@@ -208,15 +208,13 @@ class RemovalPatienceTest : ScenarioTestBase() {
                 .build()
                 .discountOf("Murder", "Mons's Goblin Raiders")
 
-            val early = onTurn(RemovalPatience.PATIENCE_FULL_THROUGH_TURN)
-            val middle = onTurn(
-                (RemovalPatience.PATIENCE_FULL_THROUGH_TURN + RemovalPatience.PATIENCE_SPENT_BY_TURN) / 2
-            )
+            val early = onTurn(Patience.FULL_THROUGH_TURN)
+            val middle = onTurn((Patience.FULL_THROUGH_TURN + Patience.SPENT_BY_TURN) / 2)
             early shouldBeGreaterThan 0.0
             middle shouldBeGreaterThan 0.0
             middle shouldBeLessThan early
-            onTurn(RemovalPatience.PATIENCE_SPENT_BY_TURN) shouldBe 0.0
-            onTurn(RemovalPatience.PATIENCE_SPENT_BY_TURN + 10) shouldBe 0.0
+            onTurn(Patience.SPENT_BY_TURN) shouldBe 0.0
+            onTurn(Patience.SPENT_BY_TURN + 10) shouldBe 0.0
         }
 
         test("the hold policy stays silent unless the profile asks for patience") {

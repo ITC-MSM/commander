@@ -1869,3 +1869,98 @@ pacified creature, a cantrip at an end step, removal aimed at a 1/1 — and the 
 degenerate null CIs did so because those shapes are rare. This one changes what *every hand
 containing a land* is worth, on every evaluation, inside every rollout. A null result here would
 itself be surprising.
+
+---
+
+# Counterspell patience
+
+**Measured:** 2026-08-08. `AiProfile.holdCountersForBetterSpells`, as
+`production-candidate-counterpatience`. The counterspell twin of removal patience: `RemovalPatience`
+asks whether a *creature* is worth the removal, `CounterPatience` asks whether a *spell on the stack*
+is worth the counter.
+
+The target is `respond-02` — a Counterspell spent on a Grizzly Bears while the opponent still holds
+cards and five untapped lands. What made it worth doing before anything was built is the margin. The
+live agent's own scores, off the insight sink:
+
+| position | opponent's lands | AI's move | advantage over passing |
+|---|---|---|---|
+| `respond-01` (Serra Angel) | 5/5 **tapped** | counters ✓ | +10.45 |
+| **`respond-02`** (Grizzly Bears) | 2 tapped, **5 open** | counters ✗ | **+1.28** |
+| `respond-03` (Wrath) | 4/4 tapped | counters ✓ | +19.61 |
+| `respond-04` (Murder) | 3/3 tapped | counters ✓ | +15.97 |
+| `respond-06` (Wrath, Negate) | 4/4 tapped | Negates ✓ | +14.17 |
+
+The mistake is worth an order of magnitude less than every counter the AI *should* make, and the one
+position where it happens is the only one whose caster has mana left. Both facts came out of one
+insight dump, and together they say a discount can fix this without endangering anything correct.
+
+## The bar is their open mana
+
+`RemovalPatience` bets a better target arrives on some future turn, which is a bet a constant can
+only approximate. A counterspell's bar is sharper and it is visible on the table: **a counter should
+answer the best spell they can still cast *this turn*, what they can still cast is bounded by the
+mana they have left, and holding costs us nothing — our own mana stays up either way.**
+
+So the bar is `1.4 × their untapped lands`, at the same per-mana rate the removal bar uses, and the
+discount is what the spell in front of us falls short of it. A tapped-out caster scores a bar of
+zero, which is why the four negative controls above are untouched by construction rather than by the
+size of a number. It shares `Patience`'s three releases (lethal on board, hand at the discard limit,
+decay to nothing by turn 14) with the removal bar and adds one of its own: an opponent with an empty
+hand has nothing better coming.
+
+## Priced by what the spell is, not what it cost
+
+Pricing the countered spell at its mana value would close `respond-02` just as well and would be a
+worse model — it would tell the AI to let a two-mana 5/5 resolve, the commonest real position where
+countering a cheap spell is right. So the worth comes from `BoardPresence.spellValue`, the same scale
+the evaluator prices the battlefield on, read off the spell's printed body or its `CardIntent` prior.
+
+That is also what makes an anthem come out right in both directions, and it is the case that decided
+the shape: "creatures you control get +1/+1" cast into an empty board is worth 3.0 and gets let
+through; the same card cast by a player with five creatures is worth 4.25 and clears the bar.
+`CounterPatienceTest` pins both, on the same card with the same mana open.
+
+Instants and sorceries are **declined outright**, by the reasoning that makes `RemovalPatience`
+decline on non-creature permanents: their worth *is* what they do to the board, which the leaf score
+already simulates. That answers `respond-03` and `respond-04` before any arithmetic runs.
+
+## Puzzles — 87 positions
+
+| | `production` | live (`production-candidate-cantrip`) |
+|---|---|---|
+| baseline | 74/87 | 84/87 |
+| with the term | 74/87 | **85/87** |
+| closes | — | `respond-02` |
+| loses | — | — |
+
+The isolation column is quiet **because it cannot be anything else**: `production` already passes
+`respond-02` — a greedy agent does not counter there for reasons of its own — so what that column
+measures is what the term *costs* across the other 86 positions, and the answer is nothing. Same
+shape as `production-patience`'s and `production-pacified`'s columns. The candidate's failing set is
+a strict subset of its baseline's: `respond-05` and `timing-03`, both of which need a horizon past
+the current resolution rather than a term.
+
+## The arena half
+
+`just arena production-candidate-cantrip production-candidate-counterpatience 100`:
+
+```
+Record:       49W-49L-2D for production-candidate-cantrip
+Pair win %:   50.0%  CI [50.0%, 50.0%]   <- the merge gate
+Completed:    98 / 100     Illegal acts: 0
+Wall clock:   1002s on 8 threads
+```
+
+The third **degenerate null** in this sequence, and the same reading as the patience and cantrip
+promotions: every scored pair came back 1-1-0, which says the term changes the outcome of a real
+sealed game *rarely*, not that it is worthless. That is what the mechanism predicts — it fires only
+on a turn where the AI holds a counterspell against a spell whose caster still has mana up. A CI
+spanning parity is a pass under the standing bar, and the puzzle side is the evidence.
+
+The two unfinished games were a `NoClassDefFoundError` on a test worker's classpath
+(`sdk.scripting.RetainUnspentColoredMana`, which exists in source and in `mtg-sdk/build` — a stale
+jar, most likely a build race with a parallel agent). Both games were the same pair, so it cancels
+out of the comparison. Unrelated to this change, which touches `:ai` only.
+
+**Promoted 2026-08-08** in `EngineAiPlayerController` and `AiProfileSelector`'s fallback.

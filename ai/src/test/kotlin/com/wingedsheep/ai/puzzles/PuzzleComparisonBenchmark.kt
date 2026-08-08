@@ -88,6 +88,12 @@ class PuzzleComparisonBenchmark : ScenarioTestBase() {
                 // this model supersedes was built for.
                 AiProfile.PRODUCTION_MANALANDS,
                 AiProfile.PRODUCTION_CANDIDATE_MANALANDS,
+                // Counterspell patience, alone and on top of what is live. `respond-02` is the
+                // verdict that should move; the rest of the `respond` category is the negative
+                // control, and all four of those are cast by a tapped-out opponent, where the bar
+                // is zero by construction.
+                AiProfile.PRODUCTION_COUNTERPATIENCE,
+                AiProfile.PRODUCTION_CANDIDATE_COUNTERPATIENCE,
                 // Phase 7's rollout evaluator, isolated from Phases 4 and 6 so the column is
                 // attributable to the rollouts alone.
                 AiProfile.PHASE7,

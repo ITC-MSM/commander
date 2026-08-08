@@ -222,6 +222,32 @@ data class AiProfile(
      */
     val holdRemovalForBetterTargets: Boolean = false,
     /**
+     * The same question [holdRemovalForBetterTargets] asks about a creature, asked about a spell on
+     * the stack: **is this worth the counterspell?**
+     *
+     * The target is `respond-02` — a Counterspell spent on a Grizzly Bears while the opponent still
+     * holds cards and five untapped lands. The leaf sees an opposing spell gone and has no term for
+     * the option the counter *was*, so it fires at whatever it is offered. On the live agent that
+     * mistake beats passing by **+1.28**, where the four counters the same category says it *should*
+     * make win by 10 to 20 — small enough for a discount to fix, and far enough from the right plays
+     * that nothing correct is at risk.
+     *
+     * [com.wingedsheep.ai.engine.knowledge.CounterPatience] sets its bar at what the caster can still
+     * deploy this turn — `1.4 × their untapped lands`, the same per-mana rate the removal bar uses —
+     * and charges what the countered spell falls short of it. An opponent who tapped out scores a bar
+     * of zero, which is why every other counterspell position in the suite is untouched by
+     * construction; an instant or a sorcery is declined outright, because its worth *is* what it does
+     * to the board and the leaf already simulates that. It shares
+     * [com.wingedsheep.ai.engine.knowledge.Patience]'s three releases with the removal bar, plus one
+     * of its own: an opponent with an empty hand has nothing better coming.
+     *
+     * The countered spell is priced by what it **is** rather than what it cost, which is what makes
+     * an anthem come out right in both directions: "creatures you control get +1/+1" cast into an
+     * empty board is worth letting resolve, and the same card cast by a player with ten creatures
+     * prices out above any bar. Needs [useCardIntent], like everything else the policy reads.
+     */
+    val holdCountersForBetterSpells: Boolean = false,
+    /**
      * Hand an instant-speed draw spell the opponent's-end-step window
      * [com.wingedsheep.ai.engine.knowledge.HoldPolicy] already hands instant-speed removal.
      *
@@ -798,7 +824,9 @@ data class AiProfile(
          * both of which were the wrong first guesses here. `PuzzleRunner.stockLibraries` carries the
          * fix and the general rule.
          *
-         * **What a player faces in a real game today** — see [EngineAiPlayerController].
+         * What a player faced in a real game until [PRODUCTION_CANDIDATE_COUNTERPATIENCE] replaced it
+         * in [EngineAiPlayerController]. Kept unchanged as the baseline that promotion was measured
+         * against.
          *
          * Promoted on the puzzle half, with the arena half returning the same **degenerate null**
          * the patience promotion did: `just arena production-candidate-boardvalue
@@ -851,6 +879,72 @@ data class AiProfile(
         val PRODUCTION_CANDIDATE_MANALANDS = PRODUCTION_CANDIDATE_CANTRIP.copy(
             id = "production-candidate-manalands",
             priceLandsInHandAsMana = true,
+        )
+
+        /**
+         * [holdCountersForBetterSpells] alone on top of [PRODUCTION], so a puzzle or an arena point
+         * that moves is attributable to it — the same isolation [PRODUCTION_LANDSEQ] gives land
+         * sequencing.
+         *
+         * This column **cannot** close its own puzzle, and that is not a failure of the term:
+         * `production` already passes `respond-02`, because a greedy agent declines to counter there
+         * for reasons of its own. So what it measures is what the term *costs* across the other 86
+         * positions — the same reading [PRODUCTION_PATIENCE]'s and [PRODUCTION_PACIFIED]'s columns
+         * get, and for the same structural reason.
+         *
+         * **Measured: 74/87, a failing set identical to [PRODUCTION]'s.** Nothing moves in either
+         * direction, which is the cheapest available evidence that what closes `respond-02` one
+         * column over is this term rather than an interaction, and that no counter the AI *should*
+         * make was traded for it.
+         */
+        val PRODUCTION_COUNTERPATIENCE = PRODUCTION.copy(
+            id = "production-counterpatience",
+            holdCountersForBetterSpells = true,
+        )
+
+        /**
+         * The promotion candidate: [PRODUCTION_CANDIDATE_CANTRIP] plus [holdCountersForBetterSpells]
+         * — the agent that stops spending its only counterspell on the first two-drop it sees.
+         *
+         * Stacked on [PRODUCTION_CANDIDATE_CANTRIP] rather than [PRODUCTION_CANDIDATE_MANALANDS]
+         * because the cantrip window is what [EngineAiPlayerController] actually points at; the
+         * manalands model is a live experiment whose arena half is still out, and a candidate has to
+         * be one flag away from what players face. If manalands promotes first, re-base this on it
+         * and re-measure rather than assuming the two are independent.
+         *
+         * **Measured: 84/87 → 85/87**, closing `respond-02`, with a failing set that is a strict
+         * subset of [PRODUCTION_CANDIDATE_CANTRIP]'s — what is left is `respond-05` and `timing-03`,
+         * both of which need a horizon past the current resolution rather than a term.
+         *
+         * The negative controls are the rest of its own category — `respond-01` (Serra Angel), `-03`
+         * (Wrath), `-04` (Murder aimed at our Angel) and `-06` (Negate over Essence Scatter) — all
+         * four cast by a *tapped out* opponent, so
+         * [com.wingedsheep.ai.engine.knowledge.CounterPatience]'s bar is zero there by construction.
+         * All four hold, as do the other 82 positions.
+         *
+         * **What a player faces in a real game today** — see [EngineAiPlayerController].
+         *
+         * Promoted on the puzzle half, with the arena half returning the same **degenerate null**
+         * the patience and cantrip promotions did: `just arena production-candidate-cantrip
+         * production-candidate-counterpatience 100` measured **50.0%, CI [50.0%, 50.0%]**,
+         * 49W-49L-2D, 0 illegal actions — and every scored pair at 1-1-0. Read that as "this term
+         * changes the outcome of a real sealed game rarely", which is what the mechanism predicts:
+         * it fires only on a turn where the AI holds a counterspell against a spell whose caster
+         * still has mana up. A CI spanning parity is a pass by the standing bar, and the evidence
+         * here is the puzzle side, at +1 with nothing traded.
+         *
+         * The two unfinished games were a pre-existing `NoClassDefFoundError` on a test worker's
+         * classpath (`sdk.scripting.RetainUnspentColoredMana`, a class that exists in source and in
+         * `mtg-sdk/build`), not an agent fault, and they hit both sides of the same pair.
+         *
+         * If a later run comes back below parity, revert the two call sites
+         * ([EngineAiPlayerController] and [AiProfileSelector]'s fallback) rather than the flag: it
+         * is off for every other profile, so backing the promotion out costs nothing and loses no
+         * measurement.
+         */
+        val PRODUCTION_CANDIDATE_COUNTERPATIENCE = PRODUCTION_CANDIDATE_CANTRIP.copy(
+            id = "production-candidate-counterpatience",
+            holdCountersForBetterSpells = true,
         )
 
         /**
@@ -926,7 +1020,7 @@ object AiProfileSelector {
     fun select(
         setCode: String?,
         requested: AiProfile?,
-        fallback: AiProfile = AiProfile.PRODUCTION_CANDIDATE_CANTRIP,
+        fallback: AiProfile = AiProfile.PRODUCTION_CANDIDATE_COUNTERPATIENCE,
     ): AiProfile {
         if (requested == null) return fallback
         val restriction = requested.restrictedToSet ?: return requested

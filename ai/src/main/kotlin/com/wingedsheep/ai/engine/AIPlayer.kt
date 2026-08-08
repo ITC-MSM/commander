@@ -248,6 +248,7 @@ class AIPlayer(
                     intents = intents,
                     combatTricksWaitForBlocks = profile.combatTricksWaitForBlocks,
                     holdRemovalForBetterTargets = profile.holdRemovalForBetterTargets,
+                    holdCountersForBetterSpells = profile.holdCountersForBetterSpells,
                     cashCantripsInTheEndStep = profile.cashCantripsInTheEndStep,
                     // Same seam as `CombatAdvisor`'s `lifeWeight`: a raw Phase 9 profile resolves
                     // to the compiled fallback here, which is the right answer for a policy that
