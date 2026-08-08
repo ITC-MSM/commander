@@ -572,6 +572,34 @@ sealed interface CostReductionSource {
     }
 
     /**
+     * Reduces cost by the *sum* of a numeric [property] over the permanents the caster controls
+     * matching a [filter] — "{X} less, where X is the total <property> of <filter> you control".
+     * Empty matches yield 0 reduction.
+     *
+     * The sum twin of [GreatestPropertyAmongPermanentsYouControl], sharing its `(property, filter)`
+     * axes and its read rules: power/toughness come from projected state (CR 613) so counters and
+     * lords count, and mana value comes from the card definition (X-cost permanents contribute
+     * X = 0). Negative power subtracts from the total, per Ghalta's ruling on the same "total
+     * power" wording; only the finished sum is floored at 0.
+     *
+     * The filtered generalization of [TotalPowerYouControl], the same way
+     * [PermanentsYouControlMatching] generalizes [CreaturesYouControl]:
+     *  - `TotalPropertyAmongPermanentsYouControl(EntityNumericProperty.Power, Filters.Creature.withKeyword(FLYING))`
+     *    — The Lord of the Eagles ("the total power of creatures you control with flying").
+     *
+     * @property property Which numeric characteristic to sum
+     * @property filter The filter that controlled permanents must match
+     */
+    @SerialName("TotalPropertyAmongPermanentsYouControl")
+    @Serializable
+    data class TotalPropertyAmongPermanentsYouControl(
+        val property: EntityNumericProperty,
+        val filter: GameObjectFilter
+    ) : CostReductionSource {
+        override val description: String = "the total ${property.description} of ${filter.description} you control"
+    }
+
+    /**
      * Reduces cost by a fixed amount if a creature is currently attacking the caster.
      * Used for cards like Swat Away ("This spell costs {2} less to cast if a creature
      * is attacking you").

@@ -1755,7 +1755,14 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   the rest of the animate at cleanup; `null` keeps the permanent's own art. The optional
   `dynamicPower`/`dynamicToughness` (`DynamicAmount`, supplied together) instead make the Layer 7b base-P/T a
   *dynamic* `SetPowerToughnessDynamic` recomputed at projection rather than locked in at resolution — the
-  single-target companion to `MassAnimateEffect`. Facade
+  single-target companion to `MassAnimateEffect`. The amounts are evaluated with the **animating source's
+  controller** as `you`, so a controller-scoped count works: **Beorn's Hospitality**
+  ("{5}{G}{G}: This enchantment becomes a Bear creature in addition to its other types and gains 'This
+  creature's power and toughness are each equal to the number of lands you control.' (This effect doesn't
+  end.)") is `BecomeCreature(EffectTarget.Self, power = Fixed(0), toughness = Fixed(0),
+  creatureTypes = {"Bear"}, duration = Duration.Permanent, dynamicPower = dynamicToughness =
+  DynamicAmounts.landsYouControl())` — the printed `power`/`toughness` are only the rules-text display
+  (rendered `*/*`), and the enchantment keeps its Enchantment type. Facade
   `Effects.BecomeCreatureWithManaValueStats(target, addTypes, keywords, creatureTypes, duration)` wires P/T = the
   animated permanent's own mana value (`EntityProperty(AffectedEntity, ManaValue)`) for **Xenic Poltergeist**
   ("Until your next upkeep, target noncreature artifact becomes an artifact creature with power and toughness
@@ -5296,7 +5303,16 @@ staticAbility {
   `<property>` among `<filter>` you control", parameterized over `EntityNumericProperty`:
   `ManaValue` (Sunderflock — "greatest mana value among Elementals you control", read from the card
   definition), `Power` (The Skullspore Nexus — "greatest power among creatures you control", read
-  from projected state so counters and buffs count); empty match → 0. … — see `CostStaticAbilities.kt`
+  from projected state so counters and buffs count); empty match → 0,
+  `TotalPropertyAmongPermanentsYouControl(property, filter)` — the sum twin of the above: "{X} less,
+  where X is the total `<property>` of `<filter>` you control", over the same `EntityNumericProperty`
+  axis and the same read rules. The filtered generalization of `TotalPowerYouControl` (Ghalta's
+  unfiltered "total power of creatures you control") the way `PermanentsYouControlMatching`
+  generalizes `CreaturesYouControl`: The Lord of the Eagles is
+  `TotalPropertyAmongPermanentsYouControl(Power, Creature.withKeyword(FLYING))`. The filter runs
+  through `PredicateEvaluator` against projected state, so granted flying and animated permanents
+  count; negative power subtracts from the total (Ghalta's ruling on the same wording) and only the
+  finished sum is floored at 0. … — see `CostStaticAbilities.kt`
   for the full list.
 - `gating: CostGating` — gates whether/how often the modifier fires:
   - `None` (default) — applies to every matching cast.

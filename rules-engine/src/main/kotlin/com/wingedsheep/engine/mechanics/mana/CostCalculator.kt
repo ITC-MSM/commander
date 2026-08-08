@@ -4,6 +4,7 @@ import com.wingedsheep.engine.state.components.battlefield.chosenColor
 import com.wingedsheep.engine.state.components.battlefield.CastChoicesComponent
 import com.wingedsheep.engine.state.components.battlefield.ChoiceValue
 
+import com.wingedsheep.engine.mechanics.layers.ProjectedState
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.battlefield.ClassLevelComponent
@@ -445,6 +446,9 @@ class CostCalculator(
             is CostReductionSource.GreatestPropertyAmongPermanentsYouControl -> {
                 greatestPropertyAmongMatching(state, playerId, source.filter, source.property)
             }
+            is CostReductionSource.TotalPropertyAmongPermanentsYouControl -> {
+                totalPropertyAmongMatching(state, playerId, source.filter, source.property)
+            }
             is CostReductionSource.FixedIfCreatureDiedThisTurn -> {
                 if (anyCreatureDiedThisTurn(state)) source.amount else 0
             }
@@ -573,19 +577,63 @@ class CostCalculator(
                 matchesBattlefieldPredicate(entityId, cardDef, predicate, projectedState)
             }
             if (!matches) continue
-            val value = when (property) {
-                EntityNumericProperty.Power ->
-                    projectedState.getPower(entityId) ?: baseCharacteristic(card.baseStats?.power)
-                EntityNumericProperty.Toughness ->
-                    projectedState.getToughness(entityId) ?: baseCharacteristic(card.baseStats?.toughness)
-                EntityNumericProperty.BasePower -> baseCharacteristic(card.baseStats?.power)
-                EntityNumericProperty.BaseToughness -> baseCharacteristic(card.baseStats?.toughness)
-                EntityNumericProperty.ManaValue -> cardDef.manaCost.cmc
-                else -> 0
-            }
+            val value = numericProperty(projectedState, entityId, card, cardDef, property)
             if (value > maxValue) maxValue = value
         }
         return maxValue
+    }
+
+    /**
+     * Sum [property] over the permanents the player controls matching a filter — the sum twin of
+     * [greatestPropertyAmongMatching] (The Lord of the Eagles: "the total power of creatures you
+     * control with flying"). Returns 0 if none match.
+     *
+     * Iterates the projected-control view and evaluates the filter through [PredicateEvaluator]
+     * against projected state, exactly like [countControlledPermanentsMatching], so stolen
+     * permanents, granted keywords, and type-changing effects are all honored. Negative power
+     * subtracts from the total (Ghalta's 2018-01-19 ruling on the same "total power" wording), and
+     * only the finished sum is floored at 0 — a net-negative board reduces nothing rather than
+     * taxing the spell.
+     */
+    private fun totalPropertyAmongMatching(
+        state: GameState,
+        playerId: EntityId,
+        filter: GameObjectFilter,
+        property: EntityNumericProperty
+    ): Int {
+        val projected = state.projectedState
+        val context = PredicateContext(controllerId = playerId)
+        var total = 0
+        for (entityId in state.controlledBattlefield(playerId)) {
+            if (!predicateEvaluator.matches(state, projected, entityId, filter, context)) continue
+            val card = state.getEntity(entityId)?.get<CardComponent>() ?: continue
+            val cardDef = cardRegistry.getCard(card.cardDefinitionId) ?: continue
+            total += numericProperty(projected, entityId, card, cardDef, property)
+        }
+        return total.coerceAtLeast(0)
+    }
+
+    /**
+     * One battlefield permanent's value for [property]. Power/toughness read projected state
+     * (CR 613) and fall back to the printed base when a permanent has no projected P/T; base
+     * power/toughness read the printed base directly; mana value comes from
+     * `CardDefinition.manaCost.cmc` (X-costs contribute X = 0 per CR 202.3b on the battlefield).
+     */
+    private fun numericProperty(
+        projectedState: ProjectedState,
+        entityId: EntityId,
+        card: CardComponent,
+        cardDef: CardDefinition,
+        property: EntityNumericProperty
+    ): Int = when (property) {
+        EntityNumericProperty.Power ->
+            projectedState.getPower(entityId) ?: baseCharacteristic(card.baseStats?.power)
+        EntityNumericProperty.Toughness ->
+            projectedState.getToughness(entityId) ?: baseCharacteristic(card.baseStats?.toughness)
+        EntityNumericProperty.BasePower -> baseCharacteristic(card.baseStats?.power)
+        EntityNumericProperty.BaseToughness -> baseCharacteristic(card.baseStats?.toughness)
+        EntityNumericProperty.ManaValue -> cardDef.manaCost.cmc
+        else -> 0
     }
 
     /** Printed base P/T from a [CharacteristicValue] — the fixed value, a CDA's offset, or 0. */

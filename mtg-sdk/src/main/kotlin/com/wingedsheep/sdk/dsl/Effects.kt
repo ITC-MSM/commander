@@ -4515,6 +4515,14 @@ object Effects {
      * power/toughness. More general than AnimateLand — can remove types, grant keywords, set
      * subtypes, change color. The base P/T amounts are evaluated once when the effect resolves
      * (CR 613.4c) — e.g. `DynamicAmount.Add(XValue, Fixed(1))` for Fractalize's "X plus 1" Fractal.
+     *
+     * Pass [dynamicPower] / [dynamicToughness] (both or neither) when the animated permanent gains a
+     * **characteristic-defining P/T that keeps recomputing** rather than a value frozen at
+     * resolution — "it gains 'This creature's power and toughness are each equal to the number of
+     * lands you control'" (Beorn's Hospitality). Those amounts are re-evaluated at Layer 7b on every
+     * projection, with the animating source's controller as `you`; [power]/[toughness] then serve
+     * only as the rules-text display. [BecomeCreatureWithManaValueStats] is the pre-baked
+     * "equal to its mana value" case.
      */
     fun BecomeCreature(
         target: EffectTarget = EffectTarget.Self,
@@ -4526,8 +4534,13 @@ object Effects {
         addTypes: Set<String> = emptySet(),
         colors: Set<String>? = null,
         imageUri: String? = null,
-        duration: Duration = Duration.EndOfTurn
-    ): Effect = BecomeCreatureEffect(target, power, toughness, keywords, creatureTypes, removeTypes, addTypes, colors, imageUri, duration)
+        duration: Duration = Duration.EndOfTurn,
+        dynamicPower: DynamicAmount? = null,
+        dynamicToughness: DynamicAmount? = null
+    ): Effect = BecomeCreatureEffect(
+        target, power, toughness, keywords, creatureTypes, removeTypes, addTypes, colors, imageUri,
+        duration, dynamicPower, dynamicToughness
+    )
 
     /** Fixed-P/T sugar for [BecomeCreature] — Sarkhan's "4/4 Dragon" and similar constant animates. */
     fun BecomeCreature(
