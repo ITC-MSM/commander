@@ -6,6 +6,7 @@ import com.wingedsheep.engine.handlers.DynamicAmountEvaluator
 import com.wingedsheep.engine.mechanics.DisturbCasts
 import com.wingedsheep.engine.mechanics.FlashbackGrants
 import com.wingedsheep.engine.mechanics.HarmonizeGrants
+import com.wingedsheep.engine.mechanics.ModalDfcCasts
 import com.wingedsheep.engine.mechanics.WarpGrants
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.PredicateContext
@@ -402,6 +403,26 @@ class CastZoneResolver(
         if (!transformedGrant) return null
         val cardComponent = state.getEntity(cardId)?.get<CardComponent>() ?: return null
         return cardRegistry.getCard(cardComponent.cardDefinitionId)?.backFace
+    }
+
+    /**
+     * The back face a card in [playerId]'s **hand** would be cast as through the modal-DFC face
+     * choice (CR 712.11b), or null when it isn't there or isn't a modal DFC with a permanent back
+     * face.
+     *
+     * Mirrors [disturbCastFace] — same "hand back the face, not a boolean" contract, because every
+     * caller needs the face's characteristics (timing, targets, name) right away — and differs only
+     * in the zone it looks in.
+     */
+    fun modalBackCastFace(
+        state: GameState,
+        playerId: EntityId,
+        cardId: EntityId
+    ): CardDefinition? {
+        val handZone = ZoneKey(playerId, Zone.HAND)
+        if (cardId !in state.getZone(handZone)) return null
+        val cardComponent = state.getEntity(cardId)?.get<CardComponent>() ?: return null
+        return ModalDfcCasts.castFace(cardRegistry.getCard(cardComponent.cardDefinitionId))
     }
 
     /**

@@ -29,10 +29,14 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  *   Prevent all damage that would be dealt to Black Panther.
  *   Whenever Black Panther deals combat damage to a player, draw a card.
  *
- * The set's Monica Rambeau / Tony Stark / Bruce Banner shape: a transforming
- * double-faced creature ([CardDefinition.doubleFacedCreature]) whose front owns the sorcery-speed
- * [TransformEffect] flip ([TimingRule.SorcerySpeed]). The back is reached only through that flip,
- * so it carries no castable mana cost — its W/U colors come from a color indicator (CR 204).
+ * A **modal** double-faced creature ([CardDefinition.modalDoubleFacedPermanent]), the shape the
+ * whole MSH hero cycle shares. CR 712.3 lets a modal DFC also transform, and this card uses both
+ * routes to the same back face: cast it from hand for its own `{4}{W}{U}` (CR 712.11b/712.11c), or
+ * transform into it with the front's sorcery-speed [TransformEffect] ability
+ * ([TimingRule.SorcerySpeed]). So the back carries its printed mana cost and *no* color indicator —
+ * its W/U comes from that cost — and per CR 712.8f (which, unlike CR 712.8e for nonmodal DFCs, has
+ * no mana-value exception) the transformed permanent has the back face's mana value, not the
+ * front's.
  *
  *  - **"Whenever a player draws their second card each turn"** is [Triggers.NthCardDrawn] with
  *    [Player.Each], not [Player.You] — it watches *every* player's per-turn draw count
@@ -89,9 +93,8 @@ private val KingTChallaFront = card("King T'Challa") {
 }
 
 private val BlackPantherHopeEnduringBack = card("Black Panther, Hope Enduring") {
-    manaCost = ""
+    manaCost = "{4}{W}{U}"
     colorIdentity = "WU"
-    colorIndicator = "WU" // Transformed back face, no mana cost (CR 204).
     typeLine = "Legendary Creature — Human Warrior Hero"
     power = 3
     toughness = 3
@@ -125,7 +128,7 @@ private val BlackPantherHopeEnduringBack = card("Black Panther, Hope Enduring") 
     }
 }
 
-val KingTChalla: CardDefinition = CardDefinition.doubleFacedCreature(
+val KingTChalla: CardDefinition = CardDefinition.modalDoubleFacedPermanent(
     frontFace = KingTChallaFront,
     backFace = BlackPantherHopeEnduringBack,
 )

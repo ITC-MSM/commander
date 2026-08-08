@@ -75,6 +75,9 @@ object CastProvenance {
         AlternativeCostType.IMPENDING -> "impending"
         AlternativeCostType.CLEAVE -> "cleave"
         AlternativeCostType.MIRACLE -> "miracle"
+        // Not an alternative cost the opponent could look up as a keyword — CR 712.11b calls it
+        // choosing which face you are casting, and the cost paid is that face's own mana cost.
+        AlternativeCostType.MODAL_BACK_FACE -> "its back face"
         // Neither of these names a printed keyword the opponent could look up, so they read as the
         // generic fact: this spell was not paid for with its mana cost.
         AlternativeCostType.SELF_ALTERNATIVE, AlternativeCostType.GRANTED -> "alternative cost"

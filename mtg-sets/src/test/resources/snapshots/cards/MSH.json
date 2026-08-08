@@ -2373,7 +2373,7 @@
     },
     "backFace": {
         "name": "The Incredible Hulk",
-        "manaCost": "",
+        "manaCost": "{2}{R}{R}{G}{G}",
         "typeLine": "Legendary Creature — Gamma Berserker Hero",
         "oracleText": "Reach, trample\nEnrage — Whenever The Incredible Hulk is dealt damage, put a +1/+1 counter on him. If he's attacking, untap him and there is an additional combat phase after this phase.",
         "creatureStats": {
@@ -2442,12 +2442,7 @@
             "BLUE",
             "RED",
             "GREEN"
-        ],
-        "colorIndicator": [
-            "RED",
-            "GREEN"
-        ],
-        "hasNoManaCost": true
+        ]
     },
     "metadata": {
         "collectorNumber": "49",
@@ -2460,7 +2455,8 @@
         "BLUE",
         "RED",
         "GREEN"
-    ]
+    ],
+    "layout": "MODAL_DFC"
 }
 
 // Call Damage Control
@@ -6824,7 +6820,7 @@
     },
     "backFace": {
         "name": "The Sensational She-Hulk",
-        "manaCost": "",
+        "manaCost": "{3}{G}{W}{W}",
         "typeLine": "Legendary Creature — Gamma Hero",
         "oracleText": "Reach, trample\nYour opponents can't cast spells during your turn.\nWhenever a creature you control is dealt damage, you may have The Sensational She-Hulk deal that much damage to any target. Do this only once each turn.",
         "creatureStats": {
@@ -6846,7 +6842,16 @@
                     "binding": "ANY",
                     "effect": {
                         "type": "Gated",
-                        "gate": "Gate.MayDecide",
+                        "gate": {
+                            "type": "Gate.MayDecide",
+                            "dynamicHint": {
+                                "template": "This trigger would deal {n} damage.",
+                                "amount": {
+                                    "type": "ContextProperty",
+                                    "key": "TRIGGER_DAMAGE_AMOUNT"
+                                }
+                            }
+                        },
                         "then": {
                             "type": "DealDamage",
                             "amount": {
@@ -6883,12 +6888,7 @@
         "colorIdentityOverride": [
             "GREEN",
             "WHITE"
-        ],
-        "colorIndicator": [
-            "GREEN",
-            "WHITE"
-        ],
-        "hasNoManaCost": true
+        ]
     },
     "metadata": {
         "collectorNumber": "18",
@@ -6900,7 +6900,8 @@
     "colorIdentityOverride": [
         "GREEN",
         "WHITE"
-    ]
+    ],
+    "layout": "MODAL_DFC"
 }
 
 // Jessica Jones, Private Eye
@@ -7477,7 +7478,7 @@
     },
     "backFace": {
         "name": "Black Panther, Hope Enduring",
-        "manaCost": "",
+        "manaCost": "{4}{W}{U}",
         "typeLine": "Legendary Creature — Human Warrior Hero",
         "oracleText": "Flash\nDouble strike\nPrevent all damage that would be dealt to Black Panther.\nWhenever Black Panther deals combat damage to a player, draw a card.",
         "creatureStats": {
@@ -7526,12 +7527,7 @@
         "colorIdentityOverride": [
             "WHITE",
             "BLUE"
-        ],
-        "colorIndicator": [
-            "WHITE",
-            "BLUE"
-        ],
-        "hasNoManaCost": true
+        ]
     },
     "metadata": {
         "collectorNumber": "219",
@@ -7542,7 +7538,8 @@
     "colorIdentityOverride": [
         "WHITE",
         "BLUE"
-    ]
+    ],
+    "layout": "MODAL_DFC"
 }
 
 // Kingpin's Enforcers
@@ -8623,7 +8620,7 @@
     },
     "backFace": {
         "name": "Photon, Living Light",
-        "manaCost": "",
+        "manaCost": "{2}{R}{W}{W}",
         "typeLine": "Legendary Creature — Elemental Hero",
         "oracleText": "Flying, hexproof, prowess\nWhenever you cast a noncreature spell, put a +1/+1 counter on each other creature you control.",
         "creatureStats": {
@@ -8702,12 +8699,7 @@
         "colorIdentityOverride": [
             "RED",
             "WHITE"
-        ],
-        "colorIndicator": [
-            "RED",
-            "WHITE"
-        ],
-        "hasNoManaCost": true
+        ]
     },
     "metadata": {
         "collectorNumber": "23",
@@ -8719,7 +8711,8 @@
     "colorIdentityOverride": [
         "RED",
         "WHITE"
-    ]
+    ],
+    "layout": "MODAL_DFC"
 }
 
 // Moon Girl and Devil Dinosaur
@@ -15233,7 +15226,7 @@
     },
     "backFace": {
         "name": "The Invincible Iron Man",
-        "manaCost": "",
+        "manaCost": "{4}{U}{R}",
         "typeLine": "Legendary Artifact Creature — Human Hero",
         "oracleText": "Flying, haste\nAt the beginning of combat on your turn, you may put an artifact card from your hand onto the battlefield. If it's an Equipment, attach it to The Invincible Iron Man.",
         "creatureStats": {
@@ -15320,12 +15313,7 @@
         "colorIdentityOverride": [
             "BLUE",
             "RED"
-        ],
-        "colorIndicator": [
-            "BLUE",
-            "RED"
-        ],
-        "hasNoManaCost": true
+        ]
     },
     "metadata": {
         "collectorNumber": "80",
@@ -15336,7 +15324,8 @@
     "colorIdentityOverride": [
         "BLUE",
         "RED"
-    ]
+    ],
+    "layout": "MODAL_DFC"
 }
 
 // Training Compound

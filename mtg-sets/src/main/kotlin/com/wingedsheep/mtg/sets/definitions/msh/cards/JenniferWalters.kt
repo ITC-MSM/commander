@@ -35,10 +35,17 @@ import com.wingedsheep.sdk.scripting.values.DynamicAmount
  *   Whenever a creature you control is dealt damage, you may have The Sensational She-Hulk deal
  *     that much damage to any target. Do this only once each turn.
  *
- * A transforming double-faced creature ([CardDefinition.doubleFacedCreature]), the Bruce Banner
- * shape: the front owns the sorcery-speed [TransformEffect] flip, and the back is reached only
- * through it, so it carries no castable mana cost — its G/W colors come from a color indicator
- * (CR 204).
+ * A **modal** double-faced creature ([CardDefinition.modalDoubleFacedPermanent]), the shape the
+ * whole MSH hero cycle shares. CR 712.3 allows a modal DFC to also transform, and this card uses
+ * both routes to the same back face:
+ *
+ *  - **Cast it** from hand for its own `{3}{G}{W}{W}` (CR 712.11b — the caster picks a face before
+ *    the card goes on the stack; CR 712.11c — only that face is evaluated).
+ *  - **Transform into it** with the front's sorcery-speed [TransformEffect] ability.
+ *
+ * The back therefore carries its printed mana cost and *no* color indicator: its G/W comes from
+ * `{3}{G}{W}{W}`, and per CR 712.8f — which, unlike CR 712.8e for nonmodal DFCs, has no mana-value
+ * exception — a transformed She-Hulk has mana value 6 rather than Jennifer Walters' 2.
  *
  *  - **"Your opponents can't cast spells during your turn"** (both faces) is the reusable
  *    [PlayersCantCastSpells] static scoped to [Player.EachOpponent] with `condition = IsYourTurn` —
@@ -101,9 +108,8 @@ private val JenniferWaltersFront = card("Jennifer Walters") {
 }
 
 private val TheSensationalSheHulkBack = card("The Sensational She-Hulk") {
-    manaCost = ""
+    manaCost = "{3}{G}{W}{W}"
     colorIdentity = "GW"
-    colorIndicator = "GW" // Transformed back face, no mana cost (CR 204).
     typeLine = "Legendary Creature — Gamma Hero"
     power = 6
     toughness = 6
@@ -149,7 +155,7 @@ private val TheSensationalSheHulkBack = card("The Sensational She-Hulk") {
     }
 }
 
-val JenniferWalters: CardDefinition = CardDefinition.doubleFacedCreature(
+val JenniferWalters: CardDefinition = CardDefinition.modalDoubleFacedPermanent(
     frontFace = JenniferWaltersFront,
     backFace = TheSensationalSheHulkBack,
 )

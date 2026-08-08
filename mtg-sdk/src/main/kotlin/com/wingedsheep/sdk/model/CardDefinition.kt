@@ -716,6 +716,59 @@ data class CardDefinition(
         }
 
         /**
+         * Creates a **modal** double-faced card whose back face is a permanent (CR 712.3), for the
+         * Marvel Super Heroes hero cycle: Jennifer Walters // The Sensational She-Hulk, Bruce
+         * Banner // The Incredible Hulk, and the rest.
+         *
+         * These are modal *and* transforming, which CR 712.3 explicitly allows: *"Modal
+         * double-faced cards have a Magic card face on each side. These faces are usually
+         * independent from one another, **but they may have an ability that allows them to
+         * 'transform' or 'convert' on either face**."* So the card supports two routes to the back
+         * face, and both must work:
+         *
+         *  - **Cast it.** Per CR 712.11b the caster chooses a face before putting the card on the
+         *    stack, and per CR 712.11c only that face is evaluated — so the back face is castable
+         *    from hand for **its own printed mana cost**, and resolves onto the battlefield back
+         *    face up (CR 712.13).
+         *  - **Transform into it.** The front face's printed activated ability
+         *    (`{3}{G}{W}{W}: Transform Jennifer Walters`) flips a front-face-up permanent, exactly
+         *    as it would on a nonmodal DFC.
+         *
+         * Both routes reach the same [backFace] definition, which is why the back is a full
+         * [CardDefinition] here rather than a [CardFace]: it needs P/T, keywords and its own
+         * abilities on the battlefield. (Modal DFCs with a *spell* back — Flamescroll Celebrant //
+         * Revel in Silence — use `modalBack { }` in the DSL and live in [cardFaces] instead; a
+         * spell face never becomes a permanent and needs none of that.)
+         *
+         * **The back face keeps its printed mana cost and takes no color indicator.** That is not
+         * cosmetic. CR 712.8f — *"While a modal double-faced spell is on the stack or a modal
+         * double-faced permanent is on the battlefield, it has only the characteristics of the face
+         * that's up"* — has no mana-value exception, unlike CR 712.8e for nonmodal DFCs. So a
+         * transformed The Sensational She-Hulk has mana value 6, not Jennifer Walters' 2, and its
+         * G/W colors come from `{3}{G}{W}{W}` rather than from a CR 204 color indicator (which is
+         * why the printed card shows none).
+         *
+         * @param frontFace The front face (must be a permanent).
+         * @param backFace The back face (must be a permanent, and must carry its own mana cost —
+         *   it is castable).
+         */
+        fun modalDoubleFacedPermanent(
+            frontFace: CardDefinition,
+            backFace: CardDefinition
+        ): CardDefinition {
+            require(frontFace.isPermanent) { "Front face must be a permanent: ${frontFace.name}" }
+            require(backFace.isPermanent) { "Back face must be a permanent: ${backFace.name}" }
+            require(!backFace.manaCost.isEmpty()) {
+                "Modal DFC back face '${backFace.name}' must have its own mana cost — it is castable (CR 712.11b)"
+            }
+            require(backFace.colorIndicator == null) {
+                "Modal DFC back face '${backFace.name}' takes no color indicator; its colors come " +
+                    "from its own mana cost (CR 712.8f)"
+            }
+            return frontFace.copy(backFace = backFace, layout = CardLayout.MODAL_DFC)
+        }
+
+        /**
          * Creates a planeswalker card.
          * @param name Card name
          * @param manaCost Mana cost

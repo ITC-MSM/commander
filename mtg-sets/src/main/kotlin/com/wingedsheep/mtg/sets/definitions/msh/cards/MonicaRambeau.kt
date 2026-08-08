@@ -26,10 +26,14 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  *   Flying, hexproof, prowess
  *   Whenever you cast a noncreature spell, put a +1/+1 counter on each other creature you control.
  *
- * A transforming double-faced creature ([CardDefinition.doubleFacedCreature]); the front owns the
- * sorcery-speed [TransformEffect] flip ([TimingRule.SorcerySpeed]). The back is reached only via
- * that flip, so it carries no castable mana cost — its R/W colors come from a color indicator
- * (CR 204).
+ * A **modal** double-faced creature ([CardDefinition.modalDoubleFacedPermanent]), the shape the
+ * whole MSH hero cycle shares. CR 712.3 lets a modal DFC also transform, and this card uses both
+ * routes to the same back face: cast it from hand for its own `{2}{R}{W}{W}` (CR 712.11b/712.11c), or
+ * transform into it with the front's sorcery-speed [TransformEffect] ability
+ * ([TimingRule.SorcerySpeed]). So the back carries its printed mana cost and *no* color indicator —
+ * its R/W comes from that cost — and per CR 712.8f (which, unlike CR 712.8e for nonmodal DFCs, has
+ * no mana-value exception) the transformed permanent has the back face's mana value, not the
+ * front's.
  *
  *  - Both faces use the [prowess] DSL helper, not a bare [Keyword.PROWESS] in `keywords(...)`: the
  *    keyword on its own is display-only, and the +1/+1 behavior comes from the intrinsic triggered
@@ -72,9 +76,8 @@ private val MonicaRambeauFront = card("Monica Rambeau") {
 }
 
 private val PhotonLivingLightBack = card("Photon, Living Light") {
-    manaCost = ""
+    manaCost = "{2}{R}{W}{W}"
     colorIdentity = "RW"
-    colorIndicator = "RW" // Transformed back face, no mana cost (CR 204).
     typeLine = "Legendary Creature — Elemental Hero"
     power = 4
     toughness = 4
@@ -105,7 +108,7 @@ private val PhotonLivingLightBack = card("Photon, Living Light") {
     }
 }
 
-val MonicaRambeau: CardDefinition = CardDefinition.doubleFacedCreature(
+val MonicaRambeau: CardDefinition = CardDefinition.modalDoubleFacedPermanent(
     frontFace = MonicaRambeauFront,
     backFace = PhotonLivingLightBack,
 )

@@ -237,10 +237,20 @@ carries the other side for the hover preview's flip toggle.
   Casts exactly like an Adventure (creature face, or Omen via `CastSpell.faceIndex = 0`), but resolving the Omen
   **shuffles the card into its owner's library** instead of exiling it — no cast-from-exile linkage. DSL:
   `card { omen("Name") { spell { … } } }`.
-- `MODAL_DFC` — primary characteristics are the front face, `cardFaces[0]` is the back face (CR 712). Cast **one**
-  face from hand (front via primary characteristics, back via `CastSpell.faceIndex = 0`), never both. Unlike
-  ADVENTURE there is no exile-then-recast linkage — a spell back resolves as an ordinary spell (graveyard, or exile
-  when its script sets `selfExileOnResolve` via `spell { selfExile() }`). DSL: `card { modalBack("Name") { spell { … } } }`.
+- `MODAL_DFC` — primary characteristics are the front face; the caster picks one face before the card goes on the
+  stack and only that face is evaluated (CR 712.11b/712.11c). Two shapes, by what the back face *is*:
+  - **Spell back** — `cardFaces[0]`, cast via `CastSpell.faceIndex = 0`. No exile-then-recast linkage: it resolves
+    as an ordinary spell (graveyard, or exile when its script sets `selfExileOnResolve` via `spell { selfExile() }`).
+    DSL: `card { modalBack("Name") { spell { … } } }`. Flamescroll Celebrant // Revel in Silence.
+  - **Permanent back** — a full `CardDefinition` in `backFace`, because it needs P/T, keywords and battlefield
+    abilities. Built with `CardDefinition.modalDoubleFacedPermanent(front, back)`, cast via
+    `CastSpell(useAlternativeCost = true, alternativeCostType = MODAL_BACK_FACE)` for the **back face's own printed
+    mana cost**, and put on the stack *transformed* — the same engine path as disturb. CR 712.3 lets such a card
+    also transform, so the front's `{cost}: Transform …` ability reaches the same back face. The back keeps its
+    printed mana cost and takes **no** color indicator: per CR 712.8f a modal back face has its own mana value
+    (unlike CR 712.8e for nonmodal DFCs, where it stays the front's). The Marvel Super Heroes hero cycle —
+    Jennifer Walters // The Sensational She-Hulk, Bruce Banner // The Incredible Hulk, King T'Challa, Tony Stark,
+    Monica Rambeau.
 - `PREPARE` — primary characteristics are the creature face, `cardFaces[0]` is the **prepare spell** (an
   instant/sorcery) (Secrets of Strixhaven). The card is only ever cast as the creature; the prepare spell is never
   cast from hand. A creature that carries `Keyword.PREPARED` ("This creature enters prepared") becomes prepared on
@@ -9352,11 +9362,21 @@ Card authors rarely reference these directly; they are created/updated by the ma
   the owner's library (`shuffleOwnerLibrary` + `LibraryShuffledEvent`) instead of exiling with a `MayPlayPermission`.
   No new effect/component — the layout enum drives the resolution fork. First user: Dirgur Island Dragon //
   Skimming Strike.
-- **Modal DFC (CR 712)** — `layout = MODAL_DFC` + `cardFaces[0]` back face; DSL:
+- **Modal DFC, spell back (CR 712)** — `layout = MODAL_DFC` + `cardFaces[0]` back face; DSL:
   `card { modalBack("Name") { imageUri = …; spell { selfExile(); … } } }`. Cast either face from hand (back via
   `CastSpell.faceIndex = 0`); reuses the Adventure cast/enumeration path (`enumerateSecondaryFace`) but with no
   exile-then-recast linkage at resolution. `StackResolver` reads the cast face's `selfExileOnResolve`, and the back
   art rides on `CardFace.imageUri` → `CardComponent.backFaceImageUri`. First user: Flamescroll Celebrant.
+- **Modal DFC, permanent back (CR 712.3)** — `layout = MODAL_DFC` + a full `backFace`, via
+  `CardDefinition.modalDoubleFacedPermanent(front, back)`. Reuses the **disturb** path rather than the Adventure
+  one, because the card goes on the stack transformed: `ModalDfcCasts.castFace` is the single
+  can-I-and-as-which-face policy (mirroring `DisturbCasts`), `CastZoneResolver.modalBackCastFace` is its hand-side
+  permission check, `CastSpellEnumerator.enumerateModalBackFace` surfaces the offer, and `CastSpellHandler` reads
+  every characteristic off that face (`transformedFace`) and passes `castTransformed = true` to `StackResolver`.
+  Cost is the back's own mana cost (`AlternativeCostType.MODAL_BACK_FACE` — the enum entry is plumbing, not a real
+  alternative cost; CR 712.11b calls it choosing a face). Because the back is a real `backFace`, transform, the
+  client's flip preview, and `CardComponent.manaValue` (CR 712.8f) all work with no extra wiring. First users: the
+  MSH hero cycle.
 - **Prepare / Prepared (Secrets of Strixhaven)** — `layout = PREPARE` + `cardFaces[0]` prepare spell; DSL:
   `card { prepare("Name") { spell { … } } }`. The creature is only cast as itself. A creature that carries
   `Keyword.PREPARED` ("This creature enters prepared") becomes prepared on enter
