@@ -21,7 +21,10 @@ import com.wingedsheep.sdk.scripting.costs.CostAtom
 import com.wingedsheep.sdk.scripting.effects.*
 import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
 import com.wingedsheep.sdk.scripting.filters.unified.Scope
+import com.wingedsheep.sdk.scripting.predicates.ControllerPredicate
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
+import com.wingedsheep.sdk.scripting.targets.TargetObject
+import com.wingedsheep.sdk.scripting.targets.TargetRequirement
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
 import java.util.concurrent.ConcurrentHashMap
 
@@ -212,6 +215,9 @@ object CardIntentAnalyzer {
             anthemBonus = anthemBonus,
             pumpToughness = pumpToughness,
             entersTapped = scripts.any(::alwaysEntersTapped),
+            flashPermanent = card.typeLine.isPermanent && Keyword.FLASH in card.keywords,
+            hasHaste = Keyword.HASTE in card.keywords,
+            targetsOnlyOurPermanents = targetsOnlyOurPermanents(scripts),
         )
         return intent.copy(staticPriorValue = priorValueOf(card, intent))
     }
@@ -432,6 +438,42 @@ object CardIntentAnalyzer {
     // ═════════════════════════════════════════════════════════════════════════
     // Speed / repeatability
     // ═════════════════════════════════════════════════════════════════════════
+
+    /**
+     * [CardIntent.targetsOnlyOurPermanents] — see there for why a consumer cannot get this from
+     * [IntentTag.REMOVAL].
+     *
+     * Requirements are read **flat**, across the spell effect and every triggered and activated
+     * ability, without matching each one back to the effect that consumes it. The question is "could
+     * any of this card's targeting point across the table", and a flat scan answers exactly that;
+     * matching bound variables to requirements would be the beginning of the `hitsAnotherPermanent`
+     * repair this field exists to avoid.
+     *
+     * [TargetObject] is the only requirement kind considered, which is the one that targets a
+     * permanent — [com.wingedsheep.sdk.scripting.targets.TargetCreature] and friends are factory
+     * functions that build one. A player target says nothing about whose board is affected.
+     *
+     * A filter carrying [TargetFilter.alternatives] is declined outright rather than descended into:
+     * "target creature you control **or** artifact an opponent controls" is a real shape, and every
+     * caller of this is better served by a false negative than by a wrong true.
+     */
+    private fun targetsOnlyOurPermanents(scripts: List<CardScript>): Boolean {
+        val permanentTargets = scripts
+            .flatMap(::targetRequirementsOf)
+            .filterIsInstance<TargetObject>()
+        return permanentTargets.isNotEmpty() && permanentTargets.all { requirement ->
+            requirement.filter.alternatives.isEmpty() &&
+                requirement.filter.baseFilter.controllerPredicate == ControllerPredicate.ControlledByYou
+        }
+    }
+
+    /** Every target requirement on [script], wherever it is declared. */
+    private fun targetRequirementsOf(script: CardScript): List<TargetRequirement> =
+        script.targetRequirements +
+            script.triggeredAbilities.flatMap {
+                listOfNotNull(it.targetRequirement) + it.additionalTargetRequirements
+            } +
+            script.activatedAbilities.flatMap { it.targetRequirements }
 
     private fun speedOf(card: CardDefinition, scripts: List<CardScript>, tags: Set<IntentTag>): Speed {
         if (!card.typeLine.isPermanent) {

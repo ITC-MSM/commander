@@ -61,18 +61,33 @@ data class GameObjectFilter(
 
     /**
      * The English indefinite article ("a" or "an") for this filter's type name.
-     * Derived from the card predicates' type word (e.g. "artifact", "equipment"),
+     * Derived from the card predicates' leading type word (e.g. "artifact", "equipment"),
      * not from the full [description] — which may include "you control" prefixes
      * that would give the wrong first letter.
+     *
+     * Reads the predicates in [orderedCardPredicates] order, the same order [description] renders
+     * them in, so the article always agrees with the word it precedes: "**an** Elf creature", not
+     * "a Elf creature". The only consumer pairs the two directly (`CostAtom`'s
+     * "from <article> <description> you control").
      */
     val indefiniteArticle: String
         get() {
-            val typeWord = cardPredicates.firstOrNull()?.description?.trim()
-                ?: if (anyOf.isNotEmpty()) anyOf.first().indefiniteArticle
+            val typeWord = orderedCardPredicates().firstOrNull()?.description?.trim()
+                ?: if (anyOf.isNotEmpty()) return anyOf.first().indefiniteArticle
                 else description.trim()
             val first = typeWord.firstOrNull()?.lowercaseChar() ?: return "a"
             return if (first in "aeiou") "an" else "a"
         }
+
+    /**
+     * Card predicates in rendering order: subtypes ahead of the card type, because Magic templates
+     * them that way — "Wolf creature", "Equipment artifact", never "creature Wolf". A stable
+     * partition, so every other pairing keeps its original insertion order.
+     */
+    private fun orderedCardPredicates(): List<CardPredicate> {
+        val (subtypes, rest) = cardPredicates.partition { it is CardPredicate.HasSubtype }
+        return subtypes + rest
+    }
 
     private fun buildDescription(): String = buildString {
         controllerPredicate?.let {
@@ -85,7 +100,7 @@ data class GameObjectFilter(
             append(predicate.description)
             append(" ")
         }
-        cardPredicates.forEach { predicate ->
+        orderedCardPredicates().forEach { predicate ->
             append(predicate.description)
             append(" ")
         }

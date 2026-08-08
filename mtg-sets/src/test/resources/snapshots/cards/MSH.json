@@ -1624,6 +1624,114 @@
     ]
 }
 
+// Baron Strucker, HYDRA Overlord
+{
+    "name": "Baron Strucker, HYDRA Overlord",
+    "manaCost": "{2}{B}",
+    "typeLine": "Legendary Creature — Human Villain",
+    "oracleText": "Villain spells you cast cost {1} less to cast.\nWhenever another Villain you control enters, you may have it connive. Do this only once each turn. (Draw a card, then discard a card. If you discarded a nonland card, put a +1/+1 counter on that creature.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "Villain ctrl:you",
+                    "to": "Battlefield"
+                },
+                "binding": "OTHER",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "DrawCards",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Hand"
+                                },
+                                "storeAs": "connive_hand"
+                            },
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "connive_hand",
+                                "selection": {
+                                    "type": "ChooseExactly",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "storeSelected": "connive_discarded",
+                                "prompt": "Choose a card to discard"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "connive_discarded",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Graveyard"
+                                },
+                                "moveType": "Discard"
+                            },
+                            {
+                                "type": "ConditionalOnCollection",
+                                "collection": "connive_discarded",
+                                "ifNotEmpty": {
+                                    "type": "AddCounters",
+                                    "counterType": "+1/+1",
+                                    "count": 1,
+                                    "target": "TriggeringEntity"
+                                },
+                                "filter": "nonland"
+                            }
+                        ],
+                        "descriptionOverride": "Connive"
+                    }
+                },
+                "effectOncePerTurn": true,
+                "descriptionOverride": "Whenever another Villain you control enters, you may have it connive. Do this only once each turn."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifySpellCost",
+                "target": {
+                    "type": "YouCast",
+                    "filter": "Villain"
+                },
+                "modification": {
+                    "type": "ReduceGeneric",
+                    "amount": 1
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "88",
+        "rarity": "UNCOMMON",
+        "artist": "InHyuk Lee",
+        "flavorText": "\"Minions of HYDRA! Behold! Our ultimate destiny is at hand!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/a/eaf2251a-ffaf-4055-9474-7e3d08d89609.jpg?1783902947"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Baxter Building
 {
     "name": "Baxter Building",
@@ -2265,7 +2373,7 @@
     },
     "backFace": {
         "name": "The Incredible Hulk",
-        "manaCost": "",
+        "manaCost": "{2}{R}{R}{G}{G}",
         "typeLine": "Legendary Creature — Gamma Berserker Hero",
         "oracleText": "Reach, trample\nEnrage — Whenever The Incredible Hulk is dealt damage, put a +1/+1 counter on him. If he's attacking, untap him and there is an additional combat phase after this phase.",
         "creatureStats": {
@@ -2334,12 +2442,7 @@
             "BLUE",
             "RED",
             "GREEN"
-        ],
-        "colorIndicator": [
-            "RED",
-            "GREEN"
-        ],
-        "hasNoManaCost": true
+        ]
     },
     "metadata": {
         "collectorNumber": "49",
@@ -2352,7 +2455,8 @@
         "BLUE",
         "RED",
         "GREEN"
-    ]
+    ],
+    "layout": "MODAL_DFC"
 }
 
 // Call Damage Control
@@ -6681,6 +6785,125 @@
     ]
 }
 
+// Jennifer Walters
+{
+    "name": "Jennifer Walters",
+    "manaCost": "{1}{W}",
+    "typeLine": "Legendary Creature — Human Advisor Hero",
+    "oracleText": "Your opponents can't cast spells during your turn.\n{3}{G}{W}{W}: Transform Jennifer Walters. Activate only as a sorcery.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{3}{G}{W}{W}"
+                    }
+                },
+                "effect": "Transform",
+                "timing": "SorcerySpeed",
+                "descriptionOverride": "Transform Jennifer Walters. Activate only as a sorcery."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "PlayersCantCastSpells",
+                "condition": "IsYourTurn"
+            }
+        ]
+    },
+    "backFace": {
+        "name": "The Sensational She-Hulk",
+        "manaCost": "{3}{G}{W}{W}",
+        "typeLine": "Legendary Creature — Gamma Hero",
+        "oracleText": "Reach, trample\nYour opponents can't cast spells during your turn.\nWhenever a creature you control is dealt damage, you may have The Sensational She-Hulk deal that much damage to any target. Do this only once each turn.",
+        "creatureStats": {
+            "power": 6,
+            "toughness": 6
+        },
+        "keywords": [
+            "REACH",
+            "TRAMPLE"
+        ],
+        "script": {
+            "triggeredAbilities": [
+                {
+                    "id": "ability_2",
+                    "trigger": {
+                        "type": "DealsDamageEvent",
+                        "recipient": "CreatureYouControl"
+                    },
+                    "binding": "ANY",
+                    "effect": {
+                        "type": "Gated",
+                        "gate": {
+                            "type": "Gate.MayDecide",
+                            "dynamicHint": {
+                                "template": "This trigger would deal {n} damage.",
+                                "amount": {
+                                    "type": "ContextProperty",
+                                    "key": "TRIGGER_DAMAGE_AMOUNT"
+                                }
+                            }
+                        },
+                        "then": {
+                            "type": "DealDamage",
+                            "amount": {
+                                "type": "ContextProperty",
+                                "key": "TRIGGER_DAMAGE_AMOUNT"
+                            },
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "any target"
+                            }
+                        }
+                    },
+                    "targetRequirement": {
+                        "type": "AnyTarget",
+                        "id": "any target"
+                    },
+                    "effectOncePerTurn": true,
+                    "descriptionOverride": "Whenever a creature you control is dealt damage, you may have The Sensational She-Hulk deal that much damage to any target. Do this only once each turn."
+                }
+            ],
+            "staticAbilities": [
+                {
+                    "type": "PlayersCantCastSpells",
+                    "condition": "IsYourTurn"
+                }
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "18",
+            "rarity": "MYTHIC",
+            "artist": "Taurin Clarke",
+            "imageUri": "https://cards.scryfall.io/normal/back/6/1/61237530-ad49-469c-a952-67c92315708e.jpg?1783902978"
+        },
+        "colorIdentityOverride": [
+            "GREEN",
+            "WHITE"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "18",
+        "rarity": "MYTHIC",
+        "artist": "Taurin Clarke",
+        "flavorText": "\"I will remind the witness that I have permission to treat her as hostile.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/1/61237530-ad49-469c-a952-67c92315708e.jpg?1783902978"
+    },
+    "colorIdentityOverride": [
+        "GREEN",
+        "WHITE"
+    ],
+    "layout": "MODAL_DFC"
+}
+
 // Jessica Jones, Private Eye
 {
     "name": "Jessica Jones, Private Eye",
@@ -7255,7 +7478,7 @@
     },
     "backFace": {
         "name": "Black Panther, Hope Enduring",
-        "manaCost": "",
+        "manaCost": "{4}{W}{U}",
         "typeLine": "Legendary Creature — Human Warrior Hero",
         "oracleText": "Flash\nDouble strike\nPrevent all damage that would be dealt to Black Panther.\nWhenever Black Panther deals combat damage to a player, draw a card.",
         "creatureStats": {
@@ -7304,12 +7527,7 @@
         "colorIdentityOverride": [
             "WHITE",
             "BLUE"
-        ],
-        "colorIndicator": [
-            "WHITE",
-            "BLUE"
-        ],
-        "hasNoManaCost": true
+        ]
     },
     "metadata": {
         "collectorNumber": "219",
@@ -7320,7 +7538,8 @@
     "colorIdentityOverride": [
         "WHITE",
         "BLUE"
-    ]
+    ],
+    "layout": "MODAL_DFC"
 }
 
 // Kingpin's Enforcers
@@ -8401,7 +8620,7 @@
     },
     "backFace": {
         "name": "Photon, Living Light",
-        "manaCost": "",
+        "manaCost": "{2}{R}{W}{W}",
         "typeLine": "Legendary Creature — Elemental Hero",
         "oracleText": "Flying, hexproof, prowess\nWhenever you cast a noncreature spell, put a +1/+1 counter on each other creature you control.",
         "creatureStats": {
@@ -8480,12 +8699,7 @@
         "colorIdentityOverride": [
             "RED",
             "WHITE"
-        ],
-        "colorIndicator": [
-            "RED",
-            "WHITE"
-        ],
-        "hasNoManaCost": true
+        ]
     },
     "metadata": {
         "collectorNumber": "23",
@@ -8497,7 +8711,8 @@
     "colorIdentityOverride": [
         "RED",
         "WHITE"
-    ]
+    ],
+    "layout": "MODAL_DFC"
 }
 
 // Moon Girl and Devil Dinosaur
@@ -15011,7 +15226,7 @@
     },
     "backFace": {
         "name": "The Invincible Iron Man",
-        "manaCost": "",
+        "manaCost": "{4}{U}{R}",
         "typeLine": "Legendary Artifact Creature — Human Hero",
         "oracleText": "Flying, haste\nAt the beginning of combat on your turn, you may put an artifact card from your hand onto the battlefield. If it's an Equipment, attach it to The Invincible Iron Man.",
         "creatureStats": {
@@ -15098,12 +15313,7 @@
         "colorIdentityOverride": [
             "BLUE",
             "RED"
-        ],
-        "colorIndicator": [
-            "BLUE",
-            "RED"
-        ],
-        "hasNoManaCost": true
+        ]
     },
     "metadata": {
         "collectorNumber": "80",
@@ -15114,7 +15324,8 @@
     "colorIdentityOverride": [
         "BLUE",
         "RED"
-    ]
+    ],
+    "layout": "MODAL_DFC"
 }
 
 // Training Compound

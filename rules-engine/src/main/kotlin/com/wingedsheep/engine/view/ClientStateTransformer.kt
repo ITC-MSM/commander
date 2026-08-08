@@ -1062,6 +1062,26 @@ class ClientStateTransformer(
             CastProvenance.badgeLabel(it.alternativeCost, it.castFromZone)
         }
 
+        // An alternative cost replaces the printed cost, so the printed pips explain nothing about
+        // what this cast actually took: name the body it ate and the mana that left the pool. Scoped
+        // to alternative-cost casts on purpose — for a normal cast both are already inferable from
+        // the card, and every spell would grow two badges for nothing. Emerge (CR 702.119a) is the
+        // case that needs it: the sacrifice is *why* the cost shrank.
+        val alternativeCostSpell = spellOnStack?.takeIf { it.alternativeCost != null }
+        val costSacrificeLabel = alternativeCostSpell?.let {
+            CastProvenance.sacrificeLabel(it.sacrificedPermanents.mapNotNull { snapshot -> snapshot.name })
+        }
+        val manaPaidCost = alternativeCostSpell?.let {
+            CastProvenance.paidManaCost(
+                white = it.manaSpentWhite,
+                blue = it.manaSpentBlue,
+                black = it.manaSpentBlack,
+                red = it.manaSpentRed,
+                green = it.manaSpentGreen,
+                colorless = it.manaSpentColorless,
+            )
+        }
+
         // Surface whether the optional Blight additional cost was paid (Lorwyn Eclipsed)
         // so opponents can see at a glance that a stronger effect is incoming on resolution.
         val wasBlightPaid = spellOnStack?.wasBlightPaid ?: false
@@ -1261,7 +1281,10 @@ class ClientStateTransformer(
             }
         }
 
-        // Modal DFC (CR 712) back face for display/flip preview (it lives in `cardFaces`, not `backFace`).
+        // Modal DFC (CR 712) back face for display/flip preview. A *spell* back lives in
+        // `cardFaces` (Flamescroll Celebrant // Revel in Silence) and is picked up here; a
+        // *permanent* back lives in `backFace` (the MSH hero cycle) and is picked up by
+        // `dfcBackFace` below, which is also what the transform machinery reads.
         val modalBackFace = if (cardDef?.layout == com.wingedsheep.sdk.model.CardLayout.MODAL_DFC) {
             cardDef.cardFaces.firstOrNull()
         } else null
@@ -1342,6 +1365,8 @@ class ClientStateTransformer(
             } ?: emptyList(),
             optionalCostLabel = optionalCostLabel,
             castProvenanceLabel = castProvenanceLabel,
+            costSacrificeLabel = costSacrificeLabel,
+            manaPaidCost = manaPaidCost,
             giftPromised = giftPromised,
             wasBlightPaid = wasBlightPaid,
             chosenX = chosenX,
@@ -1414,9 +1439,10 @@ class ClientStateTransformer(
             } else null,
             chosenModeDescriptions = chosenModeDescriptions,
             perModeTargets = perModeTargets,
-            // Modal DFCs (CR 712) keep their back face in `cardFaces`, not `backFace`, so the
-            // SDK `isDoubleFaced` (transform machinery) stays false; surface them to the client
-            // as double-faced for display/flip-preview only.
+            // A modal DFC with a *spell* back (CR 712) keeps it in `cardFaces`, so the SDK
+            // `isDoubleFaced` (transform machinery) stays false — surface it to the client as
+            // double-faced for display/flip-preview only. One with a *permanent* back already
+            // reports `isDoubleFaced`, since that back is reachable by transform too (CR 712.3).
             isDoubleFaced = container.has<com.wingedsheep.engine.state.components.identity.DoubleFacedComponent>() || cardDef?.isDoubleFaced == true || modalBackFace != null,
             currentFace = container.get<com.wingedsheep.engine.state.components.identity.DoubleFacedComponent>()?.currentFace?.name
                 ?: if (cardDef?.isDoubleFaced == true || modalBackFace != null) "FRONT" else null,
@@ -1426,6 +1452,14 @@ class ClientStateTransformer(
             backFaceImageUri = cardComponent.backFaceImageUri ?: dfcBackFace(container, cardDef)?.metadata?.imageUri ?: modalBackFace?.imageUri,
             planeswalkerAbilities = buildPlaneswalkerAbilities(cardDef, zoneKey),
             isRoom = cardDef?.isRoom == true,
+            // `cardDef` already tracks the *displayed* face of a DFC (dfcBackFace resolves the
+            // other one relative to DoubleFacedComponent.currentFace), so a defeated Siege recast
+            // as its portrait back face correctly stops reporting landscape.
+            isLandscapeFace = cardDef?.isLandscapePrint == true,
+            // Only transforming DFCs can pair a landscape face with a portrait one; a modal DFC's
+            // other half lives in `cardFaces` under the MODAL_DFC layout, which is portrait on both
+            // sides, so it never contributes here.
+            backFaceIsLandscape = dfcBackFace(container, cardDef)?.isLandscapePrint == true,
             cardFaces = buildClientCardFaces(container, cardDef),
             castFaceIndex = spellOnStack?.faceIndex,
             // Impending (CR 702.176): expose the reduced cost + time-counter count so the client can

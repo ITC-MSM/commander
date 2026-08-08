@@ -1,5 +1,6 @@
 package com.wingedsheep.engine.event
 
+import com.wingedsheep.engine.mechanics.battle.Battles
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.handlers.ConditionEvaluator
 import com.wingedsheep.engine.handlers.EffectContext
@@ -99,9 +100,14 @@ class TriggerAbilityResolver(
         val suspendAbilities = getSuspendTriggeredAbilities(entityId, state)
         val paradigmAbilities = getParadigmTriggeredAbilities(entityId, state)
 
+        // Every Siege on the battlefield has the defeat trigger (CR 310.11b), printed on none of
+        // them. Derived from the projected subtypes, so a permanent that becomes a Siege gains it
+        // and one that stops being a Siege loses it.
+        val siegeAbilities = getSiegeDefeatAbilities(entityId, state)
+
         val allGranted = grantedAbilities + staticGrantedAbilities + attachedGrantedAbilities +
             selfGrantedAbilities + wardAbilities + flankingAbilities + ringBearerAbilities +
-            suspendAbilities + paradigmAbilities
+            suspendAbilities + paradigmAbilities + siegeAbilities
         val combined = if (allGranted.isNotEmpty()) base + allGranted else base
 
         // Apply text replacement if the entity has one
@@ -121,6 +127,24 @@ class TriggerAbilityResolver(
     private fun getSuspendTriggeredAbilities(entityId: EntityId, state: GameState): List<TriggeredAbility> =
         if (state.getEntity(entityId)?.has<SuspendedComponent>() == true) {
             listOf(com.wingedsheep.sdk.scripting.Suspend.countdownAbility)
+        } else {
+            emptyList()
+        }
+
+    /**
+     * Grant [com.wingedsheep.sdk.scripting.Sieges.defeatAbility] to every Siege on the battlefield
+     * (CR 310.11b) — the "when it's defeated, exile it, then you may cast it transformed" half of
+     * the reminder text, which no Siege actually prints.
+     *
+     * Keyed off [Battles.isSiege], i.e. the *projected* card types and subtypes, so it follows a
+     * type-changing effect in both directions. A permanent that has lost all abilities keeps it:
+     * the defeat trigger is an intrinsic ability of the battle type, not of the card, so a Siege
+     * turned into an ability-less permanent that is still a Siege is still defeated when its last
+     * defense counter comes off.
+     */
+    private fun getSiegeDefeatAbilities(entityId: EntityId, state: GameState): List<TriggeredAbility> =
+        if (Battles.isSiege(state, entityId)) {
+            listOf(com.wingedsheep.sdk.scripting.Sieges.defeatAbility)
         } else {
             emptyList()
         }
@@ -258,9 +282,14 @@ class TriggerAbilityResolver(
         val suspendAbilities = getSuspendTriggeredAbilities(entityId, state)
         val paradigmAbilities = getParadigmTriggeredAbilities(entityId, state)
 
+        // Every Siege on the battlefield has the defeat trigger (CR 310.11b), printed on none of
+        // them. Derived from the projected subtypes, so a permanent that becomes a Siege gains it
+        // and one that stops being a Siege loses it.
+        val siegeAbilities = getSiegeDefeatAbilities(entityId, state)
+
         val allGranted = grantedAbilities + staticGrantedAbilities + attachedGrantedAbilities +
             selfGrantedAbilities + wardAbilities + flankingAbilities + ringBearerAbilities +
-            suspendAbilities + paradigmAbilities
+            suspendAbilities + paradigmAbilities + siegeAbilities
         val combined = if (allGranted.isNotEmpty()) base + allGranted else base
 
         val textReplacement = state.getEntity(entityId)?.get<TextReplacementComponent>()

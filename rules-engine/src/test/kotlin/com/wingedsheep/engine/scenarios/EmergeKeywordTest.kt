@@ -199,6 +199,13 @@ class EmergeKeywordTest : FunSpec({
         // player-visible contract.
         costs[courser] shouldBe "{2}{U}"
         costs[angler] shouldBe "{U}"
+
+        // The two halves the cast button renders as live arithmetic ("{5}{U} → as low as {U}"): the
+        // label names the mechanic only, and the un-reduced emerge cost is the starting point the
+        // per-candidate costs above reduce. Spelling the rule out inside the label instead would
+        // leave the button showing a price it never charges.
+        emerge.description shouldBe "Emerge Wretched Gryff"
+        emerge.manaCostString shouldBe "{5}{U}"
     }
 
     test("no emerge option at all when the reduced cost is unaffordable for every creature") {

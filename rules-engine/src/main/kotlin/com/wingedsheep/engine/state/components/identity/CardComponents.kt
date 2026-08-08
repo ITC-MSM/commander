@@ -60,6 +60,23 @@ data class CardComponent(
      * (Frantic Firebolt tallies adventurer cards in the graveyard). False for tokens.
      */
     val hasAdventure: Boolean = false,
+    /**
+     * Mana value that stands in for the one [manaCost] would give. Set **only** while a *nonmodal*
+     * double-faced object has its back face up: CR 712.8c (on the stack, a disturb cast) and
+     * CR 712.8e (on the battlefield, after a transform) both calculate such an object's mana value
+     * from the *front* face's mana cost, even though every other characteristic is the back's. The
+     * back face of a transform card prints no mana cost at all, so without this it would read 0 —
+     * a transformed Delver of Secrets would be mana value 0 rather than 1.
+     *
+     * Null everywhere else, including for a **modal** DFC: CR 712.8f gives one "only the
+     * characteristics of the face that's up" with no mana-value exception, so The Sensational
+     * She-Hulk keeps her own 6. Also null once the object flips back to its front face, whose own
+     * cost is the answer again.
+     *
+     * Set through [com.wingedsheep.engine.handlers.effects.permanent.types.dfcBackFaceManaValue],
+     * which is the one place the modal/nonmodal split is decided.
+     */
+    val manaValueOverride: Int? = null,
 ) : Component {
     // Convenience accessors
     val isCreature: Boolean get() = typeLine.isCreature
@@ -68,7 +85,7 @@ data class CardComponent(
     val isAura: Boolean get() = typeLine.isAura
     val isPlaneswalker: Boolean get() = CardType.PLANESWALKER in typeLine.cardTypes
     val isBattle: Boolean get() = typeLine.isBattle
-    val manaValue: Int get() = manaCost.cmc
+    val manaValue: Int get() = manaValueOverride ?: manaCost.cmc
 }
 
 /**

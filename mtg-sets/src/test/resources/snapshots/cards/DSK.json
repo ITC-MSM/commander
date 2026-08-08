@@ -9340,7 +9340,7 @@
                     },
                     "descriptionOverride": "You may discard a card. If you do, draw a card."
                 },
-                "oncePerTurn": true
+                "effectOncePerTurn": true
             }
         ]
     },

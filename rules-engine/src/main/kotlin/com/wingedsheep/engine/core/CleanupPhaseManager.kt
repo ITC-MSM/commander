@@ -16,6 +16,7 @@ import com.wingedsheep.engine.state.components.battlefield.DealtCombatDamageToPl
 import com.wingedsheep.engine.state.components.battlefield.WasDealtDamageThisTurnComponent
 import com.wingedsheep.engine.state.components.battlefield.TargetedByControllerThisTurnComponent
 import com.wingedsheep.engine.state.components.battlefield.ReceivedCountersThisTurnComponent
+import com.wingedsheep.engine.state.components.battlefield.TriggeredAbilityEffectAppliedThisTurnComponent
 import com.wingedsheep.engine.state.components.battlefield.TriggeredAbilityFiredThisTurnComponent
 import com.wingedsheep.engine.state.components.battlefield.GraveyardPlayPermissionUsedComponent
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
@@ -755,6 +756,10 @@ class CleanupPhaseManager(
             if (container.has<TriggeredAbilityFiredThisTurnComponent>()) {
                 needsUpdate = true
             }
+            // "Do this only once each turn" — the per-turn *effect* budget resets with the turn.
+            if (container.has<TriggeredAbilityEffectAppliedThisTurnComponent>()) {
+                needsUpdate = true
+            }
             if (container.has<com.wingedsheep.engine.state.components.battlefield.ChosenModesThisTurnComponent>()) {
                 needsUpdate = true
             }
@@ -798,6 +803,7 @@ class CleanupPhaseManager(
                         .without<PlayerAttackedPlayersThisTurnComponent>()
                         .without<GraveyardPlayPermissionUsedComponent>()
                         .without<TriggeredAbilityFiredThisTurnComponent>()
+                        .without<TriggeredAbilityEffectAppliedThisTurnComponent>()
                         .without<com.wingedsheep.engine.state.components.battlefield.ChosenModesThisTurnComponent>()
                         .without<AbilityResolutionCountThisTurnComponent>()
                         .without<TokenReplacementOfferedThisTurnComponent>()

@@ -406,6 +406,27 @@ data class ProtectorComponent(
 ) : Component
 
 /**
+ * A Siege whose last defense counter was just removed *outside* the stack — i.e. by damage
+ * (CR 310.6), the one path that empties a battle without a resolving spell or ability.
+ *
+ * This is the "has triggered but has not yet been put on the stack" window of CR 704.5v. Combat
+ * damage is applied and state-based actions run *within the same engine action*, before the turn's
+ * trigger-detection pass gets to see the damage events — so without this marker
+ * [com.wingedsheep.engine.mechanics.sba.permanent.BattleDefenseCheck] would bin a Siege killed in
+ * combat a moment before its own defeat trigger (CR 310.11b) could exile it, and the back face
+ * would never be cast. Damage dealt by a *resolving* spell needs no marker: triggers from that
+ * resolution are already detected before the next SBA pass.
+ *
+ * The marker buys exactly one SBA pass. `BattleDefenseCheck` clears it instead of binning the
+ * battle, so if the defeat trigger never materialises (it was countered, or the permanent stopped
+ * being a Siege) the very next check puts the battle into its owner's graveyard as normal. A Siege
+ * that never had a defense counter is never marked, which is what makes the "you won't exile it or
+ * cast the other face" ruling fall out.
+ */
+@Serializable
+data object DefeatTriggerArmedComponent : Component
+
+/**
  * Damage marked on a creature (cleared at cleanup).
  */
 @Serializable
@@ -638,6 +659,27 @@ data class TriggeredAbilityFiredThisTurnComponent(
         copy(abilityIds = abilityIds + abilityId)
 
     fun hasFired(abilityId: AbilityId): Boolean = abilityId in abilityIds
+}
+
+/**
+ * Tracks which triggered abilities have already **applied their effect** this turn, for the printed
+ * rider "Do this only once each turn" ([com.wingedsheep.sdk.scripting.TriggeredAbility.effectOncePerTurn]).
+ *
+ * Distinct from [TriggeredAbilityFiredThisTurnComponent] on purpose: that one records that an
+ * ability *triggered* (a trigger cap — the ability stops triggering), this one records that an
+ * ability's *effect* was applied (an effect cap — the ability keeps triggering, but at most one
+ * instance per turn does anything). Written by the `Gate.OnceEachTurn` branch of
+ * `GatedEffectExecutor`, atomically with the gate check, so two instances resolving back to back
+ * can never both pass. Cleared at end of turn by `CleanupPhaseManager`.
+ */
+@Serializable
+data class TriggeredAbilityEffectAppliedThisTurnComponent(
+    val abilityIds: Set<AbilityId> = emptySet()
+) : Component {
+    fun withApplied(abilityId: AbilityId): TriggeredAbilityEffectAppliedThisTurnComponent =
+        copy(abilityIds = abilityIds + abilityId)
+
+    fun hasApplied(abilityId: AbilityId): Boolean = abilityId in abilityIds
 }
 
 /**

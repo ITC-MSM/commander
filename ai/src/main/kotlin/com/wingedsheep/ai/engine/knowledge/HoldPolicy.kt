@@ -47,10 +47,22 @@ class HoldPolicy(
      */
     private val holdRemovalForBetterTargets: Boolean = false,
     /**
+     * [AiProfile.holdCountersForBetterSpells][com.wingedsheep.ai.engine.AiProfile.holdCountersForBetterSpells]
+     * — charge a counterspell for answering a spell smaller than what the caster can still deploy.
+     * See [CounterPatience].
+     */
+    private val holdCountersForBetterSpells: Boolean = false,
+    /**
      * [AiProfile.cashCantripsInTheEndStep][com.wingedsheep.ai.engine.AiProfile.cashCantripsInTheEndStep]
      * — hand an instant-speed draw spell the end-step window this policy already hands removal.
      */
     private val cashCantripsInTheEndStep: Boolean = false,
+    /**
+     * [AiProfile.holdFlashPermanentsForAmbush][com.wingedsheep.ai.engine.AiProfile.holdFlashPermanentsForAmbush]
+     * — stop deploying a flash creature on our own turn when the ambush window is still ahead. See
+     * [AmbushWindow], which is where the whole idea lives.
+     */
+    private val holdFlashPermanentsForAmbush: Boolean = false,
     /**
      * The profile's `EvaluationWeights.boardPresence`, so [RemovalPatience] can quote its discount
      * in the same currency as the board value it compares against. The default is the compiled
@@ -95,18 +107,33 @@ class HoldPolicy(
         return TimingVerdict.Adjust(windowDelta - patience, reason = "patience")
     }
 
-    /** The patience discount for [cast], or `0.0` when the flag is off or the shape doesn't fit. */
+    /**
+     * The patience discount for [cast], or `0.0` when the flags are off or the shape doesn't fit.
+     *
+     * The two bars are summed rather than chosen between, which costs nothing: each declines on the
+     * other's shape — [RemovalPatience] wants a single opposing *permanent* target and
+     * [CounterPatience] a single opposing *spell* — so at most one of them is ever non-zero.
+     */
     private fun patienceFor(
         state: GameState,
         playerId: EntityId,
         intent: CardIntent,
         cast: CastSpell?,
     ): Double {
-        if (!holdRemovalForBetterTargets || cast == null) return 0.0
+        if (cast == null) return 0.0
         val card = state.getEntity(cast.cardId)?.get<CardComponent>() ?: return 0.0
-        return RemovalPatience.discount(
-            state, playerId, intent, card, cast.targets, boardPresenceWeight,
-        )
+
+        val removal = if (holdRemovalForBetterTargets) {
+            RemovalPatience.discount(state, playerId, intent, card, cast.targets, boardPresenceWeight)
+        } else {
+            0.0
+        }
+        val counter = if (holdCountersForBetterSpells) {
+            CounterPatience.discount(state, playerId, intent, cast.targets, intents, boardPresenceWeight)
+        } else {
+            0.0
+        }
+        return removal + counter
     }
 
     /** The window half — "is this the moment?", which only an instant-speed card can get wrong. */
@@ -129,6 +156,28 @@ class HoldPolicy(
                 state.step in combatWindow -> TimingVerdict.Adjust(COMBAT_WINDOW)
                 else -> responseWindowFor(state, playerId, intent)
             }
+
+            // A permanent with flash, deployed where the ambush window is still ahead of us.
+            //
+            // This is the one branch that returns a verdict on the *wrong* window rather than a
+            // bonus on the right one, and [AmbushWindow] carries the argument for why the removal
+            // branch below does not transfer: a bonus three steps later cannot correct a decision
+            // made now, and unlike "hold the removal" the claim here is provable.
+            //
+            // It sits **above** the removal branch on purpose, and the reason is a bug it has to
+            // route around. `hitsAnotherPermanent` reads "does this take someone else's permanent
+            // off the battlefield" off the effect target alone, which for a bound target carries no
+            // filter and falls through to true — so Restoration Angel, whose ETB blinks a creature
+            // *we control*, is tagged `REMOVAL, EXILE_REMOVAL`. Below the removal branch this
+            // branch would be unreachable for the exact card it was written for.
+            //
+            // Ceding to it costs nothing, because [AmbushWindow]'s own guard is strictly the more
+            // precise of the two: it asks the same question *and* which side of the table the
+            // targeting points at. A flash creature that really does answer their board fails that
+            // guard, this branch's condition goes false, and the removal branch below picks it up
+            // unchanged. Nothing without flash reaches here at all.
+            holdFlashPermanentsForAmbush && AmbushWindow.holds(state, playerId, intent) ->
+                TimingVerdict.NoWindow
 
             // Instant-speed removal: reward the windows that are strictly better than now, and
             // charge nothing for casting it early.

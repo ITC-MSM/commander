@@ -726,6 +726,38 @@ class TriggerMatcher(
                 }
                 true
             }
+            is EventPattern.CountersRemovedEvent -> {
+                if (event !is com.wingedsheep.engine.core.CountersRemovedEvent) return false
+                // A removal of nothing is not a removal — it can't be "the last counter removed",
+                // and a zero-amount event would otherwise fire every "counters removed" payoff.
+                if (event.amount <= 0) return false
+                if (binding == TriggerBinding.SELF && event.entityId != sourceId) return false
+                if (binding == TriggerBinding.OTHER && event.entityId == sourceId) return false
+                // Counters.ANY is the wildcard "counters of any type" sentinel.
+                if (trigger.counterType != com.wingedsheep.sdk.core.Counters.ANY &&
+                    !counterTypesMatch(trigger.counterType, event.counterType)) return false
+                // "The last counter is removed": *this* removal must have emptied the permanent of
+                // that counter type. Read the count the event recorded, not the live one — two
+                // attackers damaging the same battle produce two removals in one batch, and by
+                // detection time the live count is 0 for both of them.
+                if (trigger.lastRemoved) {
+                    val remaining = event.remainingCount
+                        ?: remainingCounters(state, event.entityId, event.counterType)
+                    if (remaining > 0) return false
+                }
+                if (trigger.filter != GameObjectFilter.Any) {
+                    val projected = state.projectedState
+                    val predicateContext = com.wingedsheep.engine.handlers.PredicateContext(
+                        controllerId = controllerId,
+                        sourceId = sourceId
+                    )
+                    val predicateEvaluator = PredicateEvaluator()
+                    if (!predicateEvaluator.matches(state, projected, event.entityId, trigger.filter, predicateContext)) {
+                        return false
+                    }
+                }
+                true
+            }
             is EventPattern.SagaChapterResolvedEvent -> {
                 if (event !is SagaChapterResolvedEvent) return false
                 // "of a Saga you control" — the resolving Saga's controller must match the
@@ -1991,6 +2023,19 @@ class TriggerMatcher(
     private fun counterTypesMatch(triggerType: String, eventType: String): Boolean {
         if (triggerType == eventType) return true
         return normalizeCounterType(triggerType) == normalizeCounterType(eventType)
+    }
+
+    /**
+     * How many counters of [counterType] [entityId] still has — the "did that removal take the
+     * last one?" half of [EventPattern.CountersRemovedEvent.lastRemoved]. Counter names are stored
+     * normalized on the component, so the lookup goes through the same normalization the type
+     * match uses. A missing entity counts as zero: a permanent that has already left has none.
+     */
+    private fun remainingCounters(state: GameState, entityId: EntityId, counterType: String): Int {
+        val counters = state.getEntity(entityId)?.get<CountersComponent>() ?: return 0
+        return counters.counters.entries
+            .filter { (type, _) -> counterTypesMatch(counterType, counterTypeToString(type)) }
+            .sumOf { (_, count) -> count }
     }
 
     private fun normalizeCounterType(type: String): String =

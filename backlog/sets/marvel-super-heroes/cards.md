@@ -3,8 +3,7 @@
 **Set Size:** 276 booster cards (collector numbers 1-276; basic lands 277-296 and showcase
 variants 297+ are excluded)
 **Release Date:** June 26, 2026
-**Implemented:** 225 / 276
-
+**Implemented:** 227 / 276
 - [x] Agent 13, Sharon Carter
 - [ ] Agent Maria Hill
 - [x] Agent of Atlas
@@ -22,7 +21,7 @@ variants 297+ are excluded)
 - [ ] Helicarrier Strike
 - [x] Hero in Training
 - [ ] Invisible Woman, Sue Storm
-- [ ] Jennifer Walters // The Sensational She-Hulk
+- [x] Jennifer Walters // The Sensational She-Hulk
 - [x] Kree Commandos
 - [x] Luke Cage, Power Man
 - [x] The Mind Stone
@@ -92,7 +91,7 @@ variants 297+ are excluded)
 - [x] Agents of HYDRA
 - [x] Arnim Zola, Bio-Fanatic
 - [ ] Baron Helmut Zemo
-- [ ] Baron Strucker, HYDRA Overlord
+- [x] Baron Strucker, HYDRA Overlord
 - [x] Black Widow, Super Spy
 - [x] Construct a Cosmic Cube
 - [x] Crossbones, Malicious Mercenary

@@ -27,7 +27,7 @@ import { type UnifiedCube, useUnifiedCubes } from '@/store/useUnifiedCubes'
 import { HoverCardPreview } from '@/components/ui/HoverCardPreview'
 import { ManaCost, ManaSymbol } from '@/components/ui/ManaSymbols'
 import { useDfcHoverFlip } from '@/components/ui/useDfcHoverFlip'
-import { splitImageRotateDeg } from '@/utils/cardImages'
+import { landscapeImageRotateDeg } from '@/utils/cardImages'
 import styles from './CubeEditor.module.css'
 
 /** A set the cube can take its basic-land art from. */
@@ -514,7 +514,7 @@ export function CubeEditor({ cube, availableSets, onClose, onUse }: CubeEditorPr
           imageUri={dfc.displayImageUri ?? hoveredCard.imageUri ?? null}
           pos={hoverPos}
           overlay={dfc.hint}
-          imageRotateDeg={splitImageRotateDeg(hoveredCard)}
+          imageRotateDeg={landscapeImageRotateDeg(hoveredCard)}
         />
       )}
     </>,

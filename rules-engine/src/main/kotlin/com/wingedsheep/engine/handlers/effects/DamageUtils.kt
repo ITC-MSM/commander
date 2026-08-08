@@ -347,7 +347,8 @@ object DamageUtils {
             if (removed > 0) {
                 events.add(
                     com.wingedsheep.engine.core.CountersRemovedEvent(
-                        targetId, CounterType.DEFENSE.name, removed, targetName
+                        targetId, CounterType.DEFENSE.name, removed, targetName,
+                        remainingCount = currentDefense - removed
                     )
                 )
             }

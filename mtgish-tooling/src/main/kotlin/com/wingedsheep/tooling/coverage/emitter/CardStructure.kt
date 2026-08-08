@@ -3210,6 +3210,21 @@ private fun EmitCtx.triggerSpecFor(rule: JsonObject): String? {
             "filter = GameObjectFilter.Any), TriggerBinding.SELF)"
     }
 
+    // "Whenever a <counter> counter is removed from this permanent, …" — the removal mirror of the
+    // tag above (Protean Hydra). Args are [counter type, subject]; render only the SELF subject +
+    // nameable counter type as a SELF-bound CountersRemovedEvent, and decline anything else to
+    // SCAFFOLD rather than widening the subject.
+    if (jsonContains(trig, "_Trigger", "WhenACounterOfTypeIsRemovedFromAPermanent")) {
+        val targs = trig["args"].asArr ?: return null
+        val counter = counterTypeDsl(targs.getOrNull(0)) ?: return null
+        val subject = targs.getOrNull(1) as? JsonObject
+        val selfSubject = subject?.strField("_Permanents") == "SinglePermanent" &&
+            subject.field("args").strField("_Permanent") == "ThisPermanent"
+        if (!selfSubject) return null
+        return "TriggerSpec(EventPattern.CountersRemovedEvent(counterType = $counter, " +
+            "filter = GameObjectFilter.Any), TriggerBinding.SELF)"
+    }
+
     // "Whenever one or more tokens you control enter, …" — the batched
     // WhenAnyNumberOfPermanentsEnterTheBattlefield (distinct from the singular
     // WhenAPermanentEntersTheBattlefield above). Fires once per enter batch. The controller scope is

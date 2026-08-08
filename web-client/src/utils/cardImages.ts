@@ -47,12 +47,32 @@ export function faceDownImageUrl(faceDownMode?: string): string {
 export const CARD_BACK_IMAGE_URL = 'https://backs.scryfall.io/normal/2/2/222b7a3b-2321-4d4c-af19-19338b134971.jpg?1677416389'
 
 /**
- * Degrees to rotate a card's hover preview image. Split-layout cards (Pain // Suffering, Rooms
- * like Unholy Annex // Ritual Chamber — CR 709.5) are printed sideways, so their single portrait
- * image is rotated 90° to landscape. Everything else stays upright.
+ * Degrees to rotate a card's hover preview image: 90° for a card that is **printed sideways**,
+ * 0 otherwise.
+ *
+ * Which cards those are is decided server-side, in `CardDefinition.isLandscapePrint` — split
+ * layouts (Rooms, Pain // Suffering) and battles (CR 310). Prefer the `isLandscape` flag the
+ * server sends; the `layout` / `typeLine` derivation below is only a fallback for card shapes that
+ * predate the flag, and exists so no surface silently reverts to upright.
  */
-export function splitImageRotateDeg(card: { layout?: string } | null | undefined): 0 | 90 {
-  return card?.layout === 'SPLIT' ? 90 : 0
+export function landscapeImageRotateDeg(
+  card: { isLandscape?: boolean; layout?: string; typeLine?: string | null } | null | undefined
+): 0 | 90 {
+  if (!card) return 0
+  if (card.isLandscape !== undefined) return card.isLandscape ? 90 : 0
+  if (card.layout === 'SPLIT') return 90
+  return isBattleTypeLine(card.typeLine) ? 90 : 0
+}
+
+/**
+ * Whether a printed type line names the Battle card type (CR 310). Only the types half of the line
+ * is examined — everything before the em dash — so a subtype or a card name can never match.
+ * Fallback only: prefer the server's `isLandscape` flag.
+ */
+export function isBattleTypeLine(typeLine: string | null | undefined): boolean {
+  if (!typeLine) return false
+  const types = typeLine.split('—')[0] ?? ''
+  return /\bBattle\b/.test(types)
 }
 
 /**

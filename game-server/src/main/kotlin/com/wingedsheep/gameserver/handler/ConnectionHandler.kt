@@ -719,7 +719,8 @@ class ConnectionHandler(
                 colorIdentity = card.colorIdentity.map { it.name },
                 setCode = card.setCode,
                 collectorNumber = card.metadata.collectorNumber,
-                layout = card.layout.name
+                layout = card.layout.name,
+                isLandscape = card.isLandscapePrint
             )
         }
     }

@@ -88,6 +88,18 @@ class PuzzleComparisonBenchmark : ScenarioTestBase() {
                 // this model supersedes was built for.
                 AiProfile.PRODUCTION_MANALANDS,
                 AiProfile.PRODUCTION_CANDIDATE_MANALANDS,
+                // Counterspell patience, alone and on top of what is live. `respond-02` is the
+                // verdict that should move; the rest of the `respond` category is the negative
+                // control, and all four of those are cast by a tapped-out opponent, where the bar
+                // is zero by construction.
+                AiProfile.PRODUCTION_COUNTERPATIENCE,
+                AiProfile.PRODUCTION_CANDIDATE_COUNTERPATIENCE,
+                // Flash creatures held for the ambush, alone and on top of what is live.
+                // `instants-09` is the verdict that should move; `instants-10` is the ambush itself
+                // and must not, and the three guards (`instants-11`, `-12`, `-13`) are the negative
+                // controls for haste, an ETB that clears a blocker, and the late-game release.
+                AiProfile.PRODUCTION_AMBUSH,
+                AiProfile.PRODUCTION_CANDIDATE_AMBUSH,
                 // Phase 7's rollout evaluator, isolated from Phases 4 and 6 so the column is
                 // attributable to the rollouts alone.
                 AiProfile.PHASE7,

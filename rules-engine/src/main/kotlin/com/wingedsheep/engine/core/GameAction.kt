@@ -279,7 +279,23 @@ enum class AlternativeCostType {
     /** A card's own `selfAlternativeCost` (e.g. Zahid's "tap an untapped artifact") — hand. */
     SELF_ALTERNATIVE,
     /** A battlefield-granted alternative cost (e.g. Jodah's {W}{U}{B}{R}{G}) — `GrantAlternativeCastingCost`. */
-    GRANTED
+    GRANTED,
+
+    /**
+     * The **back face** of a modal double-faced card whose back is a permanent
+     * ([com.wingedsheep.engine.mechanics.ModalDfcCasts], CR 712.11b) — hand, at the *back* face's
+     * normal timing. Jennifer Walters // The Sensational She-Hulk and the rest of the Marvel Super
+     * Heroes hero cycle.
+     *
+     * Not really an alternative cost — CR 712.11b calls it choosing which face you are casting, and
+     * the cost charged is that face's own printed mana cost. It rides this enum because it needs
+     * exactly the [DISTURB] plumbing: the card goes on the stack transformed (back face up), so the
+     * spell's type line, timing, targets, P/T and abilities are the back face's, and it resolves
+     * onto the battlefield still back face up (CR 712.13). It differs from [DISTURB] in the zone
+     * (hand, not graveyard), in where the cost comes from, and in mana value — CR 712.8f gives a
+     * modal back face its *own* mana value, where CR 712.8e would keep the front's.
+     */
+    MODAL_BACK_FACE
 }
 
 /**

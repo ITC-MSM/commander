@@ -127,6 +127,10 @@ data class TargetIsSpellOnStack(
 enum class ComparisonOperator {
     LT, LTE, EQ, NEQ, GT, GTE;
 
+    /**
+     * The mathematical symbol. Debug/diagnostic rendering only — anything a player reads should use
+     * [phrase] instead, so "…can't attack unless X >= 2" comes out as "…unless X is at least 2".
+     */
     val symbol: String
         get() = when (this) {
             LT -> "<"
@@ -135,6 +139,24 @@ enum class ComparisonOperator {
             NEQ -> "!="
             GT -> ">"
             GTE -> ">="
+        }
+
+    /**
+     * English rendering of the comparison, phrased to follow an "is": "is **at least** 2",
+     * "is **greater than** the number of creatures defending player controls".
+     *
+     * Mirrors Magic's own comparative wording ("two or more" → at least, "fewer than" → less than)
+     * rather than inventing a house style, so a [Compare] description drops into rules text without
+     * reading like a debug dump.
+     */
+    val phrase: String
+        get() = when (this) {
+            LT -> "less than"
+            LTE -> "at most"
+            EQ -> "exactly"
+            NEQ -> "not"
+            GT -> "greater than"
+            GTE -> "at least"
         }
 }
 
@@ -158,7 +180,7 @@ data class Compare(
     val operator: ComparisonOperator,
     val right: DynamicAmount
 ) : Condition {
-    override val description: String = "${left.description} ${operator.symbol} ${right.description}"
+    override val description: String = "${left.description} is ${operator.phrase} ${right.description}"
     override fun applyTextReplacement(replacer: TextReplacer): Condition {
         val newLeft = left.applyTextReplacement(replacer)
         val newRight = right.applyTextReplacement(replacer)

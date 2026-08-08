@@ -330,15 +330,28 @@ sealed interface DynamicAmount : TextReplaceable<DynamicAmount> {
     companion object {
         /**
          * Pluralize the last word of a filter description for use in counting phrases.
-         * Examples: "creature" → "creatures", "land" → "lands", "sorcery" → "sorceries"
+         * Examples: "creature" → "creatures", "land" → "lands", "sorcery" → "sorceries",
+         * "Wolf" → "Wolves", "Leech" → "Leeches"
+         *
+         * Creature types drive most of these, and Magic has plenty that a bare "+s" gets wrong:
+         * Wolf/Elf/Dwarf take -ves, and the sibilant endings (Leech, Fish, Sphinx) take -es.
+         * Irregular plurals (Ox → Oxen) aren't worth a lookup table — they read acceptably as
+         * "Oxes" and cost more in maintenance than they return.
          */
         internal fun pluralize(filterDesc: String): String {
             if (filterDesc.isEmpty()) return "cards"
             val words = filterDesc.split(" ")
             val lastWord = words.last()
+            val lower = lastWord.lowercase()
             val plural = when {
-                lastWord.endsWith("s") -> lastWord
-                lastWord.endsWith("y") && !lastWord.endsWith("ey") -> lastWord.dropLast(1) + "ies"
+                lower.endsWith("s") -> lastWord
+                // Wolf → Wolves, Knife → Knives. "Dwarf" is the one Magic spells "Dwarves".
+                lower.endsWith("f") -> lastWord.dropLast(1) + "ves"
+                lower.endsWith("fe") -> lastWord.dropLast(2) + "ves"
+                // Sibilants need the extra syllable: Leech → Leeches, Sphinx → Sphinxes.
+                lower.endsWith("ch") || lower.endsWith("sh") ||
+                    lower.endsWith("x") || lower.endsWith("z") -> lastWord + "es"
+                lower.endsWith("y") && !lower.endsWith("ey") -> lastWord.dropLast(1) + "ies"
                 else -> lastWord + "s"
             }
             return (words.dropLast(1) + plural).joinToString(" ")

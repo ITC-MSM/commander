@@ -325,17 +325,20 @@ class TargetFinder(
         targets.addAll(state.turnOrder.filter { state.hasEntity(it) && !playerHasShroud(state, it) &&
             !playerHasHexproofAgainst(state, it, controllerId) })
 
-        // Add all creatures and planeswalkers
+        // Add all creatures, planeswalkers and battles
         val battlefield = state.getBattlefield()
         for (entityId in battlefield) {
             val container = state.getEntity(entityId) ?: continue
             if (!container.has<CardComponent>()) continue
             val entityController = container.get<ControllerComponent>()?.playerId
 
-            // Only creatures and planeswalkers for "any target". Read the PROJECTED
-            // type line, not the printed one, so animated lands (Earthbend) and
-            // face-down 2/2 creatures are valid targets (CR 115.4 / projection rule).
-            if (!projected.isCreature(entityId) && !projected.isPlaneswalker(entityId)) {
+            // CR 115.4 — "any target" means a creature, player, planeswalker, or battle, and
+            // nothing else. Read the PROJECTED type line, not the printed one, so animated lands
+            // (Earthbend) and face-down 2/2 creatures are valid targets (projection rule).
+            if (!projected.isCreature(entityId) &&
+                !projected.isPlaneswalker(entityId) &&
+                !projected.isBattle(entityId)
+            ) {
                 continue
             }
 

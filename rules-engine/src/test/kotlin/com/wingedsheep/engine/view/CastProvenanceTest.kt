@@ -40,6 +40,46 @@ class CastProvenanceTest : FunSpec({
         CastProvenance.logPhrase(null, Zone.EXILE) shouldBe "from exile"
     }
 
+    test("an emerge cast names the body it ate and the mana it actually cost") {
+        // The reported confusion: emerge {5}{U} minus a mana-value-2 sacrifice is a four-mana spell,
+        // which reads as a bug unless both halves of that arithmetic are visible after the fact.
+        CastProvenance.logPhrase(
+            AlternativeCostType.EMERGE,
+            Zone.HAND,
+            sacrificedNames = listOf("Niblis of the Urn"),
+            manaSpent = 4,
+        ) shouldBe "emerge, sacrificed Niblis of the Urn, paid 4 mana"
+
+        CastProvenance.sacrificeLabel(listOf("Niblis of the Urn")) shouldBe "Sacrificed Niblis of the Urn"
+        CastProvenance.sacrificeLabel(emptyList()) shouldBe null
+    }
+
+    test("the sacrifice and the mana spent extend a phrase but never create one") {
+        // A plain hand cast that sacrificed something for an *additional* cost (Angelic Purge) keeps
+        // its silent log line: its printed cost is on the card and the sacrifice has its own event.
+        CastProvenance.logPhrase(
+            null,
+            Zone.HAND,
+            sacrificedNames = listOf("Thraben Inspector"),
+            manaSpent = 3,
+        ) shouldBe null
+    }
+
+    test("a graveyard cast reports the origin before the mana, and free casts stay quiet about it") {
+        CastProvenance.logPhrase(AlternativeCostType.FLASHBACK, Zone.GRAVEYARD, manaSpent = 3) shouldBe
+            "flashback, from graveyard, paid 3 mana"
+        CastProvenance.logPhrase(AlternativeCostType.EVOKE, Zone.HAND, manaSpent = 0) shouldBe "evoke"
+    }
+
+    test("the mana actually paid renders as pips in WUBRG-then-colorless order") {
+        CastProvenance.paidManaCost(white = 3, blue = 1, black = 0, red = 0, green = 0, colorless = 0) shouldBe
+            "{W}{W}{W}{U}"
+        CastProvenance.paidManaCost(white = 0, blue = 0, black = 1, red = 1, green = 1, colorless = 2) shouldBe
+            "{B}{R}{G}{C}{C}"
+        // Nothing spent — a free cast has no pips to show, so the badge stays off.
+        CastProvenance.paidManaCost(0, 0, 0, 0, 0, 0) shouldBe null
+    }
+
     test("every alternative cost has a player-facing name") {
         // Guards the exhaustive `when` against a new mechanic slipping through as a blank badge.
         AlternativeCostType.entries.forEach { type ->

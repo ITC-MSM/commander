@@ -126,13 +126,22 @@ export function CardPreview() {
   // the image rotated +90° (CW) to read landscape with the halves side by side. Source
   // stores face[1] on top and face[0] on bottom; after rotation face[1] → right, face[0]
   // → left. Rooms additionally dim the locked half with an upright lock chip (below).
+  // `isRoom` still drives the per-half lock chips below; orientation is isLandscapeFace's job.
   const isRoom = card.isRoom === true
-  const isSplit = card.cardFaces != null && card.cardFaces.length === 2
-  const splitImageRotateDeg: 0 | 90 = isSplit ? 90 : 0
+  // Rotation follows the image actually on screen, which the DFC flip toggle can swap: hovering a
+  // Siege and flipping shows the portrait Deluge of the Dead face (don't rotate), and flipping a
+  // permanent that is *already* the back face shows the landscape Siege front (do rotate). One
+  // server-side flag per face covers every sideways-printed family — splits, Rooms, battles — so
+  // this never re-derives orientation from `cardFaces` or a type line.
+  const shownFaceIsLandscape = showingBackFace
+    ? card.backFaceIsLandscape === true
+    : card.isLandscapeFace === true
+  const isLandscapePrint = shownFaceIsLandscape
+  const landscapeImageRotateDeg: 0 | 90 = isLandscapePrint ? 90 : 0
   // Flip-layout tokens (WOE "Cursed" / "Sorcerer" Roles) carry imageRotation = 180 so the bottom
   // face reads upright. Split-card landscape rotation takes precedence when both somehow apply.
-  const previewImageRotateDeg: 0 | 90 | 180 | 270 = splitImageRotateDeg !== 0
-    ? splitImageRotateDeg
+  const previewImageRotateDeg: 0 | 90 | 180 | 270 = landscapeImageRotateDeg !== 0
+    ? landscapeImageRotateDeg
     : ((card.imageRotation ?? 0) as 0 | 90 | 180 | 270)
 
   // Mana cost overlay badge for the card image (only for hand cards)
