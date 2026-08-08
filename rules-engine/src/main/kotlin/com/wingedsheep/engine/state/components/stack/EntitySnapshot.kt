@@ -116,6 +116,19 @@ data class EntitySnapshot(
      */
     val wasEquipped: Boolean = false,
     /**
+     * The Auras/Equipment that were attached to this permanent when it left the battlefield, in
+     * attachment order. [wasEquipped]/[wasEnchanted] answer "was it attached to *anything* of this
+     * kind"; this field answers "by *what*", which is what an ATTACHED-bound leaves/dies trigger
+     * borne by a still-on-the-battlefield Equipment needs to find itself again.
+     *
+     * The live links are torn down by the exit cleanup (CR 704.5m/n), and when the permanent dies
+     * to a state-based action the unattach runs in the *same* SBA pass as the death — so by the
+     * time triggers are detected, the attachment index no longer connects the Equipment to its
+     * dead host. Freezing the ids here is the last-known information (CR 608.2h) that lets
+     * `AttachmentTriggerDetector` still fire "whenever equipped creature dies".
+     */
+    val attachmentIds: List<EntityId> = emptyList(),
+    /**
      * True if this permanent had at least one Aura attached when it left the battlefield (CR 303.4).
      * Last-known counterpart to [com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsEnchanted];
      * a leg of the last-known [com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsModified].

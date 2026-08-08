@@ -80,7 +80,7 @@ class TriggerDetector(
     private val abilityResolver = TriggerAbilityResolver(cardRegistry, abilityRegistry)
     private val deathAndLeaveDetector = DeathAndLeaveTriggerDetector(abilityResolver, matcher)
     private val damageDetector = DamageTriggerDetector(abilityResolver, matcher)
-    private val attachmentDetector = AttachmentTriggerDetector(matcher)
+    private val attachmentDetector = AttachmentTriggerDetector(abilityResolver, matcher)
 
     /**
      * Build a trigger index for the current game state.
