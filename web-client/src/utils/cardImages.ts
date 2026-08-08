@@ -19,12 +19,31 @@ export const MANIFEST_FACE_DOWN_IMAGE_URL = 'https://cards.scryfall.io/normal/fr
 export const CARD_BACK_IMAGE_URL = 'https://backs.scryfall.io/normal/2/2/222b7a3b-2321-4d4c-af19-19338b134971.jpg?1677416389'
 
 /**
- * Degrees to rotate a card's hover preview image. Split-layout cards (Pain // Suffering, Rooms
- * like Unholy Annex // Ritual Chamber — CR 709.5) are printed sideways, so their single portrait
- * image is rotated 90° to landscape. Everything else stays upright.
+ * Degrees to rotate a card's hover preview image. Two families of cards are printed sideways, so
+ * their single portrait image has to be rotated 90° to read landscape:
+ *
+ * - **Split layouts** (Pain // Suffering, Rooms like Unholy Annex // Ritual Chamber — CR 709.5).
+ * - **Battles** (CR 310) — a transforming double-faced card, so `layout` is `TRANSFORM`, not
+ *   `SPLIT`; only the type line identifies them. The *front* face is the landscape one, which is
+ *   also the face these previews show, so reading the card's own type line is correct here.
+ *
+ * Everything else stays upright.
  */
-export function splitImageRotateDeg(card: { layout?: string } | null | undefined): 0 | 90 {
-  return card?.layout === 'SPLIT' ? 90 : 0
+export function landscapeImageRotateDeg(
+  card: { layout?: string; typeLine?: string | null } | null | undefined
+): 0 | 90 {
+  if (card?.layout === 'SPLIT') return 90
+  return isBattleTypeLine(card?.typeLine) ? 90 : 0
+}
+
+/**
+ * Whether a printed type line names the Battle card type (CR 310). Only the types half of the line
+ * is examined — everything before the em dash — so a subtype or a card name can never match.
+ */
+export function isBattleTypeLine(typeLine: string | null | undefined): boolean {
+  if (!typeLine) return false
+  const types = typeLine.split('—')[0] ?? ''
+  return /\bBattle\b/.test(types)
 }
 
 /**

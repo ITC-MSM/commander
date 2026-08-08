@@ -591,6 +591,19 @@ data class ClientCard(
     val isRoom: Boolean = false,
 
     /**
+     * Whether the face currently being shown is printed **landscape** — a battle (CR 310), whose
+     * Scryfall image is a portrait file containing a card lying on its side, exactly like a Room's.
+     * Drives the 90° rotation and the landscape footprint in every place the card is drawn.
+     *
+     * Keyed to the *displayed* face, not the card: Invasion of Innistrad is landscape, but the
+     * Deluge of the Dead face it becomes is an ordinary portrait enchantment, so the same card
+     * reports true before it's defeated and false after. Read from the printed card definition
+     * rather than projected types — a type-changing effect that turns a permanent into a battle
+     * doesn't reprint its art sideways.
+     */
+    val isLandscapeFace: Boolean = false,
+
+    /**
      * For split-layout cards (currently Rooms): one entry per face with that face's name, mana
      * cost, type line, oracle text, and (on the battlefield) whether the door is unlocked. Empty
      * for normal single-face cards.

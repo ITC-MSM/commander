@@ -192,7 +192,10 @@ Engine-side helpers all live on `com.wingedsheep.engine.mechanics.battle.Battles
 `defenseOf`, `eligibleProtectors`, `canBeAttackedBy`); `ProjectedState.isBattle(entityId)` is the type
 check. The client receives a battle's defense in the ordinary `counters` map and its protector as
 `ClientCard.protectorId`. A battle is a legal choice for "any target" (CR 115.4) alongside creatures,
-players and planeswalkers.
+players and planeswalkers. Battles are printed **landscape** — the Scryfall image is a portrait file
+holding a sideways card, as a Room's is — so `ClientCard.isLandscapeFace` drives the 90° rotation
+and the landscape footprint everywhere the card is drawn. It is per *face*: a Siege reports true and
+the portrait back face it becomes when defeated reports false.
 
 ---
 

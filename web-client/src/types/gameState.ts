@@ -514,6 +514,14 @@ export interface ClientCard {
   readonly isRoom?: boolean
 
   /**
+   * True when the face currently shown is printed landscape — a battle (CR 310), whose Scryfall
+   * image is a portrait file containing a sideways card, just like a Room's. Drives the 90°
+   * rotation and the landscape footprint wherever the card is drawn. Per *face*: a Siege reports
+   * true, and the portrait back face it becomes when defeated reports false.
+   */
+  readonly isLandscapeFace?: boolean
+
+  /**
    * For split-layout cards (currently Rooms): one entry per face. `isUnlocked` reflects the live
    * door state on the battlefield; in other zones it's always false.
    */

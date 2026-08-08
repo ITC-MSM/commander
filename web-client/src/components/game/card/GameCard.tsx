@@ -344,12 +344,14 @@ function GameCardImpl({
 
   const isTapped = suppressTapRotation ? false : (card.isTapped || forceTapped)
   const isPhasedOut = card.isPhasedOut === true
-  // Rooms (CR 709.5) are printed landscape; rotate the permanent +90° on the battlefield
-  // so the image reads landscape (the source orientation matches "tilt head right").
+  // Rooms (CR 709.5) and battles (CR 310) are printed landscape; rotate the permanent +90° on the
+  // battlefield so the image reads landscape (the source orientation matches "tilt head right").
   // Tap state stacks an additional +90° on top (= 180° upside-down portrait), preserving
-  // the standard "tap = +90° from current" semantic.
-  const isRoomLandscape = !faceDown && !!battlefield && card.isRoom === true
-  const totalRotateDeg = (isRoomLandscape ? 90 : 0) + (isTapped ? 90 : 0)
+  // the standard "tap = +90° from current" semantic. `isLandscapeFace` is per *face*, so a Siege
+  // recast as its portrait back face stops being rotated.
+  const isLandscapePrint = !faceDown && !!battlefield &&
+    (card.isRoom === true || card.isLandscapeFace === true)
+  const totalRotateDeg = (isLandscapePrint ? 90 : 0) + (isTapped ? 90 : 0)
   const needsLandscapeContainer = Math.abs(totalRotateDeg) % 180 === 90
   const isInTargetingMode = targetingState !== null
   const isValidTarget = targetingState?.validTargets.includes(card.id) ?? false

@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import { useGameStore } from '@/store/gameStore.ts'
 import { selectGameState, selectViewingPlayerId, useCardLegalActions } from '@/store/selectors.ts'
 import { ZoneType, zoneIdEquals } from '@/types'
-import { getCardImageUrl } from '@/utils/cardImages.ts'
+import { getCardImageUrl, isBattleTypeLine } from '@/utils/cardImages.ts'
 import { useResponsiveContext, handleImageError, getCounterStatModifier, hasStatCounters, getTokenFrameGradient, getTokenFrameTextColor, getPTColor } from '../board/shared'
 import { styles } from '../board/styles'
 import { counterManaClass } from '@/assets/icons/keywords'
@@ -128,11 +128,21 @@ export function CardPreview() {
   // → left. Rooms additionally dim the locked half with an upright lock chip (below).
   const isRoom = card.isRoom === true
   const isSplit = card.cardFaces != null && card.cardFaces.length === 2
-  const splitImageRotateDeg: 0 | 90 = isSplit ? 90 : 0
+  // Battles (CR 310) are printed landscape too, but they're transforming double-faced cards, not
+  // split ones — they carry a `backFace`, never `cardFaces` — so the split check above misses them.
+  // Rotation follows the image actually on screen, which the DFC flip toggle can swap: hovering a
+  // Siege and flipping shows the portrait Deluge of the Dead face (don't rotate), and flipping a
+  // permanent that is *already* the back face shows the landscape Siege front (do rotate).
+  // `isLandscapeFace` describes the on-board face; `backFaceTypeLine` describes the other one.
+  const shownFaceIsLandscape = showingBackFace
+    ? isBattleTypeLine(card.backFaceTypeLine)
+    : card.isLandscapeFace === true
+  const isLandscapePrint = isSplit || shownFaceIsLandscape
+  const landscapeImageRotateDeg: 0 | 90 = isLandscapePrint ? 90 : 0
   // Flip-layout tokens (WOE "Cursed" / "Sorcerer" Roles) carry imageRotation = 180 so the bottom
   // face reads upright. Split-card landscape rotation takes precedence when both somehow apply.
-  const previewImageRotateDeg: 0 | 90 | 180 | 270 = splitImageRotateDeg !== 0
-    ? splitImageRotateDeg
+  const previewImageRotateDeg: 0 | 90 | 180 | 270 = landscapeImageRotateDeg !== 0
+    ? landscapeImageRotateDeg
     : ((card.imageRotation ?? 0) as 0 | 90 | 180 | 270)
 
   // Mana cost overlay badge for the card image (only for hand cards)
