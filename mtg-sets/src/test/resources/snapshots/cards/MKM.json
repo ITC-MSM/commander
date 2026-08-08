@@ -222,6 +222,89 @@
     ]
 }
 
+// Felonious Rage
+{
+    "name": "Felonious Rage",
+    "manaCost": "{R}",
+    "typeLine": "Instant",
+    "oracleText": "Target creature you control gets +2/+0 and gains haste until end of turn. When that creature dies this turn, create a 2/2 white and blue Detective creature token.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 0
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature you control"
+                    }
+                },
+                {
+                    "type": "GrantKeyword",
+                    "keyword": "HASTE",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature you control"
+                    }
+                },
+                {
+                    "type": "CreateDelayedTrigger",
+                    "effect": {
+                        "type": "CreateToken",
+                        "power": 2,
+                        "toughness": 2,
+                        "colors": [
+                            "WHITE",
+                            "BLUE"
+                        ],
+                        "creatureTypes": [
+                            "Detective"
+                        ]
+                    },
+                    "trigger": {
+                        "event": {
+                            "type": "ZoneChangeEvent",
+                            "from": "Battlefield",
+                            "to": "Graveyard"
+                        }
+                    },
+                    "watchedTarget": {
+                        "type": "BoundVariable",
+                        "name": "target creature you control"
+                    },
+                    "fireOnce": true
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature ctrl:you"
+                },
+                "id": "target creature you control"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "125",
+        "artist": "Justine Cruz",
+        "flavorText": "It's hard to keep the peace if you can't even control your temper.",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/5/4538d6a8-a24a-40e3-b894-45a30882c92a.jpg?1783912880"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Festerleech
 {
     "name": "Festerleech",
@@ -305,6 +388,56 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Galvanize
+{
+    "name": "Galvanize",
+    "manaCost": "{1}{R}",
+    "typeLine": "Instant",
+    "oracleText": "Galvanize deals 3 damage to target creature. If you've drawn two or more cards this turn, Galvanize deals 5 damage to that creature instead.",
+    "script": {
+        "spellEffect": {
+            "type": "DealDamage",
+            "amount": {
+                "type": "Conditional",
+                "condition": {
+                    "type": "PlayerDrewCardsThisTurn",
+                    "atLeast": 2
+                },
+                "ifTrue": {
+                    "type": "Fixed",
+                    "amount": 5
+                },
+                "ifFalse": {
+                    "type": "Fixed",
+                    "amount": 3
+                }
+            },
+            "target": {
+                "type": "BoundVariable",
+                "name": "target creature"
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target creature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "128",
+        "artist": "Matt Forsyth",
+        "flavorText": "\"Why doesn't Kylox put an off switch on these things?!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/4/64ed3bfa-3294-45dd-825e-3afc2580f0d4.jpg?1783912882"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
@@ -597,6 +730,59 @@
     ]
 }
 
+// Kraul Whipcracker
+{
+    "name": "Kraul Whipcracker",
+    "manaCost": "{B}{G}",
+    "typeLine": "Creature — Insect Assassin",
+    "oracleText": "Reach\nWhen this creature enters, destroy target token an opponent controls.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "keywords": [
+        "REACH"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target token an opponent controls"
+                    },
+                    "destination": "Graveyard",
+                    "byDestruction": true
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "token ctrl:opponent"
+                    },
+                    "id": "target token an opponent controls"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "213",
+        "rarity": "UNCOMMON",
+        "artist": "Filip Burburan",
+        "flavorText": "\"Er, sir, we could try to cite him for mishandling evidence, but I'm not sure he technically has hands.\"\n—Argyle, Agency junior detective",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/c/0c08ed44-2c13-4029-af2e-68585a76bb03.jpg?1783912845"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "GREEN"
+    ]
+}
+
 // Leering Onlooker
 {
     "name": "Leering Onlooker",
@@ -662,6 +848,51 @@
     ]
 }
 
+// Long Goodbye
+{
+    "name": "Long Goodbye",
+    "manaCost": "{1}{B}",
+    "typeLine": "Instant",
+    "oracleText": "This spell can't be countered. (This includes by the ward ability.)\nDestroy target creature or planeswalker with mana value 3 or less.",
+    "script": {
+        "spellEffect": {
+            "type": "MoveToZone",
+            "target": {
+                "type": "BoundVariable",
+                "name": "target creature or planeswalker with mana value 3 or less"
+            },
+            "destination": "Graveyard",
+            "byDestruction": true
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature|planeswalker mv<=3"
+                },
+                "id": "target creature or planeswalker with mana value 3 or less"
+            }
+        ],
+        "cantBeCountered": true
+    },
+    "metadata": {
+        "collectorNumber": "92",
+        "rarity": "UNCOMMON",
+        "artist": "Jarel Threat",
+        "flavorText": "As the days grew longer, so did the list of missing persons.",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/3/c3896705-bbd2-4ffb-a590-ee78e0eabdc5.jpg?1783912896",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "If you target a creature or planeswalker with ward, you may still pay the ward cost, but Long Goodbye won't be countered even if you don't."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Lush Portico
 {
     "name": "Lush Portico",
@@ -695,6 +926,68 @@
     "colorIdentityOverride": [
         "WHITE",
         "GREEN"
+    ]
+}
+
+// Make Your Move
+{
+    "name": "Make Your Move",
+    "manaCost": "{2}{W}",
+    "typeLine": "Instant",
+    "oracleText": "Destroy target artifact, enchantment, or creature with power 4 or greater.",
+    "script": {
+        "spellEffect": {
+            "type": "MoveToZone",
+            "target": {
+                "type": "BoundVariable",
+                "name": "target artifact, enchantment, or creature with power 4 or greater"
+            },
+            "destination": "Graveyard",
+            "byDestruction": true
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": {
+                        "cardPredicates": [
+                            {
+                                "type": "Or",
+                                "predicates": [
+                                    {
+                                        "type": "Or",
+                                        "predicates": [
+                                            "IsArtifact",
+                                            "IsEnchantment"
+                                        ]
+                                    },
+                                    {
+                                        "type": "And",
+                                        "predicates": [
+                                            "IsCreature",
+                                            {
+                                                "type": "PowerAtLeast",
+                                                "min": 4
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "id": "target artifact, enchantment, or creature with power 4 or greater"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "22",
+        "artist": "Xabi Gaztelua",
+        "flavorText": "\"If you're thinking only one step ahead, you're already falling behind.\"\n—Teysa",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/3/73475d29-2673-4614-86d3-404232426aa8.jpg?1783912922"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 
