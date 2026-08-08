@@ -388,6 +388,35 @@ sealed interface KeywordAbility {
     }
 
     // =========================================================================
+    // Disguise
+    // =========================================================================
+
+    /**
+     * Disguise with a cost to turn face up (CR 702.168).
+     * "Disguise {2}{U}" or "Disguise—Pay 5 life."
+     * You may cast this card face down as a 2/2 creature **with ward {2}** for {3}.
+     * Turn it face up any time you have priority for its disguise cost.
+     *
+     * Disguise is morph plus ward {2}; the ward is part of the face-down characteristic-defining
+     * effect ([com.wingedsheep.sdk.scripting.effects.FaceDownMode.DISGUISE]), not of this ability.
+     *
+     * The cost is a full [PayCost] rather than a [ManaCost] because CR 702.168e explicitly
+     * contemplates X in a disguise cost (other abilities of the permanent then refer to the value
+     * chosen as the special action was taken), and because non-mana costs are expressible in the
+     * same way morph costs are.
+     */
+    @SerialName("Disguise")
+    @Serializable
+    data class Disguise(
+        val disguiseCost: PayCost
+    ) : KeywordAbility {
+        /** Convenience constructor for mana-based disguise costs. */
+        constructor(cost: ManaCost) : this(PayCost.Atom(CostAtom.Mana(cost)))
+
+        override val description: String = "Disguise ${disguiseCost.description}"
+    }
+
+    // =========================================================================
     // Flashback
     // =========================================================================
 
@@ -1184,6 +1213,11 @@ sealed interface KeywordAbility {
          * Create Morph with life payment cost.
          */
         fun morphPayLife(amount: Int): KeywordAbility = Morph(PayCost.Atom(CostAtom.PayLife(amount)))
+
+        /**
+         * Create Disguise with mana cost from string (CR 702.168).
+         */
+        fun disguise(cost: String): KeywordAbility = Disguise(ManaCost.parse(cost))
 
         /**
          * Create Flashback with mana cost from string.

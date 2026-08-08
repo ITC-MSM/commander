@@ -687,6 +687,10 @@ data class SaddleMount(
  * @property sourceId The face-down creature to turn face up (named sourceId for frontend consistency with ActivateAbility)
  * @property paymentStrategy How the player intends to pay the morph cost
  * @property costTargetIds Permanents chosen for non-mana morph costs (e.g., return a Bird to hand)
+ * @property procedureIndex Which of the permanent's
+ *   [com.wingedsheep.engine.state.components.identity.MorphDataComponent.procedures] to use.
+ *   Always 0 except for a manifested/cloaked card that also prints morph or disguise, which per
+ *   CR 701.40c/d and 701.58c/d offers both procedures at once.
  */
 @Serializable
 @SerialName("TurnFaceUp")
@@ -695,7 +699,8 @@ data class TurnFaceUp(
     val sourceId: EntityId,
     val paymentStrategy: PaymentStrategy = PaymentStrategy.AutoPay,
     val costTargetIds: List<EntityId> = emptyList(),
-    val xValue: Int? = null
+    val xValue: Int? = null,
+    val procedureIndex: Int = 0
 ) : GameAction
 
 // =============================================================================

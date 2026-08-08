@@ -351,10 +351,13 @@ class CastFromZoneEnumerator : ActionEnumerator {
                 }
             }
 
-            // Check for morph on top of library (only for PlayFromTopOfLibrary)
+            // Check for a face-down cast on top of library (only for PlayFromTopOfLibrary) —
+            // morph (CR 702.37a) and disguise (CR 702.168a) both allow it.
             if (canPlayAllFromTop && context.canPlaySorcerySpeed && topCardDef != null) {
-                val hasMorph = topCardDef.keywordAbilities.any { it is KeywordAbility.Morph }
-                if (hasMorph) {
+                val castableFaceDown = topCardDef.keywordAbilities.any {
+                    it is KeywordAbility.Morph || it is KeywordAbility.Disguise
+                }
+                if (castableFaceDown) {
                     val morphCost = context.costCalculator.calculateFaceDownCost(state, playerId)
                     val canAffordMorph = context.manaSolver.canPay(state, playerId, morphCost, precomputedSources = context.availableManaSources)
                     result.add(

@@ -327,10 +327,12 @@ data class ClientCard(
     val isFaceDown: Boolean,
 
     /**
-     * Whether this face-down permanent is a manifested permanent (CR 701.40) rather than a morph.
-     * Public information; drives which face-down token art the client renders.
+     * Which mechanic made this permanent face down — "MORPH", "MANIFEST", "DISGUISE" or "CLOAK"
+     * (a [com.wingedsheep.sdk.scripting.effects.FaceDownMode] name). Public information per
+     * CR 708.6; drives which face-down helper-card art the client renders. Null when the
+     * permanent isn't face down, or came from a path that didn't record a mode.
      */
-    val isManifested: Boolean = false,
+    val faceDownMode: String? = null,
 
     /** Whether this permanent is suspected (CR 701.60 — has menace and can't block). Battlefield only. */
     val isSuspected: Boolean = false,

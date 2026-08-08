@@ -370,10 +370,16 @@ class CastSpellHandler(
             }
         }
 
-        // Handle face-down casting (morph)
+        // Handle face-down casting — morph (CR 702.37a) or disguise (CR 702.168a). Both are
+        // "cast this card face down as a 2/2 for {3}" at sorcery speed; the mode only decides
+        // what the resulting permanent looks like and costs to turn up.
         if (action.castFaceDown) {
-            val morphAbility = cardDef?.keywordAbilities?.filterIsInstance<KeywordAbility.Morph>()?.firstOrNull()
-                ?: return "This card cannot be cast face down (no morph ability)"
+            val castableFaceDown = cardDef?.keywordAbilities?.any {
+                it is KeywordAbility.Morph || it is KeywordAbility.Disguise
+            } == true
+            if (!castableFaceDown) {
+                return "This card cannot be cast face down (no morph or disguise ability)"
+            }
 
             if (!turnManager.canPlaySorcerySpeed(state, action.playerId)) {
                 return "You can only cast face-down creatures at sorcery speed"

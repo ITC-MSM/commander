@@ -33,9 +33,12 @@ import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.engine.state.components.identity.CopyOfComponent
 import com.wingedsheep.engine.state.components.identity.DoubleFacedComponent
+import com.wingedsheep.engine.handlers.effects.FaceDownTurnUp
 import com.wingedsheep.engine.state.components.identity.FaceDownComponent
+import com.wingedsheep.engine.state.components.identity.FaceDownModeComponent
 import com.wingedsheep.engine.state.components.identity.HasMorphAbilityComponent
 import com.wingedsheep.engine.state.components.identity.MorphDataComponent
+import com.wingedsheep.sdk.scripting.effects.FaceDownMode
 import com.wingedsheep.engine.state.components.identity.ExileAfterResolveComponent
 import com.wingedsheep.engine.state.components.identity.PlayWithoutPayingCostComponent
 import com.wingedsheep.engine.state.components.identity.PlottedComponent
@@ -333,16 +336,15 @@ class StackResolver(
                     TargetsComponent.capture(state, effectiveTargets, effectiveTargetRequirements)
                 )
             }
-            // Add morph data for creatures with morph (needed for face-down casting and
-            // for effects like Backslide that target "creature with a morph ability")
+            // Add turn-up data for cards castable face down (needed for face-down casting and
+            // for effects like Backslide that target "creature with a morph ability"). The mode
+            // decides which keyword's cost applies — FaceDownTurnUp is the single place that
+            // knows that mapping.
             val cardDef = cardRegistry.getCard(cardComponent.cardDefinitionId)
-            val morphAbility = cardDef?.keywordAbilities?.filterIsInstance<KeywordAbility.Morph>()?.firstOrNull()
-            if (morphAbility != null) {
-                updated = updated.with(MorphDataComponent(
-                    morphCost = morphAbility.morphCost,
-                    originalCardDefinitionId = cardComponent.cardDefinitionId,
-                    faceUpEffect = morphAbility.faceUpEffect
-                ))
+            val castFaceDownMode = faceDownCastMode(cardDef)
+            if (castFaceDownMode != null) {
+                FaceDownTurnUp.dataFor(cardDef, cardComponent.cardDefinitionId, castFaceDownMode)
+                    ?.let { updated = updated.with(it) }
             }
             if (castFaceDown) {
                 updated = updated.without<RevealedToComponent>()
@@ -1331,12 +1333,16 @@ class StackResolver(
                 updated = updated.with(TokenComponent)
             }
 
-            // If cast face-down (morph), add FaceDownComponent and strip any
-            // RevealedToComponent from hand-peek effects (zone change = new object)
-            // MorphDataComponent was already added when the spell was cast
+            // If cast face-down (morph / disguise), add FaceDownComponent and strip any
+            // RevealedToComponent from hand-peek effects (zone change = new object).
+            // MorphDataComponent was already added when the spell was cast; the mode marker is
+            // what carries disguise's ward {2} (CR 702.168a) and the face-down art.
             if (spellComponent.castFaceDown) {
                 updated = updated.with(FaceDownComponent)
                     .without<RevealedToComponent>()
+                val castDef = state.getEntity(spellId)?.get<CardComponent>()
+                    ?.let { cardRegistry.getCard(it.cardDefinitionId) }
+                faceDownCastMode(castDef)?.let { updated = updated.with(FaceDownModeComponent(it)) }
             }
 
             // All permanents enter summoning sick (CR 302.6 / 508.1a — the control-continuity
@@ -3479,14 +3485,31 @@ class StackResolver(
     }
 
     /**
-     * Once a player casts a face-down morph, opponents can no longer know whether
-     * any previously revealed morph card is still in that player's hand.
+     * Which face-down mechanic lets [cardDef] be cast face down for {3} — morph (CR 702.37a) or
+     * disguise (CR 702.168a) — or null when it can't be cast face down at all. A card never prints
+     * both; morph wins if one somehow did.
+     */
+    fun faceDownCastMode(cardDef: com.wingedsheep.sdk.model.CardDefinition?): FaceDownMode? = when {
+        cardDef == null -> null
+        cardDef.keywordAbilities.any { it is KeywordAbility.Morph } -> FaceDownMode.MORPH
+        cardDef.keywordAbilities.any { it is KeywordAbility.Disguise } -> FaceDownMode.DISGUISE
+        else -> null
+    }
+
+    /**
+     * Once a player casts a card face down, opponents can no longer know whether any previously
+     * revealed card that could have been the one cast is still in that player's hand — which
+     * covers every card castable face down, morph and disguise alike.
      */
     private fun clearRevealedMorphsInHand(state: GameState, playerId: EntityId): GameState {
         var newState = state
         for (handCardId in state.getZone(ZoneKey(playerId, Zone.HAND))) {
             val container = newState.getEntity(handCardId) ?: continue
-            if (!container.has<HasMorphAbilityComponent>()) continue
+            val castableFaceDown = container.has<HasMorphAbilityComponent>() ||
+                faceDownCastMode(
+                    container.get<CardComponent>()?.let { cardRegistry.getCard(it.cardDefinitionId) }
+                ) != null
+            if (!castableFaceDown) continue
             if (container.get<RevealedToComponent>() == null) continue
 
             newState = newState.updateEntity(handCardId) { c ->

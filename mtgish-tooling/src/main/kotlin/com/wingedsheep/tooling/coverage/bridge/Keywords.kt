@@ -151,6 +151,20 @@ internal fun BridgeBuilder.keywords() {
     // shape (every printed splice cost); anything else declines -> SCAFFOLD.
     supported("Splice", "keyword ability: Splice onto Arcane [cost] -> splice(\"{cost}\") builder (CR 702.47)")
 
+    // Disguise (CR 702.168) — morph plus ward {2}. Like Morph it's a keyword ability with no
+    // `Keyword.DISGUISE` enum member (the {3} face-down cast and the turn-face-up special action are
+    // synthesised from the ability, and the ward {2} is a face-down characteristic carried by
+    // `FaceDownMode.DISGUISE`), so it's `supported` rather than `keyword` — a bare-keyword row would
+    // stamp a non-existent enum. The emitter renders the pure-mana shape as the card-level
+    // `disguise = "{cost}"` assignment (Emitter.kt `rname == "Disguise"`).
+    supported("Disguise", "keyword ability: Disguise [cost] (CR 702.168) -> disguise = \"{cost}\"; face-down 2/2 with ward {2}")
+    // "Disguise {X}{W}{W}" (Aurelia's Vindicator) — CR 702.168e makes the X chosen as the turn-face-up
+    // special action was taken readable by the permanent's other abilities. `KeywordAbility.Disguise`
+    // takes a full PayCost so the cost itself is expressible, but inheriting that X into a later
+    // ability is the cast-time-chosen-value area the module README flags as still sloppy, so the
+    // emitter declines -> SCAFFOLD.
+    supported("DisguiseX", "keyword ability: Disguise {X}... (CR 702.168e) -> disguiseCost with X; emitter scaffolds (X inherited by other abilities)")
+
     composed("Landwalk", "specific *WALK keywords (SWAMPWALK, FORESTWALK, ...)")
     // Equip is a keyword ability, but the engine has no `Keyword.EQUIP` enum member: `equipAbility(cost)`
     // synthesises the sorcery-speed "attach to target creature you control" activated ability whose

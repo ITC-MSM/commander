@@ -2922,6 +2922,13 @@ private fun EmitCtx.triggerSpecFor(rule: JsonObject): String? {
             jsonContains(subj["args"], "_Permanents", "ControlledByAPlayer") &&
             jsonContains(subj["args"], "_Player", "You")
         if (selfOrYours) return "Triggers.CreatureTurnedFaceUp()"
+        // "When this creature is turned face up" — the plain SELF-scoped form, which is every
+        // disguise card's payoff (Dog Walker, Faerie Snoop, Alley Assailant, …) as well as the
+        // classic morph unmorph triggers. `SinglePermanent(ThisPermanent)` maps exactly to the
+        // SELF-bound Triggers.TurnedFaceUp; any wider subject falls through to the decline below.
+        val selfOnly = subj?.strField("_Permanents") == "SinglePermanent" &&
+            jsonContains(subj["args"], "_Permanent", "ThisPermanent")
+        if (selfOnly) return "Triggers.TurnedFaceUp"
     }
 
     // "Whenever this creature becomes the target of a spell or ability an opponent controls"

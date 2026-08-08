@@ -46,18 +46,26 @@ object LibraryPatterns {
         keepCount: Int,
         keepDestination: CardDestination = CardDestination.ToZone(Zone.HAND),
         restDestination: CardDestination = CardDestination.ToZone(Zone.GRAVEYARD),
-        revealed: Boolean = false
+        revealed: Boolean = false,
+        restOrder: CardOrder = CardOrder.Preserve,
+        keepFaceDown: FaceDownMode? = null
     ): CompositeEffect = lookAtTopAndKeep(
         count = DynamicAmount.Fixed(count),
         keepCount = DynamicAmount.Fixed(keepCount),
         keepDestination = keepDestination,
         restDestination = restDestination,
-        revealed = revealed
+        revealed = revealed,
+        restOrder = restOrder,
+        keepFaceDown = keepFaceDown
     )
 
     /**
      * "Look at the top [count], put [keepCount] in [keepDestination], rest to [restDestination]"
      * with optional [restOrder] (e.g. [CardOrder.Random] for "in a random order").
+     *
+     * Set [keepFaceDown] when the kept cards go to the battlefield face down — cloak
+     * ([FaceDownMode.CLOAK], "look at the top five cards of your library, cloak two of them") or
+     * manifest. It is the [MoveCollectionEffect.faceDown] mode of the keep move and nothing else.
      *
      * Labels are auto-derived from the destinations; override [selectedLabel]/[remainderLabel]
      * if a card's oracle text uses different wording.
@@ -69,6 +77,7 @@ object LibraryPatterns {
         restDestination: CardDestination = CardDestination.ToZone(Zone.GRAVEYARD),
         revealed: Boolean = false,
         restOrder: CardOrder = CardOrder.Preserve,
+        keepFaceDown: FaceDownMode? = null,
         selectedLabel: String = defaultDestinationLabel(keepDestination),
         remainderLabel: String = defaultDestinationLabel(restDestination)
     ): CompositeEffect = CompositeEffect(
@@ -88,7 +97,8 @@ object LibraryPatterns {
             ),
             MoveCollectionEffect(
                 from = "kept",
-                destination = keepDestination
+                destination = keepDestination,
+                faceDown = keepFaceDown
             ),
             MoveCollectionEffect(
                 from = "rest",

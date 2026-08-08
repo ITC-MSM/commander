@@ -426,6 +426,7 @@ object ZoneMovementUtils {
             // Identity
             .without<ControllerComponent>()
             .without<FaceDownComponent>()
+            .without<com.wingedsheep.engine.state.components.identity.FaceDownModeComponent>()
             .without<MorphDataComponent>()
             .without<RevealedToComponent>()
             // Copy effects on permanents end when the object leaves the battlefield

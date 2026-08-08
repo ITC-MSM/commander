@@ -16,6 +16,7 @@ import com.wingedsheep.sdk.dsl.Targets
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.EntityId
+import com.wingedsheep.sdk.scripting.effects.FaceDownMode
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import io.kotest.assertions.withClue
 import io.kotest.matchers.shouldBe
@@ -228,7 +229,11 @@ class PlaneswalkerEntryLoyaltyScenarioTest : ScenarioTestBase() {
 
                 val faceDown = ZoneTransitionService.moveToZone(
                     game.state, ajani, Zone.BATTLEFIELD,
-                    ZoneEntryOptions(controllerId = game.player1Id, faceDown = true, manifested = true)
+                    ZoneEntryOptions(
+                        controllerId = game.player1Id,
+                        faceDown = true,
+                        faceDownMode = FaceDownMode.MANIFEST
+                    )
                 )
                 withClue("a face-down entry has no printed loyalty to place") {
                     loyaltyOf(ajani, faceDown.state) shouldBe 0

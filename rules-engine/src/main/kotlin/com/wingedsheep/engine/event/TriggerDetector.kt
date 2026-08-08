@@ -117,11 +117,20 @@ class TriggerDetector(
             val container = state.getEntity(entityId) ?: continue
             val cardComponent = container.get<CardComponent>() ?: continue
             val controllerId = projected.getController(entityId) ?: continue
-            if (container.has<FaceDownComponent>()) continue
 
-            val abilities = abilityResolver.getTriggeredAbilitiesWithProviders(
-                entityId, cardComponent.cardDefinitionId, state, grantProviders, statics
-            )
+            // CR 708.2: a face-down permanent has none of the printed card's abilities, so it
+            // contributes no triggers of its own — except ward, which disguise and cloak list
+            // among the face-down characteristics (CR 702.168a / 701.58a) and which a static
+            // ability elsewhere can grant to any creature, face down or not.
+            val abilities = if (container.has<FaceDownComponent>()) {
+                abilityResolver.getWardTriggeredAbilities(
+                    entityId, cardComponent.cardDefinitionId, state, statics
+                )
+            } else {
+                abilityResolver.getTriggeredAbilitiesWithProviders(
+                    entityId, cardComponent.cardDefinitionId, state, grantProviders, statics
+                )
+            }
             if (abilities.isEmpty() && container.get<AttachedToComponent>() == null) continue
 
             val entry = TriggerIndex.IndexedEntity(entityId, cardComponent, controllerId, abilities)

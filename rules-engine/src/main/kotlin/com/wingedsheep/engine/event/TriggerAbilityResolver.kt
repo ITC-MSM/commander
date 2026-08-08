@@ -12,6 +12,7 @@ import com.wingedsheep.engine.state.components.battlefield.ParadigmComponent
 import com.wingedsheep.engine.state.components.battlefield.SuspendedComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.FaceDownComponent
+import com.wingedsheep.engine.state.components.identity.FaceDownModeComponent
 import com.wingedsheep.engine.state.components.identity.RingBearerComponent
 import com.wingedsheep.engine.state.components.battlefield.AttachmentsComponent
 import com.wingedsheep.engine.state.components.battlefield.ClassLevelComponent
@@ -509,17 +510,26 @@ class TriggerAbilityResolver(
      * Generate ward triggered abilities for an entity.
      *
      * Checks two sources:
-     * 1. Intrinsic ward from the card's keywordAbilities (KeywordAbility.Ward)
-     * 2. Ward granted by GrantWard static abilities on other permanents
+     * 1. Intrinsic ward — normally from the card's keywordAbilities (KeywordAbility.Ward), but for
+     *    a *face-down* permanent from its [FaceDownModeComponent] instead: CR 708.2 says a
+     *    face-down permanent has no characteristics beyond those listed by the rules that made it
+     *    face down, so the printed card's ward is suppressed, and disguise (CR 702.168a) / cloak
+     *    (CR 701.58a) contribute ward {2} of their own.
+     * 2. Ward granted by GrantWard static abilities on other permanents — these are external
+     *    continuous effects rather than characteristics of the object, so they keep applying to a
+     *    face-down permanent.
      *
      * Each found ward produces a TriggeredAbility that fires on BecomesTargetEvent
      * by an opponent, with a WardCounterEffect for the appropriate cost.
+     *
+     * Public because [TriggerDetector] indexes face-down permanents through this method alone:
+     * ward is the only triggered-ability family a face-down permanent can have.
      */
-    private fun getWardTriggeredAbilities(
+    fun getWardTriggeredAbilities(
         entityId: EntityId,
         cardDefinitionId: String,
         state: GameState,
-        statics: BattlefieldStaticsIndex
+        statics: BattlefieldStaticsIndex = BattlefieldStaticsIndex.build(state, cardRegistry)
     ): List<TriggeredAbility> {
         val result = mutableListOf<TriggeredAbility>()
 
@@ -532,12 +542,19 @@ class TriggerAbilityResolver(
         // and granted ward (Nowhere to Run: "Ward abilities of those creatures don't trigger.")
         if (isWardSuppressed(entityId, state, projected, statics)) return result
 
-        // 1. Intrinsic ward from card definition
-        val cardDef = cardRegistry.getCard(cardDefinitionId)
-        if (cardDef != null) {
-            for (ka in cardDef.keywordAbilities) {
-                if (ka is KeywordAbility.Ward) {
-                    result.add(createWardTriggeredAbility(ka.cost, "intrinsic"))
+        // 1. Intrinsic ward — from the face-down characteristic-defining effect while face down,
+        // from the card definition otherwise.
+        if (targetContainer.has<FaceDownComponent>()) {
+            targetContainer.get<FaceDownModeComponent>()?.mode?.faceDownWard?.let {
+                result.add(createWardTriggeredAbility(it, "facedown"))
+            }
+        } else {
+            val cardDef = cardRegistry.getCard(cardDefinitionId)
+            if (cardDef != null) {
+                for (ka in cardDef.keywordAbilities) {
+                    if (ka is KeywordAbility.Ward) {
+                        result.add(createWardTriggeredAbility(ka.cost, "intrinsic"))
+                    }
                 }
             }
         }

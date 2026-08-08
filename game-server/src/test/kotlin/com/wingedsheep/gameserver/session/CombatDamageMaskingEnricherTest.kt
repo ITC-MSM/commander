@@ -7,7 +7,8 @@ import com.wingedsheep.engine.core.PassPriority
 import com.wingedsheep.engine.core.PendingDecision
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.FaceDownComponent
-import com.wingedsheep.engine.state.components.identity.ManifestedComponent
+import com.wingedsheep.engine.state.components.identity.FaceDownModeComponent
+import com.wingedsheep.sdk.scripting.effects.FaceDownMode
 import com.wingedsheep.engine.state.components.identity.MorphDataComponent
 import com.wingedsheep.engine.support.GameTestDriver
 import com.wingedsheep.engine.support.TestCards
@@ -39,7 +40,7 @@ class CombatDamageMaskingEnricherTest : FunSpec({
 
     fun GameTestDriver.manifestFaceDown(entityId: EntityId) {
         replaceState(state.updateEntity(entityId) { container ->
-            container.with(FaceDownComponent).with(ManifestedComponent)
+            container.with(FaceDownComponent).with(FaceDownModeComponent(FaceDownMode.MANIFEST))
         })
     }
 
