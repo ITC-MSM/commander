@@ -1095,7 +1095,7 @@ class CastPermissionUtils(
      * Multiple sources are additive.
      */
     fun getAdditionalLandDrops(state: GameState, playerId: EntityId): Int {
-        return LandDropUtils.getAdditionalLandDrops(state, playerId, cardRegistry)
+        return LandDropUtils.getAdditionalLandDrops(state, playerId, cardRegistry, conditionEvaluator)
     }
 
     fun getMaxLoyaltyActivations(state: GameState, playerId: EntityId): Int {
