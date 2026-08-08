@@ -1174,6 +1174,14 @@ data class CountersAddedEvent(
 
 /**
  * Counters were removed from a permanent.
+ *
+ * @property remainingCount How many counters of [counterType] the permanent had left immediately
+ *   after *this* removal, or null when the emitter didn't record it. It can't be re-derived from
+ *   game state at trigger-detection time: several removals can happen in one batch (two attackers
+ *   damaging the same battle), and by the time triggers are detected the state shows the count
+ *   after *all* of them — which would make every removal in the batch look like the one that
+ *   emptied the permanent. "When the last counter is removed" (CR 310.11b) reads this field, and
+ *   falls back to the live count when it is null.
  */
 @Serializable
 @SerialName("CountersRemovedEvent")
@@ -1181,7 +1189,8 @@ data class CountersRemovedEvent(
     val entityId: EntityId,
     val counterType: String,
     val amount: Int,
-    val entityName: String = ""
+    val entityName: String = "",
+    val remainingCount: Int? = null
 ) : GameEvent
 
 /**

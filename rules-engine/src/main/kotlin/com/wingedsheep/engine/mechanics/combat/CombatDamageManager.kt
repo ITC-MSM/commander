@@ -5,6 +5,7 @@ import com.wingedsheep.engine.handlers.PredicateContext
 import com.wingedsheep.engine.handlers.PredicateEvaluator
 import com.wingedsheep.engine.handlers.effects.TargetResolutionUtils
 import com.wingedsheep.engine.handlers.effects.DamageUtils
+import com.wingedsheep.engine.mechanics.battle.Battles
 import com.wingedsheep.engine.mechanics.layers.ProjectedState
 import com.wingedsheep.engine.mechanics.layers.SerializableModification
 import com.wingedsheep.engine.registry.CardRegistry
@@ -1073,6 +1074,19 @@ internal class CombatDamageManager(
             container.with(counters.withRemoved(counterType, amount))
         }
 
+        // Combat damage that takes a Siege's last defense counter defeats it (CR 310.11b). Arm the
+        // marker so the state-based action that runs before this turn's trigger-detection pass
+        // leaves the battle alone long enough for its defeat trigger to be put on the stack — see
+        // DefeatTriggerArmedComponent.
+        if (counterType == com.wingedsheep.sdk.core.CounterType.DEFENSE &&
+            currentCount in 1..amount &&
+            Battles.isSiege(newState, targetId)
+        ) {
+            newState = newState.updateEntity(targetId) { container ->
+                container.with(com.wingedsheep.engine.state.components.battlefield.DefeatTriggerArmedComponent)
+            }
+        }
+
         if (sourceId in newState.getBattlefield()) {
             newState = newState.updateEntity(sourceId) { container ->
                 container.with(HasDealtDamageComponent)
@@ -1090,7 +1104,8 @@ internal class CombatDamageManager(
         } else if (removed > 0) {
             events.add(
                 com.wingedsheep.engine.core.CountersRemovedEvent(
-                    targetId, counterType.name, removed, targetName
+                    targetId, counterType.name, removed, targetName,
+                    remainingCount = currentCount - removed
                 )
             )
         }

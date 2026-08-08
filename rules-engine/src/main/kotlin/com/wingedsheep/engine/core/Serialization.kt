@@ -424,6 +424,7 @@ val engineSerializersModule = SerializersModule {
         subclass(EnteredFromExileComponent::class)
         subclass(CountersComponent::class)
         subclass(ProtectorComponent::class)
+        subclass(DefeatTriggerArmedComponent::class)
         subclass(DamageComponent::class)
         subclass(AttachedToComponent::class)
         subclass(AttachmentsComponent::class)

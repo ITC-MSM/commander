@@ -266,6 +266,15 @@ class CastSpellHandler(
             return "Card is not in your hand"
         }
 
+        // The face this cast puts on the stack when it is cast **transformed** (CR 712.8c) — it
+        // drives timing, targeting and the aura target below. Two sources, both meaning "back face
+        // up on the stack": disturb's printed keyword, and a may-play permission granted with
+        // `castTransformed` (CR 310.11b — "exile it, then you may cast it transformed"). The zone
+        // legality of the latter was already settled by `mayPlayFromExile` / `mayCastFromZone`
+        // above, so this lookup only answers *which face*.
+        val transformedFace = disturbFace
+            ?: zoneResolver.permissionTransformedCastFace(state, action.playerId, action.cardId)
+
         // Gift (CR 702.174a): the promise is an additional cost whose "payment" is choosing an
         // opponent, so the recipient must be an opponent of the caster and the card must actually
         // have gift.
@@ -366,7 +375,7 @@ class CastSpellHandler(
         // a disturb cast is timed by the back face it puts on the stack (CR 712.8c).
         val effectiveTypeLine = action.faceIndex
             ?.let { cardDef?.cardFaces?.getOrNull(it)?.typeLine }
-            ?: disturbFace?.typeLine
+            ?: transformedFace?.typeLine
             ?: cardComponent.typeLine
         // Sneak (CR 702.190a) grants an instant-speed casting permission during the active
         // player's declare blockers step — bypassing the normal sorcery-speed timing.
@@ -602,7 +611,7 @@ class CastSpellHandler(
         // splice onto a quality this spell actually has, and appear at most once. Checked before the
         // cost is computed, because each splice cost is folded into the total cost below (CR 601.2b/f).
         if (action.splicedCardIds.isNotEmpty()) {
-            val spliceError = validateSplice(state, action, cardDef, cardComponent, disturbFace)
+            val spliceError = validateSplice(state, action, cardDef, cardComponent, transformedFace)
             if (spliceError != null) return spliceError
         }
 
@@ -635,7 +644,7 @@ class CastSpellHandler(
             // A disturb cast reads the back face's script instead (CR 712.8c): the Innistrad
             // disturb cycle's Aura backs choose what to enchant as the spell is cast.
             val faceScript = action.faceIndex?.let { cardDef.cardFaces.getOrNull(it)?.script }
-                ?: disturbFace?.script
+                ?: transformedFace?.script
             val effectiveScript = faceScript ?: cardDef.script
             val modalEffect = effectiveScript.spellEffect as? com.wingedsheep.sdk.scripting.effects.ModalEffect
             // A choose-N modal cast that arrives with modes chosen but targets deferred
@@ -664,7 +673,7 @@ class CastSpellHandler(
             }
             val targetRequirements = buildList {
                 addAll(baseTargetReqs)
-                (disturbFace ?: cardDef).script.auraTarget?.let { add(it) }
+                (transformedFace ?: cardDef).script.auraTarget?.let { add(it) }
                 // Splice (CR 702.47d): targets for the added text are chosen normally, as part of
                 // casting this spell. They sit after the main spell's own requirements, so the flat
                 // target list splits into the main slice followed by one slice per spliced card.
@@ -683,8 +692,8 @@ class CastSpellHandler(
                     action.targets,
                     targetRequirements,
                     action.playerId,
-                    sourceColors = (disturbFace ?: cardDef).colors,
-                    sourceSubtypes = (disturbFace ?: cardDef).typeLine.subtypes.map { it.value }.toSet(),
+                    sourceColors = (transformedFace ?: cardDef).colors,
+                    sourceSubtypes = (transformedFace ?: cardDef).typeLine.subtypes.map { it.value }.toSet(),
                     sourceId = action.cardId,
                     xValue = action.xValue
                 )
@@ -1369,14 +1378,14 @@ class CastSpellHandler(
         action: CastSpell,
         cardDef: com.wingedsheep.sdk.model.CardDefinition?,
         cardComponent: CardComponent,
-        disturbFace: com.wingedsheep.sdk.model.CardDefinition?,
+        transformedFace: com.wingedsheep.sdk.model.CardDefinition?,
     ): String? {
         // The quality is read off the face actually being cast (CR 702.47a checks the spell), so an
-        // adventure / split / disturb cast is measured by the half on the stack, not the whole card.
+        // adventure / split / transformed cast is measured by the half on the stack, not the whole card.
         val castFace = action.faceIndex?.let { cardDef?.cardFaces?.getOrNull(it) }
         val spellSubtypes = when {
             castFace != null -> castFace.typeLine.subtypes.map { it.value }
-            disturbFace != null -> disturbFace.typeLine.subtypes.map { it.value }
+            transformedFace != null -> transformedFace.typeLine.subtypes.map { it.value }
             cardDef != null -> cardDef.typeLine.subtypes.map { it.value }
             else -> cardComponent.typeLine.subtypes.map { it.value }
         }
@@ -2078,12 +2087,17 @@ class CastSpellHandler(
         val xValue = action.xValue ?: 0
         val cardDef = cardRegistry.getCard(cardComponent.cardDefinitionId)
 
-        // Disturb (CR 702.146a) — resolved against the pre-cast state, while the card is still in
-        // the graveyard. Non-null means this cast puts the card on the stack transformed, so the
-        // back face supplies the spell's characteristics (CR 712.8c).
-        val disturbFace = if (action.useAlternativeCost && action.altAllows(AlternativeCostType.DISTURB)) {
-            zoneResolver.disturbCastFace(state, action.playerId, action.cardId)
-        } else null
+        // The face this cast puts on the stack when it is cast **transformed**, resolved against the
+        // pre-cast state while the card is still in its origin zone. Non-null means the back face
+        // supplies the spell's characteristics (CR 712.8c). Disturb (CR 702.146a) casts transformed
+        // from the graveyard for its disturb cost; a `castTransformed` may-play permission casts
+        // transformed from wherever the permission covers (CR 310.11b — "exile it, then you may
+        // cast it transformed").
+        val transformedFace = (
+            if (action.useAlternativeCost && action.altAllows(AlternativeCostType.DISTURB)) {
+                zoneResolver.disturbCastFace(state, action.playerId, action.cardId)
+            } else null
+        ) ?: zoneResolver.permissionTransformedCastFace(state, action.playerId, action.cardId)
 
         // Rule 400.7: a card that changed zones is a new object. Drop any stale
         // LinkedExileComponent carried over from a previous battlefield visit (e.g.
@@ -2976,7 +2990,7 @@ class CastSpellHandler(
             // Adventure / split face cast (CR 715 / 709) — read targets from the face's script;
             // a disturb cast reads the back face's (CR 712.8c). Mirrors validate().
             val faceScriptForTargets = action.faceIndex?.let { cardDef.cardFaces.getOrNull(it)?.script }
-                ?: disturbFace?.script
+                ?: transformedFace?.script
             val baseTargetReqs = if (action.chosenModes.isNotEmpty() && modalEffectForTargets != null) {
                 // Modal spell with modes chosen at cast time — union per-mode requirements
                 action.chosenModes.flatMap { idx ->
@@ -2991,7 +3005,7 @@ class CastSpellHandler(
             }
             buildList {
                 addAll(baseTargetReqs)
-                (disturbFace ?: cardDef).script.auraTarget?.let { add(it) }
+                (transformedFace ?: cardDef).script.auraTarget?.let { add(it) }
                 // Splice (CR 702.47d): the spliced text's own requirements, appended in splice order.
                 // They must be here and not only in validate(): this list becomes the spell's
                 // TargetsComponent, which drives resolution-time 608.2b re-validation and the tail that
@@ -3132,9 +3146,9 @@ class CastSpellHandler(
                 // A disturb cast is on the stack back face up, so "a Spirit spell was cast" and
                 // colour/type history read the back face (CR 712.8c). Its mana value still comes
                 // from the front face's mana cost, which is what `cardComponent` still holds here.
-                typeLine = disturbFace?.typeLine ?: cardComponent.typeLine,
+                typeLine = transformedFace?.typeLine ?: cardComponent.typeLine,
                 manaValue = cardComponent.manaValue,
-                colors = disturbFace?.colors ?: cardComponent.colors,
+                colors = transformedFace?.colors ?: cardComponent.colors,
                 isFaceDown = action.castFaceDown,
                 spentManaSubtypes = paymentResult.spentManaProvenance.spentSubtypes,
                 // The cast card moves to the stack keeping its entity id, so this matches the
@@ -3148,7 +3162,7 @@ class CastSpellHandler(
                 castFromZone = stackResolver.findCastFromZone(currentState, action.cardId, action.playerId),
                 // Face-down casts hide the card's identity; a face-up cast records the name so
                 // name predicates ("the first Otter spell other than Alania") can match history.
-                name = if (action.castFaceDown) null else (disturbFace?.name ?: cardComponent.name),
+                name = if (action.castFaceDown) null else (transformedFace?.name ?: cardComponent.name),
             )
             val existing = currentState.spellsCastThisTurnByPlayer[action.playerId] ?: emptyList()
             currentState = currentState.copy(
@@ -3248,7 +3262,7 @@ class CastSpellHandler(
             action.xValue,
             sacrificedSnapshots,
             castFaceDown = action.castFaceDown,
-            castTransformed = disturbFace != null,
+            castTransformed = transformedFace != null,
             damageDistribution = action.damageDistribution,
             targetRequirements = spellTargetRequirements,
             exiledCardCount = exiledCardCount,

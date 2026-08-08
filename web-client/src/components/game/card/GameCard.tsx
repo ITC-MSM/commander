@@ -502,8 +502,12 @@ function GameCardImpl({
     return combat?.attackers.some((a) => a.creatureId === card.id) ?? false
   })
 
-  // For attacker mode: check if this is an opponent's planeswalker that can be attacked
-  const isValidPlaneswalkerTarget = isInAttackerMode && opponentForCombat && combatState.validAttackTargets.includes(card.id)
+  // For attacker mode: check if this permanent can be attacked — an opponent's planeswalker, or a
+  // battle (CR 310.5). Deliberately *not* scoped to opponent cards: a Siege's protector is an
+  // opponent of its controller (CR 310.11a), so its own controller may attack it (CR 310.8b) and
+  // it sits on their side of the board. The server's `validAttackTargets` is the only authority on
+  // which permanents are legal, so trust it rather than re-deriving whose card this is.
+  const isValidAttackTargetCard = isInAttackerMode && combatState.validAttackTargets.includes(card.id)
 
   // Show playable highlight for cards that aren't purely combat-role cards.
   // Valid blockers with legal actions (e.g., activated abilities) are still playable since blocking uses drag.
@@ -756,7 +760,7 @@ function GameCardImpl({
       const elementAtPoint = document.elementFromPoint(clientX, clientY)
       if (!elementAtPoint) return
 
-      // Check if dropped on an opponent planeswalker
+      // Check if dropped on an attackable permanent (planeswalker, battle)
       const cardEl = elementAtPoint.closest('[data-card-id]')
       if (cardEl) {
         const targetCardId = cardEl.getAttribute('data-card-id') as EntityId | null
@@ -1013,7 +1017,7 @@ function GameCardImpl({
         return
       }
       // Clicking an opponent's planeswalker assigns the last selected attacker to it
-      if (isValidPlaneswalkerTarget && combatState && combatState.selectedAttackers.length > 0) {
+      if (isValidAttackTargetCard && combatState && combatState.selectedAttackers.length > 0) {
         const lastAttacker = combatState.selectedAttackers[combatState.selectedAttackers.length - 1]!
         setAttackTarget(lastAttacker, card.id)
         return
@@ -1081,7 +1085,7 @@ function GameCardImpl({
     // Red pulsing glow for must-be-blocked attackers (Alluring Scent)
     borderStyle = '3px solid #ff3333'
     boxShadow = '0 0 16px rgba(255, 51, 51, 0.8), 0 0 32px rgba(255, 51, 51, 0.5), 0 0 48px rgba(255, 51, 51, 0.3)'
-  } else if (isValidPlaneswalkerTarget && combatState && Object.values(combatState.attackerTargets).includes(card.id)) {
+  } else if (isValidAttackTargetCard && combatState && Object.values(combatState.attackerTargets).includes(card.id)) {
     // Red highlight for planeswalkers currently targeted by an attacker
     borderStyle = '3px solid #ff4444'
     boxShadow = '0 0 16px rgba(255, 68, 68, 0.7), 0 0 32px rgba(255, 68, 68, 0.4)'
@@ -1188,11 +1192,11 @@ function GameCardImpl({
     // Light-blue highlight for valid attackers/blockers
     borderStyle = `2px solid ${TARGET_COLOR}`
     boxShadow = `0 0 12px ${TARGET_GLOW}, 0 0 24px ${TARGET_SHADOW}`
-  } else if (isValidPlaneswalkerTarget && combatState && combatState.selectedAttackers.length > 0 && isHovered) {
+  } else if (isValidAttackTargetCard && combatState && combatState.selectedAttackers.length > 0 && isHovered) {
     // Bright orange highlight when hovering over a valid planeswalker attack target
     borderStyle = '3px solid #ff8800'
     boxShadow = '0 0 16px rgba(255, 136, 0, 0.7), 0 0 32px rgba(255, 136, 0, 0.4)'
-  } else if (isValidPlaneswalkerTarget && combatState && combatState.selectedAttackers.length > 0) {
+  } else if (isValidAttackTargetCard && combatState && combatState.selectedAttackers.length > 0) {
     // Orange highlight for valid planeswalker attack targets
     borderStyle = '2px solid #ff8800'
     boxShadow = '0 0 12px rgba(255, 136, 0, 0.5), 0 0 24px rgba(255, 136, 0, 0.3)'
@@ -1256,7 +1260,7 @@ function GameCardImpl({
   }
 
   // Determine cursor
-  const canInteract = interactive || isValidTarget || isValidDecisionTarget || isValidDecisionSelection || isValidAttacker || isValidBlocker || isAttackingInBlockerMode || isValidPlaneswalkerTarget || canDragToPlay || isDistributeTarget || isManaValidSource || isValidTapForPowerCreature || isValidConvokeCreature || isValidWaterbendPermanent || isValidHarmonizeCreature
+  const canInteract = interactive || isValidTarget || isValidDecisionTarget || isValidDecisionSelection || isValidAttacker || isValidBlocker || isAttackingInBlockerMode || isValidAttackTargetCard || canDragToPlay || isDistributeTarget || isManaValidSource || isValidTapForPowerCreature || isValidConvokeCreature || isValidWaterbendPermanent || isValidHarmonizeCreature
   const baseCursor = canInteract ? 'pointer' : 'default'
   const cursor = isValidBlocker || isValidAttacker || isSelectedAsAttacker || canDragToPlay ? 'grab' : baseCursor
 
