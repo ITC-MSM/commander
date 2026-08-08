@@ -75,7 +75,8 @@ class PlayLandHandler(
         // Check land drop availability (accounts for static ability bonuses)
         val landDrops = state.getEntity(action.playerId)?.get<LandDropsComponent>()
             ?: LandDropsComponent()
-        val staticBonus = LandDropUtils.getAdditionalLandDrops(state, action.playerId, cardRegistry)
+        val staticBonus =
+            LandDropUtils.getAdditionalLandDrops(state, action.playerId, cardRegistry, conditionEvaluator)
         if (landDrops.remaining + staticBonus <= 0) {
             return "You have already played a land this turn"
         }
