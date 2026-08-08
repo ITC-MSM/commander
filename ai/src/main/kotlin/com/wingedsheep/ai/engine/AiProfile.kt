@@ -1022,9 +1022,13 @@ data class AiProfile(
          * gives: a category of "don't cast" positions scores 100% for an agent that never casts
          * anything, so the half that says *do* has to be asserted too.
          *
-         * **Not yet promoted.** [com.wingedsheep.server.game.EngineAiPlayerController] still points
-         * at [PRODUCTION_CANDIDATE_COUNTERPATIENCE]; the arena half of the standing bar is what
-         * moves it, and until that is run this is a candidate and nothing else.
+         * The arena half returned the sequence's **fourth degenerate null**: `just arena
+         * production-candidate-counterpatience production-candidate-ambush 100` measured **50.0%,
+         * CI [50.0%, 50.0%]**, 100/100 completed, 0 illegal actions, every scored pair 1-1-0. Read
+         * that as "this term changes the outcome of a real sealed game rarely", which is what the
+         * mechanism predicts — it fires only on a turn where the AI holds a flash permanent with
+         * the ambush window still ahead. A CI spanning parity is a pass by the standing bar, and
+         * the evidence is the puzzle side, at +1 with nothing traded.
          *
          * If a later arena run comes back below parity, revert the two call sites
          * (`EngineAiPlayerController` and [AiProfileSelector]'s fallback) rather than the flag: it is

@@ -2049,3 +2049,25 @@ Four of the five new positions are controls that pass on `production` already an
 ETB that taps a blocker before we attack) and `-13` (the same board as `-09`, past the patience
 horizon). `instants-10` is not a fix and is not counted as one — it is there because a category made
 only of "don't cast" positions scores 100% for an agent that never casts anything.
+
+## The arena half
+
+`just arena production-candidate-counterpatience production-candidate-ambush 100`:
+
+```
+Pair win %:   50.0%  CI [50.0%, 50.0%]   <- the merge gate
+Game score %: 50.0%  Wilson [40.4%, 59.6%]
+Completed:    100 / 100     Illegal acts: 0
+Avg turns:    22.0   avg actions: 526
+Wall clock:   1625s on 8 threads
+```
+
+The **fourth degenerate null** in this sequence, and it reads the same way the patience, cantrip and
+counter-patience promotions did: every scored pair came back 1-1-0, which says the term changes the
+outcome of a real sealed game *rarely*, not that it is worthless. That is what the mechanism
+predicts — it fires only on a turn where the AI holds a flash permanent with the ambush window still
+ahead, and BLB sealed pools are thin in flash creatures. A CI spanning parity is a pass under the
+standing bar, and the puzzle side is the evidence.
+
+Cleaner than the counter-patience run in one respect worth noting: 100/100 completed with 0 illegal
+actions, where that one lost two games to a stale-jar `NoClassDefFoundError` on a test worker.
