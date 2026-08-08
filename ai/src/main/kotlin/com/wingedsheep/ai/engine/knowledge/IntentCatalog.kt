@@ -2,9 +2,15 @@ package com.wingedsheep.ai.engine.knowledge
 
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.ComponentContainer
+import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.RoomComponent
 import com.wingedsheep.engine.state.components.identity.RoomFaceId
+import com.wingedsheep.engine.state.components.stack.AbilityOnStackComponent
+import com.wingedsheep.engine.state.components.stack.ActivatedAbilityOnStackComponent
+import com.wingedsheep.engine.state.components.stack.TriggeredAbilityOnStackComponent
 import com.wingedsheep.sdk.model.CardDefinition
+import com.wingedsheep.sdk.scripting.AbilityId
+import com.wingedsheep.sdk.scripting.ActivatedAbility
 import com.wingedsheep.sdk.scripting.effects.Effect
 
 /**
@@ -83,6 +89,50 @@ class IntentCatalog private constructor(private val registry: CardRegistry?) {
 
     /** The intent of a definition already in hand. Always answers, even on [NONE]. */
     fun forCard(card: CardDefinition): CardIntent = CardIntentAnalyzer.analyze(card)
+
+    /**
+     * What the stack object [container] is doing, or null when nothing here can be read.
+     *
+     * A spell is its card. An **ability** is its effect, which the stack object carries itself — it
+     * has no [com.wingedsheep.engine.state.components.identity.CardComponent] at all — so it has to
+     * be read from there rather than from the permanent that produced it, which is a different and
+     * much broader question.
+     *
+     * Both readers of the stack want exactly this: [HoldPolicy]'s response window, to decide whether
+     * a trick has something it can answer, and [ExpiringGrantWindow]'s, to decide whether the thing
+     * on the stack is a reason not to defer. Null is "no information", and both treat it as a reason
+     * to decline rather than as "this object is harmless" — see each of their "silence is not a
+     * veto" notes.
+     */
+    fun forStackObject(container: ComponentContainer): CardIntent? {
+        val ability = container.get<TriggeredAbilityOnStackComponent>()?.effect
+            ?: container.get<ActivatedAbilityOnStackComponent>()?.effect
+            ?: container.get<AbilityOnStackComponent>()?.effect
+        if (ability != null) return forEffect(ability)
+        return container.get<CardComponent>()?.name?.let(::forName)
+    }
+
+    /**
+     * The ability with [abilityId] printed on the card called [cardName], or null when the catalog
+     * is off, the name is not a real card, or no face of it carries that ability.
+     *
+     * The one reader that wants the ability *itself* rather than a [CardIntent] of it, because
+     * [ExpiringGrantWindow] asks two questions no tag carries: how long the effect lasts, and
+     * whether the ability can be activated again later this turn.
+     *
+     * **Printed abilities only.** An ability *granted* to this permanent by something else — an
+     * Equipment, an Aura, a `GrantActivatedAbility` — is not on the card definition and answers
+     * null, as does a Class whose level gates which abilities exist. Both are the same "no
+     * information" every other lookup here returns, and every consumer must keep its pre-flag
+     * behaviour on it rather than reading it as "this ability does nothing".
+     */
+    fun activatedAbility(cardName: String, abilityId: AbilityId): ActivatedAbility? {
+        val definition = registry?.getCard(cardName) ?: return null
+        definition.script.activatedAbilities.find { it.id == abilityId }?.let { return it }
+        return definition.cardFaces.firstNotNullOfOrNull { face ->
+            face.script.activatedAbilities.find { it.id == abilityId }
+        }
+    }
 
     /**
      * The intent of one ability's [effect] — what a triggered or activated ability sitting on the

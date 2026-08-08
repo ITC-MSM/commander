@@ -106,6 +106,11 @@ class Strategist(
      */
     private val holdFlashPermanentsForAmbush: Boolean = false,
     /**
+     * [AiProfile.holdExpiringGrantsForCombat] — passed straight through to [HoldPolicy], which
+     * hands it to [com.wingedsheep.ai.engine.knowledge.ExpiringGrantWindow].
+     */
+    private val holdExpiringGrantsForCombat: Boolean = false,
+    /**
      * The profile's `EvaluationWeights.boardPresence`. Only [HoldPolicy] reads it, to quote a
      * patience discount in the same units the leaf score prices board value in.
      */
@@ -131,6 +136,7 @@ class Strategist(
         holdCountersForBetterSpells = holdCountersForBetterSpells,
         cashCantripsInTheEndStep = cashCantripsInTheEndStep,
         holdFlashPermanentsForAmbush = holdFlashPermanentsForAmbush,
+        holdExpiringGrantsForCombat = holdExpiringGrantsForCombat,
         boardPresenceWeight = boardPresenceWeight,
     )
 
@@ -588,7 +594,14 @@ class Strategist(
         // other half is whether this was the window — and, for removal, whether this was the target
         // worth spending the card on. The materialized action is what carries the committed
         // targets, so the hold policy is asked about the same spell the processor would receive.
-        val timing = holdPolicy.verdictFor(state, playerId, cardName, action.action as? CastSpell)
+        //
+        // The activation is handed over for the same reason: an ability's window is a question about
+        // the *ability*, and `cardName` only ever names the permanent it is printed on.
+        val timing = holdPolicy.verdictFor(
+            state, playerId, cardName,
+            cast = action.action as? CastSpell,
+            activation = action.action as? ActivateAbility,
+        )
         if (timing is TimingVerdict.NoWindow) {
             // The card does nothing here, so nothing the simulation reports should make it beat
             // passing. See [TimingVerdict.NoWindow] for why this is a floor and not a penalty.

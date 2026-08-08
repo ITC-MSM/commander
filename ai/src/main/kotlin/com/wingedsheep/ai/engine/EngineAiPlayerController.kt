@@ -22,16 +22,18 @@ private val logger = LoggerFactory.getLogger(EngineAiPlayerController::class.jav
  *
  * Runs entirely locally with no API calls. Uses the engine's ActionProcessor, board evaluator,
  * [Strategist] and [CombatAdvisor] directly, configured by
- * [AiProfile.PRODUCTION_CANDIDATE_COUNTERPATIENCE]
+ * [AiProfile.PRODUCTION_CANDIDATE_EXPIRING]
  * — rollout candidate evaluation over a determinized state, on a four-tier decision budget, with a
  * land drop priced as the card conversion it is, land *order* priced by the mana it makes usable,
  * a combat trick held until blocks are in and searched properly once they are, the race scored
  * in urgency rather than in turns, removal held for a target worth a card, and a creature priced by
  * what it can still do — marked damage wearing off at cleanup, "can't attack" costing the power —
- * a cantrip cashed in the window where its mana was going to evaporate anyway, and a counterspell
- * held while the caster still has the mana for something bigger.
+ * a cantrip cashed in the window where its mana was going to evaporate anyway, a counterspell
+ * held while the caster still has the mana for something bigger, and an activated ability whose
+ * whole payoff expires at cleanup held for a window that can actually spend it.
  * Each superseded configuration is kept as the baseline its successor was measured against:
- * [AiProfile.PRODUCTION_CANDIDATE_CANTRIP] ran immediately before it,
+ * [AiProfile.PRODUCTION_CANDIDATE_COUNTERPATIENCE] ran immediately before it,
+ * [AiProfile.PRODUCTION_CANDIDATE_CANTRIP] before it,
  * [AiProfile.PRODUCTION_CANDIDATE_BOARDVALUE] before it,
  * [AiProfile.PRODUCTION_CANDIDATE_PATIENCE] before it,
  * [AiProfile.PRODUCTION_CANDIDATE_RACECLOCK] before it,
@@ -58,7 +60,7 @@ class EngineAiPlayerController(
 
     private val aiPlayer =
         AIPlayer.create(
-            cardRegistry, playerId, AiProfile.PRODUCTION_CANDIDATE_COUNTERPATIENCE, insightSink = insightSink,
+            cardRegistry, playerId, AiProfile.PRODUCTION_CANDIDATE_EXPIRING, insightSink = insightSink,
         )
 
     override fun chooseAction(

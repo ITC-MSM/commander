@@ -179,6 +179,13 @@ class PuzzleMove internal constructor(
         }
     }
 
+    /** The "don't pay for it here" half of [shouldActivate] — see `instants-14`. */
+    fun shouldNotActivate(cardName: String) {
+        if (action is ActivateAbility && playedCard == cardName) {
+            fail("Expected NOT to activate $cardName")
+        }
+    }
+
     fun shouldPlayLand(landName: String? = null) {
         if (action !is PlayLand) fail("Expected to play a land")
         if (landName != null && playedCard != landName) fail("Expected to play $landName")

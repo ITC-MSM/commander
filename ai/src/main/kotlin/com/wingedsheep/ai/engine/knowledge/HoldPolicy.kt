@@ -1,17 +1,14 @@
 package com.wingedsheep.ai.engine.knowledge
 
 import com.wingedsheep.ai.engine.evaluation.EvaluationWeights
+import com.wingedsheep.engine.core.ActivateAbility
 import com.wingedsheep.engine.core.CastSpell
 import com.wingedsheep.engine.mechanics.layers.ProjectedState
-import com.wingedsheep.engine.state.ComponentContainer
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.battlefield.DamageComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
-import com.wingedsheep.engine.state.components.stack.AbilityOnStackComponent
-import com.wingedsheep.engine.state.components.stack.ActivatedAbilityOnStackComponent
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
 import com.wingedsheep.engine.state.components.stack.TargetsComponent
-import com.wingedsheep.engine.state.components.stack.TriggeredAbilityOnStackComponent
 import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.EntityId
 
@@ -64,6 +61,12 @@ class HoldPolicy(
      */
     private val holdFlashPermanentsForAmbush: Boolean = false,
     /**
+     * [AiProfile.holdExpiringGrantsForCombat][com.wingedsheep.ai.engine.AiProfile.holdExpiringGrantsForCombat]
+     * — stop paying for an activated ability whose whole payoff expires at cleanup, in a window
+     * where nothing can spend it. See [ExpiringGrantWindow], which is where the whole idea lives.
+     */
+    private val holdExpiringGrantsForCombat: Boolean = false,
+    /**
      * The profile's `EvaluationWeights.boardPresence`, so [RemovalPatience] can quote its discount
      * in the same currency as the board value it compares against. The default is the compiled
      * fallback's, which is what every profile that does not opt in would have used anyway.
@@ -86,13 +89,24 @@ class HoldPolicy(
      *
      * @param cast the materialized spell, when this action is one. Null for an activated ability,
      *   which spends no card and so is never charged for patience.
+     * @param activation the materialized activation, when this action is one. The window half below
+     *   reads the *card*, which for an activation is its source permanent — a different and much
+     *   broader question than what the ability does, and the reason [activationVerdictFor] exists.
      */
     fun verdictFor(
         state: GameState,
         playerId: EntityId,
         cardName: String,
         cast: CastSpell? = null,
+        activation: ActivateAbility? = null,
     ): TimingVerdict {
+        // Asked first, and it can only ever return [TimingVerdict.NoWindow] or [TimingVerdict.
+        // Neutral], so with the flag off — or on any action that is not an activation — everything
+        // below is reached exactly as it was.
+        activationVerdictFor(state, playerId, cardName, activation)
+            .takeIf { it is TimingVerdict.NoWindow }
+            ?.let { return it }
+
         val intent = intents.forName(cardName) ?: return TimingVerdict.Neutral
 
         val window = windowVerdictFor(state, playerId, intent)
@@ -134,6 +148,33 @@ class HoldPolicy(
             0.0
         }
         return removal + counter
+    }
+
+    /**
+     * The window half for an **activated ability**, which the card-driven one below cannot ask.
+     *
+     * Kept as its own entry point rather than as a branch in [windowVerdictFor] because the two
+     * read different objects. That one reads the card, and for an activation the card is the source
+     * permanent — [CardIntentAnalyzer] types anything with a non-mana activated ability as
+     * [Speed.ACTIVATED], which the window half declines outright, so no branch there has ever seen
+     * an activation. This reads the *ability*: what it does, how long it lasts, and whether it can
+     * be paid for again later.
+     *
+     * A null lookup — the flag off, no card knowledge, or an ability granted by something other
+     * than the card itself — is "no information" and returns [TimingVerdict.Neutral], leaving the
+     * leaf score in charge exactly as before.
+     */
+    private fun activationVerdictFor(
+        state: GameState,
+        playerId: EntityId,
+        cardName: String,
+        activation: ActivateAbility?,
+    ): TimingVerdict {
+        if (!holdExpiringGrantsForCombat || activation == null) return TimingVerdict.Neutral
+        val ability = intents.activatedAbility(cardName, activation.abilityId)
+            ?: return TimingVerdict.Neutral
+        return if (ExpiringGrantWindow.holds(state, playerId, ability, intents)) TimingVerdict.NoWindow
+        else TimingVerdict.Neutral
     }
 
     /** The window half — "is this the moment?", which only an instant-speed card can get wrong. */
@@ -247,8 +288,8 @@ class HoldPolicy(
      * is only honest where "does nothing" is structurally certain, so a stack object this policy
      * cannot read — an unknown card, or a fight, whose reach is the other creature's power and not
      * a property of the card — keeps the old bonus rather than earning a veto. Which makes it
-     * load-bearing that [threatOn] reads *abilities* too, since a trigger on the stack is the
-     * commonest stack object there is.
+     * load-bearing that [IntentCatalog.forStackObject] reads *abilities* too, since a trigger on the
+     * stack is the commonest stack object there is.
      */
     private fun responseWindowFor(state: GameState, playerId: EntityId, pump: CardIntent): TimingVerdict {
         val projected = state.projectedState
@@ -256,7 +297,7 @@ class HoldPolicy(
 
         for (stackId in state.stack) {
             val container = state.getEntity(stackId) ?: continue
-            val threat = threatOn(container)
+            val threat = intents.forStackObject(container)
             if (threat == null || IntentTag.FIGHT in threat.tags) {
                 unreadable = true
                 continue
@@ -280,27 +321,6 @@ class HoldPolicy(
         }
 
         return if (unreadable) TimingVerdict.Adjust(RESPONSE_WINDOW) else TimingVerdict.NoWindow
-    }
-
-    /**
-     * What the stack object [container] threatens, or null when nothing here can be read.
-     *
-     * A spell is its card. An **ability** is its effect, which the stack object carries itself —
-     * it has no [CardComponent] at all — so it has to be read from there rather than from the
-     * permanent that produced it, which is a different and much broader question.
-     *
-     * Reading abilities is what keeps [responseWindowFor]'s "silence is not a veto" fallback
-     * honest. Without it every ability on the stack fell through as unreadable and bought a trick
-     * the full response bonus, so an ETB token trigger — or a "you may pay {B} to transform this"
-     * on the opponent's own main phase — paid the AI to dump a combat trick in a window where the
-     * pump provably wears off before any combat.
-     */
-    private fun threatOn(container: ComponentContainer): CardIntent? {
-        val ability = container.get<TriggeredAbilityOnStackComponent>()?.effect
-            ?: container.get<ActivatedAbilityOnStackComponent>()?.effect
-            ?: container.get<AbilityOnStackComponent>()?.effect
-        if (ability != null) return intents.forEffect(ability)
-        return container.get<CardComponent>()?.name?.let { intents.forName(it) }
     }
 
     /**

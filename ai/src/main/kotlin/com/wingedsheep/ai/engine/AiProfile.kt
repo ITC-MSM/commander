@@ -299,6 +299,48 @@ data class AiProfile(
      */
     val holdFlashPermanentsForAmbush: Boolean = false,
     /**
+     * Stop paying for an **activated ability whose whole payoff expires at cleanup** in a window
+     * where nothing can spend it.
+     *
+     * The target is `instants-14`, taken from a real game: turn 4, the *opponent's* precombat main,
+     * an Olivia's Dragoon (`Discard a card: This creature gains flying until end of turn`) that
+     * entered last turn, and the AI discards a Battleground Geist to give it flying. A card, for a
+     * keyword that is gone at cleanup, on a turn where the opponent controls no flier for it to
+     * block and no combat it can attack in.
+     *
+     * The leaf scores it at **+2.35**, and both halves of that are the evaluator working as
+     * designed. `BoardPresence.creatureBodyValue` prices flying at `1.5 + power × 0.3` = 2.1 (× the
+     * 1.5 board weight = 3.15) with no reading of whether it is evasive against *this* board — the
+     * same fact `ThreatAssessment.evasivePower` reads correctly two features over, where the
+     * summoning-sick Dragoon contributes zero. And `CardAdvantage` charges the discarded card the
+     * 4th-card marginal, 0.8. Neither number is defensibly wrong on its own; the position is.
+     *
+     * [com.wingedsheep.ai.engine.knowledge.ExpiringGrantWindow] answers it the way
+     * [holdFlashPermanentsForAmbush] answers its own — a
+     * [com.wingedsheep.ai.engine.knowledge.TimingVerdict.NoWindow] rather than a discount — and its
+     * KDoc carries the argument. The short version is that the dominance claim is *stronger* here
+     * than for a card in hand: an ability is not a resource that can be stripped, so it is provably
+     * still available at `DECLARE_ATTACKERS`, at the same cost, with strictly more information.
+     *
+     * **This is also the first window verdict an activated ability has ever received.**
+     * `HoldPolicy.verdictFor` resolves an activation to its source permanent's name, and
+     * `CardIntentAnalyzer` types any permanent carrying a non-mana activated ability as
+     * `Speed.ACTIVATED`, which `windowVerdictFor` declines at its first line. So the `COMBAT_TRICK`
+     * branch — whose subject is exactly "a pump wears off at cleanup" — was unreachable for every
+     * ability in the catalog, and the mistake `instants-06` pins for an instant went unmeasured for
+     * the identical text printed on a creature.
+     *
+     * Three guards keep the floor honest, any one of which failing hands the decision back to the
+     * leaf: every payoff in the effect tree is an until-end-of-turn grant, the ability is
+     * instant-speed with a window still ahead, and nothing on the stack points at a permanent we
+     * control. It inherits
+     * [com.wingedsheep.ai.engine.knowledge.Patience]'s three releases on top — and the hand-size one
+     * matters more here than anywhere else, because the commonest cost on this ability shape is a
+     * discard, which is free at a full hand. Needs [useCardIntent], like everything else the policy
+     * reads.
+     */
+    val holdExpiringGrantsForCombat: Boolean = false,
+    /**
      * The two `BoardPresence.creatureValue` corrections [PRODUCTION_RACECLOCK]'s KDoc named as the
      * reason its arena win came with a puzzle trade — the damaged-creature discount and the flat
      * multiplier on "can't attack". Both are off by default; see
@@ -1038,6 +1080,64 @@ data class AiProfile(
         val PRODUCTION_CANDIDATE_AMBUSH = PRODUCTION_CANDIDATE_COUNTERPATIENCE.copy(
             id = "production-candidate-ambush",
             holdFlashPermanentsForAmbush = true,
+        )
+
+        /**
+         * [holdExpiringGrantsForCombat] alone on top of [PRODUCTION], so a puzzle or an arena point
+         * that moves is attributable to it — the same isolation [PRODUCTION_AMBUSH] gives the
+         * ambush window.
+         *
+         * Like that column this one can close its own puzzle unaided: `production` already has
+         * [useCardIntent], so the catalog resolves Olivia's Dragoon's ability and the flag is the
+         * only thing standing between the position and a floor.
+         *
+         * **Measured: 81/96 → 82/96**, closing `instants-14` and nothing else, with every other
+         * category byte-identical to [PRODUCTION]'s. A term that fires on one narrow shape and
+         * costs nothing across the other 95 positions is what the isolation column is for.
+         */
+        val PRODUCTION_EXPIRING = PRODUCTION.copy(
+            id = "production-expiring",
+            holdExpiringGrantsForCombat = true,
+        )
+
+        /**
+         * The promotion candidate: [PRODUCTION_CANDIDATE_COUNTERPATIENCE] plus
+         * [holdExpiringGrantsForCombat] — the agent that stops pitching cards for keywords it has
+         * nothing to spend them on.
+         *
+         * Stacked on [PRODUCTION_CANDIDATE_COUNTERPATIENCE], **not** on
+         * [PRODUCTION_CANDIDATE_AMBUSH], because that is what
+         * [com.wingedsheep.ai.engine.EngineAiPlayerController] actually points at: the ambush
+         * flag's own promotion never reached the call site, so stacking on it would make this
+         * candidate two flags from what players face and its arena number unattributable.
+         *
+         * Its controls are the two positions added alongside it: `instants-15` (the same ability at
+         * the opponent's declare-attackers, where the window is released and the block it buys is
+         * real) and `instants-16` (the same board at a full hand, where the discard is the card
+         * cleanup was taking anyway). A term that only ever says "don't" scores well on a suite by
+         * never playing, which is why the half that says *do* is asserted too.
+         *
+         * **Measured: 91/96 → 92/96**, closing `instants-14` with a failing set that is a strict
+         * subset of [PRODUCTION_CANDIDATE_COUNTERPATIENCE]'s. The `instants` category goes 14/17 →
+         * 15/17 and every other category is byte-identical; what is left is `instants-08`,
+         * `respond-05`, `timing-01` and `timing-03`, none of which this term is about.
+         *
+         * The arena half returned another **degenerate null**: `just arena
+         * production-candidate-counterpatience production-candidate-expiring 100` measured **50.0%,
+         * CI [50.0%, 50.0%]**, 100/100 completed, 0 illegal actions, and *every* scored pair 1-1-0.
+         * Pairs that identical mean the term did not fire at all across 100 BLB sealed games, which
+         * the mechanism predicts — it needs a permanent with an instant-speed ability whose only
+         * payoff expires, held in a pre-combat window, and BLB is not a set full of those. Read the
+         * arena as **no regression**, not as evidence of gain; the evidence for the gain is the
+         * puzzle side and the game it was taken from, which was neither BLB nor sealed.
+         *
+         * If a later arena run comes back below parity, revert the one call site
+         * ([com.wingedsheep.ai.engine.EngineAiPlayerController]) rather than the flag: it is off for
+         * every other profile, so backing the promotion out costs nothing and loses no measurement.
+         */
+        val PRODUCTION_CANDIDATE_EXPIRING = PRODUCTION_CANDIDATE_COUNTERPATIENCE.copy(
+            id = "production-candidate-expiring",
+            holdExpiringGrantsForCombat = true,
         )
 
         /**
