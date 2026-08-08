@@ -2406,6 +2406,69 @@
     ]
 }
 
+// Magnifying Glass
+{
+    "name": "Magnifying Glass",
+    "manaCost": "{3}",
+    "typeLine": "Artifact",
+    "oracleText": "{T}: Add {C}.\n{4}, {T}: Investigate. (Create a Clue token. It's an artifact with \"{2}, Sacrifice this token: Draw a card.\")",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddColorlessMana",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{4}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Clue"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "258",
+        "rarity": "UNCOMMON",
+        "artist": "Dan Murayama Scott",
+        "flavorText": "Knight-Inquisitors of Saint Raban delve deep into mysteries best left unexplored.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/7/f7a708d5-f757-4fcf-a167-5b5920c6adeb.jpg?1783937707",
+        "rulings": [
+            {
+                "date": "2016-04-08",
+                "text": "Clue is an artifact type. Even though it appears on some cards with other permanent types, it's never a creature type, a land type, or anything but an artifact type."
+            },
+            {
+                "date": "2016-04-08",
+                "text": "If an effect refers to a Clue, it means any Clue artifact, not just a Clue artifact token."
+            }
+        ]
+    },
+    "colorIdentityOverride": []
+}
+
 // Moonlight Hunt
 {
     "name": "Moonlight Hunt",

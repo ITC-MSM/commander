@@ -20,7 +20,10 @@ import com.wingedsheep.engine.core.GameEvent as EngineGameEvent
  * this detector checks if general events (DamageDealtEvent, AttackersDeclaredEvent, etc.)
  * match ATTACHED-bound triggers on auras/equipment attached to the event's entity.
  */
-class AttachmentTriggerDetector(private val matcher: TriggerMatcher) {
+class AttachmentTriggerDetector(
+    private val abilityResolver: TriggerAbilityResolver,
+    private val matcher: TriggerMatcher,
+) {
 
     /**
      * Unified detection for all ATTACHED-bound triggers on battlefield auras/equipment.
@@ -39,7 +42,11 @@ class AttachmentTriggerDetector(private val matcher: TriggerMatcher) {
         val isZoneChange = event is ZoneChangeEvent
 
         for (entityId in relevantIds) {
-            for (entry in index.aurasByTarget[entityId].orEmpty()) {
+            val live = index.aurasByTarget[entityId].orEmpty()
+            // When the attached permanent left the battlefield, the live links may already be torn
+            // down — see [lastKnownAttachments].
+            val entries = live + lastKnownAttachments(state, event, index, live)
+            for (entry in entries) {
                 for (ability in entry.abilities) {
                     if (ability.binding != TriggerBinding.ATTACHED) continue
                     // For zone-change events on the attached creature (e.g., creature dies),
@@ -61,6 +68,63 @@ class AttachmentTriggerDetector(private val matcher: TriggerMatcher) {
                     }
                 }
             }
+        }
+    }
+
+    /**
+     * The Equipment that was attached to a permanent leaving the battlefield but is no longer
+     * linked to it in [TriggerIndex.aurasByTarget] — CR 608.2h last-known information.
+     *
+     * Needed because the timing of the unattach depends on *how* the host left. A destroy or
+     * bounce effect emits the [ZoneChangeEvent] during resolution, and triggers are detected
+     * while the link is still live. A death by state-based action does not: `LETHAL_DAMAGE`
+     * (CR 704.5g) and `UNATTACHED_AURAS` (CR 704.5m) run in the *same* SBA pass, so by the time
+     * the batch's events reach trigger detection the Equipment is already unattached and the
+     * index no longer connects it to its dead host. Without this fallback, "whenever equipped
+     * creature dies" would fire on removal but silently no-op on combat damage — the far more
+     * common way a creature actually dies.
+     *
+     * Only Equipment is reconstructed: an Aura goes to the graveyard along with its host and is
+     * handled from its own [ZoneChangeEvent] by
+     * [DeathAndLeaveTriggerDetector.detectDeadAuraAttachmentTriggers].
+     *
+     * [live] entries are excluded so an attachment the index still knows about is never counted
+     * twice.
+     */
+    private fun lastKnownAttachments(
+        state: GameState,
+        event: EngineGameEvent,
+        index: TriggerIndex,
+        live: List<TriggerIndex.IndexedEntity>,
+    ): List<TriggerIndex.IndexedEntity> {
+        if (event !is ZoneChangeEvent) return emptyList()
+        val attachmentIds = event.lastKnown?.attachmentIds.orEmpty()
+        if (attachmentIds.isEmpty()) return emptyList()
+
+        val alreadyLive = live.mapTo(mutableSetOf()) { it.entityId }
+        val battlefield = state.getBattlefield()
+        return attachmentIds.mapNotNull { attachmentId ->
+            if (attachmentId in alreadyLive) return@mapNotNull null
+            // The Equipment must still be on the battlefield for its ability to function.
+            if (attachmentId !in battlefield) return@mapNotNull null
+            val container = state.getEntity(attachmentId) ?: return@mapNotNull null
+            val cardComponent = container
+                .get<com.wingedsheep.engine.state.components.identity.CardComponent>()
+                ?: return@mapNotNull null
+            if (!cardComponent.typeLine.isEquipment) return@mapNotNull null
+            val controllerId = container
+                .get<com.wingedsheep.engine.state.components.identity.ControllerComponent>()
+                ?.playerId ?: return@mapNotNull null
+            val abilities = abilityResolver.getTriggeredAbilities(
+                attachmentId, cardComponent.cardDefinitionId, state, index.statics
+            )
+            if (abilities.isEmpty()) return@mapNotNull null
+            TriggerIndex.IndexedEntity(
+                entityId = attachmentId,
+                cardComponent = cardComponent,
+                controllerId = controllerId,
+                abilities = abilities,
+            )
         }
     }
 
