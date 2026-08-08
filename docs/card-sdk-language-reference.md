@@ -2717,6 +2717,12 @@ can't statically prevent (cross-trigger flows, `Self`-vs-`ContextTarget` inside 
   `PreventLifeGain` (`LifeGainEvent(player = EnchantedPlayer)`). Resolves to nothing if the source isn't
   an Aura attached to a player. (Grievous Wound.)
 - `Player.ControllerOf(desc)` / `Player.OwnerOf(desc)` — controller/owner of the first chosen target.
+- `Player.OwnerOfSource` — the owner of the effect's **source**, read from the source card's
+  `CardComponent.ownerId`. The source-bound sibling of `Player.OwnerOf(desc)`, which needs a chosen
+  target and so can't express an ability that names its own source without targeting it: *"[This
+  creature]'s owner shuffles it into their library and draws three cards"* (Gandalf, Wandering
+  Wizard). Distinct from `Player.You` precisely when ownership and control diverge — a stolen
+  permanent's ability still acts on its owner. Reach for `Player.You` whenever the text says "you".
 - `Player.OwnersOfLinkedExile` — the **distinct owners** of the cards still in the effect source's
   linked-exile pile (`LinkedExileComponent`, populated by `Effects.ExileUntilLeaves`). A *list*
   reference: reach it only through `Effects.ForEachPlayer(Player.OwnersOfLinkedExile, …)`, typically

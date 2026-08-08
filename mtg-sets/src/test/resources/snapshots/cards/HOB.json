@@ -1577,6 +1577,64 @@
     ]
 }
 
+// Galion, Elvenking's Butler
+{
+    "name": "Galion, Elvenking's Butler",
+    "manaCost": "{2}{G}{G}",
+    "typeLine": "Legendary Creature — Elf Advisor",
+    "oracleText": "Whenever Galion attacks, choose up to one other target creature you control. Its base power and toughness become equal to Galion's power and toughness until end of turn.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "SetBaseStats",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "up to one other target creature you control"
+                    },
+                    "power": {
+                        "type": "EntityProperty",
+                        "entity": "Source",
+                        "numericProperty": "Power"
+                    },
+                    "toughness": {
+                        "type": "EntityProperty",
+                        "entity": "Source",
+                        "numericProperty": "Toughness"
+                    },
+                    "duration": "EndOfTurn"
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "optional": true,
+                    "filter": {
+                        "baseFilter": "creature ctrl:you",
+                        "excludeSelf": true
+                    },
+                    "id": "up to one other target creature you control"
+                },
+                "descriptionOverride": "Whenever Galion attacks, choose up to one other target creature you control. Its base power and toughness become equal to Galion's power and toughness until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "125",
+        "rarity": "UNCOMMON",
+        "artist": "Jarel Threat",
+        "flavorText": "\"Here's the old villain with his head on a jug! He's been having a little feast all to himself!\"\n—Elven guard",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/8/985bd676-58c4-42c7-a570-1b413e9aa94c.jpg?1785152142"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Gandalf, Spark Starter
 {
     "name": "Gandalf, Spark Starter",
@@ -1620,6 +1678,76 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Gandalf, Wandering Wizard
+{
+    "name": "Gandalf, Wandering Wizard",
+    "manaCost": "{4}{U}",
+    "typeLine": "Legendary Creature — Avatar Wizard",
+    "oracleText": "Ward {3} (Whenever this creature becomes the target of a spell or ability an opponent controls, counter it unless that player pays {3}.)\n{6}: Gandalf's owner shuffles him into their library and draws three cards.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 5
+    },
+    "keywords": [
+        "WARD"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Ward",
+            "cost": {
+                "type": "WardCost.Mana",
+                "manaCost": "{3}"
+            }
+        }
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{6}"
+                    }
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "MoveToZone",
+                            "target": "Self",
+                            "destination": "Library",
+                            "placement": "Shuffled"
+                        },
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 3
+                            },
+                            "target": {
+                                "type": "PlayerRef",
+                                "player": "OwnerOfSource"
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "{6}: Gandalf's owner shuffles him into their library and draws three cards."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "41",
+        "artist": "Irvin Rodriguez",
+        "flavorText": "\"May the wind under your wings bear you where the sun sails and the moon walks.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/f/1f8403a2-849c-4a59-b0ed-c8803995028d.jpg?1785496472"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 
@@ -3824,6 +3952,56 @@
     ]
 }
 
+// Rage into the Valley
+{
+    "name": "Rage into the Valley",
+    "manaCost": "{2}{B}",
+    "typeLine": "Sorcery",
+    "oracleText": "You draw a card and lose 1 life.\nAmass Goblins 2. (Put two +1/+1 counters on an Army you control. It's also a Goblin. If you don't control an Army, create a 0/0 black Goblin Army creature token first.)",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                {
+                    "type": "LoseLife",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": {
+                        "type": "PlayerRef",
+                        "player": "You"
+                    }
+                },
+                {
+                    "type": "Amass",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "subtype": "Goblin"
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "79",
+        "artist": "Antonio José Manzanedo",
+        "flavorText": "The Goblin army poured in, driving wildly between the arms of the Mountain, seeking for the foe.",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/6/8651958c-3b94-47a9-a751-faf8f6236a42.jpg?1785496290"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Ragged Short Spear
 {
     "name": "Ragged Short Spear",
@@ -4252,6 +4430,81 @@
     ]
 }
 
+// Snowslope Hunter
+{
+    "name": "Snowslope Hunter",
+    "manaCost": "{2}{R}",
+    "typeLine": "Creature — Goblin Ranger",
+    "oracleText": "Sacrifice another creature or artifact: Exile the top card of your library. You may play it until the end of your next turn. Activate only during your turn and only once each turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomSacrifice",
+                        "filter": "creature|artifact",
+                        "excludeSelf": true
+                    }
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeAs": "impulseExiled"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "impulseExiled",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile"
+                            }
+                        },
+                        {
+                            "type": "GrantMayPlayFromExile",
+                            "from": "impulseExiled",
+                            "expiry": {
+                                "type": "UntilControllerStep",
+                                "step": "CLEANUP",
+                                "includeCurrentTurn": false
+                            }
+                        }
+                    ]
+                },
+                "restrictions": [
+                    "OnlyDuringYourTurn",
+                    "OncePerTurn"
+                ],
+                "descriptionOverride": "Sacrifice another creature or artifact: Exile the top card of your library. You may play it until the end of your next turn. Activate only during your turn and only once each turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "112",
+        "rarity": "UNCOMMON",
+        "artist": "Adrián Rodríguez Pérez",
+        "flavorText": "Goblins did not usually venture very far from their mountains except to go on raids or hunt for food.",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/7/47666099-ffb2-4d07-a801-70524dba0837.jpg?1785497147"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Stir Up Trouble
 {
     "name": "Stir Up Trouble",
@@ -4623,6 +4876,67 @@
     },
     "colorIdentityOverride": [
         "BLACK",
+        "GREEN"
+    ]
+}
+
+// The Notary Hobbits
+{
+    "name": "The Notary Hobbits",
+    "manaCost": "{3}{G}{G}",
+    "typeLine": "Legendary Creature — Halfling Advisor",
+    "oracleText": "When The Notary Hobbits enter, if they're not a token, create two tokens that are copies of them, except the tokens aren't legendary.\n{T}: Add {C} for each Halfling you control.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreateTokenCopyOfSource",
+                    "count": 2,
+                    "removeLegendary": true
+                },
+                "triggerCondition": {
+                    "type": "EntityMatches",
+                    "entity": "Self",
+                    "filter": "nontoken"
+                },
+                "descriptionOverride": "When The Notary Hobbits enter, if they're not a token, create two tokens that are copies of them, except the tokens aren't legendary."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddColorlessMana",
+                    "amount": {
+                        "type": "AggregateBattlefield",
+                        "player": "You",
+                        "filter": "creature Halfling"
+                    }
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true,
+                "descriptionOverride": "{T}: Add {C} for each Halfling you control."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "131",
+        "rarity": "RARE",
+        "artist": "Jarel Threat",
+        "flavorText": "Since Bilbo was presumed dead, his belongings were auctioned by three of the town's best lawyers: Messrs. Grubb, Grubb, and Burrowes.",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/8/d876315f-b269-4254-a517-905c6e927462.jpg?1785412540"
+    },
+    "colorIdentityOverride": [
         "GREEN"
     ]
 }
