@@ -2540,6 +2540,15 @@ class CastSpellHandler(
 
         val flattenedAllCosts = reduceCostAlternatives(allAdditionalCosts, currentState, action.playerId, action.additionalCostPayment)
 
+        // At most one VariablePermanents atom per cast. Every one of them pays out of the *same*
+        // `additionalCostPayment.variableCostPermanents` selection, so a second would re-consume
+        // the first's permanents and — for a TAP atom — lose its tap cause entirely (the permanents
+        // are already tapped, so the tap atom emits no event). Checked here, before a single cost is
+        // paid, so a violation can never leave a half-paid cast behind. See
+        // [VariablePermanentsCost.requireAtMostOnePerCast] for why nothing reachable breaks it today
+        // and why it is still worth asserting.
+        VariablePermanentsCost.requireAtMostOnePerCast(flattenedAllCosts)
+
         // Server-initiated free cast: pay the spell's printed additional costs even though the
         // mana cost is waived (CR 601.2f / 118.9). A normal client cast arrives with the
         // selections already in `additionalCostPayment` (validated in validate()); copy-and-cast
@@ -2671,6 +2680,18 @@ class CastSpellHandler(
                             // declaration. Tapping itself goes through
                             // [VariablePermanentsCost.tapAll] — the single tap site for this atom,
                             // shared with the activated-ability payer in `CostHandler`.
+                            //
+                            // **Load-bearing invariant: at most one VariablePermanents atom per
+                            // cast.** `chosen` below is the one shared selection for the whole cast,
+                            // and the card's printed additional costs are added to
+                            // `allAdditionalCosts` *before* `declaredSlotAdditionalCost` — so a
+                            // second TAP atom reaching here would tap the whole selection first as
+                            // UNSPECIFIED, and the declared (teamwork) atom would then find it
+                            // already tapped and emit nothing at all. Asserted up front by
+                            // `VariablePermanentsCost.requireAtMostOnePerCast(flattenedAllCosts)`,
+                            // which also settles the structural-equality question on the identity
+                            // check below: with one such atom per cast there is no second, equal
+                            // atom for it to mistake for the declared one.
                             val chosen = action.additionalCostPayment.variableCostPermanents
                             when (atom.action) {
                                 PermanentCostAction.TAP -> {

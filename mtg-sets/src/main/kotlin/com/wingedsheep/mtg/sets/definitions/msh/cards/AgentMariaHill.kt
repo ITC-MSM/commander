@@ -23,9 +23,9 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  * separate them.
  *
  * Note the trigger is on *her* becoming tapped, not on the spell being cast: a teamwork cost she is
- * not among the payers for does nothing, and one cast that taps her and two others fires this once
- * (CR 603.2c — one trigger event, one occurrence per tapped permanent). At 2 power she alone
- * satisfies a teamwork 1 or 2 cost.
+ * not among the payers for does nothing, and one cast that taps her and two others still fires this
+ * once — the binding is SELF, so only her own tap is an occurrence of the trigger event. At 2 power
+ * she alone satisfies a teamwork 1 or 2 cost.
  */
 val AgentMariaHill = card("Agent Maria Hill") {
     manaCost = "{W}"

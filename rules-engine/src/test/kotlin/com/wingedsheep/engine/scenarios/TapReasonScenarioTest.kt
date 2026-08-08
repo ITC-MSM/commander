@@ -4,13 +4,17 @@ import com.wingedsheep.engine.core.CrewVehicle
 import com.wingedsheep.engine.core.GameEvent
 import com.wingedsheep.engine.core.TappedEvent
 import com.wingedsheep.engine.core.engineSerializersModule
+import com.wingedsheep.engine.mechanics.cost.VariablePermanentsCost
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.support.ScenarioTestBase
 import com.wingedsheep.sdk.core.Phase
 import com.wingedsheep.sdk.core.Step
+import com.wingedsheep.sdk.dsl.Costs
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.EventPattern
+import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.TapReason
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldNotBeEmpty
@@ -172,6 +176,28 @@ class TapReasonScenarioTest : ScenarioTestBase() {
                     "pattern asks for no particular cause") {
                     game.state.getEntity(ace)?.has<TappedComponent>() shouldBe false
                 }
+            }
+
+            // The reason only survives the payment loop because a cast carries a single
+            // VariablePermanents selection; a second such atom would re-consume it and, for TAP,
+            // find the permanents already tapped — emitting no event and losing the cause. That is
+            // an invariant of how the costs are assembled, not something the types enforce, so it
+            // is asserted rather than left as tribal knowledge.
+            test("a second VariablePermanents additional cost on one cast is rejected outright") {
+                val teamwork2 = Costs.additional.TapForTotalPower(2, GameObjectFilter.Creature)
+
+                withClue("zero and one atom are the shapes every printed card has") {
+                    VariablePermanentsCost.requireAtMostOnePerCast(emptyList())
+                    VariablePermanentsCost.requireAtMostOnePerCast(listOf(teamwork2))
+                    VariablePermanentsCost.requireAtMostOnePerCast(
+                        listOf(Costs.additional.DiscardCards(1), teamwork2)
+                    )
+                }
+
+                val failure = shouldThrow<IllegalStateException> {
+                    VariablePermanentsCost.requireAtMostOnePerCast(listOf(teamwork2, teamwork2))
+                }
+                failure.message.shouldNotBeNull() shouldContain "tap reason would be silently dropped"
             }
 
             test("the pattern renders the cause in its description and defaults to cause-agnostic") {

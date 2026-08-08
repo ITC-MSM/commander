@@ -7,22 +7,29 @@ import kotlinx.serialization.Serializable
  * "becomes tapped **to pay a teamwork cost**" (Agent Maria Hill) rather than merely "becomes
  * tapped".
  *
- * Tapping is a single transition (CR 701.26a — only untapped permanents can be tapped), and the
- * engine funnels every one of them through the same tap atom (`com.wingedsheep.engine.core.tap`).
- * That atom is therefore the only place a cause can be attached, and this enum is the vocabulary it
- * attaches. It is deliberately an *enum, not a boolean*: crew, saddle, convoke, declaring an
- * attacker and mana abilities are all distinct tap causes that already exist in the engine, and a
- * future card naming any of them adds a constant here plus a classification at that tap site —
- * without disturbing the cards that already read [TEAMWORK].
+ * Tapping is a single transition (CR 701.26a — only untapped permanents can be tapped), and this
+ * enum is the vocabulary for naming what caused it. It is deliberately an *enum, not a boolean*:
+ * crew, saddle, convoke, declaring an attacker and mana abilities are all distinct tap causes that
+ * already exist in the engine, and a future card naming any of them adds a constant here plus a
+ * classification at that tap site — without disturbing the cards that already read [TEAMWORK].
+ *
+ * **Where a cause can be attached — three sites, not one.** Nearly every tap runs through the tap
+ * atom (`com.wingedsheep.engine.core.tap`), which takes the reason as a parameter; that is the
+ * first place to look. But two sites build a `com.wingedsheep.engine.core.TappedEvent` *by hand*
+ * and never call the atom, because their permanent is sacrificed rather than left tapped
+ * (a `{T}, Sacrifice this: Add …` mana source, e.g. a Treasure):
+ * `ManaPaymentWindow.tapOrSacrifice` and `ManaPaymentContinuationResumer`. Both pass no reason and
+ * so report [UNSPECIFIED] — the honest answer for a mana tap today — but neither inherits a change
+ * made to the atom, so anyone classifying a mana-flavoured cause must update all three by hand.
  *
  * **Only [TEAMWORK] is classified today; every other tap site reports [UNSPECIFIED].** That is the
  * honest default rather than an approximation: a tap whose cause the engine has not been taught to
  * name must not silently masquerade as some other cause. Under-claiming makes a "becomes tapped for
  * reason X" trigger stay silent when it should have fired only if X is one of the *unclassified*
  * causes — which no card reads yet; over-claiming would make it fire wrongly for every card that
- * reads X. To classify a further cause: add the constant, pass it at that tap site (a single
- * chokepoint per cause — e.g. `AttackPhaseManager` for attack taps, `CrewVehicleHandler` for crew),
- * and cover both directions with a test.
+ * reads X. To classify a further cause: add the constant, pass it at that cause's tap site (one
+ * chokepoint per cause — e.g. `AttackPhaseManager` for attack taps, `CrewVehicleHandler` for crew;
+ * for a mana cause, all three sites listed above), and cover both directions with a test.
  *
  * Matched by [EventPattern.TapEvent.reason]; a null there means "any cause", which is what every
  * pre-existing "becomes tapped" trigger keeps meaning.

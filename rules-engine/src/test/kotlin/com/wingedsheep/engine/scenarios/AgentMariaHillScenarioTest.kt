@@ -22,12 +22,16 @@ import io.kotest.matchers.shouldBe
  * its threshold on her own, so a cast that taps her alone is a legal payment.
  *
  * The negative cases are the ones that would silently pass on a naive
- * "whenever this becomes tapped" implementation: attacking, crewing, and a teamwork cast paid by
- * somebody else all tap a creature, and the first two are performed by her own controller — so
- * nothing but the tap's recorded *cause*
- * ([com.wingedsheep.sdk.scripting.TapReason]) can separate them. The mana-ability and
- * activated-ability directions, plus the event/predicate mechanics themselves, are pinned in
- * `TapReasonScenarioTest`.
+ * "whenever this becomes tapped" implementation: attacking, crewing, an opponent's tap effect, and
+ * a teamwork cast paid by somebody else all tap a creature. The first two are performed by her own
+ * controller — so nothing but the tap's recorded *cause*
+ * ([com.wingedsheep.sdk.scripting.TapReason]) can separate them from a teamwork tap — and the third
+ * is the only one where `tappedById` differs, which is where cause and attribution could be
+ * confused for one another.
+ *
+ * The remaining two causes [com.wingedsheep.sdk.scripting.TapReason] names — a mana ability and a
+ * `{T}` activation cost — cannot be aimed at *her*: she has neither. Those directions, plus the
+ * event/predicate mechanics themselves, are pinned on the shared axis in `TapReasonScenarioTest`.
  */
 class AgentMariaHillScenarioTest : ScenarioTestBase() {
 
@@ -120,6 +124,36 @@ class AgentMariaHillScenarioTest : ScenarioTestBase() {
                 game.plusOneCounters("Agent Maria Hill") shouldBe 0
                 game.handSize(1) shouldBe 0
                 game.librarySize(1) shouldBe 1
+            }
+
+            // The one direction where `tappedById` is *not* her controller, so it is the one place
+            // the cause and the attribution could plausibly be confused for each other.
+            test("tapped by an opponent's effect, she does not trigger") {
+                val game = scenario()
+                    .withPlayers("Player1", "Player2")
+                    .withCardOnBattlefield(1, "Agent Maria Hill")
+                    .withCardInLibrary(1, "Plains")
+                    .withCardInHand(2, "Crippling Chill")
+                    .withCardInLibrary(2, "Island")
+                    .withLandsOnBattlefield(2, "Island", 3)
+                    .withActivePlayer(1)
+                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                    .build()
+
+                val hill = game.findPermanent("Agent Maria Hill").shouldNotBeNull()
+
+                // Crippling Chill: "Tap target creature. …" — a real untapped -> tapped transition,
+                // caused by the opponent rather than by her controller.
+                game.passPriority() // active player passes, so the opponent can cast at instant speed
+                game.castSpell(2, "Crippling Chill", targetId = hill).error shouldBe null
+                game.resolveStack()
+
+                game.state.getEntity(hill)?.has<TappedComponent>() shouldBe true
+                withClue("an opponent's tap effect names no cause, so the teamwork trigger stays silent") {
+                    game.plusOneCounters("Agent Maria Hill") shouldBe 0
+                    game.handSize(1) shouldBe 0
+                    game.librarySize(1) shouldBe 1
+                }
             }
 
             test("a teamwork cost paid by another creature does not trigger her") {

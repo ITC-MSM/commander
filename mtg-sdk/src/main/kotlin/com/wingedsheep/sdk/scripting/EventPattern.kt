@@ -1553,8 +1553,9 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
          * that instructs an **opponent** to tap a creature they control makes *them* the tapper, so
          * a `You` pattern does not fire (Tangle Wire).
          *
-         * "An **untapped** creature" needs no separate axis: tapping is a transition (CR 603.2f), so
-         * an already-tapped permanent emits no tap event at all.
+         * "An **untapped** creature" needs no separate axis: tapping is a transition (CR 701.26a —
+         * "only untapped permanents can be tapped"), so an already-tapped permanent emits no tap
+         * event at all.
          */
         val tapper: Player? = null,
         /**
@@ -1566,6 +1567,11 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
          * are both performed by the permanent's own controller, so only the reason separates them.
          * Only the causes the engine classifies can be asked for — everything else reports
          * [TapReason.UNSPECIFIED] and is matched only by a null here. See [TapReason].
+         *
+         * **Use `null`, never [TapReason.UNSPECIFIED], for "any cause".** Asking for `UNSPECIFIED`
+         * is a legal but meaningless predicate: it matches only the taps the engine has *not*
+         * classified, so its meaning would quietly shrink the day a new cause is named, and it
+         * renders as no clause at all in [description]. No printed card wants it.
          */
         val reason: TapReason? = null
     ) : EventPattern {

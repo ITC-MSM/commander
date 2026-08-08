@@ -24,7 +24,8 @@ import com.wingedsheep.sdk.scripting.TapReason
  * `TapEventEnforcementTest` now bans that pattern outside the legitimate
  * enters-tapped/cleanup sites.
  *
- * Tapping is a transition (CR 603.2f): a permanent that is *already* tapped does not
+ * Tapping is a transition (CR 701.26a — "only untapped permanents can be tapped"):
+ * a permanent that is *already* tapped does not
  * become tapped again, so this is a no-op that emits no event. The same is true for an
  * entity that no longer exists. In both cases the original [state] is returned paired
  * with `null`, so callers can fold the event in without a special case:
@@ -80,7 +81,8 @@ fun tap(
     reason: TapReason = TapReason.UNSPECIFIED,
 ): Pair<GameState, TappedEvent?> {
     val container = state.getEntity(entityId) ?: return state to null
-    // CR 603.2f: tapping an already-tapped permanent is not a transition — no event.
+    // CR 701.26a: only untapped permanents can be tapped, so tapping an already-tapped
+    // permanent is not a transition — no event.
     if (container.has<TappedComponent>()) return state to null
     val cardName = container.get<CardComponent>()?.name ?: "Permanent"
     val tapper = tappedById

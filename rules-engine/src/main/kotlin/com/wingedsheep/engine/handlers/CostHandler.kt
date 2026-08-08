@@ -948,6 +948,16 @@ class CostHandler {
         } else {
             choices
         }
+        // One permanent, one contribution. A repeated id would inflate both floors below — the
+        // count check immediately after and the measure check under it — while the permanent is
+        // only ever paid with once. Checked here, ahead of both, and for every action: TAP used to
+        // reject a duplicate incidentally (its second pass saw the permanent already tapped) but
+        // now validates against the pre-payment state, and SACRIFICE/EXILE only ever rejected one
+        // by accident (count arithmetic; "not found" on the second move). Mirrors the same guard in
+        // `CastSpellHandler.validate`.
+        if (toPay.size != toPay.distinct().size) {
+            return CostPaymentResult.failure("The same permanent can't be chosen twice to $verb")
+        }
         if (toPay.size < minCount) {
             return CostPaymentResult.failure("Not enough permanents chosen to $verb (need $minCount, got ${toPay.size})")
         }
@@ -974,14 +984,6 @@ class CostHandler {
         if (atom.action == PermanentCostAction.TAP) {
             val context = PredicateContext(controllerId = controllerId)
             val projected = state.projectedState
-            // One permanent, one contribution: a repeated id would double-count toward the measure
-            // floor above while only ever being tapped once. Checked up front because the
-            // already-tapped guard below now runs against the pre-payment state (it used to catch a
-            // duplicate incidentally, on the second pass over the same permanent). Mirrors the same
-            // guard in `CastSpellHandler.validate`.
-            if (toPay.size != toPay.distinct().size) {
-                return CostPaymentResult.failure("The same permanent can't be chosen twice to $verb")
-            }
             for (id in toPay) {
                 val container = state.getEntity(id)
                     ?: return CostPaymentResult.failure("Permanent to tap not found")
