@@ -18,11 +18,14 @@ import com.wingedsheep.sdk.scripting.targets.TargetObject
  * using teamwork, instead choose target creature card in your graveyard. Return the chosen card to
  * the battlefield.
  *
- * The **teamwork-only targeting** shape of teamwork (CR 702.194c): "instead choose" replaces the
- * target requirement itself, not the effect's size, so the two branches are two different
- * announcements. That's the shared optional-additional-cost rail's `kickerTarget` / `kickerEffect`
- * slots — the same ones Fight with Fire and Brave the Wilds ride — serving teamwork here. A
- * teamwork cast can therefore reanimate a creature card the plain cast could not even target.
+ * The **teamwork-only targeting** shape of teamwork: "instead choose" replaces the target
+ * requirement itself, not the effect's size, so the two branches are two different announcements.
+ * CR 601.2c is the rules basis ("a spell may require alternative targets only if an alternative or
+ * additional cost was chosen for it"); CR 702.194c supplies the other direction, that the plain
+ * cast is announced as though the teamwork clause's target weren't there. That maps onto the
+ * shared optional-additional-cost rail's `kickerTarget` / `kickerEffect` slots — the same ones
+ * Fight with Fire and Brave the Wilds ride — serving teamwork here. A teamwork cast can therefore
+ * reanimate a creature card the plain cast could not even target.
  *
  * The mana value is the graveyard card's own printed value; a card in a graveyard has no
  * continuous effects applied to it, so no projection is involved on either branch. Both branches

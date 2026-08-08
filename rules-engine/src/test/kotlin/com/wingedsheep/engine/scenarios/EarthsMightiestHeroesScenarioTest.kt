@@ -7,6 +7,7 @@ import com.wingedsheep.sdk.core.Phase
 import com.wingedsheep.sdk.core.Step
 import io.kotest.assertions.withClue
 import io.kotest.matchers.collections.shouldBeEmpty
+import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
@@ -108,6 +109,72 @@ class EarthsMightiestHeroesScenarioTest : ScenarioTestBase() {
                 game.isOnBattlefield("Wall of Swords") shouldBe true
                 withClue("the five noncreature cards are the rest, and go to the graveyard") {
                     game.isInGraveyard(1, "Forest") shouldBe true
+                    game.state.getLibrary(game.player1Id).shouldBeEmpty()
+                }
+            }
+
+            // `minSelections == 0` is asserted on both branches above but never exercised. "You
+            // *may* put" means declining is legal, and then every revealed card is "the rest".
+            test("selecting nothing is legal and sends all eight revealed cards to the graveyard") {
+                val game = board()
+
+                game.castSpell(1, "Earth's Mightiest Heroes").error shouldBe null
+                game.resolveStack()
+
+                game.getPendingDecision()
+                    .shouldNotBeNull()
+                    .shouldBeInstanceOf<SelectCardsDecision>()
+                    .minSelections shouldBe 0
+
+                game.skipSelection().error shouldBe null
+                game.resolveStack()
+
+                withClue("nothing was chosen, so no creature reaches the battlefield") {
+                    game.isOnBattlefield("Grizzly Bears") shouldBe false
+                    game.isOnBattlefield("Hill Giant") shouldBe false
+                    game.isOnBattlefield("Wall of Swords") shouldBe false
+                }
+                withClue("all eight revealed cards are 'the rest'") {
+                    game.isInGraveyard(1, "Grizzly Bears") shouldBe true
+                    game.isInGraveyard(1, "Hill Giant") shouldBe true
+                    game.isInGraveyard(1, "Wall of Swords") shouldBe true
+                    game.findCardsInGraveyard(1, "Forest") shouldHaveSize 5
+                    game.state.getLibrary(game.player1Id).shouldBeEmpty()
+                }
+            }
+
+            // "Reveal the top eight cards" takes as many as are there — a three-card library is
+            // not an error and does not stall the resolution.
+            test("a library of fewer than eight cards reveals as many as it has") {
+                val game = scenario()
+                    .withPlayers("Player1", "Player2")
+                    .withCardInHand(1, "Earth's Mightiest Heroes")
+                    .withLandsOnBattlefield(1, "Forest", 6)
+                    .withCardInLibrary(1, "Grizzly Bears")
+                    .withCardInLibrary(1, "Forest")
+                    .withCardInLibrary(1, "Forest")
+                    .withActivePlayer(1)
+                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                    .build()
+
+                val bears = game.findCardsInLibrary(1, "Grizzly Bears").first()
+
+                game.castSpell(1, "Earth's Mightiest Heroes").error shouldBe null
+                game.resolveStack()
+
+                val decision = game.getPendingDecision()
+                    .shouldNotBeNull()
+                    .shouldBeInstanceOf<SelectCardsDecision>()
+                withClue("only one of the three revealed cards is a creature card") {
+                    decision.maxSelections shouldBe 1
+                }
+
+                game.selectCards(listOf(bears)).error shouldBe null
+                game.resolveStack()
+
+                game.isOnBattlefield("Grizzly Bears") shouldBe true
+                withClue("the two Forests are the rest, and the library is emptied, not underflowed") {
+                    game.findCardsInGraveyard(1, "Forest") shouldHaveSize 2
                     game.state.getLibrary(game.player1Id).shouldBeEmpty()
                 }
             }

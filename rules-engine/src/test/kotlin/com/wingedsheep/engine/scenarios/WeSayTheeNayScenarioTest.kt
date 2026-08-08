@@ -15,6 +15,7 @@ import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.string.shouldNotContain
 import io.kotest.matchers.types.shouldBeInstanceOf
 
 /**
@@ -24,23 +25,26 @@ import io.kotest.matchers.types.shouldBeInstanceOf
  *   Counter target spell unless its controller pays {2}. Counter that spell unless its controller
  *   pays {4} instead if this spell was cast using teamwork.
  *
- * Both branches are pinned by the same board: Player 2 casts Grizzly Bears with four Forests, two
- * of which pay for it. Two Forests are left untapped — enough for the plain {2} tax, short of the
- * teamwork {4}. So the plain cast produces the "pay?" offer and the teamwork cast counters
- * outright, which is exactly the difference the card prints.
+ * The board is the same shape throughout — Player 2 casts Grizzly Bears, which eats two of their
+ * Forests — with only the Forest count varying, so the tax is what the tests are reading:
+ *
+ *  - four Forests (two left untapped): the plain cast offers a {2} the controller can pay, and the
+ *    teamwork cast is out of reach, so no offer is made at all and the spell is countered;
+ *  - six Forests (four left untapped): the teamwork cast offers a {4} — named in the prompt, so the
+ *    number itself is pinned, not just "more than 2" — and paying it saves Grizzly Bears.
  */
 class WeSayTheeNayScenarioTest : ScenarioTestBase() {
 
     init {
         context("We Say Thee Nay!") {
 
-            fun board() = scenario()
+            fun board(forests: Int = 4) = scenario()
                 .withPlayers("Player1", "Player2")
                 .withCardInHand(1, "We Say Thee Nay!")
                 .withLandsOnBattlefield(1, "Island", 2)
                 .withCardOnBattlefield(1, "Hill Giant")
                 .withCardInHand(2, "Grizzly Bears")
-                .withLandsOnBattlefield(2, "Forest", 4)
+                .withLandsOnBattlefield(2, "Forest", forests)
                 .withActivePlayer(2)
                 .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
                 .build()
@@ -112,6 +116,55 @@ class WeSayTheeNayScenarioTest : ScenarioTestBase() {
                 withClue("the spell is countered and goes to its owner's graveyard") {
                     game.isOnBattlefield("Grizzly Bears") shouldBe false
                     game.isInGraveyard(2, "Grizzly Bears") shouldBe true
+                }
+            }
+
+            // The test above only proves the teamwork tax is *more than* the two mana on the
+            // table. This one names the number: with four Forests left untapped the offer is
+            // actually made, and the prompt has to say {4} — not {3}, not {5}.
+            test("the teamwork tax is exactly {4}, and paying it saves the spell") {
+                val game = board(forests = 6)
+                val giant = game.findPermanent("Hill Giant").shouldNotBeNull()
+
+                game.castSpell(2, "Grizzly Bears").error shouldBe null
+                game.passPriority()
+
+                val bearsOnStack = game.state.stack.first { entityId ->
+                    game.state.getEntity(entityId)?.get<CardComponent>()?.name == "Grizzly Bears"
+                }
+                val cardId = game.findCardsInHand(1, "We Say Thee Nay!").first()
+
+                // Teamwork 2 — the 3/3 Hill Giant clears the threshold on its own.
+                game.execute(
+                    CastSpell(
+                        playerId = game.player1Id,
+                        cardId = cardId,
+                        targets = listOf(ChosenTarget.Spell(bearsOnStack)),
+                        declaredCostSlot = ChoiceSlot.TEAMWORK,
+                        additionalCostPayment = AdditionalCostPayment(
+                            variableCostPermanents = listOf(giant),
+                        ),
+                    ),
+                ).error shouldBe null
+
+                game.resolveStack()
+
+                val decision = game.getPendingDecision()
+                    .shouldNotBeNull()
+                    .shouldBeInstanceOf<YesNoDecision>()
+                decision.playerId shouldBe game.player2Id
+                withClue("teamwork was declared, so the tax is {4} rather than the printed {2}") {
+                    decision.prompt shouldContain "{4}"
+                    decision.prompt shouldNotContain "{2}"
+                }
+
+                // Four of the six Forests are still untapped, which is exactly {4}.
+                game.answerYesNo(true).error shouldBe null
+                game.submitManaSourcesAutoPay().error shouldBe null
+                game.resolveStack()
+
+                withClue("Player 2 paid the {4}, so Grizzly Bears is not countered") {
+                    game.isOnBattlefield("Grizzly Bears") shouldBe true
                 }
             }
         }

@@ -27,16 +27,21 @@ is unchanged here. No engine or SDK code was touched.
 
 ## Tests
 
-One file per card, all under `rules-engine/src/test/kotlin/.../scenarios/`. 13 tests, every card
+One file per card, all under `rules-engine/src/test/kotlin/.../scenarios/`. 17 tests, every card
 covering both branches.
 
-Three of the four assert against `getLegalActions` directly, not just `execute(CastSpell(...))`,
-because the teamwork bugs found in u02/u03 all lived in `CastSpellEnumerator`'s advertising path:
+Two of the four assert against `getLegalActions` directly, not just `execute(CastSpell(...))`,
+because the teamwork bugs found in u02/u03 all lived in `CastSpellEnumerator`'s advertising path.
+The other two (We Say Thee Nay!, Earth's Mightiest Heroes) drive `castSpell`/`CastSpell` only —
+neither has a branch-dependent target or mode, so their enumeration path is the generic one
+`TeamworkMechanicScenarioTest` already covers.
 
 - `CruelAllianceScenarioTest` — with only a mana-value-6 creature on the board the plain `CastSpell`
   is **not** advertised while the `CastWithKicker` teamwork variant is, carrying that creature as a
-  valid target; and with no creature to tap, the teamwork variant is advertised **unaffordable**.
-- `TooEvilToStayDeadScenarioTest` — same shape over the graveyard.
+  valid target; with a cheap creature present both are advertised and the plain one's
+  `validTargets` is the narrow list; and with no creature to tap, the teamwork variant is
+  advertised **unaffordable**.
+- `TooEvilToStayDeadScenarioTest` — same shape over the graveyard, both directions.
 
 ## Gate
 

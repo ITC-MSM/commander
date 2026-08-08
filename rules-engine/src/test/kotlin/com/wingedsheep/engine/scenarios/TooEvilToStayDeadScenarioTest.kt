@@ -11,6 +11,7 @@ import com.wingedsheep.sdk.scripting.AdditionalCostPayment
 import com.wingedsheep.sdk.scripting.ChoiceSlot
 import io.kotest.assertions.withClue
 import io.kotest.matchers.collections.shouldContain
+import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 
@@ -153,6 +154,38 @@ class TooEvilToStayDeadScenarioTest : ScenarioTestBase() {
                 teamworkCast.isAffordable shouldBe true
                 teamworkCast.additionalCostInfo?.costType shouldBe "TapForTotalPower"
                 teamworkCast.validTargets.shouldNotBeNull() shouldContain dragon
+            }
+
+            // The mirror of the test above: with a legal cheap target present, both variants are
+            // offered, and the plain one advertises the *narrow* list. This is the assertion that
+            // catches a filter that silently widened.
+            test("the enumerator offers both casts, with the plain one restricted to the cheap creature") {
+                val game = scenario()
+                    .withPlayers("Player1", "Player2")
+                    .withCardInHand(1, "Too Evil to Stay Dead")
+                    .withLandsOnBattlefield(1, "Swamp", 3)
+                    .withCardOnBattlefield(1, "Craw Wurm")
+                    .withCardInGraveyard(1, "Hill Giant")
+                    .withCardInGraveyard(1, "Shivan Dragon")
+                    .withActivePlayer(1)
+                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                    .build()
+
+                val giant = game.findCardsInGraveyard(1, "Hill Giant").first()
+                val dragon = game.findCardsInGraveyard(1, "Shivan Dragon").first()
+                val casts = game.getLegalActions(1)
+                    .filter { it.description.startsWith("Cast Too Evil to Stay Dead") }
+
+                val plainCast = casts.single { it.actionType == "CastSpell" }
+                withClue("the mana value 6 Shivan Dragon is outside the plain branch's filter") {
+                    plainCast.validTargets shouldBe listOf(giant)
+                }
+
+                val teamworkCast = casts.single { it.actionType == "CastWithKicker" }
+                withClue("the teamwork branch has no mana value restriction, so both are reachable") {
+                    teamworkCast.validTargets.shouldNotBeNull()
+                        .shouldContainExactlyInAnyOrder(giant, dragon)
+                }
             }
         }
     }

@@ -16,17 +16,18 @@ import com.wingedsheep.sdk.scripting.targets.TargetCreature
  * Exile target creature with mana value 3 or less. If this spell was cast using teamwork, instead
  * exile target creature and you gain 3 life.
  *
- * The **teamwork-only targeting** shape of teamwork (CR 702.194c): "instead" here replaces the
- * whole sentence, target restriction included, so this is not a rider on one effect — the declared
- * cast announces a *different* target requirement. That's the shared optional-additional-cost
- * rail's `kickerTarget` / `kickerEffect` slots (Fight with Fire, Brave the Wilds), which serve
- * whichever mechanic declared — teamwork here. The plain cast can only ever announce a creature
- * with mana value 3 or less; the teamwork cast announces any creature and cannot be announced at
- * all unless a creature is there to target.
+ * The **teamwork-only targeting** shape of teamwork: "instead" here replaces the whole sentence,
+ * target restriction included, so this is not a rider on one effect — the declared cast announces a
+ * *different* target requirement. CR 601.2c is the rules basis ("a spell may require alternative
+ * targets only if an alternative or additional cost was chosen for it"); CR 702.194c supplies the
+ * other direction, that the plain cast is announced as though the teamwork clause's target weren't
+ * there. That maps onto the shared optional-additional-cost rail's `kickerTarget` / `kickerEffect`
+ * slots (Fight with Fire, Brave the Wilds), which serve whichever mechanic declared — teamwork
+ * here. The plain cast can only ever announce a creature with mana value 3 or less; the teamwork
+ * cast announces any creature and cannot be announced at all unless a creature is there to target.
  *
  * Because the branch replaces the effect wholesale, the teamwork branch restates the exile
- * alongside the life gain. Mana value is read off the creature's card, so an animated land (mana
- * value 0) is a legal plain-cast target and a token (also 0) is too.
+ * alongside the life gain.
  */
 val CruelAlliance = card("Cruel Alliance") {
     manaCost = "{2}{B}"
