@@ -17093,7 +17093,7 @@
                         }
                     }
                 },
-                "oncePerTurn": true
+                "effectOncePerTurn": true
             }
         ]
     },

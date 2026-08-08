@@ -441,13 +441,20 @@ Baron Strucker, HYDRA Overlord [88] ("Whenever another Villain you control enter
 connive. Do this only once each turn." — with a trigger cap, two Villains entering together would
 only trigger for the first, so you could not pick which one connives).
 
-**Follow-up — seven pre-existing cards outside MSH are still mis-flagged.** They print "Do this only
-once each turn" but carry `oncePerTurn = true`, so declining burns the turn's only fire (the Legolas
-ruling says the opposite in as many words). Out of scope for the MSH unit that added the flag;
-migrating each is a one-line swap plus a scenario test:
+**Also migrated — seven pre-existing cards outside MSH (7).** They print "Do this only once each
+turn" but carried `oncePerTurn = true`, so declining burned the turn's only fire (the Legolas ruling
+says the opposite in as many words, and the Gatherer rulings on five of the seven say "once you
+*choose* to …, that ability won't trigger again that turn"). All seven now use `effectOncePerTurn`,
+each with a scenario test that declines one instance and takes a later one:
 `big/cards/AncientCornucopia.kt` · `tla/cards/EarthKingdomGeneral.kt` ·
 `dsk/cards/IrreverentGremlin.kt` · `ltr/cards/LegolasCounterOfKills.kt` ·
 `tla/cards/PlanetariumOfWanShiTong.kt` · `spm/cards/SpiderVerse.kt` · `eoe/cards/Terrasymbiosis.kt`.
+
+Planetarium of Wan Shi Tong drove one generalization of the lowering: its effect is
+`Composite(look at top card, May(cast it))`, and its ruling ties the turn's use to the *cast*, not
+the look. `withEffectBudgetGate` therefore searches the **tail** of a `CompositeEffect` for the
+consent gate — the payoff of a "do X, then you may Y" instruction is its last step — so the spending
+gate lands inside the "may" rather than around the whole composite.
 
 ### Power-only dynamic CDA granted for a duration — **Ms. Marvel, Kamala Khan** [67]
 > Embiggen Fist — Whenever you cast a spell that targets a creature you control, draw a card. Until
