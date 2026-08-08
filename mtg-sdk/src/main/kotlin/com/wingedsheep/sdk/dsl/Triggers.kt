@@ -9,6 +9,7 @@ import com.wingedsheep.sdk.scripting.ControlChangeDirection
 import com.wingedsheep.sdk.scripting.EventPattern.*
 import com.wingedsheep.sdk.scripting.ExploreReveal
 import com.wingedsheep.sdk.scripting.GameObjectFilter
+import com.wingedsheep.sdk.scripting.TapReason
 import com.wingedsheep.sdk.scripting.TriggerBinding
 import com.wingedsheep.sdk.scripting.TriggerSpec
 import com.wingedsheep.sdk.scripting.events.AbilityTargetMatch
@@ -1466,6 +1467,17 @@ object Triggers {
     )
 
     /**
+     * Whenever this permanent becomes tapped **to pay a teamwork cost** (CR 702.194a) — Agent
+     * Maria Hill. Fires only for a creature tapped to pay a spell's teamwork additional cost, never
+     * for the same creature tapped to attack, to crew, for mana, or by an opponent's effect; see
+     * [TapReason].
+     */
+    val BecomesTappedForTeamwork: TriggerSpec = TriggerSpec(
+        event = TapEvent(reason = TapReason.TEAMWORK),
+        binding = TriggerBinding.SELF
+    )
+
+    /**
      * Whenever this permanent becomes untapped.
      */
     val BecomesUntapped: TriggerSpec = TriggerSpec(
@@ -1490,12 +1502,17 @@ object Triggers {
      * tapped", Uncontrolled Infestation) or other bindings. Pass [filter] with
      * [TriggerBinding.ANY] for "whenever a creature or land becomes tapped"
      * (Temporal Distortion).
+     *
+     * [reason] restricts *why* the permanent became tapped — null (the default) is the
+     * cause-agnostic wording, [TapReason.TEAMWORK] the "to pay a teamwork cost" one. Use
+     * [BecomesTappedForTeamwork] for the SELF teamwork shape.
      */
     fun becomesTapped(
         binding: TriggerBinding = TriggerBinding.SELF,
-        filter: GameObjectFilter? = null
+        filter: GameObjectFilter? = null,
+        reason: TapReason? = null
     ): TriggerSpec =
-        TriggerSpec(event = TapEvent(filter), binding = binding)
+        TriggerSpec(event = TapEvent(filter, reason = reason), binding = binding)
 
     /**
      * Generic "becomes untapped" factory — use [BecomesUntapped] for SELF; reach for this factory

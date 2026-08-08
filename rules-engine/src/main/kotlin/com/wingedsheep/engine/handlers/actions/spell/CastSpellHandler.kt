@@ -96,6 +96,7 @@ import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.AdditionalCost
 import com.wingedsheep.sdk.scripting.ChoiceSlot
+import com.wingedsheep.sdk.scripting.TapReason
 import com.wingedsheep.engine.mechanics.cost.VariablePermanentsCost
 import com.wingedsheep.sdk.scripting.costs.CostAtom
 import com.wingedsheep.sdk.scripting.costs.PermanentCostAction
@@ -2478,12 +2479,17 @@ class CastSpellHandler(
         // + self-alternative cost's additional costs (if using alternative cost)
         // + runtime additional costs from PlayWithAdditionalCostComponent
         // Per-mode additional costs override card-level costs when present
+        // The non-mana half of the optional cost the caster *declared* (kicker, bargain, teamwork —
+        // `action.declaredCostSlot`), kept aside so the payment loop below can tell it apart from
+        // the card's printed additional costs. Only this one carries the declared mechanic's
+        // identity, which is what names a tap's cause ([TapReason.forChoiceSlot]).
+        val declaredSlotAdditionalCost: AdditionalCost? = declaredOptionalCosts(action, cardDef)
+            .firstOrNull { it.additionalCost != null }
+            ?.additionalCost
+
         val allAdditionalCosts = buildList {
             if (cardDef != null) addAll(resolveAdditionalCostsForMode(cardDef, action))
-            declaredOptionalCosts(action, cardDef)
-                .firstOrNull { it.additionalCost != null }
-                ?.additionalCost
-                ?.let { add(it) }
+            declaredSlotAdditionalCost?.let { add(it) }
             if (action.useAlternativeCost && cardDef != null) {
                 // Each bundled additional cost is gated by the chosen alternative-cost type so a
                 // collision (e.g. granted warp on a card also being evoked) doesn't drag in the
@@ -2652,15 +2658,31 @@ class CastSpellHandler(
                             // Teamwork N taps the chosen creatures (CR 702.194a). Validation above
                             // already re-checked control, filter, and the measure floor.
                             //
-                            // A tap cause must be threaded through both sites that tap for this
-                            // atom — here and `CostHandler.payVariablePermanentsList`'s TAP branch.
-                            // See mechanics.md's Agent Maria Hill entry.
+                            // The tap carries its *cause* ([TapReason]), which is what lets
+                            // "whenever this becomes tapped to pay a teamwork cost" (Agent Maria
+                            // Hill) tell a teamwork tap apart from an attack, crew, or mana tap —
+                            // all of which are also performed by the creature's own controller, so
+                            // `tappedById` can't separate them. The cause comes from the *declared
+                            // cast-choice slot*, not from the atom: `VariablePermanents(TAP)` is a
+                            // generic atom any mechanic may reuse, and it is teamwork's declaration
+                            // (CR 601.2b / 702.194a) that makes this a teamwork tap. Stamped only on
+                            // the cost the declared optional ability actually contributed, so a
+                            // card's own printed tap cost isn't relabelled by an unrelated
+                            // declaration. Tapping itself goes through
+                            // [VariablePermanentsCost.tapAll] — the single tap site for this atom,
+                            // shared with the activated-ability payer in `CostHandler`.
                             val chosen = action.additionalCostPayment.variableCostPermanents
                             when (atom.action) {
-                                PermanentCostAction.TAP -> for (permId in chosen) {
-                                    val (tappedState, tapEvent) = tap(currentState, permId)
+                                PermanentCostAction.TAP -> {
+                                    val reason = if (additionalCost == declaredSlotAdditionalCost) {
+                                        TapReason.forChoiceSlot(action.declaredCostSlot)
+                                    } else {
+                                        TapReason.UNSPECIFIED
+                                    }
+                                    val (tappedState, tapEvents) =
+                                        VariablePermanentsCost.tapAll(currentState, chosen, reason)
                                     currentState = tappedState
-                                    tapEvent?.let(events::add)
+                                    events.addAll(tapEvents)
                                 }
                                 PermanentCostAction.SACRIFICE -> {
                                     sacrificedSnapshots.addAll(

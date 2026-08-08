@@ -1,79 +1,106 @@
-# Unit u04 — MSH teamwork, the four non-modal payoffs
+# u05 — tap reason + Agent Maria Hill
 
-Branch `loop-msh-u04`, an independent PR against `main` — `loop-msh-u03` merged upstream as
-PR #1750, so this branch was rebased off the stack onto `origin/main` (`b11a8d70fe`) and carries
-only its own commits. Ordinary card work: the teamwork rail (`teamwork(n)`,
-`Conditions.TeamworkWasPaid`, `ChoiceSlot.TEAMWORK`) already shipped in u02/u03 and is unchanged
-here. No engine or SDK code was touched.
+Branch `loop-msh-u05`, built locally on `loop-msh-u04`. u01–u03 have all merged upstream (u03 as
+PR #1750), so the only extra commits in `git diff origin/main...HEAD` are u04's four; **review this
+unit against `loop-msh-u04...HEAD`**.
 
-## Cards
+Not a stacked PR: once u04 lands upstream, this branch is rebased onto `origin/main` and opened on
+its own. Being built on u04 is a local convenience, not a merge order — and note that a rebase
+invalidates this unit's gate, so re-run it on the new base before reporting green.
 
-- **Cruel Alliance** [92] — {2}{B} Sorcery, teamwork 2. Plain: exile target creature with mana value
-  3 or less. Teamwork: exile target creature (no restriction) and gain 3 life. Composes the shared
-  optional-additional-cost rail's `kickerTarget` / `kickerEffect` slots (the Fight with Fire / Brave
-  the Wilds shape) so the declared cast announces its *own* target requirement, plus
-  `Effects.Exile` + `Effects.GainLife` + `Effects.Composite`.
-- **Too Evil to Stay Dead** [118] — {2}{B} Sorcery, teamwork 4. Same `kickerTarget` / `kickerEffect`
-  shape: plain targets a creature card in your graveyard with mana value 4 or less, teamwork targets
-  any creature card in your graveyard. Both branches end in `Effects.PutOntoBattlefield`
-  (`TargetFilter.CreatureInYourGraveyard`, `Targets.CreatureCardInYourGraveyard`).
-- **We Say Thee Nay!** [82] — {1}{U} Instant — Arcane, teamwork 2. One
-  `Effects.CounterUnlessDynamicPays` whose generic amount is a
-  `DynamicAmount.Conditional(Conditions.TeamworkWasPaid, 4, 2)` — a single "counter unless they pay"
-  event whose price changes, not two counter effects.
-- **Earth's Mightiest Heroes** [165] — {4}{G}{G} Sorcery, teamwork 5. Gather → Select → Move
-  pipeline (`GatherCardsEffect(TopOfLibrary(8), revealed)` → `SelectFromCollectionEffect` →
-  two `MoveCollectionEffect`s), with a `ConditionalEffect(TeamworkWasPaid, …)` swapping only the
-  selection mode: `SelectionMode.ChooseAnyNumber` vs `SelectionMode.ChooseUpTo(1)`. Structurally the
-  same split KTK's See the Unwritten uses for its ferocious "two instead of one".
+## The primitive
+
+`TapReason` — `mtg-sdk/src/main/kotlin/com/wingedsheep/sdk/scripting/TapReason.kt`. A serializable
+enum, two members: `UNSPECIFIED` (default) and `TEAMWORK`. `TapReason.forChoiceSlot(slot)` maps a
+declared cast-choice slot to a cause; only `ChoiceSlot.TEAMWORK` maps to anything.
+
+Threaded through:
+
+- `TappedEvent.reason` (`rules-engine/.../core/GameEvent.kt`), defaulted, so serialized/replayed
+  events from before the field decode unchanged.
+- `tap(state, entityId, tappedById, reason)` (`rules-engine/.../core/TapHelpers.kt`) — the tap atom;
+  the reason defaults to `UNSPECIFIED`.
+- `EventPattern.TapEvent.reason: TapReason?` (`mtg-sdk/.../scripting/EventPattern.kt`) — null means
+  "any cause", so every existing tap trigger is unchanged. Rendered into the pattern description.
+- Matching: `TriggerMatcher` (per-event), `TriggerDetector.detectTapBatchTriggers` (batch — narrows
+  the batch by reason the same way it already narrows by tapper), `AttachmentTriggerDetector`
+  (ATTACHED binding).
+- DSL: `Triggers.becomesTapped(binding, filter, reason)` gained the parameter;
+  `Triggers.BecomesTappedForTeamwork` is the SELF facade the card uses.
+
+## Classified vs unspecified tap sites
+
+**Classified: teamwork only.** `CastSpellHandler`'s `CostAtom.VariablePermanents` payment branch
+stamps `TapReason.forChoiceSlot(action.declaredCostSlot)`, and only on the additional cost that the
+*declared* optional ability contributed (`declaredSlotAdditionalCost`), so a card's own printed tap
+cost can't be relabelled by an unrelated declaration.
+
+**Deliberately unspecified: everything else** — attacking, crew, saddle, convoke, mana abilities, a
+`{T}` activation cost, "tap target permanent" effects, and the activated-ability `VariablePermanents`
+TAP payer in `CostHandler`. Rationale: the cause is named by the mechanic that declared the cost, and
+an ability cost has no declared slot. Under-claiming makes a reading card stay silent; over-claiming
+makes it fire wrongly. I did not classify attack/crew even though each has a single chokepoint — no
+card reads them, and the enum is documented with the recipe for adding one.
+
+I acted on the previous units' suggestion: both tap sites for the atom now go through one chokepoint,
+`VariablePermanentsCost.tapAll(state, chosen, reason)`. Both `TAP-REASON HOOK` markers are gone.
+
+**One behavioural side effect to check in review:** folding `CostHandler.payVariablePermanentsList`'s
+TAP branch onto `tapAll` moved its per-permanent validation into a pass over the *pre-payment* state.
+The old interleaved loop rejected a duplicated id incidentally (second pass saw it already tapped);
+I replaced that with an explicit `toPay.distinct()` guard, mirroring the one `CastSpellHandler.validate`
+already has. That branch is unreached by any printed card today.
+
+## The card
+
+`mtg-sets/.../definitions/msh/cards/AgentMariaHill.kt` — {W} 2/1 Legendary Creature — Human Spy Hero,
+MSH #2, verified against Scryfall (name, cost, type line, oracle text, P/T, rarity, collector number,
+artist, flavor, image URI HTTP 200). No rulings on Scryfall. Composes existing primitives only:
+`Triggers.BecomesTappedForTeamwork` + `Effects.Composite(Effects.AddCounters(+1/+1, 1, Self),
+Effects.DrawCards(1))`. Canonical printing is MSH (first printing).
 
 ## Tests
 
-One file per card, all under `rules-engine/src/test/kotlin/.../scenarios/`. 17 tests, every card
-covering both branches.
+- `AgentMariaHillScenarioTest` — fires on a teamwork tap (counter + draw, projected 3/2); silent when
+  tapped by attacking, by crewing a Vehicle, and when a teamwork cost is paid by another creature; one
+  `getLegalActions` assertion that the teamwork cast variant is still advertised and prices her at
+  power 2 as an eligible payer.
+- `TapReasonScenarioTest` — the primitive itself: teamwork tap carries `TEAMWORK` (and its
+  `tappedById` is unchanged); the mana-payment land taps of that same cast are `UNSPECIFIED`; a plain
+  cast claims no teamwork anywhere; attack tap and crew tap are `UNSPECIFIED`; a cause-agnostic
+  `becomes tapped` trigger (Interface Ace) still fires on a teamwork tap; pattern description and
+  default; `TappedEvent` serialization round-trip plus legacy JSON without the field.
 
-Two of the four assert against `getLegalActions` directly, not just `execute(CastSpell(...))`,
-because the teamwork bugs found in u02/u03 all lived in `CastSpellEnumerator`'s advertising path.
-The other two (We Say Thee Nay!, Earth's Mightiest Heroes) drive `castSpell`/`CastSpell` only —
-neither has a branch-dependent target or mode, so their enumeration path is the generic one
-`TeamworkMechanicScenarioTest` already covers.
+## Docs / backlog
 
-- `CruelAllianceScenarioTest` — with only a mana-value-6 creature on the board the plain `CastSpell`
-  is **not** advertised while the `CastWithKicker` teamwork variant is, carrying that creature as a
-  valid target; with a cheap creature present both are advertised and the plain one's
-  `validTargets` is the narrow list; and with no creature to tap, the teamwork variant is
-  advertised **unaffordable**.
-- `TooEvilToStayDeadScenarioTest` — same shape over the graveyard, both directions.
+- `docs/card-sdk-language-reference.md`: `becomesTapped` entry gained the `reason` parameter, a new
+  `BecomesTappedForTeamwork` entry explains `TapReason` and the under-claiming policy, and the
+  Teamwork N mechanic block gained a "payer-side payoff" paragraph.
+- `mtgish-tooling` bridge: one comment on `WhenAPermanentBecomesTapped` saying it renders the
+  cause-agnostic trigger only and must not be used to draft the teamwork wording. No new capability
+  registered — the IR has no teamwork tag and this is a predicate on an existing trigger, not a new
+  primitive the emitter can map.
+- `backlog/sets/marvel-super-heroes/cards.md`: Agent Maria Hill ticked, header resynced via
+  `just fix-backlog`.
+- `backlog/sets/marvel-super-heroes/mechanics.md`: Teamwork N marked fully shipped (13/13), point 5
+  added for the tap cause. No other section touched.
 
 ## Gate
 
-`just build` (see the verdict block for the result). The four scenario tests were also run on their
-own first and are green. `just rebless-cards`, `just check-card-printing` ×4 (all ok, all canonical
-in MSH), `just fix-backlog` (239/276).
+`just test` — see the PR body for the result. `just rebless-cards` moved only Agent Maria Hill in
+`mtg-sets/src/test/resources/snapshots/cards/MSH.json`; `just check-card-printing "Agent Maria Hill"`
+clean.
 
-## Dropped
+## Things I am unsure about
 
-None. The conditional target filter — the flagged drop candidate — turned out to be expressible on
-the existing rail: `CardScript.kickerTargetRequirements` *replace* `targetRequirements` when a cast
-declares any slot on the optional-additional-cost rail, which is exactly "the teamwork cast
-announces a different target". No new primitive was needed.
-
-## Things I'm unsure about, for review
-
-- **`kickerTarget` forces the whole effect to be restated.** Too Evil to Stay Dead's printed last
-  sentence ("Return the chosen card to the battlefield") is shared between the branches, but because
-  `kickerSpellEffect` replaces `spellEffect` wholesale, it appears twice in the card file. That's
-  faithful, just duplicated; if there's an appetite for a "branch replaces only the target" shape
-  that's a separate feature, not this PR.
-- **Cruel Alliance's "unaffordable but still advertised" teamwork variant** is asserted as
-  `isAffordable == false` rather than absent. That matches the enumerator's explicit comment
-  ("the greyed-out variant still tells the player what teamwork would ask for"), but the unit brief
-  asked for "not advertised", so flagging the divergence rather than hiding it.
-- **No manual playthrough.** `SelectionMode.ChooseAnyNumber` on Earth's Mightiest Heroes shows an
-  8-card overlay with 3 selectable and 5 greyed out (`showAllCards = true`); I verified the decision
-  payload in the test (`maxSelections` 1 vs 3) but never looked at it in the client.
-- **`Instant — Arcane`** on We Say Thee Nay! is carried through as printed. Nothing in this set
-  cares about the Arcane subtype (no splice), so it is inert here.
-- I added one bullet to the Teamwork entry in `docs/card-sdk-language-reference.md` describing this
-  "different target *restriction* per branch" shape. No SDK change accompanies it — it documents an
-  authoring shape the rail already supported but the entry didn't name.
+- Whether the reviewer would rather see `TapReason` live next to `ChoiceSlot` (where I put it) or in
+  `sdk/scripting/events/` with the other event vocabulary.
+- Whether `tapAll` is thick enough to justify existing, given each caller still validates separately.
+  I kept it because it is what makes "one tap site per atom" true and is where the cause is documented.
+- The `additionalCost == declaredSlotAdditionalCost` identity check is structural equality on a data
+  class. It is exact for every printed card, but two structurally identical additional costs on one
+  card (one printed, one from the declared optional ability) would both be stamped.
+- No client work: `ClientEvent.PermanentTapped` does not carry the reason. Nothing in the UI needs it
+  today (the trigger is server-detected and shown as a stack object), but a future "why did this tap?"
+  affordance would need it plumbed.
+- Not done: no manual playthrough in the web client, no two-seat UX pass, no e2e test.

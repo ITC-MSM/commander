@@ -354,6 +354,57 @@
     ]
 }
 
+// Agent Maria Hill
+{
+    "name": "Agent Maria Hill",
+    "manaCost": "{W}",
+    "typeLine": "Legendary Creature — Human Spy Hero",
+    "oracleText": "Whenever Agent Maria Hill becomes tapped to pay a teamwork cost, put a +1/+1 counter on her and draw a card.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "TapEvent",
+                    "reason": "TEAMWORK"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "AddCounters",
+                            "counterType": "+1/+1",
+                            "count": 1,
+                            "target": "Self"
+                        },
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "2",
+        "rarity": "UNCOMMON",
+        "artist": "Jake Murray",
+        "flavorText": "\"You're going to have to trust me. You don't have the security clearance for the truth.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/e/9e327c67-1cf1-4d82-903c-b41c8e7cf747.jpg?1783902980"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Agent Phil Coulson
 {
     "name": "Agent Phil Coulson",

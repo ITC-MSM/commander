@@ -27,6 +27,7 @@ import com.wingedsheep.sdk.scripting.AbilityCost
 import com.wingedsheep.sdk.scripting.AdditionalCost
 import com.wingedsheep.sdk.scripting.DistributedCounterRemoval
 import com.wingedsheep.sdk.scripting.GameObjectFilter
+import com.wingedsheep.sdk.scripting.TapReason
 import com.wingedsheep.sdk.scripting.costs.CostAtom
 import com.wingedsheep.sdk.scripting.costs.PermanentCostAction
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
@@ -961,15 +962,28 @@ class CostHandler {
                 )
             }
         }
-        // A tap cause must be threaded through both sites that tap for this atom — here and
-        // `CastSpellHandler`'s VariablePermanents branch. See mechanics.md's Agent Maria Hill entry.
+        // An **activated ability's** TAP variable-permanents cost. This is the only unreached one of
+        // the three actions on the activated-ability path today — no printed card pays a TAP
+        // `VariablePermanents` cost from an ability — but keeping it honest is what lets the shared
+        // helper serve the first one that does.
+        //
+        // The tap cause ([TapReason]) stays UNSPECIFIED here on purpose: a cause is named by the
+        // *mechanic that declared the cost* (see [TapReason.forChoiceSlot]), and an ability cost has
+        // no declared cast-choice slot. Teamwork is a spell's additional cost (CR 702.194a) and is
+        // stamped on the cast path in `CastSpellHandler`; naming any cause here would be a guess.
         if (atom.action == PermanentCostAction.TAP) {
             val context = PredicateContext(controllerId = controllerId)
             val projected = state.projectedState
-            var newState = state
-            val events = mutableListOf<GameEvent>()
+            // One permanent, one contribution: a repeated id would double-count toward the measure
+            // floor above while only ever being tapped once. Checked up front because the
+            // already-tapped guard below now runs against the pre-payment state (it used to catch a
+            // duplicate incidentally, on the second pass over the same permanent). Mirrors the same
+            // guard in `CastSpellHandler.validate`.
+            if (toPay.size != toPay.distinct().size) {
+                return CostPaymentResult.failure("The same permanent can't be chosen twice to $verb")
+            }
             for (id in toPay) {
-                val container = newState.getEntity(id)
+                val container = state.getEntity(id)
                     ?: return CostPaymentResult.failure("Permanent to tap not found")
                 if (projected.getController(id) != controllerId) {
                     return CostPaymentResult.failure("Can only tap permanents you control")
@@ -983,10 +997,8 @@ class CostHandler {
                 if (excludeSelf && id == sourceId) {
                     return CostPaymentResult.failure("Cannot tap the source permanent for this cost")
                 }
-                val (tappedState, tapEvent) = tap(newState, id)
-                newState = tappedState
-                tapEvent?.let(events::add)
             }
+            val (newState, events) = VariablePermanentsCost.tapAll(state, toPay, TapReason.UNSPECIFIED)
             return CostPaymentResult.success(newState, manaPool, events)
         }
         if (atom.action == PermanentCostAction.SACRIFICE) {

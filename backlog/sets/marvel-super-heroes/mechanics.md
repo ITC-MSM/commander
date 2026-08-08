@@ -6,7 +6,7 @@ keyword, or engine capability) — not pure card authoring.
 
 Scope: the 276 booster cards (collector numbers 1–276). Triaged against the SDK on 2026-08-04,
 updated 2026-08-07 after **power-up** and the **per-turn effect budget** shipped, and 2026-08-08
-after **teamwork** shipped. **33 of the 276 are blocked**; every other card is buildable from
+after **teamwork** shipped in full. **32 of the 276 are blocked**; every other card is buildable from
 existing primitives.
 
 Supported today and *not* a blocker despite looking like one: **power-up** (see the first section
@@ -94,7 +94,7 @@ sweep is `.manaValueIsOdd()` / `.manaValueIsEven()` + a modal.
   (`CardPredicate.ManaValueAtMostDynamic(DynamicAmounts.sourcePower())` — the predicate exists, but
   nothing evaluates a source-relative dynamic filter inside delayed-trigger matching).
 
-## Teamwork N — SHIPPED ✅ (12 of 13 cards implemented, 1 still blocked)
+## Teamwork N — SHIPPED ✅ (all 13 cards implemented)
 
 > Teamwork 4 *(As an additional cost to cast this spell, you may tap any number of creatures you
 > control with total power 4 or more.)*
@@ -144,6 +144,16 @@ What that helper does:
    raise a teamwork total); folding their candidate selection in is an open follow-up.
    The candidate payload sent to the client is the crew/saddle `TapForPowerCreatureData`, under a
    `costType = "TapForTotalPower"` cost-payment phase.
+5. **The tap cause** — the payer-side half, added 2026-08-08 for Agent Maria Hill. `TappedEvent` now
+   carries a `TapReason` (`mtg-sdk/.../scripting/TapReason.kt`) alongside `tappedById`, matched by
+   `EventPattern.TapEvent.reason` and authored as `Triggers.BecomesTappedForTeamwork`. A separate axis
+   from attribution is what the card needs: a teamwork tap, an attack tap and a crew tap are all
+   performed by the creature's own controller, so `tappedById` is identical across them. Only
+   `TapReason.TEAMWORK` is classified — stamped by `CastSpellHandler` on the taps paying an additional
+   cost declared under `ChoiceSlot.TEAMWORK` (`TapReason.forChoiceSlot`) — and every other tap site
+   deliberately reports `UNSPECIFIED` rather than a guess. Both tap sites for the atom now go through
+   one chokepoint, `VariablePermanentsCost.tapAll`, so the cast payer and the ability payer can't
+   drift.
 
 Open follow-ups, neither reachable by a printed card today: folding crew's candidate selection onto
 `VariablePermanentsCost.candidates` (their measures must stay split), and modal casts from a
@@ -154,26 +164,23 @@ Tests: `TeamworkMechanicScenarioTest` (multi-creature payment, single-creature p
 an unmet threshold, already-tapped and opponent-controlled creatures, projected power via a lord,
 summoning sickness, the durable flag on a resolving permanent, teamwork-vs-kicked separation, the
 advertised legal action, the modal "Teamwork Orders" cases, and the CR 702.194c "Teamwork Rally"
-cases) plus one scenario test per implemented card.
+cases), `TapReasonScenarioTest` (the cause on each classified and unclassified tap site, a
+cause-agnostic trigger still matching, serialization), plus one scenario test per implemented card.
 
-**Implemented (12):** Helicarrier Strike [15] · Murdock's Crusade [24] · Atlantis Attacks [46] ·
-We Say Thee Nay! [82] · Cruel Alliance [92] · Too Evil to Stay Dead [118] · Widow's Bite [122] ·
-HULK SMASH! [135] · Repulsor Blast [150] · Team Tactics [155] · Earth's Mightiest Heroes [165] ·
-Go Nuts! [168]. Murdock's Crusade, Atlantis Attacks, Widow's Bite, HULK SMASH! and Go Nuts! are the
-"choose both instead" modal shape, all on `dynamicChooseCount` as above.
+**Implemented (13):** Agent Maria Hill [2] · Helicarrier Strike [15] · Murdock's Crusade [24] ·
+Atlantis Attacks [46] · We Say Thee Nay! [82] · Cruel Alliance [92] · Too Evil to Stay Dead [118] ·
+Widow's Bite [122] · HULK SMASH! [135] · Repulsor Blast [150] · Team Tactics [155] · Earth's
+Mightiest Heroes [165] · Go Nuts! [168]. Murdock's Crusade, Atlantis Attacks, Widow's Bite,
+HULK SMASH! and Go Nuts! are the "choose both instead" modal shape, all on `dynamicChooseCount` as
+above.
 
 Cruel Alliance and Too Evil to Stay Dead are a third shape the rail already covered: the teamwork
 "instead" replaces the *target requirement*, not the effect's size, so they use the shared
 optional-additional-cost `kickerTarget` / `kickerEffect` slots (Fight with Fire, Brave the Wilds) —
 the teamwork cast announces a target the plain cast could not.
 
-### Still blocked — 1 card ⛔
-
-- **Agent Maria Hill** [2] — "whenever she becomes tapped **to pay a teamwork cost**". `TappedEvent`
-  still carries only `tappedById` with no cause, so a teamwork tap is indistinguishable from a crew,
-  saddle, attack, or mana tap. Add a tap-reason field on the event (set in the teamwork payment path,
-  which now runs through `CostHandler`/`CastSpellHandler`) and a matching predicate on
-  `EventPattern.TapEvent`.
+Agent Maria Hill is the only *payer-side* payoff in the set: her trigger is on the creature that was
+tapped, not on the spell that was cast, which is why `Conditions.TeamworkWasPaid` cannot express it.
 
 ## Shield counters — 1 card ⛔
 

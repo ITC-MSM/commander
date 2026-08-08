@@ -7,6 +7,7 @@ import com.wingedsheep.sdk.core.TypeLine
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.ChoiceSlot
+import com.wingedsheep.sdk.scripting.TapReason
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -1010,13 +1011,21 @@ data class PriorityChangedEvent(
  *   rather than leaving it unattributed. Drives the "whenever **you tap** a creature an opponent
  *   controls" trigger family ([com.wingedsheep.sdk.scripting.EventPattern.TapEvent.tapper]); null
  *   only for a permanent with no controller at all.
+ * @property reason *why* it became tapped, for triggers that name a cause ("becomes tapped to pay a
+ *   teamwork cost" — [com.wingedsheep.sdk.scripting.EventPattern.TapEvent.reason]). Orthogonal to
+ *   [tappedById], which says *who* tapped it: a teamwork tap and an attack tap are both performed by
+ *   the permanent's own controller. Defaults to [TapReason.UNSPECIFIED] — only the tap sites the
+ *   engine has been taught to classify name a cause, and an unclassified tap must never masquerade
+ *   as a classified one. The default also lets an event serialized before the field existed decode
+ *   unchanged.
  */
 @Serializable
 @SerialName("TappedEvent")
 data class TappedEvent(
     val entityId: EntityId,
     val entityName: String,
-    val tappedById: EntityId? = null
+    val tappedById: EntityId? = null,
+    val reason: TapReason = TapReason.UNSPECIFIED
 ) : GameEvent
 
 /**

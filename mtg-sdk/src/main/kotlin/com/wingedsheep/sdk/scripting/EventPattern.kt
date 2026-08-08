@@ -1556,7 +1556,18 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
          * "An **untapped** creature" needs no separate axis: tapping is a transition (CR 603.2f), so
          * an already-tapped permanent emits no tap event at all.
          */
-        val tapper: Player? = null
+        val tapper: Player? = null,
+        /**
+         * *Why* the permanent had to become tapped — the difference between the cause-agnostic
+         * "whenever this becomes tapped" (null, the default, any cause) and "whenever this becomes
+         * tapped **to pay a teamwork cost**" ([TapReason.TEAMWORK], Agent Maria Hill).
+         *
+         * Orthogonal to [tapper], which says *who* caused the tap: a teamwork tap and an attack tap
+         * are both performed by the permanent's own controller, so only the reason separates them.
+         * Only the causes the engine classifies can be asked for — everything else reports
+         * [TapReason.UNSPECIFIED] and is matched only by a null here. See [TapReason].
+         */
+        val reason: TapReason? = null
     ) : EventPattern {
         override val description: String = buildString {
             if (tapper != null) {
@@ -1567,6 +1578,10 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
                 append(if (batch) "one or more " else "a ")
                 append(filter?.description ?: "permanent")
                 append(if (batch) " become tapped" else " becomes tapped")
+            }
+            if (reason != null && reason != TapReason.UNSPECIFIED) {
+                append(" ")
+                append(reason.description)
             }
         }
         override fun applyTextReplacement(replacer: TextReplacer): EventPattern {

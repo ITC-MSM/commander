@@ -9,6 +9,7 @@ import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.sdk.core.AbilityFlag
 import com.wingedsheep.sdk.core.CounterType
 import com.wingedsheep.sdk.model.EntityId
+import com.wingedsheep.sdk.scripting.TapReason
 
 /**
  * Tap a single permanent on the battlefield, emitting the [TappedEvent] that
@@ -57,8 +58,18 @@ import com.wingedsheep.sdk.model.EntityId
  * — every one of them knows the acting player — not to fall back to base [ControllerComponent],
  * which would misattribute a stolen creature's taps to its owner.
  *
+ * **Cause.** [TappedEvent.reason] records *why* it was tapped, which "becomes tapped to pay a
+ * teamwork cost" (Agent Maria Hill) reads. It is a separate axis from [tappedById] — a teamwork tap
+ * and an attack tap are both performed by the permanent's own controller, so attribution alone can
+ * never tell them apart. It defaults to [TapReason.UNSPECIFIED] and stays there for every tap site
+ * the engine has not been taught to name: an unclassified cause must never masquerade as a
+ * classified one, because a card reading that cause would then fire wrongly. Only the teamwork
+ * additional-cost payment classifies itself today; see [TapReason] for how to add the next cause.
+ *
  * @param tappedById the player causing the tap; null (the default) attributes it to the permanent's
  *   controller.
+ * @param reason why the permanent is becoming tapped; [TapReason.UNSPECIFIED] (the default) leaves
+ *   the cause unnamed.
  * @return the updated state paired with the emitted [TappedEvent], or `state to null`
  *   when the permanent was already tapped or doesn't exist (no mutation performed).
  */
@@ -66,6 +77,7 @@ fun tap(
     state: GameState,
     entityId: EntityId,
     tappedById: EntityId? = null,
+    reason: TapReason = TapReason.UNSPECIFIED,
 ): Pair<GameState, TappedEvent?> {
     val container = state.getEntity(entityId) ?: return state to null
     // CR 603.2f: tapping an already-tapped permanent is not a transition — no event.
@@ -75,7 +87,7 @@ fun tap(
         ?: state.projectedState.getController(entityId)
         ?: container.get<ControllerComponent>()?.playerId
     val newState = state.updateEntity(entityId) { it.with(TappedComponent) }
-    return newState to TappedEvent(entityId, cardName, tapper)
+    return newState to TappedEvent(entityId, cardName, tapper, reason)
 }
 
 /**

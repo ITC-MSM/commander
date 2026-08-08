@@ -463,6 +463,11 @@ class TriggerMatcher(
                 // detectTapBatchTriggers — never once per event here.
                 if (trigger.batch) return false
                 if (binding == TriggerBinding.SELF && event.entityId != sourceId) return false
+                // "… becomes tapped **to pay a teamwork cost**" — only a tap the engine classified
+                // with that cause counts. A null asks for no particular cause and matches every tap,
+                // which is what every cause-agnostic "becomes tapped" trigger keeps meaning.
+                val reason = trigger.reason
+                if (reason != null && event.reason != reason) return false
                 // "Whenever you tap …" — only a tap this trigger's controller caused counts.
                 val tapper = trigger.tapper
                 if (tapper != null) {
