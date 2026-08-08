@@ -318,6 +318,18 @@ check-card-printing CARD:
 server:
     @if [ -f .env ]; then set -a && . ./.env && set +a; fi && ./gradlew :game-server:bootRun --args='--spring.profiles.active=local'
 
+# Start the game server and web client together
+[group: 'dev']
+dev:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    just server &
+    server_pid=$!
+    just client &
+    client_pid=$!
+    trap 'kill "$server_pid" "$client_pid" 2>/dev/null || true; wait "$server_pid" "$client_pid" 2>/dev/null || true' EXIT INT TERM
+    wait "$server_pid" "$client_pid"
+
 # Start the game server with Onslaught set enabled
 [group: 'dev']
 server-ons:
