@@ -73,9 +73,12 @@ val HowlsquadHeavy = card("Howlsquad Heavy") {
             cost = Costs.Tap
             effect = Effects.AddMana(
                 Color.RED,
+                // No `.youControl()` on the filter: `battlefield(Player.You, …)` already restricts
+                // to permanents you control, and the redundant predicate only doubled the
+                // qualifier in the generated description ("you control Goblins you control").
                 DynamicAmounts.battlefield(
                     Player.You,
-                    filter = GameObjectFilter.Creature.withSubtype(Subtype.GOBLIN).youControl()
+                    filter = GameObjectFilter.Creature.withSubtype(Subtype.GOBLIN)
                 ).count(),
             )
             manaAbility = true

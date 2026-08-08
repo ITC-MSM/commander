@@ -11,6 +11,7 @@ import com.wingedsheep.engine.legalactions.ModalLegalEnumeration
 import com.wingedsheep.engine.legalactions.TargetInfo
 import com.wingedsheep.engine.legalactions.utils.SelectionCostPresentation
 import com.wingedsheep.engine.mechanics.EscalateCosts
+import com.wingedsheep.engine.mechanics.ModalDfcCasts
 import com.wingedsheep.engine.mechanics.SpliceCasts
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.identity.CardComponent
@@ -162,6 +163,15 @@ class CastSpellEnumerator : ActionEnumerator {
                     context, cardId, cardDef, result, primaryFaceAffordable = primaryFaceAffordable
                 )
                 // Don't `continue` — let the surrounding loop also enumerate the primary face.
+            }
+
+            // Modal DFC whose back face is a *permanent* (CR 712.11b) — the Marvel Super Heroes
+            // hero cycle. That back lives in `backFace` rather than `cardFaces`, because it needs
+            // P/T and battlefield abilities, so it is not a "secondary spell face" and gets its own
+            // offer: cast the card transformed for the back face's own mana cost. Falls through to
+            // the primary face below, exactly like the branch above — both faces stay castable.
+            if (ModalDfcCasts.castFace(cardDef) != null) {
+                enumerateModalBackFace(context, cardId, cardDef, result)
             }
 
             if (cardDef.layout == com.wingedsheep.sdk.model.CardLayout.SPLIT && cardDef.cardFaces.isNotEmpty()) {
@@ -2726,6 +2736,119 @@ class CastSpellEnumerator : ActionEnumerator {
      * @return True if an *affordable* secondary-face cast was emitted. The caller uses this to
      *        decide whether to emit a grayed-out placeholder for an unaffordable primary face.
      */
+    /**
+     * Offer the **back** face of a modal DFC whose back is a permanent (CR 712.11b) as a second
+     * cast option from hand — Jennifer Walters // The Sensational She-Hulk and the rest of the
+     * Marvel Super Heroes hero cycle.
+     *
+     * Deliberately shaped like `CastFromZoneEnumerator.enumerateDisturb`, because it is the same
+     * engine path: the card goes on the stack **transformed**, so everything except the cost is
+     * read off the back face — its card types decide the timing (CR 712.11c: only the face being
+     * cast is evaluated), its target requirements and `auraTarget` decide what must be chosen, and
+     * its name labels the offer, since the player is picking "cast The Sensational She-Hulk", not
+     * "cast Jennifer Walters". The cost is that face's own printed mana cost (CR 712.8f gives a
+     * modal back face its own mana value), run through the same battlefield cost-modifier pipeline
+     * as any other cast.
+     *
+     * Casting the back face grants no timing permission of its own, so a permanent back is
+     * sorcery-speed unless it has flash.
+     *
+     * The caller has already applied the two whole-card gates — `cantCastSpell` and the front-face
+     * `castRestrictions` — and skipped this card entirely if either failed, so neither is re-checked
+     * here. Per CR 712.11c only the face being cast is evaluated, so a back face with a cast
+     * restriction of its own would need its own check; none of the cycle has one.
+     */
+    private fun enumerateModalBackFace(
+        context: EnumerationContext,
+        cardId: EntityId,
+        cardDef: CardDefinition,
+        result: MutableList<LegalAction>,
+    ) {
+        val back = ModalDfcCasts.castFace(cardDef) ?: return
+        val state = context.state
+        val playerId = context.playerId
+
+        val hasFlash = back.keywords.contains(Keyword.FLASH) ||
+            context.castPermissionUtils.hasGrantedFlash(state, cardId)
+        if (!back.typeLine.isInstant && !hasFlash && !context.canPlaySorcerySpeed) return
+
+        val description = "Cast ${back.name}"
+        val backAction = CastSpell(
+            playerId, cardId,
+            useAlternativeCost = true,
+            alternativeCostType = AlternativeCostType.MODAL_BACK_FACE
+        )
+
+        val effectiveCost = context.costCalculator.calculateEffectiveCostWithAlternativeBase(
+            state, cardDef, back.manaCost, playerId
+        )
+        val costString = effectiveCost.toString()
+
+        val canAfford = context.manaSolver.canPay(
+            state, playerId, effectiveCost, precomputedSources = context.availableManaSources
+        )
+        if (!canAfford) {
+            // Surface it grayed out rather than dropping it: both faces belong in the
+            // drag-to-play menu so the choice is deliberate (same reasoning as a spell back).
+            result.add(
+                LegalAction(
+                    actionType = "CastModalBackFace",
+                    description = description,
+                    action = backAction,
+                    affordable = false,
+                    manaCostString = costString,
+                    sourceZone = "HAND"
+                )
+            )
+            return
+        }
+
+        val targetReqs = buildList {
+            addAll(back.script.targetRequirements)
+            back.script.auraTarget?.let { add(it) }
+        }
+        val autoTapPreview = if (context.skipAutoTapPreview) null else {
+            context.manaSolver
+                .solve(state, playerId, effectiveCost, precomputedSources = context.availableManaSources)
+                ?.sources?.map { it.entityId }
+        }
+
+        if (targetReqs.isEmpty()) {
+            result.add(
+                LegalAction(
+                    actionType = "CastModalBackFace",
+                    description = description,
+                    action = backAction,
+                    manaCostString = costString,
+                    autoTapPreview = autoTapPreview,
+                    sourceZone = "HAND"
+                )
+            )
+            return
+        }
+
+        val targetInfos = context.targetUtils.buildTargetInfos(state, playerId, targetReqs, cardId)
+        if (!context.targetUtils.allRequirementsSatisfied(targetInfos)) return
+        val firstReq = targetReqs.first()
+        val firstInfo = targetInfos.first()
+        result.add(
+            LegalAction(
+                actionType = "CastModalBackFace",
+                description = description,
+                action = backAction,
+                validTargets = firstInfo.validTargets,
+                requiresTargets = true,
+                targetCount = firstInfo.maxTargets,
+                minTargets = firstReq.effectiveMinCount,
+                targetDescription = firstReq.description,
+                targetRequirements = if (targetInfos.size > 1) targetInfos else null,
+                manaCostString = costString,
+                autoTapPreview = autoTapPreview,
+                sourceZone = "HAND"
+            )
+        )
+    }
+
     private fun enumerateSecondaryFace(
         context: EnumerationContext,
         cardId: EntityId,

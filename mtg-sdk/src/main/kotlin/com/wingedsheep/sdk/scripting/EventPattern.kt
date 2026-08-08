@@ -1797,6 +1797,50 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
         }
     }
 
+    /**
+     * When one or more counters of a specific type are **removed** from a permanent — the mirror of
+     * [CountersPlacedEvent].
+     *
+     * Set [lastRemoved] for the "when the **last** counter is removed" templating that the
+     * counter-countdown mechanics share (CR 310.11b's Siege defeat trigger, and the vanishing /
+     * suspend family's "when the last time counter is removed from this permanent"). It's a
+     * property of the removal, not a separate event: the trigger fires only when the removal left
+     * the permanent with none of that counter type on it, so removing 2 of 5 defense counters is
+     * silent while the removal that takes the count to 0 fires exactly once. A removal of 0
+     * counters never fires it.
+     *
+     * Examples:
+     * - "When the last defense counter is removed from this permanent"
+     *   → CountersRemovedEvent(counterType = Counters.DEFENSE, lastRemoved = true) with
+     *     [TriggerBinding.SELF]
+     * - "Whenever one or more +1/+1 counters are removed from a creature you control"
+     *   → CountersRemovedEvent(counterType = Counters.PLUS_ONE_PLUS_ONE, filter =
+     *     GameObjectFilter.Creature.youControl())
+     *
+     * @property counterType The counter type to match, or [com.wingedsheep.sdk.core.Counters.ANY]
+     *   for counters of any kind.
+     * @property filter Filter for the permanent the counters were removed from.
+     * @property lastRemoved When true, fires only for the removal that takes the permanent's count
+     *   of [counterType] to zero.
+     */
+    @SerialName("CountersRemovedEvent")
+    @Serializable
+    data class CountersRemovedEvent(
+        val counterType: String,
+        val filter: GameObjectFilter = GameObjectFilter.Any,
+        val lastRemoved: Boolean = false,
+    ) : EventPattern {
+        override val description: String = buildString {
+            val typeLabel = if (counterType == com.wingedsheep.sdk.core.Counters.ANY) "" else "$counterType "
+            if (lastRemoved) {
+                append("the last ${typeLabel}counter is removed from ")
+            } else {
+                append("one or more ${typeLabel}counters are removed from ")
+            }
+            append(describeObjectForEvent(filter))
+        }
+    }
+
     // ---- Draw/Reveal Triggers ----
 
     /**

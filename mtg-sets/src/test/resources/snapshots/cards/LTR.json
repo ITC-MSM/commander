@@ -9655,7 +9655,7 @@
                     "entity": "Self",
                     "filter": "tapped"
                 },
-                "oncePerTurn": true
+                "effectOncePerTurn": true
             },
             {
                 "id": "ability_2",

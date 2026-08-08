@@ -43,7 +43,11 @@ val SpiderVerse = card("Spider-Verse") {
         trigger = Triggers.youCastSpell(
             requires = setOf(SpellCastPredicate.CastFromZoneOtherThan(Zone.HAND))
         )
-        oncePerTurn = true
+        // CR 603.2h, and the ruling says both halves out loud: "Once you choose to copy a spell
+        // with Spider-Verse's last ability, that ability won't trigger again for the duration of
+        // the turn. Any instances of the ability already on the stack when you choose to copy a
+        // spell will have no effect." Declining leaves the turn's copy unspent.
+        effectOncePerTurn = true
         effect = MayEffect(
             effect = Effects.CopyTargetSpell(
                 target = EffectTarget.TriggeringEntity,

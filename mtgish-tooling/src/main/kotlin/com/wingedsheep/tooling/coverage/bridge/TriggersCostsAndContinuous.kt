@@ -24,6 +24,14 @@ internal fun BridgeBuilder.triggersCostsAndContinuous() {
     // renders only the SELF subject + a nameable counter type; a non-self subject or unnameable counter
     // declines -> SCAFFOLD.
     supported("WhenAnyNumberOfCountersOfTypeArePutOnAPermanent", "trigger: one or more counters of a type put on this permanent (CountersPlacedEvent, SELF)")
+    // The removal mirror of the two tags above (EventPattern.CountersRemovedEvent /
+    // Triggers.countersRemovedFrom). `lastRemoved = true` is the "when the LAST counter is removed"
+    // variant that CR 310.11b's Siege defeat ability is built from (Divine Intervention prints the
+    // same shape). The emitter renders the SELF-subject + nameable-counter form; the last-counter tag
+    // additionally carries a *remover* selector, which our trigger doesn't model, so that one declines
+    // to SCAFFOLD rather than silently dropping the restriction.
+    supported("WhenACounterOfTypeIsRemovedFromAPermanent", "trigger: a counter of a type removed from this permanent (CountersRemovedEvent, SELF)")
+    supported("WhenAPlayerRemovesTheLastCounterOfTypeFromAPermanent", "trigger: the last counter of a type removed from this permanent (CountersRemovedEvent, lastRemoved)")
     supported("WhenACreatureAttacks", "trigger: attacks")
     // "Whenever this creature attacks a player, …" — the attacks-a-player trigger, gated on the declared
     // defender being a player (not a planeswalker or battle; CR 508.1 + Kaalia of the Vast's 2024-06-07

@@ -5,6 +5,7 @@ import com.wingedsheep.engine.mechanics.layers.ProjectedState
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.battlefield.CountersComponent
 import com.wingedsheep.engine.state.components.battlefield.DamageSourceLki
+import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.TokenComponent
 import com.wingedsheep.sdk.core.TypeLine
 import com.wingedsheep.sdk.model.EntityId
@@ -95,6 +96,13 @@ data class EntitySnapshot(
     val typeLine: TypeLine? = null,
     /** Card definition id, so dies/leaves triggers resolve for tokens after 704.5s cleanup. */
     val cardDefinitionId: String? = null,
+    /**
+     * The permanent's name at capture time. Frozen because a *cost* has to be describable after the
+     * permanent it consumed is gone: the emerge sacrifice (CR 702.119a) is named on the stack card
+     * and in the game log, and a sacrificed token leaves no entity to look the name up on once
+     * 704.5d cleanup has run.
+     */
+    val name: String? = null,
     /** The original card name when this permanent entered as a copy (Clever Impersonator). */
     val copyOfOriginalName: String? = null,
     /** For auras/equipment: the entity this was attached to when it left (enchanted-creature dies triggers). */
@@ -152,6 +160,7 @@ data class EntitySnapshot(
                 counters = countersOf(state, entityId),
                 keywords = projected.getKeywords(entityId),
                 lostAllAbilities = projected.hasLostAllAbilities(entityId),
+                name = state.getEntity(entityId)?.get<CardComponent>()?.name,
             )
         }
     }
@@ -184,17 +193,23 @@ fun captureEntitySnapshots(
 }
 
 /**
- * [captureEntitySnapshots] overload that also records each permanent's **token-ness** ([EntitySnapshot.wasToken])
- * as last-known information — a fact only [GameState] carries (via [TokenComponent]), not [ProjectedState]. Use at
- * a sacrifice site when a following sibling needs to know whether the sacrificed permanent was a token (Exploit's
- * `ExploitedEvent.sacrificedWasToken`, read by Skull Skaab's "exploits a nontoken creature" clause). Caller must
- * invoke this BEFORE the zone change so both projected values and the token component still resolve.
+ * [captureEntitySnapshots] overload that also records the facts only [GameState] carries, not
+ * [ProjectedState]: each permanent's **token-ness** ([EntitySnapshot.wasToken], via [TokenComponent])
+ * and its **name** ([EntitySnapshot.name], via [CardComponent]). Use at a sacrifice site when a
+ * following sibling needs either — Exploit's `ExploitedEvent.sacrificedWasToken` (read by Skull
+ * Skaab's "exploits a nontoken creature" clause) for the first, naming what an alternative cost ate
+ * for the second. Caller must invoke this BEFORE the zone change so projected values, the token
+ * component and the card component all still resolve.
  */
 fun captureEntitySnapshots(
     ids: List<EntityId>,
     state: GameState,
 ): List<EntitySnapshot> = captureEntitySnapshots(ids, state.projectedState).map { snapshot ->
-    snapshot.copy(wasToken = state.getEntity(snapshot.entityId)?.has<TokenComponent>() ?: false)
+    val container = state.getEntity(snapshot.entityId)
+    snapshot.copy(
+        wasToken = container?.has<TokenComponent>() ?: false,
+        name = container?.get<CardComponent>()?.name,
+    )
 }
 
 fun List<EntitySnapshot>.snapshotFor(id: EntityId): EntitySnapshot? =

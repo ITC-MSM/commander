@@ -177,14 +177,33 @@ The engine supplies the rest; **do not** write any of it onto the card:
   and *you* attack it. Its protector can never attack it (CR 310.8b) and is the only player who may block
   creatures attacking it (CR 310.8c).
 
+- **A Siege is defeated, not destroyed.** Every Siege has the intrinsic trigger "when the last defense
+  counter is removed from this permanent, exile it, then you may cast it transformed without paying its
+  mana cost" (CR 310.11b), supplied as `com.wingedsheep.sdk.scripting.Sieges.defeatAbility` and granted by
+  `TriggerAbilityResolver` to any permanent whose *projected* types make it a Siege. It is a
+  `countersRemovedFrom(counterType = Counters.DEFENSE, lastRemoved = true, binding = SELF)` trigger over a
+  `GatherCards(Self) → MoveCollection(→ exile) → MayEffect(CastFromCollectionWithoutPayingCost(castTransformed = true))`
+  pipeline. **A Siege card therefore only needs its `startingDefense` and its back face** — write the front
+  face's own abilities and nothing else. Two consequences worth knowing: a Siege that never had a defense
+  counter (a permanent that became a copy of one) can't have its "last" removed, so CR 704.5v bins it and
+  nothing is exiled or cast; and a Siege with no transforming back face is exiled and simply stays there.
+
 Engine-side helpers all live on `com.wingedsheep.engine.mechanics.battle.Battles` (`protectorOf`,
 `defenseOf`, `eligibleProtectors`, `canBeAttackedBy`); `ProjectedState.isBattle(entityId)` is the type
 check. The client receives a battle's defense in the ordinary `counters` map and its protector as
-`ClientCard.protectorId`.
+`ClientCard.protectorId`. A battle is a legal choice for "any target" (CR 115.4) alongside creatures,
+players and planeswalkers.
 
-Not implemented yet (tracked as follow-up work): the Siege defeat trigger — "when the last defense counter
-is removed from this permanent, exile it, then you may cast it transformed without paying its mana cost"
-(CR 310.11b). Until it lands, a defeated Siege goes to its owner's graveyard under CR 704.5v.
+Battles are printed **landscape** — the image is a portrait file holding a sideways card, as a
+Room's is. **`CardDefinition.isLandscapePrint` is the single place that decides what counts as
+printed sideways** (split layouts including Rooms, plus battles); a future landscape card type is
+one clause there and nothing else. It reaches the client as `ClientCard.isLandscapeFace` (in-game:
+battlefield, stack, hover preview) and `SealedCardInfo.isLandscape` (sealed / draft / deckbuilder /
+cube previews, via the one `landscapeImageRotateDeg` helper). Renderers read the flag rather than
+re-deriving orientation from `isRoom` / `cardFaces` / type lines — doing that in three different
+ways is exactly how battles ended up rendering sideways. The flag is per *face*: a Siege reports
+true, the portrait back face it becomes when defeated reports false, and `backFaceIsLandscape`
+carries the other side for the hover preview's flip toggle.
 
 ---
 
@@ -218,10 +237,20 @@ is removed from this permanent, exile it, then you may cast it transformed witho
   Casts exactly like an Adventure (creature face, or Omen via `CastSpell.faceIndex = 0`), but resolving the Omen
   **shuffles the card into its owner's library** instead of exiling it — no cast-from-exile linkage. DSL:
   `card { omen("Name") { spell { … } } }`.
-- `MODAL_DFC` — primary characteristics are the front face, `cardFaces[0]` is the back face (CR 712). Cast **one**
-  face from hand (front via primary characteristics, back via `CastSpell.faceIndex = 0`), never both. Unlike
-  ADVENTURE there is no exile-then-recast linkage — a spell back resolves as an ordinary spell (graveyard, or exile
-  when its script sets `selfExileOnResolve` via `spell { selfExile() }`). DSL: `card { modalBack("Name") { spell { … } } }`.
+- `MODAL_DFC` — primary characteristics are the front face; the caster picks one face before the card goes on the
+  stack and only that face is evaluated (CR 712.11b/712.11c). Two shapes, by what the back face *is*:
+  - **Spell back** — `cardFaces[0]`, cast via `CastSpell.faceIndex = 0`. No exile-then-recast linkage: it resolves
+    as an ordinary spell (graveyard, or exile when its script sets `selfExileOnResolve` via `spell { selfExile() }`).
+    DSL: `card { modalBack("Name") { spell { … } } }`. Flamescroll Celebrant // Revel in Silence.
+  - **Permanent back** — a full `CardDefinition` in `backFace`, because it needs P/T, keywords and battlefield
+    abilities. Built with `CardDefinition.modalDoubleFacedPermanent(front, back)`, cast via
+    `CastSpell(useAlternativeCost = true, alternativeCostType = MODAL_BACK_FACE)` for the **back face's own printed
+    mana cost**, and put on the stack *transformed* — the same engine path as disturb. CR 712.3 lets such a card
+    also transform, so the front's `{cost}: Transform …` ability reaches the same back face. The back keeps its
+    printed mana cost and takes **no** color indicator: per CR 712.8f a modal back face has its own mana value
+    (unlike CR 712.8e for nonmodal DFCs, where it stays the front's). The Marvel Super Heroes hero cycle —
+    Jennifer Walters // The Sensational She-Hulk, Bruce Banner // The Incredible Hulk, King T'Challa, Tony Stark,
+    Monica Rambeau.
 - `PREPARE` — primary characteristics are the creature face, `cardFaces[0]` is the **prepare spell** (an
   instant/sorcery) (Secrets of Strixhaven). The card is only ever cast as the creature; the prepare spell is never
   cast from hand. A creature that carries `Keyword.PREPARED` ("This creature enters prepared") becomes prepared on
@@ -1665,6 +1694,7 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
 - `ReduceSpellCostsThisTurnEffect(spellFilter, amount)` (facade `Effects.ReduceSpellCostsThisTurn(spellFilter, amount)`) — the **repeating** counterpart of `GrantNextSpellAffinityEffect`: "spells you cast this turn that match `spellFilter` cost {X} less to cast." `amount` (a `DynamicAmount`) is evaluated **once, when this effect resolves**, and the resolved number is stored on `GameState.turnSpellCostReductions`; every matching spell the controller casts for the rest of the turn is discounted by it, and nothing is consumed by a cast. Only generic mana is reduced (CR 601.2f). Two consequences of living on the state rather than on the source: the discount survives the source leaving the battlefield, and it is cleared at the turn boundary by `TurnManager.startTurn`. Resolving `amount` up front is what the Scion cycle's rulings require ("the value of X is determined only once, at the time the ability resolves") — reach for a static `ModifySpellCost` instead when the reduction should track board state continuously. Used by **Will, Scion of Peace** (`DynamicAmounts.lifeGainedThisTurn()`, white and/or blue spells) and **Rowan, Scion of War** (`DynamicAmounts.lifeLostThisTurn()`, black and/or red).
 - `CopyCardIntoCollectionEffect(source, storeAs)` (facade `Effects.CopyCardIntoCollection(source, storeAs)`) — copy a **card in a zone** (not a spell on the stack), publishing the copy's entity id to pipeline collection `storeAs`. Per Rule 707.12 the copy is created in the card's current zone under the effect's controller and tagged as a stack-style copy, so once cast it becomes a token if it's a permanent spell and ceases to exist if it's an instant/sorcery (Rule 707.10). Pair with `CastFromCollectionWithoutPayingCostEffect(from)` (facade `Effects.CastFromCollectionWithoutPayingCost(from)`, wrap in `MayEffect` for "you may cast") to express "copy a card, then cast the copy" — e.g. **Shiko, Paragon of the Way**: `Composite(MoveToZoneEffect(target, Zone.EXILE), Effects.CopyCardIntoCollection(target, "copy"), MayEffect(Effects.CastFromCollectionWithoutPayingCost("copy")))`. A copy that is never cast is swept up by the Rule 707.10a state-based action (`PhantomCardCopiesCheck`), so no explicit cleanup step is needed. For the "you may cast it" wording that **doesn't** say "without paying its mana cost", use `Effects.CastFromCollection(from, storeCastTo?)` (`CastFromCollectionWithoutPayingCostEffect(from, payManaCost = true, storeCastTo)`): the controller pays the spell's normal cost (an {X} spell prompts for X) instead of casting for free. Pass `storeCastTo` to publish the cast card's id to that pipeline collection on a successful cast, then gate a follow-up with `IfYouDoEffect(this, then, SuccessCriterion.CollectionNonEmpty(storeCastTo))` — e.g. **Kaervek, the Punisher**: `Composite(Move(target, EXILE), CopyCardIntoCollection(target, "copy"), MayEffect(IfYouDoEffect(CastFromCollection("copy", storeCastTo = "cast"), LoseLife(2, Controller), SuccessCriterion.CollectionNonEmpty("cast"))))` — declining (or being unable to pay) leaves the collection empty, so no life is lost. (`storeCastTo` is reliably published for synchronous casts and target-selection casts; an {X}-cost spell cast with no targets is the one sub-case where the publish doesn't survive the X pause.) **Free-casting still pays the copied spell's non-mana additional costs** (CR 601.2f / 118.9 waive only the mana cost) — when the copy carries a printed sacrifice / discard / exile / tap additional cost, the engine resolves it during the synthesized cast: a forced single option is auto-paid, and a real choice pauses for an on-battlefield (sacrifice/tap) or overlay (discard/exile) selection; if the cost can't be paid the cast doesn't happen (e.g. Roving Actuator copying **Embrace Oblivion**'s "sacrifice an artifact or creature" still makes you sacrifice).
 - `CopyCollectionIntoCollectionEffect(from, storeAs)` (facade `Effects.CopyCollectionIntoCollection(from, storeAs)`) — the collection-wide sibling of `CopyCardIntoCollectionEffect`: copy **every** card in pipeline collection `from`, publishing all the copies' entity ids (in `from` order) to `storeAs`. For "copy them" over a set of cards rather than one (`CopyCardIntoCollection` overwrites its collection, so it can't accumulate across a `ForEach`). Each copy is created in its original's current zone (Rule 707.12) and tagged as a stack-style copy, so gather/exile the originals first, then copy. Pair with `Effects.CastAnyNumberFromCollection(storeAs)` for "copy them. You may cast any number of the copies" — e.g. **The Tale of Tamiyo** IV: `Composite(ForEachTargetEffect(Move(ContextTarget(0), EXILE)), GatherCards(ChosenTargets, "exiled"), CopyCollectionIntoCollection("exiled", "copies"), CastAnyNumberFromCollection("copies"))`. Copies never cast are swept by the Rule 707.10a state-based action.
+- `CastFromCollectionWithoutPayingCostEffect(from, payManaCost = false, storeCastTo = null, castTransformed = false)` — `castTransformed = true` casts the card **transformed**, back face up (CR 712.8c), the way disturb casts a card from the graveyard: the back face supplies the spell's card types (hence its timing), its targets and `auraTarget`, its name in the prompt, and the permanent it becomes. It is carried to the cast as `MayPlayPermission.castTransformed`, so the whole ordinary cast pipeline honors it — distinct from `MayPlayPermission.castFaceIndex`, which picks an alternative *face* of a multi-face card (an Adventure, a split half) rather than turning a transforming double-faced card over. A card with **no back face** is not cast at all and stays where it is (the CR 310.11b ruling: a token or non-transforming card that became a copy of a Siege "remains in exile"). Backs `Sieges.defeatAbility` — "exile it, then you may cast it transformed without paying its mana cost".
 - `CastAnyNumberFromCollectionWithoutPayingCostEffect(from, payManaCost = false)` (facades `Effects.CastAnyNumberFromCollectionWithoutPayingCost(from)` for free / `Effects.CastAnyNumberFromCollection(from)` for paid) — the multi-cast sibling of `CastFromCollectionWithoutPayingCostEffect`. **During this effect's resolution**, the controller is offered the cards in pipeline collection `from` (filtered to those still in exile) one at a time and may cast each until they decline; each cast's targets / X / modes flow through the normal cast machinery. With the default `payManaCost = false` each is cast for free; set `payManaCost = true` (facade `Effects.CastAnyNumberFromCollection`) for the "you may cast any number of [them]" wording **without** "without paying their mana costs" — each chosen card is then cast paying its normal cost (an {X} card prompts for X). Because the casts go through the synthesized-cast path (like Cascade), card-type **timing restrictions are ignored** and no lingering "you may play it later" permission is granted — cards left uncast just stay where they are (the controller can't wait until later in the turn). Hand it the eligible set: filter the collection upstream (e.g. nonland + `FilterCollection(ManaValueAtMost(...))`). The free form models "you may cast any number of spells with mana value X or less from among them without paying their mana costs" — e.g. **Kotis, the Fangkeeper**: `GatherCards(TopOfLibrary(damage, TriggeringPlayer)) → MoveCollection(→ exile) → FilterCollection(Nonland) → FilterCollection(ManaValueAtMost(damage)) → CastAnyNumberFromCollectionWithoutPayingCostEffect("castable")` (also **Villainous Wealth**, **Etali, Primal Storm**). The paid form models **The Tale of Tamiyo** IV (cast the copies paying their costs).
 - `FilterCollection(from, CollectionFilter.InZone(zone), storeMatching)` — keep only the cards in pipeline collection `from` that are **currently** in `zone`. Pipeline collections track entity refs, not live location, so a card can leave its zone mid-resolution (e.g. an exiled card cast for free moves to the stack). Use this to act on "the ones still there." Models the "you may cast it … if you don't, put that card into your hand" fallback of the **Tarkir: Dragonstorm "…storm" enchantments** (Breaching Dragonstorm): `GatherUntilMatch(Nonland) → MoveCollection(→ exile) → FilterCollection(ManaValueAtMost(8), "castable") → ConditionalOnCollection("castable", ifNotEmpty = MayEffect(CastFromCollectionWithoutPayingCost("castable"))) → FilterCollection("nonland", InZone(EXILE), "uncast") → MoveCollection("uncast" → hand)` — only the nonland still in exile (not the one just cast) goes to hand; the lands stay exiled. The `ConditionalOnCollection` wrapper suppresses the empty "you may cast" prompt when the nonland's mana value is > 8.
 - `MoveCollectionEffect(from, destination, filter = null, …)` — move a pipeline collection to a zone.
@@ -1853,10 +1883,14 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   targets on `then`/`otherwise` lock at trigger time (CR 603.3d) and the gate is resolved at
   resolution time (CR 117.3a) by `decisionMaker` (defaults to the controller) — the may-vs-target
   timing is correct by construction rather than re-encoded per wrapper. Gates:
-  - `Gate.MayDecide(prompt?, hint?, sourceRequiredZone?, inlineOnTrigger?, feasibility?)` — pure yes/no
+  - `Gate.MayDecide(prompt?, hint?, dynamicHint?, sourceRequiredZone?, inlineOnTrigger?, feasibility?)`
+    — pure yes/no
     ("You may [then]."). Replaces `MayEffect` (see the `MayEffect` facade below). `sourceRequiredZone`
     skips the gate silently when the source has left that zone by resolution; `inlineOnTrigger`
-    renders the yes/no on the triggering permanent rather than as a modal. `feasibility` (a
+    renders the yes/no on the triggering permanent rather than as a modal. `dynamicHint` (a
+    `DynamicHint(template, amount)`) is reminder text whose `{n}` is replaced by `amount` evaluated
+    against the **resolving** context, and takes precedence over `hint` — see *Dynamic hints* below.
+    `feasibility` (a
     `FeasibilityCheck`) — when set and **unmet** at resolution, the may-action is impossible, so the
     player "doesn't": the prompt is skipped and `otherwise` runs directly. Lets "you may sacrifice an
     artifact. If you don't, …" apply its else automatically when the controller has no artifact (the
@@ -1939,15 +1973,48 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
     `data object` (the {X} cost is implicit). The executor builds a `ChooseNumberDecision` and reuses
     the existing `MayPayXContinuation`/`resumeMayPayX` to auto-tap and bind X. Replaces
     `MayPayXForEffect` (see "Optional & gated" below).
+  - `Gate.OnceEachTurn(abilityId, spend = true)` — **not a decision, a per-turn action budget.** The
+    lowered form of `TriggeredAbility.effectOncePerTurn` ("Do this only once each turn", CR 603.2h).
+    Succeeds iff the source permanent's controller hasn't yet taken this ability's action this turn;
+    with `spend = true` succeeding also marks it taken — check and spend are one atomic step in the
+    executor, so two instances resolving back to back can never both pass. `spend = false` is the
+    read-only half, used by the lowering to place a check *outside* an optional ability's consent
+    gate so an already-used instance resolves silently. The budget lives on the source as a
+    `TriggeredAbilityEffectAppliedThisTurnComponent` keyed by ability id and is cleared in cleanup.
+    **Cards never author this gate directly** — set `effectOncePerTurn = true` on the triggered
+    ability (see §8, and note that it is *not* the `oncePerTurn` trigger cap).
   - The multi-player APNAP `AnyPlayerMayPayEffect` stays a **standalone effect**, not a gate — a
     single `decisionMaker` can't express its turn-order loop (see below).
-- `MayEffect(effect, descriptionOverride?, sourceRequiredZone?, inlineOnTrigger?, hint?, decisionMaker?, otherwise?, feasibility?)`
+- `MayEffect(effect, descriptionOverride?, sourceRequiredZone?, inlineOnTrigger?, hint?, dynamicHint?, decisionMaker?, otherwise?, feasibility?)`
   — "You may [effect]." Facade preserved for existing cards; it now **lowers to
   `GatedEffect(Gate.MayDecide(...), then = effect, otherwise = otherwise, decisionMaker = decisionMaker)`**
   (compiled form is `Gated`, no distinct `May` type or executor). The may-vs-target trigger reorder —
   for a "may" ability that *also* targets, the yes/no is asked *before* target selection (Invigorating
   Boon) — recognizes the lowered shape via the `Effect.asMayDecide()` matcher (a bare `Gate.MayDecide`
   with no `otherwise`).
+  - **Dynamic hints — `dynamicHint = DynamicHint(template, amount)`.** A printed "you may … *that
+    much* damage / *that many* cards" renders the same sentence on every instance. When one event
+    puts **several instances of the same ability on the stack at once**, the prompts become
+    indistinguishable and the player is choosing blind — which silently costs the card its whole
+    decision. `DynamicHint` fills `{n}` in `template` from `amount`, evaluated against the resolving
+    context, so each prompt names its own number; the oracle text in the prompt itself is untouched
+    and the hint renders as a line beneath it. Reach for it whenever a "may" is worth answering
+    differently depending on a number the printed text calls "that much".
+
+    ```kotlin
+    MayEffect(
+        Effects.DealDamage(DynamicAmount.ContextProperty(ContextPropertyKey.TRIGGER_DAMAGE_AMOUNT), victim),
+        dynamicHint = DynamicHint(
+            "This trigger would deal {n} damage.",
+            DynamicAmount.ContextProperty(ContextPropertyKey.TRIGGER_DAMAGE_AMOUNT),
+        ),
+    )
+    ```
+
+    **The Sensational She-Hulk** (the back face of Jennifer Walters) is the motivating case: a
+    multi-block puts one mirror trigger on the stack per damaged creature, and "decline down to the
+    biggest number" is only a real line of play if the three prompts can be told apart. Pairs
+    naturally with `TriggeredAbility.effectOncePerTurn`, which is what makes declining free.
   - **`decisionMaker` routes the yes/no to a non-controller** — pass any player `EffectTarget`
     (`EffectTarget.TargetController` for "that creature's controller may …", or a bound target such
     as `target("target opponent", Targets.Opponent)` for "**target opponent may …**"). Only the
@@ -3549,7 +3616,7 @@ work for abilities-on-stack (which carry no `CardComponent`).
 
 ## 8. Triggered abilities (`Triggers.*`)
 
-`triggeredAbility { trigger; effect; target?; triggerZone?/triggerZones?; triggerCondition?; optional?; elseEffect?; checkOnNextState?; dealsDamageBeforeResolve?; controlledByTriggeringEntityController?; oncePerTurn?; triggersOnce? }`.
+`triggeredAbility { trigger; effect; target?; triggerZone?/triggerZones?; triggerCondition?; optional?; elseEffect?; checkOnNextState?; dealsDamageBeforeResolve?; controlledByTriggeringEntityController?; oncePerTurn?; effectOncePerTurn?; triggersOnce? }`.
 
 **`triggerZones` — which zones the trigger condition functions in (CR 113.6b).** Defaults to
 `setOf(Zone.BATTLEFIELD)`, which CR 113.6 makes the rule for a permanent card's abilities. It is a
@@ -3586,6 +3653,66 @@ while that permanent stays on the battlefield — tracked by a `TriggeredAbility
 that is **not** cleared at end of turn (it lives on the entity, so re-entering the battlefield as a
 new object — a distinct game object — triggers afresh). Both caps share one detection-time filter and
 collapse simultaneous fires of the same `(source, ability)` to a single instance.
+
+**`effectOncePerTurn` — "Do this only once each turn", and the one that is easy to get wrong.** Magic
+prints two different "only once each turn" riders and they need two different flags:
+
+| Printed wording | Flag | What spends the cap |
+|---|---|---|
+| "**This ability triggers** only once each turn" | `oncePerTurn = true` | the *first trigger*, whether or not anything came of it — later matching events this turn don't trigger at all |
+| "**Do this** only once each turn" | `effectOncePerTurn = true` | the *action*, when it is actually taken — until then every matching event triggers its own instance |
+
+The governing rule is **CR 603.2h**: *"A triggered ability may have an instruction followed by 'Do
+this only once each turn.' This ability triggers only if its source's controller has not yet taken
+the indicated action that turn."* That makes the rider a **stateful trigger condition keyed to the
+action**, not a filter applied to resolutions. Concretely:
+
+- While the action is untaken, **every** matching event triggers. In a multi-block, every damaged
+  creature puts its own instance of The Sensational She-Hulk's "Whenever a creature you control is
+  dealt damage, you may have this deal that much damage to any target" on the stack; Baron Strucker's
+  "Whenever another Villain you control enters, you may have it connive" gives you one instance per
+  simultaneously-entering Villain, so you pick *which* one connives.
+- The "you may" is answered **as an instance resolves** (Legolas, Counter of Kills ruling), so you can
+  decline instance after instance until the one carrying the number you want.
+- Once the action is taken, the ability **stops triggering for the rest of the turn**, and instances
+  already on the stack **do nothing as they resolve** (Nykthos Paragon / Riveteers Ascendancy
+  rulings).
+
+Modelling either card with `oncePerTurn` burns the turn's only fire on the first trigger — even a
+declined one — and makes that choice unreachable. Do not reach for it.
+
+Mechanically, `TriggerProcessor` lowers `effectOncePerTurn = true` into `Gate.OnceEachTurn` gates
+around the effect. For an optional ability that is a sandwich:
+`GatedEffect(Gate.OnceEachTurn(abilityId, spend = false), then = <consent gate>(then =
+GatedEffect(Gate.OnceEachTurn(abilityId), then = …)))`. The inner, spending gate sits inside the
+consent gate (`Gate.MayDecide` / `MayPay` / `MayPayX`) so declining costs nothing; the outer,
+read-only gate sits outside it so an instance whose turn is already used up resolves silently instead
+of raising a yes/no that cannot matter. A mandatory capped ability gets the single spending gate.
+`GatedEffectExecutor` checks and spends in one atomic step against a
+`TriggeredAbilityEffectAppliedThisTurnComponent` on the source permanent, keyed by ability id (two
+capped abilities on one permanent never share a budget, and neither do two copies of the permanent),
+cleared at end of turn by `CleanupPhaseManager`. Once the action is taken, later matching events that
+turn are dropped silently at trigger-processing time — CR 603.2h says they never trigger, so no event
+is emitted. Cards never author `Gate.OnceEachTurn` directly.
+
+Two consequences of that outer gate are worth knowing. First, a *targeted* capped trigger no longer
+matches `asMayDecide()` at the top of its effect, so it routes through the plain targeted path:
+targets are chosen when the ability is put on the stack (CR 603.3d) and the "you may" is asked at
+resolution, one instance at a time. Second, capped abilities are excluded from the batched
+may-question — one shared yes/no would take away the choice of *which* instance to use.
+
+The lowering looks for the consent gate at the **top** of `effect` or at the **tail** of a
+`CompositeEffect`. The tail case is "do X, then you may Y", where the rider attaches to the payoff:
+Planetarium of Wan Shi Tong is `Composite(look at the top card, May(cast it))`, and its ruling ties
+the turn's single use to the *cast* — "once you choose to cast the top card of your library, the
+ability won't trigger again that turn" — so looking and declining costs nothing.
+
+**Keep the consent gate outermost or last — this is enforced, not advisory.** A "you may" sitting
+anywhere else (mid-composite, or under another wrapper) would leave the budget gate outside it, so
+declining would spend the turn's use — the exact defect the flag exists to fix, and invisible at the
+table because the prompt looks identical. Rather than mis-place the gate silently, the lowering
+throws, and `EffectOncePerTurnLoweringTest` sweeps every card in the pool for the shape so the
+failure lands at build time rather than mid-game.
 
 **`optional` = "you may [effect]"; `elseEffect` adds "If you don't, [elseEffect]."** For a
 **targeted** trigger, `optional` lets the player choose 0 targets to decline, and `elseEffect` runs
@@ -4463,6 +4590,20 @@ Dominant back faces that "stay" instead self-exile on their final chapter, dodgi
   `EffectTarget.TriggeringEntity`. Stalwart Successor shape.
 - `CountersPlacedOnThis` — "whenever you put one or more counters on ~" (any kind, SELF-bound).
   Aragorn, Company Leader.
+- `countersRemovedFrom(filter = Any, counterType = Counters.ANY, lastRemoved = false, binding = ANY)`
+  (`EventPattern.CountersRemovedEvent`) — the mirror of `countersPlacedOn`: fires when counters of
+  `counterType` are **removed** from a permanent matching `filter`. `binding = SELF` restricts it to
+  the source permanent; the permanent the counters left is `EffectTarget.TriggeringEntity` and how
+  many left it is the trigger's counter count. `lastRemoved = true` narrows it to the removal that
+  took the permanent's count of that type to **zero** — "when the last [X] counter is removed from
+  this permanent", the shape the counter-countdown mechanics share. Chipping a permanent part-way is
+  then silent and only the removal that empties it fires, exactly once. A removal of 0 counters never
+  fires it, so a permanent that *never had* one of those counters can't have its "last" removed
+  (CR 310.11b's ruling for a Siege that entered with no defense counters). The engine reads
+  `CountersRemovedEvent.remainingCount` — the count immediately after *that* removal — rather than the
+  live count, because several removals can land in one batch (two attackers damaging the same battle)
+  and the live count would make every one of them look like the last. Backs the intrinsic Siege
+  defeat ability (`Sieges.defeatAbility`, CR 310.11b).
 - `EventPattern.TrainedEvent` (facade: `Triggers.trains(binding = TriggerBinding.SELF)`) — "when this creature trains"
   (CR 702.149c: "a resolving training ability puts one or more
   +1/+1 counters on this creature"). A `data object` (no parameters); the trainer identity is selected by the ability's
@@ -7429,7 +7570,11 @@ default to "you" so card authors don't need to pass it explicitly.
 - `All(c1, c2, ...)` — AND.
 - `Any(c1, c2, ...)` — OR.
 - `Not(c)` — negate.
-- `Compare(v1, op, v2)` — numeric comparison between `DynamicAmount`s.
+- `Compare(v1, op, v2)` — numeric comparison between `DynamicAmount`s. Its `description` is
+  player-facing (a `CantAttackUnless` restriction renders it into the "can't attack" message), so it
+  reads as a sentence: `ComparisonOperator.phrase` supplies the English comparative and the whole
+  condition comes out as "the number of other Wolf creatures you control **is at least** 2". Use
+  `ComparisonOperator.symbol` (`>=`) only for diagnostics — never in text a player sees.
 - `NumberMatches(amount, NumberProperty.{Prime,Even,Odd,MultipleOf(n)})` — unary numeric predicate
   over one `DynamicAmount` (primality/parity/divisibility); facades `AmountIsPrime/Even/Odd/MultipleOf`.
 - `Exists(player, zone, filter)` — at least one matching object exists.
@@ -9293,11 +9438,37 @@ Card authors rarely reference these directly; they are created/updated by the ma
   the owner's library (`shuffleOwnerLibrary` + `LibraryShuffledEvent`) instead of exiling with a `MayPlayPermission`.
   No new effect/component — the layout enum drives the resolution fork. First user: Dirgur Island Dragon //
   Skimming Strike.
-- **Modal DFC (CR 712)** — `layout = MODAL_DFC` + `cardFaces[0]` back face; DSL:
+- **Modal DFC, spell back (CR 712)** — `layout = MODAL_DFC` + `cardFaces[0]` back face; DSL:
   `card { modalBack("Name") { imageUri = …; spell { selfExile(); … } } }`. Cast either face from hand (back via
   `CastSpell.faceIndex = 0`); reuses the Adventure cast/enumeration path (`enumerateSecondaryFace`) but with no
   exile-then-recast linkage at resolution. `StackResolver` reads the cast face's `selfExileOnResolve`, and the back
   art rides on `CardFace.imageUri` → `CardComponent.backFaceImageUri`. First user: Flamescroll Celebrant.
+- **Modal DFC, permanent back (CR 712.3)** — `layout = MODAL_DFC` + a full `backFace`, via
+  `CardDefinition.modalDoubleFacedPermanent(front, back)`. Reuses the **disturb** path rather than the Adventure
+  one, because the card goes on the stack transformed: `ModalDfcCasts.castFace` is the single
+  can-I-and-as-which-face policy (mirroring `DisturbCasts`), `CastZoneResolver.modalBackCastFace` is its hand-side
+  permission check, `CastSpellEnumerator.enumerateModalBackFace` surfaces the offer, and `CastSpellHandler` reads
+  every characteristic off that face (`transformedFace`) and passes `castTransformed = true` to `StackResolver`.
+  Cost is the back's own mana cost (`AlternativeCostType.MODAL_BACK_FACE` — the enum entry is plumbing, not a real
+  alternative cost; CR 712.11b calls it choosing a face). Because the back is a real `backFace`, transform and the
+  client's flip preview work with no extra wiring. The one place the shared disturb path is *not* shareable is
+  **mana value**, which is the only characteristic the CR treats differently for the two layouts — see the entry
+  below. Timing comes off the face being cast, not the front (CR 712.11c), so a permanent back is sorcery-speed
+  unless *it* has flash. First users: the MSH hero cycle.
+- **Mana value across a transform (CR 712.8c / 712.8e / 712.8f)** — the one characteristic where nonmodal and modal
+  DFCs diverge, so it is the one thing the shared face-swap machinery has to fork on. A **nonmodal** DFC computes
+  its mana value from the **front** face's mana cost while the back is up — on the stack (CR 712.8c, a disturb
+  cast) and on the battlefield (CR 712.8e) — which matters because a transform back prints no mana cost at all, so
+  reading the face directly would make a transformed Delver of Secrets mana value 0. A **modal** DFC has no such
+  exception (CR 712.8f): its back keeps its own printed cost. `dfcBackFaceManaValue(frontDef, frontManaValue)` is
+  the single place that decides, and it feeds `CardComponent.manaValueOverride` (which `CardComponent.manaValue`
+  prefers over `manaCost.cmc`) through `buildCardComponentForDfcFace` — so all three flip routes
+  (`flipDfcInPlace`, `returnDfcFace`, and `StackResolver`'s cast-transformed swap) agree, and every reader of
+  `manaValue` (predicates, `EntityNumericProperty.ManaValue`, emerge) sees the right number with no per-call-site
+  handling. `StackResolver` reuses the same value for `SpellCastEvent.manaValue` (hence
+  `ContextPropertyKey.TRIGGERING_SPELL_MANA_VALUE`) and `CastSpellHandler` mirrors it for its `CastSpellRecord`.
+  Not modelled: CR 712.8e's other clause, that a permanent *copying* a nonmodal back face has mana value 0
+  (CR 202.3b) — that is a property of the copy, not of the flip. Pinned by `DfcManaValueTest` and `DisturbKeywordTest`.
 - **Prepare / Prepared (Secrets of Strixhaven)** — `layout = PREPARE` + `cardFaces[0]` prepare spell; DSL:
   `card { prepare("Name") { spell { … } } }`. The creature is only cast as itself. A creature that carries
   `Keyword.PREPARED` ("This creature enters prepared") becomes prepared on enter

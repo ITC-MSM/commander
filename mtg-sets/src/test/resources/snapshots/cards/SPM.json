@@ -10801,7 +10801,7 @@
                         ]
                     }
                 },
-                "oncePerTurn": true
+                "effectOncePerTurn": true
             }
         ],
         "staticAbilities": [

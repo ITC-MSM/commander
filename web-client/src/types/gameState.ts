@@ -359,6 +359,19 @@ export interface ClientCard {
    */
   readonly castProvenanceLabel?: string
 
+  /**
+   * What this spell's alternative cost consumed — "Sacrificed Niblis of the Urn" — or absent when it
+   * consumed nothing. Server-derived label; render verbatim (only on the stack). Emerge
+   * (CR 702.119a) needs it: the sacrifice is what made the spell cheap.
+   */
+  readonly costSacrificeLabel?: string
+
+  /**
+   * The mana actually spent on this cast ("{W}{W}{W}{U}"), or absent for a normal cast. Only sent for
+   * alternative-cost casts, whose printed cost says nothing about what was paid (only on the stack).
+   */
+  readonly manaPaidCost?: string
+
   /** Whether this spell promised a gift (Bloomburrow gift mechanic — only present on stack) */
   readonly giftPromised?: boolean
 
@@ -512,6 +525,26 @@ export interface ClientCard {
 
   /** True if this is a split-layout Room (CR 709.5). Drives split-card rendering + lock UI. */
   readonly isRoom?: boolean
+
+  /**
+   * True when the face currently shown is **printed sideways** — its image is a portrait file
+   * holding a card on its side. Drives the 90° rotation and the landscape footprint wherever the
+   * card is drawn: battlefield, stack, and hover previews.
+   *
+   * The server decides which cards qualify (`CardDefinition.isLandscapePrint` — split layouts
+   * including Rooms, and battles). Renderers must read this rather than re-deriving orientation
+   * from `isRoom` / `cardFaces` / type lines, which is how battles ended up rendering sideways.
+   * Per *face*: a Siege reports true, and the portrait back face it becomes when defeated reports
+   * false.
+   */
+  readonly isLandscapeFace?: boolean
+
+  /**
+   * {@link isLandscapeFace} for the card's *other* face — what a hover preview shows when flipped.
+   * Flipping swaps the image in both directions, so peeking at a Siege's portrait back must not
+   * rotate and peeking at the landscape front of an already-transformed permanent must.
+   */
+  readonly backFaceIsLandscape?: boolean
 
   /**
    * For split-layout cards (currently Rooms): one entry per face. `isUnlocked` reflects the live

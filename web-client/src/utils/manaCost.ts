@@ -263,6 +263,27 @@ export function totalManaNeeded(symbols: string[]): number {
 }
 
 /**
+ * The cheapest of several alternative renderings of the same cost — the one whose total mana is
+ * lowest — or undefined when there are none.
+ *
+ * Emerge (CR 702.119a) sends one resulting cost per creature the player could sacrifice, since the
+ * sacrifice's mana value comes off the emerge cost. The cast button shows the best case so the
+ * number it displays and the fact that it is enabled can't contradict each other.
+ */
+export function cheapestCost(costs: readonly string[]): string | undefined {
+  let cheapest: string | undefined
+  let cheapestTotal = Number.POSITIVE_INFINITY
+  for (const cost of costs) {
+    const total = totalManaNeeded(parseManaCost(cost))
+    if (total < cheapestTotal) {
+      cheapest = cost
+      cheapestTotal = total
+    }
+  }
+  return cheapest
+}
+
+/**
  * Minimal description of a mana source needed for preview trimming.
  * Mirrors the server-provided `ManaSourceInfo` shape. Generic over the
  * entityId type so callers using a branded `EntityId` don't lose that type.

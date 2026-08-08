@@ -116,6 +116,19 @@ object ArenaAgents {
         // promotion gate. Expect this one to *move*, unlike the four before it.
         ArenaAgent("production-manalands", AiProfile.PRODUCTION_MANALANDS),
         ArenaAgent("production-candidate-manalands", AiProfile.PRODUCTION_CANDIDATE_MANALANDS),
+        // The counterspell half of removal patience: a counter is worth holding while the caster
+        // still has the mana for something bigger. `just arena production production-counterpatience
+        // 300` prices the term on its own; `just arena production-candidate-cantrip
+        // production-candidate-counterpatience 300` is the promotion gate, against what players face
+        // today. Expect a rare shape and therefore a wide or degenerate CI, as with patience.
+        ArenaAgent("production-counterpatience", AiProfile.PRODUCTION_COUNTERPATIENCE),
+        ArenaAgent("production-candidate-counterpatience", AiProfile.PRODUCTION_CANDIDATE_COUNTERPATIENCE),
+        // Flash creatures held for the ambush window instead of dumped in our own main phase.
+        // `just arena production production-ambush 300` prices the term on its own; `just arena
+        // production-candidate-counterpatience production-candidate-ambush 300` is the promotion
+        // gate, against what players face today.
+        ArenaAgent("production-ambush", AiProfile.PRODUCTION_AMBUSH),
+        ArenaAgent("production-candidate-ambush", AiProfile.PRODUCTION_CANDIDATE_AMBUSH),
         ArenaAgent("production-targeted", AiProfile.PRODUCTION_TARGETED),
         // Explicit ECL candidates. Their resource-backed weights fail closed to production's
         // evaluator until a validated artifact is installed; automatic selection is set-gated.

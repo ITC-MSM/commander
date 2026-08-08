@@ -36,7 +36,7 @@ class PuzzleSuiteTest : ScenarioTestBase() {
                     PuzzleCatalog.byCategory(category).size shouldBeGreaterThanOrEqual 6
                 }
             }
-            PuzzleCatalog.all.size shouldBe 87
+            PuzzleCatalog.all.size shouldBe 92
         }
 
         test("every KNOWN_FAILURES id names a real puzzle") {
@@ -71,8 +71,9 @@ class PuzzleSuiteTest : ScenarioTestBase() {
          *
          * Baselined 2026-07-27 against `AiProfile.PRODUCTION` at 39/48; **44/48 since Phase 6**
          * (`CardIntent`), which closed noncreature-01/03/04 and instants-01/06; **60/66 since Phase
-         * 2b** added the respond / activate / keywords categories; **71/83** today, after Phase 2c's
-         * timing / lastchance categories and the combat trick window pair. Per-category rates are in
+         * 2b** added the respond / activate / keywords categories; **71/83** after Phase 2c's
+         * timing / lastchance categories and the combat trick window pair; **78/92** today, after
+         * the five ambush-window positions. Per-category rates are in
          * `docs/ai/baseline-metrics.md`.
          */
         val KNOWN_FAILURES: Set<String> = setOf(
@@ -205,6 +206,24 @@ class PuzzleSuiteTest : ScenarioTestBase() {
             // able to cast removal at all competes with that. Its pair, `removal-08`, is the same
             // board with a full hand and passes here and everywhere.
             "removal-07",
+
+            // ── The ambush window ──
+            // Restoration Angel jammed in our own precombat main, off a real game. The leaf scores
+            // a 3/4 flier the same wherever in the turn it lands, so casting beats passing by the
+            // creature's whole board value (+4.06) and every reason flash is printed — hold the
+            // mana, see their attack, ambush a creature — is worth nothing to a one-ply evaluator.
+            // It cannot attack this turn either way.
+            //
+            // **Closed by `AiProfile.holdFlashPermanentsForAmbush`**, and unlike the entries above
+            // it needs nothing else stacked with it: `AiProfile.PRODUCTION_AMBUSH` closes it alone.
+            // Still listed here because [AiProfile.PRODUCTION] is the frozen baseline this set
+            // describes.
+            //
+            // Its four controls all pass on this baseline and must keep passing: `instants-10` (the
+            // ambush itself, at their declare-attackers), `-11` (flash *and* haste), `-12` (an ETB
+            // that taps a blocker before we attack) and `-13` (the same board as this one, past the
+            // patience horizon).
+            "instants-09",
         )
     }
 }

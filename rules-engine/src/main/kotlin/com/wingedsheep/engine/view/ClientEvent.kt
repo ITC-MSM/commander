@@ -1001,7 +1001,12 @@ object ClientEventTransformer {
                 isYours = event.casterId == viewingPlayerId,
                 targetNames = event.targetNames,
                 xValue = event.xValue,
-                castProvenance = CastProvenance.logPhrase(event.alternativeCost, event.castFromZone)
+                castProvenance = CastProvenance.logPhrase(
+                    event.alternativeCost,
+                    event.castFromZone,
+                    event.sacrificedAsCostNames,
+                    event.totalManaSpent,
+                )
             )
 
             is ResolvedEvent -> ClientEvent.SpellResolved(

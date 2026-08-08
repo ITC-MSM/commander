@@ -25,7 +25,7 @@ import { ManaCost, ManaSymbol } from '@/components/ui/ManaSymbols'
 import { HoverCardPreview } from '@/components/ui/HoverCardPreview'
 import { useDfcHoverFlip } from '@/components/ui/useDfcHoverFlip'
 import { SetIcon } from '@/components/ui/SetIcon'
-import { getCardImageUrl, splitImageRotateDeg } from '@/utils/cardImages'
+import { getCardImageUrl, landscapeImageRotateDeg } from '@/utils/cardImages'
 import {
   DeckTile,
   DeckTileActionButton,
@@ -1359,7 +1359,7 @@ export function DeckbuilderPage() {
                 : null
             }
             overlay={deckHoverDfc.hint}
-            imageRotateDeg={splitImageRotateDeg(effectiveDeckHoverCard)}
+            imageRotateDeg={landscapeImageRotateDeg(effectiveDeckHoverCard)}
           />
         ) : (
           <FilterSection
@@ -3544,7 +3544,7 @@ function CardGrid({
         name={hoverCard ? (dfc.displayName ?? hoverCard.name) : null}
         imageUri={hoverCard ? (dfc.displayImageUri ?? hoverCard.imageUri ?? null) : null}
         overlay={dfc.hint}
-        imageRotateDeg={splitImageRotateDeg(hoverCard)}
+        imageRotateDeg={landscapeImageRotateDeg(hoverCard)}
       />
     </>
   )
@@ -3932,7 +3932,7 @@ function DeckListPanel({
         name={hoverName ? (dfc.displayName ?? hoverName) : null}
         imageUri={hoverName ? (dfc.displayImageUri ?? effectiveHoverCard?.imageUri ?? null) : null}
         overlay={dfc.hint}
-        imageRotateDeg={splitImageRotateDeg(effectiveHoverCard)}
+        imageRotateDeg={landscapeImageRotateDeg(effectiveHoverCard)}
       />
     </div>
   )
@@ -4446,7 +4446,7 @@ function AddCardSearch({
         name={hoverCard ? (dfc.displayName ?? hoverCard.name) : null}
         imageUri={hoverCard ? (dfc.displayImageUri ?? hoverCard.imageUri ?? null) : null}
         overlay={dfc.hint}
-        imageRotateDeg={splitImageRotateDeg(hoverCard)}
+        imageRotateDeg={landscapeImageRotateDeg(hoverCard)}
       />
     </div>
   )

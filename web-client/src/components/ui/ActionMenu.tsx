@@ -8,6 +8,7 @@ import { ManaCostProgress } from './ManaCostProgress'
 import { useViewingPlayer } from '@/store/selectors.ts'
 import { isManaPoolEmpty } from '@/types'
 import { getCardImageUrl } from '@/utils/cardImages.ts'
+import { cheapestCost } from '@/utils/manaCost.ts'
 import styles from './ActionMenu.module.css'
 
 /**
@@ -20,6 +21,15 @@ interface ActionOption {
   label: string
   /** Mana cost to display */
   manaCost: string | null
+  /**
+   * The cheapest cost this option can actually end up costing, when a choice made *during* the cast
+   * reduces [manaCost]. Emerge (CR 702.119a) is the case: the sacrificed creature's mana value comes
+   * off the emerge cost, so the printed `{5}{U}` is a starting point, not the price. Rendered as
+   * "{5}{U} → as low as {2}{U}" so the button's number can't contradict its enabled state.
+   */
+  manaCostReducedTo?: string
+  /** One short line under the label explaining why the cost moves. */
+  hint?: string
   /** Whether this action is available (affordable) */
   isAvailable: boolean
   /** The legal action info if available */
@@ -37,6 +47,32 @@ interface ActionOption {
    * impending. Undefined for every other option.
    */
   impendingTime?: number
+}
+
+/**
+ * The cost fields for a cast option, accounting for a cost the cast's own choices will reduce.
+ *
+ * Emerge (CR 702.119a) is the only such cast today: the server prices every creature the player
+ * could sacrifice (`additionalCostInfo.costAfterSacrifice`) because the reduction is generic-only
+ * and therefore a rule, not client arithmetic. Showing only the un-reduced emerge cost is what made
+ * a four-mana Wretched Gryff read as a bug — the button said `{5}{U}` and was enabled on four lands.
+ */
+function costFieldsFor(
+  action: LegalActionInfo,
+  fallbackCost: string | null,
+): Pick<ActionOption, 'manaCost' | 'manaCostReducedTo' | 'hint'> {
+  const manaCost = action.manaCostString || fallbackCost || null
+  const costAfterSacrifice = action.additionalCostInfo?.costAfterSacrifice
+  const isEmerge = (action.action as { alternativeCostType?: string }).alternativeCostType === 'EMERGE'
+  if (!isEmerge || !costAfterSacrifice) return { manaCost }
+
+  const cheapest = cheapestCost(Object.values(costAfterSacrifice))
+  return {
+    manaCost,
+    // A single candidate leaves one price, not a range — show it as the cost outright.
+    ...(cheapest && cheapest !== manaCost ? { manaCostReducedTo: cheapest } : {}),
+    hint: 'sacrifice a creature — its mana value comes off',
+  }
 }
 
 /**
@@ -169,30 +205,35 @@ function buildActionOptions(
         options.push({
           key: `cast-extra-${index}`,
           label: ca.description,
-          manaCost: ca.manaCostString || cardInfo.manaCost || null,
+          ...costFieldsFor(ca, cardInfo.manaCost),
           isAvailable: ca.isAffordable !== false,
           action: ca,
           actionType: 'cast',
         })
       })
   } else if (castActions.length > 1) {
-    // 1b. Multiple cast options (e.g., BlightOrPay — blight path vs pay path)
+    // 1b. Multiple cast options (e.g., BlightOrPay — blight path vs pay path, or a hard cast
+    // alongside an alternative cost like emerge)
     castActions.forEach((ca, index) => {
       options.push({
         key: `cast-${index}`,
         label: ca.description,
-        manaCost: ca.manaCostString || cardInfo.manaCost || null,
+        ...costFieldsFor(ca, cardInfo.manaCost),
         isAvailable: ca.isAffordable !== false,
         action: ca,
         actionType: 'cast',
       })
     })
   } else if (castAction) {
-    // 1c. Normal cast (for non-land, non-modal cards)
+    // 1c. Normal cast (for non-land, non-modal cards). When the *only* offered cast is an
+    // alternative-cost one (emerge with the hard cast unaffordable), the server's description names
+    // the mechanic — "Cast X" would hide that the cast eats a creature.
     options.push({
       key: 'cast',
-      label: `Cast ${cardInfo.name}`,
-      manaCost: castAction.manaCostString || cardInfo.manaCost || null,
+      label: castAction.actionType === 'CastWithAlternativeCost'
+        ? castAction.description
+        : `Cast ${cardInfo.name}`,
+      ...costFieldsFor(castAction, cardInfo.manaCost),
       isAvailable: castAction.isAffordable !== false, // default true if not set
       action: castAction,
       actionType: 'cast',
@@ -625,6 +666,17 @@ function ActionOptionButton({
   const styleClass = getActionStyleClass(option.actionType, option.isAvailable)
   // Only show separate mana cost if label doesn't already contain mana symbols
   const showSeparateCost = option.manaCost && !option.label.includes('{')
+  // Mana pips for a cost, showing progress against floating mana when the player has any.
+  const renderCost = (cost: string | null) =>
+    hasFloatingMana && manaPool
+      ? <ManaCostProgress
+          cost={cost}
+          manaPool={manaPool}
+          eligibleRestrictedMana={option.action?.eligibleRestrictedMana ?? []}
+          size={16}
+          gap={2}
+        />
+      : <ManaCost cost={cost} size={16} gap={2} />
   // Show mana selection icon for actions that have mana sources available
   // Delve and Convoke spells handle mana selection after their selector, so don't show the icon
   const hasManaSelection = option.isAvailable && option.action?.availableManaSources != null && option.action.availableManaSources.length > 0 && !option.action.hasDelve && !option.action.hasConvoke
@@ -652,20 +704,30 @@ function ActionOptionButton({
           {option.impendingTime !== undefined && (
             <ImpendingTimeIcon time={option.impendingTime} />
           )}
-          <span className={styles.actionButtonLabel}>
-            <AbilityText text={option.label} size={14} />
+          <span className={styles.actionButtonLabelStack}>
+            <span className={styles.actionButtonLabel}>
+              <AbilityText text={option.label} size={14} />
+            </span>
+            {option.hint && (
+              <span className={styles.actionButtonHint}>{option.hint}</span>
+            )}
           </span>
         </span>
         {showSeparateCost && (
-          hasFloatingMana && manaPool
-            ? <ManaCostProgress
-                cost={option.manaCost}
-                manaPool={manaPool}
-                eligibleRestrictedMana={option.action?.eligibleRestrictedMana ?? []}
-                size={16}
-                gap={2}
-              />
-            : <ManaCost cost={option.manaCost} size={16} gap={2} />
+          option.manaCostReducedTo
+            ? (
+              // The printed cost, dimmed, then what a best-case choice leaves. "As low as" keeps it
+              // honest: the reduction depends on which creature the player picks next.
+              <span className={styles.actionButtonCostReduction}>
+                <span className={styles.actionButtonCostBefore}>
+                  <ManaCost cost={option.manaCost} size={13} gap={1} />
+                </span>
+                <span aria-hidden className={styles.actionButtonCostArrow}>→</span>
+                <span className={styles.actionButtonCostNote}>as low as</span>
+                {renderCost(option.manaCostReducedTo)}
+              </span>
+            )
+            : renderCost(option.manaCost)
         )}
       </button>
       {hasManaSelection && option.action && (

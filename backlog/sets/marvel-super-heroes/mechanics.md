@@ -5,8 +5,8 @@ missing mechanic they need. Each mechanic is `add-feature` territory (a new SDK 
 keyword, or engine capability) — not pure card authoring.
 
 Scope: the 276 booster cards (collector numbers 1–276). Triaged against the SDK on 2026-08-04,
-updated 2026-08-07 after **power-up shipped**. **47 of the 276 are blocked**; every other card is
-buildable from existing primitives.
+updated 2026-08-07 after **power-up** and the **per-turn effect budget** shipped. **45 of the 276 are
+blocked**; every other card is buildable from existing primitives.
 
 Supported today and *not* a blocker despite looking like one: **power-up** (see the first section
 below — the keyword, its once-only limit and its pip-wise cost reduction all ship), **harness / ∞ abilities**
@@ -409,32 +409,52 @@ damage and damage to creatures. Needed: `StatePredicate.DealtDamageThisTurn` plu
 `HasDealtDamageComponent`, cleared in `CleanupPhaseManager`, and wired into `PredicateEvaluator`,
 `AffectsFilterResolver`, `TriggerMatcher`, `BeginningPhaseManager` and `Serialization`.
 
-### "Do this only once each turn" — an effect cap, not a trigger cap — **Jennifer Walters** [18]
+### "Do this only once each turn" (CR 603.2h) — not the trigger cap — SHIPPED ✅ (2 cards unblocked)
 > Whenever a creature you control is dealt damage, you may have The Sensational She-Hulk deal that
 > much damage to any target. **Do this only once each turn.**
 
-Per CR 603.2 the ability triggers **once per damaged creature**; "Do this only once each turn" limits
-how often the *effect* may be applied. So in a multi-block, every damaged creature puts a trigger on
-the stack and the controller declines until the one carrying the biggest damage number — the whole
-point of the card.
+Shipped as `TriggeredAbility.effectOncePerTurn`, distinct from the existing `oncePerTurn` **trigger**
+cap. CR 603.2h: *"A triggered ability may have an instruction followed by 'Do this only once each
+turn.' This ability triggers only if its source's controller has not yet taken the indicated action
+that turn."* So while the action is untaken every matching event triggers — in a multi-block every
+damaged creature puts its own instance on the stack and the controller declines down the line to the
+one carrying the number they want — and once the action is taken the ability stops triggering for the
+turn, with instances already on the stack doing nothing as they resolve (Nykthos Paragon / Riveteers
+Ascendancy rulings). The "you may" is answered as each instance resolves (Legolas, Counter of Kills
+ruling).
 
-Modelling it as `oncePerTurn = true` (a **trigger** cap) fires only for the *first* creature dealt
-damage and never offers the rest, so a big hit later in the same combat is unreachable. **Implemented
-then removed from this branch** for that reason; it needs a per-turn *effect* budget — an
-`effectOncePerTurn` flag on `TriggeredAbility` (or a turn-scoped "already applied" marker the effect
-checks and sets) so all instances trigger while at most one resolves its effect.
+`TriggerProcessor` lowers the flag into `Gate.OnceEachTurn` gates around the consent gate: a
+`spend = false` check outside it (a used-up instance resolves silently instead of raising a pointless
+yes/no) and the spending gate inside it (declining costs nothing). `GatedEffectExecutor` checks and
+spends atomically against a `TriggeredAbilityEffectAppliedThisTurnComponent` on the source, cleared in
+cleanup. Capped abilities are excluded from the batched may-question (one shared yes/no would take
+away the choice of *which* instance to use), and once the action is taken, later matching events that
+turn are dropped silently — they never triggered. See `docs/card-sdk-language-reference.md` §8 →
+*`effectOncePerTurn`*.
 
 Do not confuse this with the other wording: "**This ability triggers** only once each turn"
 (Crossbones [91], Moon Girl [223], Knight of Wundagore [175], Ant-Man [201]) *is* a trigger cap and is
-correctly `oncePerTurn = true` today.
+correctly `oncePerTurn = true` today. `EffectOncePerTurnTest` pins both behaviours side by side.
 
-**Also removed for the same defect:** **Baron Strucker, HYDRA Overlord** [88] — "Whenever another
-Villain you control enters, you may have it connive. **Do this only once each turn.**" With
-`oncePerTurn = true`, when two Villains enter together only the first triggers, so you cannot pick
-which one connives.
+**Unblocked and implemented (2):** Jennifer Walters // The Sensational She-Hulk [18] ·
+Baron Strucker, HYDRA Overlord [88] ("Whenever another Villain you control enters, you may have it
+connive. Do this only once each turn." — with a trigger cap, two Villains entering together would
+only trigger for the first, so you could not pick which one connives).
 
-Both cards become implementable the moment the per-turn *effect* budget exists; neither needs
-anything else.
+**Also migrated — seven pre-existing cards outside MSH (7).** They print "Do this only once each
+turn" but carried `oncePerTurn = true`, so declining burned the turn's only fire (the Legolas ruling
+says the opposite in as many words, and the Gatherer rulings on five of the seven say "once you
+*choose* to …, that ability won't trigger again that turn"). All seven now use `effectOncePerTurn`,
+each with a scenario test that declines one instance and takes a later one:
+`big/cards/AncientCornucopia.kt` · `tla/cards/EarthKingdomGeneral.kt` ·
+`dsk/cards/IrreverentGremlin.kt` · `ltr/cards/LegolasCounterOfKills.kt` ·
+`tla/cards/PlanetariumOfWanShiTong.kt` · `spm/cards/SpiderVerse.kt` · `eoe/cards/Terrasymbiosis.kt`.
+
+Planetarium of Wan Shi Tong drove one generalization of the lowering: its effect is
+`Composite(look at top card, May(cast it))`, and its ruling ties the turn's use to the *cast*, not
+the look. `withEffectBudgetGate` therefore searches the **tail** of a `CompositeEffect` for the
+consent gate — the payoff of a "do X, then you may Y" instruction is its last step — so the spending
+gate lands inside the "may" rather than around the whole composite.
 
 ### Power-only dynamic CDA granted for a duration — **Ms. Marvel, Kamala Khan** [67]
 > Embiggen Fist — Whenever you cast a spell that targets a creature you control, draw a card. Until

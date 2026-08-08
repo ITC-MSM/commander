@@ -1366,6 +1366,29 @@ object Triggers {
     )
 
     /**
+     * Whenever one or more counters of [counterType] are removed from a permanent matching
+     * [filter] — the mirror of [countersPlacedOn].
+     *
+     * With [lastRemoved] this is the "when the last counter is removed" shape the counter-countdown
+     * mechanics share; bound [TriggerBinding.SELF] it reads "when the last [counterType] counter is
+     * removed from this permanent" (CR 310.11b). The permanent the counters left is available via
+     * [com.wingedsheep.sdk.scripting.targets.EffectTarget.TriggeringEntity].
+     */
+    fun countersRemovedFrom(
+        filter: GameObjectFilter = GameObjectFilter.Any,
+        counterType: String = Counters.ANY,
+        lastRemoved: Boolean = false,
+        binding: TriggerBinding = TriggerBinding.ANY,
+    ): TriggerSpec = TriggerSpec(
+        event = CountersRemovedEvent(
+            counterType = counterType,
+            filter = filter,
+            lastRemoved = lastRemoved,
+        ),
+        binding = binding
+    )
+
+    /**
      * "Whenever this creature trains" (CR 702.149c) — fires when a resolving training ability puts
      * one or more +1/+1 counters on this creature. Keyed on [EventPattern.TrainedEvent], which the
      * training composite emits **only when the counter actually lands** (a Solemnity-type "can't

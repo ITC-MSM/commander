@@ -481,13 +481,15 @@ class EffectAndTriggerContinuationResumer(
                 is Gate.MayDecide -> continuation.then
                 is Gate.MayPay ->
                     CompositeEffect(listOf(gate.cost, continuation.then), stopOnError = true)
-                // WhenCondition, DoAction, and MayPayX never push this (yes/no) continuation — the
-                // first resolves synchronously in the executor, the second via the action-drain
-                // GatedActionContinuation, the third via the number-chooser MayPayXContinuation — so
-                // these branches are unreachable, present only for exhaustiveness.
+                // WhenCondition, DoAction, MayPayX and OnceEachTurn never push this (yes/no)
+                // continuation — the first and fourth resolve synchronously in the executor, the
+                // second via the action-drain GatedActionContinuation, the third via the
+                // number-chooser MayPayXContinuation — so these branches are unreachable, present
+                // only for exhaustiveness.
                 is Gate.WhenCondition -> continuation.then
                 is Gate.DoAction -> continuation.then
                 is Gate.MayPayX -> continuation.then
+                is Gate.OnceEachTurn -> continuation.then
             }
         } else {
             continuation.otherwise
