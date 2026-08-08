@@ -2733,6 +2733,11 @@ class CastSpellEnumerator : ActionEnumerator {
      *
      * Casting the back face grants no timing permission of its own, so a permanent back is
      * sorcery-speed unless it has flash.
+     *
+     * The caller has already applied the two whole-card gates — `cantCastSpell` and the front-face
+     * `castRestrictions` — and skipped this card entirely if either failed, so neither is re-checked
+     * here. Per CR 712.11c only the face being cast is evaluated, so a back face with a cast
+     * restriction of its own would need its own check; none of the cycle has one.
      */
     private fun enumerateModalBackFace(
         context: EnumerationContext,
@@ -2748,10 +2753,6 @@ class CastSpellEnumerator : ActionEnumerator {
             context.castPermissionUtils.hasGrantedFlash(state, cardId)
         if (!back.typeLine.isInstant && !hasFlash && !context.canPlaySorcerySpeed) return
 
-        // Cast restrictions are a property of the whole card, so they come off the front face's
-        // script exactly as a normal cast of this card would.
-        if (!context.castPermissionUtils.checkCastRestrictions(state, playerId, cardDef.script.castRestrictions)) return
-
         val description = "Cast ${back.name}"
         val backAction = CastSpell(
             playerId, cardId,
@@ -2763,20 +2764,6 @@ class CastSpellEnumerator : ActionEnumerator {
             state, cardDef, back.manaCost, playerId
         )
         val costString = effectiveCost.toString()
-
-        if (context.cantCastSpell(cardId)) {
-            result.add(
-                LegalAction(
-                    actionType = "CastModalBackFace",
-                    description = description,
-                    action = backAction,
-                    affordable = false,
-                    manaCostString = costString,
-                    sourceZone = "HAND"
-                )
-            )
-            return
-        }
 
         val canAfford = context.manaSolver.canPay(
             state, playerId, effectiveCost, precomputedSources = context.availableManaSources

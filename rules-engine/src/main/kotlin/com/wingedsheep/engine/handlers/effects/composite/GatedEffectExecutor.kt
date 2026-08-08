@@ -530,20 +530,6 @@ class GatedEffectExecutor(
     }
 
     /**
-     * Whether [playerId] can pay [cost] right now. Mirrors the former
-     * `OptionalCostEffectExecutor`: recognizes the payment primitives that appear in a
-     * [Gate.MayPay] cost slot ([PayManaCostEffect], [PayDynamicManaCostEffect], [PayLifeEffect], and
-     * a [CompositeEffect] composing them). The dynamic-mana branch charges the cost's own `payer`, so
-     * affordability stays correct even when it differs from the gate's decisionMaker. Unknown shapes
-     * fail open (assumed payable) so exotic cost pipelines still prompt and abort later via the
-     * resumer's `stopOnError` composite.
-     */
-    /**
-     * Render a [Gate.MayPay] cost as a concrete "Pay …" button label, or null for shapes with no
-     * single obvious rendering (life, sacrifice, composites) — those keep the plain "Yes". A
-     * [PayDynamicManaCostEffect] shows its resolution-computed total, not the formula.
-     */
-    /**
      * Fill a [DynamicHint]'s `{n}` from the resolving context, so a "that much damage" prompt says
      * which number *this* instance carries (CR 603.3d locks targets at trigger time, but the
      * amount is only read here, as the instance resolves).
@@ -553,6 +539,11 @@ class GatedEffectExecutor(
         return hint.template.replace(DynamicHint.PLACEHOLDER, amount.toString())
     }
 
+    /**
+     * Render a [Gate.MayPay] cost as a concrete "Pay …" button label, or null for shapes with no
+     * single obvious rendering (life, sacrifice, composites) — those keep the plain "Yes". A
+     * [PayDynamicManaCostEffect] shows its resolution-computed total, not the formula.
+     */
     private fun computedCostLabel(state: GameState, cost: Effect, context: EffectContext): String? =
         when (cost) {
             is PayManaCostEffect -> "Pay ${cost.cost}"
@@ -571,6 +562,15 @@ class GatedEffectExecutor(
             else -> null
         }
 
+    /**
+     * Whether [playerId] can pay [cost] right now. Mirrors the former
+     * `OptionalCostEffectExecutor`: recognizes the payment primitives that appear in a
+     * [Gate.MayPay] cost slot ([PayManaCostEffect], [PayDynamicManaCostEffect], [PayLifeEffect], and
+     * a [CompositeEffect] composing them). The dynamic-mana branch charges the cost's own `payer`, so
+     * affordability stays correct even when it differs from the gate's decisionMaker. Unknown shapes
+     * fail open (assumed payable) so exotic cost pipelines still prompt and abort later via the
+     * resumer's `stopOnError` composite.
+     */
     private fun canAfford(state: GameState, playerId: EntityId, cost: Effect, context: EffectContext): Boolean =
         when (cost) {
             is PayManaCostEffect -> manaSolver.canPay(state, playerId, cost.cost)

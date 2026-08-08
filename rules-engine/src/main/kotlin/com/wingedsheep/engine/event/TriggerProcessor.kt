@@ -1536,49 +1536,8 @@ class TriggerProcessor(
      * A mandatory capped ability has no consent gate and no prompt to suppress, so a single
      * spending gate simply wraps the effect.
      */
-    private fun withEffectBudgetGate(ability: TriggeredAbility): TriggeredAbility {
-        val spending = withSpendingGate(ability.effect, ability.id)
-        val newEffect = if (spending != null) {
-            GatedEffect(gate = Gate.OnceEachTurn(ability.id, spend = false), then = spending)
-        } else {
-            GatedEffect(gate = Gate.OnceEachTurn(ability.id), then = ability.effect)
-        }
-        return ability.copy(effect = newEffect)
-    }
-
-    /**
-     * Push the *spending* budget gate inside [effect]'s consent gate, or return null when there is
-     * no consent gate to put it inside (a mandatory ability — the caller then wraps the whole
-     * effect in a spending gate instead).
-     *
-     * The consent gate is not always at the top. Planetarium of Wan Shi Tong reads "look at the top
-     * card of your library. You may cast that card without paying its mana cost. Do this only once
-     * each turn", which is `Composite(look, May(cast))` — and its ruling is explicit that it is the
-     * *casting* that spends the turn ("once you choose to cast the top card of your library, the
-     * ability won't trigger again that turn"), not the looking. So the search descends the **tail**
-     * of a [CompositeEffect]: the payoff of a "do X, then you may Y" instruction is its last step,
-     * and that is the step the rider is attached to. A "may" buried anywhere else is not the
-     * payoff and is deliberately left alone.
-     */
-    private fun withSpendingGate(effect: Effect, abilityId: AbilityId): Effect? = when (effect) {
-        is GatedEffect ->
-            if (effect.gate.isConsentGate) {
-                effect.copy(then = GatedEffect(gate = Gate.OnceEachTurn(abilityId), then = effect.then))
-            } else {
-                null
-            }
-
-        is CompositeEffect ->
-            effect.effects.lastOrNull()
-                ?.let { withSpendingGate(it, abilityId) }
-                ?.let { effect.copy(effects = effect.effects.dropLast(1) + it) }
-
-        else -> null
-    }
-
-    /** Gates that represent the printed "you may" — the ones a budget must be spent *inside* of. */
-    private val Gate.isConsentGate: Boolean
-        get() = this is Gate.MayDecide || this is Gate.MayPay || this is Gate.MayPayX
+    private fun withEffectBudgetGate(ability: TriggeredAbility): TriggeredAbility =
+        ability.copy(effect = loweredEffectBudget(ability.effect, ability.id))
 
     /**
      * Mark a once-per-turn triggered ability as fired on its source entity.
@@ -1601,5 +1560,101 @@ class TriggerProcessor(
             ?: TriggeredAbilityFiredEverComponent()
         val updated = tracker.withFired(abilityId)
         return state.updateEntity(sourceId) { it.with(updated) }
+    }
+
+    /**
+     * The pure half of the `effectOncePerTurn` lowering. Lives on the companion so the card-registry
+     * guard ([consentGateIsMisplaced]) can be run over every shipped card at build time from a test,
+     * rather than only being exercised when a capped ability happens to trigger in a game.
+     */
+    companion object {
+
+        /** Gates that represent the printed "you may" — the ones a budget must be spent *inside* of. */
+        private val Gate.isConsentGate: Boolean
+            get() = this is Gate.MayDecide || this is Gate.MayPay || this is Gate.MayPayX
+
+        /**
+         * Wrap [effect] in the [Gate.OnceEachTurn] budget gates for `effectOncePerTurn` — the
+         * sandwich documented on `withEffectBudgetGate`.
+         *
+         * Throws when the ability has a consent gate the lowering cannot reach. That combination is
+         * a silent rules bug if it ships: the budget gate lands *outside* the "you may", so
+         * declining would spend the turn's single use — exactly the defect `effectOncePerTurn`
+         * exists to fix, and invisible at the table because the prompt looks identical. The
+         * condition depends only on the card definition, never on game state, so
+         * `EffectOncePerTurnLoweringTest`'s sweep over the whole registry is what guarantees this
+         * can never fire mid-game.
+         */
+        internal fun loweredEffectBudget(effect: Effect, abilityId: AbilityId): Effect {
+            val spending = withSpendingGate(effect, abilityId)
+            require(spending != null || !containsConsentGate(effect)) {
+                "effectOncePerTurn ability $abilityId has a 'you may' the budget lowering can't " +
+                    "reach — it must be at the top of the effect or the tail of a CompositeEffect, " +
+                    "or declining would spend the turn's use (CR 603.2h). Effect: $effect"
+            }
+            return if (spending != null) {
+                GatedEffect(gate = Gate.OnceEachTurn(abilityId, spend = false), then = spending)
+            } else {
+                GatedEffect(gate = Gate.OnceEachTurn(abilityId), then = effect)
+            }
+        }
+
+        /**
+         * True when [effect] carries a consent gate that [withSpendingGate] would *not* find — a
+         * "you may" buried mid-composite or under some other wrapper. The card-registry guard.
+         */
+        internal fun consentGateIsMisplaced(effect: Effect): Boolean =
+            withSpendingGate(effect, AbilityId("probe")) == null && containsConsentGate(effect)
+
+        /**
+         * Push the *spending* budget gate inside [effect]'s consent gate, or return null when there
+         * is no consent gate to put it inside (a mandatory ability — the caller then wraps the whole
+         * effect in a spending gate instead).
+         *
+         * The consent gate is not always at the top. Planetarium of Wan Shi Tong reads "look at the
+         * top card of your library. You may cast that card without paying its mana cost. Do this
+         * only once each turn", which is `Composite(look, May(cast))` — and its ruling is explicit
+         * that it is the *casting* that spends the turn ("once you choose to cast the top card of
+         * your library, the ability won't trigger again that turn"), not the looking. So the search
+         * descends the **tail** of a [CompositeEffect]: the payoff of a "do X, then you may Y"
+         * instruction is its last step, and that is the step the rider is attached to.
+         */
+        private fun withSpendingGate(effect: Effect, abilityId: AbilityId): Effect? = when (effect) {
+            is GatedEffect ->
+                if (effect.gate.isConsentGate) {
+                    effect.copy(then = GatedEffect(gate = Gate.OnceEachTurn(abilityId), then = effect.then))
+                } else {
+                    null
+                }
+
+            is CompositeEffect ->
+                effect.effects.lastOrNull()
+                    ?.let { withSpendingGate(it, abilityId) }
+                    ?.let { effect.copy(effects = effect.effects.dropLast(1) + it) }
+
+            else -> null
+        }
+
+        /**
+         * Any consent gate anywhere in the gate/composite spine of [effect], however deeply nested —
+         * including inside a `MayPay` cost or a `DoAction` action, which are effects in their own
+         * right. Deliberately broader than [withSpendingGate]: the gap between the two is precisely
+         * the set of shapes whose budget would end up in the wrong place.
+         */
+        private fun containsConsentGate(effect: Effect): Boolean = when (effect) {
+            is GatedEffect ->
+                effect.gate.isConsentGate ||
+                    containsConsentGate(effect.then) ||
+                    effect.otherwise?.let { containsConsentGate(it) } == true ||
+                    when (val gate = effect.gate) {
+                        is Gate.MayPay -> containsConsentGate(gate.cost)
+                        is Gate.DoAction -> containsConsentGate(gate.action)
+                        else -> false
+                    }
+
+            is CompositeEffect -> effect.effects.any { containsConsentGate(it) }
+
+            else -> false
+        }
     }
 }

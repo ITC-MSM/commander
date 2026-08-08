@@ -89,10 +89,11 @@ its header blocked-count adjusted 47 → 45.
 
 *(Revised after review — two of the original entries were wrong and are corrected here.)*
 
-- **Which prompt is which.** The prompt text is the ability's static description, so a player facing
-  three She-Hulk prompts in a multi-block cannot tell which instance carries which damage number.
-  Pre-existing engine gap (identical prompts for identical triggers), not introduced here, but it
-  blunts the card. Fixing it means putting triggering context into the decision payload. Still open.
+- **~~Which prompt is which.~~ Fixed.** The prompt text is the ability's static description, so a
+  player facing three She-Hulk prompts in a multi-block could not tell which instance carried which
+  damage number — the choice the card is built around, unusable at a table. `Gate.MayDecide` now
+  takes a `dynamicHint = DynamicHint(template, amount)` whose `{n}` is filled from the *resolving*
+  context, so each prompt names its own number.
 - **~~Saying yes twice in one batch.~~ Fixed in review correction.** The may-questions used to all be
   asked at put-on-stack time, so a player could accept several and get one application. The lowering
   now puts a `spend = false` check *outside* the consent gate, which moves consent for a capped
@@ -113,7 +114,30 @@ its header blocked-count adjusted 47 → 45.
   which would silently merge or lose budgets; the explicit id is the safer choice. The alternative
   (a `Condition` + a marker `Effect`) needed two new types and put the correct ordering on card
   authors, which seemed worse.
-- **The consent gate must be outermost.** `withEffectBudgetGate` recognises `May*` only at the top of
-  the effect tree; a "you may" buried under a `CompositeEffect` would get the budget gate outside it
-  and spend the turn's use on a decline. Neither shipped card hits it; documented in the flag's KDoc
-  and in the SDK reference.
+- **~~The consent gate must be outermost.~~ Now enforced.** `withEffectBudgetGate` recognises `May*`
+  only at the top of the effect tree or at a composite's tail; a "you may" anywhere else would get
+  the budget gate outside it and spend the turn's use on a decline. Rather than rely on the KDoc,
+  `loweredEffectBudget` throws on that shape and `EffectOncePerTurnLoweringTest` sweeps every card in
+  the pool for it, so the failure lands at build time rather than mid-game.
+
+## Review corrections (second round)
+
+- **Mana value of a back-face cast (CR 712.8f).** `SpellCastEvent` and `CastSpellRecord` both took
+  the mana value from the pre-swap `CardComponent`, i.e. the front face — right for disturb
+  (CR 712.8c computes a *nonmodal* transformed spell's mana value from the front) but wrong for a
+  modal DFC, which CR 712.8f gives "only the characteristics of the face that's up". Casting The
+  Sensational She-Hulk for `{3}{G}{W}{W}` reported mana value 2 to `TRIGGERING_SPELL_MANA_VALUE` and
+  to the turn's cast history. `StackResolver` now forks on `layout == MODAL_DFC` for a single
+  `spellManaValue`, and `CastSpellHandler` mirrors it; two new tests pin both routes.
+- **Printed flash was read off the wrong face (CR 712.11c).** `CastSpellHandler`'s timing check read
+  `cardDef.keywords` — the whole card — while the type line beside it already used the face being
+  cast. A modal DFC with a flash *front* therefore let its sorcery-speed *back* be cast at instant
+  speed. Found by the new CR 712.11c timing test, which uses an inline card whose two faces disagree
+  about flash (nothing in the MSH cycle splits that way — King T'Challa prints flash on both).
+- **Dead code / duplicate work.** `enumerateModalBackFace`'s `cantCastSpell` branch was unreachable
+  (the caller already `continue`s) and its `checkCastRestrictions` was a repeat; `modalBackCastFace`
+  was queried three times per `validate()`. Both cleaned up.
+- **Minor.** `CastProvenance` says "back face" rather than "its back face", so the capitalized badge
+  reads "Back face" like its neighbours; the orphaned KDocs above `computedCostLabel` / `canAfford`
+  in `GatedEffectExecutor` are reattached; the playtest scenario is committed as
+  `manual-scenarios/sets/msh/loop-msh-u01-new-cards-castable.json`.

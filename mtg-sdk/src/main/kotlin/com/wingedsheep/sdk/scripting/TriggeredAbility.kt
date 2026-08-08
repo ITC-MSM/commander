@@ -83,12 +83,14 @@ data class TriggeredAbility(
      * even when the player declines, which makes "decline down to the biggest damage number" (or
      * "pick which Villain connives") unreachable.
      *
-     * **Consent-gate caveat.** The lowering looks for the consent gate — a `MayEffect` / `mayPay` /
-     * `mayPayX` — at the top of [effect] or at the **tail** of a `CompositeEffect`, which covers
-     * "do X, then you may Y" ("look at the top card of your library. You may cast that card …",
-     * Planetarium of Wan Shi Tong). A "you may" sitting anywhere else — mid-composite, or under
-     * some other wrapper — is not treated as the payoff: the budget gate goes on the outside and
-     * declining would then spend the turn's use. Keep the consent gate outermost or last.
+     * **Keep the consent gate outermost or last — this is enforced.** The lowering looks for the
+     * consent gate — a `MayEffect` / `mayPay` / `mayPayX` — at the top of [effect] or at the
+     * **tail** of a `CompositeEffect`, which covers "do X, then you may Y" ("look at the top card
+     * of your library. You may cast that card …", Planetarium of Wan Shi Tong). A "you may" sitting
+     * anywhere else — mid-composite, or under some other wrapper — would leave the budget gate on
+     * the outside, so declining would spend the turn's use. Rather than mis-place it silently the
+     * lowering throws, and `EffectOncePerTurnLoweringTest` sweeps the whole card pool for the shape
+     * so the failure lands at build time rather than mid-game.
      */
     val effectOncePerTurn: Boolean = false,
     /** When true, this triggered ability triggers at most once over the source permanent's

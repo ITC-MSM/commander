@@ -57,6 +57,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.scripting.effects.WarpExileEffect
 import com.wingedsheep.sdk.scripting.effects.MoveTrackedBattlefieldObjectEffect
+import com.wingedsheep.sdk.model.CardLayout
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.EntersAsCopy
 import com.wingedsheep.engine.handlers.effects.EntersWithReplacements
@@ -205,38 +206,53 @@ class StackResolver(
             newState = clearRevealedMorphsInHand(newState, casterId)
         }
 
-        // Cast transformed (CR 712.8c, disturb): flip the card to its back face *before* it becomes
-        // a spell, so the stack object — and the permanent it resolves into — has only the back
-        // face's characteristics. The front-face CardComponent is stashed on the
-        // DoubleFacedComponent so Rule 712.8a restores it if the spell is countered or the
-        // permanent later leaves the battlefield (ZoneTransitionService does that restore, and it
-        // deliberately exempts the stack).
-        if (castTransformed) {
-            val frontDef = cardRegistry.getCard(cardComponent.cardDefinitionId)
-            val backDef = frontDef?.backFace
-            if (backDef != null) {
-                newState = newState.updateEntity(cardId) { c ->
-                    var updated = c
-                        .with(buildCardComponentForDfcFace(cardComponent, backDef))
-                        .with(
-                            DoubleFacedComponent(
-                                frontCardDefinitionId = frontDef.name,
-                                backCardDefinitionId = backDef.name,
-                                currentFace = DoubleFacedComponent.Face.BACK,
-                                frontFaceCard = cardComponent
-                            )
+        // Cast transformed (CR 712.8c, disturb; CR 712.11b, a modal DFC's permanent back face): flip
+        // the card to its back face *before* it becomes a spell, so the stack object — and the
+        // permanent it resolves into — has only the back face's characteristics. The front-face
+        // CardComponent is stashed on the DoubleFacedComponent so Rule 712.8a restores it if the
+        // spell is countered or the permanent later leaves the battlefield (ZoneTransitionService
+        // does that restore, and it deliberately exempts the stack).
+        val transformedFrontDef = if (castTransformed) {
+            cardRegistry.getCard(cardComponent.cardDefinitionId)
+        } else null
+        val transformedBackDef = transformedFrontDef?.backFace
+        if (transformedFrontDef != null && transformedBackDef != null) {
+            newState = newState.updateEntity(cardId) { c ->
+                var updated = c
+                    .with(buildCardComponentForDfcFace(cardComponent, transformedBackDef))
+                    .with(
+                        DoubleFacedComponent(
+                            frontCardDefinitionId = transformedFrontDef.name,
+                            backCardDefinitionId = transformedBackDef.name,
+                            currentFace = DoubleFacedComponent.Face.BACK,
+                            frontFaceCard = cardComponent
                         )
-                        .without<ContinuousEffectSourceComponent>()
-                        .without<ReplacementEffectSourceComponent>()
-                    // Register the back face's static and replacement effects (the "if this would
-                    // be put into a graveyard from anywhere, exile it instead" clause the disturb
-                    // cycle prints on its back faces is one of these, and it must function from the
-                    // moment the card is a back-face object — CR 614.12).
-                    updated = staticAbilityHandler.addContinuousEffectComponent(updated, backDef)
-                    updated = staticAbilityHandler.addReplacementEffectComponent(updated, backDef)
-                    withDfcFaceSelfRedirects(updated, backDef)
-                }
+                    )
+                    .without<ContinuousEffectSourceComponent>()
+                    .without<ReplacementEffectSourceComponent>()
+                // Register the back face's static and replacement effects (the "if this would
+                // be put into a graveyard from anywhere, exile it instead" clause the disturb
+                // cycle prints on its back faces is one of these, and it must function from the
+                // moment the card is a back-face object — CR 614.12).
+                updated = staticAbilityHandler.addContinuousEffectComponent(updated, transformedBackDef)
+                updated = staticAbilityHandler.addReplacementEffectComponent(updated, transformedBackDef)
+                withDfcFaceSelfRedirects(updated, transformedBackDef)
             }
+        }
+
+        // The spell's mana value (CR 202.3), which the two transformed-cast routes disagree about.
+        // A *nonmodal* double-faced spell put on the stack back face up — disturb — computes its
+        // mana value from the front face's mana cost (CR 712.8c), and that is what `cardComponent`
+        // still holds here. CR 712.8f states no such exception for a modal double-faced spell: it
+        // "has only the characteristics of the face that's up", so one cast as its back face
+        // (CR 712.11b) has *that* face's mana value — The Sensational She-Hulk is 6, not Jennifer
+        // Walters' 2. Read by the SpellCastEvent below, which feeds
+        // ContextPropertyKey.TRIGGERING_SPELL_MANA_VALUE and every "a spell with mana value N"
+        // payoff; CastSpellHandler mirrors this for its CastSpellRecord.
+        val spellManaValue = if (transformedFrontDef?.layout == CardLayout.MODAL_DFC && transformedBackDef != null) {
+            transformedBackDef.manaCost.cmc
+        } else {
+            cardComponent.manaValue
         }
 
         // Build the flat target union for choose-N modal spells (Rule 700.2 / 601.2c).
@@ -413,8 +429,8 @@ class StackResolver(
         // A cast-transformed spell is on the stack back face up (CR 712.8c), so its *name* is the
         // back face's — `cardComponent` was captured before the face swap above and still holds the
         // front face's. The log used to announce a disturb cast as "cast Covetous Castaway" while
-        // the stack showed Ghostly Castigator. Only the name moves to the back face here: the mana
-        // value below deliberately stays the front face's (CR 712.8c again), and every card-definition
+        // the stack showed Ghostly Castigator. The mana value is `spellManaValue`, resolved with the
+        // face swap above because the two routes differ (CR 712.8c vs 712.8f); every card-definition
         // lookup keeps using `cardComponent.cardDefinitionId`, which addresses the whole card.
         val spellName = if (castTransformed) {
             newState.getEntity(cardId)?.get<CardComponent>()?.name ?: cardComponent.name
@@ -463,7 +479,7 @@ class StackResolver(
                 spentManaSubtypes = spentManaProvenance.spentSubtypes,
                 spentManaSourceIds = spentManaProvenance.sourceIds,
                 chosenModesCount = reportedChosenModesCount,
-                manaValue = cardComponent.manaValue,
+                manaValue = spellManaValue,
                 castFromZone = castFromZone,
                 alternativeCost = alternativeCost
             )

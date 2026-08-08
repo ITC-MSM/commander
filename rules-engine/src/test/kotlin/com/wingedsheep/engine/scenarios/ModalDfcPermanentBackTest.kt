@@ -3,12 +3,17 @@ package com.wingedsheep.engine.scenarios
 import com.wingedsheep.engine.core.ActivateAbility
 import com.wingedsheep.engine.core.AlternativeCostType
 import com.wingedsheep.engine.core.CastSpell
+import com.wingedsheep.engine.core.SpellCastEvent
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.DoubleFacedComponent
 import com.wingedsheep.engine.support.ScenarioTestBase
+import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.Phase
 import com.wingedsheep.sdk.core.Step
+import com.wingedsheep.sdk.dsl.card
+import com.wingedsheep.sdk.model.CardDefinition
 import io.kotest.assertions.withClue
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 
 /**
@@ -27,11 +32,38 @@ import io.kotest.matchers.shouldBe
  *  3. **A modal back face keeps its own mana value.** CR 712.8f says a modal DFC on the battlefield
  *     "has only the characteristics of the face that's up", with *no* mana-value exception — unlike
  *     CR 712.8e, which keeps the front's for a nonmodal DFC. So The Sensational She-Hulk is mana
- *     value 6, not Jennifer Walters' 2, however she got there.
+ *     value 6, not Jennifer Walters' 2, however she got there — on the battlefield *and* on the
+ *     stack, which is what the cast event and the turn's cast history report to every "a spell with
+ *     mana value N" payoff. (The other transformed-cast route, disturb, is the opposite: CR 712.8c
+ *     computes a nonmodal transformed spell's mana value from the *front* face.)
+ *  4. **Timing comes off the face being cast** (CR 712.11c), so a sorcery-speed permanent back is
+ *     not castable on an opponent's turn while a back with flash is — regardless of the front.
  */
 class ModalDfcPermanentBackTest : ScenarioTestBase() {
 
     init {
+        // A modal DFC whose two faces *disagree* about flash: the front has it, the back does not.
+        // Nothing in the MSH cycle splits that way (King T'Challa prints flash on both faces), so
+        // without this card a timing gate that read the front face by mistake would still pass.
+        val flashFront = card("Quickstep Courier") {
+            manaCost = "{1}{U}"
+            colorIdentity = "U"
+            typeLine = "Creature — Human Scout"
+            power = 2
+            toughness = 1
+            keywords(Keyword.FLASH)
+        }
+        val groundedBack = card("Grounded Colossus") {
+            manaCost = "{4}{U}{U}"
+            colorIdentity = "U"
+            typeLine = "Creature — Golem"
+            power = 6
+            toughness = 6
+        }
+        cardRegistry.register(
+            CardDefinition.modalDoubleFacedPermanent(frontFace = flashFront, backFace = groundedBack)
+        )
+
         /** Six lands covering `{3}{G}{W}{W}` (and, with three Forests, `{1}{W}` too). */
         fun sixLands() = scenario()
             .withPlayers("Player1", "Player2")
@@ -97,6 +129,48 @@ class ModalDfcPermanentBackTest : ScenarioTestBase() {
             }
         }
 
+        test("the back-face *spell* reports the back's mana value, not the front's (CR 712.8f)") {
+            // CR 712.8f gives a modal double-faced spell on the stack "only the characteristics of
+            // the face that's up", with none of CR 712.8c's front-face mana-value exception. Both
+            // readouts feed rules text, not just the log: the cast event drives
+            // TRIGGERING_SPELL_MANA_VALUE (Kellan, the Kid's "equal or lesser mana value") and the
+            // cast record drives the turn's "you cast a spell with mana value N" history.
+            val game = sixLands()
+            val cardId = game.findCardsInHand(1, "Jennifer Walters").first()
+
+            val result = game.execute(
+                CastSpell(
+                    game.player1Id,
+                    cardId,
+                    useAlternativeCost = true,
+                    alternativeCostType = AlternativeCostType.MODAL_BACK_FACE
+                )
+            )
+            result.error shouldBe null
+
+            val castEvent = result.events.filterIsInstance<SpellCastEvent>().firstOrNull()
+            withClue("the cast emitted a SpellCastEvent") { castEvent.shouldNotBeNull() }
+            withClue("the spell on the stack is The Sensational She-Hulk, mana value 6") {
+                castEvent!!.manaValue shouldBe 6
+            }
+            withClue("and the turn's cast history agrees") {
+                game.state.spellsCastThisTurnByPlayer[game.player1Id]!!.last().manaValue shouldBe 6
+            }
+        }
+
+        test("a front-face cast still reports the front's mana value") {
+            // The regression guard for the branch above: only a *modal* back-face cast switches.
+            val game = sixLands()
+
+            val result = game.castSpell(1, "Jennifer Walters")
+            result.error shouldBe null
+
+            val castEvent = result.events.filterIsInstance<SpellCastEvent>().firstOrNull()
+            castEvent.shouldNotBeNull()
+            castEvent!!.manaValue shouldBe 2
+            game.state.spellsCastThisTurnByPlayer[game.player1Id]!!.last().manaValue shouldBe 2
+        }
+
         test("the back-face cast is offered as a legal action alongside the front") {
             val game = sixLands()
 
@@ -124,6 +198,74 @@ class ModalDfcPermanentBackTest : ScenarioTestBase() {
             }
             withClue("but the front face is castable for {1}{W}") {
                 game.castSpell(1, "Jennifer Walters").error shouldBe null
+            }
+        }
+
+        /**
+         * Hand [cardName] to Player 1 on Player 2's turn, with eight lands of each relevant colour,
+         * and pass priority so Player 1 holds it at instant speed only.
+         */
+        fun opponentsTurnWith(cardName: String): TestGame {
+            val game = scenario()
+                .withPlayers("Player1", "Player2")
+                .withCardInHand(1, cardName)
+                .withLandsOnBattlefield(1, "Island", 4)
+                .withLandsOnBattlefield(1, "Plains", 4)
+                .withLandsOnBattlefield(1, "Forest", 4)
+                .withCardInLibrary(1, "Forest")
+                .withCardInLibrary(2, "Forest")
+                .withActivePlayer(2)
+                .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                .build()
+            game.passPriority() // active player (Player2) passes; Player1 gets priority
+            return game
+        }
+
+        fun TestGame.castBackFaceOf(cardName: String) = execute(
+            CastSpell(
+                player1Id,
+                findCardsInHand(1, cardName).first(),
+                useAlternativeCost = true,
+                alternativeCostType = AlternativeCostType.MODAL_BACK_FACE
+            )
+        )
+
+        test("a sorcery-speed back face is not castable on an opponent's turn (CR 712.11c)") {
+            val game = opponentsTurnWith("Jennifer Walters")
+
+            withClue("The Sensational She-Hulk is a creature with no flash, so it isn't offered") {
+                game.getLegalActions(1).none { "The Sensational She-Hulk" in it.description } shouldBe true
+            }
+            withClue("and the handler refuses it too, not just the enumerator") {
+                (game.castBackFaceOf("Jennifer Walters").error != null) shouldBe true
+            }
+        }
+
+        test("a back face with flash is castable on an opponent's turn (CR 712.11c)") {
+            val game = opponentsTurnWith("King T'Challa")
+
+            withClue("Black Panther, Hope Enduring has flash, so the back face is offered") {
+                game.getLegalActions(1)
+                    .any { "Black Panther" in it.description && it.isAffordable } shouldBe true
+            }
+            game.castBackFaceOf("King T'Challa").error shouldBe null
+            game.resolveStack()
+            game.isOnBattlefield("Black Panther, Hope Enduring") shouldBe true
+        }
+
+        test("timing reads the face being cast, not the front face (CR 712.11c)") {
+            // Quickstep Courier has flash; its back, Grounded Colossus, does not. Only the face
+            // being cast is evaluated, so on an opponent's turn the *front* is castable and the
+            // *back* is not — the front's flash grants the back nothing.
+            val game = opponentsTurnWith("Quickstep Courier")
+
+            withClue("the flash front is castable at instant speed") {
+                game.getLegalActions(1)
+                    .any { "Quickstep Courier" in it.description && it.isAffordable } shouldBe true
+            }
+            withClue("but its non-flash back is not, despite the front's flash") {
+                game.getLegalActions(1).none { "Grounded Colossus" in it.description } shouldBe true
+                (game.castBackFaceOf("Quickstep Courier").error != null) shouldBe true
             }
         }
 

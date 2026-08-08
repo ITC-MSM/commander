@@ -3676,9 +3676,14 @@ The lowering looks for the consent gate at the **top** of `effect` or at the **t
 `CompositeEffect`. The tail case is "do X, then you may Y", where the rider attaches to the payoff:
 Planetarium of Wan Shi Tong is `Composite(look at the top card, May(cast it))`, and its ruling ties
 the turn's single use to the *cast* — "once you choose to cast the top card of your library, the
-ability won't trigger again that turn" — so looking and declining costs nothing. A "you may" sitting
-anywhere else (mid-composite, or under another wrapper) is not treated as the payoff: the budget gate
-goes outside it and declining would spend the turn's use. Keep the consent gate outermost or last.
+ability won't trigger again that turn" — so looking and declining costs nothing.
+
+**Keep the consent gate outermost or last — this is enforced, not advisory.** A "you may" sitting
+anywhere else (mid-composite, or under another wrapper) would leave the budget gate outside it, so
+declining would spend the turn's use — the exact defect the flag exists to fix, and invisible at the
+table because the prompt looks identical. Rather than mis-place the gate silently, the lowering
+throws, and `EffectOncePerTurnLoweringTest` sweeps every card in the pool for the shape so the
+failure lands at build time rather than mid-game.
 
 **`optional` = "you may [effect]"; `elseEffect` adds "If you don't, [elseEffect]."** For a
 **targeted** trigger, `optional` lets the player choose 0 targets to decline, and `elseEffect` runs
@@ -9375,8 +9380,13 @@ Card authors rarely reference these directly; they are created/updated by the ma
   every characteristic off that face (`transformedFace`) and passes `castTransformed = true` to `StackResolver`.
   Cost is the back's own mana cost (`AlternativeCostType.MODAL_BACK_FACE` — the enum entry is plumbing, not a real
   alternative cost; CR 712.11b calls it choosing a face). Because the back is a real `backFace`, transform, the
-  client's flip preview, and `CardComponent.manaValue` (CR 712.8f) all work with no extra wiring. First users: the
-  MSH hero cycle.
+  client's flip preview, and the permanent's `CardComponent.manaValue` all work with no extra wiring. The one place
+  the shared disturb path is *not* shareable is mana value on the **stack**: CR 712.8c computes a nonmodal
+  transformed spell's from the front face, while CR 712.8f gives a modal one the face that's up. `StackResolver`
+  forks on `layout == MODAL_DFC` for `spellManaValue` (the `SpellCastEvent`, hence
+  `ContextPropertyKey.TRIGGERING_SPELL_MANA_VALUE`), and `CastSpellHandler` mirrors it for its `CastSpellRecord`.
+  Timing comes off the face being cast, not the front (CR 712.11c), so a permanent back is sorcery-speed unless
+  *it* has flash. First users: the MSH hero cycle.
 - **Prepare / Prepared (Secrets of Strixhaven)** — `layout = PREPARE` + `cardFaces[0]` prepare spell; DSL:
   `card { prepare("Name") { spell { … } } }`. The creature is only cast as itself. A creature that carries
   `Keyword.PREPARED` ("This creature enters prepared") becomes prepared on enter
