@@ -185,6 +185,22 @@ sealed interface Player {
     }
 
     /**
+     * The owner of the effect's **source** — the card the ability is printed on, not whoever
+     * currently controls it.
+     *
+     * [OwnerOf] reads the owner of the effect's first *chosen target*, so it is unusable for an
+     * ability that names its own source without targeting it. This is that missing case:
+     * *"[This creature]'s owner shuffles it into their library and draws three cards"*
+     * (Gandalf, Wandering Wizard). It matters exactly when control and ownership diverge — a stolen
+     * permanent's ability still acts on the *owner*, per the printed text.
+     */
+    @SerialName("OwnerOfSource")
+    @Serializable
+    data object OwnerOfSource : Player {
+        override val description: String = "its owner"
+    }
+
+    /**
      * The distinct owners of the cards currently in the effect source's *linked-exile pile*
      * (the source's [com.wingedsheep.engine.state.components.battlefield.LinkedExileComponent],
      * populated by [com.wingedsheep.sdk.dsl.Effects.ExileUntilLeaves]). Resolves to one entry
@@ -226,6 +242,7 @@ sealed interface Player {
             EnchantedPlayer -> "enchanted player's"
             is ControllerOf -> "its controller's"
             is OwnerOf -> "its owner's"
+            OwnerOfSource -> "its owner's"
             OwnersOfLinkedExile -> "the exiled card's owner's"
         }
 }

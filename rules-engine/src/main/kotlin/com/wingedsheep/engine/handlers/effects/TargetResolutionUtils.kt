@@ -161,6 +161,11 @@ object TargetResolutionUtils {
             Player.EnchantedPlayer -> enchantedPlayer(context, state)
             is Player.OwnerOf -> context.targets.firstOrNull()?.toEntityId()
                 ?.let { state.getEntity(it)?.get<CardComponent>()?.ownerId }
+            // The owner of the ability's own source, which is NOT context.controllerId once the
+            // permanent has been stolen — "its owner shuffles it into their library and draws"
+            // still acts on the owner (Gandalf, Wandering Wizard).
+            Player.OwnerOfSource -> context.sourceId
+                ?.let { state.getEntity(it)?.get<CardComponent>()?.ownerId }
             is Player.ControllerOf -> context.targets.firstOrNull()?.toEntityId()
                 ?.let { controllerOf(state, it) }
             // Multi-player / list-only references have no single resolution here.
