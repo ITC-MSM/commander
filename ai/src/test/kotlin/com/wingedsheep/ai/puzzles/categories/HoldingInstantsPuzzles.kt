@@ -186,5 +186,107 @@ object HoldingInstantsPuzzles {
             // cast leaks is not on the board.
             check = { shouldNotCast("Giant Growth") },
         ),
+
+        AiPuzzle(
+            id = "instants-09",
+            category = PuzzleCategory.HOLDING_INSTANTS,
+            expectation = "Hold Restoration Angel in our own main phase — flash is worth nothing spent here",
+            aiSeat = 1,
+            position = { scenario ->
+                scenario.withPlayers()
+                    .withLandsOnBattlefield(1, "Plains", 4)
+                    .withCardInHand(1, "Restoration Angel")
+                    // Something to ambush. Without a creature across the table the hold is still
+                    // right, but for a weaker reason, and a puzzle should probe the strong one.
+                    .withCardOnBattlefield(2, "Hill Giant")
+                    .build()
+            },
+            // Taken from a real game (turn 7, four Plains, precombat main). The leaf sees a 3/4
+            // flier on the battlefield and scores it the same wherever in the turn it landed, so
+            // casting beat passing by +4.06 and the AI jammed it. It cannot attack this turn
+            // either way; what casting now spends is the whole reason flash is printed.
+            check = { shouldNotCast("Restoration Angel") },
+        ),
+
+        AiPuzzle(
+            id = "instants-10",
+            category = PuzzleCategory.HOLDING_INSTANTS,
+            expectation = "They attacked with the 3/3 — flash the Angel in and ambush it",
+            aiSeat = 1,
+            position = { scenario ->
+                scenario.withPlayers()
+                    .withActivePlayer(2)
+                    .withLandsOnBattlefield(1, "Plains", 4)
+                    .withCardInHand(1, "Restoration Angel")
+                    .withCardOnBattlefield(2, "Hill Giant")
+                    .withLandsOnBattlefield(2, "Mountain", 4)
+                    .build()
+                    .advanceToDeclaration(2, Step.DECLARE_ATTACKERS)
+                    .also { it.declareAttackers(mapOf("Hill Giant" to 1)) }
+                    .advanceToPriority(1, Step.DECLARE_ATTACKERS)
+            },
+            // The positive half, and the reason `instants-09` is not just a licence to never cast:
+            // a category made only of "don't cast" positions scores 100% for an AI that never plays
+            // a spell. This is the window the hold was *for* — attackers are committed, and a 3/4
+            // deployed now blocks in the next step (CR 509.1).
+            check = { shouldCast("Restoration Angel") },
+        ),
+
+        AiPuzzle(
+            id = "instants-11",
+            category = PuzzleCategory.HOLDING_INSTANTS,
+            expectation = "Raging Kavu has haste — deploy it in our main phase and attack",
+            aiSeat = 1,
+            position = { scenario ->
+                scenario.withPlayers()
+                    .withLandsOnBattlefield(1, "Mountain", 2)
+                    .withLandsOnBattlefield(1, "Forest", 1)
+                    .withCardInHand(1, "Raging Kavu")
+                    .build()
+            },
+            // The haste guard. Flash and haste are printed together precisely so the body can be
+            // deployed and used at once, so the domination argument `instants-09` rests on does not
+            // hold: there *is* a payoff before the ambush window.
+            check = { shouldCast("Raging Kavu") },
+        ),
+
+        AiPuzzle(
+            id = "instants-12",
+            category = PuzzleCategory.HOLDING_INSTANTS,
+            expectation = "Nebelgast Herald's ETB taps a blocker — that is worth having before we attack",
+            aiSeat = 1,
+            position = { scenario ->
+                scenario.withPlayers()
+                    .withLandsOnBattlefield(1, "Island", 3)
+                    .withCardInHand(1, "Nebelgast Herald")
+                    // Our attacker, and the blocker the ETB would tap out of its way.
+                    .withCardOnBattlefield(1, "Craw Wurm")
+                    .withCardOnBattlefield(2, "Hill Giant")
+                    .build()
+            },
+            // The ETB guard. A flash creature whose trigger changes this turn's combat has a real
+            // payoff before the ambush window, and the policy has no way to rank the two — so it
+            // declines rather than guessing, and the ordinary board evaluation decides.
+            check = { shouldCast("Nebelgast Herald") },
+        ),
+
+        AiPuzzle(
+            id = "instants-13",
+            category = PuzzleCategory.HOLDING_INSTANTS,
+            expectation = "Past the patience horizon the Angel is just a body — play it",
+            aiSeat = 1,
+            position = { scenario ->
+                scenario.withPlayers()
+                    .withTurnNumber(16)
+                    .withLandsOnBattlefield(1, "Plains", 4)
+                    .withCardInHand(1, "Restoration Angel")
+                    .withCardOnBattlefield(2, "Hill Giant")
+                    .build()
+            },
+            // The release guard, and the reason a floor this hard is not a brick: `AmbushWindow`
+            // inherits `Patience`'s three exits whole, and this is the one a long game reaches.
+            // Same position as `instants-09`, nine turns later.
+            check = { shouldCast("Restoration Angel") },
+        ),
     )
 }

@@ -88,6 +88,57 @@ data class CardIntent(
      * in the evaluator tells one land from another.
      */
     val entersTapped: Boolean = false,
+    /**
+     * Whether this card is a **permanent with flash** — a body you may deploy on either player's
+     * turn.
+     *
+     * [Speed] cannot answer this on its own: it reports `INSTANT` for a Lightning Bolt and for a
+     * Restoration Angel alike, and the whole of [AmbushWindow]'s argument turns on the difference.
+     * An instant is spent when it resolves and its window is about what it is *answering*; a flash
+     * permanent stays on the battlefield afterwards, so holding it costs the board nothing and buys
+     * the option to ambush.
+     *
+     * Structural like [entersTapped] rather than an [IntentTag], for the reason that enum's own doc
+     * gives: a tag is something the card *does*, and this is a property of when it may be cast.
+     */
+    val flashPermanent: Boolean = false,
+    /**
+     * Whether the card is **printed** with haste — the one reason a [flashPermanent] is worth
+     * deploying on our own turn rather than held for the ambush window.
+     *
+     * Printed, not effective. A creature that would be granted haste by something already on the
+     * battlefield (a Lightning Mauler pairing, an Anger in the graveyard) reads `false` here, and
+     * [AmbushWindow] will hold it a turn it could have attacked. That is the conservative direction
+     * and it is the one this file takes everywhere else it cannot read a card exactly: the
+     * alternative is asking what keywords a card *would* have on resolution, which nothing short of
+     * simulating the cast can answer.
+     */
+    val hasHaste: Boolean = false,
+    /**
+     * Whether every permanent this card targets is one **we control** — and there is at least one.
+     *
+     * This exists because [IntentTag.REMOVAL] cannot answer the question. `hitsAnotherPermanent`
+     * decides "does this take *someone else's* permanent off the battlefield" from the
+     * [com.wingedsheep.sdk.scripting.effects.EffectTarget] alone, and a bound or context target
+     * carries no filter — so it falls through to `else -> true` and every "exile a creature **you
+     * control**" reads as spot removal. Restoration Angel is tagged `REMOVAL, EXILE_REMOVAL` for
+     * blinking our own creature.
+     *
+     * That fail-open is harmless where the tag is only a prior, and wrong where a consumer needs to
+     * know which side of the table an effect points at. [AmbushWindow] is the second kind: "this ETB
+     * clears a blocker before we attack" and "this ETB blinks our own creature" are opposite
+     * answers, and the tag gives the same one for both.
+     *
+     * Fixing `hitsAnotherPermanent` to resolve bound targets against their requirement is the real
+     * repair, and it is deliberately *not* done here: `REMOVAL` feeds `staticPriorValue`'s ladder
+     * and [RemovalPatience]'s bar, so re-tagging every "target creature you control" card is an
+     * evaluation change that needs its own flag and its own arena run. This field is additive, read
+     * by exactly one consumer, and changes nothing for anyone else.
+     *
+     * `false` when the card targets no permanent at all, which keeps a vanilla body — the case the
+     * ambush policy most wants — from being mistaken for one that aims at us.
+     */
+    val targetsOnlyOurPermanents: Boolean = false,
 ) {
     operator fun contains(tag: IntentTag): Boolean = tag in tags
 
