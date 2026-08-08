@@ -3,7 +3,7 @@
 **Set Size:** 276 booster cards (collector numbers 1-276; basic lands 277-296 and showcase
 variants 297+ are excluded)
 **Release Date:** June 26, 2026
-**Implemented:** 235 / 276
+**Implemented:** 239 / 276
 - [x] Agent 13, Sharon Carter
 - [ ] Agent Maria Hill
 - [x] Agent of Atlas
@@ -85,7 +85,7 @@ variants 297+ are excluded)
 - [x] Thirst for Knowledge
 - [x] Tony Stark // The Invincible Iron Man
 - [x] Trickster's Stratagem
-- [ ] We Say Thee Nay!
+- [x] We Say Thee Nay!
 - [x] Wiccan, Rising Magician
 - [x] The Wondrous Wasp
 - [x] Agents of HYDRA
@@ -95,7 +95,7 @@ variants 297+ are excluded)
 - [x] Black Widow, Super Spy
 - [x] Construct a Cosmic Cube
 - [x] Crossbones, Malicious Mercenary
-- [ ] Cruel Alliance
+- [x] Cruel Alliance
 - [x] Dark Deed
 - [x] Decoy Ploy
 - [x] Doctor Doom
@@ -121,7 +121,7 @@ variants 297+ are excluded)
 - [x] Super-Skrull
 - [x] Swordsman, Sharp Scoundrel
 - [x] Thunderbolts Conspiracy
-- [ ] Too Evil to Stay Dead
+- [x] Too Evil to Stay Dead
 - [x] Unliving Legionnaire
 - [x] Visions of Villainy
 - [x] Whiplash, Vengeful Engineer
@@ -168,7 +168,7 @@ variants 297+ are excluded)
 - [x] Call Damage Control
 - [x] Claim the Kingdom
 - [x] Doc Samson, Super Psychiatrist
-- [ ] Earth's Mightiest Heroes
+- [x] Earth's Mightiest Heroes
 - [x] Epic Fight
 - [x] Giant Growth
 - [x] Go Nuts!
