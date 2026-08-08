@@ -5760,43 +5760,6 @@
     ]
 }
 
-// Make Your Move
-{
-    "name": "Make Your Move",
-    "manaCost": "{2}{W}",
-    "typeLine": "Instant",
-    "oracleText": "Destroy target artifact, enchantment, or creature with power 4 or greater.",
-    "script": {
-        "spellEffect": {
-            "type": "MoveToZone",
-            "target": {
-                "type": "BoundVariable",
-                "name": "artifact, enchantment, or creature with power 4 or greater"
-            },
-            "destination": "Graveyard",
-            "byDestruction": true
-        },
-        "targetRequirements": [
-            {
-                "type": "TargetObject",
-                "filter": {
-                    "baseFilter": "artifact|enchantment|pow>=4"
-                },
-                "id": "artifact, enchantment, or creature with power 4 or greater"
-            }
-        ]
-    },
-    "metadata": {
-        "collectorNumber": "20",
-        "artist": "Nathaniel Himawan",
-        "flavorText": "For a moment, there is only relentless snow and frozen breath.",
-        "imageUri": "https://cards.scryfall.io/normal/front/e/d/ed8bdd98-6377-40cf-b381-cee38b1bda2a.jpg?1771502526"
-    },
-    "colorIdentityOverride": [
-        "WHITE"
-    ]
-}
-
 // Manhole Missile
 {
     "name": "Manhole Missile",
