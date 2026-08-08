@@ -4,10 +4,14 @@ Branch `loop-msh-u01`, based on `msh-shield-counters`.
 
 ## The primitive
 
-`TriggeredAbility.effectOncePerTurn: Boolean` — the printed rider **"Do this only once each turn"**.
-An *effect* cap, deliberately distinct from the existing `oncePerTurn` *trigger* cap ("This ability
-triggers only once each turn"). Per CR 603.2 / 603.2c the ability still triggers once per matching
-event, so every instance goes on the stack; at most one may apply.
+`TriggeredAbility.effectOncePerTurn: Boolean` — the printed rider **"Do this only once each turn"**,
+deliberately distinct from the existing `oncePerTurn` cap ("This ability triggers only once each
+turn"). **CR 603.2h:** *"A triggered ability may have an instruction followed by 'Do this only once
+each turn.' This ability triggers only if its source's controller has not yet taken the indicated
+action that turn."* So while the action is untaken every matching event triggers its own instance;
+once it is taken the ability stops triggering for the rest of the turn and instances already on the
+stack do nothing as they resolve (Nykthos Paragon / Riveteers Ascendancy rulings). The contrast with
+`oncePerTurn` is what spends the cap: the *first trigger* there, the *action* here.
 
 Where it lives:
 
@@ -16,12 +20,13 @@ Where it lives:
 - `mtg-sdk/.../dsl/CardBuilder.kt` — `effectOncePerTurn` in the `triggeredAbility { }` builder.
 - `mtg-sdk/.../scripting/effects/GatedEffects.kt` — new `Gate.OnceEachTurn(abilityId)`. Engine-lowered
   only; cards never author it.
-- `rules-engine/.../event/TriggerProcessor.kt` — `withEffectBudgetGate()` lowers the flag into
-  `Gate.OnceEachTurn`, placed **inside** any enclosing consent gate (`MayDecide` / `MayPay` /
-  `MayPayX`) so declining a "you may" doesn't spend the budget. Also: drops a trigger whose budget is
-  already spent (rather than prompting for a decision that can't matter), and excludes capped
+- `rules-engine/.../event/TriggerProcessor.kt` — `withEffectBudgetGate()` lowers the flag into a
+  sandwich of `Gate.OnceEachTurn` gates: the spending one **inside** any enclosing consent gate
+  (`MayDecide` / `MayPay` / `MayPayX`) so declining a "you may" costs nothing, and a `spend = false`
+  check **outside** it so an instance whose turn is already used up resolves silently. Also: drops a
+  matching event once the action has been taken (CR 603.2h — it never triggers), and excludes capped
   abilities from the batched may-question in `batchKeyOf` (one shared yes/no would take away the
-  choice of *which* instance applies).
+  choice of *which* instance to use).
 - `rules-engine/.../handlers/effects/composite/GatedEffectExecutor.kt` — `executeOnceEachTurn()`
   checks and spends the budget atomically.
 - `rules-engine/.../state/components/battlefield/BattlefieldComponents.kt` —
@@ -49,18 +54,30 @@ Where it lives:
 ## Tests
 
 - `rules-engine/.../scenarios/EffectOncePerTurnTest.kt` — the primitive, with two inline enchantments
-  differing only in which cap they use: all instances trigger vs only one; declining doesn't spend the
-  budget; a spent budget stops prompting; the budget resets at end of turn; two sources keep separate
-  budgets; and three regression tests pinning the *existing* `oncePerTurn` behaviour unchanged.
-- `rules-engine/.../scenarios/JenniferWaltersScenarioTest.kt` — multi-block (three blockers dealt
-  damage in one combat): all three instances offered, only one applies; decline the early ones and
-  apply a later one; a declined combat trigger leaves the budget for a bigger later hit; front-face
-  lock refuses an opponent's cast on your turn.
+  differing only in which cap they use: declining down a batch keeps offering the next instance;
+  taking the action makes the rest resolve silently (no prompt); a later matching event that turn
+  doesn't trigger; the budget resets at end of turn; two sources keep separate budgets; and three
+  regression tests pinning the *existing* `oncePerTurn` behaviour unchanged.
+- `mtg-sdk/.../scripting/TriggeredAbilityDescriptionTest.kt` — the auto-generated
+  " Do this only once each turn." suffix (and that `oncePerTurn` doesn't get it).
+- `rules-engine/.../scenarios/JenniferWaltersScenarioTest.kt` — multi-block with three blockers dealt
+  **1 / 2 / 5** in one combat-damage event: all three instances offered when declined, only one
+  mirror lands; accepting the first silences the rest; taking a different instance in each of three
+  runs yields all three numbers, which is what pins `TRIGGER_DAMAGE_AMOUNT` per instance and proves
+  "decline down to the 5" is reachable. Plus: a declined combat trigger leaves the turn's use for a
+  bigger later hit; front-face lock refuses an opponent's cast on your turn.
 - `rules-engine/.../scenarios/BaronStruckerScenarioTest.kt` — the second Villain still triggers after
   declining the first; only one connive per turn; his own entry doesn't trigger (OTHER binding); the
   Villain discount.
 
 ## Gate
+
+Re-gated after the review corrections: `just test` — BUILD SUCCESSFUL, 10,994 tests passed, none
+failed. (The first attempt died with "Gradle build daemon disappeared" during `:mtg-sets:test` — the
+box's known OOM kill, no test failure; re-run after reaping the orphaned workers.) `just
+rebless-cards` re-run: **no snapshot file changed**, the corrections don't touch card definitions.
+
+Original gate:
 
 `just test` — see the final verdict block. Snapshot reblessed with `just rebless-cards`; the diff to
 `mtg-sets/src/test/resources/snapshots/cards/MSH.json` is +222 lines and contains only the two new
@@ -70,23 +87,33 @@ its header blocked-count adjusted 47 → 45.
 
 ## Things I'm unsure about / worth a reviewer's eye
 
-- **Which prompt is which.** For a targeted "may" trigger the engine asks the yes/no at
-  *put-on-stack* time, and the prompt text is the ability's static description — so a player facing
+*(Revised after review — two of the original entries were wrong and are corrected here.)*
+
+- **Which prompt is which.** The prompt text is the ability's static description, so a player facing
   three She-Hulk prompts in a multi-block cannot tell which instance carries which damage number.
-  That's a pre-existing engine gap (identical prompts for identical triggers), not something this
-  unit introduced, but it blunts the card. Fixing it means putting triggering context into the
-  decision payload.
-- **Saying yes twice in one batch.** Because those may-questions are all asked before any instance
-  resolves, a player can accept two and only the last-resolving one applies (the budget stops the
-  rest). Correct by the rules, but a usability trap. Moving the may-question to resolution time for
-  capped abilities would fix it at the cost of choosing targets for instances you then decline.
-- **Dropping a spent-budget trigger.** `processSingleTrigger` returns an `AbilityFizzledEvent` and
-  never puts the ability on the stack once the budget is spent. Strictly, the ability should still go
-  on the stack and resolve doing nothing; the shortcut avoids a pointless prompt and mirrors the
-  existing no-legal-targets shortcut, but it is an observable simplification.
+  Pre-existing engine gap (identical prompts for identical triggers), not introduced here, but it
+  blunts the card. Fixing it means putting triggering context into the decision payload. Still open.
+- **~~Saying yes twice in one batch.~~ Fixed in review correction.** The may-questions used to all be
+  asked at put-on-stack time, so a player could accept several and get one application. The lowering
+  now puts a `spend = false` check *outside* the consent gate, which moves consent for a capped
+  targeted trigger to resolution time — where CR puts it anyway (targets on announcement, CR 603.3d;
+  the "you may" as the ability resolves, per the Legolas ruling). An instance whose turn is already
+  used up now resolves silently.
+- **Dropping a matching event once the action is taken is the rule, not a shortcut.** CR 603.2h: the
+  ability "triggers only if its source's controller has not yet taken the indicated action that
+  turn", and the Riveteers Ascendancy ruling is explicit — *"Once you have chosen to return a creature
+  to the battlefield, further instances of sacrificing creatures the same turn will not cause the
+  ability to trigger."* Putting it on the stack anyway would be the bug. It is dropped with **no**
+  event (an `AbilityFizzledEvent` would be a phantom ability in the log: nothing triggered).
+- **Which instance spends the budget: the *first to resolve*.** The stack is LIFO, so that is the
+  *last* instance put on the stack, not the last to resolve. (The original note had this backwards.)
 - **`Gate.OnceEachTurn` is not a general Gate.** It only makes sense for the abilities the engine
-  lowers into it, and it carries an `AbilityId` — slightly odd for an SDK data type. The alternative
+  lowers into it, and it carries an `AbilityId` — slightly odd for an SDK data type. `EffectContext`
+  already carries `abilityIdentity`, but that is definition-scoped and null for synthesized sources,
+  which would silently merge or lose budgets; the explicit id is the safer choice. The alternative
   (a `Condition` + a marker `Effect`) needed two new types and put the correct ordering on card
   authors, which seemed worse.
-- **`TriggeredAbility.description`'s new suffix is unexercised** — both shipped cards set a
-  `descriptionOverride`, so the auto-generated fallback path isn't covered by a test.
+- **The consent gate must be outermost.** `withEffectBudgetGate` recognises `May*` only at the top of
+  the effect tree; a "you may" buried under a `CompositeEffect` would get the budget gate outside it
+  and spend the turn's use on a decline. Neither shipped card hits it; documented in the flag's KDoc
+  and in the SDK reference.

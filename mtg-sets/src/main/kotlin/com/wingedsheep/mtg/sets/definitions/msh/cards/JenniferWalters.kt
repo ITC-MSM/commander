@@ -51,14 +51,17 @@ import com.wingedsheep.sdk.scripting.values.DynamicAmount
  *    damage. "That much damage" reads the triggering event's amount via
  *    [ContextPropertyKey.TRIGGER_DAMAGE_AMOUNT].
  *
- *  - **"Do this only once each turn" is an *effect* cap, not a trigger cap** — `effectOncePerTurn =
- *    true`, never `oncePerTurn = true`. That is the whole card: in a multi-block every damaged
- *    creature offers its own trigger and the controller declines down the line until the instance
- *    carrying the biggest damage number, then applies that one. The trigger cap would fire only for
- *    the first creature dealt damage and make the rest unreachable. Declining costs nothing — the
- *    engine lowers the flag into a [com.wingedsheep.sdk.scripting.effects.Gate.OnceEachTurn] budget
- *    gate placed *inside* the [MayEffect] consent gate, so only an application that actually happens
- *    spends the turn's single use.
+ *  - **"Do this only once each turn" is not the trigger cap** — `effectOncePerTurn = true`, never
+ *    `oncePerTurn = true`. That is the whole card. Per CR 603.2h the ability "triggers only if its
+ *    source's controller has not yet taken the indicated action that turn": until She-Hulk has
+ *    mirrored something, every damaged creature offers its own instance, so the controller can
+ *    decline down the line to the one carrying the biggest damage number and take *that* one. Once
+ *    mirrored, the ability stops triggering for the turn and any instance still on the stack does
+ *    nothing as it resolves. The trigger cap would be spent by the first trigger — even declined —
+ *    and make the rest unreachable. Declining costs nothing: the engine lowers the flag into
+ *    [com.wingedsheep.sdk.scripting.effects.Gate.OnceEachTurn] gates around the [MayEffect] consent
+ *    gate, so only an action actually taken spends the turn's single use, and the "you may" is asked
+ *    as each instance resolves (the Legolas, Counter of Kills ruling) rather than all at once.
  */
 
 private val JenniferWaltersFront = card("Jennifer Walters") {

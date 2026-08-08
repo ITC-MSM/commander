@@ -1,6 +1,7 @@
 package com.wingedsheep.sdk.scripting.effects
 
 import com.wingedsheep.sdk.core.Zone
+import com.wingedsheep.sdk.scripting.AbilityId
 import com.wingedsheep.sdk.scripting.conditions.Condition
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.scripting.text.TextReplacer
@@ -233,34 +234,44 @@ sealed interface Gate {
     }
 
     /**
-     * Not a decision — a **per-turn effect budget**. Models the printed rider "*Do this only once
+     * Not a decision — a **per-turn action budget**. Models the printed rider "*Do this only once
      * each turn*" (Jennifer Walters // The Sensational She-Hulk, Baron Strucker, HYDRA Overlord).
      *
-     * The gate succeeds iff the source permanent has not already spent this ability's budget this
-     * turn; succeeding *spends* it, so at most one resolution per turn runs [GatedEffect.then].
-     * Check and spend are one atomic step in the executor — there is no window where two
-     * simultaneous instances both see an unspent budget.
+     * The gate succeeds iff the source permanent's controller has not yet taken this ability's
+     * indicated action this turn; succeeding *spends* the budget when [spend] is true, so at most
+     * one resolution per turn runs the real payoff. Check and spend are one atomic step in the
+     * executor — there is no window where two simultaneous instances both see an unspent budget.
      *
-     * **This is an effect cap, not a trigger cap — the two are different printed templates and
-     * must not be swapped.** "Do this only once each turn" limits how often the *effect* may be
-     * applied: per CR 603.2 the ability still triggers once per matching event, every instance
-     * goes on the stack, and the controller chooses which one to apply. The other wording, "*This
-     * ability triggers only once each turn*", is the trigger cap and is
+     * **This is not the trigger cap — the two printed templates are different and must not be
+     * swapped.** Per CR 603.2h an ability carrying "Do this only once each turn" *triggers only if
+     * its source's controller has not yet taken the indicated action that turn*: while the action
+     * is untaken every matching event triggers a fresh instance, and once it is taken the ability
+     * stops triggering for the rest of the turn and instances already on the stack do nothing as
+     * they resolve. The other wording, "*This ability triggers only once each turn*", stops after
+     * the *first trigger* whether or not the action happened, and is
      * [com.wingedsheep.sdk.scripting.TriggeredAbility.oncePerTurn] instead.
      *
      * Cards never author this gate directly: set
      * [com.wingedsheep.sdk.scripting.TriggeredAbility.effectOncePerTurn] and the engine lowers it
-     * into this gate at trigger-processing time, placing it *inside* any enclosing consent gate so
-     * that declining a "you may" costs nothing.
+     * into this gate at trigger-processing time. For an optional ability the lowering emits *two*
+     * of these: a [spend]`= false` check outside the consent gate, so an instance whose budget is
+     * already gone resolves silently instead of raising a yes/no that cannot matter, and the
+     * spending one inside it, so declining costs nothing.
      *
-     * @property abilityId The ability whose budget this gate spends. Budgets are tracked per
-     *   (source permanent, ability), so two different capped abilities on one permanent, or the
-     *   same ability on two permanents, never share a budget.
+     * @property abilityId The ability whose budget this gate reads. Budgets are tracked per
+     *   (source permanent, ability) — CR 603.2h scopes the rider to "*its source's controller*" for
+     *   *that* ability, and the Nykthos Paragon ruling spells it out: two copies of the permanent
+     *   each get their own use. The id is carried explicitly rather than read off `EffectContext`
+     *   because `EffectContext.abilityIdentity` is definition-scoped and null for synthesized
+     *   sources (spell copies), which would silently merge or lose budgets.
+     * @property spend Whether succeeding also marks the action taken. `false` is a read-only
+     *   pre-check used by the lowering above; exactly one gate per ability may spend.
      */
     @SerialName("Gate.OnceEachTurn")
     @Serializable
     data class OnceEachTurn(
-        val abilityId: com.wingedsheep.sdk.scripting.AbilityId
+        val abilityId: AbilityId,
+        val spend: Boolean = true
     ) : Gate {
         override fun applyTextReplacement(replacer: TextReplacer): Gate = this
     }

@@ -24,14 +24,16 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  * The discount is the Tombstone, Career Criminal / Undead Warchief shape: a [ModifySpellCost] static
  * scoped to [SpellCostTarget.YouCast] over the Villain subtype, reducing generic mana by one.
  *
- * The connive trigger is where the interesting rule lives. **"Do this only once each turn" is an
- * *effect* cap, not a trigger cap** — `effectOncePerTurn = true`, never `oncePerTurn = true`. Per CR
- * 603.2 the ability triggers once per matching event, so two Villains entering together each put an
- * instance on the stack and the controller decides *which* one connives by declining the other. The
- * trigger cap would fire only for the first Villain and take that choice away. Declining the "you
- * may" does not spend the budget: the engine lowers the flag into a
- * [com.wingedsheep.sdk.scripting.effects.Gate.OnceEachTurn] gate placed inside the [MayEffect]'s
- * consent gate, so only an application that actually happens counts.
+ * The connive trigger is where the interesting rule lives. **"Do this only once each turn" is not
+ * the trigger cap** — `effectOncePerTurn = true`, never `oncePerTurn = true`. Per CR 603.2h the
+ * ability "triggers only if its source's controller has not yet taken the indicated action that
+ * turn", so while nothing has connived yet every matching event still triggers: two Villains
+ * entering together each put an instance on the stack and the controller decides *which* one
+ * connives by declining the other. Once one has, the ability stops triggering for the turn and any
+ * instance still on the stack does nothing as it resolves. The trigger cap would instead be spent by
+ * the *first* trigger — even a declined one — and take that choice away. The engine lowers the flag
+ * into [com.wingedsheep.sdk.scripting.effects.Gate.OnceEachTurn] gates around the [MayEffect]'s
+ * consent gate, so only an action actually taken counts.
  *
  * "Another **Villain** you control" is deliberately `GameObjectFilter.Any` — the set puts the Villain
  * subtype on non-creature permanents too (see Avengers Under Siege) — with [TriggerBinding.OTHER]

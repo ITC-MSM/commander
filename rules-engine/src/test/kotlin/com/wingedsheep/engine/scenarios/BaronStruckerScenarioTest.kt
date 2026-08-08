@@ -17,11 +17,12 @@ import io.kotest.matchers.shouldBe
  * "Whenever another Villain you control enters, you may have it connive. **Do this only once each
  *  turn.**"
  *
- * The rider is the per-turn *effect* budget (`TriggeredAbility.effectOncePerTurn`), not the trigger
- * cap. Every Villain that enters triggers the ability (CR 603.2), so the controller gets to pick
- * *which* one connives; with `oncePerTurn` the second Villain would never trigger at all and that
- * choice would be gone. The primitive itself is covered by [EffectOncePerTurnTest]; this file
- * covers the card.
+ * The rider is `TriggeredAbility.effectOncePerTurn`, not the trigger cap. Per CR 603.2h the ability
+ * "triggers only if its source's controller has not yet taken the indicated action that turn", so
+ * until something has connived every Villain entering triggers it and the controller gets to pick
+ * *which* one connives; once one has, the ability stops triggering for the turn. With `oncePerTurn`
+ * a declined first Villain would burn the turn's only fire and that choice would be gone. The
+ * primitive itself is covered by [EffectOncePerTurnTest]; this file covers the card.
  */
 class BaronStruckerScenarioTest : ScenarioTestBase() {
 

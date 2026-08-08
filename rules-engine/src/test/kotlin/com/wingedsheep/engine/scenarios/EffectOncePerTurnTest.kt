@@ -15,23 +15,27 @@ import io.kotest.assertions.withClue
 import io.kotest.matchers.shouldBe
 
 /**
- * Engine-level tests for the **per-turn effect budget** — `TriggeredAbility.effectOncePerTurn`,
- * the printed rider "*Do this only once each turn*", lowered by `TriggerProcessor` into a
- * `Gate.OnceEachTurn` budget gate and resolved by `GatedEffectExecutor`.
+ * Engine-level tests for **"Do this only once each turn"** — `TriggeredAbility.effectOncePerTurn`,
+ * lowered by `TriggerProcessor` into `Gate.OnceEachTurn` gates and resolved by `GatedEffectExecutor`.
  *
- * The point of the primitive is that it is an **effect** cap, not a **trigger** cap, so both are
- * exercised here side by side with two otherwise-identical cards:
+ * **CR 603.2h:** *"A triggered ability may have an instruction followed by 'Do this only once each
+ * turn.' This ability triggers only if its source's controller has not yet taken the indicated
+ * action that turn."* The rider is therefore a stateful trigger condition keyed to the *action*, not
+ * the *trigger* cap that the other printed wording ("This ability triggers only once each turn")
+ * expresses. Both are exercised here side by side with two otherwise-identical cards:
  *
- *  - *Effect Cap Warden* — `effectOncePerTurn = true`. Per CR 603.2 the ability triggers once per
- *    matching event, so a sweeper hitting three creatures raises **three** may-questions; at most
- *    one of them may apply.
- *  - *Trigger Cap Warden* — `oncePerTurn = true`, the existing "This ability triggers only once each
- *    turn" cap. The same sweeper raises exactly **one** may-question. This is the regression guard:
- *    the new flag must not change how the old one behaves.
+ *  - *Effect Cap Warden* — `effectOncePerTurn = true`. While no life has been gained this way, every
+ *    matching event triggers: a sweeper hitting three creatures puts **three** instances on the
+ *    stack. Each asks its "you may" as it resolves, so declining the first two still lets the third
+ *    apply; accepting the first makes the other two do nothing as they resolve, with no prompt
+ *    (Nykthos Paragon / Riveteers Ascendancy rulings).
+ *  - *Trigger Cap Warden* — `oncePerTurn = true`, the existing cap. The same sweeper raises exactly
+ *    **one** may-question, and a decline burns it. This is the regression guard: the new flag must
+ *    not change how the old one behaves.
  *
  * Both are enchantments so the sweeper's damage to the *source* can't add a trigger of its own, and
- * both use a plain "you may gain 2 life" payoff so the number of prompts (instances that triggered)
- * and the life gained (instances that applied) are independently observable.
+ * both use a plain "you may gain 2 life" payoff so the number of prompts and the life gained are
+ * independently observable.
  */
 private val EffectCapWarden = card("Effect Cap Warden") {
     manaCost = "{2}"
@@ -100,7 +104,8 @@ class EffectOncePerTurnTest : ScenarioTestBase() {
 
         context("effectOncePerTurn — the effect cap") {
 
-            test("every instance triggers, but only one applies its effect") {
+            /** Pyroclasm three creatures under an Effect Cap Warden — three simultaneous instances. */
+            fun sweptBoard(): TestGame {
                 val game = scenario()
                     .withPlayers("Player1", "Player2")
                     .withCardOnBattlefield(1, "Effect Cap Warden")
@@ -116,17 +121,41 @@ class EffectOncePerTurnTest : ScenarioTestBase() {
 
                 game.castSpell(1, "Pyroclasm").error shouldBe null
                 game.resolveStack()
+                return game
+            }
 
-                // Say yes to every question: three creatures were dealt damage, so three instances
-                // must have triggered — and the budget must still cap the payoff at one.
-                val asked = answerAllMayQuestions(game, true)
+            test("every instance triggers — declining down the batch keeps offering the next") {
+                val game = sweptBoard()
 
-                withClue("CR 603.2: one instance per damaged creature, all of them offered") {
+                // Three creatures were dealt damage, so three instances are on the stack. Decline
+                // the first two: neither takes the action, so neither stops the third from asking.
+                var asked = 0
+                var guard = 0
+                while (game.hasPendingDecision() && guard++ < 20) {
+                    asked++
+                    game.answerYesNo(asked == 3)
+                    game.resolveStack()
+                }
+
+                withClue("CR 603.2h: while the action is untaken, every matching event triggers") {
                     asked shouldBe 3
                 }
-                withClue("only one instance may apply its effect this turn") {
+                withClue("the accepted third instance is the one that applies") {
                     game.getLifeTotal(1) shouldBe 22
                 }
+            }
+
+            test("once one instance takes the action, the rest do nothing as they resolve") {
+                val game = sweptBoard()
+
+                // Accept the very first question. The other two instances are still on the stack,
+                // but the action has been taken, so they resolve silently — no second prompt, and
+                // no second 2 life. (Nykthos Paragon: "other instances will do nothing as they
+                // resolve.") This is the "say yes twice and get one payoff" trap, removed.
+                val asked = answerAllMayQuestions(game, true)
+
+                withClue("only the first instance raised a question") { asked shouldBe 1 }
+                withClue("only one instance applied") { game.getLifeTotal(1) shouldBe 22 }
             }
 
             test("declining does not spend the budget — a later trigger the same turn still applies") {

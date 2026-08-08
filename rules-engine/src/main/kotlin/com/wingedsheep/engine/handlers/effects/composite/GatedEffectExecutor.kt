@@ -404,7 +404,7 @@ class GatedEffectExecutor(
     }
 
     /**
-     * Resolve a [Gate.OnceEachTurn] gate — the per-turn *effect* budget behind the printed rider
+     * Resolve a [Gate.OnceEachTurn] gate — the per-turn action budget behind the printed rider
      * "Do this only once each turn" (see [com.wingedsheep.sdk.scripting.TriggeredAbility.effectOncePerTurn]).
      *
      * The budget lives on the source permanent as a
@@ -412,6 +412,13 @@ class GatedEffectExecutor(
      * on one permanent — or the same ability on two permanents — never share one. Spending it is
      * part of the same step as the check: the stamped state is what [GatedEffect.then] executes
      * against, so a second instance resolving immediately afterwards already sees a spent budget.
+     * An already-spent gate falls to [GatedEffect.otherwise] (normally absent), which is how CR
+     * 603.2h's "instances already on the stack do nothing as they resolve" is realised.
+     *
+     * A [Gate.OnceEachTurn.spend]`= false` gate is the read-only half of the same test: it lets
+     * `TriggerProcessor` put a check *outside* an optional ability's consent gate so a spent
+     * instance resolves silently instead of raising a pointless yes/no, without that check itself
+     * consuming the turn's use.
      *
      * A source with no entity in state (it left the battlefield before this resolved) has nowhere
      * to keep the stamp; the effect still applies, matching how the other per-turn trackers behave
@@ -433,6 +440,10 @@ class GatedEffectExecutor(
             return effect.otherwise
                 ?.let { effectExecutor(state, it, context) }
                 ?: EffectResult.success(state)
+        }
+
+        if (!gate.spend) {
+            return effectExecutor(state, effect.then, context)
         }
 
         val stamped = if (sourceId != null && state.getEntity(sourceId) != null) {

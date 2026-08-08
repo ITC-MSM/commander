@@ -53,24 +53,40 @@ data class TriggeredAbility(
     /** When true, this triggered ability triggers at most once each turn.
      * Used for cards like Scavenger's Talent: "This ability triggers only once each turn."
      *
-     * This is a **trigger** cap: later matching events in the same turn don't trigger at all.
-     * For the *other* printed rider, "Do this only once each turn", use [effectOncePerTurn]. */
+     * This cap is spent by the **first trigger**, whether or not anything came of it: later
+     * matching events in the same turn don't trigger at all. For the *other* printed rider,
+     * "Do this only once each turn", use [effectOncePerTurn]. */
     val oncePerTurn: Boolean = false,
     /**
-     * When true, this ability triggers normally but its **effect** may be applied at most once
-     * each turn — the printed rider "*Do this only once each turn*" (Jennifer Walters // The
-     * Sensational She-Hulk, Baron Strucker, HYDRA Overlord).
+     * When true, this ability carries the printed rider "*Do this only once each turn*" (Jennifer
+     * Walters // The Sensational She-Hulk, Baron Strucker, HYDRA Overlord).
      *
-     * Per CR 603.2 the ability triggers once per matching event, so in a multi-block every damaged
-     * creature (every Villain entering) puts its own instance on the stack; the controller then
-     * declines the ones they don't want and applies the effect on the one they do. Declining an
-     * optional instance does **not** spend the budget — the engine lowers this flag into a
-     * [com.wingedsheep.sdk.scripting.effects.Gate.OnceEachTurn] gate placed *inside* the consent
-     * gate, so the budget is spent only when the effect actually runs.
+     * **CR 603.2h:** *"A triggered ability may have an instruction followed by 'Do this only once
+     * each turn.' This ability triggers only if its source's controller has not yet taken the
+     * indicated action that turn."* So the rider is a stateful **trigger condition keyed to the
+     * action**, not a cap on how often the ability may be put on the stack:
      *
-     * Do not model this wording with [oncePerTurn]: a trigger cap fires only on the *first*
-     * matching event and never offers the rest, which makes "decline down to the biggest damage
-     * number" (or "pick which Villain connives") unreachable.
+     *  - While the action is untaken, **every** matching event triggers its own instance — a
+     *    multi-block puts one instance on the stack per damaged creature, one per Villain entering.
+     *  - The choice is made as an instance *resolves* (Legolas, Counter of Kills ruling), and
+     *    taking the action there spends the turn's single use.
+     *  - Instances still on the stack afterwards **do nothing as they resolve**, and no further
+     *    matching event triggers the ability for the rest of the turn (Nykthos Paragon / Riveteers
+     *    Ascendancy rulings).
+     *  - **Declining does not spend it** — the engine lowers this flag into a
+     *    [com.wingedsheep.sdk.scripting.effects.Gate.OnceEachTurn] gate placed *inside* the consent
+     *    gate, so only an action actually taken counts.
+     *
+     * The budget is per (source permanent, ability): two copies of the permanent each get their own.
+     *
+     * Do not model this wording with [oncePerTurn]: a trigger cap is spent by the first trigger
+     * even when the player declines, which makes "decline down to the biggest damage number" (or
+     * "pick which Villain connives") unreachable.
+     *
+     * **Consent-gate caveat.** The lowering recognises a consent gate only at the *top* of
+     * [effect] — a bare `MayEffect` / `mayPay` / `mayPayX`. An `optional` ability whose "you may"
+     * sits under a `CompositeEffect` (or any other wrapper) gets the budget gate on the outside
+     * instead, and declining would then spend the turn's use. Keep the consent gate outermost.
      */
     val effectOncePerTurn: Boolean = false,
     /** When true, this triggered ability triggers at most once over the source permanent's

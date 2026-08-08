@@ -169,9 +169,11 @@ class TriggerProcessor(
         val targetRequirement = ability.targetRequirement ?: return null
         if (ability.effect.asMayDecide() == null) return null
         // An `effectOncePerTurn` ability is never batched: its whole point is picking *which* of the
-        // simultaneous instances gets the turn's single application (which damaged creature's number
-        // to mirror, which Villain connives). One shared yes/no would answer for all of them and
-        // take that choice away.
+        // simultaneous instances gets the turn's single action (which damaged creature's number to
+        // mirror, which Villain connives). One shared yes/no would answer for all of them and take
+        // that choice away. It also never reaches the put-on-stack may-question at all — the
+        // lowering in `withEffectBudgetGate` moves consent to resolution time — but this guard reads
+        // the *un-lowered* ability, so it is still load-bearing.
         if (ability.effectOncePerTurn) return null
         val identity = state.abilityIdentityOf(trigger.sourceId, ability.id) ?: return null
         // Mirror processMayThenTargetTrigger's fizzle guard: a trigger with no legal targets (for a
@@ -287,25 +289,20 @@ class TriggerProcessor(
      * @return ExecutionResult - may be paused if trigger requires targets
      */
     private fun processSingleTrigger(state: GameState, incomingTrigger: PendingTrigger): ExecutionResult {
-        // "Do this only once each turn" (`effectOncePerTurn`) is an *effect* cap, not a trigger cap:
-        // the ability keeps triggering once per matching event (CR 603.2) and every instance goes on
-        // the stack, but at most one of them may apply its effect per turn. Once the budget is spent,
-        // a later instance would resolve doing nothing, so it is dropped here rather than dragged
-        // through a may-question and a target choice that cannot matter — the same shortcut the
-        // engine already takes for a trigger with no legal targets.
+        // "Do this only once each turn" (`effectOncePerTurn`). CR 603.2h: the ability "triggers only
+        // if its source's controller has not yet taken the indicated action that turn". Once the
+        // action has been taken this turn the ability simply does not trigger, so this instance is
+        // dropped — silently, with no event: nothing went on the stack and nothing fizzled, and a
+        // phantom ability in the log would be a lie. (Contrast `oncePerTurn`, the *trigger* cap,
+        // which is spent by the first trigger whether or not the action happened.)
+        //
+        // Deliberately ahead of the `consumesDelayedTriggerId` removal and the `triggersOnce` mark
+        // below: an ability that never triggers must not consume its one-shot delayed trigger nor
+        // burn its lifetime fire. No shipped card combines those flags with this one.
         if (incomingTrigger.ability.effectOncePerTurn &&
             effectBudgetSpent(state, incomingTrigger.sourceId, incomingTrigger.ability.id)
         ) {
-            return ExecutionResult.success(
-                state,
-                listOf(
-                    AbilityFizzledEvent(
-                        incomingTrigger.sourceId,
-                        incomingTrigger.ability.description,
-                        "Its effect has already been applied this turn"
-                    )
-                )
-            )
+            return ExecutionResult.success(state, emptyList())
         }
         val trigger = if (incomingTrigger.ability.effectOncePerTurn) {
             incomingTrigger.copy(ability = withEffectBudgetGate(incomingTrigger.ability))
@@ -362,9 +359,7 @@ class TriggerProcessor(
         // the may-action lets an impossible "may" (e.g. "you may sacrifice an artifact" with no
         // artifact) fall straight to the else with no prompt — the no-target analogue of
         // "no legal targets → else".
-        val effectOwnsConsent = (ability.effect as? GatedEffect)?.gate
-            .let { it is Gate.MayDecide || it is Gate.MayPay || it is Gate.MayPayX }
-        if (ability.optional && !effectOwnsConsent) {
+        if (ability.optional && !ability.effect.ownsConsentGate()) {
             val gated = GatedEffect(
                 gate = Gate.MayDecide(feasibility = impliedMayFeasibility(ability.effect)),
                 then = ability.effect,
@@ -375,6 +370,24 @@ class TriggerProcessor(
 
         // No targets required - put directly on stack
         return putTriggerOnStack(currentState, trigger, emptyList())
+    }
+
+    /**
+     * Does this effect already carry its own consent gate — a `May*` [GatedEffect] the executor will
+     * turn into a resolution-time yes/no? Used to keep `optional` from wrapping a second "you may"
+     * around an effect that already asks, which would prompt twice.
+     *
+     * Looks through a [Gate.OnceEachTurn] because `withEffectBudgetGate` lowers a capped optional
+     * ability to `OnceEachTurn(spend = false) → May… → OnceEachTurn() → effect`; the consent gate is
+     * still there, one level down.
+     */
+    private fun Effect.ownsConsentGate(): Boolean {
+        val gated = this as? GatedEffect ?: return false
+        return when (gated.gate) {
+            is Gate.MayDecide, is Gate.MayPay, is Gate.MayPayX -> true
+            is Gate.OnceEachTurn -> gated.then.ownsConsentGate()
+            else -> false
+        }
     }
 
     /**
@@ -1481,8 +1494,9 @@ class TriggerProcessor(
     }
 
     /**
-     * Has this source already applied [abilityId]'s "Do this only once each turn" effect this turn?
-     * Read-only mirror of the stamp `GatedEffectExecutor` writes when the budget gate passes.
+     * Has this source's controller already taken [abilityId]'s "Do this only once each turn" action
+     * this turn (CR 603.2h)? Read-only mirror of the stamp `GatedEffectExecutor` writes when the
+     * spending budget gate passes.
      */
     private fun effectBudgetSpent(state: GameState, sourceId: EntityId, abilityId: AbilityId): Boolean =
         state.getEntity(sourceId)
@@ -1490,29 +1504,51 @@ class TriggerProcessor(
             ?.hasApplied(abilityId) == true
 
     /**
-     * Lower `TriggeredAbility.effectOncePerTurn` into a [Gate.OnceEachTurn] budget gate around the
-     * effect that actually runs.
+     * Lower `TriggeredAbility.effectOncePerTurn` into [Gate.OnceEachTurn] budget gates around the
+     * effect that actually runs (CR 603.2h — see the flag's KDoc).
      *
      * Placement is the whole point. When the ability's effect already owns a consent gate (a
      * `Gate.MayDecide` / `MayPay` / `MayPayX` — "**you may** have it connive", "**you may** have
-     * She-Hulk deal that much damage"), the budget gate goes *inside* it, wrapping only the yes
-     * branch. Declining therefore costs nothing: the player can decline instance after instance and
-     * still spend the turn's single application on the one they want. Wrapping the other way round
-     * would burn the budget on a decline, and wrapping it outside a *later* `optional` lowering is
-     * exactly why the outer shape is preserved here — `processSingleTrigger`'s `optional` branch and
-     * `asMayDecide()` / `asOptionalManaPayment()` recognition all still see the gate they expect.
+     * She-Hulk deal that much damage"), the lowering emits a *sandwich*:
      *
-     * A mandatory capped ability has no consent gate, so the budget gate simply wraps the effect.
+     * ```
+     * OnceEachTurn(spend = false)   ← has the action already been taken? if so, resolve silently
+     *   └ MayDecide / MayPay / …    ← the printed "you may", asked only when it can still matter
+     *       └ OnceEachTurn()        ← taking the action spends the turn's single use
+     *           └ the real effect
+     * ```
+     *
+     * The inner, spending gate is why declining costs nothing: the player can decline instance after
+     * instance and still take the action on the one they want. The outer, read-only gate is why an
+     * instance whose turn has already been used up "does nothing as it resolves" (Nykthos Paragon /
+     * Riveteers Ascendancy rulings) instead of raising a yes/no whose answer cannot matter — the
+     * trap of accepting three She-Hulk prompts in one multi-block and getting one mirror.
+     *
+     * A consequence worth stating: with a gate on the outside, `asMayDecide()` no longer matches at
+     * the top of the effect, so `processSingleTrigger` routes a *targeted* capped trigger through
+     * `processTargetedTrigger` rather than `processMayThenTargetTrigger`. Consent therefore moves
+     * from put-on-stack time to resolution time, which is where CR puts it anyway: targets are
+     * chosen on announcement (CR 603.3d) and the "you may" is chosen as the ability resolves (the
+     * Legolas, Counter of Kills ruling says so in as many words). Without that move the three
+     * prompts of a multi-block would all be answered before any instance resolved, so the outer gate
+     * would have nothing to suppress.
+     *
+     * A mandatory capped ability has no consent gate and no prompt to suppress, so a single
+     * spending gate simply wraps the effect.
      */
     private fun withEffectBudgetGate(ability: TriggeredAbility): TriggeredAbility {
-        val budgetGate = Gate.OnceEachTurn(ability.id)
         val effect = ability.effect
         val consentGated = (effect as? GatedEffect)
             ?.takeIf { it.gate is Gate.MayDecide || it.gate is Gate.MayPay || it.gate is Gate.MayPayX }
         val newEffect = if (consentGated != null) {
-            consentGated.copy(then = GatedEffect(gate = budgetGate, then = consentGated.then))
+            GatedEffect(
+                gate = Gate.OnceEachTurn(ability.id, spend = false),
+                then = consentGated.copy(
+                    then = GatedEffect(gate = Gate.OnceEachTurn(ability.id), then = consentGated.then)
+                )
+            )
         } else {
-            GatedEffect(gate = budgetGate, then = effect)
+            GatedEffect(gate = Gate.OnceEachTurn(ability.id), then = effect)
         }
         return ability.copy(effect = newEffect)
     }
