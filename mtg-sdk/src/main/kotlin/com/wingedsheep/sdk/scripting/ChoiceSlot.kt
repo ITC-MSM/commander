@@ -73,6 +73,26 @@ enum class ChoiceSlot {
     BARGAINED,
 
     /**
+     * Whether the spell's optional **collect evidence** additional cost was declared when cast
+     * (CR 701.59c, Murders at Karlov Manor — "as an additional cost to cast this spell, you may
+     * collect evidence 6"). A present value means evidence *was* collected. Read back through
+     * [com.wingedsheep.sdk.dsl.Conditions.WasEvidenceCollected].
+     *
+     * Deliberately distinct from [KICKED] and [BARGAINED] even though all three ride the same
+     * optional-additional-cost rail ([KeywordAbility.OptionalAdditionalCost.declaredSlot]):
+     * CR 701.59c links a card's "if evidence was collected" ability to *its own* collect-evidence
+     * ability (CR 607), so a spell cast with evidence collected must not read as kicked to an
+     * unrelated "whenever you cast a kicked spell" payoff, and vice versa.
+     *
+     * Only the *linked* shape stamps this slot. The many unlinked collect-evidence costs — every
+     * activated-ability cost, Axebane Ferox's ward, and the resolution-time
+     * [com.wingedsheep.sdk.scripting.effects.CollectEvidenceEffect] — pay the same
+     * [com.wingedsheep.sdk.scripting.costs.CostAtom.CollectEvidence] atom without recording
+     * anything here, because nothing on those cards asks the question.
+     */
+    EVIDENCE_COLLECTED,
+
+    /**
      * Whether the spell's sneak cost was paid when cast (CR 702.190, e.g. Leonardo, Leader
      * in Blue). A present value means "cast for its sneak cost". Read back through
      * [com.wingedsheep.sdk.scripting.conditions.SneakCostWasPaid].

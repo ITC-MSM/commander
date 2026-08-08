@@ -195,6 +195,7 @@ export function computePhases(actionInfo: LegalActionInfo, options?: ComputePhas
       'BouncePermanent',
       'DiscardCard',
       'ExileFromGraveyard',
+      'CollectEvidence',
       'ExileFromZone',
       'RevealCard',
       'Behold',
@@ -424,7 +425,7 @@ export function mergeResult(
               ? { discardedCards: selectedTargets }
               : costType === 'BouncePermanent'
                 ? { bouncedPermanents: selectedTargets }
-                : costType === 'ExileFromGraveyard'
+                : costType === 'ExileFromGraveyard' || costType === 'CollectEvidence'
                   ? { exiledCards: selectedTargets }
                   : costType === 'Behold' || costType === 'ChooseEntity'
                     ? { beheldCards: selectedTargets }
@@ -460,7 +461,8 @@ export function mergeResult(
               ? { discardedCards: selectedTargets }
               : costType === 'BouncePermanent'
                 ? { bouncedPermanents: selectedTargets }
-                : costType === 'ExileFromGraveyard' || costType === 'Craft'
+                : costType === 'ExileFromGraveyard' || costType === 'Craft' ||
+                    costType === 'CollectEvidence'
                   ? { exiledCards: selectedTargets }
                   : costType === 'Blight'
                     ? { blightTargets: selectedTargets }
@@ -846,6 +848,20 @@ export function enterPhase(
           flags.sourceCardName = actionInfo.description
             .replace(/^Cast /, '')
             .replace(/^Activate /, '')
+          break
+        // Collect evidence N (CR 701.59a): any number of graveyard cards, gated on their summed
+        // mana value rather than a count — so the count bounds are simply 1..whole graveyard and
+        // `minTotalManaValue` carries the real constraint.
+        case 'CollectEvidence':
+          validTargets = [...(costInfo.validExileTargets ?? [])]
+          minTargets = 1
+          maxTargets = costInfo.validExileTargets?.length ?? 1
+          flags.isSacrificeSelection = true
+          flags.targetZone = 'Graveyard'
+          flags.targetDescription = costInfo.description
+          if (costInfo.exileMinTotalManaValue != null) {
+            flags.minTotalManaValue = costInfo.exileMinTotalManaValue
+          }
           break
         case 'ExileFromZone':
           validTargets = [...(costInfo.validExileTargets ?? [])]

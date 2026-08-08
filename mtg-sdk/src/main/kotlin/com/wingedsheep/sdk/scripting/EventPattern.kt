@@ -518,6 +518,30 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
     }
 
     /**
+     * Whenever [player] collects evidence (CR 701.59). Fires once per collection, after the chosen
+     * cards have been exiled — and only then: a declined collection, and one that was impossible
+     * under CR 701.59b, never fire it, so "whenever you collect evidence" payoffs (Surveillance
+     * Monitor's Thopter, Evidence Examiner's Clue) can trust that evidence genuinely changed hands.
+     *
+     * Fires for **every** context the mechanic appears in — an activated-ability cost (Cryptex), a
+     * cast-time additional cost (Extract a Confession), a ward cost (Axebane Ferox), and the
+     * resolution-time [com.wingedsheep.sdk.scripting.effects.CollectEvidenceEffect] (Sample
+     * Collector) — because all four share one payment implementation. That matters for the printed
+     * cards: Surveillance Monitor's own ETB collection triggers its own payoff.
+     *
+     * Note that this is a *different* fact from the CR 701.59c linkage: this pattern observes any
+     * collection by [player], while `Conditions.WasEvidenceCollected` asks only whether *this
+     * object's own* optional cast cost was declared.
+     */
+    @SerialName("EvidenceCollectedEvent")
+    @Serializable
+    data class EvidenceCollectedEvent(
+        val player: Player = Player.You
+    ) : EventPattern {
+        override val description: String = "${player.description} collects evidence"
+    }
+
+    /**
      * Whenever a permanent matching [filter] explores (CR 701.44), optionally gated by whether the
      * revealed card was a land ([revealedType]). The exploring permanent is the event subject, so
      * "a creature you control explores" is `filter = GameObjectFilter.Creature.youControl()` with a

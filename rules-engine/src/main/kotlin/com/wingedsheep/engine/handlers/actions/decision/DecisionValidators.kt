@@ -62,7 +62,7 @@ object DecisionValidators {
     fun validate(decision: PendingDecision, response: DecisionResponse, state: GameState? = null): String? {
         return when (decision) {
             is ChooseTargetsDecision -> validateTargets(decision, response, state)
-            is SelectCardsDecision -> validateSelectCards(decision, response)
+            is SelectCardsDecision -> validateSelectCards(decision, response, state)
             is YesNoDecision -> validateYesNo(response)
             is ChooseModeDecision -> validateModes(decision, response)
             is ChooseColorDecision -> validateColor(decision, response)
@@ -239,7 +239,11 @@ object DecisionValidators {
         return null
     }
 
-    private fun validateSelectCards(decision: SelectCardsDecision, response: DecisionResponse): String? {
+    private fun validateSelectCards(
+        decision: SelectCardsDecision,
+        response: DecisionResponse,
+        state: GameState?
+    ): String? {
         if (response !is CardsSelectedResponse) {
             return "Expected card selection response"
         }
@@ -254,6 +258,23 @@ object DecisionValidators {
         }
         if (response.selectedCards.size > decision.maxSelections) {
             return "Too many cards selected: maximum is ${decision.maxSelections}"
+        }
+        // "... with total mana value N or greater" — collect evidence N (CR 701.59a). Unlike the
+        // `maxTotalManaValue` cap, an under-total selection can't be trimmed into legality, so it
+        // is rejected outright: there is no correct way to complete an insufficient payment, and
+        // CR 701.59b means the player was only offered this decision because a legal one exists.
+        // An *empty* selection is governed by `minSelections` alone, not by the floor: where the
+        // collection is optional (a ward cost the player may simply not pay) the decision is raised
+        // with `minSelections = 0` and selecting nothing is how you decline. Enforcing the floor
+        // there would make declining impossible.
+        val manaFloor = decision.minTotalManaValue?.takeIf { response.selectedCards.isNotEmpty() }
+        if (manaFloor != null && state != null) {
+            val totalManaValue = response.selectedCards.distinct().sumOf { id ->
+                state.getEntity(id)?.get<CardComponent>()?.manaValue ?: 0
+            }
+            if (totalManaValue < manaFloor) {
+                return "Selected cards total mana value $totalManaValue, need at least $manaFloor"
+            }
         }
         val unmetConditionalMinimums = decision.conditionalMinimums.filter {
             response.selectedCards.size < it.requiredSelections

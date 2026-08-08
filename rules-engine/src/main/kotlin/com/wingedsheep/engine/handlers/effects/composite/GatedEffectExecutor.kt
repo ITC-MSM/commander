@@ -130,6 +130,21 @@ class GatedEffectExecutor(
             ) {
                 return EffectResult.success(state)
             }
+            // CR 701.59b — "if a player is given the choice to collect evidence but is unable to
+            // exile cards with total mana value N or greater … they can't choose to collect
+            // evidence." The option must be absent, not offered and refused, so an unreachable
+            // threshold skips the prompt outright (the same treatment ReflexiveTriggerEffect gives
+            // the "you may collect evidence N. When you do, …" shape).
+            if (then is com.wingedsheep.sdk.scripting.effects.CollectEvidenceEffect) {
+                val collector = TargetResolutionUtils
+                    .resolvePlayerRef(then.player, context, state)
+                if (collector == null ||
+                    !com.wingedsheep.engine.handlers.costs.CollectEvidenceResolver
+                        .canCollect(state, collector, then.amount)
+                ) {
+                    return EffectResult.success(state)
+                }
+            }
             // A declared feasibility that isn't met means the may-action is impossible — the player
             // "doesn't", so skip the prompt and run `otherwise` directly. This is the no-target
             // analogue of a targeted "may" with no legal targets falling to its else branch (e.g.

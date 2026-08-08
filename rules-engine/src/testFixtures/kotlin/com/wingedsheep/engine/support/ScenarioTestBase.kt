@@ -1616,6 +1616,90 @@ abstract class ScenarioTestBase : FunSpec() {
         }
 
         /**
+         * Cast a spell **collecting evidence** (CR 701.59) — declaring its optional "you may
+         * collect evidence N" additional cost and paying it by exiling [evidenceNames] from the
+         * caster's graveyard.
+         *
+         * The named cards must total mana value N or greater (CR 701.59a); passing an insufficient
+         * set is how a test pins the engine's rejection of an under-total payment.
+         *
+         * @param playerNumber The player casting the spell (1 or 2)
+         * @param spellName The name of the spell to cast, from that player's hand
+         * @param evidenceNames Graveyard card names to exile as the collection, in order
+         * @param targetId Optional single target for the spell
+         */
+        fun castSpellCollectingEvidence(
+            playerNumber: Int,
+            spellName: String,
+            vararg evidenceNames: String,
+            targetId: EntityId? = null,
+        ): ExecutionResult {
+            val playerId = if (playerNumber == 1) player1Id else player2Id
+            val cardId = state.getHand(playerId).find { entityId ->
+                state.getEntity(entityId)?.get<CardComponent>()?.name == spellName
+            } ?: error("Card '$spellName' not found in player $playerNumber's hand")
+
+            val graveyard = state.getZone(ZoneKey(playerId, Zone.GRAVEYARD)).toMutableList()
+            val evidenceIds = evidenceNames.map { name ->
+                val found = graveyard.find { entityId ->
+                    state.getEntity(entityId)?.get<CardComponent>()?.name == name
+                } ?: error("Card '$name' not found in player $playerNumber's graveyard")
+                // Remove so repeating a name picks distinct copies rather than the same card twice.
+                graveyard.remove(found)
+                found
+            }
+
+            return execute(
+                CastSpell(
+                    playerId = playerId,
+                    cardId = cardId,
+                    targets = targetId?.let { listOf(ChosenTarget.Permanent(it)) } ?: emptyList(),
+                    declaredCostSlot = com.wingedsheep.sdk.scripting.ChoiceSlot.EVIDENCE_COLLECTED,
+                    additionalCostPayment = com.wingedsheep.sdk.scripting.AdditionalCostPayment(
+                        exiledCards = evidenceIds
+                    ),
+                )
+            )
+        }
+
+        /**
+         * [castSpellCollectingEvidence] for a spell with more than one target (Bite Down on
+         * Crime's "target creature you control" plus "target creature you don't control").
+         */
+        fun castSpellCollectingEvidenceWithTargets(
+            playerNumber: Int,
+            spellName: String,
+            evidenceNames: List<String>,
+            targetIds: List<EntityId>,
+        ): ExecutionResult {
+            val playerId = if (playerNumber == 1) player1Id else player2Id
+            val cardId = state.getHand(playerId).find { entityId ->
+                state.getEntity(entityId)?.get<CardComponent>()?.name == spellName
+            } ?: error("Card '$spellName' not found in player $playerNumber's hand")
+
+            val graveyard = state.getZone(ZoneKey(playerId, Zone.GRAVEYARD)).toMutableList()
+            val evidenceIds = evidenceNames.map { name ->
+                val found = graveyard.find { entityId ->
+                    state.getEntity(entityId)?.get<CardComponent>()?.name == name
+                } ?: error("Card '$name' not found in player $playerNumber's graveyard")
+                graveyard.remove(found)
+                found
+            }
+
+            return execute(
+                CastSpell(
+                    playerId = playerId,
+                    cardId = cardId,
+                    targets = targetIds.map { ChosenTarget.Permanent(it) },
+                    declaredCostSlot = com.wingedsheep.sdk.scripting.ChoiceSlot.EVIDENCE_COLLECTED,
+                    additionalCostPayment = com.wingedsheep.sdk.scripting.AdditionalCostPayment(
+                        exiledCards = evidenceIds
+                    ),
+                )
+            )
+        }
+
+        /**
          * Cast a spell with an additional sacrifice cost.
          * @param playerNumber The player casting the spell (1 or 2)
          * @param spellName The name of the spell to cast

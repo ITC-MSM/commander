@@ -88,6 +88,11 @@ class PayOrSufferExecutor(
                 is CostAtom.RevealFromHand -> EffectResult.error(state, "RevealCard payment for PayOrSuffer not yet implemented")
                 is CostAtom.PutCountersOnSelf -> EffectResult.error(state, "PutCountersOnSelf is an activated-ability cost, not a PayOrSuffer cost")
                 is CostAtom.Mill -> EffectResult.error(state, "Mill payment for PayOrSuffer not yet implemented")
+                // No printed "unless you collect evidence" exists — Axebane Ferox's
+                // "Ward—Collect evidence 4" runs through WardCost, not PayOrSuffer. Reported
+                // unpayable below rather than handled here, so nothing silently succeeds.
+                is CostAtom.CollectEvidence ->
+                    EffectResult.error(state, "CollectEvidence is not a PayOrSuffer cost")
                 is CostAtom.VariablePermanents -> EffectResult.error(state, "VariablePermanents payment for PayOrSuffer not supported")
                 is CostAtom.RemoveCounters -> handleRemoveCountersCost(state, effect, context, atom, sourceId, sourceCard.name, payingPlayerId)
             }
@@ -718,6 +723,8 @@ class PayOrSufferExecutor(
                 // No printed PayOrSuffer cost mills, and the execute branch above has no handler,
                 // so report it unpayable rather than offering a prompt that would error out.
                 is CostAtom.Mill -> false
+                // See the execute branch: unpayable rather than prompting into an error.
+                is CostAtom.CollectEvidence -> false
                 is CostAtom.RemoveCounters -> {
                     // Can pay if there are permanents matching the filter with enough counters.
                     // Don't exclude the source — removing counters from the source itself is a

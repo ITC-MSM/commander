@@ -29,7 +29,7 @@ function ZoneCardTargetingOverlay({
   onBack,
 }: {
   zoneCards: ClientCard[]
-  targetingState: { selectedTargets: readonly EntityId[]; minTargets: number; maxTargets: number; targetDescription?: string; currentRequirementIndex?: number; totalRequirements?: number; sourceCardName?: string }
+  targetingState: { selectedTargets: readonly EntityId[]; minTargets: number; maxTargets: number; targetDescription?: string; currentRequirementIndex?: number; totalRequirements?: number; sourceCardName?: string; minTotalManaValue?: number }
   responsive: ResponsiveSizes
   onSelect: (cardId: EntityId) => void
   onDeselect: (cardId: EntityId) => void
@@ -46,8 +46,23 @@ function ZoneCardTargetingOverlay({
   const selectedCount = targetingState.selectedTargets.length
   const minTargets = targetingState.minTargets
   const maxTargets = targetingState.maxTargets
-  const hasEnoughTargets = selectedCount >= minTargets
-  const hasMaxTargets = selectedCount >= maxTargets
+
+  // Collect evidence N (CR 701.59a): the cost constrains the *summed mana value* of the picked
+  // cards, not how many there are, so Confirm is gated on the running total rather than the count.
+  // An empty selection is exempt — that is how an optional collection is declined.
+  const manaFloor = targetingState.minTotalManaValue
+  const totalManaValueSelected =
+    manaFloor == null
+      ? 0
+      : targetingState.selectedTargets.reduce(
+          (sum, id) => sum + (gameState?.cards[id]?.manaValue ?? 0),
+          0,
+        )
+  const meetsManaFloor =
+    manaFloor == null || selectedCount === 0 || totalManaValueSelected >= manaFloor
+
+  const hasEnoughTargets = selectedCount >= minTargets && meetsManaFloor
+  const hasMaxTargets = manaFloor != null ? false : selectedCount >= maxTargets
 
   // A group key combines the owning player and the card's zone, so graveyard and exile piles for
   // the same player are separate tabs. Zone defaults to Graveyard when the card carries none.
@@ -448,7 +463,13 @@ function ZoneCardTargetingOverlay({
             transition: 'all 0.15s',
           }}
         >
-          {minTargets === 0 && selectedCount === 0 ? 'Skip' : selectedCount > 0 ? `Confirm (${selectedCount})` : 'Confirm Target'}
+          {manaFloor != null
+            ? `Confirm (${totalManaValueSelected}/${manaFloor} mana value)`
+            : minTargets === 0 && selectedCount === 0
+              ? 'Skip'
+              : selectedCount > 0
+                ? `Confirm (${selectedCount})`
+                : 'Confirm Target'}
         </button>
         <button
           onClick={onCancel}

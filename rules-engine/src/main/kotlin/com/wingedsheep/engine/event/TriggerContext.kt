@@ -278,6 +278,12 @@ data class TriggerContext(
                     triggeringPlayerId = event.playerId,
                     discoverValue = event.value
                 )
+                // Collect evidence (CR 701.59): the collecting player is the triggering player, so
+                // "whenever you collect evidence" resolves "you" correctly for an opponent's
+                // collection against a ward cost.
+                is com.wingedsheep.engine.core.EvidenceCollectedEvent -> TriggerContext(
+                    triggeringPlayerId = event.playerId
+                )
                 // Manifest dread (CR 701.60): the cards put into the graveyard this way are
                 // carried as capturedEntityIds, seeded into the resolving trigger's pipeline under
                 // TRIGGER_CAPTURED_COLLECTION so "a card you put into your graveyard this way"

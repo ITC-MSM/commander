@@ -1350,6 +1350,10 @@ is PermanentsSacrificedEvent -> {
             // Sun's Creation); the reveal/exile/cast moves are surfaced by their own events, so no
             // separate client event.
             is DiscoveredEvent,
+            // Internal signal that fires "whenever you collect evidence" watcher triggers
+            // (Surveillance Monitor, Evidence Examiner); the exiles themselves are already
+            // surfaced by their own zone-change events, so no separate client event.
+            is EvidenceCollectedEvent,
             // Internal signal that fires "whenever a creature you control explores" watcher
             // triggers; the reveal/hand/counter moves are already surfaced by their own events, so
             // no separate client event.

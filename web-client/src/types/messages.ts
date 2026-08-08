@@ -362,6 +362,13 @@ export interface SelectCardsDecision extends PendingDecisionBase {
    */
   readonly maxTotalManaValue?: number | null
   /**
+   * Minimum total mana value across selected cards — collect evidence N (CR 701.59a). The mirror
+   * of `maxTotalManaValue`: the UI tracks the running total and keeps Confirm disabled until it
+   * reaches this floor. Card count is unconstrained; only the sum matters. An empty selection is
+   * exempt so an optional collection can still be declined.
+   */
+  readonly minTotalManaValue?: number | null
+  /**
    * Maximum total (projected) power across selected creatures (Destined Confrontation). When
    * set, the UI tracks the running total and disables creatures whose power would push it over.
    */
@@ -1075,6 +1082,13 @@ export interface AdditionalCostInfo {
   readonly validExileTargets?: readonly EntityId[]
   readonly exileMinCount?: number
   readonly exileMaxCount?: number
+  /**
+   * Floor on the summed mana value of the exiled cards — collect evidence N (CR 701.59a).
+   * Set only for `costType === 'CollectEvidence'`, where the constraint is a sum rather than a
+   * count and `exileMinCount` / `exileMaxCount` merely bound the selection at 1 and the whole
+   * graveyard.
+   */
+  readonly exileMinTotalManaValue?: number
   readonly validBeholdTargets?: readonly EntityId[]
   readonly beholdCount?: number
   readonly counterRemovalCreatures?: readonly CounterRemovalCreatureInfo[]

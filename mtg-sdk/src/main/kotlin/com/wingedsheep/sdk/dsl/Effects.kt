@@ -1794,6 +1794,23 @@ object Effects {
         com.wingedsheep.sdk.scripting.effects.PayFixedCountersEffect(counterType, amount, player)
 
     /**
+     * [player] collects evidence [amount] (CR 701.59a) — exiles any number of cards from their
+     * graveyard with total mana value [amount] or greater.
+     *
+     * The effect form of the mechanic, for cards where collecting is *not* a cost: use it as the
+     * `action` half of a [ReflexiveTrigger] for "you may collect evidence 3. When you do, …"
+     * (Sample Collector), or under an "if you do" gate for Izoni, Center of the Web. Per CR 701.59b
+     * a player who cannot reach [amount] is never offered the choice at all, so — like
+     * [PayFixedCounters] — the outer "may" is only shown when the payment can actually be made.
+     *
+     * For collect evidence as a *cost*, use `Costs.CollectEvidence(n)` (activated abilities),
+     * `Costs.additional.CollectEvidence(n)` (mandatory cast cost), or the `collectEvidence()` DSL
+     * helper (the optional linked cast cost).
+     */
+    fun CollectEvidence(amount: Int, player: Player = Player.You): Effect =
+        com.wingedsheep.sdk.scripting.effects.CollectEvidenceEffect(amount, player)
+
+    /**
      * Move one counter of each kind on [source] that [destination] does not already have,
      * from the source onto the destination. Deterministic (no player choice). Used by
      * Goldberry, River-Daughter's first ability.

@@ -217,6 +217,16 @@ class ReflexiveTriggerEffectExecutor(
                 ?: 0
             current >= action.amount
         }
+        // "You may collect evidence 3" (Sample Collector) — CR 701.59b is explicit that a player
+        // unable to exile cards totalling N *can't choose to collect evidence*, so the option must
+        // be absent rather than offered and refused. Without this branch the `else -> true` below
+        // would fail open and prompt a player whose graveyard can't pay.
+        is com.wingedsheep.sdk.scripting.effects.CollectEvidenceEffect -> {
+            val playerId = com.wingedsheep.engine.handlers.effects.TargetResolutionUtils
+                .resolvePlayerRef(action.player, context, state)
+            playerId != null && com.wingedsheep.engine.handlers.costs.CollectEvidenceResolver
+                .canCollect(state, playerId, action.amount)
+        }
         else -> true
     }
 

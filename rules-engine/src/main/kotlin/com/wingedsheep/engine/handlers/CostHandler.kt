@@ -592,6 +592,12 @@ class CostHandler {
             val zone = ZoneKey(controllerId, atom.zone)
             findMatchingCardsUnified(state, state.getZone(zone), atom.filter, controllerId).size >= atom.count
         }
+        // CR 701.59b — a player unable to exile cards totalling N can't choose to collect evidence,
+        // so the ability isn't activatable at all. The gate is the graveyard's summed mana value,
+        // never its card count.
+        is CostAtom.CollectEvidence ->
+            com.wingedsheep.engine.handlers.costs.CollectEvidenceResolver
+                .canCollect(state, controllerId, atom.amount)
         // CR 701.17b — a player can't pay a cost that includes milling more cards than their
         // library holds. Checked against the printed count; a ModifyMillAmount replacement only
         // enlarges the mill once the cost is actually being paid.
@@ -688,6 +694,21 @@ class CostHandler {
         }
         is CostAtom.ExileFrom ->
             exileCardsFromZone(state, controllerId, atom.zone, atom.count, atom.filter, choices.exileChoices, manaPool)
+        // Rides `exileChoices`, the same channel the client already fills for a graveyard exile
+        // cost. No card carries both an ExileFrom and a CollectEvidence cost, so the two can't be
+        // confused for one another.
+        is CostAtom.CollectEvidence ->
+            when (
+                val result = com.wingedsheep.engine.handlers.costs.CollectEvidenceResolver.collect(
+                    state, controllerId, atom.amount, choices.exileChoices,
+                    state.getEntity(sourceId)?.get<CardComponent>()?.name ?: "Collect evidence"
+                )
+            ) {
+                is com.wingedsheep.engine.handlers.costs.CollectEvidenceResolver.Result.Success ->
+                    CostPaymentResult.success(result.state, manaPool, result.events)
+                is com.wingedsheep.engine.handlers.costs.CollectEvidenceResolver.Result.Failure ->
+                    CostPaymentResult.failure(result.reason)
+            }
         is CostAtom.Mill -> {
             // Same announcement semantics as the mill effect (GatherCardsExecutor): apply
             // ModifyMillAmount replacements once to the announced count (CR 616), then take that
@@ -1071,6 +1092,11 @@ class CostHandler {
                 }
                 is CostAtom.ExileFrom ->
                     findMatchingCardsUnified(state, state.getZone(ZoneKey(controllerId, atom.zone)), atom.filter, controllerId).size >= atom.count
+                // CR 701.59b — see canPayAtom. An optional collect-evidence cast cost that can't be
+                // reached simply isn't offered as a second cast action.
+                is CostAtom.CollectEvidence ->
+                    com.wingedsheep.engine.handlers.costs.CollectEvidenceResolver
+                        .canCollect(state, controllerId, atom.amount)
                 is CostAtom.TapPermanents ->
                     findUntappedMatchingPermanentsUnified(state, controllerId, atom.filter).size >= atom.count
                 is CostAtom.RemoveCounters -> {

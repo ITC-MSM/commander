@@ -858,6 +858,32 @@ object Conditions {
         CastChoiceMadeCondition(com.wingedsheep.sdk.scripting.ChoiceSlot.BARGAINED)
 
     /**
+     * If **evidence was collected** for this spell (CR 701.59c, Murders at Karlov Manor) — its
+     * optional "you may collect evidence N" additional cost was declared as it was cast.
+     *
+     * A facade over the durable choice-slot read
+     * ([com.wingedsheep.sdk.scripting.ChoiceSlot.EVIDENCE_COLLECTED]), so the linkage needs no
+     * condition type of its own. CR 701.59c makes this a *linked* ability (CR 607): it reads only
+     * the declaration made for **this** object's own collect-evidence ability, so a copy or a
+     * granted instance answers for itself. Works in all three directions the printed cards use:
+     * - on a **spell**, as a rider inside the spell's own effect ("Each opponent sacrifices a
+     *   creature of their choice. If evidence was collected, instead …" — Extract a Confession),
+     *   read from the declaration the spell carries on the stack;
+     * - on a **permanent**, as an intervening-if on an enters-the-battlefield trigger ("When this
+     *   creature enters, if evidence was collected, …" — Vitu-Ghazi Inspector), read from the flag
+     *   stamped durably on the permanent as it resolved;
+     * - as a **cost gate** — `CostGating.OnlyIf(Conditions.WasEvidenceCollected)` on a `SelfCast`
+     *   [com.wingedsheep.sdk.scripting.ModifySpellCost] for Bite Down on Crime's "This spell costs
+     *   {2} less to cast if evidence was collected", where it is evaluated against the cast branch
+     *   being priced.
+     *
+     * Never true for a merely kicked or bargained spell — the three are separate facts on a shared
+     * rail. Pairs with the `collectEvidence()` DSL helper on [CardBuilder].
+     */
+    val WasEvidenceCollected: ConditionInterface =
+        CastChoiceMadeCondition(com.wingedsheep.sdk.scripting.ChoiceSlot.EVIDENCE_COLLECTED)
+
+    /**
      * If this spell's sneak cost was paid (CR 702.190 — [com.wingedsheep.sdk.scripting.KeywordAbility.Sneak]).
      * Used for riders like Leonardo, Leader in Blue and The Last Ronin's Technique whose
      * effect changes when the spell was cast for its sneak cost.

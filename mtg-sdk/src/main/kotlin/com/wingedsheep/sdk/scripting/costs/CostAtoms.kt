@@ -48,5 +48,10 @@ fun CostAtom.repeated(times: Int): CostAtom {
         }
         is CostAtom.PutCountersOnSelf -> copy(count = count * times)
         is CostAtom.RevealFromHand -> copy(count = count * times)
+        // Collecting evidence N twice is collecting evidence 2N: CR 601.2f folds the repeated cost
+        // into one payment, and one exile of total mana value 2N satisfies that just as two
+        // separate exiles of N would. (No printed card repeats it — escalate is the only caller —
+        // but the threshold multiplies cleanly, so there's nothing to reject.)
+        is CostAtom.CollectEvidence -> copy(amount = amount * times)
     }
 }

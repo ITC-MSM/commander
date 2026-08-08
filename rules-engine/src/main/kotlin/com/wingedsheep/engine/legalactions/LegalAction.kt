@@ -351,6 +351,18 @@ data class AdditionalCostData(
     val validExileTargets: List<EntityId> = emptyList(),
     val exileMinCount: Int = 0,
     val exileMaxCount: Int = 0,
+    /**
+     * For a collect-evidence cost (CR 701.59a): the **floor on the combined mana value** of the
+     * exiled cards. Non-zero only for `costType == "CollectEvidence"`.
+     *
+     * Its own field because collect evidence is the one exile cost whose constraint is a sum rather
+     * than a count — [exileMinCount] / [exileMaxCount] bound the selection at 1 and the whole
+     * graveyard, which is all a counted picker can say about it. The client gates its confirm
+     * button on the running total reaching this number and shows that total as the player selects.
+     * The server re-validates the submitted selection against it regardless
+     * ([com.wingedsheep.engine.handlers.costs.CollectEvidenceResolver.isLegalSelection]).
+     */
+    val exileMinTotalManaValue: Int = 0,
     val validBeholdTargets: List<EntityId> = emptyList(),
     val beholdCount: Int = 0,
     val counterRemovalCreatures: List<CounterRemovalCreatureData> = emptyList(),

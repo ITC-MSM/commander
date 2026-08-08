@@ -1,3 +1,103 @@
+// Bite Down on Crime
+{
+    "name": "Bite Down on Crime",
+    "manaCost": "{3}{G}",
+    "typeLine": "Sorcery",
+    "oracleText": "As an additional cost to cast this spell, you may collect evidence 6. This spell costs {2} less to cast if evidence was collected. (To collect evidence 6, exile cards with total mana value 6 or greater from your graveyard.)\nTarget creature you control gets +2/+0 until end of turn. It deals damage equal to its power to target creature you don't control.",
+    "keywordAbilities": [
+        {
+            "type": "Kicker",
+            "additionalCost": {
+                "type": "AdditionalAtom",
+                "atom": {
+                    "type": "AtomCollectEvidence",
+                    "amount": 6
+                }
+            },
+            "declaredSlot": "EVIDENCE_COLLECTED"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 0
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature you control"
+                    }
+                },
+                {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "EntityProperty",
+                        "entity": "Target",
+                        "numericProperty": "Power"
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature you don't control"
+                    },
+                    "damageSource": {
+                        "type": "BoundVariable",
+                        "name": "target creature you control"
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature ctrl:you"
+                },
+                "id": "target creature you control"
+            },
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature ctrl:opponent"
+                },
+                "id": "target creature you don't control"
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifySpellCost",
+                "target": "SelfCast",
+                "modification": {
+                    "type": "ReduceGeneric",
+                    "amount": 2
+                },
+                "gating": {
+                    "type": "OnlyIf",
+                    "condition": {
+                        "type": "CastChoiceMade",
+                        "slot": "EVIDENCE_COLLECTED"
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "154",
+        "artist": "Mike Bierek",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/9/29bbfe93-8225-444c-835b-33ffa006ef66.jpg"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Cold Case Cracker
 {
     "name": "Cold Case Cracker",
@@ -71,6 +171,92 @@
     "colorIdentityOverride": [
         "RED",
         "GREEN"
+    ]
+}
+
+// Crimestopper Sprite
+{
+    "name": "Crimestopper Sprite",
+    "manaCost": "{2}{U}",
+    "typeLine": "Creature — Faerie Detective",
+    "oracleText": "As an additional cost to cast this spell, you may collect evidence 6. (Exile cards with total mana value 6 or greater from your graveyard.)\nFlying\nWhen this creature enters, tap target creature. If evidence was collected, put a stun counter on it. (If a permanent with a stun counter would become untapped, remove one from it instead.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Kicker",
+            "additionalCost": {
+                "type": "AdditionalAtom",
+                "atom": {
+                    "type": "AtomCollectEvidence",
+                    "amount": 6
+                }
+            },
+            "declaredSlot": "EVIDENCE_COLLECTED"
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "TapUntap",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature"
+                            }
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "CastChoiceMade",
+                                    "slot": "EVIDENCE_COLLECTED"
+                                }
+                            },
+                            "then": {
+                                "type": "AddCounters",
+                                "counterType": "stun",
+                                "count": 1,
+                                "target": {
+                                    "type": "BoundVariable",
+                                    "name": "target creature"
+                                }
+                            }
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature"
+                    },
+                    "id": "target creature"
+                },
+                "descriptionOverride": "When this creature enters, tap target creature. If evidence was collected, put a stun counter on it."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "49",
+        "artist": "Julia Metzger",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/c/dc4ac597-38f0-48b5-ac2d-dfb0b169f834.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 
@@ -571,6 +757,87 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Forensic Researcher
+{
+    "name": "Forensic Researcher",
+    "manaCost": "{2}{U}",
+    "typeLine": "Creature — Merfolk Detective",
+    "oracleText": "{T}: Untap another target permanent you control.\n{T}, Collect evidence 3: Tap target creature you don't control. (To collect evidence 3, exile cards with total mana value 3 or greater from your graveyard.)",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 3
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "TapUntap",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "another target permanent you control"
+                    },
+                    "tap": false
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "permanent ctrl:you",
+                            "excludeSelf": true
+                        },
+                        "id": "another target permanent you control"
+                    }
+                ],
+                "descriptionOverride": "Untap another target permanent you control."
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        "CostTap",
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomCollectEvidence",
+                                "amount": 3
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "TapUntap",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature you don't control"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature ctrl:opponent"
+                        },
+                        "id": "target creature you don't control"
+                    }
+                ],
+                "descriptionOverride": "Tap target creature you don't control."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "58",
+        "rarity": "UNCOMMON",
+        "artist": "Aldo Domínguez",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/3/1384df5d-d705-49cb-a982-1588cbf303d8.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 
@@ -1916,6 +2183,61 @@
     ]
 }
 
+// Sample Collector
+{
+    "name": "Sample Collector",
+    "manaCost": "{2}{G}",
+    "typeLine": "Creature — Troll Detective",
+    "oracleText": "Whenever this creature attacks, you may collect evidence 3. When you do, put a +1/+1 counter on target creature you control. (To collect evidence 3, exile cards with total mana value 3 or greater from your graveyard.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "ReflexiveTrigger",
+                    "action": {
+                        "type": "CollectEvidence",
+                        "amount": 3
+                    },
+                    "reflexiveEffect": {
+                        "type": "AddCounters",
+                        "counterType": "+1/+1",
+                        "count": 1,
+                        "target": {
+                            "type": "ContextTarget",
+                            "index": 0
+                        }
+                    },
+                    "reflexiveTargetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "creature ctrl:you"
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "Whenever this creature attacks, you may collect evidence 3. When you do, put a +1/+1 counter on target creature you control."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "175",
+        "rarity": "UNCOMMON",
+        "artist": "Borja Pindado",
+        "flavorText": "\"Whatever broke out of here is *at least* half bear... and I'd say some lizard as well.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/6/76f7480c-82cc-4ddd-b619-c1a609c29a13.jpg"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Sanitation Automaton
 {
     "name": "Sanitation Automaton",
@@ -2093,6 +2415,68 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Surveillance Monitor
+{
+    "name": "Surveillance Monitor",
+    "manaCost": "{3}{U}",
+    "typeLine": "Creature — Vedalken Detective",
+    "oracleText": "When this creature enters, you may collect evidence 4. (Exile cards with total mana value 4 or greater from your graveyard.)\nWhenever you collect evidence, create a 1/1 colorless Thopter artifact creature token with flying.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "CollectEvidence",
+                        "amount": 4
+                    }
+                },
+                "descriptionOverride": "When this creature enters, you may collect evidence 4."
+            },
+            {
+                "id": "ability_2",
+                "trigger": "EvidenceCollectedEvent",
+                "binding": "ANY",
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [],
+                    "creatureTypes": [
+                        "Thopter"
+                    ],
+                    "keywords": [
+                        "FLYING"
+                    ],
+                    "name": "Thopter",
+                    "artifactToken": true
+                },
+                "descriptionOverride": "Whenever you collect evidence, create a 1/1 colorless Thopter artifact creature token with flying."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "73",
+        "rarity": "UNCOMMON",
+        "artist": "Scott Murphy",
+        "flavorText": "Thopters don't take breaks, and neither does he.",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/0/703b874d-6739-4063-9891-e9c040dd9618.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 
@@ -2480,6 +2864,86 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Vitu-Ghazi Inspector
+{
+    "name": "Vitu-Ghazi Inspector",
+    "manaCost": "{1}{G}",
+    "typeLine": "Creature — Elf Detective",
+    "oracleText": "As an additional cost to cast this spell, you may collect evidence 6. (Exile cards with total mana value 6 or greater from your graveyard.)\nReach\nWhen this creature enters, if evidence was collected, put a +1/+1 counter on target creature and you gain 2 life.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 3
+    },
+    "keywords": [
+        "REACH"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Kicker",
+            "additionalCost": {
+                "type": "AdditionalAtom",
+                "atom": {
+                    "type": "AtomCollectEvidence",
+                    "amount": 6
+                }
+            },
+            "declaredSlot": "EVIDENCE_COLLECTED"
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "AddCounters",
+                            "counterType": "+1/+1",
+                            "count": 1,
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature"
+                            }
+                        },
+                        {
+                            "type": "GainLife",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 2
+                            }
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature"
+                    },
+                    "id": "target creature"
+                },
+                "triggerCondition": {
+                    "type": "CastChoiceMade",
+                    "slot": "EVIDENCE_COLLECTED"
+                },
+                "descriptionOverride": "When this creature enters, if evidence was collected, put a +1/+1 counter on target creature and you gain 2 life."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "183",
+        "artist": "Borja Pindado",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/6/664d15d7-2724-4a9b-b5a7-8042d4b7da7b.jpg"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 

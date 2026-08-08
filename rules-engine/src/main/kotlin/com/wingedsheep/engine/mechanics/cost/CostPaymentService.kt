@@ -129,6 +129,16 @@ class CostPaymentService(private val services: EngineServices) {
                     }
                 is CostAtom.ExileFrom ->
                     selectionPrompt(state, payerId, resolved, sourceId, sourceName, ctx, cardsInZone(state, payerId, atom.filter, atom.zone), atom.count, useTargetingUI = atom.zone == Zone.BATTLEFIELD)
+                // Collect evidence N (CR 701.59a) — the whole graveyard is selectable and the gate
+                // is the summed mana value, so the count cap is simply "all of them".
+                is CostAtom.CollectEvidence -> {
+                    val graveyard = com.wingedsheep.engine.handlers.costs.CollectEvidenceResolver
+                        .candidates(state, payerId).cards
+                    selectionPrompt(
+                        state, payerId, resolved, sourceId, sourceName, ctx, graveyard, graveyard.size,
+                        useTargetingUI = false, minTotalManaValue = atom.amount
+                    )
+                }
                 // Milling takes no selection — the cards are the top of the library — so this is a
                 // plain yes/no like paying life.
                 is CostAtom.Mill ->
@@ -212,7 +222,14 @@ class CostPaymentService(private val services: EngineServices) {
         ctx: CostPaymentContext,
         options: List<EntityId>,
         count: Int,
-        useTargetingUI: Boolean
+        useTargetingUI: Boolean,
+        /**
+         * Floor on the summed mana value of the selection — collect evidence N (CR 701.59a), the
+         * one cost here whose constraint is a sum rather than a count. Null for every other cost.
+         * `minSelections` stays 0 regardless: this whole context is "pay or decline", and an empty
+         * selection is the decline.
+         */
+        minTotalManaValue: Int? = null
     ): PaymentResult {
         val result = decisionHandler.createCardSelectionDecision(
             state = state,
@@ -225,7 +242,8 @@ class CostPaymentService(private val services: EngineServices) {
             maxSelections = count,
             ordered = false,
             phase = DecisionPhase.RESOLUTION,
-            useTargetingUI = useTargetingUI
+            useTargetingUI = useTargetingUI,
+            minTotalManaValue = minTotalManaValue
         )
         val decision = result.pendingDecision!!
         val stateWithContinuation = result.state.pushContinuation(continuation(decision.id, payerId, sourceId, sourceName, cost, ctx))
@@ -311,6 +329,18 @@ class CostPaymentService(private val services: EngineServices) {
                 if (atom.random) discardRandom(state, payerId, atom.filter, atom.count)
                 else discardSelected(state, payerId, selected.keys.toList())
             is CostAtom.ExileFrom -> exileSelected(state, payerId, selected.keys.toList(), atom.zone)
+            is CostAtom.CollectEvidence ->
+                when (
+                    val result = com.wingedsheep.engine.handlers.costs.CollectEvidenceResolver.collect(
+                        state, payerId, atom.amount, selected.keys.toList(),
+                        state.getEntity(sourceId)?.get<CardComponent>()?.name ?: "Collect evidence"
+                    )
+                ) {
+                    is com.wingedsheep.engine.handlers.costs.CollectEvidenceResolver.Result.Success ->
+                        CostPaymentExecution(result.state, result.events, success = true)
+                    is com.wingedsheep.engine.handlers.costs.CollectEvidenceResolver.Result.Failure ->
+                        CostPaymentExecution(state, emptyList(), success = false)
+                }
             is CostAtom.Mill -> millTop(state, payerId, atom.count)
             is CostAtom.RevealFromHand -> revealSelected(state, payerId, selected.keys.toList())
             is CostAtom.Sacrifice -> sacrificeSelected(state, payerId, selected.keys.toList())
@@ -623,6 +653,11 @@ class CostPaymentService(private val services: EngineServices) {
                     is CostAtom.PayLife -> life(state, payerId) >= atom.amount
                     is CostAtom.Discard -> cardsInHand(state, payerId, atom.filter).size >= atom.count
                     is CostAtom.ExileFrom -> cardsInZone(state, payerId, atom.filter, atom.zone).size >= atom.count
+                    // CR 701.59b — unpayable unless the graveyard's *total mana value* reaches N.
+                    // Card count says nothing here: five lands total 0 and pay nothing.
+                    is CostAtom.CollectEvidence ->
+                        com.wingedsheep.engine.handlers.costs.CollectEvidenceResolver
+                            .canCollect(state, payerId, atom.amount)
                     // CR 701.17b — a mill cost is unpayable when the library holds fewer cards.
                     is CostAtom.Mill -> state.getZone(ZoneKey(payerId, Zone.LIBRARY)).size >= atom.count
                     is CostAtom.RevealFromHand -> cardsInHand(state, payerId, atom.filter).size >= atom.count
