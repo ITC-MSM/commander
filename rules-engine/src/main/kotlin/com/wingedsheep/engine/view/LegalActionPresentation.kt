@@ -113,6 +113,22 @@ data class LegalActionInfo(
     val hasHarmonize: Boolean = false,
     val validHarmonizeCreatures: List<HarmonizeCreatureInfo>? = null,
     val manaCostString: String? = null,
+    /**
+     * The cheapest [manaCostString] can end up being once the alternative payments this action
+     * already offers are used to the maximum — convoke taps (CR 702.51a), delve exiles (CR 702.66a),
+     * waterbend taps, a harmonize tap. Null when nothing can move the cost.
+     *
+     * For those keywords [manaCostString] is the *pre-reduction* price: the enumerator folds the
+     * reduction into affordability but never into the cost it advertises, so a convoke spell shows
+     * the one number the player never actually pays. Carrying both lets the client render the real
+     * span ("{5}{G} → as low as {G}") instead of just its top end. [AdditionalCostInfo.costAfterSacrifice]
+     * does the same job for emerge, per candidate, where the reduction depends on *which* creature
+     * is sacrificed rather than on how many resources are spent.
+     *
+     * A display floor, not a promise: spending every resource is the player's choice, and whatever
+     * is left still has to be paid with mana.
+     */
+    val minimumManaCostString: String? = null,
     val requiresDamageDistribution: Boolean = false,
     val totalDamageToDistribute: Int? = null,
     val minDamagePerTarget: Int? = null,

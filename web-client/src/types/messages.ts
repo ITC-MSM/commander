@@ -890,6 +890,17 @@ export interface LegalActionInfo {
   readonly validHarmonizeCreatures?: readonly HarmonizeCreatureInfo[]
   /** The spell's mana cost string for Convoke/Delve UI display */
   readonly manaCostString?: string
+  /**
+   * The cheapest [manaCostString] can end up being once this action's own alternative payments are
+   * spent to the maximum — convoke taps, delve exiles, waterbend taps, a harmonize tap. Absent when
+   * nothing can move the cost.
+   *
+   * For those keywords `manaCostString` is the *pre-reduction* price, so showing it alone advertises
+   * a number the player never pays. The pair is rendered as a span ("{5}{G} → as low as {G}"). The
+   * server computes it because each keyword's reduction is a rule — convoke matches colors, delve
+   * and waterbend are generic-only, harmonize taps one creature.
+   */
+  readonly minimumManaCostString?: string
   /** Whether this spell requires damage distribution at cast time (for DividedDamageEffect) */
   readonly requiresDamageDistribution?: boolean
   /** Total damage to distribute for DividedDamageEffect spells */

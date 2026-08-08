@@ -61,6 +61,8 @@ import { KeywordIcons, ActiveEffectBadges } from './CardOverlays'
 import { counterManaClass, counterSvgIcon } from '@/assets/icons/keywords'
 import { SvgGlyph } from '@/assets/icons/SvgGlyph'
 import { RenderProfiler } from '@/utils/renderProfiler'
+import { buildActionOptions, playCostRange } from '@/utils/actionOptions.ts'
+import { parseManaCost, totalManaNeeded } from '@/utils/manaCost.ts'
 
 /** Soft halo colors for the chosen-color gem, keyed by MTG color (see grantedColors). */
 const COLOR_GLOW: Record<Color, string> = {
@@ -568,40 +570,35 @@ function GameCardImpl({
   const shouldShowCastModal = computeShouldShowCastModal(playableActions)
   const canDragToPlay = (inHand || enableDragToCast) && playableAction && !isInCombatMode && !isInTargetingMode
 
-  // Determine mana cost display for cards the player can cast directly from a face-up zone
-  // (hand or, for Commander, the command zone). Commander tax (CR 903.8) folds in here for free
-  // because the server's `enumerateCommandZone` enumerator already builds CastSpell actions with
-  // the post-tax `manaCostString` — we just have to read whichever cost the active action carries.
+  // What it costs to play this card from a face-up zone (hand or, for Commander, the command zone).
+  //
+  // A single number is a lie for most of the interesting cards. An adventure or split card has one
+  // cost per face, kicker and offspring have a paid and an unpaid price, and convoke/delve/emerge sit
+  // well above their own floor. This used to pick the first "normal" CastSpell out of the list and
+  // show only that, which meant an arbitrary face on a split card, nothing at all about a kicker, and
+  // the pre-reduction price on a convoke spell. Show the two ends of the span instead, and let the
+  // hover preview's ladder name the individual options.
+  //
+  // Commander tax (CR 903.8) folds in for free because the server's `enumerateCommandZone` enumerator
+  // already builds its CastSpell actions with the post-tax `manaCostString`.
   const showCastCostOverlay = inHand || enableDragToCast
   const handCostInfo = useMemo(() => {
     if (!showCastCostOverlay || faceDown || !card.manaCost) return null
-    // Find the normal CastSpell action (not morph, not kicked, not mode)
-    const castAction = playableActions.find((a) =>
-      a.action.type === 'CastSpell' && a.actionType !== 'CastFaceDown' && a.actionType !== 'CastWithKicker' && a.actionType !== 'CastSpellMode'
-    )
-    const effectiveCost = castAction?.manaCostString
-    // If no cast action available, show base cost as-is
-    if (effectiveCost == null) return { cost: card.manaCost, isReduced: false, isIncreased: false }
-    // Compare with the card's base mana cost
-    if (effectiveCost === card.manaCost) return { cost: card.manaCost, isReduced: false, isIncreased: false }
-    // Count total mana symbols to determine if cost went up or down
-    const countSymbols = (cost: string) => {
-      const symbols = cost.match(/\{([^}]+)\}/g) ?? []
-      return symbols.reduce((total, s) => {
-        const inner = s.slice(1, -1)
-        const num = parseInt(inner, 10)
-        return total + (isNaN(num) ? 1 : num)
-      }, 0)
-    }
-    const baseMV = countSymbols(card.manaCost)
-    const effectiveMV = countSymbols(effectiveCost)
-    const displayCost = effectiveCost === '' ? '{0}' : effectiveCost
+    const range = playCostRange(buildActionOptions(card, playableActions))
+    // Nothing here plays the card (cycling-only, say) — the printed cost is all we can honestly say.
+    if (!range) return { cost: card.manaCost, floor: null, isReduced: false, isIncreased: false }
+    // The tint compares the *cheapest* way to play the card against the printed cost, so it says
+    // "cheaper or dearer than the card claims". Judging the dear end instead would paint a kicker red
+    // for merely offering a pricier mode, when its base price never moved.
+    const printedMana = totalManaNeeded(parseManaCost(card.manaCost))
+    const lowMana = totalManaNeeded(parseManaCost(range.low))
     return {
-      cost: displayCost,
-      isReduced: effectiveMV < baseMV,
-      isIncreased: effectiveMV > baseMV,
+      cost: range.high,
+      floor: range.isRange ? range.low : null,
+      isReduced: lowMana < printedMana,
+      isIncreased: lowMana > printedMana,
     }
-  }, [showCastCostOverlay, faceDown, playableActions, card.manaCost])
+  }, [showCastCostOverlay, faceDown, playableActions, card])
 
   // Handle mouse/touch down - start dragging for attackers, blockers, or hand cards
   const handlePointerDown = useCallback((e: React.MouseEvent | React.TouchEvent) => {
@@ -2483,6 +2480,7 @@ function GameCardImpl({
           position: 'absolute',
           top: responsive.badges.badgeInset,
           right: responsive.badges.badgeInset,
+          maxWidth: `calc(100% - ${responsive.badges.badgeInset * 2}px)`,
           backgroundColor: handCostInfo.isReduced || handCostInfo.isIncreased
             ? 'rgba(0, 0, 0, 0.85)'
             : 'rgba(0, 0, 0, 0.7)',
@@ -2499,10 +2497,25 @@ function GameCardImpl({
           pointerEvents: 'none',
           zIndex: 10,
           display: 'flex',
-          alignItems: 'center',
-          gap: 1,
+          // A range stacks rather than sitting side by side. The hand fans its cards with the next one
+          // overlapping this one's right edge, and the badge lives in that corner — laid out in a row,
+          // a {2}–{4}{W}{W} span runs straight under the neighbouring card and loses its dear end.
+          // Stacked, the badge is never wider than its widest single cost, so both ends survive.
+          flexDirection: 'column',
+          alignItems: 'flex-end',
+          gap: 0,
         }}>
-          <ManaCost cost={handCostInfo.cost} size={responsive.badges.manaCostFontSize} gap={1} />
+          {/* Cheapest reachable price on top, then the asking price. The leading dash on the second row
+              is what makes the two read as one span rather than two unrelated numbers. */}
+          {handCostInfo.floor && (
+            <ManaCost cost={handCostInfo.floor} size={responsive.badges.manaCostFontSize} gap={1} />
+          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            {handCostInfo.floor && (
+              <span aria-hidden style={{ color: '#9aa4b8', fontSize: responsive.badges.manaCostFontSize - 2, lineHeight: 1 }}>–</span>
+            )}
+            <ManaCost cost={handCostInfo.cost} size={responsive.badges.manaCostFontSize} gap={1} />
+          </div>
         </div>
       )}
 

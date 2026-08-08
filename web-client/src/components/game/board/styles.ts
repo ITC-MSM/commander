@@ -1238,6 +1238,60 @@ export const styles: Record<string, React.CSSProperties> = {
     fontSize: 13,
     lineHeight: 1.4,
   } as React.CSSProperties,
+  // --- Hover-preview cost ladder: one row per way to play the hovered card ---
+  // A single mana value can't describe an adventure, a kicker, or a convoke spell, and the badge on
+  // the image only has room for the two ends of the range. This panel is where the actual options
+  // live, in the same order and with the same labels as the click-to-play action menu.
+  cardPreviewCostOptions: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 6,
+    backgroundColor: 'rgba(0, 0, 0, 0.85)',
+    padding: 12,
+    borderRadius: 8,
+    border: '1px solid rgba(150, 200, 255, 0.25)',
+    minWidth: 220,
+  } as React.CSSProperties,
+  cardPreviewCostHeader: {
+    color: '#8fb8e8',
+    fontWeight: 700,
+    fontSize: 10,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+  } as React.CSSProperties,
+  cardPreviewCostRow: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
+  } as React.CSSProperties,
+  cardPreviewCostLabel: {
+    color: '#e8e8e8',
+    fontSize: 12,
+    lineHeight: 1.3,
+    minWidth: 0,
+  } as React.CSSProperties,
+  // Unaffordable right now — still listed, because "you can't pay for this yet" is the answer to
+  // half the questions a hover is asking.
+  cardPreviewCostRowUnavailable: {
+    opacity: 0.45,
+  } as React.CSSProperties,
+  cardPreviewCostValue: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 3,
+    flexShrink: 0,
+  } as React.CSSProperties,
+  // The asking price, dimmed, when the row also shows a floor it can be reduced to.
+  cardPreviewCostStruck: {
+    display: 'inline-flex',
+    opacity: 0.4,
+  } as React.CSSProperties,
+  cardPreviewCostHint: {
+    color: '#9aa4b8',
+    fontSize: 10,
+    lineHeight: 1.2,
+  } as React.CSSProperties,
   cardPreviewRulings: {
     display: 'flex',
     flexDirection: 'column',
