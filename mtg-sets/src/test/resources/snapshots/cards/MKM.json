@@ -1,3 +1,55 @@
+// Auspicious Arrival
+{
+    "name": "Auspicious Arrival",
+    "manaCost": "{1}{W}",
+    "typeLine": "Instant",
+    "oracleText": "Target creature gets +2/+2 until end of turn. Investigate. (Create a Clue token. It's an artifact with \"{2}, Sacrifice this token: Draw a card.\")",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Clue"
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target creature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "5",
+        "artist": "Lie Setiawan",
+        "flavorText": "Proft brushed past the guards and introduced himself as \"the great Detective Proft\" without a hint of irony, then identified the culprit within minutes.",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/1/5180c85c-6add-4066-83c4-27fb1fd4de16.jpg?1783912929"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Bite Down on Crime
 {
     "name": "Bite Down on Crime",
@@ -634,6 +686,60 @@
         "imageUri": "https://cards.scryfall.io/normal/front/9/3/93ddde4f-d35e-4128-8f43-d0eadbd715de.jpg?1706242339"
     },
     "colorIdentityOverride": []
+}
+
+// Fae Flight
+{
+    "name": "Fae Flight",
+    "manaCost": "{1}{U}",
+    "typeLine": "Enchantment — Aura",
+    "oracleText": "Flash\nEnchant creature\nWhen this Aura enters, enchanted creature gains hexproof until end of turn.\nEnchanted creature gets +1/+0 and has flying.",
+    "keywords": [
+        "FLASH"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "GrantEvasionKeyword",
+                    "keyword": "HEXPROOF",
+                    "target": "EnchantedCreature"
+                },
+                "descriptionOverride": "When this Aura enters, enchanted creature gains hexproof until end of turn."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 1,
+                "toughnessBonus": 0
+            },
+            {
+                "type": "GrantKeyword",
+                "keyword": "FLYING"
+            }
+        ],
+        "auraTarget": {
+            "type": "TargetObject",
+            "filter": {
+                "baseFilter": "creature"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "56",
+        "rarity": "UNCOMMON",
+        "artist": "Durion",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/9/d9caa4eb-ed8c-4d05-8029-2a42163938a7.jpg?1783912911"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
 }
 
 // Fanatical Strength
@@ -2535,6 +2641,52 @@
     "colorIdentityOverride": []
 }
 
+// Seasoned Consultant
+{
+    "name": "Seasoned Consultant",
+    "manaCost": "{1}{W}",
+    "typeLine": "Creature — Human Detective",
+    "oracleText": "Whenever you attack with three or more creatures, this creature gets +2/+0 until end of turn.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "YouAttackEvent",
+                    "minAttackers": 3
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 0
+                    },
+                    "target": "Self"
+                },
+                "descriptionOverride": "Whenever you attack with three or more creatures, this creature gets +2/+0 until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "33",
+        "artist": "Andreas Zafiratos",
+        "flavorText": "\"I appreciate working with associates whose greatest loyalty is to the job at hand.\"\n—Skurad of the Foundway Associates",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/0/c0ebfe5d-8819-495d-bf72-b9c28c6fd23e.jpg?1783912918"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Shadowy Backstreet
 {
     "name": "Shadowy Backstreet",
@@ -2568,6 +2720,68 @@
     "colorIdentityOverride": [
         "WHITE",
         "BLACK"
+    ]
+}
+
+// Shady Informant
+{
+    "name": "Shady Informant",
+    "manaCost": "{3}{B}{R}",
+    "typeLine": "Creature — Ogre Rogue",
+    "oracleText": "When this creature dies, it deals 2 damage to any target.\nDisguise {2}{B/R}{B/R} (You may cast this card face down for {3} as a 2/2 creature with ward {2}. Turn it face up any time for its disguise cost.)",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 2
+    },
+    "keywordAbilities": [
+        {
+            "type": "Disguise",
+            "disguiseCost": {
+                "type": "PayAtom",
+                "atom": {
+                    "type": "AtomMana",
+                    "cost": "{2}{B/R}{B/R}"
+                }
+            }
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "any target"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "AnyTarget",
+                    "id": "any target"
+                },
+                "descriptionOverride": "When this creature dies, it deals 2 damage to any target."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "231",
+        "artist": "Caio Monteiro",
+        "flavorText": "Rakdos snitches rarely survive to get stitches.",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/d/0de36e63-8190-415f-b65b-bae1e595845d.jpg?1783912840"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "RED"
     ]
 }
 
@@ -2776,6 +2990,42 @@
     "colorIdentityOverride": [
         "BLUE",
         "RED"
+    ]
+}
+
+// Topiary Panther
+{
+    "name": "Topiary Panther",
+    "manaCost": "{4}{G}{G}",
+    "typeLine": "Creature — Plant Cat",
+    "oracleText": "Trample\nBasic landcycling {1}{G} ({1}{G}, Discard this card: Search your library for a basic land card, reveal it, put it into your hand, then shuffle.)",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 5
+    },
+    "keywords": [
+        "TRAMPLE"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Cycling",
+            "cost": "{1}{G}",
+            "searchFilter": {
+                "cardPredicates": [
+                    "IsBasicLand"
+                ]
+            },
+            "displayPrefix": "Basic landcycling"
+        }
+    ],
+    "metadata": {
+        "collectorNumber": "179",
+        "artist": "Xabi Gaztelua",
+        "flavorText": "The gardens around Karlov Manor are oddly bereft of birdsong.",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/3/03d0365e-6dee-4236-a997-6761e3cde90d.jpg?1783912860"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 
