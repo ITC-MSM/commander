@@ -57,11 +57,11 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.scripting.effects.WarpExileEffect
 import com.wingedsheep.sdk.scripting.effects.MoveTrackedBattlefieldObjectEffect
-import com.wingedsheep.sdk.model.CardLayout
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.EntersAsCopy
 import com.wingedsheep.engine.handlers.effects.EntersWithReplacements
 import com.wingedsheep.engine.handlers.effects.permanent.types.buildCardComponentForDfcFace
+import com.wingedsheep.engine.handlers.effects.permanent.types.dfcBackFaceManaValue
 import com.wingedsheep.engine.handlers.effects.permanent.types.returnDfcFace
 import com.wingedsheep.engine.handlers.effects.permanent.types.withDfcFaceSelfRedirects
 import com.wingedsheep.sdk.scripting.events.CounterTypeFilter
@@ -216,10 +216,15 @@ class StackResolver(
             cardRegistry.getCard(cardComponent.cardDefinitionId)
         } else null
         val transformedBackDef = transformedFrontDef?.backFace
+        // CR 712.8c: a *nonmodal* transformed spell keeps the front face's mana value, which
+        // `cardComponent` still holds. CR 712.8f gives a modal one the face that's up, so the back's
+        // own cost stands and no override is needed. Null when this isn't a transformed cast at all.
+        val backFaceManaValue = transformedBackDef
+            ?.let { dfcBackFaceManaValue(transformedFrontDef, cardComponent.manaValue) }
         if (transformedFrontDef != null && transformedBackDef != null) {
             newState = newState.updateEntity(cardId) { c ->
                 var updated = c
-                    .with(buildCardComponentForDfcFace(cardComponent, transformedBackDef))
+                    .with(buildCardComponentForDfcFace(cardComponent, transformedBackDef, backFaceManaValue))
                     .with(
                         DoubleFacedComponent(
                             frontCardDefinitionId = transformedFrontDef.name,
@@ -240,20 +245,15 @@ class StackResolver(
             }
         }
 
-        // The spell's mana value (CR 202.3), which the two transformed-cast routes disagree about.
-        // A *nonmodal* double-faced spell put on the stack back face up — disturb — computes its
-        // mana value from the front face's mana cost (CR 712.8c), and that is what `cardComponent`
-        // still holds here. CR 712.8f states no such exception for a modal double-faced spell: it
-        // "has only the characteristics of the face that's up", so one cast as its back face
-        // (CR 712.11b) has *that* face's mana value — The Sensational She-Hulk is 6, not Jennifer
-        // Walters' 2. Read by the SpellCastEvent below, which feeds
+        // The spell's mana value (CR 202.3), reported by the SpellCastEvent below — which feeds
         // ContextPropertyKey.TRIGGERING_SPELL_MANA_VALUE and every "a spell with mana value N"
-        // payoff; CastSpellHandler mirrors this for its CastSpellRecord.
-        val spellManaValue = if (transformedFrontDef?.layout == CardLayout.MODAL_DFC && transformedBackDef != null) {
-            transformedBackDef.manaCost.cmc
-        } else {
-            cardComponent.manaValue
-        }
+        // payoff. It is the same number the stack object now carries, so it comes from the same
+        // decision: a disturb cast keeps the front's (CR 712.8c, `backFaceManaValue` non-null),
+        // while a modal DFC cast as its back face has that face's own — The Sensational She-Hulk is
+        // 6, not Jennifer Walters' 2. CastSpellHandler mirrors this for its CastSpellRecord.
+        val spellManaValue = backFaceManaValue
+            ?: transformedBackDef?.manaCost?.cmc
+            ?: cardComponent.manaValue
 
         // Build the flat target union for choose-N modal spells (Rule 700.2 / 601.2c).
         // TargetsComponent holds the union so existing target-arrow rendering and resolution-time

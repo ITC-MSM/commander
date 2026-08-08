@@ -9379,14 +9379,25 @@ Card authors rarely reference these directly; they are created/updated by the ma
   permission check, `CastSpellEnumerator.enumerateModalBackFace` surfaces the offer, and `CastSpellHandler` reads
   every characteristic off that face (`transformedFace`) and passes `castTransformed = true` to `StackResolver`.
   Cost is the back's own mana cost (`AlternativeCostType.MODAL_BACK_FACE` — the enum entry is plumbing, not a real
-  alternative cost; CR 712.11b calls it choosing a face). Because the back is a real `backFace`, transform, the
-  client's flip preview, and the permanent's `CardComponent.manaValue` all work with no extra wiring. The one place
-  the shared disturb path is *not* shareable is mana value on the **stack**: CR 712.8c computes a nonmodal
-  transformed spell's from the front face, while CR 712.8f gives a modal one the face that's up. `StackResolver`
-  forks on `layout == MODAL_DFC` for `spellManaValue` (the `SpellCastEvent`, hence
-  `ContextPropertyKey.TRIGGERING_SPELL_MANA_VALUE`), and `CastSpellHandler` mirrors it for its `CastSpellRecord`.
-  Timing comes off the face being cast, not the front (CR 712.11c), so a permanent back is sorcery-speed unless
-  *it* has flash. First users: the MSH hero cycle.
+  alternative cost; CR 712.11b calls it choosing a face). Because the back is a real `backFace`, transform and the
+  client's flip preview work with no extra wiring. The one place the shared disturb path is *not* shareable is
+  **mana value**, which is the only characteristic the CR treats differently for the two layouts — see the entry
+  below. Timing comes off the face being cast, not the front (CR 712.11c), so a permanent back is sorcery-speed
+  unless *it* has flash. First users: the MSH hero cycle.
+- **Mana value across a transform (CR 712.8c / 712.8e / 712.8f)** — the one characteristic where nonmodal and modal
+  DFCs diverge, so it is the one thing the shared face-swap machinery has to fork on. A **nonmodal** DFC computes
+  its mana value from the **front** face's mana cost while the back is up — on the stack (CR 712.8c, a disturb
+  cast) and on the battlefield (CR 712.8e) — which matters because a transform back prints no mana cost at all, so
+  reading the face directly would make a transformed Delver of Secrets mana value 0. A **modal** DFC has no such
+  exception (CR 712.8f): its back keeps its own printed cost. `dfcBackFaceManaValue(frontDef, frontManaValue)` is
+  the single place that decides, and it feeds `CardComponent.manaValueOverride` (which `CardComponent.manaValue`
+  prefers over `manaCost.cmc`) through `buildCardComponentForDfcFace` — so all three flip routes
+  (`flipDfcInPlace`, `returnDfcFace`, and `StackResolver`'s cast-transformed swap) agree, and every reader of
+  `manaValue` (predicates, `EntityNumericProperty.ManaValue`, emerge) sees the right number with no per-call-site
+  handling. `StackResolver` reuses the same value for `SpellCastEvent.manaValue` (hence
+  `ContextPropertyKey.TRIGGERING_SPELL_MANA_VALUE`) and `CastSpellHandler` mirrors it for its `CastSpellRecord`.
+  Not modelled: CR 712.8e's other clause, that a permanent *copying* a nonmodal back face has mana value 0
+  (CR 202.3b) — that is a property of the copy, not of the flip. Pinned by `DfcManaValueTest` and `DisturbKeywordTest`.
 - **Prepare / Prepared (Secrets of Strixhaven)** — `layout = PREPARE` + `cardFaces[0]` prepare spell; DSL:
   `card { prepare("Name") { spell { … } } }`. The creature is only cast as itself. A creature that carries
   `Keyword.PREPARED` ("This creature enters prepared") becomes prepared on enter
