@@ -11,6 +11,7 @@ import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.battlefield.chosenCreatureType
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.engine.state.components.identity.FaceDownComponent
+import com.wingedsheep.engine.state.components.identity.FaceDownModeComponent
 import com.wingedsheep.engine.state.components.identity.HexproofFromComponent
 import com.wingedsheep.engine.state.components.identity.ProtectionComponent
 import com.wingedsheep.engine.state.components.identity.RingBearerComponent
@@ -90,10 +91,20 @@ class StateProjector(
             val cardComponent = container.get<CardComponent>() ?: continue
 
             if (container.has<FaceDownComponent>()) {
+                // CR 708.2 / 708.2a: a face-down permanent has no characteristics beyond those the
+                // rules that made it face down list — 2/2 creature, no name, subtypes or mana cost.
+                // Disguise (CR 702.168a) and cloak (CR 701.58a) list one more: ward {2}. It is part
+                // of this characteristic-defining effect, not an ability of the card underneath,
+                // so it lives on the mode and ends the moment the permanent is turned face up.
+                val faceDownWard = container.get<FaceDownModeComponent>()?.mode?.faceDownWard
                 projectedValues[entityId] = MutableProjectedValues(
                     power = 2,
                     toughness = 2,
-                    keywords = mutableSetOf(),
+                    keywords = if (faceDownWard != null) {
+                        mutableSetOf(Keyword.WARD.name)
+                    } else {
+                        mutableSetOf()
+                    },
                     colors = mutableSetOf(),
                     types = mutableSetOf("CREATURE"),
                     subtypes = mutableSetOf(),

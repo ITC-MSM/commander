@@ -295,7 +295,7 @@ class MoveToZoneEffectExecutor(
             tappedAndAttacking = effect.placement == ZonePlacement.TappedAndAttacking,
             faceDown = isBattlefieldFaceDown,
             morphData = morphData,
-            manifested = isBattlefieldFaceDown && faceDownMode == FaceDownMode.MANIFEST
+            faceDownMode = if (isBattlefieldFaceDown) faceDownMode else null
         )
     }
 

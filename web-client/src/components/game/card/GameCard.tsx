@@ -3,7 +3,7 @@ import { useGameStore } from '@/store/gameStore.ts'
 import { useHasLegalActions } from '@/store/selectors.ts'
 import type { ClientCard, EntityId } from '@/types'
 import { Color, ColorSymbols, Keyword } from '@/types/enums'
-import { getCardImageUrl, getScryfallFallbackUrl, MANIFEST_FACE_DOWN_IMAGE_URL, MORPH_FACE_DOWN_IMAGE_URL } from '@/utils/cardImages.ts'
+import { getCardImageUrl, getScryfallFallbackUrl, faceDownImageUrl } from '@/utils/cardImages.ts'
 import { useInteraction } from '@/hooks/useInteraction.ts'
 import { ManaCost, ManaSymbol } from '@/components/ui/ManaSymbols.tsx'
 import { HoverCardPreview } from '@/components/ui/HoverCardPreview.tsx'
@@ -518,7 +518,7 @@ function GameCardImpl({
   const isPlayable = interactive && hasLegalActions && (!isInCombatMode || !isCombatRoleCard) && !hasActiveDecision
 
   const cardImageUrl = faceDown
-    ? (card.isManifested ? MANIFEST_FACE_DOWN_IMAGE_URL : MORPH_FACE_DOWN_IMAGE_URL)
+    ? faceDownImageUrl(card.faceDownMode)
     : getCardImageUrl(card.name, card.imageUri, 'normal')
 
   // Flip-layout tokens (e.g. the WOE "Cursed" / "Sorcerer" Roles) carry only one Scryfall image,

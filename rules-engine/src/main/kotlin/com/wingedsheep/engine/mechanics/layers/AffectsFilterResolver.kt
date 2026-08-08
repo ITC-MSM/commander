@@ -494,8 +494,12 @@ internal class AffectsFilterResolver {
             container.has<com.wingedsheep.engine.state.components.combat.BlockedOrWasBlockedByLegendaryThisTurnComponent>()
         StatePredicate.IsFaceDown -> isFaceDown
         StatePredicate.IsFaceUp -> !isFaceDown
+        // "Creature with a morph ability" (Backslide) means *morph* specifically — a manifested,
+        // cloaked or disguised permanent also carries turn-up data, so match on the procedure's
+        // mechanic rather than on the component's presence.
         StatePredicate.HasMorphAbility ->
-            container.has<MorphDataComponent>() || container.has<HasMorphAbilityComponent>()
+            container.has<HasMorphAbilityComponent>() ||
+                container.get<MorphDataComponent>()?.hasMorphProcedure == true
         StatePredicate.IsRingBearer -> {
             val bearer = container.get<com.wingedsheep.engine.state.components.identity.RingBearerComponent>()
             bearer != null && projectedController(state, entityId, projectedValues) == bearer.ownerId

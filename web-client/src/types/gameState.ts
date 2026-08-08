@@ -288,8 +288,11 @@ export interface ClientCard {
   /** Whether this card is face-down (for morph, manifest, hidden info) */
   readonly isFaceDown: boolean
 
-  /** Whether this face-down permanent is a manifest (CR 701.40), not a morph — picks the token art. */
-  readonly isManifested?: boolean
+  /**
+   * Which mechanic made this permanent face down — 'MORPH' | 'MANIFEST' | 'DISGUISE' | 'CLOAK'.
+   * Public information (CR 708.6); picks the face-down helper-card art.
+   */
+  readonly faceDownMode?: string
 
   /** Whether this permanent is suspected (CR 701.60 — has menace and can't block). Battlefield only. */
   readonly isSuspected?: boolean

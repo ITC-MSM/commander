@@ -1026,6 +1026,31 @@ internal fun EmitCtx.renderLook(node: JsonObject, args: JsonElement?, tvar: Stri
             arg("restOrder", "CardOrder.Random"),
         )
     }
+    // "Look at the top five cards of your library, cloak two of them, and put the rest on the bottom of
+    // your library in a random order." (Hide in Plain Sight). Cloak (CR 701.58a) is just a face-down
+    // destination for the kept cards, so `lookAtTopAndKeep` renders it exactly once `keepFaceDown` is
+    // pointed at FaceDownMode.CLOAK: each kept card becomes a face-down 2/2 with ward {2}, turnable face
+    // up for its own mana cost if it happens to be a creature card. The kept count lives inside the
+    // cloak sub-action's own `_GameNumber`, not the outer look count, so both are read positionally.
+    // Require the sub-actions to be EXACTLY [cloak-N, rest-to-bottom-random] — any third clause is a
+    // shape this flat pattern can't express and must scaffold rather than silently drop.
+    run {
+        val subActions = node.field("args").asArr?.getOrNull(1).asArr
+        val subKinds = subActions?.mapNotNull { (it as? JsonObject)?.strField("_LookAtTopOfLibraryAction") }
+        if (subKinds == listOf("CloakNumberGenericCards", "PutTheRemainingCardsOnTheBottomOfLibraryInARandomOrder")) {
+            val lookCount = findInteger(node.field("args").asArr?.getOrNull(0)) ?: return null
+            val cloakCount = findInteger(subActions.getOrNull(0)) ?: return null
+            return call(
+                "Patterns.Library.lookAtTopAndKeep",
+                arg("count", "$lookCount"),
+                arg("keepCount", "$cloakCount"),
+                arg("keepDestination", "CardDestination.ToZone(Zone.BATTLEFIELD)"),
+                arg("restDestination", "CardDestination.ToZone(Zone.LIBRARY, placement = ZonePlacement.Bottom)"),
+                arg("restOrder", "CardOrder.Random"),
+                arg("keepFaceDown", "FaceDownMode.CLOAK"),
+            )
+        }
+    }
     // "Look at the top X cards ... Put one of them into your hand and the rest on the bottom of your
     // library in any order." (Stress Dream — look at the top two, keep one, bottom the other). One
     // generic card kept to hand, the remainder bottomed in the controller's chosen order. The flat

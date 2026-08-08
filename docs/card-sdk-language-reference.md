@@ -110,6 +110,9 @@ section; do not let SDK additions land without a corresponding doc update.
 - `morph: String?` — morph mana cost (cast face-down).
 - `morphCost: PayCost?` — non-mana morph cost.
 - `morphFaceUpEffect: Effect?` — effect that fires when this morph turns face up.
+- `disguise: String?` — disguise mana cost (CR 702.168): cast face down for `{3}` as a 2/2 **with
+  ward {2}**, flip for this cost.
+- `disguiseCost: PayCost?` — non-mana disguise cost.
 - `warp: String?` — Warp alt-cost; exiles at end of turn.
 - `dash: String?` — Dash alt-cost (CR 702.109); gains haste and returns to owner's hand at the
   beginning of the next end step.
@@ -488,6 +491,8 @@ excluded.
   alternative (Zahid, Djinn of the Lamp).
 - `evoke` — pay evoke cost; creature is sacrificed at ETB.
 - `morph` — cast face-down for `{3}`-ish.
+- `disguise` — cast face-down for `{3}` as a 2/2 with ward {2} (CR 702.168a); same sorcery-speed
+  timing and the same `MorphCastEnumerator` as morph.
 - `warp` — cast from anywhere; exiled at end of turn.
 - `dash` — cast from hand for the dash cost (CR 702.109); gains haste, returned to owner's hand at
   the beginning of the next end step (not exiled — unlike warp, dash has no later recast).
@@ -2221,7 +2226,10 @@ one-off pipeline belongs inline in the card file via `Effects.Pipeline { }` (§5
   "exiles the top three cards of their library"). Same Gather → Move pipeline as `mill`, destination
   exile. `count` is an `Int` or `DynamicAmount`. Pass a `target` (e.g. a `Player.You` rebind under
   `Effects.ForEachPlayer(Player.EachOpponent, …)`) to exile another player's library top.
-- `lookAtTopAndKeep(count, keepCount)` — Ancestral Memories — keep exactly K to hand.
+- `lookAtTopAndKeep(count, keepCount, keepDestination?, restDestination?, restOrder?, keepFaceDown?)` —
+  Ancestral Memories — keep exactly K to hand. `restOrder = CardOrder.Random` for "on the bottom in a
+  random order"; `keepFaceDown = FaceDownMode.CLOAK` (or `MANIFEST`) when the kept cards go to the
+  battlefield face down — Hide in Plain Sight's "look at the top five, cloak two of them".
 - `lookAtTopRevealMatchingToHand(count, filter, prompt, restDestination?, restOrder?)` — Radagast the
   Brown / Star Charter shape: look at top `count`, **optionally** reveal one card matching `filter` to
   hand, rest to `restDestination` (default bottom of library) in `restOrder` (default
@@ -6705,6 +6713,10 @@ composite abilities).
     by contrast, already taps any number of creatures within one activation — a different shape —
     so it is unaffected.)
 - `Morph(cost)` — cast face-down for `{3}`, flip for cost.
+- `Disguise(cost)` — morph plus ward {2} (CR 702.168). Same `{3}` sorcery-speed face-down cast and
+  the same turn-face-up special action; the ward is a *characteristic* of the face-down permanent
+  (see `FaceDownMode.DISGUISE`), not part of this ability. Takes a full `PayCost` because
+  CR 702.168e contemplates X in a disguise cost.
 - `Unmorph(cost, effect)` — turn-face-up cost + bonus effect.
 - `Equip(cost)` — Equipment attach cost. The `equipAbility(cost, genericCostReduction = …)` DSL
   form optionally reduces the generic portion of the equip cost by a `DynamicAmount` evaluated at
@@ -9047,10 +9059,31 @@ Counter effects live in §4 (`AddCounters`, `RemoveCounters`, `Proliferate`, `Mo
   stored collection.
 - `faceDown` (on both move effects) is a nullable **`FaceDownMode`** — `null` = enter face up;
   `MORPH` = face-down with the card's morph cost as its turn-up cost; `MANIFEST` = face-down with
-  the card's mana cost as its turn-up cost (only if it's a creature card, CR 701.40b); `HIDDEN` =
-  face down with no turn-up (e.g. exiled face down for Hideaway). The engine derives the turn-up
-  data at entry, so a manifested creature reuses the whole morph turn-up machinery (special action,
-  payment, flip).
+  the card's mana cost as its turn-up cost (only if it's a creature card, CR 701.40b);
+  `DISGUISE` = morph plus ward {2} (CR 702.168); `CLOAK` = manifest plus ward {2} (CR 701.58a);
+  `HIDDEN` = face down with no turn-up (e.g. exiled face down for Hideaway). The engine derives the
+  turn-up data at entry, so a manifested, cloaked or disguised creature reuses the whole morph
+  turn-up machinery (special action, payment, flip).
+  - **The ward is data on the mode** (`FaceDownMode.faceDownWard`), not an ability of the card
+    underneath. Per CR 708.2 a face-down permanent has only the characteristics the rules that made
+    it face down list, and disguise/cloak list ward {2} among theirs — so `StateProjector` puts
+    `WARD` in the face-down keyword set and `TriggerAbilityResolver` builds the ward trigger from the
+    mode instead of from `cardDef.keywordAbilities`. It ends the instant the permanent is turned face
+    up. A face-down permanent contributes no *other* triggered ability of its own; ward granted from
+    outside (a `GrantWard` static elsewhere) still applies to it.
+  - **Turn-up procedures.** `FaceDownTurnUp` is the single place that maps (card, mode) →
+    `MorphDataComponent.procedures`. Manifest and cloak contribute both their own "pay the card's
+    mana cost" procedure *and* any morph/disguise procedure the card prints, because CR 701.40c/d and
+    701.58c/d let the controller pick either — that permanent then offers two `TurnFaceUp` legal
+    actions, selected by `TurnFaceUp.procedureIndex`. Megamorph's `faceUpEffect` rides its own
+    procedure, so a cloaked megamorph creature flipped for its mana cost correctly gets no counter
+    (CR 702.37b).
+  - **A cloaked/manifested instant or sorcery that would turn face up** is revealed and left face
+    down, firing no turned-face-up trigger (CR 701.40g / 701.58g) — handled in `TurnFaceUpExecutor`.
+  - `FaceDownModeComponent(mode)` carries the mode on the permanent while it is face down. It is
+    public information (CR 708.6) and reaches the client as `ClientCard.faceDownMode`, which picks
+    the face-down helper-card art (morph token / manifest token / "A Mysterious Creature" for both
+    disguise and cloak, matching paper).
 - `GatherCardsEffect(source, filter, into)` — pipeline gather from a zone into a named collection. `CardSource`
   variants include zones (`FromZone`, `FromMultipleZones`), battlefield queries (`BattlefieldMatching`,
   `ControlledPermanents`), linked exile (`FromLinkedExile`), tapped-as-cost (`TappedAsCost`), and the resolved
@@ -9320,6 +9353,20 @@ Card authors rarely reference these directly; they are created/updated by the ma
     wrong for a `Player.EachOpponent` one.
 - **Siege (named-mode entry)** — `EntersWithChoice(ChoiceType.MODE, modeOptions = ...)` + `SourceChosenModeIs("id")`.
 - **Morph** — `morph = "{2}{U}"` (top-level) + `morphFaceUpEffect` for "as it turns face up".
+- **Disguise** (CR 702.168) — `disguise = "{1}{W}"` (top-level), or `disguiseCost` for a non-mana
+  cost. Morph plus ward {2}, and that is the whole difference: the same sorcery-speed `{3}`
+  face-down cast (`MorphCastEnumerator`), the same turn-face-up special action, and the ward carried
+  as a face-down characteristic by `FaceDownMode.DISGUISE` rather than as an ability of the card
+  (see the `FaceDownMode` notes under the move effects). Pair with `Triggers.TurnedFaceUp` for the
+  common "when this creature is turned face up, …" payoff, or
+  `Triggers.or(Triggers.EntersBattlefield, Triggers.TurnedFaceUp)` for the "enters **or** is turned
+  face up" wording (Rakish Scoundrel) — one ability with two conditions, which must fire once on
+  either route, not twice.
+- **Cloak** (CR 701.58) — no keyword to author: it is `FaceDownMode.CLOAK` on whichever move puts
+  the card onto the battlefield, exactly as manifest is `FaceDownMode.MANIFEST`. For the common
+  "look at the top N, cloak M" shape use
+  `Patterns.Library.lookAtTopAndKeep(keepDestination = ToZone(BATTLEFIELD), keepFaceDown = CLOAK)`
+  (Hide in Plain Sight).
 - **Warp** — `warp = "{1}{R}"`; alt-cost that exiles end of turn. Like morph and cycle, a warp card
   always surfaces *both* cast options — its normal cost and its warp cost — in the action window, even
   when only one (or neither) is payable; the unpayable side appears grayed out (CR 118.9a, the caster

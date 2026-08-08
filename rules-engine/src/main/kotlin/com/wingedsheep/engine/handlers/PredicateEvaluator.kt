@@ -1227,11 +1227,13 @@ class PredicateEvaluator {
             StatePredicate.IsFaceDown -> container.has<FaceDownComponent>()
             StatePredicate.IsFaceUp -> !container.has<FaceDownComponent>()
 
-            // Morph ability — check both the runtime component (face-down permanents)
-            // and the card definition tag (cards in hand/library/graveyard)
+            // Morph ability — check both the runtime turn-up data (face-down permanents) and the
+            // card definition tag (cards in hand/library/graveyard). Manifested, cloaked and
+            // disguised permanents carry turn-up data too, so the runtime check asks whether one
+            // of the procedures actually came from morph.
             StatePredicate.HasMorphAbility ->
-                container.has<MorphDataComponent>() ||
-                container.has<HasMorphAbilityComponent>()
+                container.has<HasMorphAbilityComponent>() ||
+                container.get<MorphDataComponent>()?.hasMorphProcedure == true
 
             // Ring-bearer designation (CR 701.54e): only while it has the component AND is controlled
             // by the player who designated it.

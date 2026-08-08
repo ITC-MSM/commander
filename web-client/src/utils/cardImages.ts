@@ -14,6 +14,34 @@ export const MORPH_FACE_DOWN_IMAGE_URL = 'https://cards.scryfall.io/normal/front
 export const MANIFEST_FACE_DOWN_IMAGE_URL = 'https://cards.scryfall.io/normal/front/0/1/01104ab1-84e1-4c78-853d-637c6554bdf9.jpg'
 
 /**
+ * Face-down card art for disguise (CR 702.168) and cloak (CR 701.58).
+ *
+ * "A Mysterious Creature" is the single helper card printed for *both* mechanics — its own reminder
+ * text reads "a face-down creature that was cloaked or cast with disguise has ward {2}" — so paper
+ * Magic covers either with this one card and so do we. Taken from the Murders at Karlov Manor
+ * printing (TMKM #21, Ben Hill), the set that introduced disguise and cloak; Assassin's Creed
+ * reprinted the same card with different art (TACR #8).
+ * Source: https://scryfall.com/card/tmkm/21/a-mysterious-creature
+ */
+export const WARDED_FACE_DOWN_IMAGE_URL = 'https://cards.scryfall.io/normal/front/2/4/241b3b6d-a25f-4a43-b5d6-1d1079e7e498.jpg'
+
+/**
+ * Face-down helper-card art per {@link ClientCard.faceDownMode}. Falls back to the morph token,
+ * which is what an unmarked face-down permanent has always been rendered as.
+ */
+export function faceDownImageUrl(faceDownMode?: string): string {
+  switch (faceDownMode) {
+    case 'MANIFEST':
+      return MANIFEST_FACE_DOWN_IMAGE_URL
+    case 'DISGUISE':
+    case 'CLOAK':
+      return WARDED_FACE_DOWN_IMAGE_URL
+    default:
+      return MORPH_FACE_DOWN_IMAGE_URL
+  }
+}
+
+/**
  * Standard MTG card back image.
  */
 export const CARD_BACK_IMAGE_URL = 'https://backs.scryfall.io/normal/2/2/222b7a3b-2321-4d4c-af19-19338b134971.jpg?1677416389'

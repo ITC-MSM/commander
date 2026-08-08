@@ -285,6 +285,21 @@ class CardBuilder(private val name: String) {
     var morphFaceUpEffect: Effect? = null
 
     /**
+     * Disguise cost as a mana cost string (e.g., "{1}{W}") — CR 702.168.
+     * When set, the card gains the Disguise keyword ability with a mana cost: it may be cast face
+     * down for {3} as a 2/2 with ward {2}, and turned face up for this cost.
+     * For non-mana disguise costs, use [disguiseCost] instead.
+     */
+    var disguise: String? = null
+
+    /**
+     * Disguise cost as a [PayCost] for non-mana disguise costs.
+     * When set, the card gains the Disguise keyword ability.
+     * For mana-based disguise, the simpler [disguise] string property is preferred.
+     */
+    var disguiseCost: PayCost? = null
+
+    /**
      * Warp cost as a mana cost string (e.g., "{1}{R}").
      * When set, the card gains the Warp keyword ability.
      * Warp allows casting for an alternative cost; the permanent is exiled at end of turn
@@ -887,6 +902,10 @@ class CardBuilder(private val name: String) {
             when {
                 morph != null -> add(KeywordAbility.Morph(PayCost.Atom(CostAtom.Mana(ManaCost.parse(morph!!))), morphFaceUpEffect))
                 morphCost != null -> add(KeywordAbility.Morph(morphCost!!, morphFaceUpEffect))
+            }
+            when {
+                disguise != null -> add(KeywordAbility.Disguise(PayCost.Atom(CostAtom.Mana(ManaCost.parse(disguise!!)))))
+                disguiseCost != null -> add(KeywordAbility.Disguise(disguiseCost!!))
             }
             if (warp != null) add(KeywordAbility.Warp(ManaCost.parse(warp!!)))
             if (dash != null) add(KeywordAbility.Dash(ManaCost.parse(dash!!)))

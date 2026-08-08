@@ -668,9 +668,10 @@ class MoveCollectionExecutor(
                 else -> destPlayerId
             }
 
-            // Face-down battlefield entry (morph/manifest): derive each card's turn-up data from
-            // its identity and the mode. Per-card because manifested cards turn up for their own
-            // (differing) mana costs. Exile face-down (Hideaway) is just hidden — no turn-up data.
+            // Face-down battlefield entry (morph/manifest/disguise/cloak): derive each card's
+            // turn-up data from its identity and the mode. Per-card because manifested and cloaked
+            // cards turn up for their own (differing) mana costs. Exile face-down (Hideaway) is
+            // just hidden — no turn-up data.
             val isBattlefieldFaceDown = faceDown != null && destZone == Zone.BATTLEFIELD
             val morphData = if (isBattlefieldFaceDown) {
                 val cardDefinitionId = newState.getEntity(cardId)?.get<CardComponent>()?.cardDefinitionId
@@ -688,7 +689,7 @@ class MoveCollectionExecutor(
                 tappedAndAttacking = destination.placement == ZonePlacement.TappedAndAttacking,
                 faceDown = isBattlefieldFaceDown,
                 morphData = morphData,
-                manifested = isBattlefieldFaceDown && faceDown == FaceDownMode.MANIFEST,
+                faceDownMode = if (isBattlefieldFaceDown) faceDown else null,
                 faceDownExile = faceDown != null && destZone == Zone.EXILE
             )
 

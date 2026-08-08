@@ -23,7 +23,8 @@ import com.wingedsheep.engine.state.components.identity.DoubleFacedComponent
 import com.wingedsheep.engine.state.components.identity.PutIntoGraveyardThisTurnComponent
 import com.wingedsheep.engine.state.components.identity.FaceDownComponent
 import com.wingedsheep.engine.state.components.identity.MadnessExiledComponent
-import com.wingedsheep.engine.state.components.identity.ManifestedComponent
+import com.wingedsheep.engine.state.components.identity.FaceDownModeComponent
+import com.wingedsheep.sdk.scripting.effects.FaceDownMode
 import com.wingedsheep.engine.state.components.identity.PlayWithFixedAlternativeManaCostComponent
 import com.wingedsheep.engine.state.components.identity.MorphDataComponent
 import com.wingedsheep.engine.state.components.identity.RevealedToComponent
@@ -59,8 +60,13 @@ data class ZoneEntryOptions(
     val tappedAndAttacking: Boolean = false,
     val faceDown: Boolean = false,
     val morphData: MorphDataComponent? = null,
-    /** True when the face-down battlefield entry is a manifest (CR 701.40), not a morph. */
-    val manifested: Boolean = false,
+    /**
+     * Which mechanic put this permanent onto the battlefield face down — morph, manifest, cloak
+     * or disguise. Stamped onto the permanent as [FaceDownModeComponent]; drives the face-down art
+     * every player sees and the ward {2} disguise/cloak list among the face-down characteristics.
+     * Null when [faceDown] is false (or for a face-down *exile*, which has no mode marker).
+     */
+    val faceDownMode: FaceDownMode? = null,
     val skipZoneChangeRedirect: Boolean = false,
     val faceDownExile: Boolean = false,
     val lastKnownAttachedTo: EntityId? = null,
@@ -1058,14 +1064,14 @@ object ZoneTransitionService {
                 }
             }
 
-            // Face-down entry (morph / manifest)
+            // Face-down entry (morph / manifest / disguise / cloak)
             if (options.faceDown) {
                 updated = updated.with(FaceDownComponent)
                 if (options.morphData != null) {
                     updated = updated.with(options.morphData)
                 }
-                if (options.manifested) {
-                    updated = updated.with(ManifestedComponent)
+                if (options.faceDownMode != null) {
+                    updated = updated.with(FaceDownModeComponent(options.faceDownMode))
                 }
             }
 

@@ -34,6 +34,66 @@
     ]
 }
 
+// Dog Walker
+{
+    "name": "Dog Walker",
+    "manaCost": "{R}{W}",
+    "typeLine": "Creature — Human Citizen",
+    "oracleText": "Vigilance\nDisguise {R/W}{R/W} (You may cast this card face down for {3} as a 2/2 creature with ward {2}. Turn it face up any time for its disguise cost.)\nWhen this creature is turned face up, create two tapped 1/1 white Dog creature tokens.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 1
+    },
+    "keywords": [
+        "VIGILANCE"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Disguise",
+            "disguiseCost": {
+                "type": "PayAtom",
+                "atom": {
+                    "type": "AtomMana",
+                    "cost": "{R/W}{R/W}"
+                }
+            }
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "TurnFaceUpEvent",
+                "effect": {
+                    "type": "CreateToken",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [
+                        "WHITE"
+                    ],
+                    "creatureTypes": [
+                        "Dog"
+                    ],
+                    "tapped": true
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "197",
+        "artist": "Milivoj Ćeran",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/6/a6e0adb7-a030-4dcc-9284-cd91c7598a22.jpg"
+    },
+    "colorIdentityOverride": [
+        "RED",
+        "WHITE"
+    ]
+}
+
 // Elegant Parlor
 {
     "name": "Elegant Parlor",
@@ -730,6 +790,76 @@
     ]
 }
 
+// Hide in Plain Sight
+{
+    "name": "Hide in Plain Sight",
+    "manaCost": "{3}{G}",
+    "typeLine": "Sorcery",
+    "oracleText": "Look at the top five cards of your library, cloak two of them, and put the rest on the bottom of your library in a random order.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherCards",
+                    "source": {
+                        "type": "TopOfLibrary",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 5
+                        }
+                    },
+                    "storeAs": "looked"
+                },
+                {
+                    "type": "SelectFromCollection",
+                    "from": "looked",
+                    "selection": {
+                        "type": "ChooseExactly",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 2
+                        }
+                    },
+                    "storeSelected": "kept",
+                    "storeRemainder": "rest",
+                    "selectedLabel": "Put onto the battlefield",
+                    "remainderLabel": "Put on bottom"
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "kept",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Battlefield"
+                    },
+                    "faceDown": "CLOAK"
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "rest",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Library",
+                        "placement": "Bottom"
+                    },
+                    "order": "Random"
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "166",
+        "rarity": "RARE",
+        "artist": "Vincent Christiaens",
+        "flavorText": "The trees look beautiful... until they look back.",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/8/d87c1ed8-c644-4ad5-9a21-c7bd9a7e8d20.jpg"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Kraul Whipcracker
 {
     "name": "Kraul Whipcracker",
@@ -1203,6 +1333,64 @@
     ]
 }
 
+// Nightdrinker Moroii
+{
+    "name": "Nightdrinker Moroii",
+    "manaCost": "{3}{B}",
+    "typeLine": "Creature — Vampire",
+    "oracleText": "Flying\nWhen this creature enters, you lose 3 life.\nDisguise {B}{B} (You may cast this card face down for {3} as a 2/2 creature with ward {2}. Turn it face up any time for its disguise cost.)",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 2
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Disguise",
+            "disguiseCost": {
+                "type": "PayAtom",
+                "atom": {
+                    "type": "AtomMana",
+                    "cost": "{B}{B}"
+                }
+            }
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "LoseLife",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 3
+                    },
+                    "target": {
+                        "type": "PlayerRef",
+                        "player": "You"
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "96",
+        "rarity": "UNCOMMON",
+        "artist": "Brent Hollowell",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/e/ce043cba-aea4-4156-b1d0-545eda06c400.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // No More Lies
 {
     "name": "No More Lies",
@@ -1334,6 +1522,74 @@
         "imageUri": "https://cards.scryfall.io/normal/front/f/5/f58cfb23-4d99-4133-bf4b-d7e7c7d17cea.jpg"
     },
     "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Rakish Scoundrel
+{
+    "name": "Rakish Scoundrel",
+    "manaCost": "{2}{B}{G}",
+    "typeLine": "Creature — Elf Rogue",
+    "oracleText": "Deathtouch\nWhen this creature enters or is turned face up, target creature gains indestructible until end of turn.\nDisguise {4}{B/G}{B/G} (You may cast this card face down for {3} as a 2/2 creature with ward {2}. Turn it face up any time for its disguise cost.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "DEATHTOUCH"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Disguise",
+            "disguiseCost": {
+                "type": "PayAtom",
+                "atom": {
+                    "type": "AtomMana",
+                    "cost": "{4}{B/G}{B/G}"
+                }
+            }
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "AnyOfEvents",
+                    "events": [
+                        {
+                            "type": "ZoneChangeEvent",
+                            "to": "Battlefield"
+                        },
+                        "TurnFaceUpEvent"
+                    ]
+                },
+                "effect": {
+                    "type": "GrantKeyword",
+                    "keyword": "INDESTRUCTIBLE",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature"
+                    },
+                    "id": "target creature"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "225",
+        "artist": "Ina Wong",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/a/6aaa8c6b-7ef7-45db-99c9-4a6e7f177b94.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
         "GREEN"
     ]
 }

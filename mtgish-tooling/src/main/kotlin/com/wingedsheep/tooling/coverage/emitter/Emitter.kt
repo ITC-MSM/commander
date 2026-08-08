@@ -265,6 +265,14 @@ object Emitter {
                 // cost (none printed) declines -> scaffold.
                 rname == "TypeCycling" -> block = ctx.typecyclingLine(rule)
                 rname == "Morph" -> block = manaKeywordCost(rule)?.let { listOf(Assign("morph", Lit("\"$it\""))) }
+                // Disguise (CR 702.168) — morph plus ward {2}, and identical in the IR: a `Cost PayMana`
+                // arg. Renders the card-level `disguise = "{cost}"` assignment; the {3} face-down cast,
+                // the turn-face-up special action and the ward {2} all come from the keyword + the
+                // engine's FaceDownMode.DISGUISE, so nothing else needs emitting. Pure-mana only —
+                // `DisguiseX` has no branch here and falls through to SCAFFOLD, because CR 702.168e's
+                // "other abilities may refer to X" is the cast-time-chosen-value shape this emitter
+                // deliberately declines (see the module README).
+                rname == "Disguise" -> block = manaKeywordCost(rule)?.let { listOf(Assign("disguise", Lit("\"$it\""))) }
                 // FlashForCasters (conditional flash, CR 702.8) — "<this> has flash as long as you
                 // control a [filter]" (Colossal Rattlewurm: "...as long as you control a Desert"). The
                 // condition rides as `PlayerPassesFilter(You, ControlsA(filter))`; render the card-level
