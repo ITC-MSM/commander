@@ -6226,7 +6226,7 @@
                         }
                     }
                 },
-                "oncePerTurn": true,
+                "effectOncePerTurn": true,
                 "descriptionOverride": "Whenever you put one or more +1/+1 counters on a creature, you may gain that much life. Do this only once each turn."
             }
         ]
@@ -14842,7 +14842,7 @@
                         }
                     ]
                 },
-                "oncePerTurn": true
+                "effectOncePerTurn": true
             }
         ],
         "activatedAbilities": [

@@ -35,10 +35,14 @@ import com.wingedsheep.sdk.scripting.values.DynamicAmount
  *   At the beginning of combat on your turn, you may put an artifact card from your hand onto the
  *     battlefield. If it's an Equipment, attach it to The Invincible Iron Man.
  *
- * Modeled as a transforming double-faced creature ([CardDefinition.doubleFacedCreature]) — the same
- * shape as Peter Parker // Amazing Spider-Man. The front owns the sorcery-speed [TransformEffect]
- * flip; the back is reached only through that flip, so it carries no castable mana cost and takes
- * its U/R colors from a color indicator (CR 204).
+ * A **modal** double-faced creature ([CardDefinition.modalDoubleFacedPermanent]), the shape the
+ * whole MSH hero cycle shares. CR 712.3 lets a modal DFC also transform, and this card uses both
+ * routes to the same back face: cast it from hand for its own `{4}{U}{R}` (CR 712.11b/712.11c), or
+ * transform into it with the front's sorcery-speed [TransformEffect] ability
+ * ([TimingRule.SorcerySpeed]). So the back carries its printed mana cost and *no* color indicator —
+ * its U/R comes from that cost — and per CR 712.8f (which, unlike CR 712.8e for nonmodal DFCs, has
+ * no mana-value exception) the transformed permanent has the back face's mana value, not the
+ * front's.
  *
  *  - The front's dig is the stock [Patterns.Library.lookAtTopRevealMatchingToHand] recipe (look at
  *    four, optionally reveal one artifact card to hand, rest to the bottom in a random order).
@@ -89,9 +93,8 @@ private val TonyStarkFront = card("Tony Stark") {
 }
 
 private val TheInvincibleIronManBack = card("The Invincible Iron Man") {
-    manaCost = ""
+    manaCost = "{4}{U}{R}"
     colorIdentity = "UR"
-    colorIndicator = "UR" // Transformed back face, no mana cost (CR 204).
     typeLine = "Legendary Artifact Creature — Human Hero"
     power = 5
     toughness = 5
@@ -150,7 +153,7 @@ private fun putArtifactFromHandAndAttach(): Effect = Effects.Pipeline {
     )
 }
 
-val TonyStark: CardDefinition = CardDefinition.doubleFacedCreature(
+val TonyStark: CardDefinition = CardDefinition.modalDoubleFacedPermanent(
     frontFace = TonyStarkFront,
     backFace = TheInvincibleIronManBack,
 )

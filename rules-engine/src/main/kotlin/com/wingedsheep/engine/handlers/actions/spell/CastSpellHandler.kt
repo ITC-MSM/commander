@@ -266,13 +266,25 @@ class CastSpellHandler(
             return "Card is not in your hand"
         }
 
-        // The face this cast puts on the stack when it is cast **transformed** (CR 712.8c) — it
-        // drives timing, targeting and the aura target below. Two sources, both meaning "back face
-        // up on the stack": disturb's printed keyword, and a may-play permission granted with
-        // `castTransformed` (CR 310.11b — "exile it, then you may cast it transformed"). The zone
-        // legality of the latter was already settled by `mayPlayFromExile` / `mayCastFromZone`
-        // above, so this lookup only answers *which face*.
+        // Modal DFC back face (CR 712.11b) — the hand-side counterpart of disturb. The caster chose
+        // the back face, so the card goes on the stack transformed for that face's own mana cost.
+        // No zone guard is needed beyond the resolver's own (it only looks in hand), and the
+        // in-hand check above has already passed.
+        val modalBackFace = if (
+            action.useAlternativeCost && action.altAllows(AlternativeCostType.MODAL_BACK_FACE)
+        ) {
+            zoneResolver.modalBackCastFace(state, action.playerId, action.cardId)
+        } else null
+
+        // The face this cast puts on the stack when it is cast **transformed** (CR 712.8c / 712.8f)
+        // — it drives timing, targeting, the aura target, colors and subtypes below, which must all
+        // read this face rather than the printed front. Three sources, all meaning "back face up on
+        // the stack": disturb's printed keyword, the modal-DFC face choice above, and a may-play
+        // permission granted with `castTransformed` (CR 310.11b — "exile it, then you may cast it
+        // transformed"). The zone legality of the last was already settled by `mayPlayFromExile` /
+        // `mayCastFromZone` above, so that lookup only answers *which face*.
         val transformedFace = disturbFace
+            ?: modalBackFace
             ?: zoneResolver.permissionTransformedCastFace(state, action.playerId, action.cardId)
 
         // Gift (CR 702.174a): the promise is an additional cost whose "payment" is choosing an
@@ -384,7 +396,13 @@ class CastSpellHandler(
             cardDef != null &&
             SneakWindow.effectiveSneakCost(state, cardDef, action.cardId, action.playerId, cardRegistry) != null
         if (!effectiveTypeLine.isInstant) {
-            val hasFlash = cardDef?.keywords?.contains(Keyword.FLASH) == true
+            // Printed flash comes off the same face as the type line above, for the same reason:
+            // CR 712.11c evaluates only the face being cast, so a modal DFC whose *front* has flash
+            // grants none to a sorcery-speed back. `transformedFace` is null for an ordinary cast,
+            // which leaves this reading the card's own keywords. A *granted* flash below is a
+            // property of the card object, not of a face, so it is unaffected.
+            val faceKeywords = transformedFace?.keywords ?: cardDef?.keywords ?: emptySet()
+            val hasFlash = faceKeywords.contains(Keyword.FLASH)
             val grantedFlash = hasFlash || zoneResolver.hasGrantedFlash(state, action.cardId)
             // A from-exile may-play permission with an "as though it had flash" rider (Azula,
             // Cunning Usurper) lets a non-instant exiled card be cast at instant speed (CR 702.8).
@@ -912,6 +930,10 @@ class CastSpellHandler(
             )
             // Harmonize may be printed on the card or granted at runtime (Songcrafter Mage).
             val harmonizeAbility = HarmonizeGrants.effectiveHarmonize(state, action.cardId, cardDef)
+            // The back face of a modal DFC whose back is a permanent, when this card is one and is
+            // in hand (CR 712.11b). Resolved once here alongside the other face/keyword lookups so
+            // the branch below can both test it and read its cost.
+            val modalBackFace = zoneResolver.modalBackCastFace(state, action.playerId, action.cardId)
             // Each branch is gated by [CastSpell.altAllows] so an explicit player choice (e.g.
             // evoke) isn't overridden by a higher-priority cost that also happens to be legal
             // (e.g. a granted warp). With no choice recorded, every gate is open and this falls
@@ -937,6 +959,14 @@ class CastSpellHandler(
                 // from the front face, CR 712.8c).
                 costCalculator.calculateEffectiveCostWithAlternativeBase(
                     state, cardDef, DisturbCasts.printedDisturb(cardDef)!!.cost, action.playerId
+                )
+            } else if (action.altAllows(AlternativeCostType.MODAL_BACK_FACE) && modalBackFace != null) {
+                // Modal DFC back face (CR 712.11b) — you pay that face's *own* printed mana cost,
+                // not an alternative one. It still runs through the alternative-base path so
+                // battlefield cost modifiers apply; and unlike disturb the base is the back face's
+                // cost, because CR 712.8f gives a modal back face its own mana value.
+                costCalculator.calculateEffectiveCostWithAlternativeBase(
+                    state, cardDef, modalBackFace.manaCost, action.playerId
                 )
             } else {
                 // Check warp cost (hand only — CR 702.185a). Re-casts from exile pay the regular
@@ -1381,7 +1411,8 @@ class CastSpellHandler(
         transformedFace: com.wingedsheep.sdk.model.CardDefinition?,
     ): String? {
         // The quality is read off the face actually being cast (CR 702.47a checks the spell), so an
-        // adventure / split / transformed cast is measured by the half on the stack, not the whole card.
+        // adventure / split cast — or a transformed one (disturb, modal DFC back, a `castTransformed`
+        // permission) — is measured by the face on the stack, not the whole card.
         val castFace = action.faceIndex?.let { cardDef?.cardFaces?.getOrNull(it) }
         val spellSubtypes = when {
             castFace != null -> castFace.typeLine.subtypes.map { it.value }
@@ -2087,17 +2118,29 @@ class CastSpellHandler(
         val xValue = action.xValue ?: 0
         val cardDef = cardRegistry.getCard(cardComponent.cardDefinitionId)
 
+        // Modal DFC back face (CR 712.11b) — resolved pre-cast, while the card is still in hand.
+        // Kept as its own local because the cost branch below charges *this* face's printed mana
+        // cost, which the merged `transformedFace` alone can't distinguish from the other routes.
+        val modalBackFace = if (
+            action.useAlternativeCost && action.altAllows(AlternativeCostType.MODAL_BACK_FACE)
+        ) {
+            zoneResolver.modalBackCastFace(state, action.playerId, action.cardId)
+        } else null
+
         // The face this cast puts on the stack when it is cast **transformed**, resolved against the
         // pre-cast state while the card is still in its origin zone. Non-null means the back face
-        // supplies the spell's characteristics (CR 712.8c). Disturb (CR 702.146a) casts transformed
-        // from the graveyard for its disturb cost; a `castTransformed` may-play permission casts
-        // transformed from wherever the permission covers (CR 310.11b — "exile it, then you may
-        // cast it transformed").
+        // supplies the spell's characteristics (CR 712.8c / 712.8f). Three routes, mirroring
+        // validate(): disturb (CR 702.146a) casts transformed from the graveyard for its disturb
+        // cost; the modal-DFC face choice (CR 712.11b) casts the back face from hand for its own
+        // mana cost; and a `castTransformed` may-play permission casts transformed from wherever the
+        // permission covers (CR 310.11b — "exile it, then you may cast it transformed").
         val transformedFace = (
             if (action.useAlternativeCost && action.altAllows(AlternativeCostType.DISTURB)) {
                 zoneResolver.disturbCastFace(state, action.playerId, action.cardId)
             } else null
-        ) ?: zoneResolver.permissionTransformedCastFace(state, action.playerId, action.cardId)
+        )
+            ?: modalBackFace
+            ?: zoneResolver.permissionTransformedCastFace(state, action.playerId, action.cardId)
 
         // Rule 400.7: a card that changed zones is a new object. Drop any stale
         // LinkedExileComponent carried over from a previous battlefield visit (e.g.
@@ -2197,6 +2240,11 @@ class CastSpellHandler(
                 // Disturb cost (CR 702.146a) — mirrors validate().
                 costCalculator.calculateEffectiveCostWithAlternativeBase(
                     currentState, cardDef, DisturbCasts.printedDisturb(cardDef)!!.cost, action.playerId
+                )
+            } else if (action.altAllows(AlternativeCostType.MODAL_BACK_FACE) && modalBackFace != null) {
+                // Modal DFC back face (CR 712.11b) — mirrors validate().
+                costCalculator.calculateEffectiveCostWithAlternativeBase(
+                    currentState, cardDef, modalBackFace.manaCost, action.playerId
                 )
             } else {
                 // Check warp cost (hand only — CR 702.185a). Re-casts from exile pay the regular
@@ -3146,11 +3194,15 @@ class CastSpellHandler(
         // Track spell records cast this turn (for conditional evasion like Relic Runner, and "first of type" triggers)
         run {
             val record = com.wingedsheep.engine.state.CastSpellRecord(
-                // A disturb cast is on the stack back face up, so "a Spirit spell was cast" and
-                // colour/type history read the back face (CR 712.8c). Its mana value still comes
-                // from the front face's mana cost, which is what `cardComponent` still holds here.
+                // A transformed cast is on the stack back face up, so "a Spirit spell was cast" and
+                // colour/type history read the back face (CR 712.8c / 712.8f). Mana value splits by
+                // route: a disturb cast keeps the front face's (CR 712.8c), which is what
+                // `cardComponent` still holds here, while CR 712.8f gives a modal double-faced spell
+                // "only the characteristics of the face that's up" with no such exception — so a
+                // back-face cast reports that face's own mana value. Mirrors `StackResolver`'s
+                // `spellManaValue`, which stamps the same number onto the SpellCastEvent.
                 typeLine = transformedFace?.typeLine ?: cardComponent.typeLine,
-                manaValue = cardComponent.manaValue,
+                manaValue = modalBackFace?.manaCost?.cmc ?: cardComponent.manaValue,
                 colors = transformedFace?.colors ?: cardComponent.colors,
                 isFaceDown = action.castFaceDown,
                 spentManaSubtypes = paymentResult.spentManaProvenance.spentSubtypes,

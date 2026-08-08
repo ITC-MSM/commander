@@ -662,6 +662,27 @@ data class TriggeredAbilityFiredThisTurnComponent(
 }
 
 /**
+ * Tracks which triggered abilities have already **applied their effect** this turn, for the printed
+ * rider "Do this only once each turn" ([com.wingedsheep.sdk.scripting.TriggeredAbility.effectOncePerTurn]).
+ *
+ * Distinct from [TriggeredAbilityFiredThisTurnComponent] on purpose: that one records that an
+ * ability *triggered* (a trigger cap — the ability stops triggering), this one records that an
+ * ability's *effect* was applied (an effect cap — the ability keeps triggering, but at most one
+ * instance per turn does anything). Written by the `Gate.OnceEachTurn` branch of
+ * `GatedEffectExecutor`, atomically with the gate check, so two instances resolving back to back
+ * can never both pass. Cleared at end of turn by `CleanupPhaseManager`.
+ */
+@Serializable
+data class TriggeredAbilityEffectAppliedThisTurnComponent(
+    val abilityIds: Set<AbilityId> = emptySet()
+) : Component {
+    fun withApplied(abilityId: AbilityId): TriggeredAbilityEffectAppliedThisTurnComponent =
+        copy(abilityIds = abilityIds + abilityId)
+
+    fun hasApplied(abilityId: AbilityId): Boolean = abilityId in abilityIds
+}
+
+/**
  * Tracks which triggered abilities have fired over this permanent's lifetime on the battlefield,
  * for "This ability triggers only once" restrictions (e.g. Acrobatic Cheerleader).
  * Unlike [TriggeredAbilityFiredThisTurnComponent] this is NOT cleared at end of turn — it persists

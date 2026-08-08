@@ -28,10 +28,14 @@ import com.wingedsheep.sdk.scripting.values.DynamicAmount
  *   Enrage — Whenever The Incredible Hulk is dealt damage, put a +1/+1 counter on him. If he's
  *     attacking, untap him and there is an additional combat phase after this phase.
  *
- * A transforming double-faced creature ([CardDefinition.doubleFacedCreature]), the set's Jennifer
- * Walters / Monica Rambeau / Tony Stark shape: the front owns the sorcery-speed [TransformEffect]
- * flip ([TimingRule.SorcerySpeed]), and the back is reached only through that flip, so it carries
- * no castable mana cost — its R/G colors come from a color indicator (CR 204).
+ * A **modal** double-faced creature ([CardDefinition.modalDoubleFacedPermanent]), the shape the
+ * whole MSH hero cycle shares. CR 712.3 lets a modal DFC also transform, and this card uses both
+ * routes to the same back face: cast it from hand for its own `{2}{R}{R}{G}{G}` (CR 712.11b/712.11c), or
+ * transform into it with the front's sorcery-speed [TransformEffect] ability
+ * ([TimingRule.SorcerySpeed]). So the back carries its printed mana cost and *no* color indicator —
+ * its R/G comes from that cost — and per CR 712.8f (which, unlike CR 712.8e for nonmodal DFCs, has
+ * no mana-value exception) the transformed permanent has the back face's mana value, not the
+ * front's.
  *
  *  - **`{X}{X}, {T}: Draw X cards`** — the Gogo, Master of Mimicry idiom: the `{X}{X}` mana cost
  *    pays X twice, and the draw reads the single chosen X at resolution via
@@ -89,9 +93,8 @@ private val BruceBannerFront = card("Bruce Banner") {
 }
 
 private val TheIncredibleHulkBack = card("The Incredible Hulk") {
-    manaCost = ""
+    manaCost = "{2}{R}{R}{G}{G}"
     colorIdentity = "URG"
-    colorIndicator = "RG" // Transformed back face, no mana cost (CR 204).
     typeLine = "Legendary Creature — Gamma Berserker Hero"
     power = 8
     toughness = 8
@@ -139,7 +142,7 @@ private val TheIncredibleHulkBack = card("The Incredible Hulk") {
     }
 }
 
-val BruceBanner: CardDefinition = CardDefinition.doubleFacedCreature(
+val BruceBanner: CardDefinition = CardDefinition.modalDoubleFacedPermanent(
     frontFace = BruceBannerFront,
     backFace = TheIncredibleHulkBack,
 )

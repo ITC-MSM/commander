@@ -7,6 +7,7 @@ import com.wingedsheep.engine.mechanics.mana.ManaSolver
 import com.wingedsheep.engine.mechanics.modal.ChosenModeMemory
 import com.wingedsheep.engine.mechanics.stack.StackResolver
 import com.wingedsheep.engine.state.GameState
+import com.wingedsheep.engine.state.components.battlefield.TriggeredAbilityEffectAppliedThisTurnComponent
 import com.wingedsheep.engine.state.components.battlefield.TriggeredAbilityFiredEverComponent
 import com.wingedsheep.engine.state.components.battlefield.TriggeredAbilityFiredThisTurnComponent
 import com.wingedsheep.engine.state.components.stack.TriggeredAbilityOnStackComponent
@@ -16,6 +17,7 @@ import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.sdk.dsl.LibraryPatterns
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.AbilityId
+import com.wingedsheep.sdk.scripting.TriggeredAbility
 import com.wingedsheep.sdk.scripting.effects.CompositeEffect
 import com.wingedsheep.sdk.scripting.effects.Effect
 import com.wingedsheep.sdk.scripting.effects.FeasibilityCheck
@@ -166,6 +168,13 @@ class TriggerProcessor(
         val ability = trigger.ability
         val targetRequirement = ability.targetRequirement ?: return null
         if (ability.effect.asMayDecide() == null) return null
+        // An `effectOncePerTurn` ability is never batched: its whole point is picking *which* of the
+        // simultaneous instances gets the turn's single action (which damaged creature's number to
+        // mirror, which Villain connives). One shared yes/no would answer for all of them and take
+        // that choice away. It also never reaches the put-on-stack may-question at all — the
+        // lowering in `withEffectBudgetGate` moves consent to resolution time — but this guard reads
+        // the *un-lowered* ability, so it is still load-bearing.
+        if (ability.effectOncePerTurn) return null
         val identity = state.abilityIdentityOf(trigger.sourceId, ability.id) ?: return null
         // Mirror processMayThenTargetTrigger's fizzle guard: a trigger with no legal targets (for a
         // mandatory-target requirement) fizzles without asking, so it must not join a batch.
@@ -276,10 +285,30 @@ class TriggerProcessor(
      * Process a single triggered ability.
      *
      * @param state The current game state
-     * @param trigger The pending trigger to process
+     * @param incomingTrigger The pending trigger to process, before any `effectOncePerTurn` lowering
      * @return ExecutionResult - may be paused if trigger requires targets
      */
-    private fun processSingleTrigger(state: GameState, trigger: PendingTrigger): ExecutionResult {
+    private fun processSingleTrigger(state: GameState, incomingTrigger: PendingTrigger): ExecutionResult {
+        // "Do this only once each turn" (`effectOncePerTurn`). CR 603.2h: the ability "triggers only
+        // if its source's controller has not yet taken the indicated action that turn". Once the
+        // action has been taken this turn the ability simply does not trigger, so this instance is
+        // dropped — silently, with no event: nothing went on the stack and nothing fizzled, and a
+        // phantom ability in the log would be a lie. (Contrast `oncePerTurn`, the *trigger* cap,
+        // which is spent by the first trigger whether or not the action happened.)
+        //
+        // Deliberately ahead of the `consumesDelayedTriggerId` removal and the `triggersOnce` mark
+        // below: an ability that never triggers must not consume its one-shot delayed trigger nor
+        // burn its lifetime fire. No shipped card combines those flags with this one.
+        if (incomingTrigger.ability.effectOncePerTurn &&
+            effectBudgetSpent(state, incomingTrigger.sourceId, incomingTrigger.ability.id)
+        ) {
+            return ExecutionResult.success(state, emptyList())
+        }
+        val trigger = if (incomingTrigger.ability.effectOncePerTurn) {
+            incomingTrigger.copy(ability = withEffectBudgetGate(incomingTrigger.ability))
+        } else {
+            incomingTrigger
+        }
         val ability = trigger.ability
         var currentState = state
 
@@ -330,9 +359,7 @@ class TriggerProcessor(
         // the may-action lets an impossible "may" (e.g. "you may sacrifice an artifact" with no
         // artifact) fall straight to the else with no prompt — the no-target analogue of
         // "no legal targets → else".
-        val effectOwnsConsent = (ability.effect as? GatedEffect)?.gate
-            .let { it is Gate.MayDecide || it is Gate.MayPay || it is Gate.MayPayX }
-        if (ability.optional && !effectOwnsConsent) {
+        if (ability.optional && !ability.effect.ownsConsentGate()) {
             val gated = GatedEffect(
                 gate = Gate.MayDecide(feasibility = impliedMayFeasibility(ability.effect)),
                 then = ability.effect,
@@ -343,6 +370,24 @@ class TriggerProcessor(
 
         // No targets required - put directly on stack
         return putTriggerOnStack(currentState, trigger, emptyList())
+    }
+
+    /**
+     * Does this effect already carry its own consent gate — a `May*` [GatedEffect] the executor will
+     * turn into a resolution-time yes/no? Used to keep `optional` from wrapping a second "you may"
+     * around an effect that already asks, which would prompt twice.
+     *
+     * Looks through a [Gate.OnceEachTurn] because `withEffectBudgetGate` lowers a capped optional
+     * ability to `OnceEachTurn(spend = false) → May… → OnceEachTurn() → effect`; the consent gate is
+     * still there, one level down.
+     */
+    private fun Effect.ownsConsentGate(): Boolean {
+        val gated = this as? GatedEffect ?: return false
+        return when (gated.gate) {
+            is Gate.MayDecide, is Gate.MayPay, is Gate.MayPayX -> true
+            is Gate.OnceEachTurn -> gated.then.ownsConsentGate()
+            else -> false
+        }
     }
 
     /**
@@ -1449,6 +1494,52 @@ class TriggerProcessor(
     }
 
     /**
+     * Has this source's controller already taken [abilityId]'s "Do this only once each turn" action
+     * this turn (CR 603.2h)? Read-only mirror of the stamp `GatedEffectExecutor` writes when the
+     * spending budget gate passes.
+     */
+    private fun effectBudgetSpent(state: GameState, sourceId: EntityId, abilityId: AbilityId): Boolean =
+        state.getEntity(sourceId)
+            ?.get<TriggeredAbilityEffectAppliedThisTurnComponent>()
+            ?.hasApplied(abilityId) == true
+
+    /**
+     * Lower `TriggeredAbility.effectOncePerTurn` into [Gate.OnceEachTurn] budget gates around the
+     * effect that actually runs (CR 603.2h — see the flag's KDoc).
+     *
+     * Placement is the whole point. When the ability's effect already owns a consent gate (a
+     * `Gate.MayDecide` / `MayPay` / `MayPayX` — "**you may** have it connive", "**you may** have
+     * She-Hulk deal that much damage"), the lowering emits a *sandwich*:
+     *
+     * ```
+     * OnceEachTurn(spend = false)   ← has the action already been taken? if so, resolve silently
+     *   └ MayDecide / MayPay / …    ← the printed "you may", asked only when it can still matter
+     *       └ OnceEachTurn()        ← taking the action spends the turn's single use
+     *           └ the real effect
+     * ```
+     *
+     * The inner, spending gate is why declining costs nothing: the player can decline instance after
+     * instance and still take the action on the one they want. The outer, read-only gate is why an
+     * instance whose turn has already been used up "does nothing as it resolves" (Nykthos Paragon /
+     * Riveteers Ascendancy rulings) instead of raising a yes/no whose answer cannot matter — the
+     * trap of accepting three She-Hulk prompts in one multi-block and getting one mirror.
+     *
+     * A consequence worth stating: with a gate on the outside, `asMayDecide()` no longer matches at
+     * the top of the effect, so `processSingleTrigger` routes a *targeted* capped trigger through
+     * `processTargetedTrigger` rather than `processMayThenTargetTrigger`. Consent therefore moves
+     * from put-on-stack time to resolution time, which is where CR puts it anyway: targets are
+     * chosen on announcement (CR 603.3d) and the "you may" is chosen as the ability resolves (the
+     * Legolas, Counter of Kills ruling says so in as many words). Without that move the three
+     * prompts of a multi-block would all be answered before any instance resolved, so the outer gate
+     * would have nothing to suppress.
+     *
+     * A mandatory capped ability has no consent gate and no prompt to suppress, so a single
+     * spending gate simply wraps the effect.
+     */
+    private fun withEffectBudgetGate(ability: TriggeredAbility): TriggeredAbility =
+        ability.copy(effect = loweredEffectBudget(ability.effect, ability.id))
+
+    /**
      * Mark a once-per-turn triggered ability as fired on its source entity.
      */
     private fun markTriggerFired(state: GameState, sourceId: EntityId, abilityId: AbilityId): GameState {
@@ -1469,5 +1560,101 @@ class TriggerProcessor(
             ?: TriggeredAbilityFiredEverComponent()
         val updated = tracker.withFired(abilityId)
         return state.updateEntity(sourceId) { it.with(updated) }
+    }
+
+    /**
+     * The pure half of the `effectOncePerTurn` lowering. Lives on the companion so the card-registry
+     * guard ([consentGateIsMisplaced]) can be run over every shipped card at build time from a test,
+     * rather than only being exercised when a capped ability happens to trigger in a game.
+     */
+    companion object {
+
+        /** Gates that represent the printed "you may" — the ones a budget must be spent *inside* of. */
+        private val Gate.isConsentGate: Boolean
+            get() = this is Gate.MayDecide || this is Gate.MayPay || this is Gate.MayPayX
+
+        /**
+         * Wrap [effect] in the [Gate.OnceEachTurn] budget gates for `effectOncePerTurn` — the
+         * sandwich documented on `withEffectBudgetGate`.
+         *
+         * Throws when the ability has a consent gate the lowering cannot reach. That combination is
+         * a silent rules bug if it ships: the budget gate lands *outside* the "you may", so
+         * declining would spend the turn's single use — exactly the defect `effectOncePerTurn`
+         * exists to fix, and invisible at the table because the prompt looks identical. The
+         * condition depends only on the card definition, never on game state, so
+         * `EffectOncePerTurnLoweringTest`'s sweep over the whole registry is what guarantees this
+         * can never fire mid-game.
+         */
+        internal fun loweredEffectBudget(effect: Effect, abilityId: AbilityId): Effect {
+            val spending = withSpendingGate(effect, abilityId)
+            require(spending != null || !containsConsentGate(effect)) {
+                "effectOncePerTurn ability $abilityId has a 'you may' the budget lowering can't " +
+                    "reach — it must be at the top of the effect or the tail of a CompositeEffect, " +
+                    "or declining would spend the turn's use (CR 603.2h). Effect: $effect"
+            }
+            return if (spending != null) {
+                GatedEffect(gate = Gate.OnceEachTurn(abilityId, spend = false), then = spending)
+            } else {
+                GatedEffect(gate = Gate.OnceEachTurn(abilityId), then = effect)
+            }
+        }
+
+        /**
+         * True when [effect] carries a consent gate that [withSpendingGate] would *not* find — a
+         * "you may" buried mid-composite or under some other wrapper. The card-registry guard.
+         */
+        internal fun consentGateIsMisplaced(effect: Effect): Boolean =
+            withSpendingGate(effect, AbilityId("probe")) == null && containsConsentGate(effect)
+
+        /**
+         * Push the *spending* budget gate inside [effect]'s consent gate, or return null when there
+         * is no consent gate to put it inside (a mandatory ability — the caller then wraps the whole
+         * effect in a spending gate instead).
+         *
+         * The consent gate is not always at the top. Planetarium of Wan Shi Tong reads "look at the
+         * top card of your library. You may cast that card without paying its mana cost. Do this
+         * only once each turn", which is `Composite(look, May(cast))` — and its ruling is explicit
+         * that it is the *casting* that spends the turn ("once you choose to cast the top card of
+         * your library, the ability won't trigger again that turn"), not the looking. So the search
+         * descends the **tail** of a [CompositeEffect]: the payoff of a "do X, then you may Y"
+         * instruction is its last step, and that is the step the rider is attached to.
+         */
+        private fun withSpendingGate(effect: Effect, abilityId: AbilityId): Effect? = when (effect) {
+            is GatedEffect ->
+                if (effect.gate.isConsentGate) {
+                    effect.copy(then = GatedEffect(gate = Gate.OnceEachTurn(abilityId), then = effect.then))
+                } else {
+                    null
+                }
+
+            is CompositeEffect ->
+                effect.effects.lastOrNull()
+                    ?.let { withSpendingGate(it, abilityId) }
+                    ?.let { effect.copy(effects = effect.effects.dropLast(1) + it) }
+
+            else -> null
+        }
+
+        /**
+         * Any consent gate anywhere in the gate/composite spine of [effect], however deeply nested —
+         * including inside a `MayPay` cost or a `DoAction` action, which are effects in their own
+         * right. Deliberately broader than [withSpendingGate]: the gap between the two is precisely
+         * the set of shapes whose budget would end up in the wrong place.
+         */
+        private fun containsConsentGate(effect: Effect): Boolean = when (effect) {
+            is GatedEffect ->
+                effect.gate.isConsentGate ||
+                    containsConsentGate(effect.then) ||
+                    effect.otherwise?.let { containsConsentGate(it) } == true ||
+                    when (val gate = effect.gate) {
+                        is Gate.MayPay -> containsConsentGate(gate.cost)
+                        is Gate.DoAction -> containsConsentGate(gate.action)
+                        else -> false
+                    }
+
+            is CompositeEffect -> effect.effects.any { containsConsentGate(it) }
+
+            else -> false
+        }
     }
 }

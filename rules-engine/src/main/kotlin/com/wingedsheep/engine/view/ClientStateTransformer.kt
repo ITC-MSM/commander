@@ -1281,7 +1281,10 @@ class ClientStateTransformer(
             }
         }
 
-        // Modal DFC (CR 712) back face for display/flip preview (it lives in `cardFaces`, not `backFace`).
+        // Modal DFC (CR 712) back face for display/flip preview. A *spell* back lives in
+        // `cardFaces` (Flamescroll Celebrant // Revel in Silence) and is picked up here; a
+        // *permanent* back lives in `backFace` (the MSH hero cycle) and is picked up by
+        // `dfcBackFace` below, which is also what the transform machinery reads.
         val modalBackFace = if (cardDef?.layout == com.wingedsheep.sdk.model.CardLayout.MODAL_DFC) {
             cardDef.cardFaces.firstOrNull()
         } else null
@@ -1436,9 +1439,10 @@ class ClientStateTransformer(
             } else null,
             chosenModeDescriptions = chosenModeDescriptions,
             perModeTargets = perModeTargets,
-            // Modal DFCs (CR 712) keep their back face in `cardFaces`, not `backFace`, so the
-            // SDK `isDoubleFaced` (transform machinery) stays false; surface them to the client
-            // as double-faced for display/flip-preview only.
+            // A modal DFC with a *spell* back (CR 712) keeps it in `cardFaces`, so the SDK
+            // `isDoubleFaced` (transform machinery) stays false — surface it to the client as
+            // double-faced for display/flip-preview only. One with a *permanent* back already
+            // reports `isDoubleFaced`, since that back is reachable by transform too (CR 712.3).
             isDoubleFaced = container.has<com.wingedsheep.engine.state.components.identity.DoubleFacedComponent>() || cardDef?.isDoubleFaced == true || modalBackFace != null,
             currentFace = container.get<com.wingedsheep.engine.state.components.identity.DoubleFacedComponent>()?.currentFace?.name
                 ?: if (cardDef?.isDoubleFaced == true || modalBackFace != null) "FRONT" else null,

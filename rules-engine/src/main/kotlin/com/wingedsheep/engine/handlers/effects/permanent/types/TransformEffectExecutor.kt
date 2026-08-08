@@ -22,6 +22,7 @@ import com.wingedsheep.sdk.core.AbilityFlag
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.CardDefinition
+import com.wingedsheep.sdk.model.CardLayout
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.RedirectZoneChange
 import com.wingedsheep.sdk.scripting.effects.TransformEffect
@@ -123,7 +124,16 @@ internal fun flipDfcInPlace(
     }
     val nextCardDef = cardRegistry.getCard(nextDefinitionId) ?: return null
 
-    val swappedCard = buildCardComponentForDfcFace(currentCard, nextCardDef)
+    // CR 712.8e: a nonmodal DFC keeps its *front* face's mana value while the back is up.
+    // `currentCard` is the front face on the way in, so its mana value is that number; flipping to
+    // the front instead clears the override, since the front's own cost is the answer again.
+    val swappedCard = buildCardComponentForDfcFace(
+        currentCard,
+        nextCardDef,
+        manaValueOverride = if (intoBackFace) {
+            dfcBackFaceManaValue(cardRegistry.getCard(dfc.frontCardDefinitionId), currentCard.manaValue)
+        } else null,
+    )
     // A DFC on the battlefield always has a controller; fall back to owner, and treat a truly
     // owner-less object as un-flippable (null → the caller's no-op contract) rather than fabricate an id.
     val controllerId = container.get<ControllerComponent>()?.playerId ?: currentCard.ownerId ?: return null
@@ -190,14 +200,45 @@ internal fun withDfcFaceSelfRedirects(
 }
 
 /**
+ * The mana value a double-faced object keeps while its **back** face is up, or null when the back
+ * face's own mana cost is already the right answer. The one place the modal/nonmodal split is
+ * decided; pass the result to [buildCardComponentForDfcFace] as `manaValueOverride`.
+ *
+ * A **nonmodal** DFC calculates its mana value from the *front* face's mana cost while the back is
+ * up — CR 712.8c says so for a spell on the stack (a disturb cast) and CR 712.8e for a permanent on
+ * the battlefield. Since a transform card's back prints no mana cost at all, taking the back's own
+ * cost would make a transformed Delver of Secrets mana value 0 instead of 1.
+ *
+ * A **modal** DFC has no such exception: CR 712.8f gives it "only the characteristics of the face
+ * that's up", so The Sensational She-Hulk keeps the 6 from her own `{3}{G}{W}{W}` however she got
+ * there. That is the whole difference, and it is why this takes the front *definition* rather than
+ * just a number.
+ *
+ * An unresolvable [frontDef] falls back to the nonmodal rule, which covers all but a handful of
+ * cards.
+ *
+ * Not called when flipping *to* the front face: there the front's own cost is the answer and the
+ * override must be cleared, which [buildCardComponentForDfcFace]'s default already does.
+ *
+ * (CR 712.8e's other clause — a permanent *copying* a nonmodal back face has mana value 0, CR
+ * 202.3b — is a property of the copy, not of the flip, and is not modelled here.)
+ */
+internal fun dfcBackFaceManaValue(frontDef: CardDefinition?, frontManaValue: Int): Int? =
+    if (frontDef?.layout == CardLayout.MODAL_DFC) null else frontManaValue
+
+/**
  * Build a fresh [CardComponent] for the given DFC face while preserving the permanent's
  * owner identity and inheriting the prior face's `imageUri` when the new face doesn't
  * declare its own. Shared by [TransformEffectExecutor] (CR 701.27 transform on the
  * battlefield) and [ReturnSelfFromExileTransformedExecutor] (CR 702.167 Craft return).
+ *
+ * @param manaValueOverride What [dfcBackFaceManaValue] returned when [face] is the **back** face;
+ *   null when flipping to the front, which clears any override the back face carried.
  */
 internal fun buildCardComponentForDfcFace(
     current: CardComponent,
-    face: CardDefinition
+    face: CardDefinition,
+    manaValueOverride: Int? = null,
 ): CardComponent = CardComponent(
     cardDefinitionId = face.name,
     name = face.name,
@@ -216,6 +257,7 @@ internal fun buildCardComponentForDfcFace(
     // (otherwise a transformed permanent silently reports the default `false`).
     hasNonManaActivatedAbility = face.hasNonManaActivatedAbility,
     hasActivatedAbility = face.hasActivatedAbility,
+    manaValueOverride = manaValueOverride,
 )
 
 /**
@@ -256,7 +298,15 @@ internal fun returnDfcFace(
     val destinationDef = cardRegistry.getCard(destinationDefinitionId)
         ?: return ZoneTransitionResult(state, emptyList())
 
-    val destinationCard = buildCardComponentForDfcFace(currentCard, destinationDef)
+    // `currentCard` is the front face here (Rule 712.8a — the entity reverted to it on leaving the
+    // battlefield), so it supplies the CR 712.8e mana value a nonmodal back face keeps.
+    val destinationCard = buildCardComponentForDfcFace(
+        currentCard,
+        destinationDef,
+        manaValueOverride = if (destinationFace == DoubleFacedComponent.Face.BACK) {
+            dfcBackFaceManaValue(cardRegistry.getCard(dfc.frontCardDefinitionId), currentCard.manaValue)
+        } else null,
+    )
     val updatedDfc = when (destinationFace) {
         // currentCard is the front face here (the entity reverts to its front face on leaving the
         // battlefield, Rule 712.8a) — stash it so the back face can restore it on its next exit.

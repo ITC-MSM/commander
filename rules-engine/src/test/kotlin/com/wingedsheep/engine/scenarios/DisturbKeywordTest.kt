@@ -175,6 +175,15 @@ class DisturbKeywordTest : FunSpec({
         card?.typeLine?.subtypes?.map { it.value }?.shouldContain("Spirit")
         driver.state.projectedState.hasKeyword(perm, Keyword.FLYING).shouldBeTrue()
         driver.state.getEntity(perm)?.get<DoubleFacedComponent>()?.isBack shouldBe true
+        // ...but not its mana value. CR 712.8e: "While a nonmodal double-faced permanent has its
+        // back face up, it has only the characteristics of its back face. However, its mana value is
+        // calculated using the mana cost of its front face." Test Geist's front is {W}, so the
+        // permanent is mana value 1 — not the 0 its blank-costed back face would otherwise give,
+        // which is what "creatures with mana value 1 or less" and every other reader of
+        // CardComponent.manaValue sees.
+        io.kotest.assertions.withClue("CR 712.8e — front face's mana cost, not the back's blank one") {
+            card?.manaValue shouldBe 1
+        }
     }
 
     test("the disturbed spell's mana value comes from the FRONT face's mana cost (CR 712.8c)") {
