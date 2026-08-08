@@ -1,3 +1,43 @@
+// Cold Case Cracker
+{
+    "name": "Cold Case Cracker",
+    "manaCost": "{3}{U}",
+    "typeLine": "Creature — Spirit Detective",
+    "oracleText": "Flying\nWhen this creature dies, investigate. (Create a Clue token. It's an artifact with \"{2}, Sacrifice this token: Draw a card.\")",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "effect": {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Clue"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "46",
+        "artist": "Wayne Wu",
+        "flavorText": "\"It's a rare privilege to investigate one's own death.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/0/f082111b-9b1c-4a25-8c5d-d6ef77533a9b.jpg?1783912913"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Commercial District
 {
     "name": "Commercial District",
@@ -31,6 +71,89 @@
     "colorIdentityOverride": [
         "RED",
         "GREEN"
+    ]
+}
+
+// Curious Inquiry
+{
+    "name": "Curious Inquiry",
+    "manaCost": "{U}",
+    "typeLine": "Enchantment — Aura",
+    "oracleText": "Enchant creature\nEnchanted creature gets +1/+1 and has \"Whenever this creature deals combat damage to a player, investigate.\" (Create a Clue token. It's an artifact with \"{2}, Sacrifice this token: Draw a card.\")",
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 1,
+                "toughnessBonus": 1
+            },
+            {
+                "type": "GrantTriggeredAbility",
+                "ability": {
+                    "id": "ability_1",
+                    "trigger": {
+                        "type": "DealsDamageEvent",
+                        "damageType": "DamageCombat",
+                        "recipient": "AnyPlayer"
+                    },
+                    "effect": {
+                        "type": "CreatePredefinedToken",
+                        "tokenType": "Clue"
+                    }
+                }
+            }
+        ],
+        "auraTarget": {
+            "type": "TargetObject",
+            "filter": {
+                "baseFilter": "creature"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "51",
+        "rarity": "UNCOMMON",
+        "artist": "Ekaterina Burmak",
+        "flavorText": "Each time he replayed the attack in his mind, new details emerged.",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/a/5a3603c6-92df-45c7-b402-1f0a552ea398.jpg?1783912912"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Deduce
+{
+    "name": "Deduce",
+    "manaCost": "{1}{U}",
+    "typeLine": "Instant",
+    "oracleText": "Draw a card. Investigate. (Create a Clue token. It's an artifact with \"{2}, Sacrifice this token: Draw a card.\")",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Clue"
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "52",
+        "artist": "Quintin Gleim",
+        "flavorText": "Proft lit up like a man who had just been handed a glorious and unexpected gift. \"I know who's responsible for this,\" he said. \"And I can prove it.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/c/7cbb17af-e17e-438a-ad72-0c942e6706b6.jpg?1783912912"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 
@@ -1281,6 +1404,42 @@
     ]
 }
 
+// Novice Inspector
+{
+    "name": "Novice Inspector",
+    "manaCost": "{W}",
+    "typeLine": "Creature — Human Detective",
+    "oracleText": "When this creature enters, investigate. (Create a Clue token. It's an artifact with \"{2}, Sacrifice this token: Draw a card.\")",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Clue"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "29",
+        "artist": "Fajareka Setiawan",
+        "flavorText": "\"If the perfect evidence appears at your feet, your first task is to rule out misdirection.\"\n—The Ravnican Agency of Magicological Investigations handbook",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/a/0ad38866-fc5f-4f62-89c1-afc0f50765aa.jpg?1783912920"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Pick Your Poison
 {
     "name": "Pick Your Poison",
@@ -1986,6 +2145,85 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Unscrupulous Agent
+{
+    "name": "Unscrupulous Agent",
+    "manaCost": "{1}{B}",
+    "typeLine": "Creature — Elf Detective",
+    "oracleText": "When this creature enters, target opponent exiles a card from their hand.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Hand",
+                                "player": {
+                                    "type": "ContextPlayer",
+                                    "index": 0
+                                }
+                            },
+                            "storeAs": "hand"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "hand",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "chooser": "TargetPlayer",
+                            "storeSelected": "exiled",
+                            "prompt": "Choose a card to exile"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "exiled",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile",
+                                "player": {
+                                    "type": "ContextPlayer",
+                                    "index": 0
+                                }
+                            }
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetOpponent",
+                    "id": "target opponent"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "109",
+        "artist": "Michal Ivan",
+        "flavorText": "Obtaining evidence through the \"proper\" channels can take weeks of paperwork. Sometimes justice just can't wait.",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/7/37692f9a-3825-43aa-aacb-1bb92cb5bd07.jpg?1783912890"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 
