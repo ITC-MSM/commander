@@ -8407,7 +8407,7 @@
                     "amount": {
                         "type": "AggregateBattlefield",
                         "player": "You",
-                        "filter": "creature Goblin ctrl:you"
+                        "filter": "creature Goblin"
                     }
                 },
                 "timing": "ManaAbility",
@@ -8426,7 +8426,7 @@
                     }
                 ],
                 "isManaAbility": true,
-                "descriptionOverride": "Max speed — {T}: Add {R} for each the number of you control creature Goblins you control"
+                "descriptionOverride": "Max speed — {T}: Add {R} for each the number of Goblin creatures you control"
             }
         ],
         "staticAbilities": [

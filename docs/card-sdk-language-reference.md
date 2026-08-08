@@ -7358,7 +7358,11 @@ default to "you" so card authors don't need to pass it explicitly.
 - `All(c1, c2, ...)` — AND.
 - `Any(c1, c2, ...)` — OR.
 - `Not(c)` — negate.
-- `Compare(v1, op, v2)` — numeric comparison between `DynamicAmount`s.
+- `Compare(v1, op, v2)` — numeric comparison between `DynamicAmount`s. Its `description` is
+  player-facing (a `CantAttackUnless` restriction renders it into the "can't attack" message), so it
+  reads as a sentence: `ComparisonOperator.phrase` supplies the English comparative and the whole
+  condition comes out as "the number of other Wolf creatures you control **is at least** 2". Use
+  `ComparisonOperator.symbol` (`>=`) only for diagnostics — never in text a player sees.
 - `NumberMatches(amount, NumberProperty.{Prime,Even,Odd,MultipleOf(n)})` — unary numeric predicate
   over one `DynamicAmount` (primality/parity/divisibility); facades `AmountIsPrime/Even/Odd/MultipleOf`.
 - `Exists(player, zone, filter)` — at least one matching object exists.

@@ -859,6 +859,28 @@ object PredefinedTokens {
     }
 
     /**
+     * Axe — the colorless Equipment artifact token created by Iron Hills Blacksmith (The Hobbit):
+     * "Equipped creature gets +1/+0" and equip {2}.
+     *
+     * Same shape as [Sword] and [SturdyShield], with a different name, art, and stat bonus.
+     */
+    val Axe = card("Axe") {
+        typeLine = "Artifact — Equipment"
+        oracleText = "Equipped creature gets +1/+0.\nEquip {2}"
+
+        staticAbility {
+            ability = ModifyStats(+1, 0, Filters.EquippedCreature)
+        }
+
+        equipAbility("{2}")
+
+        metadata {
+            imageUri = "https://cards.scryfall.io/normal/front/6/f/6f7a3999-e341-43bb-9b8f-6c1a05b98906.jpg?1785497989"
+            artist = "Nathaniel Himawan"
+        }
+    }
+
+    /**
      * All predefined token definitions.
      * Register these in the CardRegistry so token abilities are resolved.
      */
@@ -894,6 +916,7 @@ object PredefinedTokens {
         Zabu,
         Moloid,
         Galactus,
-        SturdyShield
+        SturdyShield,
+        Axe
     )
 }
