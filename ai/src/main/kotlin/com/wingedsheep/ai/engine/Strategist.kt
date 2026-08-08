@@ -101,6 +101,11 @@ class Strategist(
     /** [AiProfile.cashCantripsInTheEndStep] — passed straight through to [HoldPolicy]. */
     private val cashCantripsInTheEndStep: Boolean = false,
     /**
+     * [AiProfile.holdFlashPermanentsForAmbush] — passed straight through to [HoldPolicy], which
+     * hands it to [com.wingedsheep.ai.engine.knowledge.AmbushWindow].
+     */
+    private val holdFlashPermanentsForAmbush: Boolean = false,
+    /**
      * The profile's `EvaluationWeights.boardPresence`. Only [HoldPolicy] reads it, to quote a
      * patience discount in the same units the leaf score prices board value in.
      */
@@ -125,6 +130,7 @@ class Strategist(
         holdRemovalForBetterTargets = holdRemovalForBetterTargets,
         holdCountersForBetterSpells = holdCountersForBetterSpells,
         cashCantripsInTheEndStep = cashCantripsInTheEndStep,
+        holdFlashPermanentsForAmbush = holdFlashPermanentsForAmbush,
         boardPresenceWeight = boardPresenceWeight,
     )
 

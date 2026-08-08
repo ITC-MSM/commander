@@ -267,6 +267,38 @@ data class AiProfile(
      */
     val cashCantripsInTheEndStep: Boolean = false,
     /**
+     * Stop deploying a **flash creature on our own turn** when the ambush window is still ahead.
+     *
+     * The target is `instants-09`, taken from a real game: turn 7, our own precombat main, a
+     * Restoration Angel in hand and four Plains untapped, and the AI jams it. The leaf sees a 3/4
+     * flier on the battlefield and scores it the same wherever in the turn it landed, so casting
+     * beat passing by **+4.06** — the creature's whole board value — and every reason flash was
+     * printed (hold the mana, see their attack, ambush a creature) is worth exactly zero to a
+     * one-ply evaluator.
+     *
+     * [com.wingedsheep.ai.engine.knowledge.AmbushWindow] answers it with a
+     * [com.wingedsheep.ai.engine.knowledge.TimingVerdict.NoWindow] rather than a discount, and its
+     * KDoc carries the argument for why this is the one window branch that can honestly do that:
+     * a bonus on the *good* window — the shape the removal branch uses — cannot correct a decision
+     * made three steps earlier, and unlike "hold the removal" the claim is provable. Casting a
+     * no-haste flash permanent now is dominated by casting it at the next free window *unless the
+     * permanent does something in between*, and that list is finite and readable off the card:
+     * it attacks, its ETB changes a combat, its ETB hands us a resource to spend, or there is
+     * something on the stack. Any of the four and the floor declines.
+     *
+     * It inherits [com.wingedsheep.ai.engine.knowledge.Patience]'s three releases whole — lethal on
+     * board, a hand at maximum size, a game past turn 14 — which is what keeps a floor this hard
+     * from turning the card into a brick, and adds one of its own: once the opponent declares
+     * attackers, holding longer buys nothing. Needs [useCardIntent], like everything else the
+     * policy reads.
+     *
+     * Its negative controls are the rest of `instants` and the whole of `timing`: a flash creature
+     * with haste, one whose ETB clears a blocker, and the ambush window itself, where it must
+     * actually cast. A term that only ever says "don't" would score well on a suite by never
+     * playing, which is why `instants-10` asserts the cast.
+     */
+    val holdFlashPermanentsForAmbush: Boolean = false,
+    /**
      * The two `BoardPresence.creatureValue` corrections [PRODUCTION_RACECLOCK]'s KDoc named as the
      * reason its arena win came with a puzzle trade — the damaged-creature discount and the flat
      * multiplier on "can't attack". Both are off by default; see
@@ -945,6 +977,67 @@ data class AiProfile(
         val PRODUCTION_CANDIDATE_COUNTERPATIENCE = PRODUCTION_CANDIDATE_CANTRIP.copy(
             id = "production-candidate-counterpatience",
             holdCountersForBetterSpells = true,
+        )
+
+        /**
+         * [holdFlashPermanentsForAmbush] alone on top of [PRODUCTION], so a puzzle or an arena point
+         * that moves is attributable to it — the same isolation [PRODUCTION_COUNTERPATIENCE] gives
+         * counter patience.
+         *
+         * Unlike that column this one *can* close its own puzzle, because the mistake is not one a
+         * greedy agent declines to make for reasons of its own: `production` already has
+         * [useCardIntent], so it reads Restoration Angel's flash, types it `Speed.INSTANT`, finds no
+         * branch that claims it, and jams it in the main phase exactly as the live agent does.
+         *
+         * **Measured: 78/92 → 79/92**, closing `instants-09` and nothing else, with every other
+         * category byte-identical to [PRODUCTION]'s. A term that fires on one narrow shape and
+         * costs nothing across the other 91 positions is what the isolation column is for.
+         */
+        val PRODUCTION_AMBUSH = PRODUCTION.copy(
+            id = "production-ambush",
+            holdFlashPermanentsForAmbush = true,
+        )
+
+        /**
+         * The promotion candidate: [PRODUCTION_CANDIDATE_COUNTERPATIENCE] plus
+         * [holdFlashPermanentsForAmbush] — the agent that stops dumping its flash creatures into its
+         * own main phase.
+         *
+         * Stacked on [PRODUCTION_CANDIDATE_COUNTERPATIENCE] because that is what
+         * [com.wingedsheep.server.game.EngineAiPlayerController] actually points at, and a candidate
+         * has to be one flag away from what players face — the same rule
+         * [PRODUCTION_CANDIDATE_COUNTERPATIENCE]'s own KDoc states about not stacking on the
+         * manalands experiment.
+         *
+         * **Measured: 89/92 → 90/92**, closing `instants-09` with a failing set that is a strict
+         * subset of [PRODUCTION_CANDIDATE_COUNTERPATIENCE]'s — what is left is `respond-05` and
+         * `timing-03`, the same two that need a horizon rather than a term. The `instants` category
+         * goes 12/13 → **13/13** and every other category is unchanged.
+         *
+         * Its controls are the four positions added alongside it, all of which pass on
+         * [PRODUCTION] already and still pass here: `instants-10` (the ambush itself, at their
+         * declare-attackers), `-11` (flash *and* haste), `-12` (an ETB that taps a blocker before
+         * we attack) and `-13` (past the patience horizon). `instants-10` is not a fix — it passes
+         * everywhere — and it is in the suite for the reason `HoldingInstantsPuzzles`' own header
+         * gives: a category of "don't cast" positions scores 100% for an agent that never casts
+         * anything, so the half that says *do* has to be asserted too.
+         *
+         * The arena half returned the sequence's **fourth degenerate null**: `just arena
+         * production-candidate-counterpatience production-candidate-ambush 100` measured **50.0%,
+         * CI [50.0%, 50.0%]**, 100/100 completed, 0 illegal actions, every scored pair 1-1-0. Read
+         * that as "this term changes the outcome of a real sealed game rarely", which is what the
+         * mechanism predicts — it fires only on a turn where the AI holds a flash permanent with
+         * the ambush window still ahead. A CI spanning parity is a pass by the standing bar, and
+         * the evidence is the puzzle side, at +1 with nothing traded.
+         *
+         * If a later arena run comes back below parity, revert the two call sites
+         * (`EngineAiPlayerController` and [AiProfileSelector]'s fallback) rather than the flag: it is
+         * off for every other profile, so backing the promotion out costs nothing and loses no
+         * measurement.
+         */
+        val PRODUCTION_CANDIDATE_AMBUSH = PRODUCTION_CANDIDATE_COUNTERPATIENCE.copy(
+            id = "production-candidate-ambush",
+            holdFlashPermanentsForAmbush = true,
         )
 
         /**

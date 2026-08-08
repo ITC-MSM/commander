@@ -1964,3 +1964,110 @@ jar, most likely a build race with a parallel agent). Both games were the same p
 out of the comparison. Unrelated to this change, which touches `:ai` only.
 
 **Promoted 2026-08-08** in `EngineAiPlayerController` and `AiProfileSelector`'s fallback.
+
+# The ambush window — flash creatures held for the opponent's turn
+
+Reported from a real game, not found on the suite. Turn 7, the AI's own precombat main, four Plains
+untapped and a Restoration Angel in hand — and it jams it. The decision record says why:
+
+```
+Cast Restoration Angel   score  3.86   advantage +4.06   <- chosen
+Pass priority            score -0.19   baseline
+```
+
+That advantage *is* the creature's board value. A one-ply evaluator scores the board right after the
+spell resolves, and a 3/4 flier scores the same there whichever window it landed in, so every reason
+flash is printed — hold the mana, see their attack, ambush an attacker — is worth exactly zero. The
+Angel cannot attack this turn either way. What casting now spends is the whole card's edge.
+
+## Why the removal branch's shape does not transfer
+
+`HoldPolicy` already has a well-argued answer for "wrong window", and it is a **bonus on the good
+window**: instant-speed removal is paid at the opponent's end step and charged nothing for being cast
+early. That branch's KDoc records that the symmetric penalty was built, measured and removed, because
+holding removal is a preference between two futures and the constant big enough to change behaviour
+was big enough to veto casting the removal at all.
+
+Neither half of that reasoning reaches this case:
+
+1. **A bonus on the good window cannot fix it.** The removal bonus works because the comparison it
+   corrects happens *at* the end step. Here the mistake happens in our own main phase, where the
+   comparison is "cast now vs. pass now" and a bonus three steps later is invisible. Removal survives
+   the asymmetry because removal held is still removal; a flash creature dumped in main one has
+   already spent the thing being paid for.
+2. **The claim is provable, not preferential.** Casting a no-haste flash permanent now is dominated
+   by casting the identical spell at the next free window *unless the permanent does something in
+   between* — and that list is finite and readable off the card. That is exactly the standard
+   `TimingVerdict.NoWindow` sets, so the verdict says the honest thing rather than picking a number
+   to lose an argument with.
+
+`AmbushWindow` declines the floor on any of the four: printed haste, something on the stack, an ETB
+that changes a combat, an ETB that hands us a resource to spend this turn. It inherits `Patience`'s
+three releases whole — lethal on board, hand at the discard limit, decay to nothing by turn 14 — and
+adds one of its own: once attackers are declared, holding longer buys nothing.
+
+## The tag that lied
+
+The first build of this did nothing at all, and the reason is worth recording. `CardIntentAnalyzer`
+tags Restoration Angel **`REMOVAL, EXILE_REMOVAL`** — for blinking a creature *we control*.
+`hitsAnotherPermanent` decides "does this take someone else's permanent off the battlefield" from the
+`EffectTarget` alone, and a bound target carries no filter, so it falls through to `else -> true`.
+
+Two consequences, and both are in the change:
+
+- The branch had to move **above** `HoldPolicy`'s removal branch, or it was unreachable for the exact
+  card it was written for.
+- The guard needed a question the tag cannot answer — *whose* permanents does this point at. That is
+  `CardIntent.targetsOnlyOurPermanents`, computed from the target requirements' controller predicate,
+  and read by exactly one consumer.
+
+Fixing `hitsAnotherPermanent` itself is the real repair and is deliberately **not** here: `REMOVAL`
+feeds `staticPriorValue`'s ladder and `RemovalPatience`'s bar, so re-tagging every "target creature
+you control" card is an evaluation change owed its own flag and its own arena run. `AmbushWindowTest`
+pins the wrong tag on purpose, so that when the repair lands the assertion fails and the workaround
+gets deleted instead of quietly living forever.
+
+## Puzzles — 92 positions, five new
+
+| | `production` | live (`production-candidate-counterpatience`) |
+|---|---|---|
+| baseline | 78/92 | 89/92 |
+| with the term | **79/92** | **90/92** |
+| closes | `instants-09` | `instants-09` |
+| loses | — | — |
+
+The `instants` category goes 10/13 → 11/13 in isolation and 12/13 → **13/13** on the candidate; every
+other category is identical in both columns. Unlike the patience and counter-patience terms, the
+isolation column *can* close its own puzzle here — `production` already reads the card's flash and
+types it `Speed.INSTANT`, it simply had no branch that claimed it.
+
+The candidate's failing set is a strict subset of its baseline's: `respond-05` and `timing-03`, the
+same two that need a horizon rather than a term.
+
+Four of the five new positions are controls that pass on `production` already and must keep passing:
+`instants-10` (the ambush itself, at their declare-attackers), `-11` (flash *and* haste), `-12` (an
+ETB that taps a blocker before we attack) and `-13` (the same board as `-09`, past the patience
+horizon). `instants-10` is not a fix and is not counted as one — it is there because a category made
+only of "don't cast" positions scores 100% for an agent that never casts anything.
+
+## The arena half
+
+`just arena production-candidate-counterpatience production-candidate-ambush 100`:
+
+```
+Pair win %:   50.0%  CI [50.0%, 50.0%]   <- the merge gate
+Game score %: 50.0%  Wilson [40.4%, 59.6%]
+Completed:    100 / 100     Illegal acts: 0
+Avg turns:    22.0   avg actions: 526
+Wall clock:   1625s on 8 threads
+```
+
+The **fourth degenerate null** in this sequence, and it reads the same way the patience, cantrip and
+counter-patience promotions did: every scored pair came back 1-1-0, which says the term changes the
+outcome of a real sealed game *rarely*, not that it is worthless. That is what the mechanism
+predicts — it fires only on a turn where the AI holds a flash permanent with the ambush window still
+ahead, and BLB sealed pools are thin in flash creatures. A CI spanning parity is a pass under the
+standing bar, and the puzzle side is the evidence.
+
+Cleaner than the counter-patience run in one respect worth noting: 100/100 completed with 0 illegal
+actions, where that one lost two games to a stale-jar `NoClassDefFoundError` on a test worker.
