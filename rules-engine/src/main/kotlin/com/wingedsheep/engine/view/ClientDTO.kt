@@ -408,6 +408,24 @@ data class ClientCard(
      */
     val castProvenanceLabel: String? = null,
 
+    /**
+     * What this spell's alternative cost consumed — "Sacrificed Niblis of the Urn" — or null when it
+     * consumed nothing. Only present on the stack, rendered verbatim as its own badge beneath
+     * [castProvenanceLabel]. Emerge (CR 702.119a) is why it exists: the sacrifice is what makes the
+     * spell cheap, so without it a `{7}` Eldrazi resolving off four lands is unexplainable from the
+     * other seat. Read from the sacrificed permanents' last-known names (CR 608.2h), so a token that
+     * has already ceased to exist is still named.
+     */
+    val costSacrificeLabel: String? = null,
+
+    /**
+     * The mana actually spent on this cast as a mana-cost string ("{W}{W}{W}{U}"), or null for a
+     * normal cast or one that spent nothing. Only present on the stack, and deliberately only for
+     * alternative-cost casts: those are exactly the casts whose printed cost tells the opponent
+     * nothing about what was paid. See [com.wingedsheep.engine.view.CastProvenance.paidManaCost].
+     */
+    val manaPaidCost: String? = null,
+
     /** Whether this spell promised a gift (Bloomburrow gift mechanic — only present on stack) */
     val giftPromised: Boolean = false,
 

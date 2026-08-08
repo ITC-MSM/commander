@@ -1062,6 +1062,26 @@ class ClientStateTransformer(
             CastProvenance.badgeLabel(it.alternativeCost, it.castFromZone)
         }
 
+        // An alternative cost replaces the printed cost, so the printed pips explain nothing about
+        // what this cast actually took: name the body it ate and the mana that left the pool. Scoped
+        // to alternative-cost casts on purpose — for a normal cast both are already inferable from
+        // the card, and every spell would grow two badges for nothing. Emerge (CR 702.119a) is the
+        // case that needs it: the sacrifice is *why* the cost shrank.
+        val alternativeCostSpell = spellOnStack?.takeIf { it.alternativeCost != null }
+        val costSacrificeLabel = alternativeCostSpell?.let {
+            CastProvenance.sacrificeLabel(it.sacrificedPermanents.mapNotNull { snapshot -> snapshot.name })
+        }
+        val manaPaidCost = alternativeCostSpell?.let {
+            CastProvenance.paidManaCost(
+                white = it.manaSpentWhite,
+                blue = it.manaSpentBlue,
+                black = it.manaSpentBlack,
+                red = it.manaSpentRed,
+                green = it.manaSpentGreen,
+                colorless = it.manaSpentColorless,
+            )
+        }
+
         // Surface whether the optional Blight additional cost was paid (Lorwyn Eclipsed)
         // so opponents can see at a glance that a stronger effect is incoming on resolution.
         val wasBlightPaid = spellOnStack?.wasBlightPaid ?: false
@@ -1342,6 +1362,8 @@ class ClientStateTransformer(
             } ?: emptyList(),
             optionalCostLabel = optionalCostLabel,
             castProvenanceLabel = castProvenanceLabel,
+            costSacrificeLabel = costSacrificeLabel,
+            manaPaidCost = manaPaidCost,
             giftPromised = giftPromised,
             wasBlightPaid = wasBlightPaid,
             chosenX = chosenX,
