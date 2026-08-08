@@ -1853,10 +1853,14 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   targets on `then`/`otherwise` lock at trigger time (CR 603.3d) and the gate is resolved at
   resolution time (CR 117.3a) by `decisionMaker` (defaults to the controller) — the may-vs-target
   timing is correct by construction rather than re-encoded per wrapper. Gates:
-  - `Gate.MayDecide(prompt?, hint?, sourceRequiredZone?, inlineOnTrigger?, feasibility?)` — pure yes/no
+  - `Gate.MayDecide(prompt?, hint?, dynamicHint?, sourceRequiredZone?, inlineOnTrigger?, feasibility?)`
+    — pure yes/no
     ("You may [then]."). Replaces `MayEffect` (see the `MayEffect` facade below). `sourceRequiredZone`
     skips the gate silently when the source has left that zone by resolution; `inlineOnTrigger`
-    renders the yes/no on the triggering permanent rather than as a modal. `feasibility` (a
+    renders the yes/no on the triggering permanent rather than as a modal. `dynamicHint` (a
+    `DynamicHint(template, amount)`) is reminder text whose `{n}` is replaced by `amount` evaluated
+    against the **resolving** context, and takes precedence over `hint` — see *Dynamic hints* below.
+    `feasibility` (a
     `FeasibilityCheck`) — when set and **unmet** at resolution, the may-action is impossible, so the
     player "doesn't": the prompt is skipped and `otherwise` runs directly. Lets "you may sacrifice an
     artifact. If you don't, …" apply its else automatically when the controller has no artifact (the
@@ -1951,13 +1955,36 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
     ability (see §8, and note that it is *not* the `oncePerTurn` trigger cap).
   - The multi-player APNAP `AnyPlayerMayPayEffect` stays a **standalone effect**, not a gate — a
     single `decisionMaker` can't express its turn-order loop (see below).
-- `MayEffect(effect, descriptionOverride?, sourceRequiredZone?, inlineOnTrigger?, hint?, decisionMaker?, otherwise?, feasibility?)`
+- `MayEffect(effect, descriptionOverride?, sourceRequiredZone?, inlineOnTrigger?, hint?, dynamicHint?, decisionMaker?, otherwise?, feasibility?)`
   — "You may [effect]." Facade preserved for existing cards; it now **lowers to
   `GatedEffect(Gate.MayDecide(...), then = effect, otherwise = otherwise, decisionMaker = decisionMaker)`**
   (compiled form is `Gated`, no distinct `May` type or executor). The may-vs-target trigger reorder —
   for a "may" ability that *also* targets, the yes/no is asked *before* target selection (Invigorating
   Boon) — recognizes the lowered shape via the `Effect.asMayDecide()` matcher (a bare `Gate.MayDecide`
   with no `otherwise`).
+  - **Dynamic hints — `dynamicHint = DynamicHint(template, amount)`.** A printed "you may … *that
+    much* damage / *that many* cards" renders the same sentence on every instance. When one event
+    puts **several instances of the same ability on the stack at once**, the prompts become
+    indistinguishable and the player is choosing blind — which silently costs the card its whole
+    decision. `DynamicHint` fills `{n}` in `template` from `amount`, evaluated against the resolving
+    context, so each prompt names its own number; the oracle text in the prompt itself is untouched
+    and the hint renders as a line beneath it. Reach for it whenever a "may" is worth answering
+    differently depending on a number the printed text calls "that much".
+
+    ```kotlin
+    MayEffect(
+        Effects.DealDamage(DynamicAmount.ContextProperty(ContextPropertyKey.TRIGGER_DAMAGE_AMOUNT), victim),
+        dynamicHint = DynamicHint(
+            "This trigger would deal {n} damage.",
+            DynamicAmount.ContextProperty(ContextPropertyKey.TRIGGER_DAMAGE_AMOUNT),
+        ),
+    )
+    ```
+
+    **The Sensational She-Hulk** (the back face of Jennifer Walters) is the motivating case: a
+    multi-block puts one mirror trigger on the stack per damaged creature, and "decline down to the
+    biggest number" is only a real line of play if the three prompts can be told apart. Pairs
+    naturally with `TriggeredAbility.effectOncePerTurn`, which is what makes declining free.
   - **`decisionMaker` routes the yes/no to a non-controller** — pass any player `EffectTarget`
     (`EffectTarget.TargetController` for "that creature's controller may …", or a bound target such
     as `target("target opponent", Targets.Opponent)` for "**target opponent may …**"). Only the

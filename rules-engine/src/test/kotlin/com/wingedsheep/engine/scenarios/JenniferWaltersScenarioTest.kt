@@ -9,6 +9,8 @@ import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.assertions.withClue
 import io.kotest.matchers.collections.shouldContain
+import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 
 /**
@@ -153,11 +155,11 @@ class JenniferWaltersScenarioTest : ScenarioTestBase() {
             }
 
             test("each instance mirrors its own damage number, so the biggest is reachable") {
-                // The prompts carry no damage number, so instead of guessing which instance is
-                // which, take a different one in each run and check that the three runs between
-                // them produce all three numbers. That pins TRIGGER_DAMAGE_AMOUNT to the
-                // *instance* rather than to the batch, and it is what makes "decline down to the 5"
-                // a real line of play.
+                // Order-independent by construction: take a different instance in each run and
+                // check the three runs between them produce all three numbers. That pins
+                // TRIGGER_DAMAGE_AMOUNT to the *instance* rather than to the batch, and it is what
+                // makes "decline down to the 5" a real line of play. Which prompt is which is
+                // covered separately by the dynamic-hint test below.
                 val mirrored = (1..3).map { nth ->
                     val game = multiBlockCombat()
                     val asked = driveTriggers(game, game.player2Id, acceptNth = nth)
@@ -169,6 +171,41 @@ class JenniferWaltersScenarioTest : ScenarioTestBase() {
 
                 withClue("the three instances carry three different numbers: $mirrored") {
                     mirrored.toSet() shouldBe mirrorAmounts
+                }
+            }
+
+            test("each prompt names its own damage number, so the three are tellable apart") {
+                // The printed sentence is "that much damage" on every instance, so without a
+                // dynamic hint a multi-block asks the same question three times and the player
+                // chooses blind — the choice the card is built around would be unusable at a
+                // table even though the engine offers it. Decline everything and collect the hints.
+                val game = multiBlockCombat()
+                val hints = mutableListOf<String>()
+                var guard = 0
+                while (guard++ < 40) {
+                    when (val decision = game.getPendingDecision()) {
+                        is ChooseTargetsDecision -> game.selectTargets(listOf(game.player2Id))
+                        is YesNoDecision -> {
+                            decision.hint.shouldNotBeNull()
+                            hints += decision.hint!!
+                            game.answerYesNo(false)
+                        }
+                        null -> {
+                            if (game.state.stack.isEmpty()) break
+                            game.resolveStack()
+                        }
+                        else -> error("unexpected pending decision: $decision")
+                    }
+                }
+
+                withClue("one hint per instance: $hints") { hints shouldHaveSize 3 }
+                withClue("every hint names its instance's damage: $hints") {
+                    hints.map { hint -> mirrorAmounts.filter { "$it damage" in hint } }
+                        .flatten()
+                        .toSet() shouldBe mirrorAmounts
+                }
+                withClue("the placeholder was substituted, not printed: $hints") {
+                    hints.none { "{n}" in it } shouldBe true
                 }
             }
 

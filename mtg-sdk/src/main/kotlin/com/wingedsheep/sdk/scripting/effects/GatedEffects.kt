@@ -5,8 +5,46 @@ import com.wingedsheep.sdk.scripting.AbilityId
 import com.wingedsheep.sdk.scripting.conditions.Condition
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.scripting.text.TextReplacer
+import com.wingedsheep.sdk.scripting.values.DynamicAmount
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+
+/**
+ * Reminder text under a yes/no prompt whose number is only known at resolution.
+ *
+ * A printed "you may … *that much* damage / *that many* cards" renders the same sentence on every
+ * instance, so when several instances of one ability are on the stack at once the prompts are
+ * indistinguishable and the player is choosing blind. [template]'s `{n}` placeholder is replaced
+ * with [amount] evaluated against the resolving context, turning "you may have it deal that much
+ * damage" into a prompt that says *which* number this instance carries.
+ *
+ * The oracle text in the prompt itself is left alone — this is a line underneath it.
+ *
+ * ```
+ * MayEffect(
+ *     Effects.DealDamage(DynamicAmount.ContextProperty(ContextPropertyKey.TRIGGER_DAMAGE_AMOUNT), victim),
+ *     dynamicHint = DynamicHint(
+ *         "This instance would deal {n} damage.",
+ *         DynamicAmount.ContextProperty(ContextPropertyKey.TRIGGER_DAMAGE_AMOUNT),
+ *     ),
+ * )
+ * ```
+ *
+ * @property template Hint text containing `{n}` where the number belongs. Text without `{n}` is
+ *   shown unchanged, which is simply a static hint.
+ * @property amount Evaluated at resolution against the same context the gated effect resolves in,
+ *   so it sees the triggering event's values.
+ */
+@Serializable
+data class DynamicHint(
+    val template: String,
+    val amount: DynamicAmount
+) {
+    companion object {
+        /** The placeholder [template] substitutes. */
+        const val PLACEHOLDER: String = "{n}"
+    }
+}
 
 // =============================================================================
 // Gated effects — one resolution frame for the optional / gated-effect cluster
@@ -124,6 +162,9 @@ sealed interface Gate {
      *
      * @property prompt Optional override for the yes/no prompt text.
      * @property hint Optional reminder text shown under the prompt.
+     * @property dynamicHint Reminder text whose number is resolved at resolution ([DynamicHint]).
+     *   Takes precedence over [hint] when set — use it when several instances of one ability can be
+     *   on the stack at once carrying different numbers, so the prompts can be told apart.
      * @property sourceRequiredZone If set, the gate is skipped silently (no prompt, nothing
      *   happens) when the source has left this zone by resolution — e.g. a "when this dies, you
      *   may ..." ability whose source is no longer where the may-action needs it.
@@ -141,6 +182,7 @@ sealed interface Gate {
     data class MayDecide(
         val prompt: String? = null,
         val hint: String? = null,
+        val dynamicHint: DynamicHint? = null,
         val sourceRequiredZone: Zone? = null,
         val inlineOnTrigger: Boolean = false,
         val feasibility: FeasibilityCheck? = null
@@ -312,6 +354,8 @@ fun OptionalCostEffect(
  * @param sourceRequiredZone Skip silently if the source has left this zone by resolution.
  * @param inlineOnTrigger Render the yes/no inline on the triggering permanent.
  * @param hint Optional reminder text shown under the prompt.
+ * @param dynamicHint Reminder text whose `{n}` is filled in at resolution ([DynamicHint]); use it
+ *   when several instances of one ability can be on the stack carrying different numbers.
  * @param decisionMaker Who answers the yes/no. Defaults to the controller; only the prompt is
  *   delegated (e.g. [EffectTarget.TargetController] for "that creature's controller may …",
  *   or [EffectTarget.PlayerRef] of `TargetOpponent` for "target opponent may …").
@@ -328,12 +372,14 @@ fun MayEffect(
     sourceRequiredZone: Zone? = null,
     inlineOnTrigger: Boolean = false,
     hint: String? = null,
+    dynamicHint: DynamicHint? = null,
     decisionMaker: EffectTarget? = null,
     otherwise: Effect? = null,
     feasibility: FeasibilityCheck? = null
 ): GatedEffect = GatedEffect(
     gate = Gate.MayDecide(
         hint = hint,
+        dynamicHint = dynamicHint,
         sourceRequiredZone = sourceRequiredZone,
         inlineOnTrigger = inlineOnTrigger,
         feasibility = feasibility

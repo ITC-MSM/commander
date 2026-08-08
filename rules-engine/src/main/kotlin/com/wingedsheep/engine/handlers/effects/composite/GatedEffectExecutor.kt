@@ -26,6 +26,7 @@ import com.wingedsheep.sdk.scripting.effects.CardDestination
 import com.wingedsheep.sdk.scripting.effects.ChooseActionEffect
 import com.wingedsheep.sdk.scripting.effects.CompositeEffect
 import com.wingedsheep.sdk.scripting.effects.Effect
+import com.wingedsheep.sdk.scripting.effects.DynamicHint
 import com.wingedsheep.sdk.scripting.effects.Gate
 import com.wingedsheep.sdk.scripting.effects.GatedEffect
 import com.wingedsheep.sdk.scripting.effects.MoveCollectionEffect
@@ -191,7 +192,10 @@ class GatedEffectExecutor(
         }
 
         val hint = when (gate) {
-            is Gate.MayDecide -> gate.hint ?: effect.hint
+            // A dynamic hint wins over the static one: it is the only thing distinguishing two
+            // instances of the same ability whose prompts are otherwise identical sentences.
+            is Gate.MayDecide -> gate.dynamicHint?.let { renderDynamicHint(state, it, context) }
+                ?: gate.hint ?: effect.hint
             is Gate.MayPay -> effect.hint
             is Gate.WhenCondition -> effect.hint // unreachable: handled by the synchronous branch above
             is Gate.DoAction -> effect.hint // unreachable: handled by the action-drain branch above
@@ -539,6 +543,16 @@ class GatedEffectExecutor(
      * single obvious rendering (life, sacrifice, composites) — those keep the plain "Yes". A
      * [PayDynamicManaCostEffect] shows its resolution-computed total, not the formula.
      */
+    /**
+     * Fill a [DynamicHint]'s `{n}` from the resolving context, so a "that much damage" prompt says
+     * which number *this* instance carries (CR 603.3d locks targets at trigger time, but the
+     * amount is only read here, as the instance resolves).
+     */
+    private fun renderDynamicHint(state: GameState, hint: DynamicHint, context: EffectContext): String {
+        val amount = dynamicAmountEvaluator.evaluate(state, hint.amount, context)
+        return hint.template.replace(DynamicHint.PLACEHOLDER, amount.toString())
+    }
+
     private fun computedCostLabel(state: GameState, cost: Effect, context: EffectContext): String? =
         when (cost) {
             is PayManaCostEffect -> "Pay ${cost.cost}"

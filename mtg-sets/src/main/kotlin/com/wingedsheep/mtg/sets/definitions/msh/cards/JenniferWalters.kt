@@ -13,6 +13,7 @@ import com.wingedsheep.sdk.scripting.TimingRule
 import com.wingedsheep.sdk.scripting.TriggerBinding
 import com.wingedsheep.sdk.scripting.TriggerSpec
 import com.wingedsheep.sdk.scripting.conditions.IsYourTurn
+import com.wingedsheep.sdk.scripting.effects.DynamicHint
 import com.wingedsheep.sdk.scripting.effects.MayEffect
 import com.wingedsheep.sdk.scripting.effects.TransformEffect
 import com.wingedsheep.sdk.scripting.events.RecipientFilter
@@ -62,6 +63,12 @@ import com.wingedsheep.sdk.scripting.values.DynamicAmount
  *    [com.wingedsheep.sdk.scripting.effects.Gate.OnceEachTurn] gates around the [MayEffect] consent
  *    gate, so only an action actually taken spends the turn's single use, and the "you may" is asked
  *    as each instance resolves (the Legolas, Counter of Kills ruling) rather than all at once.
+ *
+ *  - **The prompts carry their damage number.** Declining down to the biggest hit is only a real
+ *    choice if the player can tell the instances apart, and the printed sentence ("that much
+ *    damage") is identical on all of them. A [DynamicHint] over the same
+ *    [ContextPropertyKey.TRIGGER_DAMAGE_AMOUNT] the effect uses renders the resolving instance's
+ *    number under the prompt, so a 1/2/5 multi-block reads as three distinct questions.
  */
 
 private val JenniferWaltersFront = card("Jennifer Walters") {
@@ -121,7 +128,13 @@ private val TheSensationalSheHulkBack = card("The Sensational She-Hulk") {
             Effects.DealDamage(
                 DynamicAmount.ContextProperty(ContextPropertyKey.TRIGGER_DAMAGE_AMOUNT),
                 victim,
-            )
+            ),
+            // Without this the three prompts of a multi-block are the same sentence three times
+            // and the player picks blind — see the KDoc's note on choosing the biggest number.
+            dynamicHint = DynamicHint(
+                "This trigger would deal {n} damage.",
+                DynamicAmount.ContextProperty(ContextPropertyKey.TRIGGER_DAMAGE_AMOUNT),
+            ),
         )
         effectOncePerTurn = true
         description = "Whenever a creature you control is dealt damage, you may have The " +
