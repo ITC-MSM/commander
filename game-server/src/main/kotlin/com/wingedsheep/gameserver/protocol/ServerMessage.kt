@@ -341,11 +341,18 @@ sealed interface ServerMessage {
         val setCode: String? = null,
         val collectorNumber: String? = null,
         /**
-         * Printed layout (`NORMAL`, `SPLIT`, `ADVENTURE`, …). Lets the sealed/draft deckbuilder
-         * rotate split cards (Rooms like Unholy Annex // Ritual Chamber, Pain // Suffering) to
-         * landscape in the hover preview, since their single image is printed sideways.
+         * Printed layout (`NORMAL`, `SPLIT`, `ADVENTURE`, …). Kept for anything that needs the raw
+         * layout; orientation is [isLandscape]'s job, not this field's.
          */
-        val layout: String = "NORMAL"
+        val layout: String = "NORMAL",
+        /**
+         * Whether this card's image is **printed sideways** and must be rotated 90° in the hover
+         * preview. Straight from [com.wingedsheep.sdk.model.CardDefinition.isLandscapePrint], the
+         * single place that decides what counts — split layouts (Rooms, Pain // Suffering) and
+         * battles (CR 310), whose layout is `TRANSFORM` and so was invisible to the old
+         * `layout == "SPLIT"` check the client used to make on its own.
+         */
+        val isLandscape: Boolean = false
     )
 
     /**

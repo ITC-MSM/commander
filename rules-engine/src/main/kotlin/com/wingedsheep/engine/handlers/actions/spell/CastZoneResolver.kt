@@ -378,6 +378,33 @@ class CastZoneResolver(
     }
 
     /**
+     * The back face a card would be cast as through a **transformed** may-play permission
+     * ([com.wingedsheep.engine.state.permissions.MayPlayPermission.castTransformed]), or null when
+     * no such permission covers it or the card has no permanent back face.
+     *
+     * The permission-granted sibling of [disturbCastFace], and it returns the face for the same
+     * reason: every caller needs the back face's characteristics (timing, targets, `auraTarget`)
+     * because that is the face the spell has on the stack (CR 712.8c). Backs CR 310.11b's "exile
+     * it, then you may cast it transformed"; unlike disturb the permission — not a printed keyword
+     * — is what authorizes the cast, so the zone the card sits in is the permission's business, not
+     * this lookup's.
+     */
+    fun permissionTransformedCastFace(
+        state: GameState,
+        playerId: EntityId,
+        cardId: EntityId
+    ): CardDefinition? {
+        val transformedGrant = state.mayPlayPermissions.any { permission ->
+            permission.castTransformed &&
+                permission.controllerId == playerId &&
+                cardId in permission.cardIds
+        }
+        if (!transformedGrant) return null
+        val cardComponent = state.getEntity(cardId)?.get<CardComponent>() ?: return null
+        return cardRegistry.getCard(cardComponent.cardDefinitionId)?.backFace
+    }
+
+    /**
      * Check if a card in the graveyard has a Harmonize keyword ability — printed on the card or
      * granted at runtime (Songcrafter Mage) — allowing it to be cast from the graveyard for its
      * harmonize cost (and exiled on resolution).

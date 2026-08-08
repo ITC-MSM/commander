@@ -122,6 +122,21 @@ data class MayPlayPermission(
      * enforced by the cast handler.
      */
     val castColorRestriction: com.wingedsheep.sdk.core.Color? = null,
+    /**
+     * When true, a cast authorized by this permission puts the card on the stack **transformed** —
+     * back face up (CR 712.8c), so the back face supplies the spell's characteristics, targets, and
+     * the permanent it becomes. The front face still supplies nothing but the card's identity.
+     *
+     * Mirrors [com.wingedsheep.sdk.scripting.effects.CastFromCollectionWithoutPayingCostEffect
+     * .castTransformed]: "exile it, then you may cast it transformed without paying its mana cost"
+     * (CR 310.11b, the Siege defeat trigger). Distinct from [castFaceIndex], which selects an
+     * alternative *face* of a multi-face card (an Adventure, a split half) — a transforming
+     * double-faced card's back face is `CardDefinition.backFace`, not a `cardFaces` entry, and it
+     * goes on the stack as the same card turned over rather than as a separate half.
+     *
+     * Ignored for a card with no back face, so it is safe on a permission covering a mixed pile.
+     */
+    val castTransformed: Boolean = false,
     val timestamp: Long
 ) {
     init {

@@ -237,6 +237,13 @@ data class TriggerContext(
                     triggeringEntityId = event.entityId,
                     counterCount = event.amount
                 )
+                // The permanent the counters left, and how many left it — the mirror of the
+                // placement context, so a "counters removed" payoff can read "that permanent" and
+                // "that many".
+                is com.wingedsheep.engine.core.CountersRemovedEvent -> TriggerContext(
+                    triggeringEntityId = event.entityId,
+                    counterCount = event.amount
+                )
                 is SpellCastEvent -> TriggerContext(
                     triggeringEntityId = event.spellEntityId,
                     triggeringPlayerId = event.casterId,

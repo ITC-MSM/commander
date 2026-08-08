@@ -7,6 +7,7 @@ import com.wingedsheep.engine.mechanics.sba.SbaOrder
 import com.wingedsheep.engine.mechanics.sba.SbaZoneMovementHelper
 import com.wingedsheep.engine.mechanics.sba.StateBasedActionCheck
 import com.wingedsheep.engine.state.GameState
+import com.wingedsheep.engine.state.components.battlefield.DefeatTriggerArmedComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
 
 /**
@@ -34,6 +35,16 @@ class BattleDefenseCheck : StateBasedActionCheck {
             if (!Battles.isBattle(newState, entityId)) continue
             if (Battles.defenseOf(newState, entityId) > 0) continue
             if (isSourceOfPendingTriggeredAbility(newState, entityId)) continue
+
+            // A Siege whose last defense counter was just removed by damage has *triggered* but
+            // has not reached the stack yet — combat damage runs this check before the turn's
+            // trigger-detection pass. Consume the marker and leave the battle alone for exactly
+            // this pass; if the defeat trigger never appears (countered, or the permanent stopped
+            // being a Siege) the next check finds no marker and bins it.
+            if (container.has<DefeatTriggerArmedComponent>()) {
+                newState = newState.updateEntity(entityId) { c -> c.without<DefeatTriggerArmedComponent>() }
+                continue
+            }
 
             val result = SbaZoneMovementHelper.putPermanentInGraveyard(newState, entityId, cardComponent)
             newState = result.newState

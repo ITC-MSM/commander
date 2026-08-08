@@ -327,9 +327,22 @@ data class CastFromCollectionWithoutPayingCostEffect(
     val payManaCost: Boolean = false,
     /** When set, the cast card's id is published to this pipeline collection on a successful cast. */
     val storeCastTo: String? = null,
+    /**
+     * Cast the card **transformed** — back face up (CR 712.8c), the way disturb casts a card from
+     * the graveyard. The back face supplies the spell's characteristics: its card types, targets,
+     * and the permanent it becomes. Set for "exile it, then you may cast it transformed" (CR
+     * 310.11b, the Siege defeat trigger).
+     *
+     * A card with no back face is cast normally, so this is safe to set on a collection that may
+     * hold single-faced cards.
+     */
+    val castTransformed: Boolean = false,
 ) : Effect {
-    override val description: String =
-        if (payManaCost) "Cast that card" else "Cast that card without paying its mana cost"
+    override val description: String = buildString {
+        append("Cast that card")
+        if (castTransformed) append(" transformed")
+        if (!payManaCost) append(" without paying its mana cost")
+    }
 }
 
 /**

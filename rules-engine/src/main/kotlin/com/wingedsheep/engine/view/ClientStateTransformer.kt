@@ -1426,6 +1426,14 @@ class ClientStateTransformer(
             backFaceImageUri = cardComponent.backFaceImageUri ?: dfcBackFace(container, cardDef)?.metadata?.imageUri ?: modalBackFace?.imageUri,
             planeswalkerAbilities = buildPlaneswalkerAbilities(cardDef, zoneKey),
             isRoom = cardDef?.isRoom == true,
+            // `cardDef` already tracks the *displayed* face of a DFC (dfcBackFace resolves the
+            // other one relative to DoubleFacedComponent.currentFace), so a defeated Siege recast
+            // as its portrait back face correctly stops reporting landscape.
+            isLandscapeFace = cardDef?.isLandscapePrint == true,
+            // Only transforming DFCs can pair a landscape face with a portrait one; a modal DFC's
+            // other half lives in `cardFaces` under the MODAL_DFC layout, which is portrait on both
+            // sides, so it never contributes here.
+            backFaceIsLandscape = dfcBackFace(container, cardDef)?.isLandscapePrint == true,
             cardFaces = buildClientCardFaces(container, cardDef),
             castFaceIndex = spellOnStack?.faceIndex,
             // Impending (CR 702.176): expose the reduced cost + time-counter count so the client can
