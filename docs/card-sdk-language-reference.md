@@ -6310,8 +6310,12 @@ copy of it (CR 707.10e). The activated-ability analogue of the spell-level `cant
 >   with `declaredCostSlot` in the context (the durable cast-choices bag doesn't exist until the spell
 >   resolves). The declared cast is enumerated as a `CastSpellModal` variant labelled "(Teamwork N)"
 >   carrying both the modes and the teamwork cost payload, so the client collects modes and then the
->   taps. The advertised `chooseCount` is the printed maximum on both variants; the handler is the
->   authority that narrows it to 1 without the declaration.
+>   taps. Both variants advertise the `chooseCount` this cast can actually reach: `CastSpellEnumerator`
+>   evaluates the same dynamic with the same declaration (none on the plain variant, `TEAMWORK` on the
+>   declared one), so the plain cast is offered as choose-**one**. The handler stays the authority; the
+>   enumeration just no longer offers a mode count it would reject. For the same reason a declared
+>   variant is dropped unless at least that many modes are actually available — "choose both" can't be
+>   satisfied when one mode has no legal target (CR 700.2a).
 > - **Permanent** — an enters-the-battlefield trigger with
 >   `triggerCondition = Conditions.TeamworkWasPaid`; CR 603.4 keeps it off the stack entirely otherwise.
 > - **Teamwork-only clause with its own target** — declare it with `kickerTarget(...)` / `kickerEffect`

@@ -118,6 +118,51 @@ class AtlantisAttacksScenarioTest : ScenarioTestBase() {
                 game.isInHand(2, "Sol Ring") shouldBe true
             }
 
+            test("the bounce mode accepts a single target") {
+                val game = scenario()
+                    .withPlayers("Player1", "Player2")
+                    .withCardInHand(1, "Atlantis Attacks")
+                    .withLandsOnBattlefield(1, "Island", 7)
+                    .withCardOnBattlefield(1, "Craw Wurm")
+                    .withCardOnBattlefield(2, "Grizzly Bears")
+                    .withCardOnBattlefield(2, "Sol Ring")
+                    .withActivePlayer(1)
+                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                    .build()
+
+                val wurm = game.findPermanent("Craw Wurm").shouldNotBeNull()
+                val bears = game.findPermanent("Grizzly Bears").shouldNotBeNull()
+                val cardId = game.findCardsInHand(1, "Atlantis Attacks").first()
+
+                // "One or two target nonland permanents" — `minCount = 1`, so one is enough.
+                game.execute(
+                    CastSpell(
+                        playerId = game.player1Id,
+                        cardId = cardId,
+                        targets = listOf(
+                            ChosenTarget.Player(game.player1Id),
+                            ChosenTarget.Permanent(bears),
+                        ),
+                        chosenModes = listOf(0, 1),
+                        modeTargetsOrdered = listOf(
+                            listOf(ChosenTarget.Player(game.player1Id)),
+                            listOf(ChosenTarget.Permanent(bears)),
+                        ),
+                        declaredCostSlot = ChoiceSlot.TEAMWORK,
+                        additionalCostPayment = AdditionalCostPayment(
+                            variableCostPermanents = listOf(wurm),
+                        ),
+                    ),
+                ).error shouldBe null
+
+                game.resolveStack()
+
+                game.isInHand(2, "Grizzly Bears") shouldBe true
+                withClue("only one target was chosen, so the second permanent stays put") {
+                    game.isOnBattlefield("Sol Ring") shouldBe true
+                }
+            }
+
             test("choosing both modes without teamwork is rejected") {
                 val game = scenario()
                     .withPlayers("Player1", "Player2")

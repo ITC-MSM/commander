@@ -1,6 +1,7 @@
 package com.wingedsheep.engine.scenarios
 
 import com.wingedsheep.engine.core.CastSpell
+import com.wingedsheep.engine.state.components.battlefield.DamageComponent
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
 import com.wingedsheep.engine.support.ScenarioTestBase
@@ -73,14 +74,16 @@ class HulkSmashScenarioTest : ScenarioTestBase() {
                     .withLandsOnBattlefield(1, "Mountain", 2)
                     .withCardOnBattlefield(1, "Craw Wurm")
                     .withCardOnBattlefield(2, "Sol Ring")
-                    .withCardOnBattlefield(2, "Grizzly Bears")
+                    // 0/8: it survives the bite, so the marked damage pins the *amount* at the
+                    // Craw Wurm's power. A 2/2 victim would die to any positive amount.
+                    .withCardOnBattlefield(2, "Wall of Stone")
                     .withActivePlayer(1)
                     .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
                     .build()
 
                 val wurm = game.findPermanent("Craw Wurm").shouldNotBeNull()
                 val solRing = game.findPermanent("Sol Ring").shouldNotBeNull()
-                val bears = game.findPermanent("Grizzly Bears").shouldNotBeNull()
+                val wall = game.findPermanent("Wall of Stone").shouldNotBeNull()
                 val cardId = game.findCardsInHand(1, "HULK SMASH!").first()
 
                 // Teamwork 4 — the 6/4 Craw Wurm clears the threshold on its own, and being tapped
@@ -92,12 +95,12 @@ class HulkSmashScenarioTest : ScenarioTestBase() {
                         targets = listOf(
                             ChosenTarget.Permanent(solRing),
                             ChosenTarget.Permanent(wurm),
-                            ChosenTarget.Permanent(bears),
+                            ChosenTarget.Permanent(wall),
                         ),
                         chosenModes = listOf(0, 1),
                         modeTargetsOrdered = listOf(
                             listOf(ChosenTarget.Permanent(solRing)),
-                            listOf(ChosenTarget.Permanent(wurm), ChosenTarget.Permanent(bears)),
+                            listOf(ChosenTarget.Permanent(wurm), ChosenTarget.Permanent(wall)),
                         ),
                         declaredCostSlot = ChoiceSlot.TEAMWORK,
                         additionalCostPayment = AdditionalCostPayment(
@@ -110,8 +113,9 @@ class HulkSmashScenarioTest : ScenarioTestBase() {
                 game.resolveStack()
 
                 game.isOnBattlefield("Sol Ring") shouldBe false
-                withClue("6 damage from the Craw Wurm kills the 2/2") {
-                    game.isOnBattlefield("Grizzly Bears") shouldBe false
+                withClue("the bite amount is the Craw Wurm's power, not the artifact's or zero") {
+                    game.state.getEntity(wall)?.get<DamageComponent>()?.amount shouldBe 6
+                    game.isOnBattlefield("Wall of Stone") shouldBe true
                 }
             }
 

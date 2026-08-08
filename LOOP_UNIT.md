@@ -1,8 +1,12 @@
 # Unit u03 — the five modal teamwork cards (MSH)
 
 Branch `loop-msh-u03`, stacked on `loop-msh-u02`. Batch unit, ordinary card work: every card is
-`teamwork(n)` plus the documented modal recipe. **No new SDK vocabulary, no engine change** — the
-diff is five card files, five test files, the MSH snapshot, and two backlog files.
+`teamwork(n)` plus the documented modal recipe. **No new SDK vocabulary** — the card diff is five card
+files, five test files, the MSH snapshot, and two backlog files.
+
+> **Amended after review.** The branch also carries two fixes to `CastSpellEnumerator.kt`, which is
+> `loop-msh-u02`'s code rather than this unit's, because both defects are only reachable through
+> these five cards and the two branches merge in order. See *Review corrections* at the bottom.
 
 ## Cards
 
@@ -89,3 +93,35 @@ enumeration for a declared cast) reappeared — the teamwork branch is reached a
   `backlog/.../mechanics.md`, but it is a slightly loose citation.
 - Not done: no manual playthrough in the web client, no UX pass from either seat, no e2e run, no
   `/generate-scenario` JSON. The web client was not type-checked (no node_modules, no network).
+
+## Review corrections
+
+Applied on top of the original commits, after the independent review (0 blocking, 4 important,
+6 minor).
+
+- **Engine, `CastSpellEnumerator.kt`** — new private `effectiveModalMaxChooseCount` mirroring the
+  dynamic branch of `CastSpellHandler.effectiveModalChooseCounts` (declaration in the evaluation
+  context, so `Conditions.TeamworkWasPaid` answers correctly from hand). Two call sites:
+  - the plain cast now advertises the dynamic-evaluated maximum (1 for an undeclared teamwork cast)
+    instead of the printed 2, so the client can no longer submit a two-mode plain cast the handler
+    rejects. Flame of Anor / Molten Collapse / Wail of the Forgotten were mis-advertised identically.
+  - the declared-cost branch now drops the variant unless at least that many modes are *available*
+    (CR 700.2a), not merely one — Murdock's Crusade's teamwork cast was being offered with no legal
+    enchantment on the board and could never be completed. `allowRepeat` is exempt (CR 700.2d).
+- **Still open:** the handler's effective *minimum* for a teamwork cast is the printed
+  `minChooseCount` (1), not 2, so a directly-submitted one-mode teamwork cast is still accepted.
+  Making "choose both instead" mandatory needs an SDK shape that raises the floor as well as the
+  ceiling; `dynamicChooseCount` deliberately only raises the ceiling (Flame of Anor prints "you *may*
+  choose two instead"). Separate feature work.
+- **`AtlantisAttacks.kt` KDoc** — it claimed one target going illegal "does not strand the other".
+  False: `processPreChosenModeQueue` skips the whole mode all-or-nothing. Now documented as the
+  pre-existing engine-wide deviation from CR 608.2b that it is; behaviour untouched.
+- **`GoNuts.kt`** — CR 608.2 → 608.2c (the rule that actually says instructions are followed in the
+  order written).
+- **Tests** — `MurdocksCrusadeScenarioTest` gains two `getLegalActions` cases (advertised mode count,
+  per-mode target candidates, teamwork variant absent with no legal enchantment, and the negative
+  side of both filters); `AtlantisAttacksScenarioTest` gains a single-target bounce case for
+  `minCount = 1`; `HulkSmashScenarioTest`'s bite victim became a 0/8 Wall of Stone so the assertion
+  pins `damage == 6` rather than "the 2/2 died".
+- No action on the Leviathan token name (matches the repo-wide default and the test lookup) or the
+  CR 702.194c citations (the reviewer verified them as accurate).

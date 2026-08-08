@@ -22,8 +22,8 @@ import com.wingedsheep.sdk.scripting.values.DynamicAmount
  * The modal shape of teamwork (CR 702.194c): the cast-time [DynamicAmount.Conditional] on
  * [Conditions.TeamworkWasPaid] narrows the printed `chooseCount = 2` to 1 unless the teamwork cost
  * was declared. Modes resolve in printed order, so a teamwork cast that puts the counter on the
- * same creature that then fights sends the bigger body into the fight (CR 608.2 — the modes are one
- * resolution, applied in order).
+ * same creature that then fights sends the bigger body into the fight (CR 608.2c — the modes are one
+ * resolution, and its controller follows the instructions in the order written).
  */
 val GoNuts = card("Go Nuts!") {
     manaCost = "{G}"

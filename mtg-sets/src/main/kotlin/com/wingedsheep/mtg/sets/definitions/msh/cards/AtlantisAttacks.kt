@@ -29,8 +29,14 @@ import com.wingedsheep.sdk.scripting.values.DynamicAmount
  * was declared.
  *
  * "One or two target nonland permanents" is a single requirement with `count = 2, minCount = 1`,
- * so the two chosen permanents must be different (CR 601.2c) and the bounce runs per surviving
- * target via [ForEachTargetEffect] — one target becoming illegal does not strand the other.
+ * so the two chosen permanents must be different (CR 601.2c), and [ForEachTargetEffect] repeats the
+ * bounce once per chosen target.
+ *
+ * Known deviation: if one of the two chosen permanents is illegal on resolution, the engine skips
+ * this whole mode instead of bouncing the still-legal one. CR 608.2b wants the partial effect to
+ * happen; `processPreChosenModeQueue` re-validates each mode all-or-nothing and says so in its own
+ * comment. Pre-existing and engine-wide (`ecl/cards/WanderwineFarewell.kt` has the same exposure),
+ * not specific to this card.
  */
 val AtlantisAttacks = card("Atlantis Attacks") {
     manaCost = "{5}{U}{U}"
