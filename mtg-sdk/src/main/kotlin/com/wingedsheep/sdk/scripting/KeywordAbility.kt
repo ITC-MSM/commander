@@ -353,6 +353,12 @@ sealed interface KeywordAbility {
             // Bargain's cost is definitional (CR 702.166a), so the printed text is the bare keyword
             // — never "Bargain—sacrifice …". The reminder text belongs to the card's `oracleText`.
             declaredSlot == ChoiceSlot.BARGAINED -> displayPrefix
+            // Collect evidence is a keyword *action*, not a keyword ability, so it has no keyword
+            // label to hang a "Prefix—cost" shape on: the cards print the additional cost in full
+            // (CR 701.59, "As an additional cost to cast this spell, you may collect evidence 6").
+            declaredSlot == ChoiceSlot.EVIDENCE_COLLECTED ->
+                "As an additional cost to cast this spell, you may " +
+                    "${additionalCost?.description?.replaceFirstChar { it.lowercase() }}."
             grantsFlashTiming && additionalCost != null ->
                 "You may cast this spell as though it had flash if you " +
                     "${additionalCost.description.replaceFirstChar { it.lowercase() }} as an additional cost to cast it."

@@ -421,6 +421,26 @@ excluded.
   additional cost (Feed the Cycle), and the graveyard-cast permission (Osteomancer Adept, where the
   card being cast is excluded from the exile pool). For a "you may forage" *effect* (not a cost) use
   `Patterns.Mechanic.forage(afterEffect?)` instead.
+- `Costs.CollectEvidence(n)` (ability cost) / `Costs.additional.CollectEvidence(n)` (mandatory
+  additional cost) / `card { collectEvidence(n) }` (the optional **linked** cast cost) — Collect
+  evidence N (CR 701.59a): "exile any number of cards from your graveyard with total mana value N or
+  greater." Backed by one shared `CostAtom.CollectEvidence`, so the same payable thing serves an
+  activated-ability cost (Cryptex, Forensic Researcher, Polygraph Orb), a cast-time additional cost
+  (Extract a Confession, Vitu-Ghazi Inspector), and a `PayCost`. All of them route through the
+  engine's `CollectEvidenceResolver` — one reachability gate, one legality rule, one exile, one
+  `EvidenceCollectedEvent`.
+
+  **The threshold is a floor on total mana value, not a card count.** Exiling *more* than N is legal,
+  and mana-value-0 cards (lands) are legal selections contributing nothing — so "enough cards" never
+  implies "enough evidence". The picker is therefore a variable-size selection with a sum gate:
+  `AdditionalCostData.exileMinTotalManaValue` and `SelectCardsDecision.minTotalManaValue` (the mirror
+  of the existing `maxTotalManaValue` cap) carry the floor, and the client shows a running total and
+  keeps Confirm disabled until it is met.
+
+  Per **CR 701.59b** a player who cannot reach N *can't choose to collect evidence*: every
+  affordability check fails closed on the summed mana value, so the option is never payable and an
+  under-total submission is rejected rather than trimmed. For collect evidence as an *effect* rather
+  than a cost, use `Effects.CollectEvidence(n)` (§ effects).
 - `Costs.Craft(filter, minCount = 1, maxCount = null)` — Craft material cost (CR 702.167a): exile
   this permanent **and** exile at least `minCount` (and, when `maxCount` is set, at most `maxCount`)
   cards matching `filter` selected from the combined pool of
@@ -2324,6 +2344,15 @@ one-off pipeline belongs inline in the card file via `Effects.Pipeline { }` (§5
   `GatedEffect(WhenCondition(Not(CollectionContainsMatch("explored", Land))))` over counter + optional
   graveyard move. The gate is "no land revealed" (not "a nonland was revealed") so an empty library still
   yields the counter, per CR 701.44a/b.
+- `Effects.CollectEvidence(n, player = Player.You)` — Collect evidence N as an *effect* (CR
+  701.59a), for cards where collecting is not a cost. Use it as the `action` half of a
+  `ReflexiveTriggerEffect` for "you may collect evidence 3. **When you do**, …" (Sample Collector —
+  a real reflexive trigger per CR 603.12, so its target is chosen after the collection resolves and
+  opponents may respond), or under `MayEffect` / a gated effect for a bare "you may collect
+  evidence N" (Surveillance Monitor) and "if you do" (Izoni, Center of the Web).
+  `ReflexiveTriggerEffectExecutor.isActionFeasible` gates the prompt on reachability, so CR 701.59b
+  holds by construction — a player who can't reach N is never *asked*, rather than being asked and
+  forced to decline. Emits the same `EvidenceCollectedEvent` the cost contexts do.
 - `forage(afterEffect?)` — Forage as an *effect* ("you may forage"): a `ChooseActionEffect` letting
   the player choose to exile three cards from their graveyard or sacrifice a Food (each gated by a
   feasibility check), with `afterEffect` appended to whichever mode is taken (Bushy Bodyguard, Curious
@@ -5965,6 +5994,48 @@ copy of it (CR 707.10e). The activated-ability analogue of the spell-level `cant
 > "Token" is not a card type, so the sacrifice filter is `GameObjectFilter.ArtifactEnchantmentOrToken`
 > (`IsArtifact or IsEnchantment or IsToken`) — a Food token, an Aura and a plain 1/1 creature token all
 > qualify; a nontoken creature does not.
+
+> **Collect evidence N** (CR 701.59, Murders at Karlov Manor). A **keyword action**, not a keyword
+> ability: "to collect evidence N" means to exile any number of cards from your graveyard with total
+> mana value N or greater (701.59a). It appears in four contexts that all mean the same thing, so the
+> payable thing is declared once as `CostAtom.CollectEvidence(n)` and every context — activated
+> ability, cast-time additional cost, `PayCost`, and the resolution-time `Effects.CollectEvidence` —
+> pays it through the engine's single `CollectEvidenceResolver`.
+>
+> Two properties drive the whole implementation:
+> - **The constraint is a sum, not a count.** Overpaying is legal, and a graveyard of lands (mana
+>   value 0) is never enough evidence however many cards it holds. Selection is variable-size with a
+>   mana-value floor — `exileMinTotalManaValue` on the cost payload, `minTotalManaValue` on
+>   `SelectCardsDecision`.
+> - **CR 701.59b fails closed.** A player unable to reach N *can't choose to collect evidence*, so
+>   every affordability check gates on the summed mana value and an under-total submission is
+>   rejected rather than completed.
+>
+> **The linkage (701.59c / CR 607) is a separate thing from the payment**, and only the optional
+> cast-cost shape has one. `card { collectEvidence(n) }` (import
+> `com.wingedsheep.sdk.dsl.collectEvidence`) rides the **same optional-additional-cost rail as kicker
+> and bargain**, stamping `ChoiceSlot.EVIDENCE_COLLECTED`; the enumerator offers a second cast action
+> labelled "(Collect evidence N)" whenever the graveyard can reach N, and the slot is carried onto the
+> permanent the spell becomes. Because the rail carries a `ChoiceSlot` rather than a boolean, the
+> three facts never read as each other: a spell cast with evidence collected doesn't satisfy
+> `Conditions.WasKicked` or `Conditions.WasBargained`, and neither of those satisfies
+> `Conditions.WasEvidenceCollected`. Every *unlinked* collect-evidence cost (all the activated
+> abilities, Axebane Ferox's ward) uses `Costs.CollectEvidence(n)` and stamps nothing, because nothing
+> on those cards asks the question.
+>
+> The payoff shapes the printed cards use:
+> - **Enters trigger** — `triggerCondition = Conditions.WasEvidenceCollected` (Vitu-Ghazi Inspector).
+>   CR 603.4 keeps it off the stack, and unasked for a target, when no evidence was collected.
+> - **Rider inside an unconditional trigger** — `ConditionalEffect(Conditions.WasEvidenceCollected, …)`
+>   (Crimestopper Sprite: the tap always happens, only the stun counter is gated). Use this, not the
+>   intervening-if, whenever the trigger must fire either way.
+> - **Cheaper cast** — `ModifySpellCost(SelfCast, CostModification.ReduceGeneric(2), gating =
+>   CostGating.OnlyIf(Conditions.WasEvidenceCollected))` (Bite Down on Crime). The gate is evaluated
+>   against the cast branch being priced, so there is no "the choice happens during casting but the
+>   cost is needed before it" ordering problem to solve.
+> - **"Whenever you collect evidence"** — `Triggers.WheneverYouCollectEvidence` (Surveillance Monitor,
+>   Evidence Examiner). A *different* fact from the linkage: it observes any collection by the player,
+>   in any context, including the permanent's own.
 
 > **Gift** (CR 702.174, Bloomburrow). "Gift a \[something\]" is two abilities: an **additional cost**
 > — "as an additional cost to cast this spell, you may choose an opponent" — and, on a permanent, the

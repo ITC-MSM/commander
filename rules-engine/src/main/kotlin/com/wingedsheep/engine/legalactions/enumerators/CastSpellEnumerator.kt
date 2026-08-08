@@ -1942,6 +1942,10 @@ class CastSpellEnumerator : ActionEnumerator {
                 val manaKicker = kickers.firstOrNull { it.manaCost != null && it.keyword != Keyword.OFFSPRING }
                 val additionalCostKicker = kickers.firstOrNull { it.additionalCost != null }
                 val offspringAbility = kickers.firstOrNull { it.keyword == Keyword.OFFSPRING }
+                val collectEvidenceAmount = (
+                    (additionalCostKicker?.additionalCost as? AdditionalCost.Atom)?.atom
+                        as? CostAtom.CollectEvidence
+                    )?.amount
 
                 // Re-check timing per slot: the flash unlock belongs to the mechanic that prints it
                 // (Ghitu Fire's pay-{2}-more clause), so a bargain variant on the same card must not
@@ -1997,6 +2001,16 @@ class CastSpellEnumerator : ActionEnumerator {
                                     )
                                 }
                             }
+                            // CR 701.59b — the collect-evidence branch is only payable when the
+                            // graveyard's *total mana value* reaches N. The resolver also builds
+                            // the picker payload, whose candidate pool is the whole graveyard and
+                            // whose real constraint is the mana-value floor, not a card count.
+                            is CostAtom.CollectEvidence -> {
+                                val info = com.wingedsheep.engine.handlers.costs.CollectEvidenceResolver
+                                    .costInfo(state, playerId, atom.amount, excludeCardId = cardId)
+                                if (info == null) canPayKickerAdditionalCost = false
+                                else kickerCostInfo = info
+                            }
                             else -> {}
                         }
                         is AdditionalCost.Behold -> {
@@ -2044,6 +2058,11 @@ class CastSpellEnumerator : ActionEnumerator {
                 // "with Flash" / "Kicked" for the kicker family. The client shows this verbatim.
                 val kickLabel = when {
                     declaredSlot == ChoiceSlot.BARGAINED -> "Bargained"
+                    // Collect evidence names the amount, because the amount is the whole choice —
+                    // "Collect evidence 6" reads the way the card is printed, where a bare
+                    // "Evidence" would not (CR 701.59).
+                    declaredSlot == ChoiceSlot.EVIDENCE_COLLECTED ->
+                        collectEvidenceAmount?.let { "Collect evidence $it" } ?: "Collect evidence"
                     offspringAbility != null -> "Offspring"
                     flashKicker -> "with Flash"
                     else -> "Kicked"

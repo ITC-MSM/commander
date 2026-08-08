@@ -24,10 +24,18 @@ import kotlinx.serialization.Serializable
  * its own `Atom` wrapper.
  *
  * **What lives here:** payable things whose meaning is identical across contexts — the *what* is paid,
- * not the *when* or *why*. Counts are plain [Int]s because every current shared cost has a fixed count;
- * genuinely *variable* costs (exile X cards, pay X life, blight X) and context-specific oddities (Forage,
- * Behold, Echo timing, kicker linkage) are deliberately **not** atoms — they stay as subtypes on the
- * wrapper that owns their context-specific behavior.
+ * not the *when* or *why*. Most counts are plain [Int]s because most shared costs have a fixed count.
+ *
+ * **The line is context-dependence, not variability.** A cost belongs on a wrapper when its *meaning*
+ * changes with the context that asks for it — Echo's timing, kicker's linkage, Forage's mode choice
+ * wired into cast-time action enumeration. Being *variable* is not by itself disqualifying: an atom
+ * whose count is a player choice is still the same payable thing everywhere, and [VariablePermanents]
+ * ("exile/sacrifice one or more … with total mana value X") and [CollectEvidence] (CR 701.59 — "exile
+ * any number of cards from your graveyard with total mana value N or greater") both live here for that
+ * reason. What stays off them is the context-specific *rider*: [CollectEvidence] carries the payment
+ * but not the "if evidence was collected" linkage, which belongs to the optional-additional-cost
+ * wrapper. Costs that are variable *and* context-bound — pay X life, blight X, kicker linkage — remain
+ * subtypes on the wrapper that owns that behavior.
  *
  * Each atom's [description] is a canonical, lower-case-leading phrase ("sacrifice a Goblin"); the wrapper
  * adapts casing for its context (mid-sentence "unless you sacrifice a Goblin" vs. leading "Sacrifice a
@@ -326,6 +334,47 @@ sealed interface CostAtom : TextReplaceable<CostAtom> {
             append(quantify(count, "$counterType counter"))
             append(" on this permanent")
         }
+    }
+
+    /**
+     * Collect evidence [amount] — exile any number of cards from your graveyard with total mana
+     * value [amount] or greater (CR 701.59a, Murders at Karlov Manor).
+     *
+     * An atom rather than a per-wrapper subtype because the *payable thing* means exactly the same
+     * in all three cost contexts, and every one of them has printed cards: an activated-ability
+     * cost ([com.wingedsheep.sdk.scripting.AbilityCost.Atom] — Cryptex, Polygraph Orb, Forensic
+     * Researcher, Hedge Whisperer, Tenth District Hero, Kylox's Voltstrider), a cast-time
+     * additional cost ([com.wingedsheep.sdk.scripting.AdditionalCost.Atom] — Extract a Confession,
+     * Vitu-Ghazi Inspector, …), and a payable cost ([PayCost.Atom] — Axebane Ferox's
+     * "Ward—Collect evidence 4"). Splitting it per wrapper would have re-created the exact
+     * duplication this vocabulary exists to prevent.
+     *
+     * **What is deliberately *not* here:** the CR 701.59c *linkage* — "if evidence was collected".
+     * That is a property of the optional-additional-cost wrapper, not of the payable thing, and
+     * rides the existing rail
+     * ([com.wingedsheep.sdk.scripting.KeywordAbility.OptionalAdditionalCost] stamping
+     * [com.wingedsheep.sdk.scripting.ChoiceSlot.EVIDENCE_COLLECTED], read back through
+     * `Conditions.WasEvidenceCollected`) exactly as bargain's linkage does. Keeping the linkage
+     * off the atom is what lets the same atom serve the six *unlinked* contexts above.
+     *
+     * **Variable by nature, like [VariablePermanents].** The payer chooses *how many* cards; the
+     * constraint is a floor on their **total mana value**, not on their count, so [selectionCount]
+     * is only the floor of 1 card and the real gate is [amount]. Exiling more than [amount] worth
+     * is legal, and land cards (mana value 0) are legal selections that contribute nothing.
+     *
+     * Per CR 701.59b a player who cannot reach [amount] **can't choose to collect evidence** — the
+     * option must be *hidden*, not offered and refused. Every affordability check therefore fails
+     * closed on "sum of available mana values < [amount]".
+     *
+     * @property amount The mana-value floor N — the total the exiled cards must meet or exceed.
+     */
+    @SerialName("AtomCollectEvidence")
+    @Serializable
+    data class CollectEvidence(val amount: Int) : CostAtom {
+        // Variable count: at least one card must be exiled, but the binding constraint is the
+        // total mana value, carried separately to the picker.
+        override val selectionCount: Int get() = 1
+        override val description: String get() = "collect evidence $amount"
     }
 
     /** Reveal [count] cards matching [filter] from your hand (the cards stay in hand). */

@@ -41,6 +41,7 @@ class ContinuationHandler(
         registerModule(DiscardAndDrawContinuationResumer(services))
         registerModule(StateBasedContinuationResumer(services))
         registerModule(SacrificeAndPayContinuationResumer(services))
+        registerModule(CollectEvidenceContinuationResumer())
         registerModule(CostPaymentContinuationResumer(services))
         registerModule(ManaPaymentContinuationResumer(services))
         registerModule(LibraryAndZoneContinuationResumer(services))

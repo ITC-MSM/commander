@@ -202,6 +202,21 @@ data class SelectCardsDecision(
      */
     val maxTotalManaValue: Int? = null,
     /**
+     * **Minimum** sum of mana values across selected cards — the mirror of [maxTotalManaValue],
+     * for collect evidence N (CR 701.59a: "exile any number of cards from your graveyard with
+     * total mana value N or greater"). null means no floor.
+     *
+     * The selection is otherwise unbounded in count: the player may exile as many cards as they
+     * like and any number *beyond* the floor is legal (CR 701.59a), so this — not
+     * [minSelections] — is the real gate. The UI must keep the confirm button disabled until the
+     * running total reaches it and show that total; the server re-validates on submit and rejects
+     * an under-total selection rather than trimming it, because there is no correct way to
+     * complete an insufficient payment.
+     *
+     * {X} contributes 0 (CR 202.3e for cards not on the stack), as it does for [maxTotalManaValue].
+     */
+    val minTotalManaValue: Int? = null,
+    /**
      * Maximum sum of (projected) power across selected creatures (Destined Confrontation).
      * null means no cap. A creature with undefined power contributes 0. The UI is expected
      * to disable creatures whose power would push the running total over the cap; the server

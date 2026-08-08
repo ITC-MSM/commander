@@ -1669,6 +1669,7 @@ class CastSpellHandler(
                 is CostAtom.Sacrifice -> p.sacrificedPermanents.isNotEmpty()
                 is CostAtom.Discard -> p.discardedCards.isNotEmpty()
                 is CostAtom.ExileFrom -> p.exiledCards.isNotEmpty()
+                is CostAtom.CollectEvidence -> p.exiledCards.isNotEmpty()
                 is CostAtom.TapPermanents -> p.tappedPermanents.isNotEmpty()
                 is CostAtom.ReturnToHand -> p.bouncedPermanents.isNotEmpty()
                 else -> false
@@ -1711,6 +1712,18 @@ class CastSpellHandler(
                             if (!matches) {
                                 return "${permCard.name} doesn't match the required filter: $filterDesc"
                             }
+                        }
+                    }
+                    // CR 701.59a — a *sum* gate, so the count of cards is irrelevant; the resolver
+                    // owns the legality rule so cast-time validation can't drift from payment.
+                    // A GameAction is client-supplied: never trust the submitted selection.
+                    is CostAtom.CollectEvidence -> {
+                        val exiled = action.additionalCostPayment?.exiledCards ?: emptyList()
+                        if (!com.wingedsheep.engine.handlers.costs.CollectEvidenceResolver
+                                .isLegalSelection(state, action.playerId, atom.amount, exiled)
+                        ) {
+                            return "You must exile cards with total mana value ${atom.amount} or " +
+                                "greater from your graveyard to collect evidence ${atom.amount}"
                         }
                     }
                     is CostAtom.ExileFrom -> {
@@ -2481,6 +2494,22 @@ class CastSpellHandler(
                                 .discardCards(currentState, action.playerId, discardedCards)
                             currentState = discardResult.state
                             events.addAll(discardResult.events)
+                        }
+                        is CostAtom.CollectEvidence -> {
+                            val collected = com.wingedsheep.engine.handlers.costs
+                                .CollectEvidenceResolver.collect(
+                                    state = currentState,
+                                    playerId = action.playerId,
+                                    amount = atom.amount,
+                                    chosenCards = action.additionalCostPayment.exiledCards,
+                                    sourceName = cardDef?.name ?: "Collect evidence",
+                                )
+                            if (collected is com.wingedsheep.engine.handlers.costs
+                                    .CollectEvidenceResolver.Result.Success
+                            ) {
+                                currentState = collected.state
+                                events.addAll(collected.events)
+                            }
                         }
                         is CostAtom.ExileFrom -> {
                             val exiledCards = action.additionalCostPayment.exiledCards

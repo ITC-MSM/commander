@@ -253,6 +253,19 @@ object Costs {
         AbilityCost.ExileXFromGraveyard(filter)
 
     /**
+     * Collect evidence [amount] (CR 701.59) — exile any number of cards from your graveyard with
+     * total mana value [amount] or greater. Unlike [ExileFromGraveyard] the constraint is a floor on
+     * the exiled cards' **total mana value**, not on their count. Per CR 701.59b the ability is not
+     * activatable at all when the graveyard can't reach [amount].
+     *
+     * For the *linked* cast-time shape ("you may collect evidence N" + "if evidence was collected")
+     * use the `collectEvidence()` DSL helper on [CardBuilder] instead — it rides the
+     * optional-additional-cost rail so the declaration is observable.
+     */
+    fun CollectEvidence(amount: Int): AbilityCost =
+        AbilityCost.Atom(CostAtom.CollectEvidence(amount))
+
+    /**
      * Exile one or more permanents matching [filter] you control (variable count, at least
      * [minCount]); with [excludeSelf] the ability's own source is excluded ("one or more *other*
      * …"). By default the exiled set's **total mana value** becomes the ability's X value — read it
@@ -503,6 +516,18 @@ object Costs {
 
         /** Forage (exile three cards from your graveyard or sacrifice a Food). */
         val Forage: AdditionalCost = AdditionalCost.Forage
+
+        /**
+         * Collect evidence [amount] (CR 701.59a) — exile any number of cards from your graveyard
+         * with total mana value [amount] or greater, as an additional cost to cast.
+         *
+         * This is the **mandatory** shape (Urgent Necropsy's "collect evidence X"). For the far more
+         * common *optional linked* shape — "you may collect evidence N", read back by
+         * `Conditions.WasEvidenceCollected` — use the `collectEvidence()` DSL helper on
+         * [CardBuilder], which wraps this on the optional-additional-cost rail.
+         */
+        fun CollectEvidence(amount: Int): AdditionalCost =
+            AdditionalCost.Atom(CostAtom.CollectEvidence(amount))
 
         /**
          * Cost-vs-cost — the caster pays exactly one of [options] ("discard a card **or** sacrifice a

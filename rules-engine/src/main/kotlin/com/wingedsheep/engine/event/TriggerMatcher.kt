@@ -560,6 +560,10 @@ class TriggerMatcher(
                 event is com.wingedsheep.engine.core.DiscoveredEvent &&
                     matchesPlayer(trigger.player, event.playerId, controllerId)
             }
+            is EventPattern.EvidenceCollectedEvent -> {
+                event is com.wingedsheep.engine.core.EvidenceCollectedEvent &&
+                    matchesPlayer(trigger.player, event.playerId, controllerId)
+            }
             is EventPattern.ExploredEvent -> {
                 if (event !is com.wingedsheep.engine.core.PermanentExploredEvent) return false
                 // Reveal-type gate (CR 701.44a): ANY always matches; LAND/NONLAND require the

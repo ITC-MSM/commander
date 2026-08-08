@@ -2218,6 +2218,19 @@ object Triggers {
     )
 
     /**
+     * Whenever you collect evidence (CR 701.59). Fires once per collection, after the cards are
+     * exiled — never for a declined collection, nor for one CR 701.59b made impossible.
+     *
+     * Fires for a collection made in *any* context, including this permanent's own: Surveillance
+     * Monitor's "when this creature enters, you may collect evidence 4" feeds its own "whenever you
+     * collect evidence, create a Thopter".
+     */
+    val WheneverYouCollectEvidence: TriggerSpec = TriggerSpec(
+        event = EvidenceCollectedEvent(Player.You),
+        binding = TriggerBinding.ANY
+    )
+
+    /**
      * Whenever a permanent matching [filter] explores (CR 701.44), optionally gated by the reveal
      * outcome ([revealedType]). Binding is [TriggerBinding.ANY] — the observer watches every
      * matching permanent, so `filter.youControl()` resolves "you" to the observer's controller.

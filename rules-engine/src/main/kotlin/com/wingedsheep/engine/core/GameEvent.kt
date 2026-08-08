@@ -389,6 +389,35 @@ data class DiscoveredEvent(
 ) : GameEvent
 
 /**
+ * A player just collected evidence (CR 701.59). Fires once per collection, after the chosen cards
+ * have all been exiled — never when the collection was declined or was impossible (CR 701.59b), so
+ * a payoff can trust that evidence genuinely changed hands. Drives "Whenever you collect evidence"
+ * triggers (Surveillance Monitor, Evidence Examiner); see
+ * [com.wingedsheep.sdk.scripting.EventPattern.EvidenceCollectedEvent].
+ *
+ * Emitted from the single payment implementation shared by every context the mechanic appears in —
+ * activated-ability cost, cast-time additional cost, ward cost, and the resolution-time
+ * [com.wingedsheep.sdk.scripting.effects.CollectEvidenceEffect] — so no context can collect evidence
+ * without the payoffs seeing it.
+ *
+ * @property playerId The player who collected evidence (and whose graveyard was spent).
+ * @property value The threshold N that was met — the *required* total, not the total actually
+ *   exiled, which may be higher since the player may exile more than needed (CR 701.59a).
+ * @property exiledCards The cards exiled to collect, in selection order.
+ * @property totalManaValue The combined mana value actually exiled; always >= [value].
+ * @property sourceName The card/ability that caused the collection (for display).
+ */
+@Serializable
+@SerialName("EvidenceCollectedEvent")
+data class EvidenceCollectedEvent(
+    val playerId: EntityId,
+    val value: Int,
+    val exiledCards: List<EntityId>,
+    val totalManaValue: Int,
+    val sourceName: String
+) : GameEvent
+
+/**
  * A permanent just explored (CR 701.44). Fires once per explore, after the reveal + hand/counter
  * resolution is determined. Drives [com.wingedsheep.sdk.scripting.EventPattern.ExploredEvent]
  * triggers ("whenever a creature you control explores [a land / nonland card]").
