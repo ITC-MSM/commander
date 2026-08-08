@@ -36,7 +36,7 @@ class PuzzleSuiteTest : ScenarioTestBase() {
                     PuzzleCatalog.byCategory(category).size shouldBeGreaterThanOrEqual 6
                 }
             }
-            PuzzleCatalog.all.size shouldBe 92
+            PuzzleCatalog.all.size shouldBe 96
         }
 
         test("every KNOWN_FAILURES id names a real puzzle") {
@@ -224,6 +224,30 @@ class PuzzleSuiteTest : ScenarioTestBase() {
             // that taps a blocker before we attack) and `-13` (the same board as this one, past the
             // patience horizon).
             "instants-09",
+
+            // ── The expiring-grant window ──
+            // Olivia's Dragoon on the opponent's precombat main, off a real game: a card discarded
+            // to give a 2/2 flying, on a turn with no combat it can use and against a board with no
+            // flier to block. `BoardPresence` prices flying at `1.5 + power × 0.3` with no reading
+            // of whether it is evasive *now*, so the leaf scored the activation +2.35 over passing.
+            //
+            // Structurally it is `instants-06` — an expiring pump bought in a window that cannot
+            // spend it — with the text printed on a creature instead of an instant, and that is why
+            // the AI gets one right and the other wrong: `HoldPolicy` resolves an activation to its
+            // source permanent, `CardIntentAnalyzer` types that permanent `Speed.ACTIVATED`, and
+            // `windowVerdictFor` declines everything that is not `Speed.INSTANT` at its first line.
+            // No branch there has ever seen an activated ability.
+            //
+            // **Closed by `AiProfile.holdExpiringGrantsForCombat`**, unaided —
+            // `AiProfile.PRODUCTION_EXPIRING` closes it alone. Still listed here because
+            // [AiProfile.PRODUCTION] is the frozen baseline this set describes.
+            //
+            // Its three controls pass on this baseline and must keep passing: `instants-15` (the
+            // same ability at their declare-attackers, where the window is released and the block
+            // it buys is real), `instants-16` (the same board at a full hand, where the discard is
+            // the card cleanup was taking anyway) and `instants-17` (our own begin combat, the
+            // release that keeps the floor from talking the AI out of the attack).
+            "instants-14",
         )
     }
 }

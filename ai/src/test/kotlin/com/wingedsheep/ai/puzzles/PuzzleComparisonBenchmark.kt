@@ -100,6 +100,12 @@ class PuzzleComparisonBenchmark : ScenarioTestBase() {
                 // controls for haste, an ETB that clears a blocker, and the late-game release.
                 AiProfile.PRODUCTION_AMBUSH,
                 AiProfile.PRODUCTION_CANDIDATE_AMBUSH,
+                // Expiring grants held for a window that can spend them, alone and on top of what
+                // is live. `instants-14` is the verdict that should move; `instants-15` (the
+                // released window) and `instants-16` (a payoff that outlives the turn) are the
+                // negative controls and must not.
+                AiProfile.PRODUCTION_EXPIRING,
+                AiProfile.PRODUCTION_CANDIDATE_EXPIRING,
                 // Phase 7's rollout evaluator, isolated from Phases 4 and 6 so the column is
                 // attributable to the rollouts alone.
                 AiProfile.PHASE7,

@@ -288,5 +288,110 @@ object HoldingInstantsPuzzles {
             // Same position as `instants-09`, nine turns later.
             check = { shouldCast("Restoration Angel") },
         ),
+
+        AiPuzzle(
+            id = "instants-14",
+            category = PuzzleCategory.HOLDING_INSTANTS,
+            expectation = "Don't pitch a card for flying on their main phase — it expires before any combat",
+            aiSeat = 1,
+            position = { scenario ->
+                scenario.withPlayers()
+                    .withActivePlayer(2)
+                    .withCardOnBattlefield(1, "Olivia's Dragoon")
+                    // The card the ability's cost would eat. No lands, so it is uncastable and the
+                    // activation is the only thing on offer besides passing.
+                    .withCardInHand(1, "Hill Giant")
+                    // A ground board across the table, so flying reads as real evasion to the
+                    // evaluator — `ThreatAssessment.evasivePower` pays for it against a defender
+                    // with no flier or reach. That is what makes this the strong version of the
+                    // position: the keyword is genuinely good, and still cannot be spent here.
+                    .withCardOnBattlefield(2, "Hill Giant")
+                    .withLandsOnBattlefield(2, "Mountain", 4)
+                    .build()
+                    .advanceToPriority(1, Step.PRECOMBAT_MAIN)
+            },
+            // Taken from a real game (turn 4, their precombat main, a Battleground Geist discarded
+            // to give a summoning-sick 2/2 flying). `BoardPresence` prices flying at 1.5 + power ×
+            // 0.3 with no reading of whether it is evasive *now*, so the leaf scored the activation
+            // +2.35 over passing. The identical text on an instant is `instants-06`, which the AI
+            // already gets right — the ability path had no window verdict at all.
+            check = { shouldNotActivate("Olivia's Dragoon") },
+        ),
+
+        AiPuzzle(
+            id = "instants-15",
+            category = PuzzleCategory.HOLDING_INSTANTS,
+            expectation = "They attacked with a flier — now the flying is worth a card, so buy it",
+            aiSeat = 1,
+            position = { scenario ->
+                scenario.withPlayers()
+                    .withActivePlayer(2)
+                    .withCardOnBattlefield(1, "Olivia's Dragoon")
+                    .withCardInHand(1, "Hill Giant")
+                    .withCardOnBattlefield(2, "Wind Drake")
+                    .withLandsOnBattlefield(2, "Island", 4)
+                    .build()
+                    .advanceToDeclaration(2, Step.DECLARE_ATTACKERS)
+                    .also { it.declareAttackers(mapOf("Wind Drake" to 1)) }
+                    .advanceToPriority(1, Step.DECLARE_ATTACKERS)
+            },
+            // The positive half, and the same argument `instants-10` makes for the ambush: a
+            // category of "don't activate" positions scores 100% for an agent that never activates
+            // anything. This is the window the floor releases at, and the last one that can still
+            // change a block (CR 509.1a) — the 2/2 blocks the Drake only if it has flying now.
+            check = { shouldActivate("Olivia's Dragoon") },
+        ),
+
+        AiPuzzle(
+            id = "instants-16",
+            category = PuzzleCategory.HOLDING_INSTANTS,
+            expectation = "At a full hand the discard is free — the cleanup step was taking that card anyway",
+            aiSeat = 1,
+            position = { scenario ->
+                scenario.withPlayers()
+                    .withActivePlayer(2)
+                    .withCardOnBattlefield(1, "Olivia's Dragoon")
+                    .withCardInHand(1, "Hill Giant")
+                    .withCardInHand(1, "Craw Wurm")
+                    .withCardInHand(1, "Grizzly Bears")
+                    .withCardInHand(1, "Llanowar Elves")
+                    .withCardInHand(1, "Trained Armodon")
+                    .withCardInHand(1, "Wind Drake")
+                    .withCardInHand(1, "Giant Spider")
+                    .withCardOnBattlefield(2, "Hill Giant")
+                    .withLandsOnBattlefield(2, "Mountain", 4)
+                    .build()
+                    .advanceToPriority(1, Step.PRECOMBAT_MAIN)
+            },
+            // `instants-14`'s board with a hand at `MaximumHandSize.DEFAULT`, which is the release
+            // that matters most for this shape: the commonest cost on an expiring grant is a
+            // discard, and at seven cards the card being pitched is the one cleanup takes. Held
+            // apart from the other two `Patience` exits because those are shared with every policy
+            // and this is the one that turns *this* ability's cost to zero.
+            check = { shouldActivate("Olivia's Dragoon") },
+        ),
+
+        AiPuzzle(
+            id = "instants-17",
+            category = PuzzleCategory.HOLDING_INSTANTS,
+            expectation = "Our own begin-combat: buy the flying now, or the attack is declared without it",
+            aiSeat = 1,
+            position = { scenario ->
+                scenario.withPlayers()
+                    .withCardOnBattlefield(1, "Olivia's Dragoon")
+                    .withCardInHand(1, "Hill Giant")
+                    // The blocker the flying is for: a 3/3 eats the 2/2 on the ground and cannot
+                    // touch it in the air.
+                    .withCardOnBattlefield(2, "Hill Giant")
+                    .build()
+                    .advanceToPriority(1, Step.BEGIN_COMBAT)
+            },
+            // The asymmetry guard, and the reason the deadline is a step earlier on our own turn:
+            // we declare attackers *in* `DECLARE_ATTACKERS` and only get priority there afterwards,
+            // and `CombatAdvisor` reads the board as it stands. A floor that held to the same step
+            // it holds to on their turn would keep the 2/2 home and then have nothing to spend the
+            // grant on — the line thrown away by protecting it.
+            check = { shouldActivate("Olivia's Dragoon") },
+        ),
     )
 }

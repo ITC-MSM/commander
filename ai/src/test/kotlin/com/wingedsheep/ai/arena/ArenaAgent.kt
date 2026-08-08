@@ -129,6 +129,12 @@ object ArenaAgents {
         // gate, against what players face today.
         ArenaAgent("production-ambush", AiProfile.PRODUCTION_AMBUSH),
         ArenaAgent("production-candidate-ambush", AiProfile.PRODUCTION_CANDIDATE_AMBUSH),
+        // Activated abilities whose payoff expires at cleanup, held for a window that can spend it.
+        // `just arena production production-expiring 300` prices the term on its own; `just arena
+        // production-candidate-counterpatience production-candidate-expiring 300` is the promotion
+        // gate, against what players face today.
+        ArenaAgent("production-expiring", AiProfile.PRODUCTION_EXPIRING),
+        ArenaAgent("production-candidate-expiring", AiProfile.PRODUCTION_CANDIDATE_EXPIRING),
         ArenaAgent("production-targeted", AiProfile.PRODUCTION_TARGETED),
         // Explicit ECL candidates. Their resource-backed weights fail closed to production's
         // evaluator until a validated artifact is installed; automatic selection is set-gated.
