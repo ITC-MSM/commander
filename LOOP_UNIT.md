@@ -93,13 +93,19 @@ All three are MSH-only printings (checked on Scryfall), so MSH is canonical for 
 - **No manual playthrough, no e2e.** Nobody has clicked a teamwork cast in the real client. The
   cost-payment phase reuses the existing on-battlefield targeting overlay with a new confirm gate;
   the "power 2/2" readout and the greyed-out unaffordable variant are untested visually.
-- **Cost-vs-target announcement order.** The client pipeline collects the additional cost *before*
-  targets, which is the order every other additional cost already uses here, but is the reverse of
-  CR 601.2b–f. No card in this unit can tell the difference; a future teamwork card whose targets
-  depend on the declaration might.
+- **Cost-vs-target announcement order — resolved on review; there is no deviation.** CR 702.194a
+  says teamwork payment follows the additional-cost rules in **601.2b and 601.2f–h** ("601.2b–f",
+  written here originally and in the first commit message, is not a range the rule uses). The
+  declaration belongs at 601.2b, *before* targets at 601.2c, and CR 702.194c explicitly requires it
+  there. The engine already does that: the cast variant carrying `declaredCostSlot` is chosen before
+  any pipeline phase, cost and target validation both run against the pre-payment state, and the
+  taps are applied only after validation in one atomic action. Only the *client's* collection order
+  (cost widget before target picker) differs, with no rules consequence.
 - **`CostAtom.VariablePermanents` on the cast path now handles all three actions.** Only `TAP` has a
   card and a test; the `SACRIFICE` and `EXILE` cast-path branches exist because the `when` is
-  exhaustive and reuse the existing helpers, but nothing exercises them.
+  exhaustive and reuse the existing helpers, but nothing exercises them. Same for the third
+  unreachable branch, `TAP` in `CostHandler.payVariablePermanentsList` — no printed card pays a TAP
+  `VariablePermanents` cost from an activated ability yet. All three kept, reviewed and accepted.
 - **`selectionCount` for the teamwork atom is 0** (`minCount = 0`), since the count is free. Nothing
   in the cast path reads it, but it is a slightly odd value for a cost that always selects at least
   one permanent in practice.

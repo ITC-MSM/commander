@@ -1551,6 +1551,13 @@ class CastSpellHandler(
      *   control a Wizard as you cast this spell, you may choose two instead." pattern (Flame of
      *   Anor) — `minChooseCount` stays the mandatory floor, unlike the resolution-time
      *   `chooseUpToDynamic` shape which always allows declining to 0.
+     *
+     * The evaluation context carries the *declaration being cast* ([CastSpell.declaredCostSlot]),
+     * because a mode count may branch on the optional additional cost this very cast declared —
+     * "Choose one. If this spell was cast using teamwork, choose both instead" (CR 702.194b).
+     * `Conditions.TeamworkWasPaid` / `CastChoiceMade` answers from that field while the card is
+     * still in hand; the durable `CastChoicesComponent` it otherwise reads only exists once the
+     * spell has resolved, so without this the teamwork branch could never be taken.
      */
     private fun effectiveModalChooseCounts(
         state: GameState,
@@ -1571,7 +1578,8 @@ class CastSpellHandler(
                 sourceId = action.cardId,
                 controllerId = action.playerId,
                 targets = emptyList(),
-                xValue = 0
+                xValue = 0,
+                declaredCostSlot = action.declaredCostSlot
             )
             val evaluated = DynamicAmountEvaluator(conditionEvaluator = conditionEvaluator)
                 .evaluate(state, dynamic, context)
@@ -2669,6 +2677,14 @@ class CastSpellHandler(
                             // A variable-count permanent cost paid as a spell's additional cost —
                             // Teamwork N taps the chosen creatures (CR 702.194a). Validation above
                             // already re-checked control, filter, and the measure floor.
+                            //
+                            // TAP-REASON HOOK (one of two): a "becomes tapped to pay a teamwork
+                            // cost" trigger (Agent Maria Hill) needs the tap to carry its cause.
+                            // `TappedEvent` has no reason field today, and the other site that taps
+                            // for a `VariablePermanents` cost is
+                            // `CostHandler.payVariablePermanentsList`'s TAP branch — whoever adds
+                            // the reason must thread it through both, or fold the loop itself into
+                            // `VariablePermanentsCost`.
                             val chosen = action.additionalCostPayment.variableCostPermanents
                             when (atom.action) {
                                 PermanentCostAction.TAP -> for (permId in chosen) {

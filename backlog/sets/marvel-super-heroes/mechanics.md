@@ -115,19 +115,28 @@ What that helper does:
    "kicked" and "bargained" (CR 702.194b).
 2. **The payoff** — `Conditions.TeamworkWasPaid`, a facade over
    `CastChoiceMade(ChoiceSlot.TEAMWORK)` mirroring `WasBargained`. The "choose both instead" shape
-   (CR 702.194c) is `modal(dynamicChooseCount = DynamicAmount.Conditional(Conditions.TeamworkWasPaid,
-   2, 1))` — existing modal machinery, nothing new.
+   (CR 702.194c) is `modal(chooseCount = 2, minChooseCount = 1, dynamicChooseCount =
+   DynamicAmount.Conditional(Conditions.TeamworkWasPaid, 2, 1))` — the existing modal type, with two
+   wiring fixes it needed: the cast handler now evaluates `dynamicChooseCount` with *this cast's*
+   `declaredCostSlot` (without it the teamwork branch could never be taken, since the durable
+   cast-choices bag only exists after the spell resolves), and the declared cast is enumerated as a
+   `CastSpellModal` variant so the client is offered the modes at all. Covered end to end by
+   `TeamworkMechanicScenarioTest`'s "Teamwork Orders" cases.
 3. **The cost atom** — the one real gap, now closed. `CostAtom.VariablePermanents` gained
    `PermanentCostAction.TAP`, `VariableCostMeasure.TOTAL_POWER` and a `minMeasure` floor (a threshold
    on the *measure*, not the count), reached through `Costs.additional.TapForTotalPower(n)`. The atom
    also became payable as a *spell* additional cost, not only an activated-ability cost, through
    `AdditionalCostPayment.variableCostPermanents`.
-4. **Reuse of the crew selection** — `VariablePermanentsCost`
-   (`rules-engine/.../mechanics/cost/`) is the single place that answers "which permanents can pay,
-   and how much do the chosen ones measure", mirroring `CrewEnumerator`: untapped only
-   (CR 701.26a), controlled by the payer, matched and summed through **projected** state, and with no
-   summoning-sickness check (CR 302.6 governs the `{T}` symbol, not a tap paid as a cost). The
-   enumerator, the cast validator, the payer and the built-in AI all read it, so they can't disagree.
+4. **The crew selection, mirrored** — `VariablePermanentsCost`
+   (`rules-engine/.../mechanics/cost/`) is the shared answer to "which permanents can pay, and how
+   much do the chosen ones measure" for every reader of `CostAtom.VariablePermanents`, modelled on
+   `CrewEnumerator`: untapped only (CR 701.26a), controlled by the payer, matched and summed through
+   **projected** state, and with no summoning-sickness check (CR 302.6 governs the `{T}` symbol, not
+   a tap paid as a cost). The cast enumerators, the cast validator, the payer and the built-in AI all
+   read it, so they can't disagree. Crew and saddle are *not* routed through it — they are a
+   different activation shape and keep their own copy of the eligibility rule (their measure must
+   stay separate, since crew-specific "crews as though its power were 2 greater" statics must not
+   raise a teamwork total); folding their candidate selection in is an open follow-up.
    The candidate payload sent to the client is the crew/saddle `TapForPowerCreatureData`, under a
    `costType = "TapForTotalPower"` cost-payment phase.
 

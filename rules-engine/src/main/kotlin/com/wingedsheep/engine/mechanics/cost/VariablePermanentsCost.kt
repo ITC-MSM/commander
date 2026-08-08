@@ -11,9 +11,10 @@ import com.wingedsheep.sdk.scripting.costs.PermanentCostAction
 import com.wingedsheep.sdk.scripting.costs.VariableCostMeasure
 
 /**
- * The one place that answers "which permanents can pay a [CostAtom.VariablePermanents] cost, and
- * how much do the chosen ones measure" — shared by every reader of that atom so the enumerator, the
- * validator, the payer, and the built-in AI can never disagree about affordability.
+ * The shared answer to "which permanents can pay a [CostAtom.VariablePermanents] cost, and how much
+ * do the chosen ones measure" — every reader of *that atom* (the cast enumerators, the cast
+ * validator, [com.wingedsheep.engine.handlers.CostHandler], and the built-in AI) goes through here,
+ * so they can't disagree about affordability.
  *
  * The `TAP` + `TOTAL_POWER` shape is the one Teamwork N uses (CR 702.194a): "tap any number of
  * creatures you control with total power N or more" — the same selection crew (CR 702.122b) and
@@ -21,6 +22,16 @@ import com.wingedsheep.sdk.scripting.costs.VariableCostMeasure
  * `com.wingedsheep.engine.legalactions.enumerators.CrewEnumerator`: untapped, controlled by the
  * payer, matched through **projected** state, and with no summoning-sickness check (CR 302.6
  * governs the `{T}` symbol in an activation cost, not a tap paid as a cost).
+ *
+ * **Crew and saddle are not routed through here.** They are not `VariablePermanents` costs — they
+ * are their own activation shape with their own action (`CrewVehicle`) — and they keep their own
+ * copies of the eligibility filter in `CrewEnumerator` / `CrewVehicleHandler`. The eligibility rule
+ * is therefore duplicated (it agrees today, and both cite the same rules), but the *measures*
+ * genuinely differ and must stay separate: crew sums through `CrewSaddleContributionEvaluator`, so
+ * a "crews Vehicles as though its power were 2 greater" static raises a crew total, and must not
+ * raise a teamwork total (CR 702.194a measures printed-and-projected power, nothing crew-specific).
+ * Migrating crew's candidate selection onto [candidates] is a worthwhile follow-up, but it is a
+ * change to a second mechanic, not to teamwork.
  */
 object VariablePermanentsCost {
 
@@ -87,9 +98,16 @@ object VariablePermanentsCost {
     }
 
     /**
-     * True when [playerId] can pay [atom] at all — enough candidates to clear both the count floor
-     * and (taking every candidate) the measure floor. Used to mark a cast variant unaffordable
+     * True when [playerId] can pay [atom] at all — enough candidates to clear the count floor, and
+     * a reachable ceiling that clears the measure floor. Used to mark a cast variant unaffordable
      * rather than offering a cast the caster can't complete (CR 601.2h).
+     *
+     * The ceiling is the sum of the candidates' *non-negative* contributions, not the measure of
+     * the whole candidate list: the payer picks any subset (CR 702.194a — "any number of creatures
+     * you control with total power N or more"), so a creature at negative power (Weakness, a
+     * −1/−1 counter, an opposing lord) is simply left out rather than dragging the total down.
+     * Summing the raw list instead would report a 3/3 plus a −2/2 as unable to pay teamwork 2.
+     * Only `TOTAL_POWER` can go negative; the other measures are unaffected by the clamp.
      */
     fun canPay(
         state: GameState,
@@ -100,6 +118,9 @@ object VariablePermanentsCost {
         val candidates = candidates(state, playerId, atom, sourceId)
         if (candidates.size < atom.minCount) return false
         if (atom.minMeasure <= 0) return true
-        return measure(state, atom.xMeasure, candidates) >= atom.minMeasure
+        val reachable = candidates.sumOf { id ->
+            maxOf(0, measure(state, atom.xMeasure, listOf(id)))
+        }
+        return reachable >= atom.minMeasure
     }
 }

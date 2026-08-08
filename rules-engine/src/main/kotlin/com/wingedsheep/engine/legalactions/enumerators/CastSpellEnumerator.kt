@@ -2114,6 +2114,68 @@ class CastSpellEnumerator : ActionEnumerator {
                 val kickerTotalDamage = kickerDividedDamage?.totalDamage
                 val kickerMinDamagePerTarget = if (kickerDividedDamage != null) 1 else null
 
+                // A *modal* spell cast with an optional additional cost declared — the "Choose one.
+                // If this spell was cast using teamwork, choose both instead" shape (CR 702.194b).
+                // The card-level target requirements are empty on a modal spell (each mode carries
+                // its own), so without this the declared variant would be advertised as a plain
+                // no-mode cast and every submit would fail validation with "Too few modes chosen".
+                // Emitted as the same `CastSpellModal` payload the undeclared cast uses, plus the
+                // declaration and this branch's cost info; the client collects modes and then the
+                // teamwork payment, exactly as it already does for the blight-path modal variant.
+                //
+                // The advertised `chooseCount` is the printed maximum, as on the undeclared path;
+                // `CastSpellHandler.effectiveModalChooseCounts` is the authority that narrows it
+                // per declaration (1 without teamwork, 2 with), the same split Flame of Anor and
+                // Molten Collapse already rely on.
+                val kickerModalEffect = kickerSpellEffect as? ModalEffect
+                if (kickerModalEffect != null) {
+                    val kickerModeEnumerations = kickerModalEffect.modes.mapIndexed { modeIndex, mode ->
+                        computeModeEnumeration(
+                            context = context,
+                            cardId = cardId,
+                            playerId = playerId,
+                            modeIndex = modeIndex,
+                            mode = mode,
+                            baseEffectiveCost = kickedCost,
+                            cardLevelAdditionalCostInfo = kickerCostInfo,
+                            baseAutoTapPreview = kickedAutoTapPreview,
+                            spellContext = kickedSpellContext,
+                            cachedSources = context.availableManaSources
+                        )
+                    }
+                    if (kickerModeEnumerations.none { it.available }) continue
+                    result.add(LegalAction(
+                        actionType = "CastSpellModal",
+                        description = "Cast ${cardComponent.name} ($kickLabel)",
+                        action = CastSpell(playerId, cardId, declaredCostSlot = declaredSlot),
+                        affordable = canAffordKicked,
+                        manaCostString = kickedCostString,
+                        autoTapPreview = kickedAutoTapPreview,
+                        additionalCostInfo = kickerCostInfo,
+                        hasXCost = kickedHasXCost,
+                        maxAffordableX = kickedMaxAffordableX,
+                        modalEnumeration = ModalLegalEnumeration(
+                            chooseCount = kickerModalEffect.chooseCount,
+                            minChooseCount = kickerModalEffect.minChooseCount,
+                            allowRepeat = kickerModalEffect.allowRepeat,
+                            modes = kickerModeEnumerations.map { modeEnum ->
+                                ModalEnumerationMode(
+                                    index = modeEnum.modeIndex,
+                                    description = modeEnum.mode.description,
+                                    available = modeEnum.available,
+                                    additionalManaCost = modeEnum.mode.additionalManaCost,
+                                    additionalCostInfo = modeEnum.additionalCostInfo,
+                                    targetRequirements = modeEnum.targetInfos
+                                )
+                            },
+                            unavailableIndices = kickerModeEnumerations
+                                .filterNot { it.available }
+                                .map { it.modeIndex }
+                        )
+                    ))
+                    continue
+                }
+
                 if (targetReqs.isNotEmpty()) {
                     val targetReqInfos = context.targetUtils.buildTargetInfos(state, playerId, targetReqs, cardId)
                     val allRequirementsSatisfied = context.targetUtils.allRequirementsSatisfied(targetReqInfos)

@@ -81,6 +81,23 @@ class TeamworkMechanicScenarioTest : ScenarioTestBase() {
         }
     }
 
+    /** Pushes a Wall to *negative* projected power, so a candidate can subtract from a raw sum. */
+    private val testWallWeakener = card("Test Wall Weakener") {
+        manaCost = "{1}"
+        typeLine = "Creature — Human"
+        power = 1
+        toughness = 1
+        oracleText = "Walls you control get -3/-0."
+        staticAbility {
+            ability = com.wingedsheep.sdk.scripting.ModifyStats(
+                powerBonus = -3,
+                toughnessBonus = 0,
+                filter = com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
+                    .OtherCreaturesYouControl.withSubtype("Wall"),
+            )
+        }
+    }
+
     // --- Cards under test -----------------------------------------------------------------------
 
     /** Helicarrier Strike's shape: a rider read off the spell while it's still on the stack. */
@@ -122,6 +139,47 @@ class TeamworkMechanicScenarioTest : ScenarioTestBase() {
         }
     }
 
+    /**
+     * The modal shape MSH prints on five cards (Widow's Bite, HULK SMASH!, Go Nuts!, Murdock's
+     * Crusade, Atlantis Attacks): "Choose one. If this spell was cast using teamwork, choose both
+     * instead." The mode count is a cast-time `dynamicChooseCount` gated on the declaration itself
+     * (CR 702.194b), so the cast handler has to evaluate it against *this cast's* declared slot —
+     * the durable cast-choices bag doesn't exist until the spell resolves.
+     *
+     * Both modes are targetless so the test drives mode selection alone.
+     */
+    private val teamworkOrders = card("Teamwork Orders") {
+        manaCost = "{R}"
+        typeLine = "Instant"
+        oracleText = "Teamwork 2 (As an additional cost to cast this spell, you may tap any " +
+            "number of creatures you control with total power 2 or more.)\n" +
+            "Choose one. If this spell was cast using teamwork, choose both instead.\n" +
+            "• You gain 3 life.\n" +
+            "• Each opponent loses 2 life."
+        teamwork(2)
+        spell {
+            modal(
+                chooseCount = 2,
+                minChooseCount = 1,
+                dynamicChooseCount = com.wingedsheep.sdk.scripting.values.DynamicAmount.Conditional(
+                    condition = Conditions.TeamworkWasPaid,
+                    ifTrue = com.wingedsheep.sdk.scripting.values.DynamicAmount.Fixed(2),
+                    ifFalse = com.wingedsheep.sdk.scripting.values.DynamicAmount.Fixed(1),
+                ),
+            ) {
+                mode("You gain 3 life") {
+                    effect = Effects.GainLife(3)
+                }
+                mode("Each opponent loses 2 life") {
+                    effect = Effects.LoseLife(
+                        2,
+                        EffectTarget.PlayerRef(com.wingedsheep.sdk.scripting.references.Player.EachOpponent),
+                    )
+                }
+            }
+        }
+    }
+
     /** A kicker card on the same rail — the control for "kicked and teamwork are different facts". */
     private val kickerBear = card("Kicker Bear") {
         manaCost = "{1}{G}"
@@ -159,8 +217,10 @@ class TeamworkMechanicScenarioTest : ScenarioTestBase() {
         cardRegistry.register(testBruiser)
         cardRegistry.register(testWall)
         cardRegistry.register(testCaptain)
+        cardRegistry.register(testWallWeakener)
         cardRegistry.register(teamworkBolt)
         cardRegistry.register(teamworkBear)
+        cardRegistry.register(teamworkOrders)
         cardRegistry.register(kickerBear)
         cardRegistry.register(kickedWatcher)
 
@@ -477,6 +537,123 @@ class TeamworkMechanicScenarioTest : ScenarioTestBase() {
                 .shouldNotBeNull()
             teamworkCast.isAffordable shouldBe true
             teamworkCast.description shouldBe "Cast Teamwork Bolt (Teamwork 2)"
+        }
+
+        test("a creature at negative power can't drag the affordability ceiling below the threshold") {
+            val game = scenario()
+                .withPlayers("Caster", "Opponent")
+                .withCardInHand(1, "Teamwork Bolt")
+                .withCardOnBattlefield(1, "Test Bruiser")        // 3/3 — pays teamwork 2 alone
+                .withCardOnBattlefield(1, "Test Wall")           // 0/4, dragged to -3/4 below
+                .withCardOnBattlefield(1, "Test Wall Weakener")  // 1/1, "Walls you control get -3/-0"
+                .withCardOnBattlefield(2, "Test Wall")
+                .withLandsOnBattlefield(1, "Mountain", 1)
+                .withActivePlayer(1)
+                .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                .build()
+
+            // Raw sum over every candidate is 3 + (-3) + 1 = 1, below the threshold; the reachable
+            // ceiling is 3 + 0 + 1 = 4, because nothing forces the debuffed Wall into the payment.
+            val teamworkCast = game.getLegalActions(1)
+                .firstOrNull { it.additionalCostInfo?.costType == "TapForTotalPower" }
+                .shouldNotBeNull()
+            teamworkCast.isAffordable shouldBe true
+
+            val wall = game.findPermanents("Test Wall").last()
+            game.castSpellWithTeamwork(1, "Teamwork Bolt", "Test Bruiser", targetId = wall)
+                .error shouldBe null
+        }
+
+        // -----------------------------------------------------------------------------------
+        // CR 702.194b + 700.2 — "Choose one. If this spell was cast using teamwork, choose both
+        // instead": the mode count branches on *this cast's* declaration, read at cast time.
+        // -----------------------------------------------------------------------------------
+
+        test("a modal teamwork spell chooses both modes when teamwork is declared") {
+            val game = scenario()
+                .withPlayers("Caster", "Opponent")
+                .withCardInHand(1, "Teamwork Orders")
+                .withCardOnBattlefield(1, "Test Bruiser")
+                .withLandsOnBattlefield(1, "Mountain", 1)
+                .withActivePlayer(1)
+                .withLifeTotal(1, 20)
+                .withLifeTotal(2, 20)
+                .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                .build()
+
+            val bruiser = game.findPermanent("Test Bruiser").shouldNotBeNull()
+            game.castSpellWithTeamwork(
+                1, "Teamwork Orders", "Test Bruiser",
+                chosenModes = listOf(0, 1),
+            ).error shouldBe null
+            game.state.isTapped(bruiser) shouldBe true
+
+            game.resolveStack()
+            game.state.lifeTotal(game.player1Id) shouldBe 23
+            game.state.lifeTotal(game.player2Id) shouldBe 18
+        }
+
+        test("the same spell cast without teamwork is held to one mode") {
+            val game = scenario()
+                .withPlayers("Caster", "Opponent")
+                .withCardInHand(1, "Teamwork Orders")
+                .withCardOnBattlefield(1, "Test Bruiser")
+                .withLandsOnBattlefield(1, "Mountain", 1)
+                .withActivePlayer(1)
+                .withLifeTotal(1, 20)
+                .withLifeTotal(2, 20)
+                .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                .build()
+
+            val caster = game.player1Id
+            val cardId = game.state.getHand(caster).first()
+
+            // Both modes without the declaration: the dynamic count evaluates to 1, so this is
+            // rejected outright rather than silently resolving both halves.
+            game.execute(
+                com.wingedsheep.engine.core.CastSpell(
+                    playerId = caster,
+                    cardId = cardId,
+                    chosenModes = listOf(0, 1),
+                )
+            ).error.shouldNotBeNull()
+            game.isInHand(1, "Teamwork Orders") shouldBe true
+
+            // One mode is fine.
+            game.execute(
+                com.wingedsheep.engine.core.CastSpell(
+                    playerId = caster,
+                    cardId = cardId,
+                    chosenModes = listOf(0),
+                )
+            ).error shouldBe null
+            game.resolveStack()
+            game.state.lifeTotal(game.player1Id) shouldBe 23
+            game.state.lifeTotal(game.player2Id) shouldBe 20
+        }
+
+        test("the modal teamwork cast variant carries the modes and the teamwork cost") {
+            val game = scenario()
+                .withPlayers("Caster", "Opponent")
+                .withCardInHand(1, "Teamwork Orders")
+                .withCardOnBattlefield(1, "Test Bruiser")
+                .withLandsOnBattlefield(1, "Mountain", 1)
+                .withActivePlayer(1)
+                .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                .build()
+
+            // Without this the declared variant would be advertised as a plain no-mode cast and
+            // every submit would fail with "Too few modes chosen".
+            val teamworkCast = game.getLegalActions(1)
+                .firstOrNull { it.additionalCostInfo?.costType == "TapForTotalPower" }
+                .shouldNotBeNull()
+            teamworkCast.description shouldBe "Cast Teamwork Orders (Teamwork 2)"
+            val modal = teamworkCast.modalEnumeration.shouldNotBeNull()
+            modal.chooseCount shouldBe 2
+            modal.minChooseCount shouldBe 1
+            modal.modes.map { it.description } shouldBe
+                listOf("You gain 3 life", "Each opponent loses 2 life")
+            modal.modes.all { it.available } shouldBe true
         }
     }
 }

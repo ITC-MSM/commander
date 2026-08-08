@@ -75,13 +75,19 @@ export function computePhases(actionInfo: LegalActionInfo, options?: ComputePhas
   //    `costPayment` phase here rather than dropping it. Without this, the action submits with
   //    no blight and the engine rejects it ("Too many modes chosen"). Per-mode targeting + mana
   //    still run server-side after submit.
+  //
+  //    Teamwork N (CR 702.194) takes the same exception for the same reason: "Choose one. If this
+  //    spell was cast using teamwork, choose both instead" surfaces the teamwork cast as its own
+  //    modal variant, and the second mode only unlocks once the submitted action carries the
+  //    tapped creatures in `variableCostPermanents`.
   if (
     actionInfo.action.type === 'CastSpell' &&
     actionInfo.modalEnumeration &&
     actionInfo.modalEnumeration.chooseCount > 1
   ) {
     const modalPhases: PipelinePhase[] = [{ type: 'modalModes' }]
-    if (actionInfo.additionalCostInfo?.costType === 'Blight') {
+    const modalCostType = actionInfo.additionalCostInfo?.costType
+    if (modalCostType === 'Blight' || modalCostType === 'TapForTotalPower') {
       modalPhases.push({ type: 'costPayment' })
     }
     return modalPhases

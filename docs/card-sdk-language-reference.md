@@ -576,7 +576,7 @@ definitions construct these through the facade, e.g. `Costs.additional.Sacrifice
   surfaces the returnable permanents (a `costType = "ReturnToHand"` cost) and the client picks them
   on the battlefield. The bounce goes through `ZoneTransitionService.moveToZone(…, Zone.HAND)`, so
   attached Auras fall off and tokens cease to exist. Mirrors the sacrifice/tap additional-cost path.
-- `Costs.additional.TapForTotalPower(totalPower, filter = Filters.Creature)` — "tap any number of
+- `Costs.additional.TapForTotalPower(totalPower, filter = GameObjectFilter.Creature)` — "tap any number of
   creatures you control with total power N or more" (Teamwork N, CR 702.194a). A
   `CostAtom.VariablePermanents` with `action = TAP`, `xMeasure = TOTAL_POWER`, `minMeasure = N` and
   `minCount = 0`: the count is free, the power floor is the constraint, and the sum is read from
@@ -6253,7 +6253,8 @@ copy of it (CR 707.10e). The activated-ability analogue of the spell-level `cant
 > `KeywordAbility.OptionalAdditionalCost(additionalCost = Costs.additional.TapForTotalPower(2),
 > displayPrefix = "Teamwork 2", keyword = Keyword.TEAMWORK, declaredSlot = ChoiceSlot.TEAMWORK)`.
 > Teamwork therefore rides the **same rail as kicker and bargain** — the enumerator offers a
-> `CastWithKicker` variant labelled "(Teamwork 2)", the ordinary additional-cost payment flow collects
+> `CastWithKicker` variant labelled "(Teamwork 2)" (a `CastSpellModal` one for a modal spell, see
+> below), the ordinary additional-cost payment flow collects
 > the tapped creatures, and the engine stamps the declared slot on the stack object and durably onto the
 > permanent it becomes. Because that rail carries a `ChoiceSlot`, "cast using teamwork", "bargained" and
 > "kicked" never read as each other.
@@ -6280,9 +6281,17 @@ copy of it (CR 707.10e). The activated-ability analogue of the spell-level `cant
 >   effect, for a genuinely additional event (Repulsor Blast's 2 damage to the creature's controller,
 >   Team Tactics' extra trample grant).
 > - **Modal "choose both instead"** (CR 702.194c) — a `modal { }` block with
+>   `chooseCount = 2, minChooseCount = 1` and
 >   `dynamicChooseCount = DynamicAmount.Conditional(Conditions.TeamworkWasPaid, DynamicAmount.Fixed(2),
->   DynamicAmount.Fixed(1))`: the plain cast picks one mode, the teamwork cast picks both. No new modal
->   machinery — the same shape LCI's Molten Collapse and Wail of the Forgotten already use.
+>   DynamicAmount.Fixed(1))`: the plain cast picks one mode, the teamwork cast picks both. The same
+>   `dynamicChooseCount` shape LCI's Molten Collapse and Wail of the Forgotten use, with one
+>   difference that matters — those two read the *battlefield*, while this reads the declaration made
+>   by the very cast being validated, so `CastSpellHandler.effectiveModalChooseCounts` evaluates it
+>   with `declaredCostSlot` in the context (the durable cast-choices bag doesn't exist until the spell
+>   resolves). The declared cast is enumerated as a `CastSpellModal` variant labelled "(Teamwork N)"
+>   carrying both the modes and the teamwork cost payload, so the client collects modes and then the
+>   taps. The advertised `chooseCount` is the printed maximum on both variants; the handler is the
+>   authority that narrows it to 1 without the declaration.
 > - **Permanent** — an enters-the-battlefield trigger with
 >   `triggerCondition = Conditions.TeamworkWasPaid`; CR 603.4 keeps it off the stack entirely otherwise.
 > - **Teamwork-only clause with its own target** — declare it with `kickerTarget(...)` / `kickerEffect`

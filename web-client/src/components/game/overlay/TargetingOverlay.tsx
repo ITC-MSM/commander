@@ -602,8 +602,10 @@ export function TargetingOverlay() {
       : isReveal
         ? `Select card to reveal (${targetDisplay})`
         : isTapPermanent
-          ? requiredTotalPower > 0 && targetingState.targetDescription
-            ? `${targetingState.targetDescription.charAt(0).toUpperCase()}${targetingState.targetDescription.slice(1)} (${targetDisplay})`
+          ? // The server already sends the cost description sentence-cased ("Tap any number of
+            // creatures you control with total power 2 or more"), so it is shown verbatim.
+            requiredTotalPower > 0 && targetingState.targetDescription
+            ? `${targetingState.targetDescription} (${targetDisplay})`
             : `Select permanents to tap (${targetDisplay})`
           : isBounce
             ? `Select ${targetingState.targetDescription ?? 'a creature to return to its owner’s hand'} (${targetDisplay})`
