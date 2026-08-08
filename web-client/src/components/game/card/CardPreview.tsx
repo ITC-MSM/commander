@@ -9,6 +9,8 @@ import { styles } from '../board/styles'
 import { counterManaClass } from '@/assets/icons/keywords'
 import { HoverCardPreview } from '../../ui/HoverCardPreview'
 import { ManaCost, AbilityText } from '../../ui/ManaSymbols'
+import { buildActionOptions, playCostRange, playLadderOptions } from '@/utils/actionOptions.ts'
+import { parseManaCost, totalManaNeeded } from '@/utils/manaCost.ts'
 
 /**
  * Game board card preview — wraps the shared HoverCardPreview with
@@ -54,33 +56,41 @@ export function CardPreview() {
     return () => window.removeEventListener('keydown', handleFlipKey)
   }, [isDfc, handleFlipKey])
 
+  // Every way the server offers to use this card, in the same order and with the same labels as the
+  // click-to-play action menu — the ladder below the image renders them one per row. Sharing
+  // `buildActionOptions` is the point: the menu and the preview can't disagree about what a card
+  // costs, which they did while each kept its own hand-maintained list of cast variants to ignore.
+  const actionOptions = useMemo(
+    () => (card ? buildActionOptions(card, cardActions) : []),
+    [card, cardActions]
+  )
+
+  // The badge on the image: the span of prices for playing the card, anchored on the printed cost so
+  // the reduced/increased tint means "cheaper or dearer than the card says" rather than "these two
+  // options differ". Only for cards in hand, where a price is something the player can act on.
   const manaCostInfo = useMemo(() => {
     if (!isInHand || !card?.manaCost) return null
-    const castAction = cardActions.find((a) =>
-      a.action.type === 'CastSpell' && a.actionType !== 'CastFaceDown' && a.actionType !== 'CastWithKicker' && a.actionType !== 'CastSpellMode'
-    )
-    const effectiveCost = castAction?.manaCostString
-    // No cast action or cost unchanged — show base cost without modification indicator
-    if (effectiveCost == null || effectiveCost === card.manaCost) {
-      return { baseCost: card.manaCost, effectiveCost: null, isReduced: false, isIncreased: false }
-    }
-    const countSymbols = (cost: string) => {
-      const symbols = cost.match(/\{([^}]+)\}/g) ?? []
-      return symbols.reduce((total, s) => {
-        const inner = s.slice(1, -1)
-        const num = parseInt(inner, 10)
-        return total + (isNaN(num) ? 1 : num)
-      }, 0)
-    }
-    const baseMV = countSymbols(card.manaCost)
-    const effectiveMV = countSymbols(effectiveCost)
+    const range = playCostRange(actionOptions)
+    if (!range) return { cost: card.manaCost, floor: null, isReduced: false, isIncreased: false }
+    // Tint judged on the cheapest way to play it — see the matching note in GameCard.
+    const printedMana = totalManaNeeded(parseManaCost(card.manaCost))
+    const lowMana = totalManaNeeded(parseManaCost(range.low))
     return {
-      baseCost: card.manaCost,
-      effectiveCost: effectiveCost === '' ? '{0}' : effectiveCost,
-      isReduced: effectiveMV < baseMV,
-      isIncreased: effectiveMV > baseMV,
+      cost: range.high,
+      floor: range.isRange ? range.low : null,
+      isReduced: lowMana < printedMana,
+      isIncreased: lowMana > printedMana,
     }
-  }, [isInHand, cardActions, card?.manaCost])
+  }, [isInHand, card?.manaCost, actionOptions])
+
+  // The ladder lists the ways to play the card wherever it is being played from — hand, a graveyard
+  // flashback, a command zone — not the activated abilities of a permanent already on the battlefield.
+  const costRows = useMemo(() => playLadderOptions(actionOptions), [actionOptions])
+
+  // Worth a panel when there is more than one row, or when a lone row's cost can be reduced — a
+  // convoke or delve spell has one way to cast it and still needs the hint saying what the floor costs
+  // you, which is otherwise invisible until the card is clicked.
+  const showCostLadder = costRows.length > 1 || costRows.some((o) => o.manaCostReducedTo)
 
   if (!card) return null
 
@@ -118,6 +128,8 @@ export function CardPreview() {
   let extraHeight = 0
   const GAP = 8
   // manaCostInfo overlay is on the image itself, no extra height needed
+  // The cost ladder is a real panel though: header + padding, then a row (plus its optional hint line).
+  if (showCostLadder) extraHeight += 40 + costRows.length * 26 + GAP
   if (hasStatModifications) extraHeight += 80 + GAP
   if (card.keywords.length > 0 || (card.abilityFlags && card.abilityFlags.length > 0)) extraHeight += 40 + GAP
 
@@ -152,7 +164,8 @@ export function CardPreview() {
           position: 'absolute',
           top: 8,
           right: 8,
-          backgroundColor: manaCostInfo.effectiveCost
+          maxWidth: 'calc(100% - 16px)',
+          backgroundColor: manaCostInfo.isReduced || manaCostInfo.isIncreased
             ? 'rgba(0, 0, 0, 0.85)'
             : 'rgba(0, 0, 0, 0.7)',
           padding: '3px 6px',
@@ -167,10 +180,20 @@ export function CardPreview() {
             : 'none',
           display: 'flex',
           alignItems: 'center',
-          gap: 2,
+          justifyContent: 'flex-end',
+          flexWrap: 'wrap',
+          gap: 3,
           zIndex: 5,
         }}>
-          <ManaCost cost={manaCostInfo.effectiveCost ?? manaCostInfo.baseCost} size={18} gap={2} />
+          {/* Cheapest reachable price first, then the asking price — range convention, and the
+              cheap end is the one the player is deciding against. */}
+          {manaCostInfo.floor && (
+            <>
+              <ManaCost cost={manaCostInfo.floor} size={18} gap={2} />
+              <span aria-hidden style={{ color: '#9aa4b8', fontSize: 13 }}>–</span>
+            </>
+          )}
+          <ManaCost cost={manaCostInfo.cost} size={18} gap={2} />
         </div>
       )}
       {isDfc && (
@@ -252,6 +275,44 @@ export function CardPreview() {
       imageRotateDeg={previewImageRotateDeg}
       overlay={previewOverlay}
     >
+      {/* Ways to play, with what each one costs. The badge on the image can only fit the two ends of
+          the range; this is where an adventure face, a kicker, a morph, an alternative cost or a
+          cycling option becomes visible without clicking the card first. Rows the player can't pay
+          for stay listed and dimmed — "not yet" is an answer. */}
+      {showCostLadder && (
+        <div style={styles.cardPreviewCostOptions}>
+          <div style={styles.cardPreviewCostHeader}>Ways to play</div>
+          {costRows.map((option) => (
+            <div key={option.key}>
+              <div style={{
+                ...styles.cardPreviewCostRow,
+                ...(option.isAvailable ? {} : styles.cardPreviewCostRowUnavailable),
+              }}>
+                <span style={styles.cardPreviewCostLabel}>
+                  <AbilityText text={option.label} size={12} />
+                </span>
+                <span style={styles.cardPreviewCostValue}>
+                  {option.manaCostReducedTo ? (
+                    <>
+                      <span style={styles.cardPreviewCostStruck}>
+                        <ManaCost cost={option.manaCost} size={14} gap={1} />
+                      </span>
+                      <span aria-hidden style={{ color: '#9aa4b8', fontSize: 11 }}>→</span>
+                      <ManaCost cost={option.manaCostReducedTo} size={14} gap={1} />
+                    </>
+                  ) : (
+                    <ManaCost cost={option.manaCost} size={14} gap={1} />
+                  )}
+                </span>
+              </div>
+              {option.hint && (
+                <div style={styles.cardPreviewCostHint}>{option.hint}</div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Stats box (for creatures with modifications) */}
       {card.power !== null && card.toughness !== null && hasStatModifications && (
         <div style={styles.cardPreviewStatsBox}>

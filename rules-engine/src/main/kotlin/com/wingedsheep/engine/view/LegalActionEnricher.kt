@@ -12,6 +12,7 @@ import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.player.ManaPoolComponent
 import com.wingedsheep.engine.state.components.player.RestrictedManaEntry
+import com.wingedsheep.sdk.core.ManaCost
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.ChoiceSlot
 
@@ -114,6 +115,7 @@ class LegalActionEnricher(
             hasHarmonize = action.hasHarmonize,
             validHarmonizeCreatures = action.harmonizeCreatures?.map { it.toDto() },
             manaCostString = action.manaCostString,
+            minimumManaCostString = minimumManaCostString(action),
             requiresDamageDistribution = action.requiresDamageDistribution,
             totalDamageToDistribute = action.totalDamageToDistribute,
             minDamagePerTarget = action.minDamagePerTarget,
@@ -128,6 +130,49 @@ class LegalActionEnricher(
             modalEnumeration = action.modalEnumeration?.toDto(),
             holdPriority = action.holdPriority
         )
+    }
+
+    /**
+     * The floor of [action]'s mana cost once every alternative payment it already carries is spent
+     * to the maximum — see [LegalActionInfo.minimumManaCostString] for what the client does with it.
+     * Null when the action offers none of those keywords, or when none of them can move this
+     * particular cost (an all-colored cost with no convoke creature of a matching color, say).
+     *
+     * Derived here rather than at each of the dozen `LegalAction(...)` emission sites because it is a
+     * pure function of fields the action already carries: every enumerator that offers one of these
+     * keywords — cast from hand, cast from graveyard, the modal per-mode variants — gets it for free,
+     * and there is no second copy of the arithmetic to drift.
+     */
+    private fun minimumManaCostString(action: LegalAction): String? {
+        val printed = action.manaCostString?.let { ManaCost.parse(it) } ?: return null
+        var floor = printed
+
+        // Convoke (CR 702.51a): each untapped creature pays either one generic mana or one pip of a
+        // color that creature is. `reduceByConvoke` is the rule; the colors decide how far it goes.
+        action.convokeCreatures?.takeIf { it.isNotEmpty() }?.let { creatures ->
+            floor = floor.reduceByConvoke(creatures.map { it.colors })
+        }
+        // Delve (CR 702.66a): each card exiled from the graveyard pays one generic mana.
+        action.delveCards?.takeIf { it.isNotEmpty() }?.let { cards ->
+            floor = floor.reduceGeneric(cards.size)
+        }
+        // Waterbend: each tapped artifact/creature pays {1} of the generic, capped at the waterbend
+        // {N}. A null `waterbendAmount` is the "waterbend {X}" shape, whose cap is the X the player
+        // hasn't chosen yet — every tappable permanent counts toward the floor there.
+        action.waterbendPermanents?.takeIf { it.isNotEmpty() }?.let { permanents ->
+            floor = floor.reduceGeneric(action.waterbendAmount?.coerceAtMost(permanents.size) ?: permanents.size)
+        }
+        // Harmonize: at most one creature may be tapped, so the floor comes from the best power on
+        // offer, not from their sum.
+        action.harmonizeCreatures?.takeIf { it.isNotEmpty() }?.let { creatures ->
+            floor = floor.reduceGeneric(creatures.maxOf { it.power }.coerceAtLeast(0))
+        }
+
+        // The reductions don't preserve symbol order, so an unchanged cost can still compare unequal
+        // — mana value is what says whether anything actually moved. A cost reduced away entirely
+        // renders as "{0}" rather than the empty string the symbol list would produce.
+        if (floor.cmc >= printed.cmc) return null
+        return floor.toString().ifEmpty { "{0}" }
     }
 
     private fun shouldExposeManaSources(action: LegalAction): Boolean =

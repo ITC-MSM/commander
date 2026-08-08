@@ -205,6 +205,32 @@ your library any time"), and a scry/surveil the viewer just performed alike. `Zo
 asks why. `TopOfLibraryClientViewTest` pins both halves of the contract: position 0 is the top, and
 the private peek stays out of an opponent's view.
 
+## What a card costs (one card, several prices)
+
+Three surfaces answer "what does this cost?" and they all read the same list, built by
+`utils/actionOptions.ts`'s `buildActionOptions(card, legalActions)`:
+
+- **`ActionMenu`** — one clickable button per option. The full ladder, since this is where the player
+  commits.
+- **`CardPreview`** — the same ladder, read-only, under the hovered card ("Ways to play"), plus the
+  cost badge on the image. Unaffordable rows stay listed and dimmed.
+- **`GameCard`** — the badge on the card in hand. Card-sized, so it shows only the two ends of the
+  span via `playCostRange`.
+
+Sharing the builder is load-bearing. A card usually has several prices — each face of a split or
+adventure card is its own `CastSpell` action, kicker/morph/impending are their own action types, and
+convoke, delve, waterbend, harmonize and emerge all sit above a floor the server sends separately
+(`minimumManaCostString`, or `additionalCostInfo.costAfterSacrifice` for emerge). Each surface used to
+pick a "normal" cast out of `legalActions` with its own hand-maintained list of `actionType` strings to
+exclude, so the three disagreed, and a card whose only cast was an adventure face or a kicker showed
+its printed cost with no sign that the printed cost wasn't the price.
+
+Two rules for `playCostRange`: the **low** end applies each option's reduction floor, the **high** end
+deliberately doesn't (the top of the range is what a cast *asks* for before you spend anything on it);
+and only options that actually put the card into play count. Cycling, plotting and suspending are
+things you do *instead of* playing the card, so folding their costs in would make a {1}{G} creature
+with cycling {W} read as a "{W}-to-{1}{G}" spell — they still get their own ladder row.
+
 ## Battlefield card grouping (token quantity aggregation)
 
 Identical permanents on one player's board collapse into a single visual **stack**

@@ -1317,13 +1317,31 @@ delegates to per-category `ActionEnumerator` implementations (spells, abilities,
 mirroring the `ActionHandler` registry pattern used for action execution.
 
 The server's `LegalActionEnricher` then maps the engine's `LegalAction` results to `LegalActionInfo`
-DTOs, adding presentation-only data: available mana source information for the pre-cast UI selection.
-The client protocol remains unchanged.
+DTOs, adding presentation-only data: available mana source information for the pre-cast UI selection,
+and `minimumManaCostString` — the floor `manaCostString` reaches once the action's own alternative
+payments (convoke taps, delve exiles, waterbend taps, a harmonize tap) are spent to the maximum. The
+client protocol remains unchanged.
 
 ```
 Engine: LegalActionEnumerator.enumerate(state, playerId) → List<LegalAction>
 Server: LegalActionEnricher.enrich(actions, state, playerId) → List<LegalActionInfo>
 ```
+
+**One card, many prices.** A card usually has more than one price, and `manaCostString` is only ever
+one of them: each face of a split or adventure card is its own `CastSpell` action, kicker and morph
+are their own action types, and for convoke/delve/waterbend/harmonize the enumerator folds the
+reduction into *affordability* but leaves `manaCostString` at the pre-reduction figure. The client
+must therefore treat the whole action list as the answer to "what does this cost?" — `playCostRange`
+in `web-client/src/utils/actionOptions.ts` reduces it to the two ends of the span for a card-sized
+badge, and the hover preview lists the options individually. Picking a single "normal" cast out of the
+list and showing its cost is how a convoke spell ends up advertising a number nobody pays.
+
+Two shapes of reduction reach the client, because they answer different questions. Spend-driven ones
+(convoke, delve, waterbend, harmonize) get a single `minimumManaCostString` floor. Choice-driven ones
+— emerge (CR 702.119a), where the reduction is the sacrificed creature's mana value — get one price
+per candidate in `AdditionalCostInfo.costAfterSacrifice`. Both are computed server-side because each
+keyword's reduction rule differs (convoke matches colors; delve, waterbend and emerge are
+generic-only; harmonize taps exactly one creature), and rules don't live in the client.
 
 **Why compute legal actions in the engine?**
 
