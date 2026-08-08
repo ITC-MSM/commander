@@ -127,22 +127,29 @@ sealed interface CostAtom : TextReplaceable<CostAtom> {
      * activation), and the resolving ability reads it as its X value
      * ([com.wingedsheep.sdk.scripting.values.DynamicAmount.XValue]).
      *
-     * Two orthogonal axes cover the printed shapes:
+     * Three orthogonal axes cover the printed shapes:
      *
      *  - [action] — what happens to the chosen permanents. `EXILE` for "exile one or more …"
-     *    (Fabrication Foundry), `SACRIFICE` for "sacrifice one or more …" (Radiant Lotus). A
-     *    sacrifice fires "whenever you sacrifice" triggers; an exile does not.
-     *  - [xMeasure] — how the choice becomes X. `TOTAL_MANA_VALUE` for "… with total mana value X"
+     *    (Fabrication Foundry), `SACRIFICE` for "sacrifice one or more …" (Radiant Lotus), `TAP`
+     *    for "tap any number of …" (Teamwork N, CR 702.194a). A sacrifice fires "whenever you
+     *    sacrifice" triggers; an exile and a tap do not.
+     *  - [xMeasure] — how the choice is measured. `TOTAL_MANA_VALUE` for "… with total mana value X"
      *    (bounds a "mana value X or less" target); `COUNT` for "… for each permanent chosen this
-     *    way", where X is simply how many were chosen.
+     *    way", where X is simply how many were chosen; `TOTAL_POWER` for "… with total power N or
+     *    more" (Teamwork). The measure doubles as the ability's X when it resolves.
+     *  - [minMeasure] — a *floor on the measure* rather than on the count: "with total power N or
+     *    more". 0 means unbounded, in which case only [minCount] constrains the choice.
      *
      * @property filter which permanents you control may be chosen.
-     * @property minCount minimum number to choose (default 1 — "one or more").
+     * @property minCount minimum number to choose (default 1 — "one or more"). Set 0 alongside a
+     *   [minMeasure] for "any number … with total power N or more", where the count itself is free.
      * @property excludeSelf when true the cost's source permanent is excluded — "exile one or more
      *   *other* [filter] you control" (Fabrication Foundry). Leave false when the source may pay for
-     *   itself (Radiant Lotus is an artifact and may sacrifice itself to its own cost).
+     *   itself (Radiant Lotus is an artifact and may sacrifice itself to its own cost), and for
+     *   spell additional costs, which have no source permanent on the battlefield to exclude.
      * @property action what the cost does with the chosen permanents.
-     * @property xMeasure how the chosen set becomes the ability's X.
+     * @property xMeasure how the chosen set is measured.
+     * @property minMeasure minimum total the chosen set's [xMeasure] must reach (0 = no floor).
      */
     @SerialName("AtomVariablePermanents")
     @Serializable
@@ -151,16 +158,30 @@ sealed interface CostAtom : TextReplaceable<CostAtom> {
         val minCount: Int = 1,
         val excludeSelf: Boolean = true,
         val action: PermanentCostAction = PermanentCostAction.EXILE,
-        val xMeasure: VariableCostMeasure = VariableCostMeasure.TOTAL_MANA_VALUE
+        val xMeasure: VariableCostMeasure = VariableCostMeasure.TOTAL_MANA_VALUE,
+        val minMeasure: Int = 0
     ) : CostAtom {
         // Variable count — the floor the payer must at least select. The picker's max is the number
         // of eligible permanents, resolved by the engine at activation time.
         override val selectionCount: Int get() = minCount
         override val description: String get() = buildString {
-            append(if (action == PermanentCostAction.EXILE) "exile " else "sacrifice ")
-            append(if (minCount <= 1) "one or more " else "$minCount or more ")
+            append(when (action) {
+                PermanentCostAction.EXILE -> "exile "
+                PermanentCostAction.SACRIFICE -> "sacrifice "
+                PermanentCostAction.TAP -> "tap "
+            })
+            append(when {
+                minCount <= 0 -> "any number of "
+                minCount == 1 -> "one or more "
+                else -> "$minCount or more "
+            })
             if (excludeSelf) append("other ")
             append("${filter.description}s you control")
+            if (minMeasure > 0) when (xMeasure) {
+                VariableCostMeasure.TOTAL_POWER -> append(" with total power $minMeasure or more")
+                VariableCostMeasure.TOTAL_MANA_VALUE -> append(" with total mana value $minMeasure or more")
+                VariableCostMeasure.COUNT -> {}
+            }
         }
 
         override fun applyTextReplacement(replacer: TextReplacer): CostAtom {
@@ -412,11 +433,19 @@ enum class PermanentCostAction {
     EXILE,
 
     /** "Sacrifice one or more artifacts …" (Radiant Lotus). */
-    SACRIFICE
+    SACRIFICE,
+
+    /**
+     * "Tap any number of creatures you control …" (Teamwork N, CR 702.194a). Only untapped
+     * permanents may be chosen (CR 701.26a); this is a cost, not the `{T}` symbol, so summoning
+     * sickness (CR 302.6) does not apply — the same rule crew and saddle already follow.
+     */
+    TAP
 }
 
 /**
- * How a [CostAtom.VariablePermanents] choice becomes the ability's X (CR 601.2b).
+ * How a [CostAtom.VariablePermanents] choice is measured — both as the ability's X (CR 601.2b) and
+ * as the quantity a [CostAtom.VariablePermanents.minMeasure] floor is compared against.
  */
 @Serializable
 enum class VariableCostMeasure {
@@ -430,5 +459,12 @@ enum class VariableCostMeasure {
      * X is simply how many permanents were chosen — the "… for each permanent sacrificed this way"
      * shape (Radiant Lotus adds three mana per artifact sacrificed).
      */
-    COUNT
+    COUNT,
+
+    /**
+     * The measure is the sum of the chosen permanents' **projected** power — "… with total power N
+     * or more" (Teamwork N, CR 702.194a; the same quantity crew and saddle sum). Read from
+     * projected state so a lord bonus or a +1/+1 counter counts toward the threshold.
+     */
+    TOTAL_POWER
 }

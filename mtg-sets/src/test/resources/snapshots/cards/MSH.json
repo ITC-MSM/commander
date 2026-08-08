@@ -5559,6 +5559,92 @@
     ]
 }
 
+// Helicarrier Strike
+{
+    "name": "Helicarrier Strike",
+    "manaCost": "{W}",
+    "typeLine": "Instant",
+    "oracleText": "Teamwork 2 (As an additional cost to cast this spell, you may tap any number of creatures you control with total power 2 or more.)\nHelicarrier Strike deals 2 damage to target attacking or blocking creature. If this spell was cast using teamwork, it deals 4 damage to that creature instead.",
+    "keywords": [
+        "TEAMWORK"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Kicker",
+            "additionalCost": {
+                "type": "AdditionalAtom",
+                "atom": {
+                    "type": "AtomVariablePermanents",
+                    "filter": "creature",
+                    "minCount": 0,
+                    "excludeSelf": false,
+                    "action": "TAP",
+                    "xMeasure": "TOTAL_POWER",
+                    "minMeasure": 2
+                }
+            },
+            "displayPrefix": "Teamwork 2",
+            "keyword": "TEAMWORK",
+            "declaredSlot": "TEAMWORK"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "DealDamage",
+            "amount": {
+                "type": "Conditional",
+                "condition": {
+                    "type": "CastChoiceMade",
+                    "slot": "TEAMWORK"
+                },
+                "ifTrue": {
+                    "type": "Fixed",
+                    "amount": 4
+                },
+                "ifFalse": {
+                    "type": "Fixed",
+                    "amount": 2
+                }
+            },
+            "target": {
+                "type": "BoundVariable",
+                "name": "target attacking or blocking creature"
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": {
+                        "cardPredicates": [
+                            "IsCreature"
+                        ],
+                        "statePredicates": [
+                            {
+                                "type": "StateOr",
+                                "predicates": [
+                                    "IsAttacking",
+                                    "IsBlocking"
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "id": "target attacking or blocking creature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "15",
+        "artist": "Maxim Ruabtsev",
+        "flavorText": "\"Light 'em up, people!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/e/6e518842-ce44-4af2-8f38-89869828294a.jpg?1783902975"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Hell's Kitchen
 {
     "name": "Hell's Kitchen",
@@ -10337,6 +10423,91 @@
     ]
 }
 
+// Repulsor Blast
+{
+    "name": "Repulsor Blast",
+    "manaCost": "{3}{R}",
+    "typeLine": "Sorcery",
+    "oracleText": "Teamwork 2 (As an additional cost to cast this spell, you may tap any number of creatures you control with total power 2 or more.)\nRepulsor Blast deals 5 damage to target creature. If this spell was cast using teamwork, it also deals 2 damage to that creature's controller.",
+    "keywords": [
+        "TEAMWORK"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Kicker",
+            "additionalCost": {
+                "type": "AdditionalAtom",
+                "atom": {
+                    "type": "AtomVariablePermanents",
+                    "filter": "creature",
+                    "minCount": 0,
+                    "excludeSelf": false,
+                    "action": "TAP",
+                    "xMeasure": "TOTAL_POWER",
+                    "minMeasure": 2
+                }
+            },
+            "displayPrefix": "Teamwork 2",
+            "keyword": "TEAMWORK",
+            "declaredSlot": "TEAMWORK"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 5
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.WhenCondition",
+                        "condition": {
+                            "type": "CastChoiceMade",
+                            "slot": "TEAMWORK"
+                        }
+                    },
+                    "then": {
+                        "type": "DealDamage",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 2
+                        },
+                        "target": "TargetController"
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target creature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "150",
+        "artist": "Peter Scanlan",
+        "flavorText": "\"Mind if I cut in?\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/3/837265b0-fc15-4d96-9d6b-fd1c78534262.jpg?1783902925"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Restorative Technique
 {
     "name": "Restorative Technique",
@@ -13505,6 +13676,89 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Team Tactics
+{
+    "name": "Team Tactics",
+    "manaCost": "{1}{R}",
+    "typeLine": "Instant",
+    "oracleText": "Teamwork 1 (As an additional cost to cast this spell, you may tap any number of creatures you control with total power 1 or more.)\nTarget creature gains double strike until end of turn. If this spell was cast using teamwork, that creature also gains trample until end of turn.",
+    "keywords": [
+        "TEAMWORK"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Kicker",
+            "additionalCost": {
+                "type": "AdditionalAtom",
+                "atom": {
+                    "type": "AtomVariablePermanents",
+                    "filter": "creature",
+                    "minCount": 0,
+                    "excludeSelf": false,
+                    "action": "TAP",
+                    "xMeasure": "TOTAL_POWER",
+                    "minMeasure": 1
+                }
+            },
+            "displayPrefix": "Teamwork 1",
+            "keyword": "TEAMWORK",
+            "declaredSlot": "TEAMWORK"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GrantKeyword",
+                    "keyword": "DOUBLE_STRIKE",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.WhenCondition",
+                        "condition": {
+                            "type": "CastChoiceMade",
+                            "slot": "TEAMWORK"
+                        }
+                    },
+                    "then": {
+                        "type": "GrantKeyword",
+                        "keyword": "TRAMPLE",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target creature"
+                        }
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target creature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "155",
+        "rarity": "UNCOMMON",
+        "artist": "Jake Murray",
+        "flavorText": "\"Most of my trick arrows don't talk this much.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/b/db1c7a71-3d01-4f2a-9b25-2a19bb0d1a56.jpg?1783902925"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 

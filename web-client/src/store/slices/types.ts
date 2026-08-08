@@ -87,6 +87,15 @@ export interface TargetingState {
   isSacrificeSelection?: boolean
   /** If set, this targeting phase is for tapping permanents as a cost */
   isTapPermanentSelection?: boolean
+  /**
+   * Teamwork N (CR 702.194a) and any other `TapForTotalPower` cost: the selection is complete
+   * once the chosen permanents' combined power reaches this number, however many that takes —
+   * so `minTargets`/`maxTargets` don't gate confirm, this does. Powers come from the server in
+   * `powerByEntityId`; the client never derives them (rules stay server-side).
+   */
+  requiredTotalPower?: number
+  /** Server-supplied projected power per selectable entity, for `requiredTotalPower` progress. */
+  powerByEntityId?: Readonly<Record<EntityId, number>>
   /** If set, this targeting phase is for discarding cards as a cost */
   isDiscardSelection?: boolean
   /** If set, this targeting phase is for revealing cards from hand as a cost */

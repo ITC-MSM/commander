@@ -1052,6 +1052,10 @@ class ClientStateTransformer(
                 declared?.keyword == Keyword.OFFSPRING -> "Offspring"
                 slot == com.wingedsheep.sdk.scripting.ChoiceSlot.BARGAINED -> "Bargained"
                 slot == com.wingedsheep.sdk.scripting.ChoiceSlot.KICKED -> "Kicked"
+                // Teamwork prints its N, so the badge is the keyword's own prefix ("Teamwork 2")
+                // rather than the bare slot name (CR 702.194b — "cast using teamwork").
+                slot == com.wingedsheep.sdk.scripting.ChoiceSlot.TEAMWORK ->
+                    declared?.displayPrefix ?: "Teamwork"
                 else -> slot.name.lowercase().replaceFirstChar { it.uppercase() }
             }
         }

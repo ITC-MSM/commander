@@ -1,0 +1,482 @@
+package com.wingedsheep.engine.scenarios
+
+import com.wingedsheep.engine.state.components.battlefield.TappedComponent
+import com.wingedsheep.engine.support.ScenarioTestBase
+import com.wingedsheep.sdk.core.ManaCost
+import com.wingedsheep.sdk.core.Phase
+import com.wingedsheep.sdk.core.Step
+import com.wingedsheep.sdk.dsl.Conditions
+import com.wingedsheep.sdk.dsl.Effects
+import com.wingedsheep.sdk.dsl.Triggers
+import com.wingedsheep.sdk.dsl.card
+import com.wingedsheep.sdk.dsl.teamwork
+import com.wingedsheep.sdk.model.EntityId
+import com.wingedsheep.sdk.scripting.ChoiceSlot
+import com.wingedsheep.sdk.scripting.KeywordAbility
+import com.wingedsheep.sdk.scripting.conditions.WasKicked
+import com.wingedsheep.sdk.scripting.effects.ConditionalEffect
+import com.wingedsheep.sdk.scripting.events.SpellCastPredicate
+import com.wingedsheep.sdk.scripting.targets.EffectTarget
+import com.wingedsheep.sdk.scripting.targets.TargetCreature
+import io.kotest.matchers.collections.shouldContain
+import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.shouldBe
+
+/**
+ * Teamwork N (CR 702.194, Marvel Super Heroes) end to end.
+ *
+ * "Teamwork N" is a static ability functioning while the spell is on the stack: "As an additional
+ * cost to cast this spell, you may tap any number of creatures you control with total power N or
+ * more" (702.194a, following 601.2b and 601.2f–h). Declaring that intention means the spell was
+ * cast *using teamwork* (702.194b) — the fact the card's own riders branch on.
+ *
+ * The mechanic rides the shared optional-additional-cost rail
+ * ([KeywordAbility.OptionalAdditionalCost]) under its own [ChoiceSlot.TEAMWORK], so these tests pin
+ * both halves: that the selection behaves like the crew payment it reuses (untapped only, projected
+ * power, summoning sickness irrelevant), and that "cast using teamwork" stays a *separate* fact
+ * from "kicked".
+ */
+class TeamworkMechanicScenarioTest : ScenarioTestBase() {
+
+    // --- Board pieces ---------------------------------------------------------------------------
+
+    /** 1/1 — two of these are needed to reach a teamwork 2 threshold. */
+    private val testScout = card("Test Scout") {
+        manaCost = "{W}"
+        typeLine = "Creature — Human Scout"
+        power = 1
+        toughness = 1
+    }
+
+    /** 3/3 — clears a teamwork 2 threshold alone. */
+    private val testBruiser = card("Test Bruiser") {
+        manaCost = "{2}{W}"
+        typeLine = "Creature — Human Soldier"
+        power = 3
+        toughness = 3
+    }
+
+    /** 0/4: never contributes power, so it can't pay a teamwork cost by itself. */
+    private val testWall = card("Test Wall") {
+        manaCost = "{1}"
+        typeLine = "Creature — Wall"
+        power = 0
+        toughness = 4
+    }
+
+    /** A lord, so a teamwork threshold has to be measured against *projected* power. */
+    private val testCaptain = card("Test Captain") {
+        manaCost = "{2}{W}"
+        typeLine = "Creature — Human Soldier"
+        power = 1
+        toughness = 1
+        oracleText = "Other creatures you control get +1/+1."
+        staticAbility {
+            ability = com.wingedsheep.sdk.scripting.ModifyStats(
+                powerBonus = 1,
+                toughnessBonus = 1,
+                filter = com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
+                    .OtherCreaturesYouControl,
+            )
+        }
+    }
+
+    // --- Cards under test -----------------------------------------------------------------------
+
+    /** Helicarrier Strike's shape: a rider read off the spell while it's still on the stack. */
+    private val teamworkBolt = card("Teamwork Bolt") {
+        manaCost = "{R}"
+        typeLine = "Instant"
+        oracleText = "Teamwork 2 (As an additional cost to cast this spell, you may tap any " +
+            "number of creatures you control with total power 2 or more.)\n" +
+            "Teamwork Bolt deals 2 damage to target creature. If this spell was cast using " +
+            "teamwork, it deals 4 damage to that creature instead."
+        teamwork(2)
+        spell {
+            val damaged = target("target creature", TargetCreature())
+            effect = Effects.DealDamage(
+                com.wingedsheep.sdk.scripting.values.DynamicAmount.Conditional(
+                    condition = Conditions.TeamworkWasPaid,
+                    ifTrue = com.wingedsheep.sdk.scripting.values.DynamicAmount.Fixed(4),
+                    ifFalse = com.wingedsheep.sdk.scripting.values.DynamicAmount.Fixed(2),
+                ),
+                damaged,
+            )
+        }
+    }
+
+    /** The permanent shape: the declaration must survive onto the resolving permanent. */
+    private val teamworkBear = card("Teamwork Bear") {
+        manaCost = "{1}{G}"
+        typeLine = "Creature — Bear"
+        power = 2
+        toughness = 2
+        oracleText = "Teamwork 2 (As an additional cost to cast this spell, you may tap any " +
+            "number of creatures you control with total power 2 or more.)\n" +
+            "When this creature enters, if it was cast using teamwork, put two +1/+1 counters on it."
+        teamwork(2)
+        triggeredAbility {
+            trigger = Triggers.EntersBattlefield
+            triggerCondition = Conditions.TeamworkWasPaid
+            effect = Effects.AddCounters("+1/+1", 2, EffectTarget.Self)
+        }
+    }
+
+    /** A kicker card on the same rail — the control for "kicked and teamwork are different facts". */
+    private val kickerBear = card("Kicker Bear") {
+        manaCost = "{1}{G}"
+        typeLine = "Creature — Bear"
+        power = 2
+        toughness = 2
+        oracleText = "Kicker {1}\nWhen this creature enters, if it was kicked, put two +1/+1 " +
+            "counters on it."
+        keywordAbility(KeywordAbility.OptionalAdditionalCost(ManaCost.parse("{1}")))
+        triggeredAbility {
+            trigger = Triggers.EntersBattlefield
+            triggerCondition = WasKicked
+            effect = Effects.AddCounters("+1/+1", 2, EffectTarget.Self)
+        }
+    }
+
+    /** "Whenever you cast a kicked spell, …" — must NOT see a teamwork spell (CR 702.194b). */
+    private val kickedWatcher = card("Kicked Watcher") {
+        manaCost = "{W}"
+        typeLine = "Creature — Human"
+        power = 1
+        toughness = 1
+        oracleText = "Whenever you cast a kicked spell, you gain 3 life."
+        triggeredAbility {
+            trigger = Triggers.youCastSpell(requires = setOf(SpellCastPredicate.WasKicked))
+            effect = Effects.GainLife(3)
+        }
+    }
+
+    private fun com.wingedsheep.engine.state.GameState.isTapped(id: EntityId): Boolean =
+        getEntity(id)?.has<TappedComponent>() == true
+
+    init {
+        cardRegistry.register(testScout)
+        cardRegistry.register(testBruiser)
+        cardRegistry.register(testWall)
+        cardRegistry.register(testCaptain)
+        cardRegistry.register(teamworkBolt)
+        cardRegistry.register(teamworkBear)
+        cardRegistry.register(kickerBear)
+        cardRegistry.register(kickedWatcher)
+
+        // -----------------------------------------------------------------------------------
+        // CR 702.194a — the optional additional cost and what may pay it
+        // -----------------------------------------------------------------------------------
+
+        test("several creatures may combine to clear the threshold, and all of them tap") {
+            val game = scenario()
+                .withPlayers("Caster", "Opponent")
+                .withCardInHand(1, "Teamwork Bolt")
+                .withCardOnBattlefield(1, "Test Scout")
+                .withCardOnBattlefield(1, "Test Scout")
+                .withCardOnBattlefield(2, "Test Wall")
+                .withLandsOnBattlefield(1, "Mountain", 1)
+                .withActivePlayer(1)
+                .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                .build()
+
+            val scouts = game.findPermanents("Test Scout")
+            scouts.size shouldBe 2
+            val wall = game.findPermanent("Test Wall").shouldNotBeNull()
+
+            game.castSpellWithTeamwork(1, "Teamwork Bolt", "Test Scout", "Test Scout", targetId = wall)
+                .error shouldBe null
+            // Both 1/1s are tapped the moment the cost is paid, before the spell resolves.
+            scouts.forEach { game.state.isTapped(it) shouldBe true }
+
+            game.resolveStack()
+            // 4 damage, not 2 — the 0/4 wall dies.
+            game.isOnBattlefield("Test Wall") shouldBe false
+        }
+
+        test("one big creature may clear the threshold alone") {
+            val game = scenario()
+                .withPlayers("Caster", "Opponent")
+                .withCardInHand(1, "Teamwork Bolt")
+                .withCardOnBattlefield(1, "Test Bruiser")
+                .withCardOnBattlefield(2, "Test Wall")
+                .withLandsOnBattlefield(1, "Mountain", 1)
+                .withActivePlayer(1)
+                .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                .build()
+
+            val wall = game.findPermanent("Test Wall").shouldNotBeNull()
+            game.castSpellWithTeamwork(1, "Teamwork Bolt", "Test Bruiser", targetId = wall)
+                .error shouldBe null
+            game.resolveStack()
+            game.isOnBattlefield("Test Wall") shouldBe false
+        }
+
+        test("declining the optional cost taps nothing and leaves the rider off") {
+            val game = scenario()
+                .withPlayers("Caster", "Opponent")
+                .withCardInHand(1, "Teamwork Bolt")
+                .withCardOnBattlefield(1, "Test Bruiser")
+                .withCardOnBattlefield(2, "Test Wall")
+                .withLandsOnBattlefield(1, "Mountain", 1)
+                .withActivePlayer(1)
+                .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                .build()
+
+            val bruiser = game.findPermanent("Test Bruiser").shouldNotBeNull()
+            val wall = game.findPermanent("Test Wall").shouldNotBeNull()
+
+            game.castSpell(1, "Teamwork Bolt", targetId = wall).error shouldBe null
+            game.state.isTapped(bruiser) shouldBe false
+            game.resolveStack()
+
+            // Only 2 damage — the 0/4 wall survives.
+            game.isOnBattlefield("Test Wall") shouldBe true
+            game.state.isTapped(bruiser) shouldBe false
+        }
+
+        test("a selection short of the threshold is rejected and nothing is tapped") {
+            val game = scenario()
+                .withPlayers("Caster", "Opponent")
+                .withCardInHand(1, "Teamwork Bolt")
+                .withCardOnBattlefield(1, "Test Scout")
+                .withCardOnBattlefield(2, "Test Wall")
+                .withLandsOnBattlefield(1, "Mountain", 1)
+                .withActivePlayer(1)
+                .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                .build()
+
+            val scout = game.findPermanent("Test Scout").shouldNotBeNull()
+            val wall = game.findPermanent("Test Wall").shouldNotBeNull()
+
+            // One 1/1 is total power 1 — short of teamwork 2.
+            game.castSpellWithTeamwork(1, "Teamwork Bolt", "Test Scout", targetId = wall)
+                .error.shouldNotBeNull()
+            game.state.isTapped(scout) shouldBe false
+            game.isInHand(1, "Teamwork Bolt") shouldBe true
+        }
+
+        test("an already-tapped creature can't pay the cost (CR 701.26a)") {
+            val game = scenario()
+                .withPlayers("Caster", "Opponent")
+                .withCardInHand(1, "Teamwork Bolt")
+                .withCardOnBattlefield(1, "Test Bruiser", tapped = true)
+                .withCardOnBattlefield(2, "Test Wall")
+                .withLandsOnBattlefield(1, "Mountain", 1)
+                .withActivePlayer(1)
+                .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                .build()
+
+            val wall = game.findPermanent("Test Wall").shouldNotBeNull()
+            game.castSpellWithTeamwork(1, "Teamwork Bolt", "Test Bruiser", targetId = wall)
+                .error.shouldNotBeNull()
+            game.isInHand(1, "Teamwork Bolt") shouldBe true
+        }
+
+        test("a creature you don't control can't pay the cost") {
+            val game = scenario()
+                .withPlayers("Caster", "Opponent")
+                .withCardInHand(1, "Teamwork Bolt")
+                .withCardOnBattlefield(2, "Test Bruiser")
+                .withCardOnBattlefield(2, "Test Wall")
+                .withLandsOnBattlefield(1, "Mountain", 1)
+                .withActivePlayer(1)
+                .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                .build()
+
+            val bruiser = game.findPermanent("Test Bruiser").shouldNotBeNull()
+            val wall = game.findPermanent("Test Wall").shouldNotBeNull()
+            val caster = game.player1Id
+            val cardId = game.state.getHand(caster).first()
+
+            game.execute(
+                com.wingedsheep.engine.core.CastSpell(
+                    playerId = caster,
+                    cardId = cardId,
+                    targets = listOf(
+                        com.wingedsheep.engine.state.components.stack.ChosenTarget.Permanent(wall)
+                    ),
+                    declaredCostSlot = ChoiceSlot.TEAMWORK,
+                    additionalCostPayment = com.wingedsheep.sdk.scripting.AdditionalCostPayment(
+                        variableCostPermanents = listOf(bruiser)
+                    ),
+                )
+            ).error.shouldNotBeNull()
+            game.state.isTapped(bruiser) shouldBe false
+        }
+
+        // -----------------------------------------------------------------------------------
+        // Projected power, and the summoning-sickness question (CR 302.6 vs a tap cost)
+        // -----------------------------------------------------------------------------------
+
+        test("a lord's bonus counts toward the threshold — the sum reads projected power") {
+            val game = scenario()
+                .withPlayers("Caster", "Opponent")
+                .withCardInHand(1, "Teamwork Bolt")
+                .withCardOnBattlefield(1, "Test Scout")   // 1/1 base, 2/2 under the captain
+                .withCardOnBattlefield(1, "Test Captain")
+                .withCardOnBattlefield(2, "Test Wall")
+                .withLandsOnBattlefield(1, "Mountain", 1)
+                .withActivePlayer(1)
+                .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                .build()
+
+            val scout = game.findPermanent("Test Scout").shouldNotBeNull()
+            game.state.projectedState.getPower(scout) shouldBe 2
+            val wall = game.findPermanent("Test Wall").shouldNotBeNull()
+
+            // The lone Scout is base power 1 but projected power 2 — enough for teamwork 2.
+            game.castSpellWithTeamwork(1, "Teamwork Bolt", "Test Scout", targetId = wall)
+                .error shouldBe null
+            game.resolveStack()
+            game.isOnBattlefield("Test Wall") shouldBe false
+        }
+
+        test("summoning sickness doesn't stop a creature paying a teamwork cost (crew's rule)") {
+            val game = scenario()
+                .withPlayers("Caster", "Opponent")
+                .withCardInHand(1, "Teamwork Bolt")
+                .withCardOnBattlefield(1, "Test Bruiser", summoningSickness = true, enteredThisTurn = true)
+                .withCardOnBattlefield(2, "Test Wall")
+                .withLandsOnBattlefield(1, "Mountain", 1)
+                .withActivePlayer(1)
+                .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                .build()
+
+            val bruiser = game.findPermanent("Test Bruiser").shouldNotBeNull()
+            val wall = game.findPermanent("Test Wall").shouldNotBeNull()
+
+            game.castSpellWithTeamwork(1, "Teamwork Bolt", "Test Bruiser", targetId = wall)
+                .error shouldBe null
+            game.state.isTapped(bruiser) shouldBe true
+            game.resolveStack()
+            game.isOnBattlefield("Test Wall") shouldBe false
+        }
+
+        // -----------------------------------------------------------------------------------
+        // CR 702.194b — the durable "cast using teamwork" fact
+        // -----------------------------------------------------------------------------------
+
+        test("the declaration survives onto the resolving permanent") {
+            val game = scenario()
+                .withPlayers("Caster", "Opponent")
+                .withCardInHand(1, "Teamwork Bear")
+                .withCardOnBattlefield(1, "Test Bruiser")
+                .withLandsOnBattlefield(1, "Forest", 2)
+                .withActivePlayer(1)
+                .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                .build()
+
+            game.castSpellWithTeamwork(1, "Teamwork Bear", "Test Bruiser").error shouldBe null
+            game.resolveStack()
+
+            val bear = game.findPermanent("Teamwork Bear").shouldNotBeNull()
+            val slots = game.state.getEntity(bear)
+                ?.get<com.wingedsheep.engine.state.components.battlefield.CastChoicesComponent>()
+                ?.chosen?.keys.orEmpty()
+            slots shouldContain ChoiceSlot.TEAMWORK
+            game.state.getEntity(bear)
+                ?.get<com.wingedsheep.engine.state.components.battlefield.CountersComponent>()
+                ?.getCount(com.wingedsheep.sdk.core.CounterType.PLUS_ONE_PLUS_ONE) shouldBe 2
+        }
+
+        test("without teamwork the intervening-if trigger never fires") {
+            val game = scenario()
+                .withPlayers("Caster", "Opponent")
+                .withCardInHand(1, "Teamwork Bear")
+                .withCardOnBattlefield(1, "Test Bruiser")
+                .withLandsOnBattlefield(1, "Forest", 2)
+                .withActivePlayer(1)
+                .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                .build()
+
+            game.castSpell(1, "Teamwork Bear").error shouldBe null
+            game.resolveStack()
+
+            val bear = game.findPermanent("Teamwork Bear").shouldNotBeNull()
+            val counters = game.state.getEntity(bear)
+                ?.get<com.wingedsheep.engine.state.components.battlefield.CountersComponent>()
+                ?.getCount(com.wingedsheep.sdk.core.CounterType.PLUS_ONE_PLUS_ONE) ?: 0
+            counters shouldBe 0
+        }
+
+        test("a teamwork spell is not a kicked spell, and a kicked spell is not teamwork") {
+            val game = scenario()
+                .withPlayers("Caster", "Opponent")
+                .withCardInHand(1, "Teamwork Bear")
+                .withCardOnBattlefield(1, "Test Bruiser")
+                .withCardOnBattlefield(1, "Kicked Watcher")
+                .withLandsOnBattlefield(1, "Forest", 4)
+                .withActivePlayer(1)
+                .withLifeTotal(1, 20)
+                .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                .build()
+
+            game.castSpellWithTeamwork(1, "Teamwork Bear", "Test Bruiser").error shouldBe null
+            game.resolveStack()
+
+            // "Whenever you cast a kicked spell" must not see the teamwork declaration.
+            game.state.lifeTotal(game.player1Id) shouldBe 20
+        }
+
+        test("declaring teamwork on a card without it is rejected") {
+            val game = scenario()
+                .withPlayers("Caster", "Opponent")
+                .withCardInHand(1, "Kicker Bear")
+                .withCardOnBattlefield(1, "Test Bruiser")
+                .withLandsOnBattlefield(1, "Forest", 4)
+                .withActivePlayer(1)
+                .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                .build()
+
+            game.castSpellWithTeamwork(1, "Kicker Bear", "Test Bruiser").error.shouldNotBeNull()
+            game.isInHand(1, "Kicker Bear") shouldBe true
+        }
+
+        // -----------------------------------------------------------------------------------
+        // Legal actions — the cast variant the client renders
+        // -----------------------------------------------------------------------------------
+
+        test("the teamwork cast variant advertises the candidates and the power threshold") {
+            val game = scenario()
+                .withPlayers("Caster", "Opponent")
+                .withCardInHand(1, "Teamwork Bolt")
+                .withCardOnBattlefield(1, "Test Scout")
+                .withCardOnBattlefield(1, "Test Bruiser", tapped = true)
+                .withCardOnBattlefield(2, "Test Wall")
+                .withLandsOnBattlefield(1, "Mountain", 1)
+                .withActivePlayer(1)
+                .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                .build()
+
+            val teamworkCast = game.getLegalActions(1)
+                .firstOrNull { it.additionalCostInfo?.costType == "TapForTotalPower" }
+                .shouldNotBeNull()
+
+            teamworkCast.additionalCostInfo!!.tapForPowerRequired shouldBe 2
+            // The tapped Bruiser is not a candidate; the untapped Scout is.
+            teamworkCast.additionalCostInfo!!.tapForPowerCreatures.map { it.name } shouldBe
+                listOf("Test Scout")
+            // Total available power (1) is short of 2, so the variant is offered unaffordable.
+            teamworkCast.isAffordable shouldBe false
+        }
+
+        test("the teamwork cast variant is affordable once the board can reach the threshold") {
+            val game = scenario()
+                .withPlayers("Caster", "Opponent")
+                .withCardInHand(1, "Teamwork Bolt")
+                .withCardOnBattlefield(1, "Test Bruiser")
+                .withCardOnBattlefield(2, "Test Wall")
+                .withLandsOnBattlefield(1, "Mountain", 1)
+                .withActivePlayer(1)
+                .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                .build()
+
+            val teamworkCast = game.getLegalActions(1)
+                .firstOrNull { it.additionalCostInfo?.costType == "TapForTotalPower" }
+                .shouldNotBeNull()
+            teamworkCast.isAffordable shouldBe true
+            teamworkCast.description shouldBe "Cast Teamwork Bolt (Teamwork 2)"
+        }
+    }
+}

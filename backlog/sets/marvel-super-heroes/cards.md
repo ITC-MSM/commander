@@ -3,7 +3,7 @@
 **Set Size:** 276 booster cards (collector numbers 1-276; basic lands 277-296 and showcase
 variants 297+ are excluded)
 **Release Date:** June 26, 2026
-**Implemented:** 227 / 276
+**Implemented:** 230 / 276
 - [x] Agent 13, Sharon Carter
 - [ ] Agent Maria Hill
 - [x] Agent of Atlas
@@ -18,7 +18,7 @@ variants 297+ are excluded)
 - [ ] Captain Mar-Vell, Space-Born
 - [x] Colleen Wing, Street Samurai
 - [x] Crowd of True Believers
-- [ ] Helicarrier Strike
+- [x] Helicarrier Strike
 - [x] Hero in Training
 - [ ] Invisible Woman, Sue Storm
 - [x] Jennifer Walters // The Sensational She-Hulk
@@ -153,12 +153,12 @@ variants 297+ are excluded)
 - [x] Photon Blast Barrage
 - [x] Quicksilver, Brash Blur
 - [x] Red Hulk
-- [ ] Repulsor Blast
+- [x] Repulsor Blast
 - [ ] The Scarlet Witch
 - [x] Speed, Young Avenger
 - [x] Stark Industries Executive
 - [x] Super Speed
-- [ ] Team Tactics
+- [x] Team Tactics
 - [x] Thor, God of Thunder
 - [x] Truck Toss
 - [x] Vision of Love

@@ -77,6 +77,12 @@ export interface AdditionalCostPayment {
   readonly blightAmount?: number
   /** X chosen for `AdditionalCost.PayXLife` (e.g., Vicious Rivalry). */
   readonly payXLifeAmount?: number
+  /**
+   * Permanents chosen for a variable-count permanent cost — the payer decides how many
+   * (`CostAtom.VariablePermanents`). Carries the creatures tapped to pay a Teamwork N cost
+   * (CR 702.194a).
+   */
+  readonly variableCostPermanents?: readonly EntityId[]
 }
 
 export interface AlternativePaymentChoice {

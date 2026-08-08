@@ -350,9 +350,10 @@ sealed interface KeywordAbility {
             }
         }
         override val description: String = when {
-            // Bargain's cost is definitional (CR 702.166a), so the printed text is the bare keyword
-            // — never "Bargain—sacrifice …". The reminder text belongs to the card's `oracleText`.
-            declaredSlot == ChoiceSlot.BARGAINED -> displayPrefix
+            // Bargain's and Teamwork's costs are definitional (CR 702.166a / 702.194a), so the
+            // printed text is the bare keyword — never "Bargain—sacrifice …" / "Teamwork 2—tap …".
+            // The reminder text belongs to the card's `oracleText`.
+            declaredSlot == ChoiceSlot.BARGAINED || declaredSlot == ChoiceSlot.TEAMWORK -> displayPrefix
             // Collect evidence is a keyword *action*, not a keyword ability, so it has no keyword
             // label to hang a "Prefix—cost" shape on: the cards print the additional cost in full
             // (CR 701.59, "As an additional cost to cast this spell, you may collect evidence 6").

@@ -884,6 +884,28 @@ object Conditions {
         CastChoiceMadeCondition(com.wingedsheep.sdk.scripting.ChoiceSlot.EVIDENCE_COLLECTED)
 
     /**
+     * If this spell was cast **using teamwork** (CR 702.194b, Marvel Super Heroes) — its optional
+     * "tap any number of creatures you control with total power N or more" additional cost was
+     * declared as it was cast.
+     *
+     * A facade over the durable choice-slot read ([com.wingedsheep.sdk.scripting.ChoiceSlot.TEAMWORK]),
+     * so teamwork needs no condition type of its own. Works in both directions of the mechanic:
+     * - on a **spell**, as a rider inside the spell's own effect ("If this spell was cast using
+     *   teamwork, it deals 4 damage to that creature instead"), read from the declaration the
+     *   spell carries on the stack;
+     * - on a **permanent**, as an intervening-if on an enters-the-battlefield trigger, read from
+     *   the flag stamped durably on the permanent as it resolved;
+     * - as the condition of a `DynamicAmount.Conditional` feeding a modal's `dynamicChooseCount`,
+     *   for "choose one; if this spell was cast using teamwork, choose both instead" (CR 702.194c).
+     *
+     * Never true for a merely *kicked* or *bargained* spell: the three are separate facts riding
+     * separate slots on the shared optional-additional-cost rail. Pairs with the `teamwork(n)` DSL
+     * helper on [CardBuilder].
+     */
+    val TeamworkWasPaid: ConditionInterface =
+        CastChoiceMadeCondition(com.wingedsheep.sdk.scripting.ChoiceSlot.TEAMWORK)
+
+    /**
      * If this spell's sneak cost was paid (CR 702.190 — [com.wingedsheep.sdk.scripting.KeywordAbility.Sneak]).
      * Used for riders like Leonardo, Leader in Blue and The Last Ronin's Technique whose
      * effect changes when the spell was cast for its sneak cost.

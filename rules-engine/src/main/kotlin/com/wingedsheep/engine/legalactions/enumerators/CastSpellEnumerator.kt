@@ -8,8 +8,10 @@ import com.wingedsheep.engine.legalactions.EnumerationContext
 import com.wingedsheep.engine.legalactions.LegalAction
 import com.wingedsheep.engine.legalactions.ModalEnumerationMode
 import com.wingedsheep.engine.legalactions.ModalLegalEnumeration
+import com.wingedsheep.engine.legalactions.TapForPowerCreatureData
 import com.wingedsheep.engine.legalactions.TargetInfo
 import com.wingedsheep.engine.legalactions.utils.SelectionCostPresentation
+import com.wingedsheep.engine.mechanics.cost.VariablePermanentsCost
 import com.wingedsheep.engine.mechanics.EscalateCosts
 import com.wingedsheep.engine.mechanics.ModalDfcCasts
 import com.wingedsheep.engine.mechanics.SpliceCasts
@@ -2021,6 +2023,30 @@ class CastSpellEnumerator : ActionEnumerator {
                                 if (info == null) canPayKickerAdditionalCost = false
                                 else kickerCostInfo = info
                             }
+                            // "Tap any number of creatures you control with total power N or more"
+                            // — Teamwork N (CR 702.194a). The candidate pool and the threshold are
+                            // the crew/saddle payload; the caster's chosen ids come back as
+                            // `additionalCostPayment.variableCostPermanents`.
+                            is CostAtom.VariablePermanents -> {
+                                val projected = state.projectedState
+                                val candidates = VariablePermanentsCost.candidates(state, playerId, atom)
+                                // The cost info is published even when the threshold is out of
+                                // reach, so the greyed-out variant still tells the player what
+                                // teamwork would ask for; affordability is the separate flag.
+                                canPayKickerAdditionalCost = VariablePermanentsCost.canPay(state, playerId, atom)
+                                kickerCostInfo = AdditionalCostData(
+                                    description = atom.description.replaceFirstChar { it.uppercase() },
+                                    costType = "TapForTotalPower",
+                                    tapForPowerRequired = atom.minMeasure,
+                                    tapForPowerCreatures = candidates.map { creatureId ->
+                                        TapForPowerCreatureData(
+                                            entityId = creatureId,
+                                            name = state.getEntity(creatureId)?.get<CardComponent>()?.name ?: "Unknown",
+                                            power = projected.getPower(creatureId) ?: 0
+                                        )
+                                    }
+                                )
+                            }
                             else -> {}
                         }
                         is AdditionalCost.Behold -> {
@@ -2073,6 +2099,9 @@ class CastSpellEnumerator : ActionEnumerator {
                     // "Evidence" would not (CR 701.59).
                     declaredSlot == ChoiceSlot.EVIDENCE_COLLECTED ->
                         collectEvidenceAmount?.let { "Collect evidence $it" } ?: "Collect evidence"
+                    // Teamwork prints its N, so the variant reads "Cast X (Teamwork 2)".
+                    declaredSlot == ChoiceSlot.TEAMWORK ->
+                        additionalCostKicker?.displayPrefix ?: "Teamwork"
                     offspringAbility != null -> "Offspring"
                     flashKicker -> "with Flash"
                     else -> "Kicked"

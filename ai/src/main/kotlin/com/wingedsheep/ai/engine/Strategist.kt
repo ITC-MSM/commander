@@ -775,6 +775,20 @@ class Strategist(
             )
             "BouncePermanent" -> existing.copy(bouncedPermanents = info.validBounceTargets.take(info.bounceCount))
             "ExileFromGraveyard" -> existing.copy(exiledCards = info.validExileTargets.take(info.exileMinCount))
+            // Teamwork N (CR 702.194a): tap as *few* creatures as will clear the total-power
+            // threshold, biggest first, so the fewest bodies are turned sideways.
+            "TapForTotalPower" -> {
+                val chosen = mutableListOf<EntityId>()
+                var total = 0
+                for (creature in info.tapForPowerCreatures.sortedByDescending { it.power }) {
+                    if (total >= info.tapForPowerRequired) break
+                    if (creature.power <= 0) continue
+                    chosen += creature.entityId
+                    total += creature.power
+                }
+                if (total < info.tapForPowerRequired) return gameAction
+                existing.copy(variableCostPermanents = chosen)
+            }
             else -> return gameAction
         }
         return when (gameAction) {

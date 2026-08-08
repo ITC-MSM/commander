@@ -1114,6 +1114,15 @@ export interface AdditionalCostInfo {
   readonly craftMinCount?: number
   /** Cap on material count for exact-count crafts ("Craft with artifact"); absent = unbounded. */
   readonly craftMaxCount?: number
+  /**
+   * `TapForTotalPower` cost (Teamwork N, CR 702.194a): the creatures that may be tapped and their
+   * server-computed (projected) power. How *many* are chosen is free — the constraint is that
+   * their total power reaches `tapForPowerRequired`. Chosen ids are submitted as
+   * `additionalCostPayment.variableCostPermanents`.
+   */
+  readonly tapForPowerCreatures?: readonly TapForPowerCreatureInfo[]
+  /** Total power the `tapForPowerCreatures` selection must reach. */
+  readonly tapForPowerRequired?: number
 }
 
 export interface CounterRemovalCreatureInfo {

@@ -1583,6 +1583,48 @@ abstract class ScenarioTestBase : FunSpec() {
          * @param xValue The value chosen for `{X}` on a bargained X spell (Stonesplitter Bolt);
          *   leave `null` for spells with no `{X}` in their cost
          */
+        /**
+         * Cast [spellName] declaring its **teamwork** cost (CR 702.194a), tapping the named
+         * creatures to pay it. Names are resolved on the caster's battlefield in order; repeat a
+         * name to tap two copies of it.
+         */
+        fun castSpellWithTeamwork(
+            playerNumber: Int,
+            spellName: String,
+            vararg tapNames: String,
+            targetId: EntityId? = null,
+            xValue: Int? = null,
+        ): ExecutionResult {
+            val playerId = if (playerNumber == 1) player1Id else player2Id
+            val cardId = state.getHand(playerId).find { entityId ->
+                state.getEntity(entityId)?.get<CardComponent>()?.name == spellName
+            } ?: error("Card '$spellName' not found in player $playerNumber's hand")
+
+            val used = mutableSetOf<EntityId>()
+            val tapped = tapNames.map { name ->
+                state.getBattlefield().find { entityId ->
+                    if (entityId in used) return@find false
+                    val container = state.getEntity(entityId) ?: return@find false
+                    container.get<CardComponent>()?.name == name &&
+                        container.get<ControllerComponent>()?.playerId == playerId
+                }?.also(used::add)
+                    ?: error("Permanent '$name' not found on player $playerNumber's battlefield")
+            }
+
+            return execute(
+                CastSpell(
+                    playerId = playerId,
+                    cardId = cardId,
+                    targets = targetId?.let { listOf(ChosenTarget.Permanent(it)) } ?: emptyList(),
+                    xValue = xValue,
+                    declaredCostSlot = com.wingedsheep.sdk.scripting.ChoiceSlot.TEAMWORK,
+                    additionalCostPayment = com.wingedsheep.sdk.scripting.AdditionalCostPayment(
+                        variableCostPermanents = tapped
+                    ),
+                )
+            )
+        }
+
         fun castSpellBargained(
             playerNumber: Int,
             spellName: String,

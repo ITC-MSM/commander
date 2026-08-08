@@ -520,7 +520,17 @@ export function TargetingOverlay() {
   const selectedCount = targetingState.selectedTargets.length
   const minTargets = targetingState.minTargets
   const maxTargets = targetingState.maxTargets
-  const hasEnoughTargets = selectedCount >= minTargets
+  // Teamwork N (CR 702.194a) and any other "tap any number … with total power N or more" cost:
+  // how many permanents are picked is free, so the confirm gate is the summed power the server
+  // sent with the candidates — never a client-derived one.
+  const requiredTotalPower = targetingState.requiredTotalPower ?? 0
+  const selectedTotalPower = targetingState.selectedTargets.reduce(
+    (sum, id) => sum + (targetingState.powerByEntityId?.[id] ?? 0),
+    0,
+  )
+  const hasEnoughTargets = requiredTotalPower > 0
+    ? selectedTotalPower >= requiredTotalPower
+    : selectedCount >= minTargets
   const hasMaxTargets = selectedCount >= maxTargets
   const canGoBack = (targetingState.previousRequirementStates?.length ?? 0) > 0
   const isSacrifice = targetingState.isSacrificeSelection
@@ -569,10 +579,12 @@ export function TargetingOverlay() {
     )
   }
 
-  // Build the target count display
-  const targetDisplay = minTargets === maxTargets
-    ? `${selectedCount}/${maxTargets}`
-    : `${selectedCount} (${minTargets}-${maxTargets})`
+  // Build the target count display. A total-power cost counts power, not permanents.
+  const targetDisplay = requiredTotalPower > 0
+    ? `power ${selectedTotalPower}/${requiredTotalPower}`
+    : minTargets === maxTargets
+      ? `${selectedCount}/${maxTargets}`
+      : `${selectedCount} (${minTargets}-${maxTargets})`
 
   // Multi-target step info
   const isMultiTarget = targetingState.totalRequirements && targetingState.totalRequirements > 1
@@ -590,7 +602,9 @@ export function TargetingOverlay() {
       : isReveal
         ? `Select card to reveal (${targetDisplay})`
         : isTapPermanent
-          ? `Select permanents to tap (${targetDisplay})`
+          ? requiredTotalPower > 0 && targetingState.targetDescription
+            ? `${targetingState.targetDescription.charAt(0).toUpperCase()}${targetingState.targetDescription.slice(1)} (${targetDisplay})`
+            : `Select permanents to tap (${targetDisplay})`
           : isBounce
             ? `Select ${targetingState.targetDescription ?? 'a creature to return to its owner’s hand'} (${targetDisplay})`
             : isSacrifice

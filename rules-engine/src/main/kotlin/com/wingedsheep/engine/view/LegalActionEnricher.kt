@@ -270,7 +270,9 @@ class LegalActionEnricher(
         distributedCounterRemovalTotal = distributedCounterRemovalTotal,
         validCraftMaterials = validCraftMaterials,
         craftMinCount = craftMinCount,
-        craftMaxCount = craftMaxCount
+        craftMaxCount = craftMaxCount,
+        tapForPowerCreatures = tapForPowerCreatures.map { it.toDto() },
+        tapForPowerRequired = tapForPowerRequired
     )
 
     private fun ConvokeCreatureData.toDto() = ConvokeCreatureInfo(

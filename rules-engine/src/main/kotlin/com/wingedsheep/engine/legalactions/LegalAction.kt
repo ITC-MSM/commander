@@ -396,7 +396,20 @@ data class AdditionalCostData(
     val validCraftMaterials: List<EntityId> = emptyList(),
     val craftMinCount: Int = 1,
     /** Cap on material count for exact-count crafts ("Craft with artifact"); null = unbounded. */
-    val craftMaxCount: Int? = null
+    val craftMaxCount: Int? = null,
+
+    /**
+     * Candidate creatures for a `TapForTotalPower` cost — "tap any number of creatures you control
+     * with total power N or more" (Teamwork N, CR 702.194a), where the count is free and the
+     * *sum of projected power* is the constraint. The same payload crew and saddle advertise
+     * through [LegalAction.tapForPowerCreatures], reused here so the client can price a selection
+     * without re-deriving power (rules stay server-side).
+     *
+     * Chosen ids are submitted as `CastSpell.additionalCostPayment.variableCostPermanents`.
+     */
+    val tapForPowerCreatures: List<TapForPowerCreatureData> = emptyList(),
+    /** Total projected power the [tapForPowerCreatures] selection must reach. 0 = no such cost. */
+    val tapForPowerRequired: Int = 0
 )
 
 /**
