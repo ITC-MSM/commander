@@ -1537,21 +1537,48 @@ class TriggerProcessor(
      * spending gate simply wraps the effect.
      */
     private fun withEffectBudgetGate(ability: TriggeredAbility): TriggeredAbility {
-        val effect = ability.effect
-        val consentGated = (effect as? GatedEffect)
-            ?.takeIf { it.gate is Gate.MayDecide || it.gate is Gate.MayPay || it.gate is Gate.MayPayX }
-        val newEffect = if (consentGated != null) {
-            GatedEffect(
-                gate = Gate.OnceEachTurn(ability.id, spend = false),
-                then = consentGated.copy(
-                    then = GatedEffect(gate = Gate.OnceEachTurn(ability.id), then = consentGated.then)
-                )
-            )
+        val spending = withSpendingGate(ability.effect, ability.id)
+        val newEffect = if (spending != null) {
+            GatedEffect(gate = Gate.OnceEachTurn(ability.id, spend = false), then = spending)
         } else {
-            GatedEffect(gate = Gate.OnceEachTurn(ability.id), then = effect)
+            GatedEffect(gate = Gate.OnceEachTurn(ability.id), then = ability.effect)
         }
         return ability.copy(effect = newEffect)
     }
+
+    /**
+     * Push the *spending* budget gate inside [effect]'s consent gate, or return null when there is
+     * no consent gate to put it inside (a mandatory ability — the caller then wraps the whole
+     * effect in a spending gate instead).
+     *
+     * The consent gate is not always at the top. Planetarium of Wan Shi Tong reads "look at the top
+     * card of your library. You may cast that card without paying its mana cost. Do this only once
+     * each turn", which is `Composite(look, May(cast))` — and its ruling is explicit that it is the
+     * *casting* that spends the turn ("once you choose to cast the top card of your library, the
+     * ability won't trigger again that turn"), not the looking. So the search descends the **tail**
+     * of a [CompositeEffect]: the payoff of a "do X, then you may Y" instruction is its last step,
+     * and that is the step the rider is attached to. A "may" buried anywhere else is not the
+     * payoff and is deliberately left alone.
+     */
+    private fun withSpendingGate(effect: Effect, abilityId: AbilityId): Effect? = when (effect) {
+        is GatedEffect ->
+            if (effect.gate.isConsentGate) {
+                effect.copy(then = GatedEffect(gate = Gate.OnceEachTurn(abilityId), then = effect.then))
+            } else {
+                null
+            }
+
+        is CompositeEffect ->
+            effect.effects.lastOrNull()
+                ?.let { withSpendingGate(it, abilityId) }
+                ?.let { effect.copy(effects = effect.effects.dropLast(1) + it) }
+
+        else -> null
+    }
+
+    /** Gates that represent the printed "you may" — the ones a budget must be spent *inside* of. */
+    private val Gate.isConsentGate: Boolean
+        get() = this is Gate.MayDecide || this is Gate.MayPay || this is Gate.MayPayX
 
     /**
      * Mark a once-per-turn triggered ability as fired on its source entity.

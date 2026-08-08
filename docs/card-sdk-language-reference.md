@@ -3662,16 +3662,13 @@ targets are chosen when the ability is put on the stack (CR 603.3d) and the "you
 resolution, one instance at a time. Second, capped abilities are excluded from the batched
 may-question — one shared yes/no would take away the choice of *which* instance to use.
 
-The lowering recognises a consent gate only at the **top** of `effect`. An `optional` ability whose
-"you may" is buried under a `CompositeEffect` or another wrapper gets the budget gate outside it, and
-declining would then spend the turn's use — keep the consent gate outermost.
-
-> **Known drift.** Seven cards shipped before this flag existed print "Do this only once each turn"
-> but are still on `oncePerTurn`, so declining burns the turn's fire on them:
-> `big/cards/AncientCornucopia.kt`, `tla/cards/EarthKingdomGeneral.kt`, `dsk/cards/IrreverentGremlin.kt`,
-> `ltr/cards/LegolasCounterOfKills.kt`, `tla/cards/PlanetariumOfWanShiTong.kt`, `spm/cards/SpiderVerse.kt`,
-> `eoe/cards/Terrasymbiosis.kt`. They are a known defect queued for a follow-up flag swap (one line
-> plus a test each), not counter-examples to the guidance above. New cards use `effectOncePerTurn`.
+The lowering looks for the consent gate at the **top** of `effect` or at the **tail** of a
+`CompositeEffect`. The tail case is "do X, then you may Y", where the rider attaches to the payoff:
+Planetarium of Wan Shi Tong is `Composite(look at the top card, May(cast it))`, and its ruling ties
+the turn's single use to the *cast* — "once you choose to cast the top card of your library, the
+ability won't trigger again that turn" — so looking and declining costs nothing. A "you may" sitting
+anywhere else (mid-composite, or under another wrapper) is not treated as the payoff: the budget gate
+goes outside it and declining would spend the turn's use. Keep the consent gate outermost or last.
 
 **`optional` = "you may [effect]"; `elseEffect` adds "If you don't, [elseEffect]."** For a
 **targeted** trigger, `optional` lets the player choose 0 targets to decline, and `elseEffect` runs
