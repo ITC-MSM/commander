@@ -93,6 +93,11 @@ class Strategist(
      * hands it to [com.wingedsheep.ai.engine.knowledge.RemovalPatience].
      */
     private val holdRemovalForBetterTargets: Boolean = false,
+    /**
+     * [AiProfile.holdCountersForBetterSpells] — passed straight through to [HoldPolicy], which
+     * hands it to [com.wingedsheep.ai.engine.knowledge.CounterPatience].
+     */
+    private val holdCountersForBetterSpells: Boolean = false,
     /** [AiProfile.cashCantripsInTheEndStep] — passed straight through to [HoldPolicy]. */
     private val cashCantripsInTheEndStep: Boolean = false,
     /**
@@ -118,6 +123,7 @@ class Strategist(
         intents,
         tricksWaitForBlocks = combatTricksWaitForBlocks,
         holdRemovalForBetterTargets = holdRemovalForBetterTargets,
+        holdCountersForBetterSpells = holdCountersForBetterSpells,
         cashCantripsInTheEndStep = cashCantripsInTheEndStep,
         boardPresenceWeight = boardPresenceWeight,
     )

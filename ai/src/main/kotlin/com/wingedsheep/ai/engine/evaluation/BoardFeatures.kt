@@ -339,7 +339,68 @@ object BoardPresence : BoardFeature {
         if (intent.anthemBonus <= 0) return intent.staticPriorValue
         val controller = projected.getController(entityId) ?: return intent.staticPriorValue
         val pumped = projected.getBattlefieldControlledBy(controller).count { projected.isCreature(it) }
-        return intent.staticPriorValue + ANTHEM_VALUE_PER_STAT * intent.anthemBonus * pumped
+        return intentValue(intent, pumped)
+    }
+
+    /**
+     * The same prior for a permanent that is not on the battlefield yet, where the creature count
+     * has to be supplied rather than read off the permanent's own controller.
+     *
+     * [spellValue] is the caller: an anthem *spell* is worth what it will pump, and that is the
+     * caster's board, counted before it resolves.
+     */
+    private fun intentValue(intent: CardIntent, pumpedCreatures: Int): Double =
+        intent.staticPriorValue + ANTHEM_VALUE_PER_STAT * intent.anthemBonus * pumpedCreatures
+
+    /**
+     * What a spell on the stack would be worth on the battlefield if it resolved, or **null** when
+     * that question does not apply — the spell is an instant or a sorcery, or it is a permanent this
+     * agent cannot read.
+     *
+     * A null is not "worth nothing", it is "not answerable this way", and the difference is the
+     * whole reason [com.wingedsheep.ai.engine.knowledge.CounterPatience] can exist: an instant's or
+     * a sorcery's worth *is* what it does to the board, which the leaf score already simulates, so
+     * there is nothing for a prior to add. A permanent spell is the opposite case — the leaf sees it
+     * only as one card leaving their hand, and what it will be once it lands is exactly the thing
+     * the counterspell is trading for.
+     *
+     * The valuation is [permanentValue]'s, minus the parts that need a battlefield: no counters, no
+     * summoning sickness, no marked damage, no attachment, and printed P/T and keywords rather than
+     * projected ones. What is deliberately *kept* is the anthem term, because "creatures you control
+     * get +1/+1" cast into an empty board and the same card cast into ten creatures are different
+     * cards, and countering the second one is the whole point.
+     *
+     * @param casterId whose board the spell would join — the anthem term's creature count.
+     */
+    internal fun spellValue(
+        projected: ProjectedState,
+        card: CardComponent,
+        casterId: EntityId,
+        intents: IntentCatalog,
+    ): Double? {
+        // Lands are played, not cast; a land "spell" is a face the AI should not be pricing here.
+        if (!card.isPermanent || card.isLand) return null
+
+        if (card.isCreature) {
+            val power = card.baseStats?.basePower ?: return null
+            val toughness = card.baseStats?.baseToughness ?: return null
+            val keywords = card.baseKeywords.mapTo(mutableSetOf()) { it.name }
+            return creatureBodyValue(power, toughness, keywords).coerceAtLeast(0.1)
+        }
+
+        val intent = intents.forName(card.name) ?: return null
+        val pumped = projected.getBattlefieldControlledBy(casterId).count { projected.isCreature(it) }
+        // One card, one reading — [priorValue]'s "baseline plus what each reading adds over it"
+        // collapses to a max when there is a single intent, and a Room is not castable as one spell.
+        val prior = maxOf(CardIntent.UNKNOWN.staticPriorValue, intentValue(intent, pumped))
+
+        // The same floors [permanentValue] applies, in the same order. A planeswalker's loyalty is
+        // its card's starting loyalty, which the stack object does not carry, so it gets the flat
+        // floor rather than the loyalty-scaled one; an Aura is priced as attached because resolving
+        // is what attaches it.
+        if (card.isPlaneswalker) return maxOf(4.0, prior)
+        if (card.isAura) return maxOf(1.5, prior)
+        return maxOf(0.5, prior)
     }
 
     /** Board value of one point of P/T an anthem hands to one creature. */
@@ -348,24 +409,24 @@ object BoardPresence : BoardFeature {
     /** Board value of one loyalty counter. Only reached with card knowledge on. */
     private const val LOYALTY_VALUE = 0.8
 
-    private fun creatureValue(
-        state: GameState,
-        projected: ProjectedState,
-        entityId: EntityId,
-        container: ComponentContainer,
-        valuation: CreatureValuation = CreatureValuation.LEGACY,
+    /**
+     * What a creature's **body** is worth — the half of [creatureValue] that reads only stats and
+     * keywords, and so is the same question whether the creature is on the battlefield or still a
+     * spell on the stack ([spellValue] is the other caller).
+     *
+     * The keyword bonuses scale with [power] rather than [settledPower] deliberately: a Giant Growth
+     * on a flier really is buying evasive damage right now, even though the stats it buys are gone
+     * at cleanup. Off the battlefield there are no temporary modifications, so the two coincide and
+     * the defaults are the printed numbers.
+     */
+    private fun creatureBodyValue(
+        power: Int,
+        toughness: Int,
+        keywords: Set<String>,
+        /** [power] and [toughness] with "until end of turn" modifications taken back off. */
+        settledPower: Int = power,
+        settledToughness: Int = toughness,
     ): Double {
-        val power = projected.getPower(entityId) ?: 0
-        val toughness = projected.getToughness(entityId) ?: 0
-        val keywords = projected.getKeywords(entityId)
-
-        // Discount temporary P/T modifications. "Until end of turn" effects expire
-        // at cleanup — evaluate using the permanent stats so killing a 2/2 with -2/-2
-        // scores better than merely shrinking a 2/3 (which recovers next turn).
-        val tempMod = temporaryPTModification(state, entityId)
-        val settledPower = (power - tempMod.first).coerceAtLeast(0)
-        val settledToughness = (toughness - tempMod.second).coerceAtLeast(0)
-
         // Base: power matters more than toughness for winning
         var value = settledPower * 1.0 + settledToughness * 0.4
 
@@ -397,12 +458,43 @@ object BoardPresence : BoardFeature {
         if (Keyword.PROTECTION.name in keywords) value += 1.0
 
         // ── Drawbacks ──
-        // "Can't attack", whether printed as DEFENDER or hung on the creature by a Pacifism, takes
-        // away the same thing: the power. [CreatureValuation.cantAttackCostsPower] is what makes the
-        // two spellings agree — see its KDoc for why the flat multiplier they used to disagree over
-        // is the wrong shape.
-        val cantAttack = Keyword.DEFENDER.name in keywords || projected.cantAttack(entityId)
-        if (Keyword.DEFENDER.name in keywords || (valuation.cantAttackCostsPower && cantAttack)) {
+        if (Keyword.DEFENDER.name in keywords) value -= power * 0.8 // can't attack, power mostly wasted
+
+        return value
+    }
+
+    private fun creatureValue(
+        state: GameState,
+        projected: ProjectedState,
+        entityId: EntityId,
+        container: ComponentContainer,
+        valuation: CreatureValuation = CreatureValuation.LEGACY,
+    ): Double {
+        val power = projected.getPower(entityId) ?: 0
+        val toughness = projected.getToughness(entityId) ?: 0
+        val keywords = projected.getKeywords(entityId)
+
+        // Discount temporary P/T modifications. "Until end of turn" effects expire
+        // at cleanup — evaluate using the permanent stats so killing a 2/2 with -2/-2
+        // scores better than merely shrinking a 2/3 (which recovers next turn).
+        val tempMod = temporaryPTModification(state, entityId)
+        val settledPower = (power - tempMod.first).coerceAtLeast(0)
+        val settledToughness = (toughness - tempMod.second).coerceAtLeast(0)
+
+        // Everything that is a property of the card's own body — stats, keywords, DEFENDER — is
+        // [creatureBodyValue]; everything below is a property of this permanent in this position.
+        var value = creatureBodyValue(power, toughness, keywords, settledPower, settledToughness)
+
+        // ── Drawbacks ──
+        // "Can't attack" hung on the creature by a Pacifism takes away the same thing DEFENDER
+        // does: the power. [CreatureValuation.cantAttackCostsPower] is what makes the two spellings
+        // agree — see its KDoc for why the flat multiplier they used to disagree over is the wrong
+        // shape. DEFENDER itself is already paid inside [creatureBodyValue]; this is the other
+        // spelling, and the guard is what keeps it from being charged twice.
+        if (valuation.cantAttackCostsPower &&
+            projected.cantAttack(entityId) &&
+            Keyword.DEFENDER.name !in keywords
+        ) {
             value -= power * 0.8 // can't attack, power mostly wasted
         }
 

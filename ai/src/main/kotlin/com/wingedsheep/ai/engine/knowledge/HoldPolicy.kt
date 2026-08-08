@@ -47,6 +47,12 @@ class HoldPolicy(
      */
     private val holdRemovalForBetterTargets: Boolean = false,
     /**
+     * [AiProfile.holdCountersForBetterSpells][com.wingedsheep.ai.engine.AiProfile.holdCountersForBetterSpells]
+     * — charge a counterspell for answering a spell smaller than what the caster can still deploy.
+     * See [CounterPatience].
+     */
+    private val holdCountersForBetterSpells: Boolean = false,
+    /**
      * [AiProfile.cashCantripsInTheEndStep][com.wingedsheep.ai.engine.AiProfile.cashCantripsInTheEndStep]
      * — hand an instant-speed draw spell the end-step window this policy already hands removal.
      */
@@ -95,18 +101,33 @@ class HoldPolicy(
         return TimingVerdict.Adjust(windowDelta - patience, reason = "patience")
     }
 
-    /** The patience discount for [cast], or `0.0` when the flag is off or the shape doesn't fit. */
+    /**
+     * The patience discount for [cast], or `0.0` when the flags are off or the shape doesn't fit.
+     *
+     * The two bars are summed rather than chosen between, which costs nothing: each declines on the
+     * other's shape — [RemovalPatience] wants a single opposing *permanent* target and
+     * [CounterPatience] a single opposing *spell* — so at most one of them is ever non-zero.
+     */
     private fun patienceFor(
         state: GameState,
         playerId: EntityId,
         intent: CardIntent,
         cast: CastSpell?,
     ): Double {
-        if (!holdRemovalForBetterTargets || cast == null) return 0.0
+        if (cast == null) return 0.0
         val card = state.getEntity(cast.cardId)?.get<CardComponent>() ?: return 0.0
-        return RemovalPatience.discount(
-            state, playerId, intent, card, cast.targets, boardPresenceWeight,
-        )
+
+        val removal = if (holdRemovalForBetterTargets) {
+            RemovalPatience.discount(state, playerId, intent, card, cast.targets, boardPresenceWeight)
+        } else {
+            0.0
+        }
+        val counter = if (holdCountersForBetterSpells) {
+            CounterPatience.discount(state, playerId, intent, cast.targets, intents, boardPresenceWeight)
+        } else {
+            0.0
+        }
+        return removal + counter
     }
 
     /** The window half — "is this the moment?", which only an instant-speed card can get wrong. */
