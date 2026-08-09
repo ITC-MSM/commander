@@ -643,6 +643,67 @@
     ]
 }
 
+// Disciple of the Vault
+{
+    "name": "Disciple of the Vault",
+    "manaCost": "{B}",
+    "typeLine": "Creature — Human Cleric",
+    "oracleText": "Whenever an artifact is put into a graveyard from the battlefield, you may have target opponent lose 1 life.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "artifact",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "LoseLife",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 1
+                        },
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target opponent"
+                        }
+                    },
+                    "descriptionOverride": "You may have target opponent lose 1 life"
+                },
+                "targetRequirement": {
+                    "type": "TargetOpponent",
+                    "id": "target opponent"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "62",
+        "artist": "Matt Thompson",
+        "flavorText": "He stands in the shadow of his lord, Geth, drinking in the dark energies of the Vault.",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/4/644359dc-3c4c-4291-876d-7390dc466877.jpg?1783944548",
+        "rulings": [
+            {
+                "date": "2020-08-07",
+                "text": "If an artifact is put into a graveyard at the same time as Disciple of the Vault, its ability triggers for that artifact."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Dross Prowler
 {
     "name": "Dross Prowler",
@@ -3361,6 +3422,42 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Rule of Law
+{
+    "name": "Rule of Law",
+    "manaCost": "{2}{W}",
+    "typeLine": "Enchantment",
+    "oracleText": "Each player can't cast more than one spell each turn.",
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "RestrictSpellsCastPerTurn",
+                "eachPlayer": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "19",
+        "rarity": "RARE",
+        "artist": "Scott M. Fischer",
+        "flavorText": "Appointed by the kha himself, members of the tribunal ensure all disputes are settled with the utmost fairness.",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/4/246a68e9-fd19-4a1e-8c7b-fcd3f7306dfb.jpg?1783944559",
+        "rulings": [
+            {
+                "date": "2019-07-12",
+                "text": "Rule of Law looks at the entire turn to see if a player has cast a spell, even if Rule of Law wasn't on the battlefield when that spell was cast. Notably, you can't cast Rule of Law and then cast another spell during the same turn."
+            },
+            {
+                "date": "2019-07-12",
+                "text": "If you cast a spell that was countered, you can't cast another spell during the same turn."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 

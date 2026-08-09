@@ -180,6 +180,12 @@ object Targets {
     val ArtifactOrLand: TargetRequirement = TargetPermanent(filter = TargetFilter.ArtifactOrLand)
 
     /**
+     * Target artifact, enchantment, or land (Creeping Mold).
+     */
+    val ArtifactEnchantmentOrLand: TargetRequirement =
+        TargetPermanent(filter = TargetFilter.ArtifactEnchantmentOrLand)
+
+    /**
      * Target land.
      */
     val Land: TargetRequirement = TargetPermanent(filter = TargetFilter.Land)

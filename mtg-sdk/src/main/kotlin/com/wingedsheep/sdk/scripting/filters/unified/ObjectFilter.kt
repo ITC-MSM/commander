@@ -215,6 +215,23 @@ data class GameObjectFilter(
                 CardPredicate.Or(listOf(CardPredicate.IsArtifact, CardPredicate.IsLand))
             )
         )
+
+        /**
+         * Artifact, enchantment, or land — the "flexible Naturalize" target family
+         * (Creeping Mold, Fade from History). Sits alongside [ArtifactOrEnchantment]
+         * and [ArtifactOrLand] as the third member of the same union family.
+         */
+        val ArtifactEnchantmentOrLand = GameObjectFilter(
+            cardPredicates = listOf(
+                CardPredicate.Or(
+                    listOf(
+                        CardPredicate.IsArtifact,
+                        CardPredicate.IsEnchantment,
+                        CardPredicate.IsLand,
+                    )
+                )
+            )
+        )
         val ArtifactCreature = GameObjectFilter(
             cardPredicates = listOf(CardPredicate.IsArtifact, CardPredicate.IsCreature)
         )

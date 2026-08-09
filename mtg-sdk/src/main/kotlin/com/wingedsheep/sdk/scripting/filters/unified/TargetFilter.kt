@@ -186,6 +186,10 @@ data class TargetFilter(
         /** Target artifact or land */
         val ArtifactOrLand = TargetFilter(GameObjectFilter.Companion.ArtifactOrLand)
 
+        /** Target artifact, enchantment, or land (Creeping Mold) */
+        val ArtifactEnchantmentOrLand =
+            TargetFilter(GameObjectFilter.Companion.ArtifactEnchantmentOrLand)
+
         /** Target land */
         val Land = TargetFilter(GameObjectFilter.Companion.Land)
 
