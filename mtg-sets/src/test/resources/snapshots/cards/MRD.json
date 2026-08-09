@@ -586,6 +586,59 @@
     ]
 }
 
+// Electrostatic Bolt
+{
+    "name": "Electrostatic Bolt",
+    "manaCost": "{R}",
+    "typeLine": "Instant",
+    "oracleText": "Electrostatic Bolt deals 2 damage to target creature. If it's an artifact creature, Electrostatic Bolt deals 4 damage to it instead.",
+    "script": {
+        "spellEffect": {
+            "type": "DealDamage",
+            "amount": {
+                "type": "Conditional",
+                "condition": {
+                    "type": "EntityMatches",
+                    "entity": {
+                        "type": "ContextTarget",
+                        "index": 0
+                    },
+                    "filter": "artifact creature"
+                },
+                "ifTrue": {
+                    "type": "Fixed",
+                    "amount": 4
+                },
+                "ifFalse": {
+                    "type": "Fixed",
+                    "amount": 2
+                }
+            },
+            "target": {
+                "type": "ContextTarget",
+                "index": 0
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "89",
+        "artist": "Randy Gallegos",
+        "flavorText": "It's hard to avoid electric shock when the entire plane is metallic.",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/4/c455c8d4-6f20-4dcb-8e82-c2bb70d6bc3e.jpg?1783944541"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Elf Replica
 {
     "name": "Elf Replica",
@@ -2030,6 +2083,83 @@
     ]
 }
 
+// Molten Rain
+{
+    "name": "Molten Rain",
+    "manaCost": "{1}{R}{R}",
+    "typeLine": "Sorcery",
+    "oracleText": "Destroy target land. If that land was nonbasic, Molten Rain deals 2 damage to the land's controller.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.WhenCondition",
+                        "condition": {
+                            "type": "EntityMatches",
+                            "entity": {
+                                "type": "ContextTarget",
+                                "index": 0
+                            },
+                            "filter": {
+                                "cardPredicates": [
+                                    "IsLand",
+                                    {
+                                        "type": "Not",
+                                        "predicate": "IsBasicLand"
+                                    }
+                                ]
+                            }
+                        }
+                    },
+                    "then": {
+                        "type": "DealDamage",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 2
+                        },
+                        "target": "TargetController"
+                    }
+                },
+                {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "ContextTarget",
+                        "index": 0
+                    },
+                    "destination": "Graveyard",
+                    "byDestruction": true
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "land"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "101",
+        "artist": "Hugh Jamieson",
+        "flavorText": "When the molten rains fall, entire landscapes melt and flow away in rivulets of fire.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/8/f888b4d4-31f9-4322-8225-4d7e7a9f4dd5.jpg?1783944539",
+        "rulings": [
+            {
+                "date": "2021-03-19",
+                "text": "If the target land is an illegal target by the time Molten Rain tries to resolve, the spell doesn't resolve. No player is dealt 2 damage. If the target is legal but not destroyed (most likely because it has indestructible), its controller is dealt 2 damage."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Myr Mindservant
 {
     "name": "Myr Mindservant",
@@ -3135,6 +3265,50 @@
     ]
 }
 
+// Slith Predator
+{
+    "name": "Slith Predator",
+    "manaCost": "{G}{G}",
+    "typeLine": "Creature — Slith",
+    "oracleText": "Trample\nWhenever this creature deals combat damage to a player, put a +1/+1 counter on it.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "TRAMPLE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "DealsDamageEvent",
+                    "damageType": "DamageCombat",
+                    "recipient": "AnyPlayer"
+                },
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": "Self"
+                },
+                "descriptionOverride": "Whenever this creature deals combat damage to a player, put a +1/+1 counter on it."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "129",
+        "rarity": "UNCOMMON",
+        "artist": "Justin Sweet",
+        "flavorText": "Born amid the molten metal of the Great Furnace, the slith have more than adapted to the perils of a metal world.",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/4/14bae45c-eaa8-4c6d-8042-df5cf26e294f.jpg?1783944532"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Soldier Replica
 {
     "name": "Soldier Replica",
@@ -3975,6 +4149,36 @@
     "colorIdentityOverride": []
 }
 
+// Tel-Jilad Chosen
+{
+    "name": "Tel-Jilad Chosen",
+    "manaCost": "{1}{G}",
+    "typeLine": "Creature — Elf Warrior",
+    "oracleText": "Protection from artifacts",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "keywordAbilities": [
+        {
+            "type": "Protection",
+            "scope": {
+                "type": "ProtectionScope.CardType",
+                "cardType": "Artifact"
+            }
+        }
+    ],
+    "metadata": {
+        "collectorNumber": "132",
+        "artist": "Matthew D. Wilson",
+        "flavorText": "\"It is my honor to keep safe Tel-Jilad's secrets, not to know them.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/e/eefea84f-d657-491d-b60d-63e6a61e9eb2.jpg?1783944532"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Tel-Jilad Exile
 {
     "name": "Tel-Jilad Exile",
@@ -4592,6 +4796,77 @@
     "colorIdentityOverride": [
         "GREEN"
     ]
+}
+
+// Viridian Longbow
+{
+    "name": "Viridian Longbow",
+    "manaCost": "{1}",
+    "typeLine": "Artifact — Equipment",
+    "oracleText": "Equipped creature has \"{T}: This creature deals 1 damage to any target.\"\nEquip {3}",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{3}"
+                    }
+                },
+                "effect": {
+                    "type": "AttachEquipment",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "creature you control"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        },
+                        "id": "creature you control"
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "isEquipAbility": true
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "GrantActivatedAbility",
+                "ability": {
+                    "id": "ability_2",
+                    "cost": "CostTap",
+                    "effect": {
+                        "type": "DealDamage",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 1
+                        },
+                        "target": {
+                            "type": "ContextTarget",
+                            "index": 0
+                        },
+                        "damageSource": "Self"
+                    },
+                    "targetRequirements": [
+                        "AnyTarget"
+                    ]
+                }
+            }
+        ]
+    },
+    "equipCost": "{3}",
+    "metadata": {
+        "collectorNumber": "270",
+        "artist": "Jeremy Jarvis",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/e/be892d73-d1f4-4c36-b674-01ae21ff1484.jpg?1783944497"
+    },
+    "colorIdentityOverride": []
 }
 
 // Viridian Shaman
