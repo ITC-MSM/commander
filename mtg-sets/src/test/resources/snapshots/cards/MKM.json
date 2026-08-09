@@ -305,6 +305,97 @@
     ]
 }
 
+// Candlestick
+{
+    "name": "Candlestick",
+    "manaCost": "{U}",
+    "typeLine": "Artifact — Clue Equipment",
+    "oracleText": "Equipped creature gets +1/+1 and has \"Whenever this creature attacks, surveil 2.\"\n{2}, Sacrifice this Equipment: Draw a card.\nEquip {2}",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}"
+                            }
+                        },
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                }
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{2}"
+                    }
+                },
+                "effect": {
+                    "type": "AttachEquipment",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "creature you control"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        },
+                        "id": "creature you control"
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "isEquipAbility": true
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 1,
+                "toughnessBonus": 1
+            },
+            {
+                "type": "GrantTriggeredAbility",
+                "ability": {
+                    "id": "ability_3",
+                    "trigger": "AttackEvent",
+                    "effect": {
+                        "type": "Surveil",
+                        "count": 2
+                    }
+                }
+            }
+        ]
+    },
+    "equipCost": "{2}",
+    "metadata": {
+        "collectorNumber": "43",
+        "rarity": "UNCOMMON",
+        "artist": "Julia Metzger",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/a/5aeae6fb-3834-4891-924e-3d1fb3e19e09.jpg?1783912915"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Cerebral Confiscation
 {
     "name": "Cerebral Confiscation",
@@ -2478,6 +2569,58 @@
     ]
 }
 
+// Jaded Analyst
+{
+    "name": "Jaded Analyst",
+    "manaCost": "{1}{U}",
+    "typeLine": "Creature — Human Detective",
+    "oracleText": "Defender\nWhenever you draw your second card each turn, this creature loses defender and gains vigilance until end of turn.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "keywords": [
+        "DEFENDER"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "NthCardDrawnEvent",
+                    "nthCard": 2
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "RemoveKeyword",
+                            "keyword": "DEFENDER",
+                            "target": "Self"
+                        },
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "VIGILANCE",
+                            "target": "Self"
+                        }
+                    ]
+                },
+                "descriptionOverride": "Whenever you draw your second card each turn, this creature loses defender and gains vigilance until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "62",
+        "artist": "Borja Pindado",
+        "flavorText": "\"Oh, good, another case with too many victims and not enough clues.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/8/2807dcfb-d99c-483b-835f-2606eae4bd30.jpg?1783912907"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Knife
 {
     "name": "Knife",
@@ -2630,6 +2773,129 @@
     "colorIdentityOverride": [
         "BLACK",
         "GREEN"
+    ]
+}
+
+// Krovod Haunch
+{
+    "name": "Krovod Haunch",
+    "manaCost": "{W}",
+    "typeLine": "Artifact — Food Equipment",
+    "oracleText": "Equipped creature gets +2/+0.\n{2}, {T}, Sacrifice this Equipment: You gain 3 life.\nWhen this Equipment is put into a graveyard from the battlefield, you may pay {1}{W}. If you do, create two 1/1 white Dog creature tokens.\nEquip {2}",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.MayPay",
+                        "cost": {
+                            "type": "PayManaCost",
+                            "cost": "{1}{W}"
+                        }
+                    },
+                    "then": {
+                        "type": "CreateToken",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 2
+                        },
+                        "power": 1,
+                        "toughness": 1,
+                        "colors": [
+                            "WHITE"
+                        ],
+                        "creatureTypes": [
+                            "Dog"
+                        ]
+                    }
+                },
+                "descriptionOverride": "When this Equipment is put into a graveyard from the battlefield, you may pay {1}{W}. If you do, create two 1/1 white Dog creature tokens."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}"
+                            }
+                        },
+                        "CostTap",
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "GainLife",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 3
+                    }
+                }
+            },
+            {
+                "id": "ability_3",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{2}"
+                    }
+                },
+                "effect": {
+                    "type": "AttachEquipment",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "creature you control"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        },
+                        "id": "creature you control"
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "isEquipAbility": true
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 2,
+                "toughnessBonus": 0
+            }
+        ]
+    },
+    "equipCost": "{2}",
+    "metadata": {
+        "collectorNumber": "21",
+        "rarity": "UNCOMMON",
+        "artist": "Craig J Spearing",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/6/f663cd86-39e6-467b-85b7-dd27536251a6.jpg?1783912923",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "If an effect refers to a Food, it means any Food artifact, not just a Food artifact token. For example, you can tap Krovod Haunch to pay for Apothecary White's activated ability."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 
@@ -4156,6 +4422,100 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Rope
+{
+    "name": "Rope",
+    "manaCost": "{G}",
+    "typeLine": "Artifact — Clue Equipment",
+    "oracleText": "Equipped creature gets +1/+2, has reach, and can't be blocked by more than one creature.\n{2}, Sacrifice this Equipment: Draw a card.\nEquip {3}",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}"
+                            }
+                        },
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                }
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{3}"
+                    }
+                },
+                "effect": {
+                    "type": "AttachEquipment",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "creature you control"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        },
+                        "id": "creature you control"
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "isEquipAbility": true
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 1,
+                "toughnessBonus": 2
+            },
+            {
+                "type": "GrantKeyword",
+                "keyword": "REACH"
+            },
+            {
+                "type": "GrantKeyword",
+                "keyword": "CANT_BE_BLOCKED_BY_MORE_THAN_ONE"
+            }
+        ]
+    },
+    "equipCost": "{3}",
+    "metadata": {
+        "collectorNumber": "173",
+        "rarity": "UNCOMMON",
+        "artist": "Matt Forsyth",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/8/6881946c-5036-4d9f-926f-932c9a592aff.jpg?1783912861",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "If the equipped creature also has menace, it can't be blocked at all."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 
@@ -5734,5 +6094,124 @@
     "colorIdentityOverride": [
         "WHITE",
         "BLACK"
+    ]
+}
+
+// Wrench
+{
+    "name": "Wrench",
+    "manaCost": "{W}",
+    "typeLine": "Artifact — Clue Equipment",
+    "oracleText": "Equipped creature gets +1/+1 and has vigilance and \"{3}, {T}: Tap target creature.\"\n{2}, Sacrifice this Equipment: Draw a card.\nEquip {2}",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}"
+                            }
+                        },
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                }
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{2}"
+                    }
+                },
+                "effect": {
+                    "type": "AttachEquipment",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "creature you control"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        },
+                        "id": "creature you control"
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "isEquipAbility": true
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 1,
+                "toughnessBonus": 1
+            },
+            {
+                "type": "GrantKeyword",
+                "keyword": "VIGILANCE"
+            },
+            {
+                "type": "GrantActivatedAbility",
+                "ability": {
+                    "id": "ability_3",
+                    "cost": {
+                        "type": "CostComposite",
+                        "costs": [
+                            {
+                                "type": "CostAtomWrapper",
+                                "atom": {
+                                    "type": "AtomMana",
+                                    "cost": "{3}"
+                                }
+                            },
+                            "CostTap"
+                        ]
+                    },
+                    "effect": {
+                        "type": "TapUntap",
+                        "target": {
+                            "type": "ContextTarget",
+                            "index": 0
+                        }
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "creature"
+                            }
+                        }
+                    ],
+                    "descriptionOverride": "{3}, {T}: Tap target creature."
+                }
+            }
+        ]
+    },
+    "equipCost": "{2}",
+    "metadata": {
+        "collectorNumber": "37",
+        "rarity": "UNCOMMON",
+        "artist": "Edgar Sánchez Hidalgo",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/3/c36cc39b-8f3b-4297-b118-86fa624308b4.jpg?1783912917"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
