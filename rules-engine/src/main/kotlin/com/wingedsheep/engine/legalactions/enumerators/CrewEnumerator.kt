@@ -43,7 +43,16 @@ class CrewEnumerator : ActionEnumerator {
                 if (crewActivations >= 1) continue
             }
 
-            // Find all untapped creatures controlled by the player that can crew
+            // Find all untapped creatures controlled by the player that can crew.
+            //
+            // This eligibility rule (untapped, controlled by the payer, projected, no
+            // summoning-sickness check) is duplicated in
+            // `com.wingedsheep.engine.mechanics.cost.VariablePermanentsCost.candidates`, which
+            // Teamwork N (CR 702.194a) pays through — the two agree, but nothing enforces that.
+            // The *measure* deliberately differs and must stay split: crew sums through
+            // `CrewSaddleContributionEvaluator` so crew-specific statics ("crews Vehicles as though
+            // its power were 2 greater") count, which they must not for teamwork. Folding the
+            // selection (not the measure) into the shared helper is an open follow-up.
             val validCrewCreatures = mutableListOf<TapForPowerCreatureData>()
             var totalAvailablePower = 0
             for (creatureId in context.battlefieldPermanents) {

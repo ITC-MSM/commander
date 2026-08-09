@@ -93,6 +93,20 @@ enum class ChoiceSlot {
     EVIDENCE_COLLECTED,
 
     /**
+     * Whether the spell was cast **using teamwork** (CR 702.194b, Marvel Super Heroes — "as an
+     * additional cost to cast this spell, you may tap any number of creatures you control with
+     * total power N or more"). A present value means the teamwork cost was declared and paid.
+     * Read back through [com.wingedsheep.sdk.dsl.Conditions.TeamworkWasPaid].
+     *
+     * Deliberately distinct from [KICKED] and [BARGAINED] even though all three ride the same
+     * optional-additional-cost rail ([KeywordAbility.OptionalAdditionalCost.declaredSlot]):
+     * CR 702.194b scopes "cast using teamwork" to the spell's *own* teamwork ability, so a
+     * teamwork spell must not read as kicked to unrelated "whenever you cast a kicked spell"
+     * payoffs.
+     */
+    TEAMWORK,
+
+    /**
      * Whether the spell's sneak cost was paid when cast (CR 702.190, e.g. Leonardo, Leader
      * in Blue). A present value means "cast for its sneak cost". Read back through
      * [com.wingedsheep.sdk.scripting.conditions.SneakCostWasPaid].

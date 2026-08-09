@@ -75,13 +75,19 @@ export function computePhases(actionInfo: LegalActionInfo, options?: ComputePhas
   //    `costPayment` phase here rather than dropping it. Without this, the action submits with
   //    no blight and the engine rejects it ("Too many modes chosen"). Per-mode targeting + mana
   //    still run server-side after submit.
+  //
+  //    Teamwork N (CR 702.194) takes the same exception for the same reason: "Choose one. If this
+  //    spell was cast using teamwork, choose both instead" surfaces the teamwork cast as its own
+  //    modal variant, and the second mode only unlocks once the submitted action carries the
+  //    tapped creatures in `variableCostPermanents`.
   if (
     actionInfo.action.type === 'CastSpell' &&
     actionInfo.modalEnumeration &&
     actionInfo.modalEnumeration.chooseCount > 1
   ) {
     const modalPhases: PipelinePhase[] = [{ type: 'modalModes' }]
-    if (actionInfo.additionalCostInfo?.costType === 'Blight') {
+    const modalCostType = actionInfo.additionalCostInfo?.costType
+    if (modalCostType === 'Blight' || modalCostType === 'TapForTotalPower') {
       modalPhases.push({ type: 'costPayment' })
     }
     return modalPhases
@@ -204,6 +210,7 @@ export function computePhases(actionInfo: LegalActionInfo, options?: ComputePhas
       'Conspire',
       'Casualty',
       'Craft',
+      'TapForTotalPower',
     ]
 
     if (costTypesNeedingSelection.includes(costType)) {
@@ -412,6 +419,16 @@ export function mergeResult(
         // Conspire populates a dedicated field on CastSpell, not additionalCostPayment.
         if (costType === 'Conspire') {
           return { ...action, conspiredCreatures: selectedTargets }
+        }
+        // Teamwork (CR 702.194a) pays through the shared variable-count permanent channel.
+        if (costType === 'TapForTotalPower') {
+          return {
+            ...action,
+            additionalCostPayment: {
+              ...action.additionalCostPayment,
+              variableCostPermanents: selectedTargets,
+            },
+          }
         }
         // Casualty sacrifices a single chosen creature into its own dedicated field.
         if (costType === 'Casualty') {
@@ -820,6 +837,22 @@ export function enterPhase(
           flags.isTapPermanentSelection = true
           flags.targetDescription = costInfo.description
           break
+        // Teamwork N (CR 702.194a) — "tap any number of creatures you control with total power N
+        // or more". The count is free, so the confirm gate is the power total, not minTargets.
+        case 'TapForTotalPower': {
+          const creatures = costInfo.tapForPowerCreatures ?? []
+          validTargets = creatures.map((c) => c.entityId)
+          minTargets = 0
+          maxTargets = validTargets.length
+          flags.isSacrificeSelection = true
+          flags.isTapPermanentSelection = true
+          flags.targetDescription = costInfo.description
+          flags.requiredTotalPower = costInfo.tapForPowerRequired ?? 0
+          const powerByEntityId: Record<EntityId, number> = {}
+          for (const c of creatures) powerByEntityId[c.entityId] = c.power
+          flags.powerByEntityId = powerByEntityId
+          break
+        }
         case 'BouncePermanent':
           validTargets = [...(costInfo.validBounceTargets ?? [])]
           minTargets = costInfo.bounceCount ?? 1

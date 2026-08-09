@@ -418,19 +418,31 @@ excluded.
   / `Costs.SacrificePermanents(filter = Any, minCount = 1, excludeSelf = false, xMeasure = COUNT)` —
   **variable-count** "exile/sacrifice one or more permanents you control matching `filter`"
   activated-ability cost (CR 601.2b — the player chooses how many, at least `minCount`, as the
-  ability is activated). One atom, `CostAtom.VariablePermanents`, with two orthogonal axes; the two
+  ability is activated). One atom, `CostAtom.VariablePermanents`, with three orthogonal axes; the two
   facades are the named entry points to it. With `excludeSelf` the ability's own source is excluded
   ("one or more *other* …"); leave it false when the source may pay for itself.
   - **`action`** (set by which facade you call) — `EXILE` moves the permanents via the normal
     battlefield→exile transition; `SACRIFICE` puts them in their owners' graveyards through the same
     path a fixed-count sacrifice cost uses, so "whenever you sacrifice" triggers and Food tracking
     fire. Either way Auras fall off, tokens cease to exist, and leaves-the-battlefield triggers fire.
-  - **`xMeasure`** — how the choice becomes the ability's **X**, read with `DynamicAmount.XValue`.
+    `TAP` taps them in place, leaving them on the battlefield — the Teamwork N shape, reached through
+    `Costs.additional.TapForTotalPower(n)`. Only untapped permanents are candidates (CR 701.26a) and
+    summoning sickness never applies (CR 302.6 is about the `{T}` symbol, not a tap paid as a cost).
+  - **`xMeasure`** — how the choice is measured, both as the ability's **X** (read with
+    `DynamicAmount.XValue`) and as the quantity a `minMeasure` floor is compared against.
     `TOTAL_MANA_VALUE` sums the chosen permanents' mana values, for "…with total mana value X" cards
     whose target is bounded by `GameObjectFilter.manaValueAtMostX()`; `COUNT` is simply how many were
-    chosen, for "…for each permanent sacrificed this way". Either value is fixed at activation and
+    chosen, for "…for each permanent sacrificed this way"; `TOTAL_POWER` sums their **projected**
+    power, for "…with total power N or more". Either value is fixed at activation and
     stored on the stack, so an X-bounded target is re-validated against it at resolution (CR 608.2b)
     and a resolution-time `XValue` read can't be changed by removal in response.
+  - **`minMeasure`** — a floor on the *measure* rather than on the count (0 = none): "any number …
+    with total power N or more". Pair it with `minCount = 0` for the free-count shapes; the engine
+    marks the whole cost unpayable when every candidate together falls short (CR 601.2h).
+
+  This atom is also a **spell additional cost**, not only an activated-ability cost: teamwork
+  (CR 702.194a) rides it through `AdditionalCost.Atom`, paying from
+  `AdditionalCostPayment.variableCostPermanents`.
 
   Backs **Fabrication Foundry** ("{2}{W}, {T}, Exile one or more other artifacts you control with
   total mana value X: Return target artifact card with mana value X or less from your graveyard to
@@ -564,6 +576,14 @@ definitions construct these through the facade, e.g. `Costs.additional.Sacrifice
   surfaces the returnable permanents (a `costType = "ReturnToHand"` cost) and the client picks them
   on the battlefield. The bounce goes through `ZoneTransitionService.moveToZone(…, Zone.HAND)`, so
   attached Auras fall off and tokens cease to exist. Mirrors the sacrifice/tap additional-cost path.
+- `Costs.additional.TapForTotalPower(totalPower, filter = GameObjectFilter.Creature)` — "tap any number of
+  creatures you control with total power N or more" (Teamwork N, CR 702.194a). A
+  `CostAtom.VariablePermanents` with `action = TAP`, `xMeasure = TOTAL_POWER`, `minMeasure = N` and
+  `minCount = 0`: the count is free, the power floor is the constraint, and the sum is read from
+  **projected** state. The engine advertises the candidates as a `costType = "TapForTotalPower"` cost
+  carrying `tapForPowerCreatures` / `tapForPowerRequired` (the same payload crew and saddle use) and
+  the client returns the picks in `additionalCostPayment.variableCostPermanents`. Reach for this
+  through the `teamwork(n)` DSL helper rather than by hand.
 - `Costs.additional.BlightVariable` — "as you cast, you may pay X life" (Blight X); X exposed via
   `DynamicAmount.AdditionalCostBlightAmount`.
 - `Costs.additional.PayXLife(minCount = 0)` — "as an additional cost to cast this spell, pay X life."
@@ -6238,6 +6258,67 @@ copy of it (CR 707.10e). The activated-ability analogue of the spell-level `cant
 >   Evidence Examiner). A *different* fact from the linkage: it observes any collection by the player,
 >   in any context, including the permanent's own.
 
+> **Teamwork N** (CR 702.194, Marvel Super Heroes). "Teamwork 2 *(As an additional cost to cast this
+> spell, you may tap any number of creatures you control with total power 2 or more.)*" — a static
+> ability functioning on the stack that grants one **optional additional cost** (702.194a). A spell whose
+> controller declared that intention was cast *using teamwork* (702.194b), and the card's own riders
+> branch on that fact.
+>
+> `card { teamwork(2) }` (import `com.wingedsheep.sdk.dsl.teamwork`) is the whole wiring: it adds
+> `KeywordAbility.OptionalAdditionalCost(additionalCost = Costs.additional.TapForTotalPower(2),
+> displayPrefix = "Teamwork 2", keyword = Keyword.TEAMWORK, declaredSlot = ChoiceSlot.TEAMWORK)`.
+> Teamwork therefore rides the **same rail as kicker and bargain** — the enumerator offers a
+> `CastWithKicker` variant labelled "(Teamwork 2)" (a `CastSpellModal` one for a modal spell, see
+> below), the ordinary additional-cost payment flow collects
+> the tapped creatures, and the engine stamps the declared slot on the stack object and durably onto the
+> permanent it becomes. Because that rail carries a `ChoiceSlot`, "cast using teamwork", "bargained" and
+> "kicked" never read as each other.
+>
+> The cost is `Costs.additional.TapForTotalPower(n, filter = GameObjectFilter.Creature)` — a
+> `CostAtom.VariablePermanents` with `action = PermanentCostAction.TAP`,
+> `xMeasure = VariableCostMeasure.TOTAL_POWER` and `minMeasure = n`. It is the *same selection crew*
+> (CR 702.122a) *and saddle already make*, re-exposed on the cast rail: only untapped permanents are
+> candidates (CR 701.26a), power is summed from **projected** state so a lord bonus or a +1/+1 counter
+> counts, and summoning sickness never applies (CR 302.6 governs the `{T}` symbol in an activation cost,
+> not a tap paid as a cost). How *many* creatures are tapped is free — the power floor is the only
+> constraint. The engine advertises the candidates and the threshold on
+> `AdditionalCostInfo.tapForPowerCreatures` / `.tapForPowerRequired` (costType `"TapForTotalPower"`, the
+> same payload crew/saddle use), and the caster's picks come back as
+> `CastSpell.additionalCostPayment.variableCostPermanents`.
+>
+> Teamwork derives no payoff — the card supplies it, in one of these shapes:
+> - **Plain rider, "instead"** — one `DynamicAmount.Conditional(Conditions.TeamworkWasPaid, ifTrue,
+>   ifFalse)` feeding the effect's amount (Helicarrier Strike: 2 damage, or 4 if cast using teamwork).
+>   Prefer this over "base effect + a second effect on the teamwork branch" whenever the printed card
+>   describes a *single* event whose size changes — splitting it would show two damage events to
+>   prevention shields and damage triggers.
+> - **Plain rider, "also"** — `ConditionalEffect(Conditions.TeamworkWasPaid, extra)` appended to the base
+>   effect, for a genuinely additional event (Repulsor Blast's 2 damage to the creature's controller,
+>   Team Tactics' extra trample grant).
+> - **Modal "choose both instead"** (CR 700.2 governs the mode count; the declaration it branches on
+>   is made under CR 601.2b — *not* CR 702.194c, which is about targets) — a `modal { }` block with
+>   `chooseCount = 2, minChooseCount = 1` and
+>   `dynamicChooseCount = DynamicAmount.Conditional(Conditions.TeamworkWasPaid, DynamicAmount.Fixed(2),
+>   DynamicAmount.Fixed(1))`: the plain cast picks one mode, the teamwork cast picks both. The same
+>   `dynamicChooseCount` shape LCI's Molten Collapse and Wail of the Forgotten use, with one
+>   difference that matters — those two read the *battlefield*, while this reads the declaration made
+>   by the very cast being validated, so `CastSpellHandler.effectiveModalChooseCounts` evaluates it
+>   with `declaredCostSlot` in the context (the durable cast-choices bag doesn't exist until the spell
+>   resolves). The declared cast is enumerated as a `CastSpellModal` variant labelled "(Teamwork N)"
+>   carrying both the modes and the teamwork cost payload, so the client collects modes and then the
+>   taps. The advertised `chooseCount` is the printed maximum on both variants; the handler is the
+>   authority that narrows it to 1 without the declaration.
+> - **Permanent** — an enters-the-battlefield trigger with
+>   `triggerCondition = Conditions.TeamworkWasPaid`; CR 603.4 keeps it off the stack entirely otherwise.
+> - **Teamwork-only clause with its own target** — declare it with `kickerTarget(...)` / `kickerEffect`
+>   in the `spell { }` block (the optional-cost branch of the shared rail), which is exactly what
+>   CR 702.194c asks for: the plain cast is announced as though the clause weren't there, and only
+>   the declared cast chooses the extra target. Pinned by `TeamworkMechanicScenarioTest`'s
+>   "Teamwork Rally" cases.
+>
+> `Conditions.TeamworkWasPaid` is a facade over `CastChoiceMade(ChoiceSlot.TEAMWORK)`, so teamwork needs
+> no condition type of its own.
+
 > **Gift** (CR 702.174, Bloomburrow). "Gift a \[something\]" is two abilities: an **additional cost**
 > — "as an additional cost to cast this spell, you may choose an opponent" — and, on a permanent, the
 > triggered ability "when this permanent enters, if its gift cost was paid, \[effect\]" whose effect the
@@ -6704,7 +6785,7 @@ composite abilities).
 - `Harmonize(cost)` — `KeywordAbility.harmonize(cost)` (Tarkir: Dragonstorm). An alternative cost to cast an instant/sorcery **from your graveyard**, like Flashback, then exile it as it resolves. As you cast it you may tap **a single** untapped creature you control to reduce the **generic** portion of the harmonize cost by that creature's (projected) power — a Convoke-style reduction, but one creature paying generic-equal-to-power instead of one mana per creature. No card-side wiring: declare the keyword ability and the engine handles graveyard-cast enumeration (`CastWithHarmonize`), the per-creature reduction (routed through `AlternativePaymentChoice.harmonizeCreature`), and the exile-on-resolution. The chosen creature and its power are surfaced to the client via `LegalAction.harmonizeCreatures` / `hasHarmonize`; the client offers an on-battlefield single-creature tap step (the `harmonize` pipeline phase + `HarmonizeSelector` HUD, mirroring Convoke). **Harmonize {X}** (e.g. Nature's Rhythm `{X}{G}{G}{G}{G}`): the `CastWithHarmonize` action surfaces `hasXCost`/`maxAffordableX` (max X folds in the best single-creature tap reduction) so the client prompts for X. {X} is generic mana, so the tap reduces the mana paid *for X* — `CastSpellHandler.harmonizePaymentXValue` lowers the X mana once `reduceGeneric` has consumed any printed generic — while the chosen X stamped onto `SpellOnStackComponent.xValue` (and read by the effect, e.g. "mana value X or less") is unchanged. Colored pips are never reduced. **Granting harmonize at runtime:** harmonize can also be granted to a graveyard card that doesn't print it via `Effects.GrantHarmonize(target, cost?, duration)` (Songcrafter Mage). The grant is a `GrantedKeywordAbility` record keyed to the card entity; every harmonize read site consults printed-**or**-granted harmonize through the `HarmonizeGrants.effectiveHarmonize` resolver, so a granted harmonize is castable, reducible, and exiled exactly like a printed one. The grant survives the graveyard → stack move (so exile-on-resolution still fires) and is cleared in the cleanup step.
 - **Waterbend** (Avatar: The Last Airbender) — *not a keyword ability*; a cost flag on an activated ability. Set `hasWaterbend = true` in the `activatedAbility { }` block (alongside a `cost = Costs.Mana("{N}")`). It means "Waterbend {N}: pay {N}, but for each generic mana in that cost you may tap an untapped **artifact or creature** you control instead." It is Convoke widened to artifacts and restricted to generic-only payment — a tapped permanent never covers a colored pip, and the number of taps is bounded by the generic mana in the cost (CR; you can tap a permanent that just came under your control, no summoning-sickness gate). Routed through `AlternativePaymentChoice.waterbendPermanents` (a `Set<EntityId>`), mirroring `hasConvoke`: the activated-ability handler applies it via `AlternativePaymentHandler.applyWaterbendForAbility`, the enumerator surfaces `LegalAction.hasWaterbend` / `waterbendPermanents` (via `CostEnumerationUtils.findWaterbendPermanents` + `canAffordWithWaterbend`), and the client offers an on-battlefield tap step (the `waterbend` pipeline phase + `WaterbendSelector` HUD, generic-only). The ability's `description` auto-prefixes "Waterbend " before the cost.
 - **Spell-level waterbend additional cost** (Avatar: The Last Airbender) — *"As an additional cost to cast this spell, [you may] waterbend {N}."* Declared in the card builder with `waterbendCost(amount, optional = false, isX = false)`, which sets `CardScript.spellWaterbend: SpellWaterbendCost`. It adds {N} generic to the spell's cost; the same `AlternativePaymentChoice.waterbendPermanents` taps pay it, **bounded by N** so taps never cover the spell's own generic. `optional = true` models "you may waterbend {N}" — the enumerator offers a second, *paid* cast variant, and paying it sets `ChoiceSlot.WATERBEND_PAID` so the effect branches via `Conditions.WaterbendWasPaid` (the waterbend analogue of `BlightWasPaid`, e.g. `ConditionalEffect(Conditions.WaterbendWasPaid, paidEffect, elseEffect = baseEffect)`); a mandatory cost always adds {N}. Wiring: `CastSpellHandler` adds {N} and applies `AlternativePaymentHandler.applyWaterbendForSpell` (capped at N); `CastSpellEnumerator` surfaces `hasWaterbend`/`waterbendPermanents` on the cast action, reusing the same client `waterbend` pipeline phase + `WaterbendSelector`. Cards: Benevolent River Spirit (mandatory {5}), Ruinous Waterbending (optional {4}), Spirit Water Revival (optional {6}). The **`isX` "waterbend {X}" shape** (`waterbendCost(isX = true)`) is fully wired: the enumerator folds a literal `{X}` into the cost so the spell reads as X-carrying (`maxAffordableX` bounded by available mana **plus** tappable permanents), the client prompts for X then runs the waterbend tap step (capped at the chosen X), and the resolver charges X as the waterbend generic — so X also feeds the effect via `DynamicAmount.XValue`. *(The two `isX` cards Crashing Wave and Foggy Swamp Visions each still need a card-specific effect beyond the cost — "distribute N counters among a filtered group chosen at resolution", and "token copy of each exiled card" + delayed sacrifice — before they can ship.)* The **in-resolution "unless you waterbend {N}" shape** (Waterbending Lesson) is wired separately as `Effects.UnlessYouWaterbend(amount, otherwise)` — a `Gate.MayPay` over a waterbend-flagged `PayManaCostEffect`, resolved during the spell's resolution rather than as a cast-time cost (see the gated-effects section).
-- `OptionalAdditionalCost(manaCost?, additionalCost?, multi, displayPrefix, branchesEffect, grantsFlashTiming, declaredSlot)` — generalised "pay an optional extra cost while casting" primitive. `declaredSlot` (default `ChoiceSlot.KICKED`) is the durable slot the declaration stamps — i.e. *which mechanic* is riding the rail, so `ChoiceSlot.BARGAINED` makes the same machinery Bargain (CR 702.166) without bargained spells reading as kicked. Backs printed Kicker / Multikicker / Offspring / Bargain **and** the pre-kicker "pay {N} more to cast as though it had flash" pattern (Ghitu Fire). When `branchesEffect = true` (default) paying the cost marks the spell so `WasKicked` fires for the card's own effect/triggers; when `false` the payment is invisible to `WasKicked` (used by `flashKicker`). When `grantsFlashTiming = true` paying the cost unlocks instant-speed casting in addition to whatever else it does — the optional cost may be mana (Ghitu Fire: `KeywordAbility.flashKicker("{2}")`) **or** a non-mana `additionalCost` such as Behold (Molten Exhale: "you may cast this as though it had flash if you behold a Dragon", `KeywordAbility.flashKicker(Costs.additional.Behold(filter = Filters.WithSubtype("Dragon")))`). Prefer the factories: `KeywordAbility.kicker(cost)`, `KeywordAbility.kicker(additionalCost)`, `KeywordAbility.multikicker(cost)`, `KeywordAbility.offspring(cost)`, `KeywordAbility.flashKicker(cost)`, `KeywordAbility.flashKicker(additionalCost)`. Serial name is `Kicker` for wire compatibility. **Kicker {X}** (variable kicker, e.g. `KeywordAbility.kicker("{X}")` on Verdeloth the Ancient): the kicked cast surfaces `hasXCost`/`maxAffordableX` so the client prompts for X exactly like a base-cost X spell; the chosen X is paid as part of the kicker and stamped onto `SpellOnStackComponent.xValue`, so the card's ETB trigger reads it via `DynamicAmount.XValue` ("create X tokens").
+- `OptionalAdditionalCost(manaCost?, additionalCost?, multi, displayPrefix, branchesEffect, grantsFlashTiming, declaredSlot)` — generalised "pay an optional extra cost while casting" primitive. `declaredSlot` (default `ChoiceSlot.KICKED`) is the durable slot the declaration stamps — i.e. *which mechanic* is riding the rail, so `ChoiceSlot.BARGAINED` makes the same machinery Bargain (CR 702.166) and `ChoiceSlot.TEAMWORK` makes it Teamwork N (CR 702.194), without either reading as kicked. Backs printed Kicker / Multikicker / Offspring / Bargain **and** the pre-kicker "pay {N} more to cast as though it had flash" pattern (Ghitu Fire). When `branchesEffect = true` (default) paying the cost marks the spell so `WasKicked` fires for the card's own effect/triggers; when `false` the payment is invisible to `WasKicked` (used by `flashKicker`). When `grantsFlashTiming = true` paying the cost unlocks instant-speed casting in addition to whatever else it does — the optional cost may be mana (Ghitu Fire: `KeywordAbility.flashKicker("{2}")`) **or** a non-mana `additionalCost` such as Behold (Molten Exhale: "you may cast this as though it had flash if you behold a Dragon", `KeywordAbility.flashKicker(Costs.additional.Behold(filter = Filters.WithSubtype("Dragon")))`). Prefer the factories: `KeywordAbility.kicker(cost)`, `KeywordAbility.kicker(additionalCost)`, `KeywordAbility.multikicker(cost)`, `KeywordAbility.offspring(cost)`, `KeywordAbility.flashKicker(cost)`, `KeywordAbility.flashKicker(additionalCost)`. Serial name is `Kicker` for wire compatibility. **Kicker {X}** (variable kicker, e.g. `KeywordAbility.kicker("{X}")` on Verdeloth the Ancient): the kicked cast surfaces `hasXCost`/`maxAffordableX` so the client prompts for X exactly like a base-cost X spell; the chosen X is paid as part of the kicker and stamped onto `SpellOnStackComponent.xValue`, so the card's ETB trigger reads it via `DynamicAmount.XValue` ("create X tokens").
 - `Impending(time, cost)` — `card { impending(n, cost) }` builder helper (CR 702.176, Duskmourn). A self-alternative
   cost: pay [cost] instead of the mana cost and the permanent enters with N **time counters**, isn't a creature until
   the last is removed, and loses one at the beginning of your end step. The helper wires everything from one call — the
@@ -7255,6 +7336,7 @@ answer it and would silently return `false`.
   after the trigger fires makes no token. See §8's `triggerZones`.
 - `WasKicked` — cast with kicker / multikicker / offspring (i.e. an `OptionalAdditionalCost` with `branchesEffect = true` whose extra cost was paid). FlashKicker payments are intentionally invisible to this condition.
 - `WasBargained` — the spell's **bargain** additional cost was declared as it was cast (CR 702.166b, Wilds of Eldraine). A facade over `CastChoiceMade(ChoiceSlot.BARGAINED)`, so bargain needs no condition type of its own. Reads the durable flag on a resolved permanent (an "if it was bargained" enters trigger) *and* the declaration carried on a still-on-the-stack spell (an "if this spell was bargained" rider), and is also the condition a `CostGating.OnlyIf` cost reduction gates on. Never true for a merely kicked spell.
+- `TeamworkWasPaid` — the spell was cast **using teamwork** (CR 702.194b, Marvel Super Heroes): its optional "tap any number of creatures you control with total power N or more" additional cost was declared as it was cast. A facade over `CastChoiceMade(ChoiceSlot.TEAMWORK)`, so teamwork needs no condition type of its own. Reads the declaration carried on a still-on-the-stack spell (an "if this spell was cast using teamwork" rider) *and* the durable flag on a resolved permanent, and is the condition a modal's `dynamicChooseCount` gates on for "choose one; if cast using teamwork, choose both instead". Never true for a merely kicked or bargained spell.
 - `SneakCostWasPaid` — the source was cast for its `Sneak` cost (CR 702.190 — mana + returning an unblocked attacker). Reads the durable `ChoiceSlot.SNEAK` flag on a resolved permanent, falling back to the resolution context for a non-permanent spell's own effect. Backs riders like Leonardo, Leader in Blue and The Last Ronin's Technique.
 - `WebSlungCostWasPaid` — the source was cast using web-slinging (CR 702.188 — mana + returning a tapped creature you control). Reads the durable `ChoiceSlot.WEB_SLUNG` flag on a resolved permanent, falling back to the resolution context for a non-permanent spell's own effect. Backs riders like *Spiders-Man, Heroic Horde* and *Scarlet Spider, Ben Reilly*; the latter also reads the returned creature's mana value via `DynamicAmount.CastChoice(ChoiceSlot.WEB_SLUNG_RETURNED_MV)`.
 - `MayhemCostWasPaid` — the source was cast from the graveyard for its Mayhem cost (CR 702.187). Reads the durable `ChoiceSlot.MAYHEM_CAST` flag on a resolved permanent, falling back to the resolution context (`wasMayhem`) for a non-permanent spell's own effect. Backs riders like *Sandman's Quicksand* ("if this spell's mayhem cost was paid, creatures your opponents control get -2/-2 instead").

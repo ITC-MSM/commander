@@ -95,7 +95,9 @@ import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.AdditionalCost
 import com.wingedsheep.sdk.scripting.ChoiceSlot
+import com.wingedsheep.engine.mechanics.cost.VariablePermanentsCost
 import com.wingedsheep.sdk.scripting.costs.CostAtom
+import com.wingedsheep.sdk.scripting.costs.PermanentCostAction
 import com.wingedsheep.sdk.scripting.AbilityId
 import com.wingedsheep.sdk.scripting.CastRestriction
 import com.wingedsheep.sdk.scripting.Duration
@@ -1549,6 +1551,13 @@ class CastSpellHandler(
      *   control a Wizard as you cast this spell, you may choose two instead." pattern (Flame of
      *   Anor) — `minChooseCount` stays the mandatory floor, unlike the resolution-time
      *   `chooseUpToDynamic` shape which always allows declining to 0.
+     *
+     * The evaluation context carries the *declaration being cast* ([CastSpell.declaredCostSlot]),
+     * because a mode count may branch on the optional additional cost this very cast declared —
+     * "Choose one. If this spell was cast using teamwork, choose both instead" (CR 702.194b).
+     * `Conditions.TeamworkWasPaid` / `CastChoiceMade` answers from that field while the card is
+     * still in hand; the durable `CastChoicesComponent` it otherwise reads only exists once the
+     * spell has resolved, so without this the teamwork branch could never be taken.
      */
     private fun effectiveModalChooseCounts(
         state: GameState,
@@ -1569,7 +1578,8 @@ class CastSpellHandler(
                 sourceId = action.cardId,
                 controllerId = action.playerId,
                 targets = emptyList(),
-                xValue = 0
+                xValue = 0,
+                declaredCostSlot = action.declaredCostSlot
             )
             val evaluated = DynamicAmountEvaluator(conditionEvaluator = conditionEvaluator)
                 .evaluate(state, dynamic, context)
@@ -1718,6 +1728,7 @@ class CastSpellHandler(
                 is CostAtom.CollectEvidence -> p.exiledCards.isNotEmpty()
                 is CostAtom.TapPermanents -> p.tappedPermanents.isNotEmpty()
                 is CostAtom.ReturnToHand -> p.bouncedPermanents.isNotEmpty()
+                is CostAtom.VariablePermanents -> p.variableCostPermanents.isNotEmpty()
                 else -> false
             }
             else -> false
@@ -1870,12 +1881,54 @@ class CastSpellHandler(
                             }
                         }
                     }
+                    is CostAtom.VariablePermanents -> {
+                        val chosen = action.additionalCostPayment?.variableCostPermanents ?: emptyList()
+                        val verb = VariablePermanentsCost.verb(atom.action)
+                        if (chosen.size != chosen.distinct().size) {
+                            return "The same permanent can't be chosen twice to $verb for this spell"
+                        }
+                        if (chosen.size < atom.minCount) {
+                            return "You must $verb at least ${atom.minCount} ${atom.filter.description}(s) to cast this spell"
+                        }
+                        val context = PredicateContext(controllerId = action.playerId)
+                        for (permId in chosen) {
+                            val permContainer = state.getEntity(permId)
+                                ?: return "Permanent to $verb not found: $permId"
+                            val permCard = permContainer.get<CardComponent>()
+                                ?: return "Entity to $verb is not a card: $permId"
+                            if (permId !in state.getBattlefield()) {
+                                return "Permanent to $verb is not on the battlefield: $permId"
+                            }
+                            if (projected.getController(permId) != action.playerId) {
+                                return "You can only $verb permanents you control"
+                            }
+                            // CR 701.26a — only untapped permanents can be tapped. Summoning
+                            // sickness (CR 302.6) governs the {T} symbol, not a tap paid as a
+                            // cost, so a creature that entered this turn may still pay (as with
+                            // crew, CR 702.122b).
+                            if (atom.action == PermanentCostAction.TAP && permContainer.has<TappedComponent>()) {
+                                return "${permCard.name} is already tapped"
+                            }
+                            if (!predicateEvaluator.matches(state, projected, permId, atom.filter, context)) {
+                                return "${permCard.name} doesn't match the required filter: ${atom.filter.description}"
+                            }
+                        }
+                        // The measure floor — Teamwork N's "with total power N or more"
+                        // (CR 702.194a), summed from projected power so a lord bonus counts.
+                        if (atom.minMeasure > 0) {
+                            val measured = VariablePermanentsCost.measure(state, atom.xMeasure, chosen)
+                            if (measured < atom.minMeasure) {
+                                return "The permanents you chose have ${VariablePermanentsCost.measureName(atom.xMeasure)} " +
+                                    "$measured; ${atom.minMeasure} or more is required"
+                            }
+                        }
+                    }
                     // Mana / reveal are not produced as spell additional costs today;
                     // put-counters-on-self is ability-scoped (no permanent to accrue them on);
-                    // VariablePermanents and Mill are activated-ability-only costs, never spell
-                    // additional costs (canPayAdditionalCost already reports Mill unpayable).
+                    // Mill is an activated-ability-only cost, never a spell additional cost
+                    // (canPayAdditionalCost already reports Mill unpayable).
                     is CostAtom.Mana, is CostAtom.RevealFromHand,
-                    is CostAtom.PutCountersOnSelf, is CostAtom.VariablePermanents,
+                    is CostAtom.PutCountersOnSelf,
                     is CostAtom.Mill -> {}
                     is CostAtom.RemoveCounters -> {
                         val needed = when (val c = atom.count) {
@@ -2620,13 +2673,45 @@ class CastSpellHandler(
                                 events.addAll(tr.events)
                             }
                         }
+                        is CostAtom.VariablePermanents -> {
+                            // A variable-count permanent cost paid as a spell's additional cost —
+                            // Teamwork N taps the chosen creatures (CR 702.194a). Validation above
+                            // already re-checked control, filter, and the measure floor.
+                            //
+                            // A tap cause must be threaded through both sites that tap for this
+                            // atom — here and `CostHandler.payVariablePermanentsList`'s TAP branch.
+                            // See mechanics.md's Agent Maria Hill entry.
+                            val chosen = action.additionalCostPayment.variableCostPermanents
+                            when (atom.action) {
+                                PermanentCostAction.TAP -> for (permId in chosen) {
+                                    val (tappedState, tapEvent) = tap(currentState, permId)
+                                    currentState = tappedState
+                                    tapEvent?.let(events::add)
+                                }
+                                PermanentCostAction.SACRIFICE -> {
+                                    sacrificedSnapshots.addAll(
+                                        captureEntitySnapshots(chosen, currentState.projectedState)
+                                    )
+                                    for (permId in chosen) {
+                                        if (currentState.getEntity(permId) == null) continue
+                                        currentState = sacrificePermanentAsCost(currentState, permId, action.playerId, events)
+                                    }
+                                }
+                                PermanentCostAction.EXILE -> for (permId in chosen) {
+                                    val tr = com.wingedsheep.engine.handlers.effects.ZoneTransitionService
+                                        .moveToZone(currentState, permId, Zone.EXILE)
+                                    currentState = tr.state
+                                    events.addAll(tr.events)
+                                }
+                            }
+                        }
                         // PayLife is auto-paid in the loop above; mana / reveal aren't spell additional
                         // costs; put-counters-on-self is ability-scoped (a spell on the stack has no
-                        // permanent to accrue them on); VariablePermanents and Mill are
-                        // activated-ability-only costs, never spell additional costs (and
-                        // canPayAdditionalCost reports Mill unpayable, so this is unreachable).
+                        // permanent to accrue them on); Mill is an activated-ability-only cost, never a
+                        // spell additional cost (and canPayAdditionalCost reports Mill unpayable, so
+                        // this is unreachable).
                         is CostAtom.PayLife, is CostAtom.Mana, is CostAtom.RevealFromHand,
-                        is CostAtom.PutCountersOnSelf, is CostAtom.VariablePermanents,
+                        is CostAtom.PutCountersOnSelf,
                         is CostAtom.Mill -> {}
                         is CostAtom.RemoveCounters -> {
                             val resolvedRemovals = resolveDistributedCounterRemovalsForPayment(action)

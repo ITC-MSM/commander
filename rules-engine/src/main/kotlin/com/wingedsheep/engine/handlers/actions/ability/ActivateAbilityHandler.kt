@@ -953,7 +953,7 @@ class ActivateAbilityHandler(
         // Skipped when variableCostPermanents is already filled (engine-direct path / resumed replay).
         // -------------------------------------------------------------------
         if (variablePermanentsCost != null && chosenForCost.isEmpty()) {
-            val verb = if (variablePermanentsCost.action == PermanentCostAction.SACRIFICE) "sacrifice" else "exile"
+            val verb = com.wingedsheep.engine.mechanics.cost.VariablePermanentsCost.verb(variablePermanentsCost.action)
             val candidates = costHandler
                 .findMatchingCardsUnified(state, state.getBattlefield(action.playerId), variablePermanentsCost.filter, action.playerId)
                 .let { if (variablePermanentsCost.excludeSelf) it.filter { id -> id != action.sourceId } else it }
@@ -3124,18 +3124,14 @@ class ActivateAbilityHandler(
      * Read at target validation and stored on the stack for resolution re-validation and
      * `DynamicAmount.XValue`.
      *
-     * `TOTAL_MANA_VALUE` sums their mana values (CR 202.3); `COUNT` is simply how many were chosen.
-     * Both read correctly whether the permanents are still on the battlefield (validation) or
-     * already gone (resolution): mana value is intrinsic to the card, and the count is a property of
-     * the selection rather than of the game state.
+     * Delegates to the shared [com.wingedsheep.engine.mechanics.cost.VariablePermanentsCost.measure]
+     * so the activated-ability path, the cast path, and the enumerators all measure a selection the
+     * same way.
      */
     private fun variableCostX(
         state: GameState,
         atom: CostAtom.VariablePermanents,
         chosenIds: List<EntityId>,
-    ): Int = when (atom.xMeasure) {
-        VariableCostMeasure.TOTAL_MANA_VALUE ->
-            chosenIds.sumOf { state.getEntity(it)?.get<CardComponent>()?.manaValue ?: 0 }
-        VariableCostMeasure.COUNT -> chosenIds.size
-    }
+    ): Int = com.wingedsheep.engine.mechanics.cost.VariablePermanentsCost
+        .measure(state, atom.xMeasure, chosenIds)
 }

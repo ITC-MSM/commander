@@ -469,6 +469,29 @@ object Costs {
             AdditionalCost.Atom(CostAtom.Sacrifice(filter, count))
 
         /**
+         * Tap any number of permanents matching [filter] you control whose **total projected
+         * power** is [totalPower] or more — the "tap creatures for total power N" selection crew
+         * and saddle already use, re-exposed as a spell's additional cost (Teamwork N,
+         * CR 702.194a). The count is free; the power floor is the constraint.
+         *
+         * Tapping this way is a cost, not the `{T}` symbol, so summoning sickness (CR 302.6)
+         * doesn't apply; only untapped permanents may be chosen (CR 701.26a).
+         */
+        fun TapForTotalPower(
+            totalPower: Int,
+            filter: GameObjectFilter = GameObjectFilter.Creature
+        ): AdditionalCost = AdditionalCost.Atom(
+            CostAtom.VariablePermanents(
+                filter = filter,
+                minCount = 0,
+                excludeSelf = false,
+                action = PermanentCostAction.TAP,
+                xMeasure = VariableCostMeasure.TOTAL_POWER,
+                minMeasure = totalPower
+            )
+        )
+
+        /**
          * Return [count] permanents matching [filter] you control to their owner's hand
          * (Fear of Isolation — "As an additional cost to cast this spell, return a permanent
          * you control to its owner's hand").

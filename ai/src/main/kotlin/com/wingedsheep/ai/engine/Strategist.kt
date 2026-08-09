@@ -775,6 +775,38 @@ class Strategist(
             )
             "BouncePermanent" -> existing.copy(bouncedPermanents = info.validBounceTargets.take(info.bounceCount))
             "ExileFromGraveyard" -> existing.copy(exiledCards = info.validExileTargets.take(info.exileMinCount))
+            // Teamwork N (CR 702.194a): tap as *few* creatures as will clear the total-power
+            // threshold, and among equally-few selections the *smallest* bodies — a board with a
+            // 5/5 and a 1/1 paying teamwork 1 should turn the 1/1 sideways and keep the better
+            // blocker up. So: the cheapest single creature that clears it on its own if there is
+            // one, else greedy biggest-first to keep the count down. Creatures at 0 or negative
+            // power never help a sum (and can only drag it down), so they are skipped.
+            "TapForTotalPower" -> {
+                val required = info.tapForPowerRequired
+                val contributors = info.tapForPowerCreatures.filter { it.power > 0 }
+                val cheapestSolo = contributors.filter { it.power >= required }.minByOrNull { it.power }
+                if (cheapestSolo != null) {
+                    existing.copy(variableCostPermanents = listOf(cheapestSolo.entityId))
+                } else {
+                    val chosen = mutableListOf<EntityId>()
+                    var total = 0
+                    for (creature in contributors.sortedByDescending { it.power }) {
+                        if (total >= required) break
+                        chosen += creature.entityId
+                        total += creature.power
+                    }
+                    // Unreachable while the enumerator marks an unpayable teamwork variant
+                    // unaffordable, but never submit a declaration we can't pay: fall back to the
+                    // undeclared cast rather than an action the handler will reject.
+                    if (total < required) {
+                        return when (gameAction) {
+                            is CastSpell -> gameAction.copy(declaredCostSlot = null)
+                            else -> gameAction
+                        }
+                    }
+                    existing.copy(variableCostPermanents = chosen)
+                }
+            }
             else -> return gameAction
         }
         return when (gameAction) {

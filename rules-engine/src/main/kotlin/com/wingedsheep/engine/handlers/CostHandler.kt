@@ -8,6 +8,7 @@ import com.wingedsheep.engine.handlers.effects.library.MillAmountModifier
 import com.wingedsheep.engine.handlers.effects.life.LifePaymentService
 import com.wingedsheep.engine.handlers.effects.permanent.counters.resolveCounterType
 import com.wingedsheep.engine.mechanics.cost.CostPaymentService
+import com.wingedsheep.engine.mechanics.cost.VariablePermanentsCost
 import com.wingedsheep.engine.mechanics.mana.ManaPool
 import com.wingedsheep.engine.mechanics.mana.SpellPaymentContext
 import com.wingedsheep.engine.state.GameState
@@ -912,7 +913,10 @@ class CostHandler {
      * sacrifice" triggers and tracks Food/permanent sacrifices exactly like a fixed-count sacrifice
      * cost; only the required count differs (all chosen, rather than a printed N). An `EXILE` atom
      * moves the permanents via [ZoneTransitionService.moveToZone], so attached Auras fall off,
-     * tokens cease to exist, and leaves-the-battlefield triggers fire.
+     * tokens cease to exist, and leaves-the-battlefield triggers fire. A `TAP` atom taps them in
+     * place (Teamwork N, CR 702.194a) — the permanents stay on the battlefield, so only CR 701.26a's
+     * "only untapped permanents can be tapped" applies; summoning sickness (CR 302.6) governs the
+     * `{T}` symbol, not a tap cost, exactly as with crew.
      */
     private fun payVariablePermanentsList(
         state: GameState,
@@ -925,13 +929,14 @@ class CostHandler {
         val filter = atom.filter
         val minCount = atom.minCount
         val excludeSelf = atom.excludeSelf
-        val verb = if (atom.action == PermanentCostAction.SACRIFICE) "sacrifice" else "exile"
+        val verb = VariablePermanentsCost.verb(atom.action)
         // With no selection supplied, auto-pick ONLY when the choice is forced (exactly minCount
         // eligible). A real choice (more eligible than minCount) is paused for by
         // ActivateAbilityHandler; never silently guess which permanents to pay with.
         val toPay: List<EntityId> = if (choices.isEmpty()) {
             val candidates = findMatchingCardsUnified(state, state.getBattlefield(controllerId), filter, controllerId)
                 .let { if (excludeSelf) it.filter { id -> id != sourceId } else it }
+                .let { if (atom.action == PermanentCostAction.TAP) it.filter { id -> state.getEntity(id)?.has<TappedComponent>() != true } else it }
             if (candidates.size < minCount) {
                 return CostPaymentResult.failure("Not enough permanents to $verb (need $minCount, got ${candidates.size})")
             }
@@ -944,6 +949,45 @@ class CostHandler {
         }
         if (toPay.size < minCount) {
             return CostPaymentResult.failure("Not enough permanents chosen to $verb (need $minCount, got ${toPay.size})")
+        }
+        // A measure floor ("… with total power N or more") is checked instead of, or alongside, the
+        // count floor — CR 702.194a's teamwork threshold is on the sum, not the size.
+        if (atom.minMeasure > 0) {
+            val measured = VariablePermanentsCost.measure(state, atom.xMeasure, toPay)
+            if (measured < atom.minMeasure) {
+                return CostPaymentResult.failure(
+                    "Chosen permanents fall short of the required ${VariablePermanentsCost.measureName(atom.xMeasure)} " +
+                        "(need ${atom.minMeasure}, got $measured)"
+                )
+            }
+        }
+        // A tap cause must be threaded through both sites that tap for this atom — here and
+        // `CastSpellHandler`'s VariablePermanents branch. See mechanics.md's Agent Maria Hill entry.
+        if (atom.action == PermanentCostAction.TAP) {
+            val context = PredicateContext(controllerId = controllerId)
+            val projected = state.projectedState
+            var newState = state
+            val events = mutableListOf<GameEvent>()
+            for (id in toPay) {
+                val container = newState.getEntity(id)
+                    ?: return CostPaymentResult.failure("Permanent to tap not found")
+                if (projected.getController(id) != controllerId) {
+                    return CostPaymentResult.failure("Can only tap permanents you control")
+                }
+                if (container.has<TappedComponent>()) {
+                    return CostPaymentResult.failure("Permanent to tap is already tapped")
+                }
+                if (!predicateEvaluator.matches(state, projected, id, filter, context)) {
+                    return CostPaymentResult.failure("Permanent to tap does not match the required filter")
+                }
+                if (excludeSelf && id == sourceId) {
+                    return CostPaymentResult.failure("Cannot tap the source permanent for this cost")
+                }
+                val (tappedState, tapEvent) = tap(newState, id)
+                newState = tappedState
+                tapEvent?.let(events::add)
+            }
+            return CostPaymentResult.success(newState, manaPool, events)
         }
         if (atom.action == PermanentCostAction.SACRIFICE) {
             // requiredCount = the whole chosen set: the count is the payer's choice, not a printed N.
@@ -1115,12 +1159,21 @@ class CostHandler {
                         total >= needed
                     }
                 }
-                // Mana / return-to-hand / reveal / put-counters-on-self / exile-permanents / mill
-                // are not produced as spell additional costs today (put-counters-on-self is
-                // inherently ability-scoped — a spell on the stack has no permanent to put the
-                // counters on; and VariablePermanents is an activated-ability cost only).
+                // A variable-count permanent cost is payable when the payer has enough candidates to
+                // clear both floors — Teamwork N's "tap any number of creatures you control with
+                // total power N or more" (CR 702.194a) is unpayable when every untapped creature
+                // together falls short. No `sourceId` is passed — this function has no such
+                // parameter, and every caller is a *spell's* additional cost, which has no source
+                // permanent on the battlefield to exclude (teamwork sets `excludeSelf = false`
+                // anyway). Reaching this from an ability means adding a `sourceId` parameter first,
+                // since the atom's default is `excludeSelf = true`.
+                is CostAtom.VariablePermanents ->
+                    com.wingedsheep.engine.mechanics.cost.VariablePermanentsCost.canPay(state, controllerId, atom)
+                // Mana / return-to-hand / reveal / put-counters-on-self / mill are not produced as
+                // spell additional costs today (put-counters-on-self is inherently ability-scoped —
+                // a spell on the stack has no permanent to put the counters on).
                 is CostAtom.Mana, is CostAtom.ReturnToHand, is CostAtom.RevealFromHand,
-                is CostAtom.PutCountersOnSelf, is CostAtom.VariablePermanents, is CostAtom.Mill -> false
+                is CostAtom.PutCountersOnSelf, is CostAtom.Mill -> false
             }
             is AdditionalCost.PayLifePerTarget -> {
                 // Always payable: choosing zero targets pays zero life. Per-target life

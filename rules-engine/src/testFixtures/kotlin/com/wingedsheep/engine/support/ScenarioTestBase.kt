@@ -1616,6 +1616,52 @@ abstract class ScenarioTestBase : FunSpec() {
         }
 
         /**
+         * Cast [spellName] declaring its **teamwork** cost (CR 702.194a), tapping the named
+         * creatures to pay it. Names are resolved on the caster's battlefield in order; repeat a
+         * name to tap two copies of it.
+         *
+         * @param chosenModes Cast-time mode picks for a modal teamwork spell ("Choose one. If this
+         *   spell was cast using teamwork, choose both instead"), empty for a non-modal spell.
+         */
+        fun castSpellWithTeamwork(
+            playerNumber: Int,
+            spellName: String,
+            vararg tapNames: String,
+            targetId: EntityId? = null,
+            xValue: Int? = null,
+            chosenModes: List<Int> = emptyList(),
+        ): ExecutionResult {
+            val playerId = if (playerNumber == 1) player1Id else player2Id
+            val cardId = state.getHand(playerId).find { entityId ->
+                state.getEntity(entityId)?.get<CardComponent>()?.name == spellName
+            } ?: error("Card '$spellName' not found in player $playerNumber's hand")
+
+            val used = mutableSetOf<EntityId>()
+            val projected = state.projectedState
+            val tapped = tapNames.map { name ->
+                projected.getBattlefieldControlledBy(playerId).find { entityId ->
+                    if (entityId in used) return@find false
+                    state.getEntity(entityId)?.get<CardComponent>()?.name == name
+                }?.also(used::add)
+                    ?: error("Permanent '$name' not found on player $playerNumber's battlefield")
+            }
+
+            return execute(
+                CastSpell(
+                    playerId = playerId,
+                    cardId = cardId,
+                    targets = targetId?.let { listOf(ChosenTarget.Permanent(it)) } ?: emptyList(),
+                    chosenModes = chosenModes,
+                    xValue = xValue,
+                    declaredCostSlot = com.wingedsheep.sdk.scripting.ChoiceSlot.TEAMWORK,
+                    additionalCostPayment = com.wingedsheep.sdk.scripting.AdditionalCostPayment(
+                        variableCostPermanents = tapped
+                    ),
+                )
+            )
+        }
+
+        /**
          * Cast a spell **collecting evidence** (CR 701.59) — declaring its optional "you may
          * collect evidence N" additional cost and paying it by exiling [evidenceNames] from the
          * caster's graveyard.

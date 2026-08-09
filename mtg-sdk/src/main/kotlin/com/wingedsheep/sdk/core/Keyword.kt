@@ -686,7 +686,28 @@ enum class Keyword(val displayName: String) {
      * `GrantKeywordToSpellEffect` — Ojer Pakpatiq, Deepest Epoch grants it to instants you cast
      * from hand).
      */
-    REBOUND("Rebound");
+    REBOUND("Rebound"),
+
+    /**
+     * Teamwork N (CR 702.194, Marvel Super Heroes). A static ability that functions while the
+     * spell is on the stack: "As an additional cost to cast this spell, you may tap any number of
+     * creatures you control with total power N or more" (CR 702.194a). A spell whose controller
+     * declared that intention was cast *using teamwork* (CR 702.194b), and the card's own riders
+     * branch on that fact.
+     *
+     * Modelled on the shared optional-additional-cost rail:
+     * [com.wingedsheep.sdk.scripting.KeywordAbility.OptionalAdditionalCost] with
+     * `declaredSlot = `[com.wingedsheep.sdk.scripting.ChoiceSlot.TEAMWORK], so "cast using
+     * teamwork" is a *different* fact from "kicked" or "bargained". The cost itself is a
+     * [com.wingedsheep.sdk.scripting.costs.CostAtom.VariablePermanents] tapping creatures measured
+     * by total power — the same selection crew and saddle use. Wired by the `teamwork(n)` DSL
+     * helper on [com.wingedsheep.sdk.dsl.CardBuilder]; payoffs read it back through
+     * [com.wingedsheep.sdk.dsl.Conditions.TeamworkWasPaid].
+     *
+     * Tapping creatures this way is a *cost*, not the `{T}` symbol, so summoning sickness
+     * (CR 302.6) never applies — only CR 701.26a's "only untapped permanents can be tapped".
+     */
+    TEAMWORK("Teamwork");
 
     companion object {
         fun fromString(value: String): Keyword? =

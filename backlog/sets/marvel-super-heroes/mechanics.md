@@ -5,8 +5,9 @@ missing mechanic they need. Each mechanic is `add-feature` territory (a new SDK 
 keyword, or engine capability) — not pure card authoring.
 
 Scope: the 276 booster cards (collector numbers 1–276). Triaged against the SDK on 2026-08-04,
-updated 2026-08-07 after **power-up** and the **per-turn effect budget** shipped. **45 of the 276 are
-blocked**; every other card is buildable from existing primitives.
+updated 2026-08-07 after **power-up** and the **per-turn effect budget** shipped, and 2026-08-08
+after **teamwork** shipped. **33 of the 276 are blocked**; every other card is buildable from
+existing primitives.
 
 Supported today and *not* a blocker despite looking like one: **power-up** (see the first section
 below — the keyword, its once-only limit and its pip-wise cost reduction all ship), **harness / ∞ abilities**
@@ -93,46 +94,82 @@ sweep is `.manaValueIsOdd()` / `.manaValueIsEven()` + a modal.
   (`CardPredicate.ManaValueAtMostDynamic(DynamicAmounts.sourcePower())` — the predicate exists, but
   nothing evaluates a source-relative dynamic filter inside delayed-trigger matching).
 
-## Teamwork N — 13 cards ⛔
+## Teamwork N — SHIPPED ✅ (3 of 13 cards implemented, 9 now unblocked, 1 still blocked)
 
 > Teamwork 4 *(As an additional cost to cast this spell, you may tap any number of creatures you
 > control with total power 4 or more.)*
 
-The set's second new mechanic: an **optional** additional cast cost plus a durable "was cast using
-teamwork" fact readable at resolution.
+The set's second new mechanic, implemented 2026-08-08 against **CR 702.194**: an **optional**
+additional cast cost plus a durable "was cast using teamwork" fact readable at resolution. Authoring
+is `teamwork(n)` in the `card { }` block — the same one-line shape as `bargain()`, deliberately,
+since both are optional additional costs riding one rail. See
+`docs/card-sdk-language-reference.md` → *Teamwork N*.
 
-The **payoff half is nearly free**. Modelling it as
-`KeywordAbility.OptionalAdditionalCost(additionalCost = …, branchesEffect = true, displayPrefix =
-"Teamwork", keyword = Keyword.TEAMWORK)` (`mtg-sdk/.../scripting/KeywordAbility.kt`) puts it on the
-existing kicker/bargain rail, so `Conditions.WasKicked` already answers it and
-`modal(dynamicChooseCount = DynamicAmount.Conditional(wasTeamwork, 2, 1))` already expresses "choose
-one; if cast using teamwork, choose both instead" — no new modal machinery. The clean version adds a
-dedicated `ChoiceSlot.TEAMWORK` + `Conditions.TeamworkWasPaid` facade mirroring `BARGAINED` /
-`WEB_SLUNG`, and `Keyword.TEAMWORK` for reminder text.
+What that helper does:
 
-The **genuine gap is the cost atom**: "tap any number of creatures you control with total power N or
-more". `CostAtom.TapPermanents` (`mtg-sdk/.../scripting/costs/CostAtom.kt`) is a *fixed* count;
-`CostAtom.VariablePermanents` is variable-count but its `PermanentCostAction` covers only
-`EXILE`/`SACRIFICE` and its `VariableCostMeasure` only `TOTAL_MANA_VALUE`/`COUNT`, with the threshold
-expressed as `minCount`. Needed: `PermanentCostAction.TAP`, `VariableCostMeasure.TOTAL_POWER`, and a
-`minMeasure` threshold field, plus the matching payment/enumeration branches.
+1. **The rail** — `KeywordAbility.OptionalAdditionalCost(additionalCost = …, displayPrefix =
+   "Teamwork N", keyword = Keyword.TEAMWORK, declaredSlot = ChoiceSlot.TEAMWORK)`, so the enumerator
+   offers a `CastWithKicker` variant labelled "(Teamwork N)", the ordinary additional-cost payment
+   flow collects the taps, and the engine stamps the slot on the stack object and durably onto the
+   permanent it becomes. `ChoiceSlot.TEAMWORK` keeps "cast using teamwork" a *different* fact from
+   "kicked" and "bargained" (CR 702.194b).
+2. **The payoff** — `Conditions.TeamworkWasPaid`, a facade over
+   `CastChoiceMade(ChoiceSlot.TEAMWORK)` mirroring `WasBargained`. The "choose both instead" shape
+   (the mode count is CR 700.2, branching on the CR 601.2b declaration — *not* CR 702.194c, which is
+   about targets) is `modal(chooseCount = 2, minChooseCount = 1, dynamicChooseCount =
+   DynamicAmount.Conditional(Conditions.TeamworkWasPaid, 2, 1))` — the existing modal type, with two
+   wiring fixes it needed: the cast handler now evaluates `dynamicChooseCount` with *this cast's*
+   `declaredCostSlot` (without it the teamwork branch could never be taken, since the durable
+   cast-choices bag only exists after the spell resolves), and the declared cast is enumerated as a
+   `CastSpellModal` variant so the client is offered the modes at all. Covered end to end by
+   `TeamworkMechanicScenarioTest`'s "Teamwork Orders" cases.
+   **CR 702.194c** — a teamwork-only clause that has its own target is chosen only on the declared
+   cast — is the rail's `kickerTarget(...)` / `kickerEffect` slots: the enumerator prices the plain
+   cast against `targetRequirements` and the declared cast against `kickerTargetRequirements`, so the
+   plain cast is announced as though the clause weren't there. Covered by the "Teamwork Rally" cases.
+3. **The cost atom** — the one real gap, now closed. `CostAtom.VariablePermanents` gained
+   `PermanentCostAction.TAP`, `VariableCostMeasure.TOTAL_POWER` and a `minMeasure` floor (a threshold
+   on the *measure*, not the count), reached through `Costs.additional.TapForTotalPower(n)`. The atom
+   also became payable as a *spell* additional cost, not only an activated-ability cost, through
+   `AdditionalCostPayment.variableCostPermanents`.
+4. **The crew selection, mirrored** — `VariablePermanentsCost`
+   (`rules-engine/.../mechanics/cost/`) is the shared answer to "which permanents can pay, and how
+   much do the chosen ones measure" for every reader of `CostAtom.VariablePermanents`, modelled on
+   `CrewEnumerator`: untapped only (CR 701.26a), controlled by the payer, matched and summed through
+   **projected** state, and with no summoning-sickness check (CR 302.6 governs the `{T}` symbol, not
+   a tap paid as a cost). The cast enumerators, the cast validator, the payer and the built-in AI all
+   read it, so they can't disagree. Crew and saddle are *not* routed through it — they are a
+   different activation shape and keep their own copy of the eligibility rule (their measure must
+   stay separate, since crew-specific "crews as though its power were 2 greater" statics must not
+   raise a teamwork total); folding their candidate selection in is an open follow-up.
+   The candidate payload sent to the client is the crew/saddle `TapForPowerCreatureData`, under a
+   `costType = "TapForTotalPower"` cost-payment phase.
 
-**The selection itself already exists** in the engine for Crew and Saddle — "tap any number of
-creatures you control with total power N or greater" is precisely the crew payment
-(`rules-engine/.../legalactions/enumerators/CrewEnumerator.kt`, `CrewSaddleContributorsComponent`,
-and the total-power sum in `mechanics/mana/CostCalculator.kt`). It is wired as an
-*activated-ability* cost rather than a spell's optional additional cost; the work is re-exposing it
-on the cast rail, not building it.
+Open follow-ups, neither reachable by a printed card today: folding crew's candidate selection onto
+`VariablePermanentsCost.candidates` (their measures must stay split), and modal casts from a
+non-hand zone — `CastFromZoneEnumerator` has never emitted `CastSpellModal` at all, so a modal
+teamwork spell given flashback or a graveyard-cast grant would be advertised without its modes.
 
-Blocked cards: **Agent Maria Hill** [2] · **Helicarrier Strike** [15] · **Murdock's Crusade** [24] ·
-**Atlantis Attacks** [46] · **We Say Thee Nay!** [82] · **Cruel Alliance** [92] · **Too Evil to Stay
-Dead** [118] · **Widow's Bite** [122] · **HULK SMASH!** [135] · **Repulsor Blast** [150] · **Team
-Tactics** [155] · **Earth's Mightiest Heroes** [165] · **Go Nuts!** [168].
+Tests: `TeamworkMechanicScenarioTest` (multi-creature payment, single-creature payment, declining,
+an unmet threshold, already-tapped and opponent-controlled creatures, projected power via a lord,
+summoning sickness, the durable flag on a resolving permanent, teamwork-vs-kicked separation, the
+advertised legal action, the modal "Teamwork Orders" cases, and the CR 702.194c "Teamwork Rally"
+cases) plus one scenario test per implemented card.
 
-**Agent Maria Hill** [2] needs one thing more: "whenever she becomes tapped **to pay a teamwork
-cost**". `TappedEvent` carries only `tappedById` with no cause, so a teamwork tap is
-indistinguishable from a crew, saddle, attack, or mana tap. Add a tap-reason field on the event (set
-in the teamwork payment path) and a matching predicate on `EventPattern.TapEvent`.
+**Implemented (3):** Helicarrier Strike [15] · Repulsor Blast [150] · Team Tactics [155].
+
+**Now buildable as ordinary card work (9):** Murdock's Crusade [24] · Atlantis Attacks [46] · We Say
+Thee Nay! [82] · Cruel Alliance [92] · Too Evil to Stay Dead [118] · Widow's Bite [122] ·
+HULK SMASH! [135] · Earth's Mightiest Heroes [165] · Go Nuts! [168]. The modal ones use
+`dynamicChooseCount` as above.
+
+### Still blocked — 1 card ⛔
+
+- **Agent Maria Hill** [2] — "whenever she becomes tapped **to pay a teamwork cost**". `TappedEvent`
+  still carries only `tappedById` with no cause, so a teamwork tap is indistinguishable from a crew,
+  saddle, attack, or mana tap. Add a tap-reason field on the event (set in the teamwork payment path,
+  which now runs through `CostHandler`/`CastSpellHandler`) and a matching predicate on
+  `EventPattern.TapEvent`.
 
 ## Shield counters — 1 card ⛔
 
