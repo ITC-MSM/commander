@@ -3232,8 +3232,8 @@ private fun EmitCtx.triggerSpecFor(rule: JsonObject): String? {
     // OneOrMoreOpponentPermanentsEnter for opponents), so the rendered filter must NOT re-encode the
     // controller clause. Only the exact "token" subject renders today — the bare GameObjectFilter.Token
     // (Spiritcall Enthusiast's "tokens you control", Kambal's "tokens your opponents control"). Any other
-    // subject filter declines -> SCAFFOLD rather than widening (gameObjectFilterDsl has no positive
-    // IsToken rendering, so it would silently drop the token restriction).
+    // subject filter declines -> SCAFFOLD rather than widening (gameObjectFilterDsl composes `.token()`
+    // onto a *cardtype* base, so a bare `IsToken` subject has no base to hang it on there).
     if (jsonContains(trig, "_Trigger", "WhenAnyNumberOfPermanentsEnterTheBattlefield")) {
         val subject = (trig["args"] as? JsonArray)?.firstOrNull() ?: trig["args"]
         val opponentControlled = jsonContains(subject, "_Players", "Opponent")

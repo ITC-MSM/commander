@@ -93,6 +93,15 @@ internal object FilterPredicates {
     fun nontoken(node: JsonElement?): Link? = if (node.hasTag("IsNonToken")) Link("nontoken") else null
 
     /**
+     * `.token()` for a positive `IsToken` clause ("creature tokens you control"), else null. The
+     * mirror of [nontoken] — without it an `And(IsCardtype Creature, IsToken, ControlledByAPlayer)`
+     * subject rendered as a bare `Creature.youControl()`, silently WIDENING the anthem to every
+     * creature you control (Intangible Virtue). [hasTag] matches the discriminator value exactly, so
+     * this never fires on the `IsNonToken` sibling.
+     */
+    fun token(node: JsonElement?): Link? = if (node.hasTag("IsToken")) Link("token") else null
+
+    /**
      * `.powerOrToughnessAtLeast(N)` for the `Or[PowerIs >= N, ToughnessIs >= N]` shape ("power or
      * toughness 4 or greater"), else null. When this fires, the caller must NOT also append the
      * standalone [powerAtLeast] — the `PowerIs` clause it would match lives inside this Or, and emitting
@@ -367,8 +376,8 @@ internal fun EmitCtx.creatureFilterExpr(filterNode: JsonElement?): Dsl? {
         // widen the target. Decline so the card scaffolds rather than emit a too-broad filter.
         val statePredicates = listOf(
             "IsAttacking", "IsBlocking", "IsTapped", "IsUntapped", "PowerIs", "ToughnessIs", "ManaValueIs",
-            "IsColor", "IsNonColor", "HasAbility", "DoesntHaveAbility", "IsNonToken", "HasACounterOfType",
-            "WasDealtDamageThisTurn",
+            "IsColor", "IsNonColor", "HasAbility", "DoesntHaveAbility", "IsNonToken", "IsToken",
+            "HasACounterOfType", "WasDealtDamageThisTurn",
         )
         if (statePredicates.any { it in blob }) return null
         return Call("TargetFilter", listOf(arg(Infix("or", subs.map { Lit("GameObjectFilter.Creature").dot("withSubtype", arg(subtypeArg(it))) }))))
@@ -392,6 +401,9 @@ internal fun EmitCtx.creatureFilterExpr(filterNode: JsonElement?): Dsl? {
     FilterPredicates.tapped(filterNode)?.let { node = node.dot(it) }
     FilterPredicates.attacking(filterNode)?.let { node = node.dot(it) }
     FilterPredicates.nontoken(filterNode)?.let { node = node.dot(it) }
+    // "target token you control" (IsToken) — the positive mirror of nontoken; dropping it would widen
+    // the target to any creature.
+    FilterPredicates.token(filterNode)?.let { node = node.dot(it) }
     // "power or toughness N or greater" takes the whole Or; suppress the standalone power bounds it
     // would otherwise also match (the PowerIs clause inside the Or) — see [powerOrToughnessAtLeast].
     val powerOrToughness = FilterPredicates.powerOrToughnessAtLeast(filterNode)
@@ -1207,6 +1219,9 @@ internal fun EmitCtx.gameObjectFilterExpr(filterNode: JsonElement?): Dsl? {
     // GameObjectFilter.Creature.blocking(), the same helper TargetFilter.BlockingCreature uses).
     FilterPredicates.blocking(filterNode)?.let { node = node.dot(it) }
     FilterPredicates.nontoken(filterNode)?.let { node = node.dot(it) }
+    // "creature TOKENS you control get +1/+1" (IsToken) — Intangible Virtue. Dropping this widened the
+    // anthem to every creature you control, so it's a real predicate here, not decoration.
+    FilterPredicates.token(filterNode)?.let { node = node.dot(it) }
     // "a face-down permanent you control" (IsFaceDown) — Cryptid Inspector's "whenever a face-down
     // permanent you control enters". Backed by GameObjectFilter.faceDown(); dropping it would widen
     // the trigger to every permanent entering, so it's a real predicate here.
