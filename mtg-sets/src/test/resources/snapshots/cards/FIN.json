@@ -26851,7 +26851,7 @@
                 "trigger": {
                     "type": "PermanentsSacrificedEvent",
                     "filter": "creature",
-                    "byAnyPlayer": true
+                    "sacrificedBy": "Each"
                 },
                 "binding": "ANY",
                 "effect": {

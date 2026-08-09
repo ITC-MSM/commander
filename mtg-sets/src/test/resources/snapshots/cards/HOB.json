@@ -1490,6 +1490,37 @@
     }
 }
 
+// Dwarven Mauler
+{
+    "name": "Dwarven Mauler",
+    "manaCost": "{R}",
+    "typeLine": "Creature — Dwarf Warrior",
+    "oracleText": "Equip abilities you activate that target this creature cost {2} less to activate.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ReduceEquipCost",
+                "amount": 2,
+                "onlyIfTargetIsSource": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "95",
+        "rarity": "UNCOMMON",
+        "artist": "Nathaniel Himawan",
+        "flavorText": "There rose from across the valley a deep-throated roar. With cries of \"Moria!\" and \"Dáin, Dáin!\" the Dwarves of the Iron Hills plunged in.",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/d/bd0f0415-43af-4f5d-8999-853c5d42780d.jpg?1784895019"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Dwarven Provisioner
 {
     "name": "Dwarven Provisioner",
@@ -1751,6 +1782,91 @@
         "WHITE",
         "BLUE"
     ]
+}
+
+// Elven Passage
+{
+    "name": "Elven Passage",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "{T}, Pay 1 life, Sacrifice this land: Search your library for a basic land card, put it onto the battlefield tapped, then shuffle. You may behold an Elf. If you do, untap that land.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        "CostTap",
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomPayLife",
+                                "amount": 1
+                            }
+                        },
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Library",
+                                "filter": "basicland"
+                            },
+                            "storeAs": "passage_searchable"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "passage_searchable",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "passage_found",
+                            "prompt": "Search for a basic land card to put onto the battlefield tapped"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "passage_found",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Battlefield",
+                                "placement": "Tapped"
+                            },
+                            "storeMovedAs": "passage_movedLand"
+                        },
+                        "ShuffleLibrary",
+                        {
+                            "type": "Behold",
+                            "filter": "Elf",
+                            "ifBeheld": {
+                                "type": "TapUntapCollection",
+                                "collectionName": "passage_movedLand",
+                                "tap": false
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "Search your library for a basic land card, put it onto the battlefield tapped, then shuffle. You may behold an Elf. If you do, untap that land."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "181",
+        "rarity": "RARE",
+        "artist": "Shahab Alizadeh",
+        "flavorText": "Filled with the twinkling lights, laughter, and songs of the Elves.",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/d/dd1fd2ab-2565-4798-a832-fc849df82f74.jpg?1785323319"
+    },
+    "colorIdentityOverride": []
 }
 
 // Elven Raft-Steerer
@@ -2380,6 +2496,86 @@
     ]
 }
 
+// Getaway Barrel
+{
+    "name": "Getaway Barrel",
+    "manaCost": "{3}{R}",
+    "typeLine": "Artifact",
+    "oracleText": "When this artifact is put into a graveyard from the battlefield, reveal the top thirteen cards of your library. Put a random creature card from among them onto the battlefield. Put the rest on the bottom of your library in a random order.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 13
+                                }
+                            },
+                            "storeAs": "barrel_revealed",
+                            "revealed": true
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "barrel_revealed",
+                            "selection": {
+                                "type": "Random",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "filter": "creature",
+                            "storeSelected": "barrel_toBattlefield",
+                            "storeRemainder": "barrel_toBottom"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "barrel_toBattlefield",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Battlefield"
+                            }
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "barrel_toBottom",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Library",
+                                "placement": "Bottom"
+                            },
+                            "order": "Random"
+                        }
+                    ]
+                },
+                "descriptionOverride": "When this artifact is put into a graveyard from the battlefield, reveal the top thirteen cards of your library. Put a random creature card from among them onto the battlefield. Put the rest on the bottom of your library in a random order."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "98",
+        "rarity": "RARE",
+        "artist": "Pablo Mendoza",
+        "flavorText": "\"I do hope I put the lids on tight enough!\"\n—Bilbo",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/4/e4819aa6-5d28-4a37-942d-89523e30c4e1.jpg?1785323241"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Giant's Boulder
 {
     "name": "Giant's Boulder",
@@ -2491,6 +2687,89 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Gleaming Splendor
+{
+    "name": "Gleaming Splendor",
+    "manaCost": "{1}{W}",
+    "typeLine": "Enchantment",
+    "oracleText": "Whenever an opponent draws their second card each turn, you create a Treasure token.\n{2}{W}: Two target players each draw a card.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "NthCardDrawnEvent",
+                    "nthCard": 2,
+                    "player": "EachOpponent"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Treasure"
+                },
+                "descriptionOverride": "Whenever an opponent draws their second card each turn, you create a Treasure token."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{2}{W}"
+                    }
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            },
+                            "target": {
+                                "type": "ContextTarget",
+                                "index": 0
+                            }
+                        },
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            },
+                            "target": {
+                                "type": "ContextTarget",
+                                "index": 1
+                            }
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetPlayer",
+                        "count": 2,
+                        "id": "two target players"
+                    }
+                ],
+                "descriptionOverride": "Two target players each draw a card."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "15",
+        "rarity": "MYTHIC",
+        "artist": "Kekai Kotaki",
+        "flavorText": "Bilbo had heard tell and sing of Dragon-hoards before, but the splendor, the lust, the glory of such treasure had never yet come home to him.",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/b/3b087bd4-bbb7-4963-bdb6-0a700ff19a04.jpg?1785496942"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 
@@ -4472,6 +4751,92 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Old Fat Spider Can't See Me
+{
+    "name": "Old Fat Spider Can't See Me",
+    "manaCost": "{2}{U}",
+    "typeLine": "Enchantment — Saga",
+    "oracleText": "(As this Saga enters and after your draw step, add a lore counter. Sacrifice after IV.)\nI — Target creature you control gains hexproof for as long as this Saga remains on the battlefield.\nII — Prevent all damage that would be dealt by up to one target creature for as long as this Saga remains on the battlefield.\nIII, IV — Draw a card.",
+    "script": {
+        "sagaChapters": [
+            {
+                "chapter": 1,
+                "effect": {
+                    "type": "GrantKeyword",
+                    "keyword": "HEXPROOF",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature you control"
+                    },
+                    "duration": {
+                        "type": "WhileSourceOnBattlefield",
+                        "sourceDescription": "this Saga"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature ctrl:you"
+                    },
+                    "id": "target creature you control"
+                }
+            },
+            {
+                "chapter": 2,
+                "effect": {
+                    "type": "PreventDamageShield",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "up to one target creature"
+                    },
+                    "direction": "FromTarget",
+                    "duration": {
+                        "type": "WhileSourceOnBattlefield",
+                        "sourceDescription": "this Saga"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "optional": true,
+                    "filter": {
+                        "baseFilter": "creature"
+                    },
+                    "id": "up to one target creature"
+                }
+            },
+            {
+                "chapter": 3,
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                }
+            },
+            {
+                "chapter": 4,
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "50",
+        "rarity": "UNCOMMON",
+        "artist": "Rovina Cai",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/a/4a865cea-f947-4736-8ace-ba478fceeb22.jpg?1785497065"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 

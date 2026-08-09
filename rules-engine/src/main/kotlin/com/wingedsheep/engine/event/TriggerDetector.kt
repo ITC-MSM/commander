@@ -2220,14 +2220,20 @@ class TriggerDetector(
                 // the self-sacrifice pass below (the source has left the battlefield by then).
                 if (ability.binding != TriggerBinding.ANY && ability.binding != TriggerBinding.OTHER) continue
 
-                // By default the trigger watches only the source controller's own sacrifices
-                // ("Whenever you sacrifice…"). When byAnyPlayer is set it watches every player's
-                // ("Whenever a player sacrifices…", Zodiark) — fire once per sacrificing player.
+                // Whose sacrifices this trigger watches. Player.You (default) is the source
+                // controller's own ("Whenever you sacrifice…"); Player.Each is every player's
+                // ("Whenever a player sacrifices…", Zodiark); Player.EachOpponent is the source
+                // controller's opponents' ("Whenever an opponent sacrifices…", Vengeful Tracker).
+                // The multi-player scopes fire once per sacrificing player.
                 val controllerId = entry.controllerId
-                val watchedPlayers = if (trigger.byAnyPlayer) {
-                    sacrificeByController.keys.toList()
-                } else {
-                    if (sacrificeByController.containsKey(controllerId)) listOf(controllerId) else emptyList()
+                val watchedPlayers = when (trigger.sacrificedBy) {
+                    Player.Each -> sacrificeByController.keys.toList()
+                    // CR 102.3 — teammates are not opponents, so go through getOpponents rather
+                    // than "everyone but me".
+                    Player.EachOpponent ->
+                        state.getOpponents(controllerId).filter { sacrificeByController.containsKey(it) }
+                    else ->
+                        if (sacrificeByController.containsKey(controllerId)) listOf(controllerId) else emptyList()
                 }
 
                 for (sacrificingPlayerId in watchedPlayers) {
@@ -2298,6 +2304,10 @@ class TriggerDetector(
                         val trigger = ability.trigger
                         if (trigger !is EventPattern.PermanentsSacrificedEvent) continue
                         if (Zone.BATTLEFIELD !in ability.activeZones) continue
+                        // This pass only ever sees a permanent sacrificed by its own controller, so
+                        // an opponent-scoped trigger ("Whenever an opponent sacrifices…") can never
+                        // be satisfied here.
+                        if (trigger.sacrificedBy == Player.EachOpponent) continue
 
                         if (trigger.perPermanent) {
                             // Per-permanent template ("a/another permanent") where the source is

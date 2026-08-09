@@ -1718,6 +1718,85 @@
     ]
 }
 
+// Forum Familiar
+{
+    "name": "Forum Familiar",
+    "manaCost": "{W}",
+    "typeLine": "Creature — Cat",
+    "oracleText": "Disguise {1}{W} (You may cast this card face down for {3} as a 2/2 creature with ward {2}. Turn it face up any time for its disguise cost.)\nWhen this creature is turned face up, return another target permanent you control to its owner's hand and put a +1/+1 counter on this creature.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywordAbilities": [
+        {
+            "type": "Disguise",
+            "disguiseCost": {
+                "type": "PayAtom",
+                "atom": {
+                    "type": "AtomMana",
+                    "cost": "{1}{W}"
+                }
+            }
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "TurnFaceUpEvent",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "MoveToZone",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "another target permanent you control"
+                            },
+                            "destination": "Hand"
+                        },
+                        {
+                            "type": "AddCounters",
+                            "counterType": "+1/+1",
+                            "count": 1,
+                            "target": "Self"
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "permanent ctrl:you",
+                        "excludeSelf": true
+                    },
+                    "id": "another target permanent you control"
+                },
+                "descriptionOverride": "When this creature is turned face up, return another target permanent you control to its owner's hand and put a +1/+1 counter on this creature."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "16",
+        "rarity": "UNCOMMON",
+        "artist": "Ilse Gort",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/0/b06a243d-acc8-42cd-926c-98a4cc96ab21.jpg?1783912926",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "Any time you have priority, you may turn the face-down creature face up by revealing what its disguise cost is and paying that cost. This is a special action. It doesn't use the stack and can't be responded to."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "Turning a permanent face up or face down doesn't change whether that permanent is tapped or untapped."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Galvanize
 {
     "name": "Galvanize",
@@ -2026,7 +2105,8 @@
                     },
                     "id": "up to two target cards from a single graveyard",
                     "sameOwner": true
-                }
+                },
+                "descriptionOverride": "When this creature enters, exile up to two target cards from a single graveyard."
             }
         ]
     },
@@ -2161,57 +2241,6 @@
     ]
 }
 
-// Harried Dronesmith
-{
-    "name": "Harried Dronesmith",
-    "manaCost": "{3}{R}",
-    "typeLine": "Creature — Human Artificer",
-    "oracleText": "At the beginning of combat on your turn, create a 1/1 colorless Thopter artifact creature token with flying. It gains haste until end of turn. Sacrifice it at the beginning of your next end step.",
-    "creatureStats": {
-        "power": 2,
-        "toughness": 3
-    },
-    "script": {
-        "triggeredAbilities": [
-            {
-                "id": "ability_1",
-                "trigger": {
-                    "type": "StepEvent",
-                    "step": "BEGIN_COMBAT"
-                },
-                "binding": "ANY",
-                "effect": {
-                    "type": "CreateToken",
-                    "power": 1,
-                    "toughness": 1,
-                    "colors": [],
-                    "creatureTypes": [
-                        "Thopter"
-                    ],
-                    "keywords": [
-                        "FLYING",
-                        "HASTE"
-                    ],
-                    "name": "Thopter",
-                    "artifactToken": true,
-                    "sacrificeAtStep": "END"
-                },
-                "descriptionOverride": "At the beginning of combat on your turn, create a 1/1 colorless Thopter artifact creature token with flying. It gains haste until end of turn. Sacrifice it at the beginning of your next end step."
-            }
-        ]
-    },
-    "metadata": {
-        "collectorNumber": "131",
-        "rarity": "UNCOMMON",
-        "artist": "Lindsey Look",
-        "flavorText": "After the eleventh consecutive thopter failed to return from Gruul territory, she developed a disposable model.",
-        "imageUri": "https://cards.scryfall.io/normal/front/3/6/36cb25ee-3c84-40a8-ba45-7e44893deecf.jpg?1783912879"
-    },
-    "colorIdentityOverride": [
-        "RED"
-    ]
-}
-
 // Hedge Maze
 {
     "name": "Hedge Maze",
@@ -2318,83 +2347,105 @@
     ]
 }
 
-// Hotshot Investigators
+// Knife
 {
-    "name": "Hotshot Investigators",
-    "manaCost": "{5}{U}",
-    "typeLine": "Creature — Vedalken Detective",
-    "oracleText": "When this creature enters, return up to one other target creature to its owner's hand. If you controlled it, investigate. (Create a Clue token. It's an artifact with \"{2}, Sacrifice this token: Draw a card.\")",
-    "creatureStats": {
-        "power": 4,
-        "toughness": 4
-    },
+    "name": "Knife",
+    "manaCost": "{R}",
+    "typeLine": "Artifact — Clue Equipment",
+    "oracleText": "During your turn, equipped creature gets +1/+0 and has first strike.\n{2}, Sacrifice this Equipment: Draw a card.\nEquip {2}",
     "script": {
-        "triggeredAbilities": [
+        "activatedAbilities": [
             {
                 "id": "ability_1",
-                "trigger": {
-                    "type": "ZoneChangeEvent",
-                    "to": "Battlefield"
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}"
+                            }
+                        },
+                        "CostSacrificeSelf"
+                    ]
                 },
                 "effect": {
-                    "type": "Gated",
-                    "gate": {
-                        "type": "Gate.WhenCondition",
-                        "condition": {
-                            "type": "EntityMatches",
-                            "entity": {
-                                "type": "ContextTarget",
-                                "index": 0
-                            },
-                            "filter": "creature ctrl:you"
-                        }
-                    },
-                    "then": {
-                        "type": "Composite",
-                        "effects": [
-                            {
-                                "type": "MoveToZone",
-                                "target": {
-                                    "type": "BoundVariable",
-                                    "name": "other creature"
-                                },
-                                "destination": "Hand"
-                            },
-                            {
-                                "type": "CreatePredefinedToken",
-                                "tokenType": "Clue"
-                            }
-                        ]
-                    },
-                    "otherwise": {
-                        "type": "MoveToZone",
-                        "target": {
-                            "type": "BoundVariable",
-                            "name": "other creature"
-                        },
-                        "destination": "Hand"
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                }
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{2}"
                     }
                 },
-                "targetRequirement": {
-                    "type": "TargetObject",
-                    "optional": true,
-                    "filter": {
-                        "baseFilter": "creature",
-                        "excludeSelf": true
-                    },
-                    "id": "other creature"
-                }
+                "effect": {
+                    "type": "AttachEquipment",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "creature you control"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        },
+                        "id": "creature you control"
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "isEquipAbility": true
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "ModifyStats",
+                    "powerBonus": 1,
+                    "toughnessBonus": 0
+                },
+                "condition": "IsYourTurn"
+            },
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "GrantKeyword",
+                    "keyword": "FIRST_STRIKE"
+                },
+                "condition": "IsYourTurn"
             }
         ]
     },
+    "equipCost": "{2}",
     "metadata": {
-        "collectorNumber": "60",
-        "artist": "Jodie Muir",
-        "flavorText": "They always think they're better than the local investigators. They're usually right.",
-        "imageUri": "https://cards.scryfall.io/normal/front/8/d/8dc3b23b-04d6-4ac0-b698-596ea90b7781.jpg?1783912912"
+        "collectorNumber": "134",
+        "rarity": "UNCOMMON",
+        "artist": "Tony Foti",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/6/b6883788-e1ee-4ddd-add2-24d6bc367717.jpg?1783912882",
+        "rulings": [
+            {
+                "date": "2016-04-08",
+                "text": "If an effect refers to a Clue, it means any Clue artifact, not just a Clue artifact token."
+            },
+            {
+                "date": "2016-04-08",
+                "text": "You can't sacrifice a Clue to pay multiple costs."
+            }
+        ]
     },
     "colorIdentityOverride": [
-        "BLUE"
+        "RED"
     ]
 }
 
@@ -2964,49 +3015,6 @@
         "imageUri": "https://cards.scryfall.io/normal/front/d/a/daf6a392-3fc4-45d1-b85d-3b1381b3ab7d.jpg"
     },
     "colorIdentityOverride": [
-        "WHITE"
-    ]
-}
-
-// Meddling Youths
-{
-    "name": "Meddling Youths",
-    "manaCost": "{3}{R}{W}",
-    "typeLine": "Creature — Human Detective",
-    "oracleText": "Haste\nWhenever you attack with three or more creatures, investigate. (Create a Clue token. It's an artifact with \"{2}, Sacrifice this token: Draw a card.\")",
-    "creatureStats": {
-        "power": 4,
-        "toughness": 5
-    },
-    "keywords": [
-        "HASTE"
-    ],
-    "script": {
-        "triggeredAbilities": [
-            {
-                "id": "ability_1",
-                "trigger": {
-                    "type": "YouAttackEvent",
-                    "minAttackers": 3
-                },
-                "binding": "ANY",
-                "effect": {
-                    "type": "CreatePredefinedToken",
-                    "tokenType": "Clue"
-                },
-                "descriptionOverride": "Whenever you attack with three or more creatures, investigate."
-            }
-        ]
-    },
-    "metadata": {
-        "collectorNumber": "219",
-        "rarity": "UNCOMMON",
-        "artist": "Matt Forsyth",
-        "flavorText": "\"Well, if it isn't mean old Mr. Larchbottom, who's always been so eager to have the only dumpling stall in Oxblood Alley.\"",
-        "imageUri": "https://cards.scryfall.io/normal/front/a/f/af12417c-b082-4379-a850-c72e2652c6fb.jpg?1783912842"
-    },
-    "colorIdentityOverride": [
-        "RED",
         "WHITE"
     ]
 }
@@ -4022,7 +4030,8 @@
                             "target": "Self"
                         }
                     ]
-                }
+                },
+                "descriptionOverride": "Whenever one or more creature cards leave your graveyard, this creature gets +1/+0 and gains menace and lifelink until end of turn."
             }
         ]
     },
@@ -5273,6 +5282,54 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Vengeful Tracker
+{
+    "name": "Vengeful Tracker",
+    "manaCost": "{1}{R}",
+    "typeLine": "Creature — Human Detective",
+    "oracleText": "Whenever an opponent sacrifices an artifact, this creature deals 2 damage to them.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "PermanentsSacrificedEvent",
+                    "filter": "artifact",
+                    "sacrificedBy": "EachOpponent",
+                    "perPermanent": true
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "target": {
+                        "type": "PlayerRef",
+                        "player": "TriggeringPlayer"
+                    }
+                },
+                "descriptionOverride": "Whenever an opponent sacrifices an artifact, this creature deals 2 damage to them."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "147",
+        "rarity": "UNCOMMON",
+        "artist": "Francisco Miyara",
+        "flavorText": "\"I won't waste my time hunting down petty thieves while my brother's killer still walks free.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/2/a247c9a0-0c65-47bc-92fd-bebe95cd35a3.jpg?1783912872"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
