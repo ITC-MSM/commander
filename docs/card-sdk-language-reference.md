@@ -4568,11 +4568,19 @@ Dominant back faces that "stay" instead self-exile on their final chapter, dodgi
   **a** <filter>" wording, which fires once per sacrificed permanent, use `YouSacrificeA`; for the "another"
   exclusion use an `OTHER`-binding trigger instead.
   By default the ANY-binding form watches only the source *controller's* sacrifices ("whenever **you**
-  sacrifice…"). For the "whenever **a player** sacrifices…" scope set
-  `EventPattern.PermanentsSacrificedEvent(filter, byAnyPlayer = true)` (Zodiark, Umbral God — "Whenever a
-  player sacrifices another creature, put a +1/+1 counter on Zodiark"): the detector then fires the trigger
-  once per sacrificing player in the batch, regardless of who controls the source, binding
-  `triggeringPlayerId` to that player.
+  sacrifice…"). `EventPattern.PermanentsSacrificedEvent.sacrificedBy` widens that scope and takes exactly
+  three meaningful values: `Player.You` (default), `Player.Each` for "whenever **a player** sacrifices…"
+  (Zodiark, Umbral God), and `Player.EachOpponent` for "whenever **an opponent** sacrifices…" (Vengeful
+  Tracker). For both multi-player scopes the detector fires the trigger once per watched sacrificing player
+  in the batch, regardless of who controls the source, binding `triggeringPlayerId` to that player — so a
+  payoff aimed at `Player.TriggeringPlayer` hits whoever actually sacrificed. `Player.EachOpponent` respects
+  CR 102.3 (teammates are not opponents) and never fires on the source's own controller, including when the
+  source is itself among the sacrificed permanents.
+- `OpponentSacrificesA(filter?)` / `OpponentSacrificesOneOrMore(filter?)` — the opponent-scoped siblings of
+  `YouSacrificeA` / `YouSacrificeOneOrMore`, i.e. `sacrificedBy = Player.EachOpponent` with `binding = ANY`.
+  `OpponentSacrificesA` is the per-permanent wording "whenever an opponent sacrifices **an** artifact"
+  (Vengeful Tracker — an opponent cracking two Clues gets hit twice); `OpponentSacrificesOneOrMore` is the
+  batch wording, firing once per opponent per batch.
 - `YouSacrificeAnother(filter?)` — the **per-permanent** template "whenever you sacrifice **another**
   permanent" (Mazirek, Kraul Death Priest; Savra; Zhao, Ruthless Admiral). Built with `binding = OTHER`
   and `EventPattern.PermanentsSacrificedEvent(filter, perPermanent = true)`. Distinct from

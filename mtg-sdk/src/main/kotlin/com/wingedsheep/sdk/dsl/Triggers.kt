@@ -1988,6 +1988,38 @@ object Triggers {
     )
 
     /**
+     * Whenever an opponent sacrifices **a** permanent matching the filter.
+     * Per-permanent trigger — fires once for EACH matching permanent that opponent sacrificed, even
+     * when several go at once (CR 603.2c) — and once per opponent when several opponents sacrifice
+     * in the same batch. The sacrificing player is bound as [Player.TriggeringPlayer], so "deals
+     * damage to them" / "they lose life" payoffs resolve against the right opponent.
+     *
+     * The opponent-scoped sibling of [YouSacrificeA]. Use [OpponentSacrificesOneOrMore] for the
+     * "one or more" batch wording.
+     *
+     * Example: "Whenever an opponent sacrifices an artifact"
+     * → OpponentSacrificesA(GameObjectFilter.Artifact)   (Vengeful Tracker)
+     */
+    fun OpponentSacrificesA(filter: GameObjectFilter = GameObjectFilter.Any): TriggerSpec = TriggerSpec(
+        event = PermanentsSacrificedEvent(
+            filter = filter,
+            sacrificedBy = Player.EachOpponent,
+            perPermanent = true
+        ),
+        binding = TriggerBinding.ANY
+    )
+
+    /**
+     * Whenever an opponent sacrifices one or more permanents matching the filter.
+     * Batching trigger — fires at most once per opponent per event batch. The opponent-scoped
+     * sibling of [YouSacrificeOneOrMore]; see [OpponentSacrificesA] for the per-permanent wording.
+     */
+    fun OpponentSacrificesOneOrMore(filter: GameObjectFilter = GameObjectFilter.Any): TriggerSpec = TriggerSpec(
+        event = PermanentsSacrificedEvent(filter = filter, sacrificedBy = Player.EachOpponent),
+        binding = TriggerBinding.ANY
+    )
+
+    /**
      * When you sacrifice this permanent.
      * Distinct from [PutIntoGraveyardFromBattlefield] / [Dies], which fire on any
      * battlefield-to-graveyard transition (including destruction).

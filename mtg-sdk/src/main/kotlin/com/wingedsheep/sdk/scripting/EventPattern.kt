@@ -2212,30 +2212,46 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
      *    sacrificed simultaneously (Mazirek, Savra, Zhao). Combine with [TriggerBinding.OTHER] for
      *    "another" (excludes the source) or [TriggerBinding.ANY] for "a" (includes the source).
      *
-     * By default the trigger watches only the controller's own sacrifices ("Whenever *you*
-     * sacrifice…"). Set [byAnyPlayer] = true for the "Whenever *a player* sacrifices…" scope
-     * (Zodiark, Umbral God) — then the detector fires the trigger once per player (batch) or once
-     * per that player's matching permanent (per-permanent), regardless of who controls the source.
+     * [sacrificedBy] scopes *whose* sacrifices are watched, independently of who controls the
+     * source. Only three values are meaningful, and the detector reads exactly these:
+     *  - [Player.You] (default): the controller's own sacrifices ("Whenever *you* sacrifice…").
+     *  - [Player.Each]: every player's ("Whenever *a player* sacrifices…", Zodiark, Umbral God).
+     *  - [Player.EachOpponent]: only the controller's opponents' ("Whenever *an opponent*
+     *    sacrifices…", Vengeful Tracker).
+     *
+     * For the two multi-player scopes the trigger fires once per watched player (batch) or once per
+     * that player's matching permanent (per-permanent). The sacrificing player is bound as the
+     * trigger's [Player.TriggeringPlayer], so payoffs can hit "them" specifically.
      *
      * Examples:
      *   → PermanentsSacrificedEvent(filter = GameObjectFilter.Food)
      *     "Whenever you sacrifice one or more Foods"
      *   → PermanentsSacrificedEvent(perPermanent = true)  // with OTHER binding
      *     "Whenever you sacrifice another permanent"
-     *   → PermanentsSacrificedEvent(filter = GameObjectFilter.Creature, byAnyPlayer = true)
+     *   → PermanentsSacrificedEvent(filter = GameObjectFilter.Creature, sacrificedBy = Player.Each)
      *     "Whenever a player sacrifices one or more creatures"
+     *   → PermanentsSacrificedEvent(filter = GameObjectFilter.Artifact, perPermanent = true,
+     *                               sacrificedBy = Player.EachOpponent)
+     *     "Whenever an opponent sacrifices an artifact"
      */
     @SerialName("PermanentsSacrificedEvent")
     @Serializable
     data class PermanentsSacrificedEvent(
         val filter: GameObjectFilter = GameObjectFilter.Any,
-        val byAnyPlayer: Boolean = false,
+        val sacrificedBy: Player = Player.You,
         val perPermanent: Boolean = false
     ) : EventPattern {
         override val description: String = buildString {
-            val who = if (byAnyPlayer) "a player sacrifices " else "you sacrifice "
+            val who = when (sacrificedBy) {
+                Player.Each -> "a player sacrifices "
+                Player.EachOpponent -> "an opponent sacrifices "
+                else -> "you sacrifice "
+            }
             append(who)
-            append(if (perPermanent) "another " else "one or more ")
+            // "another" is relative to the source permanent, so it only reads right when the
+            // sacrificing player is the source's own controller; other scopes take a plain article.
+            val article = if (sacrificedBy == Player.You) "another " else "a "
+            append(if (perPermanent) article else "one or more ")
             if (filter != GameObjectFilter.Any) {
                 append(filter.cardPredicates.joinToString(" ") { it.description })
                 if (!perPermanent) append("s")
