@@ -2079,6 +2079,63 @@
     ]
 }
 
+// Gleaming Geardrake
+{
+    "name": "Gleaming Geardrake",
+    "manaCost": "{U}{R}",
+    "typeLine": "Artifact Creature — Drake",
+    "oracleText": "Flying\nWhen this creature enters, investigate. (Create a Clue token. It's an artifact with \"{2}, Sacrifice this token: Draw a card.\")\nWhenever you sacrifice an artifact, put a +1/+1 counter on this creature.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Clue"
+                },
+                "descriptionOverride": "When this creature enters, investigate."
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "PermanentsSacrificedEvent",
+                    "filter": "artifact",
+                    "perPermanent": true
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": "Self"
+                },
+                "descriptionOverride": "Whenever you sacrifice an artifact, put a +1/+1 counter on this creature."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "205",
+        "rarity": "UNCOMMON",
+        "artist": "Filipe Pagliuso",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/a/cabb5875-42ff-4e3a-a32e-aab392fccff8.jpg?1783912848"
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "RED"
+    ]
+}
+
 // Glint Weaver
 {
     "name": "Glint Weaver",
@@ -4000,6 +4057,80 @@
     ]
 }
 
+// Offender at Large
+{
+    "name": "Offender at Large",
+    "manaCost": "{4}{R}",
+    "typeLine": "Creature — Giant Rogue",
+    "oracleText": "Disguise {4}{R} (You may cast this card face down for {3} as a 2/2 creature with ward {2}. Turn it face up any time for its disguise cost.)\nWhen this creature enters or is turned face up, up to one target creature gets +2/+0 until end of turn.",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 4
+    },
+    "keywordAbilities": [
+        {
+            "type": "Disguise",
+            "disguiseCost": {
+                "type": "PayAtom",
+                "atom": {
+                    "type": "AtomMana",
+                    "cost": "{4}{R}"
+                }
+            }
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "AnyOfEvents",
+                    "events": [
+                        {
+                            "type": "ZoneChangeEvent",
+                            "to": "Battlefield"
+                        },
+                        "TurnFaceUpEvent"
+                    ]
+                },
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 0
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "up to one target creature"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "optional": true,
+                    "filter": {
+                        "baseFilter": "creature"
+                    },
+                    "id": "up to one target creature"
+                },
+                "descriptionOverride": "When this creature enters or is turned face up, up to one target creature gets +2/+0 until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "138",
+        "artist": "Mike Bierek",
+        "flavorText": "\"In a city this big, anyone can blend in.\"\n—Imel of the Foundway Associates",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/0/f096ff4a-85f4-46f1-9478-e8921f21309d.jpg?1783912876"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // On the Job
 {
     "name": "On the Job",
@@ -4383,6 +4514,153 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Reckless Detective
+{
+    "name": "Reckless Detective",
+    "manaCost": "{1}{R}",
+    "typeLine": "Creature — Devil Detective",
+    "oracleText": "Whenever this creature attacks, you may sacrifice an artifact or discard a card. If you do, draw a card and this creature gets +2/+0 until end of turn.",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "ChooseAction",
+                        "choices": [
+                            {
+                                "label": "Sacrifice an artifact",
+                                "effect": {
+                                    "type": "Composite",
+                                    "effects": [
+                                        {
+                                            "type": "Sacrifice",
+                                            "filter": "artifact"
+                                        },
+                                        {
+                                            "type": "Composite",
+                                            "effects": [
+                                                {
+                                                    "type": "DrawCards",
+                                                    "count": {
+                                                        "type": "Fixed",
+                                                        "amount": 1
+                                                    }
+                                                },
+                                                {
+                                                    "type": "ModifyStats",
+                                                    "powerModifier": {
+                                                        "type": "Fixed",
+                                                        "amount": 2
+                                                    },
+                                                    "toughnessModifier": {
+                                                        "type": "Fixed",
+                                                        "amount": 0
+                                                    },
+                                                    "target": "Self"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                },
+                                "feasibilityCheck": {
+                                    "type": "ControlsPermanentMatching",
+                                    "filter": "artifact"
+                                }
+                            },
+                            {
+                                "label": "Discard a card",
+                                "effect": {
+                                    "type": "Composite",
+                                    "effects": [
+                                        {
+                                            "type": "GatherCards",
+                                            "source": {
+                                                "type": "FromZone",
+                                                "zone": "Hand"
+                                            },
+                                            "storeAs": "hand"
+                                        },
+                                        {
+                                            "type": "SelectFromCollection",
+                                            "from": "hand",
+                                            "selection": {
+                                                "type": "ChooseExactly",
+                                                "count": {
+                                                    "type": "Fixed",
+                                                    "amount": 1
+                                                }
+                                            },
+                                            "storeSelected": "discarded",
+                                            "prompt": "Choose 1 card to discard"
+                                        },
+                                        {
+                                            "type": "MoveCollection",
+                                            "from": "discarded",
+                                            "destination": {
+                                                "type": "ToZone",
+                                                "zone": "Graveyard"
+                                            },
+                                            "moveType": "Discard"
+                                        },
+                                        {
+                                            "type": "Composite",
+                                            "effects": [
+                                                {
+                                                    "type": "DrawCards",
+                                                    "count": {
+                                                        "type": "Fixed",
+                                                        "amount": 1
+                                                    }
+                                                },
+                                                {
+                                                    "type": "ModifyStats",
+                                                    "powerModifier": {
+                                                        "type": "Fixed",
+                                                        "amount": 2
+                                                    },
+                                                    "toughnessModifier": {
+                                                        "type": "Fixed",
+                                                        "amount": 0
+                                                    },
+                                                    "target": "Self"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                },
+                                "feasibilityCheck": {
+                                    "type": "HasCardsInZone",
+                                    "zone": "Hand"
+                                }
+                            }
+                        ]
+                    },
+                    "descriptionOverride": "You may sacrifice an artifact or discard a card. If you do, draw a card and this creature gets +2/+0 until end of turn."
+                },
+                "descriptionOverride": "Whenever this creature attacks, you may sacrifice an artifact or discard a card. If you do, draw a card and this creature gets +2/+0 until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "141",
+        "rarity": "UNCOMMON",
+        "artist": "Tuan Duong Chu",
+        "flavorText": "He's gonna crack this thing wide open.",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/8/18da1a1d-e6ba-47e5-a545-0bacd427b782.jpg?1783912874"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
@@ -5161,6 +5439,68 @@
     ]
 }
 
+// Sanguine Savior
+{
+    "name": "Sanguine Savior",
+    "manaCost": "{1}{W}{B}",
+    "typeLine": "Creature — Vampire Cleric",
+    "oracleText": "Flying, lifelink\nDisguise {W/B}{W/B} (You may cast this card face down for {3} as a 2/2 creature with ward {2}. Turn it face up any time for its disguise cost.)\nWhen this creature is turned face up, another target creature you control gains lifelink until end of turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "keywords": [
+        "FLYING",
+        "LIFELINK"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Disguise",
+            "disguiseCost": {
+                "type": "PayAtom",
+                "atom": {
+                    "type": "AtomMana",
+                    "cost": "{W/B}{W/B}"
+                }
+            }
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "TurnFaceUpEvent",
+                "effect": {
+                    "type": "GrantKeyword",
+                    "keyword": "LIFELINK",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "another target creature you control"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature ctrl:you",
+                        "excludeSelf": true
+                    },
+                    "id": "another target creature you control"
+                },
+                "descriptionOverride": "When this creature is turned face up, another target creature you control gains lifelink until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "230",
+        "artist": "Valera Lutfullina",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/c/9cba5503-ba99-43d8-8062-66d905e0d86b.jpg?1783912837"
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLACK"
+    ]
+}
+
 // Sanitation Automaton
 {
     "name": "Sanitation Automaton",
@@ -5898,6 +6238,69 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Undercity Eliminator
+{
+    "name": "Undercity Eliminator",
+    "manaCost": "{3}{B}{B}",
+    "typeLine": "Creature — Gorgon Assassin",
+    "oracleText": "When this creature enters, you may sacrifice an artifact or creature. When you do, exile target creature an opponent controls.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "ReflexiveTrigger",
+                    "action": {
+                        "type": "Sacrifice",
+                        "filter": "creature|artifact"
+                    },
+                    "reflexiveEffect": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "ContextTarget",
+                            "index": 0
+                        },
+                        "destination": "Exile"
+                    },
+                    "reflexiveTargetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "creature ctrl:opponent"
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "When this creature enters, you may sacrifice an artifact or creature. When you do, exile target creature an opponent controls."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "108",
+        "rarity": "UNCOMMON",
+        "artist": "Quintin Gleim",
+        "flavorText": "With their guild shunned for opening the doors to Phyrexia, some among the Golgari embraced their status as pariahs and took out their bitterness on all who crossed their paths.",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/6/a67a4c5e-215b-4f03-87f7-c1af4f9f0a63.jpg?1783912889",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "You don't choose a target at the time Undercity Eliminator's ability triggers. Rather, a second \"reflexive\" ability triggers when you sacrifice an artifact or creature this way. You choose a target for that ability as it goes on the stack. Each player may respond to this triggered ability as normal."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 
