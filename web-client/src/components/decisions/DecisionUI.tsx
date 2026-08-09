@@ -58,6 +58,13 @@ export function DecisionUI() {
 
   if (!pendingDecision) return null
 
+  // A prompt raised once per object names its subject on the minimized button too, so a player
+  // who stepped out to read the board knows which creature they are coming back to answer for.
+  const subjectName = pendingDecision.context.subjectEntityId
+    ? gameState?.cards[pendingDecision.context.subjectEntityId]?.name
+    : undefined
+  const returnLabel = subjectName ? `Return to decision — ${subjectName}` : 'Return to decision'
+
   // Handle SelectManaSourcesDecision (mana source selection for Lightning Rift etc.)
   if (pendingDecision.type === 'SelectManaSourcesDecision') {
     return <ManaSourceSelectionUI decision={pendingDecision} />
@@ -98,7 +105,7 @@ export function DecisionUI() {
           className={styles.floatingReturnButton}
           onClick={() => setDecisionMinimized(false)}
         >
-          Return to decision
+          {returnLabel}
         </button>
       )
     }
@@ -121,7 +128,7 @@ export function DecisionUI() {
           className={styles.floatingReturnButton}
           onClick={() => setDecisionMinimized(false)}
         >
-          Return to decision
+          {returnLabel}
         </button>
       )
     }
@@ -144,7 +151,7 @@ export function DecisionUI() {
           className={styles.floatingReturnButton}
           onClick={() => setDecisionMinimized(false)}
         >
-          Return to decision
+          {returnLabel}
         </button>
       )
     }

@@ -2032,6 +2032,15 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
     multi-block puts one mirror trigger on the stack per damaged creature, and "decline down to the
     biggest number" is only a real line of play if the three prompts can be told apart. Pairs
     naturally with `TriggeredAbility.effectOncePerTurn`, which is what makes declining free.
+  - **Per-object prompts name their subject automatically.** The sibling problem to dynamic hints:
+    a gate nested inside a `ForEachInGroup` / `ForEachInCollection` body raises one prompt per
+    entity, and the sentences are identical. `GatedEffectExecutor` stamps every gate prompt's
+    `DecisionContext.subjectEntityId` from the loop's `pipeline.iterationTarget` — the same binding
+    `EffectTarget.Self` reads inside the body — so the client renders that permanent beside the
+    source card and rings it on the battlefield in `--color-decision-subject`. Nothing to declare on
+    the card: **Killing Wave** ("for each creature, its controller sacrifices it unless they pay X
+    life") gets it from the shape alone. Only the entity id crosses the wire, so the client's
+    already-masked card map keeps a face-down subject face-down.
   - **`decisionMaker` routes the yes/no to a non-controller** — pass any player `EffectTarget`
     (`EffectTarget.TargetController` for "that creature's controller may …", or a bound target such
     as `target("target opponent", Targets.Opponent)` for "**target opponent may …**"). Only the

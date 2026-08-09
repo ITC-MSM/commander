@@ -918,7 +918,7 @@
                         "type": "SacrificeTarget",
                         "target": "Self"
                     },
-                    "descriptionOverride": "Pay life for this creature, or sacrifice it."
+                    "descriptionOverride": "Pay life to keep this creature, or sacrifice it."
                 }
             }
         }

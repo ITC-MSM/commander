@@ -447,6 +447,11 @@ function GameCardImpl({
     && pendingDecision.context.inlineOnTrigger
     && pendingDecision.context.triggeringEntityId === card.id
 
+  // The permanent the pending prompt is currently *about* — Killing Wave asks "pay X life or
+  // sacrifice it" once per creature, and the prompts are otherwise identical. Ringing the subject
+  // keeps "which creature is this?" answerable after minimizing the modal to view the battlefield.
+  const isDecisionSubject = pendingDecision?.context.subjectEntityId === card.id
+
   // Combat mode checks
   const isInAttackerMode = combatState?.mode === 'declareAttackers'
   const isInBlockerMode = combatState?.mode === 'declareBlockers'
@@ -1109,6 +1114,11 @@ function GameCardImpl({
     // Orange/gold glow for the trigger creature (matches distribute target style)
     borderStyle = '3px solid #ff6b35'
     boxShadow = '0 0 16px rgba(255, 107, 53, 0.7), 0 0 32px rgba(255, 107, 53, 0.4)'
+  } else if (isDecisionSubject) {
+    // Same orange as the decision modal's ring around this card — one visual language for
+    // "this is the object the current prompt is about".
+    borderStyle = '3px solid var(--color-decision-subject)'
+    boxShadow = '0 0 16px var(--color-decision-subject-glow), 0 0 32px var(--color-decision-subject-shadow)'
   } else if (isDistributeTarget && distributeAllocated > 0) {
     // Orange for distribute targets with damage allocated
     borderStyle = '3px solid #ff6b35'

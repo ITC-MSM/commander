@@ -301,6 +301,12 @@ export interface DecisionContext {
   readonly inlineOnTrigger?: boolean
   /** Resolved effect description (e.g., "-6/-6 until end of turn") */
   readonly effectHint?: string
+  /**
+   * The permanent this prompt is *about*, when one effect asks the same question once per object
+   * (Killing Wave: "pay X life or sacrifice it", once per creature). Resolve it through
+   * `gameState.cards` — the server sends only the id, so masking still applies.
+   */
+  readonly subjectEntityId?: EntityId
 }
 
 /**
