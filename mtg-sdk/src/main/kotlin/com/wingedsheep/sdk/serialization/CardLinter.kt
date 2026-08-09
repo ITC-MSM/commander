@@ -405,6 +405,18 @@ object CardLinter {
             type == "CreateToken" || type == "CreatePredefinedToken" ||
                 type == "CreateTokenCopyOfTarget" || type == "CreateTokenCopyOfSource" ->
                 listOf(Kind.WRITE to (Space.COLLECTION to "createdTokens"))
+            // Amass publishes the Army it chose under this well-known name (CR 701.47c), so a
+            // sibling step can address "the amassed Army" — either as
+            // DynamicAmount.EntityProperty(EntityReference.AmassedArmy, …) or, when it needs it
+            // as a target, EffectTarget.PipelineTarget(AmassedArmy.STORAGE_KEY) (Goblin Plate
+            // Mail's "then attach this Equipment to the amassed Army").
+            type == "Amass" ->
+                listOf(
+                    Kind.WRITE to (
+                        Space.COLLECTION to com.wingedsheep.sdk.scripting.values
+                            .EntityReference.AmassedArmy.STORAGE_KEY
+                        ),
+                )
             // The scry / surveil macros are opaque nodes on the card, but the engine expands each
             // into a Gather → Select → Move pipeline (LibraryPatterns.scryPipeline /
             // surveilPipeline) whose selected/remainder collections seed the *same* EffectContext.
