@@ -2678,13 +2678,9 @@ class CastSpellHandler(
                             // Teamwork N taps the chosen creatures (CR 702.194a). Validation above
                             // already re-checked control, filter, and the measure floor.
                             //
-                            // TAP-REASON HOOK (one of two): a "becomes tapped to pay a teamwork
-                            // cost" trigger (Agent Maria Hill) needs the tap to carry its cause.
-                            // `TappedEvent` has no reason field today, and the other site that taps
-                            // for a `VariablePermanents` cost is
-                            // `CostHandler.payVariablePermanentsList`'s TAP branch — whoever adds
-                            // the reason must thread it through both, or fold the loop itself into
-                            // `VariablePermanentsCost`.
+                            // A tap cause must be threaded through both sites that tap for this
+                            // atom — here and `CostHandler.payVariablePermanentsList`'s TAP branch.
+                            // See mechanics.md's Agent Maria Hill entry.
                             val chosen = action.additionalCostPayment.variableCostPermanents
                             when (atom.action) {
                                 PermanentCostAction.TAP -> for (permId in chosen) {

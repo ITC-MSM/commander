@@ -961,12 +961,8 @@ class CostHandler {
                 )
             }
         }
-        // TAP-REASON HOOK (two of two): see the matching note in
-        // `CastSpellHandler`'s VariablePermanents payment branch. A "becomes tapped to pay a
-        // teamwork cost" trigger (Agent Maria Hill) needs `tap()` to carry a cause, and both call
-        // sites must pass it. This branch is also the only unreached one of the three actions on
-        // the activated-ability path today — no printed card pays a TAP `VariablePermanents` cost
-        // from an ability — but it is what makes the shared helper honest for the first one.
+        // A tap cause must be threaded through both sites that tap for this atom — here and
+        // `CastSpellHandler`'s VariablePermanents branch. See mechanics.md's Agent Maria Hill entry.
         if (atom.action == PermanentCostAction.TAP) {
             val context = PredicateContext(controllerId = controllerId)
             val projected = state.projectedState
@@ -1166,10 +1162,11 @@ class CostHandler {
                 // A variable-count permanent cost is payable when the payer has enough candidates to
                 // clear both floors — Teamwork N's "tap any number of creatures you control with
                 // total power N or more" (CR 702.194a) is unpayable when every untapped creature
-                // together falls short. No `sourceId` is passed: this is a *spell's* additional
-                // cost, so there is no source permanent on the battlefield to exclude, and teamwork
-                // sets `excludeSelf = false` anyway. An ability-scoped caller must pass one, since
-                // the atom's default is `excludeSelf = true`.
+                // together falls short. No `sourceId` is passed — this function has no such
+                // parameter, and every caller is a *spell's* additional cost, which has no source
+                // permanent on the battlefield to exclude (teamwork sets `excludeSelf = false`
+                // anyway). Reaching this from an ability means adding a `sourceId` parameter first,
+                // since the atom's default is `excludeSelf = true`.
                 is CostAtom.VariablePermanents ->
                     com.wingedsheep.engine.mechanics.cost.VariablePermanentsCost.canPay(state, controllerId, atom)
                 // Mana / return-to-hand / reveal / put-counters-on-self / mill are not produced as

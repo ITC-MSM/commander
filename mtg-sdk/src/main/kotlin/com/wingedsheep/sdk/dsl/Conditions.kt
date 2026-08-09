@@ -896,7 +896,11 @@ object Conditions {
      * - on a **permanent**, as an intervening-if on an enters-the-battlefield trigger, read from
      *   the flag stamped durably on the permanent as it resolved;
      * - as the condition of a `DynamicAmount.Conditional` feeding a modal's `dynamicChooseCount`,
-     *   for "choose one; if this spell was cast using teamwork, choose both instead" (CR 702.194c).
+     *   for "choose one; if this spell was cast using teamwork, choose both instead" (CR 700.2 for
+     *   the mode count; the declaration it reads is made under CR 601.2b);
+     * - as the gate on a teamwork-only clause that has its own target, through the rail's
+     *   `kickerTarget` / `kickerEffect` slots (CR 702.194c — the plain cast is announced as though
+     *   the clause weren't there).
      *
      * Never true for a merely *kicked* or *bargained* spell: the three are separate facts riding
      * separate slots on the shared optional-additional-cost rail. Pairs with the `teamwork(n)` DSL

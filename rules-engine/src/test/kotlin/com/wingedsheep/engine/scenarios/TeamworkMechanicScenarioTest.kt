@@ -35,6 +35,9 @@ import io.kotest.matchers.shouldBe
  * both halves: that the selection behaves like the crew payment it reuses (untapped only, projected
  * power, summoning sickness irrelevant), and that "cast using teamwork" stays a *separate* fact
  * from "kicked".
+ *
+ * 702.194c — a teamwork-only clause with its own target is targeted only on the declared cast — is
+ * pinned by the "Teamwork Rally" cases at the end.
  */
 class TeamworkMechanicScenarioTest : ScenarioTestBase() {
 
@@ -180,6 +183,36 @@ class TeamworkMechanicScenarioTest : ScenarioTestBase() {
         }
     }
 
+    /**
+     * CR 702.194c: "If part of a spell's ability has its effect only if teamwork was used to cast
+     * it, and that part of the ability includes any targets, the spell's controller chooses those
+     * targets only if teamwork was used to cast that spell. Otherwise, the spell is cast as if it
+     * did not have those targets."
+     *
+     * The teamwork-only clause carries a second target, so the plain cast must be *announced* with
+     * one target and the declared cast with two — the Goblin Barrage shape, on the teamwork slot.
+     */
+    private val teamworkRally = card("Teamwork Rally") {
+        manaCost = "{R}"
+        typeLine = "Instant"
+        oracleText = "Teamwork 2 (As an additional cost to cast this spell, you may tap any " +
+            "number of creatures you control with total power 2 or more.)\n" +
+            "Teamwork Rally deals 2 damage to target creature. If this spell was cast using " +
+            "teamwork, it also deals 2 damage to target player."
+        teamwork(2)
+        spell {
+            val damaged = target("target creature", TargetCreature())
+            effect = Effects.DealDamage(2, damaged)
+
+            val rallyCreature = kickerTarget("creature", TargetCreature())
+            val rallyPlayer = kickerTarget("player", com.wingedsheep.sdk.dsl.Targets.Player)
+            kickerEffect = Effects.Composite(
+                Effects.DealDamage(2, rallyCreature),
+                Effects.DealDamage(2, rallyPlayer),
+            )
+        }
+    }
+
     /** A kicker card on the same rail — the control for "kicked and teamwork are different facts". */
     private val kickerBear = card("Kicker Bear") {
         manaCost = "{1}{G}"
@@ -221,6 +254,7 @@ class TeamworkMechanicScenarioTest : ScenarioTestBase() {
         cardRegistry.register(teamworkBolt)
         cardRegistry.register(teamworkBear)
         cardRegistry.register(teamworkOrders)
+        cardRegistry.register(teamworkRally)
         cardRegistry.register(kickerBear)
         cardRegistry.register(kickedWatcher)
 
@@ -513,10 +547,10 @@ class TeamworkMechanicScenarioTest : ScenarioTestBase() {
                 .firstOrNull { it.additionalCostInfo?.costType == "TapForTotalPower" }
                 .shouldNotBeNull()
 
-            teamworkCast.additionalCostInfo!!.tapForPowerRequired shouldBe 2
+            val costInfo = teamworkCast.additionalCostInfo.shouldNotBeNull()
+            costInfo.tapForPowerRequired shouldBe 2
             // The tapped Bruiser is not a candidate; the untapped Scout is.
-            teamworkCast.additionalCostInfo!!.tapForPowerCreatures.map { it.name } shouldBe
-                listOf("Test Scout")
+            costInfo.tapForPowerCreatures.map { it.name } shouldBe listOf("Test Scout")
             // Total available power (1) is short of 2, so the variant is offered unaffordable.
             teamworkCast.isAffordable shouldBe false
         }
@@ -654,6 +688,120 @@ class TeamworkMechanicScenarioTest : ScenarioTestBase() {
             modal.modes.map { it.description } shouldBe
                 listOf("You gain 3 life", "Each opponent loses 2 life")
             modal.modes.all { it.available } shouldBe true
+        }
+
+        // -----------------------------------------------------------------------------------
+        // CR 702.194c — a teamwork-only clause that has its own target. Its target is chosen
+        // only on the declared cast; the plain cast is announced as if the clause weren't there.
+        // -----------------------------------------------------------------------------------
+
+        test("only the teamwork cast is announced with the clause's extra target") {
+            val game = scenario()
+                .withPlayers("Caster", "Opponent")
+                .withCardInHand(1, "Teamwork Rally")
+                .withCardOnBattlefield(1, "Test Bruiser")
+                .withCardOnBattlefield(2, "Test Wall")
+                .withLandsOnBattlefield(1, "Mountain", 1)
+                .withActivePlayer(1)
+                .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                .build()
+
+            val casts = game.getLegalActions(1).filter { it.description.startsWith("Cast Teamwork Rally") }
+
+            // The plain cast has one requirement, so it rides the single-requirement fields.
+            val plainCast = casts.firstOrNull { it.additionalCostInfo == null }.shouldNotBeNull()
+            plainCast.targetRequirements shouldBe null
+            plainCast.targetCount shouldBe 1
+
+            // The declared cast announces both — "target creature" and "target player".
+            val teamworkCast = casts
+                .firstOrNull { it.additionalCostInfo?.costType == "TapForTotalPower" }
+                .shouldNotBeNull()
+            teamworkCast.targetRequirements.shouldNotBeNull().size shouldBe 2
+        }
+
+        test("the plain cast resolves with only the base target and spares the player") {
+            val game = scenario()
+                .withPlayers("Caster", "Opponent")
+                .withCardInHand(1, "Teamwork Rally")
+                .withCardOnBattlefield(1, "Test Bruiser")
+                .withCardOnBattlefield(2, "Test Wall")
+                .withLandsOnBattlefield(1, "Mountain", 1)
+                .withActivePlayer(1)
+                .withLifeTotal(2, 20)
+                .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                .build()
+
+            val bruiser = game.findPermanent("Test Bruiser").shouldNotBeNull()
+            val wall = game.findPermanent("Test Wall").shouldNotBeNull()
+
+            game.castSpell(1, "Teamwork Rally", targetId = wall).error shouldBe null
+            game.resolveStack()
+
+            // The 0/4 Wall survives 2 damage; the point is that no second target was ever asked
+            // for, so the opponent is untouched.
+            game.isOnBattlefield("Test Wall") shouldBe true
+            game.state.lifeTotal(game.player2Id) shouldBe 20
+            game.state.isTapped(bruiser) shouldBe false
+        }
+
+        test("the teamwork cast chooses the extra target and damages it too") {
+            val game = scenario()
+                .withPlayers("Caster", "Opponent")
+                .withCardInHand(1, "Teamwork Rally")
+                .withCardOnBattlefield(1, "Test Bruiser")
+                .withCardOnBattlefield(2, "Test Wall")
+                .withLandsOnBattlefield(1, "Mountain", 1)
+                .withActivePlayer(1)
+                .withLifeTotal(2, 20)
+                .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                .build()
+
+            val bruiser = game.findPermanent("Test Bruiser").shouldNotBeNull()
+            val wall = game.findPermanent("Test Wall").shouldNotBeNull()
+            val caster = game.player1Id
+            val cardId = game.state.getHand(caster).first()
+
+            game.execute(
+                com.wingedsheep.engine.core.CastSpell(
+                    playerId = caster,
+                    cardId = cardId,
+                    targets = listOf(
+                        com.wingedsheep.engine.state.components.stack.ChosenTarget.Permanent(wall),
+                        com.wingedsheep.engine.state.components.stack.ChosenTarget.Player(game.player2Id),
+                    ),
+                    declaredCostSlot = ChoiceSlot.TEAMWORK,
+                    additionalCostPayment = com.wingedsheep.sdk.scripting.AdditionalCostPayment(
+                        variableCostPermanents = listOf(bruiser)
+                    ),
+                )
+            ).error shouldBe null
+            game.state.isTapped(bruiser) shouldBe true
+
+            game.resolveStack()
+            game.state.lifeTotal(game.player2Id) shouldBe 18
+        }
+
+        test("the teamwork cast is rejected when the clause's target is missing") {
+            val game = scenario()
+                .withPlayers("Caster", "Opponent")
+                .withCardInHand(1, "Teamwork Rally")
+                .withCardOnBattlefield(1, "Test Bruiser")
+                .withCardOnBattlefield(2, "Test Wall")
+                .withLandsOnBattlefield(1, "Mountain", 1)
+                .withActivePlayer(1)
+                .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                .build()
+
+            val bruiser = game.findPermanent("Test Bruiser").shouldNotBeNull()
+            val wall = game.findPermanent("Test Wall").shouldNotBeNull()
+
+            // Declaring teamwork but announcing only the base target — the clause's target is
+            // mandatory once teamwork was used (CR 702.194c), so the cast is rewound.
+            game.castSpellWithTeamwork(1, "Teamwork Rally", "Test Bruiser", targetId = wall)
+                .error.shouldNotBeNull()
+            game.state.isTapped(bruiser) shouldBe false
+            game.isInHand(1, "Teamwork Rally") shouldBe true
         }
     }
 }

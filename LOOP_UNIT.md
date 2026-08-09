@@ -76,7 +76,10 @@ All three are MSH-only printings (checked on Scryfall), so MSH is canonical for 
   counting toward the threshold (projected power), summoning sickness not mattering, the flag
   surviving onto a resolving permanent, the intervening-if not firing without teamwork,
   teamwork-vs-kicked separation, declaring teamwork on a card that lacks it, and the advertised
-  legal action (candidates, threshold, affordability, label).
+  legal action (candidates, threshold, affordability, label). Plus the modal "choose both instead"
+  cases ("Teamwork Orders") and the CR 702.194c teamwork-only-target cases ("Teamwork Rally": only
+  the declared cast announces the clause's target, the plain cast spares it, and declaring teamwork
+  without it is rewound).
 - `HelicarrierStrikeScenarioTest`, `RepulsorBlastScenarioTest`, `TeamTacticsScenarioTest` — one file
   per card, each asserting both branches.
 - New fixture: `ScenarioTestBase.castSpellWithTeamwork(...)`.

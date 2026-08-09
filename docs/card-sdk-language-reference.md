@@ -6243,6 +6243,7 @@ copy of it (CR 707.10e). The activated-ability analogue of the spell-level `cant
 > - **"Whenever you collect evidence"** — `Triggers.WheneverYouCollectEvidence` (Surveillance Monitor,
 >   Evidence Examiner). A *different* fact from the linkage: it observes any collection by the player,
 >   in any context, including the permanent's own.
+
 > **Teamwork N** (CR 702.194, Marvel Super Heroes). "Teamwork 2 *(As an additional cost to cast this
 > spell, you may tap any number of creatures you control with total power 2 or more.)*" — a static
 > ability functioning on the stack that grants one **optional additional cost** (702.194a). A spell whose
@@ -6262,7 +6263,7 @@ copy of it (CR 707.10e). The activated-ability analogue of the spell-level `cant
 > The cost is `Costs.additional.TapForTotalPower(n, filter = GameObjectFilter.Creature)` — a
 > `CostAtom.VariablePermanents` with `action = PermanentCostAction.TAP`,
 > `xMeasure = VariableCostMeasure.TOTAL_POWER` and `minMeasure = n`. It is the *same selection crew*
-> (CR 702.122b) *and saddle already make*, re-exposed on the cast rail: only untapped permanents are
+> (CR 702.122a) *and saddle already make*, re-exposed on the cast rail: only untapped permanents are
 > candidates (CR 701.26a), power is summed from **projected** state so a lord bonus or a +1/+1 counter
 > counts, and summoning sickness never applies (CR 302.6 governs the `{T}` symbol in an activation cost,
 > not a tap paid as a cost). How *many* creatures are tapped is free — the power floor is the only
@@ -6280,7 +6281,8 @@ copy of it (CR 707.10e). The activated-ability analogue of the spell-level `cant
 > - **Plain rider, "also"** — `ConditionalEffect(Conditions.TeamworkWasPaid, extra)` appended to the base
 >   effect, for a genuinely additional event (Repulsor Blast's 2 damage to the creature's controller,
 >   Team Tactics' extra trample grant).
-> - **Modal "choose both instead"** (CR 702.194c) — a `modal { }` block with
+> - **Modal "choose both instead"** (CR 700.2 governs the mode count; the declaration it branches on
+>   is made under CR 601.2b — *not* CR 702.194c, which is about targets) — a `modal { }` block with
 >   `chooseCount = 2, minChooseCount = 1` and
 >   `dynamicChooseCount = DynamicAmount.Conditional(Conditions.TeamworkWasPaid, DynamicAmount.Fixed(2),
 >   DynamicAmount.Fixed(1))`: the plain cast picks one mode, the teamwork cast picks both. The same
@@ -6296,7 +6298,9 @@ copy of it (CR 707.10e). The activated-ability analogue of the spell-level `cant
 >   `triggerCondition = Conditions.TeamworkWasPaid`; CR 603.4 keeps it off the stack entirely otherwise.
 > - **Teamwork-only clause with its own target** — declare it with `kickerTarget(...)` / `kickerEffect`
 >   in the `spell { }` block (the optional-cost branch of the shared rail), which is exactly what
->   CR 702.194c asks for: the plain cast is announced as though the clause weren't there.
+>   CR 702.194c asks for: the plain cast is announced as though the clause weren't there, and only
+>   the declared cast chooses the extra target. Pinned by `TeamworkMechanicScenarioTest`'s
+>   "Teamwork Rally" cases.
 >
 > `Conditions.TeamworkWasPaid` is a facade over `CastChoiceMade(ChoiceSlot.TEAMWORK)`, so teamwork needs
 > no condition type of its own.

@@ -1583,7 +1583,6 @@ abstract class ScenarioTestBase : FunSpec() {
          * @param xValue The value chosen for `{X}` on a bargained X spell (Stonesplitter Bolt);
          *   leave `null` for spells with no `{X}` in their cost
          */
-
         fun castSpellBargained(
             playerNumber: Int,
             spellName: String,
@@ -1638,12 +1637,11 @@ abstract class ScenarioTestBase : FunSpec() {
             } ?: error("Card '$spellName' not found in player $playerNumber's hand")
 
             val used = mutableSetOf<EntityId>()
+            val projected = state.projectedState
             val tapped = tapNames.map { name ->
-                state.getBattlefield().find { entityId ->
+                projected.getBattlefieldControlledBy(playerId).find { entityId ->
                     if (entityId in used) return@find false
-                    val container = state.getEntity(entityId) ?: return@find false
-                    container.get<CardComponent>()?.name == name &&
-                        container.get<ControllerComponent>()?.playerId == playerId
+                    state.getEntity(entityId)?.get<CardComponent>()?.name == name
                 }?.also(used::add)
                     ?: error("Permanent '$name' not found on player $playerNumber's battlefield")
             }

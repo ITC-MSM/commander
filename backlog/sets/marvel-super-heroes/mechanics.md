@@ -94,7 +94,7 @@ sweep is `.manaValueIsOdd()` / `.manaValueIsEven()` + a modal.
   (`CardPredicate.ManaValueAtMostDynamic(DynamicAmounts.sourcePower())` — the predicate exists, but
   nothing evaluates a source-relative dynamic filter inside delayed-trigger matching).
 
-## Teamwork N — SHIPPED ✅ (3 of 13 cards implemented, the other 10 now unblocked)
+## Teamwork N — SHIPPED ✅ (3 of 13 cards implemented, 9 now unblocked, 1 still blocked)
 
 > Teamwork 4 *(As an additional cost to cast this spell, you may tap any number of creatures you
 > control with total power 4 or more.)*
@@ -115,13 +115,18 @@ What that helper does:
    "kicked" and "bargained" (CR 702.194b).
 2. **The payoff** — `Conditions.TeamworkWasPaid`, a facade over
    `CastChoiceMade(ChoiceSlot.TEAMWORK)` mirroring `WasBargained`. The "choose both instead" shape
-   (CR 702.194c) is `modal(chooseCount = 2, minChooseCount = 1, dynamicChooseCount =
+   (the mode count is CR 700.2, branching on the CR 601.2b declaration — *not* CR 702.194c, which is
+   about targets) is `modal(chooseCount = 2, minChooseCount = 1, dynamicChooseCount =
    DynamicAmount.Conditional(Conditions.TeamworkWasPaid, 2, 1))` — the existing modal type, with two
    wiring fixes it needed: the cast handler now evaluates `dynamicChooseCount` with *this cast's*
    `declaredCostSlot` (without it the teamwork branch could never be taken, since the durable
    cast-choices bag only exists after the spell resolves), and the declared cast is enumerated as a
    `CastSpellModal` variant so the client is offered the modes at all. Covered end to end by
    `TeamworkMechanicScenarioTest`'s "Teamwork Orders" cases.
+   **CR 702.194c** — a teamwork-only clause that has its own target is chosen only on the declared
+   cast — is the rail's `kickerTarget(...)` / `kickerEffect` slots: the enumerator prices the plain
+   cast against `targetRequirements` and the declared cast against `kickerTargetRequirements`, so the
+   plain cast is announced as though the clause weren't there. Covered by the "Teamwork Rally" cases.
 3. **The cost atom** — the one real gap, now closed. `CostAtom.VariablePermanents` gained
    `PermanentCostAction.TAP`, `VariableCostMeasure.TOTAL_POWER` and a `minMeasure` floor (a threshold
    on the *measure*, not the count), reached through `Costs.additional.TapForTotalPower(n)`. The atom
@@ -140,10 +145,16 @@ What that helper does:
    The candidate payload sent to the client is the crew/saddle `TapForPowerCreatureData`, under a
    `costType = "TapForTotalPower"` cost-payment phase.
 
+Open follow-ups, neither reachable by a printed card today: folding crew's candidate selection onto
+`VariablePermanentsCost.candidates` (their measures must stay split), and modal casts from a
+non-hand zone — `CastFromZoneEnumerator` has never emitted `CastSpellModal` at all, so a modal
+teamwork spell given flashback or a graveyard-cast grant would be advertised without its modes.
+
 Tests: `TeamworkMechanicScenarioTest` (multi-creature payment, single-creature payment, declining,
 an unmet threshold, already-tapped and opponent-controlled creatures, projected power via a lord,
-summoning sickness, the durable flag on a resolving permanent, teamwork-vs-kicked separation, and the
-advertised legal action) plus one scenario test per implemented card.
+summoning sickness, the durable flag on a resolving permanent, teamwork-vs-kicked separation, the
+advertised legal action, the modal "Teamwork Orders" cases, and the CR 702.194c "Teamwork Rally"
+cases) plus one scenario test per implemented card.
 
 **Implemented (3):** Helicarrier Strike [15] · Repulsor Blast [150] · Team Tactics [155].
 

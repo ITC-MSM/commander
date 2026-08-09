@@ -24,18 +24,20 @@ import com.wingedsheep.sdk.scripting.KeywordAbility
  * a kicked spell" payoff and vice versa (CR 702.194b).
  *
  * The cost itself is `Costs.additional.TapForTotalPower(n)`: the same "tap any number of creatures
- * you control with total power N or greater" selection crew (CR 702.122b) and saddle already use,
+ * you control with total power N or greater" selection crew (CR 702.122a) and saddle already use,
  * measured against **projected** power so a lord bonus or a +1/+1 counter counts. Tapping as a cost
  * is not the `{T}` symbol, so summoning sickness (CR 302.6) never applies.
  *
  * The card supplies its own payoff; teamwork derives nothing:
  * - A **plain rider** — gate the extra clause on [Conditions.TeamworkWasPaid]
  *   (Helicarrier Strike: "If this spell was cast using teamwork, it deals 4 damage instead").
- * - A **modal "choose both instead"** (CR 702.194c) — a `modal { }` block with
+ * - A **modal "choose both instead"** (CR 700.2 for the mode count, declared per CR 601.2b) — a
+ *   `modal { }` block with
  *   `dynamicChooseCount = DynamicAmount.Conditional(Conditions.TeamworkWasPaid, 2, 1)`, so the
  *   teamwork cast picks two modes and the plain cast one.
- * - A wholly different teamwork effect / target set — the rail's shared `kickerEffect` /
- *   `kickerTarget` slots in the `spell { }` block, which serve whichever mechanic declared.
+ * - A **teamwork-only clause with its own target** (CR 702.194c) — the rail's shared `kickerEffect`
+ *   / `kickerTarget` slots in the `spell { }` block, which serve whichever mechanic declared, so
+ *   the plain cast is announced as though the clause weren't there.
  */
 fun CardBuilder.teamwork(n: Int) {
     keywordAbilityList.add(
