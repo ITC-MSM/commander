@@ -1512,11 +1512,14 @@ class ClientStateTransformer(
         if (!cardDef.typeLine.cardTypes.contains(CardType.PLANESWALKER)) return null
         val abilities = cardDef.script.activatedAbilities.filter { it.isPlaneswalkerAbility }
         if (abilities.isEmpty()) return null
+        // Consumed in order, so two abilities sharing a loyalty cost (Garruk Relentless's two
+        // 0-cost abilities) each take their own oracle line instead of both echoing the first.
         val oracleDescriptions = parseOracleLoyaltyLines(cardDef.oracleText)
+            .mapValues { (_, lines) -> ArrayDeque(lines) }
         return abilities.mapNotNull { ability ->
             val loyalty = (ability.cost as? com.wingedsheep.sdk.scripting.AbilityCost.Loyalty)?.change
                 ?: return@mapNotNull null
-            val description = oracleDescriptions[loyalty]
+            val description = oracleDescriptions[loyalty]?.removeFirstOrNull()
                 ?: ability.descriptionOverride
                 ?: effectDisplayText(ability.effect, "this planeswalker")
             ClientPlaneswalkerAbility(
@@ -1528,23 +1531,25 @@ class ClientStateTransformer(
     }
 
     /**
-     * Parse a planeswalker's oracle text into a map of loyalty change → ability text.
-     * Example line: "−2: Ajani deals 4 damage to target tapped creature."
+     * Parse a planeswalker's oracle text into a map of loyalty change → ability texts, in the order
+     * the lines appear. Example line: "−2: Ajani deals 4 damage to target tapped creature."
      * Handles the Unicode minus (U+2212), the ASCII hyphen, and a leading "+".
-     * If a planeswalker has two abilities with the same loyalty cost (rare — Vivien, Monsters'
-     * Advocate), only the first is kept here; the fallback to `effect.description` covers the rest.
+     *
+     * A loyalty cost maps to a *list* because it isn't unique: Garruk Relentless has two 0-cost
+     * abilities, Vivien, Monsters' Advocate two −2s. Keying one text per cost gave every ability
+     * sharing that cost the first line's text, so the card showed the same ability twice.
      */
-    private fun parseOracleLoyaltyLines(oracleText: String): Map<Int, String> {
+    private fun parseOracleLoyaltyLines(oracleText: String): Map<Int, List<String>> {
         if (oracleText.isBlank()) return emptyMap()
         val pattern = Regex("""^\s*([+−\-]?)(\d+):\s*(.+?)\s*$""")
-        val result = mutableMapOf<Int, String>()
+        val result = mutableMapOf<Int, MutableList<String>>()
         for (raw in oracleText.lines()) {
             val match = pattern.matchEntire(raw) ?: continue
             val sign = match.groupValues[1]
             val magnitude = match.groupValues[2].toIntOrNull() ?: continue
             val loyalty = if (sign == "−" || sign == "-") -magnitude else magnitude
             val text = match.groupValues[3].trimEnd('.', ' ')
-            result.putIfAbsent(loyalty, text)
+            result.getOrPut(loyalty) { mutableListOf() }.add(text)
         }
         return result
     }
