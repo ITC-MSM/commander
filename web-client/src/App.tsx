@@ -28,6 +28,7 @@ import { trackPageView } from './utils/analytics'
 import { randomBackground } from './utils/background'
 import { useNavigate } from 'react-router-dom'
 import { useGameStore } from './store/gameStore'
+import { useConnectName } from './store/useConnectName'
 import { useRematch } from '@/components/lobby/useRematch'
 import { useViewingPlayer, useBattlefieldCards } from './store/selectors'
 import type { ClientAttacker, EntityId } from './types'
@@ -51,6 +52,7 @@ export default function App() {
   const connect = useGameStore((state) => state.connect)
   const spectateGame = useGameStore((state) => state.spectateGame)
   const sessionReplaced = useGameStore((state) => state.sessionReplaced)
+  const { name: connectName } = useConnectName()
   const hasConnectedRef = useRef(false)
 
   // Dev deep-link: /?spectate=<gameSessionId> connects and auto-spectates that game,
@@ -84,13 +86,14 @@ export default function App() {
       connect(`Spectator-${Math.floor(Math.random() * 9000 + 1000)}`, { spectator: true })
       return
     }
-    // Otherwise only auto-connect for a returning user with a stored name; new users see name entry.
-    const storedName = localStorage.getItem('argentum-player-name')
-    if (storedName) {
+    // Otherwise only auto-connect for someone who already has a name — a stored one, or the display
+    // name of a signed-in account. Genuinely new users see name entry. `connectName` starts null
+    // while the account check is in flight, so this re-runs once it resolves.
+    if (connectName) {
       hasConnectedRef.current = true
-      connect(storedName)
+      connect(connectName)
     }
-  }, [connectionStatus, connect, spectateParam, sessionReplaced])
+  }, [connectionStatus, connect, connectName, spectateParam, sessionReplaced])
 
   // Once connected, honor a /?spectate=<gameId> deep-link (fire once).
   useEffect(() => {

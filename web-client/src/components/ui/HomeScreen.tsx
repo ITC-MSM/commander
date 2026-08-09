@@ -22,6 +22,7 @@ import { ReplayViewer, type GameSummary } from '../admin/ReplayViewer'
 import type { ReplayData } from '@/replay/reconstructSnapshots.ts'
 import { labelForFormat } from '@/utils/deckLegality'
 import { useAuthStore } from '@/store/authStore'
+import { useConnectName } from '@/store/useConnectName'
 import { AuthWidget } from '@/components/auth/AuthWidget'
 import { LoginModal } from '@/components/auth/LoginModal'
 import { DeckMigrationPrompt } from '@/components/auth/DeckMigrationPrompt'
@@ -113,7 +114,9 @@ export function HomeScreen({
   const [joinSessionId, setJoinSessionId] = useState('')
   const [playerName, setPlayerName] = useState(() => localStorage.getItem('argentum-player-name') || '')
 
-  const [nameConfirmed, setNameConfirmed] = useState(() => !!localStorage.getItem('argentum-player-name'))
+  // The name we already have (stored, or the signed-in account's) versus one typed here just now.
+  const { name: connectName, resolving: nameResolving } = useConnectName()
+  const [nameConfirmed, setNameConfirmed] = useState(false)
   const [loginOpen, setLoginOpen] = useState(false)
   const [showReplays, setShowReplays] = useState(false)
   const [publicLobbies, setPublicLobbies] = useState<PublicLobbyEntry[]>([])
@@ -130,13 +133,10 @@ export function HomeScreen({
   const onlinePlayers = useGameStore((state) => state.onlinePlayers)
   const spectateGame = useGameStore((state) => state.spectateGame)
   const setPendingSpectateGameId = useGameStore((state) => state.setPendingSpectateGameId)
+  // Server config + session are bootstrapped by `useConnectName` above, so the AuthWidget knows
+  // whether to show at all.
   const authStatus = useAuthStore((state) => state.status)
   const accountsEnabled = useAuthStore((state) => state.accountsEnabled)
-  const authInit = useAuthStore((state) => state.init)
-  // Bootstrap server config + session on landing so the AuthWidget knows whether to show at all.
-  useEffect(() => {
-    if (authStatus === 'idle') void authInit()
-  }, [authStatus, authInit])
 
   const confirmName = () => {
     if (playerName.trim()) {
@@ -285,11 +285,12 @@ export function HomeScreen({
       spectateGame(gameSessionId)
       return
     }
-    if (!playerName.trim()) return
-    localStorage.setItem('argentum-player-name', playerName.trim())
+    const name = connectName ?? playerName.trim()
+    if (!name) return
+    localStorage.setItem('argentum-player-name', name)
     setPendingSpectateGameId(gameSessionId)
     setNameConfirmed(true)
-    connect(playerName.trim())
+    connect(name)
   }
 
   return (
@@ -322,7 +323,10 @@ export function HomeScreen({
             <p className={styles.errorMessage}>Error: {error}</p>
           )}
 
-          {!nameConfirmed && (
+          {/* Only a visitor with no name at all is asked for one. A signed-in account already has a
+              display name, and the server would overwrite anything typed here with it. Held back
+              while the account check is in flight so the prompt can't flash and vanish. */}
+          {!nameConfirmed && !connectName && !nameResolving && (
             <div className={styles.inputGroup}>
               <label className={styles.inputLabel}>{joinSessionId ? 'Enter your name to join' : 'Enter your name'}</label>
               <input
@@ -484,11 +488,13 @@ export function HomeScreen({
                   if (status === 'connected') {
                     // QuickGameLobbyHandler routes by lobby kind — works for both.
                     joinQuickGameLobby(entry.lobbyId)
-                  } else if (playerName.trim()) {
-                    localStorage.setItem('argentum-player-name', playerName.trim())
+                  } else {
+                    const name = connectName ?? playerName.trim()
+                    if (!name) return
+                    localStorage.setItem('argentum-player-name', name)
                     setPendingJoinCode(entry.lobbyId)
                     setNameConfirmed(true)
-                    connect(playerName.trim())
+                    connect(name)
                   }
                 }}
               />
@@ -497,7 +503,7 @@ export function HomeScreen({
               <LiveGameList
                 games={liveGames}
                 onSpectate={handleSpectate}
-                disabled={!playerName.trim() && status !== 'connected'}
+                disabled={!connectName && !playerName.trim() && status !== 'connected'}
               />
             )}
           </div>
