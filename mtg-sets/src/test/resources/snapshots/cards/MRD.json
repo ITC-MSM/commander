@@ -586,6 +586,59 @@
     ]
 }
 
+// Dross Scorpion
+{
+    "name": "Dross Scorpion",
+    "manaCost": "{4}",
+    "typeLine": "Artifact Creature — Scorpion",
+    "oracleText": "Whenever this creature or another artifact creature dies, you may untap target artifact.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "artifact creature",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "TapUntap",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target artifact"
+                        },
+                        "tap": false
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "artifact"
+                    },
+                    "id": "target artifact"
+                },
+                "descriptionOverride": "Whenever this creature or another artifact creature dies, you may untap target artifact."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "164",
+        "artist": "Jim Nelson",
+        "flavorText": "They skitter out of the mists to consume fresh kill before Mephidross has a chance to corrode it away.",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/7/27c5381c-2e79-41fa-b1d7-2cf0c6dc1808.jpg?1783944523"
+    },
+    "colorIdentityOverride": []
+}
+
 // Electrostatic Bolt
 {
     "name": "Electrostatic Bolt",
@@ -1440,6 +1493,72 @@
         "imageUri": "https://cards.scryfall.io/normal/front/7/8/780199bc-dce4-4ed0-88fb-7d288f304e69.jpg"
     },
     "colorIdentityOverride": []
+}
+
+// Leonin Den-Guard
+{
+    "name": "Leonin Den-Guard",
+    "manaCost": "{1}{W}",
+    "typeLine": "Creature — Cat Soldier",
+    "oracleText": "As long as this creature is equipped, it gets +1/+1 and has vigilance.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 3
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "ModifyStats",
+                    "powerBonus": 1,
+                    "toughnessBonus": 1,
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "Self"
+                    }
+                },
+                "condition": {
+                    "type": "EntityMatches",
+                    "entity": "Self",
+                    "filter": {
+                        "statePredicates": [
+                            "IsEquipped"
+                        ]
+                    }
+                }
+            },
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "GrantKeyword",
+                    "keyword": "VIGILANCE",
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "Self"
+                    }
+                },
+                "condition": {
+                    "type": "EntityMatches",
+                    "entity": "Self",
+                    "filter": {
+                        "statePredicates": [
+                            "IsEquipped"
+                        ]
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "9",
+        "artist": "Todd Lockwood",
+        "flavorText": "No one under the four suns can elude the watchful eye of the den-guard.",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/9/c9f30b7a-75bb-44e6-b1a2-726df1b5b1f3.jpg?1783944561"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
 }
 
 // Leonin Elder
@@ -3467,6 +3586,37 @@
     "colorIdentityOverride": []
 }
 
+// Somber Hoverguard
+{
+    "name": "Somber Hoverguard",
+    "manaCost": "{5}{U}",
+    "typeLine": "Creature — Drone",
+    "oracleText": "Affinity for artifacts (This spell costs {1} less to cast for each artifact you control.)\nFlying",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "keywords": [
+        "FLYING",
+        "AFFINITY"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Affinity",
+            "forType": "ARTIFACT"
+        }
+    ],
+    "metadata": {
+        "collectorNumber": "51",
+        "artist": "Adam Rex",
+        "flavorText": "The vedalken interrogate all intruders—once the hoverguards are done with them.",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/3/83a46ac2-d96d-4d5a-94fc-a9fc83a9ea1d.jpg?1783944550"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Spikeshot Goblin
 {
     "name": "Spikeshot Goblin",
@@ -5142,6 +5292,107 @@
         "artist": "Luca Zontini",
         "flavorText": "Created by the vedalken to guard Lumengrid, the drones' empty eyes look beyond the Quicksilver Sea.",
         "imageUri": "https://cards.scryfall.io/normal/front/5/2/52ac6290-1401-41c5-90a1-99acb344719e.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Welding Jar
+{
+    "name": "Welding Jar",
+    "manaCost": "{0}",
+    "typeLine": "Artifact",
+    "oracleText": "Sacrifice this artifact: Regenerate target artifact.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostSacrificeSelf",
+                "effect": {
+                    "type": "Regenerate",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target artifact"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "artifact"
+                        },
+                        "id": "target artifact"
+                    }
+                ],
+                "descriptionOverride": "Sacrifice this artifact: Regenerate target artifact."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "274",
+        "artist": "Mark Brill",
+        "flavorText": "The wires crawl over broken metal and heat themselves to melting, filling cracks quickly and efficiently.",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/2/42b7b73b-4800-4fc7-9a5c-93e00ea88498.jpg?1783944496"
+    },
+    "colorIdentityOverride": []
+}
+
+// Wizard Replica
+{
+    "name": "Wizard Replica",
+    "manaCost": "{3}",
+    "typeLine": "Artifact Creature — Wizard",
+    "oracleText": "Flying\n{U}, Sacrifice this creature: Counter target spell unless its controller pays {2}.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 3
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{U}"
+                            }
+                        },
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "Counter",
+                    "condition": {
+                        "type": "CounterCondition.UnlessPaysMana",
+                        "cost": "{2}"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": {},
+                            "zone": "Stack"
+                        }
+                    }
+                ],
+                "descriptionOverride": "{U}, Sacrifice this creature: Counter target spell unless its controller pays {2}."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "275",
+        "artist": "Carl Critchlow",
+        "flavorText": "It responds with unnatural precision.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/5/e5ab68b3-864e-4fe3-a5c5-faa33b45da0f.jpg?1783944496"
     },
     "colorIdentityOverride": [
         "BLUE"
