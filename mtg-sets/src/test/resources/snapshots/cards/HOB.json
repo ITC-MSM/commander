@@ -1343,6 +1343,96 @@
     ]
 }
 
+// Desert Were-Worm
+{
+    "name": "Desert Were-Worm",
+    "manaCost": "{4}{R}{R}",
+    "typeLine": "Creature — Dragon Wurm",
+    "oracleText": "This creature gets +2/+0 for each Mountain you control.\nWhenever you attack with creatures with total power 12 or greater for the first time each turn, untap all attacking creatures. After this phase, there is an additional combat phase.",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 5
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "YouAttackEvent",
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "ForEach",
+                            "space": {
+                                "type": "IterationSpace.Group",
+                                "filter": {
+                                    "baseFilter": "creature attacking"
+                                }
+                            },
+                            "body": {
+                                "type": "TapUntap",
+                                "target": "Self",
+                                "tap": false
+                            }
+                        },
+                        "AddCombatPhase"
+                    ]
+                },
+                "triggerCondition": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "AggregateBattlefield",
+                        "player": "You",
+                        "filter": "creature attacking",
+                        "aggregation": "SUM",
+                        "property": "POWER"
+                    },
+                    "operator": "GTE",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 12
+                    }
+                },
+                "oncePerTurn": true,
+                "descriptionOverride": "Whenever you attack with creatures with total power 12 or greater for the first time each turn, untap all attacking creatures. After this phase, there is an additional combat phase."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "GrantDynamicStats",
+                "filter": {
+                    "baseFilter": "permanent",
+                    "scope": "Self"
+                },
+                "powerBonus": {
+                    "type": "Multiply",
+                    "amount": {
+                        "type": "AggregateBattlefield",
+                        "player": "You",
+                        "filter": "land Mountain"
+                    },
+                    "multiplier": 2
+                },
+                "toughnessBonus": {
+                    "type": "Fixed",
+                    "amount": 0
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "92",
+        "rarity": "RARE",
+        "artist": "Aldo Domínguez",
+        "flavorText": "Fight wild Were-worms in the Last Desert\n—Expression meaning \"an impossible task\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/c/fc12c22a-11ff-4fb0-bc42-dd8490b8efb7.jpg?1784733924"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Desolation Prowler
 {
     "name": "Desolation Prowler",
@@ -4738,6 +4828,114 @@
     ]
 }
 
+// Master's Councillors
+{
+    "name": "Master's Councillors",
+    "manaCost": "{1}{U}",
+    "typeLine": "Creature — Human Advisor",
+    "oracleText": "Vigilance\nThis creature gets +2/+0 for each graveyard with seven or more cards in it.\nWhenever you draw your second card each turn, target player mills three cards. (They put the top three cards of their library into their graveyard.)",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 3
+    },
+    "keywords": [
+        "VIGILANCE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "NthCardDrawnEvent",
+                    "nthCard": 2
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 3
+                                },
+                                "player": {
+                                    "type": "ContextPlayer",
+                                    "index": 0
+                                },
+                                "isMill": true
+                            },
+                            "storeAs": "milled"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "milled",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard",
+                                "player": {
+                                    "type": "ContextPlayer",
+                                    "index": 0
+                                }
+                            }
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetPlayer",
+                    "id": "player"
+                },
+                "descriptionOverride": "Whenever you draw your second card each turn, target player mills three cards."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "GrantDynamicStats",
+                "filter": {
+                    "baseFilter": "permanent",
+                    "scope": "Self"
+                },
+                "powerBonus": {
+                    "type": "Multiply",
+                    "amount": {
+                        "type": "CountPlayersWith",
+                        "scope": "Each",
+                        "condition": {
+                            "type": "Compare",
+                            "left": {
+                                "type": "Count",
+                                "player": "You",
+                                "zone": "Graveyard"
+                            },
+                            "operator": "GTE",
+                            "right": {
+                                "type": "Fixed",
+                                "amount": 7
+                            }
+                        }
+                    },
+                    "multiplier": 2
+                },
+                "toughnessBonus": {
+                    "type": "Fixed",
+                    "amount": 0
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "47",
+        "rarity": "UNCOMMON",
+        "artist": "Narendra Bintara Adi",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/d/addcefdd-e012-4adf-9052-e60376a8d2d3.jpg?1784798124"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Mirkwood
 {
     "name": "Mirkwood",
@@ -5697,6 +5895,110 @@
         "artist": "Andrea Piparo",
         "flavorText": "\"I should say there were little bears, large bears, ordinary bears, and gigantic big bears, all dancing outside from dark to nearly dawn.\"\n—Gandalf",
         "imageUri": "https://cards.scryfall.io/normal/front/0/f/0feb9817-56e1-465a-851c-b2fe202aa8ae.jpg"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Part in Friendship
+{
+    "name": "Part in Friendship",
+    "manaCost": "{4}{G}",
+    "typeLine": "Enchantment",
+    "oracleText": "Whenever a nontoken creature you control dies, reveal cards from the top of your library until you reveal a creature card. If its mana value is less than or equal to the number of lands you control, put it onto the battlefield. Otherwise, put it into your hand. Put the rest on the bottom of your library in a random order. This ability triggers only once each turn.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "creature nontoken ctrl:you",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherUntilMatch",
+                            "filter": "creature",
+                            "storeMatch": "ignored",
+                            "storeRevealed": "revealed"
+                        },
+                        {
+                            "type": "RevealCollection",
+                            "from": "revealed"
+                        },
+                        {
+                            "type": "FilterCollection",
+                            "from": "revealed",
+                            "filter": {
+                                "type": "MatchesFilter",
+                                "filter": "creature"
+                            },
+                            "storeMatching": "found",
+                            "storeNonMatching": "rest"
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "Compare",
+                                    "left": {
+                                        "type": "StoredCardManaValue",
+                                        "collectionName": "found"
+                                    },
+                                    "operator": "LTE",
+                                    "right": {
+                                        "type": "AggregateBattlefield",
+                                        "player": "You",
+                                        "filter": "land"
+                                    }
+                                }
+                            },
+                            "then": {
+                                "type": "MoveCollection",
+                                "from": "found",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Battlefield"
+                                }
+                            },
+                            "otherwise": {
+                                "type": "MoveCollection",
+                                "from": "found",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Hand"
+                                },
+                                "revealed": true
+                            }
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "rest",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Library",
+                                "placement": "Bottom"
+                            },
+                            "order": "Random"
+                        }
+                    ]
+                },
+                "oncePerTurn": true,
+                "descriptionOverride": "Whenever a nontoken creature you control dies, reveal cards from the top of your library until you reveal a creature card. If its mana value is less than or equal to the number of lands you control, put it onto the battlefield. Otherwise, put it into your hand. Put the rest on the bottom of your library in a random order."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "134",
+        "rarity": "RARE",
+        "artist": "Jarel Threat",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/4/b4ff1eac-6d97-40ab-9b7c-c2fdca0917d9.jpg?1784632164"
     },
     "colorIdentityOverride": [
         "GREEN"
@@ -7289,6 +7591,99 @@
     ]
 }
 
+// The Master of Lake-town
+{
+    "name": "The Master of Lake-town",
+    "manaCost": "{1}{B}{B}",
+    "typeLine": "Legendary Creature — Human Advisor",
+    "oracleText": "Deathtouch\nWhenever a player loses life, that player mills that many cards. (Damage causes loss of life.)\nWhen The Master of Lake-town dies, draw a card for each graveyard with seven or more cards in it.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "keywords": [
+        "DEATHTOUCH"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "LifeLossEvent",
+                    "player": "Each"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "ContextProperty",
+                                    "key": "TRIGGER_LIFE_LOST"
+                                },
+                                "player": "TriggeringPlayer",
+                                "isMill": true
+                            },
+                            "storeAs": "milled"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "milled",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard",
+                                "player": "TriggeringPlayer"
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "Whenever a player loses life, that player mills that many cards."
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "CountPlayersWith",
+                        "scope": "Each",
+                        "condition": {
+                            "type": "Compare",
+                            "left": {
+                                "type": "Count",
+                                "player": "You",
+                                "zone": "Graveyard"
+                            },
+                            "operator": "GTE",
+                            "right": {
+                                "type": "Fixed",
+                                "amount": 7
+                            }
+                        }
+                    }
+                },
+                "descriptionOverride": "When The Master of Lake-town dies, draw a card for each graveyard with seven or more cards in it."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "77",
+        "rarity": "RARE",
+        "artist": "Marius Bota",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/7/3788ada6-34a9-41af-a31c-2d090550e503.jpg?1784632114"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // The Misty Mountains Cold
 {
     "name": "The Misty Mountains Cold",
@@ -8262,6 +8657,93 @@
         "imageUri": "https://cards.scryfall.io/normal/front/0/b/0b4b1c59-bcec-4779-9e27-0e6f9feb4e11.jpg?1785639568"
     },
     "colorIdentityOverride": []
+}
+
+// Uncover the Moon-Letters
+{
+    "name": "Uncover the Moon-Letters",
+    "manaCost": "{3}{U}",
+    "typeLine": "Enchantment",
+    "oracleText": "Whenever you cast a noncreature spell, you may draw X cards, where X is the amount of mana spent to cast that spell. If you do, discard two cards.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            "IsNoncreature"
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "DrawCards",
+                                "count": {
+                                    "type": "ContextProperty",
+                                    "key": "MANA_SPENT_ON_TRIGGERING_SPELL"
+                                }
+                            },
+                            {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "GatherCards",
+                                        "source": {
+                                            "type": "FromZone",
+                                            "zone": "Hand"
+                                        },
+                                        "storeAs": "hand"
+                                    },
+                                    {
+                                        "type": "SelectFromCollection",
+                                        "from": "hand",
+                                        "selection": {
+                                            "type": "ChooseExactly",
+                                            "count": {
+                                                "type": "Fixed",
+                                                "amount": 2
+                                            }
+                                        },
+                                        "storeSelected": "discarded",
+                                        "prompt": "Choose 2 cards to discard"
+                                    },
+                                    {
+                                        "type": "MoveCollection",
+                                        "from": "discarded",
+                                        "destination": {
+                                            "type": "ToZone",
+                                            "zone": "Graveyard"
+                                        },
+                                        "moveType": "Discard"
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    "descriptionOverride": "Draw X cards, where X is the amount of mana spent to cast that spell, then discard two cards?"
+                },
+                "descriptionOverride": "Whenever you cast a noncreature spell, you may draw X cards, where X is the amount of mana spent to cast that spell. If you do, discard two cards."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "57",
+        "rarity": "RARE",
+        "artist": "Leon Tukker",
+        "flavorText": "Elrond took the map and gazed long at it, and he shook his head, until he saw what the moon revealed.",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/9/79edf5f6-f6b6-4271-bd2a-14a980f30616.jpg?1785496445"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
 }
 
 // Uneasy Partings
