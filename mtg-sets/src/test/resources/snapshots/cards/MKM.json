@@ -2079,6 +2079,73 @@
     ]
 }
 
+// Glint Weaver
+{
+    "name": "Glint Weaver",
+    "manaCost": "{5}{G}{G}",
+    "typeLine": "Creature — Spider",
+    "oracleText": "Reach\nWhen this creature enters, distribute three +1/+1 counters among one, two, or three target creatures, then you gain life equal to the greatest toughness among creatures you control.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "REACH"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DistributeCountersAmongTargets",
+                            "totalCounters": {
+                                "type": "Fixed",
+                                "amount": 3
+                            }
+                        },
+                        {
+                            "type": "GainLife",
+                            "amount": {
+                                "type": "AggregateBattlefield",
+                                "player": "You",
+                                "filter": "creature",
+                                "aggregation": "MAX",
+                                "property": "TOUGHNESS"
+                            }
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "count": 3,
+                    "minCount": 1,
+                    "filter": {
+                        "baseFilter": "creature"
+                    }
+                },
+                "descriptionOverride": "When this creature enters, distribute three +1/+1 counters among one, two, or three target creatures, then you gain life equal to the greatest toughness among creatures you control."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "162",
+        "rarity": "UNCOMMON",
+        "artist": "Tuan Duong Chu",
+        "flavorText": "The spider just loved how the gems twinkled, and the high-class prey they attracted.",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/8/c8eff4d0-67ad-4900-b33d-605659b59161.jpg?1783912866"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Gravestone Strider
 {
     "name": "Gravestone Strider",
@@ -2486,6 +2553,46 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Homicide Investigator
+{
+    "name": "Homicide Investigator",
+    "manaCost": "{1}{B}",
+    "typeLine": "Creature — Human Detective",
+    "oracleText": "Whenever one or more nontoken creatures you control die, investigate. This ability triggers only once each turn. (Create a Clue token. It's an artifact with \"{2}, Sacrifice this token: Draw a card.\")",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "CreaturesYouControlDiedEvent",
+                    "filter": "creature nontoken"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Clue"
+                },
+                "oncePerTurn": true,
+                "descriptionOverride": "Whenever one or more nontoken creatures you control die, investigate. This ability triggers only once each turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "86",
+        "rarity": "RARE",
+        "artist": "Jodie Muir",
+        "flavorText": "In her line of work, the dead are often better sources than the living.",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/1/21d6accd-167a-4b21-a488-44d54cdfa608.jpg?1783912896"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 
@@ -4425,6 +4532,43 @@
     ]
 }
 
+// Riftburst Hellion
+{
+    "name": "Riftburst Hellion",
+    "manaCost": "{5}{R}{G}",
+    "typeLine": "Creature — Hellion",
+    "oracleText": "Reach\nDisguise {4}{R/G}{R/G} (You may cast this card face down for {3} as a 2/2 creature with ward {2}. Turn it face up any time for its disguise cost.)",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 7
+    },
+    "keywords": [
+        "REACH"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Disguise",
+            "disguiseCost": {
+                "type": "PayAtom",
+                "atom": {
+                    "type": "AtomMana",
+                    "cost": "{4}{R/G}{R/G}"
+                }
+            }
+        }
+    ],
+    "metadata": {
+        "collectorNumber": "228",
+        "artist": "Brent Hollowell",
+        "flavorText": "Like any Ravnican denizen, it decided to visit Plaza West for lunch.",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/f/9fae9044-a859-434d-8dc6-4f9d455ca5e1.jpg?1783912840"
+    },
+    "colorIdentityOverride": [
+        "RED",
+        "GREEN"
+    ]
+}
+
 // Rope
 {
     "name": "Rope",
@@ -4732,6 +4876,142 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Rune-Brand Juggler
+{
+    "name": "Rune-Brand Juggler",
+    "manaCost": "{B}{R}",
+    "typeLine": "Creature — Human Shaman",
+    "oracleText": "When this creature enters, suspect up to one other target creature you control. (A suspected creature has menace and can't block.)\n{3}{B}{R}, Sacrifice a suspected creature: Target creature gets -5/-5 until end of turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "SetSuspected",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "up to one other target creature you control"
+                            }
+                        },
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "MENACE",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "up to one other target creature you control"
+                            },
+                            "duration": "Permanent"
+                        },
+                        {
+                            "type": "CantBlockTargetCreatures",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "up to one other target creature you control"
+                            },
+                            "duration": "Permanent"
+                        }
+                    ],
+                    "descriptionOverride": "target becomes suspected"
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "optional": true,
+                    "filter": {
+                        "baseFilter": "creature ctrl:you",
+                        "excludeSelf": true
+                    },
+                    "id": "up to one other target creature you control"
+                },
+                "descriptionOverride": "When this creature enters, suspect up to one other target creature you control."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{3}{B}{R}"
+                            }
+                        },
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomSacrifice",
+                                "filter": {
+                                    "cardPredicates": [
+                                        "IsCreature"
+                                    ],
+                                    "statePredicates": [
+                                        "IsSuspected"
+                                    ]
+                                }
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": -5
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": -5
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature"
+                        },
+                        "id": "target creature"
+                    }
+                ],
+                "descriptionOverride": "Target creature gets -5/-5 until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "229",
+        "rarity": "UNCOMMON",
+        "artist": "Mila Pesic",
+        "flavorText": "Notice: Guests of Hellbender may be exposed to occasional bursts of flame.",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/2/5288cf17-9d79-4d35-85f1-bf4d0a73494b.jpg?1783912839",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "When an effect suspects a creature, it becomes suspected. It gains menace and \"This creature can't block\" for as long as it's suspected. It stays suspected until it leaves the battlefield or another effect causes it to no longer be suspected."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "RED"
     ]
 }
 
@@ -5816,6 +6096,69 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Vengeful Creeper
+{
+    "name": "Vengeful Creeper",
+    "manaCost": "{4}{G}",
+    "typeLine": "Creature — Plant Elemental",
+    "oracleText": "Disguise {5}{G} (You may cast this card face down for {3} as a 2/2 creature with ward {2}. Turn it face up any time for its disguise cost.)\nWhen this creature is turned face up, destroy target artifact or enchantment an opponent controls.",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 5
+    },
+    "keywordAbilities": [
+        {
+            "type": "Disguise",
+            "disguiseCost": {
+                "type": "PayAtom",
+                "atom": {
+                    "type": "AtomMana",
+                    "cost": "{5}{G}"
+                }
+            }
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "TurnFaceUpEvent",
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "ContextTarget",
+                        "index": 0
+                    },
+                    "destination": "Graveyard",
+                    "byDestruction": true
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "artifact|enchantment ctrl:opponent"
+                    }
+                },
+                "descriptionOverride": "When this creature is turned face up, destroy target artifact or enchantment an opponent controls."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "182",
+        "artist": "Maria Poliakova",
+        "flavorText": "Seeking intact evidence in the Rubblebelt is a fool's errand.",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/a/7a914416-effd-4eda-b609-2773c53a08ec.jpg?1783912858",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "Any time you have priority, you may turn the face-down creature face up by revealing what its disguise cost is and paying that cost. This is a special action. It doesn't use the stack and can't be responded to."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 
