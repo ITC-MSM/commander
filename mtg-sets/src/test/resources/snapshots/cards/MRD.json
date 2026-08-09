@@ -93,6 +93,43 @@
     "colorIdentityOverride": []
 }
 
+// Altar's Light
+{
+    "name": "Altar's Light",
+    "manaCost": "{2}{W}{W}",
+    "typeLine": "Instant",
+    "oracleText": "Exile target artifact or enchantment.",
+    "script": {
+        "spellEffect": {
+            "type": "MoveToZone",
+            "target": {
+                "type": "BoundVariable",
+                "name": "target artifact or enchantment"
+            },
+            "destination": "Exile"
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "artifact|enchantment"
+                },
+                "id": "target artifact or enchantment"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "1",
+        "rarity": "UNCOMMON",
+        "artist": "Daren Bader",
+        "flavorText": "\"The altar does nothing; the device is crushed under the weight of its own impurity.\"\n—Ushanti, leonin seer",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/d/dd037f62-7cef-4737-b575-942c5959f1ea.jpg?1783944565"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Ancient Den
 {
     "name": "Ancient Den",
@@ -784,6 +821,34 @@
     "colorIdentityOverride": [
         "RED"
     ]
+}
+
+// Frogmite
+{
+    "name": "Frogmite",
+    "manaCost": "{4}",
+    "typeLine": "Artifact Creature — Frog",
+    "oracleText": "Affinity for artifacts (This spell costs {1} less to cast for each artifact you control.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "AFFINITY"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Affinity",
+            "forType": "ARTIFACT"
+        }
+    ],
+    "metadata": {
+        "collectorNumber": "172",
+        "artist": "Terese Nielsen",
+        "flavorText": "At first, vedalken observers thought blinkmoths naturally avoided certain places. Then they realized those places were frogmite feeding grounds.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/f/ff504dcb-2eb8-4b3c-a8b9-29697739b649.jpg?1783944522"
+    },
+    "colorIdentityOverride": []
 }
 
 // Galvanic Key
@@ -2285,6 +2350,47 @@
     "colorIdentityOverride": []
 }
 
+// Nim Lasher
+{
+    "name": "Nim Lasher",
+    "manaCost": "{2}{B}",
+    "typeLine": "Creature — Zombie",
+    "oracleText": "This creature gets +1/+0 for each artifact you control.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "GrantDynamicStats",
+                "filter": {
+                    "baseFilter": "permanent",
+                    "scope": "Self"
+                },
+                "powerBonus": {
+                    "type": "AggregateBattlefield",
+                    "player": "You",
+                    "filter": "artifact"
+                },
+                "toughnessBonus": {
+                    "type": "Fixed",
+                    "amount": 0
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "71",
+        "artist": "Adam Rex",
+        "flavorText": "The rotting metal feeds the necrogen mists, and in turn the mists feed the nim.",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/b/7b66c698-02bd-48ef-a866-5251bdc02c16.jpg?1783944546"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Nim Replica
 {
     "name": "Nim Replica",
@@ -2344,6 +2450,50 @@
         "artist": "Carl Critchlow",
         "flavorText": "It kills with unfeeling malice.",
         "imageUri": "https://cards.scryfall.io/normal/front/d/1/d11a56e7-30a4-44da-a58b-336f4c0c4882.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Nim Shrieker
+{
+    "name": "Nim Shrieker",
+    "manaCost": "{3}{B}",
+    "typeLine": "Creature — Zombie",
+    "oracleText": "Flying\nThis creature gets +1/+0 for each artifact you control.",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 1
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "GrantDynamicStats",
+                "filter": {
+                    "baseFilter": "permanent",
+                    "scope": "Self"
+                },
+                "powerBonus": {
+                    "type": "AggregateBattlefield",
+                    "player": "You",
+                    "filter": "artifact"
+                },
+                "toughnessBonus": {
+                    "type": "Fixed",
+                    "amount": 0
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "73",
+        "artist": "Adam Rex",
+        "flavorText": "As imps they were an annoyance. As nim they are a pestilence.",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/3/c3a2c39b-b302-4cc3-b507-e4fe00614036.jpg?1783944545"
     },
     "colorIdentityOverride": [
         "BLACK"
@@ -2939,6 +3089,50 @@
         "imageUri": "https://cards.scryfall.io/normal/front/6/8/684a6e3f-909a-4ca0-a6aa-7354b9476df2.jpg"
     },
     "colorIdentityOverride": []
+}
+
+// Slith Firewalker
+{
+    "name": "Slith Firewalker",
+    "manaCost": "{R}{R}",
+    "typeLine": "Creature — Slith",
+    "oracleText": "Haste\nWhenever this creature deals combat damage to a player, put a +1/+1 counter on it.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "HASTE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "DealsDamageEvent",
+                    "damageType": "DamageCombat",
+                    "recipient": "AnyPlayer"
+                },
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": "Self"
+                },
+                "descriptionOverride": "Whenever this creature deals combat damage to a player, put a +1/+1 counter on it."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "107",
+        "rarity": "UNCOMMON",
+        "artist": "Justin Sweet",
+        "flavorText": "The slith incubate in the Great Furnace's heat, emerging on Mirrodin's surface only when the four suns have aligned overhead.",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/3/73ff7383-71da-46ae-849f-349c40815a29.jpg?1783944537"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
 }
 
 // Soldier Replica
