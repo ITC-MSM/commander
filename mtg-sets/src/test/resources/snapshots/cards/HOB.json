@@ -1685,6 +1685,74 @@
     ]
 }
 
+// Eagle's Rescue
+{
+    "name": "Eagle's Rescue",
+    "manaCost": "{2}{W/U}{W/U}",
+    "typeLine": "Enchantment — Aura",
+    "oracleText": "Enchant creature\nEnchanted creature gets +2/+2 and has flying.\n{2}{W/U}{W/U}: Return this card from your graveyard to the battlefield attached to target creature you control with power 1 or less. Activate only as a sorcery.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{2}{W/U}{W/U}"
+                    }
+                },
+                "effect": {
+                    "type": "ReturnSelfToBattlefieldAttached",
+                    "target": {
+                        "type": "ContextTarget",
+                        "index": 0
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature pow<=1 ctrl:you"
+                        }
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "activateFromZone": "Graveyard",
+                "descriptionOverride": "Return this card from your graveyard to the battlefield attached to target creature you control with power 1 or less. Activate only as a sorcery."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 2,
+                "toughnessBonus": 2
+            },
+            {
+                "type": "GrantKeyword",
+                "keyword": "FLYING"
+            }
+        ],
+        "auraTarget": {
+            "type": "TargetObject",
+            "filter": {
+                "baseFilter": "creature"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "155",
+        "rarity": "UNCOMMON",
+        "artist": "Ramza Psyru",
+        "flavorText": "\"Don't pinch! You need not be frightened like a rabbit. What is finer than flying?\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/2/12c8f2cc-ac9d-4cf6-9025-efe366b4e07f.jpg?1785236726"
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLUE"
+    ]
+}
+
 // Elven Raft-Steerer
 {
     "name": "Elven Raft-Steerer",
@@ -2528,6 +2596,93 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Goblin Plate Mail
+{
+    "name": "Goblin Plate Mail",
+    "manaCost": "{1}{B/R}",
+    "typeLine": "Artifact — Equipment",
+    "oracleText": "When this Equipment enters, amass Goblins 1, then attach this Equipment to the amassed Army. (To amass Goblins 1, put a +1/+1 counter on an Army you control. It's also a Goblin. If you don't control an Army, create a 0/0 black Goblin Army creature token first.)\nEquipped creature gets +1/+0 and has menace.\nEquip {4}",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "Amass",
+                            "subtype": "Goblin"
+                        },
+                        {
+                            "type": "AttachEquipment",
+                            "target": {
+                                "type": "PipelineTarget",
+                                "collectionName": "__amassed_army"
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "When this Equipment enters, amass Goblins 1, then attach this Equipment to the amassed Army."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{4}"
+                    }
+                },
+                "effect": {
+                    "type": "AttachEquipment",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "creature you control"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        },
+                        "id": "creature you control"
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "isEquipAbility": true
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 1,
+                "toughnessBonus": 0
+            },
+            {
+                "type": "GrantKeyword",
+                "keyword": "MENACE"
+            }
+        ]
+    },
+    "equipCost": "{4}",
+    "metadata": {
+        "collectorNumber": "157",
+        "artist": "Miklós Ligeti",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/b/cb982607-da37-4894-91a5-cf6307d4d703.jpg?1785323293"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "RED"
     ]
 }
 
@@ -3930,6 +4085,83 @@
     ]
 }
 
+// Moment of Glory
+{
+    "name": "Moment of Glory",
+    "manaCost": "{W}",
+    "typeLine": "Sorcery",
+    "oracleText": "Put a +1/+1 counter on target creature you control. If this spell was cast from a graveyard, also put a +1/+1 counter on each other creature you control.\nFlashback {4}{W} (You may cast this card from your graveyard for its flashback cost. Then exile it.)",
+    "keywords": [
+        "FLASHBACK"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Flashback",
+            "cost": "{4}{W}"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature you control"
+                    }
+                },
+                {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.WhenCondition",
+                        "condition": {
+                            "type": "WasCastFromZone",
+                            "zone": "Graveyard"
+                        }
+                    },
+                    "then": {
+                        "type": "ForEach",
+                        "space": {
+                            "type": "IterationSpace.Group",
+                            "filter": {
+                                "baseFilter": "creature ctrl:you",
+                                "excludeTarget": true
+                            }
+                        },
+                        "body": {
+                            "type": "AddCounters",
+                            "counterType": "+1/+1",
+                            "count": 1,
+                            "target": "Self"
+                        }
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature ctrl:you"
+                },
+                "id": "target creature you control"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "21",
+        "artist": "Jarel Threat",
+        "flavorText": "\"I am Bard, slayer of the Dragon!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/a/0a6a6ff0-b1cd-4b06-bd31-612690094e0e.jpg?1785497012"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Most Decrepit Old Bird
 {
     "name": "Most Decrepit Old Bird",
@@ -4882,6 +5114,103 @@
         "artist": "Antonio José Manzanedo",
         "flavorText": "The grey chief spoke in their dreadful language, and every now and then all the Wargs in the circle would answer together.",
         "imageUri": "https://cards.scryfall.io/normal/front/1/6/16765eb2-d497-4cd6-b683-20eac2f10bbf.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Rhovanion Rampager
+{
+    "name": "Rhovanion Rampager",
+    "manaCost": "{2}{B}",
+    "typeLine": "Creature — Wolf",
+    "oracleText": "Whenever this creature attacks, you may sacrifice another creature. If you do, put a number of +1/+1 counters on this creature equal to the sacrificed creature's power.\nWhen this creature dies, amass Goblins X, where X is this creature's power. (Put X +1/+1 counters on an Army you control. It's also a Goblin. If you don't control an Army, create a 0/0 black Goblin Army creature token first.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "BattlefieldMatching",
+                                "filter": "creature",
+                                "player": "You",
+                                "excludeSelf": true
+                            },
+                            "storeAs": "gathered0"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "gathered0",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "selected1",
+                            "prompt": "You may sacrifice another creature",
+                            "selectedLabel": "Sacrifice",
+                            "useTargetingUI": true
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "selected1",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            },
+                            "moveType": "Sacrifice"
+                        },
+                        {
+                            "type": "AddDynamicCounters",
+                            "counterType": "+1/+1",
+                            "amount": {
+                                "type": "EntityProperty",
+                                "entity": "Sacrificed",
+                                "numericProperty": "Power"
+                            },
+                            "target": "Self"
+                        }
+                    ]
+                },
+                "descriptionOverride": "Whenever this creature attacks, you may sacrifice another creature. If you do, put a number of +1/+1 counters on this creature equal to the sacrificed creature's power."
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "effect": {
+                    "type": "Amass",
+                    "amount": {
+                        "type": "EntityProperty",
+                        "entity": "Source",
+                        "numericProperty": "Power"
+                    },
+                    "subtype": "Goblin"
+                },
+                "descriptionOverride": "When this creature dies, amass Goblins X, where X is this creature's power."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "82",
+        "rarity": "RARE",
+        "artist": "Kevin Sidharta",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/e/5ee45a5e-3650-47b3-8d31-6b1de9e27a14.jpg?1785412699"
     },
     "colorIdentityOverride": [
         "BLACK"
@@ -7297,6 +7626,77 @@
         "artist": "Tomas Duchek",
         "flavorText": "Wargs had little trouble devouring and digesting the most putrid of carcasses.",
         "imageUri": "https://cards.scryfall.io/normal/front/6/3/63078f42-f404-4c61-86be-45d934393b0a.jpg"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Woodland Weavemaster
+{
+    "name": "Woodland Weavemaster",
+    "manaCost": "{1}{G}",
+    "typeLine": "Creature — Elf Druid",
+    "oracleText": "Vigilance\nWhenever another Elf you control enters, this creature gets +1/+1 until end of turn.\n{T}: Add X mana of any one color, where X is this creature's power. Spend this mana only to cast Elf spells and activate abilities of Elf sources.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 2
+    },
+    "keywords": [
+        "VIGILANCE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "Elf ctrl:you",
+                    "to": "Battlefield"
+                },
+                "binding": "OTHER",
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": "Self"
+                },
+                "descriptionOverride": "Whenever another Elf you control enters, this creature gets +1/+1 until end of turn."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddManaOfChoice",
+                    "amount": {
+                        "type": "EntityProperty",
+                        "entity": "Source",
+                        "numericProperty": "Power"
+                    },
+                    "restriction": {
+                        "type": "SubtypeSpellsOrAbilitiesOnly",
+                        "subtype": "Elf"
+                    }
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true,
+                "descriptionOverride": "Add X mana of any one color, where X is this creature's power. Spend this mana only to cast Elf spells and activate abilities of Elf sources."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "143",
+        "rarity": "UNCOMMON",
+        "artist": "Nia Kovalevski",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/e/fe2b4bcf-56de-44d3-83af-aeb27f82c25e.jpg?1785237990"
     },
     "colorIdentityOverride": [
         "GREEN"

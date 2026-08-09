@@ -8102,6 +8102,12 @@ sibling effect that reads `DynamicAmount.EntityProperty(EntityReference.AmassedA
 - It also resolves inside **target / affected-entity filters** via the pipeline-threaded
   predicate path (below), so comparison-based targeting like Grishnákh's "with power ≤ the
   amassed Army's power" works — `TargetFilter.…powerAtMostEntity(EntityReference.AmassedArmy)`.
+- When a sibling effect needs the Army as an **`EffectTarget`** rather than as an amount or a
+  filter comparand, read the same slot back with
+  `EffectTarget.PipelineTarget(EntityReference.AmassedArmy.STORAGE_KEY)` — Goblin Plate Mail's
+  "amass Goblins 1, then attach this Equipment to the amassed Army". The Army is not a target
+  (nothing is chosen on the stack); this just addresses what Amass already picked. `CardLinter`
+  knows `Amass` writes that slot, so the read does not trip the unwired-collection rule.
 
 #### Pipeline values inside target filters (`powerAtMostEntity`/`powerLessThanEntity` + `AmassedArmy`)
 
