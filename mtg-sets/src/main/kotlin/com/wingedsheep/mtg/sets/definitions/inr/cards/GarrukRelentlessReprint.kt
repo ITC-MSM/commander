@@ -15,6 +15,7 @@ val GarrukRelentlessReprint = Printing(
     scryfallId = "6897514f-e396-46d6-91e3-158366c741bb",
     artist = "Eric Deschamps",
     imageUri = "https://cards.scryfall.io/normal/front/6/8/6897514f-e396-46d6-91e3-158366c741bb.jpg?1783908104",
+    backFaceImageUri = "https://cards.scryfall.io/normal/back/6/8/6897514f-e396-46d6-91e3-158366c741bb.jpg?1783908104",
     releaseDate = "2025-01-24",
     rarity = Rarity.MYTHIC,
 )

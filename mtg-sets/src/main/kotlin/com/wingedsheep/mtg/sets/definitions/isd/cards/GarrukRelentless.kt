@@ -60,6 +60,10 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  *    [Effects.IfYouDo] with [SuccessCriterion.PermanentsSacrificed]. `Auto` can't infer a sacrifice
  *    (the graveyard's owner isn't known until the chooser picks), and `Always` would wrongly search on
  *    an empty board.
+ *  - **Neither Wolf declares an `imageUri`.** Both faces make a Wolf that Innistrad and Innistrad
+ *    Remastered each printed with their own illustration, so the art belongs to the set's
+ *    `tokenArt`, not to the script — baking one in mints Innistrad's Wolf out of a Remastered
+ *    Garruk. `TokenArtRegistry` keys off the printing the player brought and gets both right.
  *  - **The −3 counts creature cards in the graveyard at resolution** and freezes there — the ruling
  *    says the bonus doesn't change if that number changes later in the turn. A [DynamicAmount] fed to
  *    [Effects.ModifyStats] inside a `ForEachInGroup` gives both that and "only creatures you control
@@ -103,7 +107,6 @@ private val GarrukRelentlessFront = card("Garruk Relentless") {
             toughness = 2,
             colors = setOf(Color.GREEN),
             creatureTypes = setOf("Wolf"),
-            imageUri = "https://cards.scryfall.io/normal/front/8/9/89b89a55-3ea2-4186-b946-06831bc16169.jpg?1783907965",
         )
         description = "Create a 2/2 green Wolf creature token."
     }
@@ -141,7 +144,6 @@ private val GarrukTheVeilCursed = card("Garruk, the Veil-Cursed") {
             colors = setOf(Color.BLACK),
             creatureTypes = setOf("Wolf"),
             keywords = setOf(Keyword.DEATHTOUCH),
-            imageUri = "https://cards.scryfall.io/normal/front/6/8/6884b4a4-b1f8-4d3d-8b0a-0e1c04e9b0f9.jpg",
         )
         description = "Create a 1/1 black Wolf creature token with deathtouch."
     }

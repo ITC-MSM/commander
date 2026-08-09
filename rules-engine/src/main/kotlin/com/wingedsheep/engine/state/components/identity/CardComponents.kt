@@ -31,6 +31,18 @@ data class CardComponent(
     val imageUri: String? = null,
     val backFaceImageUri: String? = null,
     /**
+     * Set code of the printing this entity actually presents — the reprint the deck pinned when it
+     * pinned one, otherwise the canonical printing's set. Distinct from [originalSetCode], which is
+     * always the canonical set and is a *rules* characteristic ("originally printed in X"); this one
+     * is presentation, and is the set whose token art the card should mint.
+     *
+     * It can't be read back off [cardDefinitionId]: that id deliberately keeps the oracle
+     * definition's coordinates so ability lookups resolve, so a Garruk from an Innistrad Remastered
+     * pool is still keyed `Garruk Relentless#ISD-181`. Null only for entities minted outside
+     * `CardEntityFactory` (tokens, scenario builders).
+     */
+    val printingSetCode: String? = null,
+    /**
      * Precomputed from the card definition: does this card have at least one intrinsic
      * activated ability that isn't a mana ability (and isn't a loyalty ability)? Used by
      * static filters such as Tsabo's Web ("each land with an activated ability that isn't

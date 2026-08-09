@@ -65,10 +65,14 @@ class TokenArtRegistry {
     /**
      * Art for a token being created, or null when the creating card's set prints none that match.
      *
-     * @param sourceCardDefinitionId The creating entity's `CardComponent.cardDefinitionId`. Real
-     *   games key entities as `"Name#SET-CN"`, which names the *printing* the player brought —
-     *   that set wins, so a reprint mints its own token. Scenario builders key by bare name, which
+     * @param sourceCardDefinitionId The creating entity's `CardComponent.cardDefinitionId`, the
+     *   fallback when no printing is known. Real games key entities as `"Name#SET-CN"` naming the
+     *   *canonical* definition (that's deliberate — ability lookups resolve through it), so this
+     *   yields the set the card was first printed in. Scenario builders key by bare name, which
      *   falls back to [setByCardName].
+     * @param sourcePrintingSetCode The creating entity's `CardComponent.printingSetCode` — the
+     *   printing the player actually brought. Wins when known, which is what makes a reprint mint
+     *   its own set's token rather than the original's.
      * @param tokenName Token name as it will be created ("Cat", "Zombie Druid").
      */
     fun resolve(
@@ -77,7 +81,10 @@ class TokenArtRegistry {
         power: Int? = null,
         toughness: Int? = null,
         colors: Set<Color> = emptySet(),
-    ): String? = resolveAll(sourceCardDefinitionId, tokenName, power, toughness, colors).firstOrNull()
+        sourcePrintingSetCode: String? = null,
+    ): String? = resolveAll(
+        sourceCardDefinitionId, tokenName, power, toughness, colors, sourcePrintingSetCode,
+    ).firstOrNull()
 
     /**
      * Every art the creating card's set printed for this token, in declaration order; empty when
@@ -94,15 +101,20 @@ class TokenArtRegistry {
         power: Int? = null,
         toughness: Int? = null,
         colors: Set<Color> = emptySet(),
+        sourcePrintingSetCode: String? = null,
     ): List<String> {
-        val setCode = setCodeFor(sourceCardDefinitionId) ?: return emptyList()
+        val setCode = setCodeFor(sourceCardDefinitionId, sourcePrintingSetCode) ?: return emptyList()
         val rows = bySet[setCode] ?: return emptyList()
         return TokenPrinting.allMatches(rows, tokenName, power, toughness, colors)
             .map { it.imageUri }
     }
 
     /** Set code that should supply token art for a creating entity, or null if unknown. */
-    private fun setCodeFor(cardDefinitionId: String?): String? {
+    private fun setCodeFor(cardDefinitionId: String?, printingSetCode: String?): String? {
+        // The printing the player actually brought is the answer whenever it's known, and it's the
+        // only one that can be right for a reprint: a definition id keeps the *oracle* definition's
+        // coordinates, so an Innistrad Remastered Garruk still reads `#ISD-181` below.
+        if (printingSetCode != null && printingSetCode in bySet) return printingSetCode
         val id = cardDefinitionId ?: return null
         // "Name#SET-CN" — the printing the entity was built from. A bare "Name#CN" (definitions
         // with a collector number but no set) has no dash and correctly falls through to the name
