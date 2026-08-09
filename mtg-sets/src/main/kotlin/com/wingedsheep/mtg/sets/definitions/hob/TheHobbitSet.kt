@@ -41,6 +41,12 @@ object TheHobbitSet : MtgSet {
             name = "Treasure",
             imageUri = "https://cards.scryfall.io/art_crop/front/c/6/c6e096bb-ad9e-4a8b-8b42-26852fa32c1d.jpg?1783902770",
         ),
+        // thob #3 — the Army that every "amass Goblins" card in the set puts its counters on
+        // (Down, Down to Goblin Town, Gathering of Darkness, Rage into the Valley, Clap! Snap!).
+        TokenPrinting(
+            name = "Goblin Army",
+            imageUri = "https://cards.scryfall.io/normal/front/2/e/2e2028b1-34c0-40b6-8f65-79f79a279996.jpg?1785497644",
+        ),
     )
 
     private const val CARDS_PACKAGE = "com.wingedsheep.mtg.sets.definitions.hob.cards"
