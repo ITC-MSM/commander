@@ -2820,6 +2820,7 @@ can't statically prevent (cross-trigger flows, `Self`-vs-`ContextTarget` inside 
 - `Targets.Enchantment` — any enchantment.
 - `Targets.Land` — any land.
 - `Targets.ArtifactOrLand` — any artifact or land (Territory Forge).
+- `Targets.ArtifactEnchantmentOrLand` — any artifact, enchantment, or land (Creeping Mold). One target slot over a three-way union, not three modes.
 - `Targets.BasicLand` — any basic land.
 - `Targets.Spell` — any spell on the stack.
 - `Targets.SpellYouControl` — any spell on the stack you control, unrestricted by type (Slick Imitator's "Copy target spell you control"; a copied permanent spell resolves into a token).
@@ -3055,8 +3056,11 @@ This is the player-arm prerequisite for the planned composable mixed `TargetUnio
   `IsCreature` + `.notColor(...)`. FQL keys: `nonland` / `noncreature` / `nonartifact`.
 - **Combined-type filters** — `GameObjectFilter.InstantOrSorcery` / `CreatureOrPlaneswalker` /
   `CreatureOrEnchantment` / `ArtifactOrEnchantment` / `CreatureOrArtifact` / `CreatureOrVehicle` /
-  `ArtifactOrLand` / `ArtifactCreatureOrEnchantment` each wrap a `CardPredicate.Or` of the named
+  `ArtifactOrLand` / `ArtifactEnchantmentOrLand` / `ArtifactCreatureOrEnchantment` each wrap a
+  `CardPredicate.Or` of the named
   types (`CreatureOrVehicle` matches a creature or any object with the Vehicle subtype).
+  `ArtifactEnchantmentOrLand` (the flexible-Naturalize union) has the matching target constants
+  `TargetFilter.ArtifactEnchantmentOrLand` / `Targets.ArtifactEnchantmentOrLand` — Creeping Mold.
   `ArtifactCreatureOrEnchantment` (the three-type O-Ring restriction) has matching target constants
   `TargetFilter.ArtifactCreatureOrEnchantment` and
   `TargetFilter.ArtifactCreatureOrEnchantmentOpponentControls` — the latter for "exile target
