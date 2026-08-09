@@ -4125,12 +4125,20 @@ object Effects {
         )
 
     /**
-     * Prevent all damage target creature or spell would deal this turn.
+     * Prevent all damage target creature or spell would deal, this turn by default. Pass a
+     * [duration] for the open-ended wordings — [Duration.WhileSourceOnBattlefield] gives "prevent
+     * all damage that would be dealt by up to one target creature for as long as this Saga remains
+     * on the battlefield" (Old Fat Spider Can't See Me), which the shield honors like any other
+     * source-keyed floating effect: it stops applying the moment the source leaves.
      */
-    fun PreventAllDamageDealtBy(target: EffectTarget): Effect =
+    fun PreventAllDamageDealtBy(
+        target: EffectTarget,
+        duration: Duration = Duration.EndOfTurn
+    ): Effect =
         PreventDamageEffect(
             target = target,
-            direction = PreventionDirection.FromTarget
+            direction = PreventionDirection.FromTarget,
+            duration = duration
         )
 
     /**
