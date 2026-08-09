@@ -2279,6 +2279,56 @@
     ]
 }
 
+// Moriok Scavenger
+{
+    "name": "Moriok Scavenger",
+    "manaCost": "{3}{B}",
+    "typeLine": "Creature — Human Rogue",
+    "oracleText": "When this creature enters, you may return target artifact creature card from your graveyard to your hand.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "card"
+                    },
+                    "destination": "Hand"
+                },
+                "optional": true,
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "artifact creature own:you",
+                        "zone": "Graveyard"
+                    },
+                    "id": "card"
+                },
+                "descriptionOverride": "When this creature enters, you may return target artifact creature card from your graveyard to your hand."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "68",
+        "artist": "Puddnhead",
+        "flavorText": "Many go to Mephidross in search of lost riches. Most end up as part of the cache.",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/f/0f27426b-3679-44e4-9249-f57b92baa3f3.jpg?1783944546"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Myr Mindservant
 {
     "name": "Myr Mindservant",
@@ -2705,6 +2755,66 @@
     ]
 }
 
+// Nim Shambler
+{
+    "name": "Nim Shambler",
+    "manaCost": "{2}{B}{B}",
+    "typeLine": "Creature — Zombie",
+    "oracleText": "This creature gets +1/+0 for each artifact you control.\nSacrifice a creature: Regenerate this creature.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomSacrifice",
+                        "filter": "creature"
+                    }
+                },
+                "effect": {
+                    "type": "Regenerate",
+                    "target": "Self"
+                },
+                "descriptionOverride": "Sacrifice a creature: Regenerate this creature."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "GrantDynamicStats",
+                "filter": {
+                    "baseFilter": "permanent",
+                    "scope": "Self"
+                },
+                "powerBonus": {
+                    "type": "Count",
+                    "player": "You",
+                    "zone": "Battlefield",
+                    "filter": "artifact"
+                },
+                "toughnessBonus": {
+                    "type": "Fixed",
+                    "amount": 0
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "72",
+        "rarity": "UNCOMMON",
+        "artist": "Adam Rex",
+        "flavorText": "Called \"the Dross\" by its inhabitants, Mephidross is home to the nim, Mirrodin's mindless, ravenous undead.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/5/e59c09a0-a374-46c1-978f-ec7478dc7ab7.jpg?1783944546"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Nim Shrieker
 {
     "name": "Nim Shrieker",
@@ -2746,6 +2856,45 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Ogre Leadfoot
+{
+    "name": "Ogre Leadfoot",
+    "manaCost": "{4}{R}",
+    "typeLine": "Creature — Ogre",
+    "oracleText": "Whenever this creature becomes blocked by an artifact creature, destroy that creature.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "BecomesBlockedEvent",
+                    "filter": "artifact creature"
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": "TriggeringEntity",
+                    "destination": "Graveyard",
+                    "byDestruction": true
+                },
+                "descriptionOverride": "Whenever this creature becomes blocked by an artifact creature, destroy that creature."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "102",
+        "artist": "Heather Hudson",
+        "flavorText": "When the goblins need more scrap for the Great Furnace, they simply let the ogres loose and follow in their wake.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/3/e3c77744-3a86-46cf-9e0f-5a217a1c08b9.jpg?1783944539"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
@@ -3338,6 +3487,64 @@
         "imageUri": "https://cards.scryfall.io/normal/front/6/8/684a6e3f-909a-4ca0-a6aa-7354b9476df2.jpg"
     },
     "colorIdentityOverride": []
+}
+
+// Slith Bloodletter
+{
+    "name": "Slith Bloodletter",
+    "manaCost": "{B}{B}",
+    "typeLine": "Creature — Slith",
+    "oracleText": "Whenever this creature deals combat damage to a player, put a +1/+1 counter on it.\n{1}{B}: Regenerate this creature.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "DealsDamageEvent",
+                    "damageType": "DamageCombat",
+                    "recipient": "AnyPlayer"
+                },
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": "Self"
+                },
+                "descriptionOverride": "Whenever this creature deals combat damage to a player, put a +1/+1 counter on it."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{1}{B}"
+                    }
+                },
+                "effect": {
+                    "type": "Regenerate",
+                    "target": "Self"
+                },
+                "descriptionOverride": "{1}{B}: Regenerate this creature."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "77",
+        "rarity": "UNCOMMON",
+        "artist": "Justin Sweet",
+        "flavorText": "Goblins fear the slith, believing they are children banished from the womb of the Steel Mother, deep within Kuldotha.",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/2/22a04ccb-cb57-4548-81db-e1b77b09f5da.jpg?1783944545"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
 }
 
 // Slith Firewalker
@@ -4297,6 +4504,39 @@
         "imageUri": "https://cards.scryfall.io/normal/front/3/6/361a524c-17aa-43a0-8aea-1d26a9a1044c.jpg"
     },
     "colorIdentityOverride": []
+}
+
+// Tel-Jilad Archers
+{
+    "name": "Tel-Jilad Archers",
+    "manaCost": "{4}{G}",
+    "typeLine": "Creature — Elf Archer",
+    "oracleText": "Protection from artifacts; reach (This creature can block creatures with flying.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 4
+    },
+    "keywords": [
+        "REACH"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Protection",
+            "scope": {
+                "type": "ProtectionScope.CardType",
+                "cardType": "Artifact"
+            }
+        }
+    ],
+    "metadata": {
+        "collectorNumber": "131",
+        "artist": "Marcelo Vignali",
+        "flavorText": "They are extensions of the Tangle, stretching its vines into the furthest reaches of the sky.",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/a/3a1fde33-e86a-4146-9c90-4616a5fc0868.jpg?1783944531"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
 }
 
 // Tel-Jilad Chosen
