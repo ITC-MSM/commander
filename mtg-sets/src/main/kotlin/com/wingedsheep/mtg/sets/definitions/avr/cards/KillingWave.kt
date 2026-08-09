@@ -49,10 +49,11 @@ val KillingWave = card("Killing Wave") {
                         ifNotPaid = Effects.SacrificeTarget(EffectTarget.Self),
                         // The gate labels its own "yes" button with the computed cost ("Pay 2
                         // life") and its "no" with "Don't pay", so the prompt only has to state
-                        // the stakes. It can't name *which* creature is being asked about — the
-                        // decision's source is the spell, not the iteration entity — so a board
-                        // with several creatures shows one identical prompt per creature.
-                        descriptionOverride = "Pay life for this creature, or sacrifice it.",
+                        // the stakes. *Which* creature each of the N identical prompts covers is
+                        // carried by `DecisionContext.subjectEntityId`, which the gate executor
+                        // stamps from the enclosing per-entity iteration: the client shows that
+                        // creature beside the spell and rings it on the battlefield.
+                        descriptionOverride = "Pay life to keep this creature, or sacrifice it.",
                     ),
                 ),
             ),

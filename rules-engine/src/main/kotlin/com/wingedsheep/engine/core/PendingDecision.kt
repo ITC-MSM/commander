@@ -53,6 +53,22 @@ data class DecisionContext(
     val effectHint: String? = null,
 
     /**
+     * The specific object this decision is *about*, when one effect raises the same prompt once per
+     * object. Distinct from [sourceId] (the spell/ability doing the asking) and
+     * [triggeringEntityId] (what caused the ability to trigger): Killing Wave asks
+     * "pay X life or sacrifice it" once per creature, and without this the player sees N identical
+     * prompts with no way to tell which creature each one covers.
+     *
+     * Set from the enclosing per-entity iteration (`pipeline.iterationTarget` — the same binding
+     * `EffectTarget.Self` reads inside a `ForEachInGroup` body), so any gate raised inside such a
+     * loop names its subject for free.
+     *
+     * Only the id travels: the client resolves the card through its already-masked state map, so a
+     * face-down subject can never leak its name through the prompt.
+     */
+    val subjectEntityId: EntityId? = null,
+
+    /**
      * Definition-scoped identity of the ability that raised this decision, when it was raised by a
      * triggered or activated ability of a card. Lets the client offer "always yes/no to this
      * ability" and the engine match the answer against every current and future instance of the

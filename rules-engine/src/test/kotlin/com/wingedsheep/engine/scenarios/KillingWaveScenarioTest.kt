@@ -61,6 +61,32 @@ class KillingWaveScenarioTest : FunSpec({
         driver.getGraveyardCardNames(opponent) shouldBe listOf("Grizzly Bears")
     }
 
+    test("each prompt names the creature it covers") {
+        val driver = createDriver()
+        driver.initMirrorMatch(deck = Deck.of("Swamp" to 20), startingLife = 20)
+        val caster = driver.activePlayer!!
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        val bears = driver.putCreatureOnBattlefield(caster, "Grizzly Bears")
+        val giant = driver.putCreatureOnBattlefield(caster, "Hill Giant")
+
+        val wave = driver.putCardInHand(caster, "Killing Wave")
+        driver.giveMana(caster, Color.BLACK, 3)
+        driver.castXSpell(caster, wave, xValue = 2).isSuccess shouldBe true
+        driver.bothPass()
+
+        // Two creatures, two character-identical prompts: the only thing telling them apart is the
+        // subject the gate stamps from the per-creature iteration. Order follows the loop, so
+        // assert on the set rather than a specific sequence.
+        val first = driver.pendingDecision.shouldBeInstanceOf<YesNoDecision>().context.subjectEntityId
+        driver.submitYesNo(caster, true).error shouldBe null
+        val second = driver.pendingDecision.shouldBeInstanceOf<YesNoDecision>().context.subjectEntityId
+        driver.submitYesNo(caster, true).error shouldBe null
+
+        setOf(first, second) shouldBe setOf(bears, giant)
+        driver.getLifeTotal(caster) shouldBe 16
+    }
+
     test("a player who cannot pay X life is never offered the choice and just sacrifices") {
         val driver = createDriver()
         driver.initMirrorMatch(deck = Deck.of("Swamp" to 20), startingLife = 20)

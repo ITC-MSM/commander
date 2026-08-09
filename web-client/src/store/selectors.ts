@@ -733,13 +733,20 @@ const EMPTY_ID_SET: ReadonlySet<EntityId> = Object.freeze(new Set<EntityId>())
  * Eligible-but-unchosen targets are deliberately NOT included: identical tokens are
  * interchangeable, so the player can click the collapsed stack's representative to
  * pick one. Only a *committed* target needs its specific arrow to resolve.
+ *
+ * The pending decision's *subject* is included for the same reason: Killing Wave asks
+ * "pay X life or sacrifice it" once per creature, and a subject collapsed into a token
+ * stack would highlight the whole pile instead of the one creature being decided.
  */
 export function useSplitOutTargetIds(): ReadonlySet<EntityId> {
   const stackCards = useStackCards()
   const targetingState = useGameStore(selectTargetingState)
+  const decisionSubjectId = useGameStore((s) => s.pendingDecision?.context.subjectEntityId)
   return useMemo(() => {
     const selected = targetingState?.selectedTargets
-    if (stackCards.length === 0 && (!selected || selected.length === 0)) return EMPTY_ID_SET
+    if (stackCards.length === 0 && (!selected || selected.length === 0) && !decisionSubjectId) {
+      return EMPTY_ID_SET
+    }
     const ids = new Set<EntityId>()
     for (const card of stackCards) {
       for (const t of card.targets) {
@@ -748,8 +755,9 @@ export function useSplitOutTargetIds(): ReadonlySet<EntityId> {
       if (card.triggeringEntityId) ids.add(card.triggeringEntityId)
     }
     if (selected) for (const id of selected) ids.add(id)
+    if (decisionSubjectId) ids.add(decisionSubjectId)
     return ids
-  }, [stackCards, targetingState])
+  }, [stackCards, targetingState, decisionSubjectId])
 }
 
 /**

@@ -228,11 +228,9 @@ class GatedEffectExecutor(
             id = decisionId,
             playerId = playerId,
             prompt = effect.description,
-            context = DecisionContext(
-                sourceId = context.sourceId,
-                sourceName = sourceName,
-                phase = DecisionPhase.RESOLUTION,
-                triggeringEntityId = context.triggeringEntityId,
+            context = decisionContext(
+                context,
+                sourceName,
                 inlineOnTrigger = (gate as? Gate.MayDecide)?.inlineOnTrigger ?: false
             ),
             yesText = payLabel ?: "Yes",
@@ -287,12 +285,7 @@ class GatedEffectExecutor(
             id = decisionId,
             playerId = playerId,
             prompt = "Pay $manaCost?",
-            context = DecisionContext(
-                sourceId = context.sourceId,
-                sourceName = sourceName,
-                phase = DecisionPhase.RESOLUTION,
-                triggeringEntityId = context.triggeringEntityId
-            ),
+            context = decisionContext(context, sourceName),
             yesText = "Pay $manaCost",
             noText = "Don't pay"
         )
@@ -380,12 +373,7 @@ class GatedEffectExecutor(
             } else {
                 "Waterbend $manaCost (tap artifacts/creatures to help)"
             },
-            context = DecisionContext(
-                sourceId = context.sourceId,
-                sourceName = sourceName,
-                phase = DecisionPhase.RESOLUTION,
-                triggeringEntityId = context.triggeringEntityId
-            ),
+            context = decisionContext(context, sourceName),
             availableSources = sourceOptions,
             requiredCost = manaCost.toString(),
             autoPaySuggestion = autoPaySuggestion,
@@ -509,12 +497,7 @@ class GatedEffectExecutor(
             id = decisionId,
             playerId = playerId,
             prompt = "Pay {X}? Choose X (0 to decline)",
-            context = DecisionContext(
-                sourceId = context.sourceId,
-                sourceName = sourceName,
-                phase = DecisionPhase.RESOLUTION,
-                triggeringEntityId = context.triggeringEntityId
-            ),
+            context = decisionContext(context, sourceName),
             minValue = 0,
             maxValue = maxAffordable
         )
@@ -543,6 +526,28 @@ class GatedEffectExecutor(
             )
         )
     }
+
+    /**
+     * The [DecisionContext] every gate prompt in this executor carries.
+     *
+     * Beyond the source/trigger plumbing, it stamps the *subject* of the prompt from the enclosing
+     * per-entity iteration ([com.wingedsheep.engine.handlers.PipelineState.iterationTarget], the
+     * binding `EffectTarget.Self` already reads inside a `ForEachInGroup` body). A gate that runs
+     * once per creature — Killing Wave's "sacrifice it unless you pay X life" — otherwise raises N
+     * character-identical prompts, and the player has no way to tell which creature each covers.
+     */
+    private fun decisionContext(
+        context: EffectContext,
+        sourceName: String?,
+        inlineOnTrigger: Boolean = false
+    ): DecisionContext = DecisionContext(
+        sourceId = context.sourceId,
+        sourceName = sourceName,
+        phase = DecisionPhase.RESOLUTION,
+        triggeringEntityId = context.triggeringEntityId,
+        inlineOnTrigger = inlineOnTrigger,
+        subjectEntityId = context.pipeline.iterationTarget
+    )
 
     /**
      * Fill a [DynamicHint]'s `{n}` from the resolving context, so a "that much damage" prompt says
