@@ -305,6 +305,145 @@
     ]
 }
 
+// Cerebral Confiscation
+{
+    "name": "Cerebral Confiscation",
+    "manaCost": "{2}{B}",
+    "typeLine": "Sorcery",
+    "oracleText": "Choose one —\n• Target opponent discards two cards.\n• Target opponent reveals their hand. You choose a nonland card from it. That player discards that card.",
+    "script": {
+        "spellEffect": {
+            "type": "Modal",
+            "modes": [
+                {
+                    "effect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Hand",
+                                    "player": {
+                                        "type": "ContextPlayer",
+                                        "index": 0
+                                    }
+                                },
+                                "storeAs": "hand"
+                            },
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "hand",
+                                "selection": {
+                                    "type": "ChooseExactly",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 2
+                                    }
+                                },
+                                "chooser": "TargetPlayer",
+                                "storeSelected": "discarded",
+                                "prompt": "Choose 2 cards to discard"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "discarded",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Graveyard",
+                                    "player": {
+                                        "type": "ContextPlayer",
+                                        "index": 0
+                                    }
+                                },
+                                "moveType": "Discard"
+                            }
+                        ]
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetOpponent",
+                            "id": "target opponent"
+                        }
+                    ],
+                    "description": "Target opponent discards two cards"
+                },
+                {
+                    "effect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "RevealHand",
+                                "target": {
+                                    "type": "BoundVariable",
+                                    "name": "target opponent"
+                                }
+                            },
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Hand",
+                                    "player": {
+                                        "type": "ContextPlayer",
+                                        "index": 0
+                                    }
+                                },
+                                "storeAs": "opponentHand"
+                            },
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "opponentHand",
+                                "selection": {
+                                    "type": "ChooseExactly",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "filter": "nonland",
+                                "storeSelected": "toDiscard",
+                                "prompt": "Choose a nonland card to discard",
+                                "showAllCards": true,
+                                "alwaysPrompt": true
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "toDiscard",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Graveyard",
+                                    "player": {
+                                        "type": "ContextPlayer",
+                                        "index": 0
+                                    }
+                                },
+                                "moveType": "Discard"
+                            }
+                        ]
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetOpponent",
+                            "id": "target opponent"
+                        }
+                    ],
+                    "description": "Target opponent reveals their hand — you choose a nonland card to discard"
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "81",
+        "artist": "Lius Lasahido",
+        "flavorText": "\"Never rely on secondhand description. Always review the memory yourself.\"\n—Lazav",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/c/3c3c3d15-b775-44a2-91ea-4abcc3cf2dba.jpg?1783912903"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Cold Case Cracker
 {
     "name": "Cold Case Cracker",
@@ -1623,6 +1762,88 @@
         "artist": "Matt Forsyth",
         "flavorText": "\"Why doesn't Kylox put an off switch on these things?!\"",
         "imageUri": "https://cards.scryfall.io/normal/front/6/4/64ed3bfa-3294-45dd-825e-3afc2580f0d4.jpg?1783912882"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Gearbane Orangutan
+{
+    "name": "Gearbane Orangutan",
+    "manaCost": "{2}{R}",
+    "typeLine": "Creature — Ape",
+    "oracleText": "Reach\nWhen this creature enters, choose one —\n• Destroy up to one target artifact.\n• Sacrifice an artifact. If you do, put two +1/+1 counters on this creature.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "REACH"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Modal",
+                    "modes": [
+                        {
+                            "effect": {
+                                "type": "MoveToZone",
+                                "target": {
+                                    "type": "ContextTarget",
+                                    "index": 0
+                                },
+                                "destination": "Graveyard",
+                                "byDestruction": true
+                            },
+                            "targetRequirements": [
+                                {
+                                    "type": "TargetObject",
+                                    "optional": true,
+                                    "filter": {
+                                        "baseFilter": "artifact"
+                                    }
+                                }
+                            ],
+                            "description": "Destroy up to one target artifact"
+                        },
+                        {
+                            "effect": {
+                                "type": "Gated",
+                                "gate": {
+                                    "type": "Gate.DoAction",
+                                    "action": {
+                                        "type": "ForceSacrifice",
+                                        "filter": "artifact",
+                                        "target": "Controller"
+                                    },
+                                    "successCriterion": "SuccessCriterion.PermanentsSacrificed"
+                                },
+                                "then": {
+                                    "type": "AddCounters",
+                                    "counterType": "+1/+1",
+                                    "count": 2,
+                                    "target": "Self"
+                                }
+                            },
+                            "description": "Sacrifice an artifact — if you do, put two +1/+1 counters on this creature"
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "129",
+        "artist": "Svetlin Velinov",
+        "flavorText": "\"In her defense, thopters are very fun to smash.\"\n—Udol of the Foundway Associates",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/9/6900a344-a155-4ee1-a3ac-d6c28e024270.jpg?1783912881"
     },
     "colorIdentityOverride": [
         "RED"
@@ -2992,6 +3213,55 @@
     ]
 }
 
+// On the Job
+{
+    "name": "On the Job",
+    "manaCost": "{2}{W}{W}",
+    "typeLine": "Instant",
+    "oracleText": "Creatures you control get +2/+1 until end of turn. Investigate. (Create a Clue token. It's an artifact with \"{2}, Sacrifice this token: Draw a card.\")",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        }
+                    },
+                    "body": {
+                        "type": "ModifyStats",
+                        "powerModifier": {
+                            "type": "Fixed",
+                            "amount": 2
+                        },
+                        "toughnessModifier": {
+                            "type": "Fixed",
+                            "amount": 1
+                        },
+                        "target": "Self"
+                    }
+                },
+                {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Clue"
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "30",
+        "artist": "Jason A. Engle",
+        "flavorText": "For all their differences, Kaya, Kellan, and Agrus Kos agreed on one thing: none of them would rest until Teysa's murderer was brought to justice.",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/8/48b92629-4196-4943-91fd-8c8d5f3fcaef.jpg?1783912920"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Person of Interest
 {
     "name": "Person of Interest",
@@ -3230,6 +3500,102 @@
     "colorIdentityOverride": [
         "BLACK",
         "RED"
+    ]
+}
+
+// Reasonable Doubt
+{
+    "name": "Reasonable Doubt",
+    "manaCost": "{1}{U}",
+    "typeLine": "Instant",
+    "oracleText": "Counter target spell unless its controller pays {2}.\nSuspect up to one target creature. (A suspected creature has menace and can't block.)",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "Counter",
+                    "condition": {
+                        "type": "CounterCondition.UnlessPaysDynamic",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 2
+                        }
+                    }
+                },
+                {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "SetSuspected",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "up to one target creature"
+                            }
+                        },
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "MENACE",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "up to one target creature"
+                            },
+                            "duration": "Permanent"
+                        },
+                        {
+                            "type": "CantBlockTargetCreatures",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "up to one target creature"
+                            },
+                            "duration": "Permanent"
+                        }
+                    ],
+                    "descriptionOverride": "target becomes suspected"
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": {},
+                    "zone": "Stack"
+                },
+                "id": "target spell"
+            },
+            {
+                "type": "TargetObject",
+                "optional": true,
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "up to one target creature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "69",
+        "artist": "Betty Jiang",
+        "flavorText": "\"Merle had the motive, but Blovinac was the one caught with the murder weapon. And who was the seven-foot-tall hooded figure? This case is a mess!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/7/270570a3-8637-4e4e-92d9-e985474cd5d2.jpg?1783912905",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "You can't cast Reasonable Doubt just to suspect a creature. There has to be a spell on the stack that's a legal target for Reasonable Doubt."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "When an effect suspects a creature, it becomes suspected. It gains menace and \"This creature can't block\" for as long as it's suspected. It stays suspected until it leaves the battlefield or another effect causes it to no longer be suspected."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "If a creature is already suspected, suspecting it again won't have any effect."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 
@@ -4079,6 +4445,66 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// The Chase Is On
+{
+    "name": "The Chase Is On",
+    "manaCost": "{2}{R}",
+    "typeLine": "Instant",
+    "oracleText": "Target creature gets +3/+0 and gains first strike until end of turn. Investigate. (Create a Clue token. It's an artifact with \"{2}, Sacrifice this token: Draw a card.\")",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 3
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 0
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                {
+                    "type": "GrantKeyword",
+                    "keyword": "FIRST_STRIKE",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Clue"
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target creature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "116",
+        "artist": "Diego Gisbert",
+        "flavorText": "Etrata evaded the Boros arresters and Azorius lawmages, but not even a master assassin could give Kaya the slip.",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/d/1d54d596-f7aa-4b05-ab13-19b246698c04.jpg?1783912886"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
