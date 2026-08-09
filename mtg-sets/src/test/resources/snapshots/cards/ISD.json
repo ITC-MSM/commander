@@ -2785,14 +2785,14 @@
                 "powerBonus": 1,
                 "toughnessBonus": 1,
                 "filter": {
-                    "baseFilter": "creature ctrl:you"
+                    "baseFilter": "creature token ctrl:you"
                 }
             },
             {
                 "type": "GrantKeyword",
                 "keyword": "VIGILANCE",
                 "filter": {
-                    "baseFilter": "creature ctrl:you"
+                    "baseFilter": "creature token ctrl:you"
                 }
             }
         ]
