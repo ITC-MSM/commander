@@ -401,6 +401,87 @@
     "colorIdentityOverride": []
 }
 
+// Chimney Imp
+{
+    "name": "Chimney Imp",
+    "manaCost": "{4}{B}",
+    "typeLine": "Creature — Imp",
+    "oracleText": "Flying\nWhen this creature dies, target opponent puts a card from their hand on top of their library.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 2
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Hand",
+                                "player": {
+                                    "type": "ContextPlayer",
+                                    "index": 0
+                                }
+                            },
+                            "storeAs": "impHand"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "impHand",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "chooser": "TargetPlayer",
+                            "storeSelected": "impTucked",
+                            "prompt": "Choose a card to put on top of your library"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "impTucked",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Library",
+                                "player": {
+                                    "type": "ContextPlayer",
+                                    "index": 0
+                                },
+                                "placement": "Top"
+                            }
+                        }
+                    ]
+                },
+                "targetRequirement": "TargetOpponent",
+                "descriptionOverride": "When this creature dies, target opponent puts a card from their hand on top of their library."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "59",
+        "artist": "Christopher Moeller",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/a/0a426922-5e96-48f3-b696-f5dc99258943.jpg?1783944549"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Cloudpost
 {
     "name": "Cloudpost",
@@ -926,6 +1007,65 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Flayed Nim
+{
+    "name": "Flayed Nim",
+    "manaCost": "{3}{B}",
+    "typeLine": "Creature — Skeleton",
+    "oracleText": "Whenever this creature deals combat damage to a creature, that creature's controller loses that much life.\n{2}{B}: Regenerate this creature.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "DealsDamageEvent",
+                    "damageType": "DamageCombat",
+                    "recipient": "AnyCreature"
+                },
+                "effect": {
+                    "type": "LoseLife",
+                    "amount": {
+                        "type": "ContextProperty",
+                        "key": "TRIGGER_DAMAGE_AMOUNT"
+                    },
+                    "target": "ControllerOfTriggeringEntity"
+                },
+                "descriptionOverride": "Whenever this creature deals combat damage to a creature, that creature's controller loses that much life."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{2}{B}"
+                    }
+                },
+                "effect": {
+                    "type": "Regenerate",
+                    "target": "Self"
+                },
+                "descriptionOverride": "{2}{B}: Regenerate this creature."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "65",
+        "rarity": "UNCOMMON",
+        "artist": "Trevor Hairsine",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/d/fd2381b3-ebf8-4c65-8e89-e089c2e57145.jpg?1783944548"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 
@@ -3489,6 +3629,50 @@
     "colorIdentityOverride": []
 }
 
+// Slith Ascendant
+{
+    "name": "Slith Ascendant",
+    "manaCost": "{1}{W}{W}",
+    "typeLine": "Creature — Slith",
+    "oracleText": "Flying\nWhenever this creature deals combat damage to a player, put a +1/+1 counter on it.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "DealsDamageEvent",
+                    "damageType": "DamageCombat",
+                    "recipient": "AnyPlayer"
+                },
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": "Self"
+                },
+                "descriptionOverride": "Whenever this creature deals combat damage to a player, put a +1/+1 counter on it."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "23",
+        "rarity": "UNCOMMON",
+        "artist": "Justin Sweet",
+        "flavorText": "Instinctively drawn to the light of its \"mother-sun,\" each slith follows that sun's path around Mirrodin.",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/2/0286b42a-295b-467c-a1d8-0b31774b7ac5.jpg?1783944559"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Slith Bloodletter
 {
     "name": "Slith Bloodletter",
@@ -4608,6 +4792,49 @@
     ]
 }
 
+// Tel-Jilad Stylus
+{
+    "name": "Tel-Jilad Stylus",
+    "manaCost": "{1}",
+    "typeLine": "Artifact",
+    "oracleText": "{T}: Put target permanent you own on the bottom of your library.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "permanent"
+                    },
+                    "destination": "Library",
+                    "placement": "Bottom"
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "permanent own:you"
+                        },
+                        "id": "permanent"
+                    }
+                ],
+                "descriptionOverride": "{T}: Put target permanent you own on the bottom of your library."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "260",
+        "rarity": "UNCOMMON",
+        "artist": "Darrell Riche",
+        "flavorText": "Etched on Tel-Jilad's trunk is an entire history of Mirrodin—except for an expanse near the ground scrubbed smooth by an unknown hand.",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/2/522570eb-e654-4f8a-828c-3e456a0ad8e6.jpg?1783944500"
+    },
+    "colorIdentityOverride": []
+}
+
 // Tempest of Light
 {
     "name": "Tempest of Light",
@@ -5636,5 +5863,53 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Wurmskin Forger
+{
+    "name": "Wurmskin Forger",
+    "manaCost": "{5}{G}{G}",
+    "typeLine": "Creature — Elf Warrior",
+    "oracleText": "When this creature enters, distribute three +1/+1 counters among one, two, or three target creatures.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "DistributeCountersAmongTargets",
+                    "totalCounters": {
+                        "type": "Fixed",
+                        "amount": 3
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "count": 3,
+                    "minCount": 1,
+                    "filter": {
+                        "baseFilter": "creature"
+                    }
+                },
+                "descriptionOverride": "When this creature enters, distribute three +1/+1 counters among one, two, or three target creatures."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "140",
+        "artist": "Justin Sweet",
+        "flavorText": "It takes three weeks for a patrol of hunters to down a slagwurm. It takes just as long to make a single cut in its hide.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/1/f14f303e-371b-47dd-bbb8-7f3e44ef9af0.jpg?1783944529"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
