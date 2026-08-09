@@ -682,7 +682,16 @@ class TriggerProcessor(
 
         // Auto-select player targets when there's exactly one legal target and requirement is for exactly one target.
         // Only applies for single-target abilities (not multi-target).
-        if (allRequirements.size == 1) {
+        //
+        // NOT when the ability is `optional`. A targeted "you may" carries its consent solely through
+        // the target-selection decision's `minTargets = 0` (see `requirementInfos` below) — skipping
+        // that decision skips the decline, and the trigger goes on the stack as mandatory. That is
+        // fail-open: in a two-player game "you may have target opponent discard a card" (Ebon Dragon)
+        // never asked, it just made them discard. The optimization's premise — "there is only one
+        // choice, so don't prompt" — is false here: declining is a second choice. (An `optional`
+        // *requirement*, `TargetPlayer(optional = true)` for "up to one target player", already skips
+        // this branch via `effectiveMinCount == 0`.)
+        if (allRequirements.size == 1 && !ability.optional) {
             val isPlayerTarget = targetRequirement is com.wingedsheep.sdk.scripting.targets.TargetPlayer ||
                                  targetRequirement is com.wingedsheep.sdk.scripting.targets.TargetOpponent
             val legalTargets = allLegalTargets[0] ?: emptyList()
