@@ -1983,6 +1983,64 @@
     "colorIdentityOverride": []
 }
 
+// Griffnaut Tracker
+{
+    "name": "Griffnaut Tracker",
+    "manaCost": "{3}{W}",
+    "typeLine": "Creature — Human Detective",
+    "oracleText": "Flying\nWhen this creature enters, exile up to two target cards from a single graveyard.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "ForEach",
+                    "space": "IterationSpace.Targets",
+                    "body": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "ContextTarget",
+                            "index": 0
+                        },
+                        "destination": "Exile"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "count": 2,
+                    "optional": true,
+                    "filter": {
+                        "baseFilter": {},
+                        "zone": "Graveyard"
+                    },
+                    "id": "up to two target cards from a single graveyard",
+                    "sameOwner": true
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "17",
+        "artist": "Svetlin Velinov",
+        "flavorText": "\"The desperate will tread unexpected paths. Be prepared to follow.\"\n—Tam Sennic, Ezrim's second-in-command",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/5/95f5d048-226f-49a4-a2ce-a6fa99aa9e8a.jpg?1783912926"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Haazda Vigilante
 {
     "name": "Haazda Vigilante",
@@ -2103,6 +2161,57 @@
     ]
 }
 
+// Harried Dronesmith
+{
+    "name": "Harried Dronesmith",
+    "manaCost": "{3}{R}",
+    "typeLine": "Creature — Human Artificer",
+    "oracleText": "At the beginning of combat on your turn, create a 1/1 colorless Thopter artifact creature token with flying. It gains haste until end of turn. Sacrifice it at the beginning of your next end step.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "BEGIN_COMBAT"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [],
+                    "creatureTypes": [
+                        "Thopter"
+                    ],
+                    "keywords": [
+                        "FLYING",
+                        "HASTE"
+                    ],
+                    "name": "Thopter",
+                    "artifactToken": true,
+                    "sacrificeAtStep": "END"
+                },
+                "descriptionOverride": "At the beginning of combat on your turn, create a 1/1 colorless Thopter artifact creature token with flying. It gains haste until end of turn. Sacrifice it at the beginning of your next end step."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "131",
+        "rarity": "UNCOMMON",
+        "artist": "Lindsey Look",
+        "flavorText": "After the eleventh consecutive thopter failed to return from Gruul territory, she developed a disposable model.",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/6/36cb25ee-3c84-40a8-ba45-7e44893deecf.jpg?1783912879"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Hedge Maze
 {
     "name": "Hedge Maze",
@@ -2206,6 +2315,86 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Hotshot Investigators
+{
+    "name": "Hotshot Investigators",
+    "manaCost": "{5}{U}",
+    "typeLine": "Creature — Vedalken Detective",
+    "oracleText": "When this creature enters, return up to one other target creature to its owner's hand. If you controlled it, investigate. (Create a Clue token. It's an artifact with \"{2}, Sacrifice this token: Draw a card.\")",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.WhenCondition",
+                        "condition": {
+                            "type": "EntityMatches",
+                            "entity": {
+                                "type": "ContextTarget",
+                                "index": 0
+                            },
+                            "filter": "creature ctrl:you"
+                        }
+                    },
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "MoveToZone",
+                                "target": {
+                                    "type": "BoundVariable",
+                                    "name": "other creature"
+                                },
+                                "destination": "Hand"
+                            },
+                            {
+                                "type": "CreatePredefinedToken",
+                                "tokenType": "Clue"
+                            }
+                        ]
+                    },
+                    "otherwise": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "other creature"
+                        },
+                        "destination": "Hand"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "optional": true,
+                    "filter": {
+                        "baseFilter": "creature",
+                        "excludeSelf": true
+                    },
+                    "id": "other creature"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "60",
+        "artist": "Jodie Muir",
+        "flavorText": "They always think they're better than the local investigators. They're usually right.",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/d/8dc3b23b-04d6-4ac0-b698-596ea90b7781.jpg?1783912912"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 
@@ -2775,6 +2964,49 @@
         "imageUri": "https://cards.scryfall.io/normal/front/d/a/daf6a392-3fc4-45d1-b85d-3b1381b3ab7d.jpg"
     },
     "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Meddling Youths
+{
+    "name": "Meddling Youths",
+    "manaCost": "{3}{R}{W}",
+    "typeLine": "Creature — Human Detective",
+    "oracleText": "Haste\nWhenever you attack with three or more creatures, investigate. (Create a Clue token. It's an artifact with \"{2}, Sacrifice this token: Draw a card.\")",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 5
+    },
+    "keywords": [
+        "HASTE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "YouAttackEvent",
+                    "minAttackers": 3
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Clue"
+                },
+                "descriptionOverride": "Whenever you attack with three or more creatures, investigate."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "219",
+        "rarity": "UNCOMMON",
+        "artist": "Matt Forsyth",
+        "flavorText": "\"Well, if it isn't mean old Mr. Larchbottom, who's always been so eager to have the only dumpling stall in Oxblood Alley.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/f/af12417c-b082-4379-a850-c72e2652c6fb.jpg?1783912842"
+    },
+    "colorIdentityOverride": [
+        "RED",
         "WHITE"
     ]
 }
@@ -3739,6 +3971,66 @@
                 "text": "Being suspected isn't a copiable value. If a permanent becomes a copy of a suspected creature, it won't be suspected."
             }
         ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Rot Farm Mortipede
+{
+    "name": "Rot Farm Mortipede",
+    "manaCost": "{3}{B}",
+    "typeLine": "Creature — Insect",
+    "oracleText": "Whenever one or more creature cards leave your graveyard, this creature gets +1/+0 and gains menace and lifelink until end of turn.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 4
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "CardsLeftYourGraveyardEvent",
+                    "filter": "creature"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "ModifyStats",
+                            "powerModifier": {
+                                "type": "Fixed",
+                                "amount": 1
+                            },
+                            "toughnessModifier": {
+                                "type": "Fixed",
+                                "amount": 0
+                            },
+                            "target": "Self"
+                        },
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "MENACE",
+                            "target": "Self"
+                        },
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "LIFELINK",
+                            "target": "Self"
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "102",
+        "artist": "Loïc Canavaggia",
+        "flavorText": "Every week, the necropsy lab's unclaimed bodies are transferred to the Golgari for \"recycling.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/2/023b0142-663a-47e7-a9f1-0b565a172b60.jpg?1783912891"
     },
     "colorIdentityOverride": [
         "BLACK"

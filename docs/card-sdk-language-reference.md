@@ -1285,7 +1285,12 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
 
 ### Tokens & emblems
 
-- `CreateToken(p, t, colors?, creatureTypes, keywords?, count?, controller?, imageUri?, name?, legendary?, tapped?, artifactToken?, enchantmentToken?, staticAbilities?)` — make N creature tokens.
+- `CreateToken(p, t, colors?, creatureTypes, keywords?, count?, controller?, imageUri?, name?, legendary?, tapped?, artifactToken?, enchantmentToken?, staticAbilities?, sacrificeAtStep?)` — make N creature tokens.
+  `sacrificeAtStep: Step?` arms a delayed trigger that sacrifices each created token at the beginning of the next
+  step of that kind — the "create …, sacrifice it at the beginning of the next end step" rider (Harried Dronesmith
+  passes `Step.END`; because its ability triggers at the beginning of combat on the controller's own turn, "your
+  next end step" *is* the plain next END step and needs no controller's-turn narrowing). The plain-token sibling of
+  `CreateTokenCopyOfTarget`'s parameter of the same name.
   `name` is for the *named* tokens a card's text calls out — "create The Tiger God, a legendary 4/4 green
   Cat God creature token" (White Tiger, Ava Ayala). Omit it and the token is named after its creature
   types, which is what an ordinary "create a 1/1 white Soldier creature token" wants. Pair it with

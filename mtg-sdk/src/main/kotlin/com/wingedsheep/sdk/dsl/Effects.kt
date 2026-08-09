@@ -2295,6 +2295,10 @@ object Effects {
      *   Ayala). Null (the default) names the token after its creature types, which is what an
      *   ordinary "create a 1/1 white Soldier creature token" wants. Pair it with
      *   `legendary = true` when the printed token is legendary, so the legend rule applies.
+     * @param sacrificeAtStep Arms a delayed trigger that sacrifices each created token at the
+     *   beginning of the next step of this kind — the "create …, sacrifice it at the beginning of
+     *   the next end step" rider (Harried Dronesmith). The plain-token sibling of the parameter of
+     *   the same name on [CreateTokenCopyOfTarget]. Null (the default) leaves the token permanent.
      */
     fun CreateToken(
         power: Int,
@@ -2310,14 +2314,15 @@ object Effects {
         tapped: Boolean = false,
         artifactToken: Boolean = false,
         enchantmentToken: Boolean = false,
-        staticAbilities: List<com.wingedsheep.sdk.scripting.StaticAbility> = emptyList()
+        staticAbilities: List<com.wingedsheep.sdk.scripting.StaticAbility> = emptyList(),
+        sacrificeAtStep: com.wingedsheep.sdk.core.Step? = null
     ): Effect = CreateTokenEffect(
         count = DynamicAmount.Fixed(count), power = power, toughness = toughness,
         colors = colors, creatureTypes = creatureTypes, keywords = keywords,
         controller = controller, imageUri = imageUri, name = name,
         legendary = legendary, tapped = tapped,
         artifactToken = artifactToken, enchantmentToken = enchantmentToken,
-        staticAbilities = staticAbilities
+        staticAbilities = staticAbilities, sacrificeAtStep = sacrificeAtStep
     )
 
     /**
