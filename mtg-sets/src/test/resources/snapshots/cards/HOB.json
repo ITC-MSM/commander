@@ -1,3 +1,63 @@
+// An Unexpected Party
+{
+    "name": "An Unexpected Party",
+    "manaCost": "{2}{W}{W}",
+    "typeLine": "Enchantment",
+    "oracleText": "As this enchantment enters, choose a creature type.\nCreatures you control of the chosen type get +2/+2.",
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 2,
+                "toughnessBonus": 2,
+                "filter": {
+                    "baseFilter": "creature ctrl:you",
+                    "chosenSubtypeKey": "chosenCreatureType"
+                }
+            }
+        ],
+        "replacementEffects": [
+            {
+                "type": "EntersWithChoice",
+                "choiceType": "CREATURE_TYPE"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "29",
+        "rarity": "RARE",
+        "artist": "Matt Stewart",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/a/3aa29fe8-1687-486f-b4df-c04977869ab1.jpg?1783902787"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ],
+    "layout": "ADVENTURE",
+    "cardFaces": [
+        {
+            "name": "At the Door",
+            "manaCost": "{X}{2}{W}",
+            "typeLine": "Sorcery — Adventure",
+            "oracleText": "Create X 2/2 red Dwarf creature tokens. (Then exile this card. You may cast the enchantment later from exile.)",
+            "script": {
+                "spellEffect": {
+                    "type": "CreateToken",
+                    "count": "XValue",
+                    "power": 2,
+                    "toughness": 2,
+                    "colors": [
+                        "RED"
+                    ],
+                    "creatureTypes": [
+                        "Dwarf"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/9/f/9fcb3a3f-c0d4-43d4-8549-826a38bfa27d.jpg?1786258756"
+                }
+            }
+        }
+    ]
+}
+
 // Attercop
 {
     "name": "Attercop",
@@ -508,6 +568,72 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Bofur, Reliable Guardian
+{
+    "name": "Bofur, Reliable Guardian",
+    "manaCost": "{W}",
+    "typeLine": "Legendary Creature — Dwarf Scout",
+    "oracleText": "Lifelink",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "LIFELINK"
+    ],
+    "metadata": {
+        "collectorNumber": "6",
+        "rarity": "UNCOMMON",
+        "artist": "Kieran Yanner",
+        "flavorText": "Bofur and Bombur were left behind to guard the ponies and such stores as they had.",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/b/6b8e6435-7de4-41d5-bc7d-8e24c11897d0.jpg?1785496981"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ],
+    "layout": "ADVENTURE",
+    "cardFaces": [
+        {
+            "name": "Concerted Care",
+            "manaCost": "{1}{W}",
+            "typeLine": "Instant — Adventure",
+            "oracleText": "Target artifact or creature you control gains hexproof and indestructible until end of turn. (Then exile this card. You may cast the creature later from exile.)",
+            "script": {
+                "spellEffect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "HEXPROOF",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target artifact or creature you control"
+                            }
+                        },
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "INDESTRUCTIBLE",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target artifact or creature you control"
+                            }
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature|artifact ctrl:you"
+                        },
+                        "id": "target artifact or creature you control"
+                    }
+                ]
+            }
+        }
     ]
 }
 
@@ -3636,6 +3762,68 @@
     ]
 }
 
+// Great Ugly-Looking Goblin
+{
+    "name": "Great Ugly-Looking Goblin",
+    "manaCost": "{5}{B}",
+    "typeLine": "Creature — Goblin Soldier",
+    "oracleText": "Each creature you control with a +1/+1 counter on it has menace. (It can't be blocked except by two or more creatures.)",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "GrantKeyword",
+                "keyword": "MENACE",
+                "filter": {
+                    "baseFilter": {
+                        "cardPredicates": [
+                            "IsCreature"
+                        ],
+                        "statePredicates": [
+                            {
+                                "type": "HasCounter",
+                                "counterType": "+1/+1"
+                            }
+                        ],
+                        "controllerPredicate": "ControlledByYou"
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "74",
+        "rarity": "UNCOMMON",
+        "artist": "Jason Kang",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/8/c87f6004-e1cf-42b2-9647-322bc4939339.jpg?1785237962"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ],
+    "layout": "ADVENTURE",
+    "cardFaces": [
+        {
+            "name": "Clap! Snap!",
+            "manaCost": "{1}{B}",
+            "typeLine": "Sorcery — Adventure",
+            "oracleText": "Amass Goblins 2. (Then exile this card. You may cast the creature later from exile.)",
+            "script": {
+                "spellEffect": {
+                    "type": "Amass",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "subtype": "Goblin"
+                }
+            }
+        }
+    ]
+}
+
 // Guardian of the Halls
 {
     "name": "Guardian of the Halls",
@@ -3742,6 +3930,57 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Head of the Hunt
+{
+    "name": "Head of the Hunt",
+    "manaCost": "{2}{B}{B}",
+    "typeLine": "Creature — Wolf",
+    "oracleText": "Flash\nIf a creature an opponent controls would die, exile it instead. When you do, create a 2/2 green Wolf creature token.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 3
+    },
+    "keywords": [
+        "FLASH"
+    ],
+    "script": {
+        "replacementEffects": [
+            {
+                "type": "RedirectZoneChangeWithEffect",
+                "newDestination": "Exile",
+                "additionalEffect": {
+                    "type": "CreateToken",
+                    "power": 2,
+                    "toughness": 2,
+                    "colors": [
+                        "GREEN"
+                    ],
+                    "creatureTypes": [
+                        "Wolf"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/e/0/e07312b9-f3c1-4e36-88fc-b29cde581eb6.jpg?1785497932"
+                },
+                "appliesTo": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "creature ctrl:opponent",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "75",
+        "rarity": "RARE",
+        "artist": "Andrea Piparo",
+        "flavorText": "The Wargs planned to come by night upon the villages nearest the mountains. If their plan had been carried out, there would have been none left there next day.",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/f/3ffe34d4-72f4-4562-a948-8909b9321e59.jpg?1785152416"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 
@@ -4092,6 +4331,95 @@
     "colorIdentityOverride": [
         "WHITE",
         "BLUE"
+    ]
+}
+
+// Lake-town Mariners
+{
+    "name": "Lake-town Mariners",
+    "manaCost": "{4}{U}{U}",
+    "typeLine": "Creature — Human Citizen",
+    "oracleText": "Vigilance\nWard {2} (Whenever this creature becomes the target of a spell or ability an opponent controls, counter it unless that player pays {2}.)",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 5
+    },
+    "keywords": [
+        "VIGILANCE",
+        "WARD"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Ward",
+            "cost": {
+                "type": "WardCost.Mana",
+                "manaCost": "{2}"
+            }
+        }
+    ],
+    "metadata": {
+        "collectorNumber": "44",
+        "rarity": "UNCOMMON",
+        "artist": "Wei Guan",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/2/4202a678-a5f4-47f9-9c18-e88ab9ad20a4.jpg?1785237929"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ],
+    "layout": "ADVENTURE",
+    "cardFaces": [
+        {
+            "name": "Gone Fishing",
+            "manaCost": "{3}{U}",
+            "typeLine": "Instant — Adventure",
+            "oracleText": "Exile two target creatures and/or lands you control, then return them to the battlefield under their owner's control. (Then exile this card. You may cast the creature later from exile.)",
+            "script": {
+                "spellEffect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": "ChosenTargets",
+                            "storeAs": "gathered0"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "gathered0",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile"
+                            },
+                            "linkToSource": true
+                        },
+                        {
+                            "type": "GatherCards",
+                            "source": "FromLinkedExile",
+                            "storeAs": "gathered2"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "gathered2",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Battlefield"
+                            },
+                            "underOwnersControl": true
+                        }
+                    ],
+                    "descriptionOverride": "Exile two target creatures and/or lands you control, then return them to the battlefield under their owner's control"
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "count": 2,
+                        "filter": {
+                            "baseFilter": "creature|land ctrl:you"
+                        },
+                        "id": "two target creatures and/or lands you control"
+                    }
+                ]
+            }
+        }
     ]
 }
 
