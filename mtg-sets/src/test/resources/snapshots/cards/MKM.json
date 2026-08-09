@@ -1718,6 +1718,85 @@
     ]
 }
 
+// Forum Familiar
+{
+    "name": "Forum Familiar",
+    "manaCost": "{W}",
+    "typeLine": "Creature — Cat",
+    "oracleText": "Disguise {1}{W} (You may cast this card face down for {3} as a 2/2 creature with ward {2}. Turn it face up any time for its disguise cost.)\nWhen this creature is turned face up, return another target permanent you control to its owner's hand and put a +1/+1 counter on this creature.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywordAbilities": [
+        {
+            "type": "Disguise",
+            "disguiseCost": {
+                "type": "PayAtom",
+                "atom": {
+                    "type": "AtomMana",
+                    "cost": "{1}{W}"
+                }
+            }
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "TurnFaceUpEvent",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "MoveToZone",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "another target permanent you control"
+                            },
+                            "destination": "Hand"
+                        },
+                        {
+                            "type": "AddCounters",
+                            "counterType": "+1/+1",
+                            "count": 1,
+                            "target": "Self"
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "permanent ctrl:you",
+                        "excludeSelf": true
+                    },
+                    "id": "another target permanent you control"
+                },
+                "descriptionOverride": "When this creature is turned face up, return another target permanent you control to its owner's hand and put a +1/+1 counter on this creature."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "16",
+        "rarity": "UNCOMMON",
+        "artist": "Ilse Gort",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/0/b06a243d-acc8-42cd-926c-98a4cc96ab21.jpg?1783912926",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "Any time you have priority, you may turn the face-down creature face up by revealing what its disguise cost is and paying that cost. This is a special action. It doesn't use the stack and can't be responded to."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "Turning a permanent face up or face down doesn't change whether that permanent is tapped or untapped."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Galvanize
 {
     "name": "Galvanize",
@@ -1983,6 +2062,65 @@
     "colorIdentityOverride": []
 }
 
+// Griffnaut Tracker
+{
+    "name": "Griffnaut Tracker",
+    "manaCost": "{3}{W}",
+    "typeLine": "Creature — Human Detective",
+    "oracleText": "Flying\nWhen this creature enters, exile up to two target cards from a single graveyard.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "ForEach",
+                    "space": "IterationSpace.Targets",
+                    "body": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "ContextTarget",
+                            "index": 0
+                        },
+                        "destination": "Exile"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "count": 2,
+                    "optional": true,
+                    "filter": {
+                        "baseFilter": {},
+                        "zone": "Graveyard"
+                    },
+                    "id": "up to two target cards from a single graveyard",
+                    "sameOwner": true
+                },
+                "descriptionOverride": "When this creature enters, exile up to two target cards from a single graveyard."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "17",
+        "artist": "Svetlin Velinov",
+        "flavorText": "\"The desperate will tread unexpected paths. Be prepared to follow.\"\n—Tam Sennic, Ezrim's second-in-command",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/5/95f5d048-226f-49a4-a2ce-a6fa99aa9e8a.jpg?1783912926"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Haazda Vigilante
 {
     "name": "Haazda Vigilante",
@@ -2206,6 +2344,108 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Knife
+{
+    "name": "Knife",
+    "manaCost": "{R}",
+    "typeLine": "Artifact — Clue Equipment",
+    "oracleText": "During your turn, equipped creature gets +1/+0 and has first strike.\n{2}, Sacrifice this Equipment: Draw a card.\nEquip {2}",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}"
+                            }
+                        },
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                }
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{2}"
+                    }
+                },
+                "effect": {
+                    "type": "AttachEquipment",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "creature you control"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        },
+                        "id": "creature you control"
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "isEquipAbility": true
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "ModifyStats",
+                    "powerBonus": 1,
+                    "toughnessBonus": 0
+                },
+                "condition": "IsYourTurn"
+            },
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "GrantKeyword",
+                    "keyword": "FIRST_STRIKE"
+                },
+                "condition": "IsYourTurn"
+            }
+        ]
+    },
+    "equipCost": "{2}",
+    "metadata": {
+        "collectorNumber": "134",
+        "rarity": "UNCOMMON",
+        "artist": "Tony Foti",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/6/b6883788-e1ee-4ddd-add2-24d6bc367717.jpg?1783912882",
+        "rulings": [
+            {
+                "date": "2016-04-08",
+                "text": "If an effect refers to a Clue, it means any Clue artifact, not just a Clue artifact token."
+            },
+            {
+                "date": "2016-04-08",
+                "text": "You can't sacrifice a Clue to pay multiple costs."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
@@ -3745,6 +3985,67 @@
     ]
 }
 
+// Rot Farm Mortipede
+{
+    "name": "Rot Farm Mortipede",
+    "manaCost": "{3}{B}",
+    "typeLine": "Creature — Insect",
+    "oracleText": "Whenever one or more creature cards leave your graveyard, this creature gets +1/+0 and gains menace and lifelink until end of turn.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 4
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "CardsLeftYourGraveyardEvent",
+                    "filter": "creature"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "ModifyStats",
+                            "powerModifier": {
+                                "type": "Fixed",
+                                "amount": 1
+                            },
+                            "toughnessModifier": {
+                                "type": "Fixed",
+                                "amount": 0
+                            },
+                            "target": "Self"
+                        },
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "MENACE",
+                            "target": "Self"
+                        },
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "LIFELINK",
+                            "target": "Self"
+                        }
+                    ]
+                },
+                "descriptionOverride": "Whenever one or more creature cards leave your graveyard, this creature gets +1/+0 and gains menace and lifelink until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "102",
+        "artist": "Loïc Canavaggia",
+        "flavorText": "Every week, the necropsy lab's unclaimed bodies are transferred to the Golgari for \"recycling.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/2/023b0142-663a-47e7-a9f1-0b565a172b60.jpg?1783912891"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Rubblebelt Braggart
 {
     "name": "Rubblebelt Braggart",
@@ -4981,6 +5282,54 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Vengeful Tracker
+{
+    "name": "Vengeful Tracker",
+    "manaCost": "{1}{R}",
+    "typeLine": "Creature — Human Detective",
+    "oracleText": "Whenever an opponent sacrifices an artifact, this creature deals 2 damage to them.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "PermanentsSacrificedEvent",
+                    "filter": "artifact",
+                    "sacrificedBy": "EachOpponent",
+                    "perPermanent": true
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "target": {
+                        "type": "PlayerRef",
+                        "player": "TriggeringPlayer"
+                    }
+                },
+                "descriptionOverride": "Whenever an opponent sacrifices an artifact, this creature deals 2 damage to them."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "147",
+        "rarity": "UNCOMMON",
+        "artist": "Francisco Miyara",
+        "flavorText": "\"I won't waste my time hunting down petty thieves while my brother's killer still walks free.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/2/a247c9a0-0c65-47bc-92fd-bebe95cd35a3.jpg?1783912872"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
