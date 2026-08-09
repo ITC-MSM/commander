@@ -6300,21 +6300,24 @@ copy of it (CR 707.10e). The activated-ability analogue of the spell-level `cant
 >   effect, for a genuinely additional event (Repulsor Blast's 2 damage to the creature's controller,
 >   Team Tactics' extra trample grant).
 > - **Modal "choose both instead"** (CR 700.2 governs the mode count; the declaration it branches on
->   is made under CR 601.2b — *not* CR 702.194c, which is about targets) — a `modal { }` block with
->   `chooseCount = 2, minChooseCount = 1` and
->   `dynamicChooseCount = DynamicAmount.Conditional(Conditions.TeamworkWasPaid, DynamicAmount.Fixed(2),
->   DynamicAmount.Fixed(1))`: the plain cast picks one mode, the teamwork cast picks both. The same
->   `dynamicChooseCount` shape LCI's Molten Collapse and Wail of the Forgotten use, with one
->   difference that matters — those two read the *battlefield*, while this reads the declaration made
->   by the very cast being validated, so `CastSpellHandler.effectiveModalChooseCounts` evaluates it
->   with `declaredCostSlot` in the context (the durable cast-choices bag doesn't exist until the spell
->   resolves). The declared cast is enumerated as a `CastSpellModal` variant labelled "(Teamwork N)"
->   carrying both the modes and the teamwork cost payload, so the client collects modes and then the
->   taps. Both variants advertise the `chooseCount` this cast can actually reach: `CastSpellEnumerator`
->   evaluates the same dynamic with the same declaration (none on the plain variant, `TEAMWORK` on the
->   declared one), so the plain cast is offered as choose-**one**. The handler stays the authority; the
->   enumeration just no longer offers a mode count it would reject. For the same reason a declared
->   variant is dropped unless at least that many modes are actually available — "choose both" can't be
+>   is made under CR 601.2b — *not* CR 702.194c, which is about targets) — `teamworkModal { }`, a
+>   `modal { }` block wired for exactly that wording: the plain cast picks one mode, the teamwork
+>   cast picks all of them. It sets **both** `dynamicChooseCount` and `dynamicMinChooseCount` to the
+>   same `Conditional` on `Conditions.TeamworkWasPaid`, because "instead" is mandatory — a ceiling
+>   alone would let a player tap their team and then take a single mode. "Both" comes from the modes
+>   declared, so a three-mode printing needs no new recipe.
+>
+>   Related to the `dynamicChooseCount` shape LCI's Molten Collapse and Wail of the Forgotten use,
+>   with two differences that matter. Those read the *battlefield*, while this reads the declaration
+>   made by the very cast being validated, so the count is evaluated with `declaredCostSlot` in the
+>   context (the durable cast-choices bag doesn't exist until the spell resolves). And those print
+>   "may", so they set no floor.
+>
+>   The declared cast is enumerated as a `CastSpellModal` variant labelled "(Teamwork N)" carrying
+>   both the modes and the teamwork cost payload, so the client collects modes and then the taps.
+>   Both variants advertise the range `ModalChooseCounts` says that cast reaches — `1..1` plain,
+>   `2..2` declared — so the client's confirm button unlocks on exactly the legal counts. A declared
+>   variant is dropped unless that many modes are actually available: "choose both" can't be
 >   satisfied when one mode has no legal target (CR 700.2a).
 > - **Permanent** — an enters-the-battlefield trigger with
 >   `triggerCondition = Conditions.TeamworkWasPaid`; CR 603.4 keeps it off the stack entirely otherwise.
@@ -7344,7 +7347,7 @@ answer it and would silently return `false`.
   after the trigger fires makes no token. See §8's `triggerZones`.
 - `WasKicked` — cast with kicker / multikicker / offspring (i.e. an `OptionalAdditionalCost` with `branchesEffect = true` whose extra cost was paid). FlashKicker payments are intentionally invisible to this condition.
 - `WasBargained` — the spell's **bargain** additional cost was declared as it was cast (CR 702.166b, Wilds of Eldraine). A facade over `CastChoiceMade(ChoiceSlot.BARGAINED)`, so bargain needs no condition type of its own. Reads the durable flag on a resolved permanent (an "if it was bargained" enters trigger) *and* the declaration carried on a still-on-the-stack spell (an "if this spell was bargained" rider), and is also the condition a `CostGating.OnlyIf` cost reduction gates on. Never true for a merely kicked spell.
-- `TeamworkWasPaid` — the spell was cast **using teamwork** (CR 702.194b, Marvel Super Heroes): its optional "tap any number of creatures you control with total power N or more" additional cost was declared as it was cast. A facade over `CastChoiceMade(ChoiceSlot.TEAMWORK)`, so teamwork needs no condition type of its own. Reads the declaration carried on a still-on-the-stack spell (an "if this spell was cast using teamwork" rider) *and* the durable flag on a resolved permanent, and is the condition a modal's `dynamicChooseCount` gates on for "choose one; if cast using teamwork, choose both instead". Never true for a merely kicked or bargained spell.
+- `TeamworkWasPaid` — the spell was cast **using teamwork** (CR 702.194b, Marvel Super Heroes): its optional "tap any number of creatures you control with total power N or more" additional cost was declared as it was cast. A facade over `CastChoiceMade(ChoiceSlot.TEAMWORK)`, so teamwork needs no condition type of its own. Reads the declaration carried on a still-on-the-stack spell (an "if this spell was cast using teamwork" rider) *and* the durable flag on a resolved permanent, and is the condition `teamworkModal { }` gates both ends of the mode count on for "choose one; if cast using teamwork, choose both instead". Never true for a merely kicked or bargained spell.
 - `SneakCostWasPaid` — the source was cast for its `Sneak` cost (CR 702.190 — mana + returning an unblocked attacker). Reads the durable `ChoiceSlot.SNEAK` flag on a resolved permanent, falling back to the resolution context for a non-permanent spell's own effect. Backs riders like Leonardo, Leader in Blue and The Last Ronin's Technique.
 - `WebSlungCostWasPaid` — the source was cast using web-slinging (CR 702.188 — mana + returning a tapped creature you control). Reads the durable `ChoiceSlot.WEB_SLUNG` flag on a resolved permanent, falling back to the resolution context for a non-permanent spell's own effect. Backs riders like *Spiders-Man, Heroic Horde* and *Scarlet Spider, Ben Reilly*; the latter also reads the returned creature's mana value via `DynamicAmount.CastChoice(ChoiceSlot.WEB_SLUNG_RETURNED_MV)`.
 - `MayhemCostWasPaid` — the source was cast from the graveyard for its Mayhem cost (CR 702.187). Reads the durable `ChoiceSlot.MAYHEM_CAST` flag on a resolved permanent, falling back to the resolution context (`wasMayhem`) for a non-permanent spell's own effect. Backs riders like *Sandman's Quicksand* ("if this spell's mayhem cost was paid, creatures your opponents control get -2/-2 instead").
@@ -8702,11 +8705,10 @@ reminder via the card's `oracleText` (the `TIERED_REMINDER` constant holds the c
 Fire / Ice / Thunder / Restoration Magic, Tifa's / Vincent's Limit Break (FIN).
 
 **Cast-time conditional choose count** — for modal *spells* the same `dynamicChooseCount`
-field is evaluated against the battlefield **at cast time** (in `CastSpellHandler`,
-`effectiveModalChooseCounts`), and — unlike `chooseUpToDynamic` — it keeps the `minChooseCount`
-floor instead of forcing `0`. The effective upper bound is `eval.coerceIn(minChooseCount,
-modes.size)`. This models "Choose one. If [condition] as you cast this spell, you may choose
-two instead." (Flame of Anor): pass it via the DSL with
+field is evaluated against the battlefield **at cast time**, and — unlike `chooseUpToDynamic` — it
+keeps a floor instead of forcing `0`. Both ends are clamped to `[minChooseCount, modes.size]`. This
+models "Choose one. If [condition] as you cast this spell, you **may** choose two instead."
+(Flame of Anor): pass it via the DSL with
 `modal(chooseCount = 2, minChooseCount = 1, dynamicChooseCount = …) { … }`. Combine a
 `DynamicAmount.Conditional` with a control condition, e.g.
 
@@ -8721,6 +8723,21 @@ modal(
     )
 ) { /* modes */ }
 ```
+
+**…and the mandatory variant.** `dynamicMinChooseCount` is the same thing for the *lower* bound,
+because the printed wording splits. "You **may** choose two instead" leaves the floor at one — set
+`dynamicChooseCount` alone. "Choose both **instead**" does not — set both to the same
+`DynamicAmount`, or the player pays the extra cost and then takes a single mode, which no printed
+card allows. `teamworkModal { }` is the recipe for the Marvel Super Heroes teamwork modals and does
+exactly that, deriving "both" from the modes declared.
+
+> **One authority for the count.** `ModalChooseCounts.forCast` computes the `min..max` range, and
+> both `CastSpellHandler` (validating a submitted cast) and `CastSpellEnumerator` (advertising one)
+> call it. Keep it that way: when the enumerator had its own copy, it drifted — it knew nothing
+> about the blight path or the floor, so it offered counts the handler rejected and dropped
+> variants the handler would have taken. A mode with no legal target can't be chosen (CR 700.2a),
+> so the enumerator drops a variant when fewer than `min` modes are available, unless `allowRepeat`
+> lets one mode fill every pick (CR 700.2d).
 
 **Modal triggered abilities (CR 603.3c / 700.2b).** *Every* modal triggered ability picks its
 mode — and each chosen mode's targets, CR 603.3d — as the ability is put onto the stack, the same

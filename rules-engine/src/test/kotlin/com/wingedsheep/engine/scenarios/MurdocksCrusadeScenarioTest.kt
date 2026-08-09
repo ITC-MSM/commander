@@ -112,6 +112,45 @@ class MurdocksCrusadeScenarioTest : ScenarioTestBase() {
                 game.isInExile(2, "Castle") shouldBe true
             }
 
+            test("choosing one mode with teamwork declared is rejected") {
+                val game = scenario()
+                    .withPlayers("Player1", "Player2")
+                    .withCardInHand(1, "Murdock's Crusade")
+                    .withLandsOnBattlefield(1, "Plains", 2)
+                    .withCardOnBattlefield(1, "Craw Wurm")
+                    .withCardOnBattlefield(2, "Wall of Swords")
+                    .withCardOnBattlefield(2, "Castle")
+                    .withActivePlayer(1)
+                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                    .build()
+
+                val wurm = game.findPermanent("Craw Wurm").shouldNotBeNull()
+                val wall = game.findPermanent("Wall of Swords").shouldNotBeNull()
+                val cardId = game.findCardsInHand(1, "Murdock's Crusade").first()
+
+                // "Choose both instead" is not an allowance — a cast that declared teamwork owes
+                // both modes, so a one-mode submission is illegal (CR 601.2, 700.2a).
+                game.execute(
+                    CastSpell(
+                        playerId = game.player1Id,
+                        cardId = cardId,
+                        targets = listOf(ChosenTarget.Permanent(wall)),
+                        chosenModes = listOf(0),
+                        modeTargetsOrdered = listOf(listOf(ChosenTarget.Permanent(wall))),
+                        declaredCostSlot = ChoiceSlot.TEAMWORK,
+                        additionalCostPayment = AdditionalCostPayment(
+                            variableCostPermanents = listOf(wurm),
+                        ),
+                    ),
+                ).error.shouldNotBeNull()
+
+                withClue("the rejected cast is rewound whole") {
+                    game.isInHand(1, "Murdock's Crusade") shouldBe true
+                    game.state.getEntity(wurm)?.has<TappedComponent>() shouldBe false
+                    game.isOnBattlefield("Wall of Swords") shouldBe true
+                }
+            }
+
             test("choosing both modes without teamwork is rejected") {
                 val game = scenario()
                     .withPlayers("Player1", "Player2")

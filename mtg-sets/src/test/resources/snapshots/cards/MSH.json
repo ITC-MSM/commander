@@ -1191,6 +1191,21 @@
                     "type": "Fixed",
                     "amount": 1
                 }
+            },
+            "dynamicMinChooseCount": {
+                "type": "Conditional",
+                "condition": {
+                    "type": "CastChoiceMade",
+                    "slot": "TEAMWORK"
+                },
+                "ifTrue": {
+                    "type": "Fixed",
+                    "amount": 2
+                },
+                "ifFalse": {
+                    "type": "Fixed",
+                    "amount": 1
+                }
             }
         }
     },
@@ -5176,6 +5191,21 @@
                     "type": "Fixed",
                     "amount": 1
                 }
+            },
+            "dynamicMinChooseCount": {
+                "type": "Conditional",
+                "condition": {
+                    "type": "CastChoiceMade",
+                    "slot": "TEAMWORK"
+                },
+                "ifTrue": {
+                    "type": "Fixed",
+                    "amount": 2
+                },
+                "ifFalse": {
+                    "type": "Fixed",
+                    "amount": 1
+                }
             }
         }
     },
@@ -5494,6 +5524,21 @@
             "chooseCount": 2,
             "minChooseCount": 1,
             "dynamicChooseCount": {
+                "type": "Conditional",
+                "condition": {
+                    "type": "CastChoiceMade",
+                    "slot": "TEAMWORK"
+                },
+                "ifTrue": {
+                    "type": "Fixed",
+                    "amount": 2
+                },
+                "ifFalse": {
+                    "type": "Fixed",
+                    "amount": 1
+                }
+            },
+            "dynamicMinChooseCount": {
                 "type": "Conditional",
                 "condition": {
                     "type": "CastChoiceMade",
@@ -9414,6 +9459,21 @@
             "chooseCount": 2,
             "minChooseCount": 1,
             "dynamicChooseCount": {
+                "type": "Conditional",
+                "condition": {
+                    "type": "CastChoiceMade",
+                    "slot": "TEAMWORK"
+                },
+                "ifTrue": {
+                    "type": "Fixed",
+                    "amount": 2
+                },
+                "ifFalse": {
+                    "type": "Fixed",
+                    "amount": 1
+                }
+            },
+            "dynamicMinChooseCount": {
                 "type": "Conditional",
                 "condition": {
                     "type": "CastChoiceMade",
@@ -17833,6 +17893,21 @@
             "chooseCount": 2,
             "minChooseCount": 1,
             "dynamicChooseCount": {
+                "type": "Conditional",
+                "condition": {
+                    "type": "CastChoiceMade",
+                    "slot": "TEAMWORK"
+                },
+                "ifTrue": {
+                    "type": "Fixed",
+                    "amount": 2
+                },
+                "ifFalse": {
+                    "type": "Fixed",
+                    "amount": 1
+                }
+            },
+            "dynamicMinChooseCount": {
                 "type": "Conditional",
                 "condition": {
                     "type": "CastChoiceMade",

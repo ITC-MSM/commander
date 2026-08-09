@@ -1,12 +1,12 @@
 # Unit u03 — the five modal teamwork cards (MSH)
 
-Branch `loop-msh-u03`, stacked on `loop-msh-u02`. Batch unit, ordinary card work: every card is
-`teamwork(n)` plus the documented modal recipe. **No new SDK vocabulary** — the card diff is five card
-files, five test files, the MSH snapshot, and two backlog files.
+Branch `loop-msh-u03`, an independent PR against `main` — `loop-msh-u02` merged upstream as
+PR #1731, so this branch was rebased off the stack onto `origin/main` and carries only its own
+commits. Batch unit, ordinary card work: every card is `teamwork(n)` plus the modal recipe.
 
-> **Amended after review.** The branch also carries two fixes to `CastSpellEnumerator.kt`, which is
-> `loop-msh-u02`'s code rather than this unit's, because both defects are only reachable through
-> these five cards and the two branches merge in order. See *Review corrections* at the bottom.
+> **Amended twice after review.** The branch also carries fixes to `CastSpellEnumerator.kt` /
+> `CastSpellHandler.kt` and one new SDK field, because the defects are only reachable through these
+> five cards. See *Review corrections* and *Round-2 corrections* at the bottom.
 
 ## Cards
 
@@ -27,9 +27,9 @@ files, five test files, the MSH snapshot, and two backlog files.
   `TargetObject(count = 2, minCount = 1, filter = NonlandPermanent)` bounced through
   `ForEachTargetEffect(Effects.ReturnToHand(ContextTarget(0)))`.
 
-All five: `modal(chooseCount = 2, minChooseCount = 1, dynamicChooseCount =
-DynamicAmount.Conditional(Conditions.TeamworkWasPaid, Fixed(2), Fixed(1)))` — the recipe documented
-in `docs/card-sdk-language-reference.md` → *Teamwork N*. Thresholds verified against Scryfall
+All five: `teamworkModal { }` — the recipe documented in
+`docs/card-sdk-language-reference.md` → *Teamwork N*, which pins the mode count to exactly one on a
+plain cast and exactly all of them on a declared one. Thresholds verified against Scryfall
 (3, 4, 3, 4, 4 respectively).
 
 **Nothing was dropped.** The two shapes flagged as possible drops both turned out to be covered by
@@ -57,12 +57,14 @@ share a memory window. The final `just build` is green over everything.
 
 ## Tests
 
-Five files, `<CardName>ScenarioTest.kt`, three cases each (15 total, all passing):
+Five files, `<CardName>ScenarioTest.kt`, four cases each plus extras (25 total, all passing):
 
 1. plain cast → exactly the one chosen mode resolves, the other mode's victim is untouched, nothing
    tapped;
 2. teamwork cast → both modes resolve and the payer is tapped;
-3. plain cast declaring both modes → rejected, card stays in hand.
+3. plain cast declaring both modes → rejected, card stays in hand;
+4. teamwork cast declaring one mode → rejected and rewound, card in hand *and* payer untapped
+   (added in round 2 — "choose both instead" is mandatory in both directions).
 
 Go Nuts!'s teamwork case points both modes at the same 2/2 so the +1/+1 counter lands before the
 fight and it trades with a 3/3 — that pins mode ordering within the single resolution. HULK SMASH!'s
@@ -80,17 +82,17 @@ enumeration for a declared cast) reappeared — the teamwork branch is reached a
   `targetId` and cannot express per-mode target lists. That bypasses the legal-action enumerator, so
   these tests prove the *handler* accepts the shape but not that the client is offered the
   `CastSpellModal` "(Teamwork N)" variant for these particular cards. `TeamworkMechanicScenarioTest`
-  covers the advertised action generically; I did not add a per-card enumerator assertion.
+  covers the advertised action generically. Murdock's Crusade and Widow's Bite now carry per-card
+  `getLegalActions` assertions; the other three still rely on the generic coverage.
 - `Effects.Exile` is `MoveToZoneEffect(destination = EXILE)`; I did not check whether anything in
   MSH cares about the distinction between "exile" and "exile face down"/linked exile here. The
   printed text is a plain exile, so I believe this is right.
 - Atlantis Attacks' token is named `"Leviathan Token"` by the executor's default
   (`creatureTypes.joinToString(" ") + " Token"`) since I passed no explicit `name`. That matches
   what Brigid's Command and the other token cards do, but the printed token is just "Leviathan".
-- Each card's KDoc cites CR 702.194c for the "choose both instead" shape. 702.194c is strictly
-  about *targets* being skipped when teamwork wasn't used; that is exactly what
-  `dynamicChooseCount` produces here, and it matches the wording already in
-  `backlog/.../mechanics.md`, but it is a slightly loose citation.
+- ~~Each card's KDoc cites CR 702.194c for the "choose both instead" shape.~~ Corrected in round 2
+  to CR 700.2 / 601.2b; the loose citation was in fact wrong, and contradicted this repo's own SDK
+  reference.
 - Not done: no manual playthrough in the web client, no UX pass from either seat, no e2e run, no
   `/generate-scenario` JSON. The web client was not type-checked (no node_modules, no network).
 
@@ -108,11 +110,10 @@ Applied on top of the original commits, after the independent review (0 blocking
   - the declared-cost branch now drops the variant unless at least that many modes are *available*
     (CR 700.2a), not merely one — Murdock's Crusade's teamwork cast was being offered with no legal
     enchantment on the board and could never be completed. `allowRepeat` is exempt (CR 700.2d).
-- **Still open:** the handler's effective *minimum* for a teamwork cast is the printed
-  `minChooseCount` (1), not 2, so a directly-submitted one-mode teamwork cast is still accepted.
-  Making "choose both instead" mandatory needs an SDK shape that raises the floor as well as the
-  ceiling; `dynamicChooseCount` deliberately only raises the ceiling (Flame of Anor prints "you *may*
-  choose two instead"). Separate feature work.
+- ~~**Still open:** the handler's effective *minimum* for a teamwork cast is the printed
+  `minChooseCount` (1), not 2.~~ **Fixed in round 2** — see below. It was not separable: the client's
+  confirm button unlocks at the advertised `minChooseCount`, so a player could tap their team and
+  take one mode through the normal UI.
 - **`AtlantisAttacks.kt` KDoc** — it claimed one target going illegal "does not strand the other".
   False: `processPreChosenModeQueue` skips the whole mode all-or-nothing. Now documented as the
   pre-existing engine-wide deviation from CR 608.2b that it is; behaviour untouched.
@@ -125,3 +126,31 @@ Applied on top of the original commits, after the independent review (0 blocking
   pins `damage == 6` rather than "the 2/2 died".
 - No action on the Leviathan token name (matches the repo-wide default and the test lookup) or the
   CR 702.194c citations (the reviewer verified them as accurate).
+
+## Round-2 corrections
+
+Applied after a second review (1 blocking, 3 important).
+
+- **SDK, `ModalEffect.dynamicMinChooseCount`** — the mandatory sibling of `dynamicChooseCount`.
+  The printed wording splits: "you *may* choose two instead" (Flame of Anor) leaves the floor at
+  one, "choose both **instead**" (these five) does not. With only a ceiling, a teamwork cast could
+  legally take a single mode.
+- **SDK, `teamworkModal { }`** in `TeamworkDsl.kt` — sets both bounds from the same `Conditional`
+  and derives "both" from the modes declared. The five cards each drop six lines of copy-pasted
+  `DynamicAmount.Conditional`.
+- **Engine, `ModalChooseCounts.forCast`** — one authority for the `min..max` range, called by both
+  `CastSpellHandler` (validating) and `CastSpellEnumerator` (advertising). The two had separate
+  copies that had already drifted: the enumerator's knew nothing about the blight path or the floor.
+- **Engine, the enumerator's drop gate** now tests the effective *minimum*, not the maximum. This
+  turned out to fix a bug beyond teamwork: `CastSpellEnumeratorTest` had a case asserting that
+  Brigid's Command ("Choose two —") is still offered with only one mode available. It isn't
+  castable — CR 700.2a plus CR 601.2, and Wizards' own Cryptic Command ruling ("You must choose two
+  different modes"). That test's name already said "dropped entirely" while its body asserted the
+  opposite; it now asserts the drop.
+- **CR 702.194c → CR 700.2 / 601.2b** in five card KDocs and one test KDoc. 702.194c is about
+  targets; `docs/card-sdk-language-reference.md` already said so.
+
+**Gate (on `origin/main` b9d89050eb, after the rebase off the stack):** `:rules-engine:test` +
+`:mtg-sets:test` — 10601 passed, 0 failed. `:mtg-sdk:test` + `:game-server:test` — 897 passed,
+0 failed. Snapshot re-blessed: `MSH.json` +75 lines, 0 removed, all five `dynamicMinChooseCount`
+blocks and nothing else.

@@ -21,8 +21,9 @@ import io.kotest.matchers.shouldBe
  *   • Target creature gains deathtouch until end of turn.
  *   • Target creature gets -2/-2 until end of turn.
  *
- * Pins all three branches of the modal teamwork shape (CR 702.194c): one mode on a plain cast, both
- * modes on a teamwork cast, and a plain cast that asks for both being rejected outright.
+ * Pins all four branches of the modal teamwork shape: one mode on a plain cast, both modes on a
+ * teamwork cast, and each cast asking for the other's mode count being rejected outright — "choose
+ * both instead" is mandatory in both directions (CR 700.2, declared per CR 601.2b).
  */
 class WidowsBiteScenarioTest : ScenarioTestBase() {
 
@@ -111,6 +112,77 @@ class WidowsBiteScenarioTest : ScenarioTestBase() {
                 game.state.projectedState.hasKeyword(courser, Keyword.DEATHTOUCH) shouldBe true
                 withClue("-2/-2 kills the 2/2") {
                     game.isOnBattlefield("Grizzly Bears") shouldBe false
+                }
+            }
+
+            test("choosing one mode with teamwork declared is rejected") {
+                val game = scenario()
+                    .withPlayers("Player1", "Player2")
+                    .withCardInHand(1, "Widow's Bite")
+                    .withLandsOnBattlefield(1, "Swamp", 2)
+                    .withCardOnBattlefield(1, "Hill Giant")
+                    .withCardOnBattlefield(2, "Grizzly Bears")
+                    .withCardOnBattlefield(2, "Centaur Courser")
+                    .withActivePlayer(1)
+                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                    .build()
+
+                val giant = game.findPermanent("Hill Giant").shouldNotBeNull()
+                val courser = game.findPermanent("Centaur Courser").shouldNotBeNull()
+                val cardId = game.findCardsInHand(1, "Widow's Bite").first()
+
+                // "Choose both instead" is not an allowance — a cast that declared teamwork owes
+                // both modes, so a one-mode submission is illegal (CR 601.2, 700.2a).
+                game.execute(
+                    CastSpell(
+                        playerId = game.player1Id,
+                        cardId = cardId,
+                        targets = listOf(ChosenTarget.Permanent(courser)),
+                        chosenModes = listOf(0),
+                        modeTargetsOrdered = listOf(listOf(ChosenTarget.Permanent(courser))),
+                        declaredCostSlot = ChoiceSlot.TEAMWORK,
+                        additionalCostPayment = AdditionalCostPayment(
+                            variableCostPermanents = listOf(giant),
+                        ),
+                    ),
+                ).error.shouldNotBeNull()
+
+                withClue("the rejected cast is rewound whole — the card stays in hand and the " +
+                    "creature tapped to pay for it is untapped again") {
+                    game.isInHand(1, "Widow's Bite") shouldBe true
+                    game.state.getEntity(giant)?.has<TappedComponent>() shouldBe false
+                }
+            }
+
+            test("the enumerator advertises the teamwork variant as choose-exactly-two") {
+                val game = scenario()
+                    .withPlayers("Player1", "Player2")
+                    .withCardInHand(1, "Widow's Bite")
+                    .withLandsOnBattlefield(1, "Swamp", 2)
+                    .withCardOnBattlefield(1, "Hill Giant")
+                    .withCardOnBattlefield(2, "Grizzly Bears")
+                    .withCardOnBattlefield(2, "Centaur Courser")
+                    .withActivePlayer(1)
+                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                    .build()
+
+                val modalCasts = game.getLegalActions(1).filter { it.actionType == "CastSpellModal" }
+
+                val plain = modalCasts
+                    .firstOrNull { it.additionalCostInfo?.costType != "TapForTotalPower" }
+                    .shouldNotBeNull()
+                    .modalEnumeration.shouldNotBeNull()
+                plain.minChooseCount shouldBe 1
+                plain.chooseCount shouldBe 1
+
+                val teamwork = modalCasts
+                    .firstOrNull { it.additionalCostInfo?.costType == "TapForTotalPower" }
+                    .shouldNotBeNull()
+                    .modalEnumeration.shouldNotBeNull()
+                withClue("both ends of the advertised range move with the declaration, so the " +
+                    "client's confirm button can't unlock on a single mode") {
+                    teamwork.minChooseCount shouldBe 2
+                    teamwork.chooseCount shouldBe 2
                 }
             }
 

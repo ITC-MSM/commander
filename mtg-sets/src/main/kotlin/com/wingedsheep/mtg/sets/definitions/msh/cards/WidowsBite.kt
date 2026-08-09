@@ -1,13 +1,12 @@
 package com.wingedsheep.mtg.sets.definitions.msh.cards
 
 import com.wingedsheep.sdk.core.Keyword
-import com.wingedsheep.sdk.dsl.Conditions
 import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.Targets
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.dsl.teamwork
+import com.wingedsheep.sdk.dsl.teamworkModal
 import com.wingedsheep.sdk.model.Rarity
-import com.wingedsheep.sdk.scripting.values.DynamicAmount
 
 /**
  * Widow's Bite — Marvel Super Heroes #122
@@ -19,12 +18,13 @@ import com.wingedsheep.sdk.scripting.values.DynamicAmount
  * • Target creature gains deathtouch until end of turn.
  * • Target creature gets -2/-2 until end of turn.
  *
- * The modal shape of teamwork (CR 702.194c): `chooseCount = 2, minChooseCount = 1` is the printed
- * maximum and floor, and the cast-time [DynamicAmount.Conditional] on
- * [Conditions.TeamworkWasPaid] narrows the effective count to exactly 1 without the declaration
- * and exactly 2 with it. Each mode carries its own "target creature", so the teamwork cast may
- * point them at two different creatures — or at the same one, since separate mode requirements are
- * separate instances of the word "target" (CR 601.2c).
+ * The modal shape of teamwork — [teamworkModal] pins the effective count to exactly 1 without the
+ * declaration and exactly 2 with it. CR 700.2 governs the mode count; the declaration it branches
+ * on is made under CR 601.2b (*not* CR 702.194c, which is about targets).
+ *
+ * Each mode carries its own "target creature", so the teamwork cast may point them at two
+ * different creatures — or at the same one, since separate mode requirements are separate
+ * instances of the word "target" (CR 601.2c).
  */
 val WidowsBite = card("Widow's Bite") {
     manaCost = "{1}{B}"
@@ -39,15 +39,7 @@ val WidowsBite = card("Widow's Bite") {
     teamwork(3)
 
     spell {
-        modal(
-            chooseCount = 2,
-            minChooseCount = 1,
-            dynamicChooseCount = DynamicAmount.Conditional(
-                condition = Conditions.TeamworkWasPaid,
-                ifTrue = DynamicAmount.Fixed(2),
-                ifFalse = DynamicAmount.Fixed(1),
-            ),
-        ) {
+        teamworkModal {
             mode("Target creature gains deathtouch until end of turn") {
                 val creature = target("target creature", Targets.Creature)
                 effect = Effects.GrantKeyword(Keyword.DEATHTOUCH, creature)

@@ -1224,6 +1224,7 @@ class SpellBuilder {
         additionalCostPerExtraMode: com.wingedsheep.sdk.scripting.costs.CostAtom? = null,
         chooseAllIfBlightPaid: Boolean = false,
         dynamicChooseCount: com.wingedsheep.sdk.scripting.values.DynamicAmount? = null,
+        dynamicMinChooseCount: com.wingedsheep.sdk.scripting.values.DynamicAmount? = null,
         init: ModalBuilder.() -> Unit
     ) {
         val builder = ModalBuilder(
@@ -1233,7 +1234,8 @@ class SpellBuilder {
             additionalManaCostPerExtraMode,
             additionalCostPerExtraMode,
             chooseAllIfBlightPaid,
-            dynamicChooseCount
+            dynamicChooseCount,
+            dynamicMinChooseCount
         )
         builder.init()
         effect = builder.build()
@@ -1292,7 +1294,8 @@ class ModalBuilder(
     private val additionalManaCostPerExtraMode: String? = null,
     private val additionalCostPerExtraMode: com.wingedsheep.sdk.scripting.costs.CostAtom? = null,
     private val chooseAllIfBlightPaid: Boolean = false,
-    private val dynamicChooseCount: com.wingedsheep.sdk.scripting.values.DynamicAmount? = null
+    private val dynamicChooseCount: com.wingedsheep.sdk.scripting.values.DynamicAmount? = null,
+    private val dynamicMinChooseCount: com.wingedsheep.sdk.scripting.values.DynamicAmount? = null
 ) {
     private val modes: MutableList<Mode> = mutableListOf()
 
@@ -1321,7 +1324,8 @@ class ModalBuilder(
             additionalManaCostPerExtraMode = additionalManaCostPerExtraMode,
             additionalCostPerExtraMode = additionalCostPerExtraMode,
             chooseAllIfBlightPaid = chooseAllIfBlightPaid,
-            dynamicChooseCount = dynamicChooseCount
+            dynamicChooseCount = dynamicChooseCount,
+            dynamicMinChooseCount = dynamicMinChooseCount
         )
 }
 

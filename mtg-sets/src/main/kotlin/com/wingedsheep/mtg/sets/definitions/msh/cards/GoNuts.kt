@@ -1,13 +1,12 @@
 package com.wingedsheep.mtg.sets.definitions.msh.cards
 
 import com.wingedsheep.sdk.core.Counters
-import com.wingedsheep.sdk.dsl.Conditions
 import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.Targets
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.dsl.teamwork
+import com.wingedsheep.sdk.dsl.teamworkModal
 import com.wingedsheep.sdk.model.Rarity
-import com.wingedsheep.sdk.scripting.values.DynamicAmount
 
 /**
  * Go Nuts! — Marvel Super Heroes #168
@@ -19,9 +18,11 @@ import com.wingedsheep.sdk.scripting.values.DynamicAmount
  * • Put a +1/+1 counter on target creature.
  * • Target creature you control fights target creature an opponent controls.
  *
- * The modal shape of teamwork (CR 702.194c): the cast-time [DynamicAmount.Conditional] on
- * [Conditions.TeamworkWasPaid] narrows the printed `chooseCount = 2` to 1 unless the teamwork cost
- * was declared. Modes resolve in printed order, so a teamwork cast that puts the counter on the
+ * The modal shape of teamwork — [teamworkModal] narrows the printed "choose both" to one mode
+ * unless the teamwork cost was declared. CR 700.2 governs the mode count; the declaration it
+ * branches on is made under CR 601.2b (*not* CR 702.194c, which is about targets).
+ *
+ * Modes resolve in printed order, so a teamwork cast that puts the counter on the
  * same creature that then fights sends the bigger body into the fight (CR 608.2c — the modes are one
  * resolution, and its controller follows the instructions in the order written).
  */
@@ -38,15 +39,7 @@ val GoNuts = card("Go Nuts!") {
     teamwork(3)
 
     spell {
-        modal(
-            chooseCount = 2,
-            minChooseCount = 1,
-            dynamicChooseCount = DynamicAmount.Conditional(
-                condition = Conditions.TeamworkWasPaid,
-                ifTrue = DynamicAmount.Fixed(2),
-                ifFalse = DynamicAmount.Fixed(1),
-            ),
-        ) {
+        teamworkModal {
             mode("Put a +1/+1 counter on target creature") {
                 val creature = target("target creature", Targets.Creature)
                 effect = Effects.AddCounters(Counters.PLUS_ONE_PLUS_ONE, 1, creature)

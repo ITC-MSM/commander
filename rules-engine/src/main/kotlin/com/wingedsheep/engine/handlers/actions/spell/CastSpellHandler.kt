@@ -26,6 +26,7 @@ import com.wingedsheep.engine.mechanics.EmergeCasts
 import com.wingedsheep.engine.mechanics.SpliceCasts
 import com.wingedsheep.engine.mechanics.EscalateCosts
 import com.wingedsheep.engine.mechanics.FlashbackGrants
+import com.wingedsheep.engine.mechanics.ModalChooseCounts
 import com.wingedsheep.engine.mechanics.HarmonizeGrants
 import com.wingedsheep.engine.mechanics.MayhemGrants
 import com.wingedsheep.engine.mechanics.SneakWindow
@@ -1540,53 +1541,26 @@ class CastSpellHandler(
     }
 
     /**
-     * Compute the effective `[minChooseCount, chooseCount]` range for a modal spell,
-     * accounting for `ModalEffect.chooseAllIfBlightPaid` and `ModalEffect.dynamicChooseCount`.
+     * The effective `[min, max]` range of mode counts this cast may choose.
      *
-     * - `chooseAllIfBlightPaid`: when the flag is set and the player paid the spell's optional
-     *   `BlightOrPay` cost via blight, the player must choose all modes; otherwise the regular
-     *   range applies.
-     * - `dynamicChooseCount`: evaluated against cast-time battlefield state to produce the upper
-     *   bound (clamped to `[minChooseCount, modes.size]`). Models the printed "Choose one. If you
-     *   control a Wizard as you cast this spell, you may choose two instead." pattern (Flame of
-     *   Anor) — `minChooseCount` stays the mandatory floor, unlike the resolution-time
-     *   `chooseUpToDynamic` shape which always allows declining to 0.
-     *
-     * The evaluation context carries the *declaration being cast* ([CastSpell.declaredCostSlot]),
-     * because a mode count may branch on the optional additional cost this very cast declared —
-     * "Choose one. If this spell was cast using teamwork, choose both instead" (CR 702.194b).
-     * `Conditions.TeamworkWasPaid` / `CastChoiceMade` answers from that field while the card is
-     * still in hand; the durable `CastChoicesComponent` it otherwise reads only exists once the
-     * spell has resolved, so without this the teamwork branch could never be taken.
+     * Delegates to [ModalChooseCounts], the authority the legal-action enumerator also uses, so an
+     * advertised cast and a validated one can't disagree.
      */
     private fun effectiveModalChooseCounts(
         state: GameState,
         modalEffect: ModalEffect,
         action: CastSpell
     ): Pair<Int, Int> {
-        if (modalEffect.chooseAllIfBlightPaid) {
-            val blightPaid = action.additionalCostPayment?.blightTargets?.isNotEmpty() == true
-            return if (blightPaid) {
-                modalEffect.modes.size to modalEffect.modes.size
-            } else {
-                modalEffect.minChooseCount to modalEffect.minChooseCount
-            }
-        }
-        val dynamic = modalEffect.dynamicChooseCount
-        if (dynamic != null) {
-            val context = EffectContext(
-                sourceId = action.cardId,
-                controllerId = action.playerId,
-                targets = emptyList(),
-                xValue = 0,
-                declaredCostSlot = action.declaredCostSlot
-            )
-            val evaluated = DynamicAmountEvaluator(conditionEvaluator = conditionEvaluator)
-                .evaluate(state, dynamic, context)
-            val max = evaluated.coerceIn(modalEffect.minChooseCount, modalEffect.modes.size)
-            return modalEffect.minChooseCount to max
-        }
-        return modalEffect.minChooseCount to modalEffect.chooseCount
+        val range = ModalChooseCounts.forCast(
+            state = state,
+            modalEffect = modalEffect,
+            cardId = action.cardId,
+            controllerId = action.playerId,
+            declaredCostSlot = action.declaredCostSlot,
+            blightPaid = action.additionalCostPayment?.blightTargets?.isNotEmpty() == true,
+            conditionEvaluator = conditionEvaluator
+        )
+        return range.first to range.last
     }
 
     /**

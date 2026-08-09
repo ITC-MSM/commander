@@ -119,6 +119,45 @@ class HulkSmashScenarioTest : ScenarioTestBase() {
                 }
             }
 
+            test("choosing one mode with teamwork declared is rejected") {
+                val game = scenario()
+                    .withPlayers("Player1", "Player2")
+                    .withCardInHand(1, "HULK SMASH!")
+                    .withLandsOnBattlefield(1, "Mountain", 2)
+                    .withCardOnBattlefield(1, "Craw Wurm")
+                    .withCardOnBattlefield(2, "Sol Ring")
+                    .withCardOnBattlefield(2, "Grizzly Bears")
+                    .withActivePlayer(1)
+                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                    .build()
+
+                val wurm = game.findPermanent("Craw Wurm").shouldNotBeNull()
+                val solRing = game.findPermanent("Sol Ring").shouldNotBeNull()
+                val cardId = game.findCardsInHand(1, "HULK SMASH!").first()
+
+                // "Choose both instead" is not an allowance — a cast that declared teamwork owes
+                // both modes, so a one-mode submission is illegal (CR 601.2, 700.2a).
+                game.execute(
+                    CastSpell(
+                        playerId = game.player1Id,
+                        cardId = cardId,
+                        targets = listOf(ChosenTarget.Permanent(solRing)),
+                        chosenModes = listOf(0),
+                        modeTargetsOrdered = listOf(listOf(ChosenTarget.Permanent(solRing))),
+                        declaredCostSlot = ChoiceSlot.TEAMWORK,
+                        additionalCostPayment = AdditionalCostPayment(
+                            variableCostPermanents = listOf(wurm),
+                        ),
+                    ),
+                ).error.shouldNotBeNull()
+
+                withClue("the rejected cast is rewound whole") {
+                    game.isInHand(1, "HULK SMASH!") shouldBe true
+                    game.state.getEntity(wurm)?.has<TappedComponent>() shouldBe false
+                    game.isOnBattlefield("Sol Ring") shouldBe true
+                }
+            }
+
             test("choosing both modes without teamwork is rejected") {
                 val game = scenario()
                     .withPlayers("Player1", "Player2")

@@ -462,10 +462,15 @@ class CastSpellEnumeratorTest : FunSpec({
         enumeration.unavailableIndices.size shouldBe 2
     }
 
-    test("choose-N modal spell is dropped entirely when every mode is unavailable") {
-        // No creatures anywhere, no Kithkin. Mode 1 (target player) still works,
-        // but let's construct a case where the spell still surfaces since
-        // mode 1 has no prerequisites — so just verify mode 1 remains available.
+    test("choose-N modal spell is dropped when fewer modes are available than it must choose") {
+        // Brigid's Command is "Choose two —", so `minChooseCount` is 2 and repeats are not
+        // allowed. With no creatures and no Kithkin anywhere, only mode 1 (target player) has a
+        // legal target; a mode that would be illegal can't be chosen (CR 700.2a), so there is no
+        // legal pair to announce and the cast can't be proposed at all (CR 601.2). Wizards' own
+        // Cryptic Command ruling states the same: "You must choose two different modes."
+        //
+        // The gate is the effective *minimum*, not the maximum: a "choose one or both" spell in
+        // this position is still castable for its one available mode.
         val driver = setupP1(
             hand = listOf("Brigid's Command"),
             battlefield = listOf("Forest", "Plains", "Forest"),
@@ -474,13 +479,7 @@ class CastSpellEnumeratorTest : FunSpec({
 
         val casts = driver.enumerateFor(driver.player1).castActionsFor("Brigid's Command")
 
-        casts shouldHaveSize 1
-        val enumeration = casts.single().modalEnumeration.shouldNotBeNull()
-        // Player target stays available; everything else requires a creature we don't control or a Kithkin or an opponent creature.
-        enumeration.modes[1].available shouldBe true
-        enumeration.unavailableIndices shouldContain 0
-        enumeration.unavailableIndices shouldContain 2
-        enumeration.unavailableIndices shouldContain 3
+        casts.shouldBeEmpty()
     }
 
 })

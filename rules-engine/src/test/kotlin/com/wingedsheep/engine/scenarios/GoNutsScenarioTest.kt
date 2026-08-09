@@ -115,6 +115,45 @@ class GoNutsScenarioTest : ScenarioTestBase() {
                 }
             }
 
+            test("choosing one mode with teamwork declared is rejected") {
+                val game = scenario()
+                    .withPlayers("Player1", "Player2")
+                    .withCardInHand(1, "Go Nuts!")
+                    .withLandsOnBattlefield(1, "Forest", 1)
+                    .withCardOnBattlefield(1, "Hill Giant")
+                    .withCardOnBattlefield(1, "Grizzly Bears")
+                    .withCardOnBattlefield(2, "Centaur Courser")
+                    .withActivePlayer(1)
+                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                    .build()
+
+                val giant = game.findPermanent("Hill Giant").shouldNotBeNull()
+                val bears = game.findPermanent("Grizzly Bears").shouldNotBeNull()
+                val cardId = game.findCardsInHand(1, "Go Nuts!").first()
+
+                // "Choose both instead" is not an allowance — a cast that declared teamwork owes
+                // both modes, so a one-mode submission is illegal (CR 601.2, 700.2a).
+                game.execute(
+                    CastSpell(
+                        playerId = game.player1Id,
+                        cardId = cardId,
+                        targets = listOf(ChosenTarget.Permanent(bears)),
+                        chosenModes = listOf(0),
+                        modeTargetsOrdered = listOf(listOf(ChosenTarget.Permanent(bears))),
+                        declaredCostSlot = ChoiceSlot.TEAMWORK,
+                        additionalCostPayment = AdditionalCostPayment(
+                            variableCostPermanents = listOf(giant),
+                        ),
+                    ),
+                ).error.shouldNotBeNull()
+
+                withClue("the rejected cast is rewound whole — no counter landed either") {
+                    game.isInHand(1, "Go Nuts!") shouldBe true
+                    game.state.getEntity(giant)?.has<TappedComponent>() shouldBe false
+                    game.state.projectedState.getPower(bears) shouldBe 2
+                }
+            }
+
             test("choosing both modes without teamwork is rejected") {
                 val game = scenario()
                     .withPlayers("Player1", "Player2")

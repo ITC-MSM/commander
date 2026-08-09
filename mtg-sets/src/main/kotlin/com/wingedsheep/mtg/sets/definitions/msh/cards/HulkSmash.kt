@@ -1,10 +1,10 @@
 package com.wingedsheep.mtg.sets.definitions.msh.cards
 
-import com.wingedsheep.sdk.dsl.Conditions
 import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.Targets
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.dsl.teamwork
+import com.wingedsheep.sdk.dsl.teamworkModal
 import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.filters.unified.TargetFilter
@@ -24,9 +24,9 @@ import com.wingedsheep.sdk.scripting.values.EntityReference
  * • Target creature you control deals damage equal to its power to target creature an opponent
  *   controls.
  *
- * The modal shape of teamwork (CR 702.194c): the cast-time [DynamicAmount.Conditional] on
- * [Conditions.TeamworkWasPaid] narrows the printed `chooseCount = 2` to 1 unless the teamwork cost
- * was declared.
+ * The modal shape of teamwork — [teamworkModal] narrows the printed "choose both" to one mode
+ * unless the teamwork cost was declared. CR 700.2 governs the mode count; the declaration it
+ * branches on is made under CR 601.2b (*not* CR 702.194c, which is about targets).
  *
  * Mode 2 is the Rabid Bite shape — one-sided damage whose source is the attacking creature, so
  * deathtouch/lifelink on it apply and the victim deals nothing back. Its amount reads *this*
@@ -47,15 +47,7 @@ val HulkSmash = card("HULK SMASH!") {
     teamwork(4)
 
     spell {
-        modal(
-            chooseCount = 2,
-            minChooseCount = 1,
-            dynamicChooseCount = DynamicAmount.Conditional(
-                condition = Conditions.TeamworkWasPaid,
-                ifTrue = DynamicAmount.Fixed(2),
-                ifFalse = DynamicAmount.Fixed(1),
-            ),
-        ) {
+        teamworkModal {
             mode("Destroy target noncreature artifact") {
                 val artifact = target(
                     "target noncreature artifact",

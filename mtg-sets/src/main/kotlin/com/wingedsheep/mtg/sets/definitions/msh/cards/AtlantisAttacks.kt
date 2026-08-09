@@ -2,17 +2,16 @@ package com.wingedsheep.mtg.sets.definitions.msh.cards
 
 import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.core.Keyword
-import com.wingedsheep.sdk.dsl.Conditions
 import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.dsl.teamwork
+import com.wingedsheep.sdk.dsl.teamworkModal
 import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.effects.ForEachTargetEffect
 import com.wingedsheep.sdk.scripting.filters.unified.TargetFilter
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.scripting.targets.TargetObject
 import com.wingedsheep.sdk.scripting.targets.TargetPlayer
-import com.wingedsheep.sdk.scripting.values.DynamicAmount
 
 /**
  * Atlantis Attacks — Marvel Super Heroes #46
@@ -24,9 +23,9 @@ import com.wingedsheep.sdk.scripting.values.DynamicAmount
  * • Target player creates a 6/5 blue Leviathan creature token with hexproof.
  * • Return one or two target nonland permanents to their owners' hands.
  *
- * The modal shape of teamwork (CR 702.194c): the cast-time [DynamicAmount.Conditional] on
- * [Conditions.TeamworkWasPaid] narrows the printed `chooseCount = 2` to 1 unless the teamwork cost
- * was declared.
+ * The modal shape of teamwork — [teamworkModal] narrows the printed "choose both" to one mode
+ * unless the teamwork cost was declared. CR 700.2 governs the mode count; the declaration it
+ * branches on is made under CR 601.2b (*not* CR 702.194c, which is about targets).
  *
  * "One or two target nonland permanents" is a single requirement with `count = 2, minCount = 1`,
  * so the two chosen permanents must be different (CR 601.2c), and [ForEachTargetEffect] repeats the
@@ -51,15 +50,7 @@ val AtlantisAttacks = card("Atlantis Attacks") {
     teamwork(4)
 
     spell {
-        modal(
-            chooseCount = 2,
-            minChooseCount = 1,
-            dynamicChooseCount = DynamicAmount.Conditional(
-                condition = Conditions.TeamworkWasPaid,
-                ifTrue = DynamicAmount.Fixed(2),
-                ifFalse = DynamicAmount.Fixed(1),
-            ),
-        ) {
+        teamworkModal {
             mode("Target player creates a 6/5 blue Leviathan creature token with hexproof") {
                 val player = target("target player", TargetPlayer())
                 effect = Effects.CreateToken(

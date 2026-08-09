@@ -163,6 +163,44 @@ class AtlantisAttacksScenarioTest : ScenarioTestBase() {
                 }
             }
 
+            test("choosing one mode with teamwork declared is rejected") {
+                val game = scenario()
+                    .withPlayers("Player1", "Player2")
+                    .withCardInHand(1, "Atlantis Attacks")
+                    .withLandsOnBattlefield(1, "Island", 7)
+                    .withCardOnBattlefield(1, "Craw Wurm")
+                    .withCardOnBattlefield(2, "Grizzly Bears")
+                    .withCardOnBattlefield(2, "Sol Ring")
+                    .withActivePlayer(1)
+                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                    .build()
+
+                val wurm = game.findPermanent("Craw Wurm").shouldNotBeNull()
+                val cardId = game.findCardsInHand(1, "Atlantis Attacks").first()
+
+                // "Choose both instead" is not an allowance — a cast that declared teamwork owes
+                // both modes, so a one-mode submission is illegal (CR 601.2, 700.2a).
+                game.execute(
+                    CastSpell(
+                        playerId = game.player1Id,
+                        cardId = cardId,
+                        targets = listOf(ChosenTarget.Player(game.player1Id)),
+                        chosenModes = listOf(0),
+                        modeTargetsOrdered = listOf(listOf(ChosenTarget.Player(game.player1Id))),
+                        declaredCostSlot = ChoiceSlot.TEAMWORK,
+                        additionalCostPayment = AdditionalCostPayment(
+                            variableCostPermanents = listOf(wurm),
+                        ),
+                    ),
+                ).error.shouldNotBeNull()
+
+                withClue("the rejected cast is rewound whole — no token was created") {
+                    game.isInHand(1, "Atlantis Attacks") shouldBe true
+                    game.state.getEntity(wurm)?.has<TappedComponent>() shouldBe false
+                    game.findPermanent("Leviathan Token") shouldBe null
+                }
+            }
+
             test("choosing both modes without teamwork is rejected") {
                 val game = scenario()
                     .withPlayers("Player1", "Player2")
