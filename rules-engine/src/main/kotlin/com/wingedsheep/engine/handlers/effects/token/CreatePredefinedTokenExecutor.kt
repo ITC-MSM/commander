@@ -78,14 +78,14 @@ class CreatePredefinedTokenExecutor(
         // A list, because a set may have printed the same token with several illustrations: the
         // batch is dealt out of it in order and wraps. Indexing by position in the batch keeps it
         // deterministic, so a replay re-simulates the same board. See CreateTokenExecutor.
-        val sourceCardDefinitionId = context.sourceId
+        val sourceCard = context.sourceId
             ?.let { state.getEntity(it) }
             ?.get<CardComponent>()
-            ?.cardDefinitionId
         val resolvedImageUris = effect.imageUri?.let(::listOf)
             ?: tokenArtRegistry?.resolveAll(
-                sourceCardDefinitionId = sourceCardDefinitionId,
+                sourceCardDefinitionId = sourceCard?.cardDefinitionId,
                 tokenName = effect.tokenType,
+                sourcePrintingSetCode = sourceCard?.printingSetCode,
             )?.takeIf { it.isNotEmpty() }
             ?: listOf(cardDef.metadata.imageUri)
 

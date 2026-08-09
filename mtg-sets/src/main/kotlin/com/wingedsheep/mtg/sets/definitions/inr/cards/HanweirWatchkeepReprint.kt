@@ -11,6 +11,7 @@ val HanweirWatchkeepReprint = Printing(
     scryfallId = "d067706b-e2cc-4ad5-b992-28222a8af4ad",
     artist = "Wayne Reynolds",
     imageUri = "https://cards.scryfall.io/normal/front/d/0/d067706b-e2cc-4ad5-b992-28222a8af4ad.jpg?1783908125",
+    backFaceImageUri = "https://cards.scryfall.io/normal/back/d/0/d067706b-e2cc-4ad5-b992-28222a8af4ad.jpg?1783908125",
     releaseDate = "2025-01-24",
     rarity = Rarity.COMMON,
 )

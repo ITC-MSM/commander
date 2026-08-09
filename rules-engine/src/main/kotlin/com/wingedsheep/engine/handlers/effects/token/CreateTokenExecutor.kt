@@ -151,17 +151,17 @@ class CreateTokenExecutor(
         // this is a list: the batch is dealt out of it in order and wraps, which is why Release the
         // Dogs' four Dogs show Jumpstart's four Dog arts. Indexing by position in the batch keeps
         // it deterministic, so a replay re-simulates the same board.
-        val sourceCardDefinitionId = context.sourceId
+        val sourceCard = context.sourceId
             ?.let { state.getEntity(it) }
             ?.get<CardComponent>()
-            ?.cardDefinitionId
         val resolvedImageUris = effect.imageUri?.let(::listOf)
             ?: tokenArtRegistry?.resolveAll(
-                sourceCardDefinitionId = sourceCardDefinitionId,
+                sourceCardDefinitionId = sourceCard?.cardDefinitionId,
                 tokenName = tokenName.removeSuffix(" Token"),
                 power = tokenPower,
                 toughness = tokenToughness,
                 colors = effectiveColors,
+                sourcePrintingSetCode = sourceCard?.printingSetCode,
             )?.takeIf { it.isNotEmpty() }
             ?: listOf(TokenArt.forCreatureTypes(effectiveCreatureTypes))
 

@@ -1967,8 +1967,7 @@
                     ],
                     "creatureTypes": [
                         "Wolf"
-                    ],
-                    "imageUri": "https://cards.scryfall.io/normal/front/8/9/89b89a55-3ea2-4186-b946-06831bc16169.jpg?1783907965"
+                    ]
                 },
                 "timing": "SorcerySpeed",
                 "isPlaneswalkerAbility": true,
@@ -2001,8 +2000,7 @@
                         ],
                         "keywords": [
                             "DEATHTOUCH"
-                        ],
-                        "imageUri": "https://cards.scryfall.io/normal/front/6/8/6884b4a4-b1f8-4d3d-8b0a-0e1c04e9b0f9.jpg"
+                        ]
                     },
                     "timing": "SorcerySpeed",
                     "isPlaneswalkerAbility": true,

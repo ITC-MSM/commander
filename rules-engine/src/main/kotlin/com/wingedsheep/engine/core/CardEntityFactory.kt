@@ -74,6 +74,10 @@ object CardEntityFactory {
                     ?: cardDef.backFace?.metadata?.imageUri
                     // Modal DFC backs aren't a separate CardDefinition; their art rides on the face.
                     ?: cardDef.cardFaces.firstOrNull { it.imageUri != null }?.imageUri,
+                // The set whose art this entity presents. `definitionId` above keeps the *oracle*
+                // definition's set on purpose, so this is the only place the pinned reprint's set
+                // survives onto the entity — and it's what makes a reprint mint its own set's tokens.
+                printingSetCode = printing?.setCode ?: cardDef.setCode,
                 hasNonManaActivatedAbility = cardDef.hasNonManaActivatedAbility,
                 hasActivatedAbility = cardDef.hasActivatedAbility,
                 // Original-printing set (canonical, not the pinned printing) — "originally printed in X".

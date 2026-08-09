@@ -228,9 +228,16 @@ internal fun dfcBackFaceManaValue(frontDef: CardDefinition?, frontManaValue: Int
 
 /**
  * Build a fresh [CardComponent] for the given DFC face while preserving the permanent's
- * owner identity and inheriting the prior face's `imageUri` when the new face doesn't
- * declare its own. Shared by [TransformEffectExecutor] (CR 701.27 transform on the
- * battlefield) and [ReturnSelfFromExileTransformedExecutor] (CR 702.167 Craft return).
+ * owner identity and the art of the printing the player actually brought. Shared by
+ * [TransformEffectExecutor] (CR 701.27 transform on the battlefield) and
+ * [ReturnSelfFromExileTransformedExecutor] (CR 702.167 Craft return).
+ *
+ * **The two image fields swap on every flip.** `CardEntityFactory` stamps both from the chosen
+ * printing — `imageUri` is the face that's up, `backFaceImageUri` the other one — so trading them
+ * is exactly what turning the card over means, in either direction, and the pinned printing's art
+ * survives any number of flips. Falling through to `face.metadata.imageUri` instead (the old
+ * behaviour) reached for the *canonical* printing's art, which is why a transformed Innistrad
+ * Remastered Garruk Relentless came back wearing his original Innistrad face.
  *
  * @param manaValueOverride What [dfcBackFaceManaValue] returned when [face] is the **back** face;
  *   null when flipping to the front, which clears any override the back face carried.
@@ -251,7 +258,13 @@ internal fun buildCardComponentForDfcFace(
     colors = face.colors,
     ownerId = current.ownerId,
     spellEffect = face.spellEffect,
-    imageUri = face.metadata.imageUri ?: current.imageUri,
+    imageUri = current.backFaceImageUri ?: face.metadata.imageUri ?: current.imageUri,
+    backFaceImageUri = current.imageUri,
+    // Presentation and rules identity both belong to the whole card, not to the face that's up:
+    // the printing keeps minting its own token art after a flip, and "originally printed in X"
+    // (City in a Bottle) keeps matching a werewolf that transformed.
+    printingSetCode = current.printingSetCode,
+    originalSetCode = current.originalSetCode,
     // Carry the destination face's precomputed ability flags so predicates like
     // CardPredicate.HasActivatedAbility / HasNonManaActivatedAbility see the face that's actually up
     // (otherwise a transformed permanent silently reports the default `false`).

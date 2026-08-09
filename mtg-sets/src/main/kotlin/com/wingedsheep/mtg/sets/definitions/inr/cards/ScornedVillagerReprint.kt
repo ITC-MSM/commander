@@ -11,6 +11,7 @@ val ScornedVillagerReprint = Printing(
     scryfallId = "ee539a5e-2d10-4666-9b52-5064562dd233",
     artist = "Cynthia Sheppard",
     imageUri = "https://cards.scryfall.io/normal/front/e/e/ee539a5e-2d10-4666-9b52-5064562dd233.jpg?1783908096",
+    backFaceImageUri = "https://cards.scryfall.io/normal/back/e/e/ee539a5e-2d10-4666-9b52-5064562dd233.jpg?1783908096",
     releaseDate = "2025-01-24",
     rarity = Rarity.COMMON,
 )
