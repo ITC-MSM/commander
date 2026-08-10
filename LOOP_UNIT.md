@@ -1,8 +1,10 @@
 # Unit u04 — MSH teamwork, the four non-modal payoffs
 
-Branch `loop-msh-u04`, stacked on `loop-msh-u03`. Ordinary card work: the teamwork rail
-(`teamwork(n)`, `Conditions.TeamworkWasPaid`, `ChoiceSlot.TEAMWORK`) already shipped in u02/u03 and
-is unchanged here. No engine or SDK code was touched.
+Branch `loop-msh-u04`, an independent PR against `main` — `loop-msh-u03` merged upstream as
+PR #1750, so this branch was rebased off the stack onto `origin/main` (`b11a8d70fe`) and carries
+only its own commits. Ordinary card work: the teamwork rail (`teamwork(n)`,
+`Conditions.TeamworkWasPaid`, `ChoiceSlot.TEAMWORK`) already shipped in u02/u03 and is unchanged
+here. No engine or SDK code was touched.
 
 ## Cards
 

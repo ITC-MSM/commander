@@ -6328,7 +6328,9 @@ copy of it (CR 707.10e). The activated-ability analogue of the spell-level `cant
 >   "Teamwork Rally" cases.
 > - **A different target *restriction* on the teamwork cast** — the same `kickerTarget` /
 >   `kickerEffect` pair, with *both* branches carrying a target. Use it when "instead" replaces the
->   target requirement rather than an amount: Cruel Alliance ("exile target creature with mana value
+>   target requirement rather than an amount — CR 601.2c is the basis ("a spell may require
+>   *alternative* targets only if an alternative or additional cost was chosen for it"), with
+>   CR 702.194c supplying the other direction. Cruel Alliance ("exile target creature with mana value
 >   3 or less … instead exile target creature and you gain 3 life") and Too Evil to Stay Dead
 >   ("target creature card in your graveyard with mana value 4 or less … instead … in your
 >   graveyard"). Because `kickerTargetRequirements` *replace* `targetRequirements` on a declared

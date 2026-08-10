@@ -1,6 +1,7 @@
 package com.wingedsheep.mtg.sets.definitions.msh.cards
 
 import com.wingedsheep.sdk.dsl.Effects
+import com.wingedsheep.sdk.dsl.Targets
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.dsl.teamwork
 import com.wingedsheep.sdk.model.Rarity
@@ -49,7 +50,7 @@ val CruelAlliance = card("Cruel Alliance") {
 
         val anyCreature = kickerTarget(
             "target creature",
-            TargetCreature(filter = TargetFilter.Creature),
+            Targets.Creature,
         )
         kickerEffect = Effects.Composite(
             Effects.Exile(anyCreature),
