@@ -20,36 +20,6 @@ export function isLoneTargetRequirement(decision: ChooseTargetsDecision): boolea
 /** Zones whose cards are only reachable through a pile picker — never clickable on the board. */
 const PILE_ZONES: ReadonlySet<ZoneType> = new Set([ZoneType.GRAVEYARD, ZoneType.EXILE])
 
-/**
- * The cards for one target requirement when *all* of its legal targets sit in a pile zone
- * (graveyard or exile), else `null`.
- *
- * A pile isn't individually clickable on the board, so such a requirement has to be collected by
- * [GraveyardTargetingUI]; anything else (battlefield permanents, players, stack objects) is picked
- * by clicking the board through `decisionSelectionState` ([BattlefieldTargetingUI]). This is
- * evaluated **per requirement**, not once for the whole decision: The Spot, Living Portal's ETB
- * asks for a battlefield permanent *and* a graveyard card, so the two slots route to different UIs.
- *
- * All-or-nothing on purpose — one battlefield target in the set means the board path must handle
- * the slot, and a target the client can't resolve (missing card, null zone) is treated as
- * not-a-pile so the requirement still reaches a UI that can show *something*.
- */
-export function getPileTargetCards(
-  legalTargets: readonly EntityId[],
-  cards: ClientGameState['cards'] | undefined,
-): ClientCard[] | null {
-  if (!cards || legalTargets.length === 0) return null
-
-  const pileCards: ClientCard[] = []
-  for (const targetId of legalTargets) {
-    const card = cards[targetId]
-    const zoneType = card?.zone?.zoneType
-    if (!card || !zoneType || !PILE_ZONES.has(zoneType)) return null
-    pileCards.push(card)
-  }
-  return pileCards
-}
-
 /** How a requirement's valid targets split across the two ways a player can reach them. */
 export interface TargetZonePartition {
   /** Valid targets sitting in a pile zone, in `validTargets` order — reachable only via a picker. */
@@ -96,6 +66,55 @@ export function partitionTargetsByZone(
     }
   }
   return { pileCards, hasBoardTargets }
+}
+
+/**
+ * Which UI (or UIs) can collect one target requirement.
+ *
+ * - `board` — everything is clicked on the battlefield / player orbs / stack.
+ * - `pile` — everything lives in a graveyard or exile pile, so a picker owns the screen.
+ * - `mixed` — both, and both must stay reachable at the same time.
+ */
+export type TargetZoneRouteMode = 'board' | 'pile' | 'mixed'
+
+/** [partitionTargetsByZone] plus the routing verdict and the wording for the open-the-pile button. */
+export interface TargetZoneRoute extends TargetZonePartition {
+  readonly mode: TargetZoneRouteMode
+  /** Names the piles that actually hold valid targets: "Graveyard", "Exile", "Graveyard / Exile". */
+  readonly pileZoneLabel: string
+}
+
+/**
+ * The single routing decision shared by **both** targeting paths — the action pipeline
+ * ([TargetingOverlay], casting a spell or activating an ability) and the decision pipeline
+ * ([ChooseTargetsUI], a triggered ability's PendingDecision).
+ *
+ * They drifted once: the action path learned about mixed battlefield ∪ pile requirements while the
+ * decision path kept an all-or-nothing test, so Taskmaster, Mercenary Mimic's trigger ("becomes a
+ * copy of up to one target creature on the battlefield **or** creature card in a graveyard") fell
+ * through to board-only clicking and its graveyard half was unselectable. Routing lives here so a
+ * third path can't repeat that.
+ */
+export function routeTargetsByZone(
+  validTargets: readonly EntityId[],
+  cards: ClientGameState['cards'] | undefined,
+  targetZoneHint?: string,
+): TargetZoneRoute {
+  const partition = partitionTargetsByZone(validTargets, cards, targetZoneHint)
+  const mode: TargetZoneRouteMode =
+    partition.pileCards.length === 0 ? 'board' : partition.hasBoardTargets ? 'mixed' : 'pile'
+  return { ...partition, mode, pileZoneLabel: describePileZones(partition.pileCards) }
+}
+
+/**
+ * Label for the pile the player is being sent to, derived from the cards actually there rather
+ * than from the effect's prose — "Exile" for Blade of the Swarm, "Graveyard / Exile" for a union
+ * like Sorceress's Schemes. Empty input reads as "Graveyard" (the label is unused in that case).
+ */
+export function describePileZones(pileCards: readonly ClientCard[]): string {
+  const zones = new Set(pileCards.map((card) => card.zone?.zoneType ?? ZoneType.GRAVEYARD))
+  if (zones.size > 1) return 'Graveyard / Exile'
+  return zones.has(ZoneType.EXILE) ? 'Exile' : 'Graveyard'
 }
 
 /**

@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import {
   derivePileAction,
-  getPileTargetCards,
+  describePileZones,
   isLoneTargetRequirement,
   partitionTargetsByZone,
+  routeTargetsByZone,
 } from './targeting'
 import type { ChooseTargetsDecision, ClientCard, EntityId, TargetRequirementInfo } from '@/types'
 import { ZoneType } from '@/types'
@@ -65,44 +66,38 @@ const card = (id: string, zoneType: ZoneType | null): ClientCard =>
 const cardMap = (...cards: ClientCard[]) =>
   Object.fromEntries(cards.map((c) => [c.id, c])) as Record<string, ClientCard>
 
-describe('getPileTargetCards', () => {
+describe('routeTargetsByZone', () => {
   const bears = card('bears', ZoneType.BATTLEFIELD)
   const courser = card('courser', ZoneType.GRAVEYARD)
   const exiled = card('exiled', ZoneType.EXILE)
   const cards = cardMap(bears, courser, exiled)
 
-  it('returns the cards when every legal target sits in a graveyard', () => {
-    expect(getPileTargetCards([courser.id], cards)).toEqual([courser])
+  it('routes a battlefield-only requirement to the board', () => {
+    expect(routeTargetsByZone([bears.id], cards).mode).toBe('board')
   })
 
-  it('returns the cards when every legal target sits in exile', () => {
-    expect(getPileTargetCards([exiled.id], cards)).toEqual([exiled])
+  it('routes a graveyard-only requirement to the pile picker', () => {
+    const route = routeTargetsByZone([courser.id], cards)
+    expect(route.mode).toBe('pile')
+    expect(route.pileCards).toEqual([courser])
+    expect(route.pileZoneLabel).toBe('Graveyard')
   })
 
-  it('treats graveyard and exile as one pile set', () => {
-    expect(getPileTargetCards([courser.id, exiled.id], cards)).toEqual([courser, exiled])
+  it('routes a battlefield ∪ graveyard union to BOTH (Taskmaster, Mercenary Mimic)', () => {
+    const route = routeTargetsByZone([bears.id, courser.id], cards)
+    expect(route.mode).toBe('mixed')
+    expect(route.pileCards).toEqual([courser])
+    expect(route.hasBoardTargets).toBe(true)
   })
 
-  it('returns null when any legal target is on the battlefield', () => {
-    expect(getPileTargetCards([bears.id, courser.id], cards)).toBeNull()
-  })
-
-  it('returns null for an empty legal-target set', () => {
-    expect(getPileTargetCards([], cards)).toBeNull()
-  })
-
-  it('returns null when a target is missing from the client card map', () => {
-    expect(getPileTargetCards([entityId('unknown')], cards)).toBeNull()
-  })
-
-  it('returns null when a target card carries no zone', () => {
-    const zoneless = card('zoneless', null)
-    expect(getPileTargetCards([zoneless.id], cardMap(zoneless))).toBeNull()
+  it('routes an empty target set to the board (nothing to open a picker for)', () => {
+    expect(routeTargetsByZone([], cards).mode).toBe('board')
   })
 
   it('routes per requirement: The Spot, Living Portal exiles a permanent AND a graveyard card', () => {
     // "exile up to one target nonland permanent and up to one target nonland permanent card
-    // from a graveyard" — slot 0 is a board click, slot 1 needs the pile picker.
+    // from a graveyard" — slot 0 is a board click, slot 1 needs the pile picker. Neither slot is
+    // mixed, so neither shows the cross-over button.
     const spot = decision(
       [
         req({ index: 0, minTargets: 0, description: 'up to one target nonland permanent' }),
@@ -110,10 +105,16 @@ describe('getPileTargetCards', () => {
       ],
       { 0: [bears.id], 1: [courser.id] },
     )
-    const legalTargets = spot.legalTargets
 
-    expect(getPileTargetCards(legalTargets[0] ?? [], cards)).toBeNull()
-    expect(getPileTargetCards(legalTargets[1] ?? [], cards)).toEqual([courser])
+    expect(routeTargetsByZone(spot.legalTargets[0] ?? [], cards).mode).toBe('board')
+    expect(routeTargetsByZone(spot.legalTargets[1] ?? [], cards).mode).toBe('pile')
+  })
+
+  it('labels the pile from the cards actually there', () => {
+    expect(describePileZones([courser])).toBe('Graveyard')
+    expect(describePileZones([exiled])).toBe('Exile')
+    expect(describePileZones([courser, exiled])).toBe('Graveyard / Exile')
+    expect(routeTargetsByZone([bears.id, exiled.id], cards).pileZoneLabel).toBe('Exile')
   })
 })
 

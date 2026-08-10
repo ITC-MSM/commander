@@ -1,8 +1,12 @@
-import { useState } from 'react'
+import { useEffect, useReducer, useRef } from 'react'
 import { useGameStore } from '@/store/gameStore.ts'
 import type { ChooseTargetsDecision, EntityId } from '@/types'
 import { useResponsive } from '@/hooks/useResponsive.ts'
-import { getPileTargetCards } from '@/utils/targeting.ts'
+import {
+  chooseTargetsView,
+  chooseTargetsWalkReducer,
+  initialChooseTargetsWalk,
+} from './chooseTargetsWalk.ts'
 import { BattlefieldTargetingUI } from './BattlefieldTargetingUI'
 import { GraveyardTargetingUI } from './GraveyardTargetingUI'
 
@@ -19,6 +23,17 @@ import { GraveyardTargetingUI } from './GraveyardTargetingUI'
  * no clickable target at all, and a graveyard-first decision would submit slot 0 and silently drop
  * the rest.
  *
+ * A *single* requirement can also span both, which is not the same shape: Taskmaster, Mercenary
+ * Mimic's trigger targets "up to one target creature on the battlefield **or** creature card in a
+ * graveyard". Then the board banner stays up (permanents stay clickable) and offers a button that
+ * opens the pile picker, which offers the way back — the picks cross with the player, so both
+ * halves count toward the same slot. Deciding all-or-nothing there made the graveyard half
+ * unreachable, which is exactly the bug the action path ([TargetingOverlay]) had. Both paths now
+ * route through the same `routeTargetsByZone`.
+ *
+ * The walk itself (which slot, what's collected, which collector is showing) is the pure reducer in
+ * [chooseTargetsWalk] so it can be tested without a DOM.
+ *
  * Player-only lone requirements are handled before this by PlayerTargetingUI (click a life orb).
  */
 export function ChooseTargetsUI({ decision }: { decision: ChooseTargetsDecision }) {
@@ -26,57 +41,42 @@ export function ChooseTargetsUI({ decision }: { decision: ChooseTargetsDecision 
   const submitTargetsDecision = useGameStore((s) => s.submitTargetsDecision)
   const responsive = useResponsive()
 
-  const [currentReqIndex, setCurrentReqIndex] = useState(0)
-  const [collectedTargets, setCollectedTargets] = useState<Record<number, readonly EntityId[]>>({})
-  // Picks to pre-select because the player stepped Back into a requirement they'd already answered.
-  const [restoredSelection, setRestoredSelection] = useState<readonly EntityId[]>([])
+  const [walk, dispatch] = useReducer(chooseTargetsWalkReducer, initialChooseTargetsWalk)
 
   const totalRequirements = decision.targetRequirements.length
+  const view = chooseTargetsView(decision, walk, gameState?.cards)
 
-  // Targets confirmed for other requirements can't be picked again (collectedTargets never holds
-  // the current index — Back deletes it before stepping into it).
-  const alreadySelected = Object.values(collectedTargets).flat()
-  const legalTargets = (decision.legalTargets[currentReqIndex] ?? [])
-    .filter((id) => !alreadySelected.includes(id))
-
-  const handleComplete = (targets: readonly EntityId[]) => {
-    const updatedTargets = { ...collectedTargets, [currentReqIndex]: targets }
-    if (currentReqIndex + 1 < totalRequirements) {
-      setCollectedTargets(updatedTargets)
-      setRestoredSelection([])
-      setCurrentReqIndex(currentReqIndex + 1)
-    } else {
-      submitTargetsDecision(updatedTargets)
+  // The reducer stays pure: confirming the final requirement parks the payload in `submission` and
+  // the send happens here. The ref guards against a second SubmitDecision for the same walk — the
+  // app runs under StrictMode, which re-runs mount effects, and a duplicate submission would answer
+  // whatever decision came next.
+  const submittedRef = useRef(false)
+  useEffect(() => {
+    if (walk.submission && !submittedRef.current) {
+      submittedRef.current = true
+      submitTargetsDecision(walk.submission)
     }
-  }
+  }, [walk.submission])
 
-  const handleBack = () => {
-    // Step back to the previous requirement, restoring its confirmed picks so the player can
-    // revise them. The current requirement's in-progress picks are discarded; its pool is
-    // recomputed on re-confirm against the revised selection.
-    if (currentReqIndex === 0) return
-    const prevIndex = currentReqIndex - 1
-    setRestoredSelection(collectedTargets[prevIndex] ?? [])
-    const remaining = { ...collectedTargets }
-    delete remaining[prevIndex]
-    setCollectedTargets(remaining)
-    setCurrentReqIndex(prevIndex)
-  }
+  const handleComplete = (targets: readonly EntityId[]) =>
+    dispatch({ type: 'confirm', targets, totalRequirements })
 
-  const backProps = currentReqIndex > 0 ? { onBack: handleBack } : {}
-  const pileCards = getPileTargetCards(legalTargets, gameState?.cards)
+  const backProps = walk.requirementIndex > 0 ? { onBack: () => dispatch({ type: 'back' }) } : {}
 
-  if (pileCards) {
+  if (view.collector === 'pile') {
     return (
       <GraveyardTargetingUI
-        key={currentReqIndex}
+        key={walk.requirementIndex}
         decision={decision}
-        graveyardCards={pileCards}
+        graveyardCards={view.pileCards}
         responsive={responsive}
-        requirementIndex={currentReqIndex}
+        requirementIndex={walk.requirementIndex}
         totalRequirements={totalRequirements}
-        initialSelection={restoredSelection}
+        initialSelection={walk.pending}
         onComplete={handleComplete}
+        {...(view.isMixed
+          ? { onViewBattlefield: (carried: readonly EntityId[]) => dispatch({ type: 'closePile', carried }) }
+          : {})}
         {...backProps}
       />
     )
@@ -84,12 +84,22 @@ export function ChooseTargetsUI({ decision }: { decision: ChooseTargetsDecision 
 
   return (
     <BattlefieldTargetingUI
+      key={walk.requirementIndex}
       decision={decision}
-      requirementIndex={currentReqIndex}
+      requirementIndex={walk.requirementIndex}
       totalRequirements={totalRequirements}
-      legalTargets={legalTargets}
-      initialSelection={restoredSelection}
+      legalTargets={view.legalTargets}
+      initialSelection={walk.pending}
       onComplete={handleComplete}
+      {...(view.isMixed
+        ? {
+            pileButton: {
+              zoneLabel: view.pileZoneLabel,
+              count: view.pileCards.length,
+              onOpen: (carried: readonly EntityId[]) => dispatch({ type: 'openPile', carried }),
+            },
+          }
+        : {})}
       {...backProps}
     />
   )

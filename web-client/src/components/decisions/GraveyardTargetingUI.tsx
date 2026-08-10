@@ -27,17 +27,30 @@ export function GraveyardTargetingUI({
   initialSelection,
   onComplete,
   onBack,
+  onViewBattlefield,
 }: {
   decision: ChooseTargetsDecision
   graveyardCards: ClientCard[]
   responsive: ResponsiveSizes
   requirementIndex: number
   totalRequirements: number
-  /** Picks to pre-select — non-empty when the player stepped Back into this requirement. */
+  /**
+   * Picks to pre-select — non-empty when the player stepped Back into this requirement, or came
+   * here from the board on a mixed requirement carrying the permanents they picked there. Carried
+   * board picks are counted (they fill this requirement's slots) but aren't shown in the ribbon;
+   * they live on the battlefield, which is one click away on "View Battlefield".
+   */
   initialSelection: readonly EntityId[]
   onComplete: (targets: readonly EntityId[]) => void
   /** Present when an earlier requirement can be revised. */
   onBack?: () => void
+  /**
+   * Present on a mixed `battlefield ∪ pile` requirement, where the board half is collected by the
+   * banner this picker was opened from. "View Battlefield" then hands control (and the picks made
+   * here) back to that banner instead of minimising into a floating re-open button — the banner is
+   * where Confirm lives for this requirement.
+   */
+  onViewBattlefield?: (carried: readonly EntityId[]) => void
 }) {
   const submitCancelDecision = useGameStore((s) => s.submitCancelDecision)
   const gameState = useGameStore((s) => s.gameState)
@@ -171,6 +184,7 @@ export function GraveyardTargetingUI({
         confirmRequiresSelection={isOptionalTarget}
         sortByType={true}
         useGlobalHover={true}
+        {...(onViewBattlefield ? { onViewBattlefield } : {})}
         // The secondary button is "← Back" mid-walk (revise an earlier requirement) and
         // "Cancel" otherwise; a cancellable cast can still be cancelled from requirement 0.
         {...(onBack
@@ -255,6 +269,7 @@ export function GraveyardTargetingUI({
         responsive={responsive}
         onConfirm={handleConfirm}
         onMinimize={() => setMinimized(true)}
+        {...(onViewBattlefield ? { onViewBattlefield } : {})}
         confirmText={isOptionalTarget ? optionalConfirmText : 'Confirm Target'}
         declineText={isOptionalTarget ? 'Decline Trigger' : undefined}
         confirmRequiresSelection={isOptionalTarget}
@@ -278,6 +293,7 @@ function GraveyardCardSelection({
   responsive,
   onConfirm,
   onMinimize,
+  onViewBattlefield,
   confirmText,
   declineText,
   confirmRequiresSelection,
@@ -292,6 +308,8 @@ function GraveyardCardSelection({
   responsive: ResponsiveSizes
   onConfirm: (selectedCards: EntityId[]) => void
   onMinimize: () => void
+  /** Overrides [onMinimize] on a mixed requirement — see GraveyardTargetingUI's prop of this name. */
+  onViewBattlefield?: (carried: readonly EntityId[]) => void
   confirmText: string
   declineText?: string | undefined
   confirmRequiresSelection: boolean
@@ -341,15 +359,31 @@ function GraveyardCardSelection({
   const toggleCard = (cardId: EntityId) => {
     if (selectedCards.includes(cardId)) {
       onSelectedCardsChange(selectedCards.filter((id) => id !== cardId))
-    } else if (selectedCards.length < maxSelections) {
-      if (
-        totalManaValueAtMost != null &&
-        selectedManaValue + manaValueOf(cardId) > totalManaValueAtMost
-      ) {
-        return
-      }
-      onSelectedCardsChange([...selectedCards, cardId])
+      return
     }
+    if (selectedCards.length >= maxSelections) {
+      // Single-select slot at its cap: clicking a different card replaces the pick, the same rule
+      // the board path uses (toggleDecisionSelection). It also unblocks a mixed
+      // `battlefield ∪ pile` requirement — the pick carried in from the board fills the only slot
+      // and isn't in this ribbon, so without replacement no graveyard card could ever be clicked.
+      if (maxSelections === 1) {
+        if (
+          totalManaValueAtMost != null &&
+          manaValueOf(cardId) > totalManaValueAtMost
+        ) {
+          return
+        }
+        onSelectedCardsChange([cardId])
+      }
+      return
+    }
+    if (
+      totalManaValueAtMost != null &&
+      selectedManaValue + manaValueOf(cardId) > totalManaValueAtMost
+    ) {
+      return
+    }
+    onSelectedCardsChange([...selectedCards, cardId])
   }
 
   // Handle hover using global store (for the CardPreview component)
@@ -436,7 +470,7 @@ function GraveyardCardSelection({
           </button>
         )}
         <button
-          onClick={onMinimize}
+          onClick={() => (onViewBattlefield ? onViewBattlefield(selectedCards) : onMinimize())}
           className={styles.viewBattlefieldButton}
         >
           View Battlefield

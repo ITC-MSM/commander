@@ -25,17 +25,35 @@ export function BattlefieldTargetingUI({
   initialSelection,
   onComplete,
   onBack,
+  pileButton,
 }: {
   decision: ChooseTargetsDecision
   requirementIndex: number
   totalRequirements: number
   /** Legal targets for this requirement, already stripped of picks made for earlier requirements. */
   legalTargets: readonly EntityId[]
-  /** Picks to pre-select — non-empty when the player stepped Back into this requirement. */
+  /**
+   * Picks to pre-select — non-empty when the player stepped Back into this requirement, or came
+   * here from the pile picker on a mixed requirement carrying the cards they picked there.
+   */
   initialSelection: readonly EntityId[]
   onComplete: (targets: readonly EntityId[]) => void
   /** Present when an earlier requirement can be revised. */
   onBack?: () => void
+  /**
+   * Present when this requirement's legal targets *also* include graveyard/exile cards, which are
+   * not clickable on the board (Taskmaster, Mercenary Mimic: "target creature on the battlefield or
+   * creature card in a graveyard"). Opening hands the picks made here to the pile picker so both
+   * halves accumulate into the same slot; the banner otherwise stays exactly as it is, because the
+   * board half still has to be clickable.
+   */
+  pileButton?: {
+    /** "Graveyard" / "Exile" / "Graveyard / Exile" — the piles holding the other half. */
+    zoneLabel: string
+    /** How many valid targets are in those piles. */
+    count: number
+    onOpen: (carried: readonly EntityId[]) => void
+  }
 }) {
   const startDecisionSelection = useGameStore((s) => s.startDecisionSelection)
   const decisionSelectionState = useGameStore((s) => s.decisionSelectionState)
@@ -98,6 +116,14 @@ export function BattlefieldTargetingUI({
     onBack?.()
   }
 
+  const handleOpenPile = () => {
+    // Carry the board picks over so the pile picker counts them toward this requirement's
+    // minimum/maximum and submits them together with whatever is chosen there.
+    const carried = [...(decisionSelectionState?.selectedOptions ?? [])]
+    cancelDecisionSelection()
+    pileButton?.onOpen(carried)
+  }
+
   const requirementLabel = totalRequirements > 1
     ? `Choose Target (${requirementIndex + 1}/${totalRequirements})`
     : 'Choose Target'
@@ -132,8 +158,18 @@ export function BattlefieldTargetingUI({
       <div className={styles.hint}>
         {`${selectedCount} / ${maxTargets} selected`}
       </div>
+      {pileButton && (
+        <div className={styles.hint}>
+          {`Click a highlighted permanent, or open the ${pileButton.zoneLabel.toLowerCase()}`}
+        </div>
+      )}
 
       <div className={styles.buttonContainerSmall}>
+        {pileButton && (
+          <button onClick={handleOpenPile} className={`${styles.confirmButton} ${styles.confirmButtonSmall}`}>
+            {`${pileButton.zoneLabel} (${pileButton.count})`}
+          </button>
+        )}
         {onBack && (
           <button onClick={handleBack} className={`${styles.confirmButton} ${styles.confirmButtonSmall}`}>
             ← Back

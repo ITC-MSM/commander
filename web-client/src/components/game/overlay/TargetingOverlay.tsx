@@ -1,12 +1,11 @@
 import React from 'react'
 import { useGameStore } from '@/store/gameStore.ts'
 import type { ClientCard, EntityId } from '@/types'
-import { ZoneType } from '@/types'
 import type { ResponsiveSizes } from '@/hooks/useResponsive.ts'
 import { calculateFittingCardWidth } from '@/hooks/useResponsive.ts'
 import { useDraggable } from '@/hooks/useDraggable.ts'
 import { getCardImageUrl } from '@/utils/cardImages.ts'
-import { partitionTargetsByZone } from '@/utils/targeting.ts'
+import { routeTargetsByZone } from '@/utils/targeting.ts'
 import { useResponsiveContext, handleImageError } from '../board/shared'
 import { styles } from '../board/styles'
 import { TARGET_COLOR, TARGET_COLOR_BRIGHT } from '@/styles/targetingColors.ts'
@@ -578,16 +577,15 @@ export function TargetingOverlay() {
   //    store, so a pick made on either side counts toward the same requirement and either side's
   //    Confirm submits them. Before this, a mixed union fell through to board-only clicking and
   //    the graveyard half was simply unreachable.
-  const { pileCards, hasBoardTargets } = partitionTargetsByZone(
+  const { mode, pileCards, pileZoneLabel } = routeTargetsByZone(
     targetingState.validTargets,
     gameState?.cards,
     targetingState.targetZone,
   )
-  const hasPileTargets = pileCards.length > 0
-  const isMixedZoneTargeting = hasPileTargets && hasBoardTargets
+  const isMixedZoneTargeting = mode === 'mixed'
 
   // Pile-only: the picker is the whole UI (unchanged behaviour).
-  if (hasPileTargets && !hasBoardTargets) {
+  if (mode === 'pile') {
     return (
       <ZoneCardTargetingOverlay
         zoneCards={pileCards}
@@ -620,13 +618,6 @@ export function TargetingOverlay() {
       />
     )
   }
-
-  // Label for the open-the-pile button: name the zones actually holding valid targets.
-  const pileZoneLabel = (() => {
-    const zones = new Set(pileCards.map((card) => card.zone?.zoneType ?? ZoneType.GRAVEYARD))
-    if (zones.size > 1) return 'Graveyard / Exile'
-    return zones.has(ZoneType.EXILE) ? 'Exile' : 'Graveyard'
-  })()
 
   // Build the target count display. A total-power cost counts power, not permanents.
   const targetDisplay = requiredTotalPower > 0

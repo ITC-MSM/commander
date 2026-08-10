@@ -22,7 +22,7 @@ import { ChooseTargetsUI } from './ChooseTargetsUI'
 import { PlayerTargetingUI } from './PlayerTargetingUI'
 import { SplitPilesUI } from './SplitPilesUI'
 import { ManaSourceSelectionUI } from './ManaSourceSelectionUI'
-import { isLoneTargetRequirement } from '@/utils/targeting.ts'
+import { isLoneTargetRequirement, partitionTargetsByZone } from '@/utils/targeting.ts'
 import styles from './DecisionUI.module.css'
 
 /**
@@ -230,13 +230,20 @@ export function DecisionUI() {
       )
     }
 
-    // Single-zone, click-on-board targeting style (e.g., Lich's Mastery)
+    // Single-zone, click-on-board targeting style (e.g., Lich's Mastery). A pile isn't clickable
+    // card-by-card, so options that all sit in a graveyard/exile pile fall through to the modal
+    // picker below even when the server asked for the board UI — the same trap that made a mixed
+    // target requirement's graveyard half unreachable in the two targeting paths. (Options spanning
+    // two zones are already handled above by MultiZoneSelectionUI, which renders every zone.)
     if (pendingDecision.useTargetingUI) {
-      return (
-        <BattlefieldSelectionUI
-          decision={pendingDecision}
-        />
-      )
+      const { hasBoardTargets } = partitionTargetsByZone(pendingDecision.options, gameState?.cards)
+      if (hasBoardTargets) {
+        return (
+          <BattlefieldSelectionUI
+            decision={pendingDecision}
+          />
+        )
+      }
     }
 
     // Default: full-screen modal
