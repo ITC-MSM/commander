@@ -39,6 +39,9 @@ import styles from './GameUI.module.css'
 /** Community invite, also linked from the contributing guide's "get help" section. */
 const DISCORD_INVITE_URL = 'https://discord.com/invite/dy6eSRPWzu'
 
+/** Public source repository for the engine and web client. */
+const GITHUB_REPOSITORY_URL = 'https://github.com/wingedsheep/argentum-engine'
+
 /**
  * The contributing guide is a static page under `web-client/public/`, not an SPA route — it must be
  * reached with a plain `<a href>` full navigation, never a react-router `Link`. Trailing slash so
@@ -515,6 +518,10 @@ export function HomeScreen({
             <DiscordIcon />
             Discord
           </a>
+          <a href={GITHUB_REPOSITORY_URL} target="_blank" rel="noopener noreferrer" className={styles.communityLink}>
+            <GitHubIcon />
+            GitHub
+          </a>
           <a href={CONTRIBUTING_GUIDE_URL} target="_blank" rel="noopener noreferrer" className={styles.communityLink}>
             <GuideIcon />
             Help build it
@@ -542,6 +549,15 @@ function DiscordIcon() {
   return (
     <svg className={styles.communityIcon} viewBox="0 0 24 24" fill="currentColor" aria-hidden focusable="false">
       <path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z" />
+    </svg>
+  )
+}
+
+/** GitHub's mark, kept inline so the landing page needs no icon dependency or extra asset request. */
+function GitHubIcon() {
+  return (
+    <svg className={styles.communityIcon} viewBox="0 0 24 24" fill="currentColor" aria-hidden focusable="false">
+      <path d="M12 .7a11.5 11.5 0 00-3.64 22.41c.58.1.79-.25.79-.56v-2.23c-3.22.7-3.9-1.37-3.9-1.37-.52-1.34-1.28-1.7-1.28-1.7-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.57-.29-5.27-1.28-5.27-5.68 0-1.25.45-2.28 1.18-3.08-.12-.29-.51-1.46.11-3.04 0 0 .97-.31 3.16 1.18a10.95 10.95 0 015.75 0c2.2-1.49 3.16-1.18 3.16-1.18.63 1.58.23 2.75.12 3.04.73.8 1.17 1.83 1.17 3.08 0 4.42-2.71 5.38-5.29 5.67.42.36.79 1.07.79 2.16v3.23c0 .31.21.67.8.56A11.5 11.5 0 0012 .7z" />
     </svg>
   )
 }
