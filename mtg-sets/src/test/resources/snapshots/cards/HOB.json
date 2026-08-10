@@ -1,3 +1,89 @@
+// Along the Crooked Way
+{
+    "name": "Along the Crooked Way",
+    "manaCost": "{2}{B}",
+    "typeLine": "Enchantment",
+    "oracleText": "When this enchantment enters, return target creature card from your graveyard to your hand.\nWhenever a creature card leaves your graveyard, amass Goblins 1.\n{1}{B}: Goblins and Orcs you control gain menace until end of turn.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature card in your graveyard"
+                    },
+                    "destination": "Hand"
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature own:you",
+                        "zone": "Graveyard"
+                    },
+                    "id": "target creature card in your graveyard"
+                },
+                "descriptionOverride": "Return target creature card from your graveyard to your hand."
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "creature ctrl:you",
+                    "from": "Graveyard"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Amass",
+                    "subtype": "Goblin"
+                },
+                "descriptionOverride": "Amass Goblins 1."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_3",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{1}{B}"
+                    }
+                },
+                "effect": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": "permanent Goblin|Orc ctrl:you"
+                        }
+                    },
+                    "body": {
+                        "type": "GrantKeyword",
+                        "keyword": "MENACE",
+                        "target": "Self"
+                    }
+                },
+                "descriptionOverride": "Goblins and Orcs you control gain menace until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "60",
+        "rarity": "RARE",
+        "artist": "Bruce Brenneise",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/6/3696d65c-fffd-4685-bb2d-e8769bf476e3.jpg?1785412571"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // An Unexpected Party
 {
     "name": "An Unexpected Party",
@@ -634,6 +720,120 @@
                 ]
             }
         }
+    ]
+}
+
+// Bolg of the North
+{
+    "name": "Bolg of the North",
+    "manaCost": "{3}{B}{R}",
+    "typeLine": "Legendary Creature — Goblin Soldier",
+    "oracleText": "When Bolg enters, you may sacrifice another creature. When you do, Bolg deals damage equal to that creature's power to another target creature. If excess damage was dealt this way, amass Goblins X, where X is that excess damage. (Put X +1/+1 counters on an Army you control. It's also a Goblin. If you don't control an Army, create a 0/0 black Goblin Army creature token first.)",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 5
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "ReflexiveTrigger",
+                    "action": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "SelectTarget",
+                                "requirement": {
+                                    "type": "TargetObject",
+                                    "filter": {
+                                        "baseFilter": "creature ctrl:you",
+                                        "excludeSelf": true
+                                    }
+                                },
+                                "storeAs": "bolgSacrifice"
+                            },
+                            {
+                                "type": "StoreNumber",
+                                "name": "bolgSacrificedPower",
+                                "amount": {
+                                    "type": "EntityProperty",
+                                    "entity": {
+                                        "type": "FromCostStorage",
+                                        "collectionName": "bolgSacrifice"
+                                    },
+                                    "numericProperty": "Power"
+                                }
+                            },
+                            {
+                                "type": "SacrificeTarget",
+                                "target": {
+                                    "type": "PipelineTarget",
+                                    "collectionName": "bolgSacrifice"
+                                }
+                            }
+                        ]
+                    },
+                    "reflexiveEffect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "DealDamage",
+                                "amount": {
+                                    "type": "VariableReference",
+                                    "variableName": "bolgSacrificedPower"
+                                },
+                                "target": {
+                                    "type": "ContextTarget",
+                                    "index": 0
+                                }
+                            },
+                            {
+                                "type": "Gated",
+                                "gate": {
+                                    "type": "Gate.WhenCondition",
+                                    "condition": "TargetMarkedDamageExceedsToughness"
+                                },
+                                "then": {
+                                    "type": "Amass",
+                                    "amount": {
+                                        "type": "EntityProperty",
+                                        "entity": "Target",
+                                        "numericProperty": "ExcessMarkedDamage"
+                                    },
+                                    "subtype": "Goblin"
+                                }
+                            }
+                        ]
+                    },
+                    "reflexiveTargetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "creature",
+                                "excludeSelf": true
+                            }
+                        }
+                    ],
+                    "descriptionOverride": "You may sacrifice another creature. When you do, Bolg deals damage equal to that creature's power to another target creature. If excess damage was dealt this way, amass Goblins X, where X is that excess damage."
+                },
+                "descriptionOverride": "When Bolg enters, you may sacrifice another creature. When you do, Bolg deals damage equal to that creature's power to another target creature. If excess damage was dealt this way, amass Goblins X, where X is that excess damage."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "148",
+        "rarity": "UNCOMMON",
+        "artist": "Miklós Ligeti",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/b/7b2d2a7f-88e0-45a9-8579-a6736bcd66eb.jpg?1784377021"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "RED"
     ]
 }
 

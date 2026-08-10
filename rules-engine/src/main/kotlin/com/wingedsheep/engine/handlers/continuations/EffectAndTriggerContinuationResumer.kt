@@ -50,13 +50,17 @@ class EffectAndTriggerContinuationResumer(
     ): ExecutionResult {
         val effectResult = effectRunner.executeRemainingEffects(state, continuation.remainingEffects, continuation.effectContext)
         if (effectResult.isPaused) return effectResult.toExecutionResult()
-        // A drained composite hands its pipeline collections to the frame beneath —
-        // e.g. a DoAction gate scoring SuccessCriterion.CollectionNonEmpty. The full
-        // frame map (not just this drain's accumulation) is what propagates: keys
-        // injected into this frame by an earlier select-resume are part of it.
+        // A drained composite hands its pipeline storage to the frame beneath — e.g. a DoAction
+        // gate scoring SuccessCriterion.CollectionNonEmpty, or a reflexive "when you do" reading a
+        // number the action stored. The full frame maps (not just this drain's accumulation) are
+        // what propagate: keys injected into this frame by an earlier select-resume are part of
+        // them. Numbers and chosen values ride along with collections so that pausing mid-composite
+        // preserves exactly what completing it synchronously would have.
         val stateWithCollections = exposeCollectionsToNextFrame(
             effectResult.state,
-            continuation.effectContext.pipeline.storedCollections + effectResult.updatedCollections
+            continuation.effectContext.pipeline.storedCollections + effectResult.updatedCollections,
+            continuation.effectContext.pipeline.storedNumbers + effectResult.updatedStoredNumbers,
+            continuation.effectContext.pipeline.chosenValues + effectResult.updatedChosenValues,
         )
         return checkForMore(stateWithCollections, effectResult.events.toList())
     }
