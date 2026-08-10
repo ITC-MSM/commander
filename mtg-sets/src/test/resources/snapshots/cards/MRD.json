@@ -886,6 +886,49 @@
     ]
 }
 
+// Copperhoof Vorrac
+{
+    "name": "Copperhoof Vorrac",
+    "manaCost": "{3}{G}{G}",
+    "typeLine": "Creature — Boar Beast",
+    "oracleText": "This creature gets +1/+1 for each untapped permanent your opponents control.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "GrantDynamicStats",
+                "filter": {
+                    "baseFilter": "permanent",
+                    "scope": "Self"
+                },
+                "powerBonus": {
+                    "type": "AggregateBattlefield",
+                    "player": "EachOpponent",
+                    "filter": "untapped"
+                },
+                "toughnessBonus": {
+                    "type": "AggregateBattlefield",
+                    "player": "EachOpponent",
+                    "filter": "untapped"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "116",
+        "rarity": "RARE",
+        "artist": "Matt Cavotta",
+        "flavorText": "Like all forest beasts, it lives by one rule: if there's no room to grow, make some.",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/1/81fff4cc-b2ab-4a41-bede-0d807552ba46.jpg?1783944535"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Deconstruct
 {
     "name": "Deconstruct",
@@ -1973,6 +2016,100 @@
     ]
 }
 
+// Heartwood Shard
+{
+    "name": "Heartwood Shard",
+    "manaCost": "{3}",
+    "typeLine": "Artifact",
+    "oracleText": "{3}, {T} or {G}, {T}: Target creature gains trample until end of turn.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{3}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "GrantKeyword",
+                    "keyword": "TRAMPLE",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature"
+                        },
+                        "id": "target"
+                    }
+                ],
+                "descriptionOverride": "{3}, {T}: Target creature gains trample until end of turn."
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{G}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "GrantKeyword",
+                    "keyword": "TRAMPLE",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature"
+                        },
+                        "id": "target"
+                    }
+                ],
+                "descriptionOverride": "{G}, {T}: Target creature gains trample until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "184",
+        "rarity": "UNCOMMON",
+        "artist": "Doug Chaffee",
+        "flavorText": "Like all other relics, it was left on the Radix by the elves to be destroyed. Unlike all other relics, it persisted.",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/1/b13328a9-fc03-4c1b-b1b7-61cd41766300.jpg?1783944518",
+        "rulings": [
+            {
+                "date": "2004-10-04",
+                "text": "You can pay either of the two costs (but not both at the same time) to activate the ability."
+            }
+        ]
+    },
+    "colorIdentityOverride": []
+}
+
 // Hematite Golem
 {
     "name": "Hematite Golem",
@@ -2052,6 +2189,59 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Irradiate
+{
+    "name": "Irradiate",
+    "manaCost": "{3}{B}",
+    "typeLine": "Instant",
+    "oracleText": "Target creature gets -1/-1 until end of turn for each artifact you control.",
+    "script": {
+        "spellEffect": {
+            "type": "ModifyStats",
+            "powerModifier": {
+                "type": "Multiply",
+                "amount": {
+                    "type": "AggregateBattlefield",
+                    "player": "You",
+                    "filter": "artifact"
+                },
+                "multiplier": -1
+            },
+            "toughnessModifier": {
+                "type": "Multiply",
+                "amount": {
+                    "type": "AggregateBattlefield",
+                    "player": "You",
+                    "filter": "artifact"
+                },
+                "multiplier": -1
+            },
+            "target": {
+                "type": "BoundVariable",
+                "name": "target"
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "67",
+        "artist": "Dave Dorman",
+        "flavorText": "The blast ignores the cage of metal but devours the flesh inside.",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/e/7e0460cf-ff87-4cf8-89b5-a8b9fb7322e0.jpg?1783944547"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 
@@ -4634,6 +4824,60 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Rustmouth Ogre
+{
+    "name": "Rustmouth Ogre",
+    "manaCost": "{4}{R}{R}",
+    "typeLine": "Creature — Ogre",
+    "oracleText": "Whenever this creature deals combat damage to a player, you may destroy target artifact that player controls.",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 4
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "DealsDamageEvent",
+                    "damageType": "DamageCombat",
+                    "recipient": "AnyPlayer"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target"
+                        },
+                        "destination": "Graveyard",
+                        "byDestruction": true
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "artifact ctrl:triggering-player"
+                    },
+                    "id": "target"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "103",
+        "rarity": "UNCOMMON",
+        "artist": "Brian Snõddy",
+        "flavorText": "It has an iron stomach. Literally.",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/f/3f8bd0c9-6b3a-489e-bf4d-b2062d530b55.jpg?1783944538"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
@@ -7476,6 +7720,64 @@
     "colorIdentityOverride": [
         "RED"
     ]
+}
+
+// Vulshok Gauntlets
+{
+    "name": "Vulshok Gauntlets",
+    "manaCost": "{2}",
+    "typeLine": "Artifact — Equipment",
+    "oracleText": "Equipped creature gets +4/+2 and doesn't untap during its controller's untap step.\nEquip {3}",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{3}"
+                    }
+                },
+                "effect": {
+                    "type": "AttachEquipment",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "creature you control"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        },
+                        "id": "creature you control"
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "isEquipAbility": true
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 4,
+                "toughnessBonus": 2
+            },
+            {
+                "type": "GrantKeyword",
+                "keyword": "DOESNT_UNTAP"
+            }
+        ]
+    },
+    "equipCost": "{3}",
+    "metadata": {
+        "collectorNumber": "273",
+        "artist": "Richard Sardinha",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/4/14a04bbd-1d07-4b11-aa54-01790b9dd3a0.jpg?1783944496"
+    },
+    "colorIdentityOverride": []
 }
 
 // Wall of Blood
