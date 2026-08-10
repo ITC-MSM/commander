@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { derivePileAction, getPileTargetCards, isLoneTargetRequirement } from './targeting'
+import {
+  derivePileAction,
+  getPileTargetCards,
+  isLoneTargetRequirement,
+  partitionTargetsByZone,
+} from './targeting'
 import type { ChooseTargetsDecision, ClientCard, EntityId, TargetRequirementInfo } from '@/types'
 import { ZoneType } from '@/types'
 import { entityId } from '@/types/entities.ts'
@@ -109,6 +114,83 @@ describe('getPileTargetCards', () => {
 
     expect(getPileTargetCards(legalTargets[0] ?? [], cards)).toBeNull()
     expect(getPileTargetCards(legalTargets[1] ?? [], cards)).toEqual([courser])
+  })
+})
+
+describe('partitionTargetsByZone', () => {
+  const bears = card('bears', ZoneType.BATTLEFIELD)
+  const courser = card('courser', ZoneType.GRAVEYARD)
+  const exiled = card('exiled', ZoneType.EXILE)
+  const cards = cardMap(bears, courser, exiled)
+
+  it('sends a battlefield-only requirement to the board', () => {
+    expect(partitionTargetsByZone([bears.id], cards)).toEqual({
+      pileCards: [],
+      hasBoardTargets: true,
+    })
+  })
+
+  it('sends a graveyard-only requirement to the pile picker', () => {
+    expect(partitionTargetsByZone([courser.id], cards)).toEqual({
+      pileCards: [courser],
+      hasBoardTargets: false,
+    })
+  })
+
+  it('keeps a graveyard ∪ exile union pile-only (Sorceress\'s Schemes)', () => {
+    expect(partitionTargetsByZone([courser.id, exiled.id], cards)).toEqual({
+      pileCards: [courser, exiled],
+      hasBoardTargets: false,
+    })
+  })
+
+  it('reports BOTH routes for a battlefield ∪ graveyard union (Taskmaster, Mercenary Mimic)', () => {
+    // Playtest regression: "becomes a copy of up to one target creature on the battlefield or
+    // creature card in a graveyard". The old all-or-nothing flag collapsed this to board-only and
+    // the graveyard cards became unselectable. Both halves must be reported.
+    expect(partitionTargetsByZone([bears.id, courser.id], cards)).toEqual({
+      pileCards: [courser],
+      hasBoardTargets: true,
+    })
+  })
+
+  it('keeps the pile cards in valid-target order regardless of where the board target sits', () => {
+    expect(partitionTargetsByZone([courser.id, bears.id, exiled.id], cards).pileCards).toEqual([
+      courser,
+      exiled,
+    ])
+  })
+
+  it('treats a target missing from the client card map as a board target', () => {
+    expect(partitionTargetsByZone([entityId('unknown')], cards)).toEqual({
+      pileCards: [],
+      hasBoardTargets: true,
+    })
+  })
+
+  it('falls back to the server zone hint for a card carrying no zone', () => {
+    const zoneless = card('zoneless', null)
+    const map = cardMap(zoneless)
+    expect(partitionTargetsByZone([zoneless.id], map, ZoneType.GRAVEYARD)).toEqual({
+      pileCards: [zoneless],
+      hasBoardTargets: false,
+    })
+    expect(partitionTargetsByZone([zoneless.id], map, ZoneType.EXILE).pileCards).toEqual([zoneless])
+    expect(partitionTargetsByZone([zoneless.id], map)).toEqual({
+      pileCards: [],
+      hasBoardTargets: true,
+    })
+  })
+
+  it('reports neither route for an empty valid-target set', () => {
+    expect(partitionTargetsByZone([], cards)).toEqual({ pileCards: [], hasBoardTargets: false })
+  })
+
+  it('reports a board target when the client has no card map at all', () => {
+    expect(partitionTargetsByZone([courser.id], undefined)).toEqual({
+      pileCards: [],
+      hasBoardTargets: true,
+    })
   })
 })
 

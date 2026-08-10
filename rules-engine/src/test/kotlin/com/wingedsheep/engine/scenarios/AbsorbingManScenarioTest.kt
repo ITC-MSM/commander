@@ -1,5 +1,6 @@
 package com.wingedsheep.engine.scenarios
 
+import com.wingedsheep.engine.core.ActivateAbility
 import com.wingedsheep.engine.core.PassPriority
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.RevertCopyAtYourNextTurnComponent
@@ -11,6 +12,7 @@ import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.assertions.withClue
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Scenario test for Absorbing Man (MSH #199) — {1}{G}{U} Legendary Creature, 4/4, Rare.
@@ -32,12 +34,12 @@ class AbsorbingManScenarioTest : ScenarioTestBase() {
             // The "until your next turn" cases run three turns, so both libraries need cards —
             // the scenario builder starts them empty and a draw from an empty library ends the
             // game (CR 704.5b), which silently stalls any further turn advance.
-            fun board(): ScenarioTestBase.TestGame {
+            fun board(islands: Int = 2): ScenarioTestBase.TestGame {
                 var builder = scenario()
                     .withPlayers("Player", "Opponent")
                     .withCardOnBattlefield(1, "Absorbing Man")
                     .withCardOnBattlefield(1, "Futurist Forge")
-                    .withLandsOnBattlefield(1, "Island", 2)
+                    .withLandsOnBattlefield(1, "Island", islands)
                     .withActivePlayer(1)
                     .inPhase(Phase.BEGINNING, Step.UPKEEP)
                 repeat(5) {
@@ -165,6 +167,60 @@ class AbsorbingManScenarioTest : ScenarioTestBase() {
                     card.typeLine.isLegendary shouldBe true
                     game.state.projectedState.getPower(absorbingMan) shouldBe 4
                     game.state.projectedState.getToughness(absorbingMan) shouldBe 4
+                }
+            }
+
+            // Playtest regression (u06): the copy's activated ability was never offered in the
+            // running app. `ActivatedAbilityEnumerator` resolved the permanent's definition by
+            // `CardComponent.name`, and the "except his name is Absorbing Man" clause keeps that
+            // name pointing at the printed card — which has no activated ability at all. The
+            // scenario tests missed it because they drive `ActivateAbility` directly, and
+            // `ActivateAbilityHandler` had always resolved by `cardDefinitionId`. So the ability
+            // was executable but not enumerable: the exact asymmetry a player sees as "the button
+            // isn't there". Assert through the player-facing enumeration path, not the action.
+            test("the copied card's activated ability is offered even though the copy keeps his own name") {
+                // Four Islands: enough to actually pay the copied {3}{U} half of the cost, so the
+                // assertion covers an offered *and* affordable action rather than a greyed-out one.
+                val game = board(islands = 4)
+                val absorbingMan = game.findPermanent("Absorbing Man")!!
+                val forge = game.findPermanent("Futurist Forge")!!
+
+                withClue("his printed side has no activated ability, so nothing is offered yet") {
+                    game.getLegalActions(1)
+                        .none { (it.action as? ActivateAbility)?.sourceId == absorbingMan } shouldBe true
+                }
+
+                game.copyOnto(forge)
+
+                val card = game.state.getEntity(absorbingMan)!!.get<CardComponent>()!!
+                withClue("the name still says Absorbing Man; only the definition id moved") {
+                    card.name shouldBe "Absorbing Man"
+                    card.cardDefinitionId shouldBe "Futurist Forge"
+                }
+
+                // Match on the copied ability's own id — the printed Forge is still on the
+                // battlefield offering the same ability, so the source is what distinguishes them.
+                val forgeAbilityId = cardRegistry.getCard("Futurist Forge")!!.activatedAbilities.single().id
+                val offered = game.getLegalActions(1)
+                val sacrificeAbility = offered.firstOrNull {
+                    val activation = it.action as? ActivateAbility
+                    activation?.sourceId == absorbingMan && activation.abilityId == forgeAbilityId
+                }
+                withClue(
+                    "the copied '{3}{U}, Sacrifice this artifact: Draw two cards' must be enumerated; " +
+                        "offered instead: ${offered.map { it.description }}"
+                ) {
+                    sacrificeAbility shouldNotBe null
+                }
+                withClue("and it is payable with four Islands untapped") {
+                    sacrificeAbility!!.isAffordable shouldBe true
+                }
+                withClue("activating the enumerated action really draws two cards") {
+                    val handBefore = game.handSize(1)
+                    game.execute(sacrificeAbility!!.action)
+                    game.resolveStack()
+                    game.handSize(1) shouldBe handBefore + 2
+                    game.isOnBattlefield("Absorbing Man") shouldBe false
                 }
             }
 

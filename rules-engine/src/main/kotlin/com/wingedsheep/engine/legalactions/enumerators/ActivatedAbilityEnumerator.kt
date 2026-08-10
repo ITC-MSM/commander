@@ -63,7 +63,15 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
             // abilities of artifacts, creatures, or enchantments."
             if (context.castPermissionUtils.isActivationPreventedForPlayer(state, entityId, playerId)) continue
 
-            val cardDef = context.cardRegistry.getCard(cardComponent.name)
+            // Resolve by definition id, never by name. A copy effect may rename the copy
+            // (CR 707.9 — Absorbing Man "becomes a copy of …, except his name is Absorbing Man"),
+            // which leaves [CardComponent.name] pointing at the *printed* card while
+            // [CardComponent.cardDefinitionId] is the definition the permanent actually presents.
+            // The id is the identity that survives a copy; the name is a characteristic a copy
+            // effect is allowed to change. `ActivateAbilityHandler` already resolves by id, so a
+            // name lookup here would silently stop offering an ability the engine would happily
+            // execute.
+            val cardDef = context.cardRegistry.getCard(cardComponent.cardDefinitionId)
             // Include granted activated abilities alongside the card's own abilities (both temporary and static)
             val grantedAbilities = state.grantedActivatedAbilities
                 .filter { it.entityId == entityId }
@@ -1031,7 +1039,9 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
             if (context.castPermissionUtils.isActivationPrevented(state, entityId)) continue
             if (context.castPermissionUtils.isActivationPreventedForPlayer(state, entityId, playerId)) continue
 
-            val cardDef = context.cardRegistry.getCard(cardComponent.name) ?: continue
+            // By definition id, not name — see enumerateOwnPermanents. An opponent's renamed copy
+            // of a "any player may activate" permanent must still offer its ability.
+            val cardDef = context.cardRegistry.getCard(cardComponent.cardDefinitionId) ?: continue
             val anyPlayerAbilities = cardDef.script.activatedAbilities.filter { ability ->
                 !ability.isManaAbility && ability.activateFromZone == Zone.BATTLEFIELD && ability.restrictions.any { it is ActivationRestriction.AnyPlayerMay }
             }

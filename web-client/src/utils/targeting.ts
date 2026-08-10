@@ -50,6 +50,54 @@ export function getPileTargetCards(
   return pileCards
 }
 
+/** How a requirement's valid targets split across the two ways a player can reach them. */
+export interface TargetZonePartition {
+  /** Valid targets sitting in a pile zone, in `validTargets` order — reachable only via a picker. */
+  readonly pileCards: ClientCard[]
+  /**
+   * True when at least one valid target is *not* a pile card: a battlefield permanent, a player, a
+   * stack object, or a target the client can't resolve to a card. Those are all picked by clicking
+   * the board, so the board path must stay live.
+   */
+  readonly hasBoardTargets: boolean
+}
+
+/**
+ * Split one requirement's valid targets into "reachable by clicking the board" and "reachable only
+ * through a pile picker", instead of asking the all-or-nothing question [getPileTargetCards] asks.
+ *
+ * A union filter can span both sides — Taskmaster, Mercenary Mimic copies "target creature on the
+ * battlefield **or** creature card in a graveyard" — and such a requirement needs *both* routes at
+ * once: the board stays clickable and the graveyard cards get a picker. Collapsing that to a single
+ * boolean is what made a mixed union's graveyard half unselectable.
+ *
+ * Zones come from `card.zone`, which is server-sent state; nothing here decides legality — every
+ * entity considered is already in the server's `validTargets`. [targetZoneHint] is the server's
+ * single-zone hint (`LegalActionTargetInfo.targetZone`), used only for a card whose client-side
+ * zone is missing; a target the client can't resolve at all counts as a board target so the
+ * requirement still reaches a UI that can show something.
+ */
+export function partitionTargetsByZone(
+  validTargets: readonly EntityId[],
+  cards: ClientGameState['cards'] | undefined,
+  targetZoneHint?: string,
+): TargetZonePartition {
+  const pileCards: ClientCard[] = []
+  let hasBoardTargets = false
+  const hintIsPile = targetZoneHint === ZoneType.GRAVEYARD || targetZoneHint === ZoneType.EXILE
+
+  for (const targetId of validTargets) {
+    const card = cards?.[targetId]
+    const zoneType = card?.zone?.zoneType
+    if (card && (zoneType ? PILE_ZONES.has(zoneType) : hintIsPile)) {
+      pileCards.push(card)
+    } else {
+      hasBoardTargets = true
+    }
+  }
+  return { pileCards, hasBoardTargets }
+}
+
 /**
  * Boilerplate that hangs off the *exile* verb in O-Ring style effects — `ExileUntilLeavesEffect`
  * renders "Exile … until this permanent leaves the battlefield". It names the battlefield without
