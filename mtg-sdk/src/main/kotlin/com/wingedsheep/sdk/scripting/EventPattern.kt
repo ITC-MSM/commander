@@ -1694,14 +1694,19 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
     /**
      * When a creature is turned face up.
      * [player] filters whose creature: [Player.You] (default), [Player.Any], etc.
+     * [filter] narrows *which* creature, evaluated against the permanent's post-flip
+     * (face-up) characteristics — "whenever a Detective you control is turned face up"
+     * (Perimeter Enforcer) is `filter = Creature.withSubtype(Subtype.DETECTIVE)`.
+     * Defaults to [GameObjectFilter.Any], i.e. any creature turned face up.
      */
     @SerialName("CreatureTurnedFaceUpEvent")
     @Serializable
     data class CreatureTurnedFaceUpEvent(
-        val player: Player = Player.You
+        val player: Player = Player.You,
+        val filter: GameObjectFilter = GameObjectFilter.Any
     ) : EventPattern {
         override val description: String = buildString {
-            append("a creature ")
+            append(if (filter == GameObjectFilter.Any) "a creature " else "a ${filter.description} ")
             when (player) {
                 is Player.You -> append("you control ")
                 is Player.Any -> {}
