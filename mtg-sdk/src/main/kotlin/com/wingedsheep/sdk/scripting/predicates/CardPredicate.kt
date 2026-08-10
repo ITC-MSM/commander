@@ -904,6 +904,28 @@ sealed interface CardPredicate : TextReplaceable<CardPredicate> {
     }
 
     /**
+     * Matches objects whose name equals that of at least one permanent the evaluating player
+     * controls matching [filter]. Used by Key to the Side-Door ("Discard a legendary card with the
+     * same name as a legendary permanent you control") with
+     * `filter = GameObjectFilter.Permanent.legendary()`. The name-sharing sibling of
+     * [SharesColorWithPermanentYouControl].
+     *
+     * Names are compared exactly, and read from the permanent's card definition rather than
+     * projected state — copy effects already rewrite the card component's name, and nothing in the
+     * layer system renames a permanent without doing so. A nameless object (a token with no name)
+     * never matches.
+     */
+    @SerialName("SharesNameWithPermanentYouControl")
+    @Serializable
+    data class SharesNameWithPermanentYouControl(val filter: GameObjectFilter) : CardPredicate {
+        override val description: String = "with the same name as ${filter.description} you control"
+        override fun applyTextReplacement(replacer: TextReplacer): CardPredicate {
+            val newFilter = filter.applyTextReplacement(replacer)
+            return if (newFilter !== filter) copy(filter = newFilter) else this
+        }
+    }
+
+    /**
      * Matches creature cards that share **no** creature type with any permanent the evaluating
      * player controls matching [filter]. Used by Radagast the Brown ("a creature card that doesn't
      * share a creature type with a creature you control") with `filter = GameObjectFilter.Creature`.

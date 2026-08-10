@@ -1032,6 +1032,7 @@ class CastZoneResolver(
                 is CardPredicate.SharesColorWith,
                 is CardPredicate.SharesColorWithRecipient,
                 is CardPredicate.SharesColorWithPermanentYouControl,
+                is CardPredicate.SharesNameWithPermanentYouControl,
                 is CardPredicate.DoesNotShareCreatureTypeWithPermanentYouControl,
                 is CardPredicate.DoesNotShareLandTypeWithPermanentYouControl,
                 is CardPredicate.TargetsMatching,
