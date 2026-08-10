@@ -30,8 +30,9 @@ import com.wingedsheep.sdk.scripting.targets.TargetObject
  *  - `nameOverride` keeps him named Absorbing Man, so two of him still meet the legend rule and no
  *    "target Sol Ring" effect finds him under the copied name.
  *  - `addedSupertypes` / `addedCardTypes` / `addedSubtypes` are the "**in addition to** his other
- *    types" direction (CR 707.9d treats that phrase as load-bearing): copying a land leaves him a
- *    land that is *also* a legendary Human Villain creature.
+ *    types" direction (CR 205.1b makes that phrase retain the prior types, against CR 205.1a's
+ *    replace-by-default): copying a land leaves him a land that is *also* a legendary Human
+ *    Villain creature.
  *  - `powerOverride` / `toughnessOverride` give the 4/4. The copy source is a noncreature, so there
  *    are no copied base stats to modify — the applier creates them.
  *  - `addedKeywords` re-grants vigilance, which the copy would otherwise have wiped along with the

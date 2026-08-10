@@ -20,9 +20,9 @@ import io.kotest.matchers.shouldBe
  *  up to one target artifact, non-Aura enchantment, or land, except his name is Absorbing Man, he's
  *  a legendary 4/4 Human Villain creature in addition to his other types, and he has vigilance."
  *
- * Focus: the **additive** direction of copy exceptions (CR 707.9d's "in addition to its other
- * types") plus P/T conjured onto a copy source that had none, and the `Duration.UntilYourNextTurn`
- * revert window — which is what lets his own trigger, wiped by the copy, come back and fire again.
+ * Focus: the **additive** direction of copy exceptions (CR 205.1b's "in addition to its other
+ * types" retention clause) plus P/T conjured onto a copy source that had none, and the
+ * `Duration.UntilYourNextTurn` revert window — which is what lets his own trigger, wiped by the copy, come back and fire again.
  */
 class AbsorbingManScenarioTest : ScenarioTestBase() {
 
@@ -144,9 +144,27 @@ class AbsorbingManScenarioTest : ScenarioTestBase() {
                 game.advanceToNextUpkeep()
                 game.advanceToNextUpkeep()
 
-                game.advanceToFirstMainTrigger()
-                withClue("the first-main-phase trigger fires again once he is himself") {
-                    (game.hasPendingDecision() || game.state.stack.isNotEmpty()) shouldBe true
+                withClue("he is himself again, so the printed trigger is back") {
+                    game.state.getEntity(absorbingMan)!!.get<CardComponent>()!!
+                        .cardDefinitionId.contains("Absorbing Man") shouldBe true
+                }
+
+                // Aim the re-fired trigger at a *land* this time — the other branch of his target
+                // filter, and the case that has no base P/T of its own to copy.
+                val island = game.findPermanent("Island")!!
+                game.copyOnto(island)
+
+                val card = game.state.getEntity(absorbingMan)!!.get<CardComponent>()!!
+                withClue("the trigger really did fire again and resolved onto the new target") {
+                    card.cardDefinitionId.contains("Island") shouldBe true
+                    card.typeLine.isLand shouldBe true
+                }
+                withClue("and the same exception clause applies to the second copy") {
+                    card.name shouldBe "Absorbing Man"
+                    card.typeLine.isCreature shouldBe true
+                    card.typeLine.isLegendary shouldBe true
+                    game.state.projectedState.getPower(absorbingMan) shouldBe 4
+                    game.state.projectedState.getToughness(absorbingMan) shouldBe 4
                 }
             }
 

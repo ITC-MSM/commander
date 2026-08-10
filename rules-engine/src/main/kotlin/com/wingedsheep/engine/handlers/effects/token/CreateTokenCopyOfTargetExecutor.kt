@@ -137,15 +137,18 @@ class CreateTokenCopyOfTargetExecutor(
         val events = mutableListOf<com.wingedsheep.engine.core.GameEvent>()
         val createdTokens = mutableListOf<EntityId>()
 
+        // Every "except …" clause (CR 707.9) — added/removed types, added keywords, base P/T,
+        // colors, no-mana-cost — is applied by the shared CopyExceptionApplier, so the token
+        // path and the "permanent becomes a copy" path can't drift. Both the exceptions view and
+        // the resulting component are loop-invariant, so they are built once rather than per token.
+        val exceptions = effect.copyExceptions
+        val tokenCard = CopyExceptionApplier.apply(targetCard, exceptions)
+            .copy(ownerId = controllerId)
+
         val cappedCount = com.wingedsheep.engine.core.GameLimits.cappedTokenCount(count, "target-copy tokens")
         for (index in 0 until cappedCount) {
             val (tokenId, stateWithId) = newState.newEntity()
             newState = stateWithId
-            // Every "except …" clause (CR 707.9) — added/removed types, added keywords, base P/T,
-            // colors, no-mana-cost — is applied by the shared CopyExceptionApplier, so the token
-            // path and the "permanent becomes a copy" path can't drift.
-            val tokenCard = CopyExceptionApplier.apply(targetCard, effect.copyExceptions)
-                .copy(ownerId = controllerId)
 
             val components = mutableListOf<Component>(
                 tokenCard,

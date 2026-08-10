@@ -32,10 +32,12 @@ import com.wingedsheep.sdk.scripting.targets.TargetObject
  *    (`TargetFilter.or`, the Sorceress's Schemes shape) and the effect needs `sourceFromAnyZone`
  *    to read copiable characteristics outside the battlefield.
  *  - His type clause **replaces** rather than adds. Absorbing Man says "in addition to his other
- *    types" and Taskmaster deliberately does not, and CR 707.9d treats exactly that phrase as the
- *    switch between the two readings — so `overrideCardTypes` / `overrideSubtypes`, not the
- *    `added*` fields. Copying a Goblin Wizard makes a Human Mercenary Villain, not a Goblin Wizard
- *    Human Mercenary Villain, and copying an artifact creature drops the artifact type. Only the
+ *    types" and Taskmaster deliberately does not. CR 205.1a is the default — a stated card type or
+ *    subtype replaces the existing one — and CR 205.1b is the exception that retains the prior
+ *    types, keyed on exactly the phrase Taskmaster lacks. So `overrideCardTypes` /
+ *    `overrideSubtypes`, not the `added*` fields. Copying a Goblin Wizard makes a Human Mercenary
+ *    Villain, not a Goblin Wizard Human Mercenary Villain, and copying an artifact creature drops
+ *    the artifact type. Only the
  *    legendary supertype is *added*: the clause says nothing about the snow or world supertypes,
  *    and a copy that keeps them is the conservative reading.
  *

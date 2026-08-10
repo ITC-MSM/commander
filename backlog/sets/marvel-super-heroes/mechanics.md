@@ -227,16 +227,19 @@ What shipped:
    type for the whole "except …" half of a copy effect (CR 707.9b): `nameOverride`, `addedKeywords`,
    `addedSupertypes` / `removedSupertypes`, `addedCardTypes` / `overrideCardTypes`, `addedSubtypes` /
    `overrideSubtypes`, `addedColors` / `overrideColors`, `powerOverride` / `toughnessOverride`,
-   `noManaCost`. The add-vs-override split is CR 707.9d's own distinction — the phrase "in addition to
-   its other types" is what separates the two readings, which is exactly the difference between
-   Absorbing Man and Taskmaster.
+   `noManaCost`. The add-vs-override split is CR 205.1a (a stated card type or subtype *replaces*)
+   against CR 205.1b (the "in addition to its other types" / "still a [type]" clause *retains* the
+   prior types) — which is exactly the difference between Absorbing Man and Taskmaster.
    `EachPermanentBecomesCopyOfTargetEffect.exceptions` carries it; `CreateTokenCopyOfTargetEffect`
    keeps its historical flat riders as the authoring surface (≈20 card call sites) but exposes them
    as a `copyExceptions` view onto the same type. `retainActivatingAbility` stayed on the effect — it
    isn't a characteristic.
 2. **`CopyExceptionApplier`** (`rules-engine/.../handlers/effects/copy/`) — the single place the
-   type-line/name/keyword/P-T/color arithmetic lives. Both executors call it, so a new exception is
-   written once and both paths get it. It also fixes a latent bug on the permanent path: a P/T
+   type-line/name/keyword/P-T/color arithmetic lives. Four copy paths call it — permanent-becomes-a-
+   copy, both token-copy executors, and the `EntersAsCopy` clone path — so a new exception is written
+   once and all of them get it. (The two `removeLegendary`-only paths, Helm of the Host's
+   equipped-creature token and spell copies, have no arithmetic to share and stay outside.) It also
+   fixes a latent bug on the permanent path: a P/T
    override used to be dropped when the copied object had no base stats at all, which is precisely
    Absorbing Man copying a land.
 3. **`Duration.UntilYourNextTurn`** in the copy-revert path — `RevertCopyAtYourNextTurnComponent(playerId)`,

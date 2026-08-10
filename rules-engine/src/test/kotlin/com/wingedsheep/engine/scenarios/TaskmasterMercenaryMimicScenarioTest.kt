@@ -3,6 +3,7 @@ package com.wingedsheep.engine.scenarios
 import com.wingedsheep.engine.core.PassPriority
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.support.ScenarioTestBase
+import com.wingedsheep.sdk.core.CardType
 import com.wingedsheep.sdk.core.Phase
 import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.core.Subtype
@@ -19,8 +20,9 @@ import io.kotest.matchers.shouldBe
  *  Villain creature."
  *
  * Focus: the *replacing* reading of a type clause. Absorbing Man, in the same set, says "in addition
- * to his other types" and Taskmaster deliberately does not — CR 707.9d makes exactly that phrase the
- * switch — so his creature types are overridden, not unioned. Also covers the cross-zone target
+ * to his other types" and Taskmaster deliberately does not — CR 205.1a replaces by default and
+ * CR 205.1b retains only on exactly that phrase — so his creature types are overridden, not unioned.
+ * Also covers the cross-zone target
  * (battlefield **or** graveyard) and `sourceFromAnyZone`.
  */
 class TaskmasterMercenaryMimicScenarioTest : ScenarioTestBase() {
@@ -36,6 +38,7 @@ class TaskmasterMercenaryMimicScenarioTest : ScenarioTestBase() {
                     .withPlayers("Player", "Opponent")
                     .withCardOnBattlefield(1, "Taskmaster, Mercenary Mimic")
                     .withCardOnBattlefield(2, "Grizzly Bears")
+                    .withCardOnBattlefield(2, "Ornithopter")
                     .withCardInGraveyard(1, "Hill Giant")
                     .withLandsOnBattlefield(1, "Island", 2)
                     .withActivePlayer(1)
@@ -95,6 +98,30 @@ class TaskmasterMercenaryMimicScenarioTest : ScenarioTestBase() {
                         Subtype.HUMAN, Subtype.MERCENARY, Subtype.VILLAIN
                     )
                     card.typeLine.subtypes.contains(Subtype.BEAR) shouldBe false
+                }
+            }
+
+            test("copying an artifact creature drops the artifact card type") {
+                val game = board()
+                val taskmaster = game.findPermanent("Taskmaster, Mercenary Mimic")!!
+                val ornithopter = game.findPermanent("Ornithopter")!!
+
+                game.copyOnto(ornithopter)
+
+                val card = game.state.getEntity(taskmaster)!!.get<CardComponent>()!!
+                withClue("a stated type line replaces (CR 205.1a) — he is a creature and nothing else") {
+                    card.typeLine.isCreature shouldBe true
+                    card.typeLine.isArtifact shouldBe false
+                    card.typeLine.cardTypes shouldBe setOf(CardType.CREATURE)
+                }
+                withClue("subtypes are replaced too — no Thopter") {
+                    card.typeLine.subtypes shouldBe setOf(
+                        Subtype.HUMAN, Subtype.MERCENARY, Subtype.VILLAIN
+                    )
+                }
+                withClue("P/T are copiable values, so they still come from Ornithopter") {
+                    game.state.projectedState.getPower(taskmaster) shouldBe 0
+                    game.state.projectedState.getToughness(taskmaster) shouldBe 2
                 }
             }
 

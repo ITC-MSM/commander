@@ -11,17 +11,28 @@ import com.wingedsheep.sdk.scripting.effects.CopyExceptions
  * The one place that turns a [CopyExceptions] into an actual modification of copied characteristics
  * (CR 707.9 — "the copy effect may specify that the copy has certain values").
  *
- * Both copy paths route through here:
+ * The copy paths that route through here:
  *
  *  - [com.wingedsheep.engine.handlers.effects.permanent.types.EachPermanentBecomesCopyOfTargetExecutor]
  *    — an existing permanent becomes a copy (Mirrorform, Fleeting Reflection, Absorbing Man).
  *  - [com.wingedsheep.engine.handlers.effects.token.CreateTokenCopyOfTargetExecutor] — a token copy
- *    is minted (Molten Duplication, Ardyn, Shelob).
+ *    of a targeted permanent is minted (Molten Duplication, Ardyn, Shelob).
+ *  - [com.wingedsheep.engine.handlers.effects.token.CreateTokenCopyOfSourceExecutor] — a token copy
+ *    of the ability's own source (Vaultborn Tyrant, Ran and Shaw).
+ *  - [com.wingedsheep.engine.handlers.continuations.ModalAndCloneContinuationResumer]'s
+ *    `EntersAsCopy` path — a permanent or spell entering as a copy (Clone, Sakashima, Mockingbird).
  *
- * They used to carry two independent implementations of the same type-line arithmetic, which is why
+ * They used to carry independent implementations of the same type-line arithmetic, which is why
  * "except it isn't legendary" and "except it's a creature in addition to its other types" worked on
  * tokens and silently did nothing on permanents. Keeping the arithmetic here means a new exception
- * is written once and both paths get it.
+ * is written once and every path above gets it.
+ *
+ * Not (yet) routed through here: the two paths whose only "except" clause is the single boolean
+ * `removeLegendary` and which therefore have no arithmetic to share —
+ * [com.wingedsheep.engine.handlers.effects.token.CreateTokenCopyOfEquippedCreatureExecutor]
+ * (Helm of the Host) and
+ * [com.wingedsheep.engine.handlers.effects.stack.StormCopyEffectExecutor] (copies of *spells*,
+ * CR 707.10, where the copy lives on the stack rather than as a permanent's copiable values).
  *
  * Copiable values only: everything applied here lives on the [CardComponent], so it is itself
  * copiable (a later copy of the copy sees it) and it lasts exactly as long as the copy does.
@@ -38,10 +49,15 @@ object CopyExceptionApplier {
      * Order matters on the supertype axis: additions first, then removals, so a supertype named in
      * both is removed — "it's legendary" and "it isn't legendary" can't both be true, and the
      * removal is the more specific clause.
+     *
+     * Card types and subtypes behave the same way as each other: an override is a clause that states
+     * the whole type line (CR 205.1a), so it replaces the copied types *and* supersedes an addition
+     * on the same axis — an "in addition to its other types" clause (CR 205.1b) and a replacing one
+     * can't both be printed on the same characteristic.
      */
     fun typeLine(base: TypeLine, exceptions: CopyExceptions): TypeLine = base.copy(
         supertypes = base.supertypes + exceptions.addedSupertypes - exceptions.removedSupertypes,
-        cardTypes = (exceptions.overrideCardTypes ?: base.cardTypes) + exceptions.addedCardTypes,
+        cardTypes = exceptions.overrideCardTypes ?: (base.cardTypes + exceptions.addedCardTypes),
         subtypes = exceptions.overrideSubtypes ?: (base.subtypes + exceptions.addedSubtypes),
     )
 

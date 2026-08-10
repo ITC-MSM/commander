@@ -7,6 +7,7 @@ import com.wingedsheep.engine.event.DelayedTriggeredAbility
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.handlers.effects.EntersWithReplacements
+import com.wingedsheep.engine.handlers.effects.copy.CopyExceptionApplier
 import com.wingedsheep.engine.handlers.effects.PermanentEntryReplacements
 import com.wingedsheep.engine.mechanics.layers.StaticAbilityHandler
 import com.wingedsheep.engine.registry.CardRegistry
@@ -19,9 +20,7 @@ import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.engine.state.components.identity.DoubleFacedComponent
 import com.wingedsheep.engine.state.components.identity.TokenComponent
-import com.wingedsheep.sdk.core.CardType
 import com.wingedsheep.sdk.core.Zone
-import com.wingedsheep.sdk.model.CreatureStats
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.effects.CreateTokenCopyOfSourceEffect
 import com.wingedsheep.sdk.scripting.effects.MoveToZoneEffect
@@ -81,42 +80,17 @@ class CreateTokenCopyOfSourceExecutor(
         val events = mutableListOf<GameEvent>()
         val createdTokens = mutableListOf<EntityId>()
 
+        // The "except …" clause (CR 707.9b) — "it's not legendary", "it's an artifact in addition to
+        // its other types", "it's 1/1" — in the shared vocabulary, applied by the one engine-side
+        // implementation. Hoisted out of the loop: the view rebuilds itself on every read.
+        val exceptions = effect.copyExceptions
+        // Copy the source's CardComponent, re-homing the token to the controller.
+        val tokenCard = CopyExceptionApplier.apply(sourceCard, exceptions).copy(ownerId = controllerId)
+
         val cappedCount = com.wingedsheep.engine.core.GameLimits.cappedTokenCount(count, "source-copy tokens")
         for (index in 0 until cappedCount) {
             val (tokenId, stateWithId) = newState.newEntity()
             newState = stateWithId
-
-            // Copy the source's CardComponent, setting the token's owner to the controller
-            // Apply P/T overrides if specified (e.g., Offspring creates 1/1 copies)
-            val op = effect.overridePower
-            val ot = effect.overrideToughness
-            val overrideStats = if (op != null && ot != null) {
-                CreatureStats(op, ot)
-            } else null
-            val extraCardTypes = effect.addCardTypes
-                .mapNotNull { name ->
-                    runCatching { CardType.valueOf(name.uppercase()) }.getOrNull()
-                }
-                .toSet()
-            val typeLineWithExtras = if (extraCardTypes.isEmpty()) {
-                sourceCard.typeLine
-            } else {
-                sourceCard.typeLine.copy(
-                    cardTypes = sourceCard.typeLine.cardTypes + extraCardTypes
-                )
-            }
-            // "except it's not legendary" copy clause (CR 707.9b — modify a characteristic as part
-            // of copying) — strip the legendary supertype.
-            val unionedTypeLine = if (effect.removeLegendary) {
-                typeLineWithExtras.withoutLegendary()
-            } else {
-                typeLineWithExtras
-            }
-            val tokenCard = sourceCard.copy(
-                ownerId = controllerId,
-                typeLine = unionedTypeLine,
-                baseStats = overrideStats ?: sourceCard.baseStats
-            )
 
             val components = mutableListOf<Component>(
                 tokenCard,

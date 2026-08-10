@@ -277,6 +277,28 @@ data class CreateTokenCopyOfSourceEffect(
      */
     val removeLegendary: Boolean = false
 ) : Effect {
+    /**
+     * This effect's copy exceptions (CR 707.9) in the shared [CopyExceptions] vocabulary, exactly as
+     * [CreateTokenCopyOfTargetEffect.copyExceptions] does for the targeted sibling — so the
+     * self-copy path runs the same engine-side arithmetic instead of a third hand-rolled version.
+     *
+     * A computed view, not a constructor field: the flat riders predate [CopyExceptions] and are the
+     * authoring surface (and the serialized shape). New copy exceptions belong on [CopyExceptions].
+     */
+    val copyExceptions: CopyExceptions
+        get() = CopyExceptions(
+            removedSupertypes = if (removeLegendary) setOf(Supertype.LEGENDARY) else emptySet(),
+            // The legacy field is `Set<String>` of CardType names; unparseable entries are dropped
+            // exactly as the executor used to drop them.
+            addedCardTypes = addCardTypes.mapNotNull { name ->
+                runCatching { CardType.valueOf(name.uppercase()) }.getOrNull()
+            }.toSet(),
+            // Historically this path applied a P/T override only when *both* halves were given;
+            // keeping that pairing avoids re-interpreting any existing card.
+            powerOverride = overridePower?.takeIf { overrideToughness != null },
+            toughnessOverride = overrideToughness?.takeIf { overridePower != null },
+        )
+
     override val description: String = buildString {
         append("Create ")
         if (count == 1) append("a token that's a copy of this creature")
@@ -409,7 +431,8 @@ data class CreateTokenCopyOfTargetEffect(
      * Replaces the token copy's card types outright (e.g. Shelob, Child of Ungoliant's copy "is a
      * Food artifact ... and it loses all other card types" → {ARTIFACT}). Null leaves the copied
      * card's card types untouched. Note: when this drops CREATURE, the copy is no longer a creature,
-     * so it won't enter attacking and copies no P/T meaning.
+     * so it won't enter attacking and copies no P/T meaning. Supersedes [addCardTypes], the same way
+     * [overrideSubtypes] supersedes [addedSubtypes] — a printed clause is one or the other.
      */
     val overrideCardTypes: Set<CardType>? = null,
     /**

@@ -11,23 +11,26 @@ import kotlinx.serialization.Serializable
  * The "**except** …" half of a copy effect (CR 707.9) — the modifications a copy effect may specify
  * on top of the copiable values it copies.
  *
- * One vocabulary shared by every copy path, rather than a different ad-hoc set of riders per
- * effect. The engine applies it in exactly one place
+ * One vocabulary shared across the copy paths that can carry characteristic exceptions, rather than
+ * a different ad-hoc set of riders per effect. The engine applies it in exactly one place
  * (`rules-engine/.../handlers/effects/copy/CopyExceptionApplier.kt`), so "except it's a legendary
  * Human Villain creature in addition to its other types" means the same thing whether the copy
- * lands on an existing permanent
- * ([EachPermanentBecomesCopyOfTargetEffect]) or mints a token
- * ([CreateTokenCopyOfTargetEffect], which maps its own historical flat fields onto this type
- * through `CreateTokenCopyOfTargetEffect.copyExceptions`).
+ * lands on an existing permanent ([EachPermanentBecomesCopyOfTargetEffect]), mints a token from a
+ * target or from the ability's own source ([CreateTokenCopyOfTargetEffect] /
+ * [CreateTokenCopyOfSourceEffect], which map their historical flat fields onto this type through
+ * their `copyExceptions` views), or enters as a copy (`EntersAsCopy`, Clone/Sakashima).
  *
  * Everything here is a *copiable* value (CR 707.2): anything that later copies the copy sees these
  * modifications too. Riders that are **not** characteristics — "and this ability", "it enters
  * tapped", "it enters with a +1/+1 counter" — deliberately stay on the individual effects.
  *
- * Add/override pairs follow Magic's own templating: a clause that says "**in addition to** its
- * other types" adds ([addedCardTypes] / [addedSubtypes] / [addedColors]), one that just states a
- * type line or color replaces ([overrideCardTypes] / [overrideSubtypes] / [overrideColors]). When
- * both are set on the same axis the override wins and the additions are ignored.
+ * Add/override pairs follow Magic's own templating, which the rules make load-bearing: a stated
+ * card type or subtype *replaces* by default (CR 205.1a) — [overrideCardTypes] /
+ * [overrideSubtypes] / [overrideColors] — unless the clause says "**in addition to** its other
+ * types" or "still a [type]", which retains the prior types (CR 205.1b) — [addedCardTypes] /
+ * [addedSubtypes] / [addedColors]. A real card only prints one of the two on a given
+ * characteristic; when both are set anyway the override wins and the addition is ignored, on every
+ * axis alike.
  *
  * @property nameOverride "except its name is …" — the copy keeps this name instead of the copied
  *   object's (Absorbing Man, Taskmaster, Sakashima). The name is a copiable value, so the legend
@@ -97,8 +100,13 @@ data class CopyExceptions(
             )
         }
         if (overrideCardTypes != null || overrideSubtypes != null) {
-            // A clause that states a whole type line replaces: "it's a 5/5 black Demon".
-            typeWords(addedSupertypes, overrideCardTypes, overrideSubtypes)?.let { add("it's $it") }
+            // A clause that states a whole type line replaces: "it's a 5/5 black Demon". An axis
+            // with no override of its own still renders its addition, which is what resolves.
+            typeWords(
+                addedSupertypes,
+                overrideCardTypes ?: addedCardTypes,
+                overrideSubtypes ?: addedSubtypes,
+            )?.let { add("it's $it") }
         } else {
             typeWords(addedSupertypes, addedCardTypes, addedSubtypes)?.let { words ->
                 // Supertypes alone read as a bare statement ("except it's legendary"); anything

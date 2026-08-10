@@ -13,15 +13,18 @@ silently degrading anything else.
 ## What shipped (convergence, not new riders)
 
 - `CopyExceptions` (`mtg-sdk/.../scripting/effects/CopyExceptions.kt`) — one serializable value type
-  for the whole "except …" half of a copy effect (CR 707.9b). Add/override pairs mirror CR 707.9d's
-  own "in addition to its other types" distinction.
+  for the whole "except …" half of a copy effect (CR 707.9b). Add/override pairs mirror CR 205.1a
+  (replace by default) against CR 205.1b (the "in addition to its other types" retention clause).
 - `CopyExceptionApplier` (`rules-engine/.../handlers/effects/copy/`) — the single implementation of
-  the name/type-line/keyword/P-T/color arithmetic. **Both** executors call it, and the token
-  executor's Aura-host type-line probe now shares it too.
+  the name/type-line/keyword/P-T/color arithmetic. Four paths call it: the permanent-becomes-a-copy
+  executor, both token-copy executors (targeted and self), and the `EntersAsCopy` clone path; the
+  token executor's Aura-host type-line probe shares it too. The two `removeLegendary`-only paths
+  (Helm of the Host's equipped-creature token, spell copies) stay outside it — no arithmetic to
+  share — and the KDoc says so instead of claiming universality.
 - `EachPermanentBecomesCopyOfTargetEffect.exceptions` replaces its three flat riders.
-  `CreateTokenCopyOfTargetEffect` keeps its flat riders (≈20 card call sites) but exposes a
-  `copyExceptions` computed view onto the same type, so its serialized shape and authoring surface
-  are unchanged.
+  `CreateTokenCopyOfTargetEffect` / `CreateTokenCopyOfSourceEffect` keep their flat riders (≈20 card
+  call sites) but expose a `copyExceptions` computed view onto the same type, so their serialized
+  shape and authoring surface are unchanged.
 - `Duration.UntilYourNextTurn` in the copy-revert path — `RevertCopyAtYourNextTurnComponent(playerId)`,
   expired in `CleanupPhaseManager.expireUntilYourNextTurnEffects` with every other "until your next
   turn" effect.
@@ -46,7 +49,8 @@ had no base stats — exactly Absorbing Man copying a land.
 
 - **Taskmaster's type clause reading.** His oracle text says "he's a legendary Human Mercenary
   Villain creature" with **no** "in addition to his other types", while Absorbing Man in the same set
-  has the phrase. CR 707.9d treats that phrase as the switch, so I read Taskmaster as *replacing*
+  has the phrase. CR 205.1b makes that phrase the switch away from CR 205.1a's replace-by-default,
+  so I read Taskmaster as *replacing*
   card types and subtypes: copying an artifact creature drops the artifact type, copying a Goblin
   drops Goblin. No Scryfall rulings exist for the card yet. If a reviewer reads it the other way, the
   change is two field names in `TaskmasterMercenaryMimic.kt`.

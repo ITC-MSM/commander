@@ -1,6 +1,5 @@
-package com.wingedsheep.engine.scenarios
+package com.wingedsheep.engine.handlers.effects.copy
 
-import com.wingedsheep.engine.handlers.effects.copy.CopyExceptionApplier
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.sdk.core.CardType
 import com.wingedsheep.sdk.core.Color
@@ -12,6 +11,7 @@ import com.wingedsheep.sdk.core.TypeLine
 import com.wingedsheep.sdk.model.CharacteristicValue
 import com.wingedsheep.sdk.model.CreatureStats
 import com.wingedsheep.sdk.scripting.effects.CopyExceptions
+import com.wingedsheep.sdk.scripting.effects.CreateTokenCopyOfSourceEffect
 import com.wingedsheep.sdk.scripting.effects.CreateTokenCopyOfTargetEffect
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import io.kotest.core.spec.style.FunSpec
@@ -20,12 +20,12 @@ import io.kotest.matchers.shouldNotBe
 
 /**
  * Mechanic-level test for **copy exceptions** (CR 707.9b) — the shared `CopyExceptions` vocabulary
- * and the single [CopyExceptionApplier] that both copy paths run through.
+ * and the single [CopyExceptionApplier] every characteristic-carrying copy path runs through.
  *
  * The card-level behaviour lives in the per-card scenario tests (Shuri, Wakandan Inventor;
  * Absorbing Man; Taskmaster, Mercenary Mimic). This one pins the arithmetic those cards rely on,
- * plus the convergence itself: that `CreateTokenCopyOfTargetEffect`'s historical flat riders map
- * onto the same value type the permanent-copy path carries.
+ * plus the convergence itself: that the token effects' historical flat riders map onto the same
+ * value type the permanent-copy path carries.
  */
 class CopyExceptionsTest : FunSpec({
 
@@ -107,14 +107,32 @@ class CopyExceptionsTest : FunSpec({
         val result = CopyExceptionApplier.apply(
             legendaryArtifactBear(),
             CopyExceptions(
+                addedCardTypes = setOf(CardType.ENCHANTMENT),
+                overrideCardTypes = setOf(CardType.CREATURE),
                 addedSubtypes = setOf(Subtype.HUMAN),
                 overrideSubtypes = setOf(Subtype.GOBLIN),
                 addedColors = setOf(Color.WHITE),
                 overrideColors = setOf(Color.BLACK),
             ),
         )
+        // Card types behave exactly like subtypes and colors: the replacing clause (CR 205.1a) wins
+        // outright, so the addition is not layered back on top of it.
+        result.typeLine.cardTypes shouldBe setOf(CardType.CREATURE)
         result.typeLine.subtypes shouldBe setOf(Subtype.GOBLIN)
         result.colors shouldBe setOf(Color.BLACK)
+    }
+
+    test("an addition on an axis with no override of its own still applies") {
+        val result = CopyExceptionApplier.apply(
+            legendaryArtifactBear(),
+            CopyExceptions(
+                addedCardTypes = setOf(CardType.ENCHANTMENT),
+                overrideSubtypes = setOf(Subtype.GOBLIN),
+            ),
+        )
+        result.typeLine.cardTypes shouldBe
+            setOf(CardType.ARTIFACT, CardType.CREATURE, CardType.ENCHANTMENT)
+        result.typeLine.subtypes shouldBe setOf(Subtype.GOBLIN)
     }
 
     test("added colors union onto the copied colors") {
@@ -195,5 +213,29 @@ class CopyExceptionsTest : FunSpec({
         )
         effect.copyExceptions.powerOverride shouldBe null
         effect.copyExceptions.toughnessOverride shouldBe null
+    }
+
+    test("the self-copy token effect's flat riders map onto the same vocabulary") {
+        val effect = CreateTokenCopyOfSourceEffect(
+            overridePower = 1,
+            overrideToughness = 1,
+            addCardTypes = setOf("ARTIFACT"),
+            removeLegendary = true,
+        )
+        effect.copyExceptions shouldBe CopyExceptions(
+            removedSupertypes = setOf(Supertype.LEGENDARY),
+            addedCardTypes = setOf(CardType.ARTIFACT),
+            powerOverride = 1,
+            toughnessOverride = 1,
+        )
+    }
+
+    test("the self-copy 'except it isn't legendary' clause strips the supertype through the applier") {
+        val result = CopyExceptionApplier.apply(
+            legendaryArtifactBear(),
+            CreateTokenCopyOfSourceEffect(removeLegendary = true).copyExceptions,
+        )
+        result.typeLine.isLegendary shouldBe false
+        result.typeLine.cardTypes shouldBe setOf(CardType.ARTIFACT, CardType.CREATURE)
     }
 })
