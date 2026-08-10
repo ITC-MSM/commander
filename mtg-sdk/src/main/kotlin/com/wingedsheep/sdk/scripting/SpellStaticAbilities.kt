@@ -21,18 +21,60 @@ import kotlinx.serialization.Serializable
  *
  * @property filter The filter that spells must match to gain flash
  * @property controllerOnly If true, only the permanent's controller benefits (default: false = any player)
+ * @property nthOfTypePerTurn When set, only the Nth matching spell a player casts each turn gains
+ *   flash (1-indexed; counts the spell being cast). `1` is "the **first** [type] spell you cast each
+ *   turn … can be cast as though it had flash" (Radagast of Rhosgobel). The timing half of the same
+ *   "first spell each turn" gate that [CostGating.NthOfTypePerTurn] applies to cost, and it counts
+ *   the same way — off the caster's spells-cast-this-turn record, so a matching spell already cast
+ *   this turn closes the window even if it was countered. `null` (default) grants flash to every
+ *   matching spell, the Quick Sliver / Raff Capashen shape.
  */
 @SerialName("GrantFlashToSpellType")
 @Serializable
 data class GrantFlashToSpellType(
     val filter: GameObjectFilter,
-    val controllerOnly: Boolean = false
+    val controllerOnly: Boolean = false,
+    val nthOfTypePerTurn: Int? = null
 ) : StaticAbility {
-    override val description: String = if (controllerOnly) {
-        "You may cast ${filter.description} spells as though they had flash"
-    } else {
-        "Any player may cast ${filter.description} spells as though they had flash"
+    init {
+        require(nthOfTypePerTurn == null || nthOfTypePerTurn >= 1) {
+            "nthOfTypePerTurn must be at least 1, was $nthOfTypePerTurn"
+        }
     }
+
+    override val description: String = buildDescription()
+
+    private fun buildDescription(): String {
+        val subject = if (controllerOnly) "you cast" else "any player casts"
+        return if (nthOfTypePerTurn != null) {
+            // The gate names a single spell, so the whole clause goes singular.
+            "The ${ordinal(nthOfTypePerTurn)} ${filter.description} spell $subject each turn " +
+                "can be cast as though it had flash"
+        } else if (controllerOnly) {
+            "You may cast ${filter.description} spells as though they had flash"
+        } else {
+            "Any player may cast ${filter.description} spells as though they had flash"
+        }
+    }
+
+    private fun ordinal(n: Int): String = when (n) {
+        1 -> "first"
+        2 -> "second"
+        3 -> "third"
+        4 -> "fourth"
+        5 -> "fifth"
+        else -> {
+            val suffix = when {
+                n % 100 in 11..13 -> "th"
+                n % 10 == 1 -> "st"
+                n % 10 == 2 -> "nd"
+                n % 10 == 3 -> "rd"
+                else -> "th"
+            }
+            "$n$suffix"
+        }
+    }
+
     override fun applyTextReplacement(replacer: TextReplacer): StaticAbility {
         val newFilter = filter.applyTextReplacement(replacer)
         return if (newFilter !== filter) copy(filter = newFilter) else this

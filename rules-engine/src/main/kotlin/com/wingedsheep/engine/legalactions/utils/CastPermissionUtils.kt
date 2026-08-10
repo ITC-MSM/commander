@@ -43,6 +43,7 @@ import com.wingedsheep.sdk.scripting.PlayFromTopOfLibrary
 import com.wingedsheep.sdk.scripting.PlayLandsAndCastFilteredFromTopOfLibrary
 import com.wingedsheep.sdk.scripting.PlotFromTopOfLibrary
 import com.wingedsheep.engine.mechanics.ExhaustActivationWaiver
+import com.wingedsheep.engine.mechanics.FlashTypeGrants
 import com.wingedsheep.sdk.scripting.IgnoreExhaustActivationLimit
 import com.wingedsheep.sdk.scripting.PlayersCantActivateAbilities
 import com.wingedsheep.sdk.scripting.PlayersCantCastSpells
@@ -528,6 +529,7 @@ class CastPermissionUtils(
                 for (ability in cardDef.script.staticAbilities) {
                     if (ability is GrantFlashToSpellType) {
                         if (ability.controllerOnly && playerId != spellOwner) continue
+                        if (!FlashTypeGrants.nthGateAllows(state, spellOwner, ability, predicateEvaluator)) continue
                         if (predicateEvaluator.matches(state, state.projectedState, spellCardId, ability.filter, context)) {
                             return true
                         }

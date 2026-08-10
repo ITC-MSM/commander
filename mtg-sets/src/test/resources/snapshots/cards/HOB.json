@@ -1593,6 +1593,183 @@
     ]
 }
 
+// Down in the Valley
+{
+    "name": "Down in the Valley",
+    "manaCost": "{2}{G}",
+    "typeLine": "Enchantment — Saga",
+    "oracleText": "(As this Saga enters and after your draw step, add a lore counter. Sacrifice after IV.)\nI — Search your library for a basic land card, reveal it, put it into your hand, then shuffle.\nII — This Saga gains \"Landfall — Whenever a land you control enters, create a 1/1 green Elf creature token.\"\nIII, IV — Elves you control get +1/+0 and gain vigilance until end of turn.",
+    "script": {
+        "sagaChapters": [
+            {
+                "chapter": 1,
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Library",
+                                "filter": "basicland"
+                            },
+                            "storeAs": "searchable"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "searchable",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "found"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "found",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Hand"
+                            },
+                            "revealed": true
+                        },
+                        "ShuffleLibrary",
+                        "EmitLibrarySearchedEvent"
+                    ]
+                }
+            },
+            {
+                "chapter": 2,
+                "effect": {
+                    "type": "GrantTriggeredAbility",
+                    "ability": {
+                        "id": "ability_1",
+                        "trigger": {
+                            "type": "ZoneChangeEvent",
+                            "filter": "land ctrl:you",
+                            "to": "Battlefield"
+                        },
+                        "binding": "OTHER",
+                        "effect": {
+                            "type": "CreateToken",
+                            "power": 1,
+                            "toughness": 1,
+                            "colors": [
+                                "GREEN"
+                            ],
+                            "creatureTypes": [
+                                "Elf"
+                            ],
+                            "imageUri": "https://cards.scryfall.io/normal/front/7/6/761c7c31-c6c5-44e2-a845-f590542b6eda.jpg?1785497812"
+                        },
+                        "descriptionOverride": "Landfall — Whenever a land you control enters, create a 1/1 green Elf creature token."
+                    },
+                    "target": "Self",
+                    "duration": "Permanent"
+                }
+            },
+            {
+                "chapter": 3,
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "ForEach",
+                            "space": {
+                                "type": "IterationSpace.Group",
+                                "filter": {
+                                    "baseFilter": "creature Elf ctrl:you"
+                                }
+                            },
+                            "body": {
+                                "type": "ModifyStats",
+                                "powerModifier": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                },
+                                "toughnessModifier": {
+                                    "type": "Fixed",
+                                    "amount": 0
+                                },
+                                "target": "Self"
+                            }
+                        },
+                        {
+                            "type": "ForEach",
+                            "space": {
+                                "type": "IterationSpace.Group",
+                                "filter": {
+                                    "baseFilter": "creature Elf ctrl:you"
+                                }
+                            },
+                            "body": {
+                                "type": "GrantKeyword",
+                                "keyword": "VIGILANCE",
+                                "target": "Self"
+                            }
+                        }
+                    ]
+                }
+            },
+            {
+                "chapter": 4,
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "ForEach",
+                            "space": {
+                                "type": "IterationSpace.Group",
+                                "filter": {
+                                    "baseFilter": "creature Elf ctrl:you"
+                                }
+                            },
+                            "body": {
+                                "type": "ModifyStats",
+                                "powerModifier": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                },
+                                "toughnessModifier": {
+                                    "type": "Fixed",
+                                    "amount": 0
+                                },
+                                "target": "Self"
+                            }
+                        },
+                        {
+                            "type": "ForEach",
+                            "space": {
+                                "type": "IterationSpace.Group",
+                                "filter": {
+                                    "baseFilter": "creature Elf ctrl:you"
+                                }
+                            },
+                            "body": {
+                                "type": "GrantKeyword",
+                                "keyword": "VIGILANCE",
+                                "target": "Self"
+                            }
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "124",
+        "rarity": "RARE",
+        "artist": "Rovina Cai",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/8/c8aa5179-475b-4cc8-b21e-205b475eb4cf.jpg?1784895042"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Down, Down to Goblin-town
 {
     "name": "Down, Down to Goblin-town",
@@ -2099,6 +2276,94 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Dáin Ironfoot
+{
+    "name": "Dáin Ironfoot",
+    "manaCost": "{2}{R}",
+    "typeLine": "Legendary Creature — Dwarf Warrior",
+    "oracleText": "When Dáin enters, create a colorless Equipment artifact token named Axe with \"Equipped creature gets +1/+0\" and equip {2}. When you do, attach it to target creature you control.\nWhenever Dáin attacks, each equipped attacking creature gains double strike until end of turn.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 4
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "ReflexiveTrigger",
+                    "action": {
+                        "type": "CreatePredefinedToken",
+                        "tokenType": "Axe"
+                    },
+                    "optional": false,
+                    "reflexiveEffect": {
+                        "type": "AttachTargetEquipmentToCreature",
+                        "equipmentTarget": {
+                            "type": "PipelineTarget",
+                            "collectionName": "createdTokens"
+                        },
+                        "creatureTarget": {
+                            "type": "ContextTarget",
+                            "index": 0
+                        }
+                    },
+                    "reflexiveTargetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "creature ctrl:you"
+                            }
+                        }
+                    ],
+                    "descriptionOverride": "Create a colorless Equipment artifact token named Axe with \"Equipped creature gets +1/+0\" and equip {2}. When you do, attach it to target creature you control."
+                },
+                "descriptionOverride": "When Dáin enters, create a colorless Equipment artifact token named Axe with \"Equipped creature gets +1/+0\" and equip {2}. When you do, attach it to target creature you control."
+            },
+            {
+                "id": "ability_2",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": {
+                                "cardPredicates": [
+                                    "IsCreature"
+                                ],
+                                "statePredicates": [
+                                    "IsAttacking",
+                                    "IsEquipped"
+                                ]
+                            }
+                        }
+                    },
+                    "body": {
+                        "type": "GrantKeyword",
+                        "keyword": "DOUBLE_STRIKE",
+                        "target": "Self"
+                    }
+                },
+                "descriptionOverride": "Whenever Dáin attacks, each equipped attacking creature gains double strike until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "91",
+        "rarity": "RARE",
+        "artist": "Tomas Duchek",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/1/7112e460-9160-4535-ad94-93f1f4ac04cf.jpg?1785236701"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
@@ -6190,6 +6455,53 @@
     ]
 }
 
+// Radagast of Rhosgobel
+{
+    "name": "Radagast of Rhosgobel",
+    "manaCost": "{2}{G}{G}",
+    "typeLine": "Legendary Creature — Avatar Wizard",
+    "oracleText": "The first creature spell you cast each turn costs {2} less to cast and can be cast as though it had flash.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 5
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ModifySpellCost",
+                "target": {
+                    "type": "YouCast",
+                    "filter": "creature"
+                },
+                "modification": {
+                    "type": "ReduceGeneric",
+                    "amount": 2
+                },
+                "gating": {
+                    "type": "NthOfTypePerTurn",
+                    "n": 1
+                }
+            },
+            {
+                "type": "GrantFlashToSpellType",
+                "filter": "creature",
+                "controllerOnly": true,
+                "nthOfTypePerTurn": 1
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "136",
+        "rarity": "RARE",
+        "artist": "Anna Podedworna",
+        "flavorText": "\"Perhaps you have heard of my good cousin Radagast who lives near the southern borders of Mirkwood?\" Gandalf asked.\n\"Yes,\" said Beorn, \"not a bad fellow as Wizards go, I believe.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/7/5741bbad-a6e4-45e0-b827-73f48c9975bf.jpg?1785496313"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Rage into the Valley
 {
     "name": "Rage into the Valley",
@@ -6801,6 +7113,138 @@
         "imageUri": "https://cards.scryfall.io/normal/front/a/2/a2e4099e-86bd-461f-87fa-7f7850ae7eec.jpg?1785152396"
     },
     "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Silvan Reveler
+{
+    "name": "Silvan Reveler",
+    "manaCost": "{2}{G}{U}",
+    "typeLine": "Creature — Elf Citizen",
+    "oracleText": "When this creature enters, draw a card, then discard a card. If you discard a land card this way, put it from your graveyard onto the battlefield tapped.\nLandfall — Whenever a land you control enters, you may pay {1}{G}{U}. If you do, return this card from your graveyard to your hand.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        },
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Hand"
+                            },
+                            "storeAs": "gathered1"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "gathered1",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "selected2",
+                            "prompt": "Choose a card to discard",
+                            "selectedLabel": "Discard"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "selected2",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            },
+                            "moveType": "Discard"
+                        },
+                        {
+                            "type": "FilterCollection",
+                            "from": "selected2",
+                            "filter": {
+                                "type": "MatchesFilter",
+                                "filter": "land"
+                            },
+                            "storeMatching": "matching4"
+                        },
+                        {
+                            "type": "FilterCollection",
+                            "from": "matching4",
+                            "filter": {
+                                "type": "InZone",
+                                "zone": "Graveyard"
+                            },
+                            "storeMatching": "matching5"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "matching5",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Battlefield",
+                                "placement": "Tapped"
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "When this creature enters, draw a card, then discard a card. If you discard a land card this way, put it from your graveyard onto the battlefield tapped."
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "land ctrl:you",
+                    "to": "Battlefield"
+                },
+                "binding": "OTHER",
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.MayPay",
+                        "cost": {
+                            "type": "PayManaCost",
+                            "cost": "{1}{G}{U}"
+                        }
+                    },
+                    "then": {
+                        "type": "MoveToZone",
+                        "target": "Self",
+                        "destination": "Hand"
+                    }
+                },
+                "activeZones": [
+                    "Graveyard"
+                ],
+                "descriptionOverride": "Landfall — Whenever a land you control enters, you may pay {1}{G}{U}. If you do, return this card from your graveyard to your hand."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "163",
+        "rarity": "UNCOMMON",
+        "artist": "Bokun An",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/7/c71b74fb-fb0c-4953-b536-7a3f283c6918.jpg?1784382379"
+    },
+    "colorIdentityOverride": [
+        "GREEN",
         "BLUE"
     ]
 }
