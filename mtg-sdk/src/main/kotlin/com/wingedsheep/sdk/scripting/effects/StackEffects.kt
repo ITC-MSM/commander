@@ -491,6 +491,30 @@ sealed interface WardCost {
     }
 
     /**
+     * Ward—Collect evidence N (CR 701.59) — e.g. Axebane Ferox's "Ward—Collect evidence 4."
+     *
+     * The payment is the ordinary keyword action: exile any number of cards from your graveyard
+     * with total mana value [amount] or greater. Because the constraint is a **sum** and not a
+     * count, this is not expressible as a [Sacrifice]-style counted selection; the engine routes it
+     * through the same `CollectEvidenceResolver` every other collect-evidence context uses, so the
+     * reachability gate, the legal-selection rule and the exile can't drift from the activated-cost
+     * and cast-cost forms.
+     *
+     * CR 701.59b fails closed here as everywhere else: a controller whose graveyard cannot reach
+     * [amount] *can't choose to collect evidence*, so the spell or ability is countered without a
+     * prompt rather than offering a payment they'd have to refuse.
+     *
+     * This is an **unlinked** cost — nothing on the card asks "was evidence collected", so it
+     * stamps no `ChoiceSlot` (the linkage of CR 701.59c belongs only to the optional cast-cost
+     * shape, `card { collectEvidence(n) }`).
+     */
+    @SerialName("WardCost.CollectEvidence")
+    @Serializable
+    data class CollectEvidence(val amount: Int) : WardCost {
+        override val description: String = "collect evidence $amount"
+    }
+
+    /**
      * A ward cost made of two or more component costs that must *all* be paid — e.g.
      * "Ward—{2}, Pay 2 life." (Gisa, the Hellraiser). The components are paid one at a time
      * in order; declining or being unable to pay any one component counters the spell or
@@ -531,6 +555,9 @@ data class WardCounterEffect(
         is WardCost.DynamicLife -> "Counter it unless its controller pays life equal to ${cost.amount.description}"
         is WardCost.Discard -> "Counter it unless its controller discards ${cost.description}"
         is WardCost.Sacrifice -> "Counter it unless its controller sacrifices ${cost.description}"
+        is WardCost.CollectEvidence ->
+            "Counter it unless its controller exiles cards with total mana value " +
+                "${cost.amount} or greater from their graveyard"
         is WardCost.Composite -> "Counter it unless its controller pays ${cost.description}"
     }
 }

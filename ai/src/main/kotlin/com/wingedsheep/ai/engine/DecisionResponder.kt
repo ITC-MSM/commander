@@ -201,6 +201,24 @@ class DecisionResponder(
             return CardsSelectedResponse(decision.id, options)
         }
 
+        // A `minTotalManaValue` floor (collect evidence N, CR 701.59a) is a *sum* gate, so none of
+        // the count-based branches below can satisfy it — taking `min` cheap cards submits an
+        // illegal selection the validator rejects, and taking zero silently declines an optional
+        // one (a ward cost) every time. Pay it with the fewest cards, highest mana values first,
+        // which is the same choice `CollectEvidenceResolver.autoSelect` makes; submit nothing when
+        // the pool can't reach the floor, which CR 701.59b makes the only legal answer anyway.
+        decision.minTotalManaValue?.let { floor ->
+            val byValueDesc = options.sortedByDescending { manaValueOf(state, it) }
+            val payment = mutableListOf<EntityId>()
+            var total = 0
+            for (cardId in byValueDesc) {
+                if (total >= floor || payment.size >= max) break
+                payment.add(cardId)
+                total += manaValueOf(state, cardId)
+            }
+            return CardsSelectedResponse(decision.id, if (total >= floor) payment else emptyList())
+        }
+
         // Context-aware ranking
         val prompt = decision.prompt.lowercase()
         val isDiscard = prompt.contains("discard")
@@ -238,6 +256,14 @@ class DecisionResponder(
             }
         }
     }
+
+    /**
+     * Mana value of a card in a non-battlefield zone — intrinsic to the card (CR 202.3), so the
+     * base [CardComponent] is the correct read. Unreadable entities count 0, which keeps a
+     * mana-value floor failing closed.
+     */
+    private fun manaValueOf(state: GameState, cardId: EntityId): Int =
+        state.getEntity(cardId)?.get<CardComponent>()?.manaValue ?: 0
 
     /** Prefer the smallest legal selection, honoring reductions such as “discard two unless one is a creature.” */
     private fun minimumLegalSelection(

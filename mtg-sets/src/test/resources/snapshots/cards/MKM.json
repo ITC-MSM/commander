@@ -131,6 +131,51 @@
     ]
 }
 
+// Axebane Ferox
+{
+    "name": "Axebane Ferox",
+    "manaCost": "{2}{G}{G}",
+    "typeLine": "Creature — Beast",
+    "oracleText": "Deathtouch, haste\nWard—Collect evidence 4. (Whenever this creature becomes the target of a spell or ability an opponent controls, counter it unless that player exiles cards with total mana value 4 or greater from their graveyard.)",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "DEATHTOUCH",
+        "HASTE",
+        "WARD"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Ward",
+            "cost": {
+                "type": "WardCost.CollectEvidence",
+                "amount": 4
+            }
+        }
+    ],
+    "metadata": {
+        "collectorNumber": "153",
+        "rarity": "RARE",
+        "artist": "Maxime Minard",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/1/610a0de4-a4f7-446b-8477-00c917cb4789.jpg?1783912873",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "If you can't exile enough cards to meet or exceed the required mana value, you can't choose to collect evidence at all."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "Once you've announced that you're casting a spell, players can't take actions until you've finished doing so. Notably, opponents can't try to remove cards from your graveyard to stop you from collecting evidence."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Basilica Stalker
 {
     "name": "Basilica Stalker",
@@ -532,6 +577,64 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Chalk Outline
+{
+    "name": "Chalk Outline",
+    "manaCost": "{3}{G}",
+    "typeLine": "Enchantment",
+    "oracleText": "Whenever one or more creature cards leave your graveyard, create a 2/2 white and blue Detective creature token, then investigate. (Create a Clue token. It's an artifact with \"{2}, Sacrifice this token: Draw a card.\")",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "CardsLeftYourGraveyardEvent",
+                    "filter": "creature"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "CreateToken",
+                            "power": 2,
+                            "toughness": 2,
+                            "colors": [
+                                "WHITE",
+                                "BLUE"
+                            ],
+                            "creatureTypes": [
+                                "Detective"
+                            ]
+                        },
+                        {
+                            "type": "CreatePredefinedToken",
+                            "tokenType": "Clue"
+                        }
+                    ]
+                },
+                "descriptionOverride": "Whenever one or more creature cards leave your graveyard, create a 2/2 white and blue Detective creature token, then investigate."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "157",
+        "rarity": "UNCOMMON",
+        "artist": "Julia Griffin",
+        "flavorText": "\"In your search for a suspect, never forget that the most important person is the victim.\"\n—Ezrim, Agency chief",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/3/b3ff56c1-4153-4e15-9ac6-06d93fa2ae50.jpg?1783912868",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "If multiple creature cards leave your graveyard at the same time, Chalk Outline's ability will trigger only once."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 
@@ -2909,6 +3012,58 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Innocent Bystander
+{
+    "name": "Innocent Bystander",
+    "manaCost": "{1}{R}",
+    "typeLine": "Creature — Goblin Citizen",
+    "oracleText": "Whenever this creature is dealt 3 or more damage, investigate. (Create a Clue token. It's an artifact with \"{2}, Sacrifice this token: Draw a card.\")",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "DamageReceivedEvent",
+                "effect": {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Clue"
+                },
+                "triggerCondition": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "ContextProperty",
+                        "key": "TRIGGER_DAMAGE_AMOUNT"
+                    },
+                    "operator": "GTE",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 3
+                    }
+                },
+                "descriptionOverride": "Whenever this creature is dealt 3 or more damage, investigate."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "133",
+        "artist": "Warren Mahy",
+        "flavorText": "\"Whoops, this isn't my street! Don't mind me! I'll just be on my way while you enjoy your . . . very sharp knives.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/8/085f4595-4ae5-428e-a934-e918774df6fd.jpg?1783912882",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "Innocent Bystander's ability triggers only if it's dealt 3 or more damage all at once. It doesn't trigger if damage that adds up to 3 or more is dealt to it at different times."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
@@ -6197,6 +6352,51 @@
     ]
 }
 
+// Sudden Setback
+{
+    "name": "Sudden Setback",
+    "manaCost": "{2}{U}{U}",
+    "typeLine": "Instant",
+    "oracleText": "The owner of target spell or nonland permanent puts it on their choice of the top or bottom of their library.",
+    "script": {
+        "spellEffect": {
+            "type": "PutOnLibraryPositionOfChoice",
+            "target": {
+                "type": "BoundVariable",
+                "name": "target spell or nonland permanent"
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetSpellOrPermanent",
+                "id": "target spell or nonland permanent",
+                "permanentFilter": {
+                    "cardPredicates": [
+                        "IsNonland",
+                        "IsPermanent"
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "72",
+        "rarity": "UNCOMMON",
+        "artist": "Olivier Bernard",
+        "flavorText": "\"Look, buddy, you're not in trouble. I just wanna ask you a questio—\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/b/0b9e5fd6-a5ea-4ae5-83f5-89ed6a658dd3.jpg?1783912904",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "The spell or permanent's owner chooses whether to put it on the top or bottom of their library. If multiple cards are put into the library this way (such as when the spell targets a melded permanent), that spell or permanent's owner puts all the cards on top or all the cards on the bottom. They put them in whatever order they wish, and they do not need to reveal the order."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Surveillance Monitor
 {
     "name": "Surveillance Monitor",
@@ -7255,6 +7455,67 @@
     "colorIdentityOverride": [
         "WHITE",
         "BLACK"
+    ]
+}
+
+// Wojek Investigator
+{
+    "name": "Wojek Investigator",
+    "manaCost": "{2}{W}",
+    "typeLine": "Creature — Angel Detective",
+    "oracleText": "Flying, vigilance\nAt the beginning of your upkeep, investigate once for each opponent who has more cards in hand than you. (To investigate, create a Clue token. It's an artifact with \"{2}, Sacrifice this token: Draw a card.\")",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 4
+    },
+    "keywords": [
+        "FLYING",
+        "VIGILANCE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Clue",
+                    "dynamicCount": {
+                        "type": "CountPlayersWith",
+                        "scope": "EachOpponent",
+                        "condition": {
+                            "type": "Compare",
+                            "left": {
+                                "type": "Count",
+                                "player": "You",
+                                "zone": "Hand"
+                            },
+                            "operator": "GT",
+                            "right": {
+                                "type": "Count",
+                                "player": "ControllerOfSource",
+                                "zone": "Hand"
+                            }
+                        }
+                    }
+                },
+                "descriptionOverride": "At the beginning of your upkeep, investigate once for each opponent who has more cards in hand than you."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "36",
+        "rarity": "RARE",
+        "artist": "Ben Hill",
+        "flavorText": "\"Well, this clearly didn't come from anyone I know...\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/9/296574c6-3933-4ab3-b591-72514b244da9.jpg?1783912917"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 

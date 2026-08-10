@@ -166,6 +166,13 @@ object TargetResolutionUtils {
             // still acts on the owner (Gandalf, Wandering Wizard).
             Player.OwnerOfSource -> context.sourceId
                 ?.let { state.getEntity(it)?.get<CardComponent>()?.ownerId }
+            // "You", read off the source instead of the context — the one reference that survives
+            // a per-player rebind of controllerId (CountPlayersWith / ForEach-over-players).
+            // Falls back to the context controller for sources that aren't on the battlefield
+            // (a resolving spell), where the two always agree anyway.
+            Player.ControllerOfSource -> context.sourceId
+                ?.let { controllerOf(state, it) }
+                ?: context.controllerId
             is Player.ControllerOf -> context.targets.firstOrNull()?.toEntityId()
                 ?.let { controllerOf(state, it) }
             // Multi-player / list-only references have no single resolution here.

@@ -1456,6 +1456,10 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
 - `CreateClue(count?, controller?)` / `Investigate(count?, controller?)` — Clue tokens (artifact with
   "{2}, Sacrifice this token: Draw a card."). `Investigate` is the keyword-action spelling (CR 701.36) so
   card text "investigate" maps directly; both create the same predefined `Clue` token — Malcolm, the Eyes.
+  Both also take a `DynamicAmount` in place of the `Int` for "investigate once for each …" wording
+  whose repetition count is only known at resolution (Wojek Investigator:
+  `Investigate(DynamicAmount.CountPlayersWith(EachOpponent, …))`). A count of zero investigates not at
+  all, which is what the wording means when nothing qualifies.
 - `CreateShard(count?, controller?)` — Shard tokens (the Clue token's enchantment cousin: colorless
   "Enchantment — Shard" with "{2}, Sacrifice this enchantment: Scry 1, then draw a card."). Niko, Light of Hope.
 - `CreateLander(count?, controller?)` — Lander land tokens.
@@ -2773,6 +2777,16 @@ can't statically prevent (cross-trigger flows, `Self`-vs-`ContextTarget` inside 
   creature]'s owner shuffles it into their library and draws three cards"* (Gandalf, Wandering
   Wizard). Distinct from `Player.You` precisely when ownership and control diverge — a stolen
   permanent's ability still acts on its owner. Reach for `Player.You` whenever the text says "you".
+- `Player.ControllerOfSource` — "you", but read off the **source permanent** rather than off the
+  resolution context's `controllerId`. Normally identical to `Player.You`, and `Player.You` stays the
+  right reference; this one exists for the case where the context's controller has been **rebound to
+  another player**, which is what the per-player loops do. `DynamicAmount.CountPlayersWith` and
+  `ForEach`-over-players evaluate their inner condition once per candidate with `controllerId` set to
+  that candidate, so `Player.You` inside the loop means "the player being tested" and the ability's own
+  controller is otherwise unreachable. That is the shape of "for each opponent who has more cards in
+  hand **than you**" (Wojek Investigator): `CountPlayersWith(EachOpponent, CompareAmounts(Count(You,
+  HAND), GT, Count(ControllerOfSource, HAND)))`. Pairs with `Player.OwnerOfSource`, which follows
+  *ownership* instead of control.
 - `Player.OwnersOfLinkedExile` — the **distinct owners** of the cards still in the effect source's
   linked-exile pile (`LinkedExileComponent`, populated by `Effects.ExileUntilLeaves`). A *list*
   reference: reach it only through `Effects.ForEachPlayer(Player.OwnersOfLinkedExile, …)`, typically
@@ -6284,9 +6298,10 @@ copy of it (CR 707.10e). The activated-ability analogue of the spell-level `cant
 > permanent the spell becomes. Because the rail carries a `ChoiceSlot` rather than a boolean, the
 > three facts never read as each other: a spell cast with evidence collected doesn't satisfy
 > `Conditions.WasKicked` or `Conditions.WasBargained`, and neither of those satisfies
-> `Conditions.WasEvidenceCollected`. Every *unlinked* collect-evidence cost (all the activated
-> abilities, Axebane Ferox's ward) uses `Costs.CollectEvidence(n)` and stamps nothing, because nothing
-> on those cards asks the question.
+> `Conditions.WasEvidenceCollected`. Every *unlinked* collect-evidence cost stamps nothing, because
+> nothing on those cards asks the question: the activated abilities use `Costs.CollectEvidence(n)`,
+> and a **ward** cost uses `KeywordAbility.wardCollectEvidence(n)` → `WardCost.CollectEvidence(n)`
+> (Axebane Ferox — see § Keywords → Ward for the prompt shape and the fail-closed behaviour).
 >
 > The payoff shapes the printed cards use:
 > - **Enters trigger** — `triggerCondition = Conditions.WasEvidenceCollected` (Vitu-Ghazi Inspector).
@@ -6480,7 +6495,8 @@ composite abilities).
   **own printed** ward; granting ward to *other* permanents is the `GrantWard` static ability instead
   (see *Composite static abilities*). Non-mana costs use
   `KeywordAbility.Ward(WardCost.X)`: `WardCost.Mana`, `WardCost.Life(n)`, `WardCost.DynamicLife(amount)`,
-  `WardCost.Discard(n, random, filter)`,
+  `WardCost.Discard(n, random, filter)`, `WardCost.CollectEvidence(n)` ("Ward—Collect evidence 4",
+  Axebane Ferox),
   and `WardCost.Sacrifice(filter, count = 1)` ("Ward—Sacrifice a Food", Ygra; "Ward—Sacrifice three
   nonland permanents" with `count = 3`, Valgavoth, Terror Eater, via `KeywordAbility.wardSacrifice(filter, count)`).
   For sacrifice ward, the opponent chooses which `count` matching permanent(s) they control to sacrifice
@@ -6503,6 +6519,19 @@ composite abilities).
   last-known power if the source has left the battlefield (CR 112.7a, via `EntityReference.Source`'s
   last-known-information policy). It resolves down to a fixed `WardCost.Life` in the executor, so it
   composes inside `WardCost.Composite` and uses the same pay-or-counter prompt.
+  `WardCost.CollectEvidence(n)` (built via `KeywordAbility.wardCollectEvidence(n)`) is
+  **Ward—Collect evidence N** (CR 701.59 — Axebane Ferox's "Ward—Collect evidence 4"): the targeting
+  opponent must exile any number of cards from their own graveyard with **total mana value** N or
+  greater. It is the one ward cost whose constraint is a *sum* rather than a count, so the prompt is a
+  variable-size `SelectCardsDecision` (min 0 — the empty selection is how declining is expressed — up
+  to the whole graveyard) carrying `minTotalManaValue = n`; `DecisionValidators` enforces that floor on
+  any non-empty submission, so the resumer only ever sees a decline or a legal collection. CR 701.59b
+  fails closed exactly as in every other collect-evidence context: a graveyard that can't reach N means
+  the controller *can't choose to collect evidence*, and the spell is countered with **no prompt at
+  all**. The reachability gate, the legality re-check and the exile all run through the shared
+  `CollectEvidenceResolver`, so the `EvidenceCollectedEvent` a ward payment emits fires "whenever you
+  collect evidence" payoffs (Surveillance Monitor) like any other. It is an **unlinked** cost — it
+  stamps no `ChoiceSlot`, so it satisfies no `Conditions.WasEvidenceCollected` (§ Collect evidence N).
   **Ward—Waterbend `{N}`** (Avatar: The Last Airbender — The Unagi of Kyoshi Island's
   "Ward—Waterbend {4}") is `KeywordAbility.wardWaterbend("{4}")` → `WardCost.Mana("{4}", waterbend = true)`.
   It is an ordinary mana ward, but while paying the `{N}` the controller may tap their untapped
