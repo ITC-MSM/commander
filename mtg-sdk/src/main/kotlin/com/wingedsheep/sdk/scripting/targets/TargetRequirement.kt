@@ -189,14 +189,16 @@ fun TargetPermanent(
     unlimited: Boolean = false,
     filter: TargetFilter = TargetFilter.Permanent,
     id: String? = null,
-    dynamicMaxCount: DynamicAmount? = null
+    dynamicMaxCount: DynamicAmount? = null,
+    sameCardType: Boolean = false
 ): TargetObject = TargetObject(
     count = count,
     optional = optional,
     unlimited = unlimited,
     filter = filter,
     id = id,
-    dynamicMaxCount = dynamicMaxCount
+    dynamicMaxCount = dynamicMaxCount,
+    sameCardType = sameCardType
 )
 
 // =============================================================================
@@ -385,6 +387,17 @@ data class TargetObject(
      */
     val sameCreatureType: Boolean = false,
     /**
+     * When true and more than one target is chosen for this requirement, the chosen permanent
+     * targets must all share at least one **card type** (CR 205.2a — artifact, creature,
+     * enchantment, planeswalker, …) with one another — "two target nonland permanents that share a
+     * card type" (Burglar's Plot). The card-type sibling of [sameCreatureType]: enforced
+     * cross-target by `TargetValidator` using each permanent's *projected* types (so an animated
+     * land counts as a creature) with supertypes sieved out (two legendary permanents don't share
+     * a card type by being legendary). A no-op for single-target requirements and for non-permanent
+     * targets. Defaults to false.
+     */
+    val sameCardType: Boolean = false,
+    /**
      * When non-null, the chosen card targets for this requirement must have a **combined mana
      * value no greater than this amount** — "any number of target creature cards with total mana
      * value X or less" (Fire Lord Sozin). The [DynamicAmount] is resolved once the ability is
@@ -437,6 +450,7 @@ data class TargetObject(
             sameController -> "$base controlled by the same player"
             sameOwner -> "$base from a single graveyard"
             sameCreatureType -> "$base that share a creature type"
+            sameCardType -> "$base that share a card type"
             else -> base
         }
         if (totalManaValueAtMost != null) {

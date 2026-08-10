@@ -2983,6 +2983,16 @@ Every `TargetRequirement` carries count semantics (defaults shown):
   the battlefield — can never share, so the set is rejected. A no-op for single-target requirements and for
   non-permanent targets. E.g. `TargetCreature(count = 2, filter = TargetFilter.CreatureYouControl,
   sameCreatureType = true)` (Secret Tunnel).
+- `sameCardType = false` — on `TargetObject` / `TargetPermanent(...)`; the **card-type** sibling of
+  `sameCreatureType`. When `true` and the requirement picks more than one target, the chosen **permanent**
+  targets must all share at least one *card type* per CR 205.2a — artifact, creature, enchantment,
+  planeswalker, … ("**two target nonland permanents that share a card type**"). Enforced cross-target by
+  `TargetValidator` as the non-empty intersection of every target's *projected* types with supertypes
+  sieved out, so an animated land counts as a creature but two legendary permanents do **not** qualify by
+  both being legendary. A target off the battlefield contributes nothing and rejects the set. A no-op for
+  single-target requirements and non-permanent targets. E.g. `TargetPermanent(count = 2, filter =
+  TargetFilter.NonlandPermanent, sameCardType = true)` (Burglar's Plot, the Adventure half of
+  Bilbo, Luckwearer).
 - `totalManaValueAtMost = null` — on `TargetObject`; when set to a `DynamicAmount`, the **combined
   mana value** of the chosen **card** targets may not exceed the resolved amount ("**any number of
   target creature cards with total mana value X or less**"). The amount is resolved once the ability
@@ -3193,6 +3203,15 @@ This is the player-arm prerequisite for the planned composable mixed `TargetUnio
   creature you control") with `filter = GameObjectFilter.Creature.legendary()`. Colorless candidates
   never match. Evaluated for real in targeting/search/count contexts; inert (false) in
   static-projection / trigger-gating, permissive (true) in cost-calculation.
+- `.sharingNameWithPermanentYouControl(filter)` — `CardPredicate.SharesNameWithPermanentYouControl`:
+  has the **same name** as at least one permanent the evaluating player controls matching `filter`. The
+  name sibling of `.sharingColorWithPermanentYouControl`; names compare exactly, read off the permanent's
+  card component (copy effects already rewrite it), and a nameless object never matches. Used by Key to
+  the Side-Door ("Discard a legendary card with the same name as a legendary permanent you control") as a
+  `Costs.Discard(...)` filter — the cost enumerators supply a `PredicateContext` whose `controllerId` is
+  the activating player, so the battlefield side is scoped to "you control". Evaluated for real in
+  targeting/search/cost contexts; inert (false) in static-projection / trigger-gating, permissive (true)
+  in cost-calculation.
 - `.notSharingCreatureTypeWithPermanentYouControl(filter)` —
   `CardPredicate.DoesNotShareCreatureTypeWithPermanentYouControl`: shares **no** (projected) creature
   type with any permanent the evaluating player controls matching `filter`. Negative analogue of

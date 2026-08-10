@@ -657,6 +657,194 @@
     ]
 }
 
+// Bilbo's Gambit
+{
+    "name": "Bilbo's Gambit",
+    "manaCost": "{1}{W}",
+    "typeLine": "Instant",
+    "oracleText": "Gift a Treasure (You may promise an opponent a gift as you cast this spell. If you do, they create a Treasure token before its other effects. It's an artifact with \"{T}, Sacrifice this token: Add one mana of any color.\")\nReturn target spell to its owner's hand. If the gift was promised, players can't cast spells this turn.",
+    "script": {
+        "spellEffect": {
+            "type": "Modal",
+            "modes": [
+                {
+                    "effect": "ReturnSpellToOwnersHand",
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": {},
+                                "zone": "Stack"
+                            }
+                        }
+                    ],
+                    "description": "Don't promise a gift — return target spell to its owner's hand"
+                },
+                {
+                    "effect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "ChooseOpponentForSource",
+                                "prompt": "Choose an opponent to receive the gift"
+                            },
+                            {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "CreatePredefinedToken",
+                                        "tokenType": "Treasure",
+                                        "controller": {
+                                            "type": "PlayerRef",
+                                            "player": "ChosenOpponent"
+                                        }
+                                    },
+                                    "ReturnSpellToOwnersHand",
+                                    {
+                                        "type": "CantCastSpells",
+                                        "target": {
+                                            "type": "PlayerRef",
+                                            "player": "Each"
+                                        }
+                                    },
+                                    "GiftGiven"
+                                ]
+                            }
+                        ]
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": {},
+                                "zone": "Stack"
+                            }
+                        }
+                    ],
+                    "description": "Promise a gift — that opponent creates a Treasure, then return target spell to its owner's hand and players can't cast spells this turn"
+                }
+            ],
+            "countsAsModalSpell": false
+        }
+    },
+    "metadata": {
+        "collectorNumber": "5",
+        "rarity": "RARE",
+        "artist": "Randy Gallegos",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/5/45ad01f0-cda8-4931-82bb-cb4949e56ae9.jpg?1784894818"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Bilbo, Luckwearer
+{
+    "name": "Bilbo, Luckwearer",
+    "manaCost": "{1}{U}",
+    "typeLine": "Legendary Creature — Halfling Rogue",
+    "oracleText": "Bilbo can't be blocked.\nWhenever Bilbo deals combat damage to a player, draw a card, then discard a card.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "DealsDamageEvent",
+                    "damageType": "DamageCombat",
+                    "recipient": "AnyPlayer"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        },
+                        {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "GatherCards",
+                                    "source": {
+                                        "type": "FromZone",
+                                        "zone": "Hand"
+                                    },
+                                    "storeAs": "hand"
+                                },
+                                {
+                                    "type": "SelectFromCollection",
+                                    "from": "hand",
+                                    "selection": {
+                                        "type": "ChooseExactly",
+                                        "count": {
+                                            "type": "Fixed",
+                                            "amount": 1
+                                        }
+                                    },
+                                    "storeSelected": "discarded",
+                                    "prompt": "Choose 1 card to discard"
+                                },
+                                {
+                                    "type": "MoveCollection",
+                                    "from": "discarded",
+                                    "destination": {
+                                        "type": "ToZone",
+                                        "zone": "Graveyard"
+                                    },
+                                    "moveType": "Discard"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "descriptionOverride": "Draw a card, then discard a card."
+            }
+        ],
+        "staticAbilities": [
+            "CantBeBlocked"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "32",
+        "rarity": "UNCOMMON",
+        "artist": "Anna Steinbauer",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/b/8bff0aa6-16d9-4c83-b598-ef00a3b33d2c.jpg?1783902786"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ],
+    "layout": "ADVENTURE",
+    "cardFaces": [
+        {
+            "name": "Burglar's Plot",
+            "manaCost": "{4}{U}",
+            "typeLine": "Sorcery — Adventure",
+            "oracleText": "Exchange control of two target nonland permanents that share a card type. (Then exile this card. You may cast the creature later from exile.)",
+            "script": {
+                "spellEffect": "ExchangeControl",
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "count": 2,
+                        "filter": {
+                            "baseFilter": "nonland permanent"
+                        },
+                        "id": "two target nonland permanents that share a card type",
+                        "sameCardType": true
+                    }
+                ]
+            }
+        }
+    ]
+}
+
 // Bofur, Reliable Guardian
 {
     "name": "Bofur, Reliable Guardian",
@@ -4986,6 +5174,103 @@
     "colorIdentityOverride": [
         "RED"
     ]
+}
+
+// Key to the Side-Door
+{
+    "name": "Key to the Side-Door",
+    "manaCost": "{1}",
+    "typeLine": "Artifact",
+    "oracleText": "{2}, {T}: Target creature can't be blocked this turn.\n{1}, {T}, Discard a legendary card with the same name as a legendary permanent you control: Draw two cards.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "GrantKeyword",
+                    "keyword": "CANT_BE_BLOCKED",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature"
+                        },
+                        "id": "target creature"
+                    }
+                ],
+                "descriptionOverride": "Target creature can't be blocked this turn."
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}"
+                            }
+                        },
+                        "CostTap",
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomDiscard",
+                                "filter": {
+                                    "cardPredicates": [
+                                        "IsLegendary",
+                                        {
+                                            "type": "SharesNameWithPermanentYouControl",
+                                            "filter": {
+                                                "cardPredicates": [
+                                                    "IsPermanent",
+                                                    "IsLegendary"
+                                                ]
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 2
+                    }
+                },
+                "descriptionOverride": "Draw two cards."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "175",
+        "rarity": "UNCOMMON",
+        "artist": "Nathaniel Himawan",
+        "flavorText": "\"I forgot to mention that with the map went a key, a small and curious key.\"\n—Gandalf, to Thorin",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/9/898c14a2-d897-4341-83ed-eee666df9648.jpg?1785412757"
+    }
 }
 
 // Lake-town
@@ -10580,6 +10865,103 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Wizard's Staff
+{
+    "name": "Wizard's Staff",
+    "manaCost": "{1}{U}",
+    "typeLine": "Artifact — Equipment",
+    "oracleText": "Equipped creature has prowess. (Whenever its controller casts a noncreature spell, that creature gets +1/+1 until end of turn.)\nIf an ability of equipped creature triggers, that ability triggers an additional time.\nEquip Wizard {1} ({1}: Attach to target Wizard you control. Equip only as a sorcery.)\nEquip {3} ({3}: Attach to target creature you control. Equip only as a sorcery.)",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{1}"
+                    }
+                },
+                "effect": {
+                    "type": "AttachEquipment",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target Wizard you control"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature Wizard ctrl:you"
+                        },
+                        "id": "target Wizard you control"
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "isEquipAbility": true,
+                "descriptionOverride": "Equip Wizard {1}"
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{3}"
+                    }
+                },
+                "effect": {
+                    "type": "AttachEquipment",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "creature you control"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        },
+                        "id": "creature you control"
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "isEquipAbility": true
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "GrantKeyword",
+                "keyword": "PROWESS"
+            },
+            {
+                "type": "AdditionalSourceTriggers",
+                "sourceFilter": {
+                    "cardPredicates": [
+                        "IsPermanent"
+                    ],
+                    "statePredicates": [
+                        "IsAttachedToBySource"
+                    ]
+                },
+                "description": "If an ability of equipped creature triggers, that ability triggers an additional time"
+            }
+        ]
+    },
+    "equipCost": "{3}",
+    "metadata": {
+        "collectorNumber": "59",
+        "rarity": "RARE",
+        "artist": "Gaboleps",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/d/0de529a7-bdc5-4581-a169-1ad123bc099a.jpg?1785152406"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 

@@ -657,6 +657,15 @@ data class GameObjectFilter(
     )
 
     /**
+     * Must have the same name as at least one permanent the evaluating player controls matching
+     * [filter] (Key to the Side-Door: "a legendary card with the same name as a legendary permanent
+     * you control").
+     */
+    fun sharingNameWithPermanentYouControl(filter: GameObjectFilter) = copy(
+        cardPredicates = cardPredicates + CardPredicate.SharesNameWithPermanentYouControl(filter)
+    )
+
+    /**
      * Must share **no** creature type with any permanent the evaluating player controls matching
      * [filter] (Radagast the Brown: "a creature card that doesn't share a creature type with a
      * creature you control").

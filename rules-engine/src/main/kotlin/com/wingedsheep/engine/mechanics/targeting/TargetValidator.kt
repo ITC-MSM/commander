@@ -26,6 +26,13 @@ import com.wingedsheep.sdk.scripting.targets.*
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
 
 /**
+ * The card-type names (CR 205.2a). `ProjectedState.getTypes` folds supertypes (LEGENDARY, BASIC,
+ * SNOW, …) in beside them, so a "share a card type" comparison has to sieve through this — else two
+ * legendary permanents would qualify by both being legendary.
+ */
+private val CARD_TYPE_NAMES: Set<String> = CardType.entries.mapTo(mutableSetOf()) { it.name }
+
+/**
  * Validates that chosen targets match their target requirements.
  *
  * This class checks if a target:
@@ -193,6 +200,25 @@ class TargetValidator {
                 val shared = subtypeSets.reduce { acc, next -> acc intersect next }
                 if (shared.isEmpty()) {
                     return "Targets must share a creature type"
+                }
+            }
+
+            // "... that share a card type" — every chosen permanent target must hold at least one
+            // *card type* (CR 205.2a) in common with all the others (Burglar's Plot). Projected
+            // types, so an animated land counts as a creature; supertypes are sieved out, so two
+            // legendary permanents don't qualify by both being legendary. No-op for single-target
+            // requirements; a target off the battlefield contributes nothing and rejects the set.
+            if (requirement is TargetObject && requirement.sameCardType && targetsForReq.size > 1) {
+                val projected = state.projectedState
+                val typeSets = targetsForReq.map { target ->
+                    (target as? ChosenTarget.Permanent)
+                        ?.takeIf { it.entityId in state.getBattlefield() }
+                        ?.let { perm -> projected.getTypes(perm.entityId).filterTo(mutableSetOf()) { it in CARD_TYPE_NAMES } }
+                        ?: emptySet()
+                }
+                val shared = typeSets.reduce { acc, next -> acc intersect next }
+                if (shared.isEmpty()) {
+                    return "Targets must share a card type"
                 }
             }
 

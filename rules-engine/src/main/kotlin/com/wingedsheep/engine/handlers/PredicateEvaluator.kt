@@ -654,6 +654,17 @@ class PredicateEvaluator {
                 }
             }
 
+            is CardPredicate.SharesNameWithPermanentYouControl -> {
+                val name = card.name
+                if (name.isBlank()) return false
+                val controllerId = context?.controllerId ?: return false
+                state.getBattlefield().any { otherId ->
+                    projected.getController(otherId) == controllerId &&
+                        state.getEntity(otherId)?.get<CardComponent>()?.name == name &&
+                        matches(state, projected, otherId, predicate.filter, context)
+                }
+            }
+
             is CardPredicate.SharesColorWith -> {
                 val referenceId = resolveEntityReference(predicate.entity, context) ?: return false
                 val referenceColors = projected.getColors(referenceId).ifEmpty {
@@ -1584,6 +1595,7 @@ class PredicateEvaluator {
             is CardPredicate.SharesCreatureTypeWith,
             is CardPredicate.SharesColorWith,
             is CardPredicate.SharesColorWithPermanentYouControl,
+            is CardPredicate.SharesNameWithPermanentYouControl,
             is CardPredicate.DoesNotShareCreatureTypeWithPermanentYouControl,
             is CardPredicate.DoesNotShareLandTypeWithPermanentYouControl -> false
             is CardPredicate.HasSubtypeFromVariable, is CardPredicate.HasSubtypeInStoredList,
