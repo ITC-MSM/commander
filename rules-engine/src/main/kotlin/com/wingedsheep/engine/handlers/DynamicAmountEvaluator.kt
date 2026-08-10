@@ -1049,7 +1049,8 @@ class DynamicAmountEvaluator(
             // resolver (parity with resolvePlayerRef), so aggregates like "creatures that target's
             // controller controls" work (Skulking Killer's "if that opponent controls no other
             // creatures" = AggregateBattlefield(ControllerOf("target"), Creature) == 1).
-            is Player.ControllerOf, is Player.OwnerOf, is Player.OwnerOfSource -> listOfNotNull(
+            is Player.ControllerOf, is Player.OwnerOf, is Player.OwnerOfSource,
+            is Player.ControllerOfSource -> listOfNotNull(
                 TargetResolutionUtils.resolvePlayerRef(player, context, state)
             )
             is Player.TriggeringPlayer -> {

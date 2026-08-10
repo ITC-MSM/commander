@@ -41,6 +41,7 @@ import com.wingedsheep.engine.core.TargetsResponse
 import com.wingedsheep.engine.core.YesNoDecision
 import com.wingedsheep.engine.core.YesNoResponse
 import com.wingedsheep.engine.state.GameState
+import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.sdk.model.EntityId
 
 /**
@@ -88,11 +89,18 @@ class FastDecisionResponder(private val intents: IntentCatalog = IntentCatalog.N
 
             // Take the minimum a selection demands. Selections are overwhelmingly costs (discard,
             // sacrifice) rather than benefits, and a playout that over-pays every cost biases every
-            // line that contains one.
-            is SelectCardsDecision -> CardsSelectedResponse(
-                decision.id,
-                decision.options.take(decision.minSelections.coerceAtMost(decision.options.size))
-            )
+            // line that contains one. The exception is a `minTotalManaValue` floor (collect
+            // evidence N, CR 701.59a): that gate is a *sum*, so "the minimum count" is an illegal
+            // submission the validator rejects — pay it with the fewest cards instead.
+            is SelectCardsDecision ->
+                if (decision.minTotalManaValue != null) {
+                    CardsSelectedResponse(decision.id, manaFloorSelection(state, decision))
+                } else {
+                    CardsSelectedResponse(
+                        decision.id,
+                        decision.options.take(decision.minSelections.coerceAtMost(decision.options.size))
+                    )
+                }
 
             // A search is a benefit, so take as much as it offers.
             is SearchLibraryDecision -> CardsSelectedResponse(
@@ -197,6 +205,28 @@ class FastDecisionResponder(private val intents: IntentCatalog = IntentCatalog.N
         decision.cards.forEachIndexed { index, card -> piles[index % piles.size].add(card) }
         return piles
     }
+
+    /**
+     * Satisfy a `minTotalManaValue` floor with the fewest cards — highest mana values first, the
+     * same choice `CollectEvidenceResolver.autoSelect` makes. Returns nothing when the pool can't
+     * reach the floor, which CR 701.59b makes the only legal answer anyway (and which the engine's
+     * validator exempts from the floor, so an optional collection reads as a decline).
+     */
+    private fun manaFloorSelection(state: GameState, decision: SelectCardsDecision): List<EntityId> {
+        val floor = decision.minTotalManaValue ?: return emptyList()
+        val selected = mutableListOf<EntityId>()
+        var total = 0
+        val byValueDesc = decision.options.sortedByDescending { manaValueOf(state, it) }
+        for (cardId in byValueDesc) {
+            if (total >= floor || selected.size >= decision.maxSelections) break
+            selected.add(cardId)
+            total += manaValueOf(state, cardId)
+        }
+        return if (total >= floor) selected else emptyList()
+    }
+
+    private fun manaValueOf(state: GameState, cardId: EntityId): Int =
+        state.getEntity(cardId)?.get<CardComponent>()?.manaValue ?: 0
 
     /** Greedy cheapest-first spend of a pawprint budget, free modes taken exactly once. */
     private fun budgetModes(decision: BudgetModalDecision): List<Int> {

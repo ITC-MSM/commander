@@ -1,5 +1,6 @@
 package com.wingedsheep.engine.handlers.effects.stack
 
+import com.wingedsheep.engine.core.CounterUnlessCollectEvidenceContinuation
 import com.wingedsheep.engine.core.CounterUnlessDiscardContinuation
 import com.wingedsheep.engine.core.CounterUnlessPaysLifeContinuation
 import com.wingedsheep.engine.core.CounterUnlessPaysManaSelectionContinuation
@@ -17,6 +18,7 @@ import com.wingedsheep.engine.handlers.DynamicAmountEvaluator
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.PredicateContext
 import com.wingedsheep.engine.handlers.PredicateEvaluator
+import com.wingedsheep.engine.handlers.costs.CollectEvidenceResolver
 import com.wingedsheep.engine.handlers.effects.BattlefieldFilterUtils
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.mechanics.SacrificeImmunity
@@ -51,6 +53,8 @@ import kotlin.reflect.KClass
  *      standard discard pipeline (random or player's choice).
  *    - WardCost.Sacrifice → SelectCardsDecision over the controller's matching permanents
  *      (min 0, max N); selecting N pays and the spell resolves, declining counters it.
+ *    - WardCost.CollectEvidence → SelectCardsDecision over the controller's graveyard with a
+ *      `minTotalManaValue` floor (CR 701.59's sum gate); an empty selection declines.
  *    - WardCost.Composite → pay each component cost in order (CR 702.21a; "Ward—{2}, Pay 2
  *      life"). Each component reuses the per-component flow above and carries the remaining
  *      components so the resumer charges the next one after a successful payment. Declining or
@@ -163,6 +167,10 @@ class WardCounterEffectExecutor(
                     state, cardRegistry, spellEntityId, container, payingPlayerId,
                     cost.filter, cost.count, remainingParts, wardSourceId, controllerId
                 )
+                is WardCost.CollectEvidence -> handleCollectEvidenceCost(
+                    state, cardRegistry, spellEntityId, payingPlayerId,
+                    cost.amount, remainingParts, wardSourceId, controllerId
+                )
                 is WardCost.Composite -> {
                     require(cost.parts.isNotEmpty()) { "WardCost.Composite must have at least one part" }
                     chargeWardCost(
@@ -253,6 +261,73 @@ class WardCounterEffectExecutor(
 
             return EffectResult.paused(
                 stateWithContinuation,
+                decisionResult.pendingDecision,
+                decisionResult.events
+            )
+        }
+
+        /**
+         * Ward—Collect evidence N (CR 701.59 — Axebane Ferox's "Ward—Collect evidence 4").
+         *
+         * Two things separate this from every other ward cost:
+         *
+         * 1. **The constraint is a sum, not a count.** The player exiles *any number* of cards from
+         *    their graveyard whose mana values total at least [amount], and over-paying is legal, so
+         *    the prompt is a variable-size selection (min 0 — declining — up to the whole graveyard)
+         *    carrying `minTotalManaValue`. `DecisionValidators` enforces that floor on any non-empty
+         *    submission, so the resumer only ever sees a decline or a legal collection.
+         * 2. **CR 701.59b fails closed.** A graveyard that can't reach [amount] means the controller
+         *    *can't choose to collect evidence* at all, so the spell is countered with no prompt
+         *    rather than offering a payment they would have to refuse.
+         *    [CollectEvidenceResolver.canCollect] is that gate, shared with every other context.
+         *
+         * When the graveyard totals exactly [amount] there is nothing to choose (every card must go),
+         * but the *decision* still matters — declining is a real option for a ward cost, unlike the
+         * mandatory [com.wingedsheep.engine.handlers.effects.player.CollectEvidenceExecutor] — so the
+         * prompt is raised regardless.
+         */
+        private fun handleCollectEvidenceCost(
+            state: GameState,
+            cardRegistry: CardRegistry,
+            spellEntityId: EntityId,
+            payingPlayerId: EntityId,
+            amount: Int,
+            remainingParts: List<WardCost>,
+            wardSourceId: EntityId?,
+            controllerId: EntityId?
+        ): EffectResult {
+            val candidates = CollectEvidenceResolver.candidates(state, payingPlayerId)
+            if (!candidates.canReach(amount)) {
+                return counterSpellOrAbility(state, cardRegistry, spellEntityId)
+            }
+
+            val decisionResult = DecisionHandler().createCardSelectionDecision(
+                state = state,
+                playerId = payingPlayerId,
+                sourceId = wardSourceId,
+                sourceName = "Ward",
+                prompt = "Collect evidence $amount (exile cards with total mana value $amount or " +
+                    "greater from your graveyard) or your spell will be countered",
+                options = candidates.cards,
+                minSelections = 0,
+                maxSelections = candidates.cards.size,
+                ordered = false,
+                phase = DecisionPhase.RESOLUTION,
+                minTotalManaValue = amount
+            )
+
+            val continuation = CounterUnlessCollectEvidenceContinuation(
+                decisionId = decisionResult.pendingDecision!!.id,
+                payingPlayerId = payingPlayerId,
+                spellEntityId = spellEntityId,
+                amount = amount,
+                controllerId = controllerId,
+                remainingWardParts = remainingParts,
+                wardSourceId = wardSourceId
+            )
+
+            return EffectResult.paused(
+                decisionResult.state.pushContinuation(continuation),
                 decisionResult.pendingDecision,
                 decisionResult.events
             )
