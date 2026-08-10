@@ -3659,6 +3659,94 @@
     ]
 }
 
+// Cruel Alliance
+{
+    "name": "Cruel Alliance",
+    "manaCost": "{2}{B}",
+    "typeLine": "Sorcery",
+    "oracleText": "Teamwork 2 (As an additional cost to cast this spell, you may tap any number of creatures you control with total power 2 or more.)\nExile target creature with mana value 3 or less. If this spell was cast using teamwork, instead exile target creature and you gain 3 life.",
+    "keywords": [
+        "TEAMWORK"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Kicker",
+            "additionalCost": {
+                "type": "AdditionalAtom",
+                "atom": {
+                    "type": "AtomVariablePermanents",
+                    "filter": "creature",
+                    "minCount": 0,
+                    "excludeSelf": false,
+                    "action": "TAP",
+                    "xMeasure": "TOTAL_POWER",
+                    "minMeasure": 2
+                }
+            },
+            "displayPrefix": "Teamwork 2",
+            "keyword": "TEAMWORK",
+            "declaredSlot": "TEAMWORK"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "MoveToZone",
+            "target": {
+                "type": "BoundVariable",
+                "name": "target creature with mana value 3 or less"
+            },
+            "destination": "Exile"
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature mv<=3"
+                },
+                "id": "target creature with mana value 3 or less"
+            }
+        ],
+        "kickerTargetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target creature"
+            }
+        ],
+        "kickerSpellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    },
+                    "destination": "Exile"
+                },
+                {
+                    "type": "GainLife",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 3
+                    }
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "92",
+        "artist": "Vilhelmas Banys",
+        "flavorText": "\"Die, you pathetic swine!\"\n—Viper, Ophelia Sarkissian",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/8/d895d5a1-d382-438b-8551-e142bb5142af.jpg?1783902948"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Daredevil, Man Without Fear
 {
     "name": "Daredevil, Man Without Fear",
@@ -4315,6 +4403,147 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Earth's Mightiest Heroes
+{
+    "name": "Earth's Mightiest Heroes",
+    "manaCost": "{4}{G}{G}",
+    "typeLine": "Sorcery",
+    "oracleText": "Teamwork 5 (As an additional cost to cast this spell, you may tap any number of creatures you control with total power 5 or more.)\nReveal the top eight cards of your library. You may put a creature card from among them onto the battlefield. If this spell was cast using teamwork, put any number of creature cards from among them onto the battlefield instead. Put the rest into your graveyard.",
+    "keywords": [
+        "TEAMWORK"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Kicker",
+            "additionalCost": {
+                "type": "AdditionalAtom",
+                "atom": {
+                    "type": "AtomVariablePermanents",
+                    "filter": "creature",
+                    "minCount": 0,
+                    "excludeSelf": false,
+                    "action": "TAP",
+                    "xMeasure": "TOTAL_POWER",
+                    "minMeasure": 5
+                }
+            },
+            "displayPrefix": "Teamwork 5",
+            "keyword": "TEAMWORK",
+            "declaredSlot": "TEAMWORK"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherCards",
+                    "source": {
+                        "type": "TopOfLibrary",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 8
+                        }
+                    },
+                    "storeAs": "revealed",
+                    "revealed": true
+                },
+                {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.WhenCondition",
+                        "condition": {
+                            "type": "CastChoiceMade",
+                            "slot": "TEAMWORK"
+                        }
+                    },
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "revealed",
+                                "selection": "ChooseAnyNumber",
+                                "filter": "creature",
+                                "storeSelected": "selected",
+                                "storeRemainder": "rest",
+                                "prompt": "Choose any number of creature cards to put onto the battlefield",
+                                "selectedLabel": "Put onto the battlefield",
+                                "remainderLabel": "Put into your graveyard",
+                                "showAllCards": true
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "selected",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Battlefield"
+                                }
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "rest",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Graveyard"
+                                }
+                            }
+                        ]
+                    },
+                    "otherwise": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "revealed",
+                                "selection": {
+                                    "type": "ChooseUpTo",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "filter": "creature",
+                                "storeSelected": "selected",
+                                "storeRemainder": "rest",
+                                "prompt": "Choose a creature card to put onto the battlefield",
+                                "selectedLabel": "Put onto the battlefield",
+                                "remainderLabel": "Put into your graveyard",
+                                "showAllCards": true
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "selected",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Battlefield"
+                                }
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "rest",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Graveyard"
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "165",
+        "rarity": "MYTHIC",
+        "artist": "Steve Morris",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/3/b38b9bd6-1dd7-4bbc-8a82-ce391c1172e1.jpg?1783902919"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 
@@ -16103,6 +16332,84 @@
     "layout": "MODAL_DFC"
 }
 
+// Too Evil to Stay Dead
+{
+    "name": "Too Evil to Stay Dead",
+    "manaCost": "{2}{B}",
+    "typeLine": "Sorcery",
+    "oracleText": "Teamwork 4 (As an additional cost to cast this spell, you may tap any number of creatures you control with total power 4 or more.)\nChoose target creature card in your graveyard with mana value 4 or less. If this spell was cast using teamwork, instead choose target creature card in your graveyard. Return the chosen card to the battlefield.",
+    "keywords": [
+        "TEAMWORK"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Kicker",
+            "additionalCost": {
+                "type": "AdditionalAtom",
+                "atom": {
+                    "type": "AtomVariablePermanents",
+                    "filter": "creature",
+                    "minCount": 0,
+                    "excludeSelf": false,
+                    "action": "TAP",
+                    "xMeasure": "TOTAL_POWER",
+                    "minMeasure": 4
+                }
+            },
+            "displayPrefix": "Teamwork 4",
+            "keyword": "TEAMWORK",
+            "declaredSlot": "TEAMWORK"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "MoveToZone",
+            "target": {
+                "type": "BoundVariable",
+                "name": "target creature card in your graveyard with mana value 4 or less"
+            },
+            "destination": "Battlefield"
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature mv<=4 own:you",
+                    "zone": "Graveyard"
+                },
+                "id": "target creature card in your graveyard with mana value 4 or less"
+            }
+        ],
+        "kickerTargetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature own:you",
+                    "zone": "Graveyard"
+                },
+                "id": "target creature card in your graveyard"
+            }
+        ],
+        "kickerSpellEffect": {
+            "type": "MoveToZone",
+            "target": {
+                "type": "BoundVariable",
+                "name": "target creature card in your graveyard"
+            },
+            "destination": "Battlefield"
+        }
+    },
+    "metadata": {
+        "collectorNumber": "118",
+        "rarity": "UNCOMMON",
+        "artist": "Ioannis Fiore",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/4/f471e9ce-73bb-4090-98f2-f591c7cf4efe.jpg?1783902936"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Training Compound
 {
     "name": "Training Compound",
@@ -17501,6 +17808,77 @@
     "colorIdentityOverride": [
         "RED",
         "WHITE"
+    ]
+}
+
+// We Say Thee Nay!
+{
+    "name": "We Say Thee Nay!",
+    "manaCost": "{1}{U}",
+    "typeLine": "Instant — Arcane",
+    "oracleText": "Teamwork 2 (As an additional cost to cast this spell, you may tap any number of creatures you control with total power 2 or more.)\nCounter target spell unless its controller pays {2}. Counter that spell unless its controller pays {4} instead if this spell was cast using teamwork.",
+    "keywords": [
+        "TEAMWORK"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Kicker",
+            "additionalCost": {
+                "type": "AdditionalAtom",
+                "atom": {
+                    "type": "AtomVariablePermanents",
+                    "filter": "creature",
+                    "minCount": 0,
+                    "excludeSelf": false,
+                    "action": "TAP",
+                    "xMeasure": "TOTAL_POWER",
+                    "minMeasure": 2
+                }
+            },
+            "displayPrefix": "Teamwork 2",
+            "keyword": "TEAMWORK",
+            "declaredSlot": "TEAMWORK"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "Counter",
+            "condition": {
+                "type": "CounterCondition.UnlessPaysDynamic",
+                "amount": {
+                    "type": "Conditional",
+                    "condition": {
+                        "type": "CastChoiceMade",
+                        "slot": "TEAMWORK"
+                    },
+                    "ifTrue": {
+                        "type": "Fixed",
+                        "amount": 4
+                    },
+                    "ifFalse": {
+                        "type": "Fixed",
+                        "amount": 2
+                    }
+                }
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": {},
+                    "zone": "Stack"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "82",
+        "artist": "Mateus Manhanini",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/3/13b70321-75bd-4d44-b9f6-5f062a5dda0f.jpg?1783902948"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 

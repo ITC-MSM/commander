@@ -6326,6 +6326,19 @@ copy of it (CR 707.10e). The activated-ability analogue of the spell-level `cant
 >   CR 702.194c asks for: the plain cast is announced as though the clause weren't there, and only
 >   the declared cast chooses the extra target. Pinned by `TeamworkMechanicScenarioTest`'s
 >   "Teamwork Rally" cases.
+> - **A different target *restriction* on the teamwork cast** — the same `kickerTarget` /
+>   `kickerEffect` pair, with *both* branches carrying a target. Use it when "instead" replaces the
+>   target requirement rather than an amount — CR 601.2c is the basis ("a spell may require
+>   *alternative* targets only if an alternative or additional cost was chosen for it"), with
+>   CR 702.194c supplying the other direction. Cruel Alliance ("exile target creature with mana value
+>   3 or less … instead exile target creature and you gain 3 life") and Too Evil to Stay Dead
+>   ("target creature card in your graveyard with mana value 4 or less … instead … in your
+>   graveyard"). Because `kickerTargetRequirements` *replace* `targetRequirements` on a declared
+>   cast, each branch is announced under its own filter — the teamwork cast can legally target
+>   something the plain cast could not, and the plain cast is dropped from the enumeration entirely
+>   when only the wider filter has a legal target. The branch replaces the whole effect too, so any
+>   shared trailing sentence ("Return the chosen card to the battlefield") has to be restated in
+>   `kickerEffect`.
 >
 > `Conditions.TeamworkWasPaid` is a facade over `CastChoiceMade(ChoiceSlot.TEAMWORK)`, so teamwork needs
 > no condition type of its own.
