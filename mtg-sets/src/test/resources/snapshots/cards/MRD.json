@@ -525,6 +525,74 @@
     ]
 }
 
+// Clockwork Beetle
+{
+    "name": "Clockwork Beetle",
+    "manaCost": "{1}",
+    "typeLine": "Artifact Creature — Insect",
+    "oracleText": "This creature enters with two +1/+1 counters on it.\nWhenever this creature attacks or blocks, remove a +1/+1 counter from it at end of combat.",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 0
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "END_COMBAT",
+                    "player": "Each"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "RemoveCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": "Self"
+                },
+                "triggerCondition": {
+                    "type": "Any",
+                    "conditions": [
+                        {
+                            "type": "EntityMatches",
+                            "entity": "Self",
+                            "filter": {
+                                "statePredicates": [
+                                    "AttackedThisCombat"
+                                ]
+                            }
+                        },
+                        {
+                            "type": "EntityMatches",
+                            "entity": "Self",
+                            "filter": {
+                                "statePredicates": [
+                                    "BlockedThisCombat"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "Whenever this creature attacks or blocks, remove a +1/+1 counter from it at end of combat."
+            }
+        ],
+        "replacementEffects": [
+            {
+                "type": "EntersWithCounters",
+                "count": 2,
+                "selfOnly": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "153",
+        "artist": "Arnie Swekel",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/c/bc3c8db7-cf58-4571-b4ad-2b68d73495b2.jpg?1783944525"
+    },
+    "colorIdentityOverride": []
+}
+
 // Cloudpost
 {
     "name": "Cloudpost",
@@ -998,6 +1066,64 @@
         "artist": "Jim Nelson",
         "flavorText": "They skitter out of the mists to consume fresh kill before Mephidross has a chance to corrode it away.",
         "imageUri": "https://cards.scryfall.io/normal/front/2/7/27c5381c-2e79-41fa-b1d7-2cf0c6dc1808.jpg?1783944523"
+    },
+    "colorIdentityOverride": []
+}
+
+// Duskworker
+{
+    "name": "Duskworker",
+    "manaCost": "{4}",
+    "typeLine": "Artifact Creature — Construct",
+    "oracleText": "Whenever this creature becomes blocked, regenerate it.\n{3}: This creature gets +1/+0 until end of turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "BecomesBlockedEvent",
+                "effect": {
+                    "type": "Regenerate",
+                    "target": "Self"
+                },
+                "descriptionOverride": "Whenever this creature becomes blocked, regenerate it."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{3}"
+                    }
+                },
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 0
+                    },
+                    "target": "Self"
+                },
+                "descriptionOverride": "{3}: This creature gets +1/+0 until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "166",
+        "rarity": "UNCOMMON",
+        "artist": "Greg Staples",
+        "flavorText": "At the setting of each sun, it emerges to clean Mirrodin's floor of the day's carrion.",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/d/7d18dd3b-980b-4833-93fd-79dc3a260da4.jpg?1783944523"
     },
     "colorIdentityOverride": []
 }
@@ -1516,6 +1642,62 @@
     "colorIdentityOverride": [
         "RED"
     ]
+}
+
+// Goblin War Wagon
+{
+    "name": "Goblin War Wagon",
+    "manaCost": "{4}",
+    "typeLine": "Artifact Creature — Juggernaut",
+    "oracleText": "This creature doesn't untap during your untap step.\nAt the beginning of your upkeep, you may pay {2}. If you do, untap this creature.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.MayPay",
+                        "cost": {
+                            "type": "PayManaCost",
+                            "cost": "{2}"
+                        }
+                    },
+                    "then": {
+                        "type": "TapUntap",
+                        "target": "Self",
+                        "tap": false
+                    }
+                },
+                "descriptionOverride": "At the beginning of your upkeep, you may pay {2}. If you do, untap this creature."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "GrantKeyword",
+                "keyword": "DOESNT_UNTAP",
+                "filter": {
+                    "baseFilter": "permanent",
+                    "scope": "Self"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "179",
+        "artist": "Doug Chaffee",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/2/229e8124-54ed-4c29-8c44-4962bd60f145.jpg?1783944519"
+    },
+    "colorIdentityOverride": []
 }
 
 // Gold Myr
@@ -2157,6 +2339,86 @@
     ]
 }
 
+// Lifespark Spellbomb
+{
+    "name": "Lifespark Spellbomb",
+    "manaCost": "{1}",
+    "typeLine": "Artifact",
+    "oracleText": "{G}, Sacrifice this artifact: Until end of turn, target land becomes a 3/3 creature that's still a land.\n{1}, Sacrifice this artifact: Draw a card.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{G}"
+                            }
+                        },
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "AnimateLand",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target land"
+                    },
+                    "power": 3,
+                    "toughness": 3
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "land"
+                        },
+                        "id": "target land"
+                    }
+                ],
+                "descriptionOverride": "{G}, Sacrifice this artifact: Until end of turn, target land becomes a 3/3 creature that's still a land."
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}"
+                            }
+                        },
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "descriptionOverride": "{1}, Sacrifice this artifact: Draw a card."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "197",
+        "artist": "Jim Nelson",
+        "flavorText": "\"Awaken that which was never asleep.\"\n—Spellbomb inscription",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/a/0adde668-67af-4a08-a36a-2a49893ab20d.jpg?1783944515"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Lightning Greaves
 {
     "name": "Lightning Greaves",
@@ -2264,6 +2526,64 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Loxodon Mender
+{
+    "name": "Loxodon Mender",
+    "manaCost": "{5}{W}",
+    "typeLine": "Creature — Elephant Cleric",
+    "oracleText": "{W}, {T}: Regenerate target artifact.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{W}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "Regenerate",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target artifact"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "artifact"
+                        },
+                        "id": "target artifact"
+                    }
+                ],
+                "descriptionOverride": "{W}, {T}: Regenerate target artifact."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "12",
+        "artist": "Heather Hudson",
+        "flavorText": "The Auriok believe that in the hands of a loxodon, no weapon can be broken.",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/1/c17ac7c1-6d53-40b4-921f-4e23e4026041.jpg?1783944561"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 
