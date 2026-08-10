@@ -22,6 +22,7 @@ import com.wingedsheep.sdk.scripting.effects.GatherCardsEffect
 import com.wingedsheep.sdk.scripting.effects.MoveCollectionEffect
 import com.wingedsheep.sdk.scripting.effects.MoveType
 import com.wingedsheep.sdk.scripting.effects.RepeatDynamicTimesEffect
+import com.wingedsheep.sdk.scripting.effects.RevealHandEffect
 import com.wingedsheep.sdk.scripting.effects.SelectFromCollectionEffect
 import com.wingedsheep.sdk.scripting.effects.SelectTargetEffect
 import com.wingedsheep.sdk.scripting.effects.SelectionMode
@@ -698,6 +699,50 @@ object HandPatterns {
             )
         )
     )
+
+    /**
+     * "Target opponent reveals their hand. You choose a [filter] card from it. Exile that card."
+     * — the Thoughtseize shape with exile instead of discard (Cruelclaw's Heist, Soul Search).
+     *
+     * The chooser is always the *controller*, not the revealing player: that asymmetry is what the
+     * pattern is, so it is deliberately not derived from [target] the way [exileFromHand] derives
+     * its chooser.
+     *
+     * @param storeChosenAs pipeline key holding the chosen card *before* the move.
+     * @param storeExiledAs when non-null, pipeline key holding the cards that actually reached
+     *   exile — the key to read for any rider that keys off the exiled card ("if the card's mana
+     *   value is 1 or less …"), since it is empty when nothing was chosen or nothing moved.
+     */
+    fun revealHandAndExileChosen(
+        target: EffectTarget = EffectTarget.ContextTarget(0),
+        filter: GameObjectFilter = GameObjectFilter.Nonland,
+        prompt: String = "Choose a nonland card to exile",
+        storeChosenAs: String = "chosenCard",
+        storeExiledAs: String? = null,
+    ): CompositeEffect {
+        val player = effectTargetToPlayer(target)
+        return CompositeEffect(
+            listOf(
+                RevealHandEffect(target),
+                GatherCardsEffect(
+                    source = CardSource.FromZone(Zone.HAND, player, filter),
+                    storeAs = "${storeChosenAs}Candidates"
+                ),
+                SelectFromCollectionEffect(
+                    from = "${storeChosenAs}Candidates",
+                    selection = SelectionMode.ChooseExactly(DynamicAmount.Fixed(1)),
+                    chooser = Chooser.Controller,
+                    storeSelected = storeChosenAs,
+                    prompt = prompt
+                ),
+                MoveCollectionEffect(
+                    from = storeChosenAs,
+                    destination = CardDestination.ToZone(Zone.EXILE, player),
+                    storeMovedAs = storeExiledAs
+                )
+            )
+        )
+    }
 
     /**
      * Target player exiles cards from their hand.

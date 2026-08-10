@@ -611,6 +611,105 @@
     ]
 }
 
+// Convenient Target
+{
+    "name": "Convenient Target",
+    "manaCost": "{R}",
+    "typeLine": "Enchantment — Aura",
+    "oracleText": "Enchant creature\nWhen this Aura enters, suspect enchanted creature. (It has menace and can't block.)\nEnchanted creature gets +1/+1.\n{2}{R}: Return this card from your graveyard to your hand.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "SetSuspected",
+                            "target": "EnchantedCreature"
+                        },
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "MENACE",
+                            "target": "EnchantedCreature",
+                            "duration": "Permanent"
+                        },
+                        {
+                            "type": "CantBlockTargetCreatures",
+                            "target": "EnchantedCreature",
+                            "duration": "Permanent"
+                        }
+                    ],
+                    "descriptionOverride": "enchanted creature becomes suspected"
+                },
+                "descriptionOverride": "When this Aura enters, suspect enchanted creature."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{2}{R}"
+                    }
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": "Self",
+                    "destination": "Hand"
+                },
+                "activateFromZone": "Graveyard"
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 1,
+                "toughnessBonus": 1
+            }
+        ],
+        "auraTarget": {
+            "type": "TargetObject",
+            "filter": {
+                "baseFilter": "creature"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "119",
+        "rarity": "UNCOMMON",
+        "artist": "Gaboleps",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/d/2d2cf2ae-9152-41c4-9dc4-a19da5812869.jpg?1783912885",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "If Convenient Target leaves the battlefield, the creature it was enchanting will still be suspected until that creature leaves the battlefield or another effect causes it to no longer be suspected."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "When an effect suspects a creature, it becomes suspected. It gains menace and \"This creature can't block\" for as long as it's suspected. It stays suspected until it leaves the battlefield or another effect causes it to no longer be suspected."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "If a creature is already suspected, suspecting it again won't have any effect."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "Being suspected isn't a copiable value. If a permanent becomes a copy of a suspected creature, it won't be suspected."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Cornered Crook
 {
     "name": "Cornered Crook",
@@ -1885,6 +1984,86 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Gadget Technician
+{
+    "name": "Gadget Technician",
+    "manaCost": "{2}{U}{R}",
+    "typeLine": "Creature — Goblin Artificer",
+    "oracleText": "When this creature enters or is turned face up, create a 1/1 colorless Thopter artifact creature token with flying.\nDisguise {U/R}{U/R} (You may cast this card face down for {3} as a 2/2 creature with ward {2}. Turn it face up any time for its disguise cost.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "keywordAbilities": [
+        {
+            "type": "Disguise",
+            "disguiseCost": {
+                "type": "PayAtom",
+                "atom": {
+                    "type": "AtomMana",
+                    "cost": "{U/R}{U/R}"
+                }
+            }
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "AnyOfEvents",
+                    "events": [
+                        {
+                            "type": "ZoneChangeEvent",
+                            "to": "Battlefield"
+                        },
+                        "TurnFaceUpEvent"
+                    ]
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [],
+                    "creatureTypes": [
+                        "Thopter"
+                    ],
+                    "keywords": [
+                        "FLYING"
+                    ],
+                    "name": "Thopter",
+                    "imageUri": "https://cards.scryfall.io/normal/front/f/8/f80c5f0a-5573-4dc2-8791-35e35bdf4c78.jpg?1783912602",
+                    "artifactToken": true
+                },
+                "descriptionOverride": "When this creature enters or is turned face up, create a 1/1 colorless Thopter artifact creature token with flying."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "204",
+        "artist": "Caio Monteiro",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/b/3b489a54-ee43-4962-be7b-16e0e28800e0.jpg?1783912848",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "Any time you have priority, you may turn the face-down creature face up by revealing what its disguise cost is and paying that cost. This is a special action. It doesn't use the stack and can't be responded to. Only a face-down permanent can be turned face up this way; a face-down spell cannot."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "Because the permanent is on the battlefield both before and after it's turned face up, turning a permanent face up doesn't cause any enters-the-battlefield abilities to trigger."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "If a face-down creature loses its abilities, it can't be turned face up with a disguise ability because it will no longer have a disguise ability (or a disguise cost) once face up."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "RED"
     ]
 }
 
@@ -4317,6 +4496,68 @@
     ]
 }
 
+// Private Eye
+{
+    "name": "Private Eye",
+    "manaCost": "{1}{W}{U}",
+    "typeLine": "Creature — Homunculus Detective",
+    "oracleText": "Other Detectives you control get +1/+1.\nWhenever you draw your second card each turn, target Detective can't be blocked this turn.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "NthCardDrawnEvent",
+                    "nthCard": 2
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "GrantKeyword",
+                    "keyword": "CANT_BE_BLOCKED",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "detective"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature Detective"
+                    },
+                    "id": "detective"
+                },
+                "descriptionOverride": "Whenever you draw your second card each turn, target Detective can't be blocked this turn."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 1,
+                "toughnessBonus": 1,
+                "filter": {
+                    "baseFilter": "creature Detective ctrl:you",
+                    "excludeSelf": true
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "223",
+        "rarity": "UNCOMMON",
+        "artist": "Vincent Christiaens",
+        "flavorText": "\"Yep. It's a vase, all right.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/6/b6a50807-058e-45dc-847c-8ffd13b1bd48.jpg?1783912840"
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLUE"
+    ]
+}
+
 // Rakish Scoundrel
 {
     "name": "Rakish Scoundrel",
@@ -5841,6 +6082,121 @@
     ]
 }
 
+// Soul Search
+{
+    "name": "Soul Search",
+    "manaCost": "{W}{B}",
+    "typeLine": "Sorcery",
+    "oracleText": "Target opponent reveals their hand. You choose a nonland card from it. Exile that card. If the card's mana value is 1 or less, create a 1/1 white and black Spirit creature token with flying.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "Composite",
+                    "effects": [
+                        "RevealHand",
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Hand",
+                                "player": {
+                                    "type": "ContextPlayer",
+                                    "index": 0
+                                },
+                                "filter": "nonland"
+                            },
+                            "storeAs": "chosenCardCandidates"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "chosenCardCandidates",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "chosenCard",
+                            "prompt": "Choose a nonland card to exile"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "chosenCard",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile",
+                                "player": {
+                                    "type": "ContextPlayer",
+                                    "index": 0
+                                }
+                            },
+                            "storeMovedAs": "exiledCard"
+                        }
+                    ]
+                },
+                {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.WhenCondition",
+                        "condition": {
+                            "type": "CollectionContainsMatch",
+                            "collection": "exiledCard",
+                            "filter": "mv<=1"
+                        }
+                    },
+                    "then": {
+                        "type": "CreateToken",
+                        "power": 1,
+                        "toughness": 1,
+                        "colors": [
+                            "WHITE",
+                            "BLACK"
+                        ],
+                        "creatureTypes": [
+                            "Spirit"
+                        ],
+                        "keywords": [
+                            "FLYING"
+                        ],
+                        "name": "Spirit",
+                        "imageUri": "https://cards.scryfall.io/normal/front/f/4/f4588570-bde4-4c2f-8469-81a3e15fb57b.jpg?1783912607"
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetOpponent",
+                "id": "opponent"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "232",
+        "rarity": "UNCOMMON",
+        "artist": "A. M. Sartor",
+        "flavorText": "Taking a secret to your grave still doesn't make it safe from the Orzhov.",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/f/0f852937-381d-4445-99d3-2ecb8af6bb6a.jpg?1783912838",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "If the exiled card has {X} in its mana cost, X is 0."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "If the exiled card doesn't have a mana cost, its mana value is 0."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLACK"
+    ]
+}
+
 // Surveillance Monitor
 {
     "name": "Surveillance Monitor",
@@ -6192,6 +6548,65 @@
     },
     "colorIdentityOverride": [
         "WHITE",
+        "GREEN"
+    ]
+}
+
+// Tunnel Tipster
+{
+    "name": "Tunnel Tipster",
+    "manaCost": "{1}{G}",
+    "typeLine": "Creature — Mole Scout",
+    "oracleText": "At the beginning of your end step, if a face-down creature entered the battlefield under your control this turn, put a +1/+1 counter on this creature.\n{T}: Add {G}.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "END"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": "Self"
+                },
+                "triggerCondition": "PermanentEnteredFaceDownThisTurn",
+                "descriptionOverride": "At the beginning of your end step, if a face-down creature entered the battlefield under your control this turn, put a +1/+1 counter on this creature."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "GREEN"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "180",
+        "artist": "Leesha Hannigan",
+        "flavorText": "\"When your perp goes underground, I know where to find 'em.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/e/3e29b890-35b9-4e2a-9b4c-9417ca7db31d.jpg?1783912858",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "Tunnel Tipster's first ability will trigger as long as a face-down creature entered the battlefield under your control this turn, even if that creature has turned face up or left the battlefield since. A creature that enters the battlefield face up and turns face down later in the turn won't cause Tunnel Tipster's first ability to trigger."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
         "GREEN"
     ]
 }
