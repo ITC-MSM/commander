@@ -34,7 +34,10 @@ class SetSuspectedExecutor : EffectExecutor<SetSuspectedEffect> {
         effect: SetSuspectedEffect,
         context: EffectContext
     ): EffectResult {
-        val entityId = TargetResolutionUtils.resolveTarget(effect.target, context)
+        // State-aware overload: the attachment-relative targets (EnchantedCreature — Convenient
+        // Target's "suspect enchanted creature") resolve only against the battlefield, and the
+        // state-less overload returns null for them, which would silently drop the whole suspect.
+        val entityId = TargetResolutionUtils.resolveTarget(effect.target, context, state)
             ?: return EffectResult.success(state)
         state.getEntity(entityId)?.get<CardComponent>()
             ?: return EffectResult.success(state)

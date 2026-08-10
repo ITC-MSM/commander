@@ -3864,44 +3864,49 @@
                     "effect": {
                         "type": "Composite",
                         "effects": [
-                            "RevealHand",
                             {
-                                "type": "GatherCards",
-                                "source": {
-                                    "type": "FromZone",
-                                    "zone": "Hand",
-                                    "player": {
-                                        "type": "ContextPlayer",
-                                        "index": 0
+                                "type": "Composite",
+                                "effects": [
+                                    "RevealHand",
+                                    {
+                                        "type": "GatherCards",
+                                        "source": {
+                                            "type": "FromZone",
+                                            "zone": "Hand",
+                                            "player": {
+                                                "type": "ContextPlayer",
+                                                "index": 0
+                                            },
+                                            "filter": "nonland"
+                                        },
+                                        "storeAs": "chosenCardCandidates"
                                     },
-                                    "filter": "nonland"
-                                },
-                                "storeAs": "nonlandCards"
-                            },
-                            {
-                                "type": "SelectFromCollection",
-                                "from": "nonlandCards",
-                                "selection": {
-                                    "type": "ChooseExactly",
-                                    "count": {
-                                        "type": "Fixed",
-                                        "amount": 1
+                                    {
+                                        "type": "SelectFromCollection",
+                                        "from": "chosenCardCandidates",
+                                        "selection": {
+                                            "type": "ChooseExactly",
+                                            "count": {
+                                                "type": "Fixed",
+                                                "amount": 1
+                                            }
+                                        },
+                                        "storeSelected": "chosenCard",
+                                        "prompt": "Choose a nonland card to exile"
+                                    },
+                                    {
+                                        "type": "MoveCollection",
+                                        "from": "chosenCard",
+                                        "destination": {
+                                            "type": "ToZone",
+                                            "zone": "Exile",
+                                            "player": {
+                                                "type": "ContextPlayer",
+                                                "index": 0
+                                            }
+                                        }
                                     }
-                                },
-                                "storeSelected": "chosenCard",
-                                "prompt": "Choose a nonland card to exile"
-                            },
-                            {
-                                "type": "MoveCollection",
-                                "from": "chosenCard",
-                                "destination": {
-                                    "type": "ToZone",
-                                    "zone": "Exile",
-                                    "player": {
-                                        "type": "ContextPlayer",
-                                        "index": 0
-                                    }
-                                }
+                                ]
                             }
                         ]
                     },
@@ -3932,44 +3937,49 @@
                                             "index": 0
                                         }
                                     },
-                                    "RevealHand",
                                     {
-                                        "type": "GatherCards",
-                                        "source": {
-                                            "type": "FromZone",
-                                            "zone": "Hand",
-                                            "player": {
-                                                "type": "ContextPlayer",
-                                                "index": 0
+                                        "type": "Composite",
+                                        "effects": [
+                                            "RevealHand",
+                                            {
+                                                "type": "GatherCards",
+                                                "source": {
+                                                    "type": "FromZone",
+                                                    "zone": "Hand",
+                                                    "player": {
+                                                        "type": "ContextPlayer",
+                                                        "index": 0
+                                                    },
+                                                    "filter": "nonland"
+                                                },
+                                                "storeAs": "chosenCardCandidates"
                                             },
-                                            "filter": "nonland"
-                                        },
-                                        "storeAs": "nonlandCards"
-                                    },
-                                    {
-                                        "type": "SelectFromCollection",
-                                        "from": "nonlandCards",
-                                        "selection": {
-                                            "type": "ChooseExactly",
-                                            "count": {
-                                                "type": "Fixed",
-                                                "amount": 1
+                                            {
+                                                "type": "SelectFromCollection",
+                                                "from": "chosenCardCandidates",
+                                                "selection": {
+                                                    "type": "ChooseExactly",
+                                                    "count": {
+                                                        "type": "Fixed",
+                                                        "amount": 1
+                                                    }
+                                                },
+                                                "storeSelected": "chosenCard",
+                                                "prompt": "Choose a nonland card to exile"
+                                            },
+                                            {
+                                                "type": "MoveCollection",
+                                                "from": "chosenCard",
+                                                "destination": {
+                                                    "type": "ToZone",
+                                                    "zone": "Exile",
+                                                    "player": {
+                                                        "type": "ContextPlayer",
+                                                        "index": 0
+                                                    }
+                                                }
                                             }
-                                        },
-                                        "storeSelected": "chosenCard",
-                                        "prompt": "Choose a nonland card to exile"
-                                    },
-                                    {
-                                        "type": "MoveCollection",
-                                        "from": "chosenCard",
-                                        "destination": {
-                                            "type": "ToZone",
-                                            "zone": "Exile",
-                                            "player": {
-                                                "type": "ContextPlayer",
-                                                "index": 0
-                                            }
-                                        }
+                                        ]
                                     },
                                     {
                                         "type": "GrantMayPlayFromExile",

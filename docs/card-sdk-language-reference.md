@@ -2426,6 +2426,15 @@ one-off pipeline belongs inline in the card file via `Effects.Pipeline { }` (§5
 - `eachPlayerDrawsX(includeController?, includeOpponents?)` — Howling Mine shape.
 - `eachPlayerMayDraw(maxCards, lifePerCardNotDrawn?)` — optional group draw with a tax.
 - `exileFromHand(count?, target)` — exile N from hand.
+- `revealHandAndExileChosen(target?, filter?, prompt?, storeChosenAs?, storeExiledAs?)` — "Target opponent
+  reveals their hand. You choose a nonland card from it. Exile that card." (Cruelclaw's Heist, Soul Search).
+  Thoughtseize with exile instead of discard. The chooser is always the **controller**, not the revealing
+  player — that asymmetry is the pattern, so it is not derived from `target` the way `exileFromHand` derives
+  its chooser. `storeChosenAs` (default `"chosenCard"`) holds the selection *before* the move;
+  `storeExiledAs` holds the cards that actually reached exile, and is the key any rider should read
+  (`ConditionalEffect(CollectionContainsMatch("exiledCard", Filters.ManaValueAtMost(1)), …)` for Soul
+  Search's "if the card's mana value is 1 or less") — it is empty when the hand held no matching card,
+  which is exactly when nothing should happen.
 
 **Sacrifice / destroy**
 

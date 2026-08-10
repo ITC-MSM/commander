@@ -1571,6 +1571,24 @@ class StackResolver(
             updated
         }
 
+        // "A face-down creature entered the battlefield under your control this turn" (Tunnel
+        // Tipster, Oblivious Bookworm). The per-player counter is also bumped by the
+        // MoveToZone/MoveCollection face-down paths (manifest, cloak) in ZoneTransitionService;
+        // a morph/disguise *cast* resolves through here instead and never touches that service,
+        // so without this the tracker would miss the most common face-down entry of all.
+        // Cleared at the turn boundary by CleanupPhaseManager.
+        if (spellComponent.castFaceDown) {
+            newState = newState.updateEntity(controllerId) { playerContainer ->
+                val existing = playerContainer
+                    .get<com.wingedsheep.engine.state.components.player.PermanentEnteredFaceDownThisTurnComponent>()
+                    ?: com.wingedsheep.engine.state.components.player.PermanentEnteredFaceDownThisTurnComponent()
+                playerContainer.with(
+                    com.wingedsheep.engine.state.components.player
+                        .PermanentEnteredFaceDownThisTurnComponent(existing.count + 1)
+                )
+            }
+        }
+
         // CR 707.10f token-copy riders: register the delayed "sacrifice this token" trigger after
         // the permanent enters. The token shares the resolving spell-copy's entity id, so the
         // delayed trigger targets `spellId` directly.
