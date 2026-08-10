@@ -630,7 +630,27 @@ class TriggerMatcher(
             }
             is EventPattern.CreatureTurnedFaceUpEvent -> {
                 if (event !is TurnFaceUpEvent) return false
-                matchesPlayer(trigger.player, event.controllerId, controllerId)
+                if (!matchesPlayer(trigger.player, event.controllerId, controllerId)) return false
+                // "a Detective you control is turned face up" — the filter reads the permanent's
+                // post-flip characteristics, which is what the projected state already holds by
+                // detection time (the flip has happened; the event is the notification).
+                if (trigger.filter != GameObjectFilter.Any) {
+                    val predicateContext = com.wingedsheep.engine.handlers.PredicateContext(
+                        controllerId = controllerId,
+                        sourceId = sourceId
+                    )
+                    if (!predicateEvaluator.matches(
+                            state,
+                            state.projectedState,
+                            event.entityId,
+                            trigger.filter,
+                            predicateContext
+                        )
+                    ) {
+                        return false
+                    }
+                }
+                true
             }
             is EventPattern.TransformEvent -> {
                 if (event !is TransformedEvent) return false

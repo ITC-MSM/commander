@@ -772,6 +772,113 @@
     ]
 }
 
+// Caught Red-Handed
+{
+    "name": "Caught Red-Handed",
+    "manaCost": "{4}{R}",
+    "typeLine": "Instant",
+    "oracleText": "This spell can't be countered. (This includes by the ward ability.)\nGain control of target creature until end of turn. Untap that creature. It gains haste until end of turn. Suspect it. (It has menace and can't block.)",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GainControl",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    },
+                    "duration": "EndOfTurn"
+                },
+                {
+                    "type": "TapUntap",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    },
+                    "tap": false
+                },
+                {
+                    "type": "GrantKeyword",
+                    "keyword": "HASTE",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "SetSuspected",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature"
+                            }
+                        },
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "MENACE",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature"
+                            },
+                            "duration": "Permanent"
+                        },
+                        {
+                            "type": "CantBlockTargetCreatures",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature"
+                            },
+                            "duration": "Permanent"
+                        }
+                    ],
+                    "descriptionOverride": "target becomes suspected"
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target creature"
+            }
+        ],
+        "cantBeCountered": true
+    },
+    "metadata": {
+        "collectorNumber": "115",
+        "rarity": "UNCOMMON",
+        "artist": "Donato Giancola",
+        "flavorText": "\"Wait, stop! I've been framed! Extremely convincingly!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/5/95bc5f89-2f01-40c4-9883-4c90ab89fcbb.jpg?1783912886",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "When an effect suspects a creature, it becomes suspected. It gains menace and \"This creature can't block\" for as long as it's suspected. It stays suspected until it leaves the battlefield or another effect causes it to no longer be suspected."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "If a suspected creature loses all abilities, it will lose menace and \"This creature can't block\", but it won't stop being suspected."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "Being suspected isn't a copiable value. If a permanent becomes a copy of a suspected creature, it won't be suspected."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "If a creature is already suspected, suspecting it again won't have any effect."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Cerebral Confiscation
 {
     "name": "Cerebral Confiscation",
@@ -5536,6 +5643,158 @@
     ]
 }
 
+// Out Cold
+{
+    "name": "Out Cold",
+    "manaCost": "{3}{U}",
+    "typeLine": "Instant",
+    "oracleText": "This spell can't be countered. (This includes by the ward ability.)\nTap up to two target creatures and put a stun counter on each of them. Investigate. (If a permanent with a stun counter would become untapped, remove one from it instead.)",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "ForEach",
+                    "space": "IterationSpace.Targets",
+                    "body": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "TapUntap",
+                                "target": {
+                                    "type": "ContextTarget",
+                                    "index": 0
+                                }
+                            },
+                            {
+                                "type": "AddCounters",
+                                "counterType": "stun",
+                                "count": 1,
+                                "target": {
+                                    "type": "ContextTarget",
+                                    "index": 0
+                                }
+                            }
+                        ]
+                    }
+                },
+                {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Clue"
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "count": 2,
+                "optional": true,
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "up to two target creatures"
+            }
+        ],
+        "cantBeCountered": true
+    },
+    "metadata": {
+        "collectorNumber": "66",
+        "artist": "Tuan Duong Chu",
+        "flavorText": "\"We'll get their statements after they defrost.\"\n—Dvika of the Foundway Associates",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/a/aabfada0-3c1b-4237-b06c-573071ccd68d.jpg?1783912907",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "If you target a creature with ward, you may still pay the ward cost, but Out Cold won't be countered even if you don't."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "You don't have to choose any targets for Out Cold. However, if you do, and all of those creatures are illegal targets at the time Out Cold tries to resolve, it won't resolve and none of its effects will happen. You won't investigate."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "Clue is an artifact type. Even though it appears on some cards with other permanent types, it's never a creature type, a land type, or anything but an artifact type."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Perimeter Enforcer
+{
+    "name": "Perimeter Enforcer",
+    "manaCost": "{1}{W}",
+    "typeLine": "Creature — Human Detective",
+    "oracleText": "Flying, lifelink\nWhenever another Detective you control enters and whenever a Detective you control is turned face up, this creature gets +1/+1 until end of turn.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "FLYING",
+        "LIFELINK"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "creature Detective ctrl:you",
+                    "to": "Battlefield"
+                },
+                "binding": "OTHER",
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": "Self"
+                },
+                "descriptionOverride": "Whenever another Detective you control enters, this creature gets +1/+1 until end of turn."
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "CreatureTurnedFaceUpEvent",
+                    "filter": "creature Detective"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": "Self"
+                },
+                "descriptionOverride": "Whenever a Detective you control is turned face up, this creature gets +1/+1 until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "31",
+        "rarity": "UNCOMMON",
+        "artist": "Josh Hass",
+        "flavorText": "He makes sure no one sets foot in a fresh crime scene—not even himself.",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/f/1f88d077-5082-4a67-91e4-97aafb9a5e91.jpg?1783912919"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Person of Interest
 {
     "name": "Person of Interest",
@@ -6953,6 +7212,81 @@
     "colorIdentityOverride": []
 }
 
+// Scene of the Crime
+{
+    "name": "Scene of the Crime",
+    "manaCost": "",
+    "typeLine": "Artifact Land — Clue",
+    "oracleText": "This land enters tapped.\n{T}: Add {C}.\n{T}, Tap an untapped creature you control: Add one mana of any color.\n{2}, Sacrifice this land: Draw a card.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddColorlessMana",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        "CostTap",
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomTapPermanents",
+                                "filter": "creature"
+                            }
+                        }
+                    ]
+                },
+                "effect": "AddManaOfChoice",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_3",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}"
+                            }
+                        },
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                }
+            }
+        ],
+        "replacementEffects": [
+            "EntersTapped"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "267",
+        "rarity": "UNCOMMON",
+        "artist": "Jokubas Uogintas",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/e/de039992-631b-4feb-a522-acdb0a6d1f26.jpg?1783912824"
+    },
+    "colorIdentityOverride": []
+}
+
 // Seasoned Consultant
 {
     "name": "Seasoned Consultant",
@@ -7598,6 +7932,90 @@
     "colorIdentityOverride": [
         "RED"
     ]
+}
+
+// Thinking Cap
+{
+    "name": "Thinking Cap",
+    "manaCost": "{1}",
+    "typeLine": "Artifact — Equipment",
+    "oracleText": "Equipped creature gets +1/+2.\nEquip Detective {1}\nEquip {3} ({3}: Attach to target creature you control. Equip only as a sorcery.)",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{1}"
+                    }
+                },
+                "effect": {
+                    "type": "AttachEquipment",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "Detective creature you control"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature Detective ctrl:you"
+                        },
+                        "id": "Detective creature you control"
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "isEquipAbility": true,
+                "descriptionOverride": "Equip Detective {1}"
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{3}"
+                    }
+                },
+                "effect": {
+                    "type": "AttachEquipment",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "creature you control"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        },
+                        "id": "creature you control"
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "isEquipAbility": true
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 1,
+                "toughnessBonus": 2
+            }
+        ]
+    },
+    "equipCost": "{3}",
+    "metadata": {
+        "collectorNumber": "257",
+        "artist": "Tony Foti",
+        "flavorText": "\"I find that my greatest insights rarely arrive when my ears are cold.\"\n—Senior Inspector Holjo",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/d/6d2565e1-dd7b-462b-8270-a17913277793.jpg?1783912825"
+    },
+    "colorIdentityOverride": []
 }
 
 // Thundering Falls

@@ -719,10 +719,17 @@ object Triggers {
 
     /**
      * Whenever a creature is turned face up (any controller).
-     * Use [player] to filter: Player.You (default), Player.Any, etc.
+     * Use [player] to filter whose creature: Player.You (default), Player.Any, etc.
+     * Use [filter] to narrow which creature — evaluated against the permanent's post-flip
+     * (face-up) characteristics, so "whenever a Detective you control is turned face up"
+     * (Perimeter Enforcer) is
+     * `CreatureTurnedFaceUp(filter = GameObjectFilter.Creature.withSubtype(Subtype.DETECTIVE))`.
      */
-    fun CreatureTurnedFaceUp(player: Player = Player.You): TriggerSpec = TriggerSpec(
-        event = CreatureTurnedFaceUpEvent(player),
+    fun CreatureTurnedFaceUp(
+        player: Player = Player.You,
+        filter: GameObjectFilter = GameObjectFilter.Any,
+    ): TriggerSpec = TriggerSpec(
+        event = CreatureTurnedFaceUpEvent(player, filter),
         binding = TriggerBinding.ANY
     )
 

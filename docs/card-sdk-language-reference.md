@@ -4407,7 +4407,11 @@ Triggers.youCastSpell(
 ### State change & misc
 
 - `TurnedFaceUp` — source turns face up. Use `turnedFaceUp(binding)` for the ATTACHED-binding aura variant (Fatal Mutation).
-- `CreatureTurnedFaceUp(player?)` — when a creature you control turns face up.
+- `CreatureTurnedFaceUp(player?, filter?)` — when a creature you control turns face up. `filter`
+  narrows *which* creature and is evaluated against the permanent's **post-flip** characteristics
+  (a face-down creature is a nameless 2/2 with no subtypes, so a face-down check could never match):
+  `CreatureTurnedFaceUp(filter = GameObjectFilter.Creature.withSubtype(Subtype.DETECTIVE))` is
+  "whenever a Detective you control is turned face up" (Perimeter Enforcer).
 - `GainControlOfSelf` — you gain control of source. Built on `ControlChangeEvent(ControlChangeDirection.GAINED)`
   + `TriggerBinding.SELF` — the resident "when you gain control of this" self-trigger (Risky Move).
 - `LoseControlOfWatched` — `ControlChangeEvent(ControlChangeDirection.LOST)` + `TriggerBinding.SELF`,
