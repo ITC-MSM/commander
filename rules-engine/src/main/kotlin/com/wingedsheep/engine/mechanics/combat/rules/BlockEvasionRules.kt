@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.scripting.CantBeBlockedBy
 import com.wingedsheep.sdk.scripting.CantBeBlockedExceptBy
 import com.wingedsheep.sdk.scripting.CantBeBlockedIfCastSpellType
+import com.wingedsheep.sdk.scripting.CantBeBlockedIfDefenderControls
 import com.wingedsheep.sdk.scripting.CantBeBlockedUnlessDefenderSharesCreatureType
 import com.wingedsheep.sdk.scripting.CantBeBlockedWhilePropertyAtMost
 import com.wingedsheep.sdk.scripting.GameObjectFilter
@@ -360,6 +361,57 @@ class CantBeBlockedUnlessDefenderSharesCreatureTypeRule : BlockEvasionRule {
 }
 
 /**
+ * CantBeBlockedIfDefenderControls: Attacker can't be blocked while the **defending player**
+ * controls at least N permanents matching a filter — the landwalk shape generalized past land
+ * types (Neurok Spy: "can't be blocked as long as defending player controls an artifact").
+ *
+ * Counts against [BlockCheckContext.blockingPlayer], which is the defending player for this
+ * declaration, so a multiplayer attack at a player with no matching permanent stays blockable even
+ * when another opponent has one. The candidate set comes from projected state
+ * ([ProjectedState.getBattlefieldControlledBy]) and each candidate is matched with the projection in
+ * hand, so a permanent that only *became* an artifact (Ensoul Artifact, March of the Machines) counts
+ * and control-changing effects are honored. The filter is evaluated with the defender bound as
+ * "you", so an unscoped filter such as `GameObjectFilter.Artifact` reads "an artifact the defending
+ * player controls" without the card having to spell out a controller predicate.
+ */
+class CantBeBlockedIfDefenderControlsRule(
+    private val predicateEvaluator: PredicateEvaluator
+) : BlockEvasionRule {
+    override fun check(ctx: BlockCheckContext): String? {
+        // Face-down creatures have no abilities — the evasion doesn't apply.
+        if (ctx.state.getEntity(ctx.attackerId)?.has<FaceDownComponent>() == true) return null
+        val attackerCard = ctx.state.getEntity(ctx.attackerId)?.get<CardComponent>() ?: return null
+        val cardDef = ctx.cardRegistry.getCard(attackerCard.cardDefinitionId)
+        val printed = cardDef?.staticAbilities
+            ?.filterIsInstance<CantBeBlockedIfDefenderControls>()
+            ?.filter { it.filter.scope is Scope.Self }
+            .orEmpty()
+        val granted = ctx.state.grantedStaticAbilities
+            .filter { it.entityId == ctx.attackerId }
+            .map { it.ability }
+            .filterIsInstance<CantBeBlockedIfDefenderControls>()
+        val abilities = printed + granted
+        if (abilities.isEmpty()) return null
+
+        val predicateContext = PredicateContext(
+            controllerId = ctx.blockingPlayer,
+            sourceId = ctx.attackerId
+        )
+        for (ability in abilities) {
+            val matches = ctx.projected.getBattlefieldControlledBy(ctx.blockingPlayer).count { entityId ->
+                predicateEvaluator.matches(
+                    ctx.state, ctx.projected, entityId, ability.permanentFilter, predicateContext
+                )
+            }
+            if (matches >= ability.minCount) {
+                return "${attackerCard.name} ${ability.description}"
+            }
+        }
+        return null
+    }
+}
+
+/**
  * Protection from color: Attacker can't be blocked by creatures of a color it has protection from.
  */
 class ProtectionFromColorRule : BlockEvasionRule {
@@ -635,6 +687,7 @@ fun defaultBlockEvasionRules(
     CantBeBlockedByColorRule(),
     CantBeBlockedExceptByRule(predicateEvaluator),
     CantBeBlockedUnlessDefenderSharesCreatureTypeRule(),
+    CantBeBlockedIfDefenderControlsRule(predicateEvaluator),
     CantBeBlockedWhilePropertyAtMostRule(),
     CantBeBlockedIfCastSpellTypeRule(predicateEvaluator),
     ProtectionFromColorRule(),

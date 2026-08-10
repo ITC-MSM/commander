@@ -101,6 +101,7 @@ import com.wingedsheep.sdk.scripting.CantBeBlockedBy
 import com.wingedsheep.sdk.scripting.CantBeBlockedByCreaturesWithLessPower
 import com.wingedsheep.sdk.scripting.CantBeBlockedByMoreThan
 import com.wingedsheep.sdk.scripting.CantBeBlockedIfCastSpellType
+import com.wingedsheep.sdk.scripting.CantBeBlockedIfDefenderControls
 import com.wingedsheep.sdk.scripting.CantBeBlockedUnlessDefenderSharesCreatureType
 import com.wingedsheep.sdk.scripting.CantBlockCreaturesWithGreaterPower
 import com.wingedsheep.sdk.scripting.CantBlockUnless
@@ -922,6 +923,7 @@ class StaticAbilityHandler(
             is CantBeBlockedByMoreThan,
             is com.wingedsheep.sdk.scripting.CantBeBlockedByFewerThan,
             is CantBeBlockedIfCastSpellType,
+            is CantBeBlockedIfDefenderControls,
             is CantBeBlockedUnlessDefenderSharesCreatureType,
             is CantBlockCreaturesWithGreaterPower,
             is CantBlockUnless,
