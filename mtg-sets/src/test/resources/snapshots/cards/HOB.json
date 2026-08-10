@@ -5588,6 +5588,136 @@
     ]
 }
 
+// Last Light of Durin's Day
+{
+    "name": "Last Light of Durin's Day",
+    "manaCost": "{1}{R}",
+    "typeLine": "Enchantment",
+    "oracleText": "Whenever a Mountain you control enters, put a quest counter on this enchantment. If it has six or more quest counters on it, sacrifice it. If you do, search your hand and/or library for a Dragon card and put it onto the battlefield. If you search your library this way, shuffle.\nMountaincycling {2} ({2}, Discard this card: Search your library for a Mountain card, reveal it, put it into your hand, then shuffle.)",
+    "keywordAbilities": [
+        {
+            "type": "Cycling",
+            "cost": "{2}",
+            "searchFilter": {
+                "cardPredicates": [
+                    {
+                        "type": "HasSubtype",
+                        "subtype": "Mountain"
+                    }
+                ]
+            },
+            "displayPrefix": "Mountaincycling"
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "land Mountain ctrl:you",
+                    "to": "Battlefield"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "AddCounters",
+                            "counterType": "quest",
+                            "count": 1,
+                            "target": "Self"
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "Compare",
+                                    "left": {
+                                        "type": "EntityProperty",
+                                        "entity": "Source",
+                                        "numericProperty": {
+                                            "type": "CounterCount",
+                                            "counterType": {
+                                                "type": "Named",
+                                                "name": "quest"
+                                            }
+                                        }
+                                    },
+                                    "operator": "GTE",
+                                    "right": {
+                                        "type": "Fixed",
+                                        "amount": 6
+                                    }
+                                }
+                            },
+                            "then": {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "SacrificeTarget",
+                                        "target": "Self"
+                                    },
+                                    {
+                                        "type": "Composite",
+                                        "effects": [
+                                            {
+                                                "type": "GatherCards",
+                                                "source": {
+                                                    "type": "FromMultipleZones",
+                                                    "zones": [
+                                                        "Hand",
+                                                        "Library"
+                                                    ],
+                                                    "filter": "Dragon"
+                                                },
+                                                "storeAs": "searchable"
+                                            },
+                                            {
+                                                "type": "SelectFromCollection",
+                                                "from": "searchable",
+                                                "selection": {
+                                                    "type": "ChooseUpTo",
+                                                    "count": {
+                                                        "type": "Fixed",
+                                                        "amount": 1
+                                                    }
+                                                },
+                                                "storeSelected": "found"
+                                            },
+                                            {
+                                                "type": "MoveCollection",
+                                                "from": "found",
+                                                "destination": {
+                                                    "type": "ToZone",
+                                                    "zone": "Battlefield"
+                                                }
+                                            },
+                                            "ShuffleLibrary",
+                                            "EmitLibrarySearchedEvent"
+                                        ]
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "Whenever a Mountain you control enters, put a quest counter on this enchantment. If it has six or more quest counters on it, sacrifice it. If you do, search your hand and/or library for a Dragon card and put it onto the battlefield. If you search your library this way, shuffle."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "103",
+        "rarity": "RARE",
+        "artist": "Harkalé Linaï",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/f/df29484b-de4b-4bab-995a-7605745780d9.jpg?1784798201"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Little Bear
 {
     "name": "Little Bear",
@@ -8566,6 +8696,97 @@
     ]
 }
 
+// Supper for Spiders
+{
+    "name": "Supper for Spiders",
+    "manaCost": "{1}{B}",
+    "typeLine": "Instant",
+    "oracleText": "Put onto the battlefield under your control all creature cards in your opponents' graveyards that were put there from the battlefield this turn. They are Food artifacts with \"{2}, {T}, Sacrifice this artifact: You gain 3 life.\" (They lose all other types and subtypes.)",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherCards",
+                    "source": {
+                        "type": "FromZone",
+                        "zone": "Graveyard",
+                        "player": "EachOpponent",
+                        "filter": {
+                            "cardPredicates": [
+                                "IsCreature"
+                            ],
+                            "statePredicates": [
+                                "PutIntoGraveyardFromBattlefieldThisTurn"
+                            ]
+                        }
+                    },
+                    "storeAs": "gathered0"
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "gathered0",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Battlefield"
+                    }
+                },
+                {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Collection",
+                        "collection": "gathered0"
+                    },
+                    "body": {
+                        "type": "BecomeArtifact",
+                        "target": "Self",
+                        "subtypes": [
+                            "Food"
+                        ],
+                        "colors": null,
+                        "loseAllAbilities": false,
+                        "grantedAbility": {
+                            "id": "ability_1",
+                            "cost": {
+                                "type": "CostComposite",
+                                "costs": [
+                                    {
+                                        "type": "CostAtomWrapper",
+                                        "atom": {
+                                            "type": "AtomMana",
+                                            "cost": "{2}"
+                                        }
+                                    },
+                                    "CostTap",
+                                    "CostSacrificeSelf"
+                                ]
+                            },
+                            "effect": {
+                                "type": "GainLife",
+                                "amount": {
+                                    "type": "Fixed",
+                                    "amount": 3
+                                }
+                            },
+                            "descriptionOverride": "{2}, {T}, Sacrifice this artifact: You gain 3 life."
+                        }
+                    }
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "86",
+        "rarity": "RARE",
+        "artist": "Michele Giorgi",
+        "flavorText": "The spiders laughed. \"You were quite right,\" they said, \"the meat's alive and kicking!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/b/5b25e454-06bb-43ca-9a9f-57164f7a70c4.jpg?1784376962"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // The Arkenstone
 {
     "name": "The Arkenstone",
@@ -9627,6 +9848,156 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Thorin, Mountain-king
+{
+    "name": "Thorin, Mountain-king",
+    "manaCost": "{3}{R}",
+    "typeLine": "Legendary Creature — Dwarf Noble",
+    "oracleText": "Trample\nWhen Thorin enters, attach any number of target Equipment you control to target creature you control. When one or more Equipment become attached to that creature this way, that creature deals damage equal to its power to up to one target creature.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 4
+    },
+    "keywords": [
+        "TRAMPLE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": "ChosenTargets",
+                            "storeAs": "gathered0"
+                        },
+                        {
+                            "type": "FilterCollection",
+                            "from": "gathered0",
+                            "filter": {
+                                "type": "MatchesFilter",
+                                "filter": "artifact Equipment"
+                            },
+                            "storeMatching": "matching1"
+                        },
+                        {
+                            "type": "FilterCollection",
+                            "from": "gathered0",
+                            "filter": {
+                                "type": "ExcludeOtherCollection",
+                                "otherCollectionName": "matching1"
+                            },
+                            "storeMatching": "matching2"
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "All",
+                                    "conditions": [
+                                        {
+                                            "type": "CollectionContainsMatch",
+                                            "collection": "matching1"
+                                        },
+                                        {
+                                            "type": "CollectionContainsMatch",
+                                            "collection": "matching2"
+                                        }
+                                    ]
+                                }
+                            },
+                            "then": {
+                                "type": "ReflexiveTrigger",
+                                "action": {
+                                    "type": "ForEach",
+                                    "space": {
+                                        "type": "IterationSpace.Collection",
+                                        "collection": "matching1"
+                                    },
+                                    "body": {
+                                        "type": "AttachTargetEquipmentToCreature",
+                                        "equipmentTarget": "Self",
+                                        "creatureTarget": {
+                                            "type": "BoundVariable",
+                                            "name": "target creature you control"
+                                        }
+                                    }
+                                },
+                                "optional": false,
+                                "reflexiveEffect": {
+                                    "type": "ForEach",
+                                    "space": {
+                                        "type": "IterationSpace.Collection",
+                                        "collection": "matching2"
+                                    },
+                                    "body": {
+                                        "type": "DealDamage",
+                                        "amount": {
+                                            "type": "EntityProperty",
+                                            "entity": "IterationEntity",
+                                            "numericProperty": "Power"
+                                        },
+                                        "target": {
+                                            "type": "ContextTarget",
+                                            "index": 0
+                                        },
+                                        "damageSource": "Self"
+                                    }
+                                },
+                                "reflexiveTargetRequirements": [
+                                    {
+                                        "type": "TargetObject",
+                                        "optional": true,
+                                        "filter": {
+                                            "baseFilter": "creature"
+                                        }
+                                    }
+                                ],
+                                "descriptionOverride": "Attach the chosen Equipment to that creature. When one or more Equipment become attached to it this way, it deals damage equal to its power to up to one target creature."
+                            }
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature ctrl:you"
+                    },
+                    "id": "target creature you control"
+                },
+                "additionalTargetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "unlimited": true,
+                        "filter": {
+                            "baseFilter": "artifact Equipment ctrl:you"
+                        },
+                        "id": "any number of target Equipment you control"
+                    }
+                ],
+                "descriptionOverride": "When Thorin enters, attach any number of target Equipment you control to target creature you control. When one or more Equipment become attached to that creature this way, that creature deals damage equal to its power to up to one target creature."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "114",
+        "rarity": "MYTHIC",
+        "artist": "Javier Charro",
+        "flavorText": "\"To me! O my kinsfolk!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/1/117347af-0dd7-4350-901d-8c8a81387e22.jpg?1783902784"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
