@@ -2499,6 +2499,16 @@ one-off pipeline belongs inline in the card file via `Effects.Pipeline { }` (§5
 - `rummage(count?)` — discard then draw.
 - `connive(target?)` — draw 1, discard 1, then put a +1/+1 counter on `target` (default Self) if the discard was a nonland (CR 701.50). Also exposed as `Effects.Connive(target)`.
 - `conniveTargeting(requirement, storeAs?)` — connive whose +1/+1 counter lands on a *reflexively chosen* target: "draw a card, then discard a card. When you discard a nonland card this way, put a +1/+1 counter on target creature you control" (Teo, Spirited Glider). The recipient is selected at resolution via `SelectTargetEffect` *inside* the nonland gate — so the player never chooses up front or when the discard is a land. Pass the recipient's `TargetRequirement` (e.g. `Targets.CreatureYouControl`); do **not** also declare it as a cast-time `target(...)`. Exposed as `Effects.ConniveTargeting(requirement)`.
+- `Patterns.Mechanic.recruit()` — **Recruit** (The Hobbit): "draw a card, then discard a card. If you
+  discarded a nonland card, create a 1/1 white Human Soldier creature token." A keyword *action* with
+  fixed reminder text, not a keyword ability, so there is no `Keyword.RECRUIT` — it is connive's pipeline
+  with a token payoff instead of a +1/+1 counter: `DrawCards(1)` → `GatherCards(FromZone(HAND, You))` →
+  `SelectFromCollection(ChooseExactly 1)` → `MoveCollection(→ graveyard, MoveType.Discard)` →
+  `ConditionalOnCollection(Nonland, ifNotEmpty = CreateToken(1/1 white Human Soldier))`. The discard is a
+  real discard, so madness and "whenever you discard a card" payoffs see it. The gate is the positive
+  "a nonland card was discarded" — an empty hand discards nothing and mints nothing. Token art comes from
+  the set-scoped resolver (`MtgSet.tokenArt`), not a baked-in `imageUri`, because ten HOB cards share the
+  facade. Lake-town Lookout, Patient Instructor, Long Lake Nuisance, Esgaroth Garrison, Great Gilded Boat.
 - `readTheRunes()` — "draw X cards; for each, discard a card unless you sacrifice a permanent." Composes `RepeatDynamicTimesEffect(XValue, ChooseActionEffect(...))` with feasibility guards. Exposed as `Effects.ReadTheRunes()`.
 - `eachOpponentMayPutFromHand(filter?)` — each opponent may dump a matching card.
 - `putFromHand(filter?, count?, entersTapped?, entersAttacking?, anyNumber?, prompt?)` — you may put N

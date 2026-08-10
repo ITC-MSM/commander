@@ -47,6 +47,11 @@ object TheHobbitSet : MtgSet {
             name = "Goblin Army",
             imageUri = "https://cards.scryfall.io/normal/front/2/e/2e2028b1-34c0-40b6-8f65-79f79a279996.jpg?1785497644",
         ),
+        // thob #2 — the Soldier every recruit card in the set mints.
+        TokenPrinting(
+            name = "Human Soldier",
+            imageUri = "https://cards.scryfall.io/art_crop/front/6/0/6007af81-4541-4b55-90ea-03d365362ae5.jpg?1785497653",
+        ),
     )
 
     private const val CARDS_PACKAGE = "com.wingedsheep.mtg.sets.definitions.hob.cards"
