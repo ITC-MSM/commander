@@ -15679,6 +15679,65 @@
     ]
 }
 
+// The Serpent Society
+{
+    "name": "The Serpent Society",
+    "manaCost": "{1}{B}{G}",
+    "typeLine": "Legendary Creature — Human Snake Villain",
+    "oracleText": "Deathtouch\nWard—Get five poison counters. (A player with ten or more poison counters loses the game.)\nWhenever another creature you control with deathtouch dies, each opponent sacrifices a nontoken creature of their choice.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 4
+    },
+    "keywords": [
+        "DEATHTOUCH",
+        "WARD"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Ward",
+            "cost": {
+                "type": "WardCost.PlayerCounters",
+                "counterType": "poison",
+                "amount": 5
+            }
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "creature kw:deathtouch ctrl:you",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "binding": "OTHER",
+                "effect": {
+                    "type": "ForceSacrifice",
+                    "filter": "creature nontoken",
+                    "target": {
+                        "type": "PlayerRef",
+                        "player": "EachOpponent"
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "226",
+        "rarity": "RARE",
+        "artist": "Rimas Valeikis",
+        "flavorText": "\"Serpents of the world, unite!\"\n—King Cobra",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/0/209855ee-d531-4b58-926b-8da171d46619.jpg?1783902897"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "GREEN"
+    ]
+}
+
 // The Super Hero Civil War
 {
     "name": "The Super Hero Civil War",
@@ -16445,6 +16504,59 @@
         "imageUri": "https://cards.scryfall.io/normal/front/7/3/73c11aea-4fa4-438d-b886-2fafa60c82f9.jpg?1783902911"
     },
     "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Titania, Rugged Rumbler
+{
+    "name": "Titania, Rugged Rumbler",
+    "manaCost": "{2}{B/G}",
+    "typeLine": "Legendary Creature — Human Villain",
+    "oracleText": "As an additional cost to cast this spell, discard a card or pay {2}.\nWard—Discard a card or pay {2}. (Whenever this creature becomes the target of a spell or ability an opponent controls, counter it unless that player discards a card or pays {2}.)",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 5
+    },
+    "keywords": [
+        "WARD"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Ward",
+            "cost": {
+                "type": "WardCost.Choice",
+                "options": [
+                    "WardCost.Discard",
+                    {
+                        "type": "WardCost.Mana",
+                        "manaCost": "{2}"
+                    }
+                ]
+            }
+        }
+    ],
+    "script": {
+        "additionalCosts": [
+            {
+                "type": "OrPay",
+                "cost": {
+                    "type": "AdditionalAtom",
+                    "atom": "AtomDiscard"
+                },
+                "alternativeManaCost": "{2}"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "235",
+        "rarity": "UNCOMMON",
+        "artist": "Taurin Clarke",
+        "flavorText": "\"Face it. There's only room for one strongest woman . . . and it ain't you!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/2/c281e0ee-155b-4022-b921-ebc391535aad.jpg?1783902896"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
         "GREEN"
     ]
 }

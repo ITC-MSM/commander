@@ -1,79 +1,67 @@
-# loop-msh-u06 — Copy-with-exceptions (feature + 3 cards)
+# loop-msh-u07 — Ward with a non-listed cost
 
-Branch: `loop-msh-u06`, off `origin/main` (`efe697ae9a`). Nothing pushed — no network in this box.
+Feature unit: two new `WardCost` variants plus the two MSH cards they unblock.
 
-## The SDK gap
+## SDK
 
-`EachPermanentBecomesCopyOfTargetEffect` exposed only `addedKeywords` / `powerOverride` /
-`toughnessOverride` / `retainActivatingAbility` as copy exceptions, while its token sibling
-`CreateTokenCopyOfTargetEffect` had a dozen more (name aside) and its own copy of the type-line
-arithmetic. The permanent executor also honoured only `Permanent` / `EndOfTurn` / `UntilNextEndStep`,
-silently degrading anything else.
+- `WardCost.PlayerCounters(counterType, amount)` — counters placed on the **paying player**
+  (CR 122.1). Facade `KeywordAbility.wardPlayerCounters(Counters.POISON, 5)`. The only ward cost with
+  no affordability gate.
+- `WardCost.Choice(options)` — OR disjunction, sibling of `Composite`'s AND. Facades
+  `KeywordAbility.wardChoice(...)` and the named `wardDiscardOrPay("{2}")`. Modelled on
+  `AdditionalCost.Choice` / `PayCost.Choice`; the prompt follows `CostPaymentService.choicePrompt`
+  (payable options only + trailing decline, reduced list stored on the continuation).
+- `WardCost.clause` — new property: the self-contained verb phrase ("discard a card", "pay {2}") as
+  opposed to `description`'s object phrase. Only `Choice` reads it, so no existing card's rendered
+  text changes.
 
-## What shipped (convergence, not new riders)
+## Engine
 
-- `CopyExceptions` (`mtg-sdk/.../scripting/effects/CopyExceptions.kt`) — one serializable value type
-  for the whole "except …" half of a copy effect (CR 707.9b). Add/override pairs mirror CR 205.1a
-  (replace by default) against CR 205.1b (the "in addition to its other types" retention clause).
-- `CopyExceptionApplier` (`rules-engine/.../handlers/effects/copy/`) — the single implementation of
-  the name/type-line/keyword/P-T/color arithmetic. Four paths call it: the permanent-becomes-a-copy
-  executor, both token-copy executors (targeted and self), and the `EntersAsCopy` clone path; the
-  token executor's Aura-host type-line probe shares it too. The two `removeLegendary`-only paths
-  (Helm of the Host's equipped-creature token, spell copies) stay outside it — no arithmetic to
-  share — and the KDoc says so instead of claiming universality.
-- `EachPermanentBecomesCopyOfTargetEffect.exceptions` replaces its three flat riders. Both token
-  effects take an `exceptions: CopyExceptions` field too, so **all three copy effects share one
-  authoring surface** and a new exception is expressible on every path the day it is added. Their
-  ≈20 existing flat riders stay (serialized shape unchanged) and are folded in via
-  `exceptions.over(<riders>)`; `CopyExceptions.None.over(base) == base`, so a card using only the
-  riders is bit-for-bit unchanged. The riders are frozen — new exceptions go on `CopyExceptions`.
-- `Duration.UntilYourNextTurn` in the copy-revert path — `RevertCopyAtYourNextTurnComponent(playerId)`,
-  expired in `CleanupPhaseManager.expireUntilYourNextTurnEffects` with every other "until your next
-  turn" effect.
-
-Latent bug fixed on the way: the permanent path dropped a P/T override entirely when the copy source
-had no base stats — exactly Absorbing Man copying a land.
+- `WardCounterEffectExecutor`: two new branches; `canPayWardCost` is now the single source of truth
+  for "unpayable → counter without a prompt" and the four pre-existing inline can-pay checks were
+  folded into it.
+- Two continuations (`CounterUnlessPlayerCountersContinuation`, `WardCostChoiceContinuation`) in
+  `ManaContinuations.kt`, registered in `Serialization.kt`, resumed in
+  `ManaPaymentContinuationResumer`. The choice resumer routes the chosen option through the existing
+  `chargeNextWardPartOrNull`, so the spell-left-the-stack guard and composite chaining stay
+  single-sourced.
+- Counters are placed via the ordinary `AddCountersEffect` executor with the payer as controller —
+  replacement effects, `CountersAddedEvent` and the ten-poison SBA all follow for free.
 
 ## Cards
 
-- **Shuri, Wakandan Inventor** [75] — `ModifySpellCost` discount + a two-target copy
-  (`affected` / `target`, second wrapped in `TargetOther`) with
-  `CopyExceptions(removedSupertypes = {LEGENDARY})`; without the removal the copy dies to the legend
-  rule (CR 704.5j).
-- **Absorbing Man** [199] — `Triggers.FirstMainPhase`, optional target across artifact / non-Aura
-  enchantment / land, `Duration.UntilYourNextTurn`, and the additive exception set (name, legendary,
-  creature, Human Villain, 4/4, vigilance).
-- **Taskmaster, Mercenary Mimic** [232] — same shape, cross-zone target (`TargetFilter.or` over the
-  graveyard) + `sourceFromAnyZone`, and the *replacing* type clause
-  (`overrideCardTypes` / `overrideSubtypes`).
+- **The Serpent Society** [226] — deathtouch; `wardPlayerCounters(Counters.POISON, 5)`; OTHER-bound
+  dies trigger filtered by `withKeyword(DEATHTOUCH)` (matched against LKI) → `Effects.Sacrifice`
+  nontoken over `Player.EachOpponent`.
+- **Titania, Rugged Rumbler** [235] — `Costs.additional.DiscardOrPay("{2}")` +
+  `KeywordAbility.wardDiscardOrPay("{2}")`. Same printed shape on both rails, deliberately
+  matching facade names; the types stay separate because the additional cost's mana leg folds into
+  the spell's mana cost at cast time and the ward's does not.
+
+## Also
+
+- `docs/card-sdk-language-reference.md` — ward section extended for both variants and the two-rail
+  note.
+- `backlog/sets/marvel-super-heroes/cards.md` — both ticked, count 239 → 241.
+- `backlog/sets/marvel-super-heroes/mechanics.md` — section rewritten as SHIPPED; blocked count
+  33 → 31.
+- `mtgish-tooling` `CardStructure.kt` — `wardKeywordLine` learned `_Cost: "Or"` via a new
+  `wardCostExpr` leg renderer; existing single-cost branches unchanged, no corpus ward uses `Or`, so
+  no golden moves. The IR has no player-counter cost tag, so `PlayerCounters` is not taught.
 
 ## Things worth a second opinion
 
-- **Taskmaster's type clause reading.** His oracle text says "he's a legendary Human Mercenary
-  Villain creature" with **no** "in addition to his other types", while Absorbing Man in the same set
-  has the phrase. CR 205.1b makes that phrase the switch away from CR 205.1a's replace-by-default,
-  so I read Taskmaster as *replacing*
-  card types and subtypes: copying an artifact creature drops the artifact type, copying a Goblin
-  drops Goblin. No Scryfall rulings exist for the card yet. If a reviewer reads it the other way, the
-  change is two field names in `TaskmasterMercenaryMimic.kt`.
-- **Legendary is `addedSupertypes`, not an override, on Taskmaster.** `CopyExceptions` has no
-  supertype-override field on purpose (supertypes only add and remove), so a copied Snow creature
-  would keep Snow. Marginal, and the conservative reading.
-- **Snapshot movement beyond my three cards is expected.** `Likeness Looter` (WOE) and
-  `Mimeoplasm, Revered One` (DFT) are the only existing cards that used the three fields that moved
-  into `exceptions`, so their serialized ability JSON changed shape. Nothing else moves.
+`WardPlayerCountersTest`, `WardCostChoiceTest` (engine-level, one per mechanic),
+`TheSerpentSocietyScenarioTest`, `TitaniaRuggedRumblerScenarioTest` (one per card).
 
-## Gate
+## Unsure / worth a reviewer's eye
 
-Two halves, because **`just test` is Gradle-only and this unit changes ~1000 lines of TypeScript** —
-the web-client suite is not reachable from any `just` recipe and has to be run on its own.
-
-- **JVM:** `just test` — BUILD SUCCESSFUL, 0 failed (supersedes the earlier `just test-rules` run;
-  it covers `:mtg-sets:test` snapshots + `FacadeBoundaryTest` and the `:ai` / `:game-server` /
-  `:gym` / `:mtg-search` compiles the SDK type change forces). `just rebless-cards` moved MSH plus
-  the two expected reshapes and nothing else.
-- **Web client:** `cd web-client && npm run typecheck` — clean; `npm test` — 39 files, 552 tests,
-  0 failed.
-- `just check-card-printing` clean for all three cards.
-
-Exact commands and the earlier-failure story are in `build/pr/loop-msh-u06-body.md`.
+- `WardCost.clause` duplicates information with `description`. The alternative — making `description`
+  the full clause everywhere and dropping the per-renderer verb prefixes — is cleaner but rewrites
+  the rendered text of every existing ward card and moves a lot of snapshots; I chose not to.
+- `canPayWardCost` for `Composite` is a snapshot check (all parts payable *now*). Paying an earlier
+  part could in principle make a later one unpayable; the per-part handler still counters at that
+  point, so behaviour is right, but a `Choice` over a `Composite` could offer a leg that later fails.
+  No printed card has that shape.
+- The ward `Choice` picker labels are generated from `clause` ("Discard a card" / "Pay {2}" /
+  "Counter spell"). Not seen in a running client.

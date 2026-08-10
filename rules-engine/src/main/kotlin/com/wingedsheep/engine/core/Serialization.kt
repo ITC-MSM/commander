@@ -247,6 +247,8 @@ val engineSerializersModule = SerializersModule {
         subclass(CounterUnlessDiscardContinuation::class)
         subclass(CounterUnlessSacrificeContinuation::class)
         subclass(CounterUnlessCollectEvidenceContinuation::class)
+        subclass(CounterUnlessPlayerCountersContinuation::class)
+        subclass(WardCostChoiceContinuation::class)
         subclass(ModalContinuation::class)
         subclass(ChooseDoorContinuation::class)
         subclass(ModalTargetContinuation::class)

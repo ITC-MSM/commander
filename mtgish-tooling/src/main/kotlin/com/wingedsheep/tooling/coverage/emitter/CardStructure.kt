@@ -3452,9 +3452,45 @@ internal fun EmitCtx.wardKeywordLine(rule: JsonObject): List<Stmt>? {
             val filter = gameObjectFilterDsl(cost.field("args")) ?: return null
             call("KeywordAbility.wardSacrifice", arg(Lit(filter)))
         }
+        // "Ward—<cost> or <cost>" (Titania, Rugged Rumbler) — the OR disjunction, WardCost.Choice.
+        // Every leg must render to a faithful WardCost or the whole line declines -> SCAFFOLD,
+        // rather than emitting a ward that silently drops one of its options.
+        "Or" -> {
+            val legs = (cost["args"] as? JsonArray) ?: return null
+            if (legs.size < 2) return null
+            val rendered = legs.map { leg ->
+                (leg as? JsonObject)?.let { wardCostExpr(it) } ?: return null
+            }
+            Call("KeywordAbility.wardChoice", rendered.map { arg(it) })
+        }
         else -> return null  // compound / dynamic ward costs -> SCAFFOLD
     }
     return listOf(Eval(call("keywordAbility", arg(ability))))
+}
+
+/**
+ * Render one ward cost node as a `WardCost.*` value expression — the leg-level counterpart of
+ * [wardKeywordLine], which renders a whole ward line as a named `KeywordAbility.ward*` facade.
+ * Only shapes with a faithful [com.wingedsheep.sdk.scripting.effects.WardCost] variant render;
+ * anything else returns null so the caller declines to SCAFFOLD.
+ *
+ * Not used for the top-level single-cost cases: those keep their facade rendering so the large
+ * existing ward corpus golden stays byte-identical.
+ */
+private fun EmitCtx.wardCostExpr(cost: JsonObject): Dsl? = when (cost.strField("_Cost")) {
+    "PayMana" -> {
+        val mana = renderMana(cost.field("args"))
+        if (mana.isEmpty()) null else call("WardCost.Mana", arg("\"$mana\""))
+    }
+    "DiscardACard" -> call("WardCost.Discard")
+    "DiscardACardAtRandom" -> call("WardCost.Discard", arg("random", "true"))
+    "PayLife" -> {
+        val n = (cost["args"].asInt()) ?: ((cost["args"] as? JsonObject)?.get("args").asInt())
+        if (n == null) null else call("WardCost.Life", arg("$n"))
+    }
+    "SacrificeAPermanent" -> gameObjectFilterDsl(cost.field("args"))
+        ?.let { call("WardCost.Sacrifice", arg(Lit(it))) }
+    else -> null
 }
 
 /** Impending N—[cost] (CR 702.176) -> the `impending(n, cost)` CardBuilder helper. The rule's args are

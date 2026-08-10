@@ -3,7 +3,7 @@
 **Set Size:** 276 booster cards (collector numbers 1-276; basic lands 277-296 and showcase
 variants 297+ are excluded)
 **Release Date:** June 26, 2026
-**Implemented:** 243 / 276
+**Implemented:** 245 / 276
 - [x] Agent 13, Sharon Carter
 - [x] Agent Maria Hill
 - [x] Agent of Atlas
@@ -229,7 +229,7 @@ variants 297+ are excluded)
 - [x] Moon Girl and Devil Dinosaur
 - [x] The Ruinous Wrecking Crew
 - [ ] Scientist Supreme of A.I.M.
-- [ ] The Serpent Society
+- [x] The Serpent Society
 - [x] Speedball, New Warrior
 - [x] Spider-Man, To the Rescue
 - [x] Spider-Woman, Secret Agent
@@ -238,7 +238,7 @@ variants 297+ are excluded)
 - [x] Taskmaster, Mercenary Mimic
 - [x] Thanos, the Mad Titan
 - [x] Thor Odinson
-- [ ] Titania, Rugged Rumbler
+- [x] Titania, Rugged Rumbler
 - [x] U.S.Agent, John Walker
 - [x] Vision Quest
 - [x] War Machine, Legacy of Iron

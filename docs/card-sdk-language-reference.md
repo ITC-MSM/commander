@@ -6539,7 +6539,7 @@ composite abilities).
   (see *Composite static abilities*). Non-mana costs use
   `KeywordAbility.Ward(WardCost.X)`: `WardCost.Mana`, `WardCost.Life(n)`, `WardCost.DynamicLife(amount)`,
   `WardCost.Discard(n, random, filter)`, `WardCost.CollectEvidence(n)` ("Ward—Collect evidence 4",
-  Axebane Ferox),
+  Axebane Ferox), `WardCost.PlayerCounters(counterType, amount)`,
   and `WardCost.Sacrifice(filter, count = 1)` ("Ward—Sacrifice a Food", Ygra; "Ward—Sacrifice three
   nonland permanents" with `count = 3`, Valgavoth, Terror Eater, via `KeywordAbility.wardSacrifice(filter, count)`).
   For sacrifice ward, the opponent chooses which `count` matching permanent(s) they control to sacrifice
@@ -6551,6 +6551,27 @@ composite abilities).
   component is paid, and declining or being unable to pay any one component counters it (CR 702.21a).
   Each component reuses the same per-cost decision flow as a standalone ward, so a composite cost
   shows one prompt per component. `parts` must be flat atomic ward costs (no nested `Composite`).
+  **Disjunctive costs** ("Ward—Discard a card or pay {2}", Titania, Rugged Rumbler) are
+  `WardCost.Choice(options)`, the OR sibling of `Composite`'s AND, built with
+  `KeywordAbility.wardChoice(WardCost.Discard(), WardCost.Mana("{2}"))` or the named
+  `KeywordAbility.wardDiscardOrPay("{2}")`. The payer gets a `ChooseOptionDecision` listing only the
+  options they can actually pay (per `WardCounterEffectExecutor.canPayWardCost`) plus a trailing
+  "Counter spell" decline; picking one charges it through that cost's ordinary ward flow, so the
+  disjunction adds a picker and no payment logic. If no option is payable the spell is countered with
+  no prompt. Keep `options` flat (no nested `Choice`); a `Composite` option is fine.
+  `wardDiscardOrPay` is deliberately named to match the additional-cost
+  `Costs.additional.DiscardOrPay(...)` — the same printed shape on the two rails. They stay separate
+  types because an *additional* cost's mana leg folds into the spell's own mana cost at cast time
+  (`AdditionalCost.OrPay`), whereas a ward cost is paid on its own as the ward trigger resolves, so
+  here the mana leg is an ordinary option with no special status. A card printing both (Titania) uses
+  one facade per rail.
+  **Counter costs** ("Ward—Get five poison counters", The Serpent Society) are
+  `WardCost.PlayerCounters(counterType, amount)` via
+  `KeywordAbility.wardPlayerCounters(Counters.POISON, 5)` — counters placed on the *paying player*
+  (CR 122.1). It is the one ward cost that is always payable (a player can always get counters), so
+  it never counters for inability, and the counters go through the ordinary `AddCountersEffect`
+  executor: counter-placement replacement effects apply and `CountersAddedEvent` is emitted, so the
+  ten-poison state-based action (CR 122.1f) follows on its own.
   `WardCost.Discard` (built via `KeywordAbility.wardDiscard(count, random, filter)`) takes an optional
   `GameObjectFilter`: when set, only matching hand cards count toward the can-pay check and only matching
   cards are offered for discard — e.g. Saruman of Many Colors' "Ward—Discard an enchantment, instant, or

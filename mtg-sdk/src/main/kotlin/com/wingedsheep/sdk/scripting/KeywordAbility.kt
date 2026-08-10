@@ -78,6 +78,8 @@ sealed interface KeywordAbility {
      * - `Ward(WardCost.Discard())`           — "Ward—Discard a card"
      * - `Ward(WardCost.Sacrifice(filter))`   — "Ward—Sacrifice a Food"
      * - `Ward(WardCost.CollectEvidence(4))`  — "Ward—Collect evidence 4"
+     * - `Ward(WardCost.PlayerCounters(Counters.POISON, 5))` — "Ward—Get five poison counters"
+     * - `Ward(WardCost.Choice(...))`         — "Ward—Discard a card or pay {2}"
      */
     @SerialName("Ward")
     @Serializable
@@ -93,6 +95,10 @@ sealed interface KeywordAbility {
             // Capitalized: "Collect evidence N" is a keyword action, and the printed line reads
             // "Ward—Collect evidence 4."
             is WardCost.CollectEvidence -> "Ward—Collect evidence ${cost.amount}"
+            is WardCost.PlayerCounters -> "Ward—Get ${cost.description}"
+            // A disjunction renders each option with its own verb, so it goes through `clause`
+            // (see WardCost.clause) rather than a prefix this branch supplies.
+            is WardCost.Choice -> "Ward—${cost.clause.replaceFirstChar { it.uppercase() }}"
             is WardCost.Composite -> "Ward—${cost.description}"
         }
     }
@@ -1144,6 +1150,44 @@ sealed interface KeywordAbility {
          */
         fun wardComposite(vararg parts: WardCost): KeywordAbility =
             Ward(WardCost.Composite(parts.toList()))
+
+        /**
+         * Create Ward with a cost paid in counters placed on the paying player — e.g.
+         * `wardPlayerCounters(Counters.POISON, 5)` for "Ward—Get five poison counters."
+         * (The Serpent Society). [counterType] is a `Counters.*` symbol.
+         */
+        fun wardPlayerCounters(counterType: String, amount: Int): KeywordAbility =
+            Ward(WardCost.PlayerCounters(counterType, amount))
+
+        /**
+         * Create Ward with a **disjunctive** cost — the payer picks exactly one of [options] and
+         * pays it. The OR sibling of [wardComposite]'s AND. E.g.
+         * `wardChoice(WardCost.Discard(), WardCost.Mana("{2}"))` for
+         * "Ward—Discard a card or pay {2}." Prefer the named [wardDiscardOrPay] for that printed
+         * wording; reach for this factory for any other combination.
+         */
+        fun wardChoice(vararg options: WardCost): KeywordAbility =
+            Ward(WardCost.Choice(options.toList()))
+
+        /**
+         * "Ward—Discard a card or pay {N}." (Titania, Rugged Rumbler) — the ward-side rendering of
+         * the same printed shape [com.wingedsheep.sdk.dsl.Costs.additional.DiscardOrPay] renders
+         * as an *additional cost*, deliberately named to match it so a card carrying both (as
+         * Titania does) reads as one shape twice, not two inventions.
+         *
+         * They stay separate types because the rails genuinely differ: an additional cost's mana
+         * leg folds into the spell's own mana cost at cast time (`AdditionalCost.OrPay`), while a
+         * ward cost is paid on its own as the ward trigger resolves — so on this side the mana leg
+         * is an ordinary [WardCost.Mana] option with no special status.
+         */
+        fun wardDiscardOrPay(
+            alternativeManaCost: String,
+            filter: GameObjectFilter? = null,
+            count: Int = 1,
+        ): KeywordAbility = wardChoice(
+            WardCost.Discard(count = count, filter = filter),
+            WardCost.Mana(alternativeManaCost),
+        )
 
         /**
          * Create Hexproof from a color.

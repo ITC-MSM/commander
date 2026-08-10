@@ -4,8 +4,11 @@ import com.wingedsheep.engine.core.CounterUnlessCollectEvidenceContinuation
 import com.wingedsheep.engine.core.CounterUnlessDiscardContinuation
 import com.wingedsheep.engine.core.CounterUnlessPaysLifeContinuation
 import com.wingedsheep.engine.core.CounterUnlessPaysManaSelectionContinuation
+import com.wingedsheep.engine.core.CounterUnlessPlayerCountersContinuation
 import com.wingedsheep.engine.core.CounterUnlessSacrificeContinuation
+import com.wingedsheep.engine.core.ChooseOptionDecision
 import com.wingedsheep.engine.core.DecisionContext
+import com.wingedsheep.engine.core.WardCostChoiceContinuation
 import com.wingedsheep.engine.core.DecisionPhase
 import com.wingedsheep.engine.core.DecisionRequestedEvent
 import com.wingedsheep.engine.core.EffectResult
@@ -55,10 +58,15 @@ import kotlin.reflect.KClass
  *      (min 0, max N); selecting N pays and the spell resolves, declining counters it.
  *    - WardCost.CollectEvidence → SelectCardsDecision over the controller's graveyard with a
  *      `minTotalManaValue` floor (CR 701.59's sum gate); an empty selection declines.
+ *    - WardCost.PlayerCounters → YesNoDecision ("Get five poison counters?"); on Yes, places the
+ *      counters on the paying player (CR 122.1). Always payable.
  *    - WardCost.Composite → pay each component cost in order (CR 702.21a; "Ward—{2}, Pay 2
  *      life"). Each component reuses the per-component flow above and carries the remaining
  *      components so the resumer charges the next one after a successful payment. Declining or
  *      being unable to pay any component counters the spell/ability immediately.
+ *    - WardCost.Choice → ChooseOptionDecision over the options the payer can actually pay, plus a
+ *      trailing "Don't pay". The chosen option is then charged through the branch above for its
+ *      own shape, so the disjunction adds a picker and nothing else.
  *    If the controller can't possibly pay, counter immediately.
  *
  * The per-component handlers are reusable from
@@ -112,9 +120,12 @@ class WardCounterEffectExecutor(
     }
 
     /**
-     * Replace every [WardCost.DynamicLife] (including those nested in a [WardCost.Composite])
-     * with a fixed [WardCost.Life] by evaluating its [com.wingedsheep.sdk.scripting.values.DynamicAmount]
-     * against the current state, clamped to >= 0. Other cost shapes pass through unchanged.
+     * Replace every [WardCost.DynamicLife] (including those nested in a [WardCost.Composite] or a
+     * [WardCost.Choice]) with a fixed [WardCost.Life] by evaluating its
+     * [com.wingedsheep.sdk.scripting.values.DynamicAmount] against the current state, clamped to
+     * >= 0 (CR 702.21b — the amount is read when the ward ability *resolves*, which is now). Doing
+     * it here rather than at payment time also keeps the value stable across a disjunction's picker
+     * prompt. Other cost shapes pass through unchanged.
      */
     private fun resolveDynamicLife(
         state: GameState,
@@ -125,6 +136,8 @@ class WardCounterEffectExecutor(
             WardCost.Life(DynamicAmountEvaluator().evaluate(state, cost.amount, context).coerceAtLeast(0))
         is WardCost.Composite ->
             WardCost.Composite(cost.parts.map { resolveDynamicLife(state, it, context) })
+        is WardCost.Choice ->
+            WardCost.Choice(cost.options.map { resolveDynamicLife(state, it, context) })
         else -> cost
     }
 
@@ -171,6 +184,14 @@ class WardCounterEffectExecutor(
                     state, cardRegistry, spellEntityId, payingPlayerId,
                     cost.amount, remainingParts, wardSourceId, controllerId
                 )
+                is WardCost.PlayerCounters -> handlePlayerCountersCost(
+                    state, spellEntityId, payingPlayerId,
+                    cost.counterType, cost.amount, remainingParts, wardSourceId, controllerId
+                )
+                is WardCost.Choice -> handleChoiceCost(
+                    state, cardRegistry, spellEntityId, payingPlayerId,
+                    cost.options, remainingParts, wardSourceId, controllerId
+                )
                 is WardCost.Composite -> {
                     require(cost.parts.isNotEmpty()) { "WardCost.Composite must have at least one part" }
                     chargeWardCost(
@@ -186,6 +207,234 @@ class WardCounterEffectExecutor(
                     0, remainingParts, wardSourceId, controllerId
                 )
             }
+        }
+
+        /**
+         * Can [payingPlayerId] pay [cost] right now?
+         *
+         * The single source of truth for "unpayable ward cost → counter without a prompt"
+         * (CR 702.21a). Each per-cost handler consults it before prompting, and
+         * [WardCost.Choice] uses it to offer only the options the payer can actually take, so a
+         * disjunction can never advertise a leg the payer would then fail to pay.
+         *
+         * [WardCost.PlayerCounters] is always payable — a player can always get counters — and a
+         * [WardCost.Composite] is payable only if *every* part is, mirroring its AND semantics.
+         * The composite check is a snapshot: paying an earlier part can in principle make a later
+         * one unpayable, and the per-part handler still counters at that point.
+         */
+        fun canPayWardCost(
+            state: GameState,
+            cardRegistry: CardRegistry,
+            cost: WardCost,
+            payingPlayerId: EntityId,
+            controllerId: EntityId?
+        ): Boolean = when (cost) {
+            is WardCost.Mana -> canAffordManaCost(
+                state, cardRegistry, payingPlayerId, ManaCost.parse(cost.manaCost), cost.waterbend
+            )
+            // CR 119.4 — a player can pay only life they have.
+            is WardCost.Life -> state.lifeTotal(payingPlayerId) >= cost.amount
+            // Resolved to a fixed Life before it ever reaches here; treat as free defensively.
+            is WardCost.DynamicLife -> true
+            is WardCost.Discard ->
+                eligibleDiscardCount(state, payingPlayerId, cost.filter) >= cost.count
+            is WardCost.Sacrifice ->
+                !SacrificeImmunity.appliesTo(state, payingPlayerId, controllerId) &&
+                    sacrificeCandidates(state, payingPlayerId, cost.filter).size >= cost.count
+            // CR 701.59b fails closed — a graveyard that can't reach the total means the payer
+            // can't choose to collect evidence at all. Same resolver gate [handleCollectEvidenceCost]
+            // applies, so the two can't drift.
+            is WardCost.CollectEvidence ->
+                CollectEvidenceResolver.candidates(state, payingPlayerId).canReach(cost.amount)
+            is WardCost.PlayerCounters -> true
+            is WardCost.Composite ->
+                cost.parts.all { canPayWardCost(state, cardRegistry, it, payingPlayerId, controllerId) }
+            is WardCost.Choice ->
+                cost.options.any { canPayWardCost(state, cardRegistry, it, payingPlayerId, controllerId) }
+        }
+
+        /**
+         * Ward—Get N [counterType] counters (e.g. The Serpent Society's "Ward—Get five poison
+         * counters", CR 122.1 — a counter is a marker placed on an object *or player*).
+         *
+         * Always payable, so this is a plain yes/no with no can-pay gate. On Yes the counters are
+         * placed through the ordinary `AddCountersEffect` executor targeting the payer, so counter
+         * replacement effects and `CountersAddedEvent` behave exactly as for any other source of
+         * player counters (and the poison state-based action, CR 122.1f, follows from that).
+         */
+        private fun handlePlayerCountersCost(
+            state: GameState,
+            spellEntityId: EntityId,
+            payingPlayerId: EntityId,
+            counterType: String,
+            amount: Int,
+            remainingParts: List<WardCost>,
+            wardSourceId: EntityId?,
+            controllerId: EntityId?
+        ): EffectResult {
+            val label = WardCost.PlayerCounters(counterType, amount).clause
+                .replaceFirstChar { it.uppercase() }
+            val decisionId = java.util.UUID.randomUUID().toString()
+            val decision = YesNoDecision(
+                id = decisionId,
+                playerId = payingPlayerId,
+                prompt = "$label or your spell will be countered",
+                context = DecisionContext(
+                    sourceId = wardSourceId,
+                    sourceName = "Ward",
+                    phase = DecisionPhase.RESOLUTION
+                ),
+                yesText = label,
+                noText = "Counter spell"
+            )
+
+            val continuation = CounterUnlessPlayerCountersContinuation(
+                decisionId = decisionId,
+                payingPlayerId = payingPlayerId,
+                spellEntityId = spellEntityId,
+                counterType = counterType,
+                amount = amount,
+                controllerId = controllerId,
+                remainingWardParts = remainingParts,
+                wardSourceId = wardSourceId
+            )
+
+            val stateWithContinuation = state.withPendingDecision(decision).pushContinuation(continuation)
+
+            return EffectResult.paused(
+                stateWithContinuation,
+                decision,
+                listOf(
+                    DecisionRequestedEvent(
+                        decisionId = decisionId,
+                        playerId = payingPlayerId,
+                        decisionType = "YES_NO",
+                        prompt = decision.prompt
+                    )
+                )
+            )
+        }
+
+        /**
+         * Ward—[option] or [option] (e.g. Titania, Rugged Rumbler's "Ward—Discard a card or pay
+         * {2}") — the disjunction. Only the options [canPayWardCost] says the payer can take are
+         * offered, plus a trailing "Counter spell" decline; if none is payable the spell is countered without
+         * a prompt. Picking one charges it through its own ordinary handler, so this branch adds a
+         * picker and no payment logic of its own.
+         */
+        private fun handleChoiceCost(
+            state: GameState,
+            cardRegistry: CardRegistry,
+            spellEntityId: EntityId,
+            payingPlayerId: EntityId,
+            options: List<WardCost>,
+            remainingParts: List<WardCost>,
+            wardSourceId: EntityId?,
+            controllerId: EntityId?
+        ): EffectResult {
+            require(options.isNotEmpty()) { "WardCost.Choice must have at least one option" }
+
+            val payable = options.filter {
+                canPayWardCost(state, cardRegistry, it, payingPlayerId, controllerId)
+            }
+            if (payable.isEmpty()) {
+                return counterSpellOrAbility(state, cardRegistry, spellEntityId)
+            }
+
+            val labels = payable.map { it.clause.replaceFirstChar { ch -> ch.uppercase() } } +
+                "Counter spell"
+            val decisionId = java.util.UUID.randomUUID().toString()
+            val decision = ChooseOptionDecision(
+                id = decisionId,
+                playerId = payingPlayerId,
+                prompt = "Choose one to pay for ward, or your spell will be countered",
+                context = DecisionContext(
+                    sourceId = wardSourceId,
+                    sourceName = "Ward",
+                    phase = DecisionPhase.RESOLUTION
+                ),
+                options = labels
+            )
+
+            // Store the reduced (payable-only) option list so the resumer maps the chosen index
+            // directly — the same trick CostPaymentService uses for PayCost.Choice.
+            val continuation = WardCostChoiceContinuation(
+                decisionId = decisionId,
+                payingPlayerId = payingPlayerId,
+                spellEntityId = spellEntityId,
+                options = payable,
+                controllerId = controllerId,
+                remainingWardParts = remainingParts,
+                wardSourceId = wardSourceId
+            )
+
+            val stateWithContinuation = state.withPendingDecision(decision).pushContinuation(continuation)
+
+            return EffectResult.paused(
+                stateWithContinuation,
+                decision,
+                listOf(
+                    DecisionRequestedEvent(
+                        decisionId = decisionId,
+                        playerId = payingPlayerId,
+                        decisionType = "CHOOSE_OPTION",
+                        prompt = decision.prompt
+                    )
+                )
+            )
+        }
+
+        /**
+         * Permanents [payingPlayerId] controls that can pay a Ward—Sacrifice cost. Computed
+         * against **projected** state so subtypes granted by continuous effects (Ygra, Eater of
+         * All making every other creature a Food) count.
+         */
+        private fun sacrificeCandidates(
+            state: GameState,
+            payingPlayerId: EntityId,
+            filter: GameObjectFilter
+        ): List<EntityId> = BattlefieldFilterUtils.findMatchingOnBattlefield(
+            state, filter.youControl(), PredicateContext(controllerId = payingPlayerId)
+        )
+
+        /**
+         * Cards in [payingPlayerId]'s hand that could pay a Ward—Discard cost. When the ward names
+         * a card type (Saruman of Many Colors' "Discard an enchantment, instant, or sorcery
+         * card"), only matching cards count. The caster spends the spell as part of casting, so
+         * the spell itself is not in hand here.
+         */
+        private fun eligibleDiscardCount(
+            state: GameState,
+            payingPlayerId: EntityId,
+            filter: GameObjectFilter?
+        ): Int {
+            if (filter == null) return state.getHand(payingPlayerId).size
+            val predicateContext = PredicateContext(controllerId = payingPlayerId)
+            val predicateEvaluator = PredicateEvaluator()
+            return state.getHand(payingPlayerId).count { cardId ->
+                predicateEvaluator.matches(state, state.projectedState, cardId, filter, predicateContext)
+            }
+        }
+
+        /**
+         * Whether [payingPlayerId] can produce [manaCost]. With [waterbend] (Avatar: The Last
+         * Airbender) they may also tap untapped artifacts and creatures, each paying {1} — the
+         * same eligibility discovery and affordability check the activated-ability / spell
+         * waterbend surfaces use.
+         */
+        private fun canAffordManaCost(
+            state: GameState,
+            cardRegistry: CardRegistry,
+            payingPlayerId: EntityId,
+            manaCost: ManaCost,
+            waterbend: Boolean
+        ): Boolean {
+            val manaSolver = ManaSolver(cardRegistry)
+            if (manaSolver.canPay(state, payingPlayerId, manaCost)) return true
+            if (!waterbend) return false
+            val costUtils = costEnumerationUtils(cardRegistry)
+            val waterbendPermanents = costUtils.findWaterbendPermanents(state, payingPlayerId)
+            return costUtils.canAffordWithWaterbend(state, payingPlayerId, manaCost, waterbendPermanents)
         }
 
         /**
@@ -209,21 +458,17 @@ class WardCounterEffectExecutor(
             wardSourceId: EntityId?,
             controllerId: EntityId?
         ): EffectResult {
-            // Sigarda, Host of Herons: the ward trigger is an ability the warded permanent's
-            // controller controls, so a protected caster can't choose to pay a sacrifice cost it
-            // imposes. Unpayable, so the spell/ability is countered without a prompt.
-            if (SacrificeImmunity.appliesTo(state, payingPlayerId, controllerId)) {
+            // Can't possibly pay → counter immediately. This also covers Sigarda, Host of Herons:
+            // the ward trigger is an ability the warded permanent's controller controls, so a
+            // protected caster can't choose to pay a sacrifice cost it imposes.
+            if (!canPayWardCost(
+                    state, cardRegistry, WardCost.Sacrifice(filter, count), payingPlayerId, controllerId
+                )
+            ) {
                 return counterSpellOrAbility(state, cardRegistry, spellEntityId)
             }
 
-            val validPermanents = BattlefieldFilterUtils.findMatchingOnBattlefield(
-                state, filter.youControl(), PredicateContext(controllerId = payingPlayerId)
-            )
-
-            // Can't possibly pay → counter immediately.
-            if (validPermanents.size < count) {
-                return counterSpellOrAbility(state, cardRegistry, spellEntityId)
-            }
+            val validPermanents = sacrificeCandidates(state, payingPlayerId, filter)
 
             val fodderLabel = filter.description
             val prompt = if (count == 1) {
@@ -346,20 +591,11 @@ class WardCounterEffectExecutor(
             wardSourceId: EntityId?,
             controllerId: EntityId?
         ): EffectResult {
-            // Not enough eligible cards in hand → counter immediately. When the ward names a
-            // card type (Saruman of Many Colors: "Discard an enchantment, instant, or sorcery
-            // card"), only matching cards count toward the can-pay check.
-            // (The caster spends the spell as part of casting, so the spell itself is not in hand here.)
-            val eligibleCount = if (filter == null) {
-                state.getHand(payingPlayerId).size
-            } else {
-                val predicateContext = PredicateContext(controllerId = payingPlayerId)
-                val predicateEvaluator = PredicateEvaluator()
-                state.getHand(payingPlayerId).count { cardId ->
-                    predicateEvaluator.matches(state, state.projectedState, cardId, filter, predicateContext)
-                }
-            }
-            if (eligibleCount < count) {
+            // Not enough eligible cards in hand → counter immediately.
+            if (!canPayWardCost(
+                    state, cardRegistry, WardCost.Discard(count, random, filter), payingPlayerId, controllerId
+                )
+            ) {
                 return counterSpellOrAbility(state, cardRegistry, spellEntityId)
             }
 
@@ -428,22 +664,18 @@ class WardCounterEffectExecutor(
 
             val manaSolver = ManaSolver(cardRegistry)
 
+            if (!canAffordManaCost(state, cardRegistry, payingPlayerId, manaCost, waterbend)) {
+                return counterSpellOrAbility(state, cardRegistry, spellEntityId)
+            }
+
             // Ward—Waterbend (Avatar: The Last Airbender): the controller may tap their untapped
             // artifacts and creatures to help pay the generic, each paying {1}. Reuse the same
-            // eligibility discovery and affordability check as the activated-ability/spell
-            // waterbend surfaces so the rule stays single-sourced.
-            val costUtils = if (waterbend) costEnumerationUtils(cardRegistry) else null
-            val waterbendPermanents = costUtils?.findWaterbendPermanents(state, payingPlayerId)
-                ?: emptyList()
-
-            val affordable = if (costUtils != null) {
-                manaSolver.canPay(state, payingPlayerId, manaCost) ||
-                    costUtils.canAffordWithWaterbend(state, payingPlayerId, manaCost, waterbendPermanents)
+            // eligibility discovery as the activated-ability/spell waterbend surfaces so the rule
+            // stays single-sourced.
+            val waterbendPermanents = if (waterbend) {
+                costEnumerationUtils(cardRegistry).findWaterbendPermanents(state, payingPlayerId)
             } else {
-                manaSolver.canPay(state, payingPlayerId, manaCost)
-            }
-            if (!affordable) {
-                return counterSpellOrAbility(state, cardRegistry, spellEntityId)
+                emptyList()
             }
 
             val sources = manaSolver.findAvailableManaSources(state, payingPlayerId)
@@ -528,9 +760,12 @@ class WardCounterEffectExecutor(
             wardSourceId: EntityId?,
             controllerId: EntityId?
         ): EffectResult {
-            val currentLife = state.lifeTotal(payingPlayerId) // CR 810.9a — team's shared total
-            if (currentLife < lifeCost) {
-                // Can't pay — counter immediately.
+            // CR 810.9a — life paid as a cost comes out of the team's shared total; the can-pay
+            // check reads it through canPayWardCost.
+            if (!canPayWardCost(
+                    state, cardRegistry, WardCost.Life(lifeCost), payingPlayerId, controllerId
+                )
+            ) {
                 return counterSpellOrAbility(state, cardRegistry, spellEntityId)
             }
 

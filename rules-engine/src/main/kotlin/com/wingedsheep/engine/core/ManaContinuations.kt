@@ -329,6 +329,64 @@ data class CounterUnlessCollectEvidenceContinuation(
 ) : ContinuationFrame
 
 /**
+ * Resume after the controller decides whether to take counters on themselves to prevent their
+ * spell/ability from being countered (e.g. Ward—Get five poison counters, CR 702.21a / 122.1).
+ *
+ * Yes → place [amount] [counterType] counters on the paying player and let the spell resolve.
+ * No  → counter the spell.
+ *
+ * There is no can-pay re-check on resume, unlike the life / discard / sacrifice continuations: a
+ * player can always get counters, so this cost never becomes unpayable between prompt and response.
+ *
+ * @property payingPlayerId The spell's controller who must decide whether to pay
+ * @property spellEntityId The spell/ability that will be countered if they don't pay
+ * @property counterType The `Counters.*` symbol placed on the payer (e.g. `Counters.POISON`)
+ * @property amount How many counters the payer gets
+ */
+@Serializable
+data class CounterUnlessPlayerCountersContinuation(
+    override val decisionId: String,
+    val payingPlayerId: EntityId,
+    val spellEntityId: EntityId,
+    val counterType: String,
+    val amount: Int,
+    val exileOnCounter: Boolean = false,
+    val controllerId: EntityId? = null,
+    /** See [CounterUnlessPaysManaSelectionContinuation.remainingWardParts]. */
+    val remainingWardParts: List<WardCost> = emptyList(),
+    /** See [CounterUnlessPaysManaSelectionContinuation.wardSourceId]. */
+    val wardSourceId: EntityId? = null
+) : ContinuationFrame
+
+/**
+ * Resume after the controller picks **which** of a disjunctive ward cost's options to pay
+ * (`WardCost.Choice` — "Ward—Discard a card or pay {2}", CR 702.21a).
+ *
+ * [options] holds only the options the payer could actually pay when the prompt was built, index
+ * aligned with the decision's option labels; the trailing decision option (index == `options.size`)
+ * is "Don't pay" and counters the spell. The chosen option is then charged through the ordinary
+ * per-cost ward machinery, carrying [remainingWardParts] so a Choice nested inside a
+ * `WardCost.Composite` still charges the composite's remaining components afterwards.
+ *
+ * @property payingPlayerId The spell's controller who must pick and pay
+ * @property spellEntityId The spell/ability that will be countered if they decline
+ * @property options The payable options offered, positionally aligned with the decision's labels
+ */
+@Serializable
+data class WardCostChoiceContinuation(
+    override val decisionId: String,
+    val payingPlayerId: EntityId,
+    val spellEntityId: EntityId,
+    val options: List<WardCost>,
+    val exileOnCounter: Boolean = false,
+    val controllerId: EntityId? = null,
+    /** See [CounterUnlessPaysManaSelectionContinuation.remainingWardParts]. */
+    val remainingWardParts: List<WardCost> = emptyList(),
+    /** See [CounterUnlessPaysManaSelectionContinuation.wardSourceId]. */
+    val wardSourceId: EntityId? = null
+) : ContinuationFrame
+
+/**
  * Information about a mana source available for manual selection.
  *
  * @property requiresSacrifice Selecting this source also sacrifices the permanent

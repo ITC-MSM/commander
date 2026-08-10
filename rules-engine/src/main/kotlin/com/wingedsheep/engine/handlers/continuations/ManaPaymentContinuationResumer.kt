@@ -32,6 +32,8 @@ class ManaPaymentContinuationResumer(
         resumer(CounterUnlessDiscardContinuation::class, ::resumeCounterUnlessDiscard),
         resumer(CounterUnlessSacrificeContinuation::class, ::resumeCounterUnlessSacrifice),
         resumer(CounterUnlessCollectEvidenceContinuation::class, ::resumeCounterUnlessCollectEvidence),
+        resumer(CounterUnlessPlayerCountersContinuation::class, ::resumeCounterUnlessPlayerCounters),
+        resumer(WardCostChoiceContinuation::class, ::resumeWardCostChoice),
         resumer(CounterUnlessPaysManaSelectionContinuation::class, ::resumeCounterUnlessPaysManaSelection),
         resumer(WardTapPermanentsSubCostContinuation::class, ::resumeWardTapPermanentsSubCost),
         resumer(ChangeSpellTargetContinuation::class, ::resumeChangeSpellTarget),
@@ -454,6 +456,117 @@ class ManaPaymentContinuationResumer(
             checkForMore
         )?.let { return it }
         return checkForMore(collected.state, collected.events)
+    }
+
+    /**
+     * Resume after the controller decides whether to take counters on themselves for a
+     * ward—get-counters trigger (The Serpent Society's "Ward—Get five poison counters").
+     *
+     * Yes → place the counters on the paying player through the ordinary `AddCountersEffect`
+     *       executor (so counter-placement replacement effects and `CountersAddedEvent` behave as
+     *       they do for any other source) and let the spell resolve.
+     * No  → counter the spell (or counter-to-exile if exileOnCounter).
+     *
+     * No can-pay re-check: a player can always get counters, so unlike life / discard / sacrifice
+     * this cost cannot become unpayable between the prompt and the response.
+     */
+    fun resumeCounterUnlessPlayerCounters(
+        state: GameState,
+        continuation: CounterUnlessPlayerCountersContinuation,
+        response: DecisionResponse,
+        checkForMore: CheckForMore
+    ): ExecutionResult {
+        if (response !is YesNoResponse) {
+            return ExecutionResult.error(state, "Expected yes/no response for counter unless player counters")
+        }
+
+        if (!response.choice) {
+            return counterWard(
+                state, continuation.spellEntityId, continuation.exileOnCounter,
+                continuation.controllerId ?: continuation.payingPlayerId, checkForMore
+            )
+        }
+
+        // The payer places the counters on themselves, so controllerId is the payer: that is what
+        // AddCountersExecutor resolves Player.You against and reports as the counters' placer.
+        val countersEffect = com.wingedsheep.sdk.scripting.effects.AddCountersEffect(
+            counterType = continuation.counterType,
+            count = continuation.amount,
+            target = com.wingedsheep.sdk.scripting.targets.EffectTarget.PlayerRef(
+                com.wingedsheep.sdk.scripting.references.Player.You
+            )
+        )
+        val countersContext = com.wingedsheep.engine.handlers.EffectContext(
+            sourceId = continuation.wardSourceId,
+            controllerId = continuation.payingPlayerId,
+        )
+
+        val countersResult = services.effectExecutorRegistry
+            .execute(state, countersEffect, countersContext)
+            .toExecutionResult()
+        if (countersResult.error != null) return countersResult
+        if (countersResult.isPaused) return countersResult
+
+        chargeNextWardPartOrNull(
+            countersResult.newState, countersResult.events.toList(),
+            continuation.remainingWardParts, continuation.spellEntityId,
+            continuation.payingPlayerId, continuation.wardSourceId, continuation.controllerId,
+            checkForMore
+        )?.let { return it }
+        return checkForMore(countersResult.newState, countersResult.events.toList())
+    }
+
+    /**
+     * Resume after the controller picks which option of a disjunctive ward cost to pay
+     * (`WardCost.Choice` — "Ward—Discard a card or pay {2}", CR 702.21a).
+     *
+     * The trailing option (index == `options.size`) is "Counter spell" and declines; any other
+     * index charges that option through the ordinary per-cost ward machinery, with the enclosing
+     * composite's not-yet-paid components carried along behind it.
+     */
+    fun resumeWardCostChoice(
+        state: GameState,
+        continuation: WardCostChoiceContinuation,
+        response: DecisionResponse,
+        checkForMore: CheckForMore
+    ): ExecutionResult {
+        if (response !is OptionChosenResponse) {
+            return ExecutionResult.error(state, "Expected option chosen response for ward cost choice")
+        }
+
+        val chosen = continuation.options.getOrNull(response.optionIndex)
+            ?: return counterWard(
+                state, continuation.spellEntityId, continuation.exileOnCounter,
+                continuation.controllerId ?: continuation.payingPlayerId, checkForMore
+            )
+
+        // Charging the chosen option is exactly "charge the next ward part", with the option at
+        // the head of the queue — same helper, so the spell-left-the-stack guard and the
+        // composite chaining are single-sourced.
+        return chargeNextWardPartOrNull(
+            state, emptyList(),
+            listOf(chosen) + continuation.remainingWardParts, continuation.spellEntityId,
+            continuation.payingPlayerId, continuation.wardSourceId, continuation.controllerId,
+            checkForMore
+        ) ?: checkForMore(state, emptyList())
+    }
+
+    /** Counter (or counter-to-exile) the spell/ability whose ward cost went unpaid, then continue. */
+    private fun counterWard(
+        state: GameState,
+        spellEntityId: EntityId,
+        exileOnCounter: Boolean,
+        controllerId: EntityId,
+        checkForMore: CheckForMore
+    ): ExecutionResult {
+        val result = if (exileOnCounter) {
+            services.stackResolver.counterSpellToExile(
+                state, spellEntityId, grantFreeCast = false, controllerId = controllerId
+            )
+        } else {
+            services.stackResolver.counterSpellOrAbility(state, spellEntityId)
+        }
+        return checkForMore(result.newState, result.events)
     }
 
     /**
