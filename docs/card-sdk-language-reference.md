@@ -5197,6 +5197,20 @@ staticAbility {
   via `Effects.GrantKeyword(AbilityFlag.CANT_BE_BLOCKED_BY_MORE_THAN_ONE, target, duration)`;
   `BlockPhaseManager.validateMaxBlockersRequirements` reads the projected flag (cap = 1) alongside the
   printed `CantBeBlockedByMoreThan` static, taking the smaller cap.
+- `CantBeBlockedIfDefenderControls(permanentFilter, minCount = 1, filter = GroupFilter.source())` —
+  the **landwalk shape generalized past land types**: the affected creature can't be blocked while the
+  *defending player* controls at least `minCount` permanents matching `permanentFilter` (Neurok Spy's
+  "can't be blocked as long as defending player controls an artifact" =
+  `CantBeBlockedIfDefenderControls(GameObjectFilter.Artifact)`). Resolved by
+  `CantBeBlockedIfDefenderControlsRule` from the attacker's printed self-scoped statics plus granted
+  ones in `GameState.grantedStaticAbilities`. The candidate set is the *defending player's* projected
+  battlefield and each candidate is matched with the projection in hand, so type-changing effects
+  (Ensoul Artifact, March of the Machines) and control changes both count; the filter is evaluated
+  with the defender bound as "you", so it needs no controller predicate of its own.
+  **Defender-relative, not "any opponent"** — `Conditions.OpponentControls(filter)` wrapped around
+  `CantBeBlocked` is existential across opponents and only coincides with this in a two-player game.
+  The basic landwalk keywords (`Keyword.FORESTWALK` and friends, plus `NONBASIC_LANDWALK`) keep their
+  own keyword-driven `LandwalkRule` fast path rather than desugaring to this.
 - `CantBlockCreaturesWithGreaterPower(filter = source())` — blocker-side evasion (Spitfire Handler): this
   creature can't block creatures whose projected power exceeds its own.
 - `CantBeBlockedByCreaturesWithLessPower(filter = source())` — attacker-side dual (Formation Breaker): this

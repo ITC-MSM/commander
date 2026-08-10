@@ -272,3 +272,40 @@ data class CantBeBlockedUnlessDefenderSharesCreatureType(
 ) : StaticAbility {
     override val description: String = "can't be blocked unless defending player controls $minSharedCount or more creatures that share a creature type"
 }
+
+/**
+ * This creature can't be blocked as long as the **defending player** controls at least
+ * [minCount] permanents matching [permanentFilter] — the landwalk shape generalized past land
+ * types. Neurok Spy: "can't be blocked as long as defending player controls an artifact."
+ *
+ * Defender-relative, not "any opponent": the count is taken against the player (or the controller
+ * of the planeswalker/battle) this creature is attacking, so in a multiplayer pod attacking a
+ * player with no artifact leaves the Spy blockable even while another opponent has ten.
+ * `Conditions.OpponentControls(...)` is the existential mirror and is *not* a substitute here.
+ *
+ * The basic landwalk keywords ([com.wingedsheep.sdk.core.Keyword.FORESTWALK] and friends) keep
+ * their own keyword-driven fast path in the engine rather than desugaring to this; use this type
+ * for the non-land members of the family.
+ *
+ * @property permanentFilter What the defending player must control for the evasion to switch on.
+ * @property minCount How many matching permanents the defending player needs (default 1, "an X").
+ * @property filter What this ability applies to (default: the source creature).
+ */
+@SerialName("CantBeBlockedIfDefenderControls")
+@Serializable
+data class CantBeBlockedIfDefenderControls(
+    val permanentFilter: GameObjectFilter,
+    val minCount: Int = 1,
+    val filter: GroupFilter = GroupFilter.source()
+) : StaticAbility {
+    override val description: String = if (minCount == 1) {
+        "can't be blocked as long as defending player controls ${permanentFilter.description}"
+    } else {
+        "can't be blocked as long as defending player controls $minCount or more ${permanentFilter.description}"
+    }
+
+    override fun applyTextReplacement(replacer: TextReplacer): StaticAbility {
+        val newFilter = filter.applyTextReplacement(replacer)
+        return if (newFilter !== filter) copy(filter = newFilter) else this
+    }
+}

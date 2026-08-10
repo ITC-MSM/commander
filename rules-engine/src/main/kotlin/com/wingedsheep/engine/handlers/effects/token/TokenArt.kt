@@ -92,6 +92,7 @@ object TokenArt {
             "Ooze" to "https://cards.scryfall.io/art_crop/front/c/2/c2fc764f-d5fe-452a-8474-5ad380048faf.jpg?1771590231",
             "Otter" to "https://cards.scryfall.io/art_crop/front/e/6/e6b2c465-c446-4dee-9101-763105dcf813.jpg?1783909764",
             "Pegasus" to "https://cards.scryfall.io/art_crop/front/b/c/bc944579-b6d8-40f7-8c46-146513960d61.jpg?1761614913",
+            "Pest" to "https://cards.scryfall.io/art_crop/front/d/0/d0ddbe3e-4a66-494d-9304-7471232549bf.jpg?1783927190",
             "Pirate" to "https://cards.scryfall.io/art_crop/front/4/6/46bf5e2b-869f-480e-ac37-1bdb40a92f8c.jpg?1665776397",
             "Rabbit" to "https://cards.scryfall.io/art_crop/front/8/1/81de52ef-7515-4958-abea-fb8ebdcef93c.jpg?1721431122",
             "Raccoon" to "https://cards.scryfall.io/art_crop/front/a/f/af257e8b-9bed-4c6b-9510-11fe950fa80e.jpg?1783909752",

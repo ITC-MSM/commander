@@ -2684,6 +2684,80 @@
     ]
 }
 
+// Myr Adapter
+{
+    "name": "Myr Adapter",
+    "manaCost": "{3}",
+    "typeLine": "Artifact Creature — Myr",
+    "oracleText": "This creature gets +1/+1 for each Equipment attached to it.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "GrantDynamicStats",
+                "filter": {
+                    "baseFilter": "permanent",
+                    "scope": "Self"
+                },
+                "powerBonus": {
+                    "type": "EntityProperty",
+                    "entity": "Source",
+                    "numericProperty": {
+                        "type": "AttachmentCount",
+                        "kind": "EQUIPMENT"
+                    }
+                },
+                "toughnessBonus": {
+                    "type": "EntityProperty",
+                    "entity": "Source",
+                    "numericProperty": {
+                        "type": "AttachmentCount",
+                        "kind": "EQUIPMENT"
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "210",
+        "artist": "Ben Thompson",
+        "flavorText": "\"The simplest way to plan ahead is merely to be ready for everything.\"\n—Pontifex, elder researcher",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/d/0d6ddde9-4427-4a0f-b05c-9cfd886aad2d.jpg?1783944512"
+    },
+    "colorIdentityOverride": []
+}
+
+// Myr Enforcer
+{
+    "name": "Myr Enforcer",
+    "manaCost": "{7}",
+    "typeLine": "Artifact Creature — Myr",
+    "oracleText": "Affinity for artifacts (This spell costs {1} less to cast for each artifact you control.)",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "AFFINITY"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Affinity",
+            "forType": "ARTIFACT"
+        }
+    ],
+    "metadata": {
+        "collectorNumber": "211",
+        "artist": "Greg Staples",
+        "flavorText": "Most myr monitor other species. Some myr monitor other myr.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/e/eeeef899-a8b5-4416-a208-3bd5a0c7177b.jpg?1783944512"
+    },
+    "colorIdentityOverride": []
+}
+
 // Myr Mindservant
 {
     "name": "Myr Mindservant",
@@ -3004,6 +3078,39 @@
     "colorIdentityOverride": []
 }
 
+// Neurok Spy
+{
+    "name": "Neurok Spy",
+    "manaCost": "{2}{U}",
+    "typeLine": "Creature — Human Rogue",
+    "oracleText": "This creature can't be blocked as long as defending player controls an artifact.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "CantBeBlockedIfDefenderControls",
+                "permanentFilter": {
+                    "cardPredicates": [
+                        "IsArtifact"
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "44",
+        "artist": "Daren Bader",
+        "flavorText": "From the murk of Mephidross to the heart of Kuldotha, the vedalken send their servants forth to gather knowledge from every inch of Mirrodin.",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/7/47b86a02-d40a-4615-8402-bd5700cb5101.jpg?1783944553"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Nim Lasher
 {
     "name": "Nim Lasher",
@@ -3212,6 +3319,53 @@
     "colorIdentityOverride": [
         "BLACK"
     ]
+}
+
+// Nuisance Engine
+{
+    "name": "Nuisance Engine",
+    "manaCost": "{3}",
+    "typeLine": "Artifact",
+    "oracleText": "{2}, {T}: Create a 0/1 colorless Pest artifact creature token.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 0,
+                    "toughness": 1,
+                    "colors": [],
+                    "creatureTypes": [
+                        "Pest"
+                    ],
+                    "artifactToken": true
+                },
+                "descriptionOverride": "{2}, {T}: Create a 0/1 colorless Pest artifact creature token."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "221",
+        "rarity": "UNCOMMON",
+        "artist": "Stephen Tappin",
+        "flavorText": "All Auriok children know the tale, \"Bolgri and the Long Day of Squashing.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/6/266df8c3-5872-4d83-90bc-8f6f854ac838.jpg?1783944509"
+    },
+    "colorIdentityOverride": []
 }
 
 // Ogre Leadfoot
@@ -3718,6 +3872,74 @@
     "colorIdentityOverride": [
         "RED"
     ]
+}
+
+// Serum Tank
+{
+    "name": "Serum Tank",
+    "manaCost": "{3}",
+    "typeLine": "Artifact",
+    "oracleText": "Whenever this artifact or another artifact enters, put a charge counter on this artifact.\n{3}, {T}, Remove a charge counter from this artifact: Draw a card.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "artifact",
+                    "to": "Battlefield"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "charge",
+                    "count": 1,
+                    "target": "Self"
+                }
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{3}"
+                            }
+                        },
+                        "CostTap",
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomRemoveCounters",
+                                "counterType": "charge",
+                                "self": true
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "descriptionOverride": "{3}, {T}, Remove a charge counter from this artifact: Draw a card."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "240",
+        "rarity": "UNCOMMON",
+        "artist": "Corey D. Macourek",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/2/126ec055-1a7d-426b-a87f-c85c60aa7fc3.jpg?1783944505"
+    },
+    "colorIdentityOverride": []
 }
 
 // Shrapnel Blast
