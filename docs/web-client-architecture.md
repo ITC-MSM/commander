@@ -231,6 +231,25 @@ and only options that actually put the card into play count. Cycling, plotting a
 things you do *instead of* playing the card, so folding their costs in would make a {1}{G} creature
 with cycling {W} read as a "{W}-to-{1}{G}" spell — they still get their own ladder row.
 
+## "Won't untap" cue
+
+Three server signals mean one thing to a player reading the board — `DOESNT_UNTAP` and
+`CANT_BECOME_UNTAPPED` in `ClientCard.abilityFlags` (both ride the projected keyword set, the same
+one the untap step gates on) and `ClientCard.isExerted` (CR 701.43a). They collapse into a single
+cue: `components/game/card/untapRestriction.ts` picks the strongest, `GameCard` pins a frost padlock
+badge, and a tapped-and-restricted permanent additionally gets `styles.untapLockedOverlay` — an
+inset rime rim that separates "frozen" from the ordinary darkening every tapped permanent wears.
+
+Two things keep it honest. The restriction shows on *untapped* permanents too, because "tapping this
+is one-way" is the read you need before crewing or attacking with it. And the frost is deliberately
+pale, never `TARGET_COLOR`'s saturated cyan, and inset where targeting glows outward — otherwise a
+locked permanent looks like a legal target. Stun counters stay out of the ladder: their own counter
+badge already carries a count, which says more than a padlock would.
+
+A restriction implemented *outside* the layer system (read directly by a manager, as the block
+restrictions are) would stop the untap while leaving the card visually identical to one that untaps
+normally. `UntapRestrictionVisibilityTest` pins the projected-keyword contract this depends on.
+
 ## Battlefield card grouping (token quantity aggregation)
 
 Identical permanents on one player's board collapse into a single visual **stack**

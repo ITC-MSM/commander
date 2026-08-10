@@ -1,6 +1,15 @@
 import React from 'react'
 import { TARGET_COLOR, TARGET_COLOR_BRIGHT } from '../../../styles/targetingColors'
 
+/**
+ * Frost palette for the "won't untap" cue — shared by the rime overlay on a locked-tapped
+ * permanent (`styles.untapLockedOverlay`) and by the padlock badge GameCard pins to the corner, so
+ * the two halves of one signal can't drift apart. Deliberately pale rather than the saturated cyan
+ * of `TARGET_COLOR`, which means "legal target" a few pixels away on the same card.
+ */
+export const UNTAP_FROST_RIM = 'rgba(206, 236, 255, 0.62)'
+export const UNTAP_FROST_FILL = 'rgba(188, 226, 250, 0.32)'
+
 export const styles: Record<string, React.CSSProperties> = {
   container: {
     position: 'absolute',
@@ -869,6 +878,28 @@ export const styles: Record<string, React.CSSProperties> = {
     backgroundColor: 'rgba(0, 0, 0, 0.3)',
     pointerEvents: 'none',
   },
+  /**
+   * A tapped permanent that won't untap (DOESNT_UNTAP / CANT_BECOME_UNTAPPED / exerted). Sits on
+   * top of `tappedOverlay`, so it only has to add the *cold* — a frost wash plus an inner rime
+   * ring — that distinguishes "frozen" from the plain darkening every tapped permanent gets.
+   */
+  untapLockedOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: 8,
+    // Rime creeping in from the edges, not a flat film over the whole card: an even wash reads as
+    // "faded", which collides with the phased-out treatment (opacity + grayscale) and says the
+    // wrong thing anyway — the permanent isn't less relevant, it's frozen in place. Leaving the
+    // centre clear also keeps the art and the P/T box readable.
+    // Frost-white rather than the saturated cyan of TARGET_COLOR: both are blue, and the ice must
+    // not read as "this is a legal target". The rime is inset, targeting glows outward.
+    background: `radial-gradient(ellipse at 50% 50%, rgba(120, 190, 235, 0.04) 35%, ${UNTAP_FROST_FILL} 100%)`,
+    boxShadow: `inset 0 0 0 2px ${UNTAP_FROST_RIM}, inset 0 0 14px 3px rgba(170, 220, 245, 0.4)`,
+    pointerEvents: 'none',
+  } as React.CSSProperties,
   summoningSicknessOverlay: {
     position: 'absolute',
     top: 0,

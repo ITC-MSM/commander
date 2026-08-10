@@ -52,12 +52,13 @@ import {
   getCounterCount,
   PASSIVE_COUNTER_TYPES,
 } from '../board/shared'
-import { styles, bandColorFor, passiveCounterBadgeStyle } from '../board/styles'
+import { styles, bandColorFor, passiveCounterBadgeStyle, UNTAP_FROST_RIM, UNTAP_FROST_FILL } from '../board/styles'
 import {
   TARGET_COLOR, TARGET_COLOR_BRIGHT, TARGET_GLOW, TARGET_GLOW_BRIGHT, TARGET_GLOW_OUTER, TARGET_SHADOW,
   SELECTED_COLOR, SELECTED_GLOW, SELECTED_SHADOW,
 } from '@/styles/targetingColors.ts'
 import { KeywordIcons, ActiveEffectBadges } from './CardOverlays'
+import { untapRestrictionOf } from './untapRestriction'
 import { counterManaClass, counterSvgIcon } from '@/assets/icons/keywords'
 import { SvgGlyph } from '@/assets/icons/SvgGlyph'
 import { RenderProfiler } from '@/utils/renderProfiler'
@@ -346,6 +347,10 @@ function GameCardImpl({
 
   const isTapped = suppressTapRotation ? false : (card.isTapped || forceTapped)
   const isPhasedOut = card.isPhasedOut === true
+  // "Won't untap" — DOESNT_UNTAP / CANT_BECOME_UNTAPPED / exerted, collapsed to the strongest one.
+  // Battlefield-only: the restrictions are continuous effects on a permanent, so the same card seen
+  // in a graveyard or hand pile must not wear the lock.
+  const untapRestriction = battlefield ? untapRestrictionOf(card) : null
   // Sideways-printed cards — Rooms (CR 709.5), other split layouts, battles (CR 310) — are rotated
   // +90° on the battlefield so the image reads landscape (the source orientation matches "tilt head
   // right"). Tap state stacks an additional +90° on top (= 180° upside-down portrait), preserving
@@ -1450,23 +1455,48 @@ function GameCardImpl({
         </div>
       )}
 
-      {/* Exerted indicator (CR 701.43a) — won't untap during its controller's next untap step. */}
-      {battlefield && card.isExerted && (
+      {/* "Won't untap" — DOESNT_UNTAP, CANT_BECOME_UNTAPPED, or exerted (CR 701.43a), whichever is
+          strongest (see untapRestrictionOf). One padlock covers all three because they read the same
+          from across the table; the tooltip says which. The chip counter-rotates so the lock stays
+          upright on a tapped (rotated) permanent — which is exactly when it matters most. */}
+      {untapRestriction && (
         <div
-          aria-label="Exerted — won't untap next turn"
-          title="Exerted — won't untap next turn"
+          aria-label={untapRestriction.label}
+          title={untapRestriction.label}
           style={{
             position: 'absolute',
             top: 3,
             right: 3,
-            fontSize: responsive.badges.sicknessIconSize,
-            opacity: 0.85,
+            width: responsive.badges.ptFontSize * 1.7,
+            height: responsive.badges.ptFontSize * 1.7,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderRadius: '50%',
+            transform: totalRotateDeg ? `rotate(${-totalRotateDeg}deg)` : undefined,
+            background: 'radial-gradient(circle at 35% 30%, #123246 0%, #06121c 80%)',
+            // A permanent lock gets the full frost ring; the one-shot exert marker is muted so the
+            // two are distinguishable at a glance without reading the tooltip.
+            border: `1px solid ${untapRestriction.permanent ? UNTAP_FROST_RIM : UNTAP_FROST_FILL}`,
+            boxShadow: untapRestriction.permanent
+              ? `0 0 6px 1px ${UNTAP_FROST_FILL}, inset 0 1px 1px rgba(0, 0, 0, 0.5)`
+              : 'inset 0 1px 1px rgba(0, 0, 0, 0.5)',
+            fontSize: responsive.badges.ptFontSize * 0.95,
+            lineHeight: 1,
+            opacity: untapRestriction.permanent ? 1 : 0.8,
             zIndex: 7,
             pointerEvents: 'none',
           }}
         >
           🔒
         </div>
+      )}
+
+      {/* A tapped permanent that won't untap is frozen, not merely tapped — the two look identical
+          without this. A cold wash over the whole card separates "will be back next turn" from
+          "stays like this", which is the read that changes how you attack into the board. */}
+      {untapRestriction && isTapped && (
+        <div style={styles.untapLockedOverlay} />
       )}
 
       {/* Ring-bearer badge (CR 701.54) — a prominent golden Ring marker pinned to the top-left of

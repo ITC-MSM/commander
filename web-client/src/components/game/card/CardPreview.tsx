@@ -2,7 +2,7 @@ import { useMemo, useState, useEffect, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { useGameStore } from '@/store/gameStore.ts'
 import { selectGameState, selectViewingPlayerId, useCardLegalActions } from '@/store/selectors.ts'
-import { ZoneType, zoneIdEquals } from '@/types'
+import { AbilityFlagDisplayNames, ZoneType, zoneIdEquals } from '@/types'
 import { getCardImageUrl } from '@/utils/cardImages.ts'
 import { useResponsiveContext, handleImageError, getCounterStatModifier, hasStatCounters, getTokenFrameGradient, getTokenFrameTextColor, getPTColor } from '../board/shared'
 import { styles } from '../board/styles'
@@ -378,9 +378,12 @@ export function CardPreview() {
               <span style={styles.cardPreviewKeywordName}>{keyword}</span>
             </div>
           ))}
+          {/* Ability flags are engine enum names, not printed keywords — a raw "DOESNT_UNTAP" chip
+              is the one place the preview shouts an identifier at the player. Prefer the written
+              rules text, falling back to the enum name for a flag the client hasn't named yet. */}
           {card.abilityFlags?.map((flag) => (
             <div key={flag} style={styles.cardPreviewKeyword}>
-              <span style={styles.cardPreviewKeywordName}>{flag}</span>
+              <span style={styles.cardPreviewKeywordName}>{AbilityFlagDisplayNames[flag] ?? flag}</span>
             </div>
           ))}
         </div>
