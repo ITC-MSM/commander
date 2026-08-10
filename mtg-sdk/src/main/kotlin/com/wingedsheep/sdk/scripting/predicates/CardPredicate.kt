@@ -1043,6 +1043,52 @@ sealed interface CardPredicate : TextReplaceable<CardPredicate> {
         }
     }
 
+    /**
+     * Matches an **activated or triggered ability on the stack** whose *source* (CR 113.7 — the
+     * object that generated it) matches [subfilter]. The "from a creature source" / "from an
+     * artifact source" clause: Echo, Perceptive Prodigy and Scientist Supreme of A.I.M.
+     *
+     * An ability on the stack is its own object (CR 113.3b/c) and carries none of its source's
+     * characteristics, so a plain type predicate applied to the ability entity can never be true.
+     * This predicate is the redirection: it re-points the match at the ability's source and
+     * evaluates [subfilter] there, which is why the restriction is a `CardPredicate` composed into
+     * the ordinary ability filter rather than a bespoke `TargetRequirement`. It composes with
+     * everything else the same way — `and`/`or`/`not`, controller predicates, any subfilter the SDK
+     * can express (`Creature`, `Artifact`, `Creature.youControl()`, a subtype, …) — instead of
+     * forcing a new target type per source category.
+     *
+     * **Last known information.** Once an ability is on the stack it exists independently of its
+     * source, and the source is routinely gone by the time the ability is targeted — a dies trigger's
+     * source is already in the graveyard, a self-sacrifice ability's source is already sacrificed
+     * (CR 113.7a, and CR 608.2b for the resolution-time re-check). The engine therefore reads the
+     * source's *projected* characteristics while it is on the battlefield and falls back to its
+     * printed ones once it has left, so "from a creature source" still matches a dead creature's
+     * dies trigger. Same source-characteristic resolution as
+     * `CantBeTargetedBySourceTypeAbilities` / protection-from-card-type.
+     *
+     * Applied to a spell on the stack, or to any object that is not an ability, this is false — a
+     * spell is its own source and the clause deliberately does not reach it.
+     *
+     * **Known limits of that last-known read**, both inherited from how the engine stores
+     * last-known information rather than from this predicate:
+     *  - a source whose *type* came from a continuous effect (an animated land, a crewed Vehicle)
+     *    and has since left the battlefield reads its printed types, not the projected ones;
+     *  - a **token** source is unmatchable once it has left the battlefield, because CR 704.5s
+     *    cleanup deletes the entity outright and no snapshot of it survives anywhere the predicate
+     *    can reach (so "from an artifact source" misses a sacrificed Clue's draw ability). Closing
+     *    that needs a general last-known store for deleted tokens, which the engine does not have.
+     */
+    @SerialName("AbilitySourceMatches")
+    @Serializable
+    data class AbilitySourceMatches(val subfilter: GameObjectFilter) : CardPredicate {
+        override val description: String =
+            "from ${subfilter.indefiniteArticle} ${subfilter.description} source"
+        override fun applyTextReplacement(replacer: TextReplacer): CardPredicate {
+            val newSubfilter = subfilter.applyTextReplacement(replacer)
+            return if (newSubfilter !== subfilter) copy(subfilter = newSubfilter) else this
+        }
+    }
+
     // =============================================================================
     // Composite Predicates
     // =============================================================================

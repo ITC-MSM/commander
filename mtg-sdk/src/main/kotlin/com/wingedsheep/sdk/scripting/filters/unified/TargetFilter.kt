@@ -433,6 +433,13 @@ data class TargetFilter(
     /** Must be controlled by you */
     fun youControl() = copy(baseFilter = baseFilter.youControl())
 
+    /**
+     * Narrow a stack-ability target by its *source* (CR 113.7): "…from a creature source",
+     * "…from an artifact source". See [CardPredicate.AbilitySourceMatches].
+     */
+    fun abilitySourceMatches(subfilter: GameObjectFilter) =
+        copy(baseFilter = baseFilter.abilitySourceMatches(subfilter))
+
     /** Must not be legendary */
     fun nonlegendary() = copy(baseFilter = baseFilter.nonlegendary())
 

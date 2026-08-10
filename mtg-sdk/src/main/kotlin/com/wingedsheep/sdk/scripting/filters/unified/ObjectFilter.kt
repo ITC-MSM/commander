@@ -330,6 +330,16 @@ data class GameObjectFilter(
     )
 
     /**
+     * Restrict to activated/triggered abilities on the stack whose *source* (CR 113.7) matches
+     * [subfilter] — "from a creature source" (Echo, Perceptive Prodigy), "from an artifact source"
+     * (Scientist Supreme of A.I.M.). Read with last known information when the source has already
+     * left the battlefield. See [CardPredicate.AbilitySourceMatches].
+     */
+    fun abilitySourceMatches(subfilter: GameObjectFilter) = copy(
+        cardPredicates = cardPredicates + CardPredicate.AbilitySourceMatches(subfilter)
+    )
+
+    /**
      * Add an arbitrary [CardPredicate] requirement. General-purpose combinator for predicates that
      * don't have a dedicated helper — e.g. `GameObjectFilter.Nonland.withCardPredicate(
      * CardPredicate.HasActivatedAbility)` for The Enigma Jewel's craft materials.

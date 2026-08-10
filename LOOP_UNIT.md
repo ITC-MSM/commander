@@ -1,67 +1,51 @@
-# loop-msh-u07 — Ward with a non-listed cost
-
-Feature unit: two new `WardCost` variants plus the two MSH cards they unblock.
-
-## SDK
-
-- `WardCost.PlayerCounters(counterType, amount)` — counters placed on the **paying player**
-  (CR 122.1). Facade `KeywordAbility.wardPlayerCounters(Counters.POISON, 5)`. The only ward cost with
-  no affordability gate.
-- `WardCost.Choice(options)` — OR disjunction, sibling of `Composite`'s AND. Facades
-  `KeywordAbility.wardChoice(...)` and the named `wardDiscardOrPay("{2}")`. Modelled on
-  `AdditionalCost.Choice` / `PayCost.Choice`; the prompt follows `CostPaymentService.choicePrompt`
-  (payable options only + trailing decline, reduced list stored on the continuation).
-- `WardCost.clause` — new property: the self-contained verb phrase ("discard a card", "pay {2}") as
-  opposed to `description`'s object phrase. Only `Choice` reads it, so no existing card's rendered
-  text changes.
-
-## Engine
-
-- `WardCounterEffectExecutor`: two new branches; `canPayWardCost` is now the single source of truth
-  for "unpayable → counter without a prompt" and the four pre-existing inline can-pay checks were
-  folded into it.
-- Two continuations (`CounterUnlessPlayerCountersContinuation`, `WardCostChoiceContinuation`) in
-  `ManaContinuations.kt`, registered in `Serialization.kt`, resumed in
-  `ManaPaymentContinuationResumer`. The choice resumer routes the chosen option through the existing
-  `chargeNextWardPartOrNull`, so the spell-left-the-stack guard and composite chaining stay
-  single-sourced.
-- Counters are placed via the ordinary `AddCountersEffect` executor with the payer as controller —
-  replacement effects, `CountersAddedEvent` and the ten-poison SBA all follow for free.
+# loop-msh-u08 — Ability-source predicate on stack targets
 
 ## Cards
 
-- **The Serpent Society** [226] — deathtouch; `wardPlayerCounters(Counters.POISON, 5)`; OTHER-bound
-  dies trigger filtered by `withKeyword(DEATHTOUCH)` (matched against LKI) → `Effects.Sacrifice`
-  nontoken over `Player.EachOpponent`.
-- **Titania, Rugged Rumbler** [235] — `Costs.additional.DiscardOrPay("{2}")` +
-  `KeywordAbility.wardDiscardOrPay("{2}")`. Same printed shape on both rails, deliberately
-  matching facade names; the types stay separate because the additional cost's mana leg folds into
-  the spell's mana cost at cast time and the ward's does not.
+- **Echo, Perceptive Prodigy** (MSH 51) — vigilance + `{1}, {T}: Copy target activated or triggered
+  ability you control from a creature source.` Composes `Targets.ActivatedOrTriggeredAbilityYouControlFrom(Creature)`
+  (existing ability-on-stack target + the new `CardPredicate.AbilitySourceMatches`) with the existing
+  `Effects.CopyTargetSpellOrAbility`, plus `holdPriority`.
+- **Scientist Supreme of A.I.M.** (MSH 225) — `Pay 2 life: Copy target activated or triggered ability
+  you control from an artifact source. Activate only during your turn and only once each turn.`
+  Same pieces with `GameObjectFilter.Artifact`, `Costs.PayLife(2)` and
+  `ActivationRestriction.OnlyDuringYourTurn` + `OncePerTurn`.
 
-## Also
+## SDK / engine
 
-- `docs/card-sdk-language-reference.md` — ward section extended for both variants and the two-rail
-  note.
-- `backlog/sets/marvel-super-heroes/cards.md` — both ticked, count 239 → 241.
-- `backlog/sets/marvel-super-heroes/mechanics.md` — section rewritten as SHIPPED; blocked count
-  33 → 31.
-- `mtgish-tooling` `CardStructure.kt` — `wardKeywordLine` learned `_Cost: "Or"` via a new
-  `wardCostExpr` leg renderer; existing single-cost branches unchanged, no corpus ward uses `Or`, so
-  no golden moves. The IR has no player-counter cost tag, so `PlayerCounters` is not taught.
+- `CardPredicate.AbilitySourceMatches(subfilter)` — new stack-branch predicate, sibling of
+  `TargetsMatching`. Redirects the match onto the ability's `sourceId` (CR 113.7) and evaluates the
+  subfilter there. Builders: `GameObjectFilter.abilitySourceMatches`, `TargetFilter.abilitySourceMatches`,
+  `Targets.ActivatedOrTriggeredAbilityYouControlFrom`.
+- `StackObjectTargeting.permitsAbilities` — the "may this stack target requirement offer abilities?"
+  seam, extracted from `TargetFinder` so the enumerator can share it.
+- **Bug fixed, not part of the brief:** `TargetEnumerationUtils.findValidSpellTargets` filtered every
+  stack target down to spells unconditionally, so *no* ability-targeting card ever had an ability
+  **offered** as a legal target — Gogo, Master of Mimicry and Peter Parker's Camera included. Since
+  `ActivatedAbilityEnumerator` gates `holdPriority` on "top of stack ∈ validTargets", those cards
+  also never stopped auto-pass. Both readers now go through `StackObjectTargeting`.
 
-## Things worth a second opinion
+## Gate
 
-`WardPlayerCountersTest`, `WardCostChoiceTest` (engine-level, one per mechanic),
-`TheSerpentSocietyScenarioTest`, `TitaniaRuggedRumblerScenarioTest` (one per card).
+`just test` — BUILD SUCCESSFUL in 15m 46s, 12200 PASSED / 0 FAILED (`build/pr/loop-msh-u08-gate.log`).
+Plus `just rebless-cards` (only MSH.json moved, +150/−0), `just check-card-printing` ok for both
+cards, `just check-backlog` in sync.
 
-## Unsure / worth a reviewer's eye
+## Things I'm unsure about — please look
 
-- `WardCost.clause` duplicates information with `description`. The alternative — making `description`
-  the full clause everywhere and dropping the per-renderer verb prefixes — is cleaner but rewrites
-  the rendered text of every existing ward card and moves a lot of snapshots; I chose not to.
-- `canPayWardCost` for `Composite` is a snapshot check (all parts payable *now*). Paying an earlier
-  part could in principle make a later one unpayable; the per-part handler still counters at that
-  point, so behaviour is right, but a `Choice` over a `Composite` could offer a leg that later fails.
-  No printed card has that shape.
-- The ward `Choice` picker labels are generated from `clause` ("Discard a card" / "Pay {2}" /
-  "Counter spell"). Not seen in a running client.
+1. **Token sources are unmatchable once gone.** CR 704.5s deletes a token's entity, so a sacrificed
+   Clue's "Sacrifice this artifact: draw a card" is *not* "from an artifact source" for Scientist
+   Supreme. Non-token sources are fine (the entity survives in the graveyard with its printed types).
+   Closing it needs a general last-known store for deleted tokens, which the engine doesn't have —
+   `EntitySnapshot`/`LastKnownPermanentComponent` both die with the entity. Documented in the
+   predicate KDoc and the DSL reference rather than silently approximated.
+2. Related, smaller: a source whose *type* came from a continuous effect (animated land, crewed
+   Vehicle) and has since left reads its printed types.
+3. `ChosenTarget.Spell` gets no CR 608.2b filter re-check in `StackResolver.validateTargets` (only
+   "still on the stack"). Pre-existing, not touched here; it means the source restriction is enforced
+   at targeting time only. Arguably correct in practice (the ability can't stop being from a creature
+   source), but worth a second opinion.
+4. No client change was needed: `StackZone` already routes both the action-pipeline
+   (`targetingState`) and decision (`decisionSelectionState`) click paths for stack objects, and
+   `TargetingOverlay` only diverts to the pile picker for `Graveyard`/`Exile`. Verified by reading;
+   not exercised in a browser.

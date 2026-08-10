@@ -224,6 +224,26 @@ class PredicateEvaluator {
                 matches(state, projected, targetEntityId, predicate.subfilter, subContext)
             }
         }
+        // Ability-source predicate ("copy target ability ... from a creature source"): an ability on
+        // the stack is its own object with no characteristics of its own (CR 113.3b/c), so the match
+        // is redirected onto the ability's source (CR 113.7) and evaluated there. Handled before the
+        // CardComponent null-check for the same reason the ability predicates above are — the
+        // ability entity has no CardComponent.
+        //
+        // Last known information: the source is routinely gone by the time the ability is on the
+        // stack (a dies trigger's source is in the graveyard; a self-sacrifice ability's source is
+        // already sacrificed). `matches` reads the source's projected characteristics while it is on
+        // the battlefield and falls back to its printed ones once it has left — the same resolution
+        // `SourceTypeTargeting.sourceCardTypes` uses for Artifact Ward, and what CR 113.7a /
+        // CR 608.2b call for. A spell on the stack is deliberately not matched: it has no
+        // ability-on-stack component, and the clause only ever speaks of abilities.
+        if (predicate is CardPredicate.AbilitySourceMatches) {
+            val sourceId = container.get<ActivatedAbilityOnStackComponent>()?.sourceId
+                ?: container.get<TriggeredAbilityOnStackComponent>()?.sourceId
+                ?: return false
+            val subContext = context ?: return false
+            return matches(state, projected, sourceId, predicate.subfilter, subContext)
+        }
 
         val card = container.get<CardComponent>() ?: return false
         val projectedValues = projected.getProjectedValues(entityId)
@@ -811,6 +831,7 @@ class PredicateEvaluator {
             CardPredicate.IsTriggeredAbility -> false
             CardPredicate.IsActivatedAbility -> false
             is CardPredicate.TargetsMatching -> false
+            is CardPredicate.AbilitySourceMatches -> false
         }
     }
 
@@ -1617,6 +1638,10 @@ class PredicateEvaluator {
             // Stack-relative targeting predicate — historical cast records have no
             // chosen-target snapshot, so this always returns false here.
             is CardPredicate.TargetsMatching -> false
+
+            // Ability-source predicate — a cast-spell record is not an ability and has no source
+            // object to inspect.
+            is CardPredicate.AbilitySourceMatches -> false
 
             // Composite predicates
             is CardPredicate.And -> predicate.predicates.all { matchesRecordPredicate(record, it) }
