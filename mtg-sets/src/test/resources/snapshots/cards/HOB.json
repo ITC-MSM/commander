@@ -3336,6 +3336,105 @@
     ]
 }
 
+// Esgaroth Garrison
+{
+    "name": "Esgaroth Garrison",
+    "manaCost": "{4}{W}",
+    "typeLine": "Creature — Human Soldier",
+    "oracleText": "Esgaroth Garrison's power is equal to the number of creatures you control.\nWhen this creature enters, recruit. (Draw a card, then discard a card. If you discarded a nonland card, create a 1/1 white Human Soldier creature token.)",
+    "creatureStats": {
+        "power": {
+            "type": "Dynamic",
+            "source": {
+                "type": "AggregateBattlefield",
+                "player": "You",
+                "filter": "creature"
+            }
+        },
+        "toughness": 5
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        },
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Hand"
+                            },
+                            "storeAs": "recruit_hand"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "recruit_hand",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "recruit_discarded",
+                            "prompt": "Recruit — choose a card to discard"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "recruit_discarded",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            },
+                            "moveType": "Discard"
+                        },
+                        {
+                            "type": "ConditionalOnCollection",
+                            "collection": "recruit_discarded",
+                            "ifNotEmpty": {
+                                "type": "CreateToken",
+                                "power": 1,
+                                "toughness": 1,
+                                "colors": [
+                                    "WHITE"
+                                ],
+                                "creatureTypes": [
+                                    "Human",
+                                    "Soldier"
+                                ]
+                            },
+                            "filter": "nonland"
+                        }
+                    ],
+                    "descriptionOverride": "Recruit"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "13",
+        "artist": "Leonardo Santanna",
+        "flavorText": "\"I suggest we go to Lake-town,\" said Bilbo. \"What else is there?\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/7/573f67b0-6ce8-4857-a703-4a5728640736.jpg?1785496934"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Fateful Discovery
 {
     "name": "Fateful Discovery",
@@ -4686,6 +4785,106 @@
     ]
 }
 
+// Great Gilded Boat
+{
+    "name": "Great Gilded Boat",
+    "manaCost": "{2}{U}",
+    "typeLine": "Artifact — Vehicle",
+    "oracleText": "Whenever you attack, recruit. (Draw a card, then discard a card. If you discarded a nonland card, create a 1/1 white Human Soldier creature token.)\nCrew 2 (Tap any number of creatures you control with total power 2 or more: This Vehicle becomes an artifact creature until end of turn.)",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "CREW"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "CREW",
+            "n": 2
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "YouAttackEvent",
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        },
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Hand"
+                            },
+                            "storeAs": "recruit_hand"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "recruit_hand",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "recruit_discarded",
+                            "prompt": "Recruit — choose a card to discard"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "recruit_discarded",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            },
+                            "moveType": "Discard"
+                        },
+                        {
+                            "type": "ConditionalOnCollection",
+                            "collection": "recruit_discarded",
+                            "ifNotEmpty": {
+                                "type": "CreateToken",
+                                "power": 1,
+                                "toughness": 1,
+                                "colors": [
+                                    "WHITE"
+                                ],
+                                "creatureTypes": [
+                                    "Human",
+                                    "Soldier"
+                                ]
+                            },
+                            "filter": "nonland"
+                        }
+                    ],
+                    "descriptionOverride": "Recruit"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "42",
+        "rarity": "RARE",
+        "artist": "Josu Solano",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/2/b2fb3995-5b43-4776-88b2-346d353edee0.jpg?1784862975"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Great Ugly-Looking Goblin
 {
     "name": "Great Ugly-Looking Goblin",
@@ -5355,6 +5554,99 @@
     ]
 }
 
+// Lake-town Lookout
+{
+    "name": "Lake-town Lookout",
+    "manaCost": "{W}",
+    "typeLine": "Creature — Human Scout",
+    "oracleText": "When this creature dies, recruit. (Draw a card, then discard a card. If you discarded a nonland card, create a 1/1 white Human Soldier creature token.)",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        },
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Hand"
+                            },
+                            "storeAs": "recruit_hand"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "recruit_hand",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "recruit_discarded",
+                            "prompt": "Recruit — choose a card to discard"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "recruit_discarded",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            },
+                            "moveType": "Discard"
+                        },
+                        {
+                            "type": "ConditionalOnCollection",
+                            "collection": "recruit_discarded",
+                            "ifNotEmpty": {
+                                "type": "CreateToken",
+                                "power": 1,
+                                "toughness": 1,
+                                "colors": [
+                                    "WHITE"
+                                ],
+                                "creatureTypes": [
+                                    "Human",
+                                    "Soldier"
+                                ]
+                            },
+                            "filter": "nonland"
+                        }
+                    ],
+                    "descriptionOverride": "Recruit"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "18",
+        "artist": "Irina Nordsol",
+        "flavorText": "\"Look! The lights again! Last night the watchmen saw them start and fade from midnight until dawn. Something is happening up there.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/7/178c4cf6-6b11-40e4-9673-c560d6818a6b.jpg?1785496946"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Lake-town Mariners
 {
     "name": "Lake-town Mariners",
@@ -5794,6 +6086,101 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Long Lake Nuisance
+{
+    "name": "Long Lake Nuisance",
+    "manaCost": "{3}{U}",
+    "typeLine": "Creature — Bird",
+    "oracleText": "Flying\nWhen this creature enters, recruit. (Draw a card, then discard a card. If you discarded a nonland card, create a 1/1 white Human Soldier creature token.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 1
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        },
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Hand"
+                            },
+                            "storeAs": "recruit_hand"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "recruit_hand",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "recruit_discarded",
+                            "prompt": "Recruit — choose a card to discard"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "recruit_discarded",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            },
+                            "moveType": "Discard"
+                        },
+                        {
+                            "type": "ConditionalOnCollection",
+                            "collection": "recruit_discarded",
+                            "ifNotEmpty": {
+                                "type": "CreateToken",
+                                "power": 1,
+                                "toughness": 1,
+                                "colors": [
+                                    "WHITE"
+                                ],
+                                "creatureTypes": [
+                                    "Human",
+                                    "Soldier"
+                                ]
+                            },
+                            "filter": "nonland"
+                        }
+                    ],
+                    "descriptionOverride": "Recruit"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "45",
+        "artist": "Kevin Sidharta",
+        "flavorText": "Thrushes carried news between towns and villages. Herons, however, brought nothing more than disruption.",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/d/cd5af94d-6321-4834-8e5f-e5d0261b3ef3.jpg?1785497055"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 
@@ -7063,6 +7450,102 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Patient Instructor
+{
+    "name": "Patient Instructor",
+    "manaCost": "{2}{W/U}",
+    "typeLine": "Creature — Human Citizen",
+    "oracleText": "Vigilance\nWhen this creature enters, recruit. (Draw a card, then discard a card. If you discarded a nonland card, create a 1/1 white Human Soldier creature token.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "VIGILANCE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        },
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Hand"
+                            },
+                            "storeAs": "recruit_hand"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "recruit_hand",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "recruit_discarded",
+                            "prompt": "Recruit — choose a card to discard"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "recruit_discarded",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            },
+                            "moveType": "Discard"
+                        },
+                        {
+                            "type": "ConditionalOnCollection",
+                            "collection": "recruit_discarded",
+                            "ifNotEmpty": {
+                                "type": "CreateToken",
+                                "power": 1,
+                                "toughness": 1,
+                                "colors": [
+                                    "WHITE"
+                                ],
+                                "creatureTypes": [
+                                    "Human",
+                                    "Soldier"
+                                ]
+                            },
+                            "filter": "nonland"
+                        }
+                    ],
+                    "descriptionOverride": "Recruit"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "162",
+        "artist": "Joshua Raphael",
+        "flavorText": "Lake-town was much diminished from its old grandeur, but still the Long Lake provided for all their needs.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/4/e4800508-8bb9-41bb-8712-b55fba7a80a5.jpg?1785323310"
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLUE"
     ]
 }
 
