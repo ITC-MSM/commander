@@ -354,6 +354,71 @@
     ]
 }
 
+// Blinkmoth Well
+{
+    "name": "Blinkmoth Well",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "{T}: Add {C}.\n{2}, {T}: Tap target noncreature artifact.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddColorlessMana",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "TapUntap",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "noncreature artifact"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "artifact noncreature"
+                        },
+                        "id": "noncreature artifact"
+                    }
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "279",
+        "rarity": "UNCOMMON",
+        "artist": "David Martin",
+        "flavorText": "When dictated by blinkmoth migratory patterns, clouds of tiny lights well up from Mirrodin's core.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/4/e4c79155-b6d8-46df-891f-487b24c4e0d5.jpg?1783944494"
+    },
+    "colorIdentityOverride": []
+}
+
 // Bloodscent
 {
     "name": "Bloodscent",
@@ -976,6 +1041,65 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Disarm
+{
+    "name": "Disarm",
+    "manaCost": "{U}",
+    "typeLine": "Instant",
+    "oracleText": "Unattach all Equipment from target creature.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherCards",
+                    "source": {
+                        "type": "AttachedToTarget",
+                        "host": {
+                            "type": "BoundVariable",
+                            "name": "target creature"
+                        },
+                        "filter": "artifact Equipment"
+                    },
+                    "storeAs": "gathered0"
+                },
+                {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Collection",
+                        "collection": "gathered0"
+                    },
+                    "body": "UnattachEquipment"
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target creature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "32",
+        "artist": "Alex Horley-Orlandelli",
+        "flavorText": "\"Be thankful I left you your clothes.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/2/427c6350-af52-45f1-8024-5f31aa62a0d0.jpg?1783944556",
+        "rulings": [
+            {
+                "date": "2004-12-01",
+                "text": "The Equipment remains on the battlefield under its controller's control, but is no longer attached to that creature."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 
@@ -1741,6 +1865,58 @@
     "colorIdentityOverride": []
 }
 
+// Goblin Dirigible
+{
+    "name": "Goblin Dirigible",
+    "manaCost": "{6}",
+    "typeLine": "Artifact Creature — Construct",
+    "oracleText": "Flying\nThis creature doesn't untap during your untap step.\nAt the beginning of your upkeep, you may pay {4}. If you do, untap this creature.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "flags": [
+        "DOESNT_UNTAP"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.MayPay",
+                        "cost": {
+                            "type": "PayManaCost",
+                            "cost": "{4}"
+                        }
+                    },
+                    "then": {
+                        "type": "TapUntap",
+                        "target": "Self",
+                        "tap": false
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "177",
+        "rarity": "UNCOMMON",
+        "artist": "Michael Sutfin",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/2/d2ed2990-e5bf-4567-9a41-1846108a8aeb.jpg?1783944520"
+    },
+    "colorIdentityOverride": []
+}
+
 // Goblin Replica
 {
     "name": "Goblin Replica",
@@ -2014,6 +2190,39 @@
     "colorIdentityOverride": [
         "RED"
     ]
+}
+
+// Grid Monitor
+{
+    "name": "Grid Monitor",
+    "manaCost": "{4}",
+    "typeLine": "Artifact Creature — Construct",
+    "oracleText": "You can't cast creature spells.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 6
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "PlayersCantCastSpells",
+                "affected": "You",
+                "spellFilter": {
+                    "cardPredicates": [
+                        "IsCreature"
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "183",
+        "rarity": "RARE",
+        "artist": "Arnie Swekel",
+        "flavorText": "The vedalken protect the Knowledge Pool at any cost.",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/4/c4ab6c59-cd0f-4c29-8e26-6882dca61fb7.jpg?1783944518"
+    },
+    "colorIdentityOverride": []
 }
 
 // Heartwood Shard
@@ -4788,6 +4997,56 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Relic Bane
+{
+    "name": "Relic Bane",
+    "manaCost": "{1}{B}{B}",
+    "typeLine": "Enchantment — Aura",
+    "oracleText": "Enchant artifact\nEnchanted artifact has \"At the beginning of your upkeep, you lose 2 life.\"",
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "GrantTriggeredAbility",
+                "ability": {
+                    "id": "ability_1",
+                    "trigger": {
+                        "type": "StepEvent",
+                        "step": "UPKEEP"
+                    },
+                    "binding": "ANY",
+                    "effect": {
+                        "type": "LoseLife",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 2
+                        },
+                        "target": {
+                            "type": "PlayerRef",
+                            "player": "You"
+                        }
+                    }
+                }
+            }
+        ],
+        "auraTarget": {
+            "type": "TargetObject",
+            "filter": {
+                "baseFilter": "artifact"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "76",
+        "rarity": "UNCOMMON",
+        "artist": "Eric Peterson",
+        "flavorText": "A sword that has seen cowardice in battle exacts the price of honor from its wielder.",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/c/9cbafa51-693b-485c-807d-64020540f16a.jpg?1783944545"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 
