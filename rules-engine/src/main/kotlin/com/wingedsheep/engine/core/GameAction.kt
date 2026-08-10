@@ -85,7 +85,7 @@ data class CastSpell(
      * Airbender — [com.wingedsheep.sdk.scripting.SpellWaterbendCost] with `optional = true`).
      * Always `false` for spells with no optional waterbend cost, and irrelevant for a *mandatory*
      * waterbend cost (always paid). When true, the handler adds the waterbend amount to the cost,
-     * applies [alternativePayment]'s `waterbendPermanents` toward it, and stamps the
+     * applies [alternativePayment]'s `tapForGenericPermanents` toward it, and stamps the
      * [com.wingedsheep.sdk.scripting.ChoiceSlot.WATERBEND_PAID] flag so the effect can branch via
      * `Conditions.WaterbendWasPaid`.
      */

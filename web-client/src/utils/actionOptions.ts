@@ -188,7 +188,11 @@ function reductionHintFor(action: LegalActionInfo): { hint: string } | null {
   if (action.hasConvoke) return { hint: 'convoke — tap creatures to help pay' }
   if (action.hasDelve) return { hint: 'delve — exile cards from your graveyard' }
   if (action.hasHarmonize) return { hint: 'harmonize — tap one creature for its power' }
-  if (action.hasWaterbend) return { hint: 'waterbend — tap artifacts or creatures' }
+  if (action.hasTapForGeneric) {
+    return action.tapForGenericLabel === 'improvise'
+      ? { hint: 'improvise — tap artifacts' }
+      : { hint: 'waterbend — tap artifacts or creatures' }
+  }
   return null
 }
 

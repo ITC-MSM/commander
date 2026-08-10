@@ -908,6 +908,46 @@
     ]
 }
 
+// Arc Reactor
+{
+    "name": "Arc Reactor",
+    "manaCost": "{5}",
+    "typeLine": "Artifact",
+    "oracleText": "Improvise (Your artifacts can help cast this spell. Each artifact you tap after you're done activating mana abilities pays for {1}.)\nThis artifact enters tapped.\n{T}: Add {C}{C}{C}.",
+    "keywords": [
+        "IMPROVISE"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddColorlessMana",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 3
+                    }
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true,
+                "descriptionOverride": "{T}: Add {C}{C}{C}."
+            }
+        ],
+        "replacementEffects": [
+            "EntersTapped"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "243",
+        "rarity": "RARE",
+        "artist": "Maxim Ruabtsev",
+        "flavorText": "A true marvel of engineering.",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/3/339acb17-4b8e-4836-9cc5-8a0a946ebc73.jpg?1783902892"
+    },
+    "colorIdentityOverride": []
+}
+
 // Ares, God of War
 {
     "name": "Ares, God of War",
@@ -7726,6 +7766,44 @@
     "colorIdentityOverride": [
         "BLUE",
         "RED"
+    ]
+}
+
+// Ironheart, Clever Champion
+{
+    "name": "Ironheart, Clever Champion",
+    "manaCost": "{4}{U}",
+    "typeLine": "Legendary Artifact Creature — Human Hero",
+    "oracleText": "Improvise (Your artifacts can help cast this spell. Each artifact you tap after you're done activating mana abilities pays for {1}.)\nFlying\nNoncreature spells you cast have improvise.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 4
+    },
+    "keywords": [
+        "IMPROVISE",
+        "FLYING"
+    ],
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "GrantKeywordToOwnSpells",
+                "keyword": "IMPROVISE",
+                "spellFilter": {
+                    "cardPredicates": [
+                        "IsNoncreature"
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "60",
+        "rarity": "RARE",
+        "artist": "Julia Vasilyeva",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/9/395e477a-861f-4661-b329-6c1ad5343ed5.jpg?1783902957"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 

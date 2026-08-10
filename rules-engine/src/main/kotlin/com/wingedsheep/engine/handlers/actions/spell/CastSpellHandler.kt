@@ -905,8 +905,8 @@ class CastSpellHandler(
      * The full mana-cost pipeline for a cast (CR 601.2f): alternative-cost base selection
      * (flashback/harmonize/warp/sneak/evoke/impending/miracle/…), kicker, Or-Pay additional
      * costs, waterbend, airbend fixed-alternative plus runtime cost increases,
-     * sacrifice-for-reduction, and delve/convoke/waterbend alternative-payment reductions —
-     * plus the harmonize/waterbend adjustment to the X actually paid as mana.
+     * sacrifice-for-reduction, and delve/convoke/waterbend/improvise alternative-payment
+     * reductions — plus the harmonize/waterbend adjustment to the X actually paid as mana.
      *
      * Shared by [validate] and the cast-time modal affordability gate
      * ([canPayModeSelection]) so mode offers can never diverge from what payment will
@@ -1177,13 +1177,26 @@ class CastSpellHandler(
         val validateWaterbendCap = (if (cardDef != null) spellWaterbendAmount(cardDef, action) else 0) +
             fixedAltWaterbendAmount(state, action, playForFree)
         val costAfterWaterbend = if (!playForFree && action.alternativePayment != null &&
-            action.alternativePayment.waterbendPermanents.isNotEmpty() && validateWaterbendCap > 0
+            action.alternativePayment.tapForGenericPermanents.isNotEmpty() && validateWaterbendCap > 0
         ) {
             alternativePaymentHandler.calculateReducedCostForWaterbend(
                 costAfterAltPayment, action.alternativePayment, validateWaterbendCap
             )
         } else {
             costAfterAltPayment
+        }
+
+        // Account for improvise (CR 702.126): each tapped artifact pays {1} of the generic in the
+        // spell's *total* cost, with no cap beyond that generic. Shares the tap-for-generic carrier
+        // with waterbend, and no card has both — the cap above being 0 is what tells them apart.
+        val costAfterImprovise = if (!playForFree && cardDef != null && validateWaterbendCap == 0 &&
+            action.alternativePayment != null && action.alternativePayment.tapForGenericPermanents.isNotEmpty()
+        ) {
+            alternativePaymentHandler.calculateReducedCostForImprovise(
+                costAfterWaterbend, action.alternativePayment, cardDef, state, action.playerId
+            )
+        } else {
+            costAfterWaterbend
         }
 
         // For an X-cost Harmonize cast where a creature is tapped, the
@@ -1193,7 +1206,7 @@ class CastSpellHandler(
         // (and reduced by the waterbend taps), so it must NOT also be charged as {X} mana.
         val paymentXValue = if (cardDef?.script?.spellWaterbend?.isX == true) 0
             else harmonizePaymentXValue(state, action, cardDef, effectiveCost)
-        return ComputedCastCost(costAfterWaterbend, paymentXValue)
+        return ComputedCastCost(costAfterImprovise, paymentXValue)
     }
 
     private fun validatePayment(state: GameState, action: CastSpell, cost: ManaCost, paymentXValue: Int = action.xValue ?: 0): String? {
@@ -3019,7 +3032,7 @@ class CastSpellHandler(
             fixedAltWaterbendAmount(currentState, action, playForFreeInExecute)
         if (waterbendPaidAmount > 0 &&
             action.alternativePayment != null &&
-            action.alternativePayment.waterbendPermanents.isNotEmpty()
+            action.alternativePayment.tapForGenericPermanents.isNotEmpty()
         ) {
             val waterbendResult = alternativePaymentHandler.applyWaterbendForSpell(
                 currentState, effectiveCost, action.alternativePayment, action.playerId, waterbendPaidAmount
@@ -3028,6 +3041,22 @@ class CastSpellHandler(
             currentState = waterbendResult.newState
             events.addAll(waterbendResult.events)
         }
+        // Apply improvise (CR 702.126a): tap the chosen artifacts, each paying {1} of the generic in
+        // the spell's total cost. Unlike waterbend there is no separate amount to cap at — improvise
+        // is not a cost of its own (CR 702.126b) — so it runs only when no waterbend cost claimed the
+        // taps, and the handler re-checks the keyword before tapping anything.
+        if (waterbendPaidAmount == 0 && !playForFreeInExecute && cardDef != null &&
+            action.alternativePayment != null &&
+            action.alternativePayment.tapForGenericPermanents.isNotEmpty()
+        ) {
+            val improviseResult = alternativePaymentHandler.applyImproviseForSpell(
+                currentState, effectiveCost, action.alternativePayment, action.playerId, cardDef
+            )
+            effectiveCost = improviseResult.reducedCost
+            currentState = improviseResult.newState
+            events.addAll(improviseResult.events)
+        }
+
         // CR 701.67c: paying a spell's waterbend cost (however paid — taps above and/or plain mana)
         // fires "whenever you waterbend". A later payment failure rolls the cast (and this event)
         // back, so emitting here is safe.

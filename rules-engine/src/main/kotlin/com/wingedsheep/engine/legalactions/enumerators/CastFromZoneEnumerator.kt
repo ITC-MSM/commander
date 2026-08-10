@@ -45,6 +45,7 @@ import com.wingedsheep.engine.mechanics.MayhemGrants
 import com.wingedsheep.engine.mechanics.WarpGrants
 import com.wingedsheep.engine.mechanics.mana.SpellPaymentContext
 import com.wingedsheep.engine.mechanics.mana.spellPaymentContextFor
+import com.wingedsheep.engine.mechanics.mana.TapForGeneric
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
 
 /**
@@ -524,9 +525,9 @@ class CastFromZoneEnumerator : ActionEnumerator {
                             state, playerId, effectiveCost,
                             precomputedSources = context.availableManaSources, spellContext = spellContext
                         ) ||
-                        (fixedAltWaterbend != null && context.costUtils.canAffordWithWaterbend(
+                        (fixedAltWaterbend != null && context.costUtils.canAffordWithTapForGeneric(
                             state, playerId, effectiveCost,
-                            context.costUtils.findWaterbendPermanents(state, playerId)
+                            context.costUtils.findTapForGenericPermanents(state, playerId, TapForGeneric.WATERBEND)
                                 .take(fixedAltWaterbend.fixedCost.genericAmount),
                             precomputedSources = context.availableManaSources,
                             spellContext = spellContext
@@ -742,9 +743,11 @@ class CastFromZoneEnumerator : ActionEnumerator {
                 ?.get<PlayWithFixedAlternativeManaCostComponent>()
                 ?.takeIf { it.controllerId == playerId && it.waterbend } ?: continue
             result[i] = la.copy(
-                hasWaterbend = true,
-                waterbendPermanents = context.costUtils.findWaterbendPermanents(state, playerId),
-                waterbendAmount = fixedAlt.fixedCost.genericAmount
+                hasTapForGeneric = true,
+                tapForGenericPermanents =
+                    context.costUtils.findTapForGenericPermanents(state, playerId, TapForGeneric.WATERBEND),
+                tapForGenericAmount = fixedAlt.fixedCost.genericAmount,
+                tapForGenericLabel = TapForGeneric.WATERBEND.label
             )
         }
 

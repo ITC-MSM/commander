@@ -201,6 +201,7 @@ export enum Keyword {
   // Cost reduction
   CONVOKE = 'CONVOKE',
   DELVE = 'DELVE',
+  IMPROVISE = 'IMPROVISE',
   AFFINITY = 'AFFINITY',
   EMERGE = 'EMERGE',
   // Spell mechanics
@@ -297,6 +298,7 @@ export const KeywordDisplayNames: Record<Keyword, string> = {
   [Keyword.CRAFT]: 'Craft',
   [Keyword.CONVOKE]: 'Convoke',
   [Keyword.DELVE]: 'Delve',
+  [Keyword.IMPROVISE]: 'Improvise',
   [Keyword.AFFINITY]: 'Affinity',
   [Keyword.EMERGE]: 'Emerge',
   [Keyword.STORM]: 'Storm',

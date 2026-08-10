@@ -7,8 +7,8 @@ keyword, or engine capability) — not pure card authoring.
 Scope: the 276 booster cards (collector numbers 1–276). Triaged against the SDK on 2026-08-04,
 updated 2026-08-07 after **power-up** and the **per-turn effect budget** shipped, 2026-08-08
 after **teamwork** shipped in full, and 2026-08-10 after **copy-with-exceptions**,
-**ward with a non-listed cost** and the **ability-source predicate on stack targets** shipped.
-**25 of the 276 are blocked**; every other card is buildable from existing primitives.
+**ward with a non-listed cost**, the **ability-source predicate on stack targets** and **improvise**
+shipped. **23 of the 276 are blocked**; every other card is buildable from existing primitives.
 
 Supported today and *not* a blocker despite looking like one: **power-up** (see the first section
 below — the keyword, its once-only limit and its pip-wise cost reduction all ship), **harness / ∞ abilities**
@@ -266,21 +266,33 @@ with its re-firing trigger.
 **Implemented (3):** Shuri, Wakandan Inventor [75] · Absorbing Man [199] · Taskmaster, Mercenary
 Mimic [232].
 
-## Improvise (CR 702.126) — 2 cards ⛔
+## Improvise (CR 702.126) — SHIPPED ✅ (2 of 2 cards unblocked)
 
-No `IMPROVISE` anywhere; `Keyword` has `CONVOKE`, `DELVE`, `AFFINITY` but not improvise. The closest
-analogue is **waterbend**, described in the SDK as literally "a generic-only convoke+improvise" —
-improvise is a strict subset of it (artifacts only), and `AlternativePaymentChoice.waterbendPermanents`
-already taps artifacts *and* creatures for `{1}` each. Needed: `Keyword.IMPROVISE`; an
-`improvisedArtifacts: Set<EntityId>` field on `AlternativePaymentChoice`; an `applyImprovise` branch in
-`AlternativePaymentHandler` mirroring `applyWaterbend`/`applyConvoke`; and the field threaded through
-`GameAction` / `PendingDecision` / `ManaContinuations` / `LegalAction` / `LegalActionEnricher` /
-`CastSpellEnumerator` plus client UI and AI payment heuristics — the same surface convoke occupies.
+Shipped 2026-08-10 against the verified rule text: CR 702.126a "For each generic mana in this spell's
+total cost, you may tap an untapped artifact you control rather than pay that mana", 702.126b (neither
+an additional nor an alternative cost; applies only *after* the total cost is determined), 702.126c
+(multiple instances are redundant).
 
-Blocked cards: **Ironheart, Clever Champion** [60] · **Arc Reactor** [243]. Ironheart's second line
-("Noncreature spells you cast have improvise") then needs no extra work —
-`SpellStaticAbilities.GrantsKeywordToSpells` is built for exactly this and already handles
-cost-modifying keywords.
+The triage above proposed a fourth parallel payment field (`improvisedArtifacts`) beside
+`convokedCreatures`, `harmonizeCreature` and `waterbendPermanents`. That was **not** what shipped.
+Improvise and waterbend are the same mechanism with different eligibility, so the two were converged
+onto one rail instead:
+
+- `AlternativePaymentChoice.waterbendPermanents` was renamed `tapForGenericPermanents` and is now the
+  single carrier for "tap permanents you control, each paying {1} generic".
+- The eligibility rule is a value, `TapForGeneric.IMPROVISE` (artifacts) / `TapForGeneric.WATERBEND`
+  (artifacts or creatures), consumed by one `AlternativePaymentHandler.applyTapForGeneric` and one
+  `CostEnumerationUtils.findTapForGenericPermanents` / `canAffordWithTapForGeneric`.
+- `LegalAction` / the DTO / the client renamed to match, plus a `tapForGenericLabel` so the one HUD
+  (`TapForGenericSelector`, `tapForGeneric` pipeline phase) names the mechanic being paid.
+
+A further keyword of this shape is now one enum entry, not a new field + handler branch + UI.
+Card-side authoring is just `keywords(Keyword.IMPROVISE)`.
+
+Unblocked cards: **Ironheart, Clever Champion** [60] · **Arc Reactor** [243]. Ironheart's second line
+("Noncreature spells you cast have improvise") needed no extra work —
+`GrantKeywordToOwnSpells(Keyword.IMPROVISE, GameObjectFilter.Noncreature)` resolves through the same
+`GrantedKeywordResolver` every cost keyword uses.
 
 ## Ability-source predicate on stack targets — SHIPPED ✅ (2 of 2 cards unblocked)
 

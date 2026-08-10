@@ -15,7 +15,7 @@ import type {
   BlightVariableSelectionState,
   PayXLifeSelectionState,
   ConvokeSelectionState,
-  WaterbendSelectionState,
+  TapForGenericSelectionState,
   HarmonizeSelectionState,
   DelveSelectionState,
   CounterDistributionState,
@@ -40,7 +40,7 @@ export interface PipelineStoreMethods {
   startBlightVariableSelection: (state: BlightVariableSelectionState) => void
   startPayXLifeSelection: (state: PayXLifeSelectionState) => void
   startConvokeSelection: (state: ConvokeSelectionState) => void
-  startWaterbendSelection: (state: WaterbendSelectionState) => void
+  startTapForGenericSelection: (state: TapForGenericSelectionState) => void
   startHarmonizeSelection: (state: HarmonizeSelectionState) => void
   startDelveSelection: (state: DelveSelectionState) => void
   startCounterDistribution: (state: CounterDistributionState) => void
@@ -145,15 +145,16 @@ export function computePhases(actionInfo: LegalActionInfo, options?: ComputePhas
     phases.push({ type: 'convoke' })
   }
 
-  // 3a. Waterbend (activated abilities with a waterbend cost — Avatar: The Last Airbender).
-  //     Optional: the player may tap artifacts/creatures to help pay the generic cost.
+  // 3a. Tap-for-generic: improvise (CR 702.126) on a spell, or a waterbend cost on a spell or
+  //     activated ability. Optional either way — the player may tap eligible permanents to help
+  //     pay the generic cost, or confirm with none selected and pay it all with mana.
   if (
     (actionInfo.action.type === 'CastSpell' || actionInfo.action.type === 'ActivateAbility') &&
-    actionInfo.hasWaterbend &&
-    actionInfo.validWaterbendPermanents &&
-    actionInfo.validWaterbendPermanents.length > 0
+    actionInfo.hasTapForGeneric &&
+    actionInfo.validTapForGenericPermanents &&
+    actionInfo.validTapForGenericPermanents.length > 0
   ) {
-    phases.push({ type: 'waterbend' })
+    phases.push({ type: 'tapForGeneric' })
   }
 
   // 3b. Harmonize creature-tap (cast from graveyard via Harmonize). Optional: the player
@@ -182,7 +183,9 @@ export function computePhases(actionInfo: LegalActionInfo, options?: ComputePhas
 
   // 4. Mana source selection (skipped when auto-tap is enabled, except for delve/convoke
   //    spells where the player should always confirm land selection after alternative payment)
-  const hasAlternativePaymentPhase = phases.some((p) => p.type === 'delve' || p.type === 'convoke' || p.type === 'waterbend')
+  const hasAlternativePaymentPhase = phases.some(
+    (p) => p.type === 'delve' || p.type === 'convoke' || p.type === 'tapForGeneric',
+  )
   if (
     actionInfo.availableManaSources && actionInfo.availableManaSources.length > 0 &&
     (hasAlternativePaymentPhase || !options?.autoTapEnabled)
@@ -340,14 +343,14 @@ export function mergeResult(
       return action
     }
 
-    case 'waterbend': {
+    case 'tapForGeneric': {
       if (action.type === 'CastSpell' || action.type === 'ActivateAbility') {
         return {
           ...action,
           alternativePayment: {
             delvedCards: action.alternativePayment?.delvedCards ?? [],
             convokedCreatures: action.alternativePayment?.convokedCreatures ?? {},
-            waterbendPermanents: result.waterbendPermanents,
+            tapForGenericPermanents: result.tapForGenericPermanents,
           },
         }
       }
@@ -653,23 +656,34 @@ export function enterPhase(
       break
     }
 
-    case 'waterbend': {
+    case 'tapForGeneric': {
       // Fold {X} -> the chosen X so the HUD shows the real generic the taps reduce. xValue is
       // set by the preceding xSelection phase (0 if none). "waterbend {X}" spells carry an {X}.
       const xValue = action.type === 'CastSpell' ? action.xValue ?? 0 : 0
       const manaCost = (actionInfo.manaCostString ?? '').replace(/\{X\}/g, `{${xValue}}`)
-      // Tap cap N (one per generic in the waterbend {N}): an explicit spell-level amount; else
-      // the chosen X for "waterbend {X}"; else (ability waterbend) the generic mana in the cost.
-      let genericInCost = 0
-      const genericRe = /\{(\d+)\}/g
-      let gm: RegExpExecArray | null
-      while ((gm = genericRe.exec(manaCost)) !== null) genericInCost += parseInt(gm[1]!, 10)
-      const maxTaps = actionInfo.waterbendAmount ?? (actionInfo.hasXCost ? xValue : genericInCost)
-      store.startWaterbendSelection({
+      const genericIn = (cost: string): number => {
+        let total = 0
+        const genericRe = /\{(\d+)\}/g
+        let gm: RegExpExecArray | null
+        while ((gm = genericRe.exec(cost)) !== null) total += parseInt(gm[1]!, 10)
+        return total
+      }
+      // Tap cap: an explicit spell-level waterbend {N}; else the chosen X for "waterbend {X}";
+      // else the generic mana in the cost. Improvise counts only the *printed* generic — the
+      // server's improvise payment does not reduce the mana paid for {X}, so counting the folded X
+      // here would let the player tap artifacts the cast then refuses to credit.
+      const isImprovise = actionInfo.tapForGenericLabel === 'improvise'
+      const maxTaps = actionInfo.tapForGenericAmount ??
+        (isImprovise
+          ? genericIn(actionInfo.manaCostString ?? '')
+          : actionInfo.hasXCost
+            ? xValue
+            : genericIn(manaCost))
+      store.startTapForGenericSelection({
         actionInfo,
         // Strip the leading verb and the trailing " (waterbend {N})" disambiguator the enumerator
-        // appends to the optional paid action's description — the HUD already says "Waterbend …"
-        // and shows the cost as mana pips, so the suffix would double the text and render {N} as
+        // appends to the optional paid action's description — the HUD already says the verb and
+        // shows the cost as mana pips, so the suffix would double the text and render {N} as
         // literal characters.
         cardName: actionInfo.description
           .replace('Cast ', '')
@@ -677,8 +691,9 @@ export function enterPhase(
           .replace(/\s*\(waterbend \{[^}]*\}\)\s*$/i, ''),
         manaCost,
         selectedPermanents: [],
-        validPermanents: actionInfo.validWaterbendPermanents!,
+        validPermanents: actionInfo.validTapForGenericPermanents!,
         maxTaps,
+        label: actionInfo.tapForGenericLabel ?? 'waterbend',
       })
       break
     }

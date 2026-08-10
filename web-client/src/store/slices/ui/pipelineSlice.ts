@@ -37,7 +37,7 @@ export const createPipelineSlice: SliceCreator<PipelineSlice> = (set, get) => ({
 
   startPipeline: (actionInfo, options) => {
     // Refuse to start a new cast/activation while one is already in progress — you must finish or
-    // cancel the current pipeline (e.g. the waterbend tap step) first. Guards against casting a
+    // cancel the current pipeline (e.g. the improvise/waterbend tap step) first. Guards against casting a
     // second spell from hand mid-cast even if some interaction path slips past the UI gating.
     if (get().pipelineState != null) return
     const autoTapEnabled = options?.forceManualTap ? false : get().autoTapEnabled
@@ -162,12 +162,12 @@ export const createPipelineSlice: SliceCreator<PipelineSlice> = (set, get) => ({
       }
     }
 
-    // If waterbend tapped permanents, reduce the generic cost shown to subsequent phases
-    // (each tapped artifact/creature pays {1} generic). Mirrors the convoke block above.
-    if (result.type === 'waterbend') {
+    // If a tap-for-generic payment (improvise / waterbend) tapped permanents, reduce the generic
+    // cost shown to subsequent phases (each tapped permanent pays {1} generic). Mirrors convoke.
+    if (result.type === 'tapForGeneric') {
       const originalSymbols = parseManaCostUtil(actionInfo.manaCostString ?? '')
       const remainingSymbols = [...originalSymbols]
-      for (let i = 0; i < result.waterbendPermanents.length; i++) {
+      for (let i = 0; i < result.tapForGenericPermanents.length; i++) {
         const gIdx = remainingSymbols.findIndex((s) => /^\d+$/.test(s))
         if (gIdx < 0) break
         const val = parseInt(remainingSymbols[gIdx]!, 10)
@@ -180,8 +180,8 @@ export const createPipelineSlice: SliceCreator<PipelineSlice> = (set, get) => ({
           ? trimAutoTapPreview(actionInfo.autoTapPreview, actionInfo.availableManaSources, remainingSymbols)
           : actionInfo.autoTapPreview
       const {
-        hasWaterbend: _,
-        validWaterbendPermanents: _2,
+        hasTapForGeneric: _,
+        validTapForGenericPermanents: _2,
         autoTapPreview: _3,
         ...restActionInfo
       } = actionInfo
@@ -288,7 +288,7 @@ export const createPipelineSlice: SliceCreator<PipelineSlice> = (set, get) => ({
       blightVariableSelectionState: null,
       payXLifeSelectionState: null,
       convokeSelectionState: null,
-      waterbendSelectionState: null,
+      tapForGenericSelectionState: null,
       harmonizeSelectionState: null,
       delveSelectionState: null,
       manaSelectionState: null,
@@ -307,7 +307,7 @@ function getStoreMethods(get: () => import('../types').GameStore): PipelineStore
     startBlightVariableSelection: state.startBlightVariableSelection,
     startPayXLifeSelection: state.startPayXLifeSelection,
     startConvokeSelection: state.startConvokeSelection,
-    startWaterbendSelection: state.startWaterbendSelection,
+    startTapForGenericSelection: state.startTapForGenericSelection,
     startHarmonizeSelection: state.startHarmonizeSelection,
     startDelveSelection: state.startDelveSelection,
     startCounterDistribution: state.startCounterDistribution,

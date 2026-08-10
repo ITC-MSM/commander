@@ -758,7 +758,7 @@ class Strategist(
      * projected controller/type/counter legality.
      */
     private fun withAutomaticPayments(action: LegalAction): GameAction {
-        val gameAction = withAutomaticConvoke(action)
+        val gameAction = withAutomaticTapForGeneric(action, withAutomaticConvoke(action))
         val info = action.additionalCostInfo ?: return gameAction
         val existing = when (gameAction) {
             is CastSpell -> gameAction.additionalCostPayment
@@ -857,6 +857,38 @@ class Strategist(
         return cast.copy(
             alternativePayment = existing.copy(
                 convokedCreatures = existing.convokedCreatures + payments
+            )
+        )
+    }
+
+    /**
+     * Fill in a tap-for-generic payment (improvise CR 702.126, waterbend) the enumerator offered.
+     *
+     * The enumerator counts these taps toward affordability, so a cast that is only payable *with*
+     * them is offered as affordable; submitting it with an empty payment would then be rejected at
+     * the mana step. Filling it here keeps the AI's chosen action payable.
+     *
+     * Deliberately **artifacts only**, even though a waterbend cost also accepts creatures: an
+     * artifact is rarely doing anything else this turn, whereas tapping a creature silently gives
+     * up an attack or a block. That covers improvise exactly (CR 702.126a is artifacts-only) and
+     * leaves waterbend no worse off than before.
+     */
+    private fun withAutomaticTapForGeneric(action: LegalAction, gameAction: GameAction): GameAction {
+        if (!action.hasTapForGeneric) return gameAction
+        val cast = gameAction as? CastSpell ?: return gameAction
+        val artifacts = action.tapForGenericPermanents.orEmpty().filterNot { it.isCreature }
+        if (artifacts.isEmpty()) return gameAction
+        val costString = action.manaCostString ?: return gameAction
+
+        // One tap per generic mana, and never more than the mechanic's own cap (waterbend's {N}).
+        val genericInCost = ManaCost.parse(costString).genericAmount
+        val cap = minOf(action.tapForGenericAmount ?: genericInCost, genericInCost)
+        if (cap <= 0) return gameAction
+
+        val existing = cast.alternativePayment ?: AlternativePaymentChoice.NONE
+        return cast.copy(
+            alternativePayment = existing.copy(
+                tapForGenericPermanents = artifacts.take(cap).mapTo(linkedSetOf()) { it.entityId }
             )
         )
     }

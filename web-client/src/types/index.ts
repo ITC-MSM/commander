@@ -158,7 +158,7 @@ export type {
   ModalLegalEnumerationInfo,
   ModalEnumerationModeInfo,
   ConvokeCreatureInfo,
-  WaterbendPermanentInfo,
+  TapForGenericPermanentInfo,
   TapForPowerCreatureInfo,
   DelveCardInfo,
   HarmonizeCreatureInfo,
