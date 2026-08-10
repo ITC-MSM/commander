@@ -4660,6 +4660,11 @@ object Effects {
      * Pass [sourceFromAnyZone] = true to let the copy *source* ([target]) live outside the
      * battlefield — its copiable characteristics are read wherever it currently is (e.g. a card in
      * exile). Used by Lazav, Familiar Stranger: "become a copy of that [exiled] card."
+     *
+     * Pass [exceptions] for the "except …" half of the copy (CR 707.9) — name, added or removed
+     * types, added keywords, base P/T, colors. See
+     * [com.wingedsheep.sdk.scripting.effects.CopyExceptions]; it's the same vocabulary the
+     * token-copy path uses.
      */
     fun EachPermanentBecomesCopyOfTarget(
         target: EffectTarget = EffectTarget.ContextTarget(0),
@@ -4670,13 +4675,18 @@ object Effects {
         excludeTarget: Boolean = false,
         affected: EffectTarget? = null,
         sourceFromAnyZone: Boolean = false,
-        addedKeywords: Set<com.wingedsheep.sdk.core.Keyword> = emptySet(),
+        exceptions: com.wingedsheep.sdk.scripting.effects.CopyExceptions =
+            com.wingedsheep.sdk.scripting.effects.CopyExceptions.None,
         retainActivatingAbility: Boolean = false,
-        powerOverride: Int? = null,
-        toughnessOverride: Int? = null,
     ): Effect = EachPermanentBecomesCopyOfTargetEffect(
-        target, filter, duration, excludeTarget, affected, sourceFromAnyZone,
-        addedKeywords, retainActivatingAbility, powerOverride, toughnessOverride
+        target = target,
+        filter = filter,
+        duration = duration,
+        excludeTarget = excludeTarget,
+        affected = affected,
+        sourceFromAnyZone = sourceFromAnyZone,
+        exceptions = exceptions,
+        retainActivatingAbility = retainActivatingAbility,
     )
 
     // =========================================================================

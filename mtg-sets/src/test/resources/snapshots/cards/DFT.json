@@ -10548,9 +10548,11 @@
                     },
                     "affected": "Self",
                     "sourceFromAnyZone": true,
-                    "retainActivatingAbility": true,
-                    "powerOverride": 0,
-                    "toughnessOverride": 0
+                    "exceptions": {
+                        "powerOverride": 0,
+                        "toughnessOverride": 0
+                    },
+                    "retainActivatingAbility": true
                 },
                 "targetRequirements": [
                     {

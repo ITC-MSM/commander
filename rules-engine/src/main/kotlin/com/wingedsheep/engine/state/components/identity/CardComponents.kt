@@ -165,6 +165,28 @@ data object RevertCopyAtEndOfTurnComponent : Component
 data object RevertCopyAtNextEndStepComponent : Component
 
 /**
+ * Marks a permanent whose current copy identity lasts "until your next turn" — reverted to its
+ * pre-copy [CardComponent] after the untap step of [playerId]'s next turn, the same hook every
+ * other `Duration.UntilYourNextTurn` effect expires on
+ * (`CleanupPhaseManager.expireUntilYourNextTurnEffects`).
+ *
+ * Set by "until your next turn, this becomes a copy of …" effects (Absorbing Man, Taskmaster,
+ * Volrath, the Shapestealer). Unlike its end-of-turn siblings the marker has to remember *whose*
+ * next turn ends it, since the window spans at least one opponent's turn.
+ *
+ * The revert deliberately lands before the copying permanent's own "at the beginning of your first
+ * main phase" trigger would fire again, which is what lets a permanent whose only ability is the
+ * copy trigger keep re-copying: the printed ability is gone while the copy is up (the copy replaced
+ * the card component wholesale) and back by the time the next trigger would check.
+ *
+ * @property playerId The player whose next untap step ends the copy — the copy effect's controller.
+ */
+@Serializable
+data class RevertCopyAtYourNextTurnComponent(
+    val playerId: com.wingedsheep.sdk.model.EntityId
+) : Component
+
+/**
  * Marks a permanent whose current copy identity lasts only "for as long as [attachmentId] remains
  * attached to it" (Assimilation Aegis: "for as long as this Equipment remains attached to it, that
  * creature becomes a copy …"). The pre-copy snapshot lives on the entity's

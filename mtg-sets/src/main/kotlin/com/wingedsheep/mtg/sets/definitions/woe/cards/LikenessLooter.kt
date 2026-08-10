@@ -9,6 +9,7 @@ import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.Duration
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.TimingRule
+import com.wingedsheep.sdk.scripting.effects.CopyExceptions
 import com.wingedsheep.sdk.scripting.effects.EachPermanentBecomesCopyOfTargetEffect
 import com.wingedsheep.sdk.scripting.filters.unified.TargetFilter
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
@@ -30,8 +31,8 @@ import com.wingedsheep.sdk.scripting.targets.TargetObject
  * (CR 707.2 reads its copiable characteristics wherever it is), and `affected = Self` narrows the
  * usual mass-copy to this one permanent.
  *
- * The "except" clause is both copy-exception riders at once (CR 707.9): `addedKeywords` re-adds
- * flying on top of whatever the copied card has, and `retainActivatingAbility` re-grants this very
+ * The "except" clause is both copy-exception riders at once (CR 707.9): `CopyExceptions.addedKeywords`
+ * re-adds flying on top of whatever the copied card has, and `retainActivatingAbility` re-grants this very
  * ability — without it the copy would replace the card component wholesale and the permanent could
  * never be re-aimed at a different graveyard card.
  *
@@ -73,7 +74,7 @@ val LikenessLooter = card("Likeness Looter") {
             affected = EffectTarget.Self,
             sourceFromAnyZone = true,
             duration = Duration.Permanent,
-            addedKeywords = setOf(Keyword.FLYING),
+            exceptions = CopyExceptions(addedKeywords = setOf(Keyword.FLYING)),
             retainActivatingAbility = true,
         )
         timing = TimingRule.SorcerySpeed

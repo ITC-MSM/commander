@@ -9,6 +9,7 @@ import com.wingedsheep.sdk.scripting.EntersWithExileCounters
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.events.CounterTypeFilter
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
+import com.wingedsheep.sdk.scripting.effects.CopyExceptions
 import com.wingedsheep.sdk.scripting.filters.unified.TargetFilter
 import com.wingedsheep.sdk.scripting.targets.TargetObject
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
@@ -57,8 +58,7 @@ val MimeoplasmReveredOne = card("Mimeoplasm, Revered One") {
             affected = EffectTarget.Self,
             sourceFromAnyZone = true,
             retainActivatingAbility = true,
-            powerOverride = 0,
-            toughnessOverride = 0,
+            exceptions = CopyExceptions(powerOverride = 0, toughnessOverride = 0),
         )
         description = "{2}: Mimeoplasm becomes a copy of target creature card exiled with it, " +
             "except it's 0/0 and has this ability."

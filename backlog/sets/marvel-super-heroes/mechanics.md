@@ -5,9 +5,9 @@ missing mechanic they need. Each mechanic is `add-feature` territory (a new SDK 
 keyword, or engine capability) — not pure card authoring.
 
 Scope: the 276 booster cards (collector numbers 1–276). Triaged against the SDK on 2026-08-04,
-updated 2026-08-07 after **power-up** and the **per-turn effect budget** shipped, and 2026-08-08
-after **teamwork** shipped in full. **32 of the 276 are blocked**; every other card is buildable from
-existing primitives.
+updated 2026-08-07 after **power-up** and the **per-turn effect budget** shipped, 2026-08-08
+after **teamwork** shipped, and 2026-08-10 after **copy-with-exceptions** shipped. **30 of the 276
+are blocked**; every other card is buildable from existing primitives.
 
 Supported today and *not* a blocker despite looking like one: **power-up** (see the first section
 below — the keyword, its once-only limit and its pip-wise cost reduction all ship), **harness / ∞ abilities**
@@ -94,7 +94,7 @@ sweep is `.manaValueIsOdd()` / `.manaValueIsEven()` + a modal.
   (`CardPredicate.ManaValueAtMostDynamic(DynamicAmounts.sourcePower())` — the predicate exists, but
   nothing evaluates a source-relative dynamic filter inside delayed-trigger matching).
 
-## Teamwork N — SHIPPED ✅ (all 13 cards implemented)
+## Teamwork N — SHIPPED ✅ (12 of 13 cards implemented, 1 still blocked)
 
 > Teamwork 4 *(As an additional cost to cast this spell, you may tap any number of creatures you
 > control with total power 4 or more.)*
@@ -144,16 +144,6 @@ What that helper does:
    raise a teamwork total); folding their candidate selection in is an open follow-up.
    The candidate payload sent to the client is the crew/saddle `TapForPowerCreatureData`, under a
    `costType = "TapForTotalPower"` cost-payment phase.
-5. **The tap cause** — the payer-side half, added 2026-08-08 for Agent Maria Hill. `TappedEvent` now
-   carries a `TapReason` (`mtg-sdk/.../scripting/TapReason.kt`) alongside `tappedById`, matched by
-   `EventPattern.TapEvent.reason` and authored as `Triggers.BecomesTappedForTeamwork`. A separate axis
-   from attribution is what the card needs: a teamwork tap, an attack tap and a crew tap are all
-   performed by the creature's own controller, so `tappedById` is identical across them. Only
-   `TapReason.TEAMWORK` is classified — stamped by `CastSpellHandler` on the taps paying an additional
-   cost declared under `ChoiceSlot.TEAMWORK` (`TapReason.forChoiceSlot`) — and every other tap site
-   deliberately reports `UNSPECIFIED` rather than a guess. Both tap sites for the atom now go through
-   one chokepoint, `VariablePermanentsCost.tapAll`, so the cast payer and the ability payer can't
-   drift.
 
 Open follow-ups, neither reachable by a printed card today: folding crew's candidate selection onto
 `VariablePermanentsCost.candidates` (their measures must stay split), and modal casts from a
@@ -164,23 +154,26 @@ Tests: `TeamworkMechanicScenarioTest` (multi-creature payment, single-creature p
 an unmet threshold, already-tapped and opponent-controlled creatures, projected power via a lord,
 summoning sickness, the durable flag on a resolving permanent, teamwork-vs-kicked separation, the
 advertised legal action, the modal "Teamwork Orders" cases, and the CR 702.194c "Teamwork Rally"
-cases), `TapReasonScenarioTest` (the cause on each classified and unclassified tap site, a
-cause-agnostic trigger still matching, serialization), plus one scenario test per implemented card.
+cases) plus one scenario test per implemented card.
 
-**Implemented (13):** Agent Maria Hill [2] · Helicarrier Strike [15] · Murdock's Crusade [24] ·
-Atlantis Attacks [46] · We Say Thee Nay! [82] · Cruel Alliance [92] · Too Evil to Stay Dead [118] ·
-Widow's Bite [122] · HULK SMASH! [135] · Repulsor Blast [150] · Team Tactics [155] · Earth's
-Mightiest Heroes [165] · Go Nuts! [168]. Murdock's Crusade, Atlantis Attacks, Widow's Bite,
-HULK SMASH! and Go Nuts! are the "choose both instead" modal shape, all on `dynamicChooseCount` as
-above.
+**Implemented (12):** Helicarrier Strike [15] · Murdock's Crusade [24] · Atlantis Attacks [46] ·
+We Say Thee Nay! [82] · Cruel Alliance [92] · Too Evil to Stay Dead [118] · Widow's Bite [122] ·
+HULK SMASH! [135] · Repulsor Blast [150] · Team Tactics [155] · Earth's Mightiest Heroes [165] ·
+Go Nuts! [168]. Murdock's Crusade, Atlantis Attacks, Widow's Bite, HULK SMASH! and Go Nuts! are the
+"choose both instead" modal shape, all on `dynamicChooseCount` as above.
 
 Cruel Alliance and Too Evil to Stay Dead are a third shape the rail already covered: the teamwork
 "instead" replaces the *target requirement*, not the effect's size, so they use the shared
 optional-additional-cost `kickerTarget` / `kickerEffect` slots (Fight with Fire, Brave the Wilds) —
 the teamwork cast announces a target the plain cast could not.
 
-Agent Maria Hill is the only *payer-side* payoff in the set: her trigger is on the creature that was
-tapped, not on the spell that was cast, which is why `Conditions.TeamworkWasPaid` cannot express it.
+### Still blocked — 1 card ⛔
+
+- **Agent Maria Hill** [2] — "whenever she becomes tapped **to pay a teamwork cost**". `TappedEvent`
+  still carries only `tappedById` with no cause, so a teamwork tap is indistinguishable from a crew,
+  saddle, attack, or mana tap. Add a tap-reason field on the event (set in the teamwork payment path,
+  which now runs through `CostHandler`/`CastSpellHandler`) and a matching predicate on
+  `EventPattern.TapEvent`.
 
 ## Shield counters — 1 card ⛔
 
@@ -219,23 +212,48 @@ Same card, second gap: "Double all damage equipped creature would deal" wants
 
 Blocked card: **Mjölnir, Hammer of Thor** [146].
 
-## Copy-with-exceptions: name, added types, longer durations — 3 cards ⛔
+## Copy-with-exceptions: name, added types, longer durations — SHIPPED ✅ (all 3 cards implemented)
 
-`EachPermanentBecomesCopyOfTargetEffect` (`mtg-sdk/.../scripting/effects/CopyEffects.kt`) exposes only
-`addedKeywords` / `powerOverride` / `toughnessOverride` / `retainActivatingAbility` as copy exceptions,
-and its executor honours only `Duration.Permanent` / `EndOfTurn` / `UntilNextEndStep` — silently
-degrading anything else to permanent. Three additions, each of which already exists on the *token*
-sibling `CreateTokenCopyOfTargetEffect`, so this is convergence rather than one-offs:
+Implemented 2026-08-10 as **convergence between the two copy paths**, not as three riders bolted onto
+one of them. The gap was that `EachPermanentBecomesCopyOfTargetEffect`
+(`mtg-sdk/.../scripting/effects/CopyEffects.kt`) exposed only `addedKeywords` / `powerOverride` /
+`toughnessOverride` / `retainActivatingAbility` as copy exceptions while the *token* sibling
+`CreateTokenCopyOfTargetEffect` had a dozen more, and that the permanent executor honoured only
+`Duration.Permanent` / `EndOfTurn` / `UntilNextEndStep`, silently degrading anything else.
 
-1. `nameOverride` (exists on the ETB replacement `ReplacementEffect.EntersAsCopy`, not on this path).
-2. `addedSupertypes` / `addedSubtypes` / `addedCardTypes` — for "he's a legendary Human Mercenary
-   Villain creature **in addition to** its other types", and for "except it isn't legendary" (which
-   needs the *removal* direction, `removedSupertypes`; without it the copy dies to the legend rule).
-3. `Duration.UntilYourNextTurn` support in the copy-revert path — a `RevertCopyAtYourNextTurnComponent`
-   sibling to the two existing revert markers.
+What shipped:
 
-Blocked cards: **Shuri, Wakandan Inventor** [75] (needs `removedSupertypes`) · **Absorbing Man** [199]
-(needs all three) · **Taskmaster, Mercenary Mimic** [232] (needs all three).
+1. **`CopyExceptions`** (`mtg-sdk/.../scripting/effects/CopyExceptions.kt`) — one serializable value
+   type for the whole "except …" half of a copy effect (CR 707.9b): `nameOverride`, `addedKeywords`,
+   `addedSupertypes` / `removedSupertypes`, `addedCardTypes` / `overrideCardTypes`, `addedSubtypes` /
+   `overrideSubtypes`, `addedColors` / `overrideColors`, `powerOverride` / `toughnessOverride`,
+   `noManaCost`. The add-vs-override split is CR 707.9d's own distinction — the phrase "in addition to
+   its other types" is what separates the two readings, which is exactly the difference between
+   Absorbing Man and Taskmaster.
+   `EachPermanentBecomesCopyOfTargetEffect.exceptions` carries it; `CreateTokenCopyOfTargetEffect`
+   keeps its historical flat riders as the authoring surface (≈20 card call sites) but exposes them
+   as a `copyExceptions` view onto the same type. `retainActivatingAbility` stayed on the effect — it
+   isn't a characteristic.
+2. **`CopyExceptionApplier`** (`rules-engine/.../handlers/effects/copy/`) — the single place the
+   type-line/name/keyword/P-T/color arithmetic lives. Both executors call it, so a new exception is
+   written once and both paths get it. It also fixes a latent bug on the permanent path: a P/T
+   override used to be dropped when the copied object had no base stats at all, which is precisely
+   Absorbing Man copying a land.
+3. **`Duration.UntilYourNextTurn`** in the copy-revert path — `RevertCopyAtYourNextTurnComponent(playerId)`,
+   a sibling to the two existing revert markers, expired in
+   `CleanupPhaseManager.expireUntilYourNextTurnEffects` alongside every other "until your next turn"
+   effect. The long duration is load-bearing for the two triggered mimics: the copy replaces the card
+   component wholesale, so the permanent's own first-main-phase trigger is gone while the copy is up
+   and back in time to fire again once it reverts.
+
+Tests: `CopyExceptionsTest` (the mechanic — add vs override on each axis, the add-then-remove
+supertype order, P/T conjured onto a copy source that had none, and a pin that the token effect's
+flat riders map onto the same vocabulary), plus one scenario test per card covering the removal
+direction against the legend rule, the additive typing, and the until-your-next-turn revert window
+with its re-firing trigger.
+
+**Implemented (3):** Shuri, Wakandan Inventor [75] · Absorbing Man [199] · Taskmaster, Mercenary
+Mimic [232].
 
 ## Improvise (CR 702.126) — 2 cards ⛔
 

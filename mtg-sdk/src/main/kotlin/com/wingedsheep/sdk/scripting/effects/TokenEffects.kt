@@ -483,6 +483,38 @@ data class CreateTokenCopyOfTargetEffect(
      */
     val noManaCost: Boolean = false
 ) : Effect {
+    /**
+     * This effect's copy exceptions (CR 707.9) in the shared [CopyExceptions] vocabulary — the same
+     * value the permanent-copy path
+     * ([EachPermanentBecomesCopyOfTargetEffect.exceptions]) carries, so both are applied by one
+     * engine helper rather than two hand-rolled copies of the type-line math.
+     *
+     * A computed view, not a constructor field: this effect's flat riders predate [CopyExceptions]
+     * and are used by ~20 card definitions, so they stay the authoring surface (and the serialized
+     * shape) while the *meaning* converges here. New copy exceptions belong on [CopyExceptions].
+     */
+    val copyExceptions: CopyExceptions
+        get() = CopyExceptions(
+            addedKeywords = addedKeywords,
+            addedSupertypes = addedSupertypes,
+            removedSupertypes = removedSupertypes,
+            // The legacy field is `Set<String>` of CardType names; unparseable entries are dropped
+            // exactly as the executor used to drop them.
+            addedCardTypes = addCardTypes.mapNotNull { name ->
+                runCatching { CardType.valueOf(name.uppercase()) }.getOrNull()
+            }.toSet(),
+            overrideCardTypes = overrideCardTypes,
+            addedSubtypes = addedSubtypes,
+            overrideSubtypes = overrideSubtypes,
+            addedColors = addedColors,
+            overrideColors = overrideColors,
+            // Historically the token path applied a P/T override only when *both* halves were
+            // given; keeping that pairing avoids re-interpreting any existing card.
+            powerOverride = overridePower?.takeIf { overrideToughness != null },
+            toughnessOverride = overrideToughness?.takeIf { overridePower != null },
+            noManaCost = noManaCost,
+        )
+
     override val description: String = buildString {
         append("Create ${count.description} token copies of target permanent")
         // Merge any copiable-value overrides into one clause, e.g. "except it's a 5/5 black Demon".
