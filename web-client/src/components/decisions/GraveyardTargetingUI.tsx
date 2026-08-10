@@ -138,6 +138,14 @@ export function GraveyardTargetingUI({
   // fits; a composite whose slots take different verbs ("destroy target creature and return target
   // card from a graveyard to your hand") would mislabel this slot. The durable fix is an action
   // hint on TargetRequirementInfo instead of sniffing prose — a server-side change.
+  //
+  // Playtesting proved the sharper half of this: prose sniffing doesn't merely go vague, it goes
+  // *wrong*. Taskmaster, Mercenary Mimic ("becomes a copy of … creature card in a graveyard")
+  // matched no known verb and inherited the old "Return to Hand" fallback, so the picker promised a
+  // card would come back to hand while the effect only copied it and left it in the graveyard. The
+  // fallback is neutral now and the copy shape has its own branch, but every unlisted effect is
+  // still one unlucky substring away from the same class of lie. A server-supplied action verb per
+  // requirement removes the guesswork rather than lengthening the keyword list.
   const { confirmText: optionalConfirmText, verb: actionVerb } =
     derivePileAction(decision.context.effectHint)
 

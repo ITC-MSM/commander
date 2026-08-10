@@ -125,6 +125,18 @@ export function describePileZones(pileCards: readonly ClientCard[]): string {
  */
 const LEAVES_BATTLEFIELD_BOILERPLATE = 'leaves the battlefield'
 
+/**
+ * Wordings where the picked card is the *copy source* and never moves — Taskmaster, Mercenary Mimic
+ * ("becomes a copy of up to one target creature on the battlefield or creature card in a
+ * graveyard") and the token-copy shape ("create a token that's a copy of …"). Both name the
+ * battlefield while leaving the picked card exactly where it is, so this must be tested **before**
+ * the battlefield branch or the card's own zone change gets announced instead of the copy.
+ */
+const COPY_SOURCE_PATTERN = /becomes? a copy of|token that(?:'s| is) a copy of/
+
+/** "…to its owner's hand", "…to your hand" — word-bounded so "beforehand" can't trip it. */
+const TO_HAND_PATTERN = /\bhands?\b/
+
 /** What a pile-targeting requirement will do to the picked cards, in button and sentence form. */
 export interface PileAction {
   /** Label for the confirm button on an optional pile target. */
@@ -136,17 +148,34 @@ export interface PileAction {
 /**
  * Derive the action wording for a pile-targeting requirement from the decision's effect hint:
  * "Exile card in a graveyard" → Exile; "Shuffle … into its owner's library" → Shuffle into Library;
- * "Put … onto the battlefield" → Put onto Battlefield.
+ * "Put … onto the battlefield" → Put onto Battlefield; "becomes a copy of …" → Copy.
  *
  * Effects can be wrapped (ForEachTargetEffect, CompositeEffect, …) so the keyword may not be at the
- * start — match anywhere in the hint. "Return to Hand" is only the fallback, so reanimation effects
- * (Shark Shredder) must be detected explicitly or they'd mislabel as returning the opponent's card
- * to hand. [LEAVES_BATTLEFIELD_BOILERPLATE] is discounted first; every other mention of the
- * battlefield is a destination.
+ * start — match anywhere in the hint.
+ *
+ * **The fallback is deliberately verb-less.** It used to be "Return to Hand", which meant every
+ * unrecognised effect made a *false statement* about what the game was about to do: Taskmaster's
+ * copy trigger offered "Optional: choose up to one card to return to your hand" for a card that
+ * stays in the graveyard. A vague prompt is recoverable; a confidently wrong one is not. An
+ * unmatched hint now falls through to the same neutral "Confirm Target" wording the mandatory path
+ * already uses, and reanimation has to be named explicitly to be claimed.
+ *
+ * Order is load-bearing — first match wins, and several real hints contain more than one keyword:
+ *  - **copy before battlefield** — Taskmaster's hint names the battlefield as a place to *target*,
+ *    not a destination.
+ *  - **battlefield before exile** — a blink ("exile target creature, then return it to the
+ *    battlefield") ends with the card on the battlefield, so the destination wins over the means.
+ *    [LEAVES_BATTLEFIELD_BOILERPLATE] is discounted first so `ExileUntilLeavesEffect`'s "…until this
+ *    permanent leaves the battlefield" (The Spot, Living Portal) isn't mistaken for that.
+ *  - **exile before hand** — "Exile … permanents you control or cards from your hand or graveyard"
+ *    mentions the hand as a *source*.
  */
 export function derivePileAction(effectHint: string | null | undefined): PileAction {
   const hint = (effectHint?.toLowerCase() ?? '').replaceAll(LEAVES_BATTLEFIELD_BOILERPLATE, '')
 
+  if (COPY_SOURCE_PATTERN.test(hint)) {
+    return { confirmText: 'Copy', verb: 'copy' }
+  }
   if (hint.includes('battlefield')) {
     return { confirmText: 'Put onto Battlefield', verb: 'put onto the battlefield' }
   }
@@ -156,5 +185,8 @@ export function derivePileAction(effectHint: string | null | undefined): PileAct
   if (hint.includes('exile')) {
     return { confirmText: 'Exile', verb: 'exile' }
   }
-  return { confirmText: 'Return to Hand', verb: 'return to your hand' }
+  if (TO_HAND_PATTERN.test(hint)) {
+    return { confirmText: 'Return to Hand', verb: 'return to your hand' }
+  }
+  return { confirmText: 'Confirm Target', verb: 'target' }
 }

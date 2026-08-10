@@ -217,15 +217,77 @@ describe('derivePileAction', () => {
     })
   })
 
-  it('falls back to return-to-hand', () => {
+  it('labels a return-to-hand effect', () => {
     expect(derivePileAction('Return target creature card from your graveyard to your hand')).toEqual({
       confirmText: 'Return to Hand',
       verb: 'return to your hand',
     })
   })
 
-  it('falls back to return-to-hand for a missing hint', () => {
-    expect(derivePileAction(undefined).confirmText).toBe('Return to Hand')
+  it('labels a return-to-hand effect worded "to its owner\'s hand"', () => {
+    // MoveToZoneEffect(destination = HAND) renders exactly this.
+    expect(derivePileAction("Return target card in a graveyard to its owner's hand").verb).toBe(
+      'return to your hand',
+    )
+  })
+
+  it('labels a copy effect as copy, not reanimation (Taskmaster, Mercenary Mimic)', () => {
+    // Playtest regression: the hint names the battlefield as a place to *target*, and matched no
+    // verb at all before the copy branch existed — so it inherited the "Return to Hand" fallback
+    // and promised the player a graveyard card would come back to hand. Nothing moves; it is
+    // copied. The copy branch must therefore also win over the battlefield branch.
+    const hint =
+      'This creature becomes a copy of up to one target creature on the battlefield or creature ' +
+      "card in a graveyard until your next turn, except its name is Taskmaster, Mercenary Mimic"
+
+    expect(derivePileAction(hint)).toEqual({ confirmText: 'Copy', verb: 'copy' })
+  })
+
+  it('labels a token-copy effect as copy — the picked card never moves either', () => {
+    expect(
+      derivePileAction("Create a token that's a copy of target creature card in a graveyard"),
+    ).toEqual({ confirmText: 'Copy', verb: 'copy' })
+  })
+
+  it('falls back to a neutral verb for an unrecognised effect — never "return to hand"', () => {
+    // The load-bearing assertion of this whole suite: an unknown effect must not claim an action.
+    // A wrong verb is a false statement about what the game is about to do.
+    const neutral = { confirmText: 'Confirm Target', verb: 'target' }
+
+    expect(derivePileAction('Target creature card in a graveyard perpetually gets +1/+1')).toEqual(
+      neutral,
+    )
+    expect(derivePileAction('Some effect nobody has taught this picker about')).toEqual(neutral)
+  })
+
+  it('falls back to the neutral verb for a missing or empty hint', () => {
+    expect(derivePileAction(undefined)).toEqual({ confirmText: 'Confirm Target', verb: 'target' })
+    expect(derivePileAction(null).confirmText).toBe('Confirm Target')
+    expect(derivePileAction('').confirmText).toBe('Confirm Target')
+  })
+
+  it('pins the branch order for hints carrying more than one keyword', () => {
+    // copy > battlefield — see the Taskmaster case above.
+    // battlefield > exile — the blink case below: the destination wins over the means.
+    expect(derivePileAction('Exile it, then put it onto the battlefield').confirmText).toBe(
+      'Put onto Battlefield',
+    )
+    // shuffle+library > exile — a mill-back that also mentions exile still shuffles.
+    expect(
+      derivePileAction('Exile nothing; shuffle target card in a graveyard into its library')
+        .confirmText,
+    ).toBe('Shuffle into Library')
+    // exile > hand — "cards from your hand or graveyard" names the hand as a *source*.
+    expect(
+      derivePileAction('Exile permanents you control or cards from your hand or graveyard')
+        .confirmText,
+    ).toBe('Exile')
+  })
+
+  it('does not read a stray word containing "hand" as a return-to-hand effect', () => {
+    expect(derivePileAction('Choose beforehand which card is handled').confirmText).toBe(
+      'Confirm Target',
+    )
   })
 
   it('reads The Spot, Living Portal as exile, not reanimation', () => {
