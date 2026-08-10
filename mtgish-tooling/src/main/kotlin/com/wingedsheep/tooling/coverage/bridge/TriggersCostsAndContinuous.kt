@@ -55,6 +55,11 @@ internal fun BridgeBuilder.triggersCostsAndContinuous() {
     // the graveyard (CR 400.7e). That binding is what makes "exile it from their graveyard with a stash
     // counter on it" (Tinybones, Bauble Burglar) expressible.
     supported("WhenAPlayerDiscardsACard", "trigger: a player discards a card (Triggers.AnyOpponentDiscards / YouDiscard / discards(player, cardFilter)); binds the discarded card as TriggeringEntity")
+    // Cause-agnostic by construction: `EventPattern.TapEvent.reason` defaults to null, which matches a
+    // tap from any cause. The engine also carries a *tap cause* (`TapReason` — teamwork is the only
+    // classified one today, CR 702.194a), but the IR has no tag for "becomes tapped **to pay a
+    // teamwork cost**", so a card with that wording must not be drafted from this tag; it would render
+    // a strictly wider trigger. Register a distinct tag before claiming it.
     supported("WhenAPermanentBecomesTapped", "trigger: this permanent becomes tapped (Triggers.BecomesTapped — Wylie Duke, Atiin Hero)")
     // "Whenever you tap an untapped creature an opponent controls" — the tap-*attribution* trigger, a
     // different axis from the passive WhenAPermanentBecomesTapped above: only a tap the trigger's

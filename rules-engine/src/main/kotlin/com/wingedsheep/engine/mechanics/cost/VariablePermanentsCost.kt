@@ -1,11 +1,14 @@
 package com.wingedsheep.engine.mechanics.cost
 
+import com.wingedsheep.engine.core.GameEvent
+import com.wingedsheep.engine.core.tap
 import com.wingedsheep.engine.handlers.PredicateContext
 import com.wingedsheep.engine.handlers.PredicateEvaluator
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.sdk.model.EntityId
+import com.wingedsheep.sdk.scripting.TapReason
 import com.wingedsheep.sdk.scripting.costs.CostAtom
 import com.wingedsheep.sdk.scripting.costs.PermanentCostAction
 import com.wingedsheep.sdk.scripting.costs.VariableCostMeasure
@@ -95,6 +98,35 @@ object VariablePermanentsCost {
             if (atom.action == PermanentCostAction.TAP && container.has<TappedComponent>()) return@filter false
             predicateEvaluator.matches(state, projected, entityId, atom.filter, context)
         }
+    }
+
+    /**
+     * Tap every permanent in [chosen] to pay a [PermanentCostAction.TAP] variable-permanents cost,
+     * stamping [reason] as the cause on each [com.wingedsheep.engine.core.TappedEvent].
+     *
+     * **The single tap site for this atom.** Both payers — the spell's additional cost
+     * (`CastSpellHandler`) and the activated ability's cost (`CostHandler.payVariablePermanentsList`)
+     * — go through here, so the two can't drift on what a tap paid for this atom emits. Each caller
+     * validates its own selection first (control, filter, untapped, the measure floor) and then
+     * hands the vetted ids over; this does the tapping and nothing else. Routed through the tap atom
+     * [com.wingedsheep.engine.core.tap], so an already-tapped or vanished permanent contributes no
+     * event (CR 701.26a) and "whenever this becomes tapped" triggers fire exactly once each.
+     *
+     * The permanents are only tapped, never moved, so no last-known-information snapshot is needed.
+     */
+    fun tapAll(
+        state: GameState,
+        chosen: List<EntityId>,
+        reason: TapReason,
+    ): Pair<GameState, List<GameEvent>> {
+        var newState = state
+        val events = mutableListOf<GameEvent>()
+        for (id in chosen) {
+            val (tappedState, tapEvent) = tap(newState, id, reason = reason)
+            newState = tappedState
+            tapEvent?.let(events::add)
+        }
+        return newState to events
     }
 
     /**

@@ -2386,16 +2386,17 @@ class TriggerDetector(
 
                 // "Whenever you tap one or more …" (Sharae of Numbing Depths) — only the taps this
                 // trigger's controller caused count toward the batch. A batch mixing tappers is
-                // therefore narrowed, not discarded, before the filter runs.
+                // therefore narrowed, not discarded, before the filter runs. The tap *cause*
+                // narrows the same way: a batch that also contains taps from an unnamed cause still
+                // fires a "to pay a teamwork cost" batch trigger, on its teamwork taps alone.
                 val tapper = trigger.tapper
-                val tappedIds = if (tapper == null) {
-                    tapEvents.map { it.entityId }
-                } else {
-                    tapEvents.filter { event ->
-                        event.tappedById != null &&
-                            matcher.matchesPlayer(tapper, event.tappedById, entry.controllerId)
-                    }.map { it.entityId }
-                }
+                val reason = trigger.reason
+                val tappedIds = tapEvents.filter { event ->
+                    if (reason != null && event.reason != reason) return@filter false
+                    if (tapper == null) return@filter true
+                    event.tappedById != null &&
+                        matcher.matchesPlayer(tapper, event.tappedById, entry.controllerId)
+                }.map { it.entityId }
                 if (tappedIds.isEmpty()) continue
 
                 val filter = trigger.filter
