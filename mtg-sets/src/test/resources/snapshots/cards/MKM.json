@@ -1,3 +1,104 @@
+// Aftermath Analyst
+{
+    "name": "Aftermath Analyst",
+    "manaCost": "{1}{G}",
+    "typeLine": "Creature — Elf Detective",
+    "oracleText": "When this creature enters, mill three cards. (Put the top three cards of your library into your graveyard.)\n{3}{G}, Sacrifice this creature: Return all land cards from your graveyard to the battlefield tapped.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 3
+                                },
+                                "isMill": true
+                            },
+                            "storeAs": "milled"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "milled",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "When this creature enters, mill three cards."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{3}{G}"
+                            }
+                        },
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Graveyard",
+                                "filter": "land"
+                            },
+                            "storeAs": "graveyard_lands"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "graveyard_lands",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Battlefield",
+                                "placement": "Tapped"
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "Return all land cards from your graveyard to the battlefield tapped"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "148",
+        "rarity": "UNCOMMON",
+        "artist": "Danny Schwartz",
+        "flavorText": "\"Could someone bring me more evidence markers? Like . . . a lot more?\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/c/1c1aa6f8-2d34-4f4b-9184-0eab2e4745f7.jpg?1783912870"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Alley Assailant
 {
     "name": "Alley Assailant",
@@ -516,6 +617,67 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Call a Surprise Witness
+{
+    "name": "Call a Surprise Witness",
+    "manaCost": "{1}{W}",
+    "typeLine": "Sorcery",
+    "oracleText": "Return target creature card with mana value 3 or less from your graveyard to the battlefield. Put a flying counter on it. It's a Spirit in addition to its other types.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature card with mana value 3 or less from your graveyard"
+                    },
+                    "destination": "Battlefield"
+                },
+                {
+                    "type": "AddCounters",
+                    "counterType": "flying",
+                    "count": 1,
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature card with mana value 3 or less from your graveyard"
+                    }
+                },
+                {
+                    "type": "AddSubtype",
+                    "subtype": "Spirit",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature card with mana value 3 or less from your graveyard"
+                    },
+                    "duration": "Permanent"
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature mv<=3 own:you",
+                    "zone": "Graveyard"
+                },
+                "id": "target creature card with mana value 3 or less from your graveyard"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "6",
+        "rarity": "UNCOMMON",
+        "artist": "Julia Metzger",
+        "flavorText": "\"Why would a little thing like death stop me from running the Syndicate? I'm going to be here for a long, long time.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/5/f5148def-cf1a-460e-8dfd-856103940892.jpg?1783912928"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 
@@ -1564,6 +1726,75 @@
     ]
 }
 
+// Dramatic Accusation
+{
+    "name": "Dramatic Accusation",
+    "manaCost": "{2}{U}",
+    "typeLine": "Enchantment — Aura",
+    "oracleText": "Enchant creature\nWhen this Aura enters, tap enchanted creature.\nEnchanted creature doesn't untap during its controller's untap step.\n{U}{U}: Shuffle enchanted creature into its owner's library.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "TapUntap",
+                    "target": "EnchantedCreature"
+                },
+                "descriptionOverride": "When this Aura enters, tap enchanted creature."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{U}{U}"
+                    }
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": "EnchantedCreature",
+                    "destination": "Library",
+                    "placement": "Shuffled"
+                },
+                "descriptionOverride": "Shuffle enchanted creature into its owner's library"
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "GrantKeyword",
+                "keyword": "DOESNT_UNTAP"
+            }
+        ],
+        "auraTarget": {
+            "type": "TargetObject",
+            "filter": {
+                "baseFilter": "creature"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "53",
+        "artist": "Evyn Fong",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/c/2ca93438-a132-45ca-9fa8-364aeb519594.jpg?1783912912",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "Only the controller of Dramatic Accusation may activate its ability."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Due Diligence
 {
     "name": "Due Diligence",
@@ -1791,6 +2022,79 @@
         "imageUri": "https://cards.scryfall.io/normal/front/9/3/93ddde4f-d35e-4128-8f43-d0eadbd715de.jpg?1706242339"
     },
     "colorIdentityOverride": []
+}
+
+// Essence of Antiquity
+{
+    "name": "Essence of Antiquity",
+    "manaCost": "{3}{W}{W}",
+    "typeLine": "Artifact Creature — Golem",
+    "oracleText": "Disguise {2}{W} (You may cast this card face down for {3} as a 2/2 creature with ward {2}. Turn it face up any time for its disguise cost.)\nWhen this creature is turned face up, creatures you control gain hexproof until end of turn. Untap them.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 10
+    },
+    "keywordAbilities": [
+        {
+            "type": "Disguise",
+            "disguiseCost": {
+                "type": "PayAtom",
+                "atom": {
+                    "type": "AtomMana",
+                    "cost": "{2}{W}"
+                }
+            }
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "TurnFaceUpEvent",
+                "effect": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        }
+                    },
+                    "body": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GrantKeyword",
+                                "keyword": "HEXPROOF",
+                                "target": "Self"
+                            },
+                            {
+                                "type": "TapUntap",
+                                "target": "Self",
+                                "tap": false
+                            }
+                        ]
+                    }
+                },
+                "descriptionOverride": "When this creature is turned face up, creatures you control gain hexproof until end of turn. Untap them."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "15",
+        "rarity": "UNCOMMON",
+        "artist": "Caio Monteiro",
+        "flavorText": "In a city as old as Ravnica, history takes on a life of its own—even when you least expect it.",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/e/aee2945d-bf6d-4328-a482-df24c2973b56.jpg?1783912926",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "Any time you have priority, you may turn the face-down creature face up by revealing what its disguise cost is and paying that cost. This is a special action. It doesn't use the stack and can't be responded to. Only a face-down permanent can be turned face up this way; a face-down spell cannot."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
 }
 
 // Exit Specialist
@@ -3440,6 +3744,107 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Hunted Bonebrute
+{
+    "name": "Hunted Bonebrute",
+    "manaCost": "{2}{B}",
+    "typeLine": "Creature — Skeleton Beast",
+    "oracleText": "Menace\nWhen this creature enters, target opponent creates two 1/1 white Dog creature tokens.\nWhen this creature dies, each opponent loses 3 life.\nDisguise {1}{B} (You may cast this card face down for {3} as a 2/2 creature with ward {2}. Turn it face up any time for its disguise cost.)",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 2
+    },
+    "keywords": [
+        "MENACE"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Disguise",
+            "disguiseCost": {
+                "type": "PayAtom",
+                "atom": {
+                    "type": "AtomMana",
+                    "cost": "{1}{B}"
+                }
+            }
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [
+                        "WHITE"
+                    ],
+                    "creatureTypes": [
+                        "Dog"
+                    ],
+                    "controller": {
+                        "type": "BoundVariable",
+                        "name": "target opponent"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetOpponent",
+                    "id": "target opponent"
+                },
+                "descriptionOverride": "When this creature enters, target opponent creates two 1/1 white Dog creature tokens."
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "effect": {
+                    "type": "LoseLife",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 3
+                    },
+                    "target": {
+                        "type": "PlayerRef",
+                        "player": "EachOpponent"
+                    }
+                },
+                "descriptionOverride": "When this creature dies, each opponent loses 3 life."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "87",
+        "rarity": "RARE",
+        "artist": "Maxime Minard",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/4/a4ca0e10-8b7c-4ce2-888b-752fc909757a.jpg?1783912897",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "Any time you have priority, you may turn the face-down creature face up by revealing what its disguise cost is and paying that cost. This is a special action. It doesn't use the stack and can't be responded to. Only a face-down permanent can be turned face up this way; a face-down spell cannot."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "Because the permanent is on the battlefield both before and after it's turned face up, turning a permanent face up doesn't cause any enters-the-battlefield abilities to trigger."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 
