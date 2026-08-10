@@ -1554,7 +1554,7 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
 
 ### Ability granting
 
-- `GrantTriggeredAbilityEffect(ability)` — permanently grant a triggered ability.
+- `GrantTriggeredAbilityEffect(ability, target, duration = Duration.EndOfTurn)` — grant a triggered ability to a battlefield permanent for a duration; `Duration.Permanent` for "gains … " with no end (Carnage, Crimson Chaos). **Target-general — not creature-only.** Nothing in the rules restricts "gains '<triggered ability>'" to creatures, and the printed wording routinely names a noncreature permanent: Down in the Valley's chapter II is "*This Saga* gains 'Landfall — Whenever a land you control enters, create a 1/1 green Elf creature token'", authored as `GrantTriggeredAbilityEffect(ability, EffectTarget.Self, Duration.Permanent)`. Whether a noncreature is a *legal* pick is the `TargetRequirement`'s job; the executor only requires the target to be on the battlefield. Recorded in `GameState.grantedTriggeredAbilities` and merged into the entity's abilities by `TriggerAbilityResolver`, so a granted trigger is detected exactly like a printed one and dies with the permanent.
 - `CreateGlobalTriggeredAbility(ability, duration = Duration.Permanent, descriptionOverride? = null)` — engine-wide triggered ability with no source permanent. `duration` is a plain parameter, so the one method covers every lifetime: `Duration.EndOfTurn` (False Cure, Death Frenzy), `Duration.UntilYourNextTurn` (Season of the Bold), `Duration.EndOfCombat`, `Duration.Permanent` (Dimensional Breach, planeswalker emblems), etc. `descriptionOverride` sets emblem display text.
 - `GrantSpellKeywordEffect` — grant a keyword to a spell on the stack.
 - `GrantSpellsCantBeCountered(target, filter, duration)` — target's matching spells become uncounterable (Domri shape).
@@ -5917,6 +5917,22 @@ riders, matching how the engine already treats e.g. City of Brass's damage durin
     (the same shape as the existing wither-on-spell check, which reads `SpellGrantedKeywordsComponent`). One-shot
     per-spell grants (`GrantKeywordToSpellEffect` → `SpellGrantedKeywordsComponent`, e.g. a copy that gains lifelink)
     feed the same check.
+- `GrantFlashToSpellType(filter, controllerOnly = false, nthOfTypePerTurn = null)` — a battlefield
+  static letting matching spells be cast as though they had flash (CR 702.8). `controllerOnly = true`
+  is the "**You** may cast …" wording (Raff Capashen, Valley Floodcaller); the default covers "**Any
+  player** may cast …" (Quick Sliver). `nthOfTypePerTurn = N` narrows the grant to the Nth matching
+  spell a player casts each turn (1-indexed, counting the spell being cast) — **Radagast of
+  Rhosgobel**'s "the first creature spell you cast each turn … can be cast as though it had flash" is
+  `GrantFlashToSpellType(GameObjectFilter.Creature, controllerOnly = true, nthOfTypePerTurn = 1)`.
+  This is the *timing* twin of [`CostGating.NthOfTypePerTurn`](#9-static-abilities) and counts
+  identically — off `GameState.spellsCastThisTurnByPlayer`, which does not yet contain the spell
+  being cast — so a card printing both halves of "costs {2} less **and** can be cast as though it had
+  flash" can never disagree about which spell is the first. A matching spell already cast this turn
+  closes the window even if it was countered ("you cast" keys on the cast, not the resolution). Both
+  flash read sites — `CastPermissionUtils.hasGrantedFlash` (legal-action enumeration, also consulted
+  by the suspend paths) and `CastZoneResolver.hasGrantedFlash` (the authoritative cast-time check) —
+  route the gate through the shared `FlashTypeGrants.nthGateAllows`. Sibling of the durational
+  `Effects.GrantFlashToSpells`; use the static for "as long as this is on the battlefield" wording.
 - `MayCastWithoutPayingManaCost(controllerOnly = false, firstSpellOfTurnOnly = false, spellFilter = Any, oncePerTurn = false, fromExileOnly = false)` — a
   battlefield permission to cast a spell without paying its mana cost (CR 118.9). Composable
   gates: `controllerOnly = true` restricts the benefit to the source's controller ("you" wording);
