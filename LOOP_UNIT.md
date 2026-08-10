@@ -1,118 +1,156 @@
-# u02 — Teamwork N (MSH)
+# Unit u03 — the five modal teamwork cards (MSH)
 
-Branch `loop-msh-u02`, stacked on `loop-msh-u01` (its two commits are the intended base).
+Branch `loop-msh-u03`, an independent PR against `main` — `loop-msh-u02` merged upstream as
+PR #1731, so this branch was rebased off the stack onto `origin/main` and carries only its own
+commits. Batch unit, ordinary card work: every card is `teamwork(n)` plus the modal recipe.
 
-## The primitive
+> **Amended twice after review.** The branch also carries fixes to `CastSpellEnumerator.kt` /
+> `CastSpellHandler.kt` and one new SDK field, because the defects are only reachable through these
+> five cards. See *Review corrections* and *Round-2 corrections* at the bottom.
 
-**Teamwork N (CR 702.194)** — an optional additional cast cost ("tap any number of creatures you
-control with total power N or more", 702.194a) plus a durable "cast using teamwork" fact (702.194b).
+## Cards
 
-Authoring is one line: `card { teamwork(2) }`
-(`mtg-sdk/src/main/kotlin/com/wingedsheep/sdk/dsl/mechanics/TeamworkDsl.kt`), the same shape as
-`bargain()`.
+- **Widow's Bite** [122] `{1}{B}` Instant, teamwork 3 — `Effects.GrantKeyword(DEATHTOUCH)` /
+  `Effects.ModifyStats(-2, -2)`, one `Targets.Creature` per mode.
+- **HULK SMASH!** [135] `{1}{R}` Instant, teamwork 4 — `Effects.Destroy` on
+  `TargetFilter(GameObjectFilter.Artifact.notCreature())` / the Rabid Bite one-sided
+  `Effects.DealDamage` with `amount = EntityProperty(Target(0), Power)` and
+  `damageSource = <your creature>`. Mode 2 carries two targets of its own.
+- **Go Nuts!** [168] `{G}` Sorcery, teamwork 3 — `Effects.AddCounters("+1/+1", 1)` /
+  `Effects.Fight`, the Epic Fight shape.
+- **Murdock's Crusade** [24] `{1}{W}` Sorcery, teamwork 4 — `Effects.Exile` behind
+  `TargetFilter.Creature.toughnessAtLeast(4)` / `TargetFilter.Enchantment.manaValueAtLeast(4)`.
+  The printed mode names ("Street Justice —", "Legal Justice —") are part of the mode
+  descriptions, which become the client's button text.
+- **Atlantis Attacks** [46] `{5}{U}{U}` Sorcery, teamwork 4 — `Effects.CreateToken(6, 5, BLUE,
+  "Leviathan", HEXPROOF, controller = <target player>)` / a single
+  `TargetObject(count = 2, minCount = 1, filter = NonlandPermanent)` bounced through
+  `ForEachTargetEffect(Effects.ReturnToHand(ContextTarget(0)))`.
 
-### What it reuses
+All five: `teamworkModal { }` — the recipe documented in
+`docs/card-sdk-language-reference.md` → *Teamwork N*, which pins the mode count to exactly one on a
+plain cast and exactly all of them on a declared one. Thresholds verified against Scryfall
+(3, 4, 3, 4, 4 respectively).
 
-- **The kicker/bargain rail.** `KeywordAbility.OptionalAdditionalCost` with
-  `declaredSlot = ChoiceSlot.TEAMWORK`. No new keyword-ability type, no new cast action, no new
-  `actionType` (the variant is a `CastWithKicker` labelled "(Teamwork N)"), no new modal machinery.
-  The slot is what makes "cast using teamwork" a different fact from "kicked"/"bargained".
-- **`Conditions.TeamworkWasPaid`** is a one-line facade over `CastChoiceMade(ChoiceSlot.TEAMWORK)` —
-  no new `Condition` subtype, exactly like `WasBargained`.
-- **The crew selection.** "Tap any number of creatures you control with total power N or greater" is
-  the crew payment. `rules-engine/.../mechanics/cost/VariablePermanentsCost.kt` is the single shared
-  answer to "which permanents can pay / what do they measure", mirroring `CrewEnumerator`: untapped
-  only (CR 701.26a), controlled by the payer, matched **and summed through projected state**, no
-  summoning-sickness check (CR 302.6 is about the `{T}` symbol, not a tap paid as a cost). Both cast
-  enumerators, the cast validator, `CostHandler`, `ActivateAbilityHandler.variableCostX` and the AI
-  read it.
-- **The crew/saddle client payload.** `TapForPowerCreatureData` / `TapForPowerCreatureInfo`, now also
-  carried on `AdditionalCostData`/`AdditionalCostInfo` under `costType = "TapForTotalPower"`.
-- **`AdditionalCostPayment.variableCostPermanents`**, the existing variable-count payment channel.
-
-### What genuinely had to be added
-
-- SDK: `Keyword.TEAMWORK`, `ChoiceSlot.TEAMWORK`, `Conditions.TeamworkWasPaid`,
-  `Costs.additional.TapForTotalPower(n)`, `teamwork(n)` DSL helper.
-- SDK cost atom: `PermanentCostAction.TAP`, `VariableCostMeasure.TOTAL_POWER`, and a
-  `VariablePermanents.minMeasure` field — a floor on the *measure* rather than the count. Existing
-  atom descriptions are unchanged (`minCount` defaults keep the old wording).
-- Engine: `CostAtom.VariablePermanents` is now a **spell** additional cost, not only an
-  activated-ability cost — validation + payment branches in `CastSpellHandler`, `paymentSatisfied`,
-  `CostHandler.canPayAdditionalCost`, and a `TAP` payment branch in
-  `CostHandler.payVariablePermanentsList` (SACRIFICE/EXILE branches on the cast path go through the
-  existing sacrifice/zone-transition helpers).
-- Enumerators: a `VariablePermanents` branch in `CastSpellEnumerator.enumerateKicker` and the
-  matching one in `CastFromZoneEnumerator`, plus the "(Teamwork N)" label.
-- AI: a `"TapForTotalPower"` branch in `Strategist.withAutomaticPayments` — biggest-power-first until
-  the threshold is met, so the AI taps as few bodies as possible.
-- Client: a `TapForTotalPower` case in the `costPayment` pipeline phase writing
-  `variableCostPermanents`, `requiredTotalPower` / `powerByEntityId` on `TargetingState`, and a
-  total-power confirm gate + "power 2/2" progress readout in `TargetingOverlay`. Powers come from the
-  server; the client derives nothing.
-- Docs: `docs/card-sdk-language-reference.md` (Teamwork N section, the cost-atom axes, the
-  `Costs.additional.TapForTotalPower` bullet, the `TeamworkWasPaid` condition), plus the
-  `## Teamwork N` section of `backlog/sets/marvel-super-heroes/mechanics.md` marked shipped.
-
-## The cards
-
-- **Helicarrier Strike** [15] `{W}` Instant — 2 damage to target attacking or blocking creature, 4
-  instead if cast using teamwork. Composes `teamwork(2)` + `Effects.DealDamage` fed a
-  `DynamicAmount.Conditional(Conditions.TeamworkWasPaid, 4, 2)`. Deliberately one damage event rather
-  than 2+2, so prevention shields and damage triggers see what the printed card does.
-- **Repulsor Blast** [150] `{3}{R}` Sorcery — 5 damage to target creature; if cast using teamwork,
-  also 2 to that creature's controller. Composes `teamwork(2)` + `Effects.DealDamage` +
-  `ConditionalEffect(TeamworkWasPaid, DealDamage(2, EffectTarget.TargetController))`.
-- **Team Tactics** [155] `{1}{R}` Instant — target creature gains double strike; also trample if cast
-  using teamwork. Composes `teamwork(1)` + two `Effects.GrantKeyword` grants, the second under a
-  `ConditionalEffect`.
-
-All three are MSH-only printings (checked on Scryfall), so MSH is canonical for each.
-
-## Tests
-
-- `TeamworkMechanicScenarioTest` — multi-creature payment, single-creature payment, declining the
-  cost, an unmet threshold, an already-tapped creature, an opponent's creature, a lord's bonus
-  counting toward the threshold (projected power), summoning sickness not mattering, the flag
-  surviving onto a resolving permanent, the intervening-if not firing without teamwork,
-  teamwork-vs-kicked separation, declaring teamwork on a card that lacks it, and the advertised
-  legal action (candidates, threshold, affordability, label). Plus the modal "choose both instead"
-  cases ("Teamwork Orders") and the CR 702.194c teamwork-only-target cases ("Teamwork Rally": only
-  the declared cast announces the clause's target, the plain cast spares it, and declaring teamwork
-  without it is rewound).
-- `HelicarrierStrikeScenarioTest`, `RepulsorBlastScenarioTest`, `TeamTacticsScenarioTest` — one file
-  per card, each asserting both branches.
-- New fixture: `ScenarioTestBase.castSpellWithTeamwork(...)`.
+**Nothing was dropped.** The two shapes flagged as possible drops both turned out to be covered by
+existing target vocabulary: "one or two target nonland permanents" is `count = 2, minCount = 1`
+(Succumb to the Cold / Amazing Acrobatics precedent), and "enchantment with mana value 4 or
+greater" is `TargetFilter.Enchantment.manaValueAtLeast(4)`.
 
 ## Gate
 
-`just test` — see the final report for the result.
+`just build` — **passed** (`BUILD SUCCESSFUL`, all modules).
 
-## Things I'm unsure about / would like reviewed
+Getting there took several runs because the Gradle daemon was OOM-killed three times on this shared
+box (`daemon disappeared`), never with a compile or test error. The runs that stuck used
+`scripts/gradle-locked … -Pkotlin.compiler.execution.strategy=in-process --max-workers=1`, and
+`:rules-engine:test` had to be run on its own once so the test compile and the test run did not
+share a memory window. The final `just build` is green over everything.
 
-- **The web client was not type-checked.** `web-client/node_modules` is absent and there is no
-  network in this container, so `just client-typecheck` cannot run. The client changes are small and
-  reviewed by eye, but they are unverified by a compiler.
-- **No manual playthrough, no e2e.** Nobody has clicked a teamwork cast in the real client. The
-  cost-payment phase reuses the existing on-battlefield targeting overlay with a new confirm gate;
-  the "power 2/2" readout and the greyed-out unaffordable variant are untested visually.
-- **Cost-vs-target announcement order — resolved on review; there is no deviation.** CR 702.194a
-  says teamwork payment follows the additional-cost rules in **601.2b and 601.2f–h** ("601.2b–f",
-  written here originally and in the first commit message, is not a range the rule uses). The
-  declaration belongs at 601.2b, *before* targets at 601.2c, and CR 702.194c explicitly requires it
-  there. The engine already does that: the cast variant carrying `declaredCostSlot` is chosen before
-  any pipeline phase, cost and target validation both run against the pre-payment state, and the
-  taps are applied only after validation in one atomic action. Only the *client's* collection order
-  (cost widget before target picker) differs, with no rules consequence.
-- **`CostAtom.VariablePermanents` on the cast path now handles all three actions.** Only `TAP` has a
-  card and a test; the `SACRIFICE` and `EXILE` cast-path branches exist because the `when` is
-  exhaustive and reuse the existing helpers, but nothing exercises them. Same for the third
-  unreachable branch, `TAP` in `CostHandler.payVariablePermanentsList` — no printed card pays a TAP
-  `VariablePermanents` cost from an activated ability yet. All three kept, reviewed and accepted.
-- **`selectionCount` for the teamwork atom is 0** (`minCount = 0`), since the count is free. Nothing
-  in the cast path reads it, but it is a slightly odd value for a cost that always selects at least
-  one permanent in practice.
-- **mtgish bridge: declined deliberately.** The corpus (`mtgish-tooling/data/mtgish.lines.json`) has
-  no `Teamwork` keyword rule tag — the only teamwork-related tag is
-  `WhenAPermanentBecomesTappedToPayATeamworkCost` on Agent Maria Hill, which belongs to a later unit.
-  There is no IR tag for this keyword to map, so no bridge/emitter entry was added.
+- `just rebless-cards` — `mtg-sets/src/test/resources/snapshots/cards/MSH.json` only, and a **pure
+  insertion** (571 added lines, 0 removed): Atlantis Attacks, Go Nuts!, HULK SMASH!, Murdock's
+  Crusade, Widow's Bite. No unrelated card moved.
+- `just check-card-printing` — ok for all five (canonical in MSH, the earliest real printing).
+- Backlog ticked; `just fix-backlog` resynced MSH to 235 / 276. The teamwork section of
+  `mechanics.md` now reads 8 of 13 implemented, with the remaining four (We Say Thee Nay!, Cruel
+  Alliance, Too Evil to Stay Dead, Earth's Mightiest Heroes) plus the still-blocked Agent Maria Hill.
+
+## Tests
+
+Five files, `<CardName>ScenarioTest.kt`, four cases each plus extras (25 total, all passing):
+
+1. plain cast → exactly the one chosen mode resolves, the other mode's victim is untouched, nothing
+   tapped;
+2. teamwork cast → both modes resolve and the payer is tapped;
+3. plain cast declaring both modes → rejected, card stays in hand;
+4. teamwork cast declaring one mode → rejected and rewound, card in hand *and* payer untapped
+   (added in round 2 — "choose both instead" is mandatory in both directions).
+
+Go Nuts!'s teamwork case points both modes at the same 2/2 so the +1/+1 counter lands before the
+fight and it trades with a 3/3 — that pins mode ordering within the single resolution. HULK SMASH!'s
+teamwork case pins that the bite amount reads *that mode's* first target (the 6/4 Craw Wurm) rather
+than the spell's first target overall (the artifact) — the snapshot confirms
+`targetRequirements[0]` is "target creature you control".
+
+Neither of the two u02 regressions (missing `declaredCostSlot` in the evaluation context; no modal
+enumeration for a declared cast) reappeared — the teamwork branch is reached and both modes resolve.
+
+## Uncertain / worth a reviewer's eye
+
+- The tests drive `game.execute(CastSpell(...))` directly with `chosenModes` +
+  `modeTargetsOrdered`, because `ScenarioTestBase.castSpellWithTeamwork` takes only a single
+  `targetId` and cannot express per-mode target lists. That bypasses the legal-action enumerator, so
+  these tests prove the *handler* accepts the shape but not that the client is offered the
+  `CastSpellModal` "(Teamwork N)" variant for these particular cards. `TeamworkMechanicScenarioTest`
+  covers the advertised action generically. Murdock's Crusade and Widow's Bite now carry per-card
+  `getLegalActions` assertions; the other three still rely on the generic coverage.
+- `Effects.Exile` is `MoveToZoneEffect(destination = EXILE)`; I did not check whether anything in
+  MSH cares about the distinction between "exile" and "exile face down"/linked exile here. The
+  printed text is a plain exile, so I believe this is right.
+- Atlantis Attacks' token is named `"Leviathan Token"` by the executor's default
+  (`creatureTypes.joinToString(" ") + " Token"`) since I passed no explicit `name`. That matches
+  what Brigid's Command and the other token cards do, but the printed token is just "Leviathan".
+- ~~Each card's KDoc cites CR 702.194c for the "choose both instead" shape.~~ Corrected in round 2
+  to CR 700.2 / 601.2b; the loose citation was in fact wrong, and contradicted this repo's own SDK
+  reference.
+- Not done: no manual playthrough in the web client, no UX pass from either seat, no e2e run, no
+  `/generate-scenario` JSON. The web client was not type-checked (no node_modules, no network).
+
+## Review corrections
+
+Applied on top of the original commits, after the independent review (0 blocking, 4 important,
+6 minor).
+
+- **Engine, `CastSpellEnumerator.kt`** — new private `effectiveModalMaxChooseCount` mirroring the
+  dynamic branch of `CastSpellHandler.effectiveModalChooseCounts` (declaration in the evaluation
+  context, so `Conditions.TeamworkWasPaid` answers correctly from hand). Two call sites:
+  - the plain cast now advertises the dynamic-evaluated maximum (1 for an undeclared teamwork cast)
+    instead of the printed 2, so the client can no longer submit a two-mode plain cast the handler
+    rejects. Flame of Anor / Molten Collapse / Wail of the Forgotten were mis-advertised identically.
+  - the declared-cost branch now drops the variant unless at least that many modes are *available*
+    (CR 700.2a), not merely one — Murdock's Crusade's teamwork cast was being offered with no legal
+    enchantment on the board and could never be completed. `allowRepeat` is exempt (CR 700.2d).
+- ~~**Still open:** the handler's effective *minimum* for a teamwork cast is the printed
+  `minChooseCount` (1), not 2.~~ **Fixed in round 2** — see below. It was not separable: the client's
+  confirm button unlocks at the advertised `minChooseCount`, so a player could tap their team and
+  take one mode through the normal UI.
+- **`AtlantisAttacks.kt` KDoc** — it claimed one target going illegal "does not strand the other".
+  False: `processPreChosenModeQueue` skips the whole mode all-or-nothing. Now documented as the
+  pre-existing engine-wide deviation from CR 608.2b that it is; behaviour untouched.
+- **`GoNuts.kt`** — CR 608.2 → 608.2c (the rule that actually says instructions are followed in the
+  order written).
+- **Tests** — `MurdocksCrusadeScenarioTest` gains two `getLegalActions` cases (advertised mode count,
+  per-mode target candidates, teamwork variant absent with no legal enchantment, and the negative
+  side of both filters); `AtlantisAttacksScenarioTest` gains a single-target bounce case for
+  `minCount = 1`; `HulkSmashScenarioTest`'s bite victim became a 0/8 Wall of Stone so the assertion
+  pins `damage == 6` rather than "the 2/2 died".
+- No action on the Leviathan token name (matches the repo-wide default and the test lookup) or the
+  CR 702.194c citations (the reviewer verified them as accurate).
+
+## Round-2 corrections
+
+Applied after a second review (1 blocking, 3 important).
+
+- **SDK, `ModalEffect.dynamicMinChooseCount`** — the mandatory sibling of `dynamicChooseCount`.
+  The printed wording splits: "you *may* choose two instead" (Flame of Anor) leaves the floor at
+  one, "choose both **instead**" (these five) does not. With only a ceiling, a teamwork cast could
+  legally take a single mode.
+- **SDK, `teamworkModal { }`** in `TeamworkDsl.kt` — sets both bounds from the same `Conditional`
+  and derives "both" from the modes declared. The five cards each drop six lines of copy-pasted
+  `DynamicAmount.Conditional`.
+- **Engine, `ModalChooseCounts.forCast`** — one authority for the `min..max` range, called by both
+  `CastSpellHandler` (validating) and `CastSpellEnumerator` (advertising). The two had separate
+  copies that had already drifted: the enumerator's knew nothing about the blight path or the floor.
+- **Engine, the enumerator's drop gate** now tests the effective *minimum*, not the maximum. This
+  turned out to fix a bug beyond teamwork: `CastSpellEnumeratorTest` had a case asserting that
+  Brigid's Command ("Choose two —") is still offered with only one mode available. It isn't
+  castable — CR 700.2a plus CR 601.2, and Wizards' own Cryptic Command ruling ("You must choose two
+  different modes"). That test's name already said "dropped entirely" while its body asserted the
+  opposite; it now asserts the drop.
+- **CR 702.194c → CR 700.2 / 601.2b** in five card KDocs and one test KDoc. 702.194c is about
+  targets; `docs/card-sdk-language-reference.md` already said so.
+
+**Gate (on `origin/main` b9d89050eb, after the rebase off the stack):** `:rules-engine:test` +
+`:mtg-sets:test` — 10601 passed, 0 failed. `:mtg-sdk:test` + `:game-server:test` — 897 passed,
+0 failed. Snapshot re-blessed: `MSH.json` +75 lines, 0 removed, all five `dynamicMinChooseCount`
+blocks and nothing else.

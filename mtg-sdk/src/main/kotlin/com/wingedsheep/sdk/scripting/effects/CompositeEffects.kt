@@ -167,14 +167,27 @@ data class ModalEffect(
      *   for "choose up to X" where X depends on game state rather than the cast (Riku of Many
      *   Paths — X is the number of modes the triggering modal spell chose). See
      *   [chooseUpToDynamic].
-     * - **Cast-time** (modal *spells*, `CastSpellHandler.effectiveModalChooseCounts`): the
-     *   [minChooseCount] floor is preserved, so the effective range is
-     *   `[minChooseCount, eval.coerceIn(minChooseCount, modes.size)]`. Models "Choose one. If
-     *   [condition] as you cast this spell, you may choose two instead." (Flame of Anor):
-     *   `chooseCount = 2, minChooseCount = 1` with a [DynamicAmount.Conditional] that yields
-     *   2 when the condition holds, else 1.
+     * - **Cast-time** (modal *spells*, `ModalChooseCounts.forCast`): the floor comes from
+     *   [dynamicMinChooseCount] if set and [minChooseCount] otherwise, so the effective range is
+     *   `[floor, eval.coerceIn(floor, modes.size)]`. Models "Choose one. If [condition] as you cast
+     *   this spell, you **may** choose two instead." (Flame of Anor): `chooseCount = 2,
+     *   minChooseCount = 1` with a [DynamicAmount.Conditional] that yields 2 when the condition
+     *   holds, else 1.
      */
     val dynamicChooseCount: com.wingedsheep.sdk.scripting.values.DynamicAmount? = null,
+    /**
+     * Optional runtime-evaluated *lower* bound, the mandatory sibling of [dynamicChooseCount].
+     * Evaluated the same way, at the same cast-time site, and clamped the same way.
+     *
+     * The two exist because the printed wording splits: "you **may** choose two instead" leaves the
+     * floor at one (Flame of Anor — set [dynamicChooseCount] alone), while "choose both **instead**"
+     * does not (the Marvel Super Heroes teamwork modals — set both to the same [DynamicAmount], as
+     * `teamworkModal { }` does). With only a ceiling, a player who paid the extra cost could still
+     * take a single mode, which no printed card allows.
+     *
+     * Ignored at the resolution-time site, where [minChooseCount] is already treated as 0.
+     */
+    val dynamicMinChooseCount: com.wingedsheep.sdk.scripting.values.DynamicAmount? = null,
     /**
      * "Choose one that hasn't been chosen" (e.g., Gandalf the Grey). When `true`, the
      * engine remembers which modes the *source permanent* has already chosen across the

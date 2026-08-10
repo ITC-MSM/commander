@@ -13,6 +13,7 @@ import com.wingedsheep.engine.legalactions.TargetInfo
 import com.wingedsheep.engine.legalactions.utils.SelectionCostPresentation
 import com.wingedsheep.engine.mechanics.cost.VariablePermanentsCost
 import com.wingedsheep.engine.mechanics.EscalateCosts
+import com.wingedsheep.engine.mechanics.ModalChooseCounts
 import com.wingedsheep.engine.mechanics.ModalDfcCasts
 import com.wingedsheep.engine.mechanics.SpliceCasts
 import com.wingedsheep.engine.state.ZoneKey
@@ -994,13 +995,22 @@ class CastSpellEnumerator : ActionEnumerator {
                     val escalatePayability = EscalateCosts.payability(
                         state, playerId, cardId, variantEffect, context.costUtils, context.predicateEvaluator
                     )
-                    val effectiveChooseCount = if (escalatePayability == null) variantEffect.chooseCount
-                        else minOf(variantEffect.chooseCount, 1 + escalatePayability.maxExtraModes)
+                    // What the *undeclared* cast can actually reach: a cast-time count gated on a
+                    // declaration that wasn't made ("...choose both instead" with no teamwork)
+                    // yields 1..1 here, which is what the handler will enforce on the submit.
+                    val plainCounts = effectiveModalChooseCounts(
+                        context, variantEffect, cardId, playerId, declaredCostSlot = null
+                    )
+                    val effectiveChooseCount = if (escalatePayability == null) plainCounts.last
+                        else minOf(plainCounts.last, 1 + escalatePayability.maxExtraModes)
+                    val effectiveMinChooseCount = minOf(plainCounts.first, effectiveChooseCount)
 
-                    // If every mode is unavailable, the spell can't legally be cast —
-                    // drop the action entirely rather than offering an unplayable UI.
-                    val hasAnyAvailable = enumerationModes.any { it.available }
-                    if (hasAnyAvailable) {
+                    // A mode with no legal target can't be chosen (CR 700.2a), so the cast is only
+                    // offerable when enough modes are available to satisfy the floor. `allowRepeat`
+                    // is exempt: one available mode can legally fill every pick (CR 700.2d).
+                    val availableModeCount = enumerationModes.count { it.available }
+                    val requiredModeCount = if (variantEffect.allowRepeat) 1 else effectiveMinChooseCount
+                    if (availableModeCount >= requiredModeCount && availableModeCount > 0) {
                         result.add(LegalAction(
                             actionType = "CastSpellModal",
                             description = "Cast ${cardComponent.name}${variant.descriptionSuffix}",
@@ -1017,7 +1027,7 @@ class CastSpellEnumerator : ActionEnumerator {
                             autoTapPreview = variant.autoTapPreview,
                             modalEnumeration = ModalLegalEnumeration(
                                 chooseCount = effectiveChooseCount,
-                                minChooseCount = minOf(variantEffect.minChooseCount, effectiveChooseCount),
+                                minChooseCount = effectiveMinChooseCount,
                                 allowRepeat = variantEffect.allowRepeat,
                                 additionalManaCostPerExtraMode = variantEffect.additionalManaCostPerExtraMode,
                                 additionalCostPerExtraMode = escalatePayability?.costData,
@@ -2123,10 +2133,9 @@ class CastSpellEnumerator : ActionEnumerator {
                 // declaration and this branch's cost info; the client collects modes and then the
                 // teamwork payment, exactly as it already does for the blight-path modal variant.
                 //
-                // The advertised `chooseCount` is the printed maximum, as on the undeclared path;
-                // `CastSpellHandler.effectiveModalChooseCounts` is the authority that narrows it
-                // per declaration (1 without teamwork, 2 with), the same split Flame of Anor and
-                // Molten Collapse already rely on.
+                // The advertised range is what [ModalChooseCounts] says *this* declaration reaches
+                // (1..1 without teamwork, 2..2 with), the same authority the cast handler
+                // validates against — so the client is never offered a count the server rejects.
                 val kickerModalEffect = kickerSpellEffect as? ModalEffect
                 if (kickerModalEffect != null) {
                     val kickerModeEnumerations = kickerModalEffect.modes.mapIndexed { modeIndex, mode ->
@@ -2143,7 +2152,22 @@ class CastSpellEnumerator : ActionEnumerator {
                             cachedSources = context.availableManaSources
                         )
                     }
-                    if (kickerModeEnumerations.none { it.available }) continue
+                    // The declaration is what moves the mode count, so evaluate it with *this* slot
+                    // in context — teamwork declared yields the printed "choose both", on both ends
+                    // of the range, because "instead" makes it mandatory rather than an allowance.
+                    val kickerCounts = effectiveModalChooseCounts(
+                        context, kickerModalEffect, cardId, playerId, declaredCostSlot = declaredSlot
+                    )
+                    // A mode with no legal target can't be chosen (CR 700.2a), so the declared
+                    // variant is only castable when enough modes are available to satisfy the
+                    // floor; offering it with fewer (the old gate only dropped it when *every* mode
+                    // was unavailable) advertises a cast that can never be completed — Murdock's
+                    // Crusade's teamwork variant with no mana-value-4 enchantment on the
+                    // battlefield. `allowRepeat` is exempt: one available mode can legally fill
+                    // every pick (CR 700.2d).
+                    val availableModeCount = kickerModeEnumerations.count { it.available }
+                    val requiredModeCount = if (kickerModalEffect.allowRepeat) 1 else kickerCounts.first
+                    if (availableModeCount < requiredModeCount || availableModeCount == 0) continue
                     result.add(LegalAction(
                         actionType = "CastSpellModal",
                         description = "Cast ${cardComponent.name} ($kickLabel)",
@@ -2155,8 +2179,8 @@ class CastSpellEnumerator : ActionEnumerator {
                         hasXCost = kickedHasXCost,
                         maxAffordableX = kickedMaxAffordableX,
                         modalEnumeration = ModalLegalEnumeration(
-                            chooseCount = kickerModalEffect.chooseCount,
-                            minChooseCount = kickerModalEffect.minChooseCount,
+                            chooseCount = kickerCounts.last,
+                            minChooseCount = kickerCounts.first,
                             allowRepeat = kickerModalEffect.allowRepeat,
                             modes = kickerModeEnumerations.map { modeEnum ->
                                 ModalEnumerationMode(
@@ -2540,6 +2564,32 @@ class CastSpellEnumerator : ActionEnumerator {
         val manaCostString: String,
         val autoTapPreview: List<EntityId>?,
         val descriptionSuffix: String
+    )
+
+    /**
+     * The mode counts the cast handler will accept for this modal spell under the declaration
+     * [declaredCostSlot] (null for a plain, undeclared cast).
+     *
+     * Thin wrapper over [ModalChooseCounts] — the same authority `CastSpellHandler` validates
+     * against — so an advertised cast is one the handler would take. `blightPaid` is always false
+     * here: the blight path is declared through `additionalCostPayment` at submit time rather than
+     * through a [ChoiceSlot], and the enumerator already surfaces it as its own pre-narrowed
+     * [ModalCastVariant].
+     */
+    private fun effectiveModalChooseCounts(
+        context: EnumerationContext,
+        modalEffect: ModalEffect,
+        cardId: EntityId,
+        playerId: EntityId,
+        declaredCostSlot: ChoiceSlot?
+    ): IntRange = ModalChooseCounts.forCast(
+        state = context.state,
+        modalEffect = modalEffect,
+        cardId = cardId,
+        controllerId = playerId,
+        declaredCostSlot = declaredCostSlot,
+        blightPaid = false,
+        conditionEvaluator = context.conditionEvaluator
     )
 
     private data class ModeEnumeration(

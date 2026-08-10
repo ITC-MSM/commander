@@ -1087,6 +1087,138 @@
     ]
 }
 
+// Atlantis Attacks
+{
+    "name": "Atlantis Attacks",
+    "manaCost": "{5}{U}{U}",
+    "typeLine": "Sorcery",
+    "oracleText": "Teamwork 4 (As an additional cost to cast this spell, you may tap any number of creatures you control with total power 4 or more.)\nChoose one. If this spell was cast using teamwork, choose both instead.\n• Target player creates a 6/5 blue Leviathan creature token with hexproof.\n• Return one or two target nonland permanents to their owners' hands.",
+    "keywords": [
+        "TEAMWORK"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Kicker",
+            "additionalCost": {
+                "type": "AdditionalAtom",
+                "atom": {
+                    "type": "AtomVariablePermanents",
+                    "filter": "creature",
+                    "minCount": 0,
+                    "excludeSelf": false,
+                    "action": "TAP",
+                    "xMeasure": "TOTAL_POWER",
+                    "minMeasure": 4
+                }
+            },
+            "displayPrefix": "Teamwork 4",
+            "keyword": "TEAMWORK",
+            "declaredSlot": "TEAMWORK"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "Modal",
+            "modes": [
+                {
+                    "effect": {
+                        "type": "CreateToken",
+                        "power": 6,
+                        "toughness": 5,
+                        "colors": [
+                            "BLUE"
+                        ],
+                        "creatureTypes": [
+                            "Leviathan"
+                        ],
+                        "keywords": [
+                            "HEXPROOF"
+                        ],
+                        "imageUri": "https://cards.scryfall.io/normal/front/7/1/71211c95-8698-4570-abf7-3579988a329e.jpg?1783902803",
+                        "controller": {
+                            "type": "BoundVariable",
+                            "name": "target player"
+                        }
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetPlayer",
+                            "id": "target player"
+                        }
+                    ],
+                    "description": "Target player creates a 6/5 blue Leviathan creature token with hexproof"
+                },
+                {
+                    "effect": {
+                        "type": "ForEach",
+                        "space": "IterationSpace.Targets",
+                        "body": {
+                            "type": "MoveToZone",
+                            "target": {
+                                "type": "ContextTarget",
+                                "index": 0
+                            },
+                            "destination": "Hand"
+                        }
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "count": 2,
+                            "minCount": 1,
+                            "filter": {
+                                "baseFilter": "nonland permanent"
+                            },
+                            "id": "one or two target nonland permanents"
+                        }
+                    ],
+                    "description": "Return one or two target nonland permanents to their owners' hands"
+                }
+            ],
+            "chooseCount": 2,
+            "minChooseCount": 1,
+            "dynamicChooseCount": {
+                "type": "Conditional",
+                "condition": {
+                    "type": "CastChoiceMade",
+                    "slot": "TEAMWORK"
+                },
+                "ifTrue": {
+                    "type": "Fixed",
+                    "amount": 2
+                },
+                "ifFalse": {
+                    "type": "Fixed",
+                    "amount": 1
+                }
+            },
+            "dynamicMinChooseCount": {
+                "type": "Conditional",
+                "condition": {
+                    "type": "CastChoiceMade",
+                    "slot": "TEAMWORK"
+                },
+                "ifTrue": {
+                    "type": "Fixed",
+                    "amount": 2
+                },
+                "ifFalse": {
+                    "type": "Fixed",
+                    "amount": 1
+                }
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "46",
+        "artist": "Alexander Skripnikov",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/0/40bc4380-055d-4913-93cb-280c9c1d1a87.jpg?1783902962"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Attuma, Atlantean Warlord
 {
     "name": "Attuma, Atlantean Warlord",
@@ -4958,6 +5090,135 @@
     ]
 }
 
+// Go Nuts!
+{
+    "name": "Go Nuts!",
+    "manaCost": "{G}",
+    "typeLine": "Sorcery",
+    "oracleText": "Teamwork 3 (As an additional cost to cast this spell, you may tap any number of creatures you control with total power 3 or more.)\nChoose one. If this spell was cast using teamwork, choose both instead.\n• Put a +1/+1 counter on target creature.\n• Target creature you control fights target creature an opponent controls.",
+    "keywords": [
+        "TEAMWORK"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Kicker",
+            "additionalCost": {
+                "type": "AdditionalAtom",
+                "atom": {
+                    "type": "AtomVariablePermanents",
+                    "filter": "creature",
+                    "minCount": 0,
+                    "excludeSelf": false,
+                    "action": "TAP",
+                    "xMeasure": "TOTAL_POWER",
+                    "minMeasure": 3
+                }
+            },
+            "displayPrefix": "Teamwork 3",
+            "keyword": "TEAMWORK",
+            "declaredSlot": "TEAMWORK"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "Modal",
+            "modes": [
+                {
+                    "effect": {
+                        "type": "AddCounters",
+                        "counterType": "+1/+1",
+                        "count": 1,
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target creature"
+                        }
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "creature"
+                            },
+                            "id": "target creature"
+                        }
+                    ],
+                    "description": "Put a +1/+1 counter on target creature"
+                },
+                {
+                    "effect": {
+                        "type": "Fight",
+                        "target1": {
+                            "type": "BoundVariable",
+                            "name": "target creature you control"
+                        },
+                        "target2": {
+                            "type": "BoundVariable",
+                            "name": "target creature an opponent controls"
+                        }
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "creature ctrl:you"
+                            },
+                            "id": "target creature you control"
+                        },
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "creature ctrl:opponent"
+                            },
+                            "id": "target creature an opponent controls"
+                        }
+                    ],
+                    "description": "Target creature you control fights target creature an opponent controls"
+                }
+            ],
+            "chooseCount": 2,
+            "minChooseCount": 1,
+            "dynamicChooseCount": {
+                "type": "Conditional",
+                "condition": {
+                    "type": "CastChoiceMade",
+                    "slot": "TEAMWORK"
+                },
+                "ifTrue": {
+                    "type": "Fixed",
+                    "amount": 2
+                },
+                "ifFalse": {
+                    "type": "Fixed",
+                    "amount": 1
+                }
+            },
+            "dynamicMinChooseCount": {
+                "type": "Conditional",
+                "condition": {
+                    "type": "CastChoiceMade",
+                    "slot": "TEAMWORK"
+                },
+                "ifTrue": {
+                    "type": "Fixed",
+                    "amount": 2
+                },
+                "ifFalse": {
+                    "type": "Fixed",
+                    "amount": 1
+                }
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "168",
+        "artist": "Ignatius Budi",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/5/152a7b5b-2d95-45d3-8fd9-0ca1d5a79f8b.jpg?1783902918"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Grim Reaper, Lethal Legionnaire
 {
     "name": "Grim Reaper, Lethal Legionnaire",
@@ -5160,6 +5421,148 @@
         "imageUri": "https://cards.scryfall.io/normal/front/3/4/3496d0d4-3fab-4ea4-8986-afe5a7155ec6.jpg?1783902891"
     },
     "colorIdentityOverride": []
+}
+
+// HULK SMASH!
+{
+    "name": "HULK SMASH!",
+    "manaCost": "{1}{R}",
+    "typeLine": "Instant",
+    "oracleText": "Teamwork 4 (As an additional cost to cast this spell, you may tap any number of creatures you control with total power 4 or more.)\nChoose one. If this spell was cast using teamwork, choose both instead.\n• Destroy target noncreature artifact.\n• Target creature you control deals damage equal to its power to target creature an opponent controls.",
+    "keywords": [
+        "TEAMWORK"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Kicker",
+            "additionalCost": {
+                "type": "AdditionalAtom",
+                "atom": {
+                    "type": "AtomVariablePermanents",
+                    "filter": "creature",
+                    "minCount": 0,
+                    "excludeSelf": false,
+                    "action": "TAP",
+                    "xMeasure": "TOTAL_POWER",
+                    "minMeasure": 4
+                }
+            },
+            "displayPrefix": "Teamwork 4",
+            "keyword": "TEAMWORK",
+            "declaredSlot": "TEAMWORK"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "Modal",
+            "modes": [
+                {
+                    "effect": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target noncreature artifact"
+                        },
+                        "destination": "Graveyard",
+                        "byDestruction": true
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": {
+                                    "cardPredicates": [
+                                        "IsArtifact",
+                                        {
+                                            "type": "Not",
+                                            "predicate": "IsCreature"
+                                        }
+                                    ]
+                                }
+                            },
+                            "id": "target noncreature artifact"
+                        }
+                    ],
+                    "description": "Destroy target noncreature artifact"
+                },
+                {
+                    "effect": {
+                        "type": "DealDamage",
+                        "amount": {
+                            "type": "EntityProperty",
+                            "entity": "Target",
+                            "numericProperty": "Power"
+                        },
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target creature an opponent controls"
+                        },
+                        "damageSource": {
+                            "type": "BoundVariable",
+                            "name": "target creature you control"
+                        }
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "creature ctrl:you"
+                            },
+                            "id": "target creature you control"
+                        },
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "creature ctrl:opponent"
+                            },
+                            "id": "target creature an opponent controls"
+                        }
+                    ],
+                    "description": "Target creature you control deals damage equal to its power to target creature an opponent controls"
+                }
+            ],
+            "chooseCount": 2,
+            "minChooseCount": 1,
+            "dynamicChooseCount": {
+                "type": "Conditional",
+                "condition": {
+                    "type": "CastChoiceMade",
+                    "slot": "TEAMWORK"
+                },
+                "ifTrue": {
+                    "type": "Fixed",
+                    "amount": 2
+                },
+                "ifFalse": {
+                    "type": "Fixed",
+                    "amount": 1
+                }
+            },
+            "dynamicMinChooseCount": {
+                "type": "Conditional",
+                "condition": {
+                    "type": "CastChoiceMade",
+                    "slot": "TEAMWORK"
+                },
+                "ifTrue": {
+                    "type": "Fixed",
+                    "amount": 2
+                },
+                "ifFalse": {
+                    "type": "Fixed",
+                    "amount": 1
+                }
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "135",
+        "artist": "Chris Rahn",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/7/374ffb3e-0753-4682-936a-ae6921ace475.jpg?1783902929"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
 }
 
 // HYDRA Assault Robot
@@ -8976,6 +9379,124 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Murdock's Crusade
+{
+    "name": "Murdock's Crusade",
+    "manaCost": "{1}{W}",
+    "typeLine": "Sorcery",
+    "oracleText": "Teamwork 4 (As an additional cost to cast this spell, you may tap any number of creatures you control with total power 4 or more.)\nChoose one. If this spell was cast using teamwork, choose both instead.\n• Street Justice — Exile target creature with toughness 4 or greater.\n• Legal Justice — Exile target enchantment with mana value 4 or greater.",
+    "keywords": [
+        "TEAMWORK"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Kicker",
+            "additionalCost": {
+                "type": "AdditionalAtom",
+                "atom": {
+                    "type": "AtomVariablePermanents",
+                    "filter": "creature",
+                    "minCount": 0,
+                    "excludeSelf": false,
+                    "action": "TAP",
+                    "xMeasure": "TOTAL_POWER",
+                    "minMeasure": 4
+                }
+            },
+            "displayPrefix": "Teamwork 4",
+            "keyword": "TEAMWORK",
+            "declaredSlot": "TEAMWORK"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "Modal",
+            "modes": [
+                {
+                    "effect": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target creature with toughness 4 or greater"
+                        },
+                        "destination": "Exile"
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "creature tou>=4"
+                            },
+                            "id": "target creature with toughness 4 or greater"
+                        }
+                    ],
+                    "description": "Street Justice — Exile target creature with toughness 4 or greater"
+                },
+                {
+                    "effect": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target enchantment with mana value 4 or greater"
+                        },
+                        "destination": "Exile"
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "enchantment mv>=4"
+                            },
+                            "id": "target enchantment with mana value 4 or greater"
+                        }
+                    ],
+                    "description": "Legal Justice — Exile target enchantment with mana value 4 or greater"
+                }
+            ],
+            "chooseCount": 2,
+            "minChooseCount": 1,
+            "dynamicChooseCount": {
+                "type": "Conditional",
+                "condition": {
+                    "type": "CastChoiceMade",
+                    "slot": "TEAMWORK"
+                },
+                "ifTrue": {
+                    "type": "Fixed",
+                    "amount": 2
+                },
+                "ifFalse": {
+                    "type": "Fixed",
+                    "amount": 1
+                }
+            },
+            "dynamicMinChooseCount": {
+                "type": "Conditional",
+                "condition": {
+                    "type": "CastChoiceMade",
+                    "slot": "TEAMWORK"
+                },
+                "ifTrue": {
+                    "type": "Fixed",
+                    "amount": 2
+                },
+                "ifFalse": {
+                    "type": "Fixed",
+                    "amount": 1
+                }
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "24",
+        "artist": "Gal Or",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/8/98df64ca-39c3-47e6-8143-4106c8e9cf59.jpg?1783902970"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 
@@ -17285,6 +17806,131 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Widow's Bite
+{
+    "name": "Widow's Bite",
+    "manaCost": "{1}{B}",
+    "typeLine": "Instant",
+    "oracleText": "Teamwork 3 (As an additional cost to cast this spell, you may tap any number of creatures you control with total power 3 or more.)\nChoose one. If this spell was cast using teamwork, choose both instead.\n• Target creature gains deathtouch until end of turn.\n• Target creature gets -2/-2 until end of turn.",
+    "keywords": [
+        "TEAMWORK"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Kicker",
+            "additionalCost": {
+                "type": "AdditionalAtom",
+                "atom": {
+                    "type": "AtomVariablePermanents",
+                    "filter": "creature",
+                    "minCount": 0,
+                    "excludeSelf": false,
+                    "action": "TAP",
+                    "xMeasure": "TOTAL_POWER",
+                    "minMeasure": 3
+                }
+            },
+            "displayPrefix": "Teamwork 3",
+            "keyword": "TEAMWORK",
+            "declaredSlot": "TEAMWORK"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "Modal",
+            "modes": [
+                {
+                    "effect": {
+                        "type": "GrantKeyword",
+                        "keyword": "DEATHTOUCH",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target creature"
+                        }
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "creature"
+                            },
+                            "id": "target creature"
+                        }
+                    ],
+                    "description": "Target creature gains deathtouch until end of turn"
+                },
+                {
+                    "effect": {
+                        "type": "ModifyStats",
+                        "powerModifier": {
+                            "type": "Fixed",
+                            "amount": -2
+                        },
+                        "toughnessModifier": {
+                            "type": "Fixed",
+                            "amount": -2
+                        },
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target creature"
+                        }
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "creature"
+                            },
+                            "id": "target creature"
+                        }
+                    ],
+                    "description": "Target creature gets -2/-2 until end of turn"
+                }
+            ],
+            "chooseCount": 2,
+            "minChooseCount": 1,
+            "dynamicChooseCount": {
+                "type": "Conditional",
+                "condition": {
+                    "type": "CastChoiceMade",
+                    "slot": "TEAMWORK"
+                },
+                "ifTrue": {
+                    "type": "Fixed",
+                    "amount": 2
+                },
+                "ifFalse": {
+                    "type": "Fixed",
+                    "amount": 1
+                }
+            },
+            "dynamicMinChooseCount": {
+                "type": "Conditional",
+                "condition": {
+                    "type": "CastChoiceMade",
+                    "slot": "TEAMWORK"
+                },
+                "ifTrue": {
+                    "type": "Fixed",
+                    "amount": 2
+                },
+                "ifFalse": {
+                    "type": "Fixed",
+                    "amount": 1
+                }
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "122",
+        "artist": "Borja Pindado",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/b/dbee18af-9ade-4251-81a1-f6e7ffbf480f.jpg?1783902935"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 

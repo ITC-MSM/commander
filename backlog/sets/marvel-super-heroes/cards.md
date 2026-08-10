@@ -3,7 +3,7 @@
 **Set Size:** 276 booster cards (collector numbers 1-276; basic lands 277-296 and showcase
 variants 297+ are excluded)
 **Release Date:** June 26, 2026
-**Implemented:** 230 / 276
+**Implemented:** 235 / 276
 - [x] Agent 13, Sharon Carter
 - [ ] Agent Maria Hill
 - [x] Agent of Atlas
@@ -27,7 +27,7 @@ variants 297+ are excluded)
 - [x] The Mind Stone
 - [x] Mockingbird, Ace Agent
 - [x] Monica Rambeau // Photon, Living Light
-- [ ] Murdock's Crusade
+- [x] Murdock's Crusade
 - [ ] Nick Fury, Agent of S.H.I.E.L.D.
 - [x] Night Nurse, Healer of Heroes
 - [x] Okoye, Dora Milaje Leader
@@ -49,7 +49,7 @@ variants 297+ are excluded)
 - [x] Aerial Doombot
 - [x] A.I.M. Scientists
 - [x] Atlantean Cavalry
-- [ ] Atlantis Attacks
+- [x] Atlantis Attacks
 - [x] Attuma, Atlantean Warlord
 - [x] Bold Biochemist
 - [x] Bruce Banner // The Incredible Hulk
@@ -125,7 +125,7 @@ variants 297+ are excluded)
 - [x] Unliving Legionnaire
 - [x] Visions of Villainy
 - [x] Whiplash, Vengeful Engineer
-- [ ] Widow's Bite
+- [x] Widow's Bite
 - [x] Yellowjacket, Heartless Marauder
 - [x] Avengers Disassembled
 - [x] Blazing Crescendo
@@ -138,7 +138,7 @@ variants 297+ are excluded)
 - [x] Hawkeye's Bow
 - [x] Hex Magic
 - [x] Hire a Crew
-- [ ] HULK SMASH!
+- [x] HULK SMASH!
 - [x] Human Torch, Johnny Storm
 - [x] HYDRA Assault Robot
 - [x] Iron Fist, Living Weapon
@@ -171,7 +171,7 @@ variants 297+ are excluded)
 - [ ] Earth's Mightiest Heroes
 - [x] Epic Fight
 - [x] Giant Growth
-- [ ] Go Nuts!
+- [x] Go Nuts!
 - [x] Guerrilla Gorilla
 - [x] Hellcat, Undying Vigilante
 - [x] Hercules, Prince of Power
