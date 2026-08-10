@@ -59,4 +59,7 @@ had no base stats — exactly Absorbing Man copying a land.
 
 ## Gate
 
-See the PR body (`build/pr/loop-msh-u06-body.md`) for the exact commands and results.
+`just test-rules` — BUILD SUCCESSFUL, 10,340 tests, 0 failed. Plus `:mtg-sets:test` (snapshots +
+FacadeBoundaryTest), `just rebless-cards` (MSH + the two expected reshapes), and a compile of
+`:ai`, `:game-server`, `:gym`, `:mtg-search` since the SDK type changed. Exact commands and the
+earlier-failure story are in `build/pr/loop-msh-u06-body.md`.
