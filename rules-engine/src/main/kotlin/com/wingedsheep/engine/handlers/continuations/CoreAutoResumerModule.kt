@@ -114,13 +114,17 @@ class CoreAutoResumerModule(
             if (runResult.isPaused) {
                 return@autoResumer ExecutionResult.paused(runResult.state, runResult.pendingDecision!!, events + runResult.events)
             }
-            // A drained composite hands its pipeline collections to the frame beneath —
-            // e.g. a DoAction gate scoring SuccessCriterion.CollectionNonEmpty. The full
-            // frame map (not just this drain's accumulation) is what propagates: keys
-            // injected into this frame by an earlier select-resume are part of it.
+            // A drained composite hands its pipeline storage to the frame beneath — e.g. a DoAction
+            // gate scoring SuccessCriterion.CollectionNonEmpty, or a reflexive "when you do" reading
+            // a number the action stored (Bolg of the North). The full frame maps (not just this
+            // drain's accumulation) are what propagate: keys injected into this frame by an earlier
+            // select-resume are part of them. Numbers and chosen values ride along with collections
+            // so pausing mid-composite preserves exactly what completing it synchronously would.
             val stateWithCollections = exposeCollectionsToNextFrame(
                 runResult.state,
-                continuation.effectContext.pipeline.storedCollections + runResult.updatedCollections
+                continuation.effectContext.pipeline.storedCollections + runResult.updatedCollections,
+                continuation.effectContext.pipeline.storedNumbers + runResult.updatedStoredNumbers,
+                continuation.effectContext.pipeline.chosenValues + runResult.updatedChosenValues,
             )
             checkForMore(stateWithCollections, events + runResult.events)
         },
