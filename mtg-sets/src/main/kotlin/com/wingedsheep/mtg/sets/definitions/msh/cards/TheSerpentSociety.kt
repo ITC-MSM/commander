@@ -34,9 +34,9 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  * dying does not.
  *
  * The payoff is the ordinary multi-player edict — one [Effects.Sacrifice] over
- * [Player.EachOpponent], nontoken-filtered. "Of their choice" is the executor's default, and
- * CR 608.2c does as much as it can: an opponent whose only creatures are tokens sacrifices
- * nothing.
+ * [Player.EachOpponent], nontoken-filtered. "Of their choice" is the executor's default, and the
+ * effect does only as much as it can (CR 609.3, backed by CR 101.3): an opponent whose only
+ * creatures are tokens sacrifices nothing.
  */
 val TheSerpentSociety = card("The Serpent Society") {
     manaCost = "{1}{B}{G}"

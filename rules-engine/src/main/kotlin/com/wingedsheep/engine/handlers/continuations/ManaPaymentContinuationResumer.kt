@@ -151,16 +151,10 @@ class ManaPaymentContinuationResumer(
             )
         } else {
             // Player chose not to pay — counter the spell
-            val counterResult = if (continuation.exileOnCounter) {
-                services.stackResolver.counterSpellToExile(
-                    state, continuation.spellEntityId,
-                    grantFreeCast = false,
-                    controllerId = continuation.controllerId ?: continuation.payingPlayerId
-                )
-            } else {
-                services.stackResolver.counterSpellOrAbility(state, continuation.spellEntityId)
-            }
-            return checkForMore(counterResult.newState, counterResult.events)
+            return counterForUnpaidCost(
+                state, continuation.spellEntityId, continuation.exileOnCounter,
+                continuation.controllerId ?: continuation.payingPlayerId, checkForMore
+            )
         }
     }
 
@@ -194,16 +188,10 @@ class ManaPaymentContinuationResumer(
             // (CR 119.4 — paying life is a cost, not damage; players can pay life they have.)
             // Here we require the player has at least lifeCost life remaining.
             if (currentLife < continuation.lifeCost) {
-                val counterResult = if (continuation.exileOnCounter) {
-                    services.stackResolver.counterSpellToExile(
-                        state, continuation.spellEntityId,
-                        grantFreeCast = false,
-                        controllerId = continuation.controllerId ?: continuation.payingPlayerId
-                    )
-                } else {
-                    services.stackResolver.counterSpellOrAbility(state, continuation.spellEntityId)
-                }
-                return checkForMore(counterResult.newState, counterResult.events)
+                return counterForUnpaidCost(
+                    state, continuation.spellEntityId, continuation.exileOnCounter,
+                    continuation.controllerId ?: continuation.payingPlayerId, checkForMore
+                )
             }
 
             val (newState, events) = LifePaymentService.pay(state, playerId, continuation.lifeCost)
@@ -218,16 +206,10 @@ class ManaPaymentContinuationResumer(
             )?.let { return it }
             return checkForMore(newState, events)
         } else {
-            val counterResult = if (continuation.exileOnCounter) {
-                services.stackResolver.counterSpellToExile(
-                    state, continuation.spellEntityId,
-                    grantFreeCast = false,
-                    controllerId = continuation.controllerId ?: continuation.payingPlayerId
-                )
-            } else {
-                services.stackResolver.counterSpellOrAbility(state, continuation.spellEntityId)
-            }
-            return checkForMore(counterResult.newState, counterResult.events)
+            return counterForUnpaidCost(
+                state, continuation.spellEntityId, continuation.exileOnCounter,
+                continuation.controllerId ?: continuation.payingPlayerId, checkForMore
+            )
         }
     }
 
@@ -253,16 +235,10 @@ class ManaPaymentContinuationResumer(
         }
 
         if (!response.choice) {
-            val counterResult = if (continuation.exileOnCounter) {
-                services.stackResolver.counterSpellToExile(
-                    state, continuation.spellEntityId,
-                    grantFreeCast = false,
-                    controllerId = continuation.controllerId ?: continuation.payingPlayerId
-                )
-            } else {
-                services.stackResolver.counterSpellOrAbility(state, continuation.spellEntityId)
-            }
-            return checkForMore(counterResult.newState, counterResult.events)
+            return counterForUnpaidCost(
+                state, continuation.spellEntityId, continuation.exileOnCounter,
+                continuation.controllerId ?: continuation.payingPlayerId, checkForMore
+            )
         }
 
         // Yes — re-verify the player can actually discard the required number of
@@ -281,16 +257,10 @@ class ManaPaymentContinuationResumer(
             }
         }
         if (eligibleCount < continuation.count) {
-            val counterResult = if (continuation.exileOnCounter) {
-                services.stackResolver.counterSpellToExile(
-                    state, continuation.spellEntityId,
-                    grantFreeCast = false,
-                    controllerId = continuation.controllerId ?: continuation.payingPlayerId
-                )
-            } else {
-                services.stackResolver.counterSpellOrAbility(state, continuation.spellEntityId)
-            }
-            return checkForMore(counterResult.newState, counterResult.events)
+            return counterForUnpaidCost(
+                state, continuation.spellEntityId, continuation.exileOnCounter,
+                continuation.controllerId ?: continuation.payingPlayerId, checkForMore
+            )
         }
 
         val discardEffect = if (continuation.random) {
@@ -355,16 +325,10 @@ class ManaPaymentContinuationResumer(
 
         // Declined / underpaid → counter the spell.
         if (selectedPermanents.size < continuation.count) {
-            val counterResult = if (continuation.exileOnCounter) {
-                services.stackResolver.counterSpellToExile(
-                    state, continuation.spellEntityId,
-                    grantFreeCast = false,
-                    controllerId = continuation.controllerId ?: continuation.payingPlayerId
-                )
-            } else {
-                services.stackResolver.counterSpellOrAbility(state, continuation.spellEntityId)
-            }
-            return checkForMore(counterResult.newState, counterResult.events)
+            return counterForUnpaidCost(
+                state, continuation.spellEntityId, continuation.exileOnCounter,
+                continuation.controllerId ?: continuation.payingPlayerId, checkForMore
+            )
         }
 
         // Paid — sacrifice the chosen permanents and let the spell resolve.
@@ -481,7 +445,7 @@ class ManaPaymentContinuationResumer(
         }
 
         if (!response.choice) {
-            return counterWard(
+            return counterForUnpaidCost(
                 state, continuation.spellEntityId, continuation.exileOnCounter,
                 continuation.controllerId ?: continuation.payingPlayerId, checkForMore
             )
@@ -505,7 +469,18 @@ class ManaPaymentContinuationResumer(
             .execute(state, countersEffect, countersContext)
             .toExecutionResult()
         if (countersResult.error != null) return countersResult
-        if (countersResult.isPaused) return countersResult
+        if (countersResult.isPaused) {
+            // AddCountersExecutor asks the payer nothing, so this is unreachable today. If it ever
+            // does pause, the pause carries no `remainingWardParts` with it — with none left to
+            // charge that is harmless, but an enclosing Composite's unpaid components would
+            // silently vanish and the spell would neither be countered nor fully paid for. Fail
+            // loudly in that case rather than letting the ward chain evaporate.
+            if (continuation.remainingWardParts.isEmpty()) return countersResult
+            return ExecutionResult.error(
+                state,
+                "Ward counter placement paused with unpaid ward cost components remaining"
+            )
+        }
 
         chargeNextWardPartOrNull(
             countersResult.newState, countersResult.events.toList(),
@@ -535,7 +510,7 @@ class ManaPaymentContinuationResumer(
         }
 
         val chosen = continuation.options.getOrNull(response.optionIndex)
-            ?: return counterWard(
+            ?: return counterForUnpaidCost(
                 state, continuation.spellEntityId, continuation.exileOnCounter,
                 continuation.controllerId ?: continuation.payingPlayerId, checkForMore
             )
@@ -551,13 +526,25 @@ class ManaPaymentContinuationResumer(
         ) ?: checkForMore(state, emptyList())
     }
 
-    /** Counter (or counter-to-exile) the spell/ability whose ward cost went unpaid, then continue. */
-    private fun counterWard(
+    /**
+     * Counter (or counter-to-exile) the spell/ability whose counter-unless-pays cost went unpaid,
+     * then continue.
+     *
+     * Every decline path in this file routes through here — ward costs (CR 702.21a) and the generic
+     * "counter target spell unless its controller pays" alike, both when the player declines the
+     * prompt and when a re-check finds the cost became unpayable between prompt and response — so
+     * the exile-on-counter branch and the controller fallback exist once.
+     *
+     * [precedingEvents] are events already produced before the counter (e.g. mana sub-costs that
+     * were paid on the way to a payment that then failed); they stay ahead of the counter's own.
+     */
+    private fun counterForUnpaidCost(
         state: GameState,
         spellEntityId: EntityId,
         exileOnCounter: Boolean,
         controllerId: EntityId,
-        checkForMore: CheckForMore
+        checkForMore: CheckForMore,
+        precedingEvents: List<GameEvent> = emptyList()
     ): ExecutionResult {
         val result = if (exileOnCounter) {
             services.stackResolver.counterSpellToExile(
@@ -566,7 +553,7 @@ class ManaPaymentContinuationResumer(
         } else {
             services.stackResolver.counterSpellOrAbility(state, spellEntityId)
         }
-        return checkForMore(result.newState, result.events)
+        return checkForMore(result.newState, precedingEvents + result.events)
     }
 
     /**
@@ -585,16 +572,10 @@ class ManaPaymentContinuationResumer(
         // If the player declined (no mana sources, no auto-pay, no Ward—Waterbend taps to help,
         // and nothing floating that already covers the cost), counter the spell.
         if (response.isDecline(floatingCovers(state, continuation.payingPlayerId, continuation.manaCost))) {
-            val counterResult = if (continuation.exileOnCounter) {
-                services.stackResolver.counterSpellToExile(
-                    state, continuation.spellEntityId,
-                    grantFreeCast = false,
-                    controllerId = continuation.controllerId ?: continuation.payingPlayerId
-                )
-            } else {
-                services.stackResolver.counterSpellOrAbility(state, continuation.spellEntityId)
-            }
-            return checkForMore(counterResult.newState, counterResult.events)
+            return counterForUnpaidCost(
+                state, continuation.spellEntityId, continuation.exileOnCounter,
+                continuation.controllerId ?: continuation.payingPlayerId, checkForMore
+            )
         }
 
         val playerId = continuation.payingPlayerId
@@ -706,16 +687,10 @@ class ManaPaymentContinuationResumer(
         val newPool = currentPool.pay(effectiveCost)
         if (newPool == null) {
             // Payment failed — counter the spell
-            val counterResult = if (continuation.exileOnCounter) {
-                services.stackResolver.counterSpellToExile(
-                    state, continuation.spellEntityId,
-                    grantFreeCast = false,
-                    controllerId = continuation.controllerId ?: continuation.payingPlayerId
-                )
-            } else {
-                services.stackResolver.counterSpellOrAbility(state, continuation.spellEntityId)
-            }
-            return checkForMore(counterResult.newState, counterResult.events)
+            return counterForUnpaidCost(
+                state, continuation.spellEntityId, continuation.exileOnCounter,
+                continuation.controllerId ?: continuation.payingPlayerId, checkForMore
+            )
         }
 
         currentState = currentState.updateEntity(playerId) { container ->
@@ -1686,17 +1661,11 @@ class ManaPaymentContinuationResumer(
         // No more sub-costs — attempt to pay the ward cost. On failure, counter the spell.
         val newPool = pool.pay(continuation.manaCost)
         if (newPool == null) {
-            val counterResult = if (continuation.exileOnCounter) {
-                services.stackResolver.counterSpellToExile(
-                    currentState,
-                    continuation.spellEntityId,
-                    grantFreeCast = false,
-                    controllerId = continuation.controllerId ?: continuation.payingPlayerId
-                )
-            } else {
-                services.stackResolver.counterSpellOrAbility(currentState, continuation.spellEntityId)
-            }
-            return checkForMore(counterResult.newState, events + counterResult.events)
+            return counterForUnpaidCost(
+                currentState, continuation.spellEntityId, continuation.exileOnCounter,
+                continuation.controllerId ?: continuation.payingPlayerId, checkForMore,
+                precedingEvents = events
+            )
         }
         currentState = currentState.updateEntity(continuation.payingPlayerId) { container ->
             container.with(

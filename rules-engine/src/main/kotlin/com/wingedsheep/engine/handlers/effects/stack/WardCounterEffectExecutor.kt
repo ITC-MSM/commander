@@ -27,6 +27,7 @@ import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.mechanics.SacrificeImmunity
 import com.wingedsheep.engine.mechanics.mana.CostCalculator
 import com.wingedsheep.engine.mechanics.mana.ManaSolver
+import com.wingedsheep.engine.legalactions.WaterbendPermanentData
 import com.wingedsheep.engine.legalactions.utils.CostEnumerationUtils
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.engine.mechanics.stack.StackResolver
@@ -222,7 +223,7 @@ class WardCounterEffectExecutor(
          * The composite check is a snapshot: paying an earlier part can in principle make a later
          * one unpayable, and the per-part handler still counters at that point.
          */
-        fun canPayWardCost(
+        private fun canPayWardCost(
             state: GameState,
             cardRegistry: CardRegistry,
             cost: WardCost,
@@ -321,6 +322,12 @@ class WardCounterEffectExecutor(
          * offered, plus a trailing "Counter spell" decline; if none is payable the spell is countered without
          * a prompt. Picking one charges it through its own ordinary handler, so this branch adds a
          * picker and no payment logic of its own.
+         *
+         * The shape mirrors `CostPaymentService.choicePrompt` (the same "payable options plus a
+         * trailing decline, with the reduced list stored on the continuation" pattern), with one
+         * deliberate difference: the decline is labelled "Counter spell" rather than "Don't pay",
+         * because declining a ward cost has a consequence worth naming — and it matches the
+         * `noText` the existing yes/no ward prompts already use.
          */
         private fun handleChoiceCost(
             state: GameState,
@@ -421,20 +428,27 @@ class WardCounterEffectExecutor(
          * Airbender) they may also tap untapped artifacts and creatures, each paying {1} — the
          * same eligibility discovery and affordability check the activated-ability / spell
          * waterbend surfaces use.
+         *
+         * [manaSolver] and [waterbendPermanents] are passed in by callers that already built them
+         * (the ward—mana handler needs both anyway to render its decision), so the affordability
+         * check costs no extra solve or battlefield scan; callers that only ask the question build
+         * them on demand.
          */
         private fun canAffordManaCost(
             state: GameState,
             cardRegistry: CardRegistry,
             payingPlayerId: EntityId,
             manaCost: ManaCost,
-            waterbend: Boolean
+            waterbend: Boolean,
+            manaSolver: ManaSolver = ManaSolver(cardRegistry),
+            waterbendPermanents: List<WaterbendPermanentData>? = null
         ): Boolean {
-            val manaSolver = ManaSolver(cardRegistry)
             if (manaSolver.canPay(state, payingPlayerId, manaCost)) return true
             if (!waterbend) return false
             val costUtils = costEnumerationUtils(cardRegistry)
-            val waterbendPermanents = costUtils.findWaterbendPermanents(state, payingPlayerId)
-            return costUtils.canAffordWithWaterbend(state, payingPlayerId, manaCost, waterbendPermanents)
+            val permanents = waterbendPermanents
+                ?: costUtils.findWaterbendPermanents(state, payingPlayerId)
+            return costUtils.canAffordWithWaterbend(state, payingPlayerId, manaCost, permanents)
         }
 
         /**
@@ -664,18 +678,22 @@ class WardCounterEffectExecutor(
 
             val manaSolver = ManaSolver(cardRegistry)
 
-            if (!canAffordManaCost(state, cardRegistry, payingPlayerId, manaCost, waterbend)) {
-                return counterSpellOrAbility(state, cardRegistry, spellEntityId)
-            }
-
             // Ward—Waterbend (Avatar: The Last Airbender): the controller may tap their untapped
             // artifacts and creatures to help pay the generic, each paying {1}. Reuse the same
             // eligibility discovery as the activated-ability/spell waterbend surfaces so the rule
-            // stays single-sourced.
+            // stays single-sourced. Found once and shared with the affordability check below.
             val waterbendPermanents = if (waterbend) {
                 costEnumerationUtils(cardRegistry).findWaterbendPermanents(state, payingPlayerId)
             } else {
                 emptyList()
+            }
+
+            if (!canAffordManaCost(
+                    state, cardRegistry, payingPlayerId, manaCost, waterbend,
+                    manaSolver, waterbendPermanents
+                )
+            ) {
+                return counterSpellOrAbility(state, cardRegistry, spellEntityId)
             }
 
             val sources = manaSolver.findAvailableManaSources(state, payingPlayerId)

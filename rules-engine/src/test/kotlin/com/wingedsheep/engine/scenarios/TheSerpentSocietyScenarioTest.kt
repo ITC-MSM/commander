@@ -75,11 +75,23 @@ class TheSerpentSocietyScenarioTest : FunSpec({
         }
     }
 
+    // Grants deathtouch by a continuous effect, so the dying creature's *granted* keyword is what
+    // the trigger has to see in last-known information.
+    val Venom = card("Serpent Test Venom") {
+        manaCost = "{R}"
+        typeLine = "Instant"
+        spell {
+            val recipient = target("target creature", Targets.Creature)
+            effect = Effects.GrantKeyword(Keyword.DEATHTOUCH, recipient)
+        }
+    }
+
     fun driver(): GameTestDriver = GameTestDriver().apply {
         registerCards(TestCards.all + listOf(Venomous, Harmless))
         registerCard(TheSerpentSociety)
         registerCard(Zap)
         registerCard(Blast)
+        registerCard(Venom)
         initMirrorMatch(Deck.of("Mountain" to 40), skipMulligans = true, startingPlayer = 0)
     }
 
@@ -185,6 +197,32 @@ class TheSerpentSocietyScenarioTest : FunSpec({
         driver.settle()
 
         driver.findPermanent(opponent, "Serpent Test Grunt") shouldNotBe null
+    }
+
+    test("deathtouch granted by a continuous effect still triggers the edict (last-known info)") {
+        val driver = driver()
+        val activePlayer = driver.activePlayer!!
+        val opponent = driver.getOpponent(activePlayer)
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        driver.putCreatureOnBattlefield(activePlayer, "The Serpent Society")
+        val grunt = driver.putCreatureOnBattlefield(activePlayer, "Serpent Test Grunt")
+        driver.putCreatureOnBattlefield(opponent, "Serpent Test Grunt")
+
+        driver.giveMana(activePlayer, Color.RED, 2)
+
+        // The Grunt has no printed deathtouch; grant it before it dies.
+        val venom = driver.putCardInHand(activePlayer, "Serpent Test Venom")
+        driver.castSpellWithTargets(activePlayer, venom, listOf(ChosenTarget.Permanent(grunt)))
+        driver.bothPass()
+
+        val zap = driver.putCardInHand(activePlayer, "Serpent Test Zap")
+        driver.castSpellWithTargets(activePlayer, zap, listOf(ChosenTarget.Permanent(grunt)))
+        driver.settle()
+
+        withClue("the keyword frozen on the ZoneChangeEvent is the granted one, so the edict fires") {
+            driver.findPermanent(opponent, "Serpent Test Grunt") shouldBe null
+        }
     }
 
     test("the Society's own death does not trigger it (OTHER binding)") {

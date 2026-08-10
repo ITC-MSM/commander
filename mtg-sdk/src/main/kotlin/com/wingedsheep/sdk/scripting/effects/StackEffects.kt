@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.scripting.filters.unified.TargetFilter
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.scripting.targets.TargetRequirement
 import com.wingedsheep.sdk.scripting.text.TextReplacer
+import com.wingedsheep.sdk.scripting.util.numberToWord
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -525,7 +526,7 @@ sealed interface WardCost {
     @Serializable
     data class PlayerCounters(val counterType: String, val amount: Int) : WardCost {
         override val description: String =
-            if (amount == 1) "a $counterType counter" else "${spellOutCount(amount)} $counterType counters"
+            if (amount == 1) "a $counterType counter" else "${numberToWord(amount)} $counterType counters"
         override val clause: String = "get $description"
     }
 
@@ -598,25 +599,6 @@ sealed interface WardCost {
 }
 
 /**
- * Spell out 1..10 the way oracle text does ("Ward—Get **five** poison counters"), falling back to
- * digits above ten. Local to the ward-cost descriptions; the number never reaches double digits on
- * a printed card.
- */
-private fun spellOutCount(n: Int): String = when (n) {
-    1 -> "one"
-    2 -> "two"
-    3 -> "three"
-    4 -> "four"
-    5 -> "five"
-    6 -> "six"
-    7 -> "seven"
-    8 -> "eight"
-    9 -> "nine"
-    10 -> "ten"
-    else -> n.toString()
-}
-
-/**
  * Counter the spell or ability that targeted this permanent unless its controller pays
  * the ward cost. Used by ward triggered abilities. The targeting source is identified
  * via context.targetingSourceEntityId (set by BecomesTargetEvent).
@@ -629,25 +611,34 @@ private fun spellOutCount(n: Int): String = when (n) {
 data class WardCounterEffect(
     val cost: WardCost
 ) : Effect {
-    override val description: String = when (cost) {
-        is WardCost.Mana ->
-            if (cost.waterbend) {
-                "Counter it unless its controller pays ${cost.manaCost} (they may tap " +
-                    "artifacts and creatures to help; each pays for {1})"
-            } else {
-                "Counter it unless its controller pays ${cost.manaCost}"
-            }
-        is WardCost.Life -> "Counter it unless its controller pays ${cost.amount} life"
-        is WardCost.DynamicLife -> "Counter it unless its controller pays life equal to ${cost.amount.description}"
-        is WardCost.Discard -> "Counter it unless its controller discards ${cost.description}"
-        is WardCost.Sacrifice -> "Counter it unless its controller sacrifices ${cost.description}"
-        is WardCost.CollectEvidence ->
-            "Counter it unless its controller exiles cards with total mana value " +
-                "${cost.amount} or greater from their graveyard"
-        is WardCost.PlayerCounters -> "Counter it unless its controller gets ${cost.description}"
-        is WardCost.Choice -> "Counter it unless its controller ${cost.clause}"
-        is WardCost.Composite -> "Counter it unless its controller pays ${cost.description}"
-    }
+    override val description: String = "Counter it unless its controller ${wardPaymentVerbPhrase(cost)}"
+}
+
+/**
+ * The ward payment as a **third-person** verb phrase — "pays {2}", "discards a card" — for
+ * [WardCounterEffect.description], whose subject is "its controller".
+ *
+ * Deliberately not [WardCost.clause]: that one is the bare imperative ("pay {2}") because it labels
+ * an option in the payment picker. A [WardCost.Choice] joins these conjugated phrases rather than
+ * its clauses, so a disjunction reads "…unless its controller discards a card or pays {2}" like
+ * every other branch, instead of "…unless its controller discard a card or pay {2}".
+ */
+private fun wardPaymentVerbPhrase(cost: WardCost): String = when (cost) {
+    is WardCost.Mana ->
+        if (cost.waterbend) {
+            "pays ${cost.manaCost} (they may tap artifacts and creatures to help; each pays for {1})"
+        } else {
+            "pays ${cost.manaCost}"
+        }
+    is WardCost.Life -> "pays ${cost.amount} life"
+    is WardCost.DynamicLife -> "pays life equal to ${cost.amount.description}"
+    is WardCost.Discard -> "discards ${cost.description}"
+    is WardCost.Sacrifice -> "sacrifices ${cost.description}"
+    is WardCost.CollectEvidence ->
+        "exiles cards with total mana value ${cost.amount} or greater from their graveyard"
+    is WardCost.PlayerCounters -> "gets ${cost.description}"
+    is WardCost.Choice -> cost.options.joinToString(" or ") { wardPaymentVerbPhrase(it) }
+    is WardCost.Composite -> "pays ${cost.description}"
 }
 
 // =============================================================================

@@ -30,8 +30,12 @@ import io.kotest.matchers.types.shouldBeInstanceOf
  *
  * The point of the card, and of this test, is that the *same printed shape* rides two different
  * rails: the cast side folds its mana leg into Titania's own mana cost (`AdditionalCost.OrPay`),
- * the ward side pays its mana leg standing alone (`WardCost.Choice`). Both legs are exercised on
- * both sides, plus the ward's decline.
+ * the ward side pays its mana leg standing alone (`WardCost.Choice`).
+ *
+ * Both ward legs are paid here, plus the ward's decline. On the cast side the assertion is
+ * *enumeration* — that both a discard cast and a pay-{2}-more cast are offered — not payment: the
+ * or-pay additional cost itself is pre-existing and is exercised end to end elsewhere (Pumpkin
+ * Bombardment), so what is new about Titania is that the two rails coexist on one card.
  */
 class TitaniaRuggedRumblerScenarioTest : FunSpec({
 
