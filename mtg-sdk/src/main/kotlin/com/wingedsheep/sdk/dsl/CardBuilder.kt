@@ -300,6 +300,13 @@ class CardBuilder(private val name: String) {
     var disguiseCost: PayCost? = null
 
     /**
+     * Effect applied as part of the turn-face-up action for a disguise creature — the "As this
+     * creature is turned face up, …" replacement clause (Bubble Smuggler). Sibling of
+     * [morphFaceUpEffect]; unlike a `Triggers.TurnedFaceUp` ability it doesn't use the stack.
+     */
+    var disguiseFaceUpEffect: Effect? = null
+
+    /**
      * Warp cost as a mana cost string (e.g., "{1}{R}").
      * When set, the card gains the Warp keyword ability.
      * Warp allows casting for an alternative cost; the permanent is exiled at end of turn
@@ -904,8 +911,13 @@ class CardBuilder(private val name: String) {
                 morphCost != null -> add(KeywordAbility.Morph(morphCost!!, morphFaceUpEffect))
             }
             when {
-                disguise != null -> add(KeywordAbility.Disguise(PayCost.Atom(CostAtom.Mana(ManaCost.parse(disguise!!)))))
-                disguiseCost != null -> add(KeywordAbility.Disguise(disguiseCost!!))
+                disguise != null -> add(
+                    KeywordAbility.Disguise(
+                        PayCost.Atom(CostAtom.Mana(ManaCost.parse(disguise!!))),
+                        disguiseFaceUpEffect
+                    )
+                )
+                disguiseCost != null -> add(KeywordAbility.Disguise(disguiseCost!!, disguiseFaceUpEffect))
             }
             if (warp != null) add(KeywordAbility.Warp(ManaCost.parse(warp!!)))
             if (dash != null) add(KeywordAbility.Dash(ManaCost.parse(dash!!)))

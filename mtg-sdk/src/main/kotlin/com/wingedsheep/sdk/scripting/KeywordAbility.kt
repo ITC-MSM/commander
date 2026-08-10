@@ -419,7 +419,14 @@ sealed interface KeywordAbility {
     @SerialName("Disguise")
     @Serializable
     data class Disguise(
-        val disguiseCost: PayCost
+        val disguiseCost: PayCost,
+        /**
+         * Effect applied as part of the turn-face-up action, for the "As this creature is turned
+         * face up, …" replacement clause (Bubble Smuggler: "put four +1/+1 counters on it"). The
+         * exact sibling of [Morph.faceUpEffect] — it does *not* use the stack and can't be
+         * responded to, which is what separates it from a `Triggers.TurnedFaceUp` ability.
+         */
+        val faceUpEffect: com.wingedsheep.sdk.scripting.effects.Effect? = null
     ) : KeywordAbility {
         /** Convenience constructor for mana-based disguise costs. */
         constructor(cost: ManaCost) : this(PayCost.Atom(CostAtom.Mana(cost)))
