@@ -2,6 +2,7 @@ package com.wingedsheep.engine.handlers.continuations
 import com.wingedsheep.sdk.dsl.Patterns
 
 import com.wingedsheep.engine.core.*
+import com.wingedsheep.engine.handlers.costs.CollectEvidenceResolver
 import com.wingedsheep.engine.handlers.effects.BattlefieldFilterUtils
 import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.handlers.effects.life.LifePaymentService
@@ -30,6 +31,7 @@ class ManaPaymentContinuationResumer(
         resumer(CounterUnlessPaysLifeContinuation::class, ::resumeCounterUnlessPaysLife),
         resumer(CounterUnlessDiscardContinuation::class, ::resumeCounterUnlessDiscard),
         resumer(CounterUnlessSacrificeContinuation::class, ::resumeCounterUnlessSacrifice),
+        resumer(CounterUnlessCollectEvidenceContinuation::class, ::resumeCounterUnlessCollectEvidence),
         resumer(CounterUnlessPaysManaSelectionContinuation::class, ::resumeCounterUnlessPaysManaSelection),
         resumer(WardTapPermanentsSubCostContinuation::class, ::resumeWardTapPermanentsSubCost),
         resumer(ChangeSpellTargetContinuation::class, ::resumeChangeSpellTarget),
@@ -386,6 +388,72 @@ class ManaPaymentContinuationResumer(
             checkForMore
         )?.let { return it }
         return checkForMore(newState, events)
+    }
+
+    /**
+     * Resume after the controller picks which graveyard cards to exile for a Ward—Collect
+     * evidence N trigger (CR 701.59 / 702.21 — Axebane Ferox).
+     *
+     * A legal collection (cards still in their graveyard whose mana values total at least
+     * `amount`) pays the cost and the spell resolves; anything short of that — including the empty
+     * selection, which is how the prompt expresses declining — counters it.
+     *
+     * The legality re-check and the exile both go through [CollectEvidenceResolver], so this path
+     * cannot drift from the activated-ability / cast-cost / effect forms, and the
+     * `EvidenceCollectedEvent` it emits fires "whenever you collect evidence" payoffs
+     * (Surveillance Monitor) off a ward payment exactly as off any other.
+     */
+    fun resumeCounterUnlessCollectEvidence(
+        state: GameState,
+        continuation: CounterUnlessCollectEvidenceContinuation,
+        response: DecisionResponse,
+        checkForMore: CheckForMore
+    ): ExecutionResult {
+        if (response !is CardsSelectedResponse) {
+            return ExecutionResult.error(
+                state, "Expected card selection response for counter unless collect evidence"
+            )
+        }
+
+        // Declined, or the graveyard shifted under the selection between prompt and response →
+        // counter. `isLegalSelection` re-reads the graveyard, so a card that left it no longer pays.
+        val legal = CollectEvidenceResolver.isLegalSelection(
+            state, continuation.payingPlayerId, continuation.amount, response.selectedCards
+        )
+        if (!legal) {
+            val counterResult = if (continuation.exileOnCounter) {
+                services.stackResolver.counterSpellToExile(
+                    state, continuation.spellEntityId,
+                    grantFreeCast = false,
+                    controllerId = continuation.controllerId ?: continuation.payingPlayerId
+                )
+            } else {
+                services.stackResolver.counterSpellOrAbility(state, continuation.spellEntityId)
+            }
+            return checkForMore(counterResult.newState, counterResult.events)
+        }
+
+        val collected = CollectEvidenceResolver.collect(
+            state,
+            continuation.payingPlayerId,
+            continuation.amount,
+            response.selectedCards,
+            sourceName = "Ward",
+        )
+        // Unreachable: isLegalSelection above already proved the collection legal.
+        if (collected !is CollectEvidenceResolver.Result.Success) {
+            return ExecutionResult.error(
+                state, "Ward—Collect evidence: ${(collected as CollectEvidenceResolver.Result.Failure).reason}"
+            )
+        }
+
+        chargeNextWardPartOrNull(
+            collected.state, collected.events,
+            continuation.remainingWardParts, continuation.spellEntityId,
+            continuation.payingPlayerId, continuation.wardSourceId, continuation.controllerId,
+            checkForMore
+        )?.let { return it }
+        return checkForMore(collected.state, collected.events)
     }
 
     /**

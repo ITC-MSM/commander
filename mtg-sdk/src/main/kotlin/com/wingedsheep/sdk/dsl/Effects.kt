@@ -2564,6 +2564,10 @@ object Effects {
     fun CreateClue(count: Int = 1, controller: EffectTarget? = null): Effect =
         CreatePredefinedTokenEffect("Clue", count, controller)
 
+    /** Create a dynamic number of Clue tokens — the count is evaluated at resolution time. */
+    fun CreateClue(count: DynamicAmount, controller: EffectTarget? = null): Effect =
+        CreatePredefinedTokenEffect("Clue", controller = controller, dynamicCount = count)
+
     /**
      * Investigate (keyword action, CR 701.36): create [count] Clue tokens. Synonymous with
      * [CreateClue]; named after the keyword action so card text "investigate" maps directly.
@@ -2573,6 +2577,14 @@ object Effects {
      */
     fun Investigate(count: Int = 1, controller: EffectTarget? = null): Effect =
         CreatePredefinedTokenEffect("Clue", count, controller)
+
+    /**
+     * Investigate a dynamic number of times — "investigate once for each …" (Wojek Investigator),
+     * where the repetition count is only known at resolution. A count of zero investigates not at
+     * all, which is what the wording means when nothing qualifies.
+     */
+    fun Investigate(count: DynamicAmount, controller: EffectTarget? = null): Effect =
+        CreatePredefinedTokenEffect("Clue", controller = controller, dynamicCount = count)
 
     /**
      * Create Lander artifact tokens.

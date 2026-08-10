@@ -77,6 +77,7 @@ sealed interface KeywordAbility {
      * - `Ward(WardCost.Life(2))`             — "Ward—Pay 2 life"
      * - `Ward(WardCost.Discard())`           — "Ward—Discard a card"
      * - `Ward(WardCost.Sacrifice(filter))`   — "Ward—Sacrifice a Food"
+     * - `Ward(WardCost.CollectEvidence(4))`  — "Ward—Collect evidence 4"
      */
     @SerialName("Ward")
     @Serializable
@@ -89,6 +90,9 @@ sealed interface KeywordAbility {
             is WardCost.DynamicLife -> "Ward—Pay life equal to ${cost.amount.description}"
             is WardCost.Discard -> "Ward—Discard ${cost.description}"
             is WardCost.Sacrifice -> "Ward—Sacrifice ${cost.description}"
+            // Capitalized: "Collect evidence N" is a keyword action, and the printed line reads
+            // "Ward—Collect evidence 4."
+            is WardCost.CollectEvidence -> "Ward—Collect evidence ${cost.amount}"
             is WardCost.Composite -> "Ward—${cost.description}"
         }
     }
@@ -1117,6 +1121,14 @@ sealed interface KeywordAbility {
          */
         fun wardSacrifice(filter: GameObjectFilter, count: Int = 1): KeywordAbility =
             Ward(WardCost.Sacrifice(filter, count))
+
+        /**
+         * Create Ward—Collect evidence N (CR 701.59) — "Ward—Collect evidence 4" (Axebane Ferox).
+         * The targeting opponent must exile cards with total mana value [amount] or greater from
+         * their own graveyard, or the spell/ability is countered.
+         */
+        fun wardCollectEvidence(amount: Int): KeywordAbility =
+            Ward(WardCost.CollectEvidence(amount))
 
         /**
          * Create Ward with a composite cost — all components must be paid. E.g.

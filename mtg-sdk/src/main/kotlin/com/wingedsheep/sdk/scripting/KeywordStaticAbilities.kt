@@ -85,6 +85,8 @@ data class GrantWard(
         is WardCost.DynamicLife -> "${filter.description} have \"Ward—Pay life equal to ${cost.amount.description}.\""
         is WardCost.Discard -> "${filter.description} have \"Ward—Discard ${cost.description}.\""
         is WardCost.Sacrifice -> "${filter.description} have \"Ward—Sacrifice ${cost.description}.\""
+        is WardCost.CollectEvidence ->
+            "${filter.description} have \"Ward—Collect evidence ${cost.amount}.\""
         is WardCost.Composite -> "${filter.description} have \"Ward—${cost.description}.\""
     }
     override fun applyTextReplacement(replacer: TextReplacer): StaticAbility {
