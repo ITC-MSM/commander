@@ -56,21 +56,28 @@ class EquipQualityVariantTest : FunSpec({
         }
     }
 
-    test("the printed 'Equip [quality]' cards are authored through the equipAbility facade") {
-        // Each of these prints a quality-restricted equip alongside (or instead of) a plain one.
-        // Before the facade grew a `quality`/`targetFilter` pair they were hand-rolled activated
-        // abilities missing `isEquipAbility`; this pins them to the shared rail.
-        val expected = mapOf(
+    test("the cards with a target-restricted equip are authored through the equipAbility facade") {
+        // Every card here activates a restricted equip through the facade, and each was a
+        // hand-rolled activated ability missing `isEquipAbility` before the facade grew its
+        // `quality`/`targetFilter` pair; this pins them to the shared rail.
+        //
+        // Only the first five are printed CR 702.6c "Equip [quality]" cards. Ghostfire Blade is
+        // not: it prints one "Equip {3}" plus "costs {2} less to activate if it targets a
+        // colorless creature", and its {1} ability is our *model* of that reduction, not a printed
+        // quality restriction. It rides the same rail, so it belongs in this assertion — but the
+        // label below describes our modelling, not its Oracle text.
+        val restrictedEquipLabels = mapOf(
             "Blackblade Reforged" to "legendary creature you control",
             "Bilbo's Ring" to "Halfling creature you control",
             "Dúnedain Blade" to "Human creature you control",
-            "Ghostfire Blade" to "colorless creature you control",
             "Mjölnir, Hammer of Thor" to "worthy creature you control",
             "Pirate Hat" to "Pirate creature you control",
+            // Modelled, not printed — see above.
+            "Ghostfire Blade" to "colorless creature you control",
         )
 
         assertSoftly {
-            for ((cardName, label) in expected) {
+            for ((cardName, label) in restrictedEquipLabels) {
                 val card = MtgSetCatalog.all.flatMap { it.cards }.firstOrNull { it.name == cardName }
                 withClue("$cardName is in the catalog") { card shouldNotBe null }
                 val labels = card!!.script.activatedAbilities

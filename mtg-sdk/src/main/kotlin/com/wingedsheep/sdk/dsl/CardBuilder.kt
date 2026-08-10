@@ -616,6 +616,12 @@ class CardBuilder(private val name: String) {
      * chosen quality". Build it off [TargetFilter.CreatureYouControl] (or a `GameObjectFilter`
      * ending in `.youControl()`) so that holds.
      *
+     * **The two halves are unchecked against each other.** Nothing links the [quality] wording to
+     * what [targetFilter] actually admits, so `quality = "Human"` next to a filter matching Pirates
+     * compiles and ships a prompt that lies; likewise the controlled-by-you rule above is enforced
+     * only by `EquipQualityVariantTest` (mtg-sets), which asserts it catalog-wide at build time.
+     * That test is the guard — keep the pair honest by hand.
+     *
      * The restriction is a *targeting* restriction only. Per CR 702.6c the additional quality
      * "[doesn't] restrict what the Equipment may be attached to", so an Equipment that stops
      * matching stays attached; it comes off only under CR 704.5n (attached to an illegal

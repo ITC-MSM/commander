@@ -208,8 +208,9 @@ gated on `Conditions.SourceHasCounter`.
 > Equip worthy {1} *(A creature is worthy if it's a legendary non-Villain that's red and/or white.)*
 
 Implemented 2026-08-10 as a **`quality` + `targetFilter` pair on the existing `equipAbility` facade**,
-with the five printed "Equip [quality]" cards that were hand-rolling the shape converged onto it —
-not as a second authoring path beside them.
+with the five existing cards that were hand-rolling the shape converged onto it — not as a second
+authoring path beside them. (Four of those five print an actual "Equip [quality]" ability; Ghostfire
+Blade is the exception — see below.)
 
 1. **`equipAbility(cost, genericCostReduction, quality, targetFilter)`**
    (`mtg-sdk/.../dsl/CardBuilder.kt`). CR 702.6c is the rule: an equip ability may further restrict
@@ -225,6 +226,13 @@ not as a second authoring path beside them.
    ("Equip—Sacrifice a creature") still use the hand-rolled escape hatch — the facade parses a mana
    cost only. `EquipQualityVariantTest` (mtg-sets) pins both catalog-wide invariants: every
    `isEquipAbility` ability is sorcery-speed and targets a single creature you control.
+
+   Of those five, only Blackblade Reforged, Bilbo's Ring, Dúnedain Blade and Pirate Hat print a
+   CR 702.6c quality restriction. **Ghostfire Blade does not** — it prints one "Equip {3}" plus
+   "This Equipment's equip ability costs {2} less to activate if it targets a colorless creature",
+   and our extra {1} ability is a *model* of that reduction (behaviourally equivalent, and older
+   than the facade's `genericCostReduction` rail, which is how it would be written today). It rides
+   the same rail; it is not a printed "Equip [quality]" card.
 
    "Worthy" itself is **not** an SDK concept — a Scryfall search for the term returns exactly one
    card, so it is spelled out on Mjölnir from existing predicates

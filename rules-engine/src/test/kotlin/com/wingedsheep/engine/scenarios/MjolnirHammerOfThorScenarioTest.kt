@@ -3,6 +3,7 @@ package com.wingedsheep.engine.scenarios
 import com.wingedsheep.engine.core.ActivateAbility
 import com.wingedsheep.engine.core.SelectManaSourcesDecision
 import com.wingedsheep.engine.state.components.battlefield.AttachedToComponent
+import com.wingedsheep.engine.state.components.battlefield.DamageComponent
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
 import com.wingedsheep.engine.support.ScenarioTestBase
 import com.wingedsheep.sdk.core.ManaCost
@@ -33,9 +34,10 @@ import io.kotest.matchers.shouldNotBe
  *    (`LegalActionInfo.validTargets`) is verbatim what the web client highlights; a filter that is
  *    only enforced at validation time would still let the UI offer an illegal creature.
  *  - **The doubling** is a `DoubleDamage` replacement scoped to the damage *source* being the
- *    equipped creature. Combat and noncombat both go through the engine's shared damage-source
- *    matcher, and Mjölnir's own ETB damage must not be doubled — it is dealt by Mjölnir, not by
- *    the creature it is attached to.
+ *    equipped creature, with `recipient` and `damageType` both left at `Any`. Combat and noncombat
+ *    damage go through the same shared damage-source matcher, so both are covered here — combat
+ *    damage to a player and an activated-ability ping at a permanent — each against an unequipped
+ *    control that pins the undoubled number.
  */
 class MjolnirHammerOfThorScenarioTest : ScenarioTestBase() {
 
@@ -43,24 +45,35 @@ class MjolnirHammerOfThorScenarioTest : ScenarioTestBase() {
     private val equipAbilityId get() = mjolnir.script.activatedAbilities.single { it.isEquipAbility }.id
     private val discardAbilityId get() = mjolnir.script.activatedAbilities.single { !it.isEquipAbility }.id
 
+    /** Prodigal Sorcerer — "{T}: This creature deals 1 damage to any target." */
+    private val sorcererPingAbilityId
+        get() = cardRegistry.getCard("Prodigal Sorcerer")!!.script.activatedAbilities.single().id
+
     /**
-     * Vanilla 2/2 bodies, defined here rather than picked out of the catalog so the four axes of
+     * Vanilla bodies, defined here rather than picked out of the catalog so the four axes of
      * "worthy" (legendary / not a Villain / red / white) are each varied one at a time and nothing
-     * else about the creature can influence the result.
+     * else about the creature can influence the result. 2/2 unless a test needs a body that
+     * survives the damage it is measuring.
      */
     private fun body(
         name: String,
         manaCost: String,
         subtype: Subtype,
         legendary: Boolean,
+        power: Int = 2,
+        toughness: Int = 2,
     ) = CardDefinition.creature(
         name = name,
         manaCost = ManaCost.parse(manaCost),
         subtypes = setOf(subtype),
-        power = 2,
-        toughness = 2,
+        power = power,
+        toughness = toughness,
         supertypes = if (legendary) setOf(Supertype.LEGENDARY) else emptySet(),
     )
+
+    /** Marked damage on a permanent, so a test can pin the *amount* and not just "it died". */
+    private fun TestGame.damageMarkedOn(id: EntityId): Int =
+        state.getEntity(id)?.get<DamageComponent>()?.amount ?: 0
 
     /**
      * Drive a freshly cast Mjölnir all the way through: pay for the spell, resolve it, answer the
@@ -99,6 +112,11 @@ class MjolnirHammerOfThorScenarioTest : ScenarioTestBase() {
         cardRegistry.register(body("Rank-and-File Hero", "{R}", Subtype.HERO, legendary = false))
         // Worthy in every respect except that an opponent controls it (CR 702.6c).
         cardRegistry.register(body("Rival Champion", "{R}", Subtype.HERO, legendary = true))
+        // A body big enough to survive the damage the amount-pinning tests measure, so the
+        // assertion can read marked damage instead of inferring the number from a death.
+        cardRegistry.register(
+            body("Stalwart Bulwark", "{4}", Subtype.HERO, legendary = false, power = 2, toughness = 5)
+        )
 
         context("Equip worthy {1} — CR 702.6c") {
 
@@ -179,9 +197,11 @@ class MjolnirHammerOfThorScenarioTest : ScenarioTestBase() {
                 if (game.getPendingDecision() is SelectManaSourcesDecision) game.submitManaSourcesAutoPay()
                 game.resolveStack()
 
-                withClue("a legendary red Villain is not worthy, so the ability never attaches") {
-                    (result.error != null ||
-                        game.state.getEntity(hammer)?.get<AttachedToComponent>() == null) shouldBe true
+                withClue("a legendary red Villain is not worthy: target validation rejects the activation") {
+                    result.error shouldNotBe null
+                }
+                withClue("and nothing was attached") {
+                    game.state.getEntity(hammer)?.get<AttachedToComponent>() shouldBe null
                 }
             }
 
@@ -258,29 +278,97 @@ class MjolnirHammerOfThorScenarioTest : ScenarioTestBase() {
 
                 game.getLifeTotal(2) shouldBe before - 2
             }
+
+            test("noncombat damage from the equipped creature is doubled, to a permanent too") {
+                // The replacement is scoped to the damage *source*; `recipient` and `damageType`
+                // both default to Any, so an activated-ability ping at a permanent doubles just
+                // like combat damage to a player does. Prodigal Sorcerer is not worthy, but per
+                // CR 702.6c the quality restricts targeting only — an effect (here the scenario
+                // builder) may attach the Equipment to any creature.
+                val game = scenario()
+                    .withPlayers("Player", "Opponent")
+                    .withCardOnBattlefield(1, "Prodigal Sorcerer", summoningSickness = false)
+                    .withCardAttachedTo(1, "Mjölnir, Hammer of Thor", "Prodigal Sorcerer")
+                    .withCardOnBattlefield(2, "Stalwart Bulwark")
+                    .withActivePlayer(1)
+                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                    .build()
+
+                val sorcerer = game.findPermanent("Prodigal Sorcerer")!!
+                val bulwark = game.findPermanent("Stalwart Bulwark")!!
+
+                game.execute(
+                    ActivateAbility(
+                        playerId = game.player1Id,
+                        sourceId = sorcerer,
+                        abilityId = sorcererPingAbilityId,
+                        targets = listOf(ChosenTarget.Permanent(bulwark)),
+                    )
+                ).error shouldBe null
+                game.resolveStack()
+                game.checkStateBasedActions()
+
+                withClue("the Sorcerer's printed 1 damage lands as 2 on the 2/5, which survives it") {
+                    game.damageMarkedOn(bulwark) shouldBe 2
+                    game.isOnBattlefield("Stalwart Bulwark") shouldBe true
+                }
+            }
+
+            test("noncombat damage from an unequipped creature is not doubled") {
+                // Control for the case above: same ping, Mjölnir on the battlefield but attached
+                // to nothing.
+                val game = scenario()
+                    .withPlayers("Player", "Opponent")
+                    .withCardOnBattlefield(1, "Prodigal Sorcerer", summoningSickness = false)
+                    .withCardOnBattlefield(1, "Mjölnir, Hammer of Thor")
+                    .withCardOnBattlefield(2, "Stalwart Bulwark")
+                    .withActivePlayer(1)
+                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                    .build()
+
+                val sorcerer = game.findPermanent("Prodigal Sorcerer")!!
+                val bulwark = game.findPermanent("Stalwart Bulwark")!!
+
+                game.execute(
+                    ActivateAbility(
+                        playerId = game.player1Id,
+                        sourceId = sorcerer,
+                        abilityId = sorcererPingAbilityId,
+                        targets = listOf(ChosenTarget.Permanent(bulwark)),
+                    )
+                ).error shouldBe null
+                game.resolveStack()
+                game.checkStateBasedActions()
+
+                game.damageMarkedOn(bulwark) shouldBe 1
+            }
         }
 
         context("the enters trigger and the discard ability") {
 
-            test("Mjölnir's own enters damage is 4 and is not doubled by its own replacement") {
-                // The replacement is scoped to the *equipped creature* as the damage source.
-                // Mjölnir deals this damage itself, so it stays at 4 even while attached.
+            test("Mjölnir's own enters damage is exactly 4") {
+                // Pinned by marked damage on a body that survives it, so the assertion fails on 2,
+                // 3 or a doubled 8 alike. (The doubling can't apply here in any case: an Equipment
+                // doesn't enter attached to anything — CR 301.5b — so as this trigger resolves
+                // there is no equipped creature to be the source. The source-scoping of the
+                // replacement is what the two unequipped control cases above pin.)
                 val game = scenario()
                     .withPlayers("Player", "Opponent")
                     .withCardInHand(1, "Mjölnir, Hammer of Thor")
-                    .withCardOnBattlefield(2, "Rival Champion")
+                    .withCardOnBattlefield(2, "Stalwart Bulwark")
                     .withLandsOnBattlefield(1, "Mountain", 4)
                     .withActivePlayer(1)
                     .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
                     .build()
 
-                val victim = game.findPermanent("Rival Champion")!!
+                val victim = game.findPermanent("Stalwart Bulwark")!!
 
                 game.castSpell(1, "Mjölnir, Hammer of Thor").error shouldBe null
                 game.settleEntersTrigger { game.selectTargets(listOf(victim)) }
 
-                withClue("4 damage kills the 2/2") {
-                    game.isOnBattlefield("Rival Champion") shouldBe false
+                withClue("the 2/5 takes 4 — not 2, not 8 — and survives") {
+                    game.damageMarkedOn(victim) shouldBe 4
+                    game.isOnBattlefield("Stalwart Bulwark") shouldBe true
                 }
             }
 

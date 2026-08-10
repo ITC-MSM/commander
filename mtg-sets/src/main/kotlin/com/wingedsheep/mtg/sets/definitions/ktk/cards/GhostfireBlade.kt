@@ -32,8 +32,19 @@ val GhostfireBlade = card("Ghostfire Blade") {
     }
 
     // Equip {1}: Attach to target colorless creature you control.
-    // (Equip costs {2} less for colorless creatures — modeled as an "Equip [quality] creature"
-    // variant per CR 702.6c, since the discount is only ever available on a colorless target.)
+    //
+    // NOT a printed "Equip [quality]" card. Ghostfire Blade prints one equip ability, "Equip {3}",
+    // plus a cost reduction ("costs {2} less to activate if it targets a colorless creature") — no
+    // CR 702.6c quality restriction is involved. This {1} ability is a *model* of that reduction:
+    // a second equip whose target filter matches exactly the creatures the discount applies to.
+    // Behaviour is equivalent (a colorless target can always be equipped for {1}, anything else for
+    // {3}), and the two-ability shape is retained only because it predates the facade's
+    // quality/targetFilter pair.
+    //
+    // If it were re-modelled, the mechanism would be `equipAbility`'s existing
+    // `genericCostReduction` rail (a `DynamicAmount` evaluated against the chosen target — the same
+    // one Dragonfire Blade uses via `DynamicAmounts.targetColorCount()`), expressing it as the
+    // single printed ability it is.
     equipAbility(
         "{1}",
         quality = "colorless",
