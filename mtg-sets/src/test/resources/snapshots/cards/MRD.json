@@ -274,6 +274,49 @@
     ]
 }
 
+// Barter in Blood
+{
+    "name": "Barter in Blood",
+    "manaCost": "{2}{B}{B}",
+    "typeLine": "Sorcery",
+    "oracleText": "Each player sacrifices two creatures of their choice.",
+    "script": {
+        "spellEffect": {
+            "type": "ForceSacrifice",
+            "filter": "creature",
+            "count": 2,
+            "target": {
+                "type": "PlayerRef",
+                "player": "Each"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "57",
+        "rarity": "UNCOMMON",
+        "artist": "Paolo Parente",
+        "flavorText": "\"In the game of conquest, who cares about the pawns if the king yet reigns?\"\n—Geth, keeper of the Vault",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/e/beccbb2c-ca1d-4b72-9eca-a64a313fd830.jpg?1783944550",
+        "rulings": [
+            {
+                "date": "2012-05-01",
+                "text": "The active player chooses which creatures will be sacrificed first, then each other player in turn order does the same. Then all creatures are sacrificed simultaneously."
+            },
+            {
+                "date": "2012-05-01",
+                "text": "If a player controls only one creature, that creature is sacrificed."
+            },
+            {
+                "date": "2012-05-01",
+                "text": "Barter in Blood doesn't target any creatures and may be cast even if a player controls fewer than two creatures."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Battlegrowth
 {
     "name": "Battlegrowth",
@@ -555,6 +598,117 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Consume Spirit
+{
+    "name": "Consume Spirit",
+    "manaCost": "{X}{1}{B}",
+    "typeLine": "Sorcery",
+    "oracleText": "Spend only black mana on X.\nConsume Spirit deals X damage to any target and you gain X life.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "DealDamage",
+                    "amount": "XValue",
+                    "target": {
+                        "type": "ContextTarget",
+                        "index": 0
+                    }
+                },
+                {
+                    "type": "GainLife",
+                    "amount": "XValue"
+                }
+            ]
+        },
+        "targetRequirements": [
+            "AnyTarget"
+        ],
+        "xManaRestriction": [
+            "BLACK"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "60",
+        "artist": "Matt Thompson",
+        "flavorText": "Mephidross changes all who dwell there, taking their lives and adding them to its own.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/3/f375a49c-806a-4d8b-9513-6b4afc19497b.jpg?1783944549",
+        "rulings": [
+            {
+                "date": "2009-10-01",
+                "text": "The amount of life you gain is equal to the number chosen for X, not the amount of damage Consume Spirit deals (in case some of it is prevented)."
+            },
+            {
+                "date": "2009-10-01",
+                "text": "If the targeted permanent or player is an illegal target by the time Consume Spirit would resolve, the entire spell doesn't resolve. You won't gain any life."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Contaminated Bond
+{
+    "name": "Contaminated Bond",
+    "manaCost": "{1}{B}",
+    "typeLine": "Enchantment — Aura",
+    "oracleText": "Enchant creature\nWhenever enchanted creature attacks or blocks, its controller loses 3 life.",
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "GrantTriggeredAbility",
+                "ability": {
+                    "id": "ability_1",
+                    "trigger": "AttackEvent",
+                    "effect": {
+                        "type": "LoseLife",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 3
+                        },
+                        "target": "Controller"
+                    },
+                    "descriptionOverride": "Whenever this creature attacks, its controller loses 3 life."
+                }
+            },
+            {
+                "type": "GrantTriggeredAbility",
+                "ability": {
+                    "id": "ability_2",
+                    "trigger": "BlockEvent",
+                    "effect": {
+                        "type": "LoseLife",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 3
+                        },
+                        "target": "Controller"
+                    },
+                    "descriptionOverride": "Whenever this creature blocks, its controller loses 3 life."
+                }
+            }
+        ],
+        "auraTarget": {
+            "type": "TargetObject",
+            "filter": {
+                "baseFilter": "creature"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "61",
+        "artist": "Thomas M. Baxa",
+        "flavorText": "This leash disciplines the master.",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/1/a1a64356-3064-47a2-80be-5e2f56c85556.jpg?1783944549"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 
@@ -5081,6 +5235,62 @@
     ]
 }
 
+// Tooth of Chiss-Goria
+{
+    "name": "Tooth of Chiss-Goria",
+    "manaCost": "{3}",
+    "typeLine": "Artifact",
+    "oracleText": "Flash\nAffinity for artifacts (This spell costs {1} less to cast for each artifact you control.)\n{T}: Target creature gets +1/+0 until end of turn.",
+    "keywords": [
+        "FLASH",
+        "AFFINITY"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Affinity",
+            "forType": "ARTIFACT"
+        }
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 0
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature"
+                        },
+                        "id": "target"
+                    }
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "264",
+        "artist": "Alan Pollack",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/b/db5a91db-1b86-4471-badc-884142c355ca.jpg?1783944497"
+    },
+    "colorIdentityOverride": []
+}
+
 // Tower of Champions
 {
     "name": "Tower of Champions",
@@ -5422,6 +5632,51 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Vedalken Archmage
+{
+    "name": "Vedalken Archmage",
+    "manaCost": "{2}{U}{U}",
+    "typeLine": "Creature — Vedalken Wizard",
+    "oracleText": "Whenever you cast an artifact spell, draw a card.",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            "IsArtifact"
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "55",
+        "rarity": "RARE",
+        "artist": "Kev Walker",
+        "flavorText": "\"The Knowledge Pool knows. Memnarch understands.\"\n—Janus, speaker of the synod",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/b/8b38da97-5141-4de6-bd7f-3fcbf46cfd96.jpg?1783944550"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 
