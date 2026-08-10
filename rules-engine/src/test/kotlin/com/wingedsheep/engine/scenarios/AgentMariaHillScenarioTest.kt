@@ -3,6 +3,7 @@ package com.wingedsheep.engine.scenarios
 import com.wingedsheep.engine.core.CrewVehicle
 import com.wingedsheep.engine.state.components.battlefield.CountersComponent
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
+import com.wingedsheep.engine.state.components.stack.TriggeredAbilityOnStackComponent
 import com.wingedsheep.engine.support.ScenarioTestBase
 import com.wingedsheep.sdk.core.CounterType
 import com.wingedsheep.sdk.core.Phase
@@ -29,8 +30,9 @@ import io.kotest.matchers.shouldBe
  * is the only one where `tappedById` differs, which is where cause and attribution could be
  * confused for one another.
  *
- * The remaining two causes [com.wingedsheep.sdk.scripting.TapReason] names — a mana ability and a
- * `{T}` activation cost — cannot be aimed at *her*: she has neither. Those directions, plus the
+ * [com.wingedsheep.sdk.scripting.TapReason] itself names only two members — `UNSPECIFIED` and
+ * `TEAMWORK`. Two of the unclassified causes listed on `UNSPECIFIED` (a mana ability and a `{T}`
+ * activation cost) cannot be aimed at *her* anyway: she has neither. Those directions, plus the
  * event/predicate mechanics themselves, are pinned on the shared axis in `TapReasonScenarioTest`.
  */
 class AgentMariaHillScenarioTest : ScenarioTestBase() {
@@ -63,6 +65,17 @@ class AgentMariaHillScenarioTest : ScenarioTestBase() {
                 game.castSpellWithTeamwork(1, "Repulsor Blast", "Agent Maria Hill", targetId = wall)
                     .error shouldBe null
                 game.state.getEntity(hill)?.has<TappedComponent>() shouldBe true
+
+                // The cost is paid during casting, so the trigger only reaches the stack once the
+                // spell has become cast (CR 601.2i) — and CR 603.3 puts it on top, so it resolves
+                // before the spell it paid for.
+                withClue("her trigger sits on top of the spell that it paid for") {
+                    val top = game.state.getTopOfStack().shouldNotBeNull()
+                    game.state.getEntity(top)?.get<TriggeredAbilityOnStackComponent>()
+                        .shouldNotBeNull()
+                        .sourceName shouldBe "Agent Maria Hill"
+                    game.state.stack.size shouldBe 2
+                }
 
                 game.resolveStack()
 

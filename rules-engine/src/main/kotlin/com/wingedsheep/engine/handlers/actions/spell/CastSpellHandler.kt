@@ -2482,7 +2482,8 @@ class CastSpellHandler(
         // The non-mana half of the optional cost the caster *declared* (kicker, bargain, teamwork —
         // `action.declaredCostSlot`), kept aside so the payment loop below can tell it apart from
         // the card's printed additional costs. Only this one carries the declared mechanic's
-        // identity, which is what names a tap's cause ([TapReason.forChoiceSlot]).
+        // identity, which is what names a tap's cause ([TapReason.forChoiceSlot]). Reduced into
+        // `declaredSlotCosts` below before the comparison is made.
         val declaredSlotAdditionalCost: AdditionalCost? = declaredOptionalCosts(action, cardDef)
             .firstOrNull { it.additionalCost != null }
             ?.additionalCost
@@ -2540,14 +2541,14 @@ class CastSpellHandler(
 
         val flattenedAllCosts = reduceCostAlternatives(allAdditionalCosts, currentState, action.playerId, action.additionalCostPayment)
 
-        // At most one VariablePermanents atom per cast. Every one of them pays out of the *same*
-        // `additionalCostPayment.variableCostPermanents` selection, so a second would re-consume
-        // the first's permanents and — for a TAP atom — lose its tap cause entirely (the permanents
-        // are already tapped, so the tap atom emits no event). Checked here, before a single cost is
-        // paid, so a violation can never leave a half-paid cast behind. See
-        // [VariablePermanentsCost.requireAtMostOnePerCast] for why nothing reachable breaks it today
-        // and why it is still worth asserting.
-        VariablePermanentsCost.requireAtMostOnePerCast(flattenedAllCosts)
+        // The declared slot's cost, put through the *same* reduction as the full list, so the
+        // payment loop can recognise it by equality. Reducing both sides is what makes the match
+        // survive an `AdditionalCost.Composite` or `Choice` wrapper: `reduceCostAlternatives`
+        // flattens composites and picks a Choice's leg, so comparing an unreduced wrapper against
+        // the reduced list would never match and would silently drop the tap cause.
+        val declaredSlotCosts: List<AdditionalCost> = reduceCostAlternatives(
+            listOfNotNull(declaredSlotAdditionalCost), currentState, action.playerId, action.additionalCostPayment
+        )
 
         // Server-initiated free cast: pay the spell's printed additional costs even though the
         // mana cost is waived (CR 601.2f / 118.9). A normal client cast arrives with the
@@ -2680,22 +2681,10 @@ class CastSpellHandler(
                             // declaration. Tapping itself goes through
                             // [VariablePermanentsCost.tapAll] — the single tap site for this atom,
                             // shared with the activated-ability payer in `CostHandler`.
-                            //
-                            // **Load-bearing invariant: at most one VariablePermanents atom per
-                            // cast.** `chosen` below is the one shared selection for the whole cast,
-                            // and the card's printed additional costs are added to
-                            // `allAdditionalCosts` *before* `declaredSlotAdditionalCost` — so a
-                            // second TAP atom reaching here would tap the whole selection first as
-                            // UNSPECIFIED, and the declared (teamwork) atom would then find it
-                            // already tapped and emit nothing at all. Asserted up front by
-                            // `VariablePermanentsCost.requireAtMostOnePerCast(flattenedAllCosts)`,
-                            // which also settles the structural-equality question on the identity
-                            // check below: with one such atom per cast there is no second, equal
-                            // atom for it to mistake for the declared one.
                             val chosen = action.additionalCostPayment.variableCostPermanents
                             when (atom.action) {
                                 PermanentCostAction.TAP -> {
-                                    val reason = if (additionalCost == declaredSlotAdditionalCost) {
+                                    val reason = if (additionalCost in declaredSlotCosts) {
                                         TapReason.forChoiceSlot(action.declaredCostSlot)
                                     } else {
                                         TapReason.UNSPECIFIED

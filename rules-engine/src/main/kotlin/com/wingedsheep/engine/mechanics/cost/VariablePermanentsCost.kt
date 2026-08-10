@@ -8,7 +8,6 @@ import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.sdk.model.EntityId
-import com.wingedsheep.sdk.scripting.AdditionalCost
 import com.wingedsheep.sdk.scripting.TapReason
 import com.wingedsheep.sdk.scripting.costs.CostAtom
 import com.wingedsheep.sdk.scripting.costs.PermanentCostAction
@@ -98,44 +97,6 @@ object VariablePermanentsCost {
             container.get<CardComponent>() ?: return@filter false
             if (atom.action == PermanentCostAction.TAP && container.has<TappedComponent>()) return@filter false
             predicateEvaluator.matches(state, projected, entityId, atom.filter, context)
-        }
-    }
-
-    /**
-     * Enforces the **"at most one [CostAtom.VariablePermanents] atom per cast"** invariant on the
-     * flattened additional costs of a single cast, failing loudly when it is broken.
-     *
-     * A cast carries exactly *one* selection for this atom — `AdditionalCostPayment
-     * .variableCostPermanents` is a single flat list, chosen once when the cast is announced
-     * (CR 601.2b) — so a second atom on the same cast would silently consume the *same* permanents
-     * the first one already paid with. For [PermanentCostAction.TAP] that is worse than paying
-     * twice: the first atom taps the whole selection, the second finds it already tapped, and
-     * because tapping is a transition (CR 701.26a) the tap atom emits no event for it — so the
-     * second atom's [TapReason] is lost outright. The card's own printed additional costs are
-     * assembled *before* the declared optional cost (`CastSpellHandler`), which means the dropped
-     * cause would be the declared one, i.e. [TapReason.TEAMWORK] — the only classified cause there
-     * is, and the thing Agent Maria Hill reads.
-     *
-     * Nothing can violate this today, which is exactly why it needs stating:
-     * `Costs.additional.TapForTotalPower` (Teamwork N, CR 702.194a) is the only facade producing a
-     * `VariablePermanents` *additional* cost — `Costs.ExilePermanents` / `Costs.SacrificePermanents`
-     * produce `AbilityCost`s, on the activated-ability rail — and a cast declares at most one
-     * optional cost slot. The check exists so that the day a second one is authored, the cast fails
-     * here with a named reason instead of mispaying and dropping a tap cause somewhere downstream.
-     *
-     * Call it before any cost is paid, so a violation cannot leave a half-paid cast behind.
-     *
-     * @throws IllegalStateException when [additionalCosts] holds more than one such atom.
-     */
-    fun requireAtMostOnePerCast(additionalCosts: List<AdditionalCost>) {
-        val atoms = additionalCosts.count {
-            (it as? AdditionalCost.Atom)?.atom is CostAtom.VariablePermanents
-        }
-        check(atoms <= 1) {
-            "A cast has one variable-permanents selection to pay with, but this cast carries " +
-                "$atoms VariablePermanents additional costs. They would all consume the same " +
-                "chosen permanents, and the declared cost's tap reason would be silently dropped. " +
-                "A second such cost needs its own payment slot on AdditionalCostPayment."
         }
     }
 

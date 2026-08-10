@@ -1531,9 +1531,17 @@ object Triggers {
      *
      * Distinct from [becomesTapped] (per-permanent — fires once for each tapped permanent). ANY
      * binding; scope with the filter's `youControl` for "you control".
+     *
+     * [reason] restricts *why* the permanents became tapped, exactly as on [becomesTapped] — null
+     * (the default) is the cause-agnostic wording. A batch mixing causes is *narrowed* to the taps
+     * matching [reason] rather than discarded, the same way [YouTap]'s batch narrows by tapper, so
+     * the trigger still fires once on the matching subset.
      */
-    fun OneOrMoreBecomeTapped(filter: GameObjectFilter): TriggerSpec =
-        TriggerSpec(event = TapEvent(filter = filter, batch = true), binding = TriggerBinding.ANY)
+    fun OneOrMoreBecomeTapped(
+        filter: GameObjectFilter,
+        reason: TapReason? = null,
+    ): TriggerSpec =
+        TriggerSpec(event = TapEvent(filter = filter, batch = true, reason = reason), binding = TriggerBinding.ANY)
 
     /**
      * Whenever **you tap** an untapped permanent matching [filter] — the active wording of the
