@@ -8289,11 +8289,15 @@ For "X = the number of [things] attached to this permanent":
 - `DynamicAmounts.equipmentAttachedToSelf()` — only the Equipment attached to the source (Shagrat,
   Loot Bearer: "amass Orcs X, where X is the number of Equipment attached to Shagrat"). Desugars to
   `EntityProperty(Source, AttachmentCount(AttachmentKind.EQUIPMENT))`.
-- `DynamicAmounts.attachmentsOnEnchantedCreature()` — every Aura/Equipment attached to the
-  *enchanted* creature (the creature the source Aura is attached to), for an Aura that buffs its host
-  by its host's own attachment count (With Great Power…: "enchanted creature gets +2/+2 for each Aura
-  and Equipment attached to it"). Desugars to `EntityProperty(EnchantedCreature, AttachmentCount())`.
-  Distinct from `attachmentsOnSelf()`, which counts attachments on the source itself.
+- `DynamicAmounts.attachmentsOnEnchantedCreature(kind = AttachmentKind.ANY)` — attachments of `kind`
+  on the creature the *source* is attached to (the enchanted creature for an Aura, the equipped
+  creature for an Equipment — both read the same attachment link), for an Aura or Equipment that
+  buffs its host by that host's own attachment count. Desugars to
+  `EntityProperty(EnchantedCreature, AttachmentCount(kind))`. Default `ANY` counts every Aura and
+  Equipment (With Great Power…: "enchanted creature gets +2/+2 for each Aura and Equipment attached
+  to it"); `AttachmentKind.EQUIPMENT` counts only Equipment (Golem-Skin Gauntlets: "equipped creature
+  gets +1/+0 for each Equipment attached to it", which includes the Gauntlets themselves). Distinct
+  from `attachmentsOnSelf()`, which counts attachments on the source itself.
 
 `AttachmentCount(kind)` takes an `AttachmentKind` (`ANY` / `EQUIPMENT` / `AURA`); the evaluator
 counts the source's `attachedIds` whose card type matches the kind.

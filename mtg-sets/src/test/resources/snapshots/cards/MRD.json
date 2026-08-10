@@ -593,6 +593,77 @@
     "colorIdentityOverride": []
 }
 
+// Clockwork Condor
+{
+    "name": "Clockwork Condor",
+    "manaCost": "{4}",
+    "typeLine": "Artifact Creature — Bird",
+    "oracleText": "Flying\nThis creature enters with three +1/+1 counters on it.\nWhenever this creature attacks or blocks, remove a +1/+1 counter from it at end of combat.",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 0
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "END_COMBAT",
+                    "player": "Each"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "RemoveCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": "Self"
+                },
+                "triggerCondition": {
+                    "type": "Any",
+                    "conditions": [
+                        {
+                            "type": "EntityMatches",
+                            "entity": "Self",
+                            "filter": {
+                                "statePredicates": [
+                                    "AttackedThisCombat"
+                                ]
+                            }
+                        },
+                        {
+                            "type": "EntityMatches",
+                            "entity": "Self",
+                            "filter": {
+                                "statePredicates": [
+                                    "BlockedThisCombat"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "Whenever this creature attacks or blocks, remove a +1/+1 counter from it at end of combat."
+            }
+        ],
+        "replacementEffects": [
+            {
+                "type": "EntersWithCounters",
+                "count": 3,
+                "selfOnly": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "154",
+        "artist": "Arnie Swekel",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/2/02a7e1a6-347e-47bc-8a14-e584a45941e1.jpg?1783944525"
+    },
+    "colorIdentityOverride": []
+}
+
 // Cloudpost
 {
     "name": "Cloudpost",
@@ -1802,6 +1873,75 @@
     ]
 }
 
+// Golem-Skin Gauntlets
+{
+    "name": "Golem-Skin Gauntlets",
+    "manaCost": "{1}",
+    "typeLine": "Artifact — Equipment",
+    "oracleText": "Equipped creature gets +1/+0 for each Equipment attached to it.\nEquip {2}",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{2}"
+                    }
+                },
+                "effect": {
+                    "type": "AttachEquipment",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "creature you control"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        },
+                        "id": "creature you control"
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "isEquipAbility": true
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "GrantDynamicStats",
+                "filter": {
+                    "baseFilter": "permanent",
+                    "scope": "AttachedTo"
+                },
+                "powerBonus": {
+                    "type": "EntityProperty",
+                    "entity": "EnchantedCreature",
+                    "numericProperty": {
+                        "type": "AttachmentCount",
+                        "kind": "EQUIPMENT"
+                    }
+                },
+                "toughnessBonus": {
+                    "type": "Fixed",
+                    "amount": 0
+                }
+            }
+        ]
+    },
+    "equipCost": "{2}",
+    "metadata": {
+        "collectorNumber": "181",
+        "rarity": "UNCOMMON",
+        "artist": "Alan Pollack",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/9/a9519f2a-e98d-4f84-885c-24a9849a996d.jpg?1783944519"
+    },
+    "colorIdentityOverride": []
+}
+
 // Great Furnace
 {
     "name": "Great Furnace",
@@ -2648,6 +2788,63 @@
         "artist": "Heather Hudson",
         "flavorText": "The Auriok believe that in the hands of a loxodon, no weapon can be broken.",
         "imageUri": "https://cards.scryfall.io/normal/front/c/1/c17ac7c1-6d53-40b4-921f-4e23e4026041.jpg?1783944561"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Loxodon Punisher
+{
+    "name": "Loxodon Punisher",
+    "manaCost": "{3}{W}",
+    "typeLine": "Creature — Elephant Soldier",
+    "oracleText": "This creature gets +2/+2 for each Equipment attached to it.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "GrantDynamicStats",
+                "filter": {
+                    "baseFilter": "permanent",
+                    "scope": "Self"
+                },
+                "powerBonus": {
+                    "type": "Multiply",
+                    "amount": {
+                        "type": "EntityProperty",
+                        "entity": "Source",
+                        "numericProperty": {
+                            "type": "AttachmentCount",
+                            "kind": "EQUIPMENT"
+                        }
+                    },
+                    "multiplier": 2
+                },
+                "toughnessBonus": {
+                    "type": "Multiply",
+                    "amount": {
+                        "type": "EntityProperty",
+                        "entity": "Source",
+                        "numericProperty": {
+                            "type": "AttachmentCount",
+                            "kind": "EQUIPMENT"
+                        }
+                    },
+                    "multiplier": 2
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "14",
+        "rarity": "RARE",
+        "artist": "Terese Nielsen",
+        "flavorText": "The loxodons believe punishment comes in two steps: pain and atonement. They carry a weapon for each.",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/f/df2b90b8-8306-4543-b9f4-3cfd033f5ca5.jpg?1783944561"
     },
     "colorIdentityOverride": [
         "WHITE"
@@ -4483,6 +4680,123 @@
         "artist": "Arnie Swekel",
         "flavorText": "Where herds have passed, the dented ground is lined with piles of rust.",
         "imageUri": "https://cards.scryfall.io/normal/front/5/d/5d23449c-4439-4425-ad53-84168a94b1ce.jpg"
+    },
+    "colorIdentityOverride": []
+}
+
+// Scrabbling Claws
+{
+    "name": "Scrabbling Claws",
+    "manaCost": "{1}",
+    "typeLine": "Artifact",
+    "oracleText": "{T}: Target player exiles a card from their graveyard.\n{1}, Sacrifice this artifact: Exile target card from a graveyard. Draw a card.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Graveyard",
+                                "player": {
+                                    "type": "ContextPlayer",
+                                    "index": 0
+                                }
+                            },
+                            "storeAs": "clawsGraveyard"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "clawsGraveyard",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "chooser": "TargetPlayer",
+                            "storeSelected": "clawsExiled",
+                            "prompt": "Exile a card from your graveyard"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "clawsExiled",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile",
+                                "player": {
+                                    "type": "ContextPlayer",
+                                    "index": 0
+                                }
+                            }
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    "TargetPlayer"
+                ],
+                "descriptionOverride": "{T}: Target player exiles a card from their graveyard."
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}"
+                            }
+                        },
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "MoveToZone",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target card in a graveyard"
+                            },
+                            "destination": "Exile"
+                        },
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": {},
+                            "zone": "Graveyard"
+                        },
+                        "id": "target card in a graveyard"
+                    }
+                ],
+                "descriptionOverride": "{1}, Sacrifice this artifact: Exile target card from a graveyard. Draw a card."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "237",
+        "rarity": "UNCOMMON",
+        "artist": "Thomas M. Baxa",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/1/415027f8-ccef-4b38-ace2-db4e94f066fe.jpg?1783944505"
     },
     "colorIdentityOverride": []
 }
@@ -7407,6 +7721,79 @@
         "rarity": "UNCOMMON",
         "artist": "Matt Thompson",
         "imageUri": "https://cards.scryfall.io/normal/front/c/5/c5a6e960-169d-431a-9ebd-c4413aa67377.jpg?1783944543"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Wrench Mind
+{
+    "name": "Wrench Mind",
+    "manaCost": "{B}{B}",
+    "typeLine": "Sorcery",
+    "oracleText": "Target player discards two cards unless they discard an artifact card.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherCards",
+                    "source": {
+                        "type": "FromZone",
+                        "zone": "Hand",
+                        "player": {
+                            "type": "ContextPlayer",
+                            "index": 0
+                        }
+                    },
+                    "storeAs": "hand"
+                },
+                {
+                    "type": "SelectFromCollection",
+                    "from": "hand",
+                    "selection": {
+                        "type": "ChooseExactly",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 2
+                        }
+                    },
+                    "chooser": "TargetPlayer",
+                    "storeSelected": "discarded",
+                    "prompt": "Discard two cards, or a single artifact card",
+                    "restrictions": [
+                        {
+                            "type": "ReducedMinimumIfMatches",
+                            "reducedMinimum": 1,
+                            "filter": "artifact"
+                        }
+                    ]
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "discarded",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Graveyard",
+                        "player": {
+                            "type": "ContextPlayer",
+                            "index": 0
+                        }
+                    },
+                    "moveType": "Discard"
+                }
+            ]
+        },
+        "targetRequirements": [
+            "TargetPlayer"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "84",
+        "artist": "Pete Venters",
+        "flavorText": "What is the sound of one head snapping?",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/6/36ce975b-c3df-4472-a6c1-2546df11b74e.jpg?1783944542"
     },
     "colorIdentityOverride": [
         "BLACK"

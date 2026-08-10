@@ -621,13 +621,21 @@ object DynamicAmounts {
         DynamicAmount.EntityProperty(EntityReference.Source, EntityNumericProperty.AttachmentCount())
 
     /**
-     * Number of Auras and Equipment attached to the enchanted creature — the creature the source
-     * Aura is attached to (With Great Power…: "enchanted creature gets +2/+2 for each Aura and
-     * Equipment attached to it"). Distinct from [attachmentsOnSelf], which counts attachments on
-     * the source itself.
+     * Number of attachments of [kind] on the creature the source is attached to — the *enchanted*
+     * creature for an Aura, the *equipped* creature for an Equipment; both read the same attachment
+     * link. Defaults to [AttachmentKind.ANY]: every Aura and Equipment (With Great Power…:
+     * "enchanted creature gets +2/+2 for each Aura and Equipment attached to it"). Pass
+     * [AttachmentKind.EQUIPMENT] for the Equipment-only count an Equipment buffing its own host by
+     * that host's Equipment needs (Golem-Skin Gauntlets: "equipped creature gets +1/+0 for each
+     * Equipment attached to it" — which includes the Gauntlets themselves).
+     *
+     * Distinct from [attachmentsOnSelf], which counts attachments on the source itself.
      */
-    fun attachmentsOnEnchantedCreature(): DynamicAmount =
-        DynamicAmount.EntityProperty(EntityReference.EnchantedCreature, EntityNumericProperty.AttachmentCount())
+    fun attachmentsOnEnchantedCreature(kind: AttachmentKind = AttachmentKind.ANY): DynamicAmount =
+        DynamicAmount.EntityProperty(
+            EntityReference.EnchantedCreature,
+            EntityNumericProperty.AttachmentCount(kind)
+        )
 
     /** Number of Equipment attached to the source (Shagrat, Loot Bearer's amass amount). */
     fun equipmentAttachedToSelf(): DynamicAmount =
