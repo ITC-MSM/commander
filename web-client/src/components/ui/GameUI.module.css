@@ -3343,7 +3343,7 @@
 }
 
 /*
- * Community row: Discord + the contributor guide. Sits in the same glass panel as the credits
+ * Community row: Discord, GitHub + the contributor guide. Sits in the same glass panel as the credits
  * rather than in a second one, divided off by a hairline — it is an invitation, not attribution,
  * so it reads a step brighter than the lines below it. Chips rather than inline links: at 12px in a
  * translucent panel a bare underline is easy to miss, and the icons need a box to sit in.
