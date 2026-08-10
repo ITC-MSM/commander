@@ -350,6 +350,55 @@
     ]
 }
 
+// Bubble Smuggler
+{
+    "name": "Bubble Smuggler",
+    "manaCost": "{1}{U}",
+    "typeLine": "Creature — Octopus Fish",
+    "oracleText": "Disguise {5}{U} (You may cast this card face down for {3} as a 2/2 creature with ward {2}. Turn it face up any time for its disguise cost.)\nAs this creature is turned face up, put four +1/+1 counters on it.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "keywordAbilities": [
+        {
+            "type": "Disguise",
+            "disguiseCost": {
+                "type": "PayAtom",
+                "atom": {
+                    "type": "AtomMana",
+                    "cost": "{5}{U}"
+                }
+            },
+            "faceUpEffect": {
+                "type": "AddCounters",
+                "counterType": "+1/+1",
+                "count": 4,
+                "target": "Self"
+            }
+        }
+    ],
+    "metadata": {
+        "collectorNumber": "41",
+        "artist": "Leesha Hannigan",
+        "flavorText": "By the time they noticed the missing vials, Glovax was three fathoms away.",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/b/6b863ee0-d9f3-4b1e-993d-5212731d9353.jpg?1783912915",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "Any time you have priority, you may turn the face-down creature face up by revealing what its disguise cost is and paying that cost. This is a special action. It doesn't use the stack and can't be responded to. Only a face-down permanent can be turned face up this way; a face-down spell cannot."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "Because the permanent is on the battlefield both before and after it's turned face up, turning a permanent face up doesn't cause any enters-the-battlefield abilities to trigger."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Candlestick
 {
     "name": "Candlestick",
@@ -1549,6 +1598,92 @@
     "colorIdentityOverride": []
 }
 
+// Exit Specialist
+{
+    "name": "Exit Specialist",
+    "manaCost": "{1}{U}",
+    "typeLine": "Creature — Human Detective",
+    "oracleText": "This creature can't be blocked by creatures with power 3 or greater.\nDisguise {1}{U} (You may cast this card face down for {3} as a 2/2 creature with ward {2}. Turn it face up any time for its disguise cost.)\nWhen this creature is turned face up, return another target creature to its owner's hand.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "keywordAbilities": [
+        {
+            "type": "Disguise",
+            "disguiseCost": {
+                "type": "PayAtom",
+                "atom": {
+                    "type": "AtomMana",
+                    "cost": "{1}{U}"
+                }
+            }
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "TurnFaceUpEvent",
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "another target creature"
+                    },
+                    "destination": "Hand"
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature",
+                        "excludeSelf": true
+                    },
+                    "id": "another target creature"
+                },
+                "descriptionOverride": "When this creature is turned face up, return another target creature to its owner's hand."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "CantBeBlockedBy",
+                "blockerFilter": {
+                    "cardPredicates": [
+                        "IsCreature",
+                        {
+                            "type": "PowerAtLeast",
+                            "min": 3
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "55",
+        "rarity": "UNCOMMON",
+        "artist": "Mila Pesic",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/6/268f142d-9fb1-4673-b804-add1f08dacb9.jpg?1783912910",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "Once Exit Specialist has been blocked, increasing the blocking creature's power to 3 or greater won't cause Exit Specialist to become unblocked."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "If Exit Specialist becomes blocked while it's face-down, turning it face up won't cause it to become unblocked."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "Any time you have priority, you may turn the face-down creature face up by revealing what its disguise cost is and paying that cost. This is a special action. It doesn't use the stack and can't be responded to. Only a face-down permanent can be turned face up this way; a face-down spell cannot."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Fae Flight
 {
     "name": "Fae Flight",
@@ -2485,6 +2620,104 @@
     ]
 }
 
+// Granite Witness
+{
+    "name": "Granite Witness",
+    "manaCost": "{2}{W}{U}",
+    "typeLine": "Artifact Creature — Gargoyle Detective",
+    "oracleText": "Flying, vigilance\nDisguise {W/U}{W/U} (You may cast this card face down for {3} as a 2/2 creature with ward {2}. Turn it face up any time for its disguise cost.)\nWhen this creature is turned face up, you may tap or untap target creature.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "keywords": [
+        "FLYING",
+        "VIGILANCE"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Disguise",
+            "disguiseCost": {
+                "type": "PayAtom",
+                "atom": {
+                    "type": "AtomMana",
+                    "cost": "{W/U}{W/U}"
+                }
+            }
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "TurnFaceUpEvent",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Modal",
+                        "modes": [
+                            {
+                                "effect": {
+                                    "type": "TapUntap",
+                                    "target": {
+                                        "type": "BoundVariable",
+                                        "name": "target creature"
+                                    }
+                                },
+                                "description": "Tap that creature"
+                            },
+                            {
+                                "effect": {
+                                    "type": "TapUntap",
+                                    "target": {
+                                        "type": "BoundVariable",
+                                        "name": "target creature"
+                                    },
+                                    "tap": false
+                                },
+                                "description": "Untap that creature"
+                            }
+                        ],
+                        "countsAsModalSpell": false
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature"
+                    },
+                    "id": "target creature"
+                },
+                "descriptionOverride": "When this creature is turned face up, you may tap or untap target creature."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "206",
+        "artist": "Tuan Duong Chu",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/a/daee9d98-f8c6-4980-8f23-c6c636b69430.jpg?1783912849",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "Any time you have priority, you may turn the face-down creature face up by revealing what its disguise cost is and paying that cost. This is a special action. It doesn't use the stack and can't be responded to. Only a face-down permanent can be turned face up this way; a face-down spell cannot."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "Because the permanent is on the battlefield both before and after it's turned face up, turning a permanent face up doesn't cause any enters-the-battlefield abilities to trigger."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "Turning a permanent face up or face down doesn't change whether that permanent is tapped or untapped."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLUE"
+    ]
+}
+
 // Gravestone Strider
 {
     "name": "Gravestone Strider",
@@ -3064,6 +3297,107 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Inside Source
+{
+    "name": "Inside Source",
+    "manaCost": "{2}{W}",
+    "typeLine": "Creature — Human Citizen",
+    "oracleText": "When this creature enters, create a 2/2 white and blue Detective creature token.\n{3}, {T}: Target Detective you control gets +2/+0 and gains vigilance until end of turn. Activate only as a sorcery.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 2,
+                    "toughness": 2,
+                    "colors": [
+                        "WHITE",
+                        "BLUE"
+                    ],
+                    "creatureTypes": [
+                        "Detective"
+                    ]
+                }
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{3}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "ModifyStats",
+                            "powerModifier": {
+                                "type": "Fixed",
+                                "amount": 2
+                            },
+                            "toughnessModifier": {
+                                "type": "Fixed",
+                                "amount": 0
+                            },
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target Detective you control"
+                            }
+                        },
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "VIGILANCE",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target Detective you control"
+                            }
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature Detective ctrl:you"
+                        },
+                        "id": "target Detective you control"
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "descriptionOverride": "Target Detective you control gets +2/+0 and gains vigilance until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "19",
+        "artist": "John Stanko",
+        "flavorText": "\"I was never here.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/5/1548d181-3f83-457a-b2d3-eb88cfb2afda.jpg?1783912923"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 
@@ -6394,6 +6728,65 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Sumala Sentry
+{
+    "name": "Sumala Sentry",
+    "manaCost": "{G}{W}",
+    "typeLine": "Creature — Elf Archer",
+    "oracleText": "Reach\nWhenever a face-down permanent you control is turned face up, put a +1/+1 counter on it and a +1/+1 counter on this creature.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 3
+    },
+    "keywords": [
+        "REACH"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "CreatureTurnedFaceUpEvent",
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "AddCounters",
+                            "counterType": "+1/+1",
+                            "count": 1,
+                            "target": "TriggeringEntity"
+                        },
+                        {
+                            "type": "AddCounters",
+                            "counterType": "+1/+1",
+                            "count": 1,
+                            "target": "Self"
+                        }
+                    ]
+                },
+                "descriptionOverride": "Put a +1/+1 counter on that permanent and a +1/+1 counter on this creature."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "233",
+        "rarity": "UNCOMMON",
+        "artist": "Nicholas Elias",
+        "flavorText": "The great meditation garden of Sumala was no place for Ravnica's rising crime wave, and he would keep it that way.",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/b/3b9d4691-59d1-4e97-9b5d-8017788fbcb3.jpg?1783912836",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "If the permanent that was turned face up is no longer on the battlefield when Sumala Sentry's triggered ability resolves, you'll still put a +1/+1 counter on Sumala Sentry. Similarly, if Sumala Sentry is no longer on the battlefield, you'll still put a +1/+1 counter on the permanent that turned face up."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN",
+        "WHITE"
     ]
 }
 

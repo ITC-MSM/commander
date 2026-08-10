@@ -113,6 +113,15 @@ section; do not let SDK additions land without a corresponding doc update.
 - `disguise: String?` — disguise mana cost (CR 702.168): cast face down for `{3}` as a 2/2 **with
   ward {2}**, flip for this cost.
 - `disguiseCost: PayCost?` — non-mana disguise cost.
+- `disguiseFaceUpEffect: Effect?` — the disguise-side sibling of `morphFaceUpEffect`, for the
+  "As this creature is turned face up, …" replacement clause (Bubble Smuggler = "put four +1/+1
+  counters on it" → `Effects.AddCounters(Counters.PLUS_ONE_PLUS_ONE, 4, EffectTarget.Self)`). It is
+  applied **as part of the turn-up special action**, so it doesn't use the stack and can't be
+  responded to — that is what separates it from a `Triggers.TurnedFaceUp` ability ("When this
+  creature is turned face up, …", Granite Witness / Exit Specialist), which does use the stack.
+  Like `morphFaceUpEffect` it rides the *turn-up procedure* (CR 702.37b's megamorph treatment), so
+  a card put face down by cloak or manifest and flipped for its mana cost instead of its disguise
+  cost does not get it.
 - `warp: String?` — Warp alt-cost; exiles at end of turn.
 - `dash: String?` — Dash alt-cost (CR 702.109); gains haste and returns to owner's hand at the
   beginning of the next end step.
@@ -9862,7 +9871,9 @@ Card authors rarely reference these directly; they are created/updated by the ma
   common "when this creature is turned face up, …" payoff, or
   `Triggers.or(Triggers.EntersBattlefield, Triggers.TurnedFaceUp)` for the "enters **or** is turned
   face up" wording (Rakish Scoundrel) — one ability with two conditions, which must fire once on
-  either route, not twice.
+  either route, not twice. For the **replacement** wording "As this creature is turned face up, …"
+  (Bubble Smuggler) reach for `disguiseFaceUpEffect` instead: it applies inside the special action,
+  so it can't be responded to, where the `Triggers.TurnedFaceUp` form goes on the stack first.
 - **Cloak** (CR 701.58) — no keyword to author: it is `FaceDownMode.CLOAK` on whichever move puts
   the card onto the battlefield, exactly as manifest is `FaceDownMode.MANIFEST`. For the common
   "look at the top N, cloak M" shape use
