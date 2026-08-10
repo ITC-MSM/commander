@@ -179,6 +179,14 @@ export const createPipelineSlice: SliceCreator<PipelineSlice> = (set, get) => ({
         actionInfo.autoTapPreview && actionInfo.availableManaSources
           ? trimAutoTapPreview(actionInfo.autoTapPreview, actionInfo.availableManaSources, remainingSymbols)
           : actionInfo.autoTapPreview
+      // A permanent tapped for improvise/waterbend is spent — it can't also be tapped for mana
+      // (the Whir of Invention rulings say so explicitly, and the server rejects it). Drop the
+      // tapped ids from the source list the manaSource phase offers, or a mana rock the player
+      // just improvised with still shows up in the land picker and clicking it bounces.
+      const tappedIds = new Set<EntityId>(result.tapForGenericPermanents)
+      const remainingSources = actionInfo.availableManaSources?.filter(
+        (source) => !tappedIds.has(source.entityId),
+      )
       const {
         hasTapForGeneric: _,
         validTapForGenericPermanents: _2,
@@ -189,6 +197,7 @@ export const createPipelineSlice: SliceCreator<PipelineSlice> = (set, get) => ({
         ...restActionInfo,
         manaCostString: modifiedManaCost,
         ...(trimmedPreview !== undefined ? { autoTapPreview: trimmedPreview } : {}),
+        ...(remainingSources !== undefined ? { availableManaSources: remainingSources } : {}),
         action: mergedAction,
       }
     }

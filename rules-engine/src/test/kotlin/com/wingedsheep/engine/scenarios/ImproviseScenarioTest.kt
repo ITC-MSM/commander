@@ -14,6 +14,8 @@ import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.scripting.AlternativePaymentChoice
+import com.wingedsheep.sdk.scripting.GameObjectFilter
+import com.wingedsheep.sdk.scripting.GrantKeywordToOwnSpells
 import io.kotest.assertions.withClue
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.shouldBe
@@ -41,6 +43,8 @@ import io.kotest.matchers.shouldNotBe
  *     legal action carries the tap metadata and the "improvise" label the client renders.
  *  6. A spell without improvise ignores the taps entirely — nothing is tapped, nothing is
  *     discounted, and the cast fails for lack of mana.
+ *  7. CR 702.126c — a second, *granted* instance of improvise on a spell that already prints it
+ *     is redundant: it neither raises the tap cap nor doubles the discount.
  */
 class ImproviseScenarioTest : ScenarioTestBase() {
 
@@ -77,6 +81,22 @@ class ImproviseScenarioTest : ScenarioTestBase() {
             oracleText = ""
         }
         cardRegistry.register(trinket)
+
+        // Grants improvise to noncreature spells — the Ironheart, Clever Champion shape. Used to
+        // put a *second* instance of improvise on a spell that already prints it (CR 702.126c).
+        val beacon = card("Improvise Beacon") {
+            manaCost = "{2}"
+            colorIdentity = ""
+            typeLine = "Artifact"
+            oracleText = "Noncreature spells you cast have improvise."
+            staticAbility {
+                ability = GrantKeywordToOwnSpells(
+                    keyword = Keyword.IMPROVISE,
+                    spellFilter = GameObjectFilter.Noncreature
+                )
+            }
+        }
+        cardRegistry.register(beacon)
 
         fun castAction(game: TestGame, name: String): LegalActionInfo? =
             game.getLegalActions(1).firstOrNull {
@@ -170,6 +190,58 @@ class ImproviseScenarioTest : ScenarioTestBase() {
 
                 val tapped = artifacts.count { game.state.getEntity(it)!!.has<TappedComponent>() }
                 withClue("only the {4} of generic can be improvised — the other two artifacts stay untapped") {
+                    tapped shouldBe 4
+                }
+            }
+        }
+
+        context("Redundancy (CR 702.126c)") {
+
+            test("a second, granted instance of improvise adds nothing") {
+                // "Improvising Blueprint" prints improvise; the Beacon grants improvise to every
+                // noncreature spell its controller casts. CR 702.126c: multiple instances on the
+                // same spell are redundant — so the taps are still capped at the {4} of generic,
+                // not doubled to {8}, and the spell still can't touch the {U}.
+                val game = scenario()
+                    .withPlayers("P1", "P2")
+                    .withCardInHand(1, "Improvising Blueprint")
+                    .withLandsOnBattlefield(1, "Island", 1) // only the {U}
+                    .withCardOnBattlefield(1, "Improvise Beacon")
+                    .withCardOnBattlefield(1, "Improvise Trinket")
+                    .withCardOnBattlefield(1, "Improvise Trinket")
+                    .withCardOnBattlefield(1, "Improvise Trinket")
+                    .withCardOnBattlefield(1, "Improvise Trinket")
+                    .withCardOnBattlefield(1, "Improvise Trinket")
+                    .withCardOnBattlefield(1, "Improvise Trinket")
+                    .withActivePlayer(1)
+                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                    .build()
+
+                val before = game.getLifeTotal(1)
+                val trinkets = game.findAllPermanents("Improvise Trinket")
+                trinkets.size shouldBe 6
+                val beaconId = game.findAllPermanents("Improvise Beacon").single()
+
+                val action = castAction(game, "Improvising Blueprint")!!
+                withClue("one instance or two, the payment is the same one rail") {
+                    action.hasTapForGeneric shouldBe true
+                    action.tapForGenericLabel shouldBe "improvise"
+                    action.tapForGenericAmount shouldBe null
+                }
+
+                // Offer every artifact, the Beacon included — it is an untapped artifact too.
+                val cast = (action.action as CastSpell).copy(
+                    alternativePayment = AlternativePaymentChoice(
+                        tapForGenericPermanents = (trinkets + beaconId).toSet()
+                    )
+                )
+                val result = game.execute(cast)
+                result.error shouldBe null
+                game.resolveStack()
+                game.getLifeTotal(1) shouldBe before + 5
+
+                val tapped = (trinkets + beaconId).count { game.state.getEntity(it)!!.has<TappedComponent>() }
+                withClue("redundant instances don't raise the cap: still only the {4} of generic") {
                     tapped shouldBe 4
                 }
             }

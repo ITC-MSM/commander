@@ -872,9 +872,19 @@ class Strategist(
      * artifact is rarely doing anything else this turn, whereas tapping a creature silently gives
      * up an attack or a block. That covers improvise exactly (CR 702.126a is artifacts-only) and
      * leaves waterbend no worse off than before.
+     *
+     * And only when the taps are actually *needed*. An improvise tap is optional, and filling an
+     * optional one can lose the cast: a tapped artifact stops being a mana source but credits only
+     * {1}, so tapping Arc Reactor ({T}: Add {C}{C}{C}) for improvise on a board of three lands
+     * turns a payable {5} into an unpayable {4} — the AI's own action then hard-errors at the mana
+     * step. `tapForGenericRequired == false` says mana alone covers it, so we leave the artifacts
+     * up; `true` means the enumerator's affordability check already validated tapping *all* of
+     * them, so filling to the cap is safe. Null is the waterbend paths, whose taps pay a cost that
+     * is owed either way — unchanged behaviour there.
      */
     private fun withAutomaticTapForGeneric(action: LegalAction, gameAction: GameAction): GameAction {
         if (!action.hasTapForGeneric) return gameAction
+        if (action.tapForGenericRequired == false) return gameAction
         val cast = gameAction as? CastSpell ?: return gameAction
         val artifacts = action.tapForGenericPermanents.orEmpty().filterNot { it.isCreature }
         if (artifacts.isEmpty()) return gameAction

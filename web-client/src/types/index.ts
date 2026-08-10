@@ -23,6 +23,8 @@ export {
   ErrorCode,
   GameOverReason,
   CombatDamageStep,
+  TAP_FOR_GENERIC_LABEL_IMPROVISE,
+  TAP_FOR_GENERIC_LABEL_WATERBEND,
 } from './enums'
 
 // Entities

@@ -484,13 +484,18 @@ class AlternativePaymentHandler(
      * Calculate the reduced cost after an improvise payment (CR 702.126a), without mutating
      * state. Bounded only by the generic mana in the total cost. Returns [cost] unchanged when
      * the spell doesn't effectively have improvise.
+     *
+     * [state] and [playerId] are required, not optional: improvise is grantable at runtime
+     * (Ironheart, Clever Champion), and without them [effectivelyHasKeyword] degrades to a
+     * printed-keyword-only check — a caller that omitted them would silently make every *granted*
+     * improvise vanish from the cost, with no error to notice.
      */
     fun calculateReducedCostForImprovise(
         cost: ManaCost,
         payment: AlternativePaymentChoice,
         cardDef: CardDefinition,
-        state: GameState? = null,
-        playerId: EntityId? = null
+        state: GameState,
+        playerId: EntityId
     ): ManaCost {
         if (!effectivelyHasKeyword(state, playerId, cardDef, Keyword.IMPROVISE)) return cost
         return calculateReducedCostForTapForGeneric(cost, payment, Int.MAX_VALUE)
@@ -557,6 +562,11 @@ class AlternativePaymentHandler(
             if (reducedCost.genericAmount <= 0) break
             if (permanentId !in currentState.getZone(battlefieldZone)) continue
             val container = currentState.getEntity(permanentId) ?: continue
+            // Card-backed permanents only, mirroring the eligibility scan in
+            // `CostEnumerationUtils.findTapForGenericPermanents` (which needs the name). Every
+            // battlefield permanent carries one today, so this is symmetry rather than a live
+            // guard — but the two sides of the same payment should agree on what qualifies.
+            container.get<CardComponent>() ?: continue
 
             // Must be an untapped, eligible permanent the player controls.
             if (!eligibility.matches(projected, permanentId)) continue
@@ -573,26 +583,10 @@ class AlternativePaymentHandler(
         return AlternativePaymentResult(reducedCost, currentState, events)
     }
 
-    /**
-     * Does [cardDef] support alternative payment when cast by [playerId] in [state]?
-     * Returns true when the card prints DELVE/CONVOKE or a battlefield permanent grants one.
-     */
-    fun supportsAlternativePayment(
-        state: GameState,
-        playerId: EntityId,
-        cardDef: CardDefinition
-    ): Boolean =
-        effectivelyHasKeyword(state, playerId, cardDef, Keyword.DELVE) ||
-            effectivelyHasKeyword(state, playerId, cardDef, Keyword.CONVOKE)
-
-    companion object {
-        /**
-         * Legacy check — considers only the card's printed keywords. Prefer the instance method
-         * that accounts for granted keywords.
-         */
-        fun supportsAlternativePayment(cardDef: CardDefinition): Boolean {
-            return cardDef.keywords.contains(Keyword.DELVE) ||
-                    cardDef.keywords.contains(Keyword.CONVOKE)
-        }
-    }
+    // `supportsAlternativePayment` (instance + companion) used to live here. Both listed only
+    // DELVE || CONVOKE, so both were already wrong for harmonize/waterbend and became wrong again
+    // for improvise, and neither had a caller in any module. A predicate that is both stale and
+    // unused is a trap for the next reader, so it is deleted rather than extended: the live
+    // question is always "does this *specific* keyword apply", which `effectivelyHasKeyword`
+    // answers at each site.
 }

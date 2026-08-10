@@ -586,3 +586,15 @@ export enum CombatDamageStep {
   FIRST_STRIKE = 'FIRST_STRIKE',
   REGULAR = 'REGULAR',
 }
+
+/**
+ * The player-facing verbs a tap-for-generic payment can carry, mirroring
+ * `TapForGeneric.label` in the engine (`rules-engine/.../mechanics/mana/TapForGeneric.kt`).
+ *
+ * `LegalActionInfo.tapForGenericLabel` is a display string, but two places branch on it — the
+ * improvise tap cap in `pipelinePhases.ts` and the action-menu hint in `actionOptions.ts` — so
+ * the strings live here rather than being typed out at each comparison. Changing a verb is then
+ * one edit in two files (this constant and the Kotlin enum) instead of a silent behaviour change.
+ */
+export const TAP_FOR_GENERIC_LABEL_IMPROVISE = 'improvise'
+export const TAP_FOR_GENERIC_LABEL_WATERBEND = 'waterbend'

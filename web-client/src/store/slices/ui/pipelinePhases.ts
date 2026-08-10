@@ -6,6 +6,7 @@
  * - enterPhase: calls the appropriate start* method for a phase
  */
 import type { EntityId, LegalActionInfo, GameAction, ClientGameState } from '@/types'
+import { TAP_FOR_GENERIC_LABEL_IMPROVISE, TAP_FOR_GENERIC_LABEL_WATERBEND } from '@/types'
 import type {
   PipelinePhase,
   PhaseResult,
@@ -183,8 +184,15 @@ export function computePhases(actionInfo: LegalActionInfo, options?: ComputePhas
 
   // 4. Mana source selection (skipped when auto-tap is enabled, except for delve/convoke
   //    spells where the player should always confirm land selection after alternative payment)
+  //
+  //    A `tapForGeneric` phase deliberately does NOT force it. Improvise is *grantable over a
+  //    whole card type* — Ironheart, Clever Champion gives every noncreature spell you cast
+  //    improvise — so treating it like delve/convoke would silently turn auto-tap off for the
+  //    rest of the game, two confirmation clicks per spell, on a board the player didn't opt into
+  //    per-card. The server applies the taps and then auto-solves the remainder (exactly what the
+  //    harmonize note below describes), so the manaSource step buys nothing under auto-tap.
   const hasAlternativePaymentPhase = phases.some(
-    (p) => p.type === 'delve' || p.type === 'convoke' || p.type === 'tapForGeneric',
+    (p) => p.type === 'delve' || p.type === 'convoke',
   )
   if (
     actionInfo.availableManaSources && actionInfo.availableManaSources.length > 0 &&
@@ -669,10 +677,18 @@ export function enterPhase(
         return total
       }
       // Tap cap: an explicit spell-level waterbend {N}; else the chosen X for "waterbend {X}";
-      // else the generic mana in the cost. Improvise counts only the *printed* generic — the
-      // server's improvise payment does not reduce the mana paid for {X}, so counting the folded X
-      // here would let the player tap artifacts the cast then refuses to credit.
-      const isImprovise = actionInfo.tapForGenericLabel === 'improvise'
+      // else the generic mana in the cost.
+      //
+      // Improvise counts only the *printed* generic, which is a known gap rather than the rule:
+      // CR 702.126a bounds the taps at the generic in the spell's TOTAL cost, and X is locked in
+      // before that total is determined (CR 601.2b/601.2f), so improvise does pay X-derived
+      // generic — see the Whir of Invention ruling. Four printed cards have improvise with {X}
+      // (Whir of Invention, Universal Surveillance, Saheeli's Directive, Battle at the Bridge);
+      // none is implemented yet. The cap stays at the printed generic only because the *server*
+      // does not credit taps against the X mana yet (see the TODO in CastSpellEnumerator's
+      // maxAffordableX block) — offering more here would let the player tap artifacts the cast
+      // then refuses to credit. Lift this together with that TODO.
+      const isImprovise = actionInfo.tapForGenericLabel === TAP_FOR_GENERIC_LABEL_IMPROVISE
       const maxTaps = actionInfo.tapForGenericAmount ??
         (isImprovise
           ? genericIn(actionInfo.manaCostString ?? '')
@@ -693,7 +709,7 @@ export function enterPhase(
         selectedPermanents: [],
         validPermanents: actionInfo.validTapForGenericPermanents!,
         maxTaps,
-        label: actionInfo.tapForGenericLabel ?? 'waterbend',
+        label: actionInfo.tapForGenericLabel ?? TAP_FOR_GENERIC_LABEL_WATERBEND,
       })
       break
     }

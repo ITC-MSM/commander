@@ -117,6 +117,21 @@ data class LegalAction(
      * it in the tap HUD so the two mechanics don't read as each other.
      */
     val tapForGenericLabel: String? = null,
+    /**
+     * Whether the tap payment is what makes this cast affordable: `true` when the cost is **not**
+     * payable with mana alone, `false` when it is and the taps are purely optional. Null when the
+     * enumerator didn't compute it (the waterbend paths, whose taps pay a cost that is mandatory
+     * in its own right, so an automatic payer should always fill them).
+     *
+     * Exists for automatic payers. Filling an *optional* improvise payment can cost you the cast:
+     * a tapped artifact stops being a mana source but only credits {1}, so tapping Arc Reactor
+     * ({T}: Add {C}{C}{C}) for improvise trades three mana for one and can leave the rest of the
+     * cost unpayable — the case the Whir of Invention rulings warn about ("if an artifact you
+     * control has a mana ability with {T} … you won't be able to tap it again for improvise").
+     * When this is `true`, `CostEnumerationUtils.canAffordWithTapForGeneric` has already validated
+     * the configuration where *every* offered permanent is tapped, so filling is safe.
+     */
+    val tapForGenericRequired: Boolean? = null,
 
     // Harmonize (cast from graveyard; optionally tap one creature to reduce the generic
     // cost by its power). The client may pick at most one of [harmonizeCreatures].

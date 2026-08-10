@@ -89,3 +89,33 @@ describe('computePhases — emerge sacrifice', () => {
     ])
   })
 })
+
+describe('computePhases — tap-for-generic (improvise / waterbend)', () => {
+  function tapAction(): LegalActionInfo {
+    return castAction({
+      actionType: 'CastSpell',
+      manaCostString: '{4}{U}',
+      hasTapForGeneric: true,
+      tapForGenericLabel: 'improvise',
+      validTapForGenericPermanents: [{ entityId: 'rock', name: 'Arc Reactor', isCreature: false }],
+      availableManaSources: [{ entityId: 'island', producesColors: ['U'] }],
+    })
+  }
+
+  it('offers the tap step but leaves auto-tap alone', () => {
+    // Improvise is grantable over a whole card type (Ironheart, Clever Champion gives every
+    // noncreature spell you cast improvise), so forcing the manaSource phase the way delve and
+    // convoke do would silently disable auto-tap for the rest of the game. The server applies the
+    // taps and auto-solves the remainder, so the extra confirmation buys nothing.
+    expect(computePhases(tapAction(), { autoTapEnabled: true })).toEqual([
+      { type: 'tapForGeneric' },
+    ])
+  })
+
+  it('still runs manual mana selection after the taps when auto-tap is off', () => {
+    expect(computePhases(tapAction(), { autoTapEnabled: false })).toEqual([
+      { type: 'tapForGeneric' },
+      { type: 'manaSource' },
+    ])
+  })
+})

@@ -52,11 +52,22 @@ no screenshots, no e2e.**
    the rename and the improvise wiring touch the same lines in `AlternativePaymentHandler`,
    `CastSpellEnumerator` and `LegalAction`, so a split would have been an artificial one. Reading
    the diff, everything named `tapForGeneric*` that was previously `waterbend*` is rename-only.
-2. **Improvise on an {X} spell** pays only the *printed* generic, not the mana paid for X. I
-   deliberately did **not** raise `maxAffordableX` for improvise so the enumerator can't offer an X
-   the handler refuses to pay. No printed card has improvise + {X}. Comment at the site names the
-   two existing facilities that would close it (`waterbend {X}`'s cost fold,
-   `CastSpellHandler.harmonizePaymentXValue`'s leftover math).
+2. **Improvise on an {X} spell** pays only the *printed* generic, not the mana paid for X — a known
+   **gap**, corrected in round 3 after the reviewer showed the original justification here was
+   false. The rules: CR 601.2b announces X, CR 601.2f then determines the total cost, and
+   CR 702.126a bounds the taps at the generic in *that* total — so improvise **does** pay the
+   X-derived generic, and the official Whir of Invention ruling says so outright ("choose X to be 3
+   … if you tap two artifacts, you'll have to pay `{1}{U}{U}{U}`"). Four printed cards reach it:
+   Whir of Invention, Universal Surveillance, Saheeli's Directive, Battle at the Bridge. **None of
+   the four is implemented in this repo, and no MSH card has improvise with {X}**, so nothing here
+   is wrong today — but the earlier claim that no such card exists was simply untrue.
+   `maxAffordableX` still ignores improvise, deliberately: the ceiling can't move alone, because
+   the payment side stops crediting taps once the printed generic runs out, so a raised ceiling
+   would offer an X the handler then refuses to pay (under-offering is the safe direction). Closing
+   it is a four-layer change — fold X into the cost the way `waterbend {X}` does, charge the
+   leftover against the X mana the way `CastSpellHandler.harmonizePaymentXValue` does, raise the
+   ceiling, and lift the client cap in `pipelinePhases.ts` — with no card in the repo to exercise
+   it. Deferred as an explicit TODO at all four sites, to be done with the first improvise-{X} card.
 3. **`applyImproviseMetadata` is a post-process pass** over the enumerated actions rather than a
    field set at each `LegalAction(...)` site — same shape as the existing
    `applySpellWaterbendMetadata`. It means every cast shape gets it for free; it also means it runs
@@ -65,10 +76,23 @@ no screenshots, no e2e.**
    Rationale in the code: an artifact is rarely doing anything else, a creature gives up an
    attack/block. This slightly *improves* waterbend (the AI previously filled no tap payment at all
    and could pick a cast it couldn't pay) but it is a behaviour change outside the strict unit.
+   Round 3 added the second half the reviewer found missing: it fills the payment **only when the
+   taps are needed**. Improvise is optional, and filling an optional one can lose the cast — the AI
+   would tap Arc Reactor (`{T}: Add {C}{C}{C}`, shipped in this unit) for {1} and make its own cast
+   unpayable. `LegalAction.tapForGenericRequired` (new) carries "is the cost payable with mana
+   alone?" and the AI skips filling when it is; when it isn't, the enumerator's
+   `canAffordWithTapForGeneric` has already validated tapping *every* offered permanent, so filling
+   to the cap is safe. `ImprovisePaymentAiTest` pins both directions.
 5. **UX friction the mechanic implies:** while Ironheart is out, *every* noncreature cast picks up
    the improvise tap step whenever the player controls any untapped artifact — even when they have
    plenty of mana and don't want to tap. Confirming with nothing selected pays normally, so it is
    one extra click, and it matches how convoke behaves today. Worth a human's eye in play.
+   Round 3 removed the *second* cost the note originally missed: the tap phase used to also force
+   the `manaSource` phase (via `hasAlternativePaymentPhase`), which silently turned **auto-tap off**
+   for every noncreature spell for the rest of the game. Because improvise is granted over a whole
+   card type rather than printed per card, that is a much bigger imposition than it is for
+   delve/convoke — and it buys nothing, since the server applies the taps and then auto-solves the
+   remainder. `tapForGeneric` no longer forces it; delve and convoke still do.
 6. **Cast-from-graveyard/exile improvise is not wired** (`CastFromZoneEnumerator` only got the
    waterbend rename). Neither card needs it and no MSH card grants improvise to a graveyard cast.
 

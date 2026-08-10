@@ -690,13 +690,23 @@ class CastSpellEnumerator : ActionEnumerator {
                 // For waterbend {X}, each tappable artifact/creature pays {1} of the X generic, so
                 // it raises the X ceiling like an extra mana source.
                 val waterbendAvailable = if (spellWaterbend?.isX == true) waterbendPermanents.size else 0
-                // Improvise is deliberately NOT counted here. CR 702.126a would let its taps pay the
-                // generic the chosen X resolves to, but the payment side only reduces the *printed*
-                // generic (the tap loop stops once that runs out), so raising the ceiling would offer
-                // an X the handler then refuses to pay. Under-offering is the safe direction, and no
-                // printed card has improvise together with {X}. Closing it means folding X into the
-                // cost the way `waterbend {X}` does and charging the leftover against the X mana the
-                // way `CastSpellHandler.harmonizePaymentXValue` already does.
+                // TODO(improvise+{X}): improvise is deliberately NOT counted here, and that is a
+                // known *gap*, not correct behaviour. CR 601.2b announces X before CR 601.2f
+                // determines the total cost, and CR 702.126a bounds the taps at the generic in that
+                // total cost — so improvise does pay the X-derived generic. The Whir of Invention
+                // ruling spells it out: "if you cast [it] and choose X to be 3, the total cost is
+                // {3}{U}{U}{U}. If you tap two artifacts, you'll have to pay {1}{U}{U}{U}."
+                // Four printed cards reach this: Whir of Invention, Universal Surveillance,
+                // Saheeli's Directive, Battle at the Bridge. None of them is implemented yet, and
+                // no MSH card has improvise with {X}, so nothing in the repo is wrong today —
+                // the ceiling merely under-offers, which can never produce an unpayable action.
+                // The reason it is not fixed here is that the ceiling can't move on its own: the
+                // payment side (`AlternativePaymentHandler.applyTapForGeneric`) stops tapping once
+                // the *printed* generic runs out, so a raised ceiling would offer an X the handler
+                // then refuses to pay. Closing it means folding X into the cost the way
+                // `waterbend {X}` does and charging the leftover against the X mana the way
+                // `CastSpellHandler.harmonizePaymentXValue` already does — plus lifting the client
+                // cap in `pipelinePhases.ts`. Do it with the first improvise-{X} card.
                 val fixedCost = effectiveCost.cmc  // X contributes 0 to CMC
                 val xSymbolCount = effectiveCost.xCount.coerceAtLeast(1)
                 ((availableSources + delveAvailable + waterbendAvailable - fixedCost) / xSymbolCount)
@@ -1471,6 +1481,10 @@ class CastSpellEnumerator : ActionEnumerator {
      * improvise because of Ironheart, Clever Champion is covered identically to a printed one.
      * Actions that already carry a tap-for-generic payment (a waterbend cost) are left alone —
      * one tap payment per action, and no card has both.
+     *
+     * Also stamps [LegalAction.tapForGenericRequired] — whether the taps are *needed* or merely
+     * offered. That costs one extra `canPay` per improvise-eligible cast, which is why it is
+     * computed behind the two gates above (no untapped artifacts, or no improvise → no call).
      */
     private fun applyImproviseMetadata(
         context: EnumerationContext,
@@ -1496,13 +1510,24 @@ class CastSpellEnumerator : ActionEnumerator {
                 context.grantedKeywordResolver.hasKeyword(state, cs.playerId, cardDef, Keyword.IMPROVISE)
             }
             if (!hasImprovise) return@map la
+            // Are the taps needed, or just offered? Improvise is optional (CR 702.126a "you may"),
+            // and an automatic payer that always fills it can tap a mana rock for {1} that was
+            // worth more as mana and make its own cast unpayable — see [LegalAction.tapForGenericRequired].
+            val payableWithManaAlone = la.manaCostString?.let { costString ->
+                context.manaSolver.canPay(
+                    state, cs.playerId, ManaCost.parse(costString),
+                    spellContext = spellPaymentContextFor(cardComponent),
+                    precomputedSources = context.availableManaSources
+                )
+            } ?: false
             la.copy(
                 hasTapForGeneric = true,
                 tapForGenericPermanents = artifacts,
                 // No cap: CR 702.126a bounds the taps at the generic mana in the total cost, which
                 // the client derives from the cost itself.
                 tapForGenericAmount = null,
-                tapForGenericLabel = TapForGeneric.IMPROVISE.label
+                tapForGenericLabel = TapForGeneric.IMPROVISE.label,
+                tapForGenericRequired = !payableWithManaAlone
             )
         }
     }
