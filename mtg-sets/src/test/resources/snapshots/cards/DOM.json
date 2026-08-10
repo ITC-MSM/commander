@@ -1043,7 +1043,7 @@
                     }
                 ],
                 "timing": "SorcerySpeed",
-                "descriptionOverride": "Equip legendary creature {3}"
+                "isEquipAbility": true
             },
             {
                 "id": "ability_2",
@@ -1071,7 +1071,7 @@
                     }
                 ],
                 "timing": "SorcerySpeed",
-                "descriptionOverride": "Equip {7}"
+                "isEquipAbility": true
             }
         ],
         "staticAbilities": [
@@ -1094,6 +1094,7 @@
             }
         ]
     },
+    "equipCost": "{7}",
     "metadata": {
         "collectorNumber": "211",
         "rarity": "RARE",

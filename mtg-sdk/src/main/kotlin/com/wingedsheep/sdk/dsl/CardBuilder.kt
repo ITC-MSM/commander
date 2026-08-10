@@ -586,23 +586,63 @@ class CardBuilder(private val name: String) {
     /**
      * Add an equip ability with the specified cost.
      * This sets the equipCost metadata and generates the activated ability
-     * (Equip: attach to target creature you control, sorcery speed).
+     * (Equip: attach to target creature you control, sorcery speed) — CR 702.6a.
      *
      * [genericCostReduction] optionally reduces the generic portion of the equip cost by a
      * dynamic amount evaluated when the ability is activated. Reductions that read the chosen
      * equip target (e.g. `DynamicAmounts.targetColorCount()` for "costs {1} less to activate
      * for each color of the creature it targets" — Dragonfire Blade) resolve against the
      * selected target creature; the engine locks the reduction in before the cost is paid.
+     *
+     * ## "Equip [quality]" variants (CR 702.6c)
+     *
+     * An equip ability may further restrict which creatures are legal targets — printed as
+     * "Equip [quality]" or "Equip [quality] creature" (Dúnedain Blade's *Equip Human {1}*,
+     * Blackblade Reforged's *Equip legendary creature {3}*, Mjölnir, Hammer of Thor's
+     * *Equip worthy {1}*). Pass [quality] plus the matching [targetFilter]:
+     *
+     * ```kotlin
+     * equipAbility(
+     *     "{1}",
+     *     quality = "Human",
+     *     targetFilter = TargetFilter.CreatureYouControl.withSubtype(Subtype.HUMAN),
+     * )
+     * ```
+     *
+     * [quality] only supplies the wording — it becomes the target's label ("Human creature you
+     * control"), which is what the ability menu and the targeting prompt show. [targetFilter] is
+     * the rules half and must stay controlled-by-you: CR 702.6c allows an equip ability to target
+     * "only a creature that's controlled by the player activating the ability and that has the
+     * chosen quality". Build it off [TargetFilter.CreatureYouControl] (or a `GameObjectFilter`
+     * ending in `.youControl()`) so that holds.
+     *
+     * The restriction is a *targeting* restriction only. Per CR 702.6c the additional quality
+     * "[doesn't] restrict what the Equipment may be attached to", so an Equipment that stops
+     * matching stays attached; it comes off only under CR 704.5n (attached to an illegal
+     * permanent).
+     *
+     * Prefer this over hand-rolling `activatedAbility { isEquipAbility = true }` — a hand-rolled
+     * variant is easy to leave unflagged, and an unflagged equip ability is invisible to every
+     * engine rule that keys off `ActivatedAbility.isEquipAbility` (Forge Anew's free first equip,
+     * Eowyn's equip discount, instant-speed-equip permissions like Leonin Shikari).
      */
-    fun equipAbility(cost: String, genericCostReduction: DynamicAmount? = null) {
+    fun equipAbility(
+        cost: String,
+        genericCostReduction: DynamicAmount? = null,
+        quality: String? = null,
+        targetFilter: TargetFilter = TargetFilter.CreatureYouControl,
+    ) {
         equipCost = ManaCost.parse(cost)
+        // The label doubles as the target requirement's id and as the bound-variable name the
+        // attach effect reads, so both halves must use the same string.
+        val targetLabel = if (quality == null) "creature you control" else "$quality creature you control"
         activatedAbilities.add(
             ActivatedAbility(
                 id = AbilityId.generate(),
                 cost = AbilityCost.Atom(CostAtom.Mana(ManaCost.parse(cost))),
-                effect = AttachEquipmentEffect(EffectTarget.BoundVariable("creature you control")),
+                effect = AttachEquipmentEffect(EffectTarget.BoundVariable(targetLabel)),
                 targetRequirements = listOf(
-                    TargetCreature(filter = TargetFilter.CreatureYouControl, id = "creature you control")
+                    TargetCreature(filter = targetFilter, id = targetLabel)
                 ),
                 isManaAbility = false,
                 isEquipAbility = true,

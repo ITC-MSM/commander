@@ -7331,6 +7331,22 @@ composite abilities).
   = true; timing = TimingRule.SorcerySpeed; … }`. The `activatedAbility { }` builder exposes
   `isEquipAbility` so a hand-rolled equip ability still participates in equip-specific rules
   (sorcery-speed default, equip-cost reductions, instant-speed-equip permissions).
+  **"Equip [quality]" variants** (CR 702.6c — "Equip Human {1}", "Equip legendary creature {3}",
+  "Equip worthy {1}") pass `quality` + `targetFilter` to the same helper rather than being
+  hand-rolled: `equipAbility("{1}", quality = "Human", targetFilter =
+  TargetFilter.CreatureYouControl.withSubtype(Subtype.HUMAN))`. `quality` supplies the wording only —
+  it becomes the target requirement's id/label ("Human creature you control"), which is what the
+  ability menu and the targeting prompt show and what `LegalActionInfo.targetDescription` carries;
+  `targetFilter` is the rules half and must stay controller-scoped, since CR 702.6c allows targeting
+  "only a creature that's controlled by the player activating the ability and that has the chosen
+  quality". Build it off `TargetFilter.CreatureYouControl` or a `GameObjectFilter` ending in
+  `.youControl()`. The quality restricts *targeting* only: per CR 702.6c it "[doesn't] restrict what
+  the Equipment may be attached to", so a host that stops matching stays equipped — an Equipment
+  unattaches only under CR 704.5n. Mjölnir, Hammer of Thor's "worthy" (a legendary non-Villain that's
+  red and/or white) is spelled out as `GameObjectFilter.Creature.legendary().notSubtype(Subtype.VILLAIN)
+  .withAnyColor(Color.RED, Color.WHITE).youControl()` — it is one card's defined term, not an SDK
+  concept. `EquipQualityVariantTest` (mtg-sets) pins both invariants catalog-wide: every
+  `isEquipAbility` ability is sorcery-speed and targets a single creature you control.
 - `Fortify(cost)` — Aura-like attach cost on lands.
 
 ```kotlin
@@ -9261,6 +9277,14 @@ The priority groups are (CR 616.1a–f):
   Fog Bank (`DamageEvent(recipient = RecipientFilter.Self, damageType = Combat)` +
   `DamageEvent(source = SourceFilter.Self, damageType = Combat)` = "prevent all combat damage that would
   be dealt to and dealt by this creature").
+  `source = SourceFilter.EnchantedCreature` / `SourceFilter.EquippedCreature` match damage dealt **by**
+  the permanent the replacement's host Aura/Equipment is attached to — the source-side mirror of the
+  `RecipientFilter` pair, resolved from the host's `AttachedToComponent`. Mjölnir, Hammer of Thor
+  ("Double all damage equipped creature would deal") is `DoubleDamage(appliesTo = DamageEvent(source =
+  SourceFilter.EquippedCreature))`; with the default `recipient = Any` and `damageType = Any` that
+  covers combat and noncombat damage to players and permanents alike. The two constants behave
+  identically (both read the host's attachment) and exist so an Equipment's definition reads in
+  Equipment vocabulary — pick the one matching the host's card type.
 - `EntersTapped(unlessCondition?, payLifeCost?)` — "this permanent enters tapped" (`unlessCondition = null`),
   or "enters tapped unless `<condition>`" when an `unlessCondition` is supplied. The "slow land" cycle
   (Deathcap Glade, Dreamroot Cascade, Sundown Pass — "enters tapped unless you control two or more other

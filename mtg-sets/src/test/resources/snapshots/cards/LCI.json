@@ -13400,7 +13400,7 @@
                     }
                 ],
                 "timing": "SorcerySpeed",
-                "descriptionOverride": "Equip Pirate {1}"
+                "isEquipAbility": true
             },
             {
                 "id": "ability_2",

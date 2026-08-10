@@ -1411,7 +1411,10 @@ object DamageUtils {
     ): Boolean = when (filter) {
         is SourceFilter.Any -> true
         is SourceFilter.Self -> sourceId != null && sourceId == hostId
-        is SourceFilter.EnchantedCreature -> {
+        // "Enchanted creature" / "equipped creature" on the source side — damage dealt *by* the
+        // permanent this replacement's host is attached to. Same lookup for both, mirroring how
+        // [damageRecipientMatches] shares a branch for the RecipientFilter pair.
+        is SourceFilter.EnchantedCreature, is SourceFilter.EquippedCreature -> {
             val attachedTo = state.getEntity(hostId)?.get<AttachedToComponent>()?.targetId
             sourceId != null && sourceId == attachedTo
         }

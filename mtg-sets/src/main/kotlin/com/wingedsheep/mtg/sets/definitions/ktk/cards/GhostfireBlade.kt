@@ -1,16 +1,12 @@
 package com.wingedsheep.mtg.sets.definitions.ktk.cards
 
-import com.wingedsheep.sdk.dsl.Costs
-import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.Filters
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
-import com.wingedsheep.sdk.scripting.TimingRule
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.ModifyStats
 import com.wingedsheep.sdk.scripting.filters.unified.TargetFilter
 import com.wingedsheep.sdk.scripting.predicates.CardPredicate
-import com.wingedsheep.sdk.scripting.targets.TargetCreature
 
 /**
  * Ghostfire Blade
@@ -36,23 +32,17 @@ val GhostfireBlade = card("Ghostfire Blade") {
     }
 
     // Equip {1}: Attach to target colorless creature you control.
-    // (Equip costs {2} less for colorless creatures)
-    activatedAbility {
-        cost = Costs.Mana("{1}")
-        timing = TimingRule.SorcerySpeed
-        description = "Equip colorless creature {1}"
-        val colorlessCreatureYouControl = target(
-            "colorless creature you control",
-            TargetCreature(
-                filter = TargetFilter(
-                    GameObjectFilter(
-                        cardPredicates = listOf(CardPredicate.IsCreature, CardPredicate.IsColorless)
-                    ).youControl()
-                )
-            )
-        )
-        effect = Effects.AttachEquipment(colorlessCreatureYouControl)
-    }
+    // (Equip costs {2} less for colorless creatures — modeled as an "Equip [quality] creature"
+    // variant per CR 702.6c, since the discount is only ever available on a colorless target.)
+    equipAbility(
+        "{1}",
+        quality = "colorless",
+        targetFilter = TargetFilter(
+            GameObjectFilter(
+                cardPredicates = listOf(CardPredicate.IsCreature, CardPredicate.IsColorless)
+            ).youControl()
+        ),
+    )
 
     equipAbility("{3}")
 

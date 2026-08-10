@@ -4249,7 +4249,7 @@
                     }
                 ],
                 "timing": "SorcerySpeed",
-                "descriptionOverride": "Equip colorless creature {1}"
+                "isEquipAbility": true
             },
             {
                 "id": "ability_2",

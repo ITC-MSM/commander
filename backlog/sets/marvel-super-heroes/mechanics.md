@@ -203,22 +203,44 @@ Blocked card: **Captain America, Super-Soldier** [9]. Its second clause is alrea
 `GrantHexproofToController` + `GrantKeyword(HEXPROOF, Heroes)` under a `ConditionalStaticAbility`
 gated on `Conditions.SourceHasCounter`.
 
-## Equip worthy — 1 card ⛔
+## Equip worthy — SHIPPED ✅ (1 card implemented)
 
 > Equip worthy {1} *(A creature is worthy if it's a legendary non-Villain that's red and/or white.)*
 
-An equip ability whose attach target is filtered. `equipAbility(cost, genericCostReduction)`
-(`mtg-sdk/.../dsl/CardBuilder.kt`) hard-codes `TargetCreature(filter = TargetFilter.CreatureYouControl)`
-with no override, so the restriction cannot be authored. Needed: a `targetFilter: TargetFilter? = null`
-parameter on `equipAbility` (the hand-rolled `activatedAbility { isEquipAbility = true }` escape hatch
-would also work if it accepted the filter), plus a "worthy" reminder-text / keyword-display entry.
+Implemented 2026-08-10 as a **`quality` + `targetFilter` pair on the existing `equipAbility` facade**,
+with the five printed "Equip [quality]" cards that were hand-rolling the shape converged onto it —
+not as a second authoring path beside them.
 
-Same card, second gap: "Double all damage equipped creature would deal" wants
-`DoubleDamage(appliesTo = DamageEvent(source = <the equipped creature>))`, but `SourceFilter`
-(`mtg-sdk/.../scripting/events/EventFilters.kt`) has only `EnchantedCreature` on the source side —
-`RecipientFilter` has an `EquippedCreature` case and `SourceFilter` does not. A one-line mirror.
+1. **`equipAbility(cost, genericCostReduction, quality, targetFilter)`**
+   (`mtg-sdk/.../dsl/CardBuilder.kt`). CR 702.6c is the rule: an equip ability may further restrict
+   its targets ("Equip [quality]" / "Equip [quality] creature") and "may legally target only a
+   creature that's controlled by the player activating the ability and that has the chosen quality".
+   `quality` supplies the wording — it becomes the target requirement's id/label ("worthy creature
+   you control"), which is the string the ability menu, the targeting prompt and
+   `LegalActionInfo.targetDescription` all show. `targetFilter` is the rules half.
+   Blackblade Reforged, Bilbo's Ring, Dúnedain Blade, Ghostfire Blade and Pirate Hat were each
+   hand-rolling this as a bare `activatedAbility { }` **without `isEquipAbility`**, so Forge Anew's
+   free first equip, Eowyn's equip discount and instant-speed-equip permissions all silently skipped
+   their restricted halves; converging them onto the facade fixes that. Non-mana equip costs
+   ("Equip—Sacrifice a creature") still use the hand-rolled escape hatch — the facade parses a mana
+   cost only. `EquipQualityVariantTest` (mtg-sets) pins both catalog-wide invariants: every
+   `isEquipAbility` ability is sorcery-speed and targets a single creature you control.
 
-Blocked card: **Mjölnir, Hammer of Thor** [146].
+   "Worthy" itself is **not** an SDK concept — a Scryfall search for the term returns exactly one
+   card, so it is spelled out on Mjölnir from existing predicates
+   (`.legendary().notSubtype(Subtype.VILLAIN).withAnyColor(RED, WHITE).youControl()`) and the card's
+   own printed reminder text carries the definition. No keyword-display entry was added.
+
+2. **`SourceFilter.EquippedCreature`** (`mtg-sdk/.../scripting/events/EventFilters.kt`) — the mirror
+   was real and is one line plus one engine branch: `DamageUtils.damageSourceMatches` now handles
+   `SourceFilter.EnchantedCreature, SourceFilter.EquippedCreature` in a shared branch exactly as
+   `damageRecipientMatches` already did for the `RecipientFilter` pair. That single matcher is used by
+   prevention, doubling and flat/dynamic damage modification alike, and by both the combat and
+   noncombat damage paths, so "Double all damage equipped creature would deal" is
+   `DoubleDamage(appliesTo = DamageEvent(source = SourceFilter.EquippedCreature))` with no further
+   plumbing.
+
+Card: **Mjölnir, Hammer of Thor** [146].
 
 ## Copy-with-exceptions: name, added types, longer durations — SHIPPED ✅ (all 3 cards implemented)
 
