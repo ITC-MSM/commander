@@ -6,7 +6,9 @@ import com.wingedsheep.engine.state.components.stack.ChosenTarget
 import com.wingedsheep.engine.support.GameTestDriver
 import com.wingedsheep.engine.support.TestCards
 import com.wingedsheep.mtg.sets.definitions.msh.cards.ScientistSupremeOfAim
+import com.wingedsheep.mtg.sets.tokens.PredefinedTokens
 import com.wingedsheep.sdk.core.Step
+import com.wingedsheep.sdk.dsl.Costs
 import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.Targets
 import com.wingedsheep.sdk.dsl.card
@@ -28,6 +30,10 @@ import io.kotest.matchers.shouldBe
  * The artifact-source twin of Echo, Perceptive Prodigy. Covered here:
  *  - an artifact-source ability is enumerated and copied, and the copy is retargeted (CR 707.10c);
  *  - a creature-source ability is neither offered nor accepted;
+ *  - last known information (CR 113.7a): an artifact that sacrificed *itself* to pay for the
+ *    ability is still an artifact source, both as a plain card (which lands in the graveyard) and
+ *    as a **token**, whose entity CR 704.5d deletes outright — the cracked-Clue line this card is
+ *    printed for;
  *  - the cost is 2 life and the ability is once-per-turn and your-turn-only.
  */
 class ScientistSupremeOfAimScenarioTest : FunSpec({
@@ -60,11 +66,38 @@ class ScientistSupremeOfAimScenarioTest : FunSpec({
         }
     }
 
+    // Nontoken artifact that eats itself to pay for its own ability — the last-known-information
+    // case for a source that is in the graveyard by the time the ability is targeted.
+    val testCache = card("Scientist Test Cache") {
+        manaCost = "{1}"
+        typeLine = "Artifact"
+        oracleText = "{2}, Sacrifice this artifact: Draw a card."
+        activatedAbility {
+            cost = Costs.Composite(Costs.Mana("{2}"), Costs.SacrificeSelf)
+            effect = Effects.DrawCards(1)
+            timing = TimingRule.InstantSpeed
+        }
+    }
+
+    // Sorcery that makes a Clue token, so the token-source case can be built the way a real game
+    // builds it (MSH's own Agent 13, Sharon Carter / Panther Pounce investigate).
+    val testDossier = card("Scientist Test Dossier") {
+        manaCost = "{1}"
+        typeLine = "Sorcery"
+        oracleText = "Investigate."
+        spell { effect = Effects.Investigate() }
+    }
+
     val copyAbilityId = ScientistSupremeOfAim.activatedAbilities.single().id
+    val clueSacAbilityId = PredefinedTokens.Clue.activatedAbilities.single().id
+    val cacheSacAbilityId = testCache.activatedAbilities.single().id
 
     fun setup(): GameTestDriver {
         val driver = GameTestDriver()
-        driver.registerCards(TestCards.all + listOf(ScientistSupremeOfAim, testLens, testPumper))
+        driver.registerCards(
+            TestCards.all + listOf(ScientistSupremeOfAim, testLens, testPumper, testCache, testDossier)
+        )
+        driver.registerCard(PredefinedTokens.Clue)
         driver.initMirrorMatch(deck = Deck.of("Island" to 40), skipMulligans = true, startingPlayer = 0)
         return driver
     }
@@ -150,6 +183,93 @@ class ScientistSupremeOfAimScenarioTest : FunSpec({
                 targets = listOf(ChosenTarget.Spell(pumpOnStack))
             )
         )
+    }
+
+    test("an artifact that sacrificed itself to pay for its own ability is still an artifact source") {
+        val driver = setup()
+        val me = driver.activePlayer!!
+
+        val scientist = driver.putCreatureOnBattlefield(me, "Scientist Supreme of A.I.M.")
+        val cache = driver.putPermanentOnBattlefield(me, "Scientist Test Cache")
+
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        val handBefore = driver.getHandSize(me)
+        driver.giveColorlessMana(me, 2)
+        driver.submitSuccess(ActivateAbility(playerId = me, sourceId = cache, abilityId = cacheSacAbilityId))
+
+        // The source paid for itself; it is in the graveyard, not on the battlefield (CR 113.7a).
+        driver.findPermanent(me, "Scientist Test Cache") shouldBe null
+        val drawOnStack = driver.getTopOfStack()!!
+
+        offeredCopyTargets(driver, me, scientist) shouldContain drawOnStack
+        driver.submitSuccess(
+            ActivateAbility(
+                playerId = me, sourceId = scientist, abilityId = copyAbilityId,
+                targets = listOf(ChosenTarget.Spell(drawOnStack))
+            )
+        )
+
+        var guard = 0
+        while (driver.stackSize > 0 && guard < 20) { driver.bothPass(); guard++ }
+
+        // The copy plus the original: two cards drawn.
+        driver.getHandSize(me) shouldBe handBefore + 2
+    }
+
+    test("a Clue token's draw ability is still an artifact source after CR 704.5d deletes the token") {
+        val driver = setup()
+        val me = driver.activePlayer!!
+
+        val scientist = driver.putCreatureOnBattlefield(me, "Scientist Supreme of A.I.M.")
+        // A second, unrelated ability to stack on top of the Clue's, purely so *it* is what
+        // resolves first (see below) and the draw ability outlives the token's cleanup.
+        val lens = driver.putPermanentOnBattlefield(me, "Scientist Test Lens")
+        val bear = driver.putCreatureOnBattlefield(me, "Grizzly Bears")
+
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        val dossier = driver.putCardInHand(me, "Scientist Test Dossier")
+        driver.giveColorlessMana(me, 1)
+        driver.castSpell(me, dossier).isSuccess shouldBe true
+        driver.bothPass() // Investigate resolves
+        val clue = driver.findPermanent(me, "Clue")!!
+
+        val handBefore = driver.getHandSize(me)
+        driver.giveColorlessMana(me, 2)
+        driver.submitSuccess(ActivateAbility(playerId = me, sourceId = clue, abilityId = clueSacAbilityId))
+        val drawOnStack = driver.getTopOfStack()!!
+
+        // State-based actions (CR 117.5, CR 704.5d) are applied on the engine's post-resolution
+        // pass, so the token entity is still readable at the instant of activation. Reproduce the
+        // ordinary table sequence that outlives it: put a second ability on top of the draw, let
+        // *that* resolve — the SBA pass sweeps the sacrificed token then — and the Clue's draw
+        // ability is still sitting on the stack with no source entity behind it.
+        val lensAbilityId = driver.cardRegistry.requireCard("Scientist Test Lens").activatedAbilities[0].id
+        driver.submitSuccess(
+            ActivateAbility(
+                playerId = me, sourceId = lens, abilityId = lensAbilityId,
+                targets = listOf(ChosenTarget.Permanent(bear))
+            )
+        )
+        driver.bothPass() // the pump ability resolves; the sacrificed token ceases to exist
+
+        // CR 704.5d has now swept the sacrificed token out of the graveyard: there is no entity
+        // left to read, only the EntitySnapshot the activation froze.
+        driver.state.getEntity(clue) shouldBe null
+
+        offeredCopyTargets(driver, me, scientist) shouldContain drawOnStack
+        driver.submitSuccess(
+            ActivateAbility(
+                playerId = me, sourceId = scientist, abilityId = copyAbilityId,
+                targets = listOf(ChosenTarget.Spell(drawOnStack))
+            )
+        )
+
+        var guard = 0
+        while (driver.stackSize > 0 && guard < 20) { driver.bothPass(); guard++ }
+
+        driver.getHandSize(me) shouldBe handBefore + 2
     }
 
     test("activate only once each turn") {

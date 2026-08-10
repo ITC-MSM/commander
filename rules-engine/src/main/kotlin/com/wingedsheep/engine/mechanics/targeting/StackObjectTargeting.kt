@@ -38,6 +38,11 @@ object StackObjectTargeting {
             is CardPredicate.AbilitySourceMatches -> true
             is CardPredicate.Or -> p.predicates.any(::predicateNamesAbility)
             is CardPredicate.And -> p.predicates.any(::predicateNamesAbility)
+            // Negation is deliberately *not* inverted. The question this answers is "does the
+            // requirement's text mention abilities at all", not "must the object be an ability" —
+            // `Not(IsActivatedAbility)` still speaks of abilities, so the enumeration should offer
+            // ability entities and let the filter itself reject the ones that don't match. Inverting
+            // here would silently drop them before the filter ever ran.
             is CardPredicate.Not -> predicateNamesAbility(p.predicate)
             else -> false
         }

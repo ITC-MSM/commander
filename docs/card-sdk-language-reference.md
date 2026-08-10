@@ -2902,7 +2902,7 @@ can't statically prevent (cross-trigger flows, `Self`-vs-`ContextTarget` inside 
 - `Targets.ActivatedOrTriggeredAbilityYouControl` — an activated or triggered ability **you control** on the stack (`TargetFilter.ActivatedOrTriggeredAbilityOnStack.youControl()`). Mana abilities never use the stack, so they're excluded automatically. Pair with `Effects.CopyTargetSpellOrAbility` — **Gogo, Master of Mimicry**.
 - `Targets.ActivatedOrTriggeredAbilityYouControlFrom(sourceFilter)` — the same, narrowed to abilities whose **source** matches `sourceFilter` (`CardPredicate.AbilitySourceMatches`): "copy target activated or triggered ability you control **from a creature source**" (**Echo, Perceptive Prodigy**, `GameObjectFilter.Creature`) / "**from an artifact source**" (**Scientist Supreme of A.I.M.**, `GameObjectFilter.Artifact`). The restriction is on the ability's source per CR 113.7, matched with last known information when the source has already left the battlefield (CR 113.7a), so a dead creature's dies trigger still qualifies.
 - `Targets.SpellOrAbilityWithSingleTarget` — a spell or ability whose single target is changed (Willbender; pair with `Effects.ChangeTarget()`).
-- `Targets.SpellOrAbility` — any spell, activated ability, or triggered ability on the stack (`TargetFilter.SpellOrAbilityOnStack` = any object in the stack zone; mana abilities never use the stack). Pair with `Effects.CounterSpellOrAbility()` — "counter target spell, activated ability, or triggered ability" (Overcharged Amalgam).
+- `Targets.SpellOrAbility` — written for "counter target spell, activated ability, or triggered ability" (Overcharged Amalgam, Grip of Chaos); pair with `Effects.CounterSpellOrAbility()`. **Caveat:** `TargetFilter.SpellOrAbilityOnStack` is `GameObjectFilter.Any` in the stack zone and so names *no* ability predicate, which by the rule in the next bullet means the targeting seam offers **spells only** — the ability half of the wording doesn't reach abilities today, in either `TargetFinder` or the enumerator. Closing it needs an explicit ability predicate on the filter (an `Or` mirroring `TargetFilter.InstantSorcerySpellOrAbilityOnStack`); until then prefer `Targets.InstantSorcerySpellOrAbility` or a filter that names the ability kinds it means.
 - `Targets.InstantSorcerySpellOrAbility` — one requirement admitting an instant spell, sorcery spell, activated ability, or triggered ability on the stack (`TargetFilter.InstantSorcerySpellOrAbilityOnStack`, a single `CardPredicate.Or`). Pair with `Effects.CopyTargetSpellOrAbility()` — Return the Favor. **Note:** a STACK target requirement offers an ability as a legal target only when its filter *explicitly names an ability predicate* (anywhere inside `Or`/`And`/`Not`, including `CardPredicate.AbilitySourceMatches`); plain "target spell" filters stay spell-only (CR 112.1 vs 113.3b/c). Both readers — `TargetFinder.findSpellTargets` (the authoritative target set) and `TargetEnumerationUtils.findValidSpellTargets` (the legal actions sent to clients and the AI) — ask that question through the single `StackObjectTargeting.permitsAbilities` seam, so an ability-targeting card can't end up executable-but-never-offered.
 - `Targets.InstantSorceryOrTriggeredAbility` — narrower than `Targets.InstantSorcerySpellOrAbility`: admits an instant spell, sorcery spell, or **triggered** ability on the stack, but **not** an activated ability (`TargetFilter.InstantSorcerySpellOrTriggeredAbilityOnStack`, an `Or` of `IsInstant` / `IsSorcery` / `IsTriggeredAbility`). Because the filter names `IsTriggeredAbility`, the STACK enumeration offers triggered abilities (per the note above), while activated abilities stay excluded. Pair with `Effects.CounterSpellOrAbility()` — **Spider-Sense**'s "counter target instant spell, sorcery spell, or triggered ability."
 - `Targets.Card` — any card in any zone (e.g. graveyard).
@@ -3518,15 +3518,23 @@ work for abilities-on-stack (which carry no `CardComponent`).
   `PredicateContext`. **Last known information:** the source is read from the projection while it is
   on the battlefield and from its printed characteristics once it has left, so a dead creature's
   dies trigger still counts as "from a creature source" (CR 113.7a; CR 608.2b for the
-  resolution-time re-check) — the same source resolution `CantBeTargetedBySourceTypeAbilities` uses.
+  resolution-time re-check) — equivalent source resolution to what
+  `CantBeTargetedBySourceTypeAbilities` uses (a parallel implementation, not shared code). When the
+  source entity is *gone entirely* — a **token** swept by CR 704.5d — the predicate falls back to
+  `ActivatedAbilityOnStackComponent.lastKnownSourceSnapshot`, the `EntitySnapshot` frozen when the
+  ability's self-sacrifice/self-exile cost was paid, and evaluates the subfilter against it via
+  `PredicateEvaluator.matchesSnapshot`. That is what makes a cracked **Clue**/**Food**/**Blood**
+  token's ability a legal target for "from an artifact source".
   Never matches a spell. Build it with `GameObjectFilter.abilitySourceMatches(...)` /
   `TargetFilter.abilitySourceMatches(...)`, or the ready-made
   `Targets.ActivatedOrTriggeredAbilityYouControlFrom(sourceFilter)`.
-  Two limits of the last-known read, both inherited from how the engine stores last-known
-  information: a source whose type came from a continuous effect (animated land, crewed Vehicle) and
-  has since left reads its *printed* types; and a **token** source is unmatchable once it has left
-  the battlefield, because CR 704.5s cleanup deletes the entity and no snapshot survives where the
-  predicate can reach it (a sacrificed Clue's draw ability is missed by "from an artifact source").
+  Remaining limits, inherited from where the engine captures snapshots: a **nontoken** source that
+  left the battlefield some other way is read off the card in its new zone, so a type a continuous
+  effect had granted it (animated land, crewed Vehicle) is no longer visible — its *printed* types
+  answer; a deleted **token** source is only recoverable for an *activated* ability whose cost
+  sacrificed/exiled it, not for a triggered ability; and the snapshot arm answers only card types,
+  sub/supertypes, keywords, token-ness and controller, so a subfilter asking for a mana value, a
+  color or a P/T comparison does not match a deleted-token source.
 - `CardPredicate.HasNonManaActivatedAbility` — matches a permanent whose printed activated abilities
   include at least one that isn't a mana ability and isn't a loyalty ability (battlefield-activatable).
   Backed by the precomputed `CardComponent.hasNonManaActivatedAbility` flag (set at entity creation from

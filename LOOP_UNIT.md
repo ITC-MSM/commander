@@ -33,18 +33,29 @@ cards, `just check-backlog` in sync.
 
 ## Things I'm unsure about — please look
 
-1. **Token sources are unmatchable once gone.** CR 704.5s deletes a token's entity, so a sacrificed
-   Clue's "Sacrifice this artifact: draw a card" is *not* "from an artifact source" for Scientist
-   Supreme. Non-token sources are fine (the entity survives in the graveyard with its printed types).
-   Closing it needs a general last-known store for deleted tokens, which the engine doesn't have —
-   `EntitySnapshot`/`LastKnownPermanentComponent` both die with the entity. Documented in the
-   predicate KDoc and the DSL reference rather than silently approximated.
-2. Related, smaller: a source whose *type* came from a continuous effect (animated land, crewed
-   Vehicle) and has since left reads its printed types.
+1. ~~**Token sources are unmatchable once gone.**~~ **Closed in review round 3.** The claim that the
+   engine had no last-known store for a deleted token was wrong:
+   `ActivatedAbilityOnStackComponent.lastKnownSourceSnapshot` already freezes an `EntitySnapshot` of
+   the source whenever the activation cost sacrifices/exiles it — exactly the Clue / Food / Blood /
+   Treasure shape. It just wasn't carrying the type line. It now does (via the shared
+   `projectedTypeLine` helper), and the `AbilitySourceMatches` branch falls back to it through
+   `PredicateEvaluator.matchesSnapshot` when `state.getEntity(sourceId)` is null. A cracked Clue's
+   draw ability is a legal, *offered* target for Scientist Supreme; scenario test added. Timing
+   nuance found while testing: SBAs run on the engine's post-resolution pass, so the token is still
+   readable the instant its ability hits the stack and only vanishes once something else resolves —
+   the test reproduces that sequence and asserts the entity is gone before checking the offer. The
+   rule is
+   **CR 704.5d** ("If a token is in a zone other than the battlefield, it ceases to exist"), not
+   704.5s (that one is the Saga final-chapter sacrifice).
+2. Related, smaller, still open: a **nontoken** source whose *type* came from a continuous effect
+   (animated land, crewed Vehicle) and has since left the battlefield some other way reads its
+   printed types — only the self-sacrifice/self-exile cost path freezes the projected type line.
 3. `ChosenTarget.Spell` gets no CR 608.2b filter re-check in `StackResolver.validateTargets` (only
    "still on the stack"). Pre-existing, not touched here; it means the source restriction is enforced
-   at targeting time only. Arguably correct in practice (the ability can't stop being from a creature
-   source), but worth a second opinion.
+   at targeting time only. Exposure is small but not zero: an artifact animated into a creature can
+   stop being a creature between targeting and resolution, at which point CR 608.2b says Echo's copy
+   ability should fizzle and it won't. Left open deliberately — fixing it is an engine change to the
+   shared resolution-time target validation, not this unit's scope.
 4. No client change was needed: `StackZone` already routes both the action-pipeline
    (`targetingState`) and decision (`decisionSelectionState`) click paths for stack objects, and
    `TargetingOverlay` only diverts to the pile picker for `Graveyard`/`Exile`. Verified by reading;

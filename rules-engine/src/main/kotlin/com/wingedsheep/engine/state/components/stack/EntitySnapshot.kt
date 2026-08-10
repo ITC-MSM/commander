@@ -7,6 +7,8 @@ import com.wingedsheep.engine.state.components.battlefield.CountersComponent
 import com.wingedsheep.engine.state.components.battlefield.DamageSourceLki
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.TokenComponent
+import com.wingedsheep.sdk.core.CardType
+import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.core.TypeLine
 import com.wingedsheep.sdk.model.EntityId
 import kotlinx.serialization.Serializable
@@ -233,6 +235,36 @@ fun captureEntitySnapshots(
     snapshot.copy(
         wasToken = container?.has<TokenComponent>() ?: false,
         name = container?.get<CardComponent>()?.name,
+    )
+}
+
+/**
+ * The permanent's **projected** type line: its printed types overlaid with whatever continuous
+ * effects have granted or replaced (an animated artifact reads "Artifact Creature", a Vehicle
+ * crewed this turn reads "Artifact Creature — Vehicle"). Falls back to the printed type line when
+ * the entity has no projection entry, and returns null when it has no [CardComponent] at all.
+ *
+ * Caller must invoke this BEFORE any zone change, while the projection entry still exists. It is
+ * the single value frozen into [EntitySnapshot.typeLine], so the zone-exit path
+ * (`ZoneTransitionService`) and the cost-time path (`ActivateAbilityHandler`'s
+ * [com.wingedsheep.engine.state.components.stack.ActivatedAbilityOnStackComponent.lastKnownSourceSnapshot])
+ * capture the same thing rather than two hand-rolled copies.
+ */
+fun projectedTypeLine(state: GameState, entityId: EntityId): TypeLine? {
+    val base = state.getEntity(entityId)?.get<CardComponent>()?.typeLine ?: return null
+    return projectedTypeLine(state, entityId, base)
+}
+
+/** [projectedTypeLine] for a caller that already holds the printed [baseTypeLine]. */
+fun projectedTypeLine(state: GameState, entityId: EntityId, baseTypeLine: TypeLine): TypeLine {
+    val projected = state.projectedState.getProjectedValues(entityId) ?: return baseTypeLine
+    val cardTypes = projected.types
+        .mapNotNull { runCatching { CardType.valueOf(it) }.getOrNull() }
+        .toSet()
+        .ifEmpty { baseTypeLine.cardTypes }
+    return baseTypeLine.copy(
+        cardTypes = cardTypes,
+        subtypes = projected.subtypes.map { Subtype(it) }.toSet(),
     )
 }
 

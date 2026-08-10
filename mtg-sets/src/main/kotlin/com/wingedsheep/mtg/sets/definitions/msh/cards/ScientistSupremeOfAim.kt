@@ -19,10 +19,13 @@ import com.wingedsheep.sdk.scripting.GameObjectFilter
  * The artifact-source twin of Echo, Perceptive Prodigy, built from the same pieces:
  *  - [Targets.ActivatedOrTriggeredAbilityYouControlFrom]`(Artifact)` — the existing ability-on-stack
  *    target narrowed by `CardPredicate.AbilitySourceMatches(Artifact)`, which matches the ability's
- *    *source* (CR 113.7) rather than the ability object. An artifact that was animated into a
- *    creature still counts (the source's projected types are read while it is on the battlefield),
- *    and an artifact that has already been sacrificed to its own ability still counts too, because
- *    the source is read with last known information (CR 113.7a).
+ *    *source* (CR 113.7) rather than the ability object. An artifact that has already sacrificed
+ *    itself to pay for its own ability still counts, because the source is read with last known
+ *    information (CR 113.7a) — that holds for a plain artifact card (which is sitting in the
+ *    graveyard) and for an artifact **token** alike, even though CR 704.5d has deleted the token
+ *    outright, because the activation froze an `EntitySnapshot` of it. Cracking a Clue or a Food is
+ *    the line this card is printed for, and MSH makes both (Agent 13, Panther Pounce; Ant-Man's
+ *    Army, Heroic Feast).
  *  - [Effects.CopyTargetSpellOrAbility] — the copy, with the CR 707.10c retarget prompt.
  *  - Cost is a bare [Costs.PayLife] — no mana, no tap, so it works the turn Scientist Supreme
  *    enters. The two activation clauses are the existing restrictions

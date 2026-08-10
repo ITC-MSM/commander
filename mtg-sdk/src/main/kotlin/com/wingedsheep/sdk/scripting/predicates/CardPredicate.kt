@@ -1060,23 +1060,31 @@ sealed interface CardPredicate : TextReplaceable<CardPredicate> {
      * **Last known information.** Once an ability is on the stack it exists independently of its
      * source, and the source is routinely gone by the time the ability is targeted — a dies trigger's
      * source is already in the graveyard, a self-sacrifice ability's source is already sacrificed
-     * (CR 113.7a, and CR 608.2b for the resolution-time re-check). The engine therefore reads the
-     * source's *projected* characteristics while it is on the battlefield and falls back to its
+     * (CR 113.7a, and CR 608.2b for the resolution-time re-check). The engine reads the source in
+     * two steps: its *projected* characteristics while it is on the battlefield, falling back to its
      * printed ones once it has left, so "from a creature source" still matches a dead creature's
-     * dies trigger. Same source-characteristic resolution as
-     * `CantBeTargetedBySourceTypeAbilities` / protection-from-card-type.
+     * dies trigger; and, when the source entity no longer exists at all — a **token** swept by
+     * CR 704.5d — the frozen `EntitySnapshot` the activation captured before the self-sacrifice cost
+     * took it, so "from an artifact source" matches a cracked Clue's draw ability. Equivalent
+     * source-characteristic resolution to `CantBeTargetedBySourceTypeAbilities` /
+     * protection-from-card-type (a parallel implementation, not shared code).
      *
      * Applied to a spell on the stack, or to any object that is not an ability, this is false — a
      * spell is its own source and the clause deliberately does not reach it.
      *
-     * **Known limits of that last-known read**, both inherited from how the engine stores
-     * last-known information rather than from this predicate:
-     *  - a source whose *type* came from a continuous effect (an animated land, a crewed Vehicle)
-     *    and has since left the battlefield reads its printed types, not the projected ones;
-     *  - a **token** source is unmatchable once it has left the battlefield, because CR 704.5s
-     *    cleanup deletes the entity outright and no snapshot of it survives anywhere the predicate
-     *    can reach (so "from an artifact source" misses a sacrificed Clue's draw ability). Closing
-     *    that needs a general last-known store for deleted tokens, which the engine does not have.
+     * **Known limits of that last-known read**, inherited from where the engine captures snapshots
+     * rather than from this predicate:
+     *  - a **nontoken** source that left the battlefield some other way (it died, it was exiled)
+     *    is read from the card sitting in that zone, so a type a continuous effect had granted it
+     *    (an animated land, a crewed Vehicle) is no longer visible — its *printed* types answer.
+     *    Only the self-sacrifice/self-exile cost path freezes the projected type line;
+     *  - a deleted-token source is only recoverable for an **activated** ability whose cost
+     *    sacrificed/exiled it (the Clue / Food / Blood / Treasure shape, which is where the clause
+     *    actually comes up). A *triggered* ability whose token source has since ceased to exist has
+     *    no equivalent snapshot on its stack object and stays unmatchable;
+     *  - the snapshot arm answers only card types, sub/supertypes, keywords, token-ness and
+     *    controller. A subfilter asking for anything else (mana value, color, a P/T comparison)
+     *    does not match a deleted-token source.
      */
     @SerialName("AbilitySourceMatches")
     @Serializable

@@ -32,9 +32,11 @@ import com.wingedsheep.engine.state.components.battlefield.CountersComponent
 import com.wingedsheep.engine.state.components.identity.MorphDataComponent
 import com.wingedsheep.engine.state.components.identity.PutIntoGraveyardThisTurnComponent
 import com.wingedsheep.engine.state.components.identity.TokenComponent
+import com.wingedsheep.sdk.core.CardType
 import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.core.CounterType
 import com.wingedsheep.engine.state.components.stack.ActivatedAbilityOnStackComponent
+import com.wingedsheep.engine.state.components.stack.EntitySnapshot
 import com.wingedsheep.engine.state.components.stack.SpellOnStackComponent
 import com.wingedsheep.engine.state.components.stack.TriggeredAbilityOnStackComponent
 import com.wingedsheep.sdk.core.Keyword
@@ -124,6 +126,122 @@ class PredicateEvaluator {
         }
 
         return true
+    }
+
+    /**
+     * Evaluate [filter] against **frozen last-known information** instead of a live entity — the
+     * arm of [matches] for an object the engine can no longer look up at all. Today that means a
+     * *token*: CR 704.5d sweeps a token out of any non-battlefield zone as a state-based action and
+     * the entity is deleted, so a Clue that sacrificed itself to pay for its own draw ability has no
+     * `getEntity` row left while that ability sits on the stack (CR 113.7a — the ability exists
+     * independently of its source, and the source's last known information is what answers
+     * questions about it).
+     *
+     * **Partial by construction**, and deliberately so: what is answered here is card types,
+     * sub/supertypes, keywords, token-ness and controller — the characteristics an "…from an X
+     * source" clause is ever written against. A predicate outside that set (mana value, colors,
+     * P/T comparisons, "has a non-mana activated ability", …) reports
+     * *unanswerable* rather than guessing — see [matchesSnapshotPredicate] — and an unanswerable
+     * predicate makes the whole filter fail to match, which is the same answer the caller got before
+     * any snapshot existed. State predicates (tapped, attacking, …) describe a battlefield presence
+     * the object no longer has, so a filter carrying one never matches a snapshot.
+     */
+    fun matchesSnapshot(
+        state: GameState,
+        snapshot: EntitySnapshot,
+        filter: GameObjectFilter,
+        context: PredicateContext
+    ): Boolean {
+        filter.controllerPredicate?.let { controllerPred ->
+            if (!matchesSnapshotController(state, snapshot, controllerPred, context)) return false
+        }
+        if (filter.statePredicates.isNotEmpty()) return false
+        if (!filter.cardPredicates.all { matchesSnapshotPredicate(snapshot, it) == true }) return false
+        if (filter.anyOf.isNotEmpty()) {
+            return filter.anyOf.any { matchesSnapshot(state, snapshot, it, context) }
+        }
+        return true
+    }
+
+    /**
+     * Tri-state evaluation of one [CardPredicate] against frozen last-known information:
+     * `true`/`false` when [EntitySnapshot] carries the characteristic, **null** when it doesn't.
+     *
+     * The null arm is what keeps [CardPredicate.Not] honest — negating "I don't know" would turn an
+     * unsupported predicate into a match — and it propagates through `And`/`Or` the way an unknown
+     * operand should: `And` is false if any operand is false, unknown if any is unknown; `Or` is
+     * true if any operand is true, unknown if any is unknown.
+     */
+    private fun matchesSnapshotPredicate(snapshot: EntitySnapshot, predicate: CardPredicate): Boolean? {
+        val typeLine = snapshot.typeLine
+        return when (predicate) {
+            CardPredicate.IsCreature -> typeLine?.isCreature
+            CardPredicate.IsLand -> typeLine?.isLand
+            CardPredicate.IsArtifact -> typeLine?.isArtifact
+            CardPredicate.IsEnchantment -> typeLine?.isEnchantment
+            CardPredicate.IsInstant -> typeLine?.isInstant
+            CardPredicate.IsSorcery -> typeLine?.isSorcery
+            CardPredicate.IsPlaneswalker -> typeLine?.cardTypes?.contains(CardType.PLANESWALKER)
+            CardPredicate.IsPermanent -> typeLine?.isPermanent
+            CardPredicate.IsLegendary -> typeLine?.isLegendary
+            CardPredicate.IsNonlegendary -> typeLine?.isLegendary?.not()
+            CardPredicate.IsToken -> snapshot.wasToken
+            CardPredicate.IsNontoken -> !snapshot.wasToken
+            is CardPredicate.HasSubtype ->
+                typeLine?.hasSubtype(predicate.subtype)
+                    ?: snapshot.subtypes.any { it.equals(predicate.subtype.value, ignoreCase = true) }
+            is CardPredicate.HasKeyword -> predicate.keyword.name in snapshot.keywords
+            is CardPredicate.Not -> matchesSnapshotPredicate(snapshot, predicate.predicate)?.not()
+            is CardPredicate.And -> {
+                val results = predicate.predicates.map { matchesSnapshotPredicate(snapshot, it) }
+                when {
+                    results.any { it == false } -> false
+                    results.any { it == null } -> null
+                    else -> true
+                }
+            }
+            is CardPredicate.Or -> {
+                val results = predicate.predicates.map { matchesSnapshotPredicate(snapshot, it) }
+                when {
+                    results.any { it == true } -> true
+                    results.any { it == null } -> null
+                    else -> false
+                }
+            }
+            else -> null
+        }
+    }
+
+    /**
+     * [ControllerPredicate] against a snapshot's frozen [EntitySnapshot.controllerId]. Only the
+     * control-based predicates can be answered — ownership isn't frozen — and an unfrozen
+     * controller (or an owner-based predicate) is a non-match, matching [matchesSnapshotPredicate]'s
+     * conservative default.
+     */
+    private fun matchesSnapshotController(
+        state: GameState,
+        snapshot: EntitySnapshot,
+        predicate: ControllerPredicate,
+        context: PredicateContext
+    ): Boolean {
+        val controllerId = snapshot.controllerId ?: return false
+        return when (predicate) {
+            is ControllerPredicate.And ->
+                predicate.predicates.all { matchesSnapshotController(state, snapshot, it, context) }
+            is ControllerPredicate.Or ->
+                predicate.predicates.any { matchesSnapshotController(state, snapshot, it, context) }
+            is ControllerPredicate.Not ->
+                !matchesSnapshotController(state, snapshot, predicate.predicate, context)
+            ControllerPredicate.ControlledByYou -> controllerId == context.controllerId
+            ControllerPredicate.ControlledByOpponent -> controllerId != context.controllerId
+            ControllerPredicate.ControlledByAny -> true
+            ControllerPredicate.ControlledByActivePlayer -> controllerId == state.activePlayerId
+            ControllerPredicate.ControlledByTargetOpponent ->
+                context.targetOpponentId?.let { controllerId == it } ?: false
+            ControllerPredicate.ControlledByTargetPlayer ->
+                context.targetPlayerId?.let { controllerId == it } ?: false
+            else -> false
+        }
     }
 
     /**
@@ -232,17 +350,35 @@ class PredicateEvaluator {
         //
         // Last known information: the source is routinely gone by the time the ability is on the
         // stack (a dies trigger's source is in the graveyard; a self-sacrifice ability's source is
-        // already sacrificed). `matches` reads the source's projected characteristics while it is on
-        // the battlefield and falls back to its printed ones once it has left — the same resolution
-        // `SourceTypeTargeting.sourceCardTypes` uses for Artifact Ward, and what CR 113.7a /
-        // CR 608.2b call for. A spell on the stack is deliberately not matched: it has no
-        // ability-on-stack component, and the clause only ever speaks of abilities.
+        // already sacrificed). Two arms, in order:
+        //  1. the source entity still exists — `matches` reads its projected characteristics while
+        //     it is on the battlefield and falls back to its printed ones once it has left, which
+        //     is equivalent resolution to what `SourceTypeTargeting.sourceCardTypes` does for
+        //     Artifact Ward, and what CR 113.7a / CR 608.2b call for;
+        //  2. the source entity is *gone* — a token swept by CR 704.5d — so fall back to the frozen
+        //     `lastKnownSourceSnapshot` the activation captured before the self-sacrifice cost took
+        //     it (a cracked Clue is still "an artifact source"). This is the same LKI value type the
+        //     rest of the engine uses (`EntitySnapshot`), read through the `EntityView` accessors,
+        //     not a parallel store.
+        // A spell on the stack is deliberately not matched: it has no ability-on-stack component,
+        // and the clause only ever speaks of abilities.
         if (predicate is CardPredicate.AbilitySourceMatches) {
-            val sourceId = container.get<ActivatedAbilityOnStackComponent>()?.sourceId
+            val activated = container.get<ActivatedAbilityOnStackComponent>()
+            val sourceId = activated?.sourceId
                 ?: container.get<TriggeredAbilityOnStackComponent>()?.sourceId
                 ?: return false
+            // A missing context is a non-match rather than a context-free evaluation of the
+            // subfilter, deliberately and in step with the `TargetsMatching` branch above: the
+            // subfilter may carry a controller predicate ("from a creature source you control")
+            // that has no answer without one, and both live call sites (TargetFinder,
+            // TargetEnumerationUtils) always supply a context.
             val subContext = context ?: return false
-            return matches(state, projected, sourceId, predicate.subfilter, subContext)
+            if (state.getEntity(sourceId) != null) {
+                return matches(state, projected, sourceId, predicate.subfilter, subContext)
+            }
+            val snapshot = activated?.lastKnownSourceSnapshot?.takeIf { it.entityId == sourceId }
+                ?: return false
+            return matchesSnapshot(state, snapshot, predicate.subfilter, subContext)
         }
 
         val card = container.get<CardComponent>() ?: return false

@@ -1230,25 +1230,19 @@ object ZoneTransitionService {
      * firing for creatures Ygra turned into Food artifacts).
      *
      * Falls back to the base typeLine if projection has no entry for the entity.
+     *
+     * Delegates to the shared
+     * [com.wingedsheep.engine.state.components.stack.projectedTypeLine] so the cost-time capture
+     * (`ActivateAbilityHandler`'s `lastKnownSourceSnapshot`) freezes exactly the same type line
+     * this path does — one implementation, not two that can drift.
      */
     private fun buildProjectedTypeLine(
         cardComponent: CardComponent,
         state: GameState,
         entityId: EntityId
-    ): TypeLine {
-        val baseTypeLine = cardComponent.typeLine
-        val projected = state.projectedState.getProjectedValues(entityId) ?: return baseTypeLine
-
-        val cardTypes = projected.types
-            .mapNotNull { runCatching { CardType.valueOf(it) }.getOrNull() }
-            .toSet()
-            .ifEmpty { baseTypeLine.cardTypes }
-        val subtypes = projected.subtypes.map { Subtype(it) }.toSet()
-        return baseTypeLine.copy(
-            cardTypes = cardTypes,
-            subtypes = subtypes
-        )
-    }
+    ): TypeLine = com.wingedsheep.engine.state.components.stack.projectedTypeLine(
+        state, entityId, cardComponent.typeLine
+    )
 
     /**
      * Find which zone an entity is currently in.
