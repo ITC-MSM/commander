@@ -29,7 +29,9 @@ data class DraftsimArchetypeRecord(
  *    falls back to the rarity ladder (`SPEC_scoring.md` §3 `ratingFallback`/`ratingOrDefault`).
  *  - [removal]: lowercased card names curated as removal (plus split front-face aliases). Membership
  *    is tested with `card.name.lowercase()` — a plain lowercase, **not** [nameKey] (bundle quirk).
- *  - [archetypes]: `nameKey → record`. Non-empty only for FDN/SOS/SOSSPG/TMT; drives the `jm` path.
+ *  - [archetypes]: `nameKey → record`. Non-empty only for the sets whose upstream table ships
+ *    archetype columns — whichever files exist under `draftai/archetypes/`, since the set of tagged
+ *    sets moves with every data refresh; drives the `jm` path.
  */
 data class DraftsimSetTables(
     val ratings: Map<String, Double>,
