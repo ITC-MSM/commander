@@ -258,6 +258,25 @@ class StackResolver(
             ?: transformedBackDef?.manaCost?.cmc
             ?: cardComponent.manaValue
 
+        // CR 601.2b — a spell with `{X}` in its cost has X *chosen as it is cast*; there is no such
+        // thing as a spell on the stack whose X is undetermined. A caller that announced nothing
+        // (the AI's CastSpell carries no xValue, and a synthesized free cast never picks one) paid
+        // nothing for X, so X is 0.
+        //
+        // Binding it here rather than leaving null is load-bearing, not cosmetic: the resolution-time
+        // `CardPredicate.ManaValueAtMostX` fails *open* on an unbound X — deliberately, so an X spell
+        // is still offered during legal-action enumeration, which runs before X is chosen. Left null
+        // all the way to resolution, "each creature with mana value X or less" matches *every*
+        // creature, and Day of Black Sun cast for X=0 wipes the board. It is also what puts the
+        // "(X=0)" in the game log's cast line, which is otherwise silently absent.
+        val boundXValue = xValue ?: run {
+            val castCost = faceIndex
+                ?.let { cardRegistry.getCard(cardComponent.cardDefinitionId)?.cardFaces?.getOrNull(it)?.manaCost }
+                ?: transformedBackDef?.manaCost
+                ?: cardComponent.manaCost
+            if (castCost.hasX) 0 else null
+        }
+
         // Build the flat target union for choose-N modal spells (Rule 700.2 / 601.2c).
         // TargetsComponent holds the union so existing target-arrow rendering and resolution-time
         // re-validation keep working; per-mode breakdown lives on SpellOnStackComponent.
@@ -287,7 +306,7 @@ class StackResolver(
         newState = newState.updateEntity(cardId) { c ->
             var updated = c.with(SpellOnStackComponent(
                 casterId = casterId,
-                xValue = xValue,
+                xValue = boundXValue,
                 declaredCostSlot = declaredCostSlot,
                 wasBlightPaid = wasBlightPaid,
                 wasWaterbendPaid = wasWaterbendPaid,
@@ -473,7 +492,7 @@ class StackResolver(
                 cardName = eventName,
                 casterId = casterId,
                 targetNames = targetNames,
-                xValue = xValue,
+                xValue = boundXValue,
                 declaredCostSlot = declaredCostSlot,
                 totalManaSpent = totalManaSpent,
                 distinctColorsSpent =

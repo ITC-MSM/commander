@@ -42,18 +42,29 @@ val LeatherheadSwampStalker = card("Leatherhead, Swamp Stalker") {
         )
     )
 
-    // Reflexive: removing a counter (the only kind she carries is hexproof) is the cost that
-    // arms the destroy — modelled like Slumbering Walker (remove-a-counter reflexive) with
-    // Dawning Purist's "that player controls" combat-damage target.
+    // Reflexive: removing a counter is the cost that arms the destroy — Dawning Purist's
+    // "that player controls" combat-damage target hung off a remove-a-counter action.
+    //
+    // "Remove a counter" is any kind, not just the hexproof one she enters with: once anything
+    // has put +1/+1 counters on her (Ouroboroid's combat trigger, an Adapt, a bestow) the
+    // controller chooses which kind to take off, and hardcoding `Counters.HEXPROOF` silently
+    // spent her hexproof every time. [Effects.RemoveCountersUpTo]`(1, …)` is the choice-carrying
+    // primitive — it prompts per counter kind present, capped at one counter total, which is the
+    // same liberty Mister Hyde, Monster Within takes (it also permits taking off zero, already
+    // covered here by the `optional = true` decline).
     triggeredAbility {
         trigger = Triggers.DealsCombatDamageToPlayer
         effect = ReflexiveTriggerEffect(
-            action = Effects.RemoveCounters(Counters.HEXPROOF, 1, EffectTarget.Self),
+            action = Effects.RemoveCountersUpTo(1, EffectTarget.Self),
             optional = true,
             reflexiveEffect = Effects.Destroy(EffectTarget.ContextTarget(0)),
             reflexiveTargetRequirements = listOf(
                 TargetPermanent(filter = TargetFilter.ArtifactOrEnchantment.opponentControls())
-            )
+            ),
+            // The yes/no prompt should read as the card does, not as the composed
+            // "remove up to 1 counter" primitive's own wording.
+            descriptionOverride = "You may remove a counter from Leatherhead. When you do, " +
+                "destroy target artifact or enchantment that player controls."
         )
         description = "Whenever Leatherhead deals combat damage to a player, you may remove a counter from her. When you do, destroy target artifact or enchantment that player controls."
     }
