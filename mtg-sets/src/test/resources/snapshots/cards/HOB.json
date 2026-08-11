@@ -1279,6 +1279,50 @@
     ]
 }
 
+// Bombur, Gentle Dreamer
+{
+    "name": "Bombur, Gentle Dreamer",
+    "manaCost": "{2}{R}",
+    "typeLine": "Legendary Creature — Dwarf Bard",
+    "oracleText": "Storied (If you control three or more artifacts, legendaries, and/or Sagas, you have an enduring story for the rest of the game.)\nBombur doesn't untap during your untap step unless you have an enduring story.",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 3
+    },
+    "keywords": [
+        "STORIED"
+    ],
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "GrantKeyword",
+                    "keyword": "DOESNT_UNTAP",
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "Self"
+                    }
+                },
+                "condition": {
+                    "type": "Not",
+                    "condition": "PlayerHasEnduringStory"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "88",
+        "rarity": "UNCOMMON",
+        "artist": "Eric Deschamps",
+        "flavorText": "Bombur was always trying to recapture the beautiful dreams he had in the forest.",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/3/63c317e7-432c-4817-8db4-3670a1d84be3.jpg?1785496185"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Bothersome Noisemaker
 {
     "name": "Bothersome Noisemaker",
@@ -3180,6 +3224,43 @@
     ]
 }
 
+// Dáin, Lord of the Iron Hills
+{
+    "name": "Dáin, Lord of the Iron Hills",
+    "manaCost": "{1}{W}",
+    "typeLine": "Legendary Creature — Dwarf Noble",
+    "oracleText": "Vigilance\nStoried (If you control three or more artifacts, legendaries, and/or Sagas, you have an enduring story for the rest of the game.)\nAs long as you have an enduring story, creatures can't attack you unless their controller pays {1} for each of those creatures.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "VIGILANCE",
+        "STORIED"
+    ],
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "AttackTax",
+                "amountPerAttacker": {
+                    "type": "Fixed",
+                    "amount": 1
+                },
+                "condition": "PlayerHasEnduringStory"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "8",
+        "rarity": "UNCOMMON",
+        "artist": "Tomas Duchek",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/9/99d27749-d16c-45e9-accc-6a01351c17f9.jpg?1785496921"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Eagle of the Great Shelf
 {
     "name": "Eagle of the Great Shelf",
@@ -3972,6 +4053,69 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Fíli the Pathfinder
+{
+    "name": "Fíli the Pathfinder",
+    "manaCost": "{3}{W}",
+    "typeLine": "Legendary Creature — Dwarf Scout",
+    "oracleText": "Storied (If you control three or more artifacts, legendaries, and/or Sagas, you have an enduring story for the rest of the game.)\nAs long as you have an enduring story, creatures you control get +1/+1.\nWhenever Fíli or another nontoken Dwarf you control enters, create a 2/2 red Dwarf creature token.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "STORIED"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "creature Dwarf nontoken ctrl:you",
+                    "to": "Battlefield"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 2,
+                    "toughness": 2,
+                    "colors": [
+                        "RED"
+                    ],
+                    "creatureTypes": [
+                        "Dwarf"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/9/f/9fcb3a3f-c0d4-43d4-8549-826a38bfa27d.jpg?1785497537"
+                }
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "ModifyStats",
+                    "powerBonus": 1,
+                    "toughnessBonus": 1,
+                    "filter": {
+                        "baseFilter": "creature ctrl:you"
+                    }
+                },
+                "condition": "PlayerHasEnduringStory"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "14",
+        "rarity": "RARE",
+        "artist": "Valera Lutfullina",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/0/b02142f3-5e55-40dc-a02c-9113fb7d763c.jpg?1785496367"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 
