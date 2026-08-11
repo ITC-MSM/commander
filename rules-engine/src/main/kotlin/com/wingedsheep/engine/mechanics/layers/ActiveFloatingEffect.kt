@@ -420,6 +420,17 @@ sealed interface SerializableModification {
     data object SetCantBlock : SerializableModification
 
     /**
+     * Blocking requirement: creature blocks this turn if able (Culvert Ambusher).
+     *
+     * Floating counterpart of the static [com.wingedsheep.sdk.scripting.MustBlock] (Grand Melee);
+     * both project onto the same `ProjectedState.mustBlock`, which `BlockPhaseManager` reads when
+     * validating declared blockers. A requirement, not a guarantee — a creature that can't legally
+     * block any attacker is simply excused (CR 509.1c).
+     */
+    @Serializable
+    data object SetMustBlock : SerializableModification
+
+    /**
      * "It can't be turned face up." Used by Unable to Scream while it enchants a face-down
      * creature. Projected onto the affected permanent; [TurnFaceUpHandler] reads it.
      */
@@ -746,6 +757,8 @@ fun SerializableModification.toModification(): Modification = when (this) {
     is SerializableModification.SetCantBeTurnedFaceUp -> Modification.SetCantBeTurnedFaceUp
     // SetCantBlock maps to the layer modification for "can't block" projection
     is SerializableModification.SetCantBlock -> Modification.SetCantBlock
+    // SetMustBlock maps to the layer modification for the "must block" requirement projection
+    is SerializableModification.SetMustBlock -> Modification.SetMustBlock
     // SetSuspected maps to the layer modification for the "suspected" status projection
     is SerializableModification.SetSuspected -> Modification.SetSuspected
     // PreventAllDamageDealtBy doesn't map to a layer modification - it's checked during damage resolution directly

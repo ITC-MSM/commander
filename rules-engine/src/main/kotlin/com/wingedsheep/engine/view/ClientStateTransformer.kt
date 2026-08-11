@@ -2583,6 +2583,19 @@ class ClientStateTransformer(
                         )
                     )
                 }
+                // The unrestricted requirement (Culvert Ambusher). Badged for the same reason as
+                // "Must Attack": the defending player finds out about it when their declaration is
+                // rejected, which is far too late to be the first they hear of it.
+                is SerializableModification.SetMustBlock -> {
+                    effects.add(
+                        ClientCardEffect(
+                            effectId = "must_block_this_turn",
+                            name = "Must Block",
+                            description = "This creature must block this turn if able",
+                            icon = "must-attack"
+                        )
+                    )
+                }
                 is SerializableModification.PreventAllCombatDamage -> {
                     effects.add(
                         ClientCardEffect(

@@ -1598,6 +1598,17 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
 - `CantAttackGroupEffect(filter, condition?)` — group-scoped can't-attack.
 - `CantBlockGroupEffect(filter, condition?)` — group-scoped can't-block.
 - `Effects.Suspect(target)` — target becomes Suspected (MKM keyword). Composite: `SetSuspectedEffect` (named status, CR 701.60d dedup) + `GrantKeywordEffect(MENACE)` + `CantBlockEffect`.
+- `Effects.NoLongerSuspected(target = ContextTarget(0))` (`RemoveSuspectedEffect`) — "it's no longer
+  suspected" (CR 701.60c), the exact inverse of `Effects.Suspect`: it removes the named status
+  *together with* the menace grant and the can't-block restriction, since those exist only for as
+  long as the creature is suspected. `RemoveSuspectedExecutor` identifies the bundle by the
+  `(sourceId, timestamp)` the three floating effects share — `CompositeEffect` deliberately doesn't
+  tick `state.timestamp` between children so Rule 613 treats them as one application, and that same
+  shared stamp is the bundle's identity here. The match is narrowed to those three modification
+  kinds on an affected set of exactly this one creature, so menace or can't-block from any other
+  source survives. A no-op on an unsuspected creature; CR 701.60d guarantees a creature never
+  carries two bundles at once. Used by Absolving Lammasu (MKM) — `ForEachInGroup` over
+  `GameObjectFilter.Creature.suspected()` gives "all suspected creatures are no longer suspected".
 - `RemoveFromCombatEffect(target, unblockSoleBlockedAttackers = false)` — yank target out of combat.
   Set `unblockSoleBlockedAttackers = true` for the old-rules behavior (Ydwen Efreet): attackers the
   target was sole blocker of become unblocked (CR 509.1h normally keeps them blocked).
@@ -1641,6 +1652,16 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   `AttackPhaseManager` and removed during cleanup. It composes with the token pipeline for “that
   token attacks this combat if able”: create the token, then target
   `PipelineTarget(CREATED_TOKENS, 0)` with this facade.
+- `Effects.MarkMustBlockThisTurn(target = ContextTarget(0))` (`MarkMustBlockThisTurnEffect`) —
+  "target creature blocks this turn if able". Adds a `Layer.ABILITY` floating
+  `SerializableModification.SetMustBlock` for `Duration.EndOfTurn`, i.e. the same projected
+  `mustBlock` the *static* `MustBlock` (Grand Melee) writes, so
+  `BlockPhaseManager.validateProjectedMustBlockRequirements` enforces it with no extra wiring and
+  the generic end-of-turn cleanup expires it. Distinct from `Effects.ForceBlock`, which pins the
+  creature to blocking one *named* attacker and requires the source to be attacking — this one is
+  satisfied by blocking anything. A requirement, not a guarantee (CR 509.1c): a tapped creature, one
+  that can't block, or one whose every block would be illegal is excused, and its controller is
+  never forced to pay a cost associated with blocking. Used by Culvert Ambusher (MKM).
 - `Effects.SkipNextTurn(target = Controller, count = Fixed(1))` (`SkipNextTurnEffect`) — target skips their next `count` turns. `count` is a `DynamicAmount`, so it can read a pipeline value (e.g. a coin-flip tally via `DynamicAmount.VariableReference`). Skips accumulate on a `SkipNextTurnComponent(turns)`, decremented one turn per the player's turn-start; a resolved count of 0 is a no-op. Used by Lethal Vapors (one turn) and **Ral Zarek, Guest Lecturer** (skip N turns where N = heads).
 - `Effects.FlipCoins(count, storeHeadsAs = "heads")` (`FlipCoinsEffect`) — flip `count` coins and store the number of heads under `storeHeadsAs` in the pipeline (`storedNumbers`) so a later sub-effect in the same composite can scale off it via `DynamicAmount.VariableReference`. The general "flip N coins, count heads" primitive (CR 705); unlike `FlipCoinEffect` (branch on win/lose) and `FlipTwoCoinsEffect` (branch on combined outcome) it only tallies. Each flip emits a `CoinFlipEvent`. **Ral Zarek, Guest Lecturer**'s ultimate composes `FlipCoins(5, "heads")` then `SkipNextTurn(target, count = VariableReference("heads"))`.
 - `Effects.SkipNextDrawStep(target = Controller)` (`SkipNextDrawStepEffect`) — target skips their next draw step. Adds a one-shot `SkipDrawStepComponent` marker consumed by `DrawPhaseManager.performDrawStep` (Elfhame Sanctuary's "you skip your draw step this turn").
@@ -7873,6 +7894,12 @@ default to "you" so card authors don't need to pass it explicitly.
 - `SacrificedWasLegendary` — intervening-if "if the sacrificed creature was legendary". Same
   snapshot path as `SacrificedHadSubtype`, but reads `supertypes` instead of subtypes. Used by
   Nasty End and Gríma Wormtongue (LTR).
+- `SacrificedWasSuspected` — intervening-if "if the sacrificed creature was suspected" (CR 701.60a).
+  Same snapshot path again, reading `EntitySnapshot.wasSuspected`, which `captureEntitySnapshots`
+  freezes from `ProjectedState.isSuspected` at cost-payment time. It *has* to be last-known
+  information (CR 608.2h): the designation is a floating effect keyed on the entity, so it is gone
+  with the creature by the time the ability resolves. Asks "was it suspected", not "did it have
+  menace". Used by Agency Coroner (MKM).
 - `YouSacrificedThisWay` — intervening-if "if you sacrificed a creature this way". Filters
   `EffectContext.sacrificedPermanents` for snapshots whose last-known controller is the source's
   controller — the gate on the personal half of a symmetric edict. Used by Rise of the Witch-king

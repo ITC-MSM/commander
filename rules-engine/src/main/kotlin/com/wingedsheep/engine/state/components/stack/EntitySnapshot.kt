@@ -147,6 +147,15 @@ data class EntitySnapshot(
     val wasAttacking: Boolean = false,
     /** True if the leaving entity was a token (CR 704.5d — suppress persist-style return triggers). */
     val wasToken: Boolean = false,
+    /**
+     * True if this permanent carried the suspected designation (CR 701.60a) at capture time.
+     *
+     * Frozen because the designation is a floating effect keyed on the entity, and a sacrificed
+     * permanent's floating effects are torn down with it — so "if the sacrificed creature was
+     * suspected" (Agency Coroner) has to read last-known information (CR 608.2h), exactly as
+     * [supertypes] does for "was legendary".
+     */
+    val wasSuspected: Boolean = false,
     /** Per-player damage dealt to this entity this turn, keyed by source-controller (Grothama). */
     val damageDealtByPlayers: Map<EntityId, Int> = emptyMap(),
     /** Snapshots of the sources that dealt damage to this entity this turn (Shelob, Child of Ungoliant). */
@@ -173,6 +182,7 @@ data class EntitySnapshot(
                 counters = countersOf(state, entityId),
                 keywords = projected.getKeywords(entityId),
                 lostAllAbilities = projected.hasLostAllAbilities(entityId),
+                wasSuspected = projected.isSuspected(entityId),
                 name = state.getEntity(entityId)?.get<CardComponent>()?.name,
             )
         }
@@ -202,6 +212,7 @@ fun captureEntitySnapshots(
         subtypes = projected.getSubtypes(id),
         supertypes = projected.getSupertypes(id),
         controllerId = projected.getController(id),
+        wasSuspected = projected.isSuspected(id),
     )
 }
 
