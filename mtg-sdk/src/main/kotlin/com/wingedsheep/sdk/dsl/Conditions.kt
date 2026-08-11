@@ -1622,6 +1622,17 @@ object Conditions {
         trackerAtLeast(com.wingedsheep.sdk.scripting.values.TurnTracker.FOOD_SACRIFICED)
 
     /**
+     * If you've sacrificed an artifact this turn — Murders at Karlov Manor's artifact-sacrifice
+     * payoffs (Suspicious Detonation's cost reduction, Furtive Courier's evasion).
+     *
+     * Controller-scoped turn history, not a graveyard scan: the artifact having since left the
+     * graveyard doesn't clear it, and an opponent sacrificing their own artifact never sets it.
+     * The card-type sibling of [SacrificedFoodThisTurn].
+     */
+    val SacrificedArtifactThisTurn: ConditionInterface =
+        trackerAtLeast(com.wingedsheep.sdk.scripting.values.TurnTracker.ARTIFACT_SACRIFICED)
+
+    /**
      * If you descended this turn (CR 700.11) — i.e. at least one nontoken permanent
      * card was put into your graveyard from any zone this turn. Tokens do not count;
      * non-permanent cards (instants, sorceries) do not count.

@@ -1135,6 +1135,19 @@ data class CardsPutIntoExileThisTurnComponent(val count: Int = 0) : Component
 data object SacrificedFoodThisTurnComponent : Component
 
 /**
+ * Marker component indicating that this player has sacrificed an artifact this turn.
+ * Cleared at end of turn by CleanupPhaseManager.
+ *
+ * The card-type sibling of [SacrificedFoodThisTurnComponent], set by the same
+ * `ZoneTransitionService.trackPermanentSacrifice` hook off the *projected* type line, so an
+ * animated or type-changed permanent that was an artifact when sacrificed counts. Backs
+ * `TurnTracker.ARTIFACT_SACRIFICED` — "if you've sacrificed an artifact this turn"
+ * (Suspicious Detonation, Furtive Courier).
+ */
+@Serializable
+data object SacrificedArtifactThisTurnComponent : Component
+
+/**
  * Tracks the number of permanents this player has sacrificed this turn (controller-scoped,
  * any permanent type). Incremented by `ZoneTransitionService.trackPermanentSacrifice` on the
  * sacrificing player and cleared at end of turn by `CleanupPhaseManager`.

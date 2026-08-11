@@ -7841,6 +7841,16 @@ default to "you" so card authors don't need to pass it explicitly.
   `DynamicAmounts.permanentsSacrificedThisTurn()` amount for "that much" damage (Sawblade Skinripper:
   "At the beginning of your end step, if you sacrificed one or more permanents this turn, this creature
   deals that much damage to any target").
+- `SacrificedArtifactThisTurn` — you sacrificed at least one artifact this turn. Composes through
+  `Compare(DynamicAmount.TurnTracking(Player.You, TurnTracker.ARTIFACT_SACRIFICED), GTE, Fixed(1))`,
+  the card-type sibling of `SacrificedFoodThisTurn`. Backed by the per-player marker
+  `SacrificedArtifactThisTurnComponent`, set in `ZoneTransitionService.trackPermanentSacrifice` off
+  the *projected* type line (an animated artifact counts) and cleared by `CleanupPhaseManager`. Turn
+  history, not a graveyard scan — the artifact having since left the graveyard doesn't clear it, and
+  it's controller-scoped, so an opponent cracking their own Clue never sets yours. Both MKM readings
+  of "if you've sacrificed an artifact this turn" ride it: the cost reduction via
+  `ModifySpellCost(SelfCast, ReduceGeneric(3), CostGating.OnlyIf(...))` (Suspicious Detonation) and
+  the "as long as" evasion via `ConditionalStaticAbility` (Furtive Courier).
 - `DynamicAmounts.cardsDiscardedThisTurn(player)` / `TurnTracker.CARDS_DISCARDED` — the number of cards
   `player` has discarded this turn (CR 701.8). Backed by the per-player `CardsDiscardedThisTurnComponent`
   id list, recorded at **every** discard site (cost, effect, cycling, CR 514.1 hand-size cleanup) via
@@ -8721,6 +8731,9 @@ this turn").
   `Conditions.CreaturesEnteredThisTurn` — Spider-UK's "two or more creatures entered the
   battlefield under your control this turn."
 - `FOOD_SACRIFICED` — Food tokens sacrificed.
+- `ARTIFACT_SACRIFICED` — indicator (0 or 1) that the player sacrificed an artifact this turn, read
+  off the projected type line at sacrifice time. Backs `Conditions.SacrificedArtifactThisTurn`
+  (Suspicious Detonation, Furtive Courier).
 - `CARDS_LEFT_GRAVEYARD` — cards leaving your graveyard.
 - `DESCENDED` — number of times a player has descended this turn (CR 700.11) — i.e.
   count of nontoken permanent cards put into that player's graveyard from any zone.

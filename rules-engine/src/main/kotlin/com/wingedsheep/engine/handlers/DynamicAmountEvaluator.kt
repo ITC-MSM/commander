@@ -543,6 +543,10 @@ class DynamicAmountEvaluator(
                         state.getEntity(playerId)
                             ?.has<com.wingedsheep.engine.state.components.player.SacrificedFoodThisTurnComponent>() == true
                     }
+                    TurnTracker.ARTIFACT_SACRIFICED -> playerIds.count { playerId ->
+                        state.getEntity(playerId)
+                            ?.has<com.wingedsheep.engine.state.components.player.SacrificedArtifactThisTurnComponent>() == true
+                    }
                     TurnTracker.CARDS_LEFT_GRAVEYARD -> playerIds.sumOf { playerId ->
                         state.getEntity(playerId)
                             ?.get<com.wingedsheep.engine.state.components.player.CardsLeftGraveyardThisTurnComponent>()

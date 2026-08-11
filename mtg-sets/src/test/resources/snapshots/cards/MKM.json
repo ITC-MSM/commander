@@ -780,6 +780,138 @@
     ]
 }
 
+// Break Out
+{
+    "name": "Break Out",
+    "manaCost": "{R}{G}",
+    "typeLine": "Sorcery",
+    "oracleText": "Look at the top six cards of your library. You may reveal a creature card from among them. If that card has mana value 2 or less, you may put it onto the battlefield and it gains haste until end of turn. If you didn't put the revealed card onto the battlefield this way, put it into your hand. Put the rest on the bottom of your library in a random order.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherCards",
+                    "source": {
+                        "type": "TopOfLibrary",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 6
+                        }
+                    },
+                    "storeAs": "gathered0"
+                },
+                {
+                    "type": "SelectFromCollection",
+                    "from": "gathered0",
+                    "selection": {
+                        "type": "ChooseUpTo",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 1
+                        }
+                    },
+                    "filter": "creature",
+                    "storeSelected": "selected1",
+                    "storeRemainder": "remainder1",
+                    "prompt": "You may reveal a creature card",
+                    "showAllCards": true
+                },
+                {
+                    "type": "RevealCollection",
+                    "from": "selected1",
+                    "revealToSelf": false
+                },
+                {
+                    "type": "FilterCollection",
+                    "from": "selected1",
+                    "filter": {
+                        "type": "ManaValueAtMost",
+                        "max": {
+                            "type": "Fixed",
+                            "amount": 2
+                        }
+                    },
+                    "storeMatching": "matching3",
+                    "storeNonMatching": "rest3"
+                },
+                {
+                    "type": "SelectFromCollection",
+                    "from": "matching3",
+                    "selection": {
+                        "type": "ChooseUpTo",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 1
+                        }
+                    },
+                    "storeSelected": "selected4",
+                    "storeRemainder": "remainder4",
+                    "prompt": "You may put it onto the battlefield with haste"
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "selected4",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Battlefield"
+                    },
+                    "storeMovedAs": "moved5"
+                },
+                {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Collection",
+                        "collection": "moved5"
+                    },
+                    "body": {
+                        "type": "GrantKeyword",
+                        "keyword": "HASTE",
+                        "target": "Self"
+                    }
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "rest3",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Hand"
+                    }
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "remainder4",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Hand"
+                    }
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "remainder1",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Library",
+                        "placement": "Bottom"
+                    },
+                    "order": "Random"
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "190",
+        "rarity": "UNCOMMON",
+        "artist": "Daniel Correia",
+        "flavorText": "\"Hey, kiddo. Your ride's here.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/c/8c628476-0987-47d4-8d2a-cfc3977b2357.jpg?1783912863"
+    },
+    "colorIdentityOverride": [
+        "RED",
+        "GREEN"
+    ]
+}
+
 // Bubble Smuggler
 {
     "name": "Bubble Smuggler",
@@ -2574,6 +2706,88 @@
     ]
 }
 
+// Extract a Confession
+{
+    "name": "Extract a Confession",
+    "manaCost": "{1}{B}",
+    "typeLine": "Sorcery",
+    "oracleText": "As an additional cost to cast this spell, you may collect evidence 6. (Exile cards with total mana value 6 or greater from your graveyard.)\nEach opponent sacrifices a creature of their choice. If evidence was collected, instead each opponent sacrifices a creature with the greatest power among creatures they control.",
+    "keywordAbilities": [
+        {
+            "type": "Kicker",
+            "additionalCost": {
+                "type": "AdditionalAtom",
+                "atom": {
+                    "type": "AtomCollectEvidence",
+                    "amount": 6
+                }
+            },
+            "declaredSlot": "EVIDENCE_COLLECTED"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "Gated",
+            "gate": {
+                "type": "Gate.WhenCondition",
+                "condition": {
+                    "type": "CastChoiceMade",
+                    "slot": "EVIDENCE_COLLECTED"
+                }
+            },
+            "then": {
+                "type": "ForceSacrifice",
+                "filter": {
+                    "cardPredicates": [
+                        "IsCreature"
+                    ],
+                    "statePredicates": [
+                        "HasGreatestPower"
+                    ]
+                },
+                "target": {
+                    "type": "PlayerRef",
+                    "player": "EachOpponent"
+                }
+            },
+            "otherwise": {
+                "type": "ForceSacrifice",
+                "filter": "creature",
+                "target": {
+                    "type": "PlayerRef",
+                    "player": "EachOpponent"
+                }
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "84",
+        "artist": "Peter Polach",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/5/256c8b6e-4031-458b-8eb9-bbfe58405a0c.jpg?1783912899",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "Starting with the next opponent in turn order (or, if you cast Extract a Confession on an opponent's turn, starting with the opponent whose turn it is) and proceeding in turn order, each opponent chooses a creature they control to sacrifice. Then those creatures are sacrificed at the same time."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "If evidence was collected and an opponent has multiple creatures tied for the greatest power, that player chooses which one to sacrifice."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "If you can't exile enough cards to meet or exceed the required mana value, you can't choose to collect evidence at all."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "Once you've announced that you're casting a spell, players can't take actions until you've finished doing so. Notably, opponents can't try to remove cards from your graveyard to stop you from collecting evidence."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Fae Flight
 {
     "name": "Fae Flight",
@@ -3112,6 +3326,115 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Furtive Courier
+{
+    "name": "Furtive Courier",
+    "manaCost": "{2}{U}",
+    "typeLine": "Creature — Merfolk Advisor",
+    "oracleText": "This creature can't be blocked as long as you've sacrificed an artifact this turn.\nWhenever this creature attacks, draw a card, then discard a card.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        },
+                        {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "GatherCards",
+                                    "source": {
+                                        "type": "FromZone",
+                                        "zone": "Hand"
+                                    },
+                                    "storeAs": "hand"
+                                },
+                                {
+                                    "type": "SelectFromCollection",
+                                    "from": "hand",
+                                    "selection": {
+                                        "type": "ChooseExactly",
+                                        "count": {
+                                            "type": "Fixed",
+                                            "amount": 1
+                                        }
+                                    },
+                                    "storeSelected": "discarded",
+                                    "prompt": "Choose 1 card to discard"
+                                },
+                                {
+                                    "type": "MoveCollection",
+                                    "from": "discarded",
+                                    "destination": {
+                                        "type": "ToZone",
+                                        "zone": "Graveyard"
+                                    },
+                                    "moveType": "Discard"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "GrantKeyword",
+                    "keyword": "CANT_BE_BLOCKED",
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "Self"
+                    }
+                },
+                "condition": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "TurnTracking",
+                        "player": "You",
+                        "tracker": "ARTIFACT_SACRIFICED"
+                    },
+                    "operator": "GTE",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "59",
+        "rarity": "UNCOMMON",
+        "artist": "Mark Behm",
+        "flavorText": "\"Glad to see you made it in one piece. Next time, try not looking so obviously nervous.\"\n—Linghu of the Foundway Associates",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/f/6f359fc2-b9e4-4a01-9d04-442bb160b01e.jpg?1783912908",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "Sacrificing an artifact after Furtive Courier has been blocked won't cause it to become unblocked."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 
@@ -8378,6 +8701,78 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Suspicious Detonation
+{
+    "name": "Suspicious Detonation",
+    "manaCost": "{4}{R}",
+    "typeLine": "Sorcery",
+    "oracleText": "This spell costs {3} less to cast if you've sacrificed an artifact this turn.\nThis spell can't be countered. (This includes by the ward ability.)\nSuspicious Detonation deals 4 damage to target creature.",
+    "script": {
+        "spellEffect": {
+            "type": "DealDamage",
+            "amount": {
+                "type": "Fixed",
+                "amount": 4
+            },
+            "target": {
+                "type": "BoundVariable",
+                "name": "target creature"
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target creature"
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifySpellCost",
+                "target": "SelfCast",
+                "modification": {
+                    "type": "ReduceGeneric",
+                    "amount": 3
+                },
+                "gating": {
+                    "type": "OnlyIf",
+                    "condition": {
+                        "type": "Compare",
+                        "left": {
+                            "type": "TurnTracking",
+                            "player": "You",
+                            "tracker": "ARTIFACT_SACRIFICED"
+                        },
+                        "operator": "GTE",
+                        "right": {
+                            "type": "Fixed",
+                            "amount": 1
+                        }
+                    }
+                }
+            }
+        ],
+        "cantBeCountered": true
+    },
+    "metadata": {
+        "collectorNumber": "145",
+        "artist": "Joe Slucher",
+        "flavorText": "\"Clearly someone wanted us to find this.\"\n—Runubi of the Foundway Associates",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/e/6e280482-ed7e-4011-899e-096ff7bd4c41.jpg?1783912874",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "If you target a creature or planeswalker with ward, you may still pay the ward cost, but Suspicious Detonation won't be countered even if you don't."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
