@@ -54,6 +54,13 @@ interface ZoneSelectionUIProps {
   onCancel?: (() => void) | undefined
   /** Text for the cancel button */
   cancelText?: string | undefined
+  /**
+   * Overrides the default "View Battlefield" behaviour (minimise into a floating re-open button)
+   * for a caller that owns the board-side UI itself — a mixed `battlefield ∪ pile` target
+   * requirement, where dismissing this picker hands control back to the targeting banner. The
+   * current selection travels with it so both halves accumulate into the same requirement.
+   */
+  onViewBattlefield?: ((selected: readonly EntityId[]) => void) | undefined
 }
 
 /**
@@ -87,6 +94,7 @@ export function ZoneSelectionUI({
   useGlobalHover = false,
   onCancel,
   cancelText = 'Cancel',
+  onViewBattlefield,
 }: ZoneSelectionUIProps) {
   const [selectedCards, setSelectedCards] = useState<EntityId[]>(() => [...initialSelection])
   const [hoveredCardId, setHoveredCardId] = useState<EntityId | null>(null)
@@ -155,9 +163,12 @@ export function ZoneSelectionUI({
       if (prev.includes(cardId)) {
         return prev.filter((id) => id !== cardId)
       }
-      // Don't allow selecting more than max
       if (prev.length >= maxSelections) {
-        return prev
+        // Single-select at its cap: clicking a different card replaces the pick rather than being
+        // ignored — the same rule the board path uses (toggleDecisionSelection), and the only way a
+        // mixed `battlefield ∪ pile` requirement stays usable, since the pick carried in from the
+        // board fills the slot but isn't shown in this ribbon to deselect.
+        return maxSelections === 1 ? [cardId] : prev
       }
       return [...prev, cardId]
     })
@@ -336,7 +347,7 @@ export function ZoneSelectionUI({
       >
         {/* View Battlefield button */}
         <button
-          onClick={() => setMinimized(true)}
+          onClick={() => (onViewBattlefield ? onViewBattlefield(selectedCards) : setMinimized(true))}
           style={{
             padding: responsive.isMobile ? '10px 20px' : '12px 28px',
             fontSize: responsive.fontSize.normal,

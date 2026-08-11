@@ -5,6 +5,7 @@ import com.wingedsheep.engine.handlers.DynamicAmountEvaluator
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.PipelineState
 import com.wingedsheep.engine.handlers.effects.EntersWithReplacements
+import com.wingedsheep.engine.handlers.effects.copy.CopyExceptionApplier
 import com.wingedsheep.engine.handlers.effects.life.LifePaymentService
 import com.wingedsheep.engine.mechanics.modal.ChosenModeMemory
 import com.wingedsheep.engine.state.GameState
@@ -225,7 +226,8 @@ class ModalAndCloneContinuationResumer(
     /**
      * Apply an `EntersAsCopy` copy onto [entityId] in place (CR 707.2): overwrite its
      * [CardComponent] with [targetCardComponent]'s copiable characteristics (re-homed to [newOwnerId]),
-     * add any [additionalSubtypes] / [additionalKeywords] and name / P-T overrides, and snapshot a
+     * add any [additionalSubtypes] / [additionalKeywords] and name / P-T overrides (via
+     * [CopyExceptionApplier], the same arithmetic every other copy path runs), and snapshot a
      * [com.wingedsheep.engine.state.components.identity.CopyOfComponent] so the permanent reverts to
      * its printed identity when it leaves the battlefield (CR 400.7 / 707.2).
      *
@@ -246,29 +248,19 @@ class ModalAndCloneContinuationResumer(
         powerOverride: Int?,
         toughnessOverride: Int?,
     ): GameState {
-        var copiedCardComponent = targetCardComponent.copy(ownerId = newOwnerId)
-        if (additionalSubtypes.isNotEmpty()) {
-            val newSubtypes = copiedCardComponent.typeLine.subtypes +
-                additionalSubtypes.map { com.wingedsheep.sdk.core.Subtype(it) }
-            copiedCardComponent = copiedCardComponent.copy(
-                typeLine = copiedCardComponent.typeLine.copy(subtypes = newSubtypes)
-            )
-        }
-        if (additionalKeywords.isNotEmpty()) {
-            copiedCardComponent = copiedCardComponent.copy(
-                baseKeywords = copiedCardComponent.baseKeywords + additionalKeywords
-            )
-        }
-        if (nameOverride != null) {
-            copiedCardComponent = copiedCardComponent.copy(name = nameOverride)
-        }
-        if (powerOverride != null || toughnessOverride != null) {
-            val basePower = powerOverride ?: copiedCardComponent.baseStats?.basePower ?: 0
-            val baseToughness = toughnessOverride ?: copiedCardComponent.baseStats?.baseToughness ?: 0
-            copiedCardComponent = copiedCardComponent.copy(
-                baseStats = com.wingedsheep.sdk.model.CreatureStats(basePower, baseToughness)
-            )
-        }
+        // The riders are the same "except …" clause every other copy path carries (CR 707.9b), so
+        // they go through the one engine-side implementation rather than a fourth hand-rolled copy.
+        val exceptions = com.wingedsheep.sdk.scripting.effects.CopyExceptions(
+            nameOverride = nameOverride,
+            addedKeywords = additionalKeywords.toSet(),
+            addedSubtypes = additionalSubtypes.map { com.wingedsheep.sdk.core.Subtype(it) }.toSet(),
+            powerOverride = powerOverride,
+            toughnessOverride = toughnessOverride,
+        )
+        val copiedCardComponent = CopyExceptionApplier.apply(
+            targetCardComponent.copy(ownerId = newOwnerId),
+            exceptions,
+        )
         return state.updateEntity(entityId) { c ->
             c.with(copiedCardComponent)
                 .with(com.wingedsheep.engine.state.components.identity.CopyOfComponent(

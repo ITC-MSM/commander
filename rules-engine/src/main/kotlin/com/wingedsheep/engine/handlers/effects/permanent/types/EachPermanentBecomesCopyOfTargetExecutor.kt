@@ -6,11 +6,13 @@ import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.handlers.effects.BattlefieldFilterUtils
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
+import com.wingedsheep.engine.handlers.effects.copy.CopyExceptionApplier
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.CopyOfComponent
 import com.wingedsheep.engine.state.components.identity.RevertCopyAtEndOfTurnComponent
 import com.wingedsheep.engine.state.components.identity.RevertCopyAtNextEndStepComponent
+import com.wingedsheep.engine.state.components.identity.RevertCopyAtYourNextTurnComponent
 import com.wingedsheep.sdk.scripting.Duration
 import com.wingedsheep.sdk.scripting.effects.EachPermanentBecomesCopyOfTargetEffect
 import kotlin.reflect.KClass
@@ -32,8 +34,10 @@ import kotlin.reflect.KClass
  * non-Aura permanent."
  *
  * Copy *exceptions* (CR 707.9 — "except it has …") ride two riders on the effect.
- * [EachPermanentBecomesCopyOfTargetEffect.addedKeywords] are unioned into the new
- * [CardComponent]'s base keywords. [EachPermanentBecomesCopyOfTargetEffect.retainActivatingAbility]
+ * [EachPermanentBecomesCopyOfTargetEffect.exceptions] carries every characteristic modification
+ * (name, added/removed types, keywords, base P/T, colors) and is applied by the shared
+ * [CopyExceptionApplier], the same helper the token-copy path uses.
+ * [EachPermanentBecomesCopyOfTargetEffect.retainActivatingAbility]
  * re-grants the activated ability that created the copy: replacing the card component drops every
  * printed ability of the original card, so the ability has to come back through the durable
  * granted-activated-ability record, which is keyed by entity and so rides along through further
@@ -93,31 +97,21 @@ class EachPermanentBecomesCopyOfTargetExecutor(
         }
 
         // Supported durations: `Permanent` (Mirrorform/Clone, baked forever), `EndOfTurn`
-        // (reverted at cleanup), and `UntilNextEndStep` (reverted on entry to the next end step,
+        // (reverted at cleanup), `UntilNextEndStep` (reverted on entry to the next end step,
         // coincident with a paired "return it at the beginning of the next end step" trigger —
-        // Niko, Light of Hope). Anything else degrades gracefully to permanent.
+        // Niko, Light of Hope), and `UntilYourNextTurn` (reverted after the controller's next
+        // untap step — Absorbing Man, Taskmaster). Anything else degrades to permanent.
         var newState = state
         for (entityId in affected) {
             val container = newState.getEntity(entityId) ?: continue
             val currentCard = container.get<CardComponent>() ?: continue
 
             // Preserve the original ownership; only copiable card characteristics change.
-            // "except it has [keyword]" (CR 707.9) rides on the copy's base keywords, so it lasts
-            // exactly as long as the copy does.
-            val copiedCard = targetCard.copy(
-                ownerId = currentCard.ownerId,
-                baseKeywords = targetCard.baseKeywords + effect.addedKeywords,
-                baseStats = targetCard.baseStats?.let { stats ->
-                    stats.copy(
-                        power = effect.powerOverride?.let {
-                            com.wingedsheep.sdk.model.CharacteristicValue.Fixed(it)
-                        } ?: stats.power,
-                        toughness = effect.toughnessOverride?.let {
-                            com.wingedsheep.sdk.model.CharacteristicValue.Fixed(it)
-                        } ?: stats.toughness,
-                    )
-                }
-            )
+            // The "except …" clause (CR 707.9) is applied by the shared [CopyExceptionApplier],
+            // the same helper the token-copy path uses, so it rides on the copy's own
+            // CardComponent and lasts exactly as long as the copy does.
+            val copiedCard = CopyExceptionApplier.apply(targetCard, effect.exceptions)
+                .copy(ownerId = currentCard.ownerId)
 
             // If this permanent is already a copy, keep the existing pre-copy snapshot
             // so a chain of copy effects still reverts to the printed identity on exit.
@@ -140,6 +134,9 @@ class EachPermanentBecomesCopyOfTargetExecutor(
                 when (effect.duration) {
                     Duration.EndOfTurn -> updated = updated.with(RevertCopyAtEndOfTurnComponent)
                     Duration.UntilNextEndStep -> updated = updated.with(RevertCopyAtNextEndStepComponent)
+                    Duration.UntilYourNextTurn -> updated = updated.with(
+                        RevertCopyAtYourNextTurnComponent(context.controllerId)
+                    )
                     else -> {}
                 }
                 updated

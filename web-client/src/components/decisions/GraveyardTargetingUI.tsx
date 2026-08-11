@@ -27,17 +27,30 @@ export function GraveyardTargetingUI({
   initialSelection,
   onComplete,
   onBack,
+  onViewBattlefield,
 }: {
   decision: ChooseTargetsDecision
   graveyardCards: ClientCard[]
   responsive: ResponsiveSizes
   requirementIndex: number
   totalRequirements: number
-  /** Picks to pre-select — non-empty when the player stepped Back into this requirement. */
+  /**
+   * Picks to pre-select — non-empty when the player stepped Back into this requirement, or came
+   * here from the board on a mixed requirement carrying the permanents they picked there. Carried
+   * board picks are counted (they fill this requirement's slots) but aren't shown in the ribbon;
+   * they live on the battlefield, which is one click away on "View Battlefield".
+   */
   initialSelection: readonly EntityId[]
   onComplete: (targets: readonly EntityId[]) => void
   /** Present when an earlier requirement can be revised. */
   onBack?: () => void
+  /**
+   * Present on a mixed `battlefield ∪ pile` requirement, where the board half is collected by the
+   * banner this picker was opened from. "View Battlefield" then hands control (and the picks made
+   * here) back to that banner instead of minimising into a floating re-open button — the banner is
+   * where Confirm lives for this requirement.
+   */
+  onViewBattlefield?: (carried: readonly EntityId[]) => void
 }) {
   const submitCancelDecision = useGameStore((s) => s.submitCancelDecision)
   const gameState = useGameStore((s) => s.gameState)
@@ -125,6 +138,14 @@ export function GraveyardTargetingUI({
   // fits; a composite whose slots take different verbs ("destroy target creature and return target
   // card from a graveyard to your hand") would mislabel this slot. The durable fix is an action
   // hint on TargetRequirementInfo instead of sniffing prose — a server-side change.
+  //
+  // Playtesting proved the sharper half of this: prose sniffing doesn't merely go vague, it goes
+  // *wrong*. Taskmaster, Mercenary Mimic ("becomes a copy of … creature card in a graveyard")
+  // matched no known verb and inherited the old "Return to Hand" fallback, so the picker promised a
+  // card would come back to hand while the effect only copied it and left it in the graveyard. The
+  // fallback is neutral now and the copy shape has its own branch, but every unlisted effect is
+  // still one unlucky substring away from the same class of lie. A server-supplied action verb per
+  // requirement removes the guesswork rather than lengthening the keyword list.
   const { confirmText: optionalConfirmText, verb: actionVerb } =
     derivePileAction(decision.context.effectHint)
 
@@ -171,6 +192,7 @@ export function GraveyardTargetingUI({
         confirmRequiresSelection={isOptionalTarget}
         sortByType={true}
         useGlobalHover={true}
+        {...(onViewBattlefield ? { onViewBattlefield } : {})}
         // The secondary button is "← Back" mid-walk (revise an earlier requirement) and
         // "Cancel" otherwise; a cancellable cast can still be cancelled from requirement 0.
         {...(onBack
@@ -255,6 +277,7 @@ export function GraveyardTargetingUI({
         responsive={responsive}
         onConfirm={handleConfirm}
         onMinimize={() => setMinimized(true)}
+        {...(onViewBattlefield ? { onViewBattlefield } : {})}
         confirmText={isOptionalTarget ? optionalConfirmText : 'Confirm Target'}
         declineText={isOptionalTarget ? 'Decline Trigger' : undefined}
         confirmRequiresSelection={isOptionalTarget}
@@ -278,6 +301,7 @@ function GraveyardCardSelection({
   responsive,
   onConfirm,
   onMinimize,
+  onViewBattlefield,
   confirmText,
   declineText,
   confirmRequiresSelection,
@@ -292,6 +316,8 @@ function GraveyardCardSelection({
   responsive: ResponsiveSizes
   onConfirm: (selectedCards: EntityId[]) => void
   onMinimize: () => void
+  /** Overrides [onMinimize] on a mixed requirement — see GraveyardTargetingUI's prop of this name. */
+  onViewBattlefield?: (carried: readonly EntityId[]) => void
   confirmText: string
   declineText?: string | undefined
   confirmRequiresSelection: boolean
@@ -341,15 +367,31 @@ function GraveyardCardSelection({
   const toggleCard = (cardId: EntityId) => {
     if (selectedCards.includes(cardId)) {
       onSelectedCardsChange(selectedCards.filter((id) => id !== cardId))
-    } else if (selectedCards.length < maxSelections) {
-      if (
-        totalManaValueAtMost != null &&
-        selectedManaValue + manaValueOf(cardId) > totalManaValueAtMost
-      ) {
-        return
-      }
-      onSelectedCardsChange([...selectedCards, cardId])
+      return
     }
+    if (selectedCards.length >= maxSelections) {
+      // Single-select slot at its cap: clicking a different card replaces the pick, the same rule
+      // the board path uses (toggleDecisionSelection). It also unblocks a mixed
+      // `battlefield ∪ pile` requirement — the pick carried in from the board fills the only slot
+      // and isn't in this ribbon, so without replacement no graveyard card could ever be clicked.
+      if (maxSelections === 1) {
+        if (
+          totalManaValueAtMost != null &&
+          manaValueOf(cardId) > totalManaValueAtMost
+        ) {
+          return
+        }
+        onSelectedCardsChange([cardId])
+      }
+      return
+    }
+    if (
+      totalManaValueAtMost != null &&
+      selectedManaValue + manaValueOf(cardId) > totalManaValueAtMost
+    ) {
+      return
+    }
+    onSelectedCardsChange([...selectedCards, cardId])
   }
 
   // Handle hover using global store (for the CardPreview component)
@@ -436,7 +478,7 @@ function GraveyardCardSelection({
           </button>
         )}
         <button
-          onClick={onMinimize}
+          onClick={() => (onViewBattlefield ? onViewBattlefield(selectedCards) : onMinimize())}
           className={styles.viewBattlefieldButton}
         >
           View Battlefield

@@ -1,106 +1,79 @@
-# u05 — tap reason + Agent Maria Hill
+# loop-msh-u06 — Copy-with-exceptions (feature + 3 cards)
 
-Branch `loop-msh-u05`, built locally on `loop-msh-u04`. u01–u03 have all merged upstream (u03 as
-PR #1750), so the only extra commits in `git diff origin/main...HEAD` are u04's four; **review this
-unit against `loop-msh-u04...HEAD`**.
+Branch: `loop-msh-u06`, off `origin/main` (`efe697ae9a`). Nothing pushed — no network in this box.
 
-Not a stacked PR: once u04 lands upstream, this branch is rebased onto `origin/main` and opened on
-its own. Being built on u04 is a local convenience, not a merge order — and note that a rebase
-invalidates this unit's gate, so re-run it on the new base before reporting green.
+## The SDK gap
 
-## The primitive
+`EachPermanentBecomesCopyOfTargetEffect` exposed only `addedKeywords` / `powerOverride` /
+`toughnessOverride` / `retainActivatingAbility` as copy exceptions, while its token sibling
+`CreateTokenCopyOfTargetEffect` had a dozen more (name aside) and its own copy of the type-line
+arithmetic. The permanent executor also honoured only `Permanent` / `EndOfTurn` / `UntilNextEndStep`,
+silently degrading anything else.
 
-`TapReason` — `mtg-sdk/src/main/kotlin/com/wingedsheep/sdk/scripting/TapReason.kt`. A serializable
-enum, two members: `UNSPECIFIED` (default) and `TEAMWORK`. `TapReason.forChoiceSlot(slot)` maps a
-declared cast-choice slot to a cause; only `ChoiceSlot.TEAMWORK` maps to anything.
+## What shipped (convergence, not new riders)
 
-Threaded through:
+- `CopyExceptions` (`mtg-sdk/.../scripting/effects/CopyExceptions.kt`) — one serializable value type
+  for the whole "except …" half of a copy effect (CR 707.9b). Add/override pairs mirror CR 205.1a
+  (replace by default) against CR 205.1b (the "in addition to its other types" retention clause).
+- `CopyExceptionApplier` (`rules-engine/.../handlers/effects/copy/`) — the single implementation of
+  the name/type-line/keyword/P-T/color arithmetic. Four paths call it: the permanent-becomes-a-copy
+  executor, both token-copy executors (targeted and self), and the `EntersAsCopy` clone path; the
+  token executor's Aura-host type-line probe shares it too. The two `removeLegendary`-only paths
+  (Helm of the Host's equipped-creature token, spell copies) stay outside it — no arithmetic to
+  share — and the KDoc says so instead of claiming universality.
+- `EachPermanentBecomesCopyOfTargetEffect.exceptions` replaces its three flat riders. Both token
+  effects take an `exceptions: CopyExceptions` field too, so **all three copy effects share one
+  authoring surface** and a new exception is expressible on every path the day it is added. Their
+  ≈20 existing flat riders stay (serialized shape unchanged) and are folded in via
+  `exceptions.over(<riders>)`; `CopyExceptions.None.over(base) == base`, so a card using only the
+  riders is bit-for-bit unchanged. The riders are frozen — new exceptions go on `CopyExceptions`.
+- `Duration.UntilYourNextTurn` in the copy-revert path — `RevertCopyAtYourNextTurnComponent(playerId)`,
+  expired in `CleanupPhaseManager.expireUntilYourNextTurnEffects` with every other "until your next
+  turn" effect.
 
-- `TappedEvent.reason` (`rules-engine/.../core/GameEvent.kt`), defaulted, so serialized/replayed
-  events from before the field decode unchanged.
-- `tap(state, entityId, tappedById, reason)` (`rules-engine/.../core/TapHelpers.kt`) — the tap atom;
-  the reason defaults to `UNSPECIFIED`.
-- `EventPattern.TapEvent.reason: TapReason?` (`mtg-sdk/.../scripting/EventPattern.kt`) — null means
-  "any cause", so every existing tap trigger is unchanged. Rendered into the pattern description.
-- Matching: `TriggerMatcher` (per-event), `TriggerDetector.detectTapBatchTriggers` (batch — narrows
-  the batch by reason the same way it already narrows by tapper), `AttachmentTriggerDetector`
-  (ATTACHED binding).
-- DSL: `Triggers.becomesTapped(binding, filter, reason)` gained the parameter;
-  `Triggers.BecomesTappedForTeamwork` is the SELF facade the card uses.
+Latent bug fixed on the way: the permanent path dropped a P/T override entirely when the copy source
+had no base stats — exactly Absorbing Man copying a land.
 
-## Classified vs unspecified tap sites
+## Cards
 
-**Classified: teamwork only.** `CastSpellHandler`'s `CostAtom.VariablePermanents` payment branch
-stamps `TapReason.forChoiceSlot(action.declaredCostSlot)`, and only on the additional cost that the
-*declared* optional ability contributed (`declaredSlotAdditionalCost`), so a card's own printed tap
-cost can't be relabelled by an unrelated declaration.
+- **Shuri, Wakandan Inventor** [75] — `ModifySpellCost` discount + a two-target copy
+  (`affected` / `target`, second wrapped in `TargetOther`) with
+  `CopyExceptions(removedSupertypes = {LEGENDARY})`; without the removal the copy dies to the legend
+  rule (CR 704.5j).
+- **Absorbing Man** [199] — `Triggers.FirstMainPhase`, optional target across artifact / non-Aura
+  enchantment / land, `Duration.UntilYourNextTurn`, and the additive exception set (name, legendary,
+  creature, Human Villain, 4/4, vigilance).
+- **Taskmaster, Mercenary Mimic** [232] — same shape, cross-zone target (`TargetFilter.or` over the
+  graveyard) + `sourceFromAnyZone`, and the *replacing* type clause
+  (`overrideCardTypes` / `overrideSubtypes`).
 
-**Deliberately unspecified: everything else** — attacking, crew, saddle, convoke, mana abilities, a
-`{T}` activation cost, "tap target permanent" effects, and the activated-ability `VariablePermanents`
-TAP payer in `CostHandler`. Rationale: the cause is named by the mechanic that declared the cost, and
-an ability cost has no declared slot. Under-claiming makes a reading card stay silent; over-claiming
-makes it fire wrongly. I did not classify attack/crew even though each has a single chokepoint — no
-card reads them, and the enum is documented with the recipe for adding one.
+## Things worth a second opinion
 
-I acted on the previous units' suggestion: both tap sites for the atom now go through one chokepoint,
-`VariablePermanentsCost.tapAll(state, chosen, reason)`. Both `TAP-REASON HOOK` markers are gone.
-
-**One behavioural side effect to check in review:** folding `CostHandler.payVariablePermanentsList`'s
-TAP branch onto `tapAll` moved its per-permanent validation into a pass over the *pre-payment* state.
-The old interleaved loop rejected a duplicated id incidentally (second pass saw it already tapped);
-I replaced that with an explicit `toPay.distinct()` guard, mirroring the one `CastSpellHandler.validate`
-already has. That branch is unreached by any printed card today.
-
-## The card
-
-`mtg-sets/.../definitions/msh/cards/AgentMariaHill.kt` — {W} 2/1 Legendary Creature — Human Spy Hero,
-MSH #2, verified against Scryfall (name, cost, type line, oracle text, P/T, rarity, collector number,
-artist, flavor, image URI HTTP 200). No rulings on Scryfall. Composes existing primitives only:
-`Triggers.BecomesTappedForTeamwork` + `Effects.Composite(Effects.AddCounters(+1/+1, 1, Self),
-Effects.DrawCards(1))`. Canonical printing is MSH (first printing).
-
-## Tests
-
-- `AgentMariaHillScenarioTest` — fires on a teamwork tap (counter + draw, projected 3/2); silent when
-  tapped by attacking, by crewing a Vehicle, and when a teamwork cost is paid by another creature; one
-  `getLegalActions` assertion that the teamwork cast variant is still advertised and prices her at
-  power 2 as an eligible payer.
-- `TapReasonScenarioTest` — the primitive itself: teamwork tap carries `TEAMWORK` (and its
-  `tappedById` is unchanged); the mana-payment land taps of that same cast are `UNSPECIFIED`; a plain
-  cast claims no teamwork anywhere; attack tap and crew tap are `UNSPECIFIED`; a cause-agnostic
-  `becomes tapped` trigger (Interface Ace) still fires on a teamwork tap; pattern description and
-  default; `TappedEvent` serialization round-trip plus legacy JSON without the field.
-
-## Docs / backlog
-
-- `docs/card-sdk-language-reference.md`: `becomesTapped` entry gained the `reason` parameter, a new
-  `BecomesTappedForTeamwork` entry explains `TapReason` and the under-claiming policy, and the
-  Teamwork N mechanic block gained a "payer-side payoff" paragraph.
-- `mtgish-tooling` bridge: one comment on `WhenAPermanentBecomesTapped` saying it renders the
-  cause-agnostic trigger only and must not be used to draft the teamwork wording. No new capability
-  registered — the IR has no teamwork tag and this is a predicate on an existing trigger, not a new
-  primitive the emitter can map.
-- `backlog/sets/marvel-super-heroes/cards.md`: Agent Maria Hill ticked, header resynced via
-  `just fix-backlog`.
-- `backlog/sets/marvel-super-heroes/mechanics.md`: Teamwork N marked fully shipped (13/13), point 5
-  added for the tap cause. No other section touched.
+- **Taskmaster's type clause reading.** His oracle text says "he's a legendary Human Mercenary
+  Villain creature" with **no** "in addition to his other types", while Absorbing Man in the same set
+  has the phrase. CR 205.1b makes that phrase the switch away from CR 205.1a's replace-by-default,
+  so I read Taskmaster as *replacing*
+  card types and subtypes: copying an artifact creature drops the artifact type, copying a Goblin
+  drops Goblin. No Scryfall rulings exist for the card yet. If a reviewer reads it the other way, the
+  change is two field names in `TaskmasterMercenaryMimic.kt`.
+- **Legendary is `addedSupertypes`, not an override, on Taskmaster.** `CopyExceptions` has no
+  supertype-override field on purpose (supertypes only add and remove), so a copied Snow creature
+  would keep Snow. Marginal, and the conservative reading.
+- **Snapshot movement beyond my three cards is expected.** `Likeness Looter` (WOE) and
+  `Mimeoplasm, Revered One` (DFT) are the only existing cards that used the three fields that moved
+  into `exceptions`, so their serialized ability JSON changed shape. Nothing else moves.
 
 ## Gate
 
-`just test` — see the PR body for the result. `just rebless-cards` moved only Agent Maria Hill in
-`mtg-sets/src/test/resources/snapshots/cards/MSH.json`; `just check-card-printing "Agent Maria Hill"`
-clean.
+Two halves, because **`just test` is Gradle-only and this unit changes ~1000 lines of TypeScript** —
+the web-client suite is not reachable from any `just` recipe and has to be run on its own.
 
-## Things I am unsure about
+- **JVM:** `just test` — BUILD SUCCESSFUL, 0 failed (supersedes the earlier `just test-rules` run;
+  it covers `:mtg-sets:test` snapshots + `FacadeBoundaryTest` and the `:ai` / `:game-server` /
+  `:gym` / `:mtg-search` compiles the SDK type change forces). `just rebless-cards` moved MSH plus
+  the two expected reshapes and nothing else.
+- **Web client:** `cd web-client && npm run typecheck` — clean; `npm test` — 39 files, 552 tests,
+  0 failed.
+- `just check-card-printing` clean for all three cards.
 
-- Whether the reviewer would rather see `TapReason` live next to `ChoiceSlot` (where I put it) or in
-  `sdk/scripting/events/` with the other event vocabulary.
-- Whether `tapAll` is thick enough to justify existing, given each caller still validates separately.
-  I kept it because it is what makes "one tap site per atom" true and is where the cause is documented.
-- The `additionalCost == declaredSlotAdditionalCost` identity check is structural equality on a data
-  class. It is exact for every printed card, but two structurally identical additional costs on one
-  card (one printed, one from the declared optional ability) would both be stamped.
-- No client work: `ClientEvent.PermanentTapped` does not carry the reason. Nothing in the UI needs it
-  today (the trigger is server-detected and shown as a stack object), but a future "why did this tap?"
-  affordance would need it plumbed.
-- Not done: no manual playthrough in the web client, no two-seat UX pass, no e2e test.
+Exact commands and the earlier-failure story are in `build/pr/loop-msh-u06-body.md`.

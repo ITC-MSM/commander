@@ -388,6 +388,7 @@ val engineSerializersModule = SerializersModule {
         subclass(CopyOfComponent::class)
         subclass(RevertCopyAtEndOfTurnComponent::class)
         subclass(RevertCopyAtNextEndStepComponent::class)
+        subclass(RevertCopyAtYourNextTurnComponent::class)
         subclass(CopyWhileAttachedComponent::class)
         subclass(DoubleFacedComponent::class)
         subclass(RoomComponent::class)

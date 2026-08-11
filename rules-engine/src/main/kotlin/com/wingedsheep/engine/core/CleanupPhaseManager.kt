@@ -33,6 +33,7 @@ import com.wingedsheep.engine.state.components.identity.CopyOfComponent
 import com.wingedsheep.engine.state.components.identity.PlayWithoutPayingCostComponent
 import com.wingedsheep.engine.state.components.identity.RevertCopyAtEndOfTurnComponent
 import com.wingedsheep.engine.state.components.identity.RevertCopyAtNextEndStepComponent
+import com.wingedsheep.engine.state.components.identity.RevertCopyAtYourNextTurnComponent
 import com.wingedsheep.engine.state.components.identity.TextReplacementComponent
 import com.wingedsheep.engine.state.components.player.AdditionalPhasesComponent
 import com.wingedsheep.engine.state.components.player.InAdditionalCombatPhaseComponent
@@ -181,6 +182,11 @@ class CleanupPhaseManager(
      * Expire UntilYourNextTurn floating effects after the untap step of the
      * controller's next turn. The effect needs to be active during the untap
      * step (to prevent untapping), then removed afterward.
+     *
+     * Temporary copies tagged [RevertCopyAtYourNextTurnComponent] wear off on the same hook —
+     * "until your next turn, this becomes a copy of …" (Absorbing Man, Taskmaster). Same revert
+     * mechanism as the end-of-turn and next-end-step markers, keyed to the copy effect's
+     * controller rather than to a step of any player's turn.
      */
     fun expireUntilYourNextTurnEffects(state: GameState, activePlayer: EntityId): GameState {
         // Event-based delayed triggers scoped "until your next turn" (Tamiyo, Field Researcher's
@@ -254,6 +260,24 @@ class CleanupPhaseManager(
             val expiryPlayer = restricted.expiresForPlayerId ?: playerId
             if (expiryPlayer == activePlayer) {
                 result = result.updateEntity(playerId) { it.without<CantCastFromNonHandZonesComponent>() }
+            }
+        }
+        // "Until your next turn, this becomes a copy of …" (Absorbing Man, Taskmaster): restore the
+        // pre-copy CardComponent snapshot for every permanent whose copy was keyed to this player's
+        // next turn, and drop both the marker and the copy tag. Reverting here — after untap, before
+        // the upkeep and main-phase triggers — is what lets a permanent whose copy trigger is its
+        // own printed ability re-copy every turn: while the copy is up that ability is gone, and it
+        // is back in time to trigger again.
+        for ((entityId, container) in result.entities) {
+            val marker = container.get<RevertCopyAtYourNextTurnComponent>() ?: continue
+            if (marker.playerId != activePlayer) continue
+            val originalCard = container.get<CopyOfComponent>()?.originalCardComponent
+            result = result.updateEntity(entityId) { c ->
+                var reverted = c.without<RevertCopyAtYourNextTurnComponent>()
+                if (originalCard != null) {
+                    reverted = reverted.with(originalCard).without<CopyOfComponent>()
+                }
+                reverted
             }
         }
         return result

@@ -5,6 +5,7 @@ import type { ResponsiveSizes } from '@/hooks/useResponsive.ts'
 import { calculateFittingCardWidth } from '@/hooks/useResponsive.ts'
 import { useDraggable } from '@/hooks/useDraggable.ts'
 import { getCardImageUrl } from '@/utils/cardImages.ts'
+import { routeTargetsByZone } from '@/utils/targeting.ts'
 import { useResponsiveContext, handleImageError } from '../board/shared'
 import { styles } from '../board/styles'
 import { TARGET_COLOR, TARGET_COLOR_BRIGHT } from '@/styles/targetingColors.ts'
@@ -27,6 +28,7 @@ function ZoneCardTargetingOverlay({
   onConfirm,
   onCancel,
   onBack,
+  onViewBattlefield,
 }: {
   zoneCards: ClientCard[]
   targetingState: { selectedTargets: readonly EntityId[]; minTargets: number; maxTargets: number; targetDescription?: string; currentRequirementIndex?: number; totalRequirements?: number; sourceCardName?: string; minTotalManaValue?: number }
@@ -37,6 +39,14 @@ function ZoneCardTargetingOverlay({
   onCancel: () => void
   /** Present when an earlier target requirement can be revised (multi-target spells). */
   onBack?: () => void
+  /**
+   * Present when the caller owns the "look at the board instead" state — a mixed
+   * battlefield ∪ pile requirement, where dismissing the picker hands control back to the
+   * targeting banner (which keeps Confirm/Cancel and leaves permanents clickable). Absent for a
+   * pile-only requirement, where there is nothing to pick on the board and the overlay minimizes
+   * itself into a "return to card selection" button instead.
+   */
+  onViewBattlefield?: () => void
 }) {
   const hoverCard = useGameStore((s) => s.hoverCard)
   const gameState = useGameStore((s) => s.gameState)
@@ -143,7 +153,7 @@ function ZoneCardTargetingOverlay({
     60
   )
 
-  if (minimized) {
+  if (minimized && !onViewBattlefield) {
     return (
       <button
         onClick={() => setMinimized(false)}
@@ -433,7 +443,7 @@ function ZoneCardTargetingOverlay({
           </button>
         )}
         <button
-          onClick={() => setMinimized(true)}
+          onClick={() => (onViewBattlefield ? onViewBattlefield() : setMinimized(true))}
           style={{
             padding: responsive.isMobile ? '10px 24px' : '12px 36px',
             fontSize: responsive.fontSize.large,
@@ -508,6 +518,18 @@ export function TargetingOverlay() {
   const addTarget = useGameStore((state) => state.addTarget)
   const removeTarget = useGameStore((state) => state.removeTarget)
 
+  // Whether the pile picker is open on a *mixed* battlefield ∪ pile requirement (see below).
+  // This overlay is mounted for the whole game, so the flag is reset whenever targeting ends or
+  // advances to the next requirement — otherwise a picker left open would reopen over an unrelated
+  // spell's board targeting.
+  const [pilePickerOpen, setPilePickerOpen] = React.useState(false)
+  const requirementKey = targetingState
+    ? `${targetingState.currentRequirementIndex ?? 0}`
+    : null
+  React.useEffect(() => {
+    setPilePickerOpen(false)
+  }, [requirementKey])
+
   // Only show when in targeting mode
   if (!targetingState) return null
 
@@ -540,40 +562,58 @@ export function TargetingOverlay() {
   const isReveal = targetingState.isRevealSelection
   const isBehold = targetingState.isBeholdSelection
 
-  // Collect valid-target cards that live in a selectable card zone (graveyard or exile). These
-  // route to the cross-zone card picker rather than on-battlefield clicking — the picker shows
-  // the actual cards (a graveyard/exile pile isn't individually clickable on the board). This
-  // covers single-zone graveyard targeting (the common case), exile targeting (Blade of the
-  // Swarm), and cross-zone unions (Sorceress's Schemes: graveyard ∪ exile). `targetZone` is the
-  // server's single-zone hint when present; when absent (single-target or union) we detect from
-  // the valid-target set, requiring *every* valid target to be a card-zone card so we don't
-  // hijack mixed battlefield/player targeting.
-  const CARD_ZONES = new Set(['Graveyard', 'Exile'])
-  const zoneCards: ClientCard[] = []
-  let allTargetsAreZoneCards = targetingState.validTargets.length > 0
-  for (const targetId of targetingState.validTargets) {
-    const card = gameState?.cards[targetId]
-    const zoneType = card?.zone?.zoneType
-    if (card && (zoneType ? CARD_ZONES.has(zoneType) : targetingState.targetZone === 'Graveyard')) {
-      zoneCards.push(card)
-    } else {
-      allTargetsAreZoneCards = false
-    }
-  }
-  const useCardPicker =
-    (targetingState.targetZone === 'Graveyard' || allTargetsAreZoneCards) && zoneCards.length > 0
+  // Split the server's valid targets by how the player can physically reach them: a graveyard or
+  // exile pile isn't individually clickable on the board, so those cards need the cross-zone
+  // picker, while permanents, players and stack objects are clicked on the board. Zones come from
+  // server-sent card state — nothing here decides legality.
+  //
+  // Three shapes fall out, and all three occur:
+  //  - pile only (a graveyard reanimation spell, Sorceress's Schemes' graveyard ∪ exile): the
+  //    picker owns the screen, exactly as before.
+  //  - board only: the draggable banner, and the player clicks the board.
+  //  - **both** (Taskmaster, Mercenary Mimic: "target creature on the battlefield *or* creature
+  //    card in a graveyard"): the banner stays up so permanents remain clickable, *and* it offers
+  //    a button that opens the picker for the pile half. Selections live in the shared targeting
+  //    store, so a pick made on either side counts toward the same requirement and either side's
+  //    Confirm submits them. Before this, a mixed union fell through to board-only clicking and
+  //    the graveyard half was simply unreachable.
+  const { mode, pileCards, pileZoneLabel } = routeTargetsByZone(
+    targetingState.validTargets,
+    gameState?.cards,
+    targetingState.targetZone,
+  )
+  const isMixedZoneTargeting = mode === 'mixed'
 
-  // If targets are graveyard/exile cards, show the cross-zone card selection UI
-  if (useCardPicker) {
+  // Pile-only: the picker is the whole UI (unchanged behaviour).
+  if (mode === 'pile') {
     return (
       <ZoneCardTargetingOverlay
-        zoneCards={zoneCards}
+        zoneCards={pileCards}
         targetingState={targetingState}
         responsive={responsive}
         onSelect={addTarget}
         onDeselect={removeTarget}
         onConfirm={confirmTargeting}
         onCancel={cancelTargeting}
+        {...(canGoBack ? { onBack: goBackTargeting } : {})}
+      />
+    )
+  }
+
+  // Mixed union, picker open: same picker, but "View Battlefield" hands control back to the
+  // banner below rather than minimising into a bare re-open button — the banner is where Confirm
+  // and Cancel live for this requirement, and the board half still has to be clickable.
+  if (isMixedZoneTargeting && pilePickerOpen) {
+    return (
+      <ZoneCardTargetingOverlay
+        zoneCards={pileCards}
+        targetingState={targetingState}
+        responsive={responsive}
+        onSelect={addTarget}
+        onDeselect={removeTarget}
+        onConfirm={confirmTargeting}
+        onCancel={cancelTargeting}
+        onViewBattlefield={() => setPilePickerOpen(false)}
         {...(canGoBack ? { onBack: goBackTargeting } : {})}
       />
     )
@@ -630,11 +670,16 @@ export function TargetingOverlay() {
     costAfterMap && chosenSacrifice ? costAfterMap[chosenSacrifice] : undefined
   const showSacrificeCost = !!costBeforeSacrifice && !!costAfterMap
 
-  const hintText = hasMaxTargets
+  const baseHintText = hasMaxTargets
     ? isBehold ? 'Card selected' : isDiscard ? 'Card selected' : isReveal ? 'Card selected' : isTapPermanent ? 'Permanents selected' : isBounce ? 'Creature selected' : isSacrifice ? 'Selected' : 'Maximum targets selected'
     : hasEnoughTargets
       ? 'Click Confirm or select more'
       : isBehold ? `Click a highlighted card on the battlefield or in your hand` : isDiscard ? 'Click a card in your hand' : isReveal ? 'Click a card in your hand' : isTapPermanent ? 'Click a highlighted permanent' : isBounce ? 'Click an attacking creature you control' : isSacrifice ? 'Click a highlighted permanent you control' : 'Click a highlighted target'
+  // On a mixed union the board is only half the answer — say so, since the other half lives
+  // behind the button below and there is nothing on the board to hint at it.
+  const hintText = isMixedZoneTargeting && !hasMaxTargets
+    ? `${baseHintText}, or open the ${pileZoneLabel.toLowerCase()}`
+    : baseHintText
 
   return (
     <div
@@ -752,6 +797,19 @@ export function TargetingOverlay() {
         </div>
       )}
       <div style={{ display: 'flex', gap: 8, marginTop: 8, pointerEvents: 'auto' }}>
+        {isMixedZoneTargeting && (
+          <button
+            onClick={() => setPilePickerOpen(true)}
+            style={{
+              ...styles.actionButton,
+              padding: responsive.isMobile ? '8px 12px' : '10px 16px',
+              fontSize: responsive.fontSize.normal,
+              backgroundColor: '#1e40af',
+            }}
+          >
+            {pileZoneLabel} ({pileCards.length})
+          </button>
+        )}
         {canGoBack && (
           <button onClick={goBackTargeting} style={{
             ...styles.cancelButton,

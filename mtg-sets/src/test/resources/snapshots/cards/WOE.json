@@ -10016,9 +10016,11 @@
                     },
                     "affected": "Self",
                     "sourceFromAnyZone": true,
-                    "addedKeywords": [
-                        "FLYING"
-                    ],
+                    "exceptions": {
+                        "addedKeywords": [
+                            "FLYING"
+                        ]
+                    },
                     "retainActivatingAbility": true
                 },
                 "targetRequirements": [

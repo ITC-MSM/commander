@@ -71,7 +71,11 @@ class ManaAbilityEnumerator : ActionEnumerator {
 
             val entityLostAllAbilities = projected.hasLostAllAbilities(entityId)
 
-            val cardDef = context.cardRegistry.getCard(cardComponent.name)
+            // By definition id, not name: a renamed copy (CR 707.9 — Absorbing Man copying a mana
+            // rock "except his name is Absorbing Man") keeps its printed name but presents the
+            // copied definition. `ActivateAbilityHandler` resolves by id, so a name lookup here
+            // would hide a mana ability the engine would still let the player activate.
+            val cardDef = context.cardRegistry.getCard(cardComponent.cardDefinitionId)
 
             // Include granted activated abilities that are mana abilities (both temporary and static)
             val grantedManaAbilities = state.grantedActivatedAbilities

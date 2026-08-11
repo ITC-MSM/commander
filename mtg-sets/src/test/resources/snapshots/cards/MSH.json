@@ -264,6 +264,104 @@
     ]
 }
 
+// Absorbing Man
+{
+    "name": "Absorbing Man",
+    "manaCost": "{1}{G}{U}",
+    "typeLine": "Legendary Creature — Human Villain",
+    "oracleText": "Vigilance\nAt the beginning of your first main phase, until your next turn, Absorbing Man becomes a copy of up to one target artifact, non-Aura enchantment, or land, except his name is Absorbing Man, he's a legendary 4/4 Human Villain creature in addition to his other types, and he has vigilance.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "VIGILANCE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "PRECOMBAT_MAIN"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "EachPermanentBecomesCopyOfTarget",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "up to one target artifact, non-Aura enchantment, or land"
+                    },
+                    "duration": "UntilYourNextTurn",
+                    "affected": "Self",
+                    "exceptions": {
+                        "nameOverride": "Absorbing Man",
+                        "addedKeywords": [
+                            "VIGILANCE"
+                        ],
+                        "addedSupertypes": [
+                            "LEGENDARY"
+                        ],
+                        "addedCardTypes": [
+                            "CREATURE"
+                        ],
+                        "addedSubtypes": [
+                            "Human",
+                            "Villain"
+                        ],
+                        "powerOverride": 4,
+                        "toughnessOverride": 4
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "optional": true,
+                    "filter": {
+                        "baseFilter": {
+                            "cardPredicates": [
+                                {
+                                    "type": "Or",
+                                    "predicates": [
+                                        {
+                                            "type": "Or",
+                                            "predicates": [
+                                                "IsArtifact",
+                                                {
+                                                    "type": "And",
+                                                    "predicates": [
+                                                        "IsEnchantment",
+                                                        {
+                                                            "type": "NotSubtype",
+                                                            "subtype": "Aura"
+                                                        }
+                                                    ]
+                                                }
+                                            ]
+                                        },
+                                        "IsLand"
+                                    ]
+                                }
+                            ]
+                        }
+                    },
+                    "id": "up to one target artifact, non-Aura enchantment, or land"
+                },
+                "descriptionOverride": "At the beginning of your first main phase, until your next turn, Absorbing Man becomes a copy of up to one target artifact, non-Aura enchantment, or land, except his name is Absorbing Man, he's a legendary 4/4 Human Villain creature in addition to his other types, and he has vigilance."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "199",
+        "rarity": "RARE",
+        "artist": "Nathaniel Himawan",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/1/7114ef87-53ff-43e9-864c-9faa455d86ef.jpg?1783902907"
+    },
+    "colorIdentityOverride": [
+        "GREEN",
+        "BLUE"
+    ]
+}
+
 // Aerial Doombot
 {
     "name": "Aerial Doombot",
@@ -12345,6 +12443,99 @@
     ]
 }
 
+// Shuri, Wakandan Inventor
+{
+    "name": "Shuri, Wakandan Inventor",
+    "manaCost": "{1}{U}",
+    "typeLine": "Legendary Creature — Human Artificer Hero",
+    "oracleText": "Artifact spells you cast cost {1} less to cast.\n{1}, {T}: Target artifact you control becomes a copy of a second target artifact you control until end of turn, except it isn't legendary. Activate only as a sorcery.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "EachPermanentBecomesCopyOfTarget",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "a second target artifact you control"
+                    },
+                    "duration": "EndOfTurn",
+                    "affected": {
+                        "type": "BoundVariable",
+                        "name": "target artifact you control"
+                    },
+                    "exceptions": {
+                        "removedSupertypes": [
+                            "LEGENDARY"
+                        ]
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "artifact ctrl:you"
+                        },
+                        "id": "target artifact you control"
+                    },
+                    {
+                        "type": "TargetOther",
+                        "baseRequirement": {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "artifact ctrl:you"
+                            }
+                        },
+                        "id": "a second target artifact you control"
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "descriptionOverride": "{1}, {T}: Target artifact you control becomes a copy of a second target artifact you control until end of turn, except it isn't legendary. Activate only as a sorcery."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifySpellCost",
+                "target": {
+                    "type": "YouCast",
+                    "filter": "artifact"
+                },
+                "modification": {
+                    "type": "ReduceGeneric",
+                    "amount": 1
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "75",
+        "rarity": "UNCOMMON",
+        "artist": "Wayne Wu",
+        "flavorText": "While her older brother T'Challa ruled Wakanda, Shuri perfected its defenses and vibranium-based weapons.",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/5/65005522-555e-4479-939c-be16e0262f6f.jpg?1783902952"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Speed, Young Avenger
 {
     "name": "Speed, Young Avenger",
@@ -14476,6 +14667,79 @@
         "imageUri": "https://cards.scryfall.io/normal/front/6/5/6572aafe-18ed-4182-92e9-25f003f5fe3d.jpg?1783902937"
     },
     "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Taskmaster, Mercenary Mimic
+{
+    "name": "Taskmaster, Mercenary Mimic",
+    "manaCost": "{2}{U}{B}",
+    "typeLine": "Legendary Creature — Human Mercenary Villain",
+    "oracleText": "Photographic Reflexes — At the beginning of your first main phase, until your next turn, Taskmaster becomes a copy of up to one target creature on the battlefield or creature card in a graveyard, except his name is Taskmaster, Mercenary Mimic and he's a legendary Human Mercenary Villain creature.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 5
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "PRECOMBAT_MAIN"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "EachPermanentBecomesCopyOfTarget",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "up to one target creature on the battlefield or creature card in a graveyard"
+                    },
+                    "duration": "UntilYourNextTurn",
+                    "affected": "Self",
+                    "sourceFromAnyZone": true,
+                    "exceptions": {
+                        "nameOverride": "Taskmaster, Mercenary Mimic",
+                        "addedSupertypes": [
+                            "LEGENDARY"
+                        ],
+                        "overrideCardTypes": [
+                            "CREATURE"
+                        ],
+                        "overrideSubtypes": [
+                            "Human",
+                            "Mercenary",
+                            "Villain"
+                        ]
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "optional": true,
+                    "filter": {
+                        "baseFilter": "creature",
+                        "alternatives": [
+                            {
+                                "baseFilter": "creature",
+                                "zone": "Graveyard"
+                            }
+                        ]
+                    },
+                    "id": "up to one target creature on the battlefield or creature card in a graveyard"
+                },
+                "descriptionOverride": "Photographic Reflexes — At the beginning of your first main phase, until your next turn, Taskmaster becomes a copy of up to one target creature on the battlefield or creature card in a graveyard, except his name is Taskmaster, Mercenary Mimic and he's a legendary Human Mercenary Villain creature."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "232",
+        "rarity": "RARE",
+        "artist": "Riccardo Federici",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/d/0d4265fd-cbfa-4e57-89fd-a1d757acfe81.jpg?1783902897"
+    },
+    "colorIdentityOverride": [
+        "BLUE",
         "BLACK"
     ]
 }

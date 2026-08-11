@@ -501,8 +501,18 @@ highlights board objects through `decisionSelectionState`. The two can mix insid
 The Spot, Living Portal exiles "up to one target nonland permanent **and** up to one target
 nonland permanent card from a graveyard" — so the choice must not be made once for the whole
 decision. Both collectors take the restored picks as `initialSelection`, so Back keeps its
-confirmed selection whichever UI owns the slot. The cast-time equivalent is `TargetingOverlay`'s
-`ZoneCardTargetingOverlay` routing.
+confirmed selection whichever UI owns the slot.
+
+A **single** requirement can also span both zones (Taskmaster, Mercenary Mimic: "up to one target
+creature on the battlefield **or** creature card in a graveyard"). Then the board banner stays up
+so permanents remain clickable *and* offers a button that opens the pile picker, whose "View
+Battlefield" hands control back; the picks travel with the player in both directions, so either
+half fills the same slot. That routing — `board` / `pile` / `mixed` — is `routeTargetsByZone` in
+`utils/targeting.ts`, shared with the cast-time path (`TargetingOverlay` +
+`ZoneCardTargetingOverlay`) precisely because the two drifted once and left a trigger's graveyard
+targets unreachable. The decision path's walk itself (requirement index, collected picks, which
+collector owns the screen) is the pure reducer in `decisions/chooseTargetsWalk.ts`, which is also
+where its unit tests live — the web-client has no DOM test environment.
 
 The wording on a pile slot ("Exile" vs "Put onto Battlefield" vs "Shuffle into Library") comes
 from `derivePileAction` in `utils/targeting.ts`, which sniffs the decision's `effectHint` prose.

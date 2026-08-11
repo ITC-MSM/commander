@@ -5,9 +5,9 @@ missing mechanic they need. Each mechanic is `add-feature` territory (a new SDK 
 keyword, or engine capability) — not pure card authoring.
 
 Scope: the 276 booster cards (collector numbers 1–276). Triaged against the SDK on 2026-08-04,
-updated 2026-08-07 after **power-up** and the **per-turn effect budget** shipped, and 2026-08-08
-after **teamwork** shipped in full. **32 of the 276 are blocked**; every other card is buildable from
-existing primitives.
+updated 2026-08-07 after **power-up** and the **per-turn effect budget** shipped, 2026-08-08
+after **teamwork** shipped in full, and 2026-08-10 after **copy-with-exceptions** shipped.
+**29 of the 276 are blocked**; every other card is buildable from existing primitives.
 
 Supported today and *not* a blocker despite looking like one: **power-up** (see the first section
 below — the keyword, its once-only limit and its pip-wise cost reduction all ship), **harness / ∞ abilities**
@@ -219,23 +219,51 @@ Same card, second gap: "Double all damage equipped creature would deal" wants
 
 Blocked card: **Mjölnir, Hammer of Thor** [146].
 
-## Copy-with-exceptions: name, added types, longer durations — 3 cards ⛔
+## Copy-with-exceptions: name, added types, longer durations — SHIPPED ✅ (all 3 cards implemented)
 
-`EachPermanentBecomesCopyOfTargetEffect` (`mtg-sdk/.../scripting/effects/CopyEffects.kt`) exposes only
-`addedKeywords` / `powerOverride` / `toughnessOverride` / `retainActivatingAbility` as copy exceptions,
-and its executor honours only `Duration.Permanent` / `EndOfTurn` / `UntilNextEndStep` — silently
-degrading anything else to permanent. Three additions, each of which already exists on the *token*
-sibling `CreateTokenCopyOfTargetEffect`, so this is convergence rather than one-offs:
+Implemented 2026-08-10 as **convergence between the two copy paths**, not as three riders bolted onto
+one of them. The gap was that `EachPermanentBecomesCopyOfTargetEffect`
+(`mtg-sdk/.../scripting/effects/CopyEffects.kt`) exposed only `addedKeywords` / `powerOverride` /
+`toughnessOverride` / `retainActivatingAbility` as copy exceptions while the *token* sibling
+`CreateTokenCopyOfTargetEffect` had a dozen more, and that the permanent executor honoured only
+`Duration.Permanent` / `EndOfTurn` / `UntilNextEndStep`, silently degrading anything else.
 
-1. `nameOverride` (exists on the ETB replacement `ReplacementEffect.EntersAsCopy`, not on this path).
-2. `addedSupertypes` / `addedSubtypes` / `addedCardTypes` — for "he's a legendary Human Mercenary
-   Villain creature **in addition to** its other types", and for "except it isn't legendary" (which
-   needs the *removal* direction, `removedSupertypes`; without it the copy dies to the legend rule).
-3. `Duration.UntilYourNextTurn` support in the copy-revert path — a `RevertCopyAtYourNextTurnComponent`
-   sibling to the two existing revert markers.
+What shipped:
 
-Blocked cards: **Shuri, Wakandan Inventor** [75] (needs `removedSupertypes`) · **Absorbing Man** [199]
-(needs all three) · **Taskmaster, Mercenary Mimic** [232] (needs all three).
+1. **`CopyExceptions`** (`mtg-sdk/.../scripting/effects/CopyExceptions.kt`) — one serializable value
+   type for the whole "except …" half of a copy effect (CR 707.9b): `nameOverride`, `addedKeywords`,
+   `addedSupertypes` / `removedSupertypes`, `addedCardTypes` / `overrideCardTypes`, `addedSubtypes` /
+   `overrideSubtypes`, `addedColors` / `overrideColors`, `powerOverride` / `toughnessOverride`,
+   `noManaCost`. The add-vs-override split is CR 205.1a (a stated card type or subtype *replaces*)
+   against CR 205.1b (the "in addition to its other types" / "still a [type]" clause *retains* the
+   prior types) — which is exactly the difference between Absorbing Man and Taskmaster.
+   `EachPermanentBecomesCopyOfTargetEffect.exceptions` carries it; `CreateTokenCopyOfTargetEffect`
+   keeps its historical flat riders as the authoring surface (≈20 card call sites) but exposes them
+   as a `copyExceptions` view onto the same type. `retainActivatingAbility` stayed on the effect — it
+   isn't a characteristic.
+2. **`CopyExceptionApplier`** (`rules-engine/.../handlers/effects/copy/`) — the single place the
+   type-line/name/keyword/P-T/color arithmetic lives. Four copy paths call it — permanent-becomes-a-
+   copy, both token-copy executors, and the `EntersAsCopy` clone path — so a new exception is written
+   once and all of them get it. (The two `removeLegendary`-only paths, Helm of the Host's
+   equipped-creature token and spell copies, have no arithmetic to share and stay outside.) It also
+   fixes a latent bug on the permanent path: a P/T
+   override used to be dropped when the copied object had no base stats at all, which is precisely
+   Absorbing Man copying a land.
+3. **`Duration.UntilYourNextTurn`** in the copy-revert path — `RevertCopyAtYourNextTurnComponent(playerId)`,
+   a sibling to the two existing revert markers, expired in
+   `CleanupPhaseManager.expireUntilYourNextTurnEffects` alongside every other "until your next turn"
+   effect. The long duration is load-bearing for the two triggered mimics: the copy replaces the card
+   component wholesale, so the permanent's own first-main-phase trigger is gone while the copy is up
+   and back in time to fire again once it reverts.
+
+Tests: `CopyExceptionsTest` (the mechanic — add vs override on each axis, the add-then-remove
+supertype order, P/T conjured onto a copy source that had none, and a pin that the token effect's
+flat riders map onto the same vocabulary), plus one scenario test per card covering the removal
+direction against the legend rule, the additive typing, and the until-your-next-turn revert window
+with its re-firing trigger.
+
+**Implemented (3):** Shuri, Wakandan Inventor [75] · Absorbing Man [199] · Taskmaster, Mercenary
+Mimic [232].
 
 ## Improvise (CR 702.126) — 2 cards ⛔
 

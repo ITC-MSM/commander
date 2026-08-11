@@ -5,6 +5,7 @@ import com.wingedsheep.engine.core.ZoneChangeEvent
 import com.wingedsheep.engine.handlers.DynamicAmountEvaluator
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
+import com.wingedsheep.engine.handlers.effects.copy.CopyExceptionApplier
 import com.wingedsheep.engine.mechanics.layers.StaticAbilityHandler
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.event.DelayedTriggeredAbility
@@ -24,10 +25,7 @@ import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.engine.state.components.identity.DoubleFacedComponent
 import com.wingedsheep.engine.state.components.identity.TokenComponent
-import com.wingedsheep.sdk.core.CardType
-import com.wingedsheep.sdk.core.ManaCost
 import com.wingedsheep.sdk.core.Zone
-import com.wingedsheep.sdk.model.CreatureStats
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.Duration
 import com.wingedsheep.sdk.scripting.conditions.SourceIsRingBearer
@@ -139,35 +137,18 @@ class CreateTokenCopyOfTargetExecutor(
         val events = mutableListOf<com.wingedsheep.engine.core.GameEvent>()
         val createdTokens = mutableListOf<EntityId>()
 
+        // Every "except …" clause (CR 707.9) — added/removed types, added keywords, base P/T,
+        // colors, no-mana-cost — is applied by the shared CopyExceptionApplier, so the token
+        // path and the "permanent becomes a copy" path can't drift. Both the exceptions view and
+        // the resulting component are loop-invariant, so they are built once rather than per token.
+        val exceptions = effect.copyExceptions
+        val tokenCard = CopyExceptionApplier.apply(targetCard, exceptions)
+            .copy(ownerId = controllerId)
+
         val cappedCount = com.wingedsheep.engine.core.GameLimits.cappedTokenCount(count, "target-copy tokens")
         for (index in 0 until cappedCount) {
             val (tokenId, stateWithId) = newState.newEntity()
             newState = stateWithId
-            val op = effect.overridePower
-            val ot = effect.overrideToughness
-            val overrideStats = if (op != null && ot != null) {
-                CreatureStats(op, ot)
-            } else null
-            val extraCardTypes = effect.addCardTypes
-                .mapNotNull { name -> runCatching { CardType.valueOf(name.uppercase()) }.getOrNull() }
-                .toSet()
-            val tokenTypeLine = targetCard.typeLine.copy(
-                cardTypes = (effect.overrideCardTypes ?: targetCard.typeLine.cardTypes) + extraCardTypes,
-                supertypes = targetCard.typeLine.supertypes + effect.addedSupertypes - effect.removedSupertypes,
-                subtypes = effect.overrideSubtypes ?: (targetCard.typeLine.subtypes + effect.addedSubtypes)
-            )
-            val tokenCard = targetCard.copy(
-                ownerId = controllerId,
-                typeLine = tokenTypeLine,
-                baseStats = overrideStats ?: targetCard.baseStats,
-                baseKeywords = targetCard.baseKeywords + effect.addedKeywords,
-                // overrideColors replaces outright; addedColors unions onto the copied colors
-                // ("red ... in addition to its other colors"). overrideColors wins if both set.
-                colors = effect.overrideColors ?: (targetCard.colors + effect.addedColors),
-                // "…and it has no mana cost" (Embalm / Eternalize, CR 702.128a): the token's mana
-                // value is 0, and that is itself a copiable value.
-                manaCost = if (effect.noManaCost) ManaCost.ZERO else targetCard.manaCost
-            )
 
             val components = mutableListOf<Component>(
                 tokenCard,
@@ -447,15 +428,13 @@ class CreateTokenCopyOfTargetExecutor(
     }
 
     /**
-     * The type line the copy will actually have, after the effect's `override*` clauses. Read to
+     * The type line the copy will actually have, after every "except …" type clause. Read to
      * decide whether the Aura host choice applies — "except it's a creature" turns an Aura copy
-     * into something that isn't an Aura and needs no host.
+     * into something that isn't an Aura and needs no host. Shares [CopyExceptionApplier.typeLine]
+     * with the token that is actually built, so the two can't disagree about what the copy is.
      */
     private fun auraTypeLineOf(
         effect: CreateTokenCopyOfTargetEffect,
         targetCard: CardComponent,
-    ) = targetCard.typeLine.copy(
-        cardTypes = effect.overrideCardTypes ?: targetCard.typeLine.cardTypes,
-        subtypes = effect.overrideSubtypes ?: (targetCard.typeLine.subtypes + effect.addedSubtypes),
-    )
+    ) = CopyExceptionApplier.typeLine(targetCard.typeLine, effect.copyExceptions)
 }

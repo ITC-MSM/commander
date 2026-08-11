@@ -3,7 +3,7 @@
 **Set Size:** 276 booster cards (collector numbers 1-276; basic lands 277-296 and showcase
 variants 297+ are excluded)
 **Release Date:** June 26, 2026
-**Implemented:** 240 / 276
+**Implemented:** 243 / 276
 - [x] Agent 13, Sharon Carter
 - [x] Agent Maria Hill
 - [x] Agent of Atlas
@@ -78,7 +78,7 @@ variants 297+ are excluded)
 - [x] Secret Invasion
 - [x] S.H.I.E.L.D. Deployment Drone
 - [x] S.H.I.E.L.D. Flying Car
-- [ ] Shuri, Wakandan Inventor
+- [x] Shuri, Wakandan Inventor
 - [x] Stature, Size Shifter
 - [x] Super Intelligence
 - [x] Super Suit
@@ -202,7 +202,7 @@ variants 297+ are excluded)
 - [x] White Tiger, Ava Ayala
 - [ ] World War Hulk
 - [x] Abomination, Terrifying Titan
-- [ ] Absorbing Man
+- [x] Absorbing Man
 - [x] Alien Invasion
 - [x] Ant-Man, Colony Commander
 - [x] Ares, God of War
@@ -235,7 +235,7 @@ variants 297+ are excluded)
 - [x] Spider-Woman, Secret Agent
 - [ ] Storm, Windrider
 - [x] The Super Hero Civil War
-- [ ] Taskmaster, Mercenary Mimic
+- [x] Taskmaster, Mercenary Mimic
 - [x] Thanos, the Mad Titan
 - [x] Thor Odinson
 - [ ] Titania, Rugged Rumbler
