@@ -1216,6 +1216,24 @@ object Triggers {
     )
 
     /**
+     * Whenever [player] activates an ability *of a permanent matching [sourceFilter]* that isn't a
+     * mana ability — Elrond, Moon-Reader's "whenever you activate an ability of a creature".
+     *
+     * The source-scoped sibling of [YouActivateAbility]: same "isn't a mana ability" gate (CR 605 /
+     * 606), plus the activated ability's source permanent must match. Unlike
+     * [activatesAbilityWithoutTap], which keys on the literal "{T} in its activation cost" wording,
+     * this leaves the tap cost alone — a {T} ability of a creature fires it just as a costless one
+     * does.
+     */
+    fun activatesAbilityOf(
+        sourceFilter: GameObjectFilter,
+        player: Player = Player.You
+    ): TriggerSpec = TriggerSpec(
+        event = AbilityActivatedEvent(player = player, sourceFilter = sourceFilter),
+        binding = TriggerBinding.ANY
+    )
+
+    /**
      * Whenever you activate an exhaust ability (CR 702.177). The plain Aetherdrift wording —
      * Adrenaline Jockey, Rangers' Refueler, Rangers' Aetherhive, Afterburner Expert — which counts
      * an exhaust *mana* ability as well. For the "that isn't a mana ability" variant see
@@ -2199,11 +2217,20 @@ object Triggers {
      * Whenever a player casts their Nth spell each turn.
      * Example: "Whenever a player casts their second spell each turn" → NthSpellCast(2)
      *
+     * [spellFilter] makes the ordinal per-kind — "their first noncreature spell each turn" (The
+     * Queen of Dale) is `NthSpellCast(1, Player.EachOpponent, GameObjectFilter.Noncreature)`. The
+     * count runs over the caster's cast history, so it counts casts rather than resolutions.
+     *
      * @param n The spell number (e.g., 2 for "second spell")
      * @param player Which player's spell count to track (default: any player)
+     * @param spellFilter Restricts which spells are counted; null (default) counts every spell
      */
-    fun NthSpellCast(n: Int, player: Player = Player.Each): TriggerSpec = TriggerSpec(
-        event = NthSpellCastEvent(nthSpell = n, player = player),
+    fun NthSpellCast(
+        n: Int,
+        player: Player = Player.Each,
+        spellFilter: GameObjectFilter? = null
+    ): TriggerSpec = TriggerSpec(
+        event = NthSpellCastEvent(nthSpell = n, player = player, spellFilter = spellFilter),
         binding = TriggerBinding.ANY
     )
 

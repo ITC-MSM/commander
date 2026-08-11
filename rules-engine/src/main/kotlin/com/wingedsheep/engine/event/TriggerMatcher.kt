@@ -226,7 +226,17 @@ class TriggerMatcher(
                 // reaches exactly the specified threshold (e.g., 2 for "second spell").
                 if (event !is SpellCastEvent) return false
                 if (!matchesPlayer(trigger.player, event.casterId, controllerId)) return false
-                val currentCount = state.playerSpellsCastThisTurn[event.casterId] ?: 0
+                val spellFilter = trigger.spellFilter
+                val currentCount = if (spellFilter == null) {
+                    state.playerSpellsCastThisTurn[event.casterId] ?: 0
+                } else {
+                    // "their first noncreature spell each turn" — the ordinal runs over matching
+                    // spells only, so count the caster's cast records instead of the flat total.
+                    // CastSpellHandler appends the spell being cast before triggers are detected,
+                    // so this count includes it and the `== nthSpell` comparison stays the same.
+                    val records = state.spellsCastThisTurnByPlayer[event.casterId] ?: emptyList()
+                    records.count { predicateEvaluator.matchesFilter(it, spellFilter) }
+                }
                 currentCount == trigger.nthSpell
             }
             is EventPattern.CastThisSpellEvent -> {
