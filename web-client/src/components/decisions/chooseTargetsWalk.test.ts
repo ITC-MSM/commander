@@ -190,6 +190,18 @@ describe('ChooseTargetsUI walk — per-requirement walking', () => {
     expect(chooseTargetsView(bothBoard, walk, cards).legalTargets).toEqual([bears.id, elves.id])
   })
 
+  it('builds a fresh submission object on every confirm', () => {
+    // ChooseTargetsUI dedupes its SubmitDecision on the identity of `submission`: StrictMode
+    // re-runs the effect with the same object (suppress), while a re-confirm after a rejected
+    // submission must produce a different one (send). That only works if the reducer never hands
+    // back the same object twice.
+    const first = run([confirm([bears.id])])
+    const second = chooseTargetsWalkReducer(first, confirm([elves.id]))
+
+    expect(second.submission).not.toBe(first.submission)
+    expect(second.submission).toEqual({ 0: [elves.id] })
+  })
+
   it('is a no-op stepping Back from the first requirement', () => {
     expect(chooseTargetsWalkReducer(initialChooseTargetsWalk, { type: 'back' })).toBe(
       initialChooseTargetsWalk,

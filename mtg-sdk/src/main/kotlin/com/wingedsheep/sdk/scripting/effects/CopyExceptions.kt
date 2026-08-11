@@ -17,8 +17,13 @@ import kotlinx.serialization.Serializable
  * Human Villain creature in addition to its other types" means the same thing whether the copy
  * lands on an existing permanent ([EachPermanentBecomesCopyOfTargetEffect]), mints a token from a
  * target or from the ability's own source ([CreateTokenCopyOfTargetEffect] /
- * [CreateTokenCopyOfSourceEffect], which map their historical flat fields onto this type through
- * their `copyExceptions` views), or enters as a copy (`EntersAsCopy`, Clone/Sakashima).
+ * [CreateTokenCopyOfSourceEffect]), or enters as a copy (`EntersAsCopy`, Clone/Sakashima).
+ *
+ * Every one of those effects takes a `CopyExceptions` directly, so a new exception added here is
+ * immediately expressible on all of them. The two token effects additionally keep their historical
+ * flat riders (`addedSupertypes`, `overridePower`, `addCardTypes`, …) because ~20 card definitions
+ * and their serialized shape depend on them; those riders are folded into this type via [over], and
+ * are frozen — **a new copy exception goes here, never onto another flat rider.**
  *
  * Everything here is a *copiable* value (CR 707.2): anything that later copies the copy sees these
  * modifications too. Riders that are **not** characteristics — "and this ability", "it enters
@@ -83,6 +88,39 @@ data class CopyExceptions(
     val isEmpty: Boolean get() = this == None
 
     /**
+     * This value layered on top of [base], with `this` winning wherever the two disagree.
+     *
+     * The one rule for an effect that carries both a `CopyExceptions` field and older flat riders
+     * ([CreateTokenCopyOfTargetEffect], [CreateTokenCopyOfSourceEffect]): the riders are projected
+     * into a `CopyExceptions` and passed here as [base], so the modern field can express anything
+     * the riders can't without either of them silently dropping the other. Additive axes union;
+     * replacing axes and the single-valued ones take `this` when set and fall through to [base]
+     * otherwise; [noManaCost] is a claim either side can make.
+     *
+     * `None.over(base) == base` exactly, so an effect that only uses the legacy riders is
+     * bit-for-bit unchanged.
+     */
+    fun over(base: CopyExceptions): CopyExceptions {
+        if (isEmpty) return base
+        if (base.isEmpty) return this
+        return CopyExceptions(
+            nameOverride = nameOverride ?: base.nameOverride,
+            addedKeywords = base.addedKeywords + addedKeywords,
+            addedSupertypes = base.addedSupertypes + addedSupertypes,
+            removedSupertypes = base.removedSupertypes + removedSupertypes,
+            addedCardTypes = base.addedCardTypes + addedCardTypes,
+            overrideCardTypes = overrideCardTypes ?: base.overrideCardTypes,
+            addedSubtypes = base.addedSubtypes + addedSubtypes,
+            overrideSubtypes = overrideSubtypes ?: base.overrideSubtypes,
+            addedColors = base.addedColors + addedColors,
+            overrideColors = overrideColors ?: base.overrideColors,
+            powerOverride = powerOverride ?: base.powerOverride,
+            toughnessOverride = toughnessOverride ?: base.toughnessOverride,
+            noManaCost = noManaCost || base.noManaCost,
+        )
+    }
+
+    /**
      * The "except …" clause fragments, in printed order, for rendering an effect's description.
      * Joined by the caller (normally with " and "), so an effect can splice them into its own
      * sentence. Empty when [isEmpty].
@@ -102,17 +140,18 @@ data class CopyExceptions(
         if (overrideCardTypes != null || overrideSubtypes != null) {
             // A clause that states a whole type line replaces: "it's a 5/5 black Demon". An axis
             // with no override of its own still renders its addition, which is what resolves.
-            typeWords(
-                addedSupertypes,
-                overrideCardTypes ?: addedCardTypes,
-                overrideSubtypes ?: addedSubtypes,
-            )?.let { add("it's $it") }
+            val cardTypes = overrideCardTypes ?: addedCardTypes
+            val subtypes = overrideSubtypes ?: addedSubtypes
+            typeWords(addedSupertypes, cardTypes, subtypes)?.let { words ->
+                add("it's ${withArticle(words, isNounPhrase = cardTypes.isNotEmpty() || subtypes.isNotEmpty())}")
+            }
         } else {
             typeWords(addedSupertypes, addedCardTypes, addedSubtypes)?.let { words ->
                 // Supertypes alone read as a bare statement ("except it's legendary"); anything
-                // that touches card types or subtypes carries the "in addition" tail.
+                // that touches card types or subtypes is a noun phrase and carries both an article
+                // and the "in addition" tail.
                 if (addedCardTypes.isEmpty() && addedSubtypes.isEmpty()) add("it's $words")
-                else add("it's $words in addition to its other types")
+                else add("it's ${withArticle(words, isNounPhrase = true)} in addition to its other types")
             }
         }
         if (removedSupertypes.isNotEmpty()) {
@@ -123,6 +162,15 @@ data class CopyExceptions(
         }
         if (noManaCost) add("it has no mana cost")
     }
+
+    /**
+     * "a legendary Human Villain creature" / "an artifact creature" — the indefinite article Magic's
+     * own templating puts in front of a stated type line. Only a noun phrase gets one: a clause that
+     * names nothing but supertypes reads "except it's legendary", not "except it's a legendary".
+     */
+    private fun withArticle(words: String, isNounPhrase: Boolean): String =
+        if (!isNounPhrase) words
+        else if (words.first().lowercaseChar() in "aeiou") "an $words" else "a $words"
 
     private fun typeWords(
         supertypes: Set<Supertype>,

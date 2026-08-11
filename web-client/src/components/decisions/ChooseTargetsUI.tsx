@@ -6,6 +6,7 @@ import {
   chooseTargetsView,
   chooseTargetsWalkReducer,
   initialChooseTargetsWalk,
+  type ChooseTargetsWalkState,
 } from './chooseTargetsWalk.ts'
 import { BattlefieldTargetingUI } from './BattlefieldTargetingUI'
 import { GraveyardTargetingUI } from './GraveyardTargetingUI'
@@ -50,10 +51,16 @@ export function ChooseTargetsUI({ decision }: { decision: ChooseTargetsDecision 
   // the send happens here. The ref guards against a second SubmitDecision for the same walk — the
   // app runs under StrictMode, which re-runs mount effects, and a duplicate submission would answer
   // whatever decision came next.
-  const submittedRef = useRef(false)
+  //
+  // It holds the payload it sent rather than a bare `true`. StrictMode re-runs the effect with the
+  // *same* `submission` object, which is what has to be suppressed; a re-confirm always builds a
+  // fresh one (the reducer spreads `collected` into a new object), which must go through. A bare
+  // boolean can't tell those apart and latches forever — so a server that re-sent the same decision
+  // after rejecting a submission would leave the walk with no way to answer it.
+  const submittedRef = useRef<ChooseTargetsWalkState['submission']>(null)
   useEffect(() => {
-    if (walk.submission && !submittedRef.current) {
-      submittedRef.current = true
+    if (walk.submission && submittedRef.current !== walk.submission) {
+      submittedRef.current = walk.submission
       submitTargetsDecision(walk.submission)
     }
   }, [walk.submission])

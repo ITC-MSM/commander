@@ -21,10 +21,12 @@ silently degrading anything else.
   token executor's Aura-host type-line probe shares it too. The two `removeLegendary`-only paths
   (Helm of the Host's equipped-creature token, spell copies) stay outside it — no arithmetic to
   share — and the KDoc says so instead of claiming universality.
-- `EachPermanentBecomesCopyOfTargetEffect.exceptions` replaces its three flat riders.
-  `CreateTokenCopyOfTargetEffect` / `CreateTokenCopyOfSourceEffect` keep their flat riders (≈20 card
-  call sites) but expose a `copyExceptions` computed view onto the same type, so their serialized
-  shape and authoring surface are unchanged.
+- `EachPermanentBecomesCopyOfTargetEffect.exceptions` replaces its three flat riders. Both token
+  effects take an `exceptions: CopyExceptions` field too, so **all three copy effects share one
+  authoring surface** and a new exception is expressible on every path the day it is added. Their
+  ≈20 existing flat riders stay (serialized shape unchanged) and are folded in via
+  `exceptions.over(<riders>)`; `CopyExceptions.None.over(base) == base`, so a card using only the
+  riders is bit-for-bit unchanged. The riders are frozen — new exceptions go on `CopyExceptions`.
 - `Duration.UntilYourNextTurn` in the copy-revert path — `RevertCopyAtYourNextTurnComponent(playerId)`,
   expired in `CleanupPhaseManager.expireUntilYourNextTurnEffects` with every other "until your next
   turn" effect.
@@ -63,7 +65,15 @@ had no base stats — exactly Absorbing Man copying a land.
 
 ## Gate
 
-`just test-rules` — BUILD SUCCESSFUL, 10,340 tests, 0 failed. Plus `:mtg-sets:test` (snapshots +
-FacadeBoundaryTest), `just rebless-cards` (MSH + the two expected reshapes), and a compile of
-`:ai`, `:game-server`, `:gym`, `:mtg-search` since the SDK type changed. Exact commands and the
-earlier-failure story are in `build/pr/loop-msh-u06-body.md`.
+Two halves, because **`just test` is Gradle-only and this unit changes ~1000 lines of TypeScript** —
+the web-client suite is not reachable from any `just` recipe and has to be run on its own.
+
+- **JVM:** `just test` — BUILD SUCCESSFUL, 0 failed (supersedes the earlier `just test-rules` run;
+  it covers `:mtg-sets:test` snapshots + `FacadeBoundaryTest` and the `:ai` / `:game-server` /
+  `:gym` / `:mtg-search` compiles the SDK type change forces). `just rebless-cards` moved MSH plus
+  the two expected reshapes and nothing else.
+- **Web client:** `cd web-client && npm run typecheck` — clean; `npm test` — 39 files, 552 tests,
+  0 failed.
+- `just check-card-printing` clean for all three cards.
+
+Exact commands and the earlier-failure story are in `build/pr/loop-msh-u06-body.md`.

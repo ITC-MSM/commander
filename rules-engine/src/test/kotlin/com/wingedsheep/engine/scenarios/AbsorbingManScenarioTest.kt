@@ -1,6 +1,7 @@
 package com.wingedsheep.engine.scenarios
 
 import com.wingedsheep.engine.core.ActivateAbility
+import com.wingedsheep.engine.core.CrewVehicle
 import com.wingedsheep.engine.core.PassPriority
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.RevertCopyAtYourNextTurnComponent
@@ -34,7 +35,10 @@ class AbsorbingManScenarioTest : ScenarioTestBase() {
             // The "until your next turn" cases run three turns, so both libraries need cards —
             // the scenario builder starts them empty and a draw from an empty library ends the
             // game (CR 704.5b), which silently stalls any further turn advance.
-            fun board(islands: Int = 2): ScenarioTestBase.TestGame {
+            fun board(
+                islands: Int = 2,
+                extraPermanents: List<String> = emptyList(),
+            ): ScenarioTestBase.TestGame {
                 var builder = scenario()
                     .withPlayers("Player", "Opponent")
                     .withCardOnBattlefield(1, "Absorbing Man")
@@ -42,6 +46,9 @@ class AbsorbingManScenarioTest : ScenarioTestBase() {
                     .withLandsOnBattlefield(1, "Island", islands)
                     .withActivePlayer(1)
                     .inPhase(Phase.BEGINNING, Step.UPKEEP)
+                for (name in extraPermanents) {
+                    builder = builder.withCardOnBattlefield(1, name)
+                }
                 repeat(5) {
                     builder = builder.withCardInLibrary(1, "Island").withCardInLibrary(2, "Island")
                 }
@@ -221,6 +228,69 @@ class AbsorbingManScenarioTest : ScenarioTestBase() {
                     game.resolveStack()
                     game.handSize(1) shouldBe handBefore + 2
                     game.isOnBattlefield("Absorbing Man") shouldBe false
+                }
+            }
+
+            // The same enumerate-by-name bug had four more sites than the one above, each reached
+            // by a different enumerator. These two cover the ones a printed MSH card can actually
+            // reach: a copied mana ability and a copied Vehicle's Crew.
+            test("a copied mana ability is offered even though the copy keeps his own name") {
+                // The Mind Stone is a Legendary Artifact — Infinity Stone with "{T}: Add {W}".
+                // `ManaAbilityEnumerator` is a separate pass from the general activated-ability
+                // one, so it needs its own coverage: a name lookup there would hide the mana
+                // ability while `ActivateAbilityHandler` (which resolves by id) would still run it.
+                val game = board(extraPermanents = listOf("The Mind Stone"))
+                val absorbingMan = game.findPermanent("Absorbing Man")!!
+                val mindStone = game.findPermanent("The Mind Stone")!!
+
+                game.copyOnto(mindStone)
+
+                val card = game.state.getEntity(absorbingMan)!!.get<CardComponent>()!!
+                withClue("he presents the Stone's definition under his own printed name") {
+                    card.name shouldBe "Absorbing Man"
+                    card.cardDefinitionId shouldBe "The Mind Stone"
+                }
+
+                val manaAbilityId = cardRegistry.getCard("The Mind Stone")!!
+                    .activatedAbilities.single { it.isManaAbility }.id
+                val offered = game.getLegalActions(1)
+                withClue(
+                    "the copied '{T}: Add {W}' must be enumerated off him, not just off the " +
+                        "printed Stone; offered instead: ${offered.map { it.description }}"
+                ) {
+                    offered.any {
+                        val activation = it.action as? ActivateAbility
+                        activation?.sourceId == absorbingMan && activation.abilityId == manaAbilityId
+                    } shouldBe true
+                }
+            }
+
+            test("a copied Vehicle's Crew is offered even though the copy keeps his own name") {
+                // Dependable Quinjet is an Artifact — Vehicle with Crew 4. `CrewEnumerator` reads
+                // the crew keyword off the definition, so the renamed copy has to resolve by id or
+                // `CrewVehicleHandler` would accept a crew the UI never offered.
+                val game = board(
+                    extraPermanents = listOf("Dependable Quinjet", "Hill Giant", "Hill Giant"),
+                )
+                val absorbingMan = game.findPermanent("Absorbing Man")!!
+                val quinjet = game.findPermanent("Dependable Quinjet")!!
+
+                game.copyOnto(quinjet)
+
+                val offered = game.getLegalActions(1)
+                val crew = offered.firstOrNull {
+                    (it.action as? CrewVehicle)?.vehicleId == absorbingMan
+                }
+                withClue(
+                    "Crew must be offered on the copy; offered instead: " +
+                        "${offered.map { it.description }}"
+                ) {
+                    crew shouldNotBe null
+                }
+                withClue("and it is payable — two Hill Giants are power 6, over Crew 4") {
+                    // Absorbing Man is himself a creature here, but a Vehicle can't crew itself,
+                    // and the Forge isn't a creature — so the two Giants are the whole payer pool.
+                    crew!!.isAffordable shouldBe true
                 }
             }
 

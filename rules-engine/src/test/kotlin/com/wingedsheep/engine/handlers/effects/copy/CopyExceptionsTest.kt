@@ -230,6 +230,81 @@ class CopyExceptionsTest : FunSpec({
         )
     }
 
+    test("an effect carrying only legacy riders is bit-for-bit unchanged by the merge") {
+        // CopyExceptions.None.over(base) must be `base` itself, or every existing token-copy card
+        // silently re-serializes.
+        val riders = CreateTokenCopyOfTargetEffect(
+            target = EffectTarget.ContextTarget(0),
+            addedKeywords = setOf(Keyword.FLYING),
+            overrideSubtypes = setOf(Subtype.DEMON),
+        ).copyExceptions
+        CopyExceptions.None.over(riders) shouldBe riders
+    }
+
+    test("the exceptions field and the legacy riders combine instead of dropping each other") {
+        // The point of giving the token effects an `exceptions` field: a name override is not
+        // expressible as a flat rider at all, and it must not cost the card its rider-borne types.
+        val effect = CreateTokenCopyOfTargetEffect(
+            target = EffectTarget.ContextTarget(0),
+            addedKeywords = setOf(Keyword.FLYING),
+            addCardTypes = setOf("ARTIFACT"),
+            exceptions = CopyExceptions(
+                nameOverride = "Mirror Image",
+                addedKeywords = setOf(Keyword.VIGILANCE),
+                powerOverride = 7,
+            ),
+        )
+        effect.copyExceptions shouldBe CopyExceptions(
+            nameOverride = "Mirror Image",
+            // Additive axes union across the two sources.
+            addedKeywords = setOf(Keyword.FLYING, Keyword.VIGILANCE),
+            addedCardTypes = setOf(CardType.ARTIFACT),
+            // A half-specified P/T is expressible on the field even though the riders demand both.
+            powerOverride = 7,
+        )
+    }
+
+    test("the modern field wins over a legacy rider on a replacing axis") {
+        val effect = CreateTokenCopyOfTargetEffect(
+            target = EffectTarget.ContextTarget(0),
+            overrideSubtypes = setOf(Subtype.DEMON),
+            exceptions = CopyExceptions(overrideSubtypes = setOf(Subtype.GOBLIN)),
+        )
+        effect.copyExceptions.overrideSubtypes shouldBe setOf(Subtype.GOBLIN)
+    }
+
+    test("the self-copy effect takes an exceptions field too") {
+        val effect = CreateTokenCopyOfSourceEffect(
+            removeLegendary = true,
+            exceptions = CopyExceptions(nameOverride = "Absorbing Man"),
+        )
+        effect.copyExceptions shouldBe CopyExceptions(
+            nameOverride = "Absorbing Man",
+            removedSupertypes = setOf(Supertype.LEGENDARY),
+        )
+    }
+
+    test("a stated type line renders with an article, a bare supertype clause without one") {
+        // Taskmaster's replacing clause, Absorbing Man's additive one, and Shuri's removal.
+        CopyExceptions(
+            addedSupertypes = setOf(Supertype.LEGENDARY),
+            overrideCardTypes = setOf(CardType.CREATURE),
+            overrideSubtypes = setOf(Subtype.HUMAN),
+        ).clauses() shouldBe listOf("it's a legendary Human creature")
+
+        CopyExceptions(
+            addedCardTypes = setOf(CardType.ARTIFACT),
+        ).clauses() shouldBe listOf("it's an artifact in addition to its other types")
+
+        CopyExceptions(
+            addedSupertypes = setOf(Supertype.LEGENDARY),
+        ).clauses() shouldBe listOf("it's legendary")
+
+        CopyExceptions(
+            removedSupertypes = setOf(Supertype.LEGENDARY),
+        ).clauses() shouldBe listOf("it isn't legendary")
+    }
+
     test("the self-copy 'except it isn't legendary' clause strips the supertype through the applier") {
         val result = CopyExceptionApplier.apply(
             legendaryArtifactBear(),
