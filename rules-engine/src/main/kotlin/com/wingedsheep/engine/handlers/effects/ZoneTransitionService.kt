@@ -41,6 +41,7 @@ import com.wingedsheep.engine.state.components.player.PermanentLeftBattlefieldTh
 import com.wingedsheep.engine.state.components.player.CreatureLeftBattlefieldThisTurnComponent
 import com.wingedsheep.engine.state.components.player.PermanentsSacrificedThisTurnComponent
 import com.wingedsheep.engine.state.components.player.PlayerDescendedThisTurnComponent
+import com.wingedsheep.engine.state.components.player.SacrificedArtifactThisTurnComponent
 import com.wingedsheep.engine.state.components.player.SacrificedFoodThisTurnComponent
 import com.wingedsheep.sdk.core.CardType
 import com.wingedsheep.sdk.core.CounterType
@@ -974,6 +975,13 @@ object ZoneTransitionService {
      *    Sawblade Skinripper).
      *  - Marks the controller with [SacrificedFoodThisTurnComponent] if any sacrificed permanent
      *    was a Food (Food-sacrifice triggers, e.g. Ygra).
+     *  - Marks the controller with [SacrificedArtifactThisTurnComponent] if any sacrificed
+     *    permanent was an artifact (backs `TurnTracker.ARTIFACT_SACRIFICED` — Suspicious
+     *    Detonation, Furtive Courier).
+     *
+     * Both markers read the *projected* characteristics, so a permanent that was only a Food or
+     * only an artifact through a continuous effect still counts, and both are checked
+     * independently — one sacrifice can set both.
      */
     fun trackPermanentSacrifice(state: GameState, permanentIds: List<EntityId>, controllerId: EntityId): GameState {
         if (permanentIds.isEmpty()) return state
@@ -988,13 +996,15 @@ object ZoneTransitionService {
             container.with(PermanentsSacrificedThisTurnComponent(prior + permanentIds.size))
         }
         val projected = state.projectedState
-        for (permId in permanentIds) {
-            newState.getEntity(permId)?.get<CardComponent>() ?: continue
-            if (projected.hasSubtype(permId, Subtype.FOOD.value)) {
-                newState = newState.updateEntity(controllerId) { container ->
-                    container.with(SacrificedFoodThisTurnComponent)
-                }
-                break // Only need to mark once
+        val sacrificedCards = permanentIds.filter { newState.getEntity(it)?.has<CardComponent>() == true }
+        if (sacrificedCards.any { projected.hasSubtype(it, Subtype.FOOD.value) }) {
+            newState = newState.updateEntity(controllerId) { container ->
+                container.with(SacrificedFoodThisTurnComponent)
+            }
+        }
+        if (sacrificedCards.any { projected.hasType(it, CardType.ARTIFACT.name) }) {
+            newState = newState.updateEntity(controllerId) { container ->
+                container.with(SacrificedArtifactThisTurnComponent)
             }
         }
         return newState

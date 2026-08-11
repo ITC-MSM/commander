@@ -104,6 +104,18 @@ enum class TurnTracker {
     CREATURES_ENTERED_UNDER_CONTROL,
     /** Indicator (0 or 1) that the player sacrificed at least one Food this turn. */
     FOOD_SACRIFICED,
+    /**
+     * Indicator (0 or 1) that the player sacrificed at least one artifact this turn — the
+     * card-type sibling of [FOOD_SACRIFICED], recorded by the same central sacrifice hook and
+     * read off the projected type line, so a permanent that was only an artifact through a
+     * continuous effect still counts.
+     *
+     * Backs Murders at Karlov Manor's "if you've sacrificed an artifact this turn" wording
+     * (Suspicious Detonation's cost reduction, Furtive Courier's evasion). Turn history, not a
+     * board scan: it stays set for the rest of the turn even once the artifact has left the
+     * graveyard.
+     */
+    ARTIFACT_SACRIFICED,
     /** Total cards that left the player's graveyard this turn (Bonecache Overseer). */
     CARDS_LEFT_GRAVEYARD,
     /**
@@ -180,6 +192,7 @@ enum class TurnTracker {
         NONLAND_PERMANENTS_ENTERED -> "the number of nonland permanents that entered the battlefield under ${player.possessive} control this turn"
         CREATURES_ENTERED_UNDER_CONTROL -> "the number of creatures that entered the battlefield under ${player.possessive} control this turn"
         FOOD_SACRIFICED -> "whether ${player.description} sacrificed a Food this turn"
+        ARTIFACT_SACRIFICED -> "whether ${player.description} sacrificed an artifact this turn"
         CARDS_LEFT_GRAVEYARD -> "the number of cards that left ${player.possessive} graveyard this turn"
         DESCENDED -> "the number of times ${player.description} descended this turn"
         CARDS_DRAWN -> "the number of cards ${player.description} have drawn this turn"
