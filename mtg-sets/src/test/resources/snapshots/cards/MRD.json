@@ -2161,6 +2161,102 @@
     "colorIdentityOverride": []
 }
 
+// Granite Shard
+{
+    "name": "Granite Shard",
+    "manaCost": "{3}",
+    "typeLine": "Artifact",
+    "oracleText": "{3}, {T} or {R}, {T}: This artifact deals 1 damage to any target.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{3}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "any target"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "AnyTarget",
+                        "id": "any target"
+                    }
+                ],
+                "descriptionOverride": "{3}, {T}: This artifact deals 1 damage to any target."
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{R}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "any target"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "AnyTarget",
+                        "id": "any target"
+                    }
+                ],
+                "descriptionOverride": "{R}, {T}: This artifact deals 1 damage to any target."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "182",
+        "rarity": "UNCOMMON",
+        "artist": "Doug Chaffee",
+        "flavorText": "It's a piece of a world the goblins have never seen but would dearly like to blow up.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/1/e197af6a-24ac-4f3b-ab3c-736f4057748b.jpg?1783944519",
+        "rulings": [
+            {
+                "date": "2004-10-04",
+                "text": "You can pay either of the two costs (but not both at the same time) to activate the ability."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Great Furnace
 {
     "name": "Great Furnace",
@@ -2223,6 +2319,52 @@
         "imageUri": "https://cards.scryfall.io/normal/front/c/4/c4ab6c59-cd0f-4c29-8e26-6882dca61fb7.jpg?1783944518"
     },
     "colorIdentityOverride": []
+}
+
+// Groffskithur
+{
+    "name": "Groffskithur",
+    "manaCost": "{5}{G}",
+    "typeLine": "Creature — Beast",
+    "oracleText": "Whenever this creature becomes blocked, you may return target card named Groffskithur from your graveyard to your hand.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "BecomesBlockedEvent",
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target card named Groffskithur from your graveyard"
+                    },
+                    "destination": "Hand"
+                },
+                "optional": true,
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "name:Groffskithur own:you",
+                        "zone": "Graveyard"
+                    },
+                    "id": "target card named Groffskithur from your graveyard"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "121",
+        "artist": "John Matson",
+        "flavorText": "It growls not to threaten, but to summon.",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/5/75e84098-c15c-40f4-9d8a-3fa5da26a268.jpg?1783944533"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
 }
 
 // Heartwood Shard
@@ -2363,6 +2505,37 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Inertia Bubble
+{
+    "name": "Inertia Bubble",
+    "manaCost": "{1}{U}",
+    "typeLine": "Enchantment — Aura",
+    "oracleText": "Enchant artifact\nEnchanted artifact doesn't untap during its controller's untap step.",
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "GrantKeyword",
+                "keyword": "DOESNT_UNTAP"
+            }
+        ],
+        "auraTarget": {
+            "type": "TargetObject",
+            "filter": {
+                "baseFilter": "artifact"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "37",
+        "artist": "Hugh Jamieson",
+        "flavorText": "\"I wouldn't want you to hurt yourself.\"\n—Bruenna, Neurok leader",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/2/72b2d227-68b3-40e8-bef7-45ea43e17318.jpg?1783944554"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 
@@ -5508,6 +5681,104 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Skeleton Shard
+{
+    "name": "Skeleton Shard",
+    "manaCost": "{3}",
+    "typeLine": "Artifact",
+    "oracleText": "{3}, {T} or {B}, {T}: Return target artifact creature card from your graveyard to your hand.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{3}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target artifact creature card from your graveyard"
+                    },
+                    "destination": "Hand"
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "artifact creature own:you",
+                            "zone": "Graveyard"
+                        },
+                        "id": "target artifact creature card from your graveyard"
+                    }
+                ],
+                "descriptionOverride": "{3}, {T}: Return target artifact creature card from your graveyard to your hand."
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{B}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target artifact creature card from your graveyard"
+                    },
+                    "destination": "Hand"
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "artifact creature own:you",
+                            "zone": "Graveyard"
+                        },
+                        "id": "target artifact creature card from your graveyard"
+                    }
+                ],
+                "descriptionOverride": "{B}, {T}: Return target artifact creature card from your graveyard to your hand."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "242",
+        "rarity": "UNCOMMON",
+        "artist": "Doug Chaffee",
+        "flavorText": "Metal permeates the marrow of every bone in Mephidross—except one.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/e/eeffcd61-ea1f-4ccd-b3d3-79efa9d4a0cf.jpg?1783944504",
+        "rulings": [
+            {
+                "date": "2004-10-04",
+                "text": "You can pay either of the two costs (but not both at the same time) to activate the ability."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 
