@@ -368,12 +368,12 @@ object DamageUtils {
                 // source's controller, so "whenever you put counters" triggers see them as yours.
                 events.add(CountersAddedEvent(targetId, CounterType.MINUS_ONE_MINUS_ONE.name, effectiveAmount,
                     newState.getEntity(targetId)?.get<CardComponent>()?.name ?: "Creature",
-                    placedBy = sourceId?.let { newState.projectedState.getController(it) }))
+                    placedBy = newState.projectedState.getController(sourceId)))
                 // Wither only changes the FORM of the damage (CR 702.80a); the creature was still
                 // dealt damage by this source, so a deathtouch source still marks it for
                 // destruction as an SBA (CR 702.2b / 704.5h) even though nothing is marked as
                 // normal damage. Record the deathtouch flag without marking damage.
-                if (sourceId != null && projected.hasKeyword(sourceId, Keyword.DEATHTOUCH)) {
+                if (projected.hasKeyword(sourceId, Keyword.DEATHTOUCH)) {
                     newState = newState.updateEntity(targetId) { container ->
                         val existing = container.get<DamageComponent>()
                         container.with(DamageComponent(

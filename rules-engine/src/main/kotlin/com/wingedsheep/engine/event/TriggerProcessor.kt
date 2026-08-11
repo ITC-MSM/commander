@@ -1111,7 +1111,7 @@ class TriggerProcessor(
             val soleLegal = legalTargetsMap[0].orEmpty()
             val isPlayerTarget = soleReq is com.wingedsheep.sdk.scripting.targets.TargetPlayer ||
                 soleReq is com.wingedsheep.sdk.scripting.targets.TargetOpponent
-            if (isPlayerTarget && soleLegal.size == 1 && soleReq!!.count == 1) {
+            if (isPlayerTarget && soleLegal.size == 1 && soleReq.count == 1) {
                 targetsAccum = targetsAccum + listOf(listOf(createChosenTarget(state, soleLegal.first())))
                 ordinal++
                 continue

@@ -643,7 +643,7 @@ internal class AttackPhaseManager(
         if (state.projectedState.mustAttack(attackerId)) return true
         return state.grantedStaticAbilities.any {
             it.entityId == attackerId && it.ability is MustAttack &&
-                (it.ability as MustAttack).filter.scope is Scope.Self
+                it.ability.filter.scope is Scope.Self
         }
     }
 

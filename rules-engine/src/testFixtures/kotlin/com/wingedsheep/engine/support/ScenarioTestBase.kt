@@ -1097,7 +1097,7 @@ abstract class ScenarioTestBase : FunSpec() {
          * Check if a card with the given name is in a player's sideboard ("outside the game").
          */
         fun isInSideboard(playerNumber: Int, cardName: String): Boolean {
-            val playerId = if (playerNumber == 1) player1Id!! else player2Id!!
+            val playerId = if (playerNumber == 1) player1Id else player2Id
             return state.getZone(playerId, Zone.SIDEBOARD).any { entityId ->
                 state.getEntity(entityId)?.get<CardComponent>()?.name == cardName
             }
@@ -1105,7 +1105,7 @@ abstract class ScenarioTestBase : FunSpec() {
 
         /** Number of cards in a player's sideboard. */
         fun sideboardSize(playerNumber: Int): Int {
-            val playerId = if (playerNumber == 1) player1Id!! else player2Id!!
+            val playerId = if (playerNumber == 1) player1Id else player2Id
             return state.getZone(playerId, Zone.SIDEBOARD).size
         }
 
@@ -1113,7 +1113,7 @@ abstract class ScenarioTestBase : FunSpec() {
          * Check if a card with the given name is in a player's exile zone.
          */
         fun isInExile(playerNumber: Int, cardName: String): Boolean {
-            val playerId = if (playerNumber == 1) player1Id!! else player2Id!!
+            val playerId = if (playerNumber == 1) player1Id else player2Id
             return state.getExile(playerId).any { entityId ->
                 state.getEntity(entityId)?.get<CardComponent>()?.name == cardName
             }

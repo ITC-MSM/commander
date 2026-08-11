@@ -38,7 +38,7 @@ class TapAtomTest : ScenarioTestBase() {
 
             newState.getEntity(wurm)?.has<TappedComponent>() shouldBe true
             event.shouldBeInstanceOf<TappedEvent>()
-            event!!.entityId shouldBe wurm
+            event.entityId shouldBe wurm
         }
 
         test("tap() attributes the tap to the permanent's controller by default") {

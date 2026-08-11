@@ -8,6 +8,7 @@ import com.wingedsheep.engine.support.TestCards
 import com.wingedsheep.mtg.sets.definitions.ecl.cards.CinderStrike
 import com.wingedsheep.mtg.sets.definitions.ecl.cards.EvershrikesGift
 import com.wingedsheep.sdk.core.Step
+import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
@@ -25,7 +26,7 @@ class BlightPaymentAiTest : FunSpec({
         val gift = driver.putCardInGraveyard(player, "Evershrike's Gift")
         val creature = driver.putCreatureOnBattlefield(player, "Force of Nature")
         repeat(2) { driver.putLandOnBattlefield(player, "Plains") }
-        val abilityId = EvershrikesGift.activatedAbilities.first { it.activateFromZone != null }.id
+        val abilityId = EvershrikesGift.activatedAbilities.first { it.activateFromZone == Zone.GRAVEYARD }.id
         val legal = LegalActionEnumerator.create(driver.cardRegistry).enumerate(driver.state, player)
             .single { (it.action as? ActivateAbility)?.abilityId == abilityId }
 

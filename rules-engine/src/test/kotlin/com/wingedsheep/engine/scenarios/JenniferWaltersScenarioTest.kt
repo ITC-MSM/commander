@@ -187,7 +187,7 @@ class JenniferWaltersScenarioTest : ScenarioTestBase() {
                         is ChooseTargetsDecision -> game.selectTargets(listOf(game.player2Id))
                         is YesNoDecision -> {
                             decision.hint.shouldNotBeNull()
-                            hints += decision.hint!!
+                            hints += decision.hint
                             game.answerYesNo(false)
                         }
                         null -> {

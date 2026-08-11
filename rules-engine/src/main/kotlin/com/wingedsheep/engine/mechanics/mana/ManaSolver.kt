@@ -1417,7 +1417,7 @@ class ManaSolver(
                 // (never happens for the two real cards, but keep it sound) the extra colored
                 // leaf still needs `producesColors` non-empty so its color is spendable.
                 if (extraBonusColor != null && combinedColors.isEmpty()) {
-                    combinedColors.add(extraBonusColor!!)
+                    combinedColors.add(extraBonusColor)
                     extraBonusColor = null
                     extraBonusAmount = maxOf(0, extraBonusAmount - 1)
                 }

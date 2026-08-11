@@ -486,7 +486,7 @@ class CostPaymentService(private val services: EngineServices) {
             // auto-tap path (ActivateAbilityHandler.autoTapForManaCost).
             for (source in solution.sources) {
                 if (source.bonusManaPerTap > 0 && source.bonusManaColor != null) {
-                    combined = combined.add(source.bonusManaColor!!, source.bonusManaPerTap)
+                    combined = combined.add(source.bonusManaColor, source.bonusManaPerTap)
                 }
             }
         }

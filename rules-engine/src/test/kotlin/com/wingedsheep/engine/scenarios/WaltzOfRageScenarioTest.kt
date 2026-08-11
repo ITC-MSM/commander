@@ -39,7 +39,7 @@ class WaltzOfRageScenarioTest : ScenarioTestBase() {
                     game.findAllPermanents("Grizzly Bears").size shouldBe 0
                 }
                 withClue("Player 1's creature death triggered the delayed impulse-draw to exile") {
-                    game.state.getExile(game.player1Id!!).size shouldBeGreaterThanOrEqual 1
+                    game.state.getExile(game.player1Id).size shouldBeGreaterThanOrEqual 1
                 }
             }
         }

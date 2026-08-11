@@ -410,13 +410,6 @@ class MaralenFaeAscendantScenarioTest : ScenarioTestBase() {
         }
     }
 
-    private fun TestGame.isInExile(playerNumber: Int, cardName: String): Boolean {
-        val playerId = if (playerNumber == 1) player1Id else player2Id
-        return state.getExile(playerId).any { entityId ->
-            state.getEntity(entityId)?.get<CardComponent>()?.name == cardName
-        }
-    }
-
     private fun findCardInExile(game: TestGame, playerNumber: Int, cardName: String): EntityId? {
         val playerId = if (playerNumber == 1) game.player1Id else game.player2Id
         return game.state.getExile(playerId).find { entityId ->

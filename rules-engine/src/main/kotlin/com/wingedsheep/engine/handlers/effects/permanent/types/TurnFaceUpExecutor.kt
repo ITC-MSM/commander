@@ -67,7 +67,7 @@ class TurnFaceUpExecutor(
                         revealingPlayerId = controllerId,
                         cardIds = listOf(targetId),
                         cardNames = listOf(cardName),
-                        imageUris = listOf(cardComponent?.imageUri),
+                        imageUris = listOf(cardComponent.imageUri),
                         source = "Turned face up (stays face down — not a creature card)"
                     )
                 )

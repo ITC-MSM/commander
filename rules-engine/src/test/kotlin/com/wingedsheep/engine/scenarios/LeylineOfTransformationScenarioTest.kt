@@ -367,7 +367,7 @@ class LeylineOfTransformationScenarioTest : FunSpec({
         var sawCreatureTypeChoice = false
         var steps = 0
         while (state.pendingDecision != null && steps++ < 10) {
-            val decision = state.pendingDecision!!
+            val decision = state.pendingDecision
             val response = when (decision) {
                 is YesNoDecision -> YesNoResponse(decision.id, true)
                 is ChooseOptionDecision -> {

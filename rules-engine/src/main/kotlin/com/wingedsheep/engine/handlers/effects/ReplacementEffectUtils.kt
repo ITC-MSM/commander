@@ -82,7 +82,6 @@ object ReplacementEffectUtils {
                 val placedByYouOnly = when (effect) {
                     is ModifyCounterPlacement -> effect.placedByYou
                     is DoubleCounterPlacement -> effect.placedByYou
-                    else -> false
                 }
                 if (placedByYouOnly && placerId != sourceControllerId) continue
 
