@@ -167,7 +167,7 @@ class ModalDfcPermanentBackTest : ScenarioTestBase() {
 
             val castEvent = result.events.filterIsInstance<SpellCastEvent>().firstOrNull()
             castEvent.shouldNotBeNull()
-            castEvent!!.manaValue shouldBe 2
+            castEvent.manaValue shouldBe 2
             game.state.spellsCastThisTurnByPlayer[game.player1Id]!!.last().manaValue shouldBe 2
         }
 

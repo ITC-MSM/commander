@@ -32,7 +32,7 @@ class PeerPastTheVeilScenarioTest : ScenarioTestBase() {
                     .build()
 
                 withClue("Graveyard starts with 3 cards (creature, instant, land)") {
-                    game.state.getGraveyard(game.player1Id!!).size shouldBe 3
+                    game.state.getGraveyard(game.player1Id).size shouldBe 3
                 }
 
                 game.castSpell(1, "Peer Past the Veil").error shouldBe null
@@ -42,7 +42,7 @@ class PeerPastTheVeilScenarioTest : ScenarioTestBase() {
                 // Peer Past the Veil itself reaches the graveyard as an instant (already present). So the
                 // card types among graveyard cards = {creature, instant, land} = 3, and 3 cards are drawn.
                 withClue("Hand was discarded then refilled with 3 drawn cards (X = 3 card types)") {
-                    game.state.getHand(game.player1Id!!).size shouldBe 3
+                    game.state.getHand(game.player1Id).size shouldBe 3
                 }
                 withClue("Discarded Grizzly Bears are now in the graveyard") {
                     game.isInGraveyard(1, "Grizzly Bears") shouldBe true

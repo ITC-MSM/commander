@@ -415,7 +415,7 @@ class WebSlingingTest : FunSpec({
         driver.bothPass()
         val trig = driver.getTopOfStack()
         trig.shouldNotBeNull()
-        driver.state.getEntity(trig!!)?.get<TriggeredAbilityOnStackComponent>().shouldNotBeNull()
+        driver.state.getEntity(trig)?.get<TriggeredAbilityOnStackComponent>().shouldNotBeNull()
 
         // Counter the triggered ability with the Spider-Sense-style spell.
         driver.giveMana(player, Color.BLUE, 1)
@@ -447,7 +447,7 @@ class WebSlingingTest : FunSpec({
             .isSuccess shouldBe true
         val abilityOnStack = driver.getTopOfStack()
         abilityOnStack.shouldNotBeNull()
-        driver.state.getEntity(abilityOnStack!!)?.get<ActivatedAbilityOnStackComponent>().shouldNotBeNull()
+        driver.state.getEntity(abilityOnStack)?.get<ActivatedAbilityOnStackComponent>().shouldNotBeNull()
 
         // The narrow filter admits triggered abilities but not activated ones, so this target is illegal.
         val counter = driver.putCardInHand(player, "Sense Mirror")

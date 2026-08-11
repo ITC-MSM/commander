@@ -14,8 +14,8 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.annotation.Primary
 import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.stereotype.Component
+import java.time.Duration
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.TimeUnit
 
 /**
  * Redis-backed implementation of GameRepository.
@@ -63,8 +63,7 @@ class RedisGameRepository(
             redisTemplate.opsForValue().set(
                 gameKey(gameSession.sessionId),
                 json,
-                redisProperties.ttlMinutes,
-                TimeUnit.MINUTES
+                Duration.ofMinutes(redisProperties.ttlMinutes)
             )
             logger.debug("Persisted game session ${gameSession.sessionId} to Redis")
         } catch (e: Exception) {
@@ -124,8 +123,7 @@ class RedisGameRepository(
             redisTemplate.opsForValue().set(
                 lobbyLinkKey(gameSessionId),
                 lobbyId,
-                redisProperties.ttlMinutes,
-                TimeUnit.MINUTES
+                Duration.ofMinutes(redisProperties.ttlMinutes)
             )
         } catch (e: Exception) {
             logger.error("Failed to persist lobby link for game $gameSessionId", e)

@@ -168,7 +168,7 @@ class EmergeKeywordTest : FunSpec({
 
         val emerge = actions.firstOrNull { la ->
             (la.action as? CastSpell)?.cardId == gryff &&
-                (la.action as? CastSpell)?.alternativeCostType == AlternativeCostType.EMERGE
+                la.action.alternativeCostType == AlternativeCostType.EMERGE
         }
         emerge shouldNotBe null
         emerge!!.actionType shouldBe "CastWithAlternativeCost"
@@ -190,7 +190,7 @@ class EmergeKeywordTest : FunSpec({
         val actions = enumerator.enumerate(driver.state, player, EnumerationMode.FULL)
         val emerge = actions.first { la ->
             (la.action as? CastSpell)?.cardId == gryff &&
-                (la.action as? CastSpell)?.alternativeCostType == AlternativeCostType.EMERGE
+                la.action.alternativeCostType == AlternativeCostType.EMERGE
         }
 
         val costs = emerge.additionalCostInfo!!.costAfterSacrifice
@@ -221,7 +221,7 @@ class EmergeKeywordTest : FunSpec({
 
         actions.none { la ->
             (la.action as? CastSpell)?.cardId == gryff &&
-                (la.action as? CastSpell)?.alternativeCostType == AlternativeCostType.EMERGE
+                la.action.alternativeCostType == AlternativeCostType.EMERGE
         } shouldBe true
     }
 
@@ -237,7 +237,7 @@ class EmergeKeywordTest : FunSpec({
 
         actions.none { la ->
             (la.action as? CastSpell)?.cardId == gryff &&
-                (la.action as? CastSpell)?.alternativeCostType == AlternativeCostType.EMERGE
+                la.action.alternativeCostType == AlternativeCostType.EMERGE
         } shouldBe true
     }
 
@@ -255,7 +255,7 @@ class EmergeKeywordTest : FunSpec({
         val actions = enumerator.enumerate(driver.state, player, EnumerationMode.FULL)
         fun emergeFor(cardId: com.wingedsheep.sdk.model.EntityId) = actions.any { la ->
             (la.action as? CastSpell)?.cardId == cardId &&
-                (la.action as? CastSpell)?.alternativeCostType == AlternativeCostType.EMERGE
+                la.action.alternativeCostType == AlternativeCostType.EMERGE
         }
 
         emergeFor(gryff) shouldBe false

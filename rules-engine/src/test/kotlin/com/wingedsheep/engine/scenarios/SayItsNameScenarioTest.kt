@@ -71,7 +71,7 @@ class SayItsNameScenarioTest : ScenarioTestBase() {
 
                 val result = game.execute(
                     ActivateAbility(
-                        playerId = game.player1Id!!,
+                        playerId = game.player1Id,
                         sourceId = sourceId,
                         abilityId = abilityId,
                         costPayment = AdditionalCostPayment(exiledCards = copies)
@@ -91,7 +91,7 @@ class SayItsNameScenarioTest : ScenarioTestBase() {
                 // cost is still paid: all three Say Its Name copies are exiled from the graveyard.
                 withClue("All three Say Its Name copies were exiled to pay the cost") {
                     game.findCardsInGraveyard(1, "Say Its Name").size shouldBe 0
-                    game.state.getExile(game.player1Id!!).size shouldBeGreaterThanOrEqual 3
+                    game.state.getExile(game.player1Id).size shouldBeGreaterThanOrEqual 3
                 }
             }
         }

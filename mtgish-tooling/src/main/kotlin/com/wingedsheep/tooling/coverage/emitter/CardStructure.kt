@@ -3704,7 +3704,7 @@ internal fun EmitCtx.asEntersBlock(rule: JsonObject, condition: String? = null):
                 val condDsl = singleInterveningIfDsl(cond) ?: run { reasons.add("AsPermanentEnters"); return null }
                 // Rebuild an AsPermanentEnters node carrying the inner replacements, preserving the same
                 // scope permanent (first arg), and render it with the recovered condition.
-                val scopePermanent = rule["args"].asArr?.getOrNull(0) as? JsonElement
+                val scopePermanent = rule["args"].asArr?.getOrNull(0)
                     ?: run { reasons.add("AsPermanentEnters"); return null }
                 val synthetic = buildJsonObject {
                     put("_Rule", JsonPrimitive("AsPermanentEnters"))

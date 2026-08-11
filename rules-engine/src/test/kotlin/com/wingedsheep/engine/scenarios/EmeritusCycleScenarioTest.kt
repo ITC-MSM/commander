@@ -89,7 +89,6 @@ class EmeritusCycleScenarioTest : ScenarioTestBase() {
                     cast shouldNotBe null
                     (cast!!.action as CastSpell).faceIndex shouldBe 0
                     cast.manaCostString shouldBe "{R}"
-                    Unit
                 }
             }
         }
@@ -331,7 +330,6 @@ class EmeritusCycleScenarioTest : ScenarioTestBase() {
                 withClue("Demonic Tutor copy is offered from exile for {1}{B}") {
                     cast shouldNotBe null
                     cast!!.manaCostString shouldBe "{1}{B}"
-                    Unit
                 }
             }
         }
