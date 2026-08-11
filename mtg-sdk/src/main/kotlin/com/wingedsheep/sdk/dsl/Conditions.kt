@@ -45,6 +45,7 @@ import com.wingedsheep.sdk.scripting.conditions.PlayerAttackedWithCreaturesThisT
 import com.wingedsheep.sdk.scripting.conditions.PlayerCastSpellsThisTurn
 import com.wingedsheep.sdk.scripting.conditions.PlayerCommittedCrimeThisTurn
 import com.wingedsheep.sdk.scripting.conditions.PlayerHasCitysBlessing
+import com.wingedsheep.sdk.scripting.conditions.PlayerHasEnduringStory
 import com.wingedsheep.sdk.scripting.conditions.RingHasTemptedPlayerAtLeast
 import com.wingedsheep.sdk.scripting.references.Player
 import com.wingedsheep.sdk.scripting.values.Aggregation
@@ -1798,6 +1799,17 @@ object Conditions {
      */
     val YouHaveCitysBlessing: ConditionInterface =
         PlayerHasCitysBlessing(Player.You)
+
+    /**
+     * If you have an enduring story (The Hobbit, CR 702.195).
+     *
+     * Gained from the **storied** keyword once you control three or more permanents that are
+     * artifacts, Sagas, and/or legendary; once gained, never lost for the rest of the game. This is
+     * the gate every storied card's payoff half hangs on — see
+     * [com.wingedsheep.sdk.dsl.storied].
+     */
+    val YouHaveEnduringStory: ConditionInterface =
+        PlayerHasEnduringStory(Player.You)
 
     // =========================================================================
     // Speed (Aetherdrift, CR 702.178–702.179)

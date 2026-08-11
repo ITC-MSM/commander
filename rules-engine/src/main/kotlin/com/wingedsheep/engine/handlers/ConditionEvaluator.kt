@@ -137,6 +137,7 @@ import com.wingedsheep.sdk.scripting.conditions.PermanentTypeEnteredBattlefieldT
 import com.wingedsheep.sdk.scripting.conditions.PlayerCastSpellsThisTurn
 import com.wingedsheep.sdk.scripting.conditions.PlayerCommittedCrimeThisTurn
 import com.wingedsheep.sdk.scripting.conditions.PlayerHasCitysBlessing
+import com.wingedsheep.sdk.scripting.conditions.PlayerHasEnduringStory
 import com.wingedsheep.sdk.scripting.conditions.PlayerHasMostLife
 import com.wingedsheep.sdk.scripting.conditions.TriggeringPlayerIs
 import com.wingedsheep.sdk.scripting.conditions.RingHasTemptedPlayerAtLeast
@@ -153,6 +154,7 @@ import com.wingedsheep.engine.state.components.identity.ForetoldComponent
 import com.wingedsheep.sdk.scripting.conditions.YouWereAttackedThisStep
 import com.wingedsheep.sdk.scripting.conditions.VoidCondition
 import com.wingedsheep.engine.mechanics.citysblessing.CitysBlessingService
+import com.wingedsheep.engine.mechanics.enduringstory.EnduringStoryService
 import com.wingedsheep.engine.state.components.player.TheRingComponent
 
 /**
@@ -431,6 +433,7 @@ class ConditionEvaluator(
                 count > 0
             }
             is PlayerHasCitysBlessing -> evaluateHasCitysBlessingCtx(state, condition, ctx)
+            is PlayerHasEnduringStory -> evaluateHasEnduringStoryCtx(state, condition, ctx)
 
             is TriggeringPlayerIs -> {
                 val triggeringPlayer = resolvePlayer(state, Player.TriggeringPlayer, ctx)
@@ -1089,6 +1092,21 @@ class ConditionEvaluator(
         // projection-mode caller — Tendershoot Dryad's city's-blessing static gate — from
         // re-entering the lazy projection initializer. See CitysBlessingService.
         return CitysBlessingService.has(state, playerId, ctx.projectedStateFor(state))
+    }
+
+    private fun evaluateHasEnduringStoryCtx(
+        state: GameState,
+        condition: PlayerHasEnduringStory,
+        ctx: ConditionEvaluationContext
+    ): Boolean {
+        val playerId = resolvePlayer(state, condition.player, ctx) ?: return false
+        // Same shape and same two reasons as the city's blessing read above: CR 702.195a's storied is
+        // continuous, so a player who has just crossed three qualifying permanents mid-resolution
+        // already has the enduring story before the state-based action writes the marker; and the ctx
+        // projection (not state.projectedState) is what keeps the projection-mode callers — every
+        // storied card's "as long as you have an enduring story" static gate — from re-entering the
+        // lazy projection initializer. See EnduringStoryService.
+        return EnduringStoryService.has(state, playerId, ctx.projectedStateFor(state))
     }
 
     private fun evaluatePermanentTypeEnteredBattlefieldThisTurnCtx(

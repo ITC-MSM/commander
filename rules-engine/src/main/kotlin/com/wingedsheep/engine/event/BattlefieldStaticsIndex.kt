@@ -1,5 +1,7 @@
 package com.wingedsheep.engine.event
 
+import com.wingedsheep.engine.handlers.ConditionEvaluator
+import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.battlefield.AttachedToComponent
@@ -8,6 +10,7 @@ import com.wingedsheep.engine.state.components.battlefield.SuppressesWardForGrou
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.FaceDownComponent
 import com.wingedsheep.sdk.model.EntityId
+import com.wingedsheep.sdk.scripting.ConditionalStaticAbility
 import com.wingedsheep.sdk.scripting.GrantTriggeredAbility
 import com.wingedsheep.sdk.scripting.GrantWard
 import com.wingedsheep.sdk.scripting.filters.unified.Scope
@@ -73,6 +76,8 @@ class BattlefieldStaticsIndex private constructor(
         val EMPTY = BattlefieldStaticsIndex(emptyList(), emptyList(), emptyList(), emptyMap())
 
         fun build(state: GameState, cardRegistry: CardRegistry): BattlefieldStaticsIndex {
+            // Reused across the whole walk; ConditionEvaluator is stateless.
+            val conditionEvaluator = ConditionEvaluator()
             var triggerGrants: MutableList<TriggerIndex.GrantProviderEntry>? = null
             var wardGrants: MutableList<WardGrantProvider>? = null
             var suppressors: MutableList<WardSuppressor>? = null
@@ -115,6 +120,28 @@ class BattlefieldStaticsIndex private constructor(
                         ability is GrantWard && ability.filter.scope is Scope.Battlefield ->
                             (wardGrants ?: mutableListOf<WardGrantProvider>().also { wardGrants = it })
                                 .add(WardGrantProvider(permanentId, ability, sourceControllerId))
+
+                        // "As long as <condition>, <group> have ward <cost>" (Thorin Oakenshield's
+                        // enduring-story ward). The layer system already projects the WARD keyword
+                        // through the ConditionalStaticAbility wrapper, but the *trigger* is built
+                        // here from the raw static list — so without this branch the badge appears
+                        // and nothing ever triggers, which is the worse of the two failure modes.
+                        // Mirrors the AttachedTo-scope unwrap in
+                        // `TriggerAbilityResolver.getAttachedWardTriggeredAbilities`, gate and all.
+                        ability is ConditionalStaticAbility -> {
+                            val grant = ability.ability
+                            if (grant is GrantWard && grant.filter.scope is Scope.Battlefield) {
+                                val context = EffectContext(
+                                    sourceId = permanentId,
+                                    controllerId = sourceControllerId,
+                                )
+                                if (conditionEvaluator.evaluate(state, ability.condition, context)) {
+                                    (wardGrants
+                                        ?: mutableListOf<WardGrantProvider>().also { wardGrants = it })
+                                        .add(WardGrantProvider(permanentId, grant, sourceControllerId))
+                                }
+                            }
+                        }
                     }
                 }
             }

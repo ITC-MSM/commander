@@ -237,6 +237,8 @@ export enum Keyword {
   ENDURING = 'ENDURING',
   // Resolution-time city's blessing grant (Ixalan)
   ASCEND = 'ASCEND',
+  // Enduring-story designation off three artifacts/Sagas/legendaries (The Hobbit)
+  STORIED = 'STORIED',
   // Player speed 0–4 (Aetherdrift): the keyword that starts it, and the gate at 4
   START_YOUR_ENGINES = 'START_YOUR_ENGINES',
   MAX_SPEED = 'MAX_SPEED',
@@ -325,6 +327,7 @@ export const KeywordDisplayNames: Record<Keyword, string> = {
   [Keyword.UNDYING]: 'Undying',
   [Keyword.ENDURING]: 'Enduring',
   [Keyword.ASCEND]: 'Ascend',
+  [Keyword.STORIED]: 'Storied',
   [Keyword.START_YOUR_ENGINES]: 'Start your engines!',
   [Keyword.MAX_SPEED]: 'Max speed',
   [Keyword.DECAYED]: 'Decayed',

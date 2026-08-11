@@ -8,6 +8,7 @@ object SbaOrder {
     const val DAY_NIGHT = 40                 // 702.145c/d/f/g (daybound/nightbound designation + transform)
     const val START_YOUR_ENGINES = 50       // 704.5z (Aetherdrift speed)
     const val ASCEND_CITYS_BLESSING = 60    // 702.131b (ascend on a permanent is a static ability)
+    const val STORIED_ENDURING_STORY = 70   // 702.195a (storied is a static ability)
     const val PLAYER_LIFE_LOSS = 100        // 704.5a
     const val COMMANDER_DAMAGE_LOSS = 150   // 704.5c (Commander format)
     const val POISON_LOSS = 200             // 704.5b

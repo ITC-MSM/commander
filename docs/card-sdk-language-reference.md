@@ -6542,7 +6542,7 @@ Flying, Menace, Intimidate, Fear, Shadow, Horsemanship, all basic landwalks (Pla
 `LandwalkRule` checks `typeLine.isLand && !isBasicLand`; Trailblazer's Boots), First Strike, Double
 Strike, Trample, Deathtouch, Lifelink, Vigilance, Reach, Provoke, Defender, Indestructible, Hexproof, Shroud, Haste,
 Flash, Prowess, Flurry, Changeling, Convoke, Delve, Affinity, Emerge, Storm, Flashback, Harmonize, Mayhem, Disturb, Evoke, Sneak, Ninjutsu, Web-slinging, Impending, Conspire, Casualty, Miracle, Hideaway, Cascade, Plot,
-Offspring, Persist, Undying, Enduring, Ascend, Start your engines!, Max speed, Wither, Toxic, Eerie, Vivid, Fateful Bite, Exploit, Soulbond, Daybound, Nightbound, … (display-only — engine effect lives in handlers or
+Offspring, Persist, Undying, Enduring, Ascend, Storied, Start your engines!, Max speed, Wither, Toxic, Eerie, Vivid, Fateful Bite, Exploit, Soulbond, Daybound, Nightbound, … (display-only — engine effect lives in handlers or
 composite abilities).
 
 **Parameterized `KeywordAbility.*`**
@@ -7443,6 +7443,7 @@ answer it and would silently return `false`.
   long as enchanted permanent is red or green…", `GameObjectFilter.Permanent.withAnyColor(Color.RED,
   Color.GREEN)`).
 - `YouHaveCitysBlessing` — you have City's Blessing (10+ permanents).
+- `YouHaveEnduringStory` — you have an enduring story (storied: 3+ artifacts/Sagas/legendaries).
 - `SourceIsRingBearer` — the source permanent is your Ring-bearer (CR 701.54e).
 - `YouChoseOtherCreatureAsRingBearer` — intervening-if for `Triggers.RingTemptsYou` payoffs that fire
   only when the controller chose a Ring-bearer other than the source (CR 701.54a). True iff the
@@ -7759,6 +7760,7 @@ default to "you" so card authors don't need to pass it explicitly.
   (stamped in the turn-face-up handler), both cleared at the turn boundary. Compose with `Conditions.Not` /
   `Conditions.Any` for the "unless A or B" rider.
 - `YouHaveCitysBlessing` — Ascend gate. Backed by `PlayerHasCitysBlessing(Player.You)`.
+- `YouHaveEnduringStory` — storied gate (CR 702.195). Backed by `PlayerHasEnduringStory(Player.You)`.
 - `YouHaveMaxSpeed` / `HasMaxSpeed(player)` — "your speed is 4" (CR 702.179e), the gate the
   `maxSpeed { }` block applies. `SpeedBelowMax(player)` is the complement used by the inherent speed
   trigger's intervening-if. All three are plain `Compare` over `DynamicAmount.Speed`, so they need no
@@ -9874,6 +9876,31 @@ Card authors rarely reference these directly; they are created/updated by the ma
   condition *live* — that is what makes "create a token, then if you have the city's blessing…" come out
   right when the token itself is your tenth permanent (Ocelot Pride), since state-based actions aren't
   polled mid-resolution.
+- **Storied / Enduring Story** (The Hobbit, CR 702.195) — the same shape as ascend-on-a-permanent, with a
+  different threshold, and authored the same way: `storied()` adds `Keyword.STORIED` and nothing else,
+  because 702.195a is a *static* ability ("**any time** you control three or more permanents that are
+  artifacts, Sagas, and/or legendary…") handled by the engine's `StoriedEnduringStoryCheck` state-based
+  action. There is no spell-ability form — storied only ever appears on permanents — so unlike the city's
+  blessing there is no grant *effect*, only the SBA.
+
+  ```kotlin
+  storied()
+  staticAbility {                                       // "As long as you have an enduring story, …"
+      ability = ConditionalStaticAbility(
+          ability = GrantKeyword(Keyword.VIGILANCE, GroupFilter.source()),
+          condition = Conditions.YouHaveEnduringStory
+      )
+  }
+  ```
+
+  Read it back with `Conditions.YouHaveEnduringStory` (backed by `PlayerHasEnduringStory(Player.You)`);
+  the marker is `PlayerEnduringStoryComponent` and is never removed (702.195a, "for the rest of the
+  game"). Read and write both go through `EnduringStoryService`, which evaluates the storied condition
+  *live* for the same mid-resolution reason as `CitysBlessingService`. Two things the count gets right and
+  a hand-rolled one usually doesn't: the three categories are a **union over permanents**, so a legendary
+  artifact is one qualifying permanent rather than two; and the whole scan reads *projected* state, so a
+  granted storied, an animated artifact, or a stolen permanent all count for the right player. First
+  users: Ori, Keeper of Songs; Óin the Brave; Thorin Oakenshield.
 - **Speed / Start your engines! / Max speed** (Aetherdrift, CR 702.178–702.179) — a player's speed is
   an `Int` 0–4 (`Speed.NONE` / `Speed.STARTING` / `Speed.MAX` in `core/Speed.kt`) held by
   `PlayerSpeedComponent`. It only ever rises, is clamped at 4, and is never removed — like the city's

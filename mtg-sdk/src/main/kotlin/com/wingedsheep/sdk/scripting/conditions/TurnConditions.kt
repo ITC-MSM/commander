@@ -626,6 +626,28 @@ data class PlayerHasCitysBlessing(val player: Player = Player.You) : Condition {
     override val description: String = "if ${player.description} has the city's blessing"
 }
 
+// =============================================================================
+// Enduring story (The Hobbit, CR 702.195)
+// =============================================================================
+
+/**
+ * Intervening-if / static condition: "if [player] has an enduring story".
+ *
+ * Enduring story is a permanent player designation (CR 702.195b) gained from the **storied** keyword
+ * once its controller controls three or more permanents that are artifacts, Sagas, and/or legendary,
+ * and never lost thereafter. The designation is the sole payoff hook the storied cards read — every
+ * one of them is shaped "As long as you have an enduring story, …".
+ *
+ * The `Conditions.YouHaveEnduringStory` DSL constant passes [Player.You], resolved to the source's
+ * controller in both resolution and static-ability (projection) contexts, so it works equally as a
+ * [ConditionalStaticAbility] gate (Ori, Keeper of Songs) and as a resolution-time check.
+ */
+@SerialName("PlayerHasEnduringStory")
+@Serializable
+data class PlayerHasEnduringStory(val player: Player = Player.You) : Condition {
+    override val description: String = "if ${player.description} has an enduring story"
+}
+
 /**
  * Intervening-if / resolution condition: "if the Ring has tempted [player] [times] or more times
  * this game" (CR 701.54).

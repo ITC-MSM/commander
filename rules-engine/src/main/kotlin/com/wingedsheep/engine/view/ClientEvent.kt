@@ -1341,6 +1341,7 @@ is PermanentsSacrificedEvent -> {
             is LibraryReorderedEvent,
             is KeywordGrantedEvent,
             is CitysBlessingGainedEvent,
+            is EnduringStoryGainedEvent,
             is MaximumHandSizeRemovedEvent,
             is MaximumHandSizeReducedEvent,
             is RingTemptedEvent,

@@ -690,6 +690,17 @@ data class CantCastFromNonHandZonesComponent(
 data object PlayerCitysBlessingComponent : Component
 
 /**
+ * Marks a player as having an enduring story (The Hobbit, CR 702.195b).
+ *
+ * Written by the **storied** state-based action once its controller controls three or more permanents
+ * that are artifacts, Sagas, and/or legendary. Like [PlayerCitysBlessingComponent] — and for the same
+ * reason, CR 702.195a's "for the rest of the game" — the designation is never removed once granted,
+ * so this component has no `removeOn` field and cleanup never touches it.
+ */
+@Serializable
+data object PlayerEnduringStoryComponent : Component
+
+/**
  * Marks a player as having no maximum hand size for the rest of the game.
  *
  * Conferred by resolution effects like Wisdom of Ages ("You have no maximum hand size for the

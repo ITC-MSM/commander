@@ -478,6 +478,23 @@ enum class Keyword(val displayName: String) {
     ASCEND("Ascend"),
 
     /**
+     * Storied (The Hobbit, CR 702.195a). A static ability: "Any time you control three or more
+     * permanents that are artifacts, Sagas, and/or legendary and you don't have an enduring story,
+     * you have an enduring story for the rest of the game."
+     *
+     * Load-bearing rather than display-only, and for the same reason as [START_YOUR_ENGINES]: the
+     * engine's `StoriedEnduringStoryCheck` state-based action scans *projected* battlefield
+     * permanents for this keyword, so granting storied at runtime works and stealing a storied
+     * permanent hands the designation to its new controller. Add it with the `storied()` helper on
+     * [com.wingedsheep.sdk.dsl.CardBuilder]; read it back with
+     * [com.wingedsheep.sdk.dsl.Conditions.YouHaveEnduringStory].
+     *
+     * Note the count is *not* the ascend count: three permanents each of which is an artifact, a
+     * Saga, or legendary — one permanent satisfying two of those still counts once.
+     */
+    STORIED("Storied"),
+
+    /**
      * Start your engines! (Aetherdrift, CR 702.179). "If a player controls a permanent with start
      * your engines! and that player has no speed, their speed becomes 1."
      *

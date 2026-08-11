@@ -265,6 +265,21 @@ data class CitysBlessingGainedEvent(
 ) : GameEvent
 
 /**
+ * A player gained an enduring story (The Hobbit, CR 702.195).
+ *
+ * Fired by the storied state-based action the first time its controller controls three or more
+ * permanents that are artifacts, Sagas, and/or legendary. The designation is permanent for the rest
+ * of the game (CR 702.195a), so this event fires at most once per player per game.
+ */
+@Serializable
+@SerialName("EnduringStoryGainedEvent")
+data class EnduringStoryGainedEvent(
+    val playerId: EntityId,
+    val playerName: String,
+    val sourceName: String
+) : GameEvent
+
+/**
  * A player's speed changed (Aetherdrift, CR 702.179).
  *
  * Fired both by the CR 704.5z state-based action that starts a speed at 1 ([oldSpeed] = 0) and by
