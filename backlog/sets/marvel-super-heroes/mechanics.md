@@ -6,8 +6,9 @@ keyword, or engine capability) — not pure card authoring.
 
 Scope: the 276 booster cards (collector numbers 1–276). Triaged against the SDK on 2026-08-04,
 updated 2026-08-07 after **power-up** and the **per-turn effect budget** shipped, 2026-08-08
-after **teamwork** shipped in full, and 2026-08-10 after **copy-with-exceptions** shipped.
-**29 of the 276 are blocked**; every other card is buildable from existing primitives.
+after **teamwork** shipped in full, and 2026-08-10 after **copy-with-exceptions** and
+**ward with a non-listed cost** shipped.
+**27 of the 276 are blocked**; every other card is buildable from existing primitives.
 
 Supported today and *not* a blocker despite looking like one: **power-up** (see the first section
 below — the keyword, its once-only limit and its pip-wise cost reduction all ship), **harness / ∞ abilities**
@@ -295,23 +296,47 @@ static `CantBeTargetedBySourceTypeAbilities`.
 Blocked cards: **Echo, Perceptive Prodigy** [51] (creature source) · **Scientist Supreme of A.I.M.**
 [225] (artifact source).
 
-## Ward with a non-listed cost — 2 cards ⛔
+## Ward with a non-listed cost — SHIPPED ✅ (both cards implemented)
 
-`WardCost` (`mtg-sdk/.../scripting/effects/StackEffects.kt`) has exactly six variants: `Mana`, `Life`,
-`DynamicLife`, `Discard`, `Sacrifice`, `Composite`. `Composite` is **AND** (Gisa's "Ward—{2}, Pay 2
-life"); there is no disjunction and no arbitrary-effect variant. Each addition needs a new sealed case
-plus a branch in `WardCounterEffectExecutor` (currently exhaustive) and description strings in
-`KeywordAbility.kt` / `KeywordStaticAbilities.kt` / `StackEffects.kt`:
+`WardCost` (`mtg-sdk/.../scripting/effects/StackEffects.kt`) had exactly six variants: `Mana`, `Life`,
+`DynamicLife`, `Discard`, `Sacrifice`, `Composite`, with `Composite` being **AND** (Gisa's
+"Ward—{2}, Pay 2 life"). Two variants were added 2026-08-10, each with its branch in
+`WardCounterEffectExecutor` and description strings in `KeywordAbility.kt` /
+`KeywordStaticAbilities.kt` / `StackEffects.kt`:
 
-- `WardCost.PlayerCounters(counterType, amount)` — "Ward—Get five poison counters." `Counters.POISON`
-  and player-scoped counter placement already work; only the ward-cost wrapper is missing.
-  → **The Serpent Society** [226]
-- `WardCost.Choice(options)` — "Ward—Discard a card or pay {2}", an OR-disjunction with a pick-one
-  prompt; model it on the existing `AdditionalCost.Choice`. → **Titania, Rugged Rumbler** [235]
+- **`WardCost.PlayerCounters(counterType, amount)`** — "Ward—Get five poison counters"
+  (`KeywordAbility.wardPlayerCounters(Counters.POISON, 5)`). Counters placed on the *paying* player
+  (CR 122.1), through the ordinary `AddCountersEffect` executor so replacement effects, the
+  `CountersAddedEvent` and the ten-poison state-based action (CR 122.1f) all follow for free. It is
+  the one ward cost with no affordability gate — a player can always get counters, so it always
+  prompts and never counters for inability. → **The Serpent Society** [226]
+- **`WardCost.Choice(options)`** — "Ward—Discard a card or pay {2}"
+  (`KeywordAbility.wardChoice(...)`, or the named `wardDiscardOrPay("{2}")`), the OR sibling of
+  `Composite`'s AND, modelled on `AdditionalCost.Choice` / `PayCost.Choice`. A `ChooseOptionDecision`
+  lists only the options the payer can pay plus a trailing decline; picking one charges it through
+  that cost's own ordinary flow, so the disjunction adds a picker and no payment logic.
+  → **Titania, Rugged Rumbler** [235]
 
-Both cards' other halves are already expressible (Serpent Society's deathtouch-dies edict; Titania's
-*additional cost* via `Costs.additional.DiscardOrPay("{2}")`, precedent
-`spm/cards/PumpkinBombardment.kt`).
+Two supporting pieces landed with them. `WardCost.clause` is the self-contained verb phrase for a
+cost ("discard a card", "pay {2}"), as opposed to `description`'s object phrase — a disjunction has
+to render each option with its own verb, and the three ward renderers keep supplying the verb for
+every other shape, so existing oracle text is unchanged. `WardCounterEffectExecutor.canPayWardCost`
+is now the single source of truth for "unpayable ward cost → counter without a prompt": every
+per-cost handler consults it, and `Choice` uses it to filter the options it offers.
+
+Titania carries the *same printed shape* on two rails — `Costs.additional.DiscardOrPay("{2}")` for
+the additional cost (`AdditionalCost.OrPay`, whose mana leg folds into the spell's own cost at cast
+time) and `KeywordAbility.wardDiscardOrPay("{2}")` for the ward (`WardCost.Choice`, paid standing
+alone as the trigger resolves). The facades are deliberately named to match; the types stay separate
+because the rails genuinely differ.
+
+Tests: `WardPlayerCountersTest` and `WardCostChoiceTest` (engine-level, per mechanic), plus
+`TheSerpentSocietyScenarioTest` and `TitaniaRuggedRumblerScenarioTest`.
+
+The mtgish emitter learned the disjunction (`_Cost: Or` → `KeywordAbility.wardChoice(...)`, via a new
+`wardCostExpr` leg renderer in `CardStructure.kt`); every leg must render faithfully or the whole
+ward line still declines to SCAFFOLD. The IR has no player-counter cost tag, so
+`WardCost.PlayerCounters` has nothing to map to and is not taught.
 
 ## Missing keyword counters: haste, menace — 1 card ⛔
 

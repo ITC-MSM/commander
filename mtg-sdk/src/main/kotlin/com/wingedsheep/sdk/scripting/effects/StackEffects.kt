@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.scripting.filters.unified.TargetFilter
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.scripting.targets.TargetRequirement
 import com.wingedsheep.sdk.scripting.text.TextReplacer
+import com.wingedsheep.sdk.scripting.util.numberToWord
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -414,6 +415,19 @@ sealed interface WardCost {
     val description: String
 
     /**
+     * The **self-contained verb phrase** for this cost — "pay {2}", "pay 2 life", "discard a card",
+     * "sacrifice a Food", "get five poison counters".
+     *
+     * [description] is deliberately *not* that: for most variants it is only the object phrase
+     * ("a card", "a Food"), because each of the three ward renderers supplies the verb itself
+     * ("Ward—Discard " + description). That works only while a ward cost is rendered alone. A
+     * disjunction ([Choice]) has to render each option *with its own verb* — "discard a card or
+     * pay {2}" — so it joins [clause]s instead. Keep the two in sync when adding a variant: the
+     * clause is what a player is asked to do, standing on its own, lowercase and unpunctuated.
+     */
+    val clause: String
+
+    /**
      * Ward with a mana cost — e.g. Ward {1}.
      *
      * When [waterbend] is true the cost is a **Ward—Waterbend** (Avatar: The Last Airbender):
@@ -428,6 +442,8 @@ sealed interface WardCost {
     data class Mana(val manaCost: String, val waterbend: Boolean = false) : WardCost {
         override val description: String =
             if (waterbend) "Waterbend $manaCost" else manaCost
+        override val clause: String =
+            if (waterbend) "waterbend $manaCost" else "pay $manaCost"
     }
 
     /** Ward with a life cost — e.g. Ward—Pay 2 life. */
@@ -435,6 +451,7 @@ sealed interface WardCost {
     @Serializable
     data class Life(val amount: Int) : WardCost {
         override val description: String = "pay $amount life"
+        override val clause: String = description
     }
 
     /**
@@ -451,6 +468,7 @@ sealed interface WardCost {
     @Serializable
     data class DynamicLife(val amount: DynamicAmount) : WardCost {
         override val description: String = "pay life equal to ${amount.description}"
+        override val clause: String = description
     }
 
     /**
@@ -477,6 +495,7 @@ sealed interface WardCost {
             }
             if (random) append(" at random")
         }
+        override val clause: String = "discard $description"
     }
 
     /**
@@ -488,6 +507,32 @@ sealed interface WardCost {
     data class Sacrifice(val filter: GameObjectFilter, val count: Int = 1) : WardCost {
         override val description: String =
             if (count == 1) "a ${filter.description}" else "$count ${filter.description}s"
+        override val clause: String = "sacrifice $description"
+    }
+
+    /**
+     * Ward with a cost paid in **counters placed on the paying player** (CR 122.1 — a counter is a
+     * marker placed on an object *or player*) — "Ward—Get five poison counters." (The Serpent
+     * Society). [counterType] is a `Counters.*` symbol (`Counters.POISON`, `Counters.ENERGY`, …),
+     * matching every other player-scoped counter surface in the SDK.
+     *
+     * Unlike every other ward cost this one has no affordability precondition: a player can always
+     * get counters, so the payment is a plain yes/no and can never be "unpayable" the way an empty
+     * hand or an empty board makes a discard or sacrifice unpayable. That asymmetry is exactly why
+     * it is its own variant rather than a re-skin of [Life] — the payer is *receiving* a marker,
+     * not spending a resource they must already hold.
+     *
+     * "Always payable" is an assumption, not a proof: it holds because nothing grants a *player*
+     * `CANT_RECEIVE_COUNTERS` today. A Melira / Solemnity-shaped card would make the counter
+     * placement a silent no-op and the ward would then be paid for free — revisit the can-pay
+     * branch in `WardCounterEffectExecutor` if one ever lands.
+     */
+    @SerialName("WardCost.PlayerCounters")
+    @Serializable
+    data class PlayerCounters(val counterType: String, val amount: Int) : WardCost {
+        override val description: String =
+            if (amount == 1) "a $counterType counter" else "${numberToWord(amount)} $counterType counters"
+        override val clause: String = "get $description"
     }
 
     /**
@@ -512,6 +557,7 @@ sealed interface WardCost {
     @Serializable
     data class CollectEvidence(val amount: Int) : WardCost {
         override val description: String = "collect evidence $amount"
+        override val clause: String = description
     }
 
     /**
@@ -527,6 +573,33 @@ sealed interface WardCost {
     @Serializable
     data class Composite(val parts: List<WardCost>) : WardCost {
         override val description: String = parts.joinToString(", ") { it.description }
+        override val clause: String = parts.joinToString(", ") { it.clause }
+    }
+
+    /**
+     * A ward cost that is a **disjunction**: the paying player picks exactly *one* of [options] and
+     * pays it — "Ward—Discard a card or pay {2}." (Titania, Rugged Rumbler). The OR to
+     * [Composite]'s AND; the two are the only two ways a printed ward cost combines sub-costs, and
+     * keeping them as sibling variants is what stops "or" from being smuggled in as an
+     * ad-hoc third state on [Composite].
+     *
+     * Modelled on [com.wingedsheep.sdk.scripting.AdditionalCost.Choice] / `PayCost.Choice`, the
+     * cost-vs-cost shape the other two cost vocabularies already use: options are themselves
+     * fully-formed costs of the same vocabulary, only options the payer can actually pay are
+     * offered, and declining is always available (declining a ward cost counters the spell or
+     * ability, CR 702.21a). A mana option is just a [Mana] in the list — unlike
+     * `AdditionalCost.OrPay`, where the mana leg has to fold into the spell's own mana cost at
+     * cast time, a ward cost is paid on its own as the ward trigger resolves, so no leg is special.
+     *
+     * Nesting another [Choice] inside [options] is not supported (and not needed by any printed
+     * card); keep [options] a flat list. A [Composite] option *is* supported — "or" over an
+     * all-of group would be its natural use — and pays its parts in order.
+     */
+    @SerialName("WardCost.Choice")
+    @Serializable
+    data class Choice(val options: List<WardCost>) : WardCost {
+        override val clause: String = options.joinToString(" or ") { it.clause }
+        override val description: String = clause
     }
 }
 
@@ -543,23 +616,34 @@ sealed interface WardCost {
 data class WardCounterEffect(
     val cost: WardCost
 ) : Effect {
-    override val description: String = when (cost) {
-        is WardCost.Mana ->
-            if (cost.waterbend) {
-                "Counter it unless its controller pays ${cost.manaCost} (they may tap " +
-                    "artifacts and creatures to help; each pays for {1})"
-            } else {
-                "Counter it unless its controller pays ${cost.manaCost}"
-            }
-        is WardCost.Life -> "Counter it unless its controller pays ${cost.amount} life"
-        is WardCost.DynamicLife -> "Counter it unless its controller pays life equal to ${cost.amount.description}"
-        is WardCost.Discard -> "Counter it unless its controller discards ${cost.description}"
-        is WardCost.Sacrifice -> "Counter it unless its controller sacrifices ${cost.description}"
-        is WardCost.CollectEvidence ->
-            "Counter it unless its controller exiles cards with total mana value " +
-                "${cost.amount} or greater from their graveyard"
-        is WardCost.Composite -> "Counter it unless its controller pays ${cost.description}"
-    }
+    override val description: String = "Counter it unless its controller ${wardPaymentVerbPhrase(cost)}"
+}
+
+/**
+ * The ward payment as a **third-person** verb phrase — "pays {2}", "discards a card" — for
+ * [WardCounterEffect.description], whose subject is "its controller".
+ *
+ * Deliberately not [WardCost.clause]: that one is the bare imperative ("pay {2}") because it labels
+ * an option in the payment picker. A [WardCost.Choice] joins these conjugated phrases rather than
+ * its clauses, so a disjunction reads "…unless its controller discards a card or pays {2}" like
+ * every other branch, instead of "…unless its controller discard a card or pay {2}".
+ */
+private fun wardPaymentVerbPhrase(cost: WardCost): String = when (cost) {
+    is WardCost.Mana ->
+        if (cost.waterbend) {
+            "pays ${cost.manaCost} (they may tap artifacts and creatures to help; each pays for {1})"
+        } else {
+            "pays ${cost.manaCost}"
+        }
+    is WardCost.Life -> "pays ${cost.amount} life"
+    is WardCost.DynamicLife -> "pays life equal to ${cost.amount.description}"
+    is WardCost.Discard -> "discards ${cost.description}"
+    is WardCost.Sacrifice -> "sacrifices ${cost.description}"
+    is WardCost.CollectEvidence ->
+        "exiles cards with total mana value ${cost.amount} or greater from their graveyard"
+    is WardCost.PlayerCounters -> "gets ${cost.description}"
+    is WardCost.Choice -> cost.options.joinToString(" or ") { wardPaymentVerbPhrase(it) }
+    is WardCost.Composite -> "pays ${cost.description}"
 }
 
 // =============================================================================

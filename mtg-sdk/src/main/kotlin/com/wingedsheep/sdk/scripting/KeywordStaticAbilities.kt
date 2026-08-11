@@ -87,6 +87,9 @@ data class GrantWard(
         is WardCost.Sacrifice -> "${filter.description} have \"Ward—Sacrifice ${cost.description}.\""
         is WardCost.CollectEvidence ->
             "${filter.description} have \"Ward—Collect evidence ${cost.amount}.\""
+        is WardCost.PlayerCounters -> "${filter.description} have \"Ward—Get ${cost.description}.\""
+        is WardCost.Choice ->
+            "${filter.description} have \"Ward—${cost.clause.replaceFirstChar { it.uppercase() }}.\""
         is WardCost.Composite -> "${filter.description} have \"Ward—${cost.description}.\""
     }
     override fun applyTextReplacement(replacer: TextReplacer): StaticAbility {
