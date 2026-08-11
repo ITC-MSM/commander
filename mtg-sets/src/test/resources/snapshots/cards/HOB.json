@@ -1411,6 +1411,143 @@
     ]
 }
 
+// Celebrate the Mountain-king
+{
+    "name": "Celebrate the Mountain-king",
+    "manaCost": "{3}{W}",
+    "typeLine": "Enchantment",
+    "oracleText": "When this enchantment enters, for each opponent, exile up to one target nonland permanent that player controls until this enchantment leaves the battlefield.\nWhen this enchantment enters, recruit. (Draw a card, then discard a card. If you discarded a nonland card, create a 1/1 white Human Soldier creature token.)",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "ExileUntilLeaves",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "up to one target nonland permanent that player controls"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "optional": true,
+                    "filter": {
+                        "baseFilter": "nonland permanent ctrl:opponent"
+                    },
+                    "id": "up to one target nonland permanent that player controls"
+                },
+                "descriptionOverride": "When this enchantment enters, for each opponent, exile up to one target nonland permanent that player controls until this enchantment leaves the battlefield."
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": "FromLinkedExile",
+                            "storeAs": "linked_return"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "linked_return",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Battlefield"
+                            },
+                            "underOwnersControl": true
+                        }
+                    ]
+                }
+            },
+            {
+                "id": "ability_3",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        },
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Hand"
+                            },
+                            "storeAs": "recruit_hand"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "recruit_hand",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "recruit_discarded",
+                            "prompt": "Recruit — choose a card to discard"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "recruit_discarded",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            },
+                            "moveType": "Discard"
+                        },
+                        {
+                            "type": "ConditionalOnCollection",
+                            "collection": "recruit_discarded",
+                            "ifNotEmpty": {
+                                "type": "CreateToken",
+                                "power": 1,
+                                "toughness": 1,
+                                "colors": [
+                                    "WHITE"
+                                ],
+                                "creatureTypes": [
+                                    "Human",
+                                    "Soldier"
+                                ]
+                            },
+                            "filter": "nonland"
+                        }
+                    ],
+                    "descriptionOverride": "Recruit"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "7",
+        "rarity": "UNCOMMON",
+        "artist": "Tomas Duchek",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/2/42fbd61d-e1a6-465d-b1a3-f5ee0869d3af.jpg?1785496910"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Chief Warg's Company
 {
     "name": "Chief Warg's Company",
@@ -8866,6 +9003,121 @@
     ]
 }
 
+// Sound the Trumpets
+{
+    "name": "Sound the Trumpets",
+    "manaCost": "{1}{U}{U}",
+    "typeLine": "Instant",
+    "oracleText": "Counter target spell. If that spell's mana value was 2 or less, recruit. (Draw a card, then discard a card. If you discarded a nonland card, create a 1/1 white Human Soldier creature token.)",
+    "script": {
+        "spellEffect": {
+            "type": "Gated",
+            "gate": {
+                "type": "Gate.WhenCondition",
+                "condition": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "EntityProperty",
+                        "entity": "Target",
+                        "numericProperty": "ManaValue"
+                    },
+                    "operator": "LTE",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 2
+                    }
+                }
+            },
+            "then": {
+                "type": "Composite",
+                "effects": [
+                    "Counter",
+                    {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "DrawCards",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Hand"
+                                },
+                                "storeAs": "recruit_hand"
+                            },
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "recruit_hand",
+                                "selection": {
+                                    "type": "ChooseExactly",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "storeSelected": "recruit_discarded",
+                                "prompt": "Recruit — choose a card to discard"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "recruit_discarded",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Graveyard"
+                                },
+                                "moveType": "Discard"
+                            },
+                            {
+                                "type": "ConditionalOnCollection",
+                                "collection": "recruit_discarded",
+                                "ifNotEmpty": {
+                                    "type": "CreateToken",
+                                    "power": 1,
+                                    "toughness": 1,
+                                    "colors": [
+                                        "WHITE"
+                                    ],
+                                    "creatureTypes": [
+                                        "Human",
+                                        "Soldier"
+                                    ]
+                                },
+                                "filter": "nonland"
+                            }
+                        ],
+                        "descriptionOverride": "Recruit"
+                    }
+                ]
+            },
+            "otherwise": "Counter"
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": {},
+                    "zone": "Stack"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "55",
+        "rarity": "UNCOMMON",
+        "artist": "Nereida",
+        "flavorText": "The warning trumpets were suddenly sounded, and echoed along the rocky shores. So it was that the Dragon did not find them quite unprepared.",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/d/dd32a1dd-3541-4572-a717-1deabc14b827.jpg?1784760160"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Stir Up Trouble
 {
     "name": "Stir Up Trouble",
@@ -10095,6 +10347,129 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// The Mountain-king's Return
+{
+    "name": "The Mountain-king's Return",
+    "manaCost": "{2}{W}",
+    "typeLine": "Enchantment — Saga",
+    "oracleText": "(As this Saga enters and after your draw step, add a lore counter. Sacrifice after III.)\nI — Recruit. (Draw a card, then discard a card. If you discarded a nonland card, create a 1/1 white Human Soldier creature token.)\nII — Return target creature card with mana value 3 or less from your graveyard to the battlefield.\nIII — Put a +1/+1 counter on up to one target creature.",
+    "script": {
+        "sagaChapters": [
+            {
+                "chapter": 1,
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        },
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Hand"
+                            },
+                            "storeAs": "recruit_hand"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "recruit_hand",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "recruit_discarded",
+                            "prompt": "Recruit — choose a card to discard"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "recruit_discarded",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            },
+                            "moveType": "Discard"
+                        },
+                        {
+                            "type": "ConditionalOnCollection",
+                            "collection": "recruit_discarded",
+                            "ifNotEmpty": {
+                                "type": "CreateToken",
+                                "power": 1,
+                                "toughness": 1,
+                                "colors": [
+                                    "WHITE"
+                                ],
+                                "creatureTypes": [
+                                    "Human",
+                                    "Soldier"
+                                ]
+                            },
+                            "filter": "nonland"
+                        }
+                    ],
+                    "descriptionOverride": "Recruit"
+                }
+            },
+            {
+                "chapter": 2,
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature card with mana value 3 or less from your graveyard"
+                    },
+                    "destination": "Battlefield"
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature mv<=3 own:you",
+                        "zone": "Graveyard"
+                    },
+                    "id": "target creature card with mana value 3 or less from your graveyard"
+                }
+            },
+            {
+                "chapter": 3,
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "up to one target creature"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "optional": true,
+                    "filter": {
+                        "baseFilter": "creature"
+                    },
+                    "id": "up to one target creature"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "22",
+        "rarity": "UNCOMMON",
+        "artist": "Rovina Cai",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/8/68f4893d-e9a5-4f89-ade3-9ab78a834ad5.jpg?1784631780"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 
