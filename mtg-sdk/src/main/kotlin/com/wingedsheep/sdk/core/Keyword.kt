@@ -649,11 +649,19 @@ enum class Keyword(val displayName: String) {
 
     /**
      * Prepared (Secrets of Strixhaven).
-     * Display keyword on a preparation card ([com.wingedsheep.sdk.model.CardLayout.PREPARE]):
-     * "This creature enters prepared." Display-only on the keyword — the behavior is driven by
-     * the PREPARE layout. When the creature becomes prepared (e.g. as it enters), its controller
-     * creates a copy of the card's prepare spell (`cardFaces[0]`) in exile that they may cast
-     * (paying that spell's cost); casting the copy unprepares the creature.
+     * The printed "This creature enters prepared." line on a preparation card
+     * ([com.wingedsheep.sdk.model.CardLayout.PREPARE]).
+     *
+     * **Load-bearing, not display-only**: a PREPARE-layout creature enters prepared if and only if
+     * it carries this keyword — the stack resolver gates on layout *and* keyword. A card that only
+     * *becomes* prepared later, via a trigger (Leech Collector) or an ETB conditional (Emeritus of
+     * Truce), must omit it and use `Effects.BecomePrepared` instead. Scryfall tags `Prepared` on
+     * *every* prepare-layout card regardless of the printed line, so its keyword list must never be
+     * copied verbatim onto one of these.
+     *
+     * When the creature becomes prepared (however it got there), its controller creates a copy of
+     * the card's prepare spell (`cardFaces[0]`) in exile that they may cast (paying that spell's
+     * cost); casting the copy unprepares the creature.
      */
     PREPARED("Prepared"),
 
