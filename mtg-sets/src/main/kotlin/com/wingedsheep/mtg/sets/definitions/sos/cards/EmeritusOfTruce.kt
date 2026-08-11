@@ -22,17 +22,22 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  * Swords to Plowshares — {W}, Instant: Exile target creature. Its controller gains life equal to
  * its power.
  *
- * Prepare (Secrets of Strixhaven): the "becomes prepared" clause is a resolution-time
- * conditional (CR 603.4 "Then if …") sequenced AFTER the token creation, not a separate trigger
- * or intervening-if. Becoming prepared (via [Effects.BecomePrepared]) creates a copy of its
- * prepare spell ("Swords to Plowshares") in exile that its controller may cast for {W}; casting
- * that copy unprepares the creature. Modeled via [com.wingedsheep.sdk.model.CardLayout.PREPARE]
- * + the `prepare(name) { }` DSL.
+ * Prepare (Secrets of Strixhaven): the "becomes prepared" clause is a resolution-time conditional
+ * sequenced AFTER the token creation, not a separate trigger and not an intervening-if — CR 603.4's
+ * closing parenthetical limits that rule to an "if" immediately following the trigger condition, so
+ * this mid-text "Then if" is just English: the ability follows its instructions in the order written
+ * (CR 608.2c) and reads the creature counts as that instruction is applied (CR 608.2h), i.e. with
+ * the Inkling already on the battlefield.
+ *
+ * Becoming prepared (via [Effects.BecomePrepared]) creates a copy of its prepare spell ("Swords to
+ * Plowshares") in exile that its controller may cast for {W}; casting that copy unprepares the
+ * creature. Modeled via [com.wingedsheep.sdk.model.CardLayout.PREPARE] + the `prepare(name) { }` DSL.
  *
  * No [Keyword.PREPARED]: in this engine that keyword means "this creature enters prepared" (the
- * printed line the rest of the Emeritus cycle carries), and Emeritus of Truce has no such line —
- * it only ever becomes prepared from the ETB conditional. Scryfall tags `Prepared` on *every*
- * prepare-layout card including this one, so its keyword list must not be copied verbatim.
+ * printed line Emeritus of Abundance, Ideation, and Woe carry), and Emeritus of Truce has no such
+ * line — like Emeritus of Conflict it only ever becomes prepared from its own ability, here the ETB
+ * conditional. Scryfall tags `Prepared` on *every* prepare-layout card including this one, so its
+ * keyword list must not be copied verbatim.
  */
 val EmeritusOfTruce = card("Emeritus of Truce") {
     manaCost = "{1}{W}{W}"
