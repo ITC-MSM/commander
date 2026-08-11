@@ -28,6 +28,11 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  * prepare spell ("Swords to Plowshares") in exile that its controller may cast for {W}; casting
  * that copy unprepares the creature. Modeled via [com.wingedsheep.sdk.model.CardLayout.PREPARE]
  * + the `prepare(name) { }` DSL.
+ *
+ * No [Keyword.PREPARED]: in this engine that keyword means "this creature enters prepared" (the
+ * printed line the rest of the Emeritus cycle carries), and Emeritus of Truce has no such line —
+ * it only ever becomes prepared from the ETB conditional. Scryfall tags `Prepared` on *every*
+ * prepare-layout card including this one, so its keyword list must not be copied verbatim.
  */
 val EmeritusOfTruce = card("Emeritus of Truce") {
     manaCost = "{1}{W}{W}"
@@ -39,8 +44,6 @@ val EmeritusOfTruce = card("Emeritus of Truce") {
         "creature token with flying. Then if an opponent controls more creatures than you, this " +
         "creature becomes prepared. (While it's prepared, you may cast a copy of its spell. Doing " +
         "so unprepares it.)"
-
-    keywords(Keyword.PREPARED)
 
     // When this creature enters, target player creates a 1/1 W/B Inkling with flying.
     // Then if an opponent controls more creatures than you, it becomes prepared.

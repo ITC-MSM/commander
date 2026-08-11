@@ -4269,9 +4269,6 @@
         "power": 3,
         "toughness": 3
     },
-    "keywords": [
-        "PREPARED"
-    ],
     "script": {
         "triggeredAbilities": [
             {
