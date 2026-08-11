@@ -66,8 +66,8 @@ import kotlin.reflect.KClass
  *      components so the resumer charges the next one after a successful payment. Declining or
  *      being unable to pay any component counters the spell/ability immediately.
  *    - WardCost.Choice → ChooseOptionDecision over the options the payer can actually pay, plus a
- *      trailing "Don't pay". The chosen option is then charged through the branch above for its
- *      own shape, so the disjunction adds a picker and nothing else.
+ *      trailing "Counter spell" decline. The chosen option is then charged through the branch above
+ *      for its own shape, so the disjunction adds a picker and nothing else.
  *    If the controller can't possibly pay, counter immediately.
  *
  * The per-component handlers are reusable from

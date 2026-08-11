@@ -521,6 +521,11 @@ sealed interface WardCost {
      * hand or an empty board makes a discard or sacrifice unpayable. That asymmetry is exactly why
      * it is its own variant rather than a re-skin of [Life] — the payer is *receiving* a marker,
      * not spending a resource they must already hold.
+     *
+     * "Always payable" is an assumption, not a proof: it holds because nothing grants a *player*
+     * `CANT_RECEIVE_COUNTERS` today. A Melira / Solemnity-shaped card would make the counter
+     * placement a silent no-op and the ward would then be paid for free — revisit the can-pay
+     * branch in `WardCounterEffectExecutor` if one ever lands.
      */
     @SerialName("WardCost.PlayerCounters")
     @Serializable

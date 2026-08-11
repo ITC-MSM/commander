@@ -16,6 +16,7 @@ import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.GrantWard
 import com.wingedsheep.sdk.scripting.KeywordAbility
 import com.wingedsheep.sdk.scripting.effects.WardCost
+import com.wingedsheep.sdk.scripting.effects.WardCounterEffect
 import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
@@ -24,6 +25,7 @@ import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.types.shouldBeInstanceOf
 
 /**
@@ -286,5 +288,18 @@ class WardCostChoiceTest : FunSpec({
             WardCost.Life(2),
             WardCost.Sacrifice(GameObjectFilter.Creature),
         ).description shouldBe "Ward—Pay 2 life or sacrifice a creature"
+    }
+
+    test("the trigger's own effect and a static grant render the disjunction too") {
+        // Three renderings share the WardCost taxonomy: the keyword line above, the third-person
+        // "Counter it unless its controller ~" on the trigger's effect (which joins *conjugated*
+        // phrases, not clauses), and the granted-ward line.
+        WardCounterEffect(
+            WardCost.Choice(listOf(WardCost.Discard(), WardCost.Mana("{2}")))
+        ).description shouldBe "Counter it unless its controller discards a card or pays {2}"
+        GrantWard(
+            cost = WardCost.Choice(listOf(WardCost.Discard(), WardCost.Mana("{2}"))),
+            filter = GroupFilter(GameObjectFilter.Creature.youControl()).other()
+        ).description shouldContain "have \"Ward—Discard a card or pay {2}.\""
     }
 })

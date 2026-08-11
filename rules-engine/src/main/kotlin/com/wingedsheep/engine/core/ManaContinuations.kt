@@ -338,6 +338,9 @@ data class CounterUnlessCollectEvidenceContinuation(
  * There is no can-pay re-check on resume, unlike the life / discard / sacrifice continuations: a
  * player can always get counters, so this cost never becomes unpayable between prompt and response.
  *
+ * Ward is the only producer of this frame, and a ward never counters to exile, so unlike its
+ * siblings it carries no `exileOnCounter`.
+ *
  * @property payingPlayerId The spell's controller who must decide whether to pay
  * @property spellEntityId The spell/ability that will be countered if they don't pay
  * @property counterType The `Counters.*` symbol placed on the payer (e.g. `Counters.POISON`)
@@ -350,7 +353,6 @@ data class CounterUnlessPlayerCountersContinuation(
     val spellEntityId: EntityId,
     val counterType: String,
     val amount: Int,
-    val exileOnCounter: Boolean = false,
     val controllerId: EntityId? = null,
     /** See [CounterUnlessPaysManaSelectionContinuation.remainingWardParts]. */
     val remainingWardParts: List<WardCost> = emptyList(),
@@ -364,9 +366,12 @@ data class CounterUnlessPlayerCountersContinuation(
  *
  * [options] holds only the options the payer could actually pay when the prompt was built, index
  * aligned with the decision's option labels; the trailing decision option (index == `options.size`)
- * is "Don't pay" and counters the spell. The chosen option is then charged through the ordinary
+ * is "Counter spell" and declines. The chosen option is then charged through the ordinary
  * per-cost ward machinery, carrying [remainingWardParts] so a Choice nested inside a
  * `WardCost.Composite` still charges the composite's remaining components afterwards.
+ *
+ * Ward is the only producer of this frame, and a ward never counters to exile, so unlike the
+ * `CounterUnless*` siblings it carries no `exileOnCounter`.
  *
  * @property payingPlayerId The spell's controller who must pick and pay
  * @property spellEntityId The spell/ability that will be countered if they decline
@@ -378,7 +383,6 @@ data class WardCostChoiceContinuation(
     val payingPlayerId: EntityId,
     val spellEntityId: EntityId,
     val options: List<WardCost>,
-    val exileOnCounter: Boolean = false,
     val controllerId: EntityId? = null,
     /** See [CounterUnlessPaysManaSelectionContinuation.remainingWardParts]. */
     val remainingWardParts: List<WardCost> = emptyList(),

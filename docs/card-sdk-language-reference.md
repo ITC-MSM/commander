@@ -6539,7 +6539,7 @@ composite abilities).
   (see *Composite static abilities*). Non-mana costs use
   `KeywordAbility.Ward(WardCost.X)`: `WardCost.Mana`, `WardCost.Life(n)`, `WardCost.DynamicLife(amount)`,
   `WardCost.Discard(n, random, filter)`, `WardCost.CollectEvidence(n)` ("Ward—Collect evidence 4",
-  Axebane Ferox), `WardCost.PlayerCounters(counterType, amount)`,
+  Axebane Ferox), `WardCost.PlayerCounters(counterType, amount)`, `WardCost.Choice(options)`,
   and `WardCost.Sacrifice(filter, count = 1)` ("Ward—Sacrifice a Food", Ygra; "Ward—Sacrifice three
   nonland permanents" with `count = 3`, Valgavoth, Terror Eater, via `KeywordAbility.wardSacrifice(filter, count)`).
   For sacrifice ward, the opponent chooses which `count` matching permanent(s) they control to sacrifice

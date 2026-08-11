@@ -446,8 +446,9 @@ class ManaPaymentContinuationResumer(
 
         if (!response.choice) {
             return counterForUnpaidCost(
-                state, continuation.spellEntityId, continuation.exileOnCounter,
-                continuation.controllerId ?: continuation.payingPlayerId, checkForMore
+                state, continuation.spellEntityId, exileOnCounter = false,
+                controllerId = continuation.controllerId ?: continuation.payingPlayerId,
+                checkForMore = checkForMore
             )
         }
 
@@ -511,8 +512,9 @@ class ManaPaymentContinuationResumer(
 
         val chosen = continuation.options.getOrNull(response.optionIndex)
             ?: return counterForUnpaidCost(
-                state, continuation.spellEntityId, continuation.exileOnCounter,
-                continuation.controllerId ?: continuation.payingPlayerId, checkForMore
+                state, continuation.spellEntityId, exileOnCounter = false,
+                controllerId = continuation.controllerId ?: continuation.payingPlayerId,
+                checkForMore = checkForMore
             )
 
         // Charging the chosen option is exactly "charge the next ward part", with the option at
