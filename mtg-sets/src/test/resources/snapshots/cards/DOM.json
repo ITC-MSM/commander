@@ -4733,39 +4733,6 @@
     ]
 }
 
-// Gilded Lotus
-{
-    "name": "Gilded Lotus",
-    "manaCost": "{5}",
-    "typeLine": "Artifact",
-    "oracleText": "{T}: Add three mana of any one color.",
-    "script": {
-        "activatedAbilities": [
-            {
-                "id": "ability_1",
-                "cost": "CostTap",
-                "effect": {
-                    "type": "AddManaOfChoice",
-                    "amount": {
-                        "type": "Fixed",
-                        "amount": 3
-                    }
-                },
-                "timing": "ManaAbility",
-                "isManaAbility": true
-            }
-        ]
-    },
-    "metadata": {
-        "collectorNumber": "215",
-        "rarity": "RARE",
-        "artist": "Volkan Baǵa",
-        "flavorText": "\"The perfection of the lotus reminds me of my hopes for this world . . . and my failures. I will not rest until I've atoned for them.\" —Karn",
-        "imageUri": "https://cards.scryfall.io/normal/front/a/4/a487e208-8493-4bca-8c44-284d89c66b15.jpg?1562740681"
-    },
-    "colorIdentityOverride": []
-}
-
 // Goblin Barrage
 {
     "name": "Goblin Barrage",
