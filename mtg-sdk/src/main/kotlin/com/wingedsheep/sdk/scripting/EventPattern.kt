@@ -1172,24 +1172,41 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
      *
      * Used by cards like Hearthborn Battler: "Whenever a player casts their second spell each turn"
      *
+     * [spellFilter] narrows *which* spells the count runs over, so the ordinal is per-kind rather
+     * than over every spell: The Queen of Dale's "casts their first **noncreature** spell each turn"
+     * is `nthSpell = 1, spellFilter = GameObjectFilter.Noncreature`. The count reads the caster's
+     * cast history, so it tracks casts and not resolutions — a matching spell already cast this turn
+     * closes the window even if it was countered, exactly as `nthOfTypePerTurn` does for cost and
+     * flash gates. `null` (the default) counts every spell, the Hearthborn Battler shape.
+     *
      * @param nthSpell The spell number that triggers this (e.g., 2 for "second spell")
      * @param player Which player's spell count to track
+     * @param spellFilter Restricts the count to matching spells; null counts all of them
      */
     @SerialName("NthSpellCastEvent")
     @Serializable
     data class NthSpellCastEvent(
         val nthSpell: Int,
-        val player: Player = Player.Each
+        val player: Player = Player.Each,
+        val spellFilter: GameObjectFilter? = null
     ) : EventPattern {
         override val description: String = buildString {
             append(player.description)
             append(" casts their ")
             append(when (nthSpell) {
+                1 -> "first"
                 2 -> "second"
                 3 -> "third"
                 else -> "${nthSpell}th"
             })
-            append(" spell each turn")
+            append(" ")
+            spellFilter?.let { append(it.description).append(" ") }
+            append("spell each turn")
+        }
+
+        override fun applyTextReplacement(replacer: TextReplacer): EventPattern {
+            val newFilter = spellFilter?.applyTextReplacement(replacer)
+            return if (newFilter !== spellFilter) copy(spellFilter = newFilter) else this
         }
     }
 

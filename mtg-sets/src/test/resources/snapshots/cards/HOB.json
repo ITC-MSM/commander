@@ -262,6 +262,180 @@
     ]
 }
 
+// Bard's Company
+{
+    "name": "Bard's Company",
+    "manaCost": "{2}{W}{U}",
+    "typeLine": "Creature — Human Citizen",
+    "oracleText": "You may cast this spell as though it had flash if you control a Human.\nOther creatures you control get +1/+1.\nWhenever this creature enters or attacks, recruit. (Draw a card, then discard a card. If you discarded a nonland card, create a 1/1 white Human Soldier creature token.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        },
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Hand"
+                            },
+                            "storeAs": "recruit_hand"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "recruit_hand",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "recruit_discarded",
+                            "prompt": "Recruit — choose a card to discard"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "recruit_discarded",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            },
+                            "moveType": "Discard"
+                        },
+                        {
+                            "type": "ConditionalOnCollection",
+                            "collection": "recruit_discarded",
+                            "ifNotEmpty": {
+                                "type": "CreateToken",
+                                "power": 1,
+                                "toughness": 1,
+                                "colors": [
+                                    "WHITE"
+                                ],
+                                "creatureTypes": [
+                                    "Human",
+                                    "Soldier"
+                                ]
+                            },
+                            "filter": "nonland"
+                        }
+                    ],
+                    "descriptionOverride": "Recruit"
+                }
+            },
+            {
+                "id": "ability_2",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        },
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Hand"
+                            },
+                            "storeAs": "recruit_hand"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "recruit_hand",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "recruit_discarded",
+                            "prompt": "Recruit — choose a card to discard"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "recruit_discarded",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            },
+                            "moveType": "Discard"
+                        },
+                        {
+                            "type": "ConditionalOnCollection",
+                            "collection": "recruit_discarded",
+                            "ifNotEmpty": {
+                                "type": "CreateToken",
+                                "power": 1,
+                                "toughness": 1,
+                                "colors": [
+                                    "WHITE"
+                                ],
+                                "creatureTypes": [
+                                    "Human",
+                                    "Soldier"
+                                ]
+                            },
+                            "filter": "nonland"
+                        }
+                    ],
+                    "descriptionOverride": "Recruit"
+                }
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 1,
+                "toughnessBonus": 1,
+                "filter": {
+                    "baseFilter": "creature ctrl:you",
+                    "excludeSelf": true
+                }
+            }
+        ],
+        "conditionalFlash": {
+            "type": "Exists",
+            "player": "You",
+            "zone": "Battlefield",
+            "filter": "permanent Human"
+        }
+    },
+    "metadata": {
+        "collectorNumber": "146",
+        "rarity": "RARE",
+        "artist": "Jarel Threat",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/1/d14aa2ff-7bbd-47a6-8e36-481e56302a62.jpg?1785152250"
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLUE"
+    ]
+}
+
 // Bejeweled Warg
 {
     "name": "Bejeweled Warg",
@@ -3119,6 +3293,99 @@
     },
     "colorIdentityOverride": [
         "WHITE",
+        "BLUE"
+    ]
+}
+
+// Elrond, Moon-Reader
+{
+    "name": "Elrond, Moon-Reader",
+    "manaCost": "{2}{U}",
+    "typeLine": "Legendary Creature — Elf Noble",
+    "oracleText": "Whenever you activate an ability of a creature, draw a card. This ability triggers only once each turn.\n{5}{U}{U}: Exile up to two other target nonland permanents you control. Return those cards to the battlefield under their owner's control at the beginning of the next end step.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "AbilityActivatedEvent",
+                    "sourceFilter": "creature"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "oncePerTurn": true
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{5}{U}{U}"
+                    }
+                },
+                "effect": {
+                    "type": "ForEach",
+                    "space": "IterationSpace.Targets",
+                    "body": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "MoveToZone",
+                                "target": {
+                                    "type": "ContextTarget",
+                                    "index": 0
+                                },
+                                "destination": "Exile"
+                            },
+                            {
+                                "type": "CreateDelayedTrigger",
+                                "step": "END",
+                                "effect": {
+                                    "type": "MoveToZone",
+                                    "target": {
+                                        "type": "ContextTarget",
+                                        "index": 0
+                                    },
+                                    "destination": "Battlefield"
+                                }
+                            }
+                        ]
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "count": 2,
+                        "optional": true,
+                        "filter": {
+                            "baseFilter": "nonland permanent ctrl:you",
+                            "excludeSelf": true
+                        }
+                    }
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "36",
+        "rarity": "MYTHIC",
+        "artist": "Christina Kraus",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/b/fbcb310c-be73-46f8-8e65-8632454ccc6e.jpg?1784376948"
+    },
+    "colorIdentityOverride": [
         "BLUE"
     ]
 }
@@ -10531,6 +10798,106 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// The Queen of Dale
+{
+    "name": "The Queen of Dale",
+    "manaCost": "{1}{W}",
+    "typeLine": "Legendary Creature — Human Noble",
+    "oracleText": "Whenever an opponent casts their first noncreature spell each turn, you recruit. (Draw a card, then discard a card. If you discarded a nonland card, create a 1/1 white Human Soldier creature token.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "NthSpellCastEvent",
+                    "nthSpell": 1,
+                    "player": "EachOpponent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            "IsNoncreature"
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        },
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Hand"
+                            },
+                            "storeAs": "recruit_hand"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "recruit_hand",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "recruit_discarded",
+                            "prompt": "Recruit — choose a card to discard"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "recruit_discarded",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            },
+                            "moveType": "Discard"
+                        },
+                        {
+                            "type": "ConditionalOnCollection",
+                            "collection": "recruit_discarded",
+                            "ifNotEmpty": {
+                                "type": "CreateToken",
+                                "power": 1,
+                                "toughness": 1,
+                                "colors": [
+                                    "WHITE"
+                                ],
+                                "creatureTypes": [
+                                    "Human",
+                                    "Soldier"
+                                ]
+                            },
+                            "filter": "nonland"
+                        }
+                    ],
+                    "descriptionOverride": "Recruit"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "24",
+        "rarity": "MYTHIC",
+        "artist": "Magali Villeneuve",
+        "flavorText": "Dale may grow to reclaim its former glory and splendor, as in the days before the Dragon came.",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/9/c977fb5f-4436-41d0-af68-93b6d05897e5.jpg?1784376948"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 

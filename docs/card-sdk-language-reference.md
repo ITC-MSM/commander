@@ -4259,6 +4259,13 @@ Named sugar for the common type-primitive cases; reach for `youCastSpell(...)` p
   with `Effects.DealDamage(n, EffectTarget.PlayerRef(Player.TriggeringPlayer))` to punish the activator (Flamescroll
   Celebrant). Backed by `EventPattern.AbilityActivatedEvent(player)`.
 - `YouActivateAbility` — you activate an ability that isn't a mana ability (the `Player.You` form of the above).
+- `activatesAbilityOf(sourceFilter, player?)` — the source-scoped form of the above: an ability that isn't a mana
+  ability, activated from a permanent matching `sourceFilter`. Elrond, Moon-Reader's "whenever you activate an
+  ability of a creature" is `activatesAbilityOf(GameObjectFilter.Creature)`; pair it with `oncePerTurn = true` on
+  the triggered ability for the "this ability triggers only once each turn" clause. Backed by
+  `EventPattern.AbilityActivatedEvent(player, sourceFilter)`. Unlike `activatesAbilityWithoutTap` (below), which
+  keys on the literal `{T}`-in-cost wording, this keeps the "isn't a mana ability" gate — so a creature's
+  tap-for-mana never fires it while a `{T}`-costed non-mana ability does.
 - `YouActivateExhaustAbility` — you activate an ability marked `isExhaust`. Backed by
   `EventPattern.AbilityActivatedEvent(player = Player.You, requireExhaust = true)` and the activation event's
   `isExhaust` flag. The event is emitted as soon as the exhaust ability is put on the stack, so the triggered
@@ -4793,7 +4800,13 @@ Dominant back faces that "stay" instead self-exile on their final chapter, dodgi
 
 ### Conditional
 
-- `NthSpellCast(n, player?)` — fires on the Nth spell cast.
+- `NthSpellCast(n, player?, spellFilter?)` — fires on the Nth spell cast each turn. `spellFilter` makes the
+  ordinal per-kind rather than over every spell — The Queen of Dale's "whenever an opponent casts their **first
+  noncreature** spell each turn" is `NthSpellCast(1, Player.EachOpponent, GameObjectFilter.Noncreature)`. With a
+  filter the count runs over the caster's `spellsCastThisTurnByPlayer` records (the same history
+  `CostGating.NthOfTypePerTurn` and the `nthOfTypePerTurn` flash gate read) instead of the flat
+  `playerSpellsCastThisTurn` total, so it counts **casts, not resolutions**: a matching spell that was countered
+  still closes the window for that turn. Without a filter it is the flat total, the Hearthborn Battler shape.
 - `WhenYouCastThisSpell()` — a "cast trigger" that fires on the spell's **own** cast while it is on
   the stack (`EventPattern.CastThisSpellEvent`, `binding = SELF`). Distinct from a battlefield
   `SpellCast`/`NthSpellCast` trigger that observes *other* spells: this one travels with the spell
