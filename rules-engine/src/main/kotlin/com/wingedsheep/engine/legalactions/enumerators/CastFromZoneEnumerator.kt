@@ -43,6 +43,7 @@ import com.wingedsheep.engine.mechanics.FlashbackGrants
 import com.wingedsheep.engine.mechanics.HarmonizeGrants
 import com.wingedsheep.engine.mechanics.MayhemGrants
 import com.wingedsheep.engine.mechanics.WarpGrants
+import com.wingedsheep.engine.mechanics.mana.SpellPaymentContext
 import com.wingedsheep.engine.mechanics.mana.spellPaymentContextFor
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
 
@@ -359,7 +360,13 @@ class CastFromZoneEnumerator : ActionEnumerator {
                 }
                 if (castableFaceDown) {
                     val morphCost = context.costCalculator.calculateFaceDownCost(state, playerId)
-                    val canAffordMorph = context.manaSolver.canPay(state, playerId, morphCost, precomputedSources = context.availableManaSources)
+                    val canAffordMorph = context.manaSolver.canPay(
+                        state, playerId, morphCost,
+                        // CR 708.2 — nameless 2/2 creature spell, so "spend this mana only to cast
+                        // face-down spells" (Tin Street Gossip) counts here.
+                        spellContext = SpellPaymentContext.faceDownCast(isFromHand = false),
+                        precomputedSources = context.availableManaSources
+                    )
                     result.add(
                         LegalAction(
                             actionType = "CastFaceDown",

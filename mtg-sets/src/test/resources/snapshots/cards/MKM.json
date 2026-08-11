@@ -2451,6 +2451,91 @@
     ]
 }
 
+// Eliminate the Impossible
+{
+    "name": "Eliminate the Impossible",
+    "manaCost": "{1}{U}",
+    "typeLine": "Instant",
+    "oracleText": "Investigate. Creatures your opponents control get -2/-0 until end of turn. If any of them are suspected, they're no longer suspected. (To investigate, create a Clue token. It's an artifact with \"{2}, Sacrifice this token: Draw a card.\")",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Clue"
+                },
+                {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": "creature ctrl:opponent"
+                        }
+                    },
+                    "body": {
+                        "type": "ModifyStats",
+                        "powerModifier": {
+                            "type": "Fixed",
+                            "amount": -2
+                        },
+                        "toughnessModifier": {
+                            "type": "Fixed",
+                            "amount": 0
+                        },
+                        "target": "Self"
+                    }
+                },
+                {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": {
+                                "cardPredicates": [
+                                    "IsCreature"
+                                ],
+                                "statePredicates": [
+                                    "IsSuspected"
+                                ],
+                                "controllerPredicate": "ControlledByOpponent"
+                            }
+                        }
+                    },
+                    "body": {
+                        "type": "RemoveSuspected",
+                        "target": "Self"
+                    }
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "54",
+        "rarity": "UNCOMMON",
+        "artist": "Carlos Palma Cruchaga",
+        "flavorText": "\"Half the city had motive. Time to narrow down who also had the means and opportunity.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/8/486f1cc2-c162-448e-91a9-577d7d796584.jpg?1783912910",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "Eliminate the Impossible affects only creatures your opponents control at the time it resolves. Creatures they begin to control later in the turn won't get -2/-0 and won't stop being suspected."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "When an effect suspects a creature, it becomes suspected. It gains menace and \"This creature can't block\" for as long as it's suspected. It stays suspected until it leaves the battlefield or another effect causes it to no longer be suspected."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "If a suspected creature loses all abilities, it will lose menace and \"This creature can't block\", but it won't stop being suspected."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Escape Tunnel
 {
     "name": "Escape Tunnel",
@@ -6559,6 +6644,80 @@
     ]
 }
 
+// Persuasive Interrogators
+{
+    "name": "Persuasive Interrogators",
+    "manaCost": "{4}{B}{B}",
+    "typeLine": "Creature — Gorgon Detective",
+    "oracleText": "When this creature enters, investigate. (Create a Clue token. It's an artifact with \"{2}, Sacrifice this token: Draw a card.\")\nWhenever you sacrifice a Clue, target opponent gets two poison counters. (A player with ten or more poison counters loses the game.)",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 6
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Clue"
+                },
+                "descriptionOverride": "When this creature enters, investigate."
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "PermanentsSacrificedEvent",
+                    "filter": "artifact Clue",
+                    "perPermanent": true
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "poison",
+                    "count": 2,
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target opponent"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetOpponent",
+                    "id": "target opponent"
+                },
+                "descriptionOverride": "Whenever you sacrifice a Clue, target opponent gets two poison counters."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "98",
+        "rarity": "UNCOMMON",
+        "artist": "Dmitry Burmak",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/0/f0713025-581f-451b-97a3-97d891285dcc.jpg?1783912892",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "Some abilities trigger \"whenever you sacrifice a Clue\". Those abilities trigger whenever you sacrifice a Clue for any reason, not just to activate a Clue's activated ability."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "If an effect refers to a Clue, it means any Clue artifact, not just a Clue artifact token."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "You can't sacrifice a Clue to pay multiple costs. For example, you can't sacrifice a Clue token to activate its own ability and also to activate another ability."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Pick Your Poison
 {
     "name": "Pick Your Poison",
@@ -8261,6 +8420,110 @@
     ]
 }
 
+// Sharp-Eyed Rookie
+{
+    "name": "Sharp-Eyed Rookie",
+    "manaCost": "{1}{G}",
+    "typeLine": "Creature — Human Detective",
+    "oracleText": "Vigilance\nWhenever a creature you control enters, if its power is greater than this creature's power or its toughness is greater than this creature's toughness, put a +1/+1 counter on this creature and investigate. (Create a Clue token. It's an artifact with \"{2}, Sacrifice this token: Draw a card.\")",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "VIGILANCE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "creature ctrl:you",
+                    "to": "Battlefield"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "AddCounters",
+                            "counterType": "+1/+1",
+                            "count": 1,
+                            "target": "Self"
+                        },
+                        {
+                            "type": "CreatePredefinedToken",
+                            "tokenType": "Clue"
+                        }
+                    ]
+                },
+                "triggerCondition": {
+                    "type": "Any",
+                    "conditions": [
+                        {
+                            "type": "Compare",
+                            "left": {
+                                "type": "EntityProperty",
+                                "entity": "Triggering",
+                                "numericProperty": "Power"
+                            },
+                            "operator": "GT",
+                            "right": {
+                                "type": "EntityProperty",
+                                "entity": "Source",
+                                "numericProperty": "Power"
+                            }
+                        },
+                        {
+                            "type": "Compare",
+                            "left": {
+                                "type": "EntityProperty",
+                                "entity": "Triggering",
+                                "numericProperty": "Toughness"
+                            },
+                            "operator": "GT",
+                            "right": {
+                                "type": "EntityProperty",
+                                "entity": "Source",
+                                "numericProperty": "Toughness"
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "Whenever a creature you control enters, if its power is greater than this creature's power or its toughness is greater than this creature's toughness, put a +1/+1 counter on this creature and investigate."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "176",
+        "rarity": "RARE",
+        "artist": "Jake Murray",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/d/3d5d4788-a970-4e09-89a1-740eca9331d9.jpg?1783912862",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "When a creature enters the battlefield under your control, check its power and toughness against Sharp-Eyed Rookie's power and toughness. If neither stat of the new creature is greater, Sharp-Eyed Rookie's triggered ability won't trigger at all."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "If Sharp-Eyed Rookie's triggered ability triggers, the stat comparison will happen again when the ability tries to resolve. If neither stat of the new creature is greater, the ability will do nothing. If the creature that entered the battlefield leaves the battlefield before the ability tries to resolve, use its power and toughness as it last existed on the battlefield for the purposes of the comparison."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "If a creature enters the battlefield with +1/+1 counters on it, consider those counters when determining if Sharp-Eyed Rookie's triggered ability will trigger."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "When comparing the stats as Sharp-Eyed Rookie's ability resolves, it's possible that the stat that's greater changes from power to toughness or vice versa. If this happens, the ability will still resolve and you'll put a +1/+1 counter on Sharp-Eyed Rookie and investigate."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Slice from the Shadows
 {
     "name": "Slice from the Shadows",
@@ -8836,6 +9099,76 @@
     ]
 }
 
+// They Went This Way
+{
+    "name": "They Went This Way",
+    "manaCost": "{2}{G}",
+    "typeLine": "Sorcery",
+    "oracleText": "Search your library for a basic land card, put it onto the battlefield tapped, then shuffle. Investigate. (Create a Clue token. It's an artifact with \"{2}, Sacrifice this token: Draw a card.\")",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherCards",
+                    "source": {
+                        "type": "FromZone",
+                        "zone": "Library",
+                        "filter": "basicland"
+                    },
+                    "storeAs": "searchable"
+                },
+                {
+                    "type": "SelectFromCollection",
+                    "from": "searchable",
+                    "selection": {
+                        "type": "ChooseUpTo",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 1
+                        }
+                    },
+                    "storeSelected": "found"
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "found",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Battlefield",
+                        "placement": "Tapped"
+                    }
+                },
+                "ShuffleLibrary",
+                "EmitLibrarySearchedEvent",
+                {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Clue"
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "178",
+        "artist": "Andreas Zafiratos",
+        "flavorText": "\"Running doesn't prove guilt, but innocent people don't typically flee into the North Ridge Forest.\"\n—Alst of the Foundway Associates",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/4/f4a31d4a-34bc-46b4-b20f-a5460191b35d.jpg?1783912860",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "Clue is an artifact type. Even though it appears on some cards with other permanent types, it's never a creature type, a land type, or anything but an artifact type."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "If an effect refers to a Clue, it means any Clue artifact, not just a Clue artifact token."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Thinking Cap
 {
     "name": "Thinking Cap",
@@ -8953,6 +9286,76 @@
     "colorIdentityOverride": [
         "BLUE",
         "RED"
+    ]
+}
+
+// Tin Street Gossip
+{
+    "name": "Tin Street Gossip",
+    "manaCost": "{2}{R}{G}",
+    "typeLine": "Creature — Lizard Advisor",
+    "oracleText": "Vigilance\n{T}: Add {R}{G}. Spend this mana only to cast face-down spells or to turn creatures face up.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "VIGILANCE"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "AddMana",
+                            "color": "RED",
+                            "restriction": {
+                                "type": "AnyOf",
+                                "restrictions": [
+                                    "FaceDownSpellsOnly",
+                                    "TurnPermanentsFaceUpOnly"
+                                ]
+                            }
+                        },
+                        {
+                            "type": "AddMana",
+                            "color": "GREEN",
+                            "restriction": {
+                                "type": "AnyOf",
+                                "restrictions": [
+                                    "FaceDownSpellsOnly",
+                                    "TurnPermanentsFaceUpOnly"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true,
+                "descriptionOverride": "{T}: Add {R}{G}. Spend this mana only to cast face-down spells or to turn creatures face up."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "235",
+        "rarity": "UNCOMMON",
+        "artist": "Tony Foti",
+        "flavorText": "\"The lawmages are trying to hush it up, but I'm telling you—the guard didn't fall off that balcony. He was pushed!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/0/4094b13f-28d4-48b6-8cce-3c44656745b7.jpg?1783912834",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "The mana produced by Tin Street Gossip can't be used to cast a spell that instructs you to cloak or manifest cards."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED",
+        "GREEN"
     ]
 }
 

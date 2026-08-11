@@ -4,6 +4,7 @@ import com.wingedsheep.engine.core.CastSpell
 import com.wingedsheep.engine.legalactions.ActionEnumerator
 import com.wingedsheep.engine.legalactions.EnumerationContext
 import com.wingedsheep.engine.legalactions.LegalAction
+import com.wingedsheep.engine.mechanics.mana.SpellPaymentContext
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.sdk.scripting.KeywordAbility
 
@@ -35,10 +36,22 @@ class MorphCastEnumerator : ActionEnumerator {
         val playerId = context.playerId
 
         val faceDownCost = context.costCalculator.calculateFaceDownCost(state, playerId)
-        val canAffordFaceDown = context.manaSolver.canPay(state, playerId, faceDownCost, precomputedSources = context.availableManaSources)
+        // CR 708.2 — the spell on the stack is a nameless 2/2 creature, whatever card it came
+        // from, so every card in hand shares one payment context. That context is what makes
+        // "spend this mana only to cast face-down spells" mana (Tin Street Gossip) count toward
+        // affordability here.
+        val faceDownContext = SpellPaymentContext.faceDownCast()
+        val canAffordFaceDown = context.manaSolver.canPay(
+            state, playerId, faceDownCost,
+            spellContext = faceDownContext,
+            precomputedSources = context.availableManaSources
+        )
         val faceDownAutoTapPreview = if (context.skipAutoTapPreview) null else {
-            context.manaSolver.solve(state, playerId, faceDownCost, precomputedSources = context.availableManaSources)
-                ?.sources?.map { it.entityId }
+            context.manaSolver.solve(
+                state, playerId, faceDownCost,
+                spellContext = faceDownContext,
+                precomputedSources = context.availableManaSources
+            )?.sources?.map { it.entityId }
         }
 
         val hand = state.getHand(playerId)
