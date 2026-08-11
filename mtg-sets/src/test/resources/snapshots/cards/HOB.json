@@ -7753,6 +7753,59 @@
     ]
 }
 
+// Ori, Keeper of Songs
+{
+    "name": "Ori, Keeper of Songs",
+    "manaCost": "{2}{W}",
+    "typeLine": "Legendary Creature — Dwarf Bard",
+    "oracleText": "Storied (If you control three or more artifacts, legendaries, and/or Sagas, you have an enduring story for the rest of the game.)\nAs long as you have an enduring story, Ori gets +1/+0 and has vigilance.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "STORIED"
+    ],
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "ModifyStats",
+                    "powerBonus": 1,
+                    "toughnessBonus": 0,
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "Self"
+                    }
+                },
+                "condition": "PlayerHasEnduringStory"
+            },
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "GrantKeyword",
+                    "keyword": "VIGILANCE",
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "Self"
+                    }
+                },
+                "condition": "PlayerHasEnduringStory"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "23",
+        "artist": "Yigit Koroglu",
+        "flavorText": "The music began all at once, so sudden and sweet that Bilbo forgot everything else.",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/5/c5727af5-a487-4b16-8278-81c3c928c417.jpg?1785323179"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Part in Friendship
 {
     "name": "Part in Friendship",
@@ -10995,6 +11048,50 @@
     ]
 }
 
+// Thorin Oakenshield
+{
+    "name": "Thorin Oakenshield",
+    "manaCost": "{R}{W}",
+    "typeLine": "Legendary Creature — Dwarf Noble",
+    "oracleText": "Trample\nStoried (If you control three or more artifacts, legendaries, and/or Sagas, you have an enduring story for the rest of the game.)\nAs long as you have an enduring story, artifacts and creatures you control have ward {1}.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "keywords": [
+        "TRAMPLE",
+        "STORIED"
+    ],
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "GrantWard",
+                    "cost": {
+                        "type": "WardCost.Mana",
+                        "manaCost": "{1}"
+                    },
+                    "filter": {
+                        "baseFilter": "artifact|creature ctrl:you"
+                    }
+                },
+                "condition": "PlayerHasEnduringStory"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "165",
+        "rarity": "UNCOMMON",
+        "artist": "Francisco Miyara",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/7/c7e18609-d1ed-4829-be11-f2ce2cfcbc49.jpg?1784377040"
+    },
+    "colorIdentityOverride": [
+        "RED",
+        "WHITE"
+    ]
+}
+
 // Thorin's Last Stand
 {
     "name": "Thorin's Last Stand",
@@ -12629,5 +12726,87 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Óin the Brave
+{
+    "name": "Óin the Brave",
+    "manaCost": "{1}{R}",
+    "typeLine": "Legendary Creature — Dwarf Warrior",
+    "oracleText": "Storied (If you control three or more artifacts, legendaries, and/or Sagas, you have an enduring story for the rest of the game.)\nAs long as you have an enduring story, Óin gets +1/+0 and has haste.\n{1}, {T}, Discard a card: Draw a card.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 3
+    },
+    "keywords": [
+        "STORIED"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}"
+                            }
+                        },
+                        "CostTap",
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": "AtomDiscard"
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                }
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "ModifyStats",
+                    "powerBonus": 1,
+                    "toughnessBonus": 0,
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "Self"
+                    }
+                },
+                "condition": "PlayerHasEnduringStory"
+            },
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "GrantKeyword",
+                    "keyword": "HASTE",
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "Self"
+                    }
+                },
+                "condition": "PlayerHasEnduringStory"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "106",
+        "artist": "Colin Boyer",
+        "flavorText": "When the heart of a Dwarf is wakened by gold, he grows suddenly bold and fierce.",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/9/9984b9ef-e81c-48f4-aa33-0504171a2d3c.jpg?1785496200"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }

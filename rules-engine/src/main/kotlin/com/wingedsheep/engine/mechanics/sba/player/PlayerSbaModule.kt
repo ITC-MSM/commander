@@ -7,6 +7,7 @@ class PlayerSbaModule : StateBasedActionModule {
     override fun checks(): List<StateBasedActionCheck> = listOf(
         StartYourEnginesCheck(),
         AscendCitysBlessingCheck(),
+        StoriedEnduringStoryCheck(),
         PlayerLifeLossCheck(),
         CommanderDamageLossCheck(),
         PoisonLossCheck(),

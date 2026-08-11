@@ -4,6 +4,7 @@ import com.wingedsheep.sdk.core.AbilityFlag
 import com.wingedsheep.sdk.core.CardType
 import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.engine.mechanics.citysblessing.CitysBlessingService
+import com.wingedsheep.engine.mechanics.enduringstory.EnduringStoryService
 import com.wingedsheep.engine.mechanics.combat.rules.DefenderBypass
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.Phase
@@ -2266,6 +2267,24 @@ class ClientStateTransformer(
                     description = "You have the city's blessing for the rest of the game",
                     icon = "shield",
                     imageUri = "https://cards.scryfall.io/normal/front/3/0/30758c2e-fc01-4037-838c-bdabe8a4e5a3.jpg?1721428739"
+                )
+            )
+        }
+
+        // Storied / enduring story (CR 702.195). Read through EnduringStoryService rather than the
+        // component for the same reason as the city's blessing above: storied on a permanent is
+        // continuous, so a player who has just crossed three qualifying permanents already has the
+        // designation even though the state-based action that writes the marker hasn't been polled
+        // yet. The badge image is the actual Scryfall "Enduring Story" marker card (thob #14), so it
+        // matches the physical-game marker players know.
+        if (EnduringStoryService.has(state, playerId)) {
+            effects.add(
+                ClientPlayerEffect(
+                    effectId = "enduring_story",
+                    name = "Enduring Story",
+                    description = "You have an enduring story for the rest of the game",
+                    icon = "shield",
+                    imageUri = "https://cards.scryfall.io/normal/front/5/3/53bfaac7-07cf-4637-8f64-aba93ec7fd1a.jpg?1785534385"
                 )
             )
         }
