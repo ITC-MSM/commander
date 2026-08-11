@@ -4178,6 +4178,50 @@
     ]
 }
 
+// Mind's Eye
+{
+    "name": "Mind's Eye",
+    "manaCost": "{5}",
+    "typeLine": "Artifact",
+    "oracleText": "Whenever an opponent draws a card, you may pay {1}. If you do, draw a card.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "DrawEvent",
+                    "player": "EachOpponent"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.MayPay",
+                        "cost": {
+                            "type": "PayManaCost",
+                            "cost": "{1}"
+                        }
+                    },
+                    "then": {
+                        "type": "DrawCards",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 1
+                        }
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "205",
+        "rarity": "RARE",
+        "artist": "Edward P. Beard, Jr.",
+        "flavorText": "\"Ideas drift like petals on the wind. I have only to lift my face to the breeze.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/8/0899f753-c229-4cdf-a60c-4978a6506def.jpg?1783944513"
+    }
+}
+
 // Molder Slug
 {
     "name": "Molder Slug",
@@ -4879,6 +4923,85 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Nim Devourer
+{
+    "name": "Nim Devourer",
+    "manaCost": "{3}{B}{B}",
+    "typeLine": "Creature — Zombie",
+    "oracleText": "This creature gets +1/+0 for each artifact you control.\n{B}{B}: Return this card from your graveyard to the battlefield, then sacrifice a creature. Activate only during your upkeep.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{B}{B}"
+                    }
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "MoveToZone",
+                            "target": "Self",
+                            "destination": "Battlefield"
+                        },
+                        {
+                            "type": "ForceSacrifice",
+                            "filter": "creature",
+                            "target": {
+                                "type": "PlayerRef",
+                                "player": "You"
+                            }
+                        }
+                    ]
+                },
+                "restrictions": [
+                    {
+                        "type": "DuringStep",
+                        "step": "UPKEEP"
+                    },
+                    "OnlyDuringYourTurn"
+                ],
+                "activateFromZone": "Graveyard"
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "GrantDynamicStats",
+                "filter": {
+                    "baseFilter": "permanent",
+                    "scope": "Self"
+                },
+                "powerBonus": {
+                    "type": "AggregateBattlefield",
+                    "player": "You",
+                    "filter": "artifact"
+                },
+                "toughnessBonus": {
+                    "type": "Fixed",
+                    "amount": 0
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "70",
+        "rarity": "RARE",
+        "artist": "Adam Rex",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/0/a037ef49-8849-41aa-aa6e-3ac6ee34cdad.jpg?1783944547"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 
@@ -7052,6 +7175,87 @@
     ]
 }
 
+// Taj-Nar Swordsmith
+{
+    "name": "Taj-Nar Swordsmith",
+    "manaCost": "{3}{W}",
+    "typeLine": "Creature — Cat Soldier",
+    "oracleText": "When this creature enters, you may pay {X}. If you do, search your library for an Equipment card with mana value X or less, put that card onto the battlefield, then shuffle.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayPayX",
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Library",
+                                    "filter": {
+                                        "cardPredicates": [
+                                            "IsArtifact",
+                                            {
+                                                "type": "HasSubtype",
+                                                "subtype": "Equipment"
+                                            },
+                                            "ManaValueAtMostX"
+                                        ]
+                                    }
+                                },
+                                "storeAs": "searchable"
+                            },
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "searchable",
+                                "selection": {
+                                    "type": "ChooseUpTo",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "storeSelected": "found"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "found",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Battlefield"
+                                }
+                            },
+                            "ShuffleLibrary",
+                            "EmitLibrarySearchedEvent"
+                        ]
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "27",
+        "rarity": "UNCOMMON",
+        "artist": "Todd Lockwood",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/9/89c24cb4-4d7d-41df-b5c2-bd967a6a5d7e.jpg?1783944557"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Talisman of Dominance
 {
     "name": "Talisman of Dominance",
@@ -8749,6 +8953,71 @@
         "imageUri": "https://cards.scryfall.io/normal/front/1/3/13e731de-32e9-4dae-804f-9b962b457cf3.jpg"
     },
     "colorIdentityOverride": []
+}
+
+// Vulshok Battlemaster
+{
+    "name": "Vulshok Battlemaster",
+    "manaCost": "{4}{R}",
+    "typeLine": "Creature — Human Warrior",
+    "oracleText": "Haste\nWhen this creature enters, attach all Equipment on the battlefield to it. (Control of the Equipment doesn't change.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "HASTE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": "artifact Equipment"
+                        }
+                    },
+                    "body": {
+                        "type": "AttachTargetEquipmentToCreature",
+                        "equipmentTarget": "Self",
+                        "creatureTarget": "TriggeringEntity"
+                    }
+                },
+                "descriptionOverride": "When this creature enters, attach all Equipment on the battlefield to it."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "110",
+        "rarity": "RARE",
+        "artist": "Kev Walker",
+        "flavorText": "\"I could demonstrate how the leonin sunsplicer works, but then you'd be too dead to buy one.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/8/083f3b83-b7d3-472f-87b2-ed247c9c937e.jpg?1783944537",
+        "rulings": [
+            {
+                "date": "2004-12-01",
+                "text": "The \"enters\" effect moves all Equipment onto the Battlemaster, regardless of whether that Equipment was attached to other creatures."
+            },
+            {
+                "date": "2004-12-01",
+                "text": "Other players' Equipment is moved onto the Battlemaster as well as your own. This doesn't change who controls the Equipment or who can activate its equip ability to move it onto another creature."
+            },
+            {
+                "date": "2004-12-01",
+                "text": "If an Equipment can't equip Vulshok Battlemaster, it isn't attached to the Battlemaster, and it doesn't become unattached (if it's attached to a creature)."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
 }
 
 // Vulshok Berserker
