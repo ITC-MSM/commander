@@ -564,6 +564,26 @@ data object SacrificedPermanentWasLegendary : Condition {
 }
 
 /**
+ * Condition: "If the sacrificed creature was suspected." (CR 701.60a)
+ *
+ * The suspect sibling of [SacrificedPermanentWasLegendary], reading the same
+ * `EffectContext.sacrificedPermanents` snapshots — here the `wasSuspected` flag, frozen at
+ * cost-payment time. It has to be last-known information (CR 608.2h): the suspected designation is
+ * a floating effect keyed on the entity, and by the time the ability resolves the sacrificed
+ * creature and its floating effects are both gone.
+ *
+ * Asks specifically "was it *suspected*", not "did it have menace" — the menace and can't-block
+ * halves of `Effects.Suspect` are separate sub-effects that any number of other cards also grant.
+ *
+ * Used by MKM's Agency Coroner ("If the sacrificed creature was suspected, draw two cards instead").
+ */
+@SerialName("SacrificedPermanentWasSuspected")
+@Serializable
+data object SacrificedPermanentWasSuspected : Condition {
+    override val description: String = "if the sacrificed creature was suspected"
+}
+
+/**
  * Condition: "as long as it's blocking or blocked by a creature of one of [subtypes]".
  *
  * Source-relative combat condition. The "it" is resolved through the source: when the source

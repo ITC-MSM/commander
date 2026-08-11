@@ -96,6 +96,7 @@ import com.wingedsheep.engine.state.components.battlefield.CastFromGraveyardComp
 import com.wingedsheep.engine.state.components.battlefield.CastFromLibraryComponent
 import com.wingedsheep.sdk.scripting.conditions.SacrificedPermanentHadSubtype
 import com.wingedsheep.sdk.scripting.conditions.SacrificedPermanentWasLegendary
+import com.wingedsheep.sdk.scripting.conditions.SacrificedPermanentWasSuspected
 import com.wingedsheep.sdk.scripting.conditions.YouSacrificedPermanentThisWay
 import com.wingedsheep.sdk.scripting.conditions.AnotherPermanentWithSameNameAsTarget
 import com.wingedsheep.sdk.scripting.conditions.TargetMarkedDamageExceedsToughness
@@ -573,6 +574,7 @@ class ConditionEvaluator(
             }
             is SacrificedPermanentHadSubtype -> ifResolution { evaluateSacrificedPermanentHadSubtype(condition, it) }
             is SacrificedPermanentWasLegendary -> ifResolution { evaluateSacrificedPermanentWasLegendary(it) }
+            is SacrificedPermanentWasSuspected -> ifResolution { evaluateSacrificedPermanentWasSuspected(it) }
             is YouSacrificedPermanentThisWay -> ifResolution { evaluateYouSacrificedPermanentThisWay(it) }
             is TriggeringEntityWasHistoric -> ifResolution { evaluateTriggeringEntityWasHistoric(state, it) }
             is TriggeringEntityWasCast -> ifResolution { evaluateTriggeringEntityWasCast(state, it) }
@@ -1367,6 +1369,10 @@ class ConditionEvaluator(
         return context.sacrificedPermanents.any { snapshot ->
             "LEGENDARY" in snapshot.supertypes
         }
+    }
+
+    private fun evaluateSacrificedPermanentWasSuspected(context: EffectContext): Boolean {
+        return context.sacrificedPermanents.any { snapshot -> snapshot.wasSuspected }
     }
 
     private fun evaluateYouSacrificedPermanentThisWay(context: EffectContext): Boolean {

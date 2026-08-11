@@ -1260,6 +1260,13 @@ object Conditions {
         com.wingedsheep.sdk.scripting.conditions.SacrificedPermanentWasLegendary
 
     /**
+     * If at least one permanent sacrificed as part of the cost was suspected (CR 701.60a) at the
+     * moment of sacrifice. Used by MKM's Agency Coroner.
+     */
+    val SacrificedWasSuspected: ConditionInterface =
+        com.wingedsheep.sdk.scripting.conditions.SacrificedPermanentWasSuspected
+
+    /**
      * If at least one permanent sacrificed "this way" was controlled by the source's
      * controller at the moment of sacrifice. Used to gate the personal half of a
      * symmetric edict (Rise of the Witch-king, LTR).

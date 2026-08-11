@@ -63,6 +63,8 @@ import com.wingedsheep.sdk.scripting.effects.CantAttackEffect
 import com.wingedsheep.sdk.scripting.effects.CantBlockEffect
 import com.wingedsheep.sdk.scripting.effects.GoadEffect
 import com.wingedsheep.sdk.scripting.effects.MarkMustAttackThisTurnEffect
+import com.wingedsheep.sdk.scripting.effects.MarkMustBlockThisTurnEffect
+import com.wingedsheep.sdk.scripting.effects.RemoveSuspectedEffect
 import com.wingedsheep.sdk.scripting.effects.SetSuspectedEffect
 import com.wingedsheep.sdk.scripting.effects.CantBlockGroupEffect
 import com.wingedsheep.sdk.scripting.effects.CantActivateLoyaltyAbilitiesEffect
@@ -3839,6 +3841,17 @@ object Effects {
         MarkMustAttackThisTurnEffect(target)
 
     /**
+     * Mark a creature as required to block this turn if able ("target creature blocks this turn if
+     * able", Culvert Ambusher).
+     *
+     * Unrestricted counterpart to [ForceBlock], which pins the creature to blocking one *named*
+     * attacker: this one is satisfied by blocking any attacker at all. A requirement only — a
+     * creature that is tapped or otherwise unable to block just doesn't block (CR 509.1c).
+     */
+    fun MarkMustBlockThisTurn(target: EffectTarget = EffectTarget.ContextTarget(0)): Effect =
+        MarkMustBlockThisTurnEffect(target)
+
+    /**
      * Target creature becomes suspected (CR 701.60): atomic composite of the
      * named "suspected" status, granted menace, and "can't block".
      *
@@ -3856,6 +3869,17 @@ object Effects {
             ),
             descriptionOverride = "${target.description} becomes suspected"
         )
+
+    /**
+     * Target is no longer suspected (CR 701.60c) — the exact inverse of [Suspect], removing the
+     * named status together with the menace and can't-block halves it applied.
+     *
+     * A single effect rather than a composite of three "remove" effects: the three floating effects
+     * [Suspect] creates are one application (they share a timestamp), so they come off as one too.
+     * Menace or can't-block a creature has from anywhere else survives.
+     */
+    fun NoLongerSuspected(target: EffectTarget = EffectTarget.ContextTarget(0)): Effect =
+        RemoveSuspectedEffect(target)
 
     // =========================================================================
     // Special Effects
