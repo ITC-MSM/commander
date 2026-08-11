@@ -3295,7 +3295,7 @@ class TriggerDetector(
             existingCard != null ->
                 existingCard.copy(typeLine = lastKnownTypeLine ?: existingCard.typeLine)
             lastKnownTypeLine != null -> CardComponent(
-                cardDefinitionId = event.lastKnown?.cardDefinitionId ?: event.entityName,
+                cardDefinitionId = event.lastKnown.cardDefinitionId ?: event.entityName,
                 name = event.entityName,
                 manaCost = ManaCost.ZERO,
                 typeLine = lastKnownTypeLine

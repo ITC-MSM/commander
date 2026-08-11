@@ -446,7 +446,7 @@ class CastSpellEnumerator : ActionEnumerator {
                 context.costUtils.findWaterbendPermanents(state, playerId)
             } else emptyList()
             if (mandatoryWaterbend) {
-                effectiveCost = effectiveCost + if (spellWaterbend!!.isX) {
+                effectiveCost = effectiveCost + if (spellWaterbend.isX) {
                     ManaCost.parse("{X}")
                 } else {
                     ManaCost.parse("{${spellWaterbend.amount}}")
@@ -502,7 +502,7 @@ class CastSpellEnumerator : ActionEnumerator {
                 context.manaSolver.canPay(state, playerId, payableCost, spellContext = spellContext, precomputedSources = cachedSources) ||
                     context.costUtils.canAffordWithWaterbend(
                         state, playerId, payableCost,
-                        waterbendPermanents.take(spellWaterbend!!.amount),
+                        waterbendPermanents.take(spellWaterbend.amount),
                         precomputedSources = cachedSources, spellContext = spellContext
                     )
             } else {

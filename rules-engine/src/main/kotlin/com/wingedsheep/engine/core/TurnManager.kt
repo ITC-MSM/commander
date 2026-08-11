@@ -872,7 +872,7 @@ class TurnManager(
             )
         }
         if (cleanupResult.error != null) {
-            return ExecutionResult.error(cleanupResult.newState, cleanupResult.error!!)
+            return ExecutionResult.error(cleanupResult.newState, cleanupResult.error)
         }
         newState = cleanupResult.newState
         events.addAll(cleanupResult.events)

@@ -972,7 +972,7 @@ class TriggerMatcher(
             // that was a Food artifact only because of Ygra's continuous effect). The base
             // cardComponent.typeLine in the new zone has only the printed types.
             val typeLine = if (event.fromZone == Zone.BATTLEFIELD && event.lastKnown?.typeLine != null) {
-                event.lastKnown?.typeLine
+                event.lastKnown.typeLine
             } else {
                 cardComponent?.typeLine ?: event.lastKnown?.typeLine
             }
@@ -1033,7 +1033,7 @@ class TriggerMatcher(
                         // have its keywords (e.g., Jackdaw Savior: "whenever a creature you control
                         // with flying dies").
                         if (event.fromZone == Zone.BATTLEFIELD && event.lastKnown?.keywords?.isNotEmpty() == true) {
-                            predicate.keyword.name in (event.lastKnown?.keywords ?: emptySet())
+                            predicate.keyword.name in event.lastKnown.keywords
                         } else {
                             projected.hasKeyword(event.entityId, predicate.keyword)
                         }

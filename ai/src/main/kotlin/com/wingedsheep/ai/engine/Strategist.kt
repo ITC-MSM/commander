@@ -282,7 +282,7 @@ class Strategist(
             // Fill in targets on the returned action so the processor can execute it.
             // The committed target is chosen by simulation (not just the heuristic) so the
             // AI sees the real resolved board, including effects already on the stack.
-            best!!.first
+            best.first
         } else {
             pass ?: legalActions.first()
         }
@@ -292,7 +292,7 @@ class Strategist(
                 state, evaluationState, playerId, startNanos,
                 pass = pass, passScore = passScore, adjustedPassScore = adjustedPassScore,
                 adjusted = adjusted, dropped = dropped.orEmpty(),
-                chosenAction = if (takeAction) best!!.first else null,
+                chosenAction = if (takeAction) best.first else null,
             )
         }
         return chosen

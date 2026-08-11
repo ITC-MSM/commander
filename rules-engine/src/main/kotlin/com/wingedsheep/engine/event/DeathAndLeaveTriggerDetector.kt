@@ -467,7 +467,7 @@ class DeathAndLeaveTriggerDetector(
         if (event.fromZone != Zone.BATTLEFIELD || event.toZone != Zone.GRAVEYARD) return
         if (event.lastKnown?.wasToken == true) return
         if (event.lastKnown?.typeLine?.isCreature != true) return
-        if (Keyword.ENDURING.name !in (event.lastKnown?.keywords ?: emptySet())) return
+        if (Keyword.ENDURING.name !in event.lastKnown.keywords) return
 
         val info = resolveDyingEntity(state, event) ?: return
 

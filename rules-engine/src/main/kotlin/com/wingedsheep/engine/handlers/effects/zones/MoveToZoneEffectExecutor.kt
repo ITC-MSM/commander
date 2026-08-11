@@ -284,7 +284,7 @@ class MoveToZoneEffectExecutor(
             com.wingedsheep.engine.handlers.effects.FaceDownTurnUp.dataFor(
                 cardRegistry.getCard(cardComponent.cardDefinitionId),
                 cardComponent.cardDefinitionId,
-                faceDownMode!!
+                faceDownMode
             )
         } else null
 
