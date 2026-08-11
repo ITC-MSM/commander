@@ -1201,7 +1201,11 @@ class CastSpellHandler(
 
         // Build spell context for conditional mana validation
         val cardComponent = state.getEntity(action.cardId)?.get<CardComponent>()
-        val spellCtx = if (cardComponent != null) {
+        val spellCtx = if (action.castFaceDown) {
+            // CR 708.2 — a face-down spell has none of the printed card's characteristics, so
+            // conditional mana is judged against the nameless 2/2 creature it actually is.
+            SpellPaymentContext.faceDownCast(isFromHand = isCastFromHand(state, action.cardId))
+        } else if (cardComponent != null) {
             SpellPaymentContext(
                 isInstantOrSorcery = cardComponent.typeLine.isInstant || cardComponent.typeLine.isSorcery,
                 isKicked = action.declaredCostSlot == ChoiceSlot.KICKED,
@@ -3033,8 +3037,12 @@ class CastSpellHandler(
             events.add(bendEvent)
         }
 
-        // Build spell context for conditional mana restrictions
-        val spellContext = SpellPaymentContext(
+        // Build spell context for conditional mana restrictions. A face-down cast (CR 708.2) is a
+        // nameless 2/2 creature spell regardless of what the card says, so it gets its own context
+        // rather than the printed card's — see `validatePayment`.
+        val spellContext = if (action.castFaceDown) {
+            SpellPaymentContext.faceDownCast(isFromHand = isCastFromHand(currentState, action.cardId))
+        } else SpellPaymentContext(
             isInstantOrSorcery = cardComponent.typeLine.isInstant || cardComponent.typeLine.isSorcery,
             isKicked = action.declaredCostSlot == ChoiceSlot.KICKED,
             isCreature = cardComponent.typeLine.isCreature,

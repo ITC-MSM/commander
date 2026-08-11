@@ -4,6 +4,7 @@ import com.wingedsheep.engine.core.ActivateAbility
 import com.wingedsheep.engine.core.CastSpell
 import com.wingedsheep.engine.legalactions.*
 import com.wingedsheep.engine.mechanics.mana.ManaSolver
+import com.wingedsheep.engine.mechanics.mana.SpellPaymentContext
 import com.wingedsheep.engine.mechanics.mana.buildAbilityPaymentContext
 import com.wingedsheep.engine.mechanics.mana.isSatisfiedBy
 import com.wingedsheep.engine.mechanics.mana.spellPaymentContextFor
@@ -51,7 +52,13 @@ class LegalActionEnricher(
         restrictedMana: List<RestrictedManaEntry>
     ): List<ClientRestrictedManaEntry>? {
         val paymentContext = when (val gameAction = action.action) {
-            is CastSpell -> state.getEntity(gameAction.cardId)?.get<CardComponent>()?.let { card ->
+            // CR 708.2 — a face-down cast is a nameless 2/2 creature spell, so it never carries
+            // the printed card's characteristics into the restriction check.
+            is CastSpell -> if (gameAction.castFaceDown) {
+                SpellPaymentContext.faceDownCast(
+                    isFromHand = action.sourceZone == null || action.sourceZone == "HAND"
+                )
+            } else state.getEntity(gameAction.cardId)?.get<CardComponent>()?.let { card ->
                 spellPaymentContextFor(
                     card,
                     isKicked = gameAction.declaredCostSlot == ChoiceSlot.KICKED,

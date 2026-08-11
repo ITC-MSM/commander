@@ -142,6 +142,23 @@ sealed interface ManaRestriction {
     }
 
     /**
+     * "Spend this mana only to cast face-down spells."
+     *
+     * Satisfied by casting a card face down for its morph (CR 702.37a) or disguise (CR 702.168a)
+     * cost — a spell with no name and no characteristics but "2/2 creature" (CR 708.2). Used
+     * inside [AnyOf] by Tin Street Gossip.
+     *
+     * Deliberately *not* satisfied by effects that merely put cards onto the battlefield face
+     * down: per the printed ruling on Tin Street Gossip, this mana can't pay for a spell that
+     * instructs you to cloak or manifest, because nothing there is cast face down.
+     */
+    @SerialName("FaceDownSpellsOnly")
+    @Serializable
+    data object FaceDownSpellsOnly : ManaRestriction {
+        override val description: String = "Spend this mana only to cast face-down spells"
+    }
+
+    /**
      * "Spend this mana only to unlock a door."
      *
      * Satisfied by the unlock-a-door special action (CR 709.5e), not by spell casts or ability

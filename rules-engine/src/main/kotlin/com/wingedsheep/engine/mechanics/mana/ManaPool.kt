@@ -59,7 +59,34 @@ data class SpellPaymentContext(
      * (Creeping Peeper).
      */
     val isUnlockDoorAction: Boolean = false,
+    /**
+     * True when the spell being cast is being cast **face down** for its morph (CR 702.37a) or
+     * disguise (CR 702.168a) cost. Lets [ManaRestriction.FaceDownSpellsOnly] recognize "spend
+     * this mana only to cast face-down spells" (Tin Street Gossip).
+     *
+     * A face-down spell has no name and no characteristics other than "2/2 creature" (CR 708.2),
+     * so [faceDownCast] is the whole context for such a cast — see its factory below.
+     */
+    val isFaceDownCast: Boolean = false,
 ) {
+    companion object {
+        /**
+         * The payment context for a face-down cast (morph / disguise). CR 708.2: the spell has no
+         * name, no mana cost, no color, and no card types or subtypes other than creature, with
+         * power and toughness 2/2. Building it from the *printed* card would let restricted mana
+         * keyed to the hidden card's characteristics (Cavern of Souls' chosen type, "creature
+         * spells with mana value 4 or greater") pay for a cast that, as far as the rules are
+         * concerned, has none of them.
+         */
+        fun faceDownCast(isFromHand: Boolean = true): SpellPaymentContext = SpellPaymentContext(
+            isCreature = true,
+            manaValue = 0,
+            cardTypes = setOf(com.wingedsheep.sdk.core.CardType.CREATURE),
+            isFromHand = isFromHand,
+            isFaceDownCast = true,
+        )
+    }
+
     /**
      * True when this payment is for *casting a spell*, as opposed to activating an ability, a
      * special action, or any other cost a player is asked to pay. Every spell has at least one
@@ -89,6 +116,7 @@ fun ManaRestriction.isSatisfiedBy(context: SpellPaymentContext): Boolean = when 
     is ManaRestriction.CastFromExileOnly -> !context.isAbilityActivation && context.isFromExile
     is ManaRestriction.CastFromNonHandOnly -> !context.isAbilityActivation && !context.isFromHand
     is ManaRestriction.TurnPermanentsFaceUpOnly -> context.isTurnFaceUpAction
+    is ManaRestriction.FaceDownSpellsOnly -> !context.isAbilityActivation && context.isFaceDownCast
     is ManaRestriction.UnlockDoorOnly -> context.isUnlockDoorAction
     is ManaRestriction.AbilityActivationOnly -> context.isAbilityActivation
     is ManaRestriction.AnyOf -> restrictions.any { it.isSatisfiedBy(context) }

@@ -8607,6 +8607,14 @@ restriction matches the spell context.
 - `ManaRestriction.UnlockDoorOnly` — only the unlock-a-door special action (CR 709.5e).
   Satisfied by `SpellPaymentContext.isUnlockDoorAction`; the unlock-room handler/enumerator pass
   that context. Creeping Peeper (inside `AnyOf`).
+- `ManaRestriction.FaceDownSpellsOnly` — only spells **cast face down** for a morph (CR 702.37a)
+  or disguise (CR 702.168a) cost. Satisfied by `SpellPaymentContext.isFaceDownCast`, which every
+  face-down cast path sets via `SpellPaymentContext.faceDownCast()` — the CR 708.2 shape (nameless
+  colorless 2/2 creature spell, mana value 0), *not* the printed card's characteristics. Does not
+  cover cloak or manifest: nothing there is cast. The turn-face-up half of "cast face-down spells
+  or turn creatures face up" is the separate `TurnPermanentsFaceUpOnly` atom (a face-down permanent
+  is always a creature, so "permanents" and "creatures" coincide). Tin Street Gossip:
+  `AnyOf(FaceDownSpellsOnly, TurnPermanentsFaceUpOnly)`.
 - `ManaRestriction.CannotCastSpellsOtherThan(cardTypes)` — the family's only **negative**
   restriction: "This mana can't be spent to cast a non[type] spell" (Hydraulic Helper —
   `CannotCastSpellsOtherThan(setOf(CardType.ARTIFACT))`). Every other variant is a whitelist
