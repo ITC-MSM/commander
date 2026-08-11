@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useGameStore } from '@/store/gameStore.ts'
 import { useHasLegalActions } from '@/store/selectors.ts'
-import type { ClientCard, EntityId } from '@/types'
+import type { ClientCard, EntityId, LegalActionInfo } from '@/types'
 import { Color, ColorSymbols, Keyword } from '@/types/enums'
 import { getCardImageUrl, getScryfallFallbackUrl, faceDownImageUrl } from '@/utils/cardImages.ts'
 import { useInteraction } from '@/hooks/useInteraction.ts'
@@ -64,6 +64,9 @@ import { SvgGlyph } from '@/assets/icons/SvgGlyph'
 import { RenderProfiler } from '@/utils/renderProfiler'
 import { buildActionOptions, playCostRange } from '@/utils/actionOptions.ts'
 import { parseManaCost, totalManaNeeded } from '@/utils/manaCost.ts'
+
+/** Shared empty list for cards that can never be played from where they are — see GameCardImpl. */
+const NO_LEGAL_ACTIONS: readonly LegalActionInfo[] = Object.freeze([])
 
 /** Soft halo colors for the chosen-color gem, keyed by MTG color (see grantedColors). */
 const COLOR_GLOW: Record<Color, string> = {
@@ -234,7 +237,16 @@ function GameCardImpl({
   const hotseat = useGameStore(
     (state) => ((state.spectatingState?.gameState ?? state.gameState)?.hotseat ?? false),
   )
-  const legalActions = useGameStore((state) => state.legalActions)
+  // `legalActions` is a fresh array on every server update, so subscribing to it re-renders this
+  // card whenever *anything* happens anywhere — and on a full board that is most of the cost of
+  // a click. It is only ever used to find the ways to play *this* card, which can only exist for
+  // a card in hand (or a commander in the command zone); for everything on the battlefield, in a
+  // graveyard, or on the stack the filter below is always empty. Handing those cards a shared
+  // constant instead lets Zustand's Object.is bail-out skip them entirely.
+  const canBePlayedFromHere = inHand || enableDragToCast
+  const legalActions = useGameStore((state) =>
+    canBePlayedFromHere ? state.legalActions : NO_LEGAL_ACTIONS
+  )
   const toggleAttacker = useGameStore((state) => state.toggleAttacker)
   const assignBlocker = useGameStore((state) => state.assignBlocker)
   const removeBlockerAssignment = useGameStore((state) => state.removeBlockerAssignment)
@@ -254,7 +266,10 @@ function GameCardImpl({
   const setAttackTarget = useGameStore((state) => state.setAttackTarget)
   const startDraggingCard = useGameStore((state) => state.startDraggingCard)
   const stopDraggingCard = useGameStore((state) => state.stopDraggingCard)
-  const draggingCardId = useGameStore((state) => state.draggingCardId)
+  // Per-card boolean rather than the raw id: a plain click on any card writes draggingCardId
+  // twice (pointer down, then up), and subscribing to the id itself made every one of those
+  // writes re-render every card on the board. Only "is it this card?" is ever asked.
+  const isDraggingThisCard = useGameStore((state) => state.draggingCardId === card.id)
   const pendingDecision = useGameStore((state) => state.pendingDecision)
   const submitTargetsDecision = useGameStore((state) => state.submitTargetsDecision)
   const decisionSelectionState = useGameStore((state) => state.decisionSelectionState)
@@ -653,7 +668,7 @@ function GameCardImpl({
 
   // Global mouse/touch up handler for card dragging (to detect drop outside hand)
   useEffect(() => {
-    if (draggingCardId !== card.id) return
+    if (!isDraggingThisCard) return
 
     const handleGlobalPointerUp = (clientX: number, clientY: number) => {
       // Require minimum drag distance to prevent accidental casts
@@ -727,7 +742,7 @@ function GameCardImpl({
       window.removeEventListener('mouseup', handleMouseUp)
       window.removeEventListener('touchend', handleTouchEnd)
     }
-  }, [draggingCardId, card.id, playableAction, shouldShowCastModal, executeAction, stopDraggingCard, handleCardClick, selectCard, isInAttackerMode, isValidAttacker, toggleAttacker, isInBlockerMode, isValidBlocker, isSelectedAsBlocker, removeBlockerAssignment])
+  }, [isDraggingThisCard, card.id, playableAction, shouldShowCastModal, executeAction, stopDraggingCard, handleCardClick, selectCard, isInAttackerMode, isValidAttacker, toggleAttacker, isInBlockerMode, isValidBlocker, isSelectedAsBlocker, removeBlockerAssignment])
 
   // Global mouse/touch up handler to cancel blocker drag
   // For touch, we also detect drop target since touchend fires on the originating element
@@ -1284,7 +1299,7 @@ function GameCardImpl({
   const cursor = isValidBlocker || isValidAttacker || isSelectedAsAttacker || canDragToPlay ? 'grab' : baseCursor
 
   // Check if currently being dragged (attacker, blocker, or hand card)
-  const isBeingDragged = draggingBlockerId === card.id || draggingAttackerId === card.id || draggingCardId === card.id
+  const isBeingDragged = draggingBlockerId === card.id || draggingAttackerId === card.id || isDraggingThisCard
 
   // Container dimensions - expand width when the card sits sideways (tapped permanents
   // and Rooms always-landscape) to prevent overlap with neighbours.

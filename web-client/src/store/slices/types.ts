@@ -5,7 +5,6 @@ import type { StateCreator } from 'zustand'
 import type {
   EntityId,
   ClientGameState,
-  ClientEvent,
   GameAction,
   LegalActionInfo,
   ConvokeCreatureInfo,
@@ -875,7 +874,6 @@ export type GameStore = {
   opponentDecisionStatus: OpponentDecisionStatus | null
   mulliganState: MulliganState | null
   waitingForOpponentMulligan: boolean
-  pendingEvents: readonly ClientEvent[]
   eventLog: readonly LogEntry[]
   gameOverState: GameOverState | null
   lastError: ErrorState | null
@@ -934,7 +932,6 @@ export type GameStore = {
   returnToMenu: () => void
   setError: (error: ErrorState) => void
   clearError: () => void
-  consumeEvent: () => ClientEvent | undefined
 
   // Lobby slice
   lobbyState: LobbyState | null
