@@ -509,6 +509,51 @@
     "colorIdentityOverride": []
 }
 
+// Broodstar
+{
+    "name": "Broodstar",
+    "manaCost": "{8}{U}{U}",
+    "typeLine": "Creature — Beast",
+    "oracleText": "Affinity for artifacts (This spell costs {1} less to cast for each artifact you control.)\nFlying\nBroodstar's power and toughness are each equal to the number of artifacts you control.",
+    "creatureStats": {
+        "power": {
+            "type": "Dynamic",
+            "source": {
+                "type": "AggregateBattlefield",
+                "player": "You",
+                "filter": "artifact"
+            }
+        },
+        "toughness": {
+            "type": "Dynamic",
+            "source": {
+                "type": "AggregateBattlefield",
+                "player": "You",
+                "filter": "artifact"
+            }
+        }
+    },
+    "keywords": [
+        "FLYING",
+        "AFFINITY"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Affinity",
+            "forType": "ARTIFACT"
+        }
+    ],
+    "metadata": {
+        "collectorNumber": "31",
+        "rarity": "RARE",
+        "artist": "Glen Angus",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/7/07a194cb-53c9-4690-ba63-79beecaebe0e.jpg?1783944557"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Chimney Imp
 {
     "name": "Chimney Imp",
@@ -1334,6 +1379,35 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Domineer
+{
+    "name": "Domineer",
+    "manaCost": "{1}{U}{U}",
+    "typeLine": "Enchantment — Aura",
+    "oracleText": "Enchant artifact creature\nYou control enchanted artifact creature.",
+    "script": {
+        "staticAbilities": [
+            "ControlEnchantedPermanent"
+        ],
+        "auraTarget": {
+            "type": "TargetObject",
+            "filter": {
+                "baseFilter": "artifact creature"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "33",
+        "rarity": "UNCOMMON",
+        "artist": "Jon Foster",
+        "flavorText": "Since they haven't seen their original master for millennia, golems are eager to take orders from anyone.",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/0/c0010b89-afc4-4dee-bda3-2f34e552cba5.jpg?1783944556"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 
@@ -5516,6 +5590,78 @@
     ]
 }
 
+// Rust Elemental
+{
+    "name": "Rust Elemental",
+    "manaCost": "{4}",
+    "typeLine": "Artifact Creature — Elemental",
+    "oracleText": "Flying\nAt the beginning of your upkeep, sacrifice another artifact. If you can't, tap this creature and you lose 4 life.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.WhenCondition",
+                        "condition": {
+                            "type": "Exists",
+                            "player": "You",
+                            "zone": "Battlefield",
+                            "filter": "artifact",
+                            "excludeSelf": true
+                        }
+                    },
+                    "then": {
+                        "type": "Sacrifice",
+                        "filter": "artifact",
+                        "excludeSource": true
+                    },
+                    "otherwise": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "TapUntap",
+                                "target": "Self"
+                            },
+                            {
+                                "type": "LoseLife",
+                                "amount": {
+                                    "type": "Fixed",
+                                    "amount": 4
+                                },
+                                "target": {
+                                    "type": "PlayerRef",
+                                    "player": "You"
+                                }
+                            }
+                        ]
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "234",
+        "rarity": "UNCOMMON",
+        "artist": "Arnie Swekel",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/6/967a08cd-72b3-4b3f-9f23-15697704acb3.jpg?1783944506"
+    },
+    "colorIdentityOverride": []
+}
+
 // Rustmouth Ogre
 {
     "name": "Rustmouth Ogre",
@@ -5787,6 +5933,34 @@
         "rarity": "UNCOMMON",
         "artist": "Thomas M. Baxa",
         "imageUri": "https://cards.scryfall.io/normal/front/4/1/415027f8-ccef-4b38-ace2-db4e94f066fe.jpg?1783944505"
+    },
+    "colorIdentityOverride": []
+}
+
+// Sculpting Steel
+{
+    "name": "Sculpting Steel",
+    "manaCost": "{3}",
+    "typeLine": "Artifact",
+    "oracleText": "You may have this artifact enter as a copy of any artifact on the battlefield.",
+    "script": {
+        "replacementEffects": [
+            {
+                "type": "EntersAsCopy",
+                "copyFilter": {
+                    "cardPredicates": [
+                        "IsArtifact"
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "238",
+        "rarity": "RARE",
+        "artist": "Heather Hudson",
+        "flavorText": "An artificer once dropped one in a vault full of coins. She has yet to find it.",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/a/3aac5f6f-97c1-4546-94ed-016292e98c9d.jpg?1783944505"
     },
     "colorIdentityOverride": []
 }
@@ -7603,6 +7777,41 @@
         "artist": "Ben Thompson",
         "flavorText": "Lymph, the fluid essence of blinkmoths, is prized by wizards for the rush of intellect it provides.",
         "imageUri": "https://cards.scryfall.io/normal/front/0/f/0ff1f608-203e-4413-8753-37fc49731c87.jpg?1783944550"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Thoughtcast
+{
+    "name": "Thoughtcast",
+    "manaCost": "{4}{U}",
+    "typeLine": "Sorcery",
+    "oracleText": "Affinity for artifacts (This spell costs {1} less to cast for each artifact you control.)\nDraw two cards.",
+    "keywords": [
+        "AFFINITY"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Affinity",
+            "forType": "ARTIFACT"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "DrawCards",
+            "count": {
+                "type": "Fixed",
+                "amount": 2
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "54",
+        "artist": "Greg Hildebrandt",
+        "flavorText": "Vedalken eyes don't see the beauty in things. They see only what those things can teach.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/f/efb965a7-877a-4302-b507-25b0a9e32d9b.jpg?1783944550"
     },
     "colorIdentityOverride": [
         "BLUE"
