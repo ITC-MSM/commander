@@ -119,5 +119,69 @@ object BlockingPuzzles {
             },
             check = { shouldBlock("Hill Giant", "Craw Wurm") },
         ),
+
+        // The two below are the same mistake from two directions: a block chosen for what it *wins*
+        // in a turn that does not come. Both were found by a randomised sweep over vanilla boards
+        // that asked one question — "was there a legal set of blocks that survives, and did the AI
+        // find one?" — and both killed the AI at three life with the answer sitting on the table.
+        AiPuzzle(
+            id = "blocking-07",
+            category = PuzzleCategory.BLOCKING,
+            expectation = "Three attackers, three blockers, 3 life: one body in front of each, " +
+                "not two on the Wurm while the Giant walks in for exact lethal",
+            aiSeat = 2,
+            position = { scenario ->
+                scenario.withPlayers()
+                    .withCardOnBattlefield(1, "Craw Wurm")        // 6/4
+                    .withCardOnBattlefield(1, "Hill Giant")       // 3/3
+                    .withCardOnBattlefield(1, "Ordinary Bear")    // 4/5
+                    .withCardOnBattlefield(2, "Trained Armodon")  // 3/3
+                    .withCardOnBattlefield(2, "Grizzly Bears")    // 2/2
+                    .withCardOnBattlefield(2, "Alpha Myr")        // 2/1
+                    .withLifeTotal(2, 3)
+                    .build()
+                    .advanceToDeclaration(1, Step.DECLARE_ATTACKERS)
+                    .also {
+                        it.declareAttackers(
+                            mapOf("Craw Wurm" to 2, "Hill Giant" to 2, "Ordinary Bear" to 2)
+                        )
+                    }
+                    .advanceToDeclaration(2, Step.DECLARE_BLOCKERS)
+            },
+            check = {
+                shouldBlockWithAtLeast(1, "Craw Wurm")
+                shouldBlockWithAtLeast(1, "Hill Giant")
+                shouldBlockWithAtLeast(1, "Ordinary Bear")
+            },
+        ),
+
+        AiPuzzle(
+            id = "blocking-08",
+            category = PuzzleCategory.BLOCKING,
+            expectation = "At 3 life the free kill on the 2/2 is a luxury: the two blockers belong " +
+                "in front of the 6/4 and the 4/5, taking 2 instead of 4",
+            aiSeat = 2,
+            position = { scenario ->
+                scenario.withPlayers()
+                    .withCardOnBattlefield(1, "Craw Wurm")        // 6/4
+                    .withCardOnBattlefield(1, "Grizzly Bears")    // 2/2
+                    .withCardOnBattlefield(1, "Ordinary Bear")    // 4/5
+                    .withCardOnBattlefield(2, "Trained Armodon")  // 3/3
+                    .withCardOnBattlefield(2, "Alpha Myr")        // 2/1
+                    .withLifeTotal(2, 3)
+                    .build()
+                    .advanceToDeclaration(1, Step.DECLARE_ATTACKERS)
+                    .also {
+                        it.declareAttackers(
+                            mapOf("Craw Wurm" to 2, "Grizzly Bears" to 2, "Ordinary Bear" to 2)
+                        )
+                    }
+                    .advanceToDeclaration(2, Step.DECLARE_BLOCKERS)
+            },
+            check = {
+                shouldBlockWithAtLeast(1, "Craw Wurm")
+                shouldBlockWithAtLeast(1, "Ordinary Bear")
+            },
+        ),
     )
 }

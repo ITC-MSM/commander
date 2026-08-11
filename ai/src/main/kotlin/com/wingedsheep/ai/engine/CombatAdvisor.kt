@@ -194,7 +194,7 @@ class CombatAdvisor(
         )
 
         // ── Phase 2: Improve via local search (if not nested) ──
-        val bestMap = if (useSimulation) {
+        var bestMap = if (useSimulation) {
             improveViaLocalSearch(
                 state, projected, playerId, attackers, validBlockers,
                 mandatoryBlockerIds, seedMap, budget, trace
@@ -212,21 +212,7 @@ class CombatAdvisor(
             val unblockedAttackers = attackers
                 .filter { attacker -> bestMap.values.none { attacker in it } }
 
-            // Sort by damage actually prevented by a chump block: non-tramplers first
-            // (chump blocks all damage) then tramplers (only prevents blocker toughness).
-            // Among each group, prefer blocking higher-power attackers.
-            val sortedUnblocked = unblockedAttackers.sortedByDescending { attacker ->
-                val aKeywords = projected.getKeywords(attacker)
-                val aPower = projected.getPower(attacker) ?: 0
-                if (Keyword.TRAMPLE.name in aKeywords) {
-                    // Trample: chump only prevents ~1-2 damage (blocker toughness)
-                    // Use negative power so tramplers sort after non-tramplers
-                    aPower * -1
-                } else {
-                    // Non-trampler: chump prevents ALL damage
-                    aPower * 1000
-                }
-            }
+            val sortedUnblocked = unblockedAttackers.sortedByDescending { chumpPriority(projected, it) }
 
             for (attacker in sortedUnblocked) {
                 val available = availableBlockersFor(state, projected, attacker, validBlockers, assignedBlockers)
@@ -234,6 +220,23 @@ class CombatAdvisor(
                 val cheapest = available.firstOrNull() ?: continue
                 bestMap[cheapest] = listOf(attacker)
                 assignedBlockers.add(cheapest)
+            }
+
+            // ── Survival pass: a plan that still lets lethal through is not a plan ──
+            // Everything above prices a block by what it *wins* — a favourable trade, a gang block
+            // that eats the best attacker — which is the right currency only if we get another turn
+            // to spend the board on. When the leftovers are lethal we do not, and two blockers
+            // standing in front of one creature while a bigger one walks in unblocked is a loss
+            // however good the trade reads. So rebuild the assignment for damage *prevented*, and
+            // adopt it only when it genuinely saves us: positions the AI already survives keep the
+            // plan they had.
+            if (calculateIncomingDamage(state, projected, attackers, bestMap) >= myLife) {
+                val survival = damageMinimisingPlan(state, projected, attackers, validBlockers, mandatoryMap)
+                if (calculateIncomingDamage(state, projected, attackers, survival) < myLife) {
+                    bestMap = survival
+                    assignedBlockers.clear()
+                    assignedBlockers.addAll(survival.keys)
+                }
             }
         }
 
@@ -244,11 +247,7 @@ class CombatAdvisor(
             if (inDanger) {
                 val unblockedAttackers = attackers
                     .filter { attacker -> bestMap.values.none { attacker in it } }
-                    .sortedByDescending { attacker ->
-                        val aKeywords = projected.getKeywords(attacker)
-                        val aPower = projected.getPower(attacker) ?: 0
-                        if (Keyword.TRAMPLE.name in aKeywords) aPower * -1 else aPower * 1000
-                    }
+                    .sortedByDescending { chumpPriority(projected, it) }
 
                 for (attacker in unblockedAttackers) {
                     val available = availableBlockersFor(state, projected, attacker, validBlockers, assignedBlockers)
@@ -838,6 +837,68 @@ class CombatAdvisor(
         return sides.opponents.maxOf { team ->
             team.sumOf { CombatMath.estimateNextTurnDamage(state, projected, it, myBlockers) }
         }
+    }
+
+    /**
+     * How much a chump block on [attacker] is worth, as a sort key: the damage it takes off the
+     * table, biggest first.
+     *
+     * A trampler keeps hitting us for everything the blocker cannot soak, so a chump in front of
+     * one buys a point or two; a chump in front of anything else buys the whole hit. Scaling
+     * separates the two groups outright rather than trying to price them on one scale — no
+     * trampler is ever worth chumping ahead of a non-trampler.
+     */
+    private fun chumpPriority(projected: ProjectedState, attacker: EntityId): Int {
+        val power = projected.getPower(attacker) ?: 0
+        return if (Keyword.TRAMPLE.name in projected.getKeywords(attacker)) -power else power * 1000
+    }
+
+    /**
+     * Assign blockers for damage prevented rather than for value: the biggest hits first, paid for
+     * with the cheapest legal body that can stand in front of each.
+     *
+     * Only [mandatoryMap] is carried over — every other blocker is put back in the pool, which is
+     * the point. This is the plan for a turn we do not survive otherwise, so a blocker committed to
+     * a trade or to the second half of a gang block is a blocker standing in the wrong place.
+     */
+    private fun damageMinimisingPlan(
+        state: GameState,
+        projected: ProjectedState,
+        attackers: List<EntityId>,
+        validBlockers: List<EntityId>,
+        mandatoryMap: Map<EntityId, List<EntityId>>,
+    ): MutableMap<EntityId, List<EntityId>> {
+        val plan = mandatoryMap.toMutableMap()
+        val assigned = plan.keys.toMutableSet()
+        val alreadyBlocked = plan.values.flatten().toSet()
+
+        val byDamage = attackers
+            .filter { it !in alreadyBlocked }
+            .sortedByDescending { chumpPriority(projected, it) }
+
+        for (attacker in byDamage) {
+            val keywords = projected.getKeywords(attacker)
+            // Menace wants two bodies or none — a lone blocker on it is an illegal plan that
+            // `fixMenaceAssignments` would strip right back out, damage and all.
+            val needed = if (Keyword.MENACE.name in keywords) 2 else 1
+            val available = availableBlockersFor(state, projected, attacker, validBlockers, assigned)
+                .sortedWith(
+                    if (Keyword.TRAMPLE.name in keywords) {
+                        // Trample spills whatever the blockers cannot soak, so here the wall is
+                        // worth more than the cheap body.
+                        compareByDescending<EntityId> { projected.getToughness(it) ?: 0 }
+                            .thenBy { CombatMath.creatureValue(state, projected, it) }
+                    } else {
+                        compareBy { CombatMath.creatureValue(state, projected, it) }
+                    }
+                )
+            if (available.size < needed) continue
+            available.take(needed).forEach { blocker ->
+                plan[blocker] = listOf(attacker)
+                assigned.add(blocker)
+            }
+        }
+        return plan
     }
 
     /**

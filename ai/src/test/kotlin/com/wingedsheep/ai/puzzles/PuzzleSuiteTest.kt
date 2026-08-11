@@ -36,7 +36,7 @@ class PuzzleSuiteTest : ScenarioTestBase() {
                     PuzzleCatalog.byCategory(category).size shouldBeGreaterThanOrEqual 6
                 }
             }
-            PuzzleCatalog.all.size shouldBe 96
+            PuzzleCatalog.all.size shouldBe 98
         }
 
         test("every KNOWN_FAILURES id names a real puzzle") {
