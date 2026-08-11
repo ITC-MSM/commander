@@ -2,7 +2,7 @@
  * Gameplay slice - handles game state, actions, events, and core game mechanics.
  */
 import type { SliceCreator, EntityId, LogEntry, MulliganState, GameOverState, ErrorState } from './types'
-import type { ClientGameState, ClientEvent, GameAction, LegalActionInfo, PendingDecision, OpponentDecisionStatus } from '@/types'
+import type { ClientGameState, GameAction, LegalActionInfo, PendingDecision, OpponentDecisionStatus } from '@/types'
 import {
   createCreateGameMessage,
   createJoinGameMessage,
@@ -37,7 +37,6 @@ export interface GameplaySliceState {
   opponentDecisionStatus: OpponentDecisionStatus | null
   mulliganState: MulliganState | null
   waitingForOpponentMulligan: boolean
-  pendingEvents: readonly ClientEvent[]
   eventLog: readonly LogEntry[]
   gameOverState: GameOverState | null
   lastError: ErrorState | null
@@ -102,7 +101,6 @@ export interface GameplaySliceActions {
    */
   setError: (error: ErrorState) => void
   clearError: () => void
-  consumeEvent: () => ClientEvent | undefined
 }
 
 export type GameplaySlice = GameplaySliceState & GameplaySliceActions
@@ -115,7 +113,6 @@ export const createGameplaySlice: SliceCreator<GameplaySlice> = (set, get) => ({
   opponentDecisionStatus: null,
   mulliganState: null,
   waitingForOpponentMulligan: false,
-  pendingEvents: [],
   eventLog: [],
   gameOverState: null,
   lastError: null,
@@ -599,7 +596,6 @@ export const createGameplaySlice: SliceCreator<GameplaySlice> = (set, get) => ({
       stopOverrides: { myTurnStops: [], opponentTurnStops: [] },
       nextStopPoint: null,
       opponentDisconnectCountdown: null,
-      pendingEvents: [],
       eventLog: [],
       gameOverState: null,
       lastError: null,
@@ -629,14 +625,5 @@ export const createGameplaySlice: SliceCreator<GameplaySlice> = (set, get) => ({
       errorDismissTimer = null
     }
     set({ lastError: null })
-  },
-
-  consumeEvent: () => {
-    const { pendingEvents } = get()
-    if (pendingEvents.length === 0) return undefined
-
-    const [event, ...rest] = pendingEvents
-    set({ pendingEvents: rest })
-    return event
   },
 })
