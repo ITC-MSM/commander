@@ -729,6 +729,91 @@
     "colorIdentityOverride": []
 }
 
+// Clockwork Vorrac
+{
+    "name": "Clockwork Vorrac",
+    "manaCost": "{5}",
+    "typeLine": "Artifact Creature — Boar Beast",
+    "oracleText": "Trample\nThis creature enters with four +1/+1 counters on it.\nWhenever this creature attacks or blocks, remove a +1/+1 counter from it at end of combat.\n{T}: Put a +1/+1 counter on this creature.",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 0
+    },
+    "keywords": [
+        "TRAMPLE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "END_COMBAT",
+                    "player": "Each"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "RemoveCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": "Self"
+                },
+                "triggerCondition": {
+                    "type": "Any",
+                    "conditions": [
+                        {
+                            "type": "EntityMatches",
+                            "entity": "Self",
+                            "filter": {
+                                "statePredicates": [
+                                    "AttackedThisCombat"
+                                ]
+                            }
+                        },
+                        {
+                            "type": "EntityMatches",
+                            "entity": "Self",
+                            "filter": {
+                                "statePredicates": [
+                                    "BlockedThisCombat"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "Whenever this creature attacks or blocks, remove a +1/+1 counter from it at end of combat."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": "Self"
+                },
+                "descriptionOverride": "{T}: Put a +1/+1 counter on this creature."
+            }
+        ],
+        "replacementEffects": [
+            {
+                "type": "EntersWithCounters",
+                "count": 4,
+                "selfOnly": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "156",
+        "rarity": "UNCOMMON",
+        "artist": "Arnie Swekel",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/e/7e876938-1b8e-44cf-ade2-a42f8acdf24c.jpg?1783944525"
+    },
+    "colorIdentityOverride": []
+}
+
 // Cloudpost
 {
     "name": "Cloudpost",
@@ -992,6 +1077,94 @@
     "colorIdentityOverride": [
         "GREEN"
     ]
+}
+
+// Dead-Iron Sledge
+{
+    "name": "Dead-Iron Sledge",
+    "manaCost": "{1}",
+    "typeLine": "Artifact — Equipment",
+    "oracleText": "Whenever equipped creature blocks or becomes blocked by a creature, destroy both creatures.\nEquip {2} ({2}: Attach to target creature you control. Equip only as a sorcery.)",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{2}"
+                    }
+                },
+                "effect": {
+                    "type": "AttachEquipment",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "creature you control"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        },
+                        "id": "creature you control"
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "isEquipAbility": true
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "GrantTriggeredAbility",
+                "ability": {
+                    "id": "ability_2",
+                    "trigger": {
+                        "type": "BlocksOrBecomesBlockedByEvent",
+                        "partnerFilter": {
+                            "cardPredicates": [
+                                "IsCreature"
+                            ]
+                        }
+                    },
+                    "effect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "MoveToZone",
+                                "target": "Self",
+                                "destination": "Graveyard",
+                                "byDestruction": true
+                            },
+                            {
+                                "type": "MoveToZone",
+                                "target": "TriggeringEntity",
+                                "destination": "Graveyard",
+                                "byDestruction": true
+                            }
+                        ]
+                    },
+                    "descriptionOverride": "Whenever this creature blocks or becomes blocked by a creature, destroy both creatures."
+                }
+            }
+        ]
+    },
+    "equipCost": "{2}",
+    "metadata": {
+        "collectorNumber": "162",
+        "rarity": "UNCOMMON",
+        "artist": "Ray Lago",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/d/1dc312c0-14da-4b23-8293-6fa41bdd3167.jpg?1783944524",
+        "rulings": [
+            {
+                "date": "2006-10-15",
+                "text": "Moving Dead-Iron Sledge after the ability triggers will not affect which creatures are destroyed."
+            }
+        ]
+    },
+    "colorIdentityOverride": []
 }
 
 // Deconstruct
@@ -1861,6 +2034,40 @@
         "artist": "Tony Szczudlo",
         "flavorText": "A solution in search of a problem.",
         "imageUri": "https://cards.scryfall.io/normal/front/9/3/934936d1-f470-47fa-ac28-344020c9fc76.jpg"
+    },
+    "colorIdentityOverride": []
+}
+
+// Gilded Lotus
+{
+    "name": "Gilded Lotus",
+    "manaCost": "{5}",
+    "typeLine": "Artifact",
+    "oracleText": "{T}: Add three mana of any one color.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddManaOfChoice",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 3
+                    }
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true,
+                "descriptionOverride": "{T}: Add three mana of any one color."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "175",
+        "rarity": "RARE",
+        "artist": "Martina Pilcerova",
+        "flavorText": "Over such beauty, wars are fought. With such power, wars are won.",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/1/a1d5e4c8-dfd0-45bc-8000-ebfaccfefec3.jpg?1783944521"
     },
     "colorIdentityOverride": []
 }
@@ -3252,6 +3459,56 @@
         "rarity": "UNCOMMON",
         "artist": "Jeremy Jarvis",
         "imageUri": "https://cards.scryfall.io/normal/front/6/1/61a28870-cf78-4323-9d82-cee764067764.jpg"
+    },
+    "colorIdentityOverride": []
+}
+
+// Lodestone Myr
+{
+    "name": "Lodestone Myr",
+    "manaCost": "{4}",
+    "typeLine": "Artifact Creature — Myr",
+    "oracleText": "Trample\nTap an untapped artifact you control: This creature gets +1/+1 until end of turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "TRAMPLE"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomTapPermanents",
+                        "filter": "artifact"
+                    }
+                },
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": "Self"
+                },
+                "descriptionOverride": "Tap an untapped artifact you control: This creature gets +1/+1 until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "200",
+        "rarity": "RARE",
+        "artist": "Greg Staples",
+        "flavorText": "When necessary, myr can override and control any artificial object, as can their creator.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/a/faab1d25-dee5-4315-ba63-f8e14087a9c0.jpg?1783944514"
     },
     "colorIdentityOverride": []
 }
@@ -5356,6 +5613,63 @@
         "artist": "Arnie Swekel",
         "flavorText": "Where herds have passed, the dented ground is lined with piles of rust.",
         "imageUri": "https://cards.scryfall.io/normal/front/5/d/5d23449c-4439-4425-ad53-84168a94b1ce.jpg"
+    },
+    "colorIdentityOverride": []
+}
+
+// Scale of Chiss-Goria
+{
+    "name": "Scale of Chiss-Goria",
+    "manaCost": "{3}",
+    "typeLine": "Artifact",
+    "oracleText": "Flash\nAffinity for artifacts (This spell costs {1} less to cast for each artifact you control.)\n{T}: Target creature gets +0/+1 until end of turn.",
+    "keywords": [
+        "FLASH",
+        "AFFINITY"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Affinity",
+            "forType": "ARTIFACT"
+        }
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 0
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature"
+                        },
+                        "id": "target"
+                    }
+                ],
+                "descriptionOverride": "{T}: Target creature gets +0/+1 until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "236",
+        "artist": "Alan Pollack",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/3/133b367c-b1a1-46f7-a539-a33ee655affb.jpg?1783944506"
     },
     "colorIdentityOverride": []
 }
