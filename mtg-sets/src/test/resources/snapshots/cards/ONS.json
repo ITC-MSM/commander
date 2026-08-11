@@ -4270,7 +4270,7 @@
                 "targetRequirement": {
                     "type": "TargetObject",
                     "filter": {
-                        "baseFilter": "enchantment ctrl:opponent"
+                        "baseFilter": "enchantment ctrl:triggering-player"
                     },
                     "id": "target"
                 }

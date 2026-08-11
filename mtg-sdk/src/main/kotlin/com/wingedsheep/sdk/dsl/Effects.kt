@@ -1762,6 +1762,24 @@ object Effects {
         com.wingedsheep.sdk.scripting.effects.RemoveAnyNumberOfCountersEffect(target, maxTotal = maxCount)
 
     /**
+     * "Remove a counter from [target]" — the player picks *which kind*, but not *whether*. The
+     * floored form of [RemoveCountersUpTo]: exactly [count] counters come off, chosen across
+     * whatever kinds the permanent carries.
+     *
+     * Reach for this, not `RemoveCountersUpTo(1, …)`, whenever a payoff hangs off the removal
+     * ("remove a counter … when you do, …", Leatherhead, Swamp Stalker; "… if you do, draw a card",
+     * Mister Hyde, Monster Within). A bare ceiling lets the player answer 0 to every prompt and
+     * still succeed, which fires the payoff for free. Use [RemoveCountersUpTo] only where the card
+     * really does say "up to".
+     */
+    fun RemoveCounterOfAnyKind(
+        target: EffectTarget = EffectTarget.ContextTarget(0),
+        count: Int = 1
+    ): Effect = com.wingedsheep.sdk.scripting.effects.RemoveAnyNumberOfCountersEffect(
+        target, maxTotal = count, minTotal = count
+    )
+
+    /**
      * "[player] gets N [counterType] counters" (CR 122.1 — counters placed on a player rather
      * than a permanent). Sugar for [AddCounters] targeting the player directly; no new plumbing —
      * `AddCountersExecutor` already resolves player-shaped targets the same way it does for

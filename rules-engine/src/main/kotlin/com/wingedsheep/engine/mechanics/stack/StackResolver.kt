@@ -258,10 +258,11 @@ class StackResolver(
             ?: transformedBackDef?.manaCost?.cmc
             ?: cardComponent.manaValue
 
-        // CR 601.2b — a spell with `{X}` in its cost has X *chosen as it is cast*; there is no such
-        // thing as a spell on the stack whose X is undetermined. A caller that announced nothing
-        // (the AI's CastSpell carries no xValue, and a synthesized free cast never picks one) paid
-        // nothing for X, so X is 0.
+        // CR 601.2b — a spell with `{X}` in its cost has X *announced as it is cast*; there is no
+        // such thing as a spell on the stack whose X is undetermined. A caller that announced
+        // nothing (the AI's CastSpell carries no xValue) paid nothing for X, so X is 0. For the
+        // other caller — a synthesized cast that pays no mana cost at all — CR 107.3b is directly
+        // on point: "the only legal choice for X is 0."
         //
         // Binding it here rather than leaving null is load-bearing, not cosmetic: the resolution-time
         // `CardPredicate.ManaValueAtMostX` fails *open* on an unbound X — deliberately, so an X spell

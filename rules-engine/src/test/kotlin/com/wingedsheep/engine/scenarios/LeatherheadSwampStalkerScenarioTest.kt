@@ -23,10 +23,17 @@ import io.kotest.matchers.shouldBe
  *  Whenever Leatherhead deals combat damage to a player, you may remove a counter from her.
  *  When you do, destroy target artifact or enchantment that player controls."
  *
- * "A counter" is any kind, not the hexproof one specifically. Once something has put +1/+1
- * counters on her (Ouroboroid's begin-combat trigger is the common case) the controller chooses
- * which kind comes off — the implementation used to hardcode the hexproof counter and spend it
- * with no prompt at all.
+ * Two things the wording pins down, and both have been wrong here:
+ *
+ *  - **"A counter" is any kind**, not the hexproof one specifically. Once something has put +1/+1
+ *    counters on her (Ouroboroid's begin-combat trigger is the common case) the controller chooses
+ *    which kind comes off — the implementation used to hardcode the hexproof counter and spend it
+ *    with no prompt at all.
+ *  - **The choice is which kind, not whether.** Once you accept the "you may", a counter comes off;
+ *    CR 603.12's "when you do" is what arms the destroy, so a controller who takes off nothing must
+ *    get nothing. Modelling this as `RemoveCountersUpTo(1, …)` — a ceiling with no floor — let the
+ *    controller say yes and then answer 0 at every prompt, destroying an artifact every combat
+ *    without ever spending a counter.
  */
 class LeatherheadSwampStalkerScenarioTest : FunSpec({
 
@@ -166,5 +173,69 @@ class LeatherheadSwampStalkerScenarioTest : FunSpec({
         val after = counts(driver, leatherhead)
         (after[CounterType.HEXPROOF] ?: 0) shouldBe 0
         after[CounterType.PLUS_ONE_PLUS_ONE] shouldBe 3
+    }
+
+    test("answering zero at every prompt still spends a counter — the destroy is never free") {
+        val (driver, leatherhead, defender) = attackAndAccept(plusOnes = 3)
+
+        // Try to take nothing: answer 0 to every prompt, including any the floor has already
+        // narrowed to a single legal answer. The engine holds the controller to the minimum.
+        var safety = 0
+        while (safety++ < 10) {
+            val decision = driver.pendingDecision as? ChooseNumberDecision ?: break
+            driver.submitDecision(decision.playerId, NumberChosenResponse(decision.id, 0))
+        }
+
+        // 4 counters went in; "remove a counter" means exactly one comes off, controller's pick.
+        counts(driver, leatherhead).values.sum() shouldBe 3
+
+        // And the payoff is genuinely earned, so it does resolve.
+        val chooseTargets = driver.advanceToChooseTargets()
+        val enchantment = driver.findPermanent(defender, "Test Enchantment")!!
+        driver.submitTargetSelection(chooseTargets.playerId, listOf(enchantment))
+        safety = 0
+        while (driver.findPermanent(defender, "Test Enchantment") != null && safety++ < 6) {
+            driver.bothPass()
+        }
+        driver.findPermanent(defender, "Test Enchantment") shouldBe null
+    }
+
+    test("with a single kind of counter there is nothing to ask, so no prompt is raised") {
+        val (driver, leatherhead, _) = attackAndAccept(plusOnes = 0)
+
+        // One kind, floor and ceiling both 1: the only legal answer is applied rather than asked.
+        (driver.pendingDecision is ChooseNumberDecision) shouldBe false
+        counts(driver, leatherhead).values.sum() shouldBe 0
+    }
+
+    test("no counters left: the may-clause is never offered and nothing is destroyed") {
+        val driver = createDriver()
+        driver.initMirrorMatch(deck = Deck.of("Forest" to 20, "Swamp" to 20), startingLife = 20)
+
+        val attacker = driver.player1
+        val defender = driver.player2
+
+        // Straight onto the battlefield, so the enters-with-a-hexproof-counter replacement never
+        // runs — this is Leatherhead a combat after her last counter was spent.
+        val leatherhead = driver.putCreatureOnBattlefield(attacker, "Leatherhead, Swamp Stalker")
+        driver.removeSummoningSickness(leatherhead)
+        counts(driver, leatherhead).values.sum() shouldBe 0
+
+        driver.putPermanentOnBattlefield(defender, "Test Enchantment")
+
+        driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
+        driver.declareAttackers(attacker, listOf(leatherhead), defender)
+        driver.bothPass()
+        driver.declareNoBlockers(defender)
+
+        var safety = 0
+        var asked = false
+        while (safety++ < 12) {
+            if (driver.pendingDecision is YesNoDecision) { asked = true; break }
+            driver.bothPass()
+        }
+
+        asked shouldBe false
+        (driver.findPermanent(defender, "Test Enchantment") != null) shouldBe true
     }
 })
