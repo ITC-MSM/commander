@@ -41,9 +41,13 @@ block describes the code as it stands.**
    `:rules-engine:test` BUILD SUCCESSFUL 12m 27s / 0 failures (`-gate-correction-rules.log`) and
    `:mtg-sets:test` BUILD SUCCESSFUL 1m 12s / 0 failures (`-gate-correction-sets.log`). The three
    runs together cover every module.
-3. **`HEAD`** (after round-4 review) — one behaviour-neutral plumbing change in
-   `ActivateAbilityHandler` (switch to the existing state-aware `captureEntitySnapshots` overload)
-   plus comment-only fixes. **Re-gate pending** — see `build/pr/loop-msh-u08-round4-correction.md`.
+3. **`c6d333a27e`** (after round-4 review, the code as it stands) — one behaviour-neutral plumbing
+   change in `ActivateAbilityHandler` (switch to the existing state-aware `captureEntitySnapshots`
+   overload) plus comment-only fixes. `:rules-engine:test` at reduced footprint **BUILD SUCCESSFUL
+   in 4m 34s, 10765 PASSED / 0 failures** (`build/pr/loop-msh-u08-gate-round4-rules.log`), all 15 of
+   this unit's tests green. Only `:rules-engine` was touched and no signature moved, so downstream
+   modules were not re-run — tree 2 covers them. Accounting in
+   `build/pr/loop-msh-u08-round4-correction.md`.
 
 Unaffected by the tree: `just rebless-cards` (only MSH.json moved, +150/−0),
 `just check-card-printing` ok for both cards, `just check-backlog` in sync.
