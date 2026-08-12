@@ -1127,15 +1127,10 @@ class DynamicAmountEvaluator(
         entityId: EntityId,
         fallbackControllerId: EntityId? = null
     ): Boolean {
-        val projected = state.projectedState
-        val controller = projected.getController(entityId) ?: fallbackControllerId ?: return false
-        // Scanned here rather than through ControllerGrants.grantedTo so the controller match
-        // stays on the *projected* controller, as it always has — a control-change effect
-        // re-points the grant. The gate still goes through ControllerGrants.
-        return state.getBattlefield().any { permanentId ->
-            projected.getController(permanentId) == controller &&
-                ControllerGrants.isActiveOn<GrantsStationUsingToughnessComponent>(state, permanentId)
-        }
+        val controller = state.projectedState.getController(entityId)
+            ?: fallbackControllerId
+            ?: return false
+        return ControllerGrants.grantedTo<GrantsStationUsingToughnessComponent>(state, controller)
     }
 
     // =========================================================================

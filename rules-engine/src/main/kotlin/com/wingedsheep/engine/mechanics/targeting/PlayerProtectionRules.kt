@@ -41,7 +41,9 @@ object PlayerProtectionRules {
 
         return state.getBattlefield().any { entityId ->
             val container = state.getEntity(entityId) ?: return@any false
-            if (container.get<ControllerComponent>()?.playerId != playerId) return@any false
+            // Projected controller: a stolen Absolute Virtue protects its thief, not the player it
+            // was taken from — see [ControllerGrants.granterController].
+            if (ControllerGrants.granterController(state, entityId) != playerId) return@any false
             container.get<GrantsControllerProtectionComponent>()?.grants
                 // Each scope carries its own "as long as …" gate, re-evaluated here on every read
                 // because the marker was stamped once, on entry — see [ControllerGrantMarker].

@@ -12,8 +12,9 @@ import com.wingedsheep.sdk.model.EntityId
  *
  * Single home for the question so the four readers that ask it — [TargetValidator],
  * `TargetEnumerationUtils`, `TargetFinder` and `ClientStateTransformer` — can't drift. They had
- * four copies of the same battlefield scan, and a gated grant would otherwise have had to be
- * special-cased in each.
+ * four copies of the same battlefield scan, each matching on the base `ControllerComponent` (so a
+ * stolen granter kept protecting the player it was taken from), and a gated grant would otherwise
+ * have had to be special-cased in each.
  *
  * The gate is the reason this exists rather than a bare component check.
  * [GrantsControllerHexproofComponent] is stamped once by `StaticAbilityHandler` as the permanent
@@ -23,15 +24,6 @@ import com.wingedsheep.sdk.model.EntityId
  * component and is evaluated here, against current state, on every read.
  */
 object ControllerHexproof {
-
-    /**
-     * Whether [entityId] is *currently* granting hexproof to its controller — it carries the
-     * marker, and either the grant is unconditional or its "as long as" gate holds right now.
-     */
-    fun isGrantingNow(state: GameState, entityId: EntityId): Boolean {
-        val marker = state.getEntity(entityId)?.get<GrantsControllerHexproofComponent>() ?: return false
-        return ControllerGrants.isGrantingNow(state, entityId, marker)
-    }
 
     /**
      * Whether [playerId] has hexproof — either directly ([PlayerHexproofComponent], from a

@@ -24,7 +24,7 @@ import com.wingedsheep.sdk.scripting.RevealFirstDrawEachTurn
  * [CardRevealedFromDrawEvent] if this is the first draw of the turn and the
  * player controls a permanent with [RevealFirstDrawEachTurn].
  *
- * Handles empty-library loss (Rule 704.5c) respecting [playerCantLoseGame] (Platinum Angel).
+ * Handles empty-library loss (Rule 704.5b) respecting [playerCantLoseGame] (Platinum Angel).
  *
  * Does **not** emit [com.wingedsheep.engine.core.CardsDrawnEvent] — the driver
  * aggregates drawn cards across multiple calls and emits a single
@@ -74,9 +74,9 @@ class DrawCardPrimitive(
         val library = state.getZone(libraryZone)
 
         if (library.isEmpty()) {
-            // Rule 704.5c: failed to draw from an empty library → lose the game,
+            // Rule 704.5b: failed to draw from an empty library → lose the game,
             // unless a controlled permanent grants "can't lose the game" (Platinum Angel).
-            // Shared with the 704.5a/b checks so the gate on a conditional grant and the
+            // Shared with the other loss checks so the gate on a conditional grant and the
             // CR 810.8a team reach are applied identically wherever a player would lose.
             val cantLose = playerCantLoseGame(state, playerId)
             val lostState = if (cantLose) {

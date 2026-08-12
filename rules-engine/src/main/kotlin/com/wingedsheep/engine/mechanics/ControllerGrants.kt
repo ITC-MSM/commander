@@ -52,6 +52,16 @@ object ControllerGrants {
         isActive(state, entityId, marker.condition)
 
     /**
+     * Who [entityId] currently grants to — its projected controller, since control change is a
+     * Layer 2 floating effect that never writes back to [ControllerComponent]. Reading the base
+     * component instead would leave a stolen Sigarda protecting the player it was taken from, and
+     * would disagree with [isActive], which resolves "you" the same way when evaluating the gate.
+     */
+    fun granterController(state: GameState, entityId: EntityId): EntityId? =
+        state.projectedState.getController(entityId)
+            ?: state.getEntity(entityId)?.get<ControllerComponent>()?.playerId
+
+    /**
      * Whether any permanent on the battlefield currently grants [M] and has a controller
      * satisfying [controllerMatches].
      *
@@ -66,7 +76,7 @@ object ControllerGrants {
         state.getBattlefield().any { entityId ->
             val container = state.getEntity(entityId) ?: return@any false
             val marker = container.get<M>() ?: return@any false
-            val controllerId = container.get<ControllerComponent>()?.playerId ?: return@any false
+            val controllerId = granterController(state, entityId) ?: return@any false
             controllerMatches(controllerId) && isGrantingNow(state, entityId, marker)
         }
 
