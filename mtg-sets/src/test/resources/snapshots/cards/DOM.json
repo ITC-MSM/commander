@@ -1043,7 +1043,8 @@
                     }
                 ],
                 "timing": "SorcerySpeed",
-                "isEquipAbility": true
+                "isEquipAbility": true,
+                "equipQuality": "legendary"
             },
             {
                 "id": "ability_2",

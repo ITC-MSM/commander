@@ -216,9 +216,11 @@ Blade is the exception — see below.)
    (`mtg-sdk/.../dsl/CardBuilder.kt`). CR 702.6c is the rule: an equip ability may further restrict
    its targets ("Equip [quality]" / "Equip [quality] creature") and "may legally target only a
    creature that's controlled by the player activating the ability and that has the chosen quality".
-   `quality` supplies the wording — it becomes the target requirement's id/label ("worthy creature
-   you control"), which is the string the ability menu, the targeting prompt and
-   `LegalActionInfo.targetDescription` all show. `targetFilter` is the rules half.
+   `quality` supplies the wording, in two places: `ActivatedAbility.equipQuality`, which makes
+   `describeWithCost` render the ability as its printed line ("Equip worthy {1}") against the
+   *effective* cost, so an equip discount rewrites the menu text a `descriptionOverride` would have
+   frozen; and the target requirement's id/label ("worthy creature you control"), which is the
+   targeting prompt and `LegalActionInfo.targetDescription`. `targetFilter` is the rules half.
    Blackblade Reforged, Bilbo's Ring, Dúnedain Blade, Ghostfire Blade and Pirate Hat were each
    hand-rolling this as a bare `activatedAbility { }` **without `isEquipAbility`**, so Forge Anew's
    free first equip, Eowyn's equip discount and instant-speed-equip permissions all silently skipped

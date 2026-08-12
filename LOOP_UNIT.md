@@ -52,11 +52,13 @@ Not done: no web-client playthrough, no e2e, no UX pass from either seat.
 
 ## Things I'm unsure about — reviewer, look here
 
-- **Menu text change on five existing cards.** Converging drops their `descriptionOverride`
-  ("Equip Human {1}") in favour of the auto-generated "{1}: Attach this equipment to Human creature you
-  control" that plain `equipAbility` has always produced. I judged consistency + cost-reduction-aware
-  labels to be worth it, but it is a visible string change across four other sets and I could be wrong
-  about the tradeoff.
+- ~~**Menu text change on five existing cards.**~~ **Resolved in the review round.** Rather than
+  choose between the printed wording and cost-reduction awareness, `ActivatedAbility.describeWithCost`
+  now renders any `isEquipAbility` ability as its printed line — "Equip {3}" (CR 702.6a),
+  "Equip Human {1}" (CR 702.6c), "Equip—Pay 3 life" for a non-mana cost — against the *effective*
+  cost. That restores the printed text on all five and gets the discount-aware label too, which a
+  static `descriptionOverride` could never do. The new `equipQuality` field carries the wording. Note
+  this changes the menu text for *every* Equipment in the catalog, not just the converged ones.
 - **Scope.** The convergence is wider than "the card it unblocks". I did it because the run's standing
   lesson is "don't add a parallel rail where one can be shared" and the parallel rail already existed
   with a latent bug. If the reviewer disagrees, the card + SDK halves stand alone without it.
@@ -73,3 +75,29 @@ Not done: no web-client playthrough, no e2e, no UX pass from either seat.
 - I did **not** add a "worthy" keyword/reminder-text entry that the brief suggested. Scryfall says
   exactly one printed card uses the term, so it would be a one-card SDK concept; the card's own
   reminder text carries the definition.
+
+## Review round 2 — fixes applied
+
+- **`damageDoublersAffectingSource` was O(battlefield) per card.** It ran from
+  `ClientStateTransformer.buildCardActiveEffects` for every card on every state push, making the view
+  path quadratic. Now driven off the maintained `AttachmentsComponent` reverse index (the same one
+  `TriggerAbilityResolver` and `DestroyAllEquipmentOnTargetExecutor` use), with an early return for
+  the un-attached common case.
+- **Two more cards were still hand-rolling "Equip [quality]"** — Thinking Cap ("Equip Detective {1}",
+  MKM) and Wizard's Staff ("Equip Wizard {1}", HOB). Both *did* set `isEquipAbility`, so they weren't
+  invisible to the engine like the original five, but both froze their cost in a
+  `descriptionOverride`. Converged onto the facade. `EquipQualityVariantTest` found them — it is now
+  three catalog-wide *properties* rather than a hardcoded card list, so it needs no edit per new
+  Equipment and keys "is this restricted?" off the target filter rather than the prompt label.
+- **The Irencrag's redundant `descriptionOverride = "Equip {3}"`** dropped — the renderer produces
+  exactly that, and now does so against the discounted cost.
+- **Playtest board fixed.** Frodo Baggins ({G}{W} Legendary Halfling Scout) is *worthy*, so it was a
+  second legal equip target and covered no failing clause; swapped for Hercules, Prince of Power
+  (mono-green legendary Hero). Thor is now the only worthy target and each other creature fails
+  exactly one clause. (The `a516b0ec2d` commit message also names "Skyward Spider", which was never in
+  the file — read the file, not that message.)
+- **Doc-accuracy.** `isAttachmentScopedSource`'s KDoc no longer claims a type-level invariant that
+  `SourceFilter.Self` would break; it states the catalog fact instead. The Aura half
+  (`SourceFilter.EnchantedCreature` + `DoubleDamage`) is documented as unreachable from the current
+  catalog — shared-matcher generality, not behaviour under test.
+- **Client:** `double-damage` gained the tooltip border colour its badge style already had.

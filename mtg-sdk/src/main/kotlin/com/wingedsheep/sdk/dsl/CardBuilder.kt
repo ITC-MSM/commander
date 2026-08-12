@@ -609,12 +609,18 @@ class CardBuilder(private val name: String) {
      * )
      * ```
      *
-     * [quality] only supplies the wording — it becomes the target's label ("Human creature you
-     * control"), which is what the ability menu and the targeting prompt show. [targetFilter] is
-     * the rules half and must stay controlled-by-you: CR 702.6c allows an equip ability to target
-     * "only a creature that's controlled by the player activating the ability and that has the
-     * chosen quality". Build it off [TargetFilter.CreatureYouControl] (or a `GameObjectFilter`
-     * ending in `.youControl()`) so that holds.
+     * [quality] only supplies the wording. It lands in two places: as
+     * [ActivatedAbility.equipQuality], which makes the ability render as its printed line
+     * ("Equip Human {1}" — see [ActivatedAbility.describeWithCost]); and as the target
+     * requirement's id, the label the targeting prompt shows. The prompt label is normalised to
+     * "[quality] creature you control" even where the printed reminder omits the noun (Bilbo's Ring
+     * prints "Attach to target Halfling you control"); the two denote the same set, and one template
+     * beats per-card wording now that the *ability* line carries the printed text.
+     *
+     * [targetFilter] is the rules half and must stay controlled-by-you: CR 702.6c allows an equip
+     * ability to target "only a creature that's controlled by the player activating the ability and
+     * that has the chosen quality". Build it off [TargetFilter.CreatureYouControl] (or a
+     * `GameObjectFilter` ending in `.youControl()`) so that holds.
      *
      * **The two halves are unchecked against each other.** Nothing links the [quality] wording to
      * what [targetFilter] actually admits, so `quality = "Human"` next to a filter matching Pirates
@@ -652,6 +658,7 @@ class CardBuilder(private val name: String) {
                 ),
                 isManaAbility = false,
                 isEquipAbility = true,
+                equipQuality = quality,
                 timing = TimingRule.SorcerySpeed,
                 genericCostReduction = genericCostReduction,
             )

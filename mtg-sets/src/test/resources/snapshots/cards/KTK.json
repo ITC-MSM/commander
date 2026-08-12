@@ -4249,7 +4249,8 @@
                     }
                 ],
                 "timing": "SorcerySpeed",
-                "isEquipAbility": true
+                "isEquipAbility": true,
+                "equipQuality": "colorless"
             },
             {
                 "id": "ability_2",

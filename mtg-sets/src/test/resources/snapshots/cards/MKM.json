@@ -9204,7 +9204,7 @@
                 ],
                 "timing": "SorcerySpeed",
                 "isEquipAbility": true,
-                "descriptionOverride": "Equip Detective {1}"
+                "equipQuality": "Detective"
             },
             {
                 "id": "ability_2",

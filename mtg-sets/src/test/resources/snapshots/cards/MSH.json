@@ -9576,7 +9576,8 @@
                     }
                 ],
                 "timing": "SorcerySpeed",
-                "isEquipAbility": true
+                "isEquipAbility": true,
+                "equipQuality": "worthy"
             },
             {
                 "id": "ability_3",

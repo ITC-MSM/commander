@@ -7334,10 +7334,11 @@ composite abilities).
   **"Equip [quality]" variants** (CR 702.6c — "Equip Human {1}", "Equip legendary creature {3}",
   "Equip worthy {1}") pass `quality` + `targetFilter` to the same helper rather than being
   hand-rolled: `equipAbility("{1}", quality = "Human", targetFilter =
-  TargetFilter.CreatureYouControl.withSubtype(Subtype.HUMAN))`. `quality` supplies the wording only —
-  it becomes the target requirement's id/label ("Human creature you control"), which is what the
-  ability menu and the targeting prompt show and what `LegalActionInfo.targetDescription` carries;
-  `targetFilter` is the rules half and must stay controller-scoped, since CR 702.6c allows targeting
+  TargetFilter.CreatureYouControl.withSubtype(Subtype.HUMAN))`. `quality` supplies the wording only,
+  landing in two places: `ActivatedAbility.equipQuality`, which makes the ability *render* as its
+  printed line, and the target requirement's id/label ("Human creature you control"), which is the
+  targeting prompt and what `LegalActionInfo.targetDescription` carries. `targetFilter` is the rules
+  half and must stay controller-scoped, since CR 702.6c allows targeting
   "only a creature that's controlled by the player activating the ability and that has the chosen
   quality". Build it off `TargetFilter.CreatureYouControl` or a `GameObjectFilter` ending in
   `.youControl()`. The quality restricts *targeting* only: per CR 702.6c it "[doesn't] restrict what
@@ -7345,8 +7346,22 @@ composite abilities).
   unattaches only under CR 704.5n. Mjölnir, Hammer of Thor's "worthy" (a legendary non-Villain that's
   red and/or white) is spelled out as `GameObjectFilter.Creature.legendary().notSubtype(Subtype.VILLAIN)
   .withAnyColor(Color.RED, Color.WHITE).youControl()` — it is one card's defined term, not an SDK
-  concept. `EquipQualityVariantTest` (mtg-sets) pins both invariants catalog-wide: every
-  `isEquipAbility` ability is sorcery-speed and targets a single creature you control.
+  concept.
+
+  **Menu text.** `ActivatedAbility.describeWithCost` renders any `isEquipAbility` ability as its
+  printed keyword line — `"Equip {3}"` (CR 702.6a) or `"Equip Human {1}"` (CR 702.6c) — rather than
+  the attach effect's generated `"{1}: Attach this equipment to Human creature you control"`. A
+  non-mana equip cost takes the printed em dash instead: `"Equip—Pay 3 life"`. Because the line is
+  derived rather than a per-card `descriptionOverride`, the cost stays live: the legal-action
+  enumerator re-renders against the *effective* cost, so Éowyn's discount and Forge Anew's free first
+  equip show as the `{0}`/`{2}` the player actually pays. **Never give a mana-cost equip ability a
+  `descriptionOverride`** — it freezes exactly the number those effects rewrite. Only a non-mana equip
+  cost with card-specific naming needs one (Dark Knight's Greatsword: "Chaosbringer — Equip—Pay 3
+  life. Activate only once each turn."). `EquipQualityVariantTest` (mtg-sets) pins all three
+  invariants catalog-wide, as properties rather than a card list: every `isEquipAbility` ability is
+  sorcery-speed and targets a single creature you control, renders as its printed `Equip …` line with
+  no frozen cost, and — when its target label is narrower than the plain `"creature you control"` —
+  declares the matching `equipQuality`.
 - `Fortify(cost)` — Aura-like attach cost on lands.
 
 ```kotlin

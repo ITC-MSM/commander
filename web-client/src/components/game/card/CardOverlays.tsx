@@ -296,6 +296,8 @@ function getTooltipBorderColor(icon?: string): string {
       return 'rgba(120, 60, 140, 0.5)'
     case 'redirect':
       return 'rgba(180, 130, 40, 0.5)'
+    case 'double-damage':
+      return 'rgba(255, 160, 100, 0.5)'
     case 'lost-abilities':
       return 'rgba(160, 160, 200, 0.5)'
     case 'type-change':

@@ -13400,7 +13400,8 @@
                     }
                 ],
                 "timing": "SorcerySpeed",
-                "isEquipAbility": true
+                "isEquipAbility": true,
+                "equipQuality": "Pirate"
             },
             {
                 "id": "ability_2",

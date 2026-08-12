@@ -19,6 +19,7 @@ import com.wingedsheep.engine.handlers.PredicateEvaluator
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.battlefield.AttachedToComponent
+import com.wingedsheep.engine.state.components.battlefield.AttachmentsComponent
 import com.wingedsheep.engine.state.components.battlefield.CountersComponent
 import com.wingedsheep.engine.state.components.battlefield.DamageComponent
 import com.wingedsheep.engine.state.components.battlefield.DamageDealtByPlayersThisTurnComponent
@@ -1510,9 +1511,12 @@ object DamageUtils {
      *
      * These are the one source shape that is a property of a *specific* creature rather than of the
      * damage's recipient, which is why [damageDoublersAffectingPlayer] excludes them and
-     * [damageDoublersAffectingSource] owns them instead. Every other [SourceFilter] either matches
-     * anything or is controller-relative, so "damage dealt to you can be doubled" stays honest for
-     * those without a concrete source in hand.
+     * [damageDoublersAffectingSource] owns them instead. No other [SourceFilter] paired with a
+     * [DoubleDamage] in the catalog is source-specific — every one of them is
+     * [SourceFilter.Matching] scoped by controller (Twinflame Tyrant, Gratuitous Violence, The
+     * Rollercrusher Ride, Collective Inferno, Kuja, Neriv) — so "damage dealt to you can be doubled"
+     * stays honest for those without a concrete source in hand. [SourceFilter.Self] would be the
+     * next shape to need this treatment if a card ever pairs it with doubling.
      */
     private fun isAttachmentScopedSource(filter: SourceFilter): Boolean =
         filter is SourceFilter.EquippedCreature || filter is SourceFilter.EnchantedCreature
@@ -1579,18 +1583,32 @@ object DamageUtils {
      * *by* [sourceId] — the source-side counterpart of [damageDoublersAffectingPlayer], which the
      * client turns into a badge on the equipped/enchanted creature itself.
      *
-     * Attachment is the whole condition: the host is reported only while its [AttachedToComponent]
-     * points at [sourceId], so the badge appears exactly when the doubling can actually apply and
-     * follows the Equipment as it moves. One entry per applicable replacement, matching the
-     * once-each rule (CR 616.1) that [damageDoublersAffectingPlayer] documents.
+     * Attachment is the whole condition: only permanents attached to [sourceId] are considered, so
+     * the badge appears exactly when the doubling can actually apply and follows the Equipment as it
+     * moves. One entry per applicable replacement, matching the once-each rule (CR 616.1) that
+     * [damageDoublersAffectingPlayer] documents.
+     *
+     * Driven off the maintained [AttachmentsComponent] reverse index rather than a battlefield scan:
+     * this runs from `ClientStateTransformer.buildCardActiveEffects` for *every* card on *every*
+     * state push, so scanning would make the view path quadratic in battlefield size. The un-attached
+     * case — overwhelmingly the common one — costs a single component lookup.
+     *
+     * Only the Equipment half is reachable from the current catalog; no card pairs [DoubleDamage]
+     * with [SourceFilter.EnchantedCreature] yet, so the Aura half is generality carried by the shared
+     * matcher rather than behaviour under test.
      */
     fun damageDoublersAffectingSource(state: GameState, sourceId: EntityId): List<ActiveDamageDoubler> {
+        val attachedIds = state.getEntity(sourceId)?.get<AttachmentsComponent>()?.attachedIds.orEmpty()
+        if (attachedIds.isEmpty()) return emptyList()
+
         val doublers = mutableListOf<ActiveDamageDoubler>()
 
-        for (entityId in state.getBattlefield()) {
+        for (entityId in attachedIds) {
             val container = state.getEntity(entityId) ?: continue
             val replacementComponent = container.get<ReplacementEffectSourceComponent>() ?: continue
             val hostControllerId = replacementHostController(state, entityId) ?: continue
+            // The forward link is what [damageSourceMatches] reads when the damage actually
+            // resolves, so the badge agrees with the replacement rather than with the index alone.
             if (container.get<AttachedToComponent>()?.targetId != sourceId) continue
 
             for (effect in replacementComponent.replacementEffects) {

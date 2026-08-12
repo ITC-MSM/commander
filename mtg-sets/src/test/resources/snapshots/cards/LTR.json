@@ -1355,7 +1355,8 @@
                     }
                 ],
                 "timing": "SorcerySpeed",
-                "isEquipAbility": true
+                "isEquipAbility": true,
+                "equipQuality": "Halfling"
             },
             {
                 "id": "ability_3",
@@ -3202,7 +3203,8 @@
                     }
                 ],
                 "timing": "SorcerySpeed",
-                "isEquipAbility": true
+                "isEquipAbility": true,
+                "equipQuality": "Human"
             },
             {
                 "id": "ability_2",

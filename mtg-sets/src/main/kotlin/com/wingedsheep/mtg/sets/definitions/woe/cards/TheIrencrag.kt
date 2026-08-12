@@ -67,7 +67,8 @@ val TheIrencrag = card("The Irencrag") {
         ),
         isEquipAbility = true,
         timing = TimingRule.SorcerySpeed,
-        descriptionOverride = "Equip {3}"
+        // No descriptionOverride: `isEquipAbility` already renders "Equip {3}", and it renders
+        // against the *effective* cost, so an equip discount shows in the menu.
     )
 
     triggeredAbility {

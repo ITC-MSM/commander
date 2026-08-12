@@ -1,6 +1,8 @@
 package com.wingedsheep.mtg.sets
 
 import com.wingedsheep.sdk.scripting.TimingRule
+import com.wingedsheep.sdk.scripting.costs.manaCostOrNull
+import com.wingedsheep.sdk.scripting.filters.unified.TargetFilter
 import com.wingedsheep.sdk.scripting.predicates.ControllerPredicate
 import com.wingedsheep.sdk.scripting.targets.TargetObject
 import io.kotest.assertions.assertSoftly
@@ -17,7 +19,7 @@ import io.kotest.matchers.shouldNotBe
  * "Equip [quality] creature" — which "may legally target only a creature that's controlled by the
  * player activating the ability and that has the chosen quality."
  *
- * Two catalog-wide invariants follow, and both have been violated in this repo before:
+ * Three catalog-wide invariants follow, and each has been violated in this repo before:
  *
  *  1. **Every equip ability is flagged.** A quality-restricted equip authored as a bare
  *     `activatedAbility { }` is a real equip ability that the engine cannot see: everything that
@@ -25,6 +27,12 @@ import io.kotest.matchers.shouldNotBe
  *     discount, Leonin Shikari's instant-speed-equip permission — silently skips it.
  *  2. **Every equip ability targets a creature *you control*.** The quality narrows the target
  *     set; it never widens it past the controller scope CR 702.6c states.
+ *  3. **Every mana-cost equip ability renders as its printed line**, from `equipQuality` plus the
+ *     effective cost — not from a frozen `descriptionOverride` that a cost reduction can't rewrite.
+ *     Non-mana equip costs ("Equip—Pay 3 life") can't be discounted and may keep an override.
+ *
+ * All three are stated as properties over the catalog rather than as a list of card names, so a
+ * new Equipment never needs this file edited.
  *
  * Scoped to abilities already flagged `isEquipAbility` — a card whose attach happens on an ETB
  * trigger (Pirate's Cutlass, Super Suit) or a loyalty ability (The Aetherspark) is not an equip
@@ -56,37 +64,69 @@ class EquipQualityVariantTest : FunSpec({
         }
     }
 
-    test("the cards with a target-restricted equip are authored through the equipAbility facade") {
-        // Every card here activates a restricted equip through the facade, and each was a
-        // hand-rolled activated ability missing `isEquipAbility` before the facade grew its
-        // `quality`/`targetFilter` pair; this pins them to the shared rail.
-        //
-        // Only the first five are printed CR 702.6c "Equip [quality]" cards. Ghostfire Blade is
-        // not: it prints one "Equip {3}" plus "costs {2} less to activate if it targets a
-        // colorless creature", and its {1} ability is our *model* of that reduction, not a printed
-        // quality restriction. It rides the same rail, so it belongs in this assertion — but the
-        // label below describes our modelling, not its Oracle text.
-        val restrictedEquipLabels = mapOf(
-            "Blackblade Reforged" to "legendary creature you control",
-            "Bilbo's Ring" to "Halfling creature you control",
-            "Dúnedain Blade" to "Human creature you control",
-            "Mjölnir, Hammer of Thor" to "worthy creature you control",
-            "Pirate Hat" to "Pirate creature you control",
-            // Modelled, not printed — see above.
-            "Ghostfire Blade" to "colorless creature you control",
-        )
-
+    test("every equip ability renders as its printed 'Equip [quality] [cost]' line") {
+        // The regression this replaces a hardcoded card list with: five cards hand-rolled a
+        // restricted equip as a bare `activatedAbility { }` carrying a `descriptionOverride`
+        // ("Equip Human {1}"), which both left `isEquipAbility` unset and froze the cost — a static
+        // string can't be rewritten when Eowyn or Forge Anew discounts the activation.
+        // `ActivatedAbility.describeWithCost` now renders the printed line from `equipQuality` plus
+        // the *effective* cost, so an override on a flagged equip ability is by definition the stale
+        // hand-rolled shape.
         assertSoftly {
-            for ((cardName, label) in restrictedEquipLabels) {
-                val card = MtgSetCatalog.all.flatMap { it.cards }.firstOrNull { it.name == cardName }
-                withClue("$cardName is in the catalog") { card shouldNotBe null }
-                val labels = card!!.script.activatedAbilities
-                    .filter { it.isEquipAbility }
-                    .mapNotNull { it.targetRequirements.singleOrNull()?.id }
-                withClue("$cardName has a flagged equip ability labelled '$label' (has: $labels)") {
-                    (label in labels) shouldBe true
+            for ((card, ability) in equipAbilities) {
+                withClue("${card.name}: ${ability.description}") {
+                    withClue("every equip ability names the keyword it is") {
+                        ability.description.contains("Equip") shouldBe true
+                    }
+                    if (ability.cost.manaCostOrNull != null) {
+                        // The exemption is narrow on purpose. A *mana* equip cost is exactly what
+                        // Eowyn and Forge Anew rewrite, so freezing it in a string is the bug; a
+                        // non-mana cost can't be discounted and may need card-specific naming
+                        // (Dark Knight's Greatsword prints "Chaosbringer — Equip—Pay 3 life").
+                        withClue("a mana equip cost must stay live — no frozen override") {
+                            ability.descriptionOverride shouldBe null
+                        }
+                        // "Equip {3}" (CR 702.6a) / "Equip Human {1}" (CR 702.6c).
+                        val expectedPrefix = "Equip ${ability.equipQuality?.let { "$it " } ?: ""}"
+                        withClue("renders as its printed keyword line") {
+                            ability.description.startsWith(expectedPrefix) shouldBe true
+                        }
+                    }
                 }
             }
         }
     }
-})
+
+    test("a target-restricted equip declares its quality — it is never restricted but unlabelled") {
+        // Keyed off the *filter*, not the prompt label: a hand-rolled equip picks its own label
+        // ("target Wizard you control"), so only the filter says reliably whether the ability is
+        // restricted. Anything narrower than plain creature-you-control is a CR 702.6c variant and
+        // must go through the facade, which is what keeps the printed wording, `equipQuality` and
+        // the prompt label in agreement. This is the assertion that caught Thinking Cap and
+        // Wizard's Staff still hand-rolling the shape.
+        val restricted = equipAbilities.filter { (_, ability) ->
+            (ability.targetRequirements.singleOrNull() as? TargetObject)?.filter?.baseFilter != PLAIN_EQUIP_FILTER
+        }
+        withClue("the catalog has quality-restricted equips to assert about") {
+            restricted.size shouldNotBe 0
+        }
+        assertSoftly {
+            for ((card, ability) in restricted) {
+                withClue("${card.name}: ${ability.description}") {
+                    val quality = ability.equipQuality
+                    withClue("a narrowed target filter means a quality variant") {
+                        quality shouldNotBe null
+                    }
+                    withClue("the prompt label is built from the quality") {
+                        ability.targetRequirements.singleOrNull()?.id shouldBe "$quality creature you control"
+                    }
+                }
+            }
+        }
+    }
+}) {
+    private companion object {
+        /** The target filter of a plain, unrestricted equip (CR 702.6a). */
+        val PLAIN_EQUIP_FILTER = TargetFilter.CreatureYouControl.baseFilter
+    }
+}
