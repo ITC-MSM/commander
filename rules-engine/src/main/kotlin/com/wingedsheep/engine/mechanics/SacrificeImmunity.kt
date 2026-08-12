@@ -2,7 +2,6 @@ package com.wingedsheep.engine.mechanics
 
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.battlefield.GrantsSacrificeImmunityComponent
-import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.sdk.model.EntityId
 
 /**
@@ -40,10 +39,6 @@ object SacrificeImmunity {
     ): Boolean {
         if (effectControllerId == null || effectControllerId == sacrificingPlayerId) return false
         if (effectControllerId !in state.getOpponents(sacrificingPlayerId)) return false
-        return state.getBattlefield().any { entityId ->
-            val container = state.getEntity(entityId) ?: return@any false
-            container.has<GrantsSacrificeImmunityComponent>() &&
-                container.get<ControllerComponent>()?.playerId == sacrificingPlayerId
-        }
+        return ControllerGrants.grantedTo<GrantsSacrificeImmunityComponent>(state, sacrificingPlayerId)
     }
 }

@@ -4,12 +4,12 @@ import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.battlefield.AttachedToComponent
 import com.wingedsheep.engine.state.components.battlefield.CantBeTargetedByOpponentAbilitiesComponent
-import com.wingedsheep.engine.state.components.battlefield.GrantsControllerShroudComponent
-import com.wingedsheep.engine.state.components.player.PlayerShroudComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
+import com.wingedsheep.engine.mechanics.ControllerGrants
 import com.wingedsheep.engine.mechanics.layers.ProjectedState
 import com.wingedsheep.engine.mechanics.targeting.ControllerHexproof
+import com.wingedsheep.engine.mechanics.targeting.ControllerShroud
 import com.wingedsheep.engine.mechanics.targeting.PlayerTargetRestriction
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.Zone
@@ -172,13 +172,10 @@ class TargetFinder(
         if (entityController == controllerId) return false  // own permanents are never restricted
         if (targetingSourceType == TargetingSourceType.SPELL) return false  // spells bypass this restriction
 
-        val container = state.getEntity(entityId) ?: return false
-        if (container.has<CantBeTargetedByOpponentAbilitiesComponent>()) {
-            // For ABILITY source type, always blocked
-            // For ANY (unknown), conservatively block since we don't know the source type
-            return true
-        }
-        return false
+        // For ABILITY source type, always blocked. For ANY (unknown), conservatively block since
+        // we don't know the source type. Read through ControllerGrants so a gated form of the
+        // ability switches off with its condition instead of sticking on.
+        return ControllerGrants.isActiveOn<CantBeTargetedByOpponentAbilitiesComponent>(state, entityId)
     }
 
     private fun findOpponentOrPlaneswalkerTargets(
@@ -568,22 +565,9 @@ class TargetFinder(
     /**
      * Check if a player has shroud (e.g., from True Believer's "You have shroud"
      * or Gilded Light's "You gain shroud until end of turn").
-     * A player has shroud if:
-     * - Any permanent on the battlefield controlled by that player has GrantsControllerShroudComponent, OR
-     * - The player entity has PlayerShroudComponent (from a spell effect)
      */
-    private fun playerHasShroud(state: GameState, playerId: EntityId): Boolean {
-        // Check for temporary player shroud (e.g., Gilded Light)
-        val playerEntity = state.getEntity(playerId)
-        if (playerEntity?.has<PlayerShroudComponent>() == true) return true
-
-        // Check for permanent-based shroud (e.g., True Believer)
-        return state.getBattlefield().any { entityId ->
-            val container = state.getEntity(entityId) ?: return@any false
-            container.get<GrantsControllerShroudComponent>() != null &&
-                container.get<ControllerComponent>()?.playerId == playerId
-        }
-    }
+    private fun playerHasShroud(state: GameState, playerId: EntityId): Boolean =
+        ControllerShroud.appliesTo(state, playerId)
 
     /**
      * Check if a player has hexproof (from a permanent like Shalai, Voice of Plenty).

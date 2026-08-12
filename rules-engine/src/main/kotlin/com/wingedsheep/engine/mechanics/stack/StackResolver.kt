@@ -7,6 +7,7 @@ import com.wingedsheep.engine.handlers.PipelineState
 import com.wingedsheep.engine.handlers.EffectHandler
 import com.wingedsheep.engine.handlers.effects.composite.PreTargetedEffectContext
 import com.wingedsheep.engine.handlers.effects.composite.processPreTargetedEffectQueue
+import com.wingedsheep.engine.mechanics.ControllerGrants
 import com.wingedsheep.engine.mechanics.FlashbackGrants
 import com.wingedsheep.engine.mechanics.HarmonizeGrants
 import com.wingedsheep.engine.mechanics.SpliceCasts
@@ -3309,8 +3310,11 @@ class StackResolver(
 
                     // Check can't-be-targeted-by-abilities (Shanna, Sisay's Legacy)
                     if (targetingSourceType != TargetingSourceType.SPELL && entityController != controllerId) {
-                        val container = state.getEntity(target.entityId)
-                        if (container?.has<CantBeTargetedByOpponentAbilitiesComponent>() == true) {
+                        if (ControllerGrants.isActiveOn<CantBeTargetedByOpponentAbilitiesComponent>(
+                                state,
+                                target.entityId,
+                            )
+                        ) {
                             return@filterIndexed false
                         }
                     }

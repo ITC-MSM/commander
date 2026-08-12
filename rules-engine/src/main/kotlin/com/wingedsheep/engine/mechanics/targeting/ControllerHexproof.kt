@@ -1,10 +1,8 @@
 package com.wingedsheep.engine.mechanics.targeting
 
-import com.wingedsheep.engine.handlers.ConditionEvaluator
-import com.wingedsheep.engine.handlers.EffectContext
+import com.wingedsheep.engine.mechanics.ControllerGrants
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.battlefield.GrantsControllerHexproofComponent
-import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.engine.state.components.player.PlayerHexproofComponent
 import com.wingedsheep.sdk.model.EntityId
 
@@ -14,8 +12,9 @@ import com.wingedsheep.sdk.model.EntityId
  *
  * Single home for the question so the four readers that ask it — [TargetValidator],
  * `TargetEnumerationUtils`, `TargetFinder` and `ClientStateTransformer` — can't drift. They had
- * four copies of the same battlefield scan, and a gated grant would otherwise have had to be
- * special-cased in each.
+ * four copies of the same battlefield scan, each matching on the base `ControllerComponent` (so a
+ * stolen granter kept protecting the player it was taken from), and a gated grant would otherwise
+ * have had to be special-cased in each.
  *
  * The gate is the reason this exists rather than a bare component check.
  * [GrantsControllerHexproofComponent] is stamped once by `StaticAbilityHandler` as the permanent
@@ -25,26 +24,6 @@ import com.wingedsheep.sdk.model.EntityId
  * component and is evaluated here, against current state, on every read.
  */
 object ControllerHexproof {
-
-    private val conditionEvaluator = ConditionEvaluator()
-
-    /**
-     * Whether [entityId] is *currently* granting hexproof to its controller — it carries the
-     * marker, and either the grant is unconditional or its "as long as" gate holds right now.
-     */
-    fun isGrantingNow(state: GameState, entityId: EntityId): Boolean {
-        val container = state.getEntity(entityId) ?: return false
-        val marker = container.get<GrantsControllerHexproofComponent>() ?: return false
-        val condition = marker.condition ?: return true
-        val controllerId = state.projectedState.getController(entityId)
-            ?: container.get<ControllerComponent>()?.playerId
-            ?: return false
-        return conditionEvaluator.evaluate(
-            state,
-            condition,
-            EffectContext(sourceId = entityId, controllerId = controllerId),
-        )
-    }
 
     /**
      * Whether [playerId] has hexproof — either directly ([PlayerHexproofComponent], from a
@@ -56,12 +35,7 @@ object ControllerHexproof {
      */
     fun appliesTo(state: GameState, playerId: EntityId): Boolean {
         if (state.getEntity(playerId)?.has<PlayerHexproofComponent>() == true) return true
-
-        return state.getBattlefield().any { entityId ->
-            val container = state.getEntity(entityId) ?: return@any false
-            container.get<ControllerComponent>()?.playerId == playerId &&
-                isGrantingNow(state, entityId)
-        }
+        return ControllerGrants.grantedTo<GrantsControllerHexproofComponent>(state, playerId)
     }
 
     /**

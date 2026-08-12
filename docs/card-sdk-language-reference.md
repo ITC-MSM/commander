@@ -5142,6 +5142,17 @@ staticAbility {
   enchanted permanent is a land, it has '{T}: Add two mana of any one color'" is a
   `ConditionalStaticAbility(GrantActivatedAbility({T}: AddAnyColorMana(2)), EnchantedPermanentMatches(Land))` — the
   granted mana ability switches on/off continuously with the host's type.
+  The same holds for the **player-level controller grants** — `GrantShroudToController`,
+  `GrantHexproofToController`, `GrantProtectionToController`, `OpponentsCantMakeYouSacrifice`,
+  `GrantCantLoseGame`, `GrantOpponentsCantWinGame`, `GrantCantLoseGameFromLife`, `StationUsingToughness`,
+  `CantBeTargetedByOpponentAbilities`. Those are stamped as marker components once, as the permanent
+  enters, rather than projected each pass, so the gate travels on the marker and every reader
+  re-evaluates it against current state via `ControllerGrants` (Captain America, Super-Soldier:
+  `ConditionalStaticAbility(GrantHexproofToController, Conditions.SourceHasCounter(Named(Counters.SHIELD)))`).
+  Adding a new marker of this kind means stamping it through `StaticAbilityHandler.controllerGrant<A>()`
+  and reading it through `ControllerGrants` — a bare `any { it is A }` at the stamp makes the gated form
+  *silently inert*, and a bare `has<M>()` at the read leaves it stuck on. `ConditionalControllerGrantsTest`
+  enforces both.
 - `CompositeStaticAbility(abilities)` — bundles several component static abilities into **one** printed static ability
   whose single continuous effect spans multiple Rule 613 layers (CR 613.6). Use it when one printed ability grants a
   *combination* of type/subtype/color/keyword/P/T changes to the same objects — e.g. Bello, Bard of the Brambles: "each
@@ -5680,7 +5691,9 @@ staticAbility {
   [scope]" while this permanent is on the battlefield (Absolute Virtue: "You have protection from each
   of your opponents."). The continuous, static counterpart of the one-shot `GrantPlayerProtection`
   (The One Ring) — for a player only the **D**amage and **T**argeting legs of DEBT apply. Projected to
-  `GrantsControllerProtectionComponent(scopes)`; `PlayerProtectionRules.isProtectedFromSource` unions
+  `GrantsControllerProtectionComponent(grants)` — a list of `ProtectionGrant(scope, condition)`, gated
+  **per scope**, so one permanent can carry several of these abilities and wrap only some in a
+  `ConditionalStaticAbility`. `PlayerProtectionRules.isProtectedFromSource` unions
   these battlefield-sourced scopes with any one-shot `PlayerProtectionComponent` on the player, so the
   protection appears/disappears with the permanent (no cleanup). General over any `ProtectionScope`
   (single color, `Everything`, `EachOpponent`, …), mirroring the controller-grant statics

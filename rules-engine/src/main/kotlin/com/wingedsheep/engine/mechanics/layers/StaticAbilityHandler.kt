@@ -12,6 +12,7 @@ import com.wingedsheep.engine.state.components.battlefield.GrantsControllerHexpr
 import com.wingedsheep.engine.state.components.battlefield.GrantsSacrificeImmunityComponent
 import com.wingedsheep.engine.state.components.battlefield.GrantsControllerProtectionComponent
 import com.wingedsheep.engine.state.components.battlefield.GrantsStationUsingToughnessComponent
+import com.wingedsheep.engine.state.components.battlefield.ProtectionGrant
 import com.wingedsheep.engine.state.components.battlefield.GrantsControllerShroudComponent
 import com.wingedsheep.engine.state.components.battlefield.ReplacementEffectSourceComponent
 import com.wingedsheep.engine.state.components.battlefield.SuppressesHexproofForGroupComponent
@@ -75,9 +76,12 @@ import com.wingedsheep.sdk.scripting.CantBeTargetedBySourceTypeAbilities
 import com.wingedsheep.sdk.scripting.CantBeTargetedByOpponentAbilities
 import com.wingedsheep.sdk.scripting.CantBeSacrificed
 import com.wingedsheep.sdk.scripting.CantReceiveCounters
+import com.wingedsheep.sdk.scripting.GrantCantLoseGameFromLife
 import com.wingedsheep.sdk.scripting.GrantHexproofToController
+import com.wingedsheep.sdk.scripting.GrantOpponentsCantWinGame
 import com.wingedsheep.sdk.scripting.GrantProtectionToController
 import com.wingedsheep.sdk.scripting.GrantShroudToController
+import com.wingedsheep.sdk.scripting.OpponentsCantMakeYouSacrifice
 import com.wingedsheep.sdk.scripting.StationUsingToughness
 import com.wingedsheep.sdk.scripting.AdditionalAttackTriggers
 import com.wingedsheep.sdk.scripting.AdditionalDeathTriggers
@@ -242,51 +246,43 @@ class StaticAbilityHandler(
             result = result.with(ContinuousEffectSourceComponent(effectsData))
         }
 
-        // Add tag component for abilities that grant controller-level effects
-        if (allStaticAbilities.any { it is GrantShroudToController }) {
-            result = result.with(GrantsControllerShroudComponent)
+        // Marker components for the grants that live outside the layer system (see
+        // [ControllerGrantMarker]). Every one of these goes through controllerGrant<A>(), which
+        // matches the ability bare *or* behind an "as long as …" gate and carries the condition
+        // onto the marker for readers to re-evaluate. A bare `any { it is A }` here would make a
+        // gated grant silently inert.
+        allStaticAbilities.controllerGrant<GrantShroudToController>()?.let {
+            result = result.with(GrantsControllerShroudComponent(it.condition))
         }
-        // "You have hexproof", bare or behind an "as long as …" gate (Captain America,
-        // Super-Soldier). The gate rides along on the marker so every reader re-evaluates it
-        // against current state — see [ControllerHexproof].
         allStaticAbilities.controllerGrant<GrantHexproofToController>()?.let {
             result = result.with(GrantsControllerHexproofComponent(it.condition))
         }
-        val controllerProtectionScopes = allStaticAbilities
-            .filterIsInstance<GrantProtectionToController>()
-            .map { it.scope }
-        if (controllerProtectionScopes.isNotEmpty()) {
-            result = result.with(GrantsControllerProtectionComponent(controllerProtectionScopes))
+        allStaticAbilities.controllerGrant<OpponentsCantMakeYouSacrifice>()?.let {
+            result = result.with(GrantsSacrificeImmunityComponent(it.condition))
+        }
+        allStaticAbilities.controllerGrant<GrantCantLoseGame>()?.let {
+            result = result.with(GrantsCantLoseGameComponent(it.condition))
+        }
+        allStaticAbilities.controllerGrant<GrantOpponentsCantWinGame>()?.let {
+            result = result.with(GrantsOpponentsCantWinGameComponent(it.condition))
+        }
+        allStaticAbilities.controllerGrant<GrantCantLoseGameFromLife>()?.let {
+            result = result.with(GrantsCantLoseGameFromLifeComponent(it.condition))
+        }
+        allStaticAbilities.controllerGrant<StationUsingToughness>()?.let {
+            result = result.with(GrantsStationUsingToughnessComponent(it.condition))
+        }
+        allStaticAbilities.controllerGrant<CantBeTargetedByOpponentAbilities>()?.let {
+            result = result.with(CantBeTargetedByOpponentAbilitiesComponent(it.condition))
         }
 
-        // Add tag component for "opponents' spells and abilities can't make you sacrifice"
-        if (allStaticAbilities.any { it is com.wingedsheep.sdk.scripting.OpponentsCantMakeYouSacrifice }) {
-            result = result.with(GrantsSacrificeImmunityComponent)
-        }
-
-        // Add tag component for "you can't lose the game"
-        if (allStaticAbilities.any { it is com.wingedsheep.sdk.scripting.GrantCantLoseGame }) {
-            result = result.with(GrantsCantLoseGameComponent)
-        }
-
-        // Add tag component for "your opponents can't win the game" (Herald of Eternal Dawn)
-        if (allStaticAbilities.any { it is com.wingedsheep.sdk.scripting.GrantOpponentsCantWinGame }) {
-            result = result.with(GrantsOpponentsCantWinGameComponent)
-        }
-
-        // Add tag component for the narrow "you don't lose for 0 or less life" (Marina's Grimoire)
-        if (allStaticAbilities.any { it is com.wingedsheep.sdk.scripting.GrantCantLoseGameFromLife }) {
-            result = result.with(GrantsCantLoseGameFromLifeComponent)
-        }
-
-        // Add tag component for "station using toughness"
-        if (allStaticAbilities.any { it is StationUsingToughness }) {
-            result = result.with(GrantsStationUsingToughnessComponent)
-        }
-
-        // Add tag component for "can't be the target of abilities your opponents control"
-        if (allStaticAbilities.any { it is CantBeTargetedByOpponentAbilities }) {
-            result = result.with(CantBeTargetedByOpponentAbilitiesComponent)
+        // Player-level protection is the one grant gated *per scope* rather than per permanent: a
+        // card may carry several GrantProtectionToController abilities and gate them
+        // independently, so each keeps its own condition rather than collapsing to one marker.
+        val protectionGrants = allStaticAbilities.controllerGrants<GrantProtectionToController>()
+            .map { (ability, condition) -> ProtectionGrant(ability.scope, condition) }
+        if (protectionGrants.isNotEmpty()) {
+            result = result.with(GrantsControllerProtectionComponent(protectionGrants))
         }
 
         // Add component for the power/toughness-gated evasion (Tetsuko Umezawa's "creatures you
@@ -357,13 +353,12 @@ class StaticAbilityHandler(
      *
      * A bare grant wins over a gated one if a card somehow carries both, and only the first gated
      * grant is taken — no printed card has two, and a second would need a different condition to
-     * mean anything.
+     * mean anything. Use [controllerGrants] instead for the grants where a card legitimately
+     * carries several, each with its own gate.
      *
-     * Only the hexproof marker carries a condition today. The sibling grants below it
-     * ([GrantShroudToController], [GrantProtectionToController], `OpponentsCantMakeYouSacrifice`,
-     * `GrantCantLoseGame`, …) still match the bare type only, so wrapping one of *those* in a
-     * `ConditionalStaticAbility` reproduces the same silent no-op. Route them through here and give
-     * their marker components a `condition` when a card first needs it.
+     * **Every** [com.wingedsheep.engine.state.components.battlefield.ControllerGrantMarker] is
+     * stamped through this helper (or [controllerGrants]); `ConditionalControllerGrantsTest` fails
+     * the build if a new one regresses to a bare type check.
      */
     private inline fun <reified A : StaticAbility> List<StaticAbility>.controllerGrant(): ControllerGrant? =
         when {
@@ -371,6 +366,23 @@ class StaticAbilityHandler(
             else -> filterIsInstance<ConditionalStaticAbility>()
                 .firstOrNull { it.ability is A }
                 ?.let { ControllerGrant(it.condition) }
+        }
+
+    /**
+     * Every static ability of type [A] the permanent carries, each paired with the gate it sits
+     * behind (`null` when written bare) — the many-per-card counterpart of [controllerGrant], for
+     * grants that stack rather than collapsing into a single marker
+     * ([GrantProtectionToController]: "you have protection from red, and from blue as long as you
+     * control an Island" is two abilities with two different gates).
+     */
+    private inline fun <reified A : StaticAbility> List<StaticAbility>.controllerGrants(): List<Pair<A, Condition?>> =
+        mapNotNull { ability ->
+            when {
+                ability is A -> ability to null
+                ability is ConditionalStaticAbility ->
+                    (ability.ability as? A)?.let { it to ability.condition }
+                else -> null
+            }
         }
 
     /**

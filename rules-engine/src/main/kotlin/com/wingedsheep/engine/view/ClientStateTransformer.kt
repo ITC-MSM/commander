@@ -45,6 +45,7 @@ import com.wingedsheep.engine.mechanics.layers.ProjectedState
 import com.wingedsheep.engine.mechanics.layers.SerializableModification
 import com.wingedsheep.engine.mechanics.layers.imageOverrideFor
 import com.wingedsheep.engine.mechanics.targeting.ControllerHexproof
+import com.wingedsheep.engine.mechanics.targeting.ControllerShroud
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.sdk.model.CardDefinition
 import kotlinx.serialization.json.JsonArray
@@ -2177,8 +2178,10 @@ class ClientStateTransformer(
             )
         }
 
-        // Check for PlayerShroudComponent (e.g., Gilded Light)
-        if (container.has<PlayerShroudComponent>()) {
+        // Shroud, from a resolution-time effect (Gilded Light) or from a permanent that grants it
+        // (True Believer). [ControllerShroud] unions the two and re-evaluates any "as long as …"
+        // gate the grant sits behind, so the badge tracks the gate instead of freezing on entry.
+        if (ControllerShroud.appliesTo(state, playerId)) {
             effects.add(
                 ClientPlayerEffect(
                     effectId = "player_shroud",
@@ -2224,25 +2227,11 @@ class ClientStateTransformer(
             )
         }
 
-        // Check for PlayerHexproofComponent (e.g., Dawn's Truce)
-        if (container.has<PlayerHexproofComponent>()) {
-            effects.add(
-                ClientPlayerEffect(
-                    effectId = "player_hexproof",
-                    name = "Hexproof",
-                    description = "You have hexproof (you can't be the target of spells or abilities your opponents control)",
-                    icon = "shield"
-                )
-            )
-        }
-
-        // Check for permanent-based player hexproof (e.g., Shalai, Voice of Plenty)
-        val hasHexproof = !container.has<PlayerHexproofComponent>() && state.getBattlefield().any { entityId ->
-            val entityContainer = state.getEntity(entityId) ?: return@any false
-            entityContainer.get<ControllerComponent>()?.playerId == playerId &&
-                ControllerHexproof.isGrantingNow(state, entityId)
-        }
-        if (hasHexproof) {
+        // Hexproof, from a resolution-time effect (Dawn's Truce) or from a permanent that grants it
+        // (Shalai, Voice of Plenty). Same union-and-re-evaluate as shroud above; this used to be
+        // two blocks, the second scanning the battlefield on the *base* controller so a stolen
+        // Shalai badged the wrong player.
+        if (ControllerHexproof.appliesTo(state, playerId)) {
             effects.add(
                 ClientPlayerEffect(
                     effectId = "player_hexproof",

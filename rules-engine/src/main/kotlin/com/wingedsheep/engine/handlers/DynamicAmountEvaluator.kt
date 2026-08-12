@@ -5,6 +5,7 @@ import com.wingedsheep.engine.handlers.effects.LkiPolicy
 import com.wingedsheep.engine.handlers.effects.TargetResolutionUtils
 import com.wingedsheep.engine.handlers.effects.lkiPolicyFor
 import com.wingedsheep.engine.handlers.effects.lkiSnapshotFor
+import com.wingedsheep.engine.mechanics.ControllerGrants
 import com.wingedsheep.engine.mechanics.layers.ProjectedState
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
@@ -1126,13 +1127,10 @@ class DynamicAmountEvaluator(
         entityId: EntityId,
         fallbackControllerId: EntityId? = null
     ): Boolean {
-        val projected = state.projectedState
-        val controller = projected.getController(entityId) ?: fallbackControllerId ?: return false
-        return state.getBattlefield().any { permanentId ->
-            val perm = state.getEntity(permanentId) ?: return@any false
-            perm.has<GrantsStationUsingToughnessComponent>() &&
-                projected.getController(permanentId) == controller
-        }
+        val controller = state.projectedState.getController(entityId)
+            ?: fallbackControllerId
+            ?: return false
+        return ControllerGrants.grantedTo<GrantsStationUsingToughnessComponent>(state, controller)
     }
 
     // =========================================================================
