@@ -5,6 +5,7 @@ import com.wingedsheep.engine.handlers.effects.LkiPolicy
 import com.wingedsheep.engine.handlers.effects.TargetResolutionUtils
 import com.wingedsheep.engine.handlers.effects.lkiPolicyFor
 import com.wingedsheep.engine.handlers.effects.lkiSnapshotFor
+import com.wingedsheep.engine.mechanics.ControllerGrants
 import com.wingedsheep.engine.mechanics.layers.ProjectedState
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
@@ -1128,10 +1129,12 @@ class DynamicAmountEvaluator(
     ): Boolean {
         val projected = state.projectedState
         val controller = projected.getController(entityId) ?: fallbackControllerId ?: return false
+        // Scanned here rather than through ControllerGrants.grantedTo so the controller match
+        // stays on the *projected* controller, as it always has — a control-change effect
+        // re-points the grant. The gate still goes through ControllerGrants.
         return state.getBattlefield().any { permanentId ->
-            val perm = state.getEntity(permanentId) ?: return@any false
-            perm.has<GrantsStationUsingToughnessComponent>() &&
-                projected.getController(permanentId) == controller
+            projected.getController(permanentId) == controller &&
+                ControllerGrants.isActiveOn<GrantsStationUsingToughnessComponent>(state, permanentId)
         }
     }
 

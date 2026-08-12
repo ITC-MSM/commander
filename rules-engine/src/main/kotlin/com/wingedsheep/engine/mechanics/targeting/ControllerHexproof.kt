@@ -1,10 +1,8 @@
 package com.wingedsheep.engine.mechanics.targeting
 
-import com.wingedsheep.engine.handlers.ConditionEvaluator
-import com.wingedsheep.engine.handlers.EffectContext
+import com.wingedsheep.engine.mechanics.ControllerGrants
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.battlefield.GrantsControllerHexproofComponent
-import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.engine.state.components.player.PlayerHexproofComponent
 import com.wingedsheep.sdk.model.EntityId
 
@@ -26,24 +24,13 @@ import com.wingedsheep.sdk.model.EntityId
  */
 object ControllerHexproof {
 
-    private val conditionEvaluator = ConditionEvaluator()
-
     /**
      * Whether [entityId] is *currently* granting hexproof to its controller — it carries the
      * marker, and either the grant is unconditional or its "as long as" gate holds right now.
      */
     fun isGrantingNow(state: GameState, entityId: EntityId): Boolean {
-        val container = state.getEntity(entityId) ?: return false
-        val marker = container.get<GrantsControllerHexproofComponent>() ?: return false
-        val condition = marker.condition ?: return true
-        val controllerId = state.projectedState.getController(entityId)
-            ?: container.get<ControllerComponent>()?.playerId
-            ?: return false
-        return conditionEvaluator.evaluate(
-            state,
-            condition,
-            EffectContext(sourceId = entityId, controllerId = controllerId),
-        )
+        val marker = state.getEntity(entityId)?.get<GrantsControllerHexproofComponent>() ?: return false
+        return ControllerGrants.isGrantingNow(state, entityId, marker)
     }
 
     /**
@@ -56,12 +43,7 @@ object ControllerHexproof {
      */
     fun appliesTo(state: GameState, playerId: EntityId): Boolean {
         if (state.getEntity(playerId)?.has<PlayerHexproofComponent>() == true) return true
-
-        return state.getBattlefield().any { entityId ->
-            val container = state.getEntity(entityId) ?: return@any false
-            container.get<ControllerComponent>()?.playerId == playerId &&
-                isGrantingNow(state, entityId)
-        }
+        return ControllerGrants.grantedTo<GrantsControllerHexproofComponent>(state, playerId)
     }
 
     /**

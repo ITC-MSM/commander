@@ -5,7 +5,9 @@ import com.wingedsheep.engine.state.Component
 import com.wingedsheep.sdk.core.CounterType
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.AbilityId
+import com.wingedsheep.sdk.scripting.ProtectionScope
 import com.wingedsheep.sdk.scripting.ReplacementEffect
+import com.wingedsheep.sdk.scripting.conditions.Condition
 import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
 import kotlinx.serialization.Serializable
 
@@ -874,12 +876,48 @@ data class GraveyardPlayPermissionUsedComponent(
 }
 
 /**
+ * A marker component stamped on a permanent from one of its static abilities, carrying that
+ * ability's "as long as …" gate. Almost all of these hand a *player-level* effect to the
+ * permanent's controller — "you have shroud", "you can't lose the game", "opponents can't make you
+ * sacrifice"; [CantBeTargetedByOpponentAbilitiesComponent] is the self-scoped exception.
+ *
+ * These grants are deliberately outside the Rule 613 layer system: they are stamped **once**, by
+ * `StaticAbilityHandler` as the permanent enters, and readers later scan the battlefield for the
+ * marker rather than re-deriving it each projection pass.
+ *
+ * That stamp-once design is exactly why [condition] exists. A grant written behind an "as long as
+ * …" gate ([com.wingedsheep.sdk.scripting.ConditionalStaticAbility]) cannot be resolved at stamp
+ * time — the gate flips later in the game — so the condition rides along on the marker and is
+ * re-evaluated against current state on **every** read, via
+ * [com.wingedsheep.engine.mechanics.ControllerGrants]. `null` means an unconditional grant.
+ *
+ * Two rules for anything implementing this interface:
+ *  1. Stamp it through `StaticAbilityHandler.controllerGrant<A>()`, never a bare `any { it is A }`
+ *     — a bare type check misses a `ConditionalStaticAbility` wrapper, and the ability then does
+ *     nothing *at all* rather than switching on and off. That silent no-op is the bug this
+ *     interface exists to make unrepresentable.
+ *  2. Read it through [com.wingedsheep.engine.mechanics.ControllerGrants], never a bare
+ *     `container.has<M>()` — the latter ignores the gate and leaves the grant permanently on.
+ *
+ * `ConditionalControllerGrantsTest` holds every implementor to both rules.
+ */
+interface ControllerGrantMarker {
+    /** The "as long as …" gate this grant sits behind, or `null` when it is unconditional. */
+    val condition: Condition?
+}
+
+/**
  * Marks a permanent as granting shroud to its controller.
  * Used for True Believer: "You have shroud."
  * When the permanent leaves the battlefield, the component goes with it — no cleanup needed.
+ *
+ * See [ControllerGrantMarker] for why [condition] travels on the marker; read through
+ * [com.wingedsheep.engine.mechanics.targeting.ControllerShroud].
  */
 @Serializable
-data object GrantsControllerShroudComponent : Component
+data class GrantsControllerShroudComponent(
+    override val condition: Condition? = null
+) : Component, ControllerGrantMarker
 
 /**
  * Marks a permanent as granting hexproof to its controller.
@@ -889,16 +927,14 @@ data object GrantsControllerShroudComponent : Component
  *
  * [condition] is set when the grant is gated behind a
  * [com.wingedsheep.sdk.scripting.ConditionalStaticAbility] ("As long as Captain America has a
- * shield counter on him, you … have hexproof"). The marker is stamped once, as the permanent
- * enters, so the gate **must** be re-evaluated on every read rather than baked in here — otherwise
- * the grant would freeze at whatever the condition said on entry. Every reader goes through
- * [com.wingedsheep.engine.mechanics.targeting.ControllerHexproof], which does exactly that; `null`
- * means an unconditional grant.
+ * shield counter on him, you … have hexproof"). See [ControllerGrantMarker] for why it travels on
+ * the marker; every reader goes through
+ * [com.wingedsheep.engine.mechanics.targeting.ControllerHexproof].
  */
 @Serializable
 data class GrantsControllerHexproofComponent(
-    val condition: com.wingedsheep.sdk.scripting.conditions.Condition? = null
-) : Component
+    override val condition: Condition? = null
+) : Component, ControllerGrantMarker
 
 /**
  * Marks a permanent as granting its controller player-level protection from one or more
@@ -909,11 +945,28 @@ data class GrantsControllerHexproofComponent(
  * read by [com.wingedsheep.engine.mechanics.targeting.PlayerProtectionRules], which scans the
  * battlefield for permanents carrying this component under the queried player's control. When the
  * permanent leaves the battlefield the component goes with it — no cleanup needed.
+ *
+ * The gate is **per scope**, not per component: one permanent can carry several
+ * `GrantProtectionToController` abilities and gate them independently ("you have protection from
+ * red" unconditionally, "and from blue as long as you control an Island"). That is why this is a
+ * list of [ProtectionGrant] rather than a [ControllerGrantMarker] with one condition — see that
+ * interface for the stamp-once reasoning the gate exists to work around.
  */
 @Serializable
 data class GrantsControllerProtectionComponent(
-    val scopes: List<com.wingedsheep.sdk.scripting.ProtectionScope>
+    val grants: List<ProtectionGrant>
 ) : Component
+
+/**
+ * One player-level protection scope, together with the "as long as …" gate it sits behind
+ * (`null` when unconditional). Evaluated on every read by
+ * [com.wingedsheep.engine.mechanics.targeting.PlayerProtectionRules].
+ */
+@Serializable
+data class ProtectionGrant(
+    val scope: ProtectionScope,
+    val condition: Condition? = null
+)
 
 /**
  * Marks a permanent as granting "spells and abilities your opponents control can't cause you to
@@ -923,17 +976,26 @@ data class GrantsControllerProtectionComponent(
  * [com.wingedsheep.engine.mechanics.SacrificeImmunity], which every sacrifice site consults
  * before moving a permanent to the graveyard. When the permanent leaves the battlefield the
  * component goes with it — no cleanup needed.
+ *
+ * See [ControllerGrantMarker] for why [condition] travels on the marker.
  */
 @Serializable
-data object GrantsSacrificeImmunityComponent : Component
+data class GrantsSacrificeImmunityComponent(
+    override val condition: Condition? = null
+) : Component, ControllerGrantMarker
 
 /**
  * Marks a permanent as granting "can't lose the game" to its controller.
  * Used for Lich's Mastery: "You can't lose the game."
  * When the permanent leaves the battlefield, the component goes with it — no cleanup needed.
+ *
+ * See [ControllerGrantMarker] for why [condition] travels on the marker; read through
+ * `playerCantLoseGame`, which also applies the CR 810.8a team reach.
  */
 @Serializable
-data object GrantsCantLoseGameComponent : Component
+data class GrantsCantLoseGameComponent(
+    override val condition: Condition? = null
+) : Component, ControllerGrantMarker
 
 /**
  * Marks a permanent as granting "your opponents can't win the game" from its controller.
@@ -942,18 +1004,26 @@ data object GrantsCantLoseGameComponent : Component
  * [com.wingedsheep.engine.mechanics.sba.player.playerCantWinGame]): an effect that would make an
  * opponent of this permanent's controller win the game does nothing.
  * When the permanent leaves the battlefield, the component goes with it — no cleanup needed.
+ *
+ * See [ControllerGrantMarker] for why [condition] travels on the marker.
  */
 @Serializable
-data object GrantsOpponentsCantWinGameComponent : Component
+data class GrantsOpponentsCantWinGameComponent(
+    override val condition: Condition? = null
+) : Component, ControllerGrantMarker
 
 /**
  * Marks a permanent as granting "you don't lose the game for having 0 or less life" to its
  * controller — the narrow sibling of [GrantsCantLoseGameComponent]. Read only by the 704.5a
  * life-loss state-based action (Marina Vendrell's Grimoire); poison / empty-library / effect
  * losses are unaffected. Leaves with the permanent — no cleanup needed.
+ *
+ * See [ControllerGrantMarker] for why [condition] travels on the marker.
  */
 @Serializable
-data object GrantsCantLoseGameFromLifeComponent : Component
+data class GrantsCantLoseGameFromLifeComponent(
+    override val condition: Condition? = null
+) : Component, ControllerGrantMarker
 
 /**
  * Marks a permanent as granting the Station-using-toughness effect to creatures its
@@ -961,17 +1031,29 @@ data object GrantsCantLoseGameFromLifeComponent : Component
  * Station ability and its toughness > power, it contributes toughness instead of power.
  *
  * Created by [StaticAbilityHandler] from [StationUsingToughness] static abilities.
+ *
+ * See [ControllerGrantMarker] for why [condition] travels on the marker.
  */
 @Serializable
-data object GrantsStationUsingToughnessComponent : Component
+data class GrantsStationUsingToughnessComponent(
+    override val condition: Condition? = null
+) : Component, ControllerGrantMarker
 
 /**
  * Marks a permanent as unable to be targeted by abilities opponents control.
  * Unlike hexproof, spells can still target this permanent.
  * Used for Shanna, Sisay's Legacy: "Shanna can't be the target of abilities your opponents control."
+ *
+ * The self-scoped outlier among [ControllerGrantMarker]s — the effect lands on this permanent
+ * rather than on its controller. It implements the interface anyway because the hazard is
+ * identical: stamped once on entry, so a gated form has to carry its condition here and be read
+ * through [com.wingedsheep.engine.mechanics.ControllerGrants.isActive] rather than a bare
+ * `has<…>()`. Readers pass this permanent's own id, not its controller's.
  */
 @Serializable
-data object CantBeTargetedByOpponentAbilitiesComponent : Component
+data class CantBeTargetedByOpponentAbilitiesComponent(
+    override val condition: Condition? = null
+) : Component, ControllerGrantMarker
 
 /**
  * Marks a permanent as granting "can't be blocked" to the creatures [affects] resolves to, while

@@ -6,15 +6,14 @@ import com.wingedsheep.engine.handlers.PredicateContext
 import com.wingedsheep.engine.handlers.PredicateEvaluator
 import com.wingedsheep.engine.legalactions.TargetInfo
 import com.wingedsheep.engine.mechanics.targeting.ControllerHexproof
+import com.wingedsheep.engine.mechanics.targeting.ControllerShroud
 import com.wingedsheep.engine.mechanics.targeting.HexproofSuppression
 import com.wingedsheep.engine.mechanics.targeting.PlayerTargetRestriction
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.battlefield.AttachedToComponent
-import com.wingedsheep.engine.state.components.battlefield.GrantsControllerShroudComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
-import com.wingedsheep.engine.state.components.player.PlayerShroudComponent
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
@@ -414,15 +413,8 @@ class TargetEnumerationUtils(
 
     // Player protection checks
 
-    fun playerHasShroud(state: GameState, playerId: EntityId): Boolean {
-        val playerEntity = state.getEntity(playerId)
-        if (playerEntity?.has<PlayerShroudComponent>() == true) return true
-        return state.getBattlefield().any { entityId ->
-            val container = state.getEntity(entityId) ?: return@any false
-            container.get<GrantsControllerShroudComponent>() != null &&
-                container.get<ControllerComponent>()?.playerId == playerId
-        }
-    }
+    fun playerHasShroud(state: GameState, playerId: EntityId): Boolean =
+        ControllerShroud.appliesTo(state, playerId)
 
     fun playerHasHexproof(state: GameState, playerId: EntityId): Boolean =
         ControllerHexproof.appliesTo(state, playerId)
