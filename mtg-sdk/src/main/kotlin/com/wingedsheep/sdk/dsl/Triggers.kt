@@ -1459,6 +1459,47 @@ object Triggers {
         binding = binding,
     )
 
+    /**
+     * Whenever **you** (this permanent's controller) are dealt damage, by any source at all —
+     * creature, burn spell, artifact, planeswalker (Sun Droplet). The player-recipient sibling of
+     * [TakesDamage], which watches the permanent itself.
+     *
+     * The trigger context carries the damage amount, so "put that many counters" payoffs read
+     * `DynamicAmount.ContextProperty(ContextPropertyKey.TRIGGER_DAMAGE_AMOUNT)`; the triggering
+     * entity is the damage *source*.
+     *
+     * Use [damageDealtToYou] to restrict which sources count.
+     */
+    val YouAreDealtDamage: TriggerSpec = TriggerSpec(
+        event = DealsDamageEvent(recipient = RecipientFilter.You),
+        binding = TriggerBinding.ANY
+    )
+
+    /**
+     * "Whenever [a source matching sourceFilter] deals damage to you" — the source-restricted
+     * factory behind [YouAreDealtDamage].
+     *
+     * Examples:
+     * - Aurification, "whenever a creature deals damage to you":
+     *   `damageDealtToYou(GameObjectFilter.Creature)`
+     * - Farsight Mask, "whenever a source an opponent controls deals damage to you":
+     *   `damageDealtToYou(GameObjectFilter.Any.opponentControls())`
+     *
+     * "You" is the controller of the permanent bearing the trigger, and the filter's
+     * controller-relative predicates resolve against that same player.
+     */
+    fun damageDealtToYou(
+        sourceFilter: GameObjectFilter? = null,
+        damageType: DamageType = DamageType.Any,
+    ): TriggerSpec = TriggerSpec(
+        event = DealsDamageEvent(
+            damageType = damageType,
+            recipient = RecipientFilter.You,
+            sourceFilter = sourceFilter,
+        ),
+        binding = TriggerBinding.ANY
+    )
+
     // -------------------------------------------------------------------------
     // Aura / Equipment binding (TriggerBinding.ATTACHED)
     //

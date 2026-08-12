@@ -274,6 +274,107 @@
     ]
 }
 
+// Banshee's Blade
+{
+    "name": "Banshee's Blade",
+    "manaCost": "{2}",
+    "typeLine": "Artifact — Equipment",
+    "oracleText": "Equipped creature gets +1/+1 for each charge counter on this Equipment.\nWhenever equipped creature deals combat damage, put a charge counter on this Equipment.\nEquip {2}",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "DealsDamageEvent",
+                    "damageType": "DamageCombat"
+                },
+                "binding": "ATTACHED",
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "charge",
+                    "count": 1,
+                    "target": "Self"
+                }
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{2}"
+                    }
+                },
+                "effect": {
+                    "type": "AttachEquipment",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "creature you control"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        },
+                        "id": "creature you control"
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "isEquipAbility": true
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "GrantDynamicStats",
+                "filter": {
+                    "baseFilter": "permanent",
+                    "scope": "AttachedTo"
+                },
+                "powerBonus": {
+                    "type": "EntityProperty",
+                    "entity": "Source",
+                    "numericProperty": {
+                        "type": "CounterCount",
+                        "counterType": {
+                            "type": "Named",
+                            "name": "charge"
+                        }
+                    }
+                },
+                "toughnessBonus": {
+                    "type": "EntityProperty",
+                    "entity": "Source",
+                    "numericProperty": {
+                        "type": "CounterCount",
+                        "counterType": {
+                            "type": "Named",
+                            "name": "charge"
+                        }
+                    }
+                }
+            }
+        ]
+    },
+    "equipCost": "{2}",
+    "metadata": {
+        "collectorNumber": "144",
+        "rarity": "UNCOMMON",
+        "artist": "Bradley Williams",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/7/b77baad4-2bd6-492a-86ca-8e0088b751d2.jpg?1783944528",
+        "rulings": [
+            {
+                "date": "2004-12-01",
+                "text": "The counters stay on Banshee's Blade even if it becomes unattached, or moves from one creature to another."
+            }
+        ]
+    },
+    "colorIdentityOverride": []
+}
+
 // Barter in Blood
 {
     "name": "Barter in Blood",
@@ -1124,6 +1225,41 @@
     ]
 }
 
+// Damping Matrix
+{
+    "name": "Damping Matrix",
+    "manaCost": "{3}",
+    "typeLine": "Artifact",
+    "oracleText": "Activated abilities of artifacts and creatures can't be activated unless they're mana abilities.",
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "PreventActivatedAbilities",
+                "filter": "artifact|creature",
+                "nonManaAbilitiesOnly": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "161",
+        "rarity": "RARE",
+        "artist": "Mike Dringenberg",
+        "flavorText": "The priests tried cursing it. The mages tried dispelling it. In the end, they all obeyed it.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/2/e2214e75-e469-41ae-8412-df725c097d08.jpg?1783944524",
+        "rulings": [
+            {
+                "date": "2017-03-14",
+                "text": "Damping Matrix's ability affects only artifacts and creatures on the battlefield. Activated abilities that work in other zones (such as bloodrush or unearth) can still be activated. Triggered abilities (starting with \"when,\" \"whenever,\" or \"at\") are unaffected."
+            },
+            {
+                "date": "2017-03-14",
+                "text": "A mana ability is an ability that produces mana, not an ability that costs mana."
+            }
+        ]
+    },
+    "colorIdentityOverride": []
+}
+
 // Dead-Iron Sledge
 {
     "name": "Dead-Iron Sledge",
@@ -1871,6 +2007,76 @@
     "colorIdentityOverride": [
         "GREEN"
     ]
+}
+
+// Farsight Mask
+{
+    "name": "Farsight Mask",
+    "manaCost": "{5}",
+    "typeLine": "Artifact",
+    "oracleText": "Whenever a source an opponent controls deals damage to you, if this artifact is untapped, you may draw a card.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "DealsDamageEvent",
+                    "recipient": "You",
+                    "sourceFilter": "ctrl:opponent"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.WhenCondition",
+                        "condition": {
+                            "type": "EntityMatches",
+                            "entity": "Self",
+                            "filter": "untapped"
+                        }
+                    },
+                    "then": {
+                        "type": "Gated",
+                        "gate": "Gate.MayDecide",
+                        "then": {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        }
+                    }
+                },
+                "triggerCondition": {
+                    "type": "EntityMatches",
+                    "entity": "Self",
+                    "filter": "untapped"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "170",
+        "rarity": "UNCOMMON",
+        "artist": "Ben Thompson",
+        "flavorText": "It turns the adversity of the moment into the knowledge of a lifetime.",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/8/98312bc3-9d2a-480c-bcf0-db8d70d632b9.jpg?1783944521",
+        "rulings": [
+            {
+                "date": "2004-12-01",
+                "text": "This triggers each time a source an opponent controls deals damage to you. If the same source deals damage more than once in a turn, it triggers for each of those times."
+            },
+            {
+                "date": "2004-12-01",
+                "text": "You draw no more than one card each time a source an opponent controls damages you, no matter how much damage the source deals."
+            },
+            {
+                "date": "2004-12-01",
+                "text": "Farsight Mask must be untapped both when the damage is dealt and when you would draw the card."
+            }
+        ]
+    },
+    "colorIdentityOverride": []
 }
 
 // Fireshrieker
@@ -7051,6 +7257,98 @@
     "colorIdentityOverride": []
 }
 
+// Sun Droplet
+{
+    "name": "Sun Droplet",
+    "manaCost": "{2}",
+    "typeLine": "Artifact",
+    "oracleText": "Whenever you're dealt damage, put that many charge counters on this artifact.\nAt the beginning of each upkeep, you may remove a charge counter from this artifact. If you do, you gain 1 life.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "DealsDamageEvent",
+                    "recipient": "You"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "AddDynamicCounters",
+                    "counterType": "charge",
+                    "amount": {
+                        "type": "ContextProperty",
+                        "key": "TRIGGER_DAMAGE_AMOUNT"
+                    },
+                    "target": "Self"
+                }
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP",
+                    "player": "Each"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.WhenCondition",
+                        "condition": {
+                            "type": "EntityMatches",
+                            "entity": "Self",
+                            "filter": {
+                                "statePredicates": [
+                                    {
+                                        "type": "HasCounter",
+                                        "counterType": "CHARGE"
+                                    }
+                                ]
+                            }
+                        }
+                    },
+                    "then": {
+                        "type": "Gated",
+                        "gate": "Gate.MayDecide",
+                        "then": {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "RemoveCounters",
+                                    "counterType": "charge",
+                                    "count": 1,
+                                    "target": "Self"
+                                },
+                                {
+                                    "type": "GainLife",
+                                    "amount": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                }
+                            ]
+                        },
+                        "descriptionOverride": "Remove a charge counter from Sun Droplet to gain 1 life?"
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "249",
+        "rarity": "UNCOMMON",
+        "artist": "Greg Hildebrandt",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/b/9bdd01de-2ac6-4393-ad53-d52df137bc08.jpg?1783944502",
+        "rulings": [
+            {
+                "date": "2006-05-01",
+                "text": "In Two-Headed Giant, triggers only once per upkeep, not once for each player."
+            }
+        ]
+    },
+    "colorIdentityOverride": []
+}
+
 // Sunbeam Spellbomb
 {
     "name": "Sunbeam Spellbomb",
@@ -7731,6 +8029,60 @@
         "imageUri": "https://cards.scryfall.io/normal/front/3/6/361a524c-17aa-43a0-8aea-1d26a9a1044c.jpg"
     },
     "colorIdentityOverride": []
+}
+
+// Tangleroot
+{
+    "name": "Tangleroot",
+    "manaCost": "{3}",
+    "typeLine": "Artifact",
+    "oracleText": "Whenever a player casts a creature spell, that player adds {G}.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            "IsCreature"
+                        ]
+                    },
+                    "player": "Each"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "AddManaOfChoice",
+                    "colorSet": {
+                        "type": "ManaColorSet.Specific",
+                        "colors": [
+                            "GREEN"
+                        ]
+                    },
+                    "recipient": {
+                        "type": "PlayerRef",
+                        "player": "TriggeringPlayer"
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "259",
+        "rarity": "RARE",
+        "artist": "Dana Knutson",
+        "flavorText": "As if there's glitch in the system, the Tangle sometimes folds in on itself, throwing off sparks of mana in a mystifying display.",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/7/87ff2c28-770b-49cb-be10-35429233e048.jpg?1783944500",
+        "rulings": [
+            {
+                "date": "2011-01-25",
+                "text": "The player gets the mana whether they want it or not. If it isn't spent, it will disappear at the end of the current step (or phase)."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
 }
 
 // Tel-Jilad Archers
