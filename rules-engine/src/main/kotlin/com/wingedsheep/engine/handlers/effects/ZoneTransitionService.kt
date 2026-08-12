@@ -40,6 +40,7 @@ import com.wingedsheep.engine.state.components.player.PermanentEnteredFaceDownTh
 import com.wingedsheep.engine.state.components.player.PermanentLeftBattlefieldThisTurnComponent
 import com.wingedsheep.engine.state.components.player.CreatureLeftBattlefieldThisTurnComponent
 import com.wingedsheep.engine.state.components.player.PermanentsSacrificedThisTurnComponent
+import com.wingedsheep.engine.state.components.player.CreatureCardsPutIntoGraveyardThisTurnComponent
 import com.wingedsheep.engine.state.components.player.PlayerDescendedThisTurnComponent
 import com.wingedsheep.engine.state.components.player.SacrificedArtifactThisTurnComponent
 import com.wingedsheep.engine.state.components.player.SacrificedFoodThisTurnComponent
@@ -754,6 +755,22 @@ object ZoneTransitionService {
                 val existing = playerContainer.get<PlayerDescendedThisTurnComponent>()
                     ?: PlayerDescendedThisTurnComponent()
                 playerContainer.with(PlayerDescendedThisTurnComponent(existing.count + 1))
+            }
+        }
+
+        // 8d2. "A creature card was put into your graveyard from anywhere this turn" (Macabre
+        // Reconstruction). The creature-typed slice of the same arrival: any origin zone, keyed
+        // on the owner, tokens excluded. Turn history — reanimating the card later in the turn
+        // doesn't undo the count.
+        if (actualDestZone == Zone.GRAVEYARD &&
+            fromZone != Zone.GRAVEYARD &&
+            cardComponent.typeLine.isCreature &&
+            !container.has<TokenComponent>()
+        ) {
+            newState = newState.updateEntity(ownerId) { playerContainer ->
+                val existing = playerContainer.get<CreatureCardsPutIntoGraveyardThisTurnComponent>()
+                    ?: CreatureCardsPutIntoGraveyardThisTurnComponent()
+                playerContainer.with(CreatureCardsPutIntoGraveyardThisTurnComponent(existing.count + 1))
             }
         }
 

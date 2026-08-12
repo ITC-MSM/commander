@@ -125,6 +125,18 @@ enum class TurnTracker {
      */
     DESCENDED,
     /**
+     * Number of creature cards put into the player's graveyard from any zone this turn — the
+     * creature-typed sibling of [DESCENDED], keyed on the card's owner and excluding tokens
+     * (a token isn't a card, CR 111.6). Backed by
+     * `CreatureCardsPutIntoGraveyardThisTurnComponent`, cleared at end of turn.
+     *
+     * Turn history, not a graveyard scan: the card need not still be there, so reanimating it
+     * later in the turn doesn't clear the count. Reach for the threshold form via
+     * `Conditions.CreatureCardPutIntoYourGraveyardThisTurn` — Murders at Karlov Manor's "if a
+     * creature card was put into your graveyard from anywhere this turn" (Macabre Reconstruction).
+     */
+    CREATURE_CARDS_PUT_INTO_GRAVEYARD,
+    /**
      * Number of cards the player has drawn this turn (CR 120). Backed by
      * `CardsDrawnThisTurnComponent`, reset to 0 for every player at the start of each turn.
      * Powers "equal to the number of cards you've drawn this turn" (Duelist of the Mind).
@@ -195,6 +207,8 @@ enum class TurnTracker {
         ARTIFACT_SACRIFICED -> "whether ${player.description} sacrificed an artifact this turn"
         CARDS_LEFT_GRAVEYARD -> "the number of cards that left ${player.possessive} graveyard this turn"
         DESCENDED -> "the number of times ${player.description} descended this turn"
+        CREATURE_CARDS_PUT_INTO_GRAVEYARD ->
+            "the number of creature cards put into ${player.possessive} graveyard this turn"
         CARDS_DRAWN -> "the number of cards ${player.description} have drawn this turn"
         CARDS_DISCARDED -> "the number of cards ${player.description} have discarded this turn"
         CARDS_PUT_INTO_EXILE -> "the number of cards put into exile this turn"

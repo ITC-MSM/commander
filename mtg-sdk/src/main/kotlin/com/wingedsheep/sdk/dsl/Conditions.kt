@@ -502,6 +502,21 @@ object Conditions {
         com.wingedsheep.sdk.scripting.conditions.PlayerHasMostLife(player)
 
     /**
+     * [player] controls the most permanents matching [filter], or is tied for the most, among all
+     * players. The board-count sibling of [PlayerHasMostLife] — same "max over every player" shape
+     * a binary comparison can't express. Counts come from the projected battlefield.
+     *
+     * Wrap it in a per-player loop for "each player who controls the most X" (No Witnesses):
+     * `ForEachPlayerEffect(Player.Each, ConditionalEffect(PlayerControlsMostPermanents(Player.You,
+     * GameObjectFilter.Creature), …))` — inside the loop `Player.You` is the iterated player.
+     */
+    fun PlayerControlsMostPermanents(
+        player: Player,
+        filter: GameObjectFilter = GameObjectFilter.Creature,
+    ): ConditionInterface =
+        com.wingedsheep.sdk.scripting.conditions.PlayerControlsMostPermanents(player, filter)
+
+    /**
      * If the context target at [targetIndex] is a tapped battlefield permanent. Branch on a
      * target's tapped state at resolution — e.g. Shackle Slinger's "If it's tapped, put a stun
      * counter on it. Otherwise, tap it."
@@ -1646,6 +1661,23 @@ object Conditions {
      */
     fun YouDescendedThisTurn(atLeast: Int = 1): ConditionInterface =
         trackerAtLeast(com.wingedsheep.sdk.scripting.values.TurnTracker.DESCENDED, atLeast = atLeast)
+
+    /**
+     * If [atLeast] or more creature cards were put into your graveyard from anywhere this turn —
+     * the creature-typed sibling of [YouDescendedThisTurn]. Tokens don't count (a token isn't a
+     * card); the origin zone doesn't matter (battlefield, hand, library, stack all qualify).
+     *
+     * Controller-scoped turn history, not a graveyard scan: reanimating the creature later in the
+     * turn doesn't clear it, and a creature card hitting an *opponent's* graveyard never sets it.
+     *
+     * Gates Macabre Reconstruction's cost reduction ("This spell costs {2} less to cast if a
+     * creature card was put into your graveyard from anywhere this turn").
+     */
+    fun CreatureCardPutIntoYourGraveyardThisTurn(atLeast: Int = 1): ConditionInterface =
+        trackerAtLeast(
+            com.wingedsheep.sdk.scripting.values.TurnTracker.CREATURE_CARDS_PUT_INTO_GRAVEYARD,
+            atLeast = atLeast,
+        )
 
     /**
      * If you've sacrificed [atLeast] or more permanents this turn (controller-scoped, any
