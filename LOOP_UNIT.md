@@ -1,6 +1,6 @@
 # u09 — Improvise (CR 702.126)
 
-Branch `loop-msh-u09`, off `origin/main` (`efe697ae9a`). Feature unit: a keyword + cross-layer
+Branch `loop-msh-u09`, rebased onto `loop-msh-u08` (`752ff224fc`). Feature unit: a keyword + cross-layer
 payment plumbing + the two cards it unblocks.
 
 ## Cards
