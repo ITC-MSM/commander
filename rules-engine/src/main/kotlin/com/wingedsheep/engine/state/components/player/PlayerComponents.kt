@@ -1274,6 +1274,22 @@ data class TurnedPermanentFaceUpThisTurnComponent(val count: Int = 0) : Componen
 data class PlayerDescendedThisTurnComponent(val count: Int = 0) : Component
 
 /**
+ * Tracks the number of creature cards put into this player's graveyard from any zone during
+ * the current turn. Cleared at end of turn by CleanupPhaseManager.
+ *
+ * The creature-typed sibling of [PlayerDescendedThisTurnComponent], recorded by the same
+ * `moveToZone` hook and keyed the same way — on the card's **owner** ("your graveyard" is the
+ * owner's graveyard), from any origin zone, tokens excluded (a token isn't a card, CR 111.6).
+ * Like descend it is pure turn history: the card need not still be in the graveyard, so
+ * reanimating it later in the turn doesn't clear the count.
+ *
+ * Backs Murders at Karlov Manor's "if a creature card was put into your graveyard from anywhere
+ * this turn" (Macabre Reconstruction's cost reduction).
+ */
+@Serializable
+data class CreatureCardsPutIntoGraveyardThisTurnComponent(val count: Int = 0) : Component
+
+/**
  * Marks that this player has flipped one or more coins already this turn. Presence alone is the
  * signal — it is set the first time the player flips (regardless of who controls any coin-flip
  * replacement) so that a "the first time you flip one or more coins each turn" effect

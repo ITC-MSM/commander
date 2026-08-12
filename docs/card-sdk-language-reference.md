@@ -7374,6 +7374,14 @@ answer it and would silently return `false`.
   an attack-trigger intervening-if), etc. Preacher of the Schism gates its two attack triggers with
   `PlayerHasMostLife(Player.DefendingPlayer)` ("attacks the player with the most life") and
   `PlayerHasMostLife(Player.You)` ("attacks while you have the most life").
+- `PlayerControlsMostPermanents(player, filter = GameObjectFilter.Creature)` — `player` controls the
+  most permanents matching `filter`, or is tied for the most, among all players. The board-count
+  sibling of `PlayerHasMostLife`: the same "max over every player" shape a binary `CompareAmounts`
+  can't express. Counts are read off the **projected** battlefield, so an animated land counts as a
+  creature. Wrap it in a per-player loop for "each player who controls the most X" —
+  `ForEachPlayerEffect(Player.Each, ConditionalEffect(PlayerControlsMostPermanents(Player.You,
+  GameObjectFilter.Creature), …))`, where `Player.You` inside the loop is the iterated player
+  (No Witnesses: "Each player who controls the most creatures investigates").
 - `AmountIsPrime(amount)` / `AmountIsEven(amount)` / `AmountIsOdd(amount)` /
   `AmountIsMultipleOf(amount, divisor)` — the **unary** numeric-predicate family, the counterpart to
   `CompareAmounts` for properties a two-sided threshold can't express (primality, parity,
@@ -7856,6 +7864,17 @@ default to "you" so card authors don't need to pass it explicitly.
   `PlayerDescendedThisTurnComponent`, incremented in `ZoneTransitionService` whenever a
   permanent (nontoken) card lands in a player's graveyard, and cleared by
   `CleanupPhaseManager` at end of turn.
+- `CreatureCardPutIntoYourGraveyardThisTurn(atLeast = 1)` — at least `atLeast` creature cards were put
+  into your graveyard from *any* zone this turn (battlefield, hand, library, stack). The creature-typed
+  sibling of `YouDescendedThisTurn`, composing through
+  `Compare(DynamicAmount.TurnTracking(Player.You, TurnTracker.CREATURE_CARDS_PUT_INTO_GRAVEYARD), GTE,
+  Fixed(atLeast))`. Tokens never count (a token isn't a card, CR 111.6), and it's owner-scoped — a
+  creature card hitting an *opponent's* graveyard never sets yours. Turn history, not a graveyard scan:
+  reanimating the creature later in the turn doesn't clear it. Backed by the per-player
+  `CreatureCardsPutIntoGraveyardThisTurnComponent`, incremented in `ZoneTransitionService` alongside the
+  descend counter and cleared by `CleanupPhaseManager`. Gates Macabre Reconstruction's cost reduction
+  ("This spell costs {2} less to cast if a creature card was put into your graveyard from anywhere this
+  turn") via `ModifySpellCost(SelfCast, ReduceGeneric(2), CostGating.OnlyIf(...))`.
 - `YouSacrificedPermanentsThisTurn(atLeast = 1)` — at least `atLeast` permanents (any type) were
   sacrificed by you this turn. Composes through `Compare(DynamicAmount.TurnTracking(Player.You,
   TurnTracker.PERMANENTS_SACRIFICED), GTE, Fixed(atLeast))`. Backed by the per-player
@@ -8771,6 +8790,10 @@ this turn").
   count of nontoken permanent cards put into that player's graveyard from any zone.
   Backs `Conditions.YouDescendedThisTurn(atLeast)` and `DynamicAmounts.descendedThisTurn`
   (descend N / fathomless descent ability words).
+- `CREATURE_CARDS_PUT_INTO_GRAVEYARD` — number of creature cards put into a player's graveyard from
+  any zone this turn; the creature-typed sibling of `DESCENDED`, recorded by the same
+  `ZoneTransitionService` hook, keyed on the card's owner, tokens excluded. Backs
+  `Conditions.CreatureCardPutIntoYourGraveyardThisTurn(atLeast)` (Macabre Reconstruction).
 - `CARDS_DRAWN` — number of cards a player has drawn this turn (backed by
   `CardsDrawnThisTurnComponent`, reset to 0 for every player at turn start). Powers
   characteristic-defining stats like Duelist of the Mind's "power is equal to the number of
