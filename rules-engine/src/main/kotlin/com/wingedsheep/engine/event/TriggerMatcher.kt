@@ -1483,17 +1483,7 @@ class TriggerMatcher(
             else -> false
         }
         // Check sourceFilter (e.g., "creature you control" for Gossip's Talent)
-        val sourceMatches = if (trigger.sourceFilter != null && event.sourceId != null) {
-            val predicateContext = com.wingedsheep.engine.handlers.PredicateContext(
-                controllerId = controllerId ?: EntityId(""),
-                sourceId = null
-            )
-            predicateEvaluator.matches(
-                state, state.projectedState, event.sourceId, trigger.sourceFilter!!, predicateContext
-            )
-        } else {
-            true
-        }
+        val sourceMatches = matchesDamageSourceFilter(trigger.sourceFilter, event, state, controllerId)
         // "Excess damage" triggers (Fall of Cair Andros) fire only when the recipient took
         // damage past lethal — CR 120.4a. Non-creature targets and at-or-below-lethal hits leave
         // event.excessAmount at 0 and silently fail this gate.
@@ -1506,6 +1496,33 @@ class TriggerMatcher(
             }
         }
         return combatMatches && recipientMatches && sourceMatches && excessMatches && requirementsMatch
+    }
+
+    /**
+     * Whether the *source* of [event] matches [sourceFilter], evaluated relative to [controllerId]
+     * so controller-relative predicates ("a source you control" / "an opponent controls") read from
+     * the observing permanent's controller. A null filter matches every source — "whenever you're
+     * dealt damage" names no source at all (Sun Droplet), and a source-blind trigger must not be
+     * narrowed to creatures.
+     *
+     * Shared by [matchesDealsDamageTrigger] and the damage-to-you observer path in
+     * [DamageTriggerDetector.detectDamageToControllerTriggers], which reaches the same triggers
+     * through a different index and must apply the same gate.
+     */
+    fun matchesDamageSourceFilter(
+        sourceFilter: GameObjectFilter?,
+        event: DamageDealtEvent,
+        state: GameState,
+        controllerId: EntityId?
+    ): Boolean {
+        if (sourceFilter == null || event.sourceId == null) return true
+        val predicateContext = com.wingedsheep.engine.handlers.PredicateContext(
+            controllerId = controllerId ?: EntityId(""),
+            sourceId = null
+        )
+        return predicateEvaluator.matches(
+            state, state.projectedState, event.sourceId, sourceFilter, predicateContext
+        )
     }
 
     /**

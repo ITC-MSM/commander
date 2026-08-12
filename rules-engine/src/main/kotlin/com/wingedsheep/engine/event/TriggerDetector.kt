@@ -144,7 +144,12 @@ class TriggerDetector(
                     // Index damage observer triggers
                     val trigger = ability.trigger
                     if (trigger is EventPattern.DealsDamageEvent && ability.binding == TriggerBinding.ANY) {
-                        if (trigger.recipient == RecipientFilter.You && trigger.sourceFilter == null) {
+                        // Every "… deals damage to you" observer goes to the damage-to-you index,
+                        // with or without a sourceFilter — `RecipientFilter.You` is unmatchable in
+                        // the general observer path (TriggerMatcher.matchesDealsDamageTrigger
+                        // returns false for it), so a source-filtered one routed anywhere else
+                        // would silently never fire (Farsight Mask).
+                        if (trigger.recipient == RecipientFilter.You) {
                             damageToYou.add(entry)
                         } else if (trigger.damageType == DamageType.Combat &&
                             trigger.recipient == RecipientFilter.AnyPlayer &&

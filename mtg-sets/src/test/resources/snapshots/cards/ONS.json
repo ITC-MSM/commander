@@ -963,7 +963,8 @@
                 "id": "ability_1",
                 "trigger": {
                     "type": "DealsDamageEvent",
-                    "recipient": "You"
+                    "recipient": "You",
+                    "sourceFilter": "creature"
                 },
                 "binding": "ANY",
                 "effect": {
