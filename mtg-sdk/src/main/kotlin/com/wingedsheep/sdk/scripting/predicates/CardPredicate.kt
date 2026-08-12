@@ -1043,6 +1043,60 @@ sealed interface CardPredicate : TextReplaceable<CardPredicate> {
         }
     }
 
+    /**
+     * Matches an **activated or triggered ability on the stack** whose *source* (CR 113.7 — the
+     * object that generated it) matches [subfilter]. The "from a creature source" / "from an
+     * artifact source" clause: Echo, Perceptive Prodigy and Scientist Supreme of A.I.M.
+     *
+     * An ability on the stack is its own object (CR 113.3b/c) and carries none of its source's
+     * characteristics, so a plain type predicate applied to the ability entity can never be true.
+     * This predicate is the redirection: it re-points the match at the ability's source and
+     * evaluates [subfilter] there, which is why the restriction is a `CardPredicate` composed into
+     * the ordinary ability filter rather than a bespoke `TargetRequirement`. It composes with
+     * everything else the same way — `and`/`or`/`not`, controller predicates, any subfilter the SDK
+     * can express (`Creature`, `Artifact`, `Creature.youControl()`, a subtype, …) — instead of
+     * forcing a new target type per source category.
+     *
+     * **Last known information.** Once an ability is on the stack it exists independently of its
+     * source, and the source is routinely gone by the time the ability is targeted — a dies trigger's
+     * source is already in the graveyard, a self-sacrifice ability's source is already sacrificed
+     * (CR 113.7a, and CR 608.2b for the resolution-time re-check). The engine reads the source in
+     * two steps: its *projected* characteristics while it is on the battlefield, falling back to its
+     * printed ones once it has left, so "from a creature source" still matches a dead creature's
+     * dies trigger; and, when the source entity no longer exists at all — a **token** swept by
+     * CR 704.5d — the frozen `EntitySnapshot` the activation captured before the self-sacrifice cost
+     * took it, so "from an artifact source" matches a cracked Clue's draw ability. Equivalent
+     * source-characteristic resolution to `CantBeTargetedBySourceTypeAbilities` /
+     * protection-from-card-type (a parallel implementation, not shared code).
+     *
+     * Applied to a spell on the stack, or to any object that is not an ability, this is false — a
+     * spell is its own source and the clause deliberately does not reach it.
+     *
+     * **Known limits of that last-known read**, inherited from where the engine captures snapshots
+     * rather than from this predicate:
+     *  - a **nontoken** source that left the battlefield some other way (it died, it was exiled)
+     *    is read from the card sitting in that zone, so a type a continuous effect had granted it
+     *    (an animated land, a crewed Vehicle) is no longer visible — its *printed* types answer.
+     *    Only the self-sacrifice/self-exile cost path freezes the projected type line;
+     *  - a deleted-token source is only recoverable for an **activated** ability whose cost
+     *    sacrificed/exiled it (the Clue / Food / Blood / Treasure shape, which is where the clause
+     *    actually comes up). A *triggered* ability whose token source has since ceased to exist has
+     *    no equivalent snapshot on its stack object and stays unmatchable;
+     *  - the snapshot arm answers only card types, sub/supertypes, keywords, token-ness and
+     *    controller. A subfilter asking for anything else (mana value, color, a P/T comparison)
+     *    does not match a deleted-token source.
+     */
+    @SerialName("AbilitySourceMatches")
+    @Serializable
+    data class AbilitySourceMatches(val subfilter: GameObjectFilter) : CardPredicate {
+        override val description: String =
+            "from ${subfilter.indefiniteArticle} ${subfilter.description} source"
+        override fun applyTextReplacement(replacer: TextReplacer): CardPredicate {
+            val newSubfilter = subfilter.applyTextReplacement(replacer)
+            return if (newSubfilter !== subfilter) copy(subfilter = newSubfilter) else this
+        }
+    }
+
     // =============================================================================
     // Composite Predicates
     // =============================================================================

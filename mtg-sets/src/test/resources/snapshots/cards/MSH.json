@@ -4696,6 +4696,83 @@
     ]
 }
 
+// Echo, Perceptive Prodigy
+{
+    "name": "Echo, Perceptive Prodigy",
+    "manaCost": "{2}{U}",
+    "typeLine": "Legendary Creature — Human Hero",
+    "oracleText": "Vigilance\n{1}, {T}: Copy target activated or triggered ability you control from a creature source. You may choose new targets for the copy. (Mana abilities can't be targeted.)",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 4
+    },
+    "keywords": [
+        "VIGILANCE"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "CopyTargetSpellOrAbility",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "activated or triggered ability you control from a creature source"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": {
+                                "cardPredicates": [
+                                    "IsActivatedOrTriggeredAbility",
+                                    {
+                                        "type": "AbilitySourceMatches",
+                                        "subfilter": {
+                                            "cardPredicates": [
+                                                "IsCreature"
+                                            ]
+                                        }
+                                    }
+                                ],
+                                "controllerPredicate": "ControlledByYou"
+                            },
+                            "zone": "Stack"
+                        },
+                        "id": "activated or triggered ability you control from a creature source"
+                    }
+                ],
+                "descriptionOverride": "{1}, {T}: Copy target activated or triggered ability you control from a creature source. You may choose new targets for the copy.",
+                "holdPriority": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "51",
+        "rarity": "UNCOMMON",
+        "artist": "Jurijus Chitrovas",
+        "flavorText": "\"I've seen the fighting techniques of some of the best. Now their strengths are mine.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/d/cd9b9be6-0143-467c-8a2a-937ecafe0473.jpg?1783902961"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Elektra, Daughter of the Hand
 {
     "name": "Elektra, Daughter of the Hand",
@@ -12215,6 +12292,79 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Scientist Supreme of A.I.M.
+{
+    "name": "Scientist Supreme of A.I.M.",
+    "manaCost": "{U}{B}",
+    "typeLine": "Legendary Creature — Human Scientist Villain",
+    "oracleText": "Pay 2 life: Copy target activated or triggered ability you control from an artifact source. You may choose new targets for the copy. Activate only during your turn and only once each turn. (Mana abilities can't be targeted.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomPayLife",
+                        "amount": 2
+                    }
+                },
+                "effect": {
+                    "type": "CopyTargetSpellOrAbility",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "activated or triggered ability you control from an artifact source"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": {
+                                "cardPredicates": [
+                                    "IsActivatedOrTriggeredAbility",
+                                    {
+                                        "type": "AbilitySourceMatches",
+                                        "subfilter": {
+                                            "cardPredicates": [
+                                                "IsArtifact"
+                                            ]
+                                        }
+                                    }
+                                ],
+                                "controllerPredicate": "ControlledByYou"
+                            },
+                            "zone": "Stack"
+                        },
+                        "id": "activated or triggered ability you control from an artifact source"
+                    }
+                ],
+                "restrictions": [
+                    "OnlyDuringYourTurn",
+                    "OncePerTurn"
+                ],
+                "descriptionOverride": "Pay 2 life: Copy target activated or triggered ability you control from an artifact source. You may choose new targets for the copy. Activate only during your turn and only once each turn.",
+                "holdPriority": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "225",
+        "rarity": "RARE",
+        "artist": "Gal Or",
+        "flavorText": "\"A weapon to kill a god? A.I.M. can do that, if you have the money.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/4/0473a990-88c4-4921-a492-377d9171318a.jpg?1783902899"
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "BLACK"
     ]
 }
 

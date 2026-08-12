@@ -9,6 +9,7 @@ import com.wingedsheep.engine.mechanics.targeting.ControllerHexproof
 import com.wingedsheep.engine.mechanics.targeting.ControllerShroud
 import com.wingedsheep.engine.mechanics.targeting.HexproofSuppression
 import com.wingedsheep.engine.mechanics.targeting.PlayerTargetRestriction
+import com.wingedsheep.engine.mechanics.targeting.StackObjectTargeting
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.battlefield.AttachedToComponent
@@ -236,14 +237,22 @@ class TargetEnumerationUtils(
         filter: TargetFilter
     ): List<EntityId> {
         val context = PredicateContext(controllerId = playerId)
-        return state.stack.filter { spellId ->
-            // "Target spell" only matches actual spells — never triggered/activated abilities on
-            // the stack. A spell is a card on the stack (CR 112.1); an ability on the stack is an
-            // ability, not a spell (CR 113.3b/c, 113.7a). The base filter is `Any` (zone = STACK)
-            // and would otherwise pass ability entities, surfacing a castable counterspell whenever
-            // anything is on the stack — which previously left the AI in an infinite re-pick loop.
-            state.isSpellOnStack(spellId) &&
-                predicateEvaluator.matches(state, state.projectedState, spellId, filter.baseFilter, context)
+        // "Target spell" only matches actual spells — never triggered/activated abilities on the
+        // stack. A spell is a card on the stack (CR 112.1); an ability on the stack is an ability,
+        // not a spell (CR 113.3b/c, 113.7a). The base filter is `Any` (zone = STACK) and would
+        // otherwise pass ability entities, surfacing a castable counterspell whenever anything is on
+        // the stack — which previously left the AI in an infinite re-pick loop.
+        //
+        // A filter that *does* name an ability ("counter target ability", "copy target activated or
+        // triggered ability you control") must enumerate ability entities, or the card is executable
+        // but never offered: the enumeration below is what the server sends to the client and the AI
+        // as legal targets, so a blanket spells-only filter here makes every ability-targeting card
+        // unplayable through the UI even though the engine would accept the action. Same seam, same
+        // answer as the authoritative target set in `TargetFinder` — see [StackObjectTargeting].
+        val abilitiesAllowed = StackObjectTargeting.permitsAbilities(filter.baseFilter)
+        return state.stack.filter { stackId ->
+            if (!abilitiesAllowed && !state.isSpellOnStack(stackId)) return@filter false
+            predicateEvaluator.matches(state, state.projectedState, stackId, filter.baseFilter, context)
         }
     }
 

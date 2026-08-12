@@ -406,6 +406,25 @@ object Targets {
     )
 
     /**
+     * Target activated or triggered ability you control on the stack **from a source matching
+     * [sourceFilter]** — the "from a creature source" (Echo, Perceptive Prodigy) / "from an
+     * artifact source" (Scientist Supreme of A.I.M.) narrowing of
+     * [ActivatedOrTriggeredAbilityYouControl].
+     *
+     * The restriction is on the ability's source per CR 113.7, not on the ability object itself
+     * (which has no characteristics of its own), and is matched with last known information when
+     * the source has already left the battlefield — a dead creature's dies trigger is still "from a
+     * creature source". See [com.wingedsheep.sdk.scripting.predicates.CardPredicate.AbilitySourceMatches].
+     * Pair with [com.wingedsheep.sdk.dsl.Effects.CopyTargetSpellOrAbility].
+     */
+    fun ActivatedOrTriggeredAbilityYouControlFrom(sourceFilter: GameObjectFilter): TargetRequirement =
+        TargetObject(
+            filter = TargetFilter.ActivatedOrTriggeredAbilityOnStack
+                .youControl()
+                .abilitySourceMatches(sourceFilter)
+        )
+
+    /**
      * Target spell or ability with a single target.
      * The single-target restriction is enforced at resolution time by the executor.
      */

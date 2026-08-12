@@ -6,9 +6,9 @@ keyword, or engine capability) — not pure card authoring.
 
 Scope: the 276 booster cards (collector numbers 1–276). Triaged against the SDK on 2026-08-04,
 updated 2026-08-07 after **power-up** and the **per-turn effect budget** shipped, 2026-08-08
-after **teamwork** shipped in full, and 2026-08-10 after **copy-with-exceptions** and
-**ward with a non-listed cost** shipped.
-**27 of the 276 are blocked**; every other card is buildable from existing primitives.
+after **teamwork** shipped in full, and 2026-08-10 after **copy-with-exceptions**,
+**ward with a non-listed cost** and the **ability-source predicate on stack targets** shipped.
+**25 of the 276 are blocked**; every other card is buildable from existing primitives.
 
 Supported today and *not* a blocker despite looking like one: **power-up** (see the first section
 below — the keyword, its once-only limit and its pip-wise cost reduction all ship), **harness / ∞ abilities**
@@ -282,18 +282,30 @@ Blocked cards: **Ironheart, Clever Champion** [60] · **Arc Reactor** [243]. Iro
 `SpellStaticAbilities.GrantsKeywordToSpells` is built for exactly this and already handles
 cost-modifying keywords.
 
-## Ability-source predicate on stack targets — 2 cards ⛔
+## Ability-source predicate on stack targets — SHIPPED ✅ (2 of 2 cards unblocked)
 
-Abilities on the stack carry no `CardComponent`, and `PredicateEvaluator.matchesCardPredicate`
-(`rules-engine/.../handlers/PredicateEvaluator.kt`) bails out on them, so `GameObjectFilter.Artifact`
-is always false for an ability. `Targets.ActivatedOrTriggeredAbilityYouControl` and
-`Effects.CopyTargetSpellOrAbility` both exist (precedent `fin/cards/GogoMasterOfMimicry.kt`) — what is
-missing is restricting the target by its **source**. Needed: a `CardPredicate.AbilitySourceMatches(filter)`
-resolved in the evaluator's stack branch against the ability's `sourceEntityId`, matched with
-last-known information since the source may have left. The concept already exists engine-side as the
-static `CantBeTargetedBySourceTypeAbilities`.
+Shipped 2026-08-10. An ability on the stack is its own object with none of its source's
+characteristics (CR 113.3b/c), so a type predicate applied to the ability entity is never true.
+`CardPredicate.AbilitySourceMatches(subfilter)` redirects the match onto the ability's **source**
+(CR 113.7) — `ActivatedAbilityOnStackComponent.sourceId` / `TriggeredAbilityOnStackComponent.sourceId`
+— and evaluates the subfilter there, in the evaluator's stack branch alongside
+`CardPredicate.TargetsMatching`. The source is read from the projection while it is on the
+battlefield and from its printed characteristics once it has left, so a dead creature's dies trigger
+is still "from a creature source" (CR 113.7a, and CR 608.2b for the resolution-time re-check) — the
+same source resolution `CantBeTargetedBySourceTypeAbilities` uses.
 
-Blocked cards: **Echo, Perceptive Prodigy** [51] (creature source) · **Scientist Supreme of A.I.M.**
+Authoring: `Targets.ActivatedOrTriggeredAbilityYouControlFrom(GameObjectFilter.Creature)`, or the
+`.abilitySourceMatches(...)` chain on `GameObjectFilter` / `TargetFilter`. See
+`docs/card-sdk-language-reference.md`.
+
+Shipped alongside, because the cards were unplayable without it: the legal-action enumerator
+(`TargetEnumerationUtils.findValidSpellTargets`) filtered *every* stack target down to spells, so no
+ability-targeting card — including the already-shipped Gogo, Master of Mimicry and Peter Parker's
+Camera — was ever **offered** an ability as a legal target, even though `TargetFinder` accepted one
+when the action was submitted. Both readers now go through the single
+`StackObjectTargeting.permitsAbilities` seam.
+
+**Unblocked (2):** Echo, Perceptive Prodigy [51] (creature source) · Scientist Supreme of A.I.M.
 [225] (artifact source).
 
 ## Ward with a non-listed cost — SHIPPED ✅ (both cards implemented)
