@@ -582,11 +582,4 @@ class AlternativePaymentHandler(
 
         return AlternativePaymentResult(reducedCost, currentState, events)
     }
-
-    // `supportsAlternativePayment` (instance + companion) used to live here. Both listed only
-    // DELVE || CONVOKE, so both were already wrong for harmonize/waterbend and became wrong again
-    // for improvise, and neither had a caller in any module. A predicate that is both stale and
-    // unused is a trap for the next reader, so it is deleted rather than extended: the live
-    // question is always "does this *specific* keyword apply", which `effectivelyHasKeyword`
-    // answers at each site.
 }

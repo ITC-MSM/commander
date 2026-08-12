@@ -45,6 +45,9 @@ import io.kotest.matchers.shouldNotBe
  *     discounted, and the cast fails for lack of mana.
  *  7. CR 702.126c — a second, *granted* instance of improvise on a spell that already prints it
  *     is redundant: it neither raises the tap cap nor doubles the discount.
+ *  8. Improvise composes with another alternative payment on the same spell (delve, convoke).
+ *     The grant is by card type, so this is the ordinary case rather than a corner one — and the
+ *     no-taps configuration stays reachable, since a mana rock is worth more untapped.
  */
 class ImproviseScenarioTest : ScenarioTestBase() {
 
@@ -73,6 +76,20 @@ class ImproviseScenarioTest : ScenarioTestBase() {
             }
         }
         cardRegistry.register(plain)
+
+        // {6}{U} with printed delve, no printed improvise — the "improvise rides along on another
+        // alternative payment" case, reached via the Beacon's grant.
+        val delver = card("Delving Blueprint") {
+            manaCost = "{6}{U}"
+            colorIdentity = "U"
+            typeLine = "Sorcery"
+            oracleText = "Delve\nYou gain 5 life."
+            keywords(Keyword.DELVE)
+            spell {
+                effect = Effects.GainLife(5)
+            }
+        }
+        cardRegistry.register(delver)
 
         val trinket = card("Improvise Trinket") {
             manaCost = "{1}"
@@ -320,6 +337,86 @@ class ImproviseScenarioTest : ScenarioTestBase() {
                 }
                 withClue("and nothing was tapped on the way to failing") {
                     artifacts.none { result.state.getEntity(it)!!.has<TappedComponent>() } shouldBe true
+                }
+            }
+        }
+
+        context("Alongside another alternative payment") {
+
+            // Improvise is granted by card *type* — "Noncreature spells you cast have improvise"
+            // — so it lands on spells that print delve or convoke, which are noncreature almost to
+            // a card (Treasure Cruise, Dig Through Time, Murderous Cut, Temporal Cleansing…).
+            // The handler applies delve/convoke first and improvise second, so enumeration has to
+            // consider them together: an unaffordable cast is dropped from the legal actions
+            // entirely, not greyed out, so missing this makes a legal play impossible to reach.
+
+            test("granted improvise stacks with delve on the same spell") {
+                val game = scenario()
+                    .withPlayers("P1", "P2")
+                    .withCardInHand(1, "Delving Blueprint")
+                    .withLandsOnBattlefield(1, "Island", 1) // the {U} only
+                    .withCardInGraveyard(1, "Improvise Trinket")
+                    .withCardInGraveyard(1, "Improvise Trinket")
+                    .withCardOnBattlefield(1, "Improvise Beacon")
+                    .withCardOnBattlefield(1, "Improvise Trinket")
+                    .withCardOnBattlefield(1, "Improvise Trinket")
+                    .withCardOnBattlefield(1, "Improvise Trinket")
+                    .withCardOnBattlefield(1, "Improvise Trinket")
+                    .withActivePlayer(1)
+                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                    .build()
+
+                val before = game.getLifeTotal(1)
+                val artifacts = game.findAllPermanents("Improvise Trinket")
+                val graveyard = game.findCardsInGraveyard(1, "Improvise Trinket")
+                artifacts.size shouldBe 4
+                graveyard.size shouldBe 2
+
+                // {6}{U}: delve two graveyard cards -> {4}{U}; four artifacts improvise the {4};
+                // the lone Island pays the {U}. Neither payment covers it alone.
+                val action = castAction(game, "Delving Blueprint")
+                withClue("delve 2 + improvise 4 + one Island covers {6}{U}") {
+                    action shouldNotBe null
+                    action!!.isAffordable shouldBe true
+                }
+
+                val cast = (action!!.action as CastSpell).copy(
+                    alternativePayment = AlternativePaymentChoice(
+                        delvedCards = graveyard,
+                        tapForGenericPermanents = artifacts.toSet()
+                    )
+                )
+                val result = game.execute(cast)
+                withClue("the engine accepts the combined payment: ${result.error}") {
+                    result.error shouldBe null
+                }
+                game.resolveStack()
+                game.getLifeTotal(1) shouldBe before + 5
+                withClue("every improvised artifact ends up tapped") {
+                    artifacts.all { game.state.getEntity(it)!!.has<TappedComponent>() } shouldBe true
+                }
+            }
+
+            test("a delve spell stays castable on mana alone when the artifacts are worth more untapped") {
+                // The no-taps configuration has to remain reachable: a rock that taps for {3} is
+                // worth more as a mana source than as a {1} improvise tap, so counting it as a tap
+                // must never *remove* affordability the player already had.
+                val game = scenario()
+                    .withPlayers("P1", "P2")
+                    .withCardInHand(1, "Delving Blueprint")
+                    .withLandsOnBattlefield(1, "Island", 5)
+                    .withCardInGraveyard(1, "Improvise Trinket")
+                    .withCardInGraveyard(1, "Improvise Trinket")
+                    .withCardOnBattlefield(1, "Improvise Beacon") // grants improvise; taps for nothing
+                    .withActivePlayer(1)
+                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                    .build()
+
+                // {6}{U} minus delve 2 = {4}{U}; five Islands cover it with no taps at all.
+                val action = castAction(game, "Delving Blueprint")
+                withClue("delve plus five Islands is enough on its own") {
+                    action shouldNotBe null
+                    action!!.isAffordable shouldBe true
                 }
             }
         }

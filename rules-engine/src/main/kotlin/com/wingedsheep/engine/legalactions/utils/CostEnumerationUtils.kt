@@ -208,6 +208,11 @@ class CostEnumerationUtils(
      * mana only to cast spells with mana value 4 or greater" (Ashling, Rimebound) — counts toward
      * affordability when it is eligible for *this* payment. Passing null ignores restricted mana
      * entirely, which under-reports affordability and hides the cast from the client.
+     *
+     * [tapForGenericPermanents] lets a *second* payment help on the same spell — improvise
+     * (CR 702.126) is grantable over a whole card type (Ironheart, Clever Champion), so it lands
+     * on convoke spells that never printed it. Each such tap pays {1} generic on top of convoke's
+     * own reduction, exactly as `CastSpellHandler` applies them in sequence.
      */
     fun canAffordWithConvoke(
         state: GameState,
@@ -215,17 +220,23 @@ class CostEnumerationUtils(
         manaCost: ManaCost,
         convokeCreatures: List<ConvokeCreatureData>,
         precomputedSources: List<ManaSource>? = null,
-        spellContext: SpellPaymentContext? = null
+        spellContext: SpellPaymentContext? = null,
+        tapForGenericPermanents: List<TapForGenericPermanentData> = emptyList()
     ): Boolean {
         // Convoke creatures with their own mana abilities (e.g. Llanowar Elves) appear in
         // both lists — but tapping the creature can pay either a convoke pip or a mana
         // ability, never both. Exclude them from the mana-source count so the totals
         // don't double-up.
         val convokeIds = convokeCreatures.mapTo(mutableSetOf()) { it.entityId }
+        // An artifact *creature* qualifies for both convoke and improvise, but one tap pays one
+        // of them — `applyTapForGeneric` skips anything convoke already tapped. Drop the overlap
+        // so it isn't counted twice here either.
+        val tapPermanents = tapForGenericPermanents.filter { it.entityId !in convokeIds }
+        val tapIds = tapPermanents.mapTo(mutableSetOf()) { it.entityId }
         val sourcesForMana = (precomputedSources ?: manaSolver.findAvailableManaSources(state, playerId))
-            .filter { it.entityId !in convokeIds }
+            .filter { it.entityId !in convokeIds && it.entityId !in tapIds }
         val availableMana = manaSolver.getAvailableManaCount(state, playerId, sourcesForMana, spellContext)
-        val totalResources = availableMana + convokeCreatures.size
+        val totalResources = availableMana + convokeCreatures.size + tapPermanents.size
         if (totalResources < manaCost.cmc) return false
 
         val coloredRequirements = manaCost.colorCount
@@ -242,7 +253,8 @@ class CostEnumerationUtils(
         }
         val genericRequired = manaCost.genericAmount
         val creaturesForGeneric = convokeCreatures.size - creaturesUsedForColors
-        val resourcesForGeneric = availableMana + creaturesForGeneric
+        // Tap-for-generic is generic-only, so it joins the generic pool and never the colored one.
+        val resourcesForGeneric = availableMana + creaturesForGeneric + tapPermanents.size
         return resourcesForGeneric >= genericRequired
     }
 
@@ -401,17 +413,31 @@ class CostEnumerationUtils(
         }
     }
 
-    /** [spellContext] lets eligible conditional floating mana count — see [canAffordWithConvoke]. */
+    /**
+     * [spellContext] lets eligible conditional floating mana count — see [canAffordWithConvoke].
+     *
+     * [tapForGenericPermanents] lets improvise (CR 702.126) help pay what delve leaves behind —
+     * delve spells are noncreature, so Ironheart, Clever Champion grants improvise to every one of
+     * them. Delve exiles first, then each tap pays {1} of the remaining generic, matching the order
+     * `CastSpellHandler` applies them in.
+     */
     fun canAffordWithDelve(
         state: GameState,
         playerId: EntityId,
         manaCost: ManaCost,
         delveCards: List<DelveCardData>,
         precomputedSources: List<ManaSource>? = null,
-        spellContext: SpellPaymentContext? = null
+        spellContext: SpellPaymentContext? = null,
+        tapForGenericPermanents: List<TapForGenericPermanentData> = emptyList()
     ): Boolean {
         val maxDelve = minOf(delveCards.size, manaCost.genericAmount)
         val reducedCost = manaCost.reduceGeneric(maxDelve)
+        if (tapForGenericPermanents.isNotEmpty()) {
+            return canAffordWithTapForGeneric(
+                state, playerId, reducedCost, tapForGenericPermanents,
+                precomputedSources = precomputedSources, spellContext = spellContext
+            )
+        }
         return manaSolver.canPay(
             state, playerId, reducedCost,
             precomputedSources = precomputedSources, spellContext = spellContext

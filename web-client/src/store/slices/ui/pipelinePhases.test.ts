@@ -118,4 +118,24 @@ describe('computePhases — tap-for-generic (improvise / waterbend)', () => {
       { type: 'manaSource' },
     ])
   })
+
+  it('waterbend gets the same treatment — the taps do not force a mana-source confirm', () => {
+    // Waterbend used to sit alongside delve and convoke in the force-manaSource list. It was
+    // moved out with improvise deliberately, not incidentally: the server applies the taps and
+    // then auto-solves the remainder for both mechanics, so under auto-tap the extra confirm
+    // step bought nothing on either. Pinned here so the older mechanic's UX can't drift back
+    // unnoticed.
+    const waterbendAction = castAction({
+      actionType: 'CastSpell',
+      manaCostString: '{3}{U}',
+      hasTapForGeneric: true,
+      tapForGenericLabel: 'waterbend',
+      tapForGenericAmount: 2,
+      validTapForGenericPermanents: [{ entityId: 'bender', name: 'Katara', isCreature: true }],
+      availableManaSources: [{ entityId: 'island', producesColors: ['U'] }],
+    })
+    expect(computePhases(waterbendAction, { autoTapEnabled: true })).toEqual([
+      { type: 'tapForGeneric' },
+    ])
+  })
 })

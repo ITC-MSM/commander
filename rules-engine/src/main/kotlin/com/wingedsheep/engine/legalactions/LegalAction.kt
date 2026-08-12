@@ -123,6 +123,10 @@ data class LegalAction(
      * enumerator didn't compute it (the waterbend paths, whose taps pay a cost that is mandatory
      * in its own right, so an automatic payer should always fill them).
      *
+     * Engine-side only — deliberately not mapped onto `LegalActionInfo`, because the client never
+     * fills this payment on its own: a human picks the taps in the HUD. Its one consumer is the
+     * built-in AI (`Strategist.withAutomaticTapForGeneric`), which reads `LegalAction` directly.
+     *
      * Exists for automatic payers. Filling an *optional* improvise payment can cost you the cast:
      * a tapped artifact stops being a mana source but only credits {1}, so tapping Arc Reactor
      * ({T}: Add {C}{C}{C}) for improvise trades three mana for one and can leave the rest of the

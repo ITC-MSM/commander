@@ -496,18 +496,38 @@ class CastSpellEnumerator : ActionEnumerator {
 
             // For Convoke/Delve spells, check if affordable with alternative payment help
             val cachedSources = context.availableManaSources
+            // Improvise can ride along on a convoke or delve spell — the grant is by card type
+            // ("Noncreature spells you cast have improvise"), and every delve spell and most
+            // convoke spells are noncreature, so the combination is ordinary rather than exotic.
+            // `CastSpellHandler` already applies convoke/delve and then improvise in sequence, so
+            // affordability has to consider both together or a legal cast is never offered at all
+            // (an unaffordable cast is dropped, not greyed out). Evaluated as an extra disjunct
+            // rather than folded into the calls above: an artifact that taps for more than {1}
+            // (Arc Reactor) is worth more as a mana source than as an improvise tap, so the
+            // no-taps configuration has to stay reachable on its own.
+            val improviseHelp = improviseArtifacts.takeIf { hasImprovise && it.isNotEmpty() }.orEmpty()
             val canAfford = if (hasConvoke && convokeCreatures != null && convokeCreatures.isNotEmpty()) {
                 context.manaSolver.canPay(state, playerId, payableCost, spellContext = spellContext, precomputedSources = cachedSources) ||
                     context.costUtils.canAffordWithConvoke(
                         state, playerId, payableCost, convokeCreatures,
                         precomputedSources = cachedSources, spellContext = spellContext
-                    )
+                    ) ||
+                    (improviseHelp.isNotEmpty() && context.costUtils.canAffordWithConvoke(
+                        state, playerId, payableCost, convokeCreatures,
+                        precomputedSources = cachedSources, spellContext = spellContext,
+                        tapForGenericPermanents = improviseHelp
+                    ))
             } else if (hasDelve && delveCards != null && delveCards.isNotEmpty()) {
                 context.manaSolver.canPay(state, playerId, payableCost, spellContext = spellContext, precomputedSources = cachedSources) ||
                     context.costUtils.canAffordWithDelve(
                         state, playerId, payableCost, delveCards,
                         precomputedSources = cachedSources, spellContext = spellContext
-                    )
+                    ) ||
+                    (improviseHelp.isNotEmpty() && context.costUtils.canAffordWithDelve(
+                        state, playerId, payableCost, delveCards,
+                        precomputedSources = cachedSources, spellContext = spellContext,
+                        tapForGenericPermanents = improviseHelp
+                    ))
             } else if (mandatoryWaterbend) {
                 // payableCost already includes the mandatory waterbend {N}; taps can cover up to {N}.
                 context.manaSolver.canPay(state, playerId, payableCost, spellContext = spellContext, precomputedSources = cachedSources) ||
@@ -516,12 +536,12 @@ class CastSpellEnumerator : ActionEnumerator {
                         waterbendPermanents.take(spellWaterbend.amount),
                         precomputedSources = cachedSources, spellContext = spellContext
                     )
-            } else if (hasImprovise && improviseArtifacts.isNotEmpty()) {
+            } else if (improviseHelp.isNotEmpty()) {
                 // CR 702.126a: each tapped artifact pays {1} of the *generic* in the total cost,
                 // so the colored pips still have to come from mana.
                 context.manaSolver.canPay(state, playerId, payableCost, spellContext = spellContext, precomputedSources = cachedSources) ||
                     context.costUtils.canAffordWithTapForGeneric(
-                        state, playerId, payableCost, improviseArtifacts,
+                        state, playerId, payableCost, improviseHelp,
                         precomputedSources = cachedSources, spellContext = spellContext
                     )
             } else {
