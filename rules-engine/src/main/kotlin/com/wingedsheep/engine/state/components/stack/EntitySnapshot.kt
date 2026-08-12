@@ -96,7 +96,7 @@ data class EntitySnapshot(
     // --- battlefield-exit-only fields (no meaning for a live permanent) ---
     /** Projected type line at capture, so leaves-battlefield triggers see continuous-effect-granted types. */
     val typeLine: TypeLine? = null,
-    /** Card definition id, so dies/leaves triggers resolve for tokens after 704.5s cleanup. */
+    /** Card definition id, so dies/leaves triggers resolve for tokens after 704.5d cleanup. */
     val cardDefinitionId: String? = null,
     /**
      * The permanent's name at capture time. Frozen because a *cost* has to be describable after the

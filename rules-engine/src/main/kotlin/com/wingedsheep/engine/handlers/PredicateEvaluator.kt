@@ -145,6 +145,18 @@ class PredicateEvaluator {
      * predicate makes the whole filter fail to match, which is the same answer the caller got before
      * any snapshot existed. State predicates (tapped, attacking, …) describe a battlefield presence
      * the object no longer has, so a filter carrying one never matches a snapshot.
+     *
+     * **Caller invariant: pass a snapshot captured with the state-aware
+     * [com.wingedsheep.engine.state.components.stack.captureEntitySnapshots] overload** (the
+     * `(ids, state)` one), and populate [EntitySnapshot.typeLine] and [EntitySnapshot.keywords] on
+     * top of it. The unanswerable-reports-null discipline above cannot cover
+     * [EntitySnapshot.wasToken] or [EntitySnapshot.keywords]: both default to a *legitimate* value
+     * (`false` / empty) with no "was never captured" state, so a snapshot taken by the projection-
+     * only overload answers `IsToken` false, `IsNontoken` true and every `HasKeyword` false with
+     * full confidence rather than reporting unknown. There is one caller today
+     * ([CardPredicate.AbilitySourceMatches] against
+     * [com.wingedsheep.engine.state.components.stack.ActivatedAbilityOnStackComponent.lastKnownSourceSnapshot],
+     * which does exactly that); a second one must too.
      */
     fun matchesSnapshot(
         state: GameState,

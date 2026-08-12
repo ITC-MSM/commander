@@ -27,9 +27,26 @@
 
 ## Gate
 
-`just test` — BUILD SUCCESSFUL in 15m 46s, 12200 PASSED / 0 FAILED (`build/pr/loop-msh-u08-gate.log`).
-Plus `just rebless-cards` (only MSH.json moved, +150/−0), `just check-card-printing` ok for both
-cards, `just check-backlog` in sync.
+Three trees, because two review rounds landed as new commits after the first gate. **Only the last
+block describes the code as it stands.**
+
+1. **`5df00a8467`** (original, superseded) — `just test` BUILD SUCCESSFUL in 15m 46s, 12200 PASSED /
+   0 FAILED (`build/pr/loop-msh-u08-gate.log`). Does not cover the merged code: `daec416da0` went on
+   to rewrite `PredicateEvaluator`, `ActivateAbilityHandler`, `EntitySnapshot` and
+   `ZoneTransitionService` and add two scenario tests.
+2. **`daec416da0`** (after round-3 corrections) — `just test-class ScientistSupremeOfAimScenarioTest`
+   6/6 PASSED (`-gate-correction-targeted.log`); `just test` 0 failures across every module *except*
+   `:rules-engine`, where the run ended in the documented shared-box daemon OOM at ~146 MiB available
+   (`-gate-correction.log`, environmental, not a test failure); re-run at reduced footprint,
+   `:rules-engine:test` BUILD SUCCESSFUL 12m 27s / 0 failures (`-gate-correction-rules.log`) and
+   `:mtg-sets:test` BUILD SUCCESSFUL 1m 12s / 0 failures (`-gate-correction-sets.log`). The three
+   runs together cover every module.
+3. **`HEAD`** (after round-4 review) — one behaviour-neutral plumbing change in
+   `ActivateAbilityHandler` (switch to the existing state-aware `captureEntitySnapshots` overload)
+   plus comment-only fixes. **Re-gate pending** — see `build/pr/loop-msh-u08-round4-correction.md`.
+
+Unaffected by the tree: `just rebless-cards` (only MSH.json moved, +150/−0),
+`just check-card-printing` ok for both cards, `just check-backlog` in sync.
 
 ## Things I'm unsure about — please look
 
