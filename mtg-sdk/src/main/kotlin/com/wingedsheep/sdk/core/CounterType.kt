@@ -103,7 +103,25 @@ enum class CounterType {
      * one is ever placed; it models the permanent "once harnessed" state that resets if the Stone
      * leaves the battlefield.
      */
-    HARNESS;
+    HARNESS,
+
+    /**
+     * Hone counter (The Hobbit). CR 122.1j: "A hone counter on an Equipment gives +1/+0 to any
+     * creature that Equipment is attached to."
+     *
+     * Like [SHIELD] and [STUN], the behavior is inherent to the *counter*, not an ability of the
+     * permanent carrying it — a hone counter placed on an Equipment that never mentions hone still
+     * pumps that Equipment's equipped creature. That is exactly what Dwalin, Weaponmaster relies on
+     * when he puts a counter on *each* Equipment you control, so it cannot be modelled as a static
+     * ability printed on the two cards that happen to grant hone counters.
+     *
+     * Realized in `StateProjector.collectContinuousEffects`, which synthesizes one Layer 7c P/T
+     * modification (CR 613.4c — "effects **and counters** that modify power and/or toughness") per
+     * honed Equipment, aimed at whatever it is attached to. Deliberately **not** a keyword counter,
+     * so it is absent from `StateProjector.KEYWORD_COUNTER_MAP`: it grants the Equipment nothing and
+     * modifies a *different* object than the one it sits on.
+     */
+    HONE;
 
     companion object {
         /**
@@ -439,6 +457,14 @@ object Counters {
 
     /** Harness marker counter — the Infinity Stones' "once harnessed" binary state. */
     const val HARNESS = "harness"
+
+    /**
+     * Hone counter (The Hobbit). CR 122.1j: "A hone counter on an Equipment gives +1/+0 to any
+     * creature that Equipment is attached to." The bonus belongs to the counter rather than to the
+     * permanent holding it, so it applies to Equipment that never mention hone — see
+     * [CounterType.HONE] for the full contract and where the engine realizes it.
+     */
+    const val HONE = "hone"
 
     /**
      * Skewer counter (WOE — Rotisserie Elemental). A tally counter with no inherent rule: the

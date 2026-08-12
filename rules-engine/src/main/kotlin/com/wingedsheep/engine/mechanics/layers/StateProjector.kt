@@ -586,6 +586,45 @@ class StateProjector(
             }
         }
 
+        // 1b. Hone counters (CR 122.1j): "A hone counter on an Equipment gives +1/+0 to any
+        // creature that Equipment is attached to." Synthesized here rather than lowered from a
+        // static ability because the bonus belongs to the *counter*, not to the permanent holding
+        // it — Dwalin, Weaponmaster puts a hone counter on *each* Equipment you control, and those
+        // Equipment pump their equipped creature without ever mentioning hone.
+        //
+        // Layer 7c (CR 613.4c — "effects and counters that modify power and/or toughness"), so it
+        // stacks additively with lords and lands after any Layer 7b base-setting effect.
+        //
+        // The Equipment check reads the in-progress projection, which at collection time holds base
+        // types plus Layer 3 text changes; a Layer 4 effect that turned something into an Equipment
+        // this same projection pass would not be seen. That matches how every other filter resolved
+        // here behaves and no printed card reaches the case.
+        for (entityId in state.getBattlefield()) {
+            val container = state.getEntity(entityId) ?: continue
+            val honeCount = container.get<CountersComponent>()?.getCount(CounterType.HONE) ?: 0
+            if (honeCount <= 0) continue
+            if (projectedValues[entityId]?.subtypes?.contains(Subtype.EQUIPMENT.value) != true) continue
+            // AttachedPermanent resolves to the empty set while the Equipment is unattached, so an
+            // unequipped honed Equipment contributes nothing without a separate guard.
+            val affected = filterResolver.resolveAffectedEntities(
+                state,
+                entityId,
+                AffectsFilter.AttachedPermanent,
+                projectedValues
+            )
+            if (affected.isEmpty()) continue
+            effects.add(
+                ContinuousEffect(
+                    sourceId = entityId,
+                    timestamp = container.get<com.wingedsheep.engine.state.components.battlefield.TimestampComponent>()?.timestamp
+                        ?: state.timestamp,
+                    modification = Modification.ModifyPowerToughness(honeCount, 0),
+                    affectedEntities = affected,
+                    affectsFilter = AffectsFilter.AttachedPermanent
+                )
+            )
+        }
+
         // 2. Collect floating effects (from resolved spells like Giant Growth)
         for (floating in state.floatingEffects) {
             if (floating.duration is Duration.WhileSourceTapped) {

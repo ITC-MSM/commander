@@ -9752,6 +9752,17 @@ substitution.
   not regeneration (no tap, no removal from combat, marked damage untouched) and it is not a keyword counter, so
   losing all abilities doesn't switch it off. Unpreventable damage (Leyline of Punishment) is still dealt — but
   still removes a counter. An indestructible permanent never "would be destroyed", so its counter stays unspent.
+- `hone` — CR 122.1j, a built-in Layer 7c pump aimed at a *different* object: "A hone counter on an Equipment
+  gives +1/+0 to any creature that Equipment is attached to." Add via `AddCounters(Counters.HONE, n, target)`
+  or `AddDynamicCounters(Counters.HONE, amount, target)` — and that is **all** a hone card does; the bonus is
+  never a `ModifyStats`/`GrantDynamicStats` on the Equipment. Like `shield` and `stun` the behavior belongs to
+  the counter, which is what makes Dwalin, Weaponmaster ("put a hone counter on each Equipment you control")
+  work: a Mirrodin Bonesplitter that has never heard of hone still pumps its equipped creature. Engine-wired in
+  `StateProjector.collectContinuousEffects`, which synthesizes one `Modification.ModifyPowerToughness(n, 0)` per
+  honed Equipment scoped to `AffectsFilter.AttachedPermanent` — so it stacks additively with the Equipment's own
+  printed bonus (CR 613.4c covers "effects **and** counters that modify power and/or toughness"), contributes
+  nothing while the Equipment is unattached, and is inert on a non-Equipment permanent. Not a keyword counter,
+  so it stays out of `KEYWORD_COUNTER_MAP`. Used by Sting, Bilbo's Sword and Dwalin, Weaponmaster (HOB).
 - **Keyword counters** (Rule 122.1b) — `flying`, `first strike`, `double strike`, `vigilance`, `lifelink`,
   `indestructible`, `deathtouch`, `trample`, `hexproof`, `reach`, `haste`, `menace`. `StateProjector` grants the matching `Keyword`
   to any permanent carrying one (mapped in `KEYWORD_COUNTER_MAP`, re-applied after Layer 6 so "loses all abilities"
