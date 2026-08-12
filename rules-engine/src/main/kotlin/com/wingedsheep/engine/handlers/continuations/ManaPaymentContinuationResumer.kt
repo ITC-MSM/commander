@@ -594,7 +594,7 @@ class ManaPaymentContinuationResumer(
                     currentState,
                     continuation.manaCost,
                     com.wingedsheep.sdk.scripting.AlternativePaymentChoice(
-                        waterbendPermanents = response.waterbendPermanents
+                        tapForGenericPermanents = response.waterbendPermanents
                     ),
                     playerId
                 )
@@ -1002,7 +1002,7 @@ class ManaPaymentContinuationResumer(
                     currentState,
                     continuation.manaCost,
                     com.wingedsheep.sdk.scripting.AlternativePaymentChoice(
-                        waterbendPermanents = response.waterbendPermanents
+                        tapForGenericPermanents = response.waterbendPermanents
                     ),
                     playerId
                 )

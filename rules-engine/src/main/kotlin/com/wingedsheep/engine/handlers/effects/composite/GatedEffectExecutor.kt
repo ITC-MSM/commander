@@ -12,6 +12,7 @@ import com.wingedsheep.engine.handlers.effects.TargetResolutionUtils
 import com.wingedsheep.engine.legalactions.utils.CostEnumerationUtils
 import com.wingedsheep.engine.mechanics.mana.CostCalculator
 import com.wingedsheep.engine.mechanics.mana.ManaSolver
+import com.wingedsheep.engine.mechanics.mana.TapForGeneric
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
@@ -319,7 +320,7 @@ class GatedEffectExecutor(
      * Resolve an in-resolution **waterbend** payment gate (Avatar: The Last Airbender):
      * "you may waterbend [manaCost]. Otherwise, [otherwise]." Surfaces a [SelectManaSourcesDecision]
      * that also lists the untapped artifacts/creatures the player may tap to help pay the generic
-     * (each {1}, via [CostEnumerationUtils.findWaterbendPermanents]); the shared
+     * (each {1}, via [CostEnumerationUtils.findTapForGenericPermanents]); the shared
      * [MayPayManaSelectionContinuation] resumer then taps them, pays the remainder with mana, and
      * runs [then] on payment or [otherwise] on decline. If the player can't possibly pay (no mana
      * and no tappable permanents), [otherwise] runs immediately with no pointless prompt — mirroring
@@ -336,9 +337,9 @@ class GatedEffectExecutor(
         val costUtils = CostEnumerationUtils(
             manaSolver, CostCalculator(cardRegistry), PredicateEvaluator(), cardRegistry
         )
-        val waterbendPermanents = costUtils.findWaterbendPermanents(state, playerId)
+        val waterbendPermanents = costUtils.findTapForGenericPermanents(state, playerId, TapForGeneric.WATERBEND)
         val affordable = manaSolver.canPay(state, playerId, manaCost) ||
-            costUtils.canAffordWithWaterbend(state, playerId, manaCost, waterbendPermanents)
+            costUtils.canAffordWithTapForGeneric(state, playerId, manaCost, waterbendPermanents)
         if (!affordable) {
             // Can't pay → the "unless" fires (e.g. discard a card).
             return otherwise?.let { effectExecutor(state, it, context) } ?: EffectResult.success(state)

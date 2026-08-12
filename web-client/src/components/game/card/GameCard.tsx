@@ -284,7 +284,7 @@ function GameCardImpl({
   const toggleManaSource = useGameStore((state) => state.toggleManaSource)
   const toggleTapForPowerCreature = useGameStore((state) => state.toggleTapForPowerCreature)
   const toggleConvokeCreature = useGameStore((state) => state.toggleConvokeCreature)
-  const toggleWaterbendPermanent = useGameStore((state) => state.toggleWaterbendPermanent)
+  const toggleTapForGenericPermanent = useGameStore((state) => state.toggleTapForGenericPermanent)
   const toggleHarmonizeCreature = useGameStore((state) => state.toggleHarmonizeCreature)
   const submitYesNoDecision = useGameStore((state) => state.submitYesNoDecision)
   const isBeheldPulsing = useGameStore((state) => state.beholdPulses.some((p) => p.cardId === card.id))
@@ -450,11 +450,11 @@ function GameCardImpl({
   const isValidConvokeCreature = convokeSelectionState?.validCreatures.some((c) => c.entityId === card.id) ?? false
   const isSelectedConvokeCreature = convokeSelectionState?.selectedCreatures.some((c) => c.entityId === card.id) ?? false
 
-  // Waterbend selection checks (generic-only; artifacts + creatures eligible)
-  const waterbendSelectionState = useGameStore((state) => state.waterbendSelectionState)
-  const isInWaterbendMode = waterbendSelectionState !== null
-  const isValidWaterbendPermanent = waterbendSelectionState?.validPermanents.some((p) => p.entityId === card.id) ?? false
-  const isSelectedWaterbendPermanent = waterbendSelectionState?.selectedPermanents.includes(card.id) ?? false
+  // Tap-for-generic selection checks (improvise / waterbend; generic-only)
+  const tapForGenericSelectionState = useGameStore((state) => state.tapForGenericSelectionState)
+  const isInTapForGenericMode = tapForGenericSelectionState !== null
+  const isValidTapForGenericPermanent = tapForGenericSelectionState?.validPermanents.some((p) => p.entityId === card.id) ?? false
+  const isSelectedTapForGenericPermanent = tapForGenericSelectionState?.selectedPermanents.includes(card.id) ?? false
 
   // Harmonize creature-tap selection checks (single creature, optional)
   const harmonizeSelectionState = useGameStore((state) => state.harmonizeSelectionState)
@@ -994,9 +994,9 @@ function GameCardImpl({
       return
     }
 
-    // Handle waterbend selection mode - click to toggle artifact/creature (generic-only)
-    if (isInWaterbendMode && isValidWaterbendPermanent) {
-      toggleWaterbendPermanent(card.id)
+    // Handle tap-for-generic selection mode - click to toggle an eligible permanent
+    if (isInTapForGenericMode && isValidTapForGenericPermanent) {
+      toggleTapForGenericPermanent(card.id)
       return
     }
 
@@ -1183,16 +1183,16 @@ function GameCardImpl({
     // Blue highlight for valid convoke creatures
     borderStyle = `2px solid ${TARGET_COLOR}`
     boxShadow = `0 0 12px ${TARGET_GLOW}, 0 0 24px ${TARGET_SHADOW}`
-  } else if (isSelectedWaterbendPermanent) {
-    // Green highlight for selected waterbend permanents
+  } else if (isSelectedTapForGenericPermanent) {
+    // Green highlight for permanents selected to tap for generic mana
     borderStyle = `3px solid ${SELECTED_COLOR}`
     boxShadow = `0 0 20px ${SELECTED_GLOW}, 0 0 40px ${SELECTED_SHADOW}`
-  } else if (isValidWaterbendPermanent && isHovered) {
-    // Bright blue highlight when hovering over a tappable waterbend permanent
+  } else if (isValidTapForGenericPermanent && isHovered) {
+    // Bright blue highlight when hovering over a tappable permanent
     borderStyle = `3px solid ${TARGET_COLOR_BRIGHT}`
     boxShadow = `0 0 20px ${TARGET_GLOW_BRIGHT}, 0 0 40px ${TARGET_GLOW_OUTER}`
-  } else if (isValidWaterbendPermanent) {
-    // Blue highlight for valid waterbend permanents
+  } else if (isValidTapForGenericPermanent) {
+    // Blue highlight for permanents eligible to tap for generic mana
     borderStyle = `2px solid ${TARGET_COLOR}`
     boxShadow = `0 0 12px ${TARGET_GLOW}, 0 0 24px ${TARGET_SHADOW}`
   } else if (isSelectedHarmonizeCreature) {
@@ -1294,7 +1294,7 @@ function GameCardImpl({
   }
 
   // Determine cursor
-  const canInteract = interactive || isValidTarget || isValidDecisionTarget || isValidDecisionSelection || isValidAttacker || isValidBlocker || isAttackingInBlockerMode || isValidAttackTargetCard || canDragToPlay || isDistributeTarget || isManaValidSource || isValidTapForPowerCreature || isValidConvokeCreature || isValidWaterbendPermanent || isValidHarmonizeCreature
+  const canInteract = interactive || isValidTarget || isValidDecisionTarget || isValidDecisionSelection || isValidAttacker || isValidBlocker || isAttackingInBlockerMode || isValidAttackTargetCard || canDragToPlay || isDistributeTarget || isManaValidSource || isValidTapForPowerCreature || isValidConvokeCreature || isValidTapForGenericPermanent || isValidHarmonizeCreature
   const baseCursor = canInteract ? 'pointer' : 'default'
   const cursor = isValidBlocker || isValidAttacker || isSelectedAsAttacker || canDragToPlay ? 'grab' : baseCursor
 

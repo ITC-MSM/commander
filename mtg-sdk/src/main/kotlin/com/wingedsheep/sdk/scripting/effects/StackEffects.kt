@@ -435,7 +435,7 @@ sealed interface WardCost {
      * may tap their untapped artifacts and creatures to help — each tapped permanent pays {1}
      * of the generic (a generic-only convoke+improvise, identical to the waterbend additional
      * cost / activated-ability waterbend). The waterbend taps are surfaced and applied through
-     * the same machinery as those (`AlternativePaymentChoice.waterbendPermanents`).
+     * the same machinery as those (`AlternativePaymentChoice.tapForGenericPermanents`).
      */
     @SerialName("WardCost.Mana")
     @Serializable

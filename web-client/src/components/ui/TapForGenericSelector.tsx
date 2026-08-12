@@ -18,7 +18,7 @@ function parseManaCost(manaCost: string): string[] {
 }
 
 /**
- * Waterbend pays only generic mana — each tapped artifact/creature removes {1} of generic.
+ * These payments pay only generic mana — each tapped permanent removes {1} of generic.
  */
 function reduceGenericBy(symbols: string[], count: number): string[] {
   const remaining = [...symbols]
@@ -46,29 +46,32 @@ function totalManaAvailable(
 }
 
 /**
- * Compact floating HUD bar for Waterbend (Avatar: The Last Airbender). Mirrors the Convoke
- * selector but generic-only: each tapped artifact/creature pays {1}. Permanents are selected
- * directly on the battlefield; this bar shows progress and confirm/cancel.
+ * Compact floating HUD bar for a **tap-for-generic** payment — improvise (CR 702.126) or a
+ * waterbend cost. Mirrors the Convoke selector but generic-only: each tapped permanent pays {1},
+ * with no color choice. Permanents are selected directly on the battlefield (the server decides
+ * which are eligible: artifacts for improvise, artifacts or creatures for waterbend); this bar
+ * shows progress and confirm/cancel. Confirming with nothing selected pays the cost entirely with
+ * mana, which is legal for both — the taps are always optional ("you *may* tap").
  */
-export function WaterbendSelector() {
-  const waterbendSelectionState = useGameStore((state) => state.waterbendSelectionState)
-  const cancelWaterbendSelection = useGameStore((state) => state.cancelWaterbendSelection)
-  const confirmWaterbendSelection = useGameStore((state) => state.confirmWaterbendSelection)
+export function TapForGenericSelector() {
+  const tapForGenericSelectionState = useGameStore((state) => state.tapForGenericSelectionState)
+  const cancelTapForGenericSelection = useGameStore((state) => state.cancelTapForGenericSelection)
+  const confirmTapForGenericSelection = useGameStore((state) => state.confirmTapForGenericSelection)
   const viewingPlayer = useViewingPlayer()
   const manaPool = viewingPlayer?.manaPool
 
   const originalSymbols = useMemo(() => {
-    if (!waterbendSelectionState) return []
-    return parseManaCost(waterbendSelectionState.manaCost)
-  }, [waterbendSelectionState?.manaCost])
+    if (!tapForGenericSelectionState) return []
+    return parseManaCost(tapForGenericSelectionState.manaCost)
+  }, [tapForGenericSelectionState?.manaCost])
 
   const remainingSymbols = useMemo(() => {
-    if (!waterbendSelectionState) return []
-    return reduceGenericBy(originalSymbols, waterbendSelectionState.selectedPermanents.length)
-  }, [originalSymbols, waterbendSelectionState?.selectedPermanents])
+    if (!tapForGenericSelectionState) return []
+    return reduceGenericBy(originalSymbols, tapForGenericSelectionState.selectedPermanents.length)
+  }, [originalSymbols, tapForGenericSelectionState?.selectedPermanents])
 
   // Conditional mana counts only where the server judged it eligible for this payment.
-  const eligibleRestricted = waterbendSelectionState?.actionInfo.eligibleRestrictedMana
+  const eligibleRestricted = tapForGenericSelectionState?.actionInfo.eligibleRestrictedMana
 
   const symbolsAfterPool = useMemo(
     () => applyManaPoolToCost(remainingSymbols, manaPool, eligibleRestricted),
@@ -76,13 +79,13 @@ export function WaterbendSelector() {
   )
 
   const tappedIds = useMemo(
-    () => new Set(waterbendSelectionState?.selectedPermanents ?? []),
-    [waterbendSelectionState?.selectedPermanents],
+    () => new Set(tapForGenericSelectionState?.selectedPermanents ?? []),
+    [tapForGenericSelectionState?.selectedPermanents],
   )
 
-  if (!waterbendSelectionState) return null
+  if (!tapForGenericSelectionState) return null
 
-  const { cardName, selectedPermanents, actionInfo, maxTaps } = waterbendSelectionState
+  const { cardName, selectedPermanents, actionInfo, maxTaps, label } = tapForGenericSelectionState
 
   const manaNeeded = totalManaNeeded(symbolsAfterPool)
   const manaFromSources = totalManaAvailable(actionInfo.availableManaSources, tappedIds)
@@ -91,11 +94,12 @@ export function WaterbendSelector() {
   return (
     <div style={styles.bar}>
       <span style={styles.label}>
-        {/* Card name first, then the waterbend prompt in parentheses with the amount {N} rendered
-            as a proper mana pip (not literal "{N}" text): e.g. "Ruinous Waterbending (waterbend {4})". */}
+        {/* Card name first, then the payment prompt in parentheses with the amount {N} rendered
+            as a proper mana pip (not literal "{N}" text): e.g. "Ruinous Waterbending (waterbend
+            {4})", "Ironheart, Clever Champion (improvise {4})". */}
         <strong>{cardName}</strong>
         <span style={{ display: 'inline-flex', alignItems: 'center', marginLeft: 6 }}>
-          <span style={{ marginRight: 3 }}>(waterbend</span>
+          <span style={{ marginRight: 3 }}>({label}</span>
           <ManaSymbol symbol={String(maxTaps)} size={16} />
           <span>)</span>
         </span>
@@ -117,14 +121,14 @@ export function WaterbendSelector() {
       </div>
       <span style={styles.count}>({selectedPermanents.length} tapped)</span>
       <span style={styles.divider} />
-      <button onClick={cancelWaterbendSelection} style={styles.cancelButton}>
+      <button onClick={cancelTapForGenericSelection} style={styles.cancelButton}>
         Cancel
       </button>
       <button
-        onClick={canAfford ? confirmWaterbendSelection : undefined}
+        onClick={canAfford ? confirmTapForGenericSelection : undefined}
         style={canAfford ? styles.confirmButton : styles.confirmButtonDisabled}
       >
-        Activate
+        Confirm
       </button>
     </div>
   )

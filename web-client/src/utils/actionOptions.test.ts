@@ -30,12 +30,14 @@ describe('costFieldsFor', () => {
     expect(fields.hint).toContain('convoke')
   })
 
-  it('names delve, harmonize and waterbend rather than saying "reduced" generically', () => {
+  it('names delve, harmonize, waterbend and improvise rather than saying "reduced" generically', () => {
     const floorFields = (extra: Record<string, unknown>) =>
       costFieldsFor(action({ manaCostString: '{5}{U}', minimumManaCostString: '{2}{U}', ...extra }), null)
     expect(floorFields({ hasDelve: true }).hint).toContain('delve')
     expect(floorFields({ hasHarmonize: true }).hint).toContain('harmonize')
-    expect(floorFields({ hasWaterbend: true }).hint).toContain('waterbend')
+    expect(floorFields({ hasTapForGeneric: true, tapForGenericLabel: 'waterbend' }).hint).toContain('waterbend')
+    // The two tap-for-generic keywords share one carrier, so the label is what distinguishes them.
+    expect(floorFields({ hasTapForGeneric: true, tapForGenericLabel: 'improvise' }).hint).toContain('improvise')
   })
 
   it('emerge prices its candidates, and the best of them wins over any generic floor', () => {

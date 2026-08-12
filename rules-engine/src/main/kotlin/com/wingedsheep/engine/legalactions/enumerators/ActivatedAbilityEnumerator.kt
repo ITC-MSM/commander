@@ -3,6 +3,7 @@ package com.wingedsheep.engine.legalactions.enumerators
 import com.wingedsheep.engine.core.ActivateAbility
 import com.wingedsheep.engine.handlers.effects.composite.asConditional
 import com.wingedsheep.engine.handlers.effects.permanent.counters.resolveCounterType
+import com.wingedsheep.engine.mechanics.mana.TapForGeneric
 import com.wingedsheep.engine.legalactions.*
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.battlefield.*
@@ -245,9 +246,9 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                                         spellContext = abilityContext
                                     )
                                 val affordableViaWaterbend = ability.hasWaterbend &&
-                                    context.costUtils.canAffordWithWaterbend(
+                                    context.costUtils.canAffordWithTapForGeneric(
                                         state, playerId, atom.cost,
-                                        context.costUtils.findWaterbendPermanents(state, playerId),
+                                        context.costUtils.findTapForGenericPermanents(state, playerId, TapForGeneric.WATERBEND),
                                         precomputedSources = context.availableManaSources,
                                         spellContext = abilityContext
                                     )
@@ -398,9 +399,9 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                                                     spellContext = abilityContext
                                                 )
                                             val affordableViaWaterbend = ability.hasWaterbend &&
-                                                context.costUtils.canAffordWithWaterbend(
+                                                context.costUtils.canAffordWithTapForGeneric(
                                                     state, playerId, atom.cost,
-                                                    context.costUtils.findWaterbendPermanents(state, playerId),
+                                                    context.costUtils.findTapForGenericPermanents(state, playerId, TapForGeneric.WATERBEND),
                                                     precomputedSources = context.availableManaSources,
                                                     spellContext = abilityContext
                                                 )
@@ -667,7 +668,7 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
 
                 // Compute waterbend permanent data for abilities with hasWaterbend
                 val abilityWaterbendPermanents = if (ability.hasWaterbend) {
-                    context.costUtils.findWaterbendPermanents(state, playerId)
+                    context.costUtils.findTapForGenericPermanents(state, playerId, TapForGeneric.WATERBEND)
                 } else null
 
                 // If cost is unaffordable, add as greyed-out option and skip expensive computations
@@ -912,8 +913,9 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                             manaCostString = abilityManaCostString,
                             hasConvoke = ability.hasConvoke,
                             convokeCreatures = abilityConvokeCreatures,
-                            hasWaterbend = ability.hasWaterbend,
-                            waterbendPermanents = abilityWaterbendPermanents
+                            hasTapForGeneric = ability.hasWaterbend,
+                            tapForGenericPermanents = abilityWaterbendPermanents,
+                            tapForGenericLabel = TapForGeneric.WATERBEND.label.takeIf { ability.hasWaterbend }
                         ))
                     } else if (targetReqs.size == 1 && firstReqInfo.validTargets.size == 1 && firstReqInfo.validTargets.first() == entityId) {
                         // Self-targeting: only valid target is the source itself — auto-select and offer repeat
@@ -931,8 +933,9 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                             manaCostString = abilityManaCostString,
                             hasConvoke = ability.hasConvoke,
                             convokeCreatures = abilityConvokeCreatures,
-                            hasWaterbend = ability.hasWaterbend,
-                            waterbendPermanents = abilityWaterbendPermanents
+                            hasTapForGeneric = ability.hasWaterbend,
+                            tapForGenericPermanents = abilityWaterbendPermanents,
+                            tapForGenericLabel = TapForGeneric.WATERBEND.label.takeIf { ability.hasWaterbend }
                         ))
                     } else {
                         // Only hold priority when the top of the stack is something this
@@ -967,8 +970,9 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                             manaCostString = abilityManaCostString,
                             hasConvoke = ability.hasConvoke,
                             convokeCreatures = abilityConvokeCreatures,
-                            hasWaterbend = ability.hasWaterbend,
-                            waterbendPermanents = abilityWaterbendPermanents,
+                            hasTapForGeneric = ability.hasWaterbend,
+                            tapForGenericPermanents = abilityWaterbendPermanents,
+                            tapForGenericLabel = TapForGeneric.WATERBEND.label.takeIf { ability.hasWaterbend },
                             holdPriority = holdPriorityForTopOfStack,
                             requiresDamageDistribution = dividedDamage != null,
                             totalDamageToDistribute = dividedDamage?.totalDamage,
@@ -989,8 +993,9 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                         manaCostString = abilityManaCostString,
                         hasConvoke = ability.hasConvoke,
                         convokeCreatures = abilityConvokeCreatures,
-                        hasWaterbend = ability.hasWaterbend,
-                        waterbendPermanents = abilityWaterbendPermanents
+                        hasTapForGeneric = ability.hasWaterbend,
+                        tapForGenericPermanents = abilityWaterbendPermanents,
+                        tapForGenericLabel = TapForGeneric.WATERBEND.label.takeIf { ability.hasWaterbend }
                     ))
                 }
 

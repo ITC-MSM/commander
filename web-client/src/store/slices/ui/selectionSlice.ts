@@ -10,7 +10,7 @@ import type {
   BlightVariableSelectionState,
   PayXLifeSelectionState,
   ConvokeSelectionState,
-  WaterbendSelectionState,
+  TapForGenericSelectionState,
   HarmonizeSelectionState,
   TapForPowerSelectionState,
   DelveSelectionState,
@@ -38,7 +38,7 @@ export interface SelectionSliceState {
   blightVariableSelectionState: BlightVariableSelectionState | null
   payXLifeSelectionState: PayXLifeSelectionState | null
   convokeSelectionState: ConvokeSelectionState | null
-  waterbendSelectionState: WaterbendSelectionState | null
+  tapForGenericSelectionState: TapForGenericSelectionState | null
   harmonizeSelectionState: HarmonizeSelectionState | null
   tapForPowerSelectionState: TapForPowerSelectionState | null
   delveSelectionState: DelveSelectionState | null
@@ -67,10 +67,10 @@ export interface SelectionSliceActions {
   toggleConvokeCreature: (entityId: EntityId, name: string, payingColor: string | null) => void
   cancelConvokeSelection: () => void
   confirmConvokeSelection: () => void
-  startWaterbendSelection: (state: WaterbendSelectionState) => void
-  toggleWaterbendPermanent: (entityId: EntityId) => void
-  cancelWaterbendSelection: () => void
-  confirmWaterbendSelection: () => void
+  startTapForGenericSelection: (state: TapForGenericSelectionState) => void
+  toggleTapForGenericPermanent: (entityId: EntityId) => void
+  cancelTapForGenericSelection: () => void
+  confirmTapForGenericSelection: () => void
   startHarmonizeSelection: (state: HarmonizeSelectionState) => void
   toggleHarmonizeCreature: (entityId: EntityId) => void
   cancelHarmonizeSelection: () => void
@@ -104,7 +104,7 @@ export const createSelectionSlice: SliceCreator<SelectionSlice> = (set, get) => 
   blightVariableSelectionState: null,
   payXLifeSelectionState: null,
   convokeSelectionState: null,
-  waterbendSelectionState: null,
+  tapForGenericSelectionState: null,
   harmonizeSelectionState: null,
   tapForPowerSelectionState: null,
   delveSelectionState: null,
@@ -282,44 +282,44 @@ export const createSelectionSlice: SliceCreator<SelectionSlice> = (set, get) => 
     get().advancePipeline({ type: 'convoke', convokedCreatures })
   },
 
-  // Waterbend selection actions (Avatar: The Last Airbender). Generic-only — clicking an
-  // eligible artifact/creature toggles whether it is tapped to pay {1} of the cost.
-  startWaterbendSelection: (waterbendSelectionState) => {
-    set({ waterbendSelectionState })
+  // Tap-for-generic selection actions (improvise CR 702.126 / waterbend). Generic-only —
+  // clicking an eligible permanent toggles whether it is tapped to pay {1} of the cost.
+  startTapForGenericSelection: (tapForGenericSelectionState) => {
+    set({ tapForGenericSelectionState })
   },
 
-  toggleWaterbendPermanent: (entityId) => {
+  toggleTapForGenericPermanent: (entityId) => {
     set((state) => {
-      if (!state.waterbendSelectionState) return state
-      const { selectedPermanents, maxTaps } = state.waterbendSelectionState
+      if (!state.tapForGenericSelectionState) return state
+      const { selectedPermanents, maxTaps } = state.tapForGenericSelectionState
       const alreadySelected = selectedPermanents.includes(entityId)
-      // Can't tap more permanents than the generic mana in the waterbend cost (CR). Ignore an
-      // attempt to select beyond the cap; deselecting is always allowed.
+      // Can't tap more permanents than the generic mana being paid this way (CR 702.126a for
+      // improvise). Ignore an attempt to select beyond the cap; deselecting is always allowed.
       if (!alreadySelected && selectedPermanents.length >= maxTaps) return state
       const newSelected = alreadySelected
         ? selectedPermanents.filter((id) => id !== entityId)
         : [...selectedPermanents, entityId]
       return {
-        waterbendSelectionState: {
-          ...state.waterbendSelectionState,
+        tapForGenericSelectionState: {
+          ...state.tapForGenericSelectionState,
           selectedPermanents: newSelected,
         },
       }
     })
   },
 
-  cancelWaterbendSelection: () => {
+  cancelTapForGenericSelection: () => {
     const { pipelineState, cancelPipeline } = get()
     if (pipelineState) { cancelPipeline(); return }
-    set({ waterbendSelectionState: null })
+    set({ tapForGenericSelectionState: null })
   },
 
-  confirmWaterbendSelection: () => {
-    const { waterbendSelectionState, pipelineState } = get()
-    if (!waterbendSelectionState || !pipelineState) return
-    const waterbendPermanents = [...waterbendSelectionState.selectedPermanents]
-    set({ waterbendSelectionState: null })
-    get().advancePipeline({ type: 'waterbend', waterbendPermanents })
+  confirmTapForGenericSelection: () => {
+    const { tapForGenericSelectionState, pipelineState } = get()
+    if (!tapForGenericSelectionState || !pipelineState) return
+    const tapForGenericPermanents = [...tapForGenericSelectionState.selectedPermanents]
+    set({ tapForGenericSelectionState: null })
+    get().advancePipeline({ type: 'tapForGeneric', tapForGenericPermanents })
   },
 
   // Harmonize creature-tap selection actions (cast from graveyard via Harmonize). At most

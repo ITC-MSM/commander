@@ -7,7 +7,7 @@ import com.wingedsheep.engine.legalactions.EnumerationMode
 import com.wingedsheep.engine.legalactions.HarmonizeCreatureData
 import com.wingedsheep.engine.legalactions.LegalAction
 import com.wingedsheep.engine.legalactions.LegalActionEnumerator
-import com.wingedsheep.engine.legalactions.WaterbendPermanentData
+import com.wingedsheep.engine.legalactions.TapForGenericPermanentData
 import com.wingedsheep.engine.mechanics.mana.ManaSolver
 import com.wingedsheep.engine.support.GameTestDriver
 import com.wingedsheep.engine.support.TestCards
@@ -145,24 +145,24 @@ class LegalActionMinimumCostTest : FunSpec({
 
     test("waterbend taps are capped at the waterbend amount, not at the number of permanents") {
         val driver = createDriver()
-        val permanents = (1..5).map { WaterbendPermanentData(EntityId.generate(), "Thing $it", isCreature = true) }
+        val permanents = (1..5).map { TapForGenericPermanentData(EntityId.generate(), "Thing $it", isCreature = true) }
         val action = castAction(driver, "{4}{U}").copy(
-            hasWaterbend = true,
-            waterbendPermanents = permanents,
-            waterbendAmount = 2
+            hasTapForGeneric = true,
+            tapForGenericPermanents = permanents,
+            tapForGenericAmount = 2
         )
         floorOf(driver, action) shouldBe "{2}{U}"
     }
 
     test("waterbend {X} has no cap yet, so every tappable permanent counts toward the floor") {
         val driver = createDriver()
-        // A null waterbendAmount is the "waterbend {X}" shape — the cap is the X the player hasn't
+        // A null tapForGenericAmount is the "waterbend {X}" shape — the cap is the X the player hasn't
         // chosen, so the floor is drawn against the whole board.
-        val permanents = (1..3).map { WaterbendPermanentData(EntityId.generate(), "Thing $it", isCreature = false) }
+        val permanents = (1..3).map { TapForGenericPermanentData(EntityId.generate(), "Thing $it", isCreature = false) }
         val action = castAction(driver, "{4}{U}").copy(
-            hasWaterbend = true,
-            waterbendPermanents = permanents,
-            waterbendAmount = null
+            hasTapForGeneric = true,
+            tapForGenericPermanents = permanents,
+            tapForGenericAmount = null
         )
         floorOf(driver, action) shouldBe "{1}{U}"
     }

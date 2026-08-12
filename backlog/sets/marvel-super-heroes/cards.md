@@ -3,7 +3,7 @@
 **Set Size:** 276 booster cards (collector numbers 1-276; basic lands 277-296 and showcase
 variants 297+ are excluded)
 **Release Date:** June 26, 2026
-**Implemented:** 247 / 276
+**Implemented:** 249 / 276
 - [x] Agent 13, Sharon Carter
 - [x] Agent Maria Hill
 - [x] Agent of Atlas
@@ -63,7 +63,7 @@ variants 297+ are excluded)
 - [x] Hydraulic Helper
 - [x] I Am Iron Man
 - [x] Iron Lad, Diverging Destiny
-- [ ] Ironheart, Clever Champion
+- [x] Ironheart, Clever Champion
 - [x] Justice, Vance Astrovik
 - [ ] Kang the Conqueror
 - [ ] Kid Loki
@@ -246,7 +246,7 @@ variants 297+ are excluded)
 - [ ] Wolverine, Fierce Fighter
 - [x] Worlds Within Worlds
 - [x] A.I.M. Synthoids
-- [ ] Arc Reactor
+- [x] Arc Reactor
 - [x] Captain America's Shield
 - [x] Cosmic Cube
 - [x] Dependable Quinjet

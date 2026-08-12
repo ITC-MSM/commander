@@ -27,7 +27,8 @@ import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.mechanics.SacrificeImmunity
 import com.wingedsheep.engine.mechanics.mana.CostCalculator
 import com.wingedsheep.engine.mechanics.mana.ManaSolver
-import com.wingedsheep.engine.legalactions.WaterbendPermanentData
+import com.wingedsheep.engine.legalactions.TapForGenericPermanentData
+import com.wingedsheep.engine.mechanics.mana.TapForGeneric
 import com.wingedsheep.engine.legalactions.utils.CostEnumerationUtils
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.engine.mechanics.stack.StackResolver
@@ -441,14 +442,14 @@ class WardCounterEffectExecutor(
             manaCost: ManaCost,
             waterbend: Boolean,
             manaSolver: ManaSolver = ManaSolver(cardRegistry),
-            waterbendPermanents: List<WaterbendPermanentData>? = null
+            waterbendPermanents: List<TapForGenericPermanentData>? = null
         ): Boolean {
             if (manaSolver.canPay(state, payingPlayerId, manaCost)) return true
             if (!waterbend) return false
             val costUtils = costEnumerationUtils(cardRegistry)
             val permanents = waterbendPermanents
-                ?: costUtils.findWaterbendPermanents(state, payingPlayerId)
-            return costUtils.canAffordWithWaterbend(state, payingPlayerId, manaCost, permanents)
+                ?: costUtils.findTapForGenericPermanents(state, payingPlayerId, TapForGeneric.WATERBEND)
+            return costUtils.canAffordWithTapForGeneric(state, payingPlayerId, manaCost, permanents)
         }
 
         /**
@@ -683,7 +684,8 @@ class WardCounterEffectExecutor(
             // eligibility discovery as the activated-ability/spell waterbend surfaces so the rule
             // stays single-sourced. Found once and shared with the affordability check below.
             val waterbendPermanents = if (waterbend) {
-                costEnumerationUtils(cardRegistry).findWaterbendPermanents(state, payingPlayerId)
+                costEnumerationUtils(cardRegistry)
+                    .findTapForGenericPermanents(state, payingPlayerId, TapForGeneric.WATERBEND)
             } else {
                 emptyList()
             }

@@ -1,83 +1,115 @@
-# loop-msh-u08 — Ability-source predicate on stack targets
+# u09 — Improvise (CR 702.126)
+
+Branch `loop-msh-u09`, rebased onto `loop-msh-u08` (`752ff224fc`). Feature unit: a keyword + cross-layer
+payment plumbing + the two cards it unblocks.
 
 ## Cards
 
-- **Echo, Perceptive Prodigy** (MSH 51) — vigilance + `{1}, {T}: Copy target activated or triggered
-  ability you control from a creature source.` Composes `Targets.ActivatedOrTriggeredAbilityYouControlFrom(Creature)`
-  (existing ability-on-stack target + the new `CardPredicate.AbilitySourceMatches`) with the existing
-  `Effects.CopyTargetSpellOrAbility`, plus `holdPriority`.
-- **Scientist Supreme of A.I.M.** (MSH 225) — `Pay 2 life: Copy target activated or triggered ability
-  you control from an artifact source. Activate only during your turn and only once each turn.`
-  Same pieces with `GameObjectFilter.Artifact`, `Costs.PayLife(2)` and
-  `ActivationRestriction.OnlyDuringYourTurn` + `OncePerTurn`.
+- **Ironheart, Clever Champion** [msh 60] — {4}{U} Legendary Artifact Creature — Human Hero 3/4.
+  `keywords(Keyword.IMPROVISE, Keyword.FLYING)` + `GrantKeywordToOwnSpells(Keyword.IMPROVISE,
+  GameObjectFilter.Noncreature)`. No new primitive for the grant — `GrantedKeywordResolver` already
+  handles cost keywords and `CardPredicate.IsNoncreature`.
+- **Arc Reactor** [msh 243] — {5} Artifact. `keywords(Keyword.IMPROVISE)` + `EntersTapped()`
+  replacement effect + `Effects.AddColorlessMana(3)` behind `Costs.Tap`.
 
-## SDK / engine
+## The design call the brief asked for
 
-- `CardPredicate.AbilitySourceMatches(subfilter)` — new stack-branch predicate, sibling of
-  `TargetsMatching`. Redirects the match onto the ability's `sourceId` (CR 113.7) and evaluates the
-  subfilter there. Builders: `GameObjectFilter.abilitySourceMatches`, `TargetFilter.abilitySourceMatches`,
-  `Targets.ActivatedOrTriggeredAbilityYouControlFrom`.
-- `StackObjectTargeting.permitsAbilities` — the "may this stack target requirement offer abilities?"
-  seam, extracted from `TargetFinder` so the enumerator can share it.
-- **Bug fixed, not part of the brief:** `TargetEnumerationUtils.findValidSpellTargets` filtered every
-  stack target down to spells unconditionally, so *no* ability-targeting card ever had an ability
-  **offered** as a legal target — Gogo, Master of Mimicry and Peter Parker's Camera included. Since
-  `ActivatedAbilityEnumerator` gates `holdPriority` on "top of stack ∈ validTargets", those cards
-  also never stopped auto-pass. Both readers now go through `StackObjectTargeting`.
+The backlog proposed a **fourth** parallel payment field (`improvisedArtifacts`) beside delve /
+convoke / harmonize / waterbend. I **converged instead**: improvise and waterbend are the same
+mechanism with different eligibility, so `AlternativePaymentChoice.waterbendPermanents` became
+`tapForGenericPermanents` (one carrier), the eligibility became a value (`TapForGeneric.IMPROVISE` /
+`.WATERBEND`), and one `applyTapForGeneric` / `findTapForGenericPermanents` /
+`canAffordWithTapForGeneric` serves both. `LegalAction` / DTO / client renamed to match, plus a
+`tapForGenericLabel` so one HUD names either mechanic. A third keyword of this shape is now one enum
+entry.
+
+**Convoke was not folded in, deliberately** — a convoked creature can pay a *colored* pip of its own
+color (CR 702.51a), which is why it carries a per-creature color map and a colored-vs-generic
+assignment affordability check. It is a different payment shape.
+
+**Not converged, deliberately:** `ActivatedAbility.hasWaterbend` (the card-facing DSL flag on 15 TLA
+cards — it's the waterbend *cost*, not the rail) and the Ward—Waterbend / in-resolution decision
+path (`WaterbendPermanentChoice`, `ManaSourcesSelectedResponse.waterbendPermanents`, the
+continuations' `waterbend` flags). Improvise functions only while the spell is on the stack
+(CR 702.126a), so it can never be paid there.
+
+## Player-facing verification
+
+Tests assert against `game.getLegalActions(player)` — the enriched DTO the server actually sends —
+so enumerability and the DTO payload are covered, not just executability: `isAffordable` is true only
+because of the artifacts, `hasTapForGeneric` / `tapForGenericLabel == "improvise"` /
+`tapForGenericAmount == null` are set, and `validTapForGenericPermanents` holds exactly the caster's
+untapped artifacts. The client path was traced by hand end to end (phase → `startTapForGenericSelection`
+→ `GameCard` toggle → `advancePipeline` → `alternativePayment.tapForGenericPermanents` on the wire,
+field name matching Kotlin), and `tsc --noEmit` + vitest (516 tests) pass. **No manual playthrough,
+no screenshots, no e2e.**
+
+## Things I'm unsure about / worth a reviewer's eye
+
+1. **The rename is large** (~250 sites across mtg-sdk, rules-engine, ai, web-client) and it is the
+   bulk of the single commit `9b3323b3fa`. It is mechanical and behaviour-preserving, and the
+   existing waterbend suites are the regression net. I did *not* split it into its own commit —
+   the rename and the improvise wiring touch the same lines in `AlternativePaymentHandler`,
+   `CastSpellEnumerator` and `LegalAction`, so a split would have been an artificial one. Reading
+   the diff, everything named `tapForGeneric*` that was previously `waterbend*` is rename-only.
+2. **Improvise on an {X} spell** pays only the *printed* generic, not the mana paid for X — a known
+   **gap**, corrected in round 3 after the reviewer showed the original justification here was
+   false. The rules: CR 601.2b announces X, CR 601.2f then determines the total cost, and
+   CR 702.126a bounds the taps at the generic in *that* total — so improvise **does** pay the
+   X-derived generic, and the official Whir of Invention ruling says so outright ("choose X to be 3
+   … if you tap two artifacts, you'll have to pay `{1}{U}{U}{U}`"). Four printed cards reach it:
+   Whir of Invention, Universal Surveillance, Saheeli's Directive, Battle at the Bridge. **None of
+   the four is implemented in this repo, and no MSH card has improvise with {X}**, so nothing here
+   is wrong today — but the earlier claim that no such card exists was simply untrue.
+   `maxAffordableX` still ignores improvise, deliberately: the ceiling can't move alone, because
+   the payment side stops crediting taps once the printed generic runs out, so a raised ceiling
+   would offer an X the handler then refuses to pay (under-offering is the safe direction). Closing
+   it is a four-layer change — fold X into the cost the way `waterbend {X}` does, charge the
+   leftover against the X mana the way `CastSpellHandler.harmonizePaymentXValue` does, raise the
+   ceiling, and lift the client cap in `pipelinePhases.ts` — with no card in the repo to exercise
+   it. Deferred as an explicit TODO at all four sites, to be done with the first improvise-{X} card.
+3. **`applyImproviseMetadata` is a post-process pass** over the enumerated actions rather than a
+   field set at each `LegalAction(...)` site — same shape as the existing
+   `applySpellWaterbendMetadata`. It means every cast shape gets it for free; it also means it runs
+   over every action each enumeration (memoized per player and per card definition).
+4. **AI heuristic taps artifacts only**, even for a waterbend cost that also accepts creatures.
+   Rationale in the code: an artifact is rarely doing anything else, a creature gives up an
+   attack/block. This slightly *improves* waterbend (the AI previously filled no tap payment at all
+   and could pick a cast it couldn't pay) but it is a behaviour change outside the strict unit.
+   Round 3 added the second half the reviewer found missing: it fills the payment **only when the
+   taps are needed**. Improvise is optional, and filling an optional one can lose the cast — the AI
+   would tap Arc Reactor (`{T}: Add {C}{C}{C}`, shipped in this unit) for {1} and make its own cast
+   unpayable. `LegalAction.tapForGenericRequired` (new) carries "is the cost payable with mana
+   alone?" and the AI skips filling when it is; when it isn't, the enumerator's
+   `canAffordWithTapForGeneric` has already validated tapping *every* offered permanent, so filling
+   to the cap is safe. `ImprovisePaymentAiTest` pins both directions.
+5. **UX friction the mechanic implies:** while Ironheart is out, *every* noncreature cast picks up
+   the improvise tap step whenever the player controls any untapped artifact — even when they have
+   plenty of mana and don't want to tap. Confirming with nothing selected pays normally, so it is
+   one extra click, and it matches how convoke behaves today. Worth a human's eye in play.
+   Round 3 removed the *second* cost the note originally missed: the tap phase used to also force
+   the `manaSource` phase (via `hasAlternativePaymentPhase`), which silently turned **auto-tap off**
+   for every noncreature spell for the rest of the game. Because improvise is granted over a whole
+   card type rather than printed per card, that is a much bigger imposition than it is for
+   delve/convoke — and it buys nothing, since the server applies the taps and then auto-solves the
+   remainder. `tapForGeneric` no longer forces it; delve and convoke still do.
+6. **Cast-from-graveyard/exile improvise is not wired** (`CastFromZoneEnumerator` only got the
+   waterbend rename). Neither card needs it and no MSH card grants improvise to a graveyard cast.
 
 ## Gate
 
-Three trees, because two review rounds landed as new commits after the first gate. **Only the last
-block describes the code as it stands.**
+Per-module (a full `just test` has OOM-killed on this box today):
 
-1. **`5df00a8467`** (original, superseded) — `just test` BUILD SUCCESSFUL in 15m 46s, 12200 PASSED /
-   0 FAILED (`build/pr/loop-msh-u08-gate.log`). Does not cover the merged code: `daec416da0` went on
-   to rewrite `PredicateEvaluator`, `ActivateAbilityHandler`, `EntitySnapshot` and
-   `ZoneTransitionService` and add two scenario tests.
-2. **`daec416da0`** (after round-3 corrections) — `just test-class ScientistSupremeOfAimScenarioTest`
-   6/6 PASSED (`-gate-correction-targeted.log`); `just test` 0 failures across every module *except*
-   `:rules-engine`, where the run ended in the documented shared-box daemon OOM at ~146 MiB available
-   (`-gate-correction.log`, environmental, not a test failure); re-run at reduced footprint,
-   `:rules-engine:test` BUILD SUCCESSFUL 12m 27s / 0 failures (`-gate-correction-rules.log`) and
-   `:mtg-sets:test` BUILD SUCCESSFUL 1m 12s / 0 failures (`-gate-correction-sets.log`). The three
-   runs together cover every module.
-3. **`c6d333a27e`** (after round-4 review, the code as it stands) — one behaviour-neutral plumbing
-   change in `ActivateAbilityHandler` (switch to the existing state-aware `captureEntitySnapshots`
-   overload) plus comment-only fixes. `:rules-engine:test` at reduced footprint **BUILD SUCCESSFUL
-   in 4m 34s, 10765 PASSED / 0 failures** (`build/pr/loop-msh-u08-gate-round4-rules.log`), all 15 of
-   this unit's tests green. Only `:rules-engine` was touched and no signature moved, so downstream
-   modules were not re-run — tree 2 covers them. Accounting in
-   `build/pr/loop-msh-u08-round4-correction.md`.
-
-Unaffected by the tree: `just rebless-cards` (only MSH.json moved, +150/−0),
-`just check-card-printing` ok for both cards, `just check-backlog` in sync.
-
-## Things I'm unsure about — please look
-
-1. ~~**Token sources are unmatchable once gone.**~~ **Closed in review round 3.** The claim that the
-   engine had no last-known store for a deleted token was wrong:
-   `ActivatedAbilityOnStackComponent.lastKnownSourceSnapshot` already freezes an `EntitySnapshot` of
-   the source whenever the activation cost sacrifices/exiles it — exactly the Clue / Food / Blood /
-   Treasure shape. It just wasn't carrying the type line. It now does (via the shared
-   `projectedTypeLine` helper), and the `AbilitySourceMatches` branch falls back to it through
-   `PredicateEvaluator.matchesSnapshot` when `state.getEntity(sourceId)` is null. A cracked Clue's
-   draw ability is a legal, *offered* target for Scientist Supreme; scenario test added. Timing
-   nuance found while testing: SBAs run on the engine's post-resolution pass, so the token is still
-   readable the instant its ability hits the stack and only vanishes once something else resolves —
-   the test reproduces that sequence and asserts the entity is gone before checking the offer. The
-   rule is
-   **CR 704.5d** ("If a token is in a zone other than the battlefield, it ceases to exist"), not
-   704.5s (that one is the Saga final-chapter sacrifice).
-2. Related, smaller, still open: a **nontoken** source whose *type* came from a continuous effect
-   (animated land, crewed Vehicle) and has since left the battlefield some other way reads its
-   printed types — only the self-sacrifice/self-exile cost path freezes the projected type line.
-3. `ChosenTarget.Spell` gets no CR 608.2b filter re-check in `StackResolver.validateTargets` (only
-   "still on the stack"). Pre-existing, not touched here; it means the source restriction is enforced
-   at targeting time only. Exposure is small but not zero: an artifact animated into a creature can
-   stop being a creature between targeting and resolution, at which point CR 608.2b says Echo's copy
-   ability should fizzle and it won't. Left open deliberately — fixing it is an engine change to the
-   shared resolution-time target validation, not this unit's scope.
-4. No client change was needed: `StackZone` already routes both the action-pipeline
-   (`targetingState`) and decision (`decisionSelectionState`) click paths for stack objects, and
-   `TargetingOverlay` only diverts to the pile picker for `Graveyard`/`Exile`. Verified by reading;
-   not exercised in a browser.
+- `scripts/gradle-locked :mtg-sdk:test :mtg-sets:test` — mtg-sdk green; mtg-sets failed only on the
+  expected `CardDefinitionSnapshotTest` MSH golden, then `just rebless-cards`; re-diff shows **only
+  the two new cards** added to `MSH.json` (78 insertions, 0 deletions).
+- `just check-card-printing` for both cards — ok, canonical in earliest printing.
+- `just test-rules` — see `build/pr/loop-msh-u09-gate-rules.log`. **Note:** a first attempt with the
+  reduced-footprint override (`-Pkotlin.compiler.execution.strategy=in-process` +
+  `-Dorg.gradle.jvmargs=-Xmx3g`) died with `OutOfMemoryError: Java heap space` inside
+  `compileTestKotlin` after ~60 min. That is the override being too small for a full non-incremental
+  recompile of the rules-engine **test** source set (the rename touches shared SDK types), not a
+  code fault and not the OS OOM-killer — the sanctioned `just test-rules` recipe compiles in a
+  separate Kotlin daemon with its own heap and was used for the recorded result.
+- `web-client`: `npx tsc --noEmit` clean, `npx vitest run` 37 files / 516 tests pass.
+- `just fix-backlog` — MSH header now 241 / 276.

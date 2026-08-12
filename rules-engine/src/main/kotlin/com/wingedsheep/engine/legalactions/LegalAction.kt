@@ -98,17 +98,44 @@ data class LegalAction(
     val delveCards: List<DelveCardData>? = null,
     val minDelveNeeded: Int? = null,
 
-    // Waterbend (Avatar: The Last Airbender) — tap untapped artifacts/creatures you control,
-    // each paying {1} of the generic mana in the cost.
-    val hasWaterbend: Boolean = false,
-    val waterbendPermanents: List<WaterbendPermanentData>? = null,
+    // Tap-for-generic payment — tap untapped permanents you control, each paying {1} of the
+    // generic mana in the cost. Shared by Improvise (CR 702.126, artifacts only) and Waterbend
+    // (Avatar: The Last Airbender, artifacts or creatures); [tapForGenericLabel] names which.
+    val hasTapForGeneric: Boolean = false,
+    val tapForGenericPermanents: List<TapForGenericPermanentData>? = null,
     /**
      * For a spell-level waterbend cost, the tap cap N — the number of permanents that may be
-     * tapped (one per generic in the waterbend {N}). Null for an activated-ability waterbend
-     * (whose whole cost is the waterbend cost, so the cap is the cost's generic) and for the
+     * tapped (one per generic in the waterbend {N}). Null when the cap is simply the generic mana
+     * in the cost: an activated-ability waterbend (whose whole cost is the waterbend cost),
+     * improvise (CR 702.126a, "for each generic mana in this spell's total cost"), and the
      * "waterbend {X}" shape (the client caps at the chosen xValue).
      */
-    val waterbendAmount: Int? = null,
+    val tapForGenericAmount: Int? = null,
+    /**
+     * The player-facing verb for this tap payment — [com.wingedsheep.engine.mechanics.mana.TapForGeneric.label],
+     * e.g. `"improvise"` or `"waterbend"`. Null when [hasTapForGeneric] is false. The client shows
+     * it in the tap HUD so the two mechanics don't read as each other.
+     */
+    val tapForGenericLabel: String? = null,
+    /**
+     * Whether the tap payment is what makes this cast affordable: `true` when the cost is **not**
+     * payable with mana alone, `false` when it is and the taps are purely optional. Null when the
+     * enumerator didn't compute it (the waterbend paths, whose taps pay a cost that is mandatory
+     * in its own right, so an automatic payer should always fill them).
+     *
+     * Engine-side only — deliberately not mapped onto `LegalActionInfo`, because the client never
+     * fills this payment on its own: a human picks the taps in the HUD. Its one consumer is the
+     * built-in AI (`Strategist.withAutomaticTapForGeneric`), which reads `LegalAction` directly.
+     *
+     * Exists for automatic payers. Filling an *optional* improvise payment can cost you the cast:
+     * a tapped artifact stops being a mana source but only credits {1}, so tapping Arc Reactor
+     * ({T}: Add {C}{C}{C}) for improvise trades three mana for one and can leave the rest of the
+     * cost unpayable — the case the Whir of Invention rulings warn about ("if an artifact you
+     * control has a mana ability with {T} … you won't be able to tap it again for improvise").
+     * When this is `true`, `CostEnumerationUtils.canAffordWithTapForGeneric` has already validated
+     * the configuration where *every* offered permanent is tapped, so filling is safe.
+     */
+    val tapForGenericRequired: Boolean? = null,
 
     // Harmonize (cast from graveyard; optionally tap one creature to reduce the generic
     // cost by its power). The client may pick at most one of [harmonizeCreatures].
@@ -272,11 +299,12 @@ data class ConvokeCreatureData(
 )
 
 /**
- * Information about an artifact or creature that can be tapped for Waterbend. Generic-only,
- * so no color is carried (each tapped permanent always pays {1} generic). [isCreature] lets
- * the client distinguish creatures from artifacts for highlight/labelling only.
+ * Information about a permanent that can be tapped for a **tap-for-generic** payment (Improvise
+ * CR 702.126, Waterbend). Generic-only, so no color is carried (each tapped permanent always pays
+ * {1} generic). [isCreature] lets the client distinguish creatures from artifacts for
+ * highlight/labelling only.
  */
-data class WaterbendPermanentData(
+data class TapForGenericPermanentData(
     val entityId: EntityId,
     val name: String,
     val isCreature: Boolean
