@@ -180,10 +180,30 @@ sealed interface SourceFilter {
         override val description = "a $type"
     }
 
+    /**
+     * The creature this replacement's host Aura is attached to — damage dealt *by* the enchanted
+     * creature. Source-side mirror of [RecipientFilter.EnchantedCreature].
+     */
     @SerialName("SourceEnchantedCreature")
     @Serializable
     data object EnchantedCreature : SourceFilter {
         override val description = "enchanted creature"
+    }
+
+    /**
+     * The creature this replacement's host Equipment is attached to — damage dealt *by* the
+     * equipped creature ("Double all damage equipped creature would deal", Mjölnir, Hammer of
+     * Thor). Source-side mirror of [RecipientFilter.EquippedCreature].
+     *
+     * Resolves identically to [EnchantedCreature] (both read the host's attachment), and the two
+     * share a branch in the engine's source matcher exactly as the [RecipientFilter] pair does.
+     * They are kept distinct so an Equipment's card definition reads in Equipment vocabulary
+     * rather than borrowing Aura wording.
+     */
+    @SerialName("SourceEquippedCreature")
+    @Serializable
+    data object EquippedCreature : SourceFilter {
+        override val description = "equipped creature"
     }
 
     @SerialName("SourceCreature")

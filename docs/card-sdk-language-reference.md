@@ -7331,6 +7331,37 @@ composite abilities).
   = true; timing = TimingRule.SorcerySpeed; … }`. The `activatedAbility { }` builder exposes
   `isEquipAbility` so a hand-rolled equip ability still participates in equip-specific rules
   (sorcery-speed default, equip-cost reductions, instant-speed-equip permissions).
+  **"Equip [quality]" variants** (CR 702.6c — "Equip Human {1}", "Equip legendary creature {3}",
+  "Equip worthy {1}") pass `quality` + `targetFilter` to the same helper rather than being
+  hand-rolled: `equipAbility("{1}", quality = "Human", targetFilter =
+  TargetFilter.CreatureYouControl.withSubtype(Subtype.HUMAN))`. `quality` supplies the wording only,
+  landing in two places: `ActivatedAbility.equipQuality`, which makes the ability *render* as its
+  printed line, and the target requirement's id/label ("Human creature you control"), which is the
+  targeting prompt and what `LegalActionInfo.targetDescription` carries. `targetFilter` is the rules
+  half and must stay controller-scoped, since CR 702.6c allows targeting
+  "only a creature that's controlled by the player activating the ability and that has the chosen
+  quality". Build it off `TargetFilter.CreatureYouControl` or a `GameObjectFilter` ending in
+  `.youControl()`. The quality restricts *targeting* only: per CR 702.6c it "[doesn't] restrict what
+  the Equipment may be attached to", so a host that stops matching stays equipped — an Equipment
+  unattaches only under CR 704.5n. Mjölnir, Hammer of Thor's "worthy" (a legendary non-Villain that's
+  red and/or white) is spelled out as `GameObjectFilter.Creature.legendary().notSubtype(Subtype.VILLAIN)
+  .withAnyColor(Color.RED, Color.WHITE).youControl()` — it is one card's defined term, not an SDK
+  concept.
+
+  **Menu text.** `ActivatedAbility.describeWithCost` renders any `isEquipAbility` ability as its
+  printed keyword line — `"Equip {3}"` (CR 702.6a) or `"Equip Human {1}"` (CR 702.6c) — rather than
+  the attach effect's generated `"{1}: Attach this equipment to Human creature you control"`. A
+  non-mana equip cost takes the printed em dash instead: `"Equip—Pay 3 life"`. Because the line is
+  derived rather than a per-card `descriptionOverride`, the cost stays live: the legal-action
+  enumerator re-renders against the *effective* cost, so Éowyn's discount and Forge Anew's free first
+  equip show as the `{0}`/`{2}` the player actually pays. **Never give a mana-cost equip ability a
+  `descriptionOverride`** — it freezes exactly the number those effects rewrite. Only a non-mana equip
+  cost with card-specific naming needs one (Dark Knight's Greatsword: "Chaosbringer — Equip—Pay 3
+  life. Activate only once each turn."). `EquipQualityVariantTest` (mtg-sets) pins all three
+  invariants catalog-wide, as properties rather than a card list: every `isEquipAbility` ability is
+  sorcery-speed and targets a single creature you control, renders as its printed `Equip …` line with
+  no frozen cost, and — when its target label is narrower than the plain `"creature you control"` —
+  declares the matching `equipQuality`.
 - `Fortify(cost)` — Aura-like attach cost on lands.
 
 ```kotlin
@@ -9212,7 +9243,11 @@ The priority groups are (CR 616.1a–f):
   `RecipientFilter` the prevention and `ModifyDamageAmount` paths understand works here too —
   including `RecipientFilter.OpponentOrPermanentTheyControl` (Twinflame Tyrant). Each hosting
   permanent is its own replacement and applies once (CR 616.1): two Twinflame Tyrants quadruple.
-  A player who is a legal recipient sees a "Damage Doubled" badge on their life orb.
+  A player who is a legal recipient sees a "Damage Doubled" badge on their life orb — **except** when
+  the source filter is attachment-scoped (`SourceFilter.EquippedCreature` / `EnchantedCreature`), which
+  badges the attached creature's card instead, and only while it is attached. That case is a property
+  of one creature's *outgoing* damage rather than of whoever might be damaged, so a player badge would
+  read as "all damage dealt to you doubles" and would show even for an Equipment attached to nothing.
 - `ModifyDamageAmount(modifier = 0, dynamicModifier = null, restrictions = emptyList(), appliesTo)` —
   add an amount to matching
   damage. Pass a flat `modifier` (Valley Flamecaller: "deals that much damage plus 1") or a
@@ -9261,6 +9296,14 @@ The priority groups are (CR 616.1a–f):
   Fog Bank (`DamageEvent(recipient = RecipientFilter.Self, damageType = Combat)` +
   `DamageEvent(source = SourceFilter.Self, damageType = Combat)` = "prevent all combat damage that would
   be dealt to and dealt by this creature").
+  `source = SourceFilter.EnchantedCreature` / `SourceFilter.EquippedCreature` match damage dealt **by**
+  the permanent the replacement's host Aura/Equipment is attached to — the source-side mirror of the
+  `RecipientFilter` pair, resolved from the host's `AttachedToComponent`. Mjölnir, Hammer of Thor
+  ("Double all damage equipped creature would deal") is `DoubleDamage(appliesTo = DamageEvent(source =
+  SourceFilter.EquippedCreature))`; with the default `recipient = Any` and `damageType = Any` that
+  covers combat and noncombat damage to players and permanents alike. The two constants behave
+  identically (both read the host's attachment) and exist so an Equipment's definition reads in
+  Equipment vocabulary — pick the one matching the host's card type.
 - `EntersTapped(unlessCondition?, payLifeCost?)` — "this permanent enters tapped" (`unlessCondition = null`),
   or "enters tapped unless `<condition>`" when an `unlessCondition` is supplied. The "slow land" cycle
   (Deathcap Glade, Dreamroot Cascade, Sundown Pass — "enters tapped unless you control two or more other

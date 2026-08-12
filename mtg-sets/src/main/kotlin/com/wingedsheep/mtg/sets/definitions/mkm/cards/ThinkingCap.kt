@@ -1,15 +1,11 @@
 package com.wingedsheep.mtg.sets.definitions.mkm.cards
 
 import com.wingedsheep.sdk.core.Subtype
-import com.wingedsheep.sdk.dsl.Costs
 import com.wingedsheep.sdk.dsl.Filters
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.ModifyStats
-import com.wingedsheep.sdk.scripting.TimingRule
-import com.wingedsheep.sdk.scripting.effects.AttachEquipmentEffect
 import com.wingedsheep.sdk.scripting.filters.unified.TargetFilter
-import com.wingedsheep.sdk.scripting.targets.TargetCreature
 
 /**
  * Thinking Cap — Murders at Karlov Manor #257
@@ -19,20 +15,14 @@ import com.wingedsheep.sdk.scripting.targets.TargetCreature
  * Equip Detective {1}
  * Equip {3}
  *
- * "Equip Detective {1}" is a variant equip keyword ("{1}: Attach to target Detective creature you
- * control. Equip only as a sorcery.") — the Pirate Hat / Dúnedain Blade idiom, modelled as its own
- * sorcery-speed activated ability whose target is restricted to a Detective you control. The plain
- * "Equip {3}" goes through the [equipAbility] facade.
+ * "Equip Detective {1}" is an "Equip [quality]" variant (CR 702.6c) — the Pirate Hat / Dúnedain
+ * Blade idiom — authored through the [equipAbility] facade's `quality`/`targetFilter` pair, exactly
+ * like the plain "Equip {3}" below it.
  *
  * The two are genuinely separate abilities, not one ability with a discount: a Detective can be
  * equipped either way, and a non-Detective only via the {3} ability. Modelling the Detective clause
  * as a cost reduction on a single equip ability would wrongly let you point the cheap version at a
  * non-Detective (it would just cost more), so the two-ability shape is the faithful one.
- *
- * The hand-rolled Detective ability sets `isEquipAbility = true` — it *is* an equip ability
- * (CR 702.6), so the flags that read that bit have to see it: "you may activate equip abilities any
- * time you could cast an instant" (Leonin Shikari) and "equip abilities cost {N} less" both apply to
- * it, not just to the plain "Equip {3}".
  *
  * Unlike this set's murder-weapon Equipment (Knife, Wrench, Rope, …) this one is *not* a Clue — it
  * has no sacrifice-to-draw and the type line carries no Clue subtype.
@@ -50,18 +40,12 @@ val ThinkingCap = card("Thinking Cap") {
         ability = ModifyStats(+1, +2, Filters.EquippedCreature)
     }
 
-    // Equip Detective {1}: attach only to a Detective you control, sorcery speed.
-    activatedAbility {
-        cost = Costs.Mana("{1}")
-        timing = TimingRule.SorcerySpeed
-        isEquipAbility = true
-        val detective = target(
-            "Detective creature you control",
-            TargetCreature(filter = TargetFilter.CreatureYouControl.withSubtype(Subtype.DETECTIVE))
-        )
-        effect = AttachEquipmentEffect(detective)
-        description = "Equip Detective {1}"
-    }
+    // Equip Detective {1}: attach only to a Detective you control, sorcery speed (CR 702.6c).
+    equipAbility(
+        "{1}",
+        quality = "Detective",
+        targetFilter = TargetFilter.CreatureYouControl.withSubtype(Subtype.DETECTIVE),
+    )
 
     // Equip {3}: attach to any creature you control, sorcery speed.
     equipAbility("{3}")

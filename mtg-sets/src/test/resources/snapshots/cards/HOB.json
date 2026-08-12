@@ -12726,7 +12726,7 @@
                     "type": "AttachEquipment",
                     "target": {
                         "type": "BoundVariable",
-                        "name": "target Wizard you control"
+                        "name": "Wizard creature you control"
                     }
                 },
                 "targetRequirements": [
@@ -12735,12 +12735,12 @@
                         "filter": {
                             "baseFilter": "creature Wizard ctrl:you"
                         },
-                        "id": "target Wizard you control"
+                        "id": "Wizard creature you control"
                     }
                 ],
                 "timing": "SorcerySpeed",
                 "isEquipAbility": true,
-                "descriptionOverride": "Equip Wizard {1}"
+                "equipQuality": "Wizard"
             },
             {
                 "id": "ability_2",
