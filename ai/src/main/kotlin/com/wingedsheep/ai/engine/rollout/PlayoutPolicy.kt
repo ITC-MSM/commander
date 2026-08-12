@@ -105,11 +105,13 @@ class PlayoutPolicy(
         // X first, then targets: an X-cost spell's legal targets can depend on the X chosen
         // ("mana value X or less"), so filling targets against the enumerator's permissive list
         // and binding X afterwards would pick targets the chosen X doesn't reach. Costs no
-        // simulation — XCostSelection reads the board, it does not play it forward.
-        val chosen = XCostSelection.bindBestX(state, candidates[index])
+        // simulation — XCostSelection reads the board, it does not play it forward — and it is
+        // *sampled* rather than maximized, because always taking the largest affordable X would
+        // make every playout of this line identical, which is the second rule above.
+        val (chosen, xRng) = XCostSelection.sampleX(state, candidates[index], nextRng)
         return TargetSelection.fillHeuristically(
             state, chosen, playerId, fillPartialRequirements = true, intents = intents
-        ) to nextRng
+        ) to xRng
     }
 
     /**
