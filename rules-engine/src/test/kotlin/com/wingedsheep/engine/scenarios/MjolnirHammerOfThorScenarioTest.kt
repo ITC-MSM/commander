@@ -428,5 +428,101 @@ class MjolnirHammerOfThorScenarioTest : ScenarioTestBase() {
                 }
             }
         }
+
+        /**
+         * The doubling is scoped to the damage *source* being the equipped creature, so the badge
+         * that announces it belongs on that creature — not on a player.
+         *
+         * The player-badge path ([DamageUtils.damageDoublersAffectingPlayer]) evaluates only the
+         * `RecipientFilter`. Mjölnir leaves `recipient` at `Any`, so before the fix an unattached
+         * Mjölnir told *both* players "Damage dealt to you is doubled by Mjölnir, Hammer of Thor" —
+         * false twice over: an unequipped Equipment doubles nothing, and even equipped it doubles
+         * one creature's outgoing damage rather than everything aimed at a player.
+         */
+        context("the doubling is badged on the equipped creature, not on the players") {
+
+            fun TestGame.doubledBadgesOnPlayers(): List<String?> =
+                getClientState(1).players
+                    .flatMap { it.activeEffects }
+                    .filter { it.effectId.startsWith("damage_doubled") }
+                    .map { it.description }
+
+            fun TestGame.doubledBadgesOn(id: EntityId): List<String?> =
+                getClientState(1).cards.getValue(id).activeEffects
+                    .filter { it.effectId.startsWith("damage_doubled") }
+                    .map { it.description }
+
+            test("an unequipped Mjölnir badges nobody — not either player, not any creature") {
+                val game = scenario()
+                    .withPlayers("Player", "Opponent")
+                    .withCardOnBattlefield(1, "Thunder Prince")
+                    .withCardOnBattlefield(1, "Mjölnir, Hammer of Thor")
+                    .withCardOnBattlefield(2, "Rival Champion")
+                    .withActivePlayer(1)
+                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                    .build()
+
+                withClue("an Equipment attached to nothing doubles nothing") {
+                    game.doubledBadgesOnPlayers() shouldBe emptyList()
+                    game.doubledBadgesOn(game.findPermanent("Thunder Prince")!!) shouldBe emptyList()
+                    game.doubledBadgesOn(game.findPermanent("Rival Champion")!!) shouldBe emptyList()
+                }
+            }
+
+            test("once equipped, the badge is on the equipped creature and still on no player") {
+                val game = scenario()
+                    .withPlayers("Player", "Opponent")
+                    .withCardOnBattlefield(1, "Thunder Prince", summoningSickness = false)
+                    .withCardAttachedTo(1, "Mjölnir, Hammer of Thor", "Thunder Prince")
+                    .withCardOnBattlefield(2, "Rival Champion")
+                    .withActivePlayer(1)
+                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                    .build()
+
+                withClue("the creature whose outgoing damage is doubled carries the badge") {
+                    game.doubledBadgesOn(game.findPermanent("Thunder Prince")!!) shouldBe
+                        listOf("Damage this creature deals is doubled by Mjölnir, Hammer of Thor")
+                }
+                withClue("no other creature is affected, on either side") {
+                    game.doubledBadgesOn(game.findPermanent("Rival Champion")!!) shouldBe emptyList()
+                }
+                withClue("the doubling is source-scoped, so no player is warned about it") {
+                    game.doubledBadgesOnPlayers() shouldBe emptyList()
+                }
+            }
+
+            test("the badge follows the Equipment when it moves to another creature") {
+                val game = scenario()
+                    .withPlayers("Player", "Opponent")
+                    .withCardOnBattlefield(1, "Thunder Prince", summoningSickness = false)
+                    .withCardOnBattlefield(1, "Shield Paladin", summoningSickness = false)
+                    .withCardAttachedTo(1, "Mjölnir, Hammer of Thor", "Thunder Prince")
+                    .withLandsOnBattlefield(1, "Mountain", 2)
+                    .withActivePlayer(1)
+                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                    .build()
+
+                val hammer = game.findPermanent("Mjölnir, Hammer of Thor")!!
+                val prince = game.findPermanent("Thunder Prince")!!
+                val paladin = game.findPermanent("Shield Paladin")!!
+
+                game.execute(
+                    ActivateAbility(
+                        playerId = game.player1Id,
+                        sourceId = hammer,
+                        abilityId = equipAbilityId,
+                        targets = listOf(ChosenTarget.Permanent(paladin)),
+                    )
+                ).error shouldBe null
+                if (game.getPendingDecision() is SelectManaSourcesDecision) game.submitManaSourcesAutoPay()
+                game.resolveStack()
+
+                withClue("re-equipping moves the badge along with the Equipment") {
+                    game.doubledBadgesOn(paladin) shouldBe
+                        listOf("Damage this creature deals is doubled by Mjölnir, Hammer of Thor")
+                    game.doubledBadgesOn(prince) shouldBe emptyList()
+                }
+            }
+        }
     }
 }

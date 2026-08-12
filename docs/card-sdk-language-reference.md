@@ -9228,7 +9228,11 @@ The priority groups are (CR 616.1a–f):
   `RecipientFilter` the prevention and `ModifyDamageAmount` paths understand works here too —
   including `RecipientFilter.OpponentOrPermanentTheyControl` (Twinflame Tyrant). Each hosting
   permanent is its own replacement and applies once (CR 616.1): two Twinflame Tyrants quadruple.
-  A player who is a legal recipient sees a "Damage Doubled" badge on their life orb.
+  A player who is a legal recipient sees a "Damage Doubled" badge on their life orb — **except** when
+  the source filter is attachment-scoped (`SourceFilter.EquippedCreature` / `EnchantedCreature`), which
+  badges the attached creature's card instead, and only while it is attached. That case is a property
+  of one creature's *outgoing* damage rather than of whoever might be damaged, so a player badge would
+  read as "all damage dealt to you doubles" and would show even for an Equipment attached to nothing.
 - `ModifyDamageAmount(modifier = 0, dynamicModifier = null, restrictions = emptyList(), appliesTo)` —
   add an amount to matching
   damage. Pass a flat `modifier` (Valley Flamecaller: "deals that much damage plus 1") or a
