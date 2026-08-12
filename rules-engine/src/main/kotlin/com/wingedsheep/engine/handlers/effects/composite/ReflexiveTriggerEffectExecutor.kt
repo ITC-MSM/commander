@@ -217,6 +217,18 @@ class ReflexiveTriggerEffectExecutor(
                 ?: 0
             current >= action.amount
         }
+        // "You may remove a counter from ~" (Leatherhead, Swamp Stalker) — with no counters left
+        // there is nothing to remove, so the may-clause must be absent. Both removal executors
+        // no-op on an empty permanent and report *success*, which would otherwise arm the "when you
+        // do" payoff for free: Leatherhead would keep destroying an artifact each combat long after
+        // her last counter was spent. A `minTotal` floor raises the bar to the whole floor — an
+        // action that can't pay it in full can't be performed at all.
+        is com.wingedsheep.sdk.scripting.effects.RemoveAnyNumberOfCountersEffect ->
+            countersOn(state, context, action.target)
+                ?.let { it >= action.minTotal.coerceAtLeast(1) } ?: true
+        is com.wingedsheep.sdk.scripting.effects.RemoveCountersEffect ->
+            countersOn(state, context, action.target, kind = action.counterType)
+                ?.let { it >= action.count } ?: true
         // "You may collect evidence 3" (Sample Collector) — CR 701.59b is explicit that a player
         // unable to exile cards totalling N *can't choose to collect evidence*, so the option must
         // be absent rather than offered and refused. Without this branch the `else -> true` below
@@ -228,6 +240,38 @@ class ReflexiveTriggerEffectExecutor(
                 .canCollect(state, playerId, action.amount)
         }
         else -> true
+    }
+
+    /**
+     * How many counters the permanent [target] resolves to currently carries — of every kind, or
+     * of [kind] alone when one is named. Zero for an entity that is gone or tracks no counters,
+     * which is the fail-*closed* answer the callers want: nothing to remove means no may-clause.
+     *
+     * `null` means the target shape couldn't be resolved at all, which is a different question and
+     * gets the opposite answer. Feasibility runs before the action does, so a `PipelineTarget`
+     * filled in by an earlier step of the same composite isn't stored yet, and `state` is consulted
+     * for the relational shapes ([EffectTarget.EnchantedCreature], `EquippedCreature`,
+     * `ChosenCreature`, …) that the stateless overload can't reach. Treating "don't know" as zero
+     * would silently delete the whole ability, so callers fail open on it — the same policy as this
+     * method's `else -> true`.
+     */
+    private fun countersOn(
+        state: GameState,
+        context: EffectContext,
+        target: com.wingedsheep.sdk.scripting.targets.EffectTarget,
+        kind: String? = null
+    ): Int? {
+        val targetId = context.resolveTarget(target, state) ?: return null
+        val counters = state.getEntity(targetId)
+            ?.get<com.wingedsheep.engine.state.components.battlefield.CountersComponent>()
+            ?: return 0
+        return if (kind == null) {
+            counters.counters.values.sum()
+        } else {
+            counters.getCount(
+                com.wingedsheep.engine.handlers.effects.permanent.counters.resolveCounterType(kind)
+            )
+        }
     }
 
     /**

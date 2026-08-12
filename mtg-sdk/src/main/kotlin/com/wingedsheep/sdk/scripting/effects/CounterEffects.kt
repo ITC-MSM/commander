@@ -137,32 +137,51 @@ data class RemoveCountersEffect(
 
 /**
  * Remove counters from a target permanent. The controller chooses how many counters of each kind
- * to remove (0 up to the current count of that kind). With [maxTotal] set, no more than that many
- * counters may be removed in total across all kinds ("remove up to N counters"); left null, there
- * is no cap ("remove any number of counters").
+ * to remove. [maxTotal] caps the total across all kinds ("remove up to N counters"); left null,
+ * there is no cap ("remove any number of counters"). [minTotal] is the matching *floor* — the
+ * number the controller must remove in total once the effect resolves at all.
  *
  * "Remove any number of counters from target creature you control." ([maxTotal] = null.)
  * "Remove up to three counters from target creature." (Heartless Act, [maxTotal] = 3.)
+ * "Remove a counter from it." ([minTotal] = [maxTotal] = 1 — the kind is the player's choice, the
+ * count is not.)
+ *
+ * The floor matters because a bare ceiling silently makes every such removal optional: "remove a
+ * counter" modelled as `maxTotal = 1` alone lets the controller answer 0 to every prompt and still
+ * report success, which hands a free payoff to any "if you do" / "when you do" clause hanging off
+ * it (CR 603.12 — the reflexive ability triggers only when the action is actually taken).
  *
  * At resolution time, the executor enumerates each counter kind currently on the target and
- * presents a sequence of `ChooseNumberDecision`s — one per kind. When [maxTotal] is set, each
- * prompt's maximum is the smaller of that kind's count and the remaining budget, and prompting
- * stops once the budget is spent.
+ * presents a sequence of `ChooseNumberDecision`s — one per kind. Each prompt's maximum is the
+ * smaller of that kind's count and the remaining budget, and prompting stops once the budget is
+ * spent. Each prompt's *minimum* is whatever of [minTotal] the kinds still to come can't cover, so
+ * the player keeps a free choice for as long as the floor is still reachable and is held to it on
+ * the last kind that can pay it. With one kind present and `minTotal == maxTotal` the prompt
+ * collapses to a single legal answer and is auto-resolved rather than asked.
  *
  * @property target The permanent to remove counters from.
  * @property maxTotal The total budget across all kinds, or null for no cap.
+ * @property minTotal The total that must be removed across all kinds; 0 makes the removal optional.
  */
 @SerialName("RemoveAnyNumberOfCounters")
 @Serializable
 data class RemoveAnyNumberOfCountersEffect(
     val target: EffectTarget = EffectTarget.ContextTarget(0),
-    val maxTotal: Int? = null
+    val maxTotal: Int? = null,
+    val minTotal: Int = 0
 ) : Effect {
-    override val description: String =
-        if (maxTotal != null)
+    override val description: String = when {
+        minTotal > 0 && minTotal == maxTotal ->
+            "Remove $minTotal counter${if (minTotal != 1) "s" else ""} from ${target.description}"
+        minTotal > 0 && maxTotal != null ->
+            "Remove $minTotal to $maxTotal counters from ${target.description}"
+        minTotal > 0 ->
+            "Remove at least $minTotal counter${if (minTotal != 1) "s" else ""} from ${target.description}"
+        maxTotal != null ->
             "Remove up to $maxTotal counter${if (maxTotal != 1) "s" else ""} from ${target.description}"
-        else
+        else ->
             "Remove any number of counters from ${target.description}"
+    }
 }
 
 /**

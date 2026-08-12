@@ -5141,10 +5141,10 @@
                 "effect": {
                     "type": "ReflexiveTrigger",
                     "action": {
-                        "type": "RemoveCounters",
-                        "counterType": "hexproof",
-                        "count": 1,
-                        "target": "Self"
+                        "type": "RemoveAnyNumberOfCounters",
+                        "target": "Self",
+                        "maxTotal": 1,
+                        "minTotal": 1
                     },
                     "reflexiveEffect": {
                         "type": "MoveToZone",
@@ -5159,10 +5159,11 @@
                         {
                             "type": "TargetObject",
                             "filter": {
-                                "baseFilter": "artifact|enchantment ctrl:opponent"
+                                "baseFilter": "artifact|enchantment ctrl:triggering-player"
                             }
                         }
-                    ]
+                    ],
+                    "descriptionOverride": "You may remove a counter from Leatherhead. When you do, destroy target artifact or enchantment that player controls."
                 },
                 "descriptionOverride": "Whenever Leatherhead deals combat damage to a player, you may remove a counter from her. When you do, destroy target artifact or enchantment that player controls."
             }

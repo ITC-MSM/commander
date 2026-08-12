@@ -1132,6 +1132,15 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   with `maxTotal` set, not a separate effect: one `ChooseNumber` prompt per kind, each capped at
   `min(kind's count, remaining budget)`; prompting stops once the budget is spent. Used by Heartless Act's
   "Remove up to three counters from target creature."
+- `RemoveCounterOfAnyKind(target, count = 1)` — "**remove a counter** from it": the player chooses which
+  *kind* comes off, but not *whether*. The floored form of the same effect (`minTotal = maxTotal = count`).
+  Each prompt's minimum is the share of the floor the kinds still to come can't cover, so the choice stays
+  free while the floor is reachable and is enforced on the last kind that can pay it; a prompt whose min and
+  max coincide is applied without asking, so a permanent carrying a single kind raises no prompt at all.
+  **Reach for this, not `RemoveCountersUpTo(1, …)`, whenever a payoff hangs off the removal** — `IfYouDo` /
+  `ReflexiveTriggerEffect` ("remove a counter … when you do, …", Leatherhead, Swamp Stalker). A bare ceiling
+  lets the player answer 0 to every prompt and still report success, firing the payoff for free against
+  CR 603.12. Use `RemoveCountersUpTo` only where the card really does say "up to".
 - **Player-scoped counters (CR 122.1, 107.14).** Every counter type above lives on a permanent/object. Poison,
   energy, and rad counters instead live directly on a **player entity**, reusing the same `CountersComponent` —
   no separate component or data model. `AddCountersExecutor` already resolves player-shaped targets (`that

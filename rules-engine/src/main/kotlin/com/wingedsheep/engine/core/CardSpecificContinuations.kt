@@ -159,14 +159,17 @@ data class DistributeCountersContinuation(
  * When [remainingBudget] is non-null, a *total* cap is in force (`maxTotal` on the effect —
  * Heartless Act's "remove up to N counters"): each prompt is capped at `min(kindCount, budget)`,
  * the budget is decremented on resume, and prompting stops once it hits zero. Null means no cap
- * ("remove any number").
+ * ("remove any number"). [remainingFloor] is the mirror image — the `minTotal` still owed, which
+ * raises a later prompt's minimum once the kinds after it can no longer cover it.
  *
  * @property targetId The permanent whose counters are being removed
  * @property controllerId The player making the choices
  * @property currentCounterType The counter kind the active decision is for
- * @property currentMaxAmount Cap shown to the player (0..currentMaxAmount)
+ * @property currentMinAmount Floor shown to the player, and enforced on resume
+ * @property currentMaxAmount Cap shown to the player (currentMinAmount..currentMaxAmount)
  * @property remainingBudget Counters still removable in total after the active decision, or null for no cap
- * @property remainingCounterTypes Pending (counterType, maxAmount) prompts
+ * @property remainingFloor Counters still owed toward the effect's `minTotal`
+ * @property remainingCounterTypes Counter kinds still to be walked, in prompt order
  * @property targetName Display name for follow-up prompts
  * @property sourceId Source emitting the effect (for prompt context)
  * @property sourceName Source name for prompt context
@@ -178,11 +181,13 @@ data class RemoveAnyNumberOfCountersContinuation(
     val controllerId: EntityId,
     val currentCounterType: String,
     val currentMaxAmount: Int,
-    val remainingCounterTypes: List<Pair<String, Int>>,
+    val remainingCounterTypes: List<String>,
     val targetName: String,
     val sourceId: EntityId?,
     val sourceName: String?,
-    val remainingBudget: Int? = null
+    val remainingBudget: Int? = null,
+    val currentMinAmount: Int = 0,
+    val remainingFloor: Int = 0
 ) : ContinuationFrame
 
 /**
