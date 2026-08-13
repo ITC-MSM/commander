@@ -1,39 +1,100 @@
 {
   "counts": {
     "BLOCKED_FEATURE": 0,
-    "IMPLEMENTED_UNVERIFIED": 8746,
+    "IMPLEMENTED_UNVERIFIED": 8748,
     "IMPLEMENTED_VERIFIED": 0,
     "NOT_PLANNED": 12,
-    "UNMATCHED_TRIAGE": 19816
+    "UNMATCHED_TRIAGE": 19814
   },
-  "evidenceLedger": { "blocked": [], "verified": [] },
+  "evidenceLedger": {
+    "blocked": [],
+    "verified": []
+  },
   "generatedFrom": {
     "catalogSha256": "e9eec0d07a62307bee91a8b1dbb4100ca2d33f3f60d196f4d99383b444217d77",
     "catalogSource": "coverage/set-totals.json",
-    "commit": "153a9ed4062f93da094bfea820ee779a86f6f2a7",
-    "commitTimestamp": "2026-08-11T19:46:39+02:00",
+    "commit": "7b0d2c44be87bbc65bf75fd72befcf81398aa6e3",
+    "commitTimestamp": "2026-08-13T17:17:34+02:00",
     "ledgerSha256": "d560a90563d1676a61ed41e0ea5d7cd5d3c4ed33a3ace9d34316030b3cda2223",
     "ledgerSource": "coverage/card-readiness-ledger.json",
-    "triageLedgerSource": "coverage/card-implementation-ledger.json",
-    "triageLedgerSha256": "249f754092d40cdb9a86d7e71e71f47203584cffd4007bdbd2a1ebbc39b67bbe"
+    "triageLedgerSha256": "249f754092d40cdb9a86d7e71e71f47203584cffd4007bdbd2a1ebbc39b67bbe",
+    "triageLedgerSource": "coverage/card-implementation-ledger.json"
   },
   "samples": {
     "BLOCKED_FEATURE": [],
     "IMPLEMENTED_UNVERIFIED": [
-      { "name": "A Realm Reborn", "sets": ["FIN"] },
-      { "name": "A Tale for the Ages", "sets": ["WOE"] },
-      { "name": "A.I.M. Labs", "sets": ["MSH"] }
+      {
+        "name": "A Realm Reborn",
+        "sets": [
+          "FIN"
+        ]
+      },
+      {
+        "name": "A Tale for the Ages",
+        "sets": [
+          "WOE"
+        ]
+      },
+      {
+        "name": "A.I.M. Labs",
+        "sets": [
+          "MSH"
+        ]
+      }
     ],
     "IMPLEMENTED_VERIFIED": [],
     "NOT_PLANNED": [
-      { "name": "Amulet of Quoz", "reason": { "kind": "ante", "why": "Ante is not supported — the engine has no ante zone, and ante play is banned in every sanctioned format." }, "sets": ["ICE"] },
-      { "name": "Bronze Tablet", "reason": { "kind": "ante", "why": "Ante is not supported — the engine has no ante zone, and ante play is banned in every sanctioned format." }, "sets": ["ATQ"] },
-      { "name": "Chaos Orb", "reason": { "kind": "dexterity", "why": "Requires physical dexterity with a real card, which has no digital equivalent." }, "sets": ["LEA", "LEB"] }
+      {
+        "name": "Amulet of Quoz",
+        "reason": {
+          "kind": "ante",
+          "why": "Ante is not supported — the engine has no ante zone, and ante play is banned in every sanctioned format."
+        },
+        "sets": [
+          "ICE"
+        ]
+      },
+      {
+        "name": "Bronze Tablet",
+        "reason": {
+          "kind": "ante",
+          "why": "Ante is not supported — the engine has no ante zone, and ante play is banned in every sanctioned format."
+        },
+        "sets": [
+          "ATQ"
+        ]
+      },
+      {
+        "name": "Chaos Orb",
+        "reason": {
+          "kind": "dexterity",
+          "why": "Requires physical dexterity with a real card, which has no digital equivalent."
+        },
+        "sets": [
+          "LEA",
+          "LEB"
+        ]
+      }
     ],
     "UNMATCHED_TRIAGE": [
-      { "name": "+2 Mace", "sets": ["AFR"] },
-      { "name": "A Killer Among Us", "sets": ["MKM"] },
-      { "name": "A Little Chat", "sets": ["SNC"] }
+      {
+        "name": "+2 Mace",
+        "sets": [
+          "AFR"
+        ]
+      },
+      {
+        "name": "A Killer Among Us",
+        "sets": [
+          "MKM"
+        ]
+      },
+      {
+        "name": "A Little Chat",
+        "sets": [
+          "SNC"
+        ]
+      }
     ]
   },
   "schemaVersion": 1,
