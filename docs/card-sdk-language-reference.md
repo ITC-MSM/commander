@@ -5881,8 +5881,10 @@ riders, matching how the engine already treats e.g. City of Brass's damage durin
   .canEquipAtInstantSpeed` (enumerator) and `ActivateAbilityHandler.validate` (submit path), both
   keyed on `ActivatedAbility.isEquipAbility`.
 - `FreeFirstEquipEachTurn` — the controller may pay {0} rather than the equip cost of the **first**
-  equip ability they activate during each of their turns (Forge Anew). The engine zeroes the whole
-  cost (colored pips included) of the turn's first equip while the per-player
+  equip ability they activate each turn (Kíli the Resourceful; Forge Anew's separate timing gate
+  confines its equip activations to its controller's turns). This is
+  an alternative activation cost: it replaces the whole equip cost, including colored mana and
+  nonmana parts such as paying life, while the per-player
   `EquipActivationsThisTurnComponent.count == 0`, and increments that counter on every equip
   activation (reset at turn start by `TurnManager`).
 - `ReduceEquipCost(amount, onlyIfTargetIsSource = false, onlyOwnEquip = false)` — the controller's equip abilities cost

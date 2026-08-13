@@ -615,11 +615,12 @@ class CastPermissionUtils(
     }
 
     /**
-     * Zero the mana cost of [cost] when [ability] is an equip ability, [playerId] has an active
+     * Replace [cost] with {0} when [ability] is an equip ability, [playerId] has an active
      * [FreeFirstEquipEachTurn] grant (Forge Anew), and this is their first equip this turn
      * (`EquipActivationsThisTurnComponent.count == 0`). Shared by the enumerator (offered/displayed
      * cost) and [ActivateAbilityHandler] (paid cost) so the two always agree. "Pay {0} rather than
-     * pay the equip cost" zeroes the whole cost, including any colored pips.
+     * pay the equip cost" is an alternative cost for the activation, so it replaces every part of
+     * the equip cost, including nonmana costs such as paying life.
      */
     fun applyFreeFirstEquipDiscount(
         cost: AbilityCost,
@@ -631,14 +632,7 @@ class CastPermissionUtils(
         val activations = state.getEntity(playerId)?.get<EquipActivationsThisTurnComponent>()?.count ?: 0
         if (activations > 0) return cost
         if (!hasFreeFirstEquip(state, playerId)) return cost
-        return when (cost) {
-            is AbilityCost.Atom ->
-                if (cost.manaCostOrNull != null) AbilityCost.Atom(CostAtom.Mana(ManaCost.ZERO)) else cost
-            is AbilityCost.Composite -> AbilityCost.Composite(cost.costs.map {
-                if (it.manaCostOrNull != null) AbilityCost.Atom(CostAtom.Mana(ManaCost.ZERO)) else it
-            })
-            else -> cost
-        }
+        return AbilityCost.Atom(CostAtom.Mana(ManaCost.ZERO))
     }
 
     /**
