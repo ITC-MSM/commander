@@ -269,7 +269,7 @@ entirely, and "until end of turn" wired as a permanent effect.
 
 Run the gates via the **`verify`** skill — `just build` for cards on existing effects, `just test` when
 Step 4 added engine behavior. **Once for the whole batch, after every card is written** — not per card;
-every `just` build takes a machine-global lock with a 30-minute queue. Expect a
+`just` holds the machine to two concurrent builds and queues the rest for up to 30 minutes. Expect a
 `CardDefinitionSnapshotTest` diff; re-bless with `just rebless-cards` and confirm **only your cards** moved
 in the golden. An unrelated card moving means you changed shared SDK behavior — stop and report it rather
 than re-blessing past it.
