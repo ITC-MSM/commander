@@ -600,6 +600,32 @@ sealed interface CostReductionSource {
     }
 
     /**
+     * Reduces cost by a numeric [property] of the permanent the *reducing ability's own source* is
+     * attached to — "{X} less to cast, where X is equipped creature's power" (Glamdring,
+     * Foe-hammer).
+     *
+     * The odd one out in this family: every other source aggregates over a group the caster
+     * controls, while this one reads a single permanent found by walking the Equipment's/Aura's
+     * attachment. It is therefore only meaningful on a [ModifySpellCost] printed on a permanent
+     * that can be attached; an unattached (or non-attaching) source contributes 0, which is exactly
+     * what an Equipment sitting on the battlefield with nothing equipped should do.
+     *
+     * Shares the read rules of [GreatestPropertyAmongPermanentsYouControl] and
+     * [TotalPropertyAmongPermanentsYouControl]: power/toughness come from projected state (CR 613),
+     * so counters, anthems, and the Equipment's own bonus all count; mana value comes from the card
+     * definition. Negative power floors at 0 — a cost can't be *increased* by a reduction clause.
+     *
+     * @property property Which numeric characteristic of the attached permanent to read
+     */
+    @SerialName("AttachedPermanentProperty")
+    @Serializable
+    data class AttachedPermanentProperty(
+        val property: EntityNumericProperty
+    ) : CostReductionSource {
+        override val description: String = "the attached permanent's ${property.description}"
+    }
+
+    /**
      * Reduces cost by a fixed amount if a creature is currently attacking the caster.
      * Used for cards like Swat Away ("This spell costs {2} less to cast if a creature
      * is attacking you").
