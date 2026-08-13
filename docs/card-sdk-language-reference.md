@@ -2065,6 +2065,16 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
     ability (see §8, and note that it is *not* the `oncePerTurn` trigger cap).
   - The multi-player APNAP `AnyPlayerMayPayEffect` stays a **standalone effect**, not a gate — a
     single `decisionMaker` can't express its turn-order loop (see below).
+
+  **Pipeline storage crosses the gate.** Whatever the taken branch stores — collections, numbers,
+  chosen values — is handed to the frame beneath through `exposeCollectionsToNextFrame`, on both the
+  synchronous path and the paused/continuation-drain path. That is what lets a gate sit *inside* a
+  composite whose later siblings read what the branch produced: "you may discard your hand. Draw X
+  cards, where X is the number of cards discarded this way" (**Balin, Loremaster**) gates only the
+  discard, and the sibling `DrawCards(VariableReference("discardedHand_count"))` sees the collection
+  the `then` branch gathered. Scoping the gate to just the optional clause — rather than wrapping the
+  whole rider — is also what makes a decline read X = 0 (an unset `VariableReference` evaluates to 0)
+  instead of skipping the mandatory half.
 - `MayEffect(effect, descriptionOverride?, sourceRequiredZone?, inlineOnTrigger?, hint?, dynamicHint?, decisionMaker?, otherwise?, feasibility?)`
   — "You may [effect]." Facade preserved for existing cards; it now **lowers to
   `GatedEffect(Gate.MayDecide(...), then = effect, otherwise = otherwise, decisionMaker = decisionMaker)`**
@@ -5526,7 +5536,15 @@ staticAbility {
   `TotalPropertyAmongPermanentsYouControl(Power, Creature.withKeyword(FLYING))`. The filter runs
   through `PredicateEvaluator` against projected state, so granted flying and animated permanents
   count; negative power subtracts from the total (Ghalta's ruling on the same wording) and only the
-  finished sum is floored at 0. … — see `CostStaticAbilities.kt`
+  finished sum is floored at 0,
+  `AttachedPermanentProperty(property)` — "{X} less, where X is equipped creature's `<property>`"
+  (Glamdring, Foe-hammer's `AttachedPermanentProperty(Power)`). The odd one out in this family: it
+  reads a *single* permanent found by walking the reducing permanent's own `AttachedToComponent`
+  rather than aggregating over a group the caster controls, so it is only meaningful on a
+  `ModifySpellCost` printed on an Equipment/Aura. Same `EntityNumericProperty` axis and read rules as
+  the two above (projected state for P/T, card definition for mana value). Nothing attached — or a
+  `SelfCast` reduction, which has no source permanent — reads 0, which is the correct reading of an
+  unequipped Equipment; negative power floors at 0. … — see `CostStaticAbilities.kt`
   for the full list.
 - `gating: CostGating` — gates whether/how often the modifier fires:
   - `None` (default) — applies to every matching cast.

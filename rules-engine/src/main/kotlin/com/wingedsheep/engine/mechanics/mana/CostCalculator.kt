@@ -138,6 +138,7 @@ class CostCalculator(
                 addColoredReduction = { coloredReductionSymbols += it },
                 addColoredReductionWithOverflow = { coloredReductionWithOverflow += it },
                 addColoredIncrease = { coloredIncreaseSymbols += it },
+                abilitySourceId = sourceId,
             )
         }
 
@@ -353,18 +354,22 @@ class CostCalculator(
         addColoredReduction: (ManaSymbol) -> Unit,
         addColoredReductionWithOverflow: (ManaSymbol) -> Unit,
         addColoredIncrease: (ManaSymbol) -> Unit,
+        abilitySourceId: EntityId? = null,
     ) {
         when (modification) {
             is CostModification.ReduceGeneric -> addGenericReduction(modification.amount)
             is CostModification.ReduceGenericBy ->
-                addGenericReduction(evaluateReduction(state, modification.source, casterId, chosenTargets))
+                addGenericReduction(
+                    evaluateReduction(state, modification.source, casterId, chosenTargets, abilitySourceId)
+                )
             is CostModification.ReduceColored -> {
                 ManaCost.parse(modification.symbols).symbols
                     .filterIsInstance<ManaSymbol.Colored>()
                     .forEach(addColoredReduction)
             }
             is CostModification.ReduceColoredPerUnit -> {
-                val units = evaluateReduction(state, modification.countSource, casterId, chosenTargets)
+                val units =
+                    evaluateReduction(state, modification.countSource, casterId, chosenTargets, abilitySourceId)
                 val coloredSymbols = ManaCost.parse(modification.symbols).symbols
                     .filterIsInstance<ManaSymbol.Colored>()
                 repeat(units) { coloredSymbols.forEach(addColoredReductionWithOverflow) }
@@ -404,12 +409,18 @@ class CostCalculator(
 
     /**
      * Evaluate the reduction amount from a CostReductionSource.
+     *
+     * [abilitySourceId] is the battlefield permanent the reducing [ModifySpellCost] is printed on,
+     * or null when the reduction comes from the spell's own script (a `SelfCast` reduction, where
+     * there is no permanent to read). Only the attachment-reading sources need it; everything else
+     * aggregates over what [playerId] controls.
      */
     private fun evaluateReduction(
         state: GameState,
         source: CostReductionSource,
         playerId: EntityId,
-        chosenTargets: List<EntityId> = emptyList()
+        chosenTargets: List<EntityId> = emptyList(),
+        abilitySourceId: EntityId? = null
     ): Int {
         return when (source) {
             is CostReductionSource.Fixed -> source.amount
@@ -448,6 +459,9 @@ class CostCalculator(
             }
             is CostReductionSource.TotalPropertyAmongPermanentsYouControl -> {
                 totalPropertyAmongMatching(state, playerId, source.filter, source.property)
+            }
+            is CostReductionSource.AttachedPermanentProperty -> {
+                attachedPermanentProperty(state, abilitySourceId, source.property)
             }
             is CostReductionSource.FixedIfCreatureDiedThisTurn -> {
                 if (anyCreatureDiedThisTurn(state)) source.amount else 0
@@ -611,6 +625,36 @@ class CostCalculator(
             total += numericProperty(projected, entityId, card, cardDef, property)
         }
         return total.coerceAtLeast(0)
+    }
+
+    /**
+     * The [property] of the permanent [abilitySourceId] is attached to — "equipped creature's
+     * power" (Glamdring, Foe-hammer).
+     *
+     * Returns 0 whenever there is nothing to read: no source permanent (a `SelfCast` reduction
+     * printed on the spell itself), a source that isn't attached to anything, or an attachment
+     * target that has since left the battlefield. An unequipped Equipment reducing costs by 0 is
+     * the correct reading of the oracle text, so failing to 0 here is faithful rather than merely
+     * defensive.
+     *
+     * The attachment is read from the source's `AttachedToComponent` — the same seam
+     * `Scope.AttachedTo` uses — and the value from projected state, so the equipped creature's
+     * counters, anthems, and the Equipment's own P/T bonus are all included.
+     */
+    private fun attachedPermanentProperty(
+        state: GameState,
+        abilitySourceId: EntityId?,
+        property: EntityNumericProperty
+    ): Int {
+        val sourceId = abilitySourceId ?: return 0
+        val attachedTo = state.getEntity(sourceId)
+            ?.get<com.wingedsheep.engine.state.components.battlefield.AttachedToComponent>()
+            ?.targetId
+            ?: return 0
+        val card = state.getEntity(attachedTo)?.get<CardComponent>() ?: return 0
+        val cardDef = cardRegistry.getCard(card.cardDefinitionId) ?: return 0
+        return numericProperty(state.projectedState, attachedTo, card, cardDef, property)
+            .coerceAtLeast(0)
     }
 
     /**
@@ -1243,7 +1287,9 @@ class CostCalculator(
             when (val mod = ability.modification) {
                 is CostModification.ReduceGeneric -> totalReduction += mod.amount
                 is CostModification.ReduceGenericBy ->
-                    totalReduction += evaluateReduction(state, mod.source, casterId)
+                    totalReduction += evaluateReduction(
+                        state, mod.source, casterId, abilitySourceId = sourceId
+                    )
                 else -> { /* face-down only supports generic reduction */ }
             }
         }
