@@ -534,6 +534,9 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   background: rgba(0, 0, 0, 0.2);
   position: relative;
+  /* The bar also lives in the scenario builder's (narrow, resizable) browser pane, where the
+     sort select and hints would otherwise squeeze the input down to a few pixels. */
+  flex-wrap: wrap;
 }
 
 .helpBackdrop {
@@ -637,7 +640,8 @@
 }
 
 .searchInputWrap {
-  flex: 1;
+  flex: 1 1 220px;
+  min-width: 200px;
   position: relative;
   display: flex;
   flex-direction: column;
@@ -951,6 +955,13 @@
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   gap: var(--space-2);
   align-content: start;
+}
+
+/* Denser tiles for side-pane browsers (the scenario builder), where the pane is a few hundred
+   pixels wide and fitting four cards per row beats three larger ones. */
+.gridCompact {
+  composes: grid;
+  grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
 }
 
 .showMoreRow {
