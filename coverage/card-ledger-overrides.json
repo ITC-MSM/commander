@@ -1,0 +1,5 @@
+{
+  "schemaVersion": 1,
+  "_comment": "Only reviewed unresolved entries belong here. Key format: SET|Card Name. Omit a row to retain the safe UNMATCHED_TRIAGE default; remove an override when the card is implemented.",
+  "overrides": {}
+}

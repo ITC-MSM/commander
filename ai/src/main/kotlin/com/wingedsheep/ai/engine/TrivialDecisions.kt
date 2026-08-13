@@ -16,6 +16,8 @@ import com.wingedsheep.engine.core.NumberChosenResponse
 import com.wingedsheep.engine.core.OptionChosenResponse
 import com.wingedsheep.engine.core.OrderObjectsDecision
 import com.wingedsheep.engine.core.OrderedResponse
+import com.wingedsheep.engine.core.OrderTriggeredAbilitiesDecision
+import com.wingedsheep.engine.core.TriggeredAbilitiesOrderedResponse
 import com.wingedsheep.engine.core.PendingDecision
 import com.wingedsheep.engine.core.ReorderLibraryDecision
 import com.wingedsheep.engine.core.SelectCardsDecision
@@ -115,6 +117,12 @@ object TrivialDecisions {
         is OrderObjectsDecision -> {
             if (decision.objects.size <= 1) {
                 OrderedResponse(decision.id, decision.objects)
+            } else null
+        }
+
+        is OrderTriggeredAbilitiesDecision -> {
+            if (decision.abilities.size <= 1) {
+                TriggeredAbilitiesOrderedResponse(decision.id, decision.abilities.map { it.id })
             } else null
         }
 

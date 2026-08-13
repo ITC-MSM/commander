@@ -1,6 +1,11 @@
 FROM node:22-alpine AS build
 ARG COMMIT_HASH=unknown
 ENV VITE_COMMIT_HASH=$COMMIT_HASH
+# Private/LAN staging must not inherit the production analytics setting from
+# `.env.production`.  The production Docker build remains unchanged unless this
+# argument is explicitly supplied by its compose file.
+ARG VITE_ANALYTICS_ENABLED=true
+ENV VITE_ANALYTICS_ENABLED=$VITE_ANALYTICS_ENABLED
 WORKDIR /app
 COPY package*.json ./
 RUN npm install

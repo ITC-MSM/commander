@@ -68,8 +68,15 @@ class MorningtidesLightScenarioTest : FunSpec({
 
         // At the beginning of the next end step one delayed trigger per exiled creature fires.
         driver.passPriorityUntil(Step.END)
+        // The three independently delayed returns trigger together.  Their controller
+        // chooses their order before any is placed on the stack (CR 603.3b).
+        (driver.pendingDecision is com.wingedsheep.engine.core.OrderTriggeredAbilitiesDecision) shouldBe true
+        driver.submitTriggerOrderInListedOrder() shouldBe true
         driver.stackSize shouldBe 3
-        repeat(3) { driver.bothPass() }
+        var guard = 0
+        while ((driver.stackSize > 0 || driver.pendingDecision is com.wingedsheep.engine.core.OrderTriggeredAbilitiesDecision) && guard++ < 10) {
+            if (!driver.submitTriggerOrderInListedOrder()) driver.bothPass()
+        }
         driver.stackSize shouldBe 0
 
         val returnedMine = driver.getCreatures(me)

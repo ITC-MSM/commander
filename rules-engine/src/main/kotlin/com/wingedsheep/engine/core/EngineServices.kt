@@ -67,6 +67,9 @@ class EngineServices(
      * makes it safe for it to stop being so.
      */
     val replacementEffectProcessor = ReplacementEffectProcessor()
+    init {
+        ZoneTransitionService.replacementEffectProcessor = replacementEffectProcessor
+    }
     val effectExecutorRegistry = EffectExecutorRegistry(
         cardRegistry = cardRegistry,
         tokenArtRegistry = tokenArtRegistry,
@@ -83,7 +86,14 @@ class EngineServices(
         effectHandler = EffectHandler(cardRegistry = cardRegistry, registry = effectExecutorRegistry),
         cardRegistry = cardRegistry
     )
-    val triggerProcessor = TriggerProcessor(cardRegistry = cardRegistry, stackResolver = stackResolver)
+    val triggerProcessor = TriggerProcessor(
+        cardRegistry = cardRegistry,
+        stackResolver = stackResolver,
+        triggerDetector = triggerDetector,
+    )
+    init {
+        ZoneTransitionService.effectExecutorRegistry = effectExecutorRegistry
+    }
     val manaSolver = ManaSolver(cardRegistry)
     val costCalculator = CostCalculator(cardRegistry)
     val grantedKeywordResolver = GrantedKeywordResolver(cardRegistry)

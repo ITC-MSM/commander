@@ -72,6 +72,9 @@ class TaureanMaulerScenarioTest : FunSpec({
 
         d.castSpell(p2, d.putCardInHand(p2, "Zap")).error shouldBe null
         resolveStack(d)
+        // Once the stack is empty the active player receives priority.  Hand it back to
+        // the opponent before its second instant-speed spell.
+        d.passPriority(p1)
         d.castSpell(p2, d.putCardInHand(p2, "Zap")).error shouldBe null
         resolveStack(d)
 

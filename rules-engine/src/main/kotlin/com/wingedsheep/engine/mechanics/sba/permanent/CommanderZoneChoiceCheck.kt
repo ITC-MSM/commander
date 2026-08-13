@@ -14,14 +14,12 @@ import com.wingedsheep.sdk.core.Format
 import com.wingedsheep.sdk.core.Zone
 
 /**
- * CR 903.9a — if a commander is in a graveyard or in exile (and, by the modern Commander
- * rules committee extension, in its owner's hand or library) and that object was put into
+ * CR 903.9a — if a commander is in a graveyard or in exile and that object was put into
  * that zone since the last time state-based actions were checked, its owner may put it
  * into the command zone.
  *
- * Implementation: when the format enables commanders *without* the
- * [Format.alwaysDivertToCommand] shortcut, pause the SBA loop with a yes/no
- * decision the first time the SBA sees a given commander outside the command zone. After
+ * Implementation: pause the SBA loop with a yes/no decision the first time it sees a given
+ * commander in one of those zones. After
  * the prompt (yes or no) we attach [CommanderZoneChoiceAskedComponent] so the SBA does
  * not re-ask on the next iteration; [ZoneTransitionService.moveToZone] strips that marker
  * whenever the commander next changes zones, restoring the "fresh question on next entry"
@@ -39,10 +37,6 @@ class CommanderZoneChoiceCheck(
     override fun check(state: GameState): ExecutionResult {
         val format = state.format
         if (!format.usesCommanders) return ExecutionResult.success(state)
-        // alwaysDivertToCommand sends the commander to the command zone synchronously via the
-        // zone-change replacement, so it never sits in a non-command zone for this SBA to see.
-        if (format.alwaysDivertToCommand) return ExecutionResult.success(state)
-
         for (playerId in state.turnOrder) {
             for ((entityId, commander) in state.findEntitiesWith<CommanderComponent>()) {
                 if (commander.ownerId != playerId) continue
@@ -87,18 +81,11 @@ class CommanderZoneChoiceCheck(
     }
 
     companion object {
-        private val CHOICE_ZONES = setOf(
-            Zone.GRAVEYARD,
-            Zone.EXILE,
-            Zone.HAND,
-            Zone.LIBRARY,
-        )
+        private val CHOICE_ZONES = setOf(Zone.GRAVEYARD, Zone.EXILE)
 
         private fun zoneLabelFor(zone: Zone): String = when (zone) {
             Zone.GRAVEYARD -> "the graveyard"
             Zone.EXILE -> "exile"
-            Zone.HAND -> "your hand"
-            Zone.LIBRARY -> "your library"
             else -> zone.displayName
         }
     }

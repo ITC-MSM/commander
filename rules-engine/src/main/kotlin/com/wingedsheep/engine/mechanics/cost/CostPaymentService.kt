@@ -18,7 +18,6 @@ import com.wingedsheep.engine.handlers.DecisionHandler
 import com.wingedsheep.engine.handlers.PredicateContext
 import com.wingedsheep.engine.handlers.PredicateEvaluator
 import com.wingedsheep.engine.handlers.effects.BattlefieldFilterUtils
-import com.wingedsheep.engine.handlers.effects.ZoneMovementUtils
 import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.handlers.effects.library.MillAmountModifier
 import com.wingedsheep.engine.handlers.effects.life.LifePaymentService
@@ -344,7 +343,13 @@ class CostPaymentService(private val services: EngineServices) {
             is CostAtom.Mill -> millTop(state, payerId, atom.count)
             is CostAtom.RevealFromHand -> revealSelected(state, payerId, selected.keys.toList())
             is CostAtom.Sacrifice -> sacrificeSelected(state, payerId, selected.keys.toList())
-            is CostAtom.ReturnToHand -> returnSelected(state, selected.keys.toList())
+            // This payment can pause for a Command-zone replacement.  The
+            // continuation resumer owns the pause-aware multi-card loop so it
+            // can retain the original payment continuation below the
+            // replacement decision.  Calling the old synchronous helper here
+            // would silently bypass that choice.
+            is CostAtom.ReturnToHand ->
+                error("ReturnToHand payment must be resumed through CostPaymentContinuationResumer")
             is CostAtom.TapPermanents -> tapSelected(state, selected.keys.toList())
             // Not offered as a PayCost (canAfford reports it unaffordable) — an activated-ability
             // cost is paid through CostHandler.payAtom, which owns the counter-placement path.
@@ -588,17 +593,15 @@ class CostPaymentService(private val services: EngineServices) {
         return CostPaymentExecution(newState, events, success = true)
     }
 
-    private fun returnSelected(state: GameState, selected: List<EntityId>): CostPaymentExecution {
-        var newState = state
-        val events = mutableListOf<GameEvent>()
-        for (permanentId in selected) {
-            val result = ZoneMovementUtils.movePermanentToZone(newState, permanentId, Zone.HAND)
-            if (result.error != null) return CostPaymentExecution(state, emptyList(), success = false)
-            newState = result.state
-            events.addAll(result.events)
-        }
-        return CostPaymentExecution(newState, events, success = true)
-    }
+    /**
+     * Attempt one return-to-hand payment move through the generic replacement
+     * pipeline.  The caller owns any remaining selected permanents and must
+     * resume them only after a paused attempt's physical move has completed.
+     */
+    fun attemptReturnToHandPayment(
+        state: GameState,
+        permanentId: EntityId
+    ) = ZoneTransitionService.attemptMoveToZone(state, permanentId, Zone.HAND)
 
     private fun tapSelected(state: GameState, selected: List<EntityId>): CostPaymentExecution {
         var newState = state

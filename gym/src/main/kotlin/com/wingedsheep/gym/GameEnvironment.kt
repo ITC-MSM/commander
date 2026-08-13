@@ -107,6 +107,10 @@ class GameEnvironment private constructor(
     var stepCount: Int = 0
         private set
 
+    /** Seed actually used by the latest [reset], including an entropy-generated seed. */
+    var initializationSeed: Long? = null
+        private set
+
     // =========================================================================
     // Queries
     // =========================================================================
@@ -142,6 +146,7 @@ class GameEnvironment private constructor(
         val initResult = initializer.initializeGame(config)
         state = initResult.state
         playerIds = initResult.playerIds
+        initializationSeed = initResult.seed
         events = initResult.events
         lastStepEvents = initResult.events
         stepCount = 0
@@ -230,6 +235,7 @@ class GameEnvironment private constructor(
         forked.events = emptyList() // forked environments start with clean event history
         forked.lastStepEvents = emptyList()
         forked.stepCount = stepCount
+        forked.initializationSeed = initializationSeed
         return forked
     }
 
@@ -250,6 +256,7 @@ class GameEnvironment private constructor(
         this.events = emptyList()
         this.lastStepEvents = emptyList()
         this.stepCount = stepCount
+        this.initializationSeed = null
     }
 
     /**
@@ -357,10 +364,12 @@ class GameEnvironment private constructor(
          */
         fun create(
             cardRegistry: CardRegistry,
-            evaluator: BoardEvaluator = defaultEvaluator()
+            evaluator: BoardEvaluator = defaultEvaluator(),
+            /** Optional diagnostics hook for fuzzing and simulation; disabled in ordinary play. */
+            observer: ActionProcessorObserver? = null,
         ): GameEnvironment {
             val services = EngineServices(cardRegistry)
-            val processor = ActionProcessor(services, computeUndo = false)
+            val processor = ActionProcessor(services, computeUndo = false, observer = observer)
             val enumerator = LegalActionEnumerator.create(cardRegistry)
             val simulator = GameSimulator(cardRegistry, processor, enumerator)
             return GameEnvironment(cardRegistry, processor, enumerator, evaluator, simulator)

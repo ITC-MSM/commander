@@ -6,7 +6,6 @@ import com.wingedsheep.engine.handlers.PredicateContext
 import com.wingedsheep.engine.handlers.PredicateEvaluator
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.handlers.effects.ReplacementEffectUtils
-import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.battlefield.CountersComponent
 import com.wingedsheep.engine.state.components.battlefield.ReplacementEffectSourceComponent
@@ -117,12 +116,26 @@ class ExploreEffectExecutor(
         )
 
         return if (topCardComponent.typeLine.isLand) {
-            // Land: move directly to hand
-            val transition = ZoneTransitionService.moveToZone(state, topCardId, Zone.HAND)
-            EffectResult.success(
-                transition.state,
-                listOf(revealEvent) + transition.events + exploredEvent(true)
+            // Land: move to hand, then announce the explore.  This used to make a
+            // synchronous zone transition here.  A commander in the library may instead
+            // be sent to the command zone by its owner's optional pre-move replacement,
+            // which pauses.  Running both steps as a composite preserves the required
+            // post-move event below that replacement continuation (CR 903.9b).
+            val moved = recurse(
+                state,
+                CompositeEffect(listOf(
+                    MoveToZoneEffect(
+                        target = EffectTarget.SpecificEntity(topCardId),
+                        destination = Zone.HAND
+                    ),
+                    EmitExploredEventEffect(
+                        target = EffectTarget.SpecificEntity(exploringCreatureId),
+                        revealedCardWasLand = true
+                    )
+                )),
+                context
             )
+            moved.copy(events = listOf(revealEvent) + moved.events)
         } else {
             // Non-land: mark card revealed to all players, add +1/+1 counter, then ask:
             // back to top of library (stays visible) or graveyard?

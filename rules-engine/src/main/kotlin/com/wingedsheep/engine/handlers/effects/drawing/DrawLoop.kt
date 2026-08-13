@@ -110,6 +110,47 @@ object DrawLoop {
             newState = drawOneResult.state
             perCardEvents.addAll(drawOneResult.events)
 
+            if (drawOneResult.pendingDecision != null) {
+                // The top card's library -> hand move paused for a Commander
+                // 903.9b (or competing CR 616) replacement choice. Put the
+                // bookkeeping frame below the replacement's continuation so
+                // it observes the final destination, then resume the tail of
+                // this already-announced draw instruction. The current draw
+                // is consumed whether it ends in hand or command; only the
+                // bookkeeping frame decides whether it was actually drawn.
+                if (drawOneResult.drawnCardId != null) drawnCards.add(drawOneResult.drawnCardId)
+                val (replacementContinuation, withoutReplacement) = newState.popContinuation()
+                check(replacementContinuation != null) {
+                    "A paused draw zone transition must provide a replacement continuation"
+                }
+                newState = withoutReplacement
+                    .pushContinuation(
+                        com.wingedsheep.engine.core.DrawReplacementRemainingDrawsContinuation(
+                            drawingPlayerId = playerId,
+                            remainingDraws = remaining - 1,
+                            isDrawStep = isDrawStep,
+                            announcementApplied = true
+                        )
+                    )
+                    .let { stateAfterRemaining ->
+                        if (drawOneResult.needsPostZoneChangeBookkeeping) {
+                            stateAfterRemaining.pushContinuation(
+                                com.wingedsheep.engine.core.DrawCardAfterZoneChangeContinuation(
+                                    drawingPlayerId = playerId,
+                                    cardId = drawOneResult.drawnCardId!!
+                                )
+                            )
+                        } else {
+                            stateAfterRemaining
+                        }
+                    }
+                    .pushContinuation(replacementContinuation)
+                return buildPausedResult(
+                    newState, playerId, drawnCards, perCardEvents,
+                    EffectResult.paused(newState, drawOneResult.pendingDecision)
+                )
+            }
+
             if (drawOneResult.failed) {
                 // Empty library — flush aggregate event for prior draws and stop here.
                 return buildSuccessResult(newState, playerId, drawnCards, perCardEvents)

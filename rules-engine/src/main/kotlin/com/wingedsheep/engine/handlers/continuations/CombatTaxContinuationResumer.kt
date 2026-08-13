@@ -2,14 +2,18 @@ package com.wingedsheep.engine.handlers.continuations
 
 import com.wingedsheep.engine.core.AttackTaxManaSelectionContinuation
 import com.wingedsheep.engine.core.BlockTaxManaSelectionContinuation
+import com.wingedsheep.engine.core.BlockDeclarationSbaBoundaryContinuation
+import com.wingedsheep.engine.core.BlockDeclarationPostPlacementContinuation
 import com.wingedsheep.engine.core.DecisionResponse
 import com.wingedsheep.engine.core.ExecutionResult
 import com.wingedsheep.engine.core.GameEvent
 import com.wingedsheep.engine.core.ManaSourceOption
 import com.wingedsheep.engine.core.ManaSourcesSelectedResponse
+import com.wingedsheep.engine.core.PostDecisionHandling
 import com.wingedsheep.engine.core.tap
 import com.wingedsheep.engine.mechanics.mana.ManaPool
 import com.wingedsheep.engine.mechanics.mana.ManaSolver
+import com.wingedsheep.engine.handlers.actions.combat.BlockDeclarationFinalizer
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.player.ManaPoolComponent
 import com.wingedsheep.sdk.core.ManaCost
@@ -35,7 +39,7 @@ import com.wingedsheep.sdk.model.EntityId
  */
 class CombatTaxContinuationResumer(
     private val services: com.wingedsheep.engine.core.EngineServices
-) : ContinuationResumerModule {
+) : ContinuationResumerModule, AutoResumerModule {
 
     override fun resumers(): List<ContinuationResumer<*>> = listOf(
         resumer(AttackTaxManaSelectionContinuation::class) { state, continuation, response, _ ->
@@ -43,6 +47,31 @@ class CombatTaxContinuationResumer(
         },
         resumer(BlockTaxManaSelectionContinuation::class) { state, continuation, response, _ ->
             resumeBlockTaxSelection(state, continuation, response)
+        },
+    )
+
+    override fun autoResumers(): List<AutoResumer<*>> = listOf(
+        autoResumer(BlockDeclarationSbaBoundaryContinuation::class) { state, continuation, events, _ ->
+            BlockDeclarationFinalizer.resumeAfterSbaDecision(
+                state = state,
+                continuation = continuation,
+                precedingSbaEvents = events,
+                triggerDetector = services.triggerDetector,
+                triggerProcessor = services.triggerProcessor,
+                sbaChecker = services.sbaChecker,
+                stateTriggerPoller = services.stateTriggerPoller,
+            )
+        },
+        autoResumer(BlockDeclarationPostPlacementContinuation::class) { state, continuation, events, _ ->
+            BlockDeclarationFinalizer.resumePostPlacementBoundary(
+                state = state,
+                continuation = continuation,
+                precedingEvents = events,
+                triggerDetector = services.triggerDetector,
+                triggerProcessor = services.triggerProcessor,
+                sbaChecker = services.sbaChecker,
+                stateTriggerPoller = services.stateTriggerPoller,
+            )
         },
     )
 
@@ -82,17 +111,38 @@ class CombatTaxContinuationResumer(
             return ExecutionResult.error(state, "Expected mana sources selected response for block tax")
         }
         if (response.isDecline(floatingCovers(state, continuation.blockingPlayer, continuation.manaCost))) {
-            return ExecutionResult.success(state)
+            // Declining cancels this proposed declaration. The same defender still owns the
+            // turn-based declaration action; this is not a priority/SBA boundary.
+            return ExecutionResult.success(state).copy(
+                postDecisionHandling = PostDecisionHandling.RETURN_AS_IS,
+            )
         }
 
         val paid = payTax(state, continuation.blockingPlayer, continuation.manaCost, continuation.availableSources, response)
             ?: return ExecutionResult.error(state, "Cannot pay block tax of ${continuation.manaCost}")
 
-        return services.combatManager.blockPhase.commitBlockDeclaration(
+        val committed = services.combatManager.blockPhase.commitBlockDeclaration(
             state = paid.state,
             blockingPlayer = continuation.blockingPlayer,
             blockers = continuation.blockers,
             taxEvents = paid.events,
+        )
+        if (!committed.isSuccess) return committed
+        if (committed.newState.sharedTurnTeam(continuation.blockingPlayer).size > 1) {
+            return BlockDeclarationFinalizer.finishSharedTurnTeam(
+                committed.newState,
+                committed.events,
+                services.triggerDetector,
+                services.triggerProcessor,
+            )
+        }
+        return BlockDeclarationFinalizer.finish(
+            committed.newState,
+            committed.events,
+            services.triggerDetector,
+            services.triggerProcessor,
+            services.sbaChecker,
+            services.stateTriggerPoller,
         )
     }
 

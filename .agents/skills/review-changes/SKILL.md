@@ -143,6 +143,11 @@ Consult the relevant doc when the change touches an area:
 
 ## 4. MTG rules accuracy — verify every cited rule
 
+For any claimed behavioural defect or high-risk interaction, read and apply
+[`docs/rules-validation-protocol.md`](../../../docs/rules-validation-protocol.md) in addition to this
+review. Confirm the author supplied the blind rule-oracle result, legal interaction trace,
+classification, reproduction, and the required independent sign-offs; a green test alone is not enough.
+
 Whenever the diff (code, comments, commit message, or PR body) cites a CR rule number,
 **verify it online** before accepting it:
 

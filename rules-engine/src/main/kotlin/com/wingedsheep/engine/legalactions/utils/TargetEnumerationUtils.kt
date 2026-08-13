@@ -18,6 +18,7 @@ import com.wingedsheep.engine.state.components.player.PlayerShroudComponent
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
+import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.filters.unified.TargetFilter
 import com.wingedsheep.sdk.scripting.predicates.CardPredicate
 import com.wingedsheep.sdk.scripting.predicates.ControllerPredicate
@@ -38,33 +39,33 @@ class TargetEnumerationUtils(
         sourceId: EntityId? = null
     ): List<EntityId> {
         return when (requirement) {
-            is TargetPlayer -> state.turnOrder.filter { state.hasEntity(it) && !playerHasShroud(state, it) &&
+            is TargetPlayer -> state.activePlayers.filter { state.hasEntity(it) && !playerHasShroud(state, it) &&
                 !playerHasHexproofAgainst(state, it, playerId) && !playerHasProtectionFrom(state, it, sourceId, playerId) &&
                 PlayerTargetRestriction.isSatisfied(state, requirement.restriction, it, playerId, sourceId) }
-            is TargetOpponent -> state.turnOrder.filter { it != playerId && state.hasEntity(it) && !playerHasShroud(state, it) &&
+            is TargetOpponent -> state.activePlayers.filter { it != playerId && state.hasEntity(it) && !playerHasShroud(state, it) &&
                 !playerHasHexproof(state, it) && !playerHasProtectionFrom(state, it, sourceId, playerId) &&
                 PlayerTargetRestriction.isSatisfied(state, requirement.restriction, it, playerId, sourceId) }
             is AnyTarget -> {
                 val creatures = findValidPermanentTargets(state, playerId, TargetFilter.Creature, sourceId)
                 val planeswalkers = findValidPermanentTargets(state, playerId, TargetFilter.Planeswalker, sourceId)
-                val players = state.turnOrder.filter { state.hasEntity(it) && !playerHasShroud(state, it) &&
+                val players = state.activePlayers.filter { state.hasEntity(it) && !playerHasShroud(state, it) &&
                     !playerHasHexproofAgainst(state, it, playerId) && !playerHasProtectionFrom(state, it, sourceId, playerId) }
                 (creatures + planeswalkers).distinct() + players
             }
             is TargetCreatureOrPlayer -> {
                 val creatures = findValidPermanentTargets(state, playerId, TargetFilter.Creature, sourceId)
-                val players = state.turnOrder.filter { state.hasEntity(it) && !playerHasShroud(state, it) &&
+                val players = state.activePlayers.filter { state.hasEntity(it) && !playerHasShroud(state, it) &&
                     !playerHasHexproofAgainst(state, it, playerId) && !playerHasProtectionFrom(state, it, sourceId, playerId) }
                 creatures + players
             }
             is TargetPlayerOrPlaneswalker -> {
-                val players = state.turnOrder.filter { state.hasEntity(it) && !playerHasShroud(state, it) &&
+                val players = state.activePlayers.filter { state.hasEntity(it) && !playerHasShroud(state, it) &&
                     !playerHasHexproofAgainst(state, it, playerId) && !playerHasProtectionFrom(state, it, sourceId, playerId) }
                 val planeswalkers = findValidPermanentTargets(state, playerId, TargetFilter.Planeswalker, sourceId)
                 players + planeswalkers
             }
             is TargetOpponentOrPlaneswalker -> {
-                val opponents = state.turnOrder.filter { it != playerId && state.hasEntity(it) && !playerHasShroud(state, it) &&
+                val opponents = state.activePlayers.filter { it != playerId && state.hasEntity(it) && !playerHasShroud(state, it) &&
                     !playerHasHexproof(state, it) && !playerHasProtectionFrom(state, it, sourceId, playerId) }
                 val planeswalkers = findValidPermanentTargets(state, playerId, TargetFilter.Planeswalker, sourceId)
                 opponents + planeswalkers
@@ -201,7 +202,11 @@ class TargetEnumerationUtils(
             Zone.BATTLEFIELD -> findValidPermanentTargets(state, playerId, filter, sourceId)
             Zone.GRAVEYARD -> findValidGraveyardTargets(state, playerId, filter, sourceId)
             Zone.EXILE -> findValidExileTargets(state, playerId, filter, sourceId)
-            Zone.STACK -> findValidSpellTargets(state, playerId, filter)
+            // `TargetObject` is also the representation used by Stifle-style
+            // "target activated or triggered ability" effects.  Restricting this
+            // path to spells made those abilities invisible to legal-action
+            // enumeration, so the client quite correctly hid the cast action.
+            Zone.STACK -> findValidStackTargets(state, playerId, filter)
             else -> emptyList()
         }
     }
@@ -246,6 +251,45 @@ class TargetEnumerationUtils(
             state.isSpellOnStack(spellId) &&
                 predicateEvaluator.matches(state, state.projectedState, spellId, filter.baseFilter, context)
         }
+    }
+
+    /**
+     * Finds stack objects matching [filter].  A normal "target spell" filter remains
+     * spell-only; abilities are included only when the filter explicitly names an
+     * activated or triggered ability predicate.  This mirrors [TargetFinder], which
+     * is the authoritative target-validation path used after a player selects a
+     * target.
+     */
+    private fun findValidStackTargets(
+        state: GameState,
+        playerId: EntityId,
+        filter: TargetFilter
+    ): List<EntityId> {
+        val context = PredicateContext(controllerId = playerId)
+        val abilitiesAllowed = filterPermitsAbilitiesOnStack(filter.baseFilter)
+        return state.stack.filter { stackId ->
+            (!state.isSpellOnStack(stackId) && !abilitiesAllowed).not() &&
+                predicateEvaluator.matches(state, state.projectedState, stackId, filter.baseFilter, context)
+        }
+    }
+
+    /**
+     * Whether a stack filter explicitly permits abilities rather than merely spells.
+     * `Any` on the stack is the common "target spell" shape, so it must not silently
+     * include activated or triggered abilities.
+     */
+    private fun filterPermitsAbilitiesOnStack(filter: GameObjectFilter): Boolean {
+        fun predicateNamesAbility(predicate: CardPredicate): Boolean = when (predicate) {
+            CardPredicate.IsActivatedOrTriggeredAbility,
+            CardPredicate.IsTriggeredAbility,
+            CardPredicate.IsActivatedAbility -> true
+            is CardPredicate.Or -> predicate.predicates.any(::predicateNamesAbility)
+            is CardPredicate.And -> predicate.predicates.any(::predicateNamesAbility)
+            is CardPredicate.Not -> predicateNamesAbility(predicate.predicate)
+            else -> false
+        }
+        return filter.cardPredicates.any(::predicateNamesAbility) ||
+            filter.anyOf.any(::filterPermitsAbilitiesOnStack)
     }
 
     fun getTargetZone(requirement: TargetRequirement): String? {

@@ -122,9 +122,6 @@ class DiscoverExecutor(
         if (discoveredCard == null) {
             // Library exhausted without exiling a nonland card with mana value ≤ N — no castable
             // stopping card, so no may-cast/hand decision; every exiled card is bottom-randomized.
-            val bottomEvents = CascadeExecutor.bottomRandomize(currentState, controllerId, exiledCards) { newState ->
-                currentState = newState
-            }
             // CR 701.57c: the final card exiled is still the "discovered card" if its mana value is
             // ≤ N (a land at the bottom of the library has mana value 0). When so, a thenEffect keyed
             // on the discovered card still runs (Hit the Mother Lode decking itself out on lands still
@@ -136,19 +133,33 @@ class DiscoverExecutor(
                 ?.let { mapOf(it to listOf(exiledCards.last())) }
                 ?: emptyMap()
             val tail = CompositeEffect(listOfNotNull(runThen, emitDiscovered))
-            val thenResult = runEffect(
+            val tailContext = EffectContext(
+                sourceId = context.sourceId,
+                controllerId = controllerId,
+                pipeline = PipelineState.EMPTY.copy(storedCollections = discoveredCollections)
+            )
+            val bottom = CascadeExecutor.bottomRandomizeReplacementAware(
                 currentState,
-                tail,
-                EffectContext(
-                    sourceId = context.sourceId,
-                    controllerId = controllerId,
-                    pipeline = PipelineState.EMPTY.copy(storedCollections = discoveredCollections)
+                controllerId,
+                exiledCards,
+                com.wingedsheep.engine.core.EffectContinuation(
+                    decisionId = "pending",
+                    remainingEffects = listOf(tail),
+                    effectContext = tailContext
                 )
             )
+            if (bottom.isPaused) {
+                return EffectResult.paused(bottom.state, bottom.pendingDecision!!, allEvents + bottom.events)
+            }
+            val thenResult = runEffect(
+                bottom.state,
+                tail,
+                tailContext
+            )
             return if (thenResult.isPaused) {
-                EffectResult.paused(thenResult.state, thenResult.pendingDecision!!, allEvents + bottomEvents + thenResult.events)
+                EffectResult.paused(thenResult.state, thenResult.pendingDecision!!, allEvents + bottom.events + thenResult.events)
             } else {
-                EffectResult.success(thenResult.state, allEvents + bottomEvents + thenResult.events)
+                EffectResult.success(thenResult.state, allEvents + bottom.events + thenResult.events)
             }
         }
 

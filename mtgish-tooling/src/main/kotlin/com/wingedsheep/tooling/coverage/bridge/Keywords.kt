@@ -8,6 +8,11 @@ internal fun BridgeBuilder.keywords() {
     keyword("Vigilance", "VIGILANCE")
     keyword("Reach", "REACH")
     keyword("Defender", "DEFENDER")
+    keyword("Intimidate", "INTIMIDATE")
+    // Afflict N (CR 702.130) is parameterized: the count must be retained as
+    // KeywordAbility.Numeric(Keyword.AFFLICT, N), never silently rendered as a bare keyword.
+    // The engine derives one becomes-blocked trigger per instance and addresses Player.DefendingPlayer.
+    supported("Afflict", "keyword ability: Afflict N -> KeywordAbility.afflict(N); defender loses N life when this becomes blocked (CR 702.130)")
     // Daybound / Nightbound (CR 702.145, Innistrad: Crimson Vow). Bare card keywords the SDK models as
     // rules-inert `Keyword` enum members — all behaviour (enters-transformed, the designation-change
     // cascade, the can't-transform-except-via-keyword rule) is derived off projected state by the
@@ -19,12 +24,6 @@ internal fun BridgeBuilder.keywords() {
     // so pinning the capability doesn't imply an AUTO render of the whole card.
     keyword("Daybound", "DAYBOUND")
     keyword("Nightbound", "NIGHTBOUND")
-    // Intimidate (CR 702.13) — `Keyword.INTIMIDATE` exists in the SDK enum, so the PascalCase→enum
-    // auto-resolve would accept it, but the rules engine has NO block-evasion handling for it
-    // (BlockEvasionRules covers flying/fear/shadow/horsemanship/landwalk only). A bare or granted
-    // intimidate would compile, lint, and snapshot fine while doing nothing in combat — a silent
-    // no-op. Pin it blocking until the engine implements it; then delete this line.
-    unsupported("Intimidate", "Keyword.INTIMIDATE is enum-only — no BlockEvasionRules handling; implement intimidate block evasion (CR 702.13) to unlock")
     // "Hexproof from [quality]" (CR 702.11b) — a PARAMETERIZED keyword ability, so `supported` rather
     // than `keyword`: a bare `keywords(Keyword.HEXPROOF)` stamp would drop the quality and silently
     // widen the card to full hexproof. Modelled as

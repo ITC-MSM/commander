@@ -1,5 +1,6 @@
 package com.wingedsheep.engine.core
 
+import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.effects.SelectionRestriction
 import kotlinx.serialization.Serializable
@@ -62,7 +63,30 @@ data class MoveCollectionOrderContinuation(
     val cards: List<EntityId>,
     val destinationZone: com.wingedsheep.sdk.core.Zone,
     val destinationPlayerId: EntityId,
-    val placement: com.wingedsheep.sdk.scripting.effects.ZonePlacement = com.wingedsheep.sdk.scripting.effects.ZonePlacement.Top
+    val placement: com.wingedsheep.sdk.scripting.effects.ZonePlacement = com.wingedsheep.sdk.scripting.effects.ZonePlacement.Top,
+    /** Match MoveCollection's known-position library reveal bookkeeping after the order is final. */
+    val revealed: Boolean = false,
+    val revealToSelf: Boolean = true
+) : ContinuationFrame
+
+/**
+ * Automatic remainder of an ordered library move after a replaceable card move paused.
+ *
+ * The replacement continuation is placed above this frame. Once CR 616 has selected a
+ * replacement and the physical move completes, this frame continues with the next card
+ * without re-asking for the player's chosen order.
+ */
+@Serializable
+data class MoveCollectionOrderedLibraryRemainderContinuation(
+    override val decisionId: String = "move-collection-ordered-library-remainder",
+    val playerId: EntityId,
+    val sourceName: String?,
+    val orderedCards: List<EntityId>,
+    val remainingMoveOrder: List<EntityId>,
+    val destinationPlayerId: EntityId,
+    val placement: com.wingedsheep.sdk.scripting.effects.ZonePlacement,
+    val revealed: Boolean,
+    val revealToSelf: Boolean
 ) : ContinuationFrame
 
 /**
@@ -255,6 +279,81 @@ data class PutOnTopOrBottomContinuation(
 ) : ContinuationFrame
 
 /**
+ * Remainder of a [com.wingedsheep.sdk.scripting.effects.MoveCollectionEffect] after a
+ * Commander 903.9b replacement paused one member of the collection.  It deliberately
+ * sits beneath the generic replacement frames: the selected zone change is performed
+ * first, then this frame resumes the untouched tail and performs the collection-wide
+ * bookkeeping (shuffle, reveals, storeMovedAs, etc.) exactly once.
+ */
+@Serializable
+data class MoveCollectionCommanderRemainderContinuation(
+    override val decisionId: String = "move-collection-commander-remainder",
+    val effect: com.wingedsheep.sdk.scripting.effects.MoveCollectionEffect,
+    val context: EffectContext,
+    val allCards: List<EntityId>,
+    val remainingCards: List<EntityId>,
+    val pausedCardId: EntityId,
+    val pausedCardLibraryOwnerId: EntityId?,
+    val destinationPlayerId: EntityId,
+    val priorEvents: List<GameEvent> = emptyList(),
+    val movedIds: List<EntityId> = emptyList(),
+    val librariesReceivingCards: List<EntityId> = emptyList(),
+    val originalCardNames: Map<EntityId, String> = emptyMap(),
+    val originalSourceZones: Map<EntityId, com.wingedsheep.sdk.core.Zone> = emptyMap(),
+    val sacrificedSnapshots: List<com.wingedsheep.engine.state.components.stack.EntitySnapshot> = emptyList()
+) : ContinuationFrame
+
+/**
+ * Resumes a [com.wingedsheep.sdk.scripting.effects.ExileFromTopRepeatingEffect]
+ * after its matching card's replacement-aware move to hand has settled.
+ *
+ * The matching card can be a commander.  CR 903.9b therefore permits its owner
+ * to replace the hand move with a command-zone move, which pauses the enclosing
+ * repeat loop.  This frame is deliberately below the generic replacement frames:
+ * after the final zone transition it determines whether the card actually reached
+ * hand, continues the repeat predicate from the captured mana value, and applies
+ * the aggregate damage only when the entire instruction is over.
+ */
+@Serializable
+data class ExileFromTopRepeatingContinuation(
+    override val decisionId: String = "pending",
+    val effect: com.wingedsheep.sdk.scripting.effects.ExileFromTopRepeatingEffect,
+    val effectContext: EffectContext,
+    val cardsPutIntoHandBefore: Int,
+    val matchingCardId: EntityId,
+    val matchingCardManaValue: Int
+) : ContinuationFrame
+
+/**
+ * Completes the public-information bookkeeping after a replacement-aware
+ * library move selected by [PutOnTopOrBottomContinuation].
+ *
+ * This frame is deliberately below the replacement decision/perform frames:
+ * the final destination is not known until the Commander hand/library
+ * replacement has been accepted or declined.  A commander redirected to the
+ * command zone must not be revealed as a library card.
+ */
+@Serializable
+data class RevealLibraryMoveAfterReplacementContinuation(
+    override val decisionId: String = "reveal-library-move-after-replacement",
+    val cardId: EntityId,
+    val ownerId: EntityId
+) : ContinuationFrame
+
+/**
+ * Completes a Discover hand branch after a Commander hand replacement has
+ * settled.  Discover's may-cast decision has already been consumed when the
+ * replacement prompt appears, so its follow-up (including the discovered
+ * event) must be kept explicitly below the replacement perform frame.
+ */
+@Serializable
+data class DiscoverHandMoveAfterReplacementContinuation(
+    override val decisionId: String = "discover-hand-move-after-replacement",
+    val discover: DiscoverMayCastContinuation,
+    val discoveredCollections: Map<String, List<EntityId>> = emptyMap()
+) : ContinuationFrame
+
+/**
  * Resume after player chooses a card to return from a linked exile.
  *
  * Used for effects like Dimensional Breach's upkeep trigger: the active player
@@ -339,6 +438,37 @@ data class DiscoverMayCastContinuation(
     val discoveredCardId: EntityId,
     val storeDiscoveredAs: String? = null,
     val thenEffect: com.wingedsheep.sdk.scripting.effects.Effect? = null,
+) : ContinuationFrame
+
+/**
+ * Automatic, replacement-aware remainder of putting a randomized group of
+ * exiled cards onto the bottom of a library.
+ *
+ * Cascade and discover randomize this group before any cards move.  Keeping the
+ * resulting order in a continuation is essential: a Commander replacement may
+ * pause before one card moves, but resuming must neither shuffle again nor skip
+ * the remaining cards.
+ */
+@Serializable
+data class BottomLibraryMoveRemainderContinuation(
+    override val decisionId: String = "bottom-library-move-remainder",
+    val playerId: EntityId,
+    val remainingMoveOrder: List<EntityId>
+) : ContinuationFrame
+
+/** Continue Cascade's accepted free-cast branch after its non-hit cards finish bottoming. */
+@Serializable
+data class CascadeMayCastAfterBottomContinuation(
+    override val decisionId: String = "cascade-may-cast-after-bottom",
+    val cascade: CascadeMayCastContinuation
+) : ContinuationFrame
+
+/** Continue Discover's selected branch after its non-hit cards finish bottoming. */
+@Serializable
+data class DiscoverMayCastAfterBottomContinuation(
+    override val decisionId: String = "discover-may-cast-after-bottom",
+    val discover: DiscoverMayCastContinuation,
+    val castForFree: Boolean
 ) : ContinuationFrame
 
 /**

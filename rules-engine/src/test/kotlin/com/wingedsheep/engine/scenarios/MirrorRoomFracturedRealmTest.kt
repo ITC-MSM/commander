@@ -66,6 +66,7 @@ class MirrorRoomFracturedRealmTest : FunSpec({
         d.giveColorlessMana(p1, 2)
         d.submitSuccess(CastSpell(p1, roomId, faceIndex = 0))
         d.bothPass()
+        d.submitTriggerOrderInListedOrder()
 
         val room = d.state.getEntity(roomId)?.get<RoomComponent>()
         room shouldNotBe null
@@ -74,6 +75,7 @@ class MirrorRoomFracturedRealmTest : FunSpec({
         // The "When you unlock this door" trigger asks for its target creature.
         d.submitTargetSelection(p1, listOf(bear))
         d.bothPass()
+        d.submitTriggerOrderInListedOrder()
 
         // Two Grizzly Bears now: the original plus a token copy.
         val bears = d.state.getBattlefield().filter {
@@ -107,8 +109,8 @@ class MirrorRoomFracturedRealmTest : FunSpec({
         val before = d.getHandSize(p1)
         d.castSpell(p1, creature).isSuccess shouldBe true
         var guard = 0
-        while (d.state.stack.isNotEmpty() && guard++ < 20) {
-            d.bothPass()
+        while ((d.state.stack.isNotEmpty() || d.submitTriggerOrderInListedOrder()) && guard++ < 20) {
+            if (d.state.stack.isNotEmpty()) d.bothPass()
         }
 
         // Casting moved the card from hand, then two ETB draws (original + additional firing):

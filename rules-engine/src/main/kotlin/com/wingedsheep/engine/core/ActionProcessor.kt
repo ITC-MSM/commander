@@ -41,7 +41,8 @@ data class ProcessedAction(
  */
 class ActionProcessor(
     private val services: EngineServices,
-    private val computeUndo: Boolean = true
+    private val computeUndo: Boolean = true,
+    private val observer: ActionProcessorObserver? = null
 ) {
     /**
      * Backward-compatible constructor: wraps a CardRegistry in EngineServices.
@@ -75,13 +76,13 @@ class ActionProcessor(
         // Basic validation that applies to all actions
         val basicError = validateBasics(state, action)
         if (basicError != null) {
-            return ProcessedAction(ExecutionResult.error(state, basicError))
+            return observe(state, action, ProcessedAction(ExecutionResult.error(state, basicError)))
         }
 
         // Delegate to the handler registry for action-specific validation
         val validationError = registry.validate(state, action)
         if (validationError != null) {
-            return ProcessedAction(ExecutionResult.error(state, validationError))
+            return observe(state, action, ProcessedAction(ExecutionResult.error(state, validationError)))
         }
 
         // Execute the action, then update which revealed/returned cards opponents may see
@@ -94,7 +95,12 @@ class ActionProcessor(
         } else {
             UndoCheckpointAction.CLEAR
         }
-        return ProcessedAction(result, undoPolicy)
+        return observe(state, action, ProcessedAction(result, undoPolicy))
+    }
+
+    private fun observe(state: GameState, action: GameAction, processed: ProcessedAction): ProcessedAction {
+        observer?.afterProcess(state, action, processed.result)
+        return processed
     }
 
     /**

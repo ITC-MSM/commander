@@ -54,9 +54,14 @@ import com.wingedsheep.sdk.model.EntityId
  * driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
  * ```
  */
-class GameTestDriver {
+class GameTestDriver(
+    observer: ActionProcessorObserver? = null,
+) {
     val cardRegistry: CardRegistry = CardRegistry()
-    private val processor: ActionProcessor = ActionProcessor(cardRegistry)
+    private val processor: ActionProcessor = ActionProcessor(
+        services = EngineServices(cardRegistry),
+        observer = observer,
+    )
     private var _state: GameState = GameState()
     private val _events = mutableListOf<GameEvent>()
 
@@ -1317,6 +1322,12 @@ class GameTestDriver {
             is ReorderLibraryDecision -> {
                 submitOrderedResponse(decision.playerId, decision.cards)
             }
+            is OrderTriggeredAbilitiesDecision -> {
+                submitDecision(
+                    decision.playerId,
+                    TriggeredAbilitiesOrderedResponse(decision.id, decision.abilities.map { it.id })
+                )
+            }
             is DistributeDecision -> {
                 // Auto-resolve: assign all to the first target
                 val distribution = decision.targets.associateWith { 0 }.toMutableMap()
@@ -1347,6 +1358,22 @@ class GameTestDriver {
                 "Cannot auto-resolve decision of type ${decision::class.simpleName}"
             )
         }
+    }
+
+    /**
+     * Test-only deterministic response to CR 603.3b's ordering prompt.
+     *
+     * Production deliberately exposes this choice to the controller. Scenario tests that do not
+     * assert an order can call this explicitly to retain their historical detector-order setup.
+     * Returns false when no triggered-ability ordering decision is pending.
+     */
+    fun submitTriggerOrderInListedOrder(): Boolean {
+        val decision = state.pendingDecision as? OrderTriggeredAbilitiesDecision ?: return false
+        submitDecision(
+            decision.playerId,
+            TriggeredAbilitiesOrderedResponse(decision.id, decision.abilities.map { it.id })
+        )
+        return true
     }
 
     /**

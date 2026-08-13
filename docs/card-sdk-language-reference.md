@@ -6552,6 +6552,11 @@ Flash, Prowess, Flurry, Changeling, Convoke, Delve, Affinity, Emerge, Storm, Fla
 Offspring, Persist, Undying, Enduring, Ascend, Start your engines!, Max speed, Wither, Toxic, Eerie, Vivid, Fateful Bite, Exploit, Soulbond, Daybound, Nightbound, … (display-only — engine effect lives in handlers or
 composite abilities).
 
+`Keyword.INTIMIDATE` is enforced by `BlockEvasionRules`: an attacking creature with intimidate can
+be blocked only by an artifact creature or a creature sharing at least one of its current colors.
+The check reads projected types and colors, so continuous effects that add/remove Artifact or change
+either creature's colors are honored at the declaration of blockers.
+
 **Parameterized `KeywordAbility.*`**
 
 - `Ward(amount)` — opponent pays a mana cost to target this (CR 702.21). This is the shape for a card's
@@ -6742,7 +6747,11 @@ composite abilities).
   alongside the normal cast so the player explicitly picks one (CR 118.9a). When the cleave cost
   carries {X} (Lantern Flare), the cleave action also carries `hasXCost`/`maxAffordableX` so the
   client prompts for X, just like an {X} in a printed cost.
-- `Afflict(n)` — defender loses N when this becomes blocked.
+- `Afflict(n)` — `KeywordAbility.afflict(n)` (or `KeywordAbility.Numeric(Keyword.AFFLICT, n)`).
+  The engine derives one unfiltered `BecomesBlockedEvent` trigger per Afflict instance: when the
+  creature first becomes blocked, the actual `Player.DefendingPlayer` loses N life. It is life loss,
+  not damage; one Afflict instance triggers once even with multiple blockers, while multiple
+  instances trigger separately.
 - `Crew(n)` (`KeywordAbility.crew(n, onceEachTurn = false)` / `Numeric(Keyword.CREW, n, onceEachTurn)`) —
   Crew N (CR 702.122): tap any number of untapped creatures you control with total power N or greater to
   animate a **Vehicle** (artifact subtype, CR 301.7) — it becomes an artifact creature until end of turn at
@@ -9068,6 +9077,11 @@ staticAbility { ability = GrantLandwalkOfChosenType() }
 ---
 
 ## 15. Replacement effects
+
+- `CommanderZoneReplacement(appliesTo)` — engine-supplied, optional data representation of
+  Commander rule 903.9b. It is not card-authored; the engine gathers it only when a designated
+  commander would enter its owner's hand or library, where it competes with other zone-change
+  replacements through the normal CR 614–616 pipeline.
 
 ```kotlin
 replacementEffect {

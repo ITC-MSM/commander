@@ -19,7 +19,7 @@ class SpecialActionsModule(
     private val services: EngineServices
 ) : ActionHandlerModule {
     override fun handlers(): List<ActionHandler<*>> = listOf(
-        ConcedeHandler(services.sbaChecker),
+        ConcedeHandler(services.sbaChecker, services),
         ChooseManaColorHandler()
     )
 }

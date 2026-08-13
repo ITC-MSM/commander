@@ -3,6 +3,7 @@ package com.wingedsheep.engine.handlers.continuations
 import com.wingedsheep.engine.core.CardsSelectedResponse
 import com.wingedsheep.engine.core.CostPaymentContinuation
 import com.wingedsheep.engine.core.CostPaymentManaSelectionContinuation
+import com.wingedsheep.engine.core.CostPaymentReturnToHandContinuation
 import com.wingedsheep.engine.core.DecisionContext
 import com.wingedsheep.engine.core.DecisionPhase
 import com.wingedsheep.engine.core.DecisionRequestedEvent
@@ -35,13 +36,19 @@ import com.wingedsheep.sdk.scripting.effects.Effect
  */
 class CostPaymentContinuationResumer(
     private val services: EngineServices
-) : ContinuationResumerModule {
+) : ContinuationResumerModule, AutoResumerModule {
 
     private val paymentService = CostPaymentService(services)
 
     override fun resumers(): List<ContinuationResumer<*>> = listOf(
         resumer(CostPaymentContinuation::class, ::resume),
         resumer(CostPaymentManaSelectionContinuation::class, ::resumeManaSelection)
+    )
+
+    override fun autoResumers(): List<AutoResumer<*>> = listOf(
+        autoResumer(CostPaymentReturnToHandContinuation::class) { state, continuation, events, checkForMore ->
+            resumeReturnToHand(state, continuation, events, checkForMore)
+        }
     )
 
     fun resume(
@@ -212,10 +219,71 @@ class CostPaymentContinuationResumer(
         ) {
             return declined(state, continuation, checkForMore)
         }
+        if (atom is CostAtom.ReturnToHand) {
+            return continueReturnToHand(
+                state = state,
+                originalPayment = continuation,
+                remainingPermanentIds = response.selectedCards,
+                priorEvents = emptyList(),
+                checkForMore = checkForMore
+            )
+        }
         val execution = paymentService.performPayment(state, continuation.payerId, cost, continuation.sourceId, selected)
         return if (execution.success) paid(execution.state, execution.events, continuation, checkForMore)
         else declined(state, continuation, checkForMore)
     }
+
+    /**
+     * Continue a return-to-hand payment one selected permanent at a time.  A
+     * Commander hand replacement pauses *before* the physical move.  The
+     * remainder frame is inserted below that replacement continuation so the
+     * actual move has completed before the payment can continue.
+     */
+    private fun continueReturnToHand(
+        state: GameState,
+        originalPayment: CostPaymentContinuation,
+        remainingPermanentIds: List<com.wingedsheep.sdk.model.EntityId>,
+        priorEvents: List<GameEvent>,
+        checkForMore: CheckForMore
+    ): ExecutionResult {
+        val permanentId = remainingPermanentIds.firstOrNull()
+            ?: return paid(state, priorEvents, originalPayment, checkForMore)
+
+        val attempt = paymentService.attemptReturnToHandPayment(state, permanentId)
+        val rest = remainingPermanentIds.drop(1)
+        val events = priorEvents + attempt.events
+        if (!attempt.isPaused) {
+            return continueReturnToHand(attempt.state, originalPayment, rest, events, checkForMore)
+        }
+
+        val remainder = CostPaymentReturnToHandContinuation(
+            originalPayment = originalPayment,
+            remainingPermanentIds = rest,
+            priorEvents = events
+        )
+        val stack = attempt.state.continuationStack
+        // `attemptMoveToZone` placed the replacement decision continuation on
+        // top. Insert the cost remainder immediately beneath it. On answer,
+        // the generic replacement machinery pushes/auto-runs the physical move
+        // first, then this frame receives its ZoneChangeEvent and continues.
+        val stateWithRemainder = attempt.state.copy(
+            continuationStack = stack.dropLast(1) + remainder + stack.last()
+        )
+        return ExecutionResult.paused(stateWithRemainder, attempt.pendingDecision!!)
+    }
+
+    private fun resumeReturnToHand(
+        state: GameState,
+        continuation: CostPaymentReturnToHandContinuation,
+        events: List<GameEvent>,
+        checkForMore: CheckForMore
+    ): ExecutionResult = continueReturnToHand(
+        state = state,
+        originalPayment = continuation.originalPayment,
+        remainingPermanentIds = continuation.remainingPermanentIds,
+        priorEvents = continuation.priorEvents + events,
+        checkForMore = checkForMore
+    )
 
     private fun resumeChoice(
         state: GameState,

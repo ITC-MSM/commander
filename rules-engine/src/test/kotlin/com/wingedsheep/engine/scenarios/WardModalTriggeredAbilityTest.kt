@@ -4,6 +4,8 @@ import com.wingedsheep.engine.core.ChooseOptionDecision
 import com.wingedsheep.engine.core.ChooseTargetsDecision
 import com.wingedsheep.engine.core.OptionChosenResponse
 import com.wingedsheep.engine.core.SelectManaSourcesDecision
+import com.wingedsheep.engine.event.TriggerAbilityResolver
+import com.wingedsheep.engine.event.AbilityRegistry
 import com.wingedsheep.engine.core.TargetsResponse
 import com.wingedsheep.engine.support.ScenarioTestBase
 import com.wingedsheep.sdk.core.Phase
@@ -40,6 +42,9 @@ class WardModalTriggeredAbilityTest : ScenarioTestBase() {
                     .build()
 
                 val lurker = game.findPermanent("Long River Lurker")!!
+                TriggerAbilityResolver(cardRegistry, AbilityRegistry())
+                    .getWardTriggeredAbilities(lurker, "Long River Lurker", game.state)
+                    .size shouldBe 1
 
                 val cast = game.castSpell(1, "Downwind Ambusher")
                 withClue("Downwind Ambusher should cast: ${cast.error}") { cast.error shouldBe null }
@@ -115,6 +120,11 @@ class WardModalTriggeredAbilityTest : ScenarioTestBase() {
 
                 val lurker = game.findPermanent("Long River Lurker")!!
 
+                // Its own "other Frogs" static must not grant a second ward instance to itself.
+                TriggerAbilityResolver(cardRegistry, AbilityRegistry())
+                    .getWardTriggeredAbilities(lurker, "Long River Lurker", game.state)
+                    .size shouldBe 1
+
                 // Damage the 2/3 Lurker so the destroy mode has a legal target (it survives Shock).
                 game.castSpell(1, "Shock", lurker)
                 if (game.getPendingDecision() is SelectManaSourcesDecision) game.submitManaSourcesAutoPay()
@@ -141,7 +151,11 @@ class WardModalTriggeredAbilityTest : ScenarioTestBase() {
 
                 game.resolveStack()
                 game.state.pendingDecision.shouldBeSelectManaSources()
-                game.submitManaSourcesAutoPay()
+                val paidWard = game.submitManaSourcesAutoPay()
+                withClue("Ward payment must resolve rather than leave its decision open: ${paidWard.error}") {
+                    paidWard.error shouldBe null
+                    game.state.pendingDecision shouldBe null
+                }
                 game.resolveStack()
 
                 withClue("ward paid, so the destroy mode resolves") {

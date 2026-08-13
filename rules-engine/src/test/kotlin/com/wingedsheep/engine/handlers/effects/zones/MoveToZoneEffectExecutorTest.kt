@@ -2,6 +2,8 @@ package com.wingedsheep.engine.handlers.effects.zones
 
 import com.wingedsheep.engine.core.LibraryShuffledEvent
 import com.wingedsheep.engine.core.ZoneChangeEvent
+import com.wingedsheep.engine.core.YesNoDecision
+import com.wingedsheep.engine.core.EngineServices
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.state.ComponentContainer
 import com.wingedsheep.engine.state.GameState
@@ -10,12 +12,14 @@ import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.engine.state.components.identity.OwnerComponent
+import com.wingedsheep.engine.state.components.identity.CommanderComponent
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
 import com.wingedsheep.sdk.core.CardType
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.ManaCost
 import com.wingedsheep.sdk.core.TypeLine
 import com.wingedsheep.sdk.core.Zone
+import com.wingedsheep.sdk.core.Format
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.scripting.effects.MoveToZoneEffect
@@ -24,6 +28,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeInstanceOf
 
 class MoveToZoneEffectExecutorTest : FunSpec({
 
@@ -119,6 +124,25 @@ class MoveToZoneEffectExecutorTest : FunSpec({
 
         val battlefieldZone = ZoneKey(playerId, Zone.BATTLEFIELD)
         result.state.getZone(battlefieldZone) shouldNotContain cardId
+    }
+
+    test("Commander bounce pauses before the hand move for the 903.9b replacement") {
+        // The executor's real game wiring supplies the generic replacement processor.
+        EngineServices(cardRegistry)
+        val card = creatureCard(playerId)
+        val state = battlefieldState(playerId, cardId, card)
+            .copy(format = Format.Commander())
+            .updateEntity(cardId) { it.with(CommanderComponent(playerId)) }
+
+        val result = executor.execute(
+            state,
+            MoveToZoneEffect(EffectTarget.ContextTarget(0), Zone.HAND),
+            context(cardId, playerId)
+        )
+
+        result.isPaused shouldBe true
+        result.pendingDecision.shouldBeInstanceOf<YesNoDecision>().playerId shouldBe playerId
+        result.state.getZone(ZoneKey(playerId, Zone.BATTLEFIELD)) shouldContain cardId
     }
 
     test("move from battlefield to exile") {

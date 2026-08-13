@@ -48,11 +48,17 @@ import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.core.TypeLine
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
+import kotlinx.serialization.Serializable
+import com.wingedsheep.engine.replacement.PendingGameEvent
+import com.wingedsheep.engine.replacement.ProcessorResult
+import com.wingedsheep.engine.replacement.ReplacementEffectProcessor
+import com.wingedsheep.engine.handlers.EffectContext
 
 
 /**
  * Options controlling how an entity enters a destination zone.
  */
+@Serializable
 data class ZoneEntryOptions(
     val controllerId: EntityId? = null,
     val libraryPlacement: LibraryPlacement = LibraryPlacement.Top,
@@ -77,16 +83,30 @@ data class ZoneEntryOptions(
      * the Craft cost payment, and only for the material exiles — never for the crafted card's own
      * self-exile.
      */
-    val craftMaterial: Boolean = false
+    val craftMaterial: Boolean = false,
+    /** Internal generic-replacement metadata; never authored by card definitions. */
+    val linkExileToSourceId: EntityId? = null,
+    /**
+     * Internal compatibility switch for operations (notably drawing) whose
+     * historical public event contract did not include a ZoneChangeEvent.
+     * The physical transition still uses this service; only its event is
+     * withheld from the enclosing operation's event batch.
+     */
+    val suppressZoneChangeEvent: Boolean = false
 )
 
 /**
  * How to place a card in the library zone.
  */
+@Serializable
 sealed interface LibraryPlacement {
+    @Serializable
     data object Top : LibraryPlacement
+    @Serializable
     data object Bottom : LibraryPlacement
+    @Serializable
     data object Shuffled : LibraryPlacement
+    @Serializable
     data class NthFromTop(val position: Int) : LibraryPlacement
 }
 
@@ -99,6 +119,17 @@ data class ZoneTransitionResult(
     val redirectResult: ZoneChangeRedirectResult? = null,
     val actualDestination: Zone? = null
 )
+
+/** Result of a pauseable replacement-aware zone movement attempt. */
+data class ZoneTransitionAttemptResult(
+    val state: GameState,
+    val events: List<EngineGameEvent> = emptyList(),
+    val pendingDecision: com.wingedsheep.engine.core.PendingDecision? = null,
+    /** True when a replacement rider paused after the physical move completed. */
+    val movementCompleted: Boolean = false
+) {
+    val isPaused: Boolean get() = pendingDecision != null
+}
 
 /**
  * Single canonical zone transition pipeline.
@@ -134,6 +165,79 @@ object ZoneTransitionService {
      */
     lateinit var staticAbilityHandler: StaticAbilityHandler
     lateinit var cardRegistry: CardRegistry
+    lateinit var replacementEffectProcessor: ReplacementEffectProcessor
+    lateinit var effectExecutorRegistry: EffectExecutorRegistry
+
+    /**
+     * Replacement-aware entry point for movement initiated by a pauseable
+     * effect pipeline.  The final physical movement is delegated to
+     * [moveToZone] through [ZoneChangePerformContinuation], exactly once and
+     * with synchronous redirects disabled because the generic chain already
+     * decided the destination.
+     */
+    fun attemptMoveToZone(
+        state: GameState,
+        entityId: EntityId,
+        destinationZone: Zone,
+        options: ZoneEntryOptions = ZoneEntryOptions(),
+        fromZoneKey: ZoneKey? = null
+    ): ZoneTransitionAttemptResult {
+        val container = state.getEntity(entityId) ?: return ZoneTransitionAttemptResult(state)
+        val owner = container.get<CardComponent>()?.ownerId ?: return ZoneTransitionAttemptResult(state)
+        val source = fromZoneKey ?: findEntityZone(state, entityId) ?: return ZoneTransitionAttemptResult(state)
+        val pending = PendingGameEvent.ZoneChangePending(entityId, owner, source, destinationZone, options)
+        return when (val result = replacementEffectProcessor.process(state, pending)) {
+            is ProcessorResult.Paused -> ZoneTransitionAttemptResult(result.state, pendingDecision = result.decision)
+            is ProcessorResult.Pass -> {
+                val transition = moveToZone(state, entityId, destinationZone, options.copy(skipZoneChangeRedirect = true), source)
+                ZoneTransitionAttemptResult(
+                    transition.state,
+                    if (options.suppressZoneChangeEvent) emptyList() else transition.events,
+                    movementCompleted = true
+                )
+            }
+            is ProcessorResult.Resolved -> when (val outcome = result.outcome) {
+                is com.wingedsheep.engine.replacement.ReplacementOutcome.Modified -> {
+                    val modified = outcome.modifiedEvent as? PendingGameEvent.ZoneChangePending
+                        ?: return ZoneTransitionAttemptResult(result.state)
+                    val transition = moveToZone(
+                        result.state.copy(activeReplacementChain = null), entityId, modified.destination,
+                        modified.options.copy(skipZoneChangeRedirect = true), source
+                    )
+                    ZoneTransitionAttemptResult(
+                        transition.state,
+                        if (modified.options.suppressZoneChangeEvent) emptyList() else transition.events,
+                        movementCompleted = true
+                    )
+                }
+                is com.wingedsheep.engine.replacement.ReplacementOutcome.Consumed ->
+                    ZoneTransitionAttemptResult(result.state.copy(activeReplacementChain = null))
+                is com.wingedsheep.engine.replacement.ReplacementOutcome.Replaced -> {
+                    val replacementEvent = outcome.replacementEvent as? PendingGameEvent.ZoneChangePending
+                        ?: return ZoneTransitionAttemptResult(result.state.copy(activeReplacementChain = null))
+                    val context = result.executionContext ?: EffectContext(
+                        sourceId = null, controllerId = replacementEvent.affectedPlayerId
+                    )
+                    val transition = moveToZone(
+                        result.state.copy(activeReplacementChain = null), entityId,
+                        replacementEvent.destination,
+                        replacementEvent.options.copy(
+                            skipZoneChangeRedirect = true,
+                            linkExileToSourceId = if (replacementEvent.linkExileToSource) context.sourceId else null
+                        ),
+                        replacementEvent.fromZoneKey
+                    )
+                    val effectResult = effectExecutorRegistry.execute(transition.state, outcome.newEffect, context)
+                    ZoneTransitionAttemptResult(
+                        effectResult.state.copy(activeReplacementChain = null),
+                        (if (replacementEvent.options.suppressZoneChangeEvent) emptyList() else transition.events) + effectResult.events,
+                        effectResult.pendingDecision,
+                        movementCompleted = true
+                    )
+                }
+            }
+        }
+    }
 
     /**
      * Move one entity between zones with full cleanup + setup.
@@ -397,13 +501,22 @@ object ZoneTransitionService {
             }
         }
 
-        // 6. Remove from current zone
-        // Use the provided fromZoneKey directly — it already identifies the correct zone.
-        // Don't derive from ControllerComponent, as the card may be on a different
-        // player's battlefield zone (e.g., control-changed permanents in some zone layouts).
-        val removeZoneKey = currentZoneKey
-        newState = newState.removeFromZone(removeZoneKey, entityId)
-
+        // 6. Remove from current zone.  GameState stores the stack separately from the
+        // ordinary ZoneKey map, but it is still a real source zone for a zone change.
+        // This lets an effect returning a spell to hand participate in the same
+        // pre-move replacement pipeline as a permanent bounce.
+        newState = if (fromZone == Zone.STACK) {
+            newState.removeFromStack(entityId).updateEntity(entityId) { entity ->
+                entity
+                    .without<com.wingedsheep.engine.state.components.stack.SpellOnStackComponent>()
+                    .without<com.wingedsheep.engine.state.components.stack.TargetsComponent>()
+            }
+        } else {
+            // Use the provided fromZoneKey directly — it already identifies the correct zone.
+            // Don't derive from ControllerComponent, as the card may be on a different
+            // player's battlefield zone (e.g., control-changed permanents in some zone layouts).
+            newState.removeFromZone(currentZoneKey, entityId)
+        }
         // Drop any remaining linked-exile reference held by a granter still on the
         // battlefield (e.g. Maralen, Fae Ascendant). The card has just left exile by
         // some non-cast path — return, blink, exile-elsewhere — so the granter must
@@ -542,7 +655,7 @@ object ZoneTransitionService {
                     newState = newState.updateEntity(entityId) { c -> c.with(FaceDownComponent) }
                 }
                 // Link the exiled card to a RedirectZoneChange(linkToSource) source (Valgavoth).
-                redirectResult.linkSourceId?.let { sourceId ->
+                (options.linkExileToSourceId ?: redirectResult.linkSourceId)?.let { sourceId ->
                     newState = ZoneMovementUtils.linkExiledToSource(newState, entityId, sourceId)
                 }
             }
@@ -1248,6 +1361,10 @@ object ZoneTransitionService {
             if (entityId in entities) {
                 return zoneKey
             }
+        }
+        if (entityId in state.stack) {
+            val ownerId = state.getEntity(entityId)?.get<CardComponent>()?.ownerId
+            if (ownerId != null) return ZoneKey(ownerId, Zone.STACK)
         }
         return null
     }

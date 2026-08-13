@@ -111,6 +111,9 @@ class RandomEncounterScenarioTest : FunSpec({
 
         // Advance to the end step; the four per-creature delayed triggers fire and resolve.
         driver.passPriorityUntil(Step.END)
+        // These four identical delayed triggers are deliberately ordered by their controller.
+        // The scenario only asserts the shared outcome, so select the listed order explicitly.
+        driver.submitTriggerOrderInListedOrder()
         repeat(8) {
             if (driver.getPermanents(activePlayer).any { driver.getCardName(it) == "Grizzly Bears" }) {
                 driver.bothPass()

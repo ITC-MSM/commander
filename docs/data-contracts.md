@@ -319,6 +319,35 @@ exceed the canonical count. A set with no booster (Commander / supplemental, eve
 `scripts/gen-set-totals` (after `scripts/card-status --refresh`) to refresh totals for new/spoiler
 sets.
 
+### Card readiness (REST / HTTP)
+
+`GET /api/readiness` returns the generated release-evidence gate used by `/readiness`.
+It is intentionally separate from `GET /api/sets/coverage` and `/set-completion`: the
+latter measures catalog presence, while readiness may only classify a card as
+`IMPLEMENTED_VERIFIED` with an explicit ledger record containing a scenario test,
+rules-gate evidence, and CI run. The manifest carries its repository commit, catalog
+and ledger SHA-256 provenance. It exposes counts and bounded diagnostic samples for:
+`IMPLEMENTED_UNVERIFIED`, `IMPLEMENTED_VERIFIED`, `BLOCKED_FEATURE`, `NOT_PLANNED`,
+and `UNMATCHED_TRIAGE`. `releaseEligible` is a boolean gate, never a percentage.
+
+The source of truth is `coverage/card-readiness-ledger.json`; regenerate with
+`scripts/gen-card-readiness` and enforce exact reproducibility with
+`scripts/gen-card-readiness --check`. A ledger entry cannot verify an absent card or
+omit its scenario/rules/CI evidence.
+
+There are deliberately two generated artifacts with different jobs:
+
+- `coverage/card-implementation-ledger.json` is the detailed, per-set queue for
+  unresolved rows. It owns `UNMATCHED_TRIAGE`, `AUTO_CANDIDATE`,
+  `SCAFFOLD_REQUIRED`, and reviewed `BLOCKED_FEATURE` planning classifications.
+- `game-server/.../coverage/card-readiness.json` is the compact release gate. It
+  counts implemented-but-unverified cards, reads reviewed blockers from that queue,
+  and reads verification evidence only from `card-readiness-ledger.json`.
+
+Neither a generated snapshot nor a passing `--check` is live CI evidence. A
+`IMPLEMENTED_VERIFIED` ledger entry must identify the actual immutable CI run; stale
+or missing evidence remains `IMPLEMENTED_UNVERIFIED` and keeps release eligibility false.
+
 ## 3b. AI Assistance Payload (REST / HTTP)
 
 In-app AI help for the player at the wheel: **Suggest Pick** (draft) and **Auto-build** (deckbuild).

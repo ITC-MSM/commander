@@ -1,6 +1,8 @@
 package com.wingedsheep.engine.scenarios
 
 import com.wingedsheep.engine.core.ActivateAbility
+import com.wingedsheep.engine.core.YesNoDecision
+import com.wingedsheep.engine.state.components.identity.CommanderComponent
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.support.GameTestDriver
 import com.wingedsheep.engine.support.TestCards
@@ -16,12 +18,14 @@ import com.wingedsheep.mtg.sets.definitions.rtr.cards.RakdosGuildgate
 import com.wingedsheep.mtg.sets.definitions.rtr.cards.SelesnyaGuildgate
 import com.wingedsheep.mtg.sets.definitions.gtc.cards.SimicGuildgate
 import com.wingedsheep.sdk.core.Color
+import com.wingedsheep.sdk.core.Format
 import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeInstanceOf
 
 /**
  * Maze's End (DGM #152, reprinted in FDN #727) — Land.
@@ -66,9 +70,21 @@ class MazesEndScenarioTest : FunSpec({
 
     fun activateTutor(driver: GameTestDriver, player: EntityId, mazesEnd: EntityId) {
         driver.giveMana(player, Color.GREEN, 3)
-        driver.submit(
+        val result = driver.submit(
             ActivateAbility(playerId = player, sourceId = mazesEnd, abilityId = tutorAbilityId)
-        ).isSuccess shouldBe true
+        )
+        result.error shouldBe null
+        result.isSuccess shouldBe true
+    }
+
+    /** A Commander replacement choice pauses cost payment before the ability is stacked. */
+    fun activateTutorWithCommanderBounce(driver: GameTestDriver, player: EntityId, mazesEnd: EntityId) {
+        driver.giveMana(player, Color.GREEN, 3)
+        val result = driver.submit(
+            ActivateAbility(playerId = player, sourceId = mazesEnd, abilityId = tutorAbilityId)
+        )
+        result.error shouldBe null
+        result.isPaused shouldBe true
     }
 
     test("returning Maze's End to hand is part of the cost — it is in hand before the ability resolves") {
@@ -83,6 +99,43 @@ class MazesEndScenarioTest : FunSpec({
         // Cost paid on activation, before anyone gets priority: the land has already left.
         driver.state.getZone(ZoneKey(player, Zone.HAND)).contains(mazesEnd) shouldBe true
         driver.state.getZone(ZoneKey(player, Zone.BATTLEFIELD)).contains(mazesEnd) shouldBe false
+    }
+
+    test("Commander accepts the self-bounce replacement before Maze's End ability is put on the stack") {
+        val driver = newDriver()
+        val player = driver.player1
+        setUpGates(driver, player, 2)
+        val mazesEnd = driver.putLandOnBattlefield(player, "Maze's End")
+        driver.replaceState(driver.state.copy(format = Format.Commander()).updateEntity(mazesEnd) {
+            it.with(CommanderComponent(player))
+        })
+
+        activateTutorWithCommanderBounce(driver, player, mazesEnd)
+        driver.pendingDecision.shouldBeInstanceOf<YesNoDecision>()
+        driver.state.stack.size shouldBe 0
+
+        driver.submitYesNo(player, true)
+        driver.state.getZone(ZoneKey(player, Zone.COMMAND)).contains(mazesEnd) shouldBe true
+        driver.state.getZone(ZoneKey(player, Zone.HAND)).contains(mazesEnd) shouldBe false
+        driver.state.stack.size shouldBe 1
+    }
+
+    test("Commander declines the self-bounce replacement and Maze's End ability is put on the stack once") {
+        val driver = newDriver()
+        val player = driver.player1
+        setUpGates(driver, player, 2)
+        val mazesEnd = driver.putLandOnBattlefield(player, "Maze's End")
+        driver.replaceState(driver.state.copy(format = Format.Commander()).updateEntity(mazesEnd) {
+            it.with(CommanderComponent(player))
+        })
+
+        activateTutorWithCommanderBounce(driver, player, mazesEnd)
+        driver.pendingDecision.shouldBeInstanceOf<YesNoDecision>()
+        driver.state.stack.size shouldBe 0
+        driver.submitYesNo(player, false)
+        driver.state.getZone(ZoneKey(player, Zone.HAND)).contains(mazesEnd) shouldBe true
+        driver.state.getZone(ZoneKey(player, Zone.COMMAND)).contains(mazesEnd) shouldBe false
+        driver.state.stack.size shouldBe 1
     }
 
     test("tutors a Gate onto the battlefield") {

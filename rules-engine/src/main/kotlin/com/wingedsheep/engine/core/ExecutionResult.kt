@@ -27,7 +27,18 @@ data class ExecutionResult(
      * Paths would be duplicated on the stack — once by the handler, once by the
      * resumer running on the same `SpellCastEvent`.
      */
-    val triggersAlreadyProcessed: Boolean = false
+    val triggersAlreadyProcessed: Boolean = false,
+    /**
+     * Directs [SubmitDecisionHandler] how to treat a successful continuation result.
+     *
+     * Most decision resumptions have reached an ordinary "a player would receive priority"
+     * boundary, so that handler performs its shared SBA/trigger/priority sequence. A small
+     * number of turn-based-action continuations instead resume *inside* an engine-owned
+     * sequence. In that case the continuation itself owns the exact rules boundary and this
+     * value prevents the generic decision path from running a second SBA/trigger pass or
+     * replacing the priority cursor it deliberately selected.
+     */
+    val postDecisionHandling: PostDecisionHandling = PostDecisionHandling.STANDARD
 ) {
     val isSuccess: Boolean get() = error == null && pendingDecision == null
     val isPaused: Boolean get() = pendingDecision != null
@@ -60,4 +71,10 @@ data class ExecutionResult(
         fun paused(state: GameState, decision: PendingDecision, events: List<GameEvent> = emptyList()): ExecutionResult =
             ExecutionResult(state, events, pendingDecision = decision)
     }
+}
+
+@Serializable
+enum class PostDecisionHandling {
+    STANDARD,
+    RETURN_AS_IS,
 }

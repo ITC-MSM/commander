@@ -49,7 +49,7 @@
 - [ ] 1 Cache Grab
 - [ ] 1 Deadly Dispute
 - [ ] 1 Plumb the Forbidden
-- [ ] 1 Putrefy
+- [x] 1 Putrefy
 - [ ] 1 Saw in Half
 - [ ] 1 Second Harvest
 - [ ] 1 Tear Asunder
@@ -69,7 +69,7 @@
 
 - [x] 1 Arcane Signet
 - [ ] 1 Chitterspitter
-- [ ] 1 Golgari Signet
+- [x] 1 Golgari Signet
 - [ ] 1 Idol of Oblivion
 - [ ] 1 Maskwood Nexus
 - [ ] 1 Skullclamp
@@ -96,7 +96,7 @@
 - [x] 1 Exotic Orchard
 - [ ] 5 Forest
 - [ ] 4 Forest
-- [ ] 1 Golgari Rot Farm
+- [x] 1 Golgari Rot Farm
 - [ ] 1 Grim Backwoods
 - [ ] 1 Haunted Mire
 - [x] 1 Jungle Hollow

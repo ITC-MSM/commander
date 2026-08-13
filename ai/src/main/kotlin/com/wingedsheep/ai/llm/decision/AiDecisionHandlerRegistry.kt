@@ -23,6 +23,7 @@ class AiDecisionHandlerRegistry {
         register(ChooseNumberHandler())
         register(DistributeHandler())
         register(OrderObjectsHandler())
+        register(OrderTriggeredAbilitiesHandler())
         register(SplitPilesHandler())
         register(ChooseOptionHandler())
         register(BudgetModalHandler())

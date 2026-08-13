@@ -1,7 +1,9 @@
 package com.wingedsheep.engine.scenarios
 
 import com.wingedsheep.engine.core.CastSpell
+import com.wingedsheep.engine.core.OrderTriggeredAbilitiesDecision
 import com.wingedsheep.engine.core.PaymentStrategy
+import com.wingedsheep.engine.core.TriggeredAbilitiesOrderedResponse
 import com.wingedsheep.engine.support.GameTestDriver
 import com.wingedsheep.engine.support.TestCards
 import com.wingedsheep.mtg.sets.definitions.ltr.cards.GandalfTheWhite
@@ -41,6 +43,28 @@ import io.kotest.matchers.shouldBe
  *    triggers the doubling. The "of a permanent you control" half remains controller-only.
  */
 class GandalfTheWhiteTest : FunSpec({
+
+    /**
+     * The test assertions concern the number of trigger instances, not their relative order.
+     * Choose the detector's stable order whenever the current rules engine asks the controller.
+     */
+    fun GameTestDriver.resolveStack() {
+        var guard = 0
+        while (
+            (state.stack.isNotEmpty() || pendingDecision is OrderTriggeredAbilitiesDecision) &&
+            guard++ < 20
+        ) {
+            val decision = pendingDecision
+            if (decision is OrderTriggeredAbilitiesDecision) {
+                submitDecision(
+                    decision.playerId,
+                    TriggeredAbilitiesOrderedResponse(decision.id, decision.abilities.map { it.id })
+                )
+            } else {
+                bothPass()
+            }
+        }
+    }
 
     val testLegendaryBeast = CardDefinition.creature(
         name = "Test Legendary Beast",
@@ -271,9 +295,7 @@ class GandalfTheWhiteTest : FunSpec({
 
         val handBefore = driver.getHandSize(p1)
         driver.castSpell(p1, legendary).isSuccess shouldBe true
-        driver.bothPass()  // resolve the legendary
-        driver.bothPass()  // first ETB Witness draw
-        driver.bothPass()  // duplicated ETB Witness draw
+        driver.resolveStack()
 
         // Cast (-1) + 2 draws from the doubled trigger = net +1.
         (driver.getHandSize(p1) - handBefore) shouldBe 1
@@ -319,9 +341,7 @@ class GandalfTheWhiteTest : FunSpec({
 
         val handBefore = driver.getHandSize(p1)
         driver.castSpell(p2, legendary).isSuccess shouldBe true
-        driver.bothPass()  // resolve legendary
-        driver.bothPass()  // first ETB Witness draw (p1)
-        driver.bothPass()  // duplicated ETB Witness draw (p1)
+        driver.resolveStack()
 
         // p1 doesn't cast — hand only grows from the doubled draws on p1's ETB Witness.
         (driver.getHandSize(p1) - handBefore) shouldBe 2
@@ -363,9 +383,7 @@ class GandalfTheWhiteTest : FunSpec({
 
         val handBefore = driver.getHandSize(p1)
         driver.castSpell(p1, doomBlade, listOf(construct)).isSuccess shouldBe true
-        driver.bothPass()  // resolve Doom Blade — Test Construct dies
-        driver.bothPass()  // first LTB Witness draw
-        driver.bothPass()  // duplicated LTB Witness draw
+        driver.resolveStack()
 
         // p1 cast (-1 from hand) + 2 draws = net +1.
         (driver.getHandSize(p1) - handBefore) shouldBe 1
@@ -396,9 +414,7 @@ class GandalfTheWhiteTest : FunSpec({
 
         val handBefore = driver.getHandSize(p1)
         driver.castSpell(p1, doomBlade, listOf(token)).isSuccess shouldBe true
-        driver.bothPass()  // resolve Doom Blade — the legendary token dies and is swept (704.5d)
-        driver.bothPass()  // first LTB Witness draw
-        driver.bothPass()  // duplicated LTB Witness draw (Gandalf, matching the token's last-known Legendary)
+        driver.resolveStack()
 
         // Doom Blade cast (-1) + 2 draws from the doubled trigger = net +1.
         (driver.getHandSize(p1) - handBefore) shouldBe 1
@@ -426,10 +442,7 @@ class GandalfTheWhiteTest : FunSpec({
 
         val handBefore = driver.getHandSize(p1)
         driver.castSpell(p1, doomBlade, listOf(bear)).isSuccess shouldBe true
-        driver.bothPass()  // resolve Doom Blade — the (now-artifact) bear dies; in the graveyard it
-                           // is a plain creature again, so only last-known info records the artifact type
-        driver.bothPass()  // first LTB Witness draw
-        driver.bothPass()  // duplicated LTB Witness draw (Gandalf matches the bear's last-known Artifact type)
+        driver.resolveStack()
 
         // Doom Blade cast (-1) + 2 draws from the doubled trigger = net +1.
         (driver.getHandSize(p1) - handBefore) shouldBe 1
@@ -472,10 +485,7 @@ class GandalfTheWhiteTest : FunSpec({
 
         val handBefore = driver.getHandSize(p1)
         driver.castSpell(p1, construct).isSuccess shouldBe true
-        driver.bothPass()  // resolve Test Construct ETB
-        driver.bothPass()  // original ETB Witness draw
-        driver.bothPass()  // duplicated by Gandalf
-        driver.bothPass()  // duplicated by Test Extra-Trigger
+        driver.resolveStack()
 
         // p1 cast (-1 from hand) + 3 draws = net +2.
         (driver.getHandSize(p1) - handBefore) shouldBe 2

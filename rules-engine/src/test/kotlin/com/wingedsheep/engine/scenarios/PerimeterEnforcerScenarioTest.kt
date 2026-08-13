@@ -1,6 +1,8 @@
 package com.wingedsheep.engine.scenarios
 
 import com.wingedsheep.engine.core.PaymentStrategy
+import com.wingedsheep.engine.core.OrderTriggeredAbilitiesDecision
+import com.wingedsheep.engine.core.TriggeredAbilitiesOrderedResponse
 import com.wingedsheep.engine.core.TurnFaceUp
 import com.wingedsheep.engine.handlers.effects.FaceDownTurnUp
 import com.wingedsheep.engine.state.components.identity.FaceDownComponent
@@ -58,7 +60,17 @@ class PerimeterEnforcerScenarioTest : FunSpec({
 
     /** Settle the stack without letting the turn advance past the end-of-turn pump expiry. */
     fun GameTestDriver.settle() {
-        repeat(4) { if (state.priorityPlayerId != null && stackSize > 0) bothPass() }
+        repeat(6) {
+            val decision = pendingDecision
+            if (decision is OrderTriggeredAbilitiesDecision) {
+                submitDecision(
+                    decision.playerId,
+                    TriggeredAbilitiesOrderedResponse(decision.id, decision.abilities.map { it.id })
+                )
+            } else if (state.priorityPlayerId != null && stackSize > 0) {
+                bothPass()
+            }
+        }
     }
 
     context("whenever another Detective you control enters") {

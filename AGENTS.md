@@ -21,6 +21,8 @@ docs it points at; load those when the work needs them.
     errata, canonical-printing placement, scenario test).
   - Any engine/SDK/server/client capability that isn't a single card — effect, trigger, condition,
     keyword, decision flow → **`add-feature`** (composition-first design, cross-layer tracing, perf + UX).
+  - Suspected rules defect or interaction validation → **`validate-rules`** (authority, stack trace,
+    false-positive classification, reproduction, and independent-review threshold).
   - Running the build/test gates and reading the results → **`verify`**.
   - Working autonomously through a whole set or backlog, one PR per unit → **`backlog-loop`** (queue +
     one background worker at a time; the orchestrator never implements or builds).
@@ -28,6 +30,13 @@ docs it points at; load those when the work needs them.
   613.8 vs 613.7 and 704.5 vs 704.6 are easy to swap. Check the official Comprehensive Rules
   <https://magic.wizards.com/en/rules> — the plain-text `.txt` is too large to fetch into context, so
   `curl -o` it and `grep` locally. If you can't verify, describe the rule by name instead of guessing.
+- **Use the [rules-validation protocol](docs/rules-validation-protocol.md) before calling an interaction
+  broken or rules-correct.** A failing test/simulation is not enough: classify it against Oracle + CR,
+  trace replacements/triggers/stack/priority/SBAs, preserve a minimal reproduction, and obtain an
+  independent rules review for cross-cutting or multiplayer interactions before changing production code.
+  Read it in full. Every delegated rules task states its role (blind rule oracle, reproducer, or engine
+  reviewer), pastes the protocol preamble, and requires the agent's explicit read acknowledgement;
+  missing acknowledgement means the validation handoff is not accepted.
 - **One card, one test file — never batch cards into a shared test.** A scenario test covers exactly one
   card: `<CardName>ScenarioTest.kt` holding that card's tests. Implementing five cards means five test
   files, not one `FooBatchScenarioTest`. Batched files hide which card a failure belongs to, make
@@ -127,3 +136,4 @@ It is **predictive and non-authoritative — never a card loader.** Two rules fo
 | [`e2e-test-patterns.md`](docs/e2e-test-patterns.md) | Playwright fixtures, GamePage helpers, scenario config |
 | [`gym-deckbuild-env.md`](docs/gym-deckbuild-env.md) | Sealed deckbuild gym env + custom win-rate reward |
 | [`gym-self-play-testing.md`](docs/gym-self-play-testing.md) | Driving the gym server over HTTP to surface broken cards |
+| [`rules-validation-protocol.md`](docs/rules-validation-protocol.md) | Mandatory rules-defect classification, evidence, and review protocol |

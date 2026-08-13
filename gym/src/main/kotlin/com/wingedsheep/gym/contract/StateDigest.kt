@@ -77,10 +77,10 @@ object StateDigest {
                 .append(':').append(s.kind.name).append('|')
         }
 
-        // Pending decision — identity + kind only; per-option IDs are not
-        // part of game identity.
+        // Pending decision kind only. The decision ID is a freshly minted transport nonce,
+        // not game identity; including it would make an otherwise identical replay diverge.
         obs.pendingDecision?.let { d ->
-            sb.append("D=").append(d.decisionId).append(':').append(d.kind.name)
+            sb.append("D=").append(d.kind.name)
                 .append(':').append(d.requiresStructuredResponse).append('|')
         }
     }

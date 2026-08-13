@@ -169,7 +169,10 @@ class ActivateAbilityHandler(
 
         // The mana-payment window (CR 605.3a) opens the door for mana abilities only — everything
         // else still needs priority.
-        if (manaPaymentWindow != null && state.priorityPlayerId != action.playerId && !ability.isManaAbility) {
+        // A pending payment decision consumes priority even when the stored priority marker
+        // still names the payer.  CR 605.3a is the sole exception: only mana abilities may be
+        // activated while casting/paying or while a rule/effect asks for mana.
+        if (manaPaymentWindow != null && !ability.isManaAbility) {
             return "Only mana abilities can be activated while paying a cost"
         }
 
@@ -1254,6 +1257,15 @@ class ActivateAbilityHandler(
                     ?: emptyList()
             } else emptyList()
 
+        // Build the resolution effect before paying costs.  A Commander replacement can pause a
+        // return-to-hand cost, in which case the post-payment continuation must retain exactly
+        // the same text-replaced effect that the normal activation path puts on the stack.
+        var finalEffect = if (textReplacement != null) {
+            ability.effect.applyTextReplacement(textReplacement)
+        } else {
+            ability.effect
+        }
+
         // When using Explicit payment, mana sources were already tapped above —
         // strip the Mana portion so payAbilityCost doesn't try to deduct from the pool.
         // When convoke was applied, replace the mana portion with the reduced cost.
@@ -1286,6 +1298,64 @@ class ActivateAbilityHandler(
 
         if (!costResult.success) {
             return ExecutionResult.error(state, costResult.error ?: "Failed to pay ability cost")
+        }
+
+        // Commander replacement effects can pause a terminal return-to-hand cost (CR 903.9b).
+        // The ability is not on the stack until *all* costs are paid, including the eventual
+        // ZoneChangePerform continuation.  Preserve the fully validated activation data in a
+        // tail below that continuation; never re-enter this handler, which would re-pay mana,
+        // tap costs, and selected permanents.
+        if (costResult.isPaused) {
+            if (ability.isManaAbility || action.repeatCount != 1) {
+                return ExecutionResult.error(state, "Pausing return-to-hand costs are unsupported for mana or repeated abilities")
+            }
+            val pendingState = costResult.newState!!
+            val pendingDecision = pendingState.pendingDecision
+                ?: return ExecutionResult.error(state, "Return-to-hand payment paused without a decision")
+            val effectiveTargetReqsForTail = if (textReplacement != null) {
+                ability.targetRequirements.map { it.applyTextReplacement(textReplacement) }
+            } else {
+                ability.targetRequirements
+            }
+            val tailAbility = ActivatedAbilityOnStackComponent(
+                sourceId = action.sourceId,
+                sourceName = cardComponent.name,
+                controllerId = action.playerId,
+                effect = finalEffect,
+                sacrificedPermanents = sacrificedSnapshots,
+                xValue = effectiveXValue,
+                tappedPermanents = firstTapSlice,
+                tappedEntitySnapshots = tappedSnapshots,
+                lastKnownSourceCounters = lastKnownSourceCounters,
+                lastKnownSourceSnapshot = lastKnownSourceSnapshot,
+                lastKnownSourceAttachments = lastKnownSourceAttachments,
+                descriptionOverride = ability.descriptionOverride,
+                abilityIdentity = com.wingedsheep.sdk.scripting.AbilityIdentity(cardComponent.cardDefinitionId, ability.id),
+                granterId = staticGranterId,
+                damageDistribution = action.damageDistribution
+            )
+            val tail = com.wingedsheep.engine.core.ActivatedAbilityPostPaymentContinuation(
+                controllerId = action.playerId,
+                abilityOnStack = tailAbility,
+                targets = action.targets,
+                targetRequirements = effectiveTargetReqsForTail,
+                costsTap = hasTapCost(effectiveCost),
+                isExhaust = ability.isExhaust,
+                cantBeCopied = ability.cantBeCopied,
+                costEvents = events + costResult.events
+            )
+            val frame: com.wingedsheep.engine.core.ContinuationFrame =
+                if (costResult.remainingReturnToHandIds.isEmpty()) tail
+                else com.wingedsheep.engine.core.ActivatedAbilityReturnToHandRemainderContinuation(
+                    tail = tail,
+                    remainingPermanentIds = costResult.remainingReturnToHandIds
+                )
+            val stack = pendingState.continuationStack
+            if (stack.isEmpty()) return ExecutionResult.error(state, "Return-to-hand payment paused without a continuation")
+            val resumedState = pendingState.copy(
+                continuationStack = stack.dropLast(1) + frame + stack.last()
+            )
+            return ExecutionResult.paused(resumedState, pendingDecision, events + costResult.events)
         }
 
         currentState = costResult.newState!!
@@ -1425,13 +1495,6 @@ class ActivateAbilityHandler(
             }
         }
 
-        // Apply text replacement if the source has a TextReplacementComponent
-        var finalEffect = if (textReplacement != null) {
-            ability.effect.applyTextReplacement(textReplacement)
-        } else {
-            ability.effect
-        }
-
         // Mana abilities don't use the stack
         if (ability.isManaAbility) {
             // Check for an attached aura that overrides the produced mana color
@@ -1489,7 +1552,8 @@ class ActivateAbilityHandler(
                 if (deferred.isNotEmpty()) {
                     val pending = com.wingedsheep.engine.core.PendingTriggersContinuation(
                         decisionId = "mana-ability-cost-triggers-${java.util.UUID.randomUUID()}",
-                        remainingTriggers = deferred
+                        remainingTriggers = deferred,
+                        alreadyOrdered = false,
                     )
                     // Insert at the BOTTOM of the continuation stack so the cost trigger is put on
                     // the stack only after the whole mana ability finishes resolving — including a

@@ -107,7 +107,9 @@ class WizardsStaffScenarioTest : FunSpec({
         driver.bothPass()
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
-        driver.declareAttackers(player, listOf(skirge), opponent).isSuccess shouldBe true
+        // Two simultaneous copies now require the controller's CR 603.3b order choice.
+        driver.declareAttackers(player, listOf(skirge), opponent).error shouldBe null
+        driver.submitTriggerOrderInListedOrder() shouldBe true
 
         // Resolve both copies of "whenever this creature attacks, it gets +2/+0".
         repeat(4) { if (driver.stackSize > 0) driver.bothPass() }

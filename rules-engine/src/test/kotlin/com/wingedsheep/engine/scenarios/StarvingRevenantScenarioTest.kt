@@ -1,6 +1,7 @@
 package com.wingedsheep.engine.scenarios
 
 import com.wingedsheep.engine.core.ReorderLibraryDecision
+import com.wingedsheep.engine.core.OrderTriggeredAbilitiesDecision
 import com.wingedsheep.engine.core.SelectCardsDecision
 import com.wingedsheep.engine.support.GameTestDriver
 import com.wingedsheep.engine.support.TestCards
@@ -52,6 +53,7 @@ class StarvingRevenantScenarioTest : FunSpec({
             val pd = pendingDecision
             when {
                 isPaused && pd is ReorderLibraryDecision -> submitOrderedResponse(you, pd.cards)
+                isPaused && pd is OrderTriggeredAbilitiesDecision -> submitTriggerOrderInListedOrder()
                 !isPaused && state.stack.isNotEmpty() -> bothPass()
                 else -> return
             }

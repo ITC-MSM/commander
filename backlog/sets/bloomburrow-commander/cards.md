@@ -2,7 +2,7 @@
 
 **Set Size:** 312 cards
 **Release Date:** August 2, 2024
-**Implemented:** 114 / 312
+**Implemented:** 123 / 312
 | Color      | Total | Done |
 |------------|-------|------|
 | White      | 37    | 0    |
@@ -23,7 +23,7 @@
 - [x] Aetherize
 - [ ] Agate Instigator
 - [x] Alchemist's Talent
-- [ ] An Offer You Can't Refuse
+- [x] An Offer You Can't Refuse
 - [ ] Angel of the Ruins
 - [ ] Ant Queen
 - [ ] Arasta of the Endless Web
@@ -43,17 +43,17 @@
 - [ ] Bident of Thassa
 - [x] Big Score
 - [ ] Binding the Old Gods
-- [ ] Birds of Paradise
+- [x] Birds of Paradise
 - [ ] Blade Splicer
 - [x] Blasphemous Act
 - [ ] Bloodroot Apothecary
 - [ ] Body of Knowledge
 - [ ] Bojuka Bog
 - [x] Bootleggers' Stash
-- [ ] Boros Signet
+- [x] Boros Signet
 - [ ] Boss's Chauffeur
 - [x] Brightcap Badger // Fungus Frolic
-- [ ] Broken Wings
+- [x] Broken Wings
 - [x] Brushland
 - [x] Burnished Hart
 - [ ] Calamity of Cinders
@@ -62,7 +62,7 @@
 - [ ] Castle Ardenvale
 - [ ] Casualties of War
 - [x] Chaos Warp
-- [ ] Chart a Course
+- [x] Chart a Course
 - [ ] Chasm Skulker
 - [ ] Chatterfang, Squirrel General
 - [ ] Chatterstorm
@@ -119,7 +119,7 @@
 - [x] Gilded Lotus
 - [ ] Glacial Fortress
 - [x] Golgari Rot Farm
-- [ ] Golgari Signet
+- [x] Golgari Signet
 - [x] Goreclaw, Terror of Qal Sisma
 - [ ] Gourmand's Talent
 - [x] Gratuitous Violence
@@ -148,7 +148,7 @@
 - [ ] Inspiring Overseer
 - [ ] Intellectual Offering
 - [ ] Ishai, Ojutai Dragonspeaker
-- [ ] Izzet Signet
+- [x] Izzet Signet
 - [ ] Jace, the Mind Sculptor
 - [ ] Jacked Rabbit
 - [ ] Jazal Goldmane
@@ -212,7 +212,7 @@
 - [ ] Prosperous Innkeeper
 - [ ] Psychosis Crawler
 - [ ] Pull from Tomorrow
-- [ ] Putrefy
+- [x] Putrefy
 - [x] Pyreswipe Hawk
 - [x] Raging Ravine
 - [x] Rain of Riches
@@ -258,7 +258,7 @@
 - [ ] Sphinx of Enlightenment
 - [x] Spine of Ish Sah
 - [ ] Spirited Companion
-- [ ] Spore Frog
+- [x] Spore Frog
 - [ ] Squirrel Mob
 - [ ] Squirrel Nest
 - [ ] Squirrel Sovereign

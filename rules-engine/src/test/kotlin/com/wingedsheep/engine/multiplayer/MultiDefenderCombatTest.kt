@@ -88,11 +88,13 @@ class MultiDefenderCombatTest : FunSpec({
         val (s2, _) = s1.withBear(players[0], attacking = players[1])   // A attacks B
         val state = s2
 
-        CombatDefenders.defendingPlayers(state) shouldBe setOf(players[1], players[2])
+        // In Attack Multiple Players every opponent is a defending player (CR 802.2),
+        // including D who has no attacker assigned to them in this combat.
+        CombatDefenders.defendingPlayers(state) shouldBe setOf(players[1], players[2], players[3])
         CombatDefenders.defendingPlayersInApnapOrder(state) shouldContainExactly
-            listOf(players[1], players[2])
+            listOf(players[1], players[2], players[3])
         CombatDefenders.isDefendingPlayer(state, players[1]).shouldBeTrue()
-        CombatDefenders.isDefendingPlayer(state, players[3]).shouldBeFalse()
+        CombatDefenders.isDefendingPlayer(state, players[3]).shouldBeTrue()
     }
 
     /** Build a four-player board where A attacks B and C, then enter DECLARE_BLOCKERS with the
@@ -163,11 +165,12 @@ class MultiDefenderCombatTest : FunSpec({
             state = result.newState
         }
 
-        // Both defenders ended up declaring (B before the loop, C inside it) and combat resolved.
-        playersWhoDeclared shouldContainExactly setOf(players[2])
+        // C and D both complete their required empty declarations after B.
+        playersWhoDeclared shouldContainExactly setOf(players[2], players[3])
         // C took 2 from the unblocked attacker; B took none (they blocked theirs).
         life(players[2]) shouldBe 18
         life(players[1]) shouldBe 20
+        life(players[3]) shouldBe 20
         life(players[0]) shouldBe 20
     }
 })

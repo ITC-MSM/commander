@@ -101,6 +101,32 @@ class GameEnvironmentTest : FunSpec({
         result.state.shouldNotBeNull()
     }
 
+    test("simulation can opt into action-boundary invariant checking") {
+        val checker = GameInvariantChecker()
+        val env = GameEnvironment.create(
+            createRegistry(),
+            observer = InvariantCheckingActionObserver(checker),
+        )
+        env.reset(
+            GameConfig(
+                players = listOf(
+                    PlayerConfig("Alice", simpleDeck()),
+                    PlayerConfig("Bob", simpleDeck()),
+                ),
+                skipMulligans = true,
+                startingPlayerIndex = 0,
+                seed = 123L,
+            )
+        )
+
+        repeat(12) {
+            val actor = env.agentToAct.shouldNotBeNull()
+            env.step(PassPriority(actor))
+        }
+
+        checker.check(env.state) shouldBe emptyList()
+    }
+
     test("fork creates an independent copy") {
         val env = GameEnvironment.create(createRegistry())
         env.reset(

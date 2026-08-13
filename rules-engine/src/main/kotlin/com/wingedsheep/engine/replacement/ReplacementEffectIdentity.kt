@@ -71,4 +71,17 @@ sealed interface ReplacementEffectIdentity {
         val sourceEntityId: EntityId,
         val effectIndex: Int = 0
     ) : ReplacementEffectIdentity
+
+    /**
+     * The Commander-format replacement granted by CR 903.9b.  It is an engine
+     * rule, not text on the commander, and participates in replacement-chain
+     * tracking. A declined choice is suppressed under CR 614.5; an accepted
+     * choice is the explicit CR 903.9b exception and may apply again if a later
+     * replacement makes the same pending event eligible again.
+     */
+    @SerialName("CommanderZoneIdentity")
+    @Serializable
+    data class CommanderZoneIdentity(
+        val commanderId: EntityId
+    ) : ReplacementEffectIdentity
 }

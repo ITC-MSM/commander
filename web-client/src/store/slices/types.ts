@@ -899,6 +899,7 @@ export type GameStore = {
   submitDecision: (selectedCards: readonly EntityId[]) => void
   submitTargetsDecision: (selectedTargets: Record<number, readonly EntityId[]>) => void
   submitOrderedDecision: (orderedObjects: readonly EntityId[]) => void
+  submitTriggeredAbilitiesOrder: (orderedAbilityIds: readonly string[]) => void
   submitYesNoDecision: (choice: boolean) => void
   submitBatchYesNoDecision: (choice: boolean, applyToAll: boolean) => void
   submitNumberDecision: (number: number) => void

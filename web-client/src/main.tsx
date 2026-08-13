@@ -35,6 +35,9 @@ const AiSandboxPage = lazy(() =>
 const SetCompletionPage = lazy(() =>
   import('./components/setCompletion/SetCompletionPage').then(({ SetCompletionPage }) => ({ default: SetCompletionPage }))
 )
+const CardReadinessPage = lazy(() =>
+  import('./components/readiness/CardReadinessPage').then(({ CardReadinessPage }) => ({ default: CardReadinessPage }))
+)
 const LoginVerifyPage = lazy(() =>
   import('./pages/LoginVerifyPage').then(({ LoginVerifyPage }) => ({ default: LoginVerifyPage }))
 )
@@ -74,6 +77,7 @@ createRoot(rootElement).render(
           <Route path="/deckbuilder/:deckId" element={<DeckbuilderPage />} />
           <Route path="/scenario" element={<ScenarioBuilderPage />} />
           <Route path="/set-completion" element={<SetCompletionPage />} />
+          <Route path="/readiness" element={<CardReadinessPage />} />
           <Route path="/login/verify" element={<LoginVerifyPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/stats" element={<StatsPage />} />

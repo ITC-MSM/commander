@@ -1,6 +1,8 @@
 package com.wingedsheep.engine.scenarios
 
 import com.wingedsheep.engine.core.PlayLand
+import com.wingedsheep.engine.core.OrderTriggeredAbilitiesDecision
+import com.wingedsheep.engine.core.TriggeredAbilitiesOrderedResponse
 import com.wingedsheep.engine.state.components.player.CardsDiscardedThisTurnComponent
 import com.wingedsheep.engine.support.GameTestDriver
 import com.wingedsheep.engine.support.TestCards
@@ -35,7 +37,19 @@ class ShadowOfTheGoblinScenarioTest : FunSpec({
 
     fun resolveStack(driver: GameTestDriver) {
         var guard = 0
-        while (guard++ < 30 && driver.state.stack.isNotEmpty() && !driver.isPaused) driver.bothPass()
+        while (guard++ < 30 && (driver.state.stack.isNotEmpty() || driver.pendingDecision is OrderTriggeredAbilitiesDecision)) {
+            val order = driver.pendingDecision as? OrderTriggeredAbilitiesDecision
+            if (order != null) {
+                driver.submitDecision(
+                    order.playerId,
+                    TriggeredAbilitiesOrderedResponse(order.id, order.abilities.map { it.id }),
+                )
+            } else if (!driver.isPaused) {
+                driver.bothPass()
+            } else {
+                break
+            }
+        }
     }
 
     test("playing a land from the graveyard (non-hand) deals 1 to each opponent") {

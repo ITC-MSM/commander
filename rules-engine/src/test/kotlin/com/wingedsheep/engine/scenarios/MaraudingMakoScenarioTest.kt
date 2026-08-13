@@ -66,6 +66,11 @@ class MaraudingMakoScenarioTest : ScenarioTestBase() {
             val cycle = game.cycleCard(1, "Agonasaur Rex")
             withClue("Cycling should succeed: ${cycle.error}") { cycle.error shouldBe null }
             if (game.hasPendingDecision()) game.submitManaSourcesAutoPay()
+            // Cycling discards Rex as a cost.  Both Rex's cycling ability and Mako's discard
+            // trigger are now waiting to be put on the stack, so first let the harness answer
+            // the explicit same-controller ordering choice.  Resolving then pauses at Rex's
+            // optional target selection, not at the ordering decision.
+            game.resolveStack()
             // The Rex's own cycle trigger targets "up to one" — decline it, we only care about the Mako.
             if (game.hasPendingDecision()) game.skipTargets()
             game.resolveStack()

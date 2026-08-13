@@ -130,7 +130,7 @@ class TargetFinder(
         controllerId: EntityId,
         sourceId: EntityId?
     ): List<EntityId> {
-        return state.turnOrder.filter { playerId ->
+        return state.activePlayers.filter { playerId ->
             state.hasEntity(playerId) && !playerHasShroud(state, playerId) &&
                 !playerHasHexproofAgainst(state, playerId, controllerId) &&
                 PlayerTargetRestriction.isSatisfied(state, requirement.restriction, playerId, controllerId, sourceId)
@@ -143,7 +143,7 @@ class TargetFinder(
         controllerId: EntityId,
         sourceId: EntityId?
     ): List<EntityId> {
-        return state.turnOrder.filter { it != controllerId && state.hasEntity(it) && !playerHasShroud(state, it) &&
+        return state.activePlayers.filter { it != controllerId && state.hasEntity(it) && !playerHasShroud(state, it) &&
             !playerHasHexproof(state, it) &&
             PlayerTargetRestriction.isSatisfied(state, requirement.restriction, it, controllerId, sourceId) }
     }
@@ -191,7 +191,7 @@ class TargetFinder(
         val targets = mutableListOf<EntityId>()
 
         // Add opponents (excluding those with shroud or hexproof)
-        targets.addAll(state.turnOrder.filter { it != controllerId && state.hasEntity(it) &&
+        targets.addAll(state.activePlayers.filter { it != controllerId && state.hasEntity(it) &&
             !playerHasShroud(state, it) && !playerHasHexproof(state, it) })
 
         // Add all planeswalkers on the battlefield
@@ -230,7 +230,7 @@ class TargetFinder(
         val targets = mutableListOf<EntityId>()
 
         // Add all players (excluding those with shroud or hexproof from opponents)
-        targets.addAll(state.turnOrder.filter { state.hasEntity(it) && !playerHasShroud(state, it) &&
+        targets.addAll(state.activePlayers.filter { state.hasEntity(it) && !playerHasShroud(state, it) &&
             !playerHasHexproofAgainst(state, it, controllerId) })
 
         // Add all planeswalkers on the battlefield
@@ -322,7 +322,7 @@ class TargetFinder(
         val targets = mutableListOf<EntityId>()
 
         // Add all players (excluding those with shroud or hexproof from opponents)
-        targets.addAll(state.turnOrder.filter { state.hasEntity(it) && !playerHasShroud(state, it) &&
+        targets.addAll(state.activePlayers.filter { state.hasEntity(it) && !playerHasShroud(state, it) &&
             !playerHasHexproofAgainst(state, it, controllerId) })
 
         // Add all creatures, planeswalkers and battles
@@ -374,7 +374,7 @@ class TargetFinder(
         val targets = mutableListOf<EntityId>()
 
         // Add all players (excluding those with shroud or hexproof from opponents)
-        targets.addAll(state.turnOrder.filter { state.hasEntity(it) && !playerHasShroud(state, it) &&
+        targets.addAll(state.activePlayers.filter { state.hasEntity(it) && !playerHasShroud(state, it) &&
             !playerHasHexproofAgainst(state, it, controllerId) })
 
         // Add all creatures

@@ -117,6 +117,21 @@ jobs:
           fi
           echo "All backend test groups passed."
 
+  # Fast, offline governance gate: source/card catalogue edits must update the
+  # reviewable unresolved-card ledger and cannot silently desynchronise backlog checklists.
+  card-ledger:
+    name: card ledger
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Verify card ledger and backlog consistency
+        run: |
+          python3 scripts/card-ledger.py --check
+          python3 scripts/check-backlog-implementations.py --check
+          python3 scripts/check-card-counts.py --check
+
   # Coverage runs only on main, off the PR critical path (Kover instruments the 3 covered modules'
   # test runs, and report generation + the PR comment add serial steps). Coverage is non-gating
   # (min 0); main-only keeps PR feedback fast while still tracking the trend on the default branch.

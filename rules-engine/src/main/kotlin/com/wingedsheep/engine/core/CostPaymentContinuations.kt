@@ -3,7 +3,10 @@ package com.wingedsheep.engine.core
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.costs.PayCost
+import com.wingedsheep.sdk.scripting.costs.CostAtom
 import com.wingedsheep.sdk.scripting.effects.Effect
+import com.wingedsheep.sdk.scripting.targets.TargetRequirement
+import com.wingedsheep.engine.state.components.stack.ActivatedAbilityOnStackComponent
 import kotlinx.serialization.Serializable
 
 /**
@@ -66,4 +69,48 @@ data class CostPaymentManaSelectionContinuation(
     val inner: CostPaymentContinuation,
     val manaCost: com.wingedsheep.sdk.core.ManaCost,
     val availableSources: List<ManaSourceOption>
+) : ContinuationFrame
+
+/**
+ * Remainder of a [CostAtom.ReturnToHand] payment after a zone-change
+ * replacement paused it.  It sits below the replacement continuation, so the
+ * physical move happens first and this frame then resumes the remaining
+ * payment exactly once.
+ *
+ * A return-to-hand payment is not allowed to use the synchronous movement
+ * shortcut: a Commander can choose the command zone instead before it moves.
+ */
+@Serializable
+data class CostPaymentReturnToHandContinuation(
+    override val decisionId: String = "cost-payment-return-to-hand",
+    val originalPayment: CostPaymentContinuation,
+    val remainingPermanentIds: List<EntityId>,
+    val priorEvents: List<GameEvent> = emptyList()
+) : ContinuationFrame
+
+/**
+ * The tail of an activated ability whose final cost atom paused for a Commander
+ * hand replacement.  Cost payment has already completed; this frame must only
+ * put the already-validated ability on the stack, never re-enter activation.
+ */
+@Serializable
+data class ActivatedAbilityPostPaymentContinuation(
+    override val decisionId: String = "activated-ability-post-payment",
+    val controllerId: EntityId,
+    val abilityOnStack: ActivatedAbilityOnStackComponent,
+    val targets: List<ChosenTarget>,
+    val targetRequirements: List<TargetRequirement>,
+    val costsTap: Boolean,
+    val isExhaust: Boolean,
+    val cantBeCopied: Boolean,
+    /** Events already emitted while paying costs; used for trigger detection once. */
+    val costEvents: List<GameEvent>
+) : ContinuationFrame
+
+/** Remaining selected permanents in an activation's ReturnToHand cost. */
+@Serializable
+data class ActivatedAbilityReturnToHandRemainderContinuation(
+    override val decisionId: String = "activated-ability-return-to-hand-remainder",
+    val tail: ActivatedAbilityPostPaymentContinuation,
+    val remainingPermanentIds: List<EntityId>
 ) : ContinuationFrame

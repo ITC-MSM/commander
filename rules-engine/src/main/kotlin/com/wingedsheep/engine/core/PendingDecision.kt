@@ -395,6 +395,30 @@ data class OrderObjectsDecision(
 ) : PendingDecision
 
 /**
+ * CR 603.3b ordering choice for multiple triggered abilities controlled by one player.
+ *
+ * Unlike [OrderObjectsDecision], these are ability *instances*, not game objects: two
+ * simultaneous triggers can have the same source, and some have no source entity at all.
+ * The opaque [TriggerOrderItem.id] therefore identifies an instance only for this decision.
+ */
+@Serializable
+@SerialName("OrderTriggeredAbilitiesDecision")
+data class OrderTriggeredAbilitiesDecision(
+    override val id: String,
+    override val playerId: EntityId,
+    override val prompt: String,
+    override val context: DecisionContext,
+    val abilities: List<TriggerOrderItem>
+) : PendingDecision
+
+@Serializable
+data class TriggerOrderItem(
+    val id: String,
+    val sourceName: String,
+    val description: String,
+)
+
+/**
  * Player must split cards into piles (e.g., Fact or Fiction).
  */
 @Serializable
@@ -659,6 +683,7 @@ sealed interface DecisionResponse {
         is NumberChosenResponse -> copy(decisionId = newId)
         is DistributionResponse -> copy(decisionId = newId)
         is OrderedResponse -> copy(decisionId = newId)
+        is TriggeredAbilitiesOrderedResponse -> copy(decisionId = newId)
         is PilesSplitResponse -> copy(decisionId = newId)
         is OptionChosenResponse -> copy(decisionId = newId)
         is ReplacementChosenResponse -> copy(decisionId = newId)
@@ -765,6 +790,14 @@ data class DistributionResponse(
 data class OrderedResponse(
     override val decisionId: String,
     val orderedObjects: List<EntityId>
+) : DecisionResponse
+
+/** Response to [OrderTriggeredAbilitiesDecision]. */
+@Serializable
+@SerialName("TriggeredAbilitiesOrderedResponse")
+data class TriggeredAbilitiesOrderedResponse(
+    override val decisionId: String,
+    val orderedAbilityIds: List<String>
 ) : DecisionResponse
 
 /**

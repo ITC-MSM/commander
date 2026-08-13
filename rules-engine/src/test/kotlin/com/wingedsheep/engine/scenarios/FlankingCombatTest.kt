@@ -5,7 +5,9 @@ import com.wingedsheep.engine.core.CombatResolutionResponse
 import com.wingedsheep.engine.core.DamageEdgeAmount
 import com.wingedsheep.engine.core.OrderObjectsDecision
 import com.wingedsheep.engine.core.OrderedResponse
+import com.wingedsheep.engine.core.OrderTriggeredAbilitiesDecision
 import com.wingedsheep.engine.core.PassPriority
+import com.wingedsheep.engine.core.TriggeredAbilitiesOrderedResponse
 import com.wingedsheep.engine.support.GameTestDriver
 import com.wingedsheep.engine.support.TestCards
 import com.wingedsheep.sdk.core.Keyword
@@ -71,6 +73,11 @@ class FlankingCombatTest : FunSpec({
             when (val decision = driver.state.pendingDecision) {
                 is OrderObjectsDecision ->
                     driver.submitDecision(decision.playerId, OrderedResponse(decision.id, decision.objects))
+                is OrderTriggeredAbilitiesDecision ->
+                    driver.submitDecision(
+                        decision.playerId,
+                        TriggeredAbilitiesOrderedResponse(decision.id, decision.abilities.map { it.id }),
+                    )
                 is CombatResolutionDecision -> {
                     val edges = decision.edges.map { DamageEdgeAmount(it.id, it.amount) }
                     driver.submitDecision(decision.playerId, CombatResolutionResponse(decision.id, edges))
@@ -168,10 +175,14 @@ class FlankingCombatTest : FunSpec({
         driver.declareAttackers(attacker, listOf(sentinel), defender).isSuccess shouldBe true
 
         driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
-        driver.declareBlockers(
+        val declaration = driver.declareBlockers(
             defender,
             mapOf(footsoldier to listOf(sentinel), militia to listOf(sentinel)),
-        ).isSuccess shouldBe true
+        )
+        // Two simultaneous Flanking triggers correctly pause the declaration for the attacking
+        // player to order them.  A paused action is a valid result here; `resolveThroughCombat`
+        // makes that order explicitly below.
+        declaration.error shouldBe null
 
         resolveThroughCombat(driver)
 

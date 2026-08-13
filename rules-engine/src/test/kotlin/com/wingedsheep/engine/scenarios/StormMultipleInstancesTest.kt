@@ -52,7 +52,8 @@ class StormMultipleInstancesTest : FunSpec({
         val tendrils = driver.putCardInHand(caster, "Tendrils of Agony")
 
         val result = driver.castSpell(caster, tendrils, listOf(opponent))
-        result.isSuccess shouldBe true
+        result.error shouldBe null
+        driver.submitTriggerOrderInListedOrder() shouldBe true
 
         // Stack should contain: original Tendrils spell + 2 Storm trigger abilities.
         val stack = driver.state.stack
@@ -83,7 +84,7 @@ class StormMultipleInstancesTest : FunSpec({
 
         val tendrils = driver.putCardInHand(caster, "Tendrils of Agony")
         val result = driver.castSpell(caster, tendrils, listOf(opponent))
-        result.isSuccess shouldBe true
+        result.error shouldBe null
 
         // Per CR 702.40a the ability still triggers — with copyCount 0.
         val stormTriggers = driver.state.stack.mapNotNull { id ->
@@ -107,7 +108,7 @@ class StormMultipleInstancesTest : FunSpec({
 
         val tendrils = driver.putCardInHand(caster, "Tendrils of Agony")
         val result = driver.castSpell(caster, tendrils, listOf(opponent))
-        result.isSuccess shouldBe true
+        result.error shouldBe null
 
         val stormTriggers = driver.state.stack.mapNotNull { id ->
             driver.state.getEntity(id)?.get<TriggeredAbilityOnStackComponent>()

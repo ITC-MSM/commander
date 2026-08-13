@@ -89,6 +89,12 @@ class CommanderSetupTest : FunSpec({
             // Commander is NOT in the library
             result.state.getZone(ZoneKey(pid, Zone.LIBRARY)) shouldNotBe commandZone
             (cmdrId in result.state.getZone(ZoneKey(pid, Zone.LIBRARY))) shouldBe false
+
+            // The opening hand is drawn only from Deck.cards. The actual commander
+            // game object was constructed separately above and begins in the command
+            // zone, so no CommanderComponent can enter either the first hand or the
+            // later London-mulligan hand/library transitions.
+            (cmdrId in result.state.getZone(ZoneKey(pid, Zone.HAND))) shouldBe false
         }
     }
 

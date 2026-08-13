@@ -149,18 +149,12 @@ class PassPriorityHandler(
     }
 
     private fun resolveTopOfStack(state: GameState): ExecutionResult {
-        // Determine who controlled the top stack item (caster/activator) so priority
-        // returns to them after resolution, per MTG rule 117.3c
-        val topId = state.getTopOfStack()
-        val topContainer = topId?.let { state.getEntity(it) }
-        val stackItemController = topContainer?.let { container ->
-            container.get<SpellOnStackComponent>()?.casterId
-                ?: container.get<TriggeredAbilityOnStackComponent>()?.controllerId
-                ?: container.get<ActivatedAbilityOnStackComponent>()?.controllerId
-        } ?: state.activePlayerId
-
-        val preResolutionStackSize = state.continuationStack.size
-        val result = stackResolver.resolveTop(state)
+        // Keep the eventual priority recipient in state while resolution is paused for a
+        // mandatory choice. SubmitDecisionHandler preserves this marker after the continuation
+        // drains, so CR 117.3b also holds when a spell/ability or its trigger placement pauses.
+        val resolutionState = state.withPriority(state.activePlayerId)
+        val preResolutionStackSize = resolutionState.continuationStack.size
+        val result = stackResolver.resolveTop(resolutionState)
 
         // If resolution paused mid-way (e.g., Broken Bond destroys a creature then asks
         // "may put a land from hand"), triggers from events emitted before the pause
@@ -176,7 +170,8 @@ class PassPriorityHandler(
             if (triggers.isNotEmpty()) {
                 val pendingTriggers = PendingTriggersContinuation(
                     decisionId = "resolution-deferred-triggers-${java.util.UUID.randomUUID()}",
-                    remainingTriggers = triggers
+                    remainingTriggers = triggers,
+                    alreadyOrdered = false,
                 )
                 val stack = result.newState.continuationStack
                 val newStack = stack.subList(0, preResolutionStackSize) +
@@ -226,7 +221,8 @@ class PassPriorityHandler(
             if (preSbaTriggers.isNotEmpty()) {
                 val pendingTriggers = PendingTriggersContinuation(
                     decisionId = "sba-deferred-triggers-${java.util.UUID.randomUUID()}",
-                    remainingTriggers = preSbaTriggers
+                    remainingTriggers = preSbaTriggers,
+                    alreadyOrdered = false,
                 )
                 val stack = pausedState.continuationStack
                 val newStack = stack.subList(0, preSbaStackSize) +
@@ -273,13 +269,15 @@ class PassPriorityHandler(
 
             combinedEvents = combinedEvents + triggerResult.events
             return ExecutionResult.success(
-                triggerResult.newState.withPriority(stackItemController),
+                // CR 117.3b: after a spell or ability resolves, the active player gets priority.
+                triggerResult.newState.withPriority(triggerResult.newState.activePlayerId),
                 combinedEvents
             )
         }
 
         return ExecutionResult.success(
-            postPollState.withPriority(stackItemController),
+            // CR 117.3b: after a spell or ability resolves, the active player gets priority.
+            postPollState.withPriority(postPollState.activePlayerId),
             combinedEvents
         )
     }

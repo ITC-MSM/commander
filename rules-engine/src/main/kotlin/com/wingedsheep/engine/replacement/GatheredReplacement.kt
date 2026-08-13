@@ -41,5 +41,6 @@ fun GatheredReplacement.sourceEntityId(state: GameState): EntityId? {
             state.grantedReplacementEffects.getOrNull(id.grantedIndex)?.entityId
         }
         is ReplacementEffectIdentity.SelfRedirectIdentity -> id.sourceEntityId
+        is ReplacementEffectIdentity.CommanderZoneIdentity -> id.commanderId
     }
 }

@@ -107,6 +107,12 @@ class LookBackTriggerTest : FunSpec({
         // Resolve the board wipe — all creatures and the artifact are destroyed simultaneously
         driver.bothPass()
 
+        // The three simultaneous Soul Shrine triggers have the same controller, so production
+        // correctly asks that controller to choose their stack order.  This scenario does not
+        // care about the order (all three are identical life-gain triggers), therefore make its
+        // historical detector order explicit rather than treating the prompt as a regression.
+        driver.submitTriggerOrderInListedOrder() shouldBe true
+
         // Rule 603.10: The artifact was on the battlefield when the creatures died,
         // so its "Whenever a creature dies" trigger should fire 3 times (once per creature).
         // The artifact dying does NOT count (it's not a creature).

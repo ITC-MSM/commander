@@ -30,7 +30,16 @@ sealed interface ReplacementOutcome {
      * The event is replaced entirely — execute this effect instead.
      */
     @Serializable
-    data class Replaced(val newEffect: Effect) : ReplacementOutcome
+    data class Replaced(
+        val newEffect: Effect,
+        /**
+         * Some replacement effects replace a pending event with both a modified
+         * version of that event and an additional effect (for example, "exile it
+         * instead and gain 2 life").  The event is performed exactly once before
+         * [newEffect].  Null means [newEffect] wholly replaces the original event.
+         */
+        val replacementEvent: PendingGameEvent? = null
+    ) : ReplacementOutcome
 
     /**
      * The event is consumed — nothing happens, skip the original action.

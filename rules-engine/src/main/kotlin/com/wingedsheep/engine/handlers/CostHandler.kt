@@ -378,11 +378,15 @@ class CostHandler {
                 state.getEntity(sourceId)
                     ?: return CostPaymentResult.failure("Source permanent not found")
 
-                val transitionResult = ZoneTransitionService.moveToZone(
+                val transitionResult = ZoneTransitionService.attemptMoveToZone(
                     state, sourceId, Zone.HAND
                 )
 
-                CostPaymentResult.success(transitionResult.state, manaPool, transitionResult.events)
+                if (transitionResult.isPaused) {
+                    CostPaymentResult.paused(transitionResult.state, manaPool, transitionResult.events)
+                } else {
+                    CostPaymentResult.success(transitionResult.state, manaPool, transitionResult.events)
+                }
             }
             is AbilityCost.ExileGrantingPermanent -> {
                 val granterId = choices.granterId
@@ -526,7 +530,15 @@ class CostHandler {
                 val allEvents = mutableListOf<GameEvent>()
                 for (subCost in cost.costs) {
                     val result = payAbilityCost(currentState, subCost, sourceId, controllerId, currentPool, choices, abilityContext)
-                    if (!result.success) return result
+                    if (!result.success || result.isPaused) {
+                        // A zone-change replacement can only pause at the terminal cost atom.
+                        // Re-entering a later cost would double-pay the earlier atoms, so reject
+                        // non-terminal shapes until they have their own serialized remainder.
+                        if (result.isPaused && subCost != cost.costs.last()) {
+                            return CostPaymentResult.failure("A pausing return-to-hand cost must be the last activation cost")
+                        }
+                        return result.copy(events = allEvents + result.events)
+                    }
                     currentState = result.newState!!
                     currentPool = result.newManaPool!!
                     allEvents.addAll(result.events)
@@ -1108,7 +1120,7 @@ class CostHandler {
         var newState = state
         val allEvents = mutableListOf<GameEvent>()
 
-        for (toBounce in toBounceList) {
+        for ((index, toBounce) in toBounceList.withIndex()) {
             newState.getEntity(toBounce)
                 ?: return CostPaymentResult.failure("Bounce target not found")
 
@@ -1118,11 +1130,17 @@ class CostHandler {
             }
 
             // Delegate zone movement to ZoneTransitionService for full cleanup
-            val transitionResult = ZoneTransitionService.moveToZone(
+            val transitionResult = ZoneTransitionService.attemptMoveToZone(
                 newState, toBounce, Zone.HAND
             )
             newState = transitionResult.state
             allEvents.addAll(transitionResult.events)
+            if (transitionResult.isPaused) {
+                return CostPaymentResult.paused(
+                    newState, manaPool, allEvents,
+                    remainingReturnToHandIds = toBounceList.drop(index + 1)
+                )
+            }
         }
 
         return CostPaymentResult.success(newState, manaPool, allEvents)
@@ -1538,7 +1556,11 @@ data class CostPaymentResult(
     val newState: GameState?,
     val newManaPool: ManaPool?,
     val error: String?,
-    val events: List<GameEvent> = emptyList()
+    val events: List<GameEvent> = emptyList(),
+    /** A replacement decision has paused the final zone-changing cost atom. */
+    val isPaused: Boolean = false,
+    /** Further selected bounce costs after the paused physical zone change. */
+    val remainingReturnToHandIds: List<EntityId> = emptyList()
 ) {
     companion object {
         fun success(state: GameState, manaPool: ManaPool, events: List<GameEvent> = emptyList()) =
@@ -1546,6 +1568,14 @@ data class CostPaymentResult(
 
         fun failure(error: String) =
             CostPaymentResult(false, null, null, error)
+
+        fun paused(
+            state: GameState,
+            manaPool: ManaPool,
+            events: List<GameEvent> = emptyList(),
+            remainingReturnToHandIds: List<EntityId> = emptyList()
+        ) = CostPaymentResult(true, state, manaPool, null, events, isPaused = true,
+            remainingReturnToHandIds = remainingReturnToHandIds)
     }
 }
 

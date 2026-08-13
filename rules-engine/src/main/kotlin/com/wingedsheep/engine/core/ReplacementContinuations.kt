@@ -4,6 +4,8 @@ import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.replacement.GatheredReplacement
 import com.wingedsheep.engine.replacement.PendingGameEvent
 import com.wingedsheep.engine.replacement.ReplacementEffectIdentity
+import com.wingedsheep.engine.handlers.effects.ZoneEntryOptions
+import com.wingedsheep.engine.state.ZoneKey
 import kotlinx.serialization.Serializable
 
 /**
@@ -28,6 +30,46 @@ data class ReplacementChoiceContinuation(
     val options: List<GatheredReplacement>,
     val alreadyApplied: Set<ReplacementEffectIdentity>,
     val context: EffectContext? = null
+) : ContinuationFrame
+
+/** Resume an optional replacement after its affected player accepts or declines it. */
+@Serializable
+data class OptionalReplacementContinuation(
+    override val decisionId: String,
+    val pendingEvent: PendingGameEvent,
+    val replacement: GatheredReplacement,
+    val alreadyApplied: Set<ReplacementEffectIdentity>,
+    val context: EffectContext? = null
+) : ContinuationFrame
+
+/** Performs the single zone transition left after a replacement chain settles. */
+@Serializable
+data class ZoneChangePerformContinuation(
+    override val decisionId: String = "zone-change-perform",
+    val entityId: com.wingedsheep.sdk.model.EntityId,
+    val destination: com.wingedsheep.sdk.core.Zone,
+    val options: ZoneEntryOptions,
+    val fromZoneKey: ZoneKey,
+    /** Optional rider of a replacement-with-effect, executed after the move. */
+    val postMoveEffect: com.wingedsheep.sdk.scripting.effects.Effect? = null,
+    val postMoveContext: EffectContext? = null,
+    /** Source to link an exiled card to when a redirect says "exile it ...". */
+    val linkExileToSourceId: com.wingedsheep.sdk.model.EntityId? = null
+) : ContinuationFrame
+
+/**
+ * Runs a spell's final stack exit after a resolution effect that paused has
+ * drained.  Omen needs this because its stack -> library move is subject to
+ * the optional Commander replacement, but that replacement cannot displace an
+ * earlier in-resolution choice.
+ */
+@Serializable
+data class DeferredStackZoneMoveContinuation(
+    override val decisionId: String = "deferred-stack-zone-move",
+    val entityId: com.wingedsheep.sdk.model.EntityId,
+    val ownerId: com.wingedsheep.sdk.model.EntityId,
+    val destination: com.wingedsheep.sdk.core.Zone,
+    val options: ZoneEntryOptions = ZoneEntryOptions()
 ) : ContinuationFrame
 
 /**

@@ -653,8 +653,8 @@ class TargetValidator {
         if (target !is ChosenTarget.Player) {
             return "Target must be a player"
         }
-        if (!state.hasEntity(target.playerId)) {
-            return "Target player not found"
+        if (target.playerId !in state.activePlayers) {
+            return "Target player is no longer in the game"
         }
         if (playerHasShroud(state, target.playerId)) {
             return "Target player has shroud"
@@ -680,8 +680,8 @@ class TargetValidator {
         if (target !is ChosenTarget.Player) {
             return "Target must be a player"
         }
-        if (!state.hasEntity(target.playerId)) {
-            return "Target player not found"
+        if (target.playerId !in state.activePlayers) {
+            return "Target player is no longer in the game"
         }
         if (target.playerId == casterId) {
             return "Target must be an opponent"
@@ -701,7 +701,7 @@ class TargetValidator {
     private fun validateAnyTarget(state: GameState, target: ChosenTarget, casterId: EntityId): String? {
         return when (target) {
             is ChosenTarget.Player -> {
-                if (!state.hasEntity(target.playerId)) "Target player not found"
+                if (target.playerId !in state.activePlayers) "Target player is no longer in the game"
                 else if (playerHasShroud(state, target.playerId)) "Target player has shroud"
                 else if (playerHasHexproofAgainst(state, target.playerId, casterId)) "Target player has hexproof"
                 else null
@@ -716,7 +716,7 @@ class TargetValidator {
     private fun validateCreatureOrPlayerTarget(state: GameState, target: ChosenTarget, casterId: EntityId): String? {
         return when (target) {
             is ChosenTarget.Player -> {
-                if (!state.hasEntity(target.playerId)) "Target player not found"
+                if (target.playerId !in state.activePlayers) "Target player is no longer in the game"
                 else if (playerHasShroud(state, target.playerId)) "Target player has shroud"
                 else if (playerHasHexproofAgainst(state, target.playerId, casterId)) "Target player has hexproof"
                 else null
@@ -742,7 +742,7 @@ class TargetValidator {
     private fun validateOpponentOrPlaneswalkerTarget(state: GameState, target: ChosenTarget, casterId: EntityId): String? {
         return when (target) {
             is ChosenTarget.Player -> {
-                if (!state.hasEntity(target.playerId)) "Target player not found"
+                if (target.playerId !in state.activePlayers) "Target player is no longer in the game"
                 else if (target.playerId == casterId) "Target must be an opponent"
                 else if (playerHasShroud(state, target.playerId)) "Target player has shroud"
                 else if (playerHasHexproof(state, target.playerId)) "Target player has hexproof"
@@ -768,7 +768,7 @@ class TargetValidator {
     private fun validatePlayerOrPlaneswalkerTarget(state: GameState, target: ChosenTarget, casterId: EntityId): String? {
         return when (target) {
             is ChosenTarget.Player -> {
-                if (!state.hasEntity(target.playerId)) "Target player not found"
+                if (target.playerId !in state.activePlayers) "Target player is no longer in the game"
                 else if (playerHasShroud(state, target.playerId)) "Target player has shroud"
                 else if (playerHasHexproofAgainst(state, target.playerId, casterId)) "Target player has hexproof"
                 else null

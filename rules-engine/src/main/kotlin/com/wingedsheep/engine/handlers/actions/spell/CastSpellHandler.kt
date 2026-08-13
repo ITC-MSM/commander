@@ -8,6 +8,8 @@ import com.wingedsheep.engine.core.CastWithCreatureTypeContinuation
 import com.wingedsheep.engine.core.ChooseOptionDecision
 import com.wingedsheep.engine.core.AdditionalCostSelectionKind
 import com.wingedsheep.engine.core.CastSpellAdditionalCostContinuation
+import com.wingedsheep.engine.core.CastSpellPostAdditionalCostsContinuation
+import com.wingedsheep.engine.core.CastSpellAlternativeBounceContinuation
 import com.wingedsheep.engine.core.DecisionContext
 import com.wingedsheep.engine.core.DecisionPhase
 import com.wingedsheep.engine.core.DecisionRequestedEvent
@@ -2155,9 +2157,57 @@ class CastSpellHandler(
         return null
     }
 
-    override fun execute(state: GameState, action: CastSpell): ExecutionResult {
+    override fun execute(state: GameState, action: CastSpell): ExecutionResult =
+        executeAfterAdditionalCosts(state, action, null)
+
+    /**
+     * Resume only the post-additional-cost cast tail.  This is intentionally separate from
+     * [execute]: a Commander replacement may have paused after prior cost atoms were already
+     * paid, so restarting the action would double-pay those atoms and re-price the spell against
+     * a changed battlefield.
+     */
+    internal fun resumePostAdditionalCosts(
+        state: GameState,
+        continuation: CastSpellPostAdditionalCostsContinuation,
+        physicalMoveEvents: List<GameEvent>
+    ): ExecutionResult = executeAfterAdditionalCosts(
+        state,
+        continuation.action,
+        continuation.copy(priorEvents = continuation.priorEvents + physicalMoveEvents),
+        alternativeBounceAlreadyPaid = continuation.alternativeBounceAlreadyPaid,
+        resumedSneakAttackDefenderId = continuation.sneakAttackDefenderId,
+        resumedWebSlungReturnedManaValue = continuation.webSlungReturnedManaValue,
+    )
+
+    /** Resume only after a Sneak/Web-slinging return was physically completed. */
+    internal fun resumeAfterAlternativeBounce(
+        state: GameState,
+        continuation: CastSpellAlternativeBounceContinuation,
+        physicalMoveEvents: List<GameEvent>,
+    ): ExecutionResult = executeAfterAdditionalCosts(
+        state = state,
+        action = continuation.action,
+        postAdditionalCosts = null,
+        alternativeBounceAlreadyPaid = true,
+        resumedSneakAttackDefenderId = continuation.sneakAttackDefenderId,
+        resumedWebSlungReturnedManaValue = continuation.webSlungReturnedManaValue,
+        lockedAlternativeBounceCost = continuation.lockedEffectiveCost,
+        priorEvents = continuation.priorEvents + physicalMoveEvents,
+    )
+
+    private fun executeAfterAdditionalCosts(
+        state: GameState,
+        action: CastSpell,
+        postAdditionalCosts: CastSpellPostAdditionalCostsContinuation?,
+        alternativeBounceAlreadyPaid: Boolean = false,
+        resumedSneakAttackDefenderId: EntityId? = null,
+        resumedWebSlungReturnedManaValue: Int = 0,
+        lockedAlternativeBounceCost: ManaCost? = null,
+        priorEvents: List<GameEvent> = emptyList(),
+    ): ExecutionResult {
         var currentState = state
-        val events = mutableListOf<GameEvent>()
+        val events = (postAdditionalCosts?.priorEvents ?: priorEvents).toMutableList()
+        val resumingPostAdditionalCosts = postAdditionalCosts != null
 
         val cardComponent = state.getEntity(action.cardId)?.get<CardComponent>()
             ?: return ExecutionResult.error(state, "Card not found")
@@ -2193,7 +2243,9 @@ class CastSpellHandler(
         // LinkedExileComponent carried over from a previous battlefield visit (e.g.
         // Veteran Survivor bounced to hand, then recast) before additional costs run —
         // a behold-and-exile cost on this same cast will attach a fresh one afterwards.
-        currentState = currentState.updateEntity(action.cardId) { c -> c.without<LinkedExileComponent>() }
+        if (!resumingPostAdditionalCosts) {
+            currentState = currentState.updateEntity(action.cardId) { c -> c.without<LinkedExileComponent>() }
+        }
 
         // Cast-time mode selection for modal spells (CR 601.2b — the controller announces
         // the mode choice while casting the spell, before it goes on the stack). Must run
@@ -2208,7 +2260,7 @@ class CastSpellHandler(
         // for modal *triggered* / *activated* abilities (CR 603.3c), which don't go
         // through the cast pipeline at all.
         val modalEffect = cardDef?.script?.spellEffect as? ModalEffect
-        if (modalEffect != null && action.chosenModes.isEmpty() && modalEffect.chooseCount >= 1) {
+        if (!resumingPostAdditionalCosts && modalEffect != null && action.chosenModes.isEmpty() && modalEffect.chooseCount >= 1) {
             return pauseForCastTimeModeSelection(currentState, action, cardComponent, modalEffect)
         }
 
@@ -2219,7 +2271,7 @@ class CastSpellHandler(
         // into, then re-enters execute() with a fully-populated action so cost payment and
         // stack placement happen exactly once. The choose-1 client path and AI supply flat
         // `targets`, so they skip this and fall through to deriveModeTargetsFromFlat below.
-        if (modalEffect != null &&
+        if (!resumingPostAdditionalCosts && modalEffect != null &&
             action.chosenModes.isNotEmpty() &&
             action.modeTargetsOrdered.isEmpty() &&
             action.targets.isEmpty() &&
@@ -2458,22 +2510,83 @@ class CastSpellHandler(
             }
         }
 
+        // Sneak and Web-slinging each include returning a creature as part of the total cost.
+        // Pay that component before any other cost atom so a Commander 903.9b decision can pause
+        // without replaying a sacrifice, discard, or mana payment.  CR 601.2h lets the caster pay
+        // components of a total cost in any order; the continuation freezes the CR 601.2f price
+        // because the returned creature may itself have modified it.
+        val wasSneaked = action.useAlternativeCost && cardDef != null &&
+            action.altAllows(AlternativeCostType.SNEAK) &&
+            (cardDef.keywordAbilities.any { it.ninjutsuStyleCost != null } ||
+                SneakWindow.graveyardSneakGrantCost(currentState, action.playerId, cardRegistry) != null)
+        val wasWebSlung = action.useAlternativeCost && cardDef != null &&
+            action.altAllows(AlternativeCostType.WEB_SLINGING) &&
+            WebSlinging.effectiveWebSlinging(
+                currentState, action.cardId, cardDef, action.playerId, cardRegistry, predicateEvaluator
+            ) != null
+        var sneakAttackDefenderId = resumedSneakAttackDefenderId
+        var webSlungReturnedManaValue = resumedWebSlungReturnedManaValue
+
+        if (postAdditionalCosts != null) {
+            effectiveCost = postAdditionalCosts.lockedEffectiveCost
+        } else if (lockedAlternativeBounceCost != null) {
+            effectiveCost = lockedAlternativeBounceCost
+        }
+
+        if (!alternativeBounceAlreadyPaid && (wasSneaked || wasWebSlung)) {
+            val bounceId = action.additionalCostPayment?.bouncedPermanents?.firstOrNull()
+            if (bounceId != null) {
+                if (wasSneaked) {
+                    sneakAttackDefenderId = currentState.getEntity(bounceId)
+                        ?.get<com.wingedsheep.engine.state.components.combat.AttackingComponent>()
+                        ?.defenderId
+                }
+                if (wasWebSlung) {
+                    webSlungReturnedManaValue = currentState.getEntity(bounceId)
+                        ?.get<CardComponent>()?.manaValue ?: 0
+                }
+                val attempt = com.wingedsheep.engine.handlers.effects.ZoneTransitionService
+                    .attemptMoveToZone(currentState, bounceId, Zone.HAND)
+                currentState = attempt.state
+                events.addAll(attempt.events)
+                if (attempt.isPaused) {
+                    val stack = currentState.continuationStack
+                    if (stack.isEmpty()) {
+                        return ExecutionResult.error(currentState, "Zone replacement paused without a continuation")
+                    }
+                    val tail = CastSpellAlternativeBounceContinuation(
+                        action = action,
+                        lockedEffectiveCost = effectiveCost,
+                        wasSneaked = wasSneaked,
+                        sneakAttackDefenderId = sneakAttackDefenderId,
+                        wasWebSlung = wasWebSlung,
+                        webSlungReturnedManaValue = webSlungReturnedManaValue,
+                        priorEvents = events,
+                    )
+                    val pausedState = currentState.copy(
+                        continuationStack = stack.dropLast(1) + tail + stack.last()
+                    )
+                    return ExecutionResult.paused(pausedState, attempt.pendingDecision!!, events)
+                }
+            }
+        }
+
         // Process additional costs (sacrifice, exile, etc.)
-        val sacrificedSnapshots = mutableListOf<EntitySnapshot>()
-        var exiledCardCount = 0
-        val beheldCards = mutableListOf<EntityId>()
+        val sacrificedSnapshots = postAdditionalCosts?.sacrificedSnapshots?.toMutableList() ?: mutableListOf()
+        var exiledCardCount = postAdditionalCosts?.exiledCardCount ?: 0
+        val beheldCards = postAdditionalCosts?.beheldCards?.toMutableList() ?: mutableListOf()
         // Cards discarded to pay an additional discard cost — threaded to the spell on the stack so
         // a resolution-time condition can test the discarded card (EffectTarget.DiscardedAsCost).
-        val discardedAsCostCards = mutableListOf<EntityId>()
+        val discardedAsCostCards = postAdditionalCosts?.discardedAsCostCards?.toMutableList() ?: mutableListOf()
         /**
          * LKI snapshots for entities chosen via [AdditionalCost.ChooseEntity] when
          * `captureSnapshot = true`. Captured at cost-pay time so downstream effects
          * (e.g. `EntityProperty(FromCostStorage(...), Power)`) can read "power as it
          * last existed on the battlefield" if the chosen entity leaves before resolution.
          */
-        val chosenEntitySnapshots = mutableListOf<EntitySnapshot>()
+        val chosenEntitySnapshots = postAdditionalCosts?.chosenEntitySnapshots?.toMutableList() ?: mutableListOf()
         /** Pipeline storage populated by Behold, consumed by ExileFromStorage */
-        val costPipelineCollections = mutableMapOf<String, List<EntityId>>()
+        val costPipelineCollections = postAdditionalCosts?.costPipelineCollections?.toMutableMap() ?: mutableMapOf()
 
         // Collect all additional costs: script costs + kicker additional cost (if kicked)
         // + self-alternative cost's additional costs (if using alternative cost)
@@ -2557,13 +2670,15 @@ class CastSpellHandler(
         // we surface the selection here. The pause sits before any cost is paid, so the re-entry
         // on resume (with the chosen entities merged into the payment) is side-effect free. Returns
         // null when every selection-requiring cost is already satisfied — the normal path.
-        surfaceUnpaidAdditionalCostSelection(currentState, action, flattenedAllCosts)?.let { return it }
+        if (!resumingPostAdditionalCosts) {
+            surfaceUnpaidAdditionalCostSelection(currentState, action, flattenedAllCosts)?.let { return it }
+        }
 
         // PayLife additional costs (e.g., Timeline Culler's "Warp—{B}, Pay 2 life")
         // are auto-paid: the amount is fixed, so no player choice is required and the
         // payment is applied regardless of whether the client included an
         // AdditionalCostPayment object.
-        for (additionalCost in flattenedAllCosts) {
+        if (!resumingPostAdditionalCosts) for (additionalCost in flattenedAllCosts) {
             val atom = (additionalCost as? AdditionalCost.Atom)?.atom
             val lifeToPay = when {
                 atom is CostAtom.PayLife -> atom.amount
@@ -2579,8 +2694,8 @@ class CastSpellHandler(
             currentState = afterPayment
             events.addAll(paymentEvents)
         }
-        if (flattenedAllCosts.isNotEmpty() && action.additionalCostPayment != null) {
-            for (additionalCost in flattenedAllCosts) {
+        if (!resumingPostAdditionalCosts && flattenedAllCosts.isNotEmpty() && action.additionalCostPayment != null) {
+            for ((additionalCostIndex, additionalCost) in flattenedAllCosts.withIndex()) {
                 when (additionalCost) {
                     is AdditionalCost.Atom -> when (val atom = additionalCost.atom) {
                         is CostAtom.Sacrifice -> {
@@ -2653,14 +2768,51 @@ class CastSpellHandler(
                             }
                         }
                         is CostAtom.ReturnToHand -> {
-                            // Return permanents you control to their owner's hand as an additional
-                            // cost (e.g., Fear of Isolation). ZoneTransitionService.moveToZone
-                            // handles attached auras/equipment and tokens ceasing to exist.
-                            for (permId in action.additionalCostPayment.bouncedPermanents) {
-                                val tr = com.wingedsheep.engine.handlers.effects.ZoneTransitionService
-                                    .moveToZone(currentState, permId, Zone.HAND)
-                                currentState = tr.state
-                                events.addAll(tr.events)
+                            // A normal additional-cost bounce can be replaced by CR 903.9b.
+                            // The frame below the replacement continuation carries the fully
+                            // paid prefix and the already locked CR 601.2f mana cost, so accepting
+                            // command does not restart this cast or re-pay an earlier cost atom.
+                            val selected = action.additionalCostPayment.bouncedPermanents
+                            for ((selectedIndex, permId) in selected.withIndex()) {
+                                val attempt = com.wingedsheep.engine.handlers.effects.ZoneTransitionService
+                                    .attemptMoveToZone(currentState, permId, Zone.HAND)
+                                currentState = attempt.state
+                                events.addAll(attempt.events)
+                                if (attempt.isPaused) {
+                                    // A later additional-cost atom would need its own frozen
+                                    // payment-program continuation. No registered normal spell
+                                    // currently has that shape; fail closed rather than silently
+                                    // re-running or skipping it.
+                                    if (flattenedAllCosts.drop(additionalCostIndex + 1).isNotEmpty()) {
+                                        return ExecutionResult.error(
+                                            currentState,
+                                            "Return-to-hand replacement after a non-terminal spell additional cost is unsupported"
+                                        )
+                                    }
+                                    val tail = CastSpellPostAdditionalCostsContinuation(
+                                        action = action,
+                                        lockedEffectiveCost = effectiveCost,
+                                        sacrificedSnapshots = sacrificedSnapshots,
+                                        exiledCardCount = exiledCardCount,
+                                        beheldCards = beheldCards,
+                                        discardedAsCostCards = discardedAsCostCards,
+                                        chosenEntitySnapshots = chosenEntitySnapshots,
+                                        costPipelineCollections = costPipelineCollections,
+                                        priorEvents = events,
+                                        remainingPermanentIds = selected.drop(selectedIndex + 1),
+                                        alternativeBounceAlreadyPaid = alternativeBounceAlreadyPaid || wasSneaked || wasWebSlung,
+                                        sneakAttackDefenderId = sneakAttackDefenderId,
+                                        webSlungReturnedManaValue = webSlungReturnedManaValue,
+                                    )
+                                    val continuationStack = currentState.continuationStack
+                                    if (continuationStack.isEmpty()) {
+                                        return ExecutionResult.error(currentState, "Zone replacement paused without a continuation")
+                                    }
+                                    val pausedState = currentState.copy(
+                                        continuationStack = continuationStack.dropLast(1) + tail + continuationStack.last()
+                                    )
+                                    return ExecutionResult.paused(pausedState, attempt.pendingDecision!!, events)
+                                }
                             }
                         }
                         is CostAtom.VariablePermanents -> {
@@ -2980,6 +3132,13 @@ class CastSpellHandler(
             }
         }
 
+        // A post-cost Commander choice may have removed a cost modifier from the battlefield.
+        // CR 601.2f locked the total before any costs were paid, so the continuation's value
+        // wins over the harmless diagnostic recomputation above.
+        if (postAdditionalCosts != null) {
+            effectiveCost = postAdditionalCosts.lockedEffectiveCost
+        }
+
         // X mana to pay (≤ action.xValue). For an X-cost Harmonize cast with a tapped
         // creature, the leftover power beyond the printed generic reduces the X mana paid;
         // computed from the pre-reduction cost so the printed-generic split matches what
@@ -3200,53 +3359,6 @@ class CastSpellHandler(
                 currentState, action, castTimeChoice, sacrificedSnapshots, spellTargetRequirements, events
             )
             if (pauseResult != null) return pauseResult
-        }
-
-        // Sneak (CR 702.190a): pay the "return an unblocked creature you control to its owner's
-        // hand" portion of the cost. The {cost} mana was paid by the standard payment pipeline
-        // above. Capture the defender the returned creature was attacking first, so a resolving
-        // permanent spell can enter attacking the same player/planeswalker (CR 702.190b).
-        // Printed Sneak, or a granted graveyard sneak (Ninja Teen). The card may already be on the
-        // stack here, so detect the grant via the player's battlefield (zone-independent) rather
-        // than the card's current zone.
-        val wasSneaked = action.useAlternativeCost && cardDef != null &&
-            action.altAllows(AlternativeCostType.SNEAK) &&
-            (cardDef.keywordAbilities.any { it.ninjutsuStyleCost != null } ||
-                SneakWindow.graveyardSneakGrantCost(currentState, action.playerId, cardRegistry) != null)
-        var sneakAttackDefenderId: EntityId? = null
-        if (wasSneaked) {
-            val bounceId = action.additionalCostPayment?.bouncedPermanents?.firstOrNull()
-            if (bounceId != null) {
-                sneakAttackDefenderId = currentState.getEntity(bounceId)
-                    ?.get<com.wingedsheep.engine.state.components.combat.AttackingComponent>()
-                    ?.defenderId
-                val bounceResult = com.wingedsheep.engine.handlers.effects.ZoneTransitionService.moveToZone(
-                    currentState, bounceId, Zone.HAND
-                )
-                currentState = bounceResult.state
-                events.addAll(bounceResult.events)
-            }
-        }
-
-        // Web-slinging (CR 702.188a): pay the alternative cost's non-mana portion by returning one
-        // tapped creature you control to its owner's hand. Capture that creature's mana value first
-        // (CR 118.9c — its own mana value, needed by Scarlet Spider, Ben Reilly) before it leaves.
-        val wasWebSlung = action.useAlternativeCost && cardDef != null &&
-            action.altAllows(AlternativeCostType.WEB_SLINGING) &&
-            WebSlinging.effectiveWebSlinging(currentState, action.cardId, cardDef, action.playerId, cardRegistry, predicateEvaluator) != null
-        var webSlungReturnedManaValue = 0
-        if (wasWebSlung) {
-            val bounceId = action.additionalCostPayment?.bouncedPermanents?.firstOrNull()
-            if (bounceId != null) {
-                webSlungReturnedManaValue = currentState.getEntity(bounceId)
-                    ?.get<CardComponent>()
-                    ?.manaValue ?: 0
-                val bounceResult = com.wingedsheep.engine.handlers.effects.ZoneTransitionService.moveToZone(
-                    currentState, bounceId, Zone.HAND
-                )
-                currentState = bounceResult.state
-                events.addAll(bounceResult.events)
-            }
         }
 
         // Determine if this spell is being cast using mayhem (CR 702.187). Gated by the chosen

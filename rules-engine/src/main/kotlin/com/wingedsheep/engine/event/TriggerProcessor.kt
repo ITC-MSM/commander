@@ -52,6 +52,7 @@ import com.wingedsheep.sdk.scripting.values.DynamicAmount
 class TriggerProcessor(
     private val cardRegistry: CardRegistry,
     private val stackResolver: StackResolver,
+    private val triggerDetector: TriggerDetector,
     private val targetFinder: TargetFinder = TargetFinder(),
     private val decisionHandler: DecisionHandler = DecisionHandler()
 ) {
@@ -67,6 +68,57 @@ class TriggerProcessor(
      * @return ExecutionResult - may be paused if a trigger requires targets
      */
     fun processTriggers(state: GameState, triggers: List<PendingTrigger>): ExecutionResult {
+        if (state.gameOver || triggers.isEmpty()) return ExecutionResult.success(state)
+        // This processor owns detection for both this wave and every subsequent placement wave.
+        // Callers such as SubmitDecisionHandler must not re-detect its emitted AbilityTriggeredEvents
+        // or a pause-resume would stack the same meta-trigger twice.
+        return processNextPlacementGroup(state, placementGroups(state, triggers), 0)
+            .copy(triggersAlreadyProcessed = true)
+    }
+
+    /** Continue a previously-started APNAP wave after its preceding controller's triggers stack. */
+    fun resumePlacementWave(
+        state: GameState,
+        continuation: TriggerPlacementWaveContinuation,
+        eventsSincePause: List<GameEvent>,
+    ): ExecutionResult = processNextPlacementGroup(
+        state, continuation.groups, continuation.nextGroupIndex,
+        continuation.placementEvents + eventsSincePause,
+    ).copy(triggersAlreadyProcessed = true)
+
+    /** Apply a controller's CR 603.3b order, then continue with the next APNAP controller. */
+    fun resumePlacementOrder(
+        state: GameState,
+        continuation: TriggerPlacementWaveContinuation,
+        orderedAbilityIds: List<String>,
+    ): ExecutionResult {
+        val group = continuation.groups.getOrNull(continuation.nextGroupIndex)
+            ?: return ExecutionResult.error(state, "Trigger placement wave has no group to order")
+        val ids = group.triggers.indices.map { triggerInstanceId(continuation.decisionId, it) }
+        if (orderedAbilityIds.size != ids.size || orderedAbilityIds.toSet() != ids.toSet()) {
+            return ExecutionResult.error(state, "Triggered ability order does not match this placement wave")
+        }
+        val byId = ids.zip(group.triggers).toMap()
+        // This entry point bypasses processTriggers(), whose public boundary
+        // normally marks a completed/paused placement wave as already scanned.
+        // Preserve that ownership here so a SubmitDecision resume cannot scan
+        // the placement events a second time.  Do not propagate this marker
+        // through arbitrary outer auto-resumers: later, fresh events still need
+        // ordinary trigger detection.
+        return processPlacementGroup(
+            state,
+            group.copy(triggers = orderedAbilityIds.map { byId.getValue(it) }),
+            continuation.groups,
+            continuation.nextGroupIndex + 1,
+            continuation.placementEvents,
+        ).copy(triggersAlreadyProcessed = true)
+    }
+
+    /**
+     * The former public implementation. Its input is already ordered; in particular, a target
+     * pause must resume the rest of this list without offering a second ordering choice.
+     */
+    fun processAlreadyOrderedTriggers(state: GameState, triggers: List<PendingTrigger>): ExecutionResult {
         // Rule 704.6 / 800.4a: once the game has ended (or a player has left), triggered
         // abilities don't resolve. In particular, dies/leaves-battlefield triggers from a
         // creature whose controller just lost must not pause the game asking that player
@@ -143,6 +195,108 @@ class TriggerProcessor(
         }
 
         return ExecutionResult.success(currentState, allEvents)
+    }
+
+    private fun placementGroups(state: GameState, triggers: List<PendingTrigger>): List<TriggerPlacementGroup> {
+        val live = triggers.filterNot { state.getEntity(it.controllerId)?.has<PlayerLostComponent>() == true }
+        val active = state.activePlayerId ?: return live.groupBy { it.controllerId }
+            .map { TriggerPlacementGroup(it.key, it.value) }
+        val turnOrder = state.turnOrder.let { players ->
+            val activeIndex = players.indexOf(active)
+            if (activeIndex < 0) players else players.drop(activeIndex) + players.take(activeIndex)
+        }
+        val byController = live.groupBy { it.controllerId }
+        return turnOrder.mapNotNull { playerId ->
+            byController[playerId]?.takeIf { it.isNotEmpty() }?.let { TriggerPlacementGroup(playerId, it) }
+        }
+    }
+
+    private fun processNextPlacementGroup(
+        state: GameState,
+        groups: List<TriggerPlacementGroup>,
+        groupIndex: Int,
+        placementEvents: List<GameEvent> = emptyList(),
+    ): ExecutionResult {
+        val group = groups.getOrNull(groupIndex) ?: return finishPlacementWave(state, placementEvents)
+        if (group.triggers.size == 1) {
+            return processPlacementGroup(state, group, groups, groupIndex + 1, placementEvents)
+        }
+
+        val decisionId = "order-triggered-abilities-${java.util.UUID.randomUUID()}"
+        val decision = OrderTriggeredAbilitiesDecision(
+            id = decisionId,
+            playerId = group.controllerId,
+            prompt = "Order your triggered abilities",
+            context = DecisionContext(phase = DecisionPhase.RESOLUTION),
+            abilities = group.triggers.mapIndexed { index, trigger ->
+                TriggerOrderItem(
+                    id = triggerInstanceId(decisionId, index),
+                    sourceName = trigger.sourceName,
+                    description = trigger.ability.effect.description,
+                )
+            },
+        )
+        val continuation = TriggerPlacementWaveContinuation(
+            decisionId = decisionId,
+            groups = groups,
+            nextGroupIndex = groupIndex,
+            placementEvents = placementEvents,
+        )
+        val pausedState = state.withPendingDecision(decision).pushContinuation(continuation)
+        return ExecutionResult.paused(
+            pausedState,
+            decision,
+            listOf(DecisionRequestedEvent(decisionId, group.controllerId, "ORDER_TRIGGERED_ABILITIES", decision.prompt)),
+        )
+    }
+
+    private fun processPlacementGroup(
+        state: GameState,
+        group: TriggerPlacementGroup,
+        groups: List<TriggerPlacementGroup>,
+        nextGroupIndex: Int,
+        placementEvents: List<GameEvent>,
+    ): ExecutionResult {
+        val prePlacementStackSize = state.continuationStack.size
+        val placed = processAlreadyOrderedTriggers(state, group.triggers)
+        if (!placed.isSuccess && !placed.isPaused) return placed
+        if (placed.isPaused) {
+            // The group's target/may continuation(s) must drain before the next APNAP controller
+            // receives an ordering choice. Insert beneath all frames created by this group.
+            val wave = TriggerPlacementWaveContinuation(
+                decisionId = "trigger-placement-wave-${java.util.UUID.randomUUID()}",
+                groups = groups,
+                nextGroupIndex = nextGroupIndex,
+                placementEvents = placementEvents + placed.events,
+            )
+            val stack = placed.state.continuationStack
+            val resumed = placed.state.copy(
+                continuationStack = stack.take(prePlacementStackSize) + wave + stack.drop(prePlacementStackSize)
+            )
+            return ExecutionResult.paused(resumed, placed.pendingDecision!!, placed.events)
+        }
+        val next = processNextPlacementGroup(
+            placed.newState, groups, nextGroupIndex, placementEvents + placed.events,
+        )
+        return ExecutionResult(
+            state = next.state,
+            events = placed.events + next.events,
+            error = next.error,
+            pendingDecision = next.pendingDecision,
+        )
+    }
+
+    private fun triggerInstanceId(decisionId: String, index: Int): String = "$decisionId:$index"
+
+    /**
+     * CR 603.3b's second half: abilities that trigger while the entire preceding wave is put on
+     * the stack are detected only after every APNAP controller's group has been placed. They form
+     * a new complete wave, so a reaction cannot jump ahead of a later original-controller group.
+     */
+    private fun finishPlacementWave(state: GameState, placementEvents: List<GameEvent>): ExecutionResult {
+        val nextWave = triggerDetector.detectTriggers(state, placementEvents)
+        if (nextWave.isEmpty()) return ExecutionResult.success(state)
+        return processTriggers(state, nextWave)
     }
 
     /**
@@ -788,6 +942,7 @@ class TriggerProcessor(
             triggerDamageAmount = trigger.triggerContext.damageAmount,
             triggeringEntityId = trigger.triggerContext.triggeringEntityId,
             triggeringPlayerId = trigger.triggerContext.triggeringPlayerId,
+            defendingPlayerId = trigger.triggerContext.defendingPlayerId,
             elseEffect = ability.elseEffect,
             targetRequirements = allRequirements,
             triggerCounterCount = trigger.triggerContext.counterCount,
@@ -852,6 +1007,9 @@ class TriggerProcessor(
             triggerDamageAmount = trigger.triggerContext.damageAmount,
             triggeringEntityId = trigger.triggerContext.triggeringEntityId,
             triggeringPlayerId = trigger.triggerContext.triggeringPlayerId,
+            // Snapshot combat's actual defender as the trigger fires. The source can leave
+            // combat before this object resolves, so resolution must not recompute it.
+            defendingPlayerId = trigger.triggerContext.defendingPlayerId,
             xValue = trigger.triggerContext.xValue ?: computeXForDisplay(state, trigger),
             triggerCounterCount = trigger.triggerContext.counterCount,
             triggerTotalCounterCount = trigger.triggerContext.totalCounterCount,

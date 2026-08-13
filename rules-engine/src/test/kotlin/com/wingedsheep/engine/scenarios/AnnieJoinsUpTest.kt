@@ -74,9 +74,11 @@ class AnnieJoinsUpTest : FunSpec({
         driver.giveColorlessMana(you, 1)
         driver.castSpell(you, annie).isSuccess shouldBe true
         var guard = 0
-        while ((driver.state.stack.isNotEmpty() || driver.state.pendingDecision is ChooseTargetsDecision) && guard++ < 20) {
+        while ((driver.state.stack.isNotEmpty() || driver.state.pendingDecision is ChooseTargetsDecision || driver.state.pendingDecision is com.wingedsheep.engine.core.OrderTriggeredAbilitiesDecision) && guard++ < 20) {
             if (driver.state.pendingDecision is ChooseTargetsDecision) {
                 driver.submitTargetSelection(you, listOf(target))
+            } else if (driver.submitTriggerOrderInListedOrder()) {
+                // Deterministic test order; production asks the controller.
             } else {
                 driver.bothPass()
             }
@@ -101,8 +103,8 @@ class AnnieJoinsUpTest : FunSpec({
         val before = driver.getHandSize(you)
         driver.castSpell(you, drawer).isSuccess shouldBe true
         var guard = 0
-        while (driver.state.stack.isNotEmpty() && guard++ < 20) {
-            driver.bothPass()
+        while ((driver.state.stack.isNotEmpty() || driver.state.pendingDecision is com.wingedsheep.engine.core.OrderTriggeredAbilitiesDecision) && guard++ < 20) {
+            if (!driver.submitTriggerOrderInListedOrder()) driver.bothPass()
         }
 
         // Casting moved the card from hand, then two ETB draws (original + additional firing):
@@ -123,8 +125,8 @@ class AnnieJoinsUpTest : FunSpec({
         val before = driver.getHandSize(you)
         driver.castSpell(you, drawer).isSuccess shouldBe true
         var guard = 0
-        while (driver.state.stack.isNotEmpty() && guard++ < 20) {
-            driver.bothPass()
+        while ((driver.state.stack.isNotEmpty() || driver.state.pendingDecision is com.wingedsheep.engine.core.OrderTriggeredAbilitiesDecision) && guard++ < 20) {
+            if (!driver.submitTriggerOrderInListedOrder()) driver.bothPass()
         }
 
         // -1 (cast) + 1 (single ETB draw, not doubled) = 0. The doubler is legendary-only.

@@ -1,6 +1,8 @@
 package com.wingedsheep.engine.scenarios
 
 import com.wingedsheep.engine.core.ChooseTargetsDecision
+import com.wingedsheep.engine.core.OrderTriggeredAbilitiesDecision
+import com.wingedsheep.engine.core.TriggeredAbilitiesOrderedResponse
 import com.wingedsheep.engine.core.YesNoDecision
 import com.wingedsheep.engine.support.ScenarioTestBase
 import com.wingedsheep.sdk.core.Phase
@@ -69,6 +71,9 @@ class JenniferWaltersScenarioTest : ScenarioTestBase() {
             var guard = 0
             while (guard++ < 40) {
                 when (val decision = game.getPendingDecision()) {
+                    is OrderTriggeredAbilitiesDecision -> game.submitDecision(
+                        TriggeredAbilitiesOrderedResponse(decision.id, decision.abilities.map { it.id })
+                    )
                     is ChooseTargetsDecision -> game.selectTargets(listOf(targetId))
                     is YesNoDecision -> {
                         asked++
@@ -184,6 +189,9 @@ class JenniferWaltersScenarioTest : ScenarioTestBase() {
                 var guard = 0
                 while (guard++ < 40) {
                     when (val decision = game.getPendingDecision()) {
+                        is OrderTriggeredAbilitiesDecision -> game.submitDecision(
+                            TriggeredAbilitiesOrderedResponse(decision.id, decision.abilities.map { it.id })
+                        )
                         is ChooseTargetsDecision -> game.selectTargets(listOf(game.player2Id))
                         is YesNoDecision -> {
                             decision.hint.shouldNotBeNull()

@@ -99,6 +99,19 @@ data class DrawReplacementRemainingDrawsContinuation(
 ) : ContinuationFrame
 
 /**
+ * Finishes a draw that paused because moving its top card to hand required a
+ * Commander CR 903.9b replacement decision.  It sits directly below the
+ * replacement continuation: after the final zone move, it counts and reveals
+ * the card only when the card actually reached the player's hand.
+ */
+@Serializable
+data class DrawCardAfterZoneChangeContinuation(
+    override val decisionId: String = "draw-card-after-zone-change",
+    val drawingPlayerId: EntityId,
+    val cardId: EntityId
+) : ContinuationFrame
+
+/**
  * Resume after the player answers yes/no for an optional static draw replacement effect
  * (e.g., Parallel Thoughts: "you may instead put the top card of the exiled pile into your hand").
  *

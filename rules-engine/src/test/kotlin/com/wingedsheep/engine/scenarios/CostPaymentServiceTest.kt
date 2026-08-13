@@ -6,6 +6,7 @@ import com.wingedsheep.engine.core.CardsSelectedResponse
 import com.wingedsheep.engine.core.OptionChosenResponse
 import com.wingedsheep.engine.core.SelectCardsDecision
 import com.wingedsheep.engine.core.YesNoResponse
+import com.wingedsheep.engine.core.ZoneChangeEvent
 import com.wingedsheep.engine.mechanics.cost.CostPaymentContext
 import com.wingedsheep.engine.mechanics.cost.CostPaymentService
 import com.wingedsheep.engine.mechanics.cost.PaymentResult
@@ -15,10 +16,12 @@ import com.wingedsheep.engine.state.components.battlefield.CountersComponent
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.LifeTotalComponent
+import com.wingedsheep.engine.state.components.identity.CommanderComponent
 import com.wingedsheep.engine.support.ScenarioTestBase
 import com.wingedsheep.sdk.core.CounterType
 import com.wingedsheep.sdk.core.ManaCost
 import com.wingedsheep.sdk.core.Zone
+import com.wingedsheep.sdk.core.Format
 import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.GameObjectFilter
@@ -364,6 +367,74 @@ class CostPaymentServiceTest : ScenarioTestBase() {
 
             game.state.getHand(game.player1Id) shouldContain fodder
             game.state.getBattlefield(game.player1Id).contains(fodder).shouldBeFalse()
+            game.state.pendingDecision shouldBe null
+        }
+
+        test("ReturnToHand: accepting the Commander replacement completes the payment exactly once") {
+            val game = scenario().withPlayers()
+                .withCardOnBattlefield(1, "Goblin Guide")
+                .withCardOnBattlefield(1, "Savannah Lions")
+                .withCardInLibrary(1, "Forest")
+                .withCardInLibrary(1, "Island")
+                .build()
+            val service = CostPaymentService(EngineServices(cardRegistry))
+            val source = bfCardByName(game.state, game.player1Id, "Goblin Guide")
+            val commander = bfCardByName(game.state, game.player1Id, "Savannah Lions")
+            game.state = game.state.copy(format = Format.Commander()).updateEntity(commander) {
+                it.with(CommanderComponent(ownerId = game.player1Id))
+            }
+
+            val pending = service.pay(
+                game.state, game.player1Id, Costs.pay.ReturnToHand(GameObjectFilter.Any, 1), source,
+                CostPaymentContext(onPaid = Effects.DrawCards(1))
+            ) as PaymentResult.Pending
+            game.state = pending.state
+            game.submitDecision(CardsSelectedResponse(pending.pendingDecision.id, listOf(commander)))
+
+            val replacement = game.state.pendingDecision.shouldBeInstanceOf<com.wingedsheep.engine.core.YesNoDecision>()
+            game.state.getBattlefield(game.player1Id) shouldContain commander
+            val completion = game.submitDecision(YesNoResponse(replacement.id, true))
+
+            game.state.getZone(ZoneKey(game.player1Id, Zone.COMMAND)) shouldContain commander
+            game.state.getHand(game.player1Id) shouldNotContain commander
+            game.state.getBattlefield(game.player1Id) shouldContain source
+            game.state.pendingDecision shouldBe null
+            game.state.getHand(game.player1Id).size shouldBe 1
+            game.state.getLibrary(game.player1Id).size shouldBe 1
+            completion.events.filterIsInstance<ZoneChangeEvent>().count { it.entityId == commander } shouldBe 1
+        }
+
+        test("ReturnToHand: declining the Commander replacement completes the payment into hand") {
+            val game = scenario().withPlayers()
+                .withCardOnBattlefield(1, "Goblin Guide")
+                .withCardOnBattlefield(1, "Savannah Lions")
+                .withCardInLibrary(1, "Forest")
+                .withCardInLibrary(1, "Island")
+                .build()
+            val service = CostPaymentService(EngineServices(cardRegistry))
+            val source = bfCardByName(game.state, game.player1Id, "Goblin Guide")
+            val commander = bfCardByName(game.state, game.player1Id, "Savannah Lions")
+            game.state = game.state.copy(format = Format.Commander()).updateEntity(commander) {
+                it.with(CommanderComponent(ownerId = game.player1Id))
+            }
+
+            val pending = service.pay(
+                game.state, game.player1Id, Costs.pay.ReturnToHand(GameObjectFilter.Any, 1), source,
+                CostPaymentContext(onPaid = Effects.DrawCards(1))
+            ) as PaymentResult.Pending
+            game.state = pending.state
+            game.submitDecision(CardsSelectedResponse(pending.pendingDecision.id, listOf(commander)))
+
+            val replacement = game.state.pendingDecision.shouldBeInstanceOf<com.wingedsheep.engine.core.YesNoDecision>()
+            val completion = game.submitDecision(YesNoResponse(replacement.id, false))
+
+            game.state.getHand(game.player1Id) shouldContain commander
+            game.state.getZone(ZoneKey(game.player1Id, Zone.COMMAND)) shouldNotContain commander
+            game.state.getBattlefield(game.player1Id) shouldContain source
+            game.state.pendingDecision shouldBe null
+            game.state.getHand(game.player1Id).size shouldBe 2
+            game.state.getLibrary(game.player1Id).size shouldBe 1
+            completion.events.filterIsInstance<ZoneChangeEvent>().count { it.entityId == commander } shouldBe 1
         }
 
         // -----------------------------------------------------------------------------------------

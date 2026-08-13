@@ -3,6 +3,9 @@ package com.wingedsheep.engine.handlers.effects.drawing
 import com.wingedsheep.engine.core.CardRevealedFromDrawEvent
 import com.wingedsheep.engine.core.DrawFailedEvent
 import com.wingedsheep.engine.core.GameEvent
+import com.wingedsheep.engine.core.PendingDecision
+import com.wingedsheep.engine.handlers.effects.ZoneEntryOptions
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
@@ -31,9 +34,11 @@ import com.wingedsheep.sdk.scripting.RevealFirstDrawEachTurn
  * aggregates drawn cards across multiple calls and emits a single
  * `CardsDrawnEvent` for the whole batch.
  *
- * No loops, no replacement logic, no prompts. This is the shared primitive
- * that both spell/ability draws ([DrawCardsExecutor]) and the draw-step
- * draw ([com.wingedsheep.engine.core.DrawPhaseManager]) call into.
+ * No loops or draw-replacement logic. The physical library-to-hand movement
+ * does use the generic zone-replacement pipeline so a Commander CR 903.9b
+ * choice can pause before the draw takes effect. This is the shared primitive
+ * that both spell/ability draws ([DrawCardsExecutor]) and the draw-step draw
+ * ([com.wingedsheep.engine.core.DrawPhaseManager]) call into.
  */
 class DrawCardPrimitive(
     private val cardRegistry: CardRegistry
@@ -53,7 +58,10 @@ class DrawCardPrimitive(
         val state: GameState,
         val events: List<GameEvent>,
         val drawnCardId: EntityId?,
-        val failed: Boolean
+        val failed: Boolean,
+        val pendingDecision: PendingDecision? = null,
+        /** True only when the replacement decision is still before the move. */
+        val needsPostZoneChangeBookkeeping: Boolean = false
     )
 
     /**
@@ -97,10 +105,65 @@ class DrawCardPrimitive(
             )
         }
 
-        // Move top card from library → hand.
+        // Move top card from library → hand through the generic replacement pipeline.
+        // CR 903.9b can replace this movement with a command-zone move and therefore
+        // must be able to pause before either the card or the draw accounting changes.
         val cardId = library.first()
-        var newState = state.removeFromZone(libraryZone, cardId)
-        newState = newState.addToZone(handZone, cardId)
+        val transition = ZoneTransitionService.attemptMoveToZone(
+            state = state,
+            entityId = cardId,
+            destinationZone = Zone.HAND,
+            options = ZoneEntryOptions(suppressZoneChangeEvent = true),
+            fromZoneKey = libraryZone
+        )
+        if (transition.isPaused) {
+            if (transition.movementCompleted) {
+                val completed = if (cardId in transition.state.getZone(handZone)) {
+                    finishMovedToHand(transition.state, playerId, cardId)
+                } else {
+                    Result(transition.state, emptyList(), null, failed = false)
+                }
+                return Result(
+                    state = completed.state,
+                    events = transition.events + completed.events,
+                    drawnCardId = completed.drawnCardId,
+                    failed = false,
+                    pendingDecision = transition.pendingDecision
+                )
+            }
+            return Result(
+                state = transition.state,
+                events = transition.events,
+                drawnCardId = cardId,
+                failed = false,
+                pendingDecision = transition.pendingDecision,
+                needsPostZoneChangeBookkeeping = true
+            )
+        }
+
+        // A replacement may have redirected this move away from hand. Such an
+        // event is not a draw (CR 121.1), so it deliberately has no draw count,
+        // reveal/miracle window, or CardsDrawnEvent contribution.
+        if (cardId !in transition.state.getZone(handZone)) {
+            return Result(transition.state, transition.events, null, failed = false)
+        }
+
+        val completed = finishMovedToHand(transition.state, playerId, cardId)
+        return Result(completed.state, transition.events + completed.events, cardId, failed = false)
+    }
+
+    /**
+     * Apply the draw-only bookkeeping after a replacement-aware zone move has
+     * completed. Used immediately above and by the continuation that resumes a
+     * paused Commander choice. The caller must establish that [cardId] is in
+     * [playerId]'s hand.
+     */
+    fun finishMovedToHand(
+        state: GameState,
+        playerId: EntityId,
+        cardId: EntityId
+    ): Result {
+        var newState = state
 
         // Track cards-drawn-this-turn and emit reveal on the first draw of the turn.
         val drawCountBefore = newState.getEntity(playerId)?.get<CardsDrawnThisTurnComponent>()?.count ?: 0

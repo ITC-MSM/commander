@@ -110,12 +110,19 @@ class PutOntoBattlefieldAttachedToChosenExecutor(
             return if (isEquipment) {
                 val fromZone = findCurrentZone(state, cardId)
                     ?: return EffectResult.success(state)
-                val transition = ZoneTransitionService.moveToZone(
+                // This is a single terminal move: there is no attachment or
+                // executor-local follow-up to lose if a replacement effect
+                // pauses.  Route it through the generic replacement pipeline.
+                val transition = ZoneTransitionService.attemptMoveToZone(
                     state, cardId, Zone.BATTLEFIELD,
                     ZoneEntryOptions(controllerId = controllerId),
                     fromZone
                 )
-                EffectResult.success(transition.state, transition.events)
+                if (transition.isPaused) {
+                    EffectResult.paused(transition.state, transition.pendingDecision!!, transition.events)
+                } else {
+                    EffectResult.success(transition.state, transition.events)
+                }
             } else {
                 EffectResult.success(state)
             }

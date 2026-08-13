@@ -53,12 +53,19 @@ class EsotericDuplicatorScenarioTest : FunSpec({
             ActivateAbility(playerId = player, sourceId = fodder, abilityId = clueDrawAbilityId)
         ).error shouldBe null
         driver.bothPass() // resolve the draw ability → fodder is sacrificed → trigger fires
+        // Both copies saw this sacrifice; choose their stack order before resolving the first
+        // optional payment.  The scenario pays only for that first trigger.
+        driver.submitTriggerOrderInListedOrder()
 
-        // The Duplicator's trigger now asks "you may pay {2}".
+        // Ordering places both simultaneous triggers on the stack; pass to resolve the
+        // first one before its optional-payment decision is requested.
+        driver.bothPass()
+        // The first Duplicator's trigger now asks "you may pay {2}".
         val mayPay = driver.pendingDecision
         (mayPay is YesNoDecision) shouldBe true
         driver.submitYesNo(player, true)
-        // Pay the {2} from the pool (auto), then both pass to finish.
+        // Pay the {2} from the pool (auto), then resolve the other simultaneous
+        // trigger. It is skipped because the remaining pool cannot pay another {2}.
         driver.bothPass()
 
         // No token yet — it's scheduled for the next end step.
@@ -86,11 +93,17 @@ class EsotericDuplicatorScenarioTest : FunSpec({
             ActivateAbility(playerId = player, sourceId = fodder, abilityId = clueDrawAbilityId)
         ).error shouldBe null
         driver.bothPass()
+        driver.submitTriggerOrderInListedOrder()
 
+        // As above, the ordering decision only stacks the triggers.
+        driver.bothPass()
         val mayPay = driver.pendingDecision
         (mayPay is YesNoDecision) shouldBe true
         driver.submitYesNo(player, false)
+        // Resolve and decline the other simultaneous trigger as well.
         driver.bothPass()
+        (driver.pendingDecision is YesNoDecision) shouldBe true
+        driver.submitYesNo(player, false)
 
         driver.passPriorityUntil(Step.END)
         driver.bothPass()

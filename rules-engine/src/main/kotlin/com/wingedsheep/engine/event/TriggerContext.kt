@@ -28,6 +28,11 @@ import com.wingedsheep.sdk.model.EntityId
 data class TriggerContext(
     val triggeringEntityId: EntityId? = null,
     val triggeringPlayerId: EntityId? = null,
+    /**
+     * Defender snapshot for a combat-triggered ability.  Unlike a live attack assignment this
+     * survives the source leaving combat or the battlefield before the triggered ability resolves.
+     */
+    val defendingPlayerId: EntityId? = null,
     val damageAmount: Int? = null,
     val step: Step? = null,
     val xValue: Int? = null,

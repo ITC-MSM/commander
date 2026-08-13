@@ -110,13 +110,21 @@ class MarangRiverRegentScenarioTest : ScenarioTestBase() {
                 }
                 game.resolveStack() // draw three, then discard prompt
 
-                if (game.hasPendingDecision()) {
-                    val discard = game.state.getHand(game.player1Id).first {
-                        game.state.getEntity(it)?.get<CardComponent>()?.name == "Island"
-                    }
-                    game.selectCards(listOf(discard))
-                    game.resolveStack()
+                val discardDecision = game.getPendingDecision()
+                withClue("Coil and Catch must pause to choose the mandatory discard: $discardDecision") {
+                    discardDecision shouldNotBe null
                 }
+                val discard = game.state.getHand(game.player1Id).first {
+                    game.state.getEntity(it)?.get<CardComponent>()?.name == "Island"
+                }
+                val selected = game.selectCards(listOf(discard))
+                withClue("Selecting Coil and Catch's discard must succeed: ${selected.error}") {
+                    selected.error shouldBe null
+                }
+                withClue("The selected card completes the Omen's remaining effect tail before its stack exit") {
+                    game.graveyardSize(1) shouldBe 1
+                }
+                game.resolveStack()
 
                 withClue("One card was discarded to the graveyard") {
                     game.graveyardSize(1) shouldBe 1

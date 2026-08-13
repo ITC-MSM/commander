@@ -184,6 +184,8 @@ data class TriggeredAbilityOnStackComponent(
     val triggerDamageAmount: Int? = null,
     val triggeringEntityId: EntityId? = null,
     val triggeringPlayerId: EntityId? = null,
+    /** Defending-player snapshot captured as this combat trigger fired (CR 802.2a). */
+    val defendingPlayerId: EntityId? = null,
     val xValue: Int? = null,
     val triggerCounterCount: Int? = null,
     val triggerTotalCounterCount: Int? = null,

@@ -1,5 +1,7 @@
 package com.wingedsheep.engine.scenarios
 
+import com.wingedsheep.engine.core.OrderTriggeredAbilitiesDecision
+import com.wingedsheep.engine.core.TriggeredAbilitiesOrderedResponse
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.engine.state.components.identity.TokenComponent
@@ -52,8 +54,16 @@ class StormsplitterTest : FunSpec({
 
     fun GameTestDriver.drainStack(maxPasses: Int = 50) {
         var passes = 0
-        while (stackSize > 0 && state.pendingDecision == null && passes < maxPasses) {
-            bothPass()
+        while (stackSize > 0 && passes < maxPasses) {
+            val decision = pendingDecision
+            if (decision is OrderTriggeredAbilitiesDecision) {
+                submitDecision(
+                    decision.playerId,
+                    TriggeredAbilitiesOrderedResponse(decision.id, decision.abilities.map { it.id })
+                )
+            } else {
+                bothPass()
+            }
             passes++
         }
     }

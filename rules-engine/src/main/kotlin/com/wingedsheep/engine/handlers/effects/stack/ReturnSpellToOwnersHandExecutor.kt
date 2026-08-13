@@ -1,15 +1,14 @@
 package com.wingedsheep.engine.handlers.effects.stack
 
 import com.wingedsheep.engine.core.EffectResult
-import com.wingedsheep.engine.core.ZoneChangeEvent
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
 import com.wingedsheep.engine.state.components.stack.SpellOnStackComponent
-import com.wingedsheep.engine.state.components.stack.TargetsComponent
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.scripting.effects.ReturnSpellToOwnersHandEffect
 import kotlin.reflect.KClass
@@ -47,23 +46,18 @@ class ReturnSpellToOwnersHandExecutor : EffectExecutor<ReturnSpellToOwnersHandEf
             ?: spellComponent?.casterId
             ?: return EffectResult.error(state, "Cannot determine spell owner")
 
-        var newState = state.removeFromStack(spellId)
-        newState = newState.addToZone(ZoneKey(ownerId, Zone.HAND), spellId)
-        newState = newState.updateEntity(spellId) { c ->
-            c.without<SpellOnStackComponent>().without<TargetsComponent>()
-        }
-
-        return EffectResult.success(
-            newState,
-            listOf(
-                ZoneChangeEvent(
-                    spellId,
-                    cardComponent?.name ?: "Unknown",
-                    null,
-                    Zone.HAND,
-                    ownerId
-                )
-            )
+        // CR 903.9b is an optional *pre-move* replacement even when a commander is
+        // returned from the stack.  The generic zone pipeline may therefore pause here.
+        val attempt = ZoneTransitionService.attemptMoveToZone(
+            state = state,
+            entityId = spellId,
+            destinationZone = Zone.HAND,
+            fromZoneKey = ZoneKey(ownerId, Zone.STACK)
         )
+        return if (attempt.isPaused) {
+            EffectResult.paused(attempt.state, attempt.pendingDecision!!, attempt.events)
+        } else {
+            EffectResult.success(attempt.state, attempt.events)
+        }
     }
 }

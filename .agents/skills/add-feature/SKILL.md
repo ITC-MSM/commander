@@ -38,6 +38,10 @@ decision below.
    fetch into context — download it and `grep` locally) and check oracle rulings on Gatherer / Scryfall
    for the cards that use it.
 
+   When this work starts from a suspected interaction defect or will claim a rules outcome, first use
+   the **`validate-rules`** skill and follow `docs/rules-validation-protocol.md`: a blind authority pass,
+   legal action/decision trace, and the required independent-review threshold come before production edits.
+
    Mechanics are full of edge cases that are easy to misremember: replacement-vs-trigger ordering, what
    counts as last-known information, layer interactions, timing and priority windows, what happens with
    zero or multiple instances. **The rule numbers and edge cases you capture here become both your design

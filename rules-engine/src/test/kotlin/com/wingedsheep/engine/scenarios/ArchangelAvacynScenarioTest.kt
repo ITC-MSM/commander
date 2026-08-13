@@ -49,7 +49,13 @@ class ArchangelAvacynScenarioTest : FunSpec({
     fun advanceToNextUpkeep(driver: GameTestDriver) {
         driver.passPriorityUntil(Step.UPKEEP, maxPasses = 200)
         var guard = 0
-        while (guard++ < 20 && driver.state.stack.isNotEmpty()) driver.bothPass()
+        while (guard++ < 20 && (driver.state.stack.isNotEmpty() || driver.pendingDecision != null)) {
+            // Two deaths create two simultaneous delayed triggers.  CR 603.3b now exposes their
+            // ordering to the controller instead of silently using detector order; this scenario
+            // does not care about that order, so choose the displayed order explicitly.
+            if (driver.submitTriggerOrderInListedOrder()) continue
+            driver.bothPass()
+        }
     }
 
     test("entering grants your creatures indestructible until end of turn") {

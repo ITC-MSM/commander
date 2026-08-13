@@ -1,6 +1,7 @@
 package com.wingedsheep.engine.handlers.effects.library
 
 import com.wingedsheep.engine.core.CardsRevealedEvent
+import com.wingedsheep.engine.core.BottomLibraryMoveRemainderContinuation
 import com.wingedsheep.engine.core.CascadeMayCastContinuation
 import com.wingedsheep.engine.core.DecisionPhase
 import com.wingedsheep.engine.core.EffectResult
@@ -107,11 +108,12 @@ class CascadeExecutor(
         if (cascadeCard == null) {
             // Library exhausted without a qualifying card — bottom-randomize everything
             // exiled this way and finish, no may-cast offered.
-            val bottomEvents = bottomRandomize(currentState, controllerId, exiledCards) { newState ->
-                currentState = newState
+            val bottom = bottomRandomizeReplacementAware(currentState, controllerId, exiledCards)
+            return if (bottom.isPaused) {
+                EffectResult.paused(bottom.state, bottom.pendingDecision!!, allEvents + bottom.events)
+            } else {
+                EffectResult.success(bottom.state, allEvents + bottom.events)
             }
-            allEvents.addAll(bottomEvents)
-            return EffectResult.success(currentState, allEvents)
         }
 
         val cascadeName = currentState.getEntity(cascadeCard)
@@ -158,8 +160,8 @@ class CascadeExecutor(
             cards: List<EntityId>,
             updateState: (GameState) -> Unit
         ): List<EngineGameEvent> {
-            val events = mutableListOf<EngineGameEvent>()
             var current = state
+            val events = mutableListOf<EngineGameEvent>()
             val (shuffledCards, advanced) = current.nextRandom { shuffle(cards) }
             current = advanced
             for (cardId in shuffledCards) {
@@ -167,16 +169,98 @@ class CascadeExecutor(
                     state = current,
                     entityId = cardId,
                     destinationZone = Zone.LIBRARY,
-                    options = ZoneEntryOptions(
-                        controllerId = playerId,
-                        libraryPlacement = LibraryPlacement.Bottom
-                    )
+                    options = ZoneEntryOptions(controllerId = playerId, libraryPlacement = LibraryPlacement.Bottom)
                 )
                 current = result.state
                 events.addAll(result.events)
             }
             updateState(current)
             return events
+        }
+
+        /**
+         * Replacement-aware counterpart to [bottomRandomize].  The random order is
+         * chosen once, then preserved in [BottomLibraryMoveRemainderContinuation]
+         * if a pre-move replacement pauses one of the individual moves.
+         *
+         * [afterComplete] is parked below the remainder only on a pause.  It lets
+         * callers retain their flow-specific work (for example Discover's cast-or-
+         * hand branch) without replaying the randomization or an earlier effect.
+         */
+        fun bottomRandomizeReplacementAware(
+            state: GameState,
+            playerId: EntityId,
+            cards: List<EntityId>,
+            afterComplete: com.wingedsheep.engine.core.ContinuationFrame? = null
+        ): EffectResult {
+            val (shuffledCards, randomizedState) = state.nextRandom { shuffle(cards) }
+            return moveBottomRemainder(
+                randomizedState,
+                BottomLibraryMoveRemainderContinuation(
+                    playerId = playerId,
+                    remainingMoveOrder = shuffledCards
+                ),
+                emptyList(),
+                afterComplete
+            )
+        }
+
+        /** Continue a previously randomized bottom-library sequence until it pauses or completes. */
+        fun moveBottomRemainder(
+            state: GameState,
+            remainder: BottomLibraryMoveRemainderContinuation,
+            leadingEvents: List<EngineGameEvent> = emptyList(),
+            afterComplete: com.wingedsheep.engine.core.ContinuationFrame? = null
+        ): EffectResult {
+            val nextCard = remainder.remainingMoveOrder.firstOrNull()
+                ?: return EffectResult.success(state, leadingEvents)
+            val ownerId = state.getEntity(nextCard)?.get<CardComponent>()?.ownerId
+                ?: return moveBottomRemainder(
+                    state,
+                    remainder.copy(remainingMoveOrder = remainder.remainingMoveOrder.drop(1)),
+                    leadingEvents,
+                    afterComplete
+                )
+            val sourceZone = Zone.entries.firstNotNullOfOrNull { zone ->
+                ZoneKey(ownerId, zone).takeIf { nextCard in state.getZone(it) }
+            }
+            if (sourceZone == null) {
+                return moveBottomRemainder(
+                    state,
+                    remainder.copy(remainingMoveOrder = remainder.remainingMoveOrder.drop(1)),
+                    leadingEvents,
+                    afterComplete
+                )
+            }
+
+            val attempt = ZoneTransitionService.attemptMoveToZone(
+                state = state,
+                entityId = nextCard,
+                destinationZone = Zone.LIBRARY,
+                options = ZoneEntryOptions(
+                    controllerId = remainder.playerId,
+                    libraryPlacement = LibraryPlacement.Bottom
+                ),
+                fromZoneKey = sourceZone
+            )
+            val events = leadingEvents + attempt.events
+            val nextRemainder = remainder.copy(remainingMoveOrder = remainder.remainingMoveOrder.drop(1))
+            if (!attempt.isPaused) {
+                return moveBottomRemainder(attempt.state, nextRemainder, events, afterComplete)
+            }
+
+            // The generic replacement frame is on top.  Put the serialized
+            // randomized remainder immediately below it, and any flow-specific
+            // tail below that, so LIFO resumption completes exactly once.
+            val stack = attempt.state.continuationStack
+            val framesBelowReplacement = buildList {
+                afterComplete?.let(::add)
+                add(nextRemainder)
+            }
+            val pausedState = attempt.state.copy(
+                continuationStack = stack.dropLast(1) + framesBelowReplacement + stack.last()
+            )
+            return EffectResult.paused(pausedState, attempt.pendingDecision!!, events)
         }
     }
 }

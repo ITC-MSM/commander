@@ -1104,6 +1104,9 @@ class StaticAbilityHandler(
      */
     private fun isRuntimeReplacementEffect(it: com.wingedsheep.sdk.scripting.ReplacementEffect): Boolean =
         when (it) {
+            // CommanderZoneReplacement is injected by the rules engine for a
+            // single pending event, never printed on a permanent.
+            is com.wingedsheep.sdk.scripting.CommanderZoneReplacement -> false
             // Damage replacement/modification:
             is PreventDamage,
             is DoubleDamage,

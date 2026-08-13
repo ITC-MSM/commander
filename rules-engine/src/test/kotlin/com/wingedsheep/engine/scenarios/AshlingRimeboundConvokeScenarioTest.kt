@@ -4,6 +4,7 @@ import com.wingedsheep.engine.core.CastSpell
 import com.wingedsheep.engine.core.ChooseColorDecision
 import com.wingedsheep.engine.core.ColorChosenResponse
 import com.wingedsheep.engine.core.PaymentStrategy
+import com.wingedsheep.engine.core.OrderTriggeredAbilitiesDecision
 import com.wingedsheep.engine.core.YesNoResponse
 import com.wingedsheep.engine.legalactions.EnumerationMode
 import com.wingedsheep.engine.legalactions.LegalActionEnumerator
@@ -131,6 +132,7 @@ private fun GameTestDriver.drainDecisionsChoosingRed(player: EntityId) {
     while (guard++ < 40 && (stackSize > 0 || pendingDecision != null)) {
         val decision = pendingDecision
         when {
+            decision is OrderTriggeredAbilitiesDecision -> submitTriggerOrderInListedOrder()
             decision is ChooseColorDecision ->
                 submitDecision(player, ColorChosenResponse(decision.id, Color.RED))
             decision != null -> declinePendingDecision(player)

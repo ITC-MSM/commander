@@ -1,0 +1,92 @@
+# Standalone LAN staging: deliberately separate from docker-compose.yml, which assumes
+# an external Traefik network, public DNS and Let's Encrypt.  Only nginx is published.
+name: commander-staging
+
+services:
+  redis:
+    image: redis:8-alpine
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - staging_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${ACCOUNTS_DB_NAME:-commander_staging}
+      POSTGRES_USER: ${ACCOUNTS_DB_USER:-commander}
+      POSTGRES_PASSWORD: ${ACCOUNTS_DB_PASSWORD:?set a private staging password}
+    volumes:
+      - staging_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  backend:
+    image: commanderonline-staging-backend:${GIT_SHA:?set the source commit SHA}
+    build:
+      context: .
+      dockerfile: game-server/Dockerfile
+      args:
+        COMMIT_HASH: ${GIT_SHA:?set the source commit SHA}
+    restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    environment:
+      CACHE_REDIS_ENABLED: "true"
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      REDIS_TTL_MINUTES: "1440"
+      GAME_DEV_ENDPOINTS_ENABLED: ${GAME_DEV_ENDPOINTS_ENABLED:-false}
+      GAME_EASTER_EGGS_ENABLED: "false"
+      GAME_AI_ENABLED: "false"
+      ACCOUNTS_ENABLED: "false"
+      ACCOUNTS_AUTOCONFIG_EXCLUDE: org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration,org.springframework.boot.flyway.autoconfigure.FlywayAutoConfiguration
+      ACCOUNTS_DB_URL: jdbc:postgresql://postgres:5432/${ACCOUNTS_DB_NAME:-commander_staging}
+      ACCOUNTS_DB_USER: ${ACCOUNTS_DB_USER:-commander}
+      ACCOUNTS_DB_PASSWORD: ${ACCOUNTS_DB_PASSWORD:?set a private staging password}
+      APP_BASE_URL: http://${STAGING_BIND_ADDRESS:?set the LAN address}:${STAGING_PORT:-8088}
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:8080/api/config"]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+
+  frontend:
+    image: commanderonline-staging-frontend:${GIT_SHA:?set the source commit SHA}
+    build:
+      context: ./web-client
+      args:
+        COMMIT_HASH: ${GIT_SHA:?set the source commit SHA}
+        VITE_ANALYTICS_ENABLED: "false"
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - target: 80
+        published: ${STAGING_PORT:-8088}
+        host_ip: ${STAGING_BIND_ADDRESS:?set the LAN address}
+        protocol: tcp
+    healthcheck:
+      # Alpine resolves localhost to ::1 first while this nginx configuration
+      # intentionally listens on IPv4 only.  Use the explicit loopback address.
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+volumes:
+  staging_redis_data:
+  staging_postgres_data:

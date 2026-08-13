@@ -31,7 +31,7 @@
 - [ ] 1 Rishkar, Peema Renegade
 - [ ] 1 Selvala, Explorer Returned
 - [ ] 1 Sphinx of Enlightenment
-- [ ] 1 Spore Frog
+- [x] 1 Spore Frog
 - [ ] 1 Steelburr Champion
 - [ ] 1 Sunscorch Regent
 - [ ] 1 Triskaidekaphile
@@ -43,8 +43,8 @@
 
 ## Instants (11)
 
-- [ ] 1 An Offer You Can't Refuse
-- [ ] 1 Broken Wings
+- [x] 1 An Offer You Can't Refuse
+- [x] 1 Broken Wings
 - [ ] 1 Generous Gift
 - [ ] 1 Illusionist's Gambit
 - [ ] 1 Intellectual Offering

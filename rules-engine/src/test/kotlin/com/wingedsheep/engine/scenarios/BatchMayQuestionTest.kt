@@ -2,6 +2,8 @@ package com.wingedsheep.engine.scenarios
 
 import com.wingedsheep.engine.core.BatchYesNoDecision
 import com.wingedsheep.engine.core.ChooseTargetsDecision
+import com.wingedsheep.engine.core.OrderTriggeredAbilitiesDecision
+import com.wingedsheep.engine.core.TriggeredAbilitiesOrderedResponse
 import com.wingedsheep.engine.core.YesNoDecision
 import com.wingedsheep.engine.state.components.stack.TriggeredAbilityOnStackComponent
 import com.wingedsheep.engine.support.GameTestDriver
@@ -32,6 +34,14 @@ import io.kotest.matchers.types.shouldBeInstanceOf
  * all at once.
  */
 class BatchMayQuestionTest : FunSpec({
+
+    fun GameTestDriver.acceptDefaultTriggerOrderIfNeeded() {
+        val order = pendingDecision as? OrderTriggeredAbilitiesDecision ?: return
+        submitDecision(
+            order.playerId,
+            TriggeredAbilitiesOrderedResponse(order.id, order.abilities.map { it.id })
+        )
+    }
 
     val batchPinger = card("Batch Pinger") {
         manaCost = "{1}"
@@ -69,6 +79,7 @@ class BatchMayQuestionTest : FunSpec({
         val bear = driver.putCardInHand(player, "Batch Bear")
         driver.castSpell(player, bear).isSuccess shouldBe true
         driver.bothPass() // resolve the bear; it enters and every Batch Pinger triggers
+        driver.acceptDefaultTriggerOrderIfNeeded()
         return Triple(driver, player, opponent)
     }
 
@@ -87,6 +98,11 @@ class BatchMayQuestionTest : FunSpec({
         val (driver, player, opponent) = driverWithPingers(2)
 
         driver.submitBatchYesNo(player, choice = true, applyToAll = true)
+
+        // The shared may answer unwraps two separate triggered-ability instances.  They are
+        // simultaneously placed on the stack, so their controller receives the normal CR 603.3b
+        // order choice before choosing each instance's target.
+        driver.acceptDefaultTriggerOrderIfNeeded()
 
         // Each of the two triggers now asks for its own target.
         val t1 = driver.pendingDecision.shouldBeInstanceOf<ChooseTargetsDecision>()

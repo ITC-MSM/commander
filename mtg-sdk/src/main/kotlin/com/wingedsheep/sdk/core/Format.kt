@@ -71,12 +71,10 @@ sealed interface Format {
      * @property deckSize Total deck size including the commander; the validator enforces this.
      * @property startingLife Each player's starting life total.
      * @property startingHandSize Cards drawn for the opening hand.
-     * @property alwaysDivertToCommand Bypass the CR 903.9a player choice and unconditionally
-     *   divert a commander leaving for graveyard / exile / hand / library to the command zone.
-     *   Off by default — the SBA pauses with a yes/no decision so the owner can choose to leave
-     *   the commander in the destination zone (e.g. to keep recursion targets in graveyard or
-     *   keep linked-exile abilities tracking it). AI/headless tooling can flip this on to skip
-     *   the prompt.
+     * @property alwaysDivertToCommand Legacy compatibility flag. It is intentionally ignored by
+     *   the rules engine: Commander zone choices are not optional automation. CR 903.9a is an
+     *   SBA choice for graveyard/exile, and CR 903.9b is a pre-move replacement choice for the
+     *   owner's hand/library.
      */
     @Serializable
     data class Commander(

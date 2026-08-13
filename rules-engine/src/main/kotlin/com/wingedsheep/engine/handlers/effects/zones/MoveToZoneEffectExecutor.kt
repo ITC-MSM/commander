@@ -22,6 +22,7 @@ import com.wingedsheep.engine.state.components.battlefield.CountersComponent
 import com.wingedsheep.engine.state.components.battlefield.LinkedExileComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.OwnerComponent
+import com.wingedsheep.engine.state.components.identity.CommanderComponent
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.effects.FaceDownMode
@@ -97,9 +98,24 @@ class MoveToZoneEffectExecutor(
         // Build ZoneEntryOptions based on placement and effect properties
         val entryOptions = buildEntryOptions(effect, cardComponent, controllerId)
 
-        val transitionResult = ZoneTransitionService.moveToZone(
-            state, targetId, effect.destination, entryOptions, currentZone
-        )
+        // Commander hand/library movement is replacement-time choice territory
+        // (CR 903.9b), so it must use the generic pauseable replacement pipeline.
+        // Other movement remains on the established synchronous path until its
+        // specialised caller has been migrated to carry a continuation safely.
+        val transitionResult = if (
+            effect.destination in setOf(Zone.HAND, Zone.LIBRARY) &&
+            container.has<CommanderComponent>() && state.format.usesCommanders
+        ) {
+            val attempt = ZoneTransitionService.attemptMoveToZone(
+                state, targetId, effect.destination, entryOptions, currentZone
+            )
+            if (attempt.isPaused) return EffectResult.paused(attempt.state, attempt.pendingDecision!!, attempt.events)
+            com.wingedsheep.engine.handlers.effects.ZoneTransitionResult(
+                attempt.state, attempt.events, actualDestination = effect.destination
+            )
+        } else {
+            ZoneTransitionService.moveToZone(state, targetId, effect.destination, entryOptions, currentZone)
+        }
 
         var resultState = transitionResult.state
         val extraEvents = mutableListOf<com.wingedsheep.engine.core.GameEvent>()

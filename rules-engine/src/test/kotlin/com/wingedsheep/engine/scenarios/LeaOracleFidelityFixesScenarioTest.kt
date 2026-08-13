@@ -250,6 +250,9 @@ class LeaOracleFidelityFixesScenarioTest : ScenarioTestBase() {
                 game.passUntilPhase(Phase.COMBAT, Step.DECLARE_BLOCKERS)
                 game.declareBlockers(mapOf("Grizzly Bears" to listOf("Gray Ogre"))).error shouldBe null
 
+                // Block declaration is a turn-based action.  Once all declarations and
+                // their trigger boundary finish, priority is with the active player.
+                game.passPriority() // Player 1 passes; Player 2 may now cast Righteousness.
                 val bears = game.findPermanent("Grizzly Bears")!!
                 val result = game.castSpell(2, "Righteousness", bears)
                 withClue("A blocking creature should be a legal target: ${result.error}") {

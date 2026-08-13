@@ -58,6 +58,7 @@ class EffectExecutorRegistry(
     // Held as a field so its recursion (for ModifyExplore's Composite delegation) can be wired
     // before the module is registered, mirroring libraryExecutors.
     private val permanentExecutors = PermanentExecutors(decisionHandler, amountEvaluator, cardRegistry)
+    private val zonesExecutors = ZonesExecutors(cardRegistry)
 
     /**
      * Exposed so [com.wingedsheep.engine.core.EngineServices] can call
@@ -82,7 +83,8 @@ class EffectExecutorRegistry(
         registerModule(StackExecutors(amountEvaluator, cardRegistry))
         registerModule(InformationExecutors())
         registerModule(CombatExecutors(amountEvaluator))
-        registerModule(ZonesExecutors(cardRegistry))
+        zonesExecutors.initializeRecursion(::recurse)
+        registerModule(zonesExecutors)
         registerModule(LinkedExileExecutors())
         registerModule(RegenerationExecutors())
         registerModule(BendExecutors())

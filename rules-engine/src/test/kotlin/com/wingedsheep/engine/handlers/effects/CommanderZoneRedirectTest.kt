@@ -19,18 +19,16 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 
 /**
- * `ZoneMovementUtils.checkZoneChangeRedirect` diverts commanders to the command zone when the
- * format is Commander *and* `alwaysDivertToCommand = true`. With the default
- * `alwaysDivertToCommand = false` the redirect is skipped — the commander reaches its original
- * destination and the CR 903.9a state-based action is responsible for prompting the owner (see
- * `CommanderZoneChoiceCheckTest`).
+ * Commander choices are not synchronous redirects. CR 903.9a is checked after a move to
+ * graveyard/exile and CR 903.9b requires an owner choice before a move to hand/library, so this
+ * helper must leave all commander destinations untouched.
  */
 class CommanderZoneRedirectTest : FunSpec({
 
     val ownerId = EntityId.generate()
     val cmdrId = EntityId.generate()
 
-    val alwaysDivertCommander = Format.Commander(alwaysDivertToCommand = true)
+    val commander = Format.Commander()
 
     fun stateWithCommander(format: Format, commanderZone: Zone): GameState {
         val cardContainer = ComponentContainer.of(
@@ -59,40 +57,40 @@ class CommanderZoneRedirectTest : FunSpec({
             .copy(turnOrder = listOf(ownerId))
     }
 
-    test("destroyed commander diverts to the command zone in Commander format") {
-        val state = stateWithCommander(alwaysDivertCommander, Zone.BATTLEFIELD)
+    test("destroyed commander reaches the graveyard before the 903.9a SBA") {
+        val state = stateWithCommander(commander, Zone.BATTLEFIELD)
         val result = ZoneMovementUtils.checkZoneChangeRedirect(
             state, cmdrId, Zone.BATTLEFIELD, Zone.GRAVEYARD,
         )
-        result.destinationZone shouldBe Zone.COMMAND
+        result.destinationZone shouldBe Zone.GRAVEYARD
     }
 
-    test("milled commander diverts to the command zone (library → graveyard)") {
-        val state = stateWithCommander(alwaysDivertCommander, Zone.LIBRARY)
+    test("milled commander reaches the graveyard before the 903.9a SBA") {
+        val state = stateWithCommander(commander, Zone.LIBRARY)
         val result = ZoneMovementUtils.checkZoneChangeRedirect(
             state, cmdrId, Zone.LIBRARY, Zone.GRAVEYARD,
         )
-        result.destinationZone shouldBe Zone.COMMAND
+        result.destinationZone shouldBe Zone.GRAVEYARD
     }
 
-    test("exiled commander diverts to the command zone (battlefield → exile)") {
-        val state = stateWithCommander(alwaysDivertCommander, Zone.BATTLEFIELD)
+    test("exiled commander reaches exile before the 903.9a SBA") {
+        val state = stateWithCommander(commander, Zone.BATTLEFIELD)
         val result = ZoneMovementUtils.checkZoneChangeRedirect(
             state, cmdrId, Zone.BATTLEFIELD, Zone.EXILE,
         )
-        result.destinationZone shouldBe Zone.COMMAND
+        result.destinationZone shouldBe Zone.EXILE
     }
 
-    test("bounced commander diverts to the command zone (battlefield → hand)") {
-        val state = stateWithCommander(alwaysDivertCommander, Zone.BATTLEFIELD)
+    test("legacy diversion flag cannot silently replace a bounce") {
+        val state = stateWithCommander(Format.Commander(alwaysDivertToCommand = true), Zone.BATTLEFIELD)
         val result = ZoneMovementUtils.checkZoneChangeRedirect(
             state, cmdrId, Zone.BATTLEFIELD, Zone.HAND,
         )
-        result.destinationZone shouldBe Zone.COMMAND
+        result.destinationZone shouldBe Zone.HAND
     }
 
     test("commander leaving the command zone is not redirected back") {
-        val state = stateWithCommander(alwaysDivertCommander, Zone.COMMAND)
+        val state = stateWithCommander(commander, Zone.COMMAND)
         // The commander is on the stack heading toward the battlefield (cast resolution).
         val result = ZoneMovementUtils.checkZoneChangeRedirect(
             state, cmdrId, Zone.COMMAND, Zone.BATTLEFIELD,
@@ -100,21 +98,11 @@ class CommanderZoneRedirectTest : FunSpec({
         result.destinationZone shouldBe Zone.BATTLEFIELD
     }
 
-    test("alwaysDivertToCommand = false leaves the destination unchanged") {
+    test("default Commander format leaves the destination unchanged") {
         val state = stateWithCommander(
             Format.Commander(alwaysDivertToCommand = false),
             Zone.BATTLEFIELD,
         )
-        val result = ZoneMovementUtils.checkZoneChangeRedirect(
-            state, cmdrId, Zone.BATTLEFIELD, Zone.GRAVEYARD,
-        )
-        result.destinationZone shouldBe Zone.GRAVEYARD
-    }
-
-    test("default Commander format defers to the SBA — no synchronous redirect") {
-        // The new default (alwaysDivertToCommand = false) hands the choice to
-        // CommanderZoneChoiceCheck, so the replacement-time check must not silently divert.
-        val state = stateWithCommander(Format.Commander(), Zone.BATTLEFIELD)
         val result = ZoneMovementUtils.checkZoneChangeRedirect(
             state, cmdrId, Zone.BATTLEFIELD, Zone.GRAVEYARD,
         )

@@ -284,6 +284,8 @@ enum class PendingDecisionKind {
     CHOOSE_NUMBER,
     DISTRIBUTE,
     ORDER_OBJECTS,
+    /** CR 603.3b ordering of triggered ability instances, not game objects. */
+    ORDER_TRIGGERED_ABILITIES,
     SPLIT_PILES,
     CHOOSE_OPTION,
     CHOOSE_REPLACEMENT,

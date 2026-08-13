@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.scripting.effects.Chooser
 import com.wingedsheep.sdk.scripting.effects.CompositeEffect
 import com.wingedsheep.sdk.scripting.effects.DealDamageEffect
 import com.wingedsheep.sdk.scripting.effects.ForEachEffect
+import com.wingedsheep.sdk.scripting.effects.ForEachInCollectionEffect
 import com.wingedsheep.sdk.scripting.effects.ForEachInGroupEffect
 import com.wingedsheep.sdk.scripting.effects.ForEachPlayerEffect
 import com.wingedsheep.sdk.scripting.effects.GainControlEffect
@@ -269,7 +270,11 @@ object GroupPatterns {
 
     /**
      * "Each player returns a permanent they control to its owner's hand." Per-player
-     * Gather → Select(1) → Move(hand), in active-player-first order.
+     * Gather → Select(1) → iterate the chosen card through MoveToZone(hand), in
+     * active-player-first order.  Do not lower the last step to MoveCollection: a
+     * Commander has an optional pre-move replacement for a hand move, and the
+     * ForEach executor preserves this nested pause before continuing the outer
+     * player loop.
      */
     fun eachPlayerReturnsPermanentToHand(): ForEachEffect = ForEachPlayerEffect(
         players = Player.ActivePlayerFirst,
@@ -284,9 +289,9 @@ object GroupPatterns {
                 storeSelected = "chosen",
                 prompt = "Choose a permanent to return to its owner's hand"
             ),
-            MoveCollectionEffect(
-                from = "chosen",
-                destination = CardDestination.ToZone(Zone.HAND, Player.You)
+            ForEachInCollectionEffect(
+                collection = "chosen",
+                effect = MoveToZoneEffect(EffectTarget.Self, Zone.HAND)
             )
         )
     )

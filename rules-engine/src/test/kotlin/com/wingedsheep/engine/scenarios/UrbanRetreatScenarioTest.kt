@@ -3,12 +3,17 @@ package com.wingedsheep.engine.scenarios
 import com.wingedsheep.engine.core.ActivateAbility
 import com.wingedsheep.engine.core.ChooseColorDecision
 import com.wingedsheep.engine.core.PaymentStrategy
+import com.wingedsheep.engine.core.YesNoDecision
+import com.wingedsheep.engine.state.ZoneKey
+import com.wingedsheep.engine.state.components.identity.CommanderComponent
 import com.wingedsheep.engine.state.components.player.ManaPoolComponent
 import com.wingedsheep.engine.support.GameTestDriver
 import com.wingedsheep.engine.support.TestCards
 import com.wingedsheep.mtg.sets.definitions.spm.cards.UrbanRetreat
 import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.core.Step
+import com.wingedsheep.sdk.core.Format
+import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.scripting.AdditionalCostPayment
 import io.kotest.core.spec.style.FunSpec
@@ -146,6 +151,61 @@ class UrbanRetreatScenarioTest : FunSpec({
         val landPermanent = driver.findPermanent(p1, "Urban Retreat")
         landPermanent.shouldNotBeNull()
         driver.isTapped(landPermanent) shouldBe true
+    }
+
+    test("Commander accepts a ReturnToHand activation cost before Urban Retreat is put on the stack") {
+        val driver = setup()
+        val p1 = driver.activePlayer!!
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+        val landInHand = driver.putCardInHand(p1, "Urban Retreat")
+        val creature = driver.putCreatureOnBattlefield(p1, "Savannah Lions")
+        driver.tapPermanent(creature)
+        driver.giveColorlessMana(p1, 2)
+        driver.replaceState(driver.state.copy(format = Format.Commander()).updateEntity(creature) {
+            it.with(CommanderComponent(p1))
+        })
+
+        val activation = driver.submit(ActivateAbility(
+            playerId = p1, sourceId = landInHand, abilityId = fromHandAbilityId,
+            costPayment = AdditionalCostPayment(bouncedPermanents = listOf(creature)),
+            paymentStrategy = PaymentStrategy.FromPool
+        ))
+        activation.error shouldBe null
+        activation.isPaused shouldBe true
+        driver.pendingDecision.shouldBeInstanceOf<YesNoDecision>()
+        driver.state.stack.size shouldBe 0
+
+        driver.submitYesNo(p1, true)
+        driver.state.getZone(ZoneKey(p1, Zone.COMMAND)).contains(creature) shouldBe true
+        driver.state.getZone(ZoneKey(p1, Zone.HAND)).contains(creature) shouldBe false
+        driver.state.stack.size shouldBe 1
+    }
+
+    test("Commander declines a ReturnToHand activation cost and Urban Retreat is stacked once") {
+        val driver = setup()
+        val p1 = driver.activePlayer!!
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+        val landInHand = driver.putCardInHand(p1, "Urban Retreat")
+        val creature = driver.putCreatureOnBattlefield(p1, "Savannah Lions")
+        driver.tapPermanent(creature)
+        driver.giveColorlessMana(p1, 2)
+        driver.replaceState(driver.state.copy(format = Format.Commander()).updateEntity(creature) {
+            it.with(CommanderComponent(p1))
+        })
+
+        val activation = driver.submit(ActivateAbility(
+            playerId = p1, sourceId = landInHand, abilityId = fromHandAbilityId,
+            costPayment = AdditionalCostPayment(bouncedPermanents = listOf(creature)),
+            paymentStrategy = PaymentStrategy.FromPool
+        ))
+        activation.error shouldBe null
+        activation.isPaused shouldBe true
+        driver.pendingDecision.shouldBeInstanceOf<YesNoDecision>()
+        driver.state.stack.size shouldBe 0
+        driver.submitYesNo(p1, false)
+        driver.state.getZone(ZoneKey(p1, Zone.HAND)).contains(creature) shouldBe true
+        driver.state.getZone(ZoneKey(p1, Zone.COMMAND)).contains(creature) shouldBe false
+        driver.state.stack.size shouldBe 1
     }
 
     test("from-hand ability cannot be activated without a tapped creature to return") {

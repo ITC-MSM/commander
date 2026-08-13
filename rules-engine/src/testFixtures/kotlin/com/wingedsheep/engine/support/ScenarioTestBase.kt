@@ -999,12 +999,36 @@ abstract class ScenarioTestBase : FunSpec() {
 
         /**
          * Pass priority for both players to resolve the stack.
-         * Note: This stops when a pending decision is created (the caller should handle it).
+         *
+         * This stops when a pending player choice is created, except for the
+         * CR 603.3b triggered-ability ordering choice.  Stack-drain scenario
+         * tests traditionally express their subject as "activate, then resolve
+         * the stack" and do not assert an ordering; using the detector order as
+         * their deterministic test default retains that meaning without changing
+         * production's explicit controller choice.  Tests that assert order use
+         * submitDecision themselves rather than this convenience method.
          */
         fun resolveStack(): List<ExecutionResult> {
             val results = mutableListOf<ExecutionResult>()
             var iterations = 0
-            while (state.stack.isNotEmpty() && state.pendingDecision == null && iterations++ < 20) {
+            // A resolution can empty the stack and then pause while ordering the
+            // newly-triggered abilities, before those abilities have been placed.
+            // Keep draining that one test-default decision even though `stack`
+            // is momentarily empty.
+            while ((state.stack.isNotEmpty() || state.pendingDecision is OrderTriggeredAbilitiesDecision) &&
+                iterations++ < 20
+            ) {
+                val order = state.pendingDecision as? OrderTriggeredAbilitiesDecision
+                if (order != null) {
+                    results += execute(
+                        SubmitDecision(
+                            order.playerId,
+                            TriggeredAbilitiesOrderedResponse(order.id, order.abilities.map { it.id })
+                        )
+                    )
+                    continue
+                }
+                if (state.pendingDecision != null) break
                 val result = passPriority()
                 results.add(result)
                 if (result.error != null) {
@@ -1305,6 +1329,12 @@ abstract class ScenarioTestBase : FunSpec() {
                 }
                 is OrderObjectsDecision -> {
                     submitDecision(OrderedResponse(decision.id, decision.objects))
+                }
+                is OrderTriggeredAbilitiesDecision -> {
+                    // Test-only deterministic default. Production deliberately presents this
+                    // CR 603.3b choice to the controller; scenarios that do not care about
+                    // order retain detector order.
+                    submitDecision(TriggeredAbilitiesOrderedResponse(decision.id, decision.abilities.map { it.id }))
                 }
                 is DistributeDecision -> {
                     val distribution = decision.targets.associateWith { 0 }.toMutableMap()

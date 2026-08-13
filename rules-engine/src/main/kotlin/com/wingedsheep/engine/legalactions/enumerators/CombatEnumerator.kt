@@ -86,7 +86,9 @@ class CombatEnumerator : ActionEnumerator {
 
         // Declare blockers — offered only to a defending player (one being attacked).
         if (state.step == Step.DECLARE_BLOCKERS && !state.isActiveTurnFor(playerId) &&
-            com.wingedsheep.engine.mechanics.combat.CombatDefenders.isDefendingPlayer(state, playerId)
+            com.wingedsheep.engine.mechanics.combat.CombatDefenders.isDefendingPlayer(state, playerId) &&
+            (state.sharedTurnTeam(playerId).size > 1 ||
+                com.wingedsheep.engine.mechanics.combat.CombatDefenders.nextDefenderToDeclare(state) == playerId)
         ) {
             val blockersAlreadyDeclared = state.getEntity(playerId)
                 ?.get<BlockersDeclaredThisCombatComponent>() != null

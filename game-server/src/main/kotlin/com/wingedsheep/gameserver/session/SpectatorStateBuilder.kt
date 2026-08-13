@@ -92,6 +92,7 @@ class SpectatorStateBuilder(
             is ChooseNumberDecision -> "Choosing a number"
             is DistributeDecision -> "Distributing"
             is OrderObjectsDecision -> "Ordering blockers"
+            is OrderTriggeredAbilitiesDecision -> "Ordering triggered abilities"
             is SplitPilesDecision -> "Splitting piles"
             is SearchLibraryDecision -> "Searching library"
             is ReorderLibraryDecision -> "Reordering cards"

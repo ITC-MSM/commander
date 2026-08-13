@@ -63,6 +63,9 @@ import com.wingedsheep.sdk.scripting.effects.MoveTrackedBattlefieldObjectEffect
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.EntersAsCopy
 import com.wingedsheep.engine.handlers.effects.EntersWithReplacements
+import com.wingedsheep.engine.handlers.effects.LibraryPlacement
+import com.wingedsheep.engine.handlers.effects.ZoneEntryOptions
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.handlers.effects.permanent.types.buildCardComponentForDfcFace
 import com.wingedsheep.engine.handlers.effects.permanent.types.dfcBackFaceManaValue
 import com.wingedsheep.engine.handlers.effects.permanent.types.returnDfcFace
@@ -2152,6 +2155,37 @@ class StackResolver(
                     spellComponent.faceIndex != null
                 val pausedOmenFaceShuffle = pausedCardDef?.layout == com.wingedsheep.sdk.model.CardLayout.OMEN &&
                     spellComponent.faceIndex != null
+
+                // CR 903.9b applies before an Omen spell is shuffled into its owner's
+                // library.  Do this through the generic pipeline, rather than the old
+                // direct add-to-library path, so accepting the Commander replacement can
+                // pause the already-resolved spell without replaying its effect.  The
+                // original effect continuation is already below the replacement decision;
+                // ZoneChangePerformContinuation therefore performs exactly one stack exit,
+                // then lets that original continuation resume.
+                if (pausedOmenFaceShuffle) {
+                    val stack = effectResult.state.continuationStack
+                    // The effect's *entire continuation tail* must resolve before its
+                    // final stack exit.  A decision may sit above a CompositeEffect
+                    // continuation (e.g. Coil and Catch draws, then asks for a discard);
+                    // inserting below only the decision would move the Omen off the stack
+                    // before that remaining effect tail runs.  The continuation stack pops
+                    // from the end, so prepend the exit below every currently pending frame.
+                    val deferred = DeferredStackZoneMoveContinuation(
+                        entityId = spellId,
+                        ownerId = ownerId,
+                        destination = Zone.LIBRARY,
+                        options = ZoneEntryOptions(libraryPlacement = LibraryPlacement.Shuffled)
+                    )
+                    val stateWithDeferredMove = effectResult.state.copy(
+                        continuationStack = listOf(deferred) + stack
+                    )
+                    return ExecutionResult.paused(
+                        stateWithDeferredMove,
+                        effectResult.pendingDecision!!,
+                        events + effectResult.events
+                    )
+                }
                 val pausedReboundExile = spellComponent.castFromZone == Zone.HAND &&
                     spellHasRebound(effectResult.state, spellId, pausedCardDef)
                 val pausedIntended = when {
@@ -2300,13 +2334,31 @@ class StackResolver(
         // library instead of putting it in the graveyard. No cast-from-exile linkage.
         val omenFaceShuffle = cardDef?.layout == com.wingedsheep.sdk.model.CardLayout.OMEN &&
             spellComponent.faceIndex != null
+
+        // An Omen's stack -> library movement is subject to CR 903.9b.  The
+        // replacement-aware service also emits the shuffle event only if the card
+        // really reaches the library (a Commander redirected to command must not
+        // shuffle it there).
+        if (omenFaceShuffle) {
+            val omenMove = ZoneTransitionService.attemptMoveToZone(
+                state = newState,
+                entityId = spellId,
+                destinationZone = Zone.LIBRARY,
+                options = ZoneEntryOptions(libraryPlacement = LibraryPlacement.Shuffled),
+                fromZoneKey = ZoneKey(ownerId, Zone.STACK)
+            )
+            return if (omenMove.isPaused) {
+                ExecutionResult.paused(omenMove.state, omenMove.pendingDecision!!, events + omenMove.events)
+            } else {
+                ExecutionResult.success(omenMove.state, events + omenMove.events)
+            }
+        }
         // Rebound (CR 702.88): a spell cast from hand that has rebound (printed or granted) exiles
         // on resolution instead of going to the graveyard, and arms a next-upkeep free recast.
         val reboundExile = spellComponent.castFromZone == Zone.HAND &&
             spellHasRebound(newState, spellId, cardDef)
         val intendedDestination = when {
             selfExile || flashbackExile || exileAfterResolve || adventureFaceExile || reboundExile -> Zone.EXILE
-            omenFaceShuffle -> Zone.LIBRARY
             else -> Zone.GRAVEYARD
         }
 
@@ -2566,43 +2618,22 @@ class StackResolver(
         // Goliath Daydreamer-style components only exile on actual resolution; if the spell
         // fizzles or is countered they go to graveyard normally.
         val exileAfterResolve = exileAfterResolveComp != null && !exileAfterResolveComp.onlyIfResolved
-        // A fizzled spell heading to its owner's graveyard is a card put into a graveyard
-        // "from anywhere" — honor RedirectZoneChange replacements (Valgavoth, Leyline).
-        val fizzleRedirect = if (flashbackExile || exileAfterResolve) {
-            com.wingedsheep.engine.handlers.effects.ZoneChangeRedirectResult(Zone.EXILE)
-        } else {
-            com.wingedsheep.engine.handlers.effects.ZoneMovementUtils
-                .checkZoneChangeRedirect(state, spellId, Zone.STACK, Zone.GRAVEYARD)
-        }
-        val destZone = fizzleRedirect.destinationZone
-        val destZoneKey = ZoneKey(ownerId, destZone)
-
-        var newState = state.updateEntity(spellId) { c ->
-            c.without<SpellOnStackComponent>().without<TargetsComponent>()
-        }
-        newState = newState.addToZone(destZoneKey, spellId)
-        // A card-intrinsic redirect into the library shuffles the card in (Progenitus).
-        if (destZone == Zone.LIBRARY && fizzleRedirect.shuffleIntoLibrary) {
-            newState = shuffleOwnerLibrary(newState, ownerId)
-        }
-        if (destZone == Zone.EXILE && fizzleRedirect.linkSourceId != null) {
-            newState = com.wingedsheep.engine.handlers.effects.ZoneMovementUtils
-                .linkExiledToSource(newState, spellId, fizzleRedirect.linkSourceId)
-        }
-
-        return ExecutionResult.success(
-            newState,
-            listOf(
-                SpellFizzledEvent(spellId, cardComponent?.name ?: "Unknown", "All targets are invalid"),
-                ZoneChangeEvent(
-                    spellId,
-                    cardComponent?.name ?: "Unknown",
-                    null,
-                    destZone,
-                    ownerId
-                )
-            )
+        // The generic pipeline handles both ordinary RedirectZoneChange effects and
+        // CR 903.9b when a fizzle is redirected to a Commander's library.  It also
+        // preserves library shuffles, linked exile, and replacement riders.
+        val intendedDestination = if (flashbackExile || exileAfterResolve) Zone.EXILE else Zone.GRAVEYARD
+        val move = ZoneTransitionService.attemptMoveToZone(
+            state = state,
+            entityId = spellId,
+            destinationZone = intendedDestination,
+            fromZoneKey = ZoneKey(ownerId, Zone.STACK)
         )
+        val fizzleEvent = SpellFizzledEvent(spellId, cardComponent?.name ?: "Unknown", "All targets are invalid")
+        return if (move.isPaused) {
+            ExecutionResult.paused(move.state, move.pendingDecision!!, listOf(fizzleEvent) + move.events)
+        } else {
+            ExecutionResult.success(move.state, listOf(fizzleEvent) + move.events)
+        }
     }
 
     /**
@@ -2882,52 +2913,27 @@ class StackResolver(
             ?: spellComponent?.casterId
             ?: return ExecutionResult.error(state, "Cannot determine spell owner")
 
-        // Remove from stack
-        var newState = state.removeFromStack(spellId)
-
-        // Put in graveyard (or exile if ExileAfterResolveComponent is present)
+        // Put in graveyard (or exile if ExileAfterResolveComponent is present).
         // Goliath Daydreamer-style components only exile on actual resolution; if the spell
         // is countered they go to graveyard normally.
         val exileComp = container.get<ExileAfterResolveComponent>()
         val exileAfterResolve = exileComp != null && !exileComp.onlyIfResolved
-        // A countered spell heading to its owner's graveyard is still a card being put into a
-        // graveyard "from anywhere" — honor RedirectZoneChange replacements (Valgavoth, Leyline).
-        val counterRedirect = if (exileAfterResolve) {
-            com.wingedsheep.engine.handlers.effects.ZoneChangeRedirectResult(Zone.EXILE)
-        } else {
-            com.wingedsheep.engine.handlers.effects.ZoneMovementUtils
-                .checkZoneChangeRedirect(state, spellId, Zone.STACK, Zone.GRAVEYARD)
-        }
-        val destZone = counterRedirect.destinationZone
-        val destZoneKey = ZoneKey(ownerId, destZone)
-        newState = newState.addToZone(destZoneKey, spellId)
-        // A card-intrinsic redirect into the library shuffles the card in (Progenitus).
-        if (destZone == Zone.LIBRARY && counterRedirect.shuffleIntoLibrary) {
-            newState = shuffleOwnerLibrary(newState, ownerId)
-        }
-        if (destZone == Zone.EXILE && counterRedirect.linkSourceId != null) {
-            newState = com.wingedsheep.engine.handlers.effects.ZoneMovementUtils
-                .linkExiledToSource(newState, spellId, counterRedirect.linkSourceId)
-        }
-
-        // Remove stack components
-        newState = newState.updateEntity(spellId) { c ->
-            c.without<SpellOnStackComponent>().without<TargetsComponent>()
-        }
-
-        return ExecutionResult.success(
-            newState,
-            listOf(
-                SpellCounteredEvent(spellId, cardComponent?.name ?: "Unknown"),
-                ZoneChangeEvent(
-                    spellId,
-                    cardComponent?.name ?: "Unknown",
-                    null,
-                    destZone,
-                    ownerId
-                )
-            )
+        // As for a fizzle, the move itself is replacement-aware.  This matters for
+        // card-intrinsic graveyard -> library redirects and, specifically, the
+        // optional Commander replacement before that library move.
+        val intendedDestination = if (exileAfterResolve) Zone.EXILE else Zone.GRAVEYARD
+        val move = ZoneTransitionService.attemptMoveToZone(
+            state = state,
+            entityId = spellId,
+            destinationZone = intendedDestination,
+            fromZoneKey = ZoneKey(ownerId, Zone.STACK)
         )
+        val counterEvent = SpellCounteredEvent(spellId, cardComponent?.name ?: "Unknown")
+        return if (move.isPaused) {
+            ExecutionResult.paused(move.state, move.pendingDecision!!, listOf(counterEvent) + move.events)
+        } else {
+            ExecutionResult.success(move.state, listOf(counterEvent) + move.events)
+        }
     }
 
     /**
@@ -3231,8 +3237,9 @@ class StackResolver(
         return targets.filterIndexed { index, target ->
             when (target) {
                 is ChosenTarget.Player -> {
-                    // Player is valid if they exist and haven't lost...
-                    if (!state.hasEntity(target.playerId)) return@filterIndexed false
+                    // Player history entities remain after multiplayer elimination;
+                    // only a player still in the game can be a legal target.
+                    if (target.playerId !in state.activePlayers) return@filterIndexed false
                     // ...and (CR 608.2b) the player-target restriction still holds. A player who
                     // gained life above the threshold, or whose "lost life this turn" never
                     // happened, is removed at resolution.

@@ -4,7 +4,7 @@ import com.wingedsheep.engine.core.EffectResult
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
-import com.wingedsheep.engine.handlers.effects.ZoneTransitionResult
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionAttemptResult
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.battlefield.BattlefieldEntryTimestampComponent
 import com.wingedsheep.sdk.core.Zone
@@ -34,7 +34,15 @@ class MoveTrackedBattlefieldObjectExecutor : EffectExecutor<MoveTrackedBattlefie
             effect.enteredBattlefieldTimestamp
         ) ?: return EffectResult.success(state)
 
-        return EffectResult.success(transitionResult.state, transitionResult.events)
+        return if (transitionResult.isPaused) {
+            EffectResult.paused(
+                transitionResult.state,
+                transitionResult.pendingDecision!!,
+                transitionResult.events
+            )
+        } else {
+            EffectResult.success(transitionResult.state, transitionResult.events)
+        }
     }
 }
 
@@ -48,14 +56,18 @@ internal fun moveTrackedBattlefieldObject(
     targetId: EntityId,
     destination: Zone,
     enteredBattlefieldTimestamp: Long?
-): ZoneTransitionResult? {
+): ZoneTransitionAttemptResult? {
     val container = state.getEntity(targetId) ?: return null
     if (targetId !in state.getBattlefield()) return null
     if (enteredBattlefieldTimestamp != null) {
         val currentEntry = container.get<BattlefieldEntryTimestampComponent>()?.timestamp
         if (currentEntry != enteredBattlefieldTimestamp) return null
     }
-    return ZoneTransitionService.moveToZone(
+    // This executor performs no work after the zone move, so it can safely
+    // propagate a pause from the generic CR 614–616 replacement pipeline.
+    // Multi-step executors must instead carry their remaining work in a
+    // continuation before adopting attemptMoveToZone.
+    return ZoneTransitionService.attemptMoveToZone(
         state = state,
         entityId = targetId,
         destinationZone = destination

@@ -27,10 +27,9 @@ import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 
 /**
- * CR 903.9a state-based action — when the format is Commander (and the
- * `alwaysDivertToCommand` shortcut is off), seeing a commander outside the command zone must
- * pause for the owner's "put it in the command zone?" decision. The marker component prevents
- * re-prompting on subsequent SBA iterations until the commander changes zones.
+ * CR 903.9a state-based action — seeing a commander in a graveyard or exile must pause for the
+ * owner's "put it in the command zone?" decision. The marker component prevents re-prompting
+ * on subsequent SBA iterations until the commander changes zones.
  */
 class CommanderZoneChoiceCheckTest : FunSpec({
 
@@ -84,8 +83,8 @@ class CommanderZoneChoiceCheckTest : FunSpec({
         frame.currentZone shouldBe Zone.GRAVEYARD
     }
 
-    test("pauses for a commander in exile, hand, or library too") {
-        for (zone in listOf(Zone.EXILE, Zone.HAND, Zone.LIBRARY)) {
+    test("pauses for a commander in exile") {
+        for (zone in listOf(Zone.EXILE)) {
             val result = check.check(stateWithCommanderIn(zone))
             result.isPaused shouldBe true
             (result.state.continuationStack.last() as CommanderZoneChoiceContinuation)
@@ -110,15 +109,19 @@ class CommanderZoneChoiceCheckTest : FunSpec({
         result.isPaused shouldBe false
     }
 
-    test("does not pause when alwaysDivertToCommand is enabled") {
-        // The synchronous replacement-time redirect handles diversion; the SBA must stay out
-        // of the way so it doesn't double-prompt for shortcut tooling / AI.
+    test("legacy alwaysDivertToCommand does not bypass the 903.9a choice") {
         val state = stateWithCommanderIn(
             Zone.GRAVEYARD,
             format = Format.Commander(alwaysDivertToCommand = true),
         )
         val result = check.check(state)
-        result.isPaused shouldBe false
+        result.isPaused shouldBe true
+    }
+
+    test("does not treat hand or library as a 903.9a state-based action") {
+        for (zone in listOf(Zone.HAND, Zone.LIBRARY)) {
+            check.check(stateWithCommanderIn(zone)).isPaused shouldBe false
+        }
     }
 
     test("does not pause when the format is not Commander") {
@@ -220,8 +223,8 @@ class CommanderZoneChoiceCheckTest : FunSpec({
         result.isPaused shouldBe false
     }
 
-    test("commander already on the stack is not prompted (CR 903.9 entry zones only)") {
-        // Stack is for resolving spells; the SBA only fires on graveyard/exile/hand/library.
+    test("commander already on the stack is not prompted (CR 903.9a entry zones only)") {
+        // Stack is for resolving spells; 903.9a only fires on graveyard/exile.
         val state = stateWithCommanderIn(Zone.STACK)
         val result = check.check(state)
         result.isPaused shouldBe false

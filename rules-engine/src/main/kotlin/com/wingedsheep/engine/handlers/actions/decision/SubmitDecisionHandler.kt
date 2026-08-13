@@ -48,6 +48,10 @@ class SubmitDecisionHandler(
 
         // Clear the pending decision
         val clearedState = state.clearPendingDecision()
+        // The priority holder at the moment a decision was requested is the player entitled to
+        // the next priority window once its continuation drains. Resolution seeds this with the
+        // active player (CR 117.3b); casting/activation keeps the acting player (CR 117.3c).
+        val priorityAfterDecision = clearedState.priorityPlayerId ?: action.playerId
 
         val submittedEvent = DecisionSubmittedEvent(
             pending.id,
@@ -63,6 +67,21 @@ class SubmitDecisionHandler(
             // placed beneath the frames this resume leaves in flight, not between them.
             val preResumeStack = clearedState.continuationStack
             val result = continuationHandler.resume(clearedState, action.response)
+
+            // Some decisions resume inside an engine-owned turn-based-action sequence rather
+            // than at a priority boundary. The producer has already performed (or deliberately
+            // deferred) the exact SBA/trigger work and selected the next rules actor. Preserve
+            // that result verbatim instead of applying the generic post-decision boundary.
+            if (result.postDecisionHandling == PostDecisionHandling.RETURN_AS_IS) {
+                return ExecutionResult(
+                    state = result.state,
+                    events = listOf(submittedEvent) + result.events,
+                    error = result.error,
+                    pendingDecision = result.pendingDecision,
+                    triggersAlreadyProcessed = result.triggersAlreadyProcessed,
+                    postDecisionHandling = result.postDecisionHandling,
+                )
+            }
 
             // Handle cleanup step completion
             if (result.isSuccess && !result.isPaused &&
@@ -114,7 +133,14 @@ class SubmitDecisionHandler(
                 val preSbaTriggers = if (result.triggersAlreadyProcessed) {
                     emptyList()
                 } else {
-                    triggerDetector.detectTriggers(result.state, result.events)
+                    // TriggerProcessor owns the full CR 603.3b placement wave, including the
+                    // next wave caused by its own AbilityTriggeredEvents. Re-detecting those here
+                    // after a target-order pause would stack the same meta-trigger twice. Other
+                    // resumed events (ETB, death, etc.) still enter ordinary detection below.
+                    triggerDetector.detectTriggers(
+                        result.state,
+                        result.events.filterNot { it is AbilityTriggeredEvent }
+                    )
                 }
 
                 val preSbaStackSize = result.state.continuationStack.size
@@ -128,7 +154,8 @@ class SubmitDecisionHandler(
                     if (preSbaTriggers.isNotEmpty()) {
                         val pendingTriggers = PendingTriggersContinuation(
                             decisionId = "submit-sba-deferred-triggers-${java.util.UUID.randomUUID()}",
-                            remainingTriggers = preSbaTriggers
+                            remainingTriggers = preSbaTriggers,
+                            alreadyOrdered = false,
                         )
                         val stack = pausedState.continuationStack
                         val newStack = stack.subList(0, preSbaStackSize) +
@@ -175,13 +202,18 @@ class SubmitDecisionHandler(
 
                     combinedEvents = combinedEvents + triggerResult.events
                     return ExecutionResult.success(
-                        triggerResult.newState.withPriority(action.playerId),
+                        // The initiating handler records the player who is to receive the next
+                        // priority window in state. This is the active player after a resolved
+                        // stack object (CR 117.3b), but the casting/activation player after an
+                        // interrupted casting/activation sequence (CR 117.3c).
+                        triggerResult.newState.withPriority(priorityAfterDecision),
                         combinedEvents
                     )
                 }
 
                 return ExecutionResult.success(
-                    sbaResult.newState.withPriority(action.playerId),
+                    // See the corresponding trigger branch above.
+                    sbaResult.newState.withPriority(priorityAfterDecision),
                     combinedEvents
                 )
             }
@@ -197,11 +229,15 @@ class SubmitDecisionHandler(
             // priority), not between two of its own steps. Mirrors
             // PassPriorityHandler.resolveTopOfStack's mid-resolution handling.
             if (result.isPaused && !result.triggersAlreadyProcessed) {
-                val deferredTriggers = triggerDetector.detectTriggers(result.state, result.events)
+                val deferredTriggers = triggerDetector.detectTriggers(
+                    result.state,
+                    result.events.filterNot { it is AbilityTriggeredEvent }
+                )
                 if (deferredTriggers.isNotEmpty()) {
                     val pending = PendingTriggersContinuation(
                         decisionId = "submit-deferred-triggers-${java.util.UUID.randomUUID()}",
-                        remainingTriggers = deferredTriggers
+                        remainingTriggers = deferredTriggers,
+                        alreadyOrdered = false,
                     )
                     // Frames untouched by this resume (the identity-equal bottom prefix) are outer
                     // resolutions the triggers must not jump ahead of; everything above is the
@@ -230,7 +266,9 @@ class SubmitDecisionHandler(
                     state = result.state,
                     events = listOf(submittedEvent) + result.events,
                     error = result.error,
-                    pendingDecision = result.pendingDecision
+                    pendingDecision = result.pendingDecision,
+                    triggersAlreadyProcessed = result.triggersAlreadyProcessed,
+                    postDecisionHandling = result.postDecisionHandling,
                 )
             } else {
                 result

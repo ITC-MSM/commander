@@ -56,6 +56,8 @@ data class TriggeredAbilityContinuation(
     val triggerDamageAmount: Int? = null,
     val triggeringEntityId: EntityId? = null,
     val triggeringPlayerId: EntityId? = null,
+    /** Defending-player snapshot captured as this combat trigger fired. */
+    val defendingPlayerId: EntityId? = null,
     val elseEffect: Effect? = null,
     val targetRequirements: List<TargetRequirement> = emptyList(),
     val triggerCounterCount: Int? = null,
@@ -138,6 +140,8 @@ data class TriggerDamageDistributionContinuation(
     val triggerDamageAmount: Int? = null,
     val triggeringEntityId: EntityId? = null,
     val triggeringPlayerId: EntityId? = null,
+    /** Defending-player snapshot carried through target and damage-distribution choices. */
+    val defendingPlayerId: EntityId? = null,
     val triggerCounterCount: Int? = null,
     val triggerTotalCounterCount: Int? = null,
     val triggerLastKnownCounters: Map<String, Int>? = null,
@@ -162,8 +166,66 @@ data class TriggerDamageDistributionContinuation(
 @Serializable
 data class PendingTriggersContinuation(
     override val decisionId: String,
-    val remainingTriggers: List<PendingTrigger>
+    val remainingTriggers: List<PendingTrigger>,
+    /** These triggers have already been ordered under CR 603.3b and must not be re-ordered. */
+    val alreadyOrdered: Boolean = true,
 ) : ContinuationFrame
+
+/**
+ * Block triggers captured while an earlier defending player declares blockers
+ * in a multiplayer combat. The frame is deliberately not auto-resumed: every
+ * defender must complete their declaration before the combined trigger wave is
+ * placed on the stack.
+ */
+@Serializable
+data class DeferredBlockTriggersContinuation(
+    override val decisionId: String,
+    val triggers: List<PendingTrigger>,
+) : ContinuationFrame
+
+/**
+ * Completes the declare-blockers rules boundary after an SBA choice pauses stabilization.
+ * Block-declaration triggers are retained here until the SBA loop is stable; only then are
+ * they combined with triggers caused by the SBAs and placed on the stack.
+ */
+@Serializable
+data class BlockDeclarationSbaBoundaryContinuation(
+    override val decisionId: String,
+    val capturedTriggers: List<PendingTrigger>,
+) : ContinuationFrame
+
+/**
+ * Marks the second half of the declare-blockers priority boundary. It is pushed below every
+ * continuation created while the current trigger-placement wave is put on the stack. Once that
+ * complete wave drains, the engine checks SBAs again before priority can be given to a player.
+ *
+ * [capturedTriggers] is normally empty. It retains triggers emitted by a post-placement SBA pass
+ * when that pass itself pauses for a player choice, so the events cannot be lost across the
+ * external decision boundary.
+ */
+@Serializable
+data class BlockDeclarationPostPlacementContinuation(
+    override val decisionId: String,
+    val capturedTriggers: List<PendingTrigger> = emptyList(),
+    /** True only when this frame is retaining triggers across a paused post-placement SBA pass. */
+    val precedingEventsAreSba: Boolean = false,
+) : ContinuationFrame
+
+/** A remaining APNAP trigger-placement wave, resumed only after the preceding group is stacked. */
+@Serializable
+data class TriggerPlacementWaveContinuation(
+    override val decisionId: String,
+    val groups: List<TriggerPlacementGroup>,
+    val nextGroupIndex: Int,
+    /** Events emitted while placing earlier groups; used for CR 603.3b's next trigger wave. */
+    val placementEvents: List<GameEvent> = emptyList(),
+) : ContinuationFrame
+
+@Serializable
+data class TriggerPlacementGroup(
+    val controllerId: EntityId,
+    val triggers: List<PendingTrigger>,
+)
 
 /**
  * Resume spell resolution after target or mode selection.

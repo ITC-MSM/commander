@@ -22,6 +22,7 @@ class ContinuationHandler(
     private val registry = ContinuationResumerRegistry().apply {
         // Core engine resumers
         registerModule(EffectAndTriggerContinuationResumer(services, effectRunner))
+        registerModule(TriggerPlacementContinuationResumer(services))
         registerModule(MiscContinuationResumer(services, effectRunner))
 
         // Core engine auto-resumers
@@ -29,7 +30,9 @@ class ContinuationHandler(
 
         // Specialized resumer modules
         registerModule(CombatContinuationResumer(services))
-        registerModule(CombatTaxContinuationResumer(services))
+        val combatTaxResumer = CombatTaxContinuationResumer(services)
+        registerModule(combatTaxResumer)
+        registerAutoResumerModule(combatTaxResumer)
         registerModule(ColorChoiceContinuationResumer(services, effectRunner))
         val chainResumer = ChainSpellContinuationResumer(services)
         registerModule(chainResumer)
@@ -42,13 +45,20 @@ class ContinuationHandler(
         registerModule(StateBasedContinuationResumer(services))
         registerModule(SacrificeAndPayContinuationResumer(services))
         registerModule(CollectEvidenceContinuationResumer())
-        registerModule(CostPaymentContinuationResumer(services))
+        val costPaymentResumer = CostPaymentContinuationResumer(services)
+        registerModule(costPaymentResumer)
+        registerAutoResumerModule(costPaymentResumer)
+        registerAutoResumerModule(ActivatedAbilityPostPaymentContinuationResumer(services))
         registerModule(ManaPaymentContinuationResumer(services))
-        registerModule(LibraryAndZoneContinuationResumer(services))
+        val libraryAndZoneResumer = LibraryAndZoneContinuationResumer(services)
+        registerModule(libraryAndZoneResumer)
+        registerAutoResumerModule(libraryAndZoneResumer)
         registerModule(GuessContinuationResumer(services))
         registerModule(ModalAndCloneContinuationResumer(services))
         registerModule(RoomDoorContinuationResumer(services))
         registerModule(CastModalContinuationResumer(services))
+        registerAutoResumerModule(CastSpellPostAdditionalCostsContinuationResumer(services))
+        registerAutoResumerModule(CastSpellAlternativeBounceContinuationResumer(services))
         registerModule(ModalTriggerContinuationResumer(services))
         registerModule(TokenContinuationResumer(services))
         registerModule(RingTemptContinuationResumer(services))

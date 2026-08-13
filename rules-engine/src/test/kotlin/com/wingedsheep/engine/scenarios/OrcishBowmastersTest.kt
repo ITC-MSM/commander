@@ -1,6 +1,8 @@
 package com.wingedsheep.engine.scenarios
 
 import com.wingedsheep.engine.core.ChooseTargetsDecision
+import com.wingedsheep.engine.core.OrderTriggeredAbilitiesDecision
+import com.wingedsheep.engine.core.TriggeredAbilitiesOrderedResponse
 import com.wingedsheep.engine.mechanics.layers.StateProjector
 import com.wingedsheep.engine.state.components.battlefield.CountersComponent
 import com.wingedsheep.engine.support.GameTestDriver
@@ -112,6 +114,13 @@ class OrcishBowmastersTest : FunSpec({
             if (decision is ChooseTargetsDecision) {
                 submitTargetSelection(controller, listOf(target))
                 pings++
+                continue
+            }
+            if (decision is OrderTriggeredAbilitiesDecision) {
+                submitDecision(
+                    decision.playerId,
+                    TriggeredAbilitiesOrderedResponse(decision.id, decision.abilities.map { it.id })
+                )
                 continue
             }
             if (getTopOfStack() != null) {

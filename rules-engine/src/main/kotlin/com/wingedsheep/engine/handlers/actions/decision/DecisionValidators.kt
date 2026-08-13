@@ -28,6 +28,8 @@ import com.wingedsheep.engine.core.NumberChosenResponse
 import com.wingedsheep.engine.core.OptionChosenResponse
 import com.wingedsheep.engine.core.OrderObjectsDecision
 import com.wingedsheep.engine.core.OrderedResponse
+import com.wingedsheep.engine.core.OrderTriggeredAbilitiesDecision
+import com.wingedsheep.engine.core.TriggeredAbilitiesOrderedResponse
 import com.wingedsheep.engine.core.PendingDecision
 import com.wingedsheep.engine.core.PilesSplitResponse
 import com.wingedsheep.engine.core.ReorderLibraryDecision
@@ -69,6 +71,7 @@ object DecisionValidators {
             is ChooseNumberDecision -> validateNumber(decision, response)
             is DistributeDecision -> validateDistribute(decision, response)
             is OrderObjectsDecision -> validateOrder(decision, response)
+            is OrderTriggeredAbilitiesDecision -> validateTriggeredAbilityOrder(decision, response)
             is SplitPilesDecision -> validateSplitPiles(decision, response)
             is ChooseOptionDecision -> validateOption(decision, response)
             is ChooseReplacementDecision -> validateReplacement(decision, response)
@@ -387,6 +390,17 @@ object DecisionValidators {
             return "Ordered objects must contain exactly the same objects as the decision"
         }
         return null
+    }
+
+    private fun validateTriggeredAbilityOrder(
+        decision: OrderTriggeredAbilitiesDecision,
+        response: DecisionResponse,
+    ): String? {
+        if (response !is TriggeredAbilitiesOrderedResponse) return "Expected triggered ability order response"
+        val expected = decision.abilities.map { it.id }.toSet()
+        return if (response.orderedAbilityIds.size != expected.size || response.orderedAbilityIds.toSet() != expected) {
+            "Ordered triggered abilities must contain each offered ability exactly once"
+        } else null
     }
 
     private fun validateSplitPiles(decision: SplitPilesDecision, response: DecisionResponse): String? {

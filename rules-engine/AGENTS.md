@@ -15,11 +15,17 @@ just test-class CreatureStatsTest                  # Specific test class
 ## Where to look
 
 - **Core design** (ECS, continuations, layer system, mana, priority): [`../docs/architecture-principles.md`](../docs/architecture-principles.md)
+- **Rules-defect validation** (blind authority pass, stack trace, classifications, independent review): [`../docs/rules-validation-protocol.md`](../docs/rules-validation-protocol.md)
 - **Rule 613.8 dependency resolution**: [`../docs/continuous-effect-dependency-system.md`](../docs/continuous-effect-dependency-system.md)
 - **Complex/rare ability patterns**: [`../docs/managing-complex-and-rare-abilities.md`](../docs/managing-complex-and-rare-abilities.md)
 - Package layout under `com.wingedsheep.engine/` — read the directory.
 
 ## Load-bearing rules (engine-specific, beyond root AGENTS.md)
+
+- **Rules claims require the protocol.** Before calling an engine interaction correct or broken, read
+  `../docs/rules-validation-protocol.md` in full and return its evidence record. A failing test or
+  simulation alone is not evidence of a rules defect; stack/priority/replacement/SBA paths require
+  independent rules-oracle and engine-review sign-offs before production changes.
 
 - **Trigger detection has three entry points**, not one:
   - `TriggerDetector.detectTriggers()` — battlefield triggers, per event

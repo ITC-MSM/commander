@@ -6,7 +6,8 @@ import com.wingedsheep.engine.state.GameState
 
 /**
  * Resolves "complex" engine decisions — `ChooseTargetsDecision`,
- * `DistributeDecision`, `OrderObjectsDecision`, `SplitPilesDecision`,
+ * `DistributeDecision`, `OrderObjectsDecision`, `OrderTriggeredAbilitiesDecision`,
+ * `SplitPilesDecision`,
  * `SearchLibraryDecision`, `ReorderLibraryDecision`, `AssignDamageDecision`,
  * `SelectManaSourcesDecision`, multi-select `SelectCardsDecision`, and
  * multi-mode `ChooseModeDecision` — that the gym can't fold into a single

@@ -29,6 +29,8 @@ import com.wingedsheep.engine.core.NumberChosenResponse
 import com.wingedsheep.engine.core.OptionChosenResponse
 import com.wingedsheep.engine.core.OrderObjectsDecision
 import com.wingedsheep.engine.core.OrderedResponse
+import com.wingedsheep.engine.core.OrderTriggeredAbilitiesDecision
+import com.wingedsheep.engine.core.TriggeredAbilitiesOrderedResponse
 import com.wingedsheep.engine.core.PendingDecision
 import com.wingedsheep.engine.core.PilesSplitResponse
 import com.wingedsheep.engine.core.ReorderLibraryDecision
@@ -134,6 +136,7 @@ class FastDecisionResponder(private val intents: IntentCatalog = IntentCatalog.N
             // Order is a real tactical choice (damage assignment order, scry). A playout takes the
             // engine's order rather than pretending to solve it.
             is OrderObjectsDecision -> OrderedResponse(decision.id, decision.objects)
+            is OrderTriggeredAbilitiesDecision -> TriggeredAbilitiesOrderedResponse(decision.id, decision.abilities.map { it.id })
             is ReorderLibraryDecision -> OrderedResponse(decision.id, decision.cards)
 
             is SplitPilesDecision -> PilesSplitResponse(decision.id, splitEvenly(decision))

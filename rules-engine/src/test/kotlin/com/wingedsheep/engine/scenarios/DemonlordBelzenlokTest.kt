@@ -1,16 +1,20 @@
 package com.wingedsheep.engine.scenarios
 
 import com.wingedsheep.engine.state.ZoneKey
+import com.wingedsheep.engine.state.components.identity.CommanderComponent
+import com.wingedsheep.engine.core.YesNoDecision
 import com.wingedsheep.engine.support.GameTestDriver
 import com.wingedsheep.engine.support.TestCards
 import com.wingedsheep.mtg.sets.definitions.dom.cards.DemonlordBelzenlok
 import com.wingedsheep.sdk.core.Color
+import com.wingedsheep.sdk.core.Format
 import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeInstanceOf
 
 /**
  * Tests for Demonlord Belzenlok:
@@ -220,5 +224,42 @@ class DemonlordBelzenlokTest : FunSpec({
 
         // No damage dealt (no cards put in hand)
         driver.getLifeTotal(activePlayer) shouldBe 20
+    }
+
+    test("commander hand replacement pauses the repeat loop, then resumes remaining iterations exactly once") {
+        val driver = createDriver()
+        driver.initMirrorMatch(
+            deck = Deck.of("Swamp" to 30, "Forest" to 30),
+            startingLife = 20
+        )
+        val player = driver.activePlayer!!
+        driver.replaceState(driver.state.copy(format = Format.Commander()))
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        // The commander is the first MV >= 4 hit. The next hit stops the repeat,
+        // proving the nested CR 903.9b decision did not drop or replay the loop tail.
+        driver.putCardOnTopOfLibrary(player, "Centaur Courser")
+        val commander = driver.putCardOnTopOfLibrary(player, "Force of Nature")
+        driver.replaceState(driver.state.updateEntity(commander) { it.with(CommanderComponent(player)) })
+
+        val belzenlok = driver.putCardInHand(player, "Demonlord Belzenlok")
+        driver.giveMana(player, Color.BLACK, 6)
+        driver.castSpell(player, belzenlok)
+        driver.bothPass()
+        driver.bothPass()
+
+        // The first hit must still be in the library while its owner is deciding.
+        driver.pendingDecision.shouldBeInstanceOf<YesNoDecision>()
+        driver.state.getZone(ZoneKey(player, Zone.LIBRARY)) shouldContain commander
+
+        driver.submitYesNo(player, true)
+
+        driver.state.getZone(ZoneKey(player, Zone.COMMAND)) shouldContain commander
+        val handNames = driver.getHand(player).mapNotNull { id ->
+            driver.state.getEntity(id)?.get<com.wingedsheep.engine.state.components.identity.CardComponent>()?.name
+        }
+        handNames shouldContain "Centaur Courser"
+        // Only the Courser reached hand; the commander was replaced into command.
+        driver.getLifeTotal(player) shouldBe 19
     }
 })

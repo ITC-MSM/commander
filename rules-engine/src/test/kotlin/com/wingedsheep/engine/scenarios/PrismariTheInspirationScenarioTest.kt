@@ -37,7 +37,7 @@ class PrismariTheInspirationScenarioTest : FunSpec({
         driver.putLandOnBattlefield(caster, "Mountain")
         val bolt = driver.putCardInHand(caster, "Lightning Bolt")
 
-        driver.castSpell(caster, bolt, listOf(opponent)).isSuccess shouldBe true
+        driver.castSpell(caster, bolt, listOf(opponent)).error shouldBe null
 
         val triggers = stormTriggers(driver)
         triggers.size shouldBe 1
@@ -59,7 +59,8 @@ class PrismariTheInspirationScenarioTest : FunSpec({
         driver.putLandOnBattlefield(caster, "Mountain")
         val bolt = driver.putCardInHand(caster, "Lightning Bolt")
 
-        driver.castSpell(caster, bolt, listOf(opponent)).isSuccess shouldBe true
+        driver.castSpell(caster, bolt, listOf(opponent)).error shouldBe null
+        driver.submitTriggerOrderInListedOrder() shouldBe true
 
         stormTriggers(driver).size shouldBe 2
     }
@@ -77,7 +78,7 @@ class PrismariTheInspirationScenarioTest : FunSpec({
         driver.putLandOnBattlefield(caster, "Mountain")
         val bolt = driver.putCardInHand(caster, "Lightning Bolt")
 
-        driver.castSpell(caster, bolt, listOf(opponent)).isSuccess shouldBe true
+        driver.castSpell(caster, bolt, listOf(opponent)).error shouldBe null
 
         stormTriggers(driver).size shouldBe 0
     }

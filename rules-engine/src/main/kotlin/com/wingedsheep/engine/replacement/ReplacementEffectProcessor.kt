@@ -9,9 +9,13 @@ import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.engine.state.components.identity.OwnerComponent
 import com.wingedsheep.engine.state.components.identity.SelfZoneRedirectComponent
+import com.wingedsheep.engine.state.components.identity.CommanderComponent
+import com.wingedsheep.engine.state.components.identity.TokenComponent
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.Duration
 import com.wingedsheep.sdk.scripting.ReplacementEffect
+import com.wingedsheep.sdk.scripting.CommanderZoneReplacement
+import com.wingedsheep.sdk.scripting.RedirectZoneChangeWithEffect
 import com.wingedsheep.sdk.scripting.ReplacementPriorityGroup
 import java.util.*
 import kotlin.enums.enumEntries
@@ -125,30 +129,10 @@ class ReplacementEffectProcessor {
             return ProcessorResult.Pass
         }
 
-        // 3. Separate optional replacements — they need a yes/no prompt before
-        //    entering the standard CR 616.1 pipeline.
-        val (optional, mandatory) = fresh.partition {
-            it.effect.optional
-        }
-        if (optional.isNotEmpty()) {
-            // Present the optional prompt via the event's domain-specific handler.
-            // If the event doesn't support optional prompts, treat as mandatory.
-            //
-            // Known simplification: CR 616.1 puts optional and mandatory effects in one pool and
-            // orders the whole pool by priority group, so a mandatory 616.1a self-replacement
-            // should be applied before an optional 616.1e one. Prompting optionals first is only
-            // observable when both are applicable to the same event, which needs a card that
-            // classifies above ANY — nothing does yet.
-            return presentOptionalReplacement(state, event, optional.first(), alreadyApplied, context)
-        }
-
-        // 4. If only one mandatory match, apply it directly
-        if (mandatory.size == 1) {
-            return applySingle(state, mandatory[0], event, alreadyApplied)
-        }
-
-        // 5. Multiple mandatory matches — group by priority order (CR 616.1a-e)
-        val byGroup = mandatory.groupBy { it.effect.priorityGroup }
+        // 3. CR 616.1 orders *all* applicable replacements by priority group
+        // before an optional effect is offered.  Optional-first is wrong when a
+        // higher-priority mandatory replacement also applies.
+        val byGroup = fresh.groupBy { it.effect.priorityGroup }
 
         for (group in enumEntries<ReplacementPriorityGroup>()) {
             val groupEffects = byGroup[group] ?: continue
@@ -165,8 +149,12 @@ class ReplacementEffectProcessor {
                 return presentChoice(state, event, groupEffects, alreadyApplied, context)
             }
 
-            // Single effect — auto-apply
-            return applySingle(state, groupEffects.first(), event, alreadyApplied)
+            val only = groupEffects.first()
+            return if (only.effect.optional) {
+                presentOptionalReplacement(state, event, only, alreadyApplied, context)
+            } else {
+                applySingle(state, only, event, alreadyApplied)
+            }
         }
 
         // Unreachable: mandatory was non-empty, so at least one group matched.
@@ -234,7 +222,12 @@ class ReplacementEffectProcessor {
                 buildContextFromShield(state, identity.floatingId, gathered.sourceControllerId)
             }
             else -> EffectContext(
-                controllerId = event.affectedPlayerId,
+                // A zone-change replacement with a rider executes its rider as
+                // the replacement source's controller ("instead exile it and
+                // you gain 2 life"), not as the owner of the card that moved.
+                controllerId = if (event is PendingGameEvent.ZoneChangePending &&
+                    gathered.effect is RedirectZoneChangeWithEffect
+                ) gathered.sourceControllerId else event.affectedPlayerId,
                 sourceId = gathered.sourceEntityId(state)
             )
         }
@@ -243,7 +236,13 @@ class ReplacementEffectProcessor {
         // responsibility — the processor only computes the outcome and passes the
         // identity through so callers can act on it.
 
-        val updatedAlreadyApplied = alreadyApplied + gathered.identity
+        // CR 903.9b expressly allows this replacement to apply more than once
+        // to one event. A decline is recorded by OptionalReplacementContinuation;
+        // therefore only an accepted Commander replacement is exempt from 614.5.
+        val updatedAlreadyApplied = if (
+            gathered.identity is ReplacementEffectIdentity.CommanderZoneIdentity &&
+            gathered.effect is CommanderZoneReplacement
+        ) alreadyApplied else alreadyApplied + gathered.identity
 
         return when (outcome) {
             is ReplacementOutcome.Modified -> {
@@ -312,7 +311,7 @@ class ReplacementEffectProcessor {
         alreadyApplied: Set<ReplacementEffectIdentity>,
         context: EffectContext?
     ): ProcessorResult.Paused {
-        val playerId = event.affectedPlayerId
+        val playerId = event.replacementChoicePlayerId(state)
         val decisionId = UUID.randomUUID().toString()
 
         val decision = ChooseOptionDecision(
@@ -351,7 +350,7 @@ class ReplacementEffectProcessor {
      * returns null (no optional prompt support), the effect is treated
      * as mandatory.
      */
-    private fun presentOptionalReplacement(
+    internal fun presentOptionalReplacement(
         state: GameState,
         event: PendingGameEvent,
         gathered: GatheredReplacement,
@@ -359,7 +358,7 @@ class ReplacementEffectProcessor {
         context: EffectContext?
     ): ProcessorResult {
         val decisionId = UUID.randomUUID().toString()
-        val promptResult = event.createOptionalPrompt(decisionId, gathered, state, context)
+        val promptResult = event.createOptionalPrompt(decisionId, gathered, state, alreadyApplied, context)
             ?: // Event doesn't support optional prompts — treat as mandatory
             return applySingle(state, gathered, event, alreadyApplied)
 
@@ -501,6 +500,23 @@ class ReplacementEffectProcessor {
                         description = describe(state, entityId, effect.description)
                     )
                 )
+            }
+        }
+
+        // 5. Commander CR 903.9b is an engine rule, but it is still an optional
+        // replacement effect and must enter the same CR 616 competition as card text.
+        val zoneEvent = event as? PendingGameEvent.ZoneChangePending
+        if (zoneEvent != null && state.format.usesCommanders &&
+            zoneEvent.destination in setOf(com.wingedsheep.sdk.core.Zone.HAND, com.wingedsheep.sdk.core.Zone.LIBRARY)) {
+            val container = state.getEntity(zoneEvent.entityId)
+            val commander = container?.get<CommanderComponent>()
+            if (commander != null && !container.has<TokenComponent>() && commander.ownerId == zoneEvent.affectedPlayerId) {
+                results.add(GatheredReplacement(
+                    identity = ReplacementEffectIdentity.CommanderZoneIdentity(zoneEvent.entityId),
+                    effect = CommanderZoneReplacement(),
+                    sourceControllerId = commander.ownerId,
+                    description = "Commander — put it into the command zone instead"
+                ))
             }
         }
 

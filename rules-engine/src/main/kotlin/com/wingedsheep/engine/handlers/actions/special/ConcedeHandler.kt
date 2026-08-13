@@ -1,10 +1,12 @@
 package com.wingedsheep.engine.handlers.actions.special
 
 import com.wingedsheep.engine.core.Concede
+import com.wingedsheep.engine.core.EngineServices
 import com.wingedsheep.engine.core.ExecutionResult
 import com.wingedsheep.engine.core.GameEndReason
 import com.wingedsheep.engine.core.PlayerLostEvent
 import com.wingedsheep.engine.handlers.actions.ActionHandler
+import com.wingedsheep.engine.handlers.actions.combat.BlockDeclarationFinalizer
 import com.wingedsheep.engine.mechanics.StateBasedActionChecker
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.player.LossReason
@@ -22,7 +24,8 @@ import kotlin.reflect.KClass
  * game immediately, while in a multiplayer pod it continues for the others.
  */
 class ConcedeHandler(
-    private val sbaChecker: StateBasedActionChecker
+    private val sbaChecker: StateBasedActionChecker,
+    private val services: EngineServices? = null,
 ) : ActionHandler<Concede> {
     override val actionType: KClass<Concede> = Concede::class
 
@@ -47,9 +50,26 @@ class ConcedeHandler(
                 listOf(lostEvent) + sbaResult.events
             )
         }
-        return ExecutionResult.success(
-            sbaResult.newState,
-            listOf(lostEvent) + sbaResult.events
-        )
+        val events = listOf(lostEvent) + sbaResult.events
+        val finalized = services?.let {
+            BlockDeclarationFinalizer.finishIfComplete(
+                sbaResult.newState,
+                it.triggerDetector,
+                it.triggerProcessor,
+                it.sbaChecker,
+                it.stateTriggerPoller,
+            )
+        }
+        return if (finalized == null) {
+            ExecutionResult.success(sbaResult.newState, events)
+        } else if (finalized.isPaused) {
+            ExecutionResult.paused(
+                finalized.newState,
+                finalized.pendingDecision!!,
+                events + finalized.events,
+            )
+        } else {
+            ExecutionResult.success(finalized.newState, events + finalized.events)
+        }
     }
 }

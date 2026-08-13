@@ -1,8 +1,11 @@
 package com.wingedsheep.gym.contract
 
 import com.wingedsheep.engine.core.GameConfig
+import com.wingedsheep.engine.core.DecisionContext
+import com.wingedsheep.engine.core.OrderTriggeredAbilitiesDecision
 import com.wingedsheep.engine.core.PassPriority
 import com.wingedsheep.engine.core.PlayerConfig
+import com.wingedsheep.engine.core.TriggerOrderItem
 import com.wingedsheep.gym.GameEnvironment
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.mtg.sets.definitions.por.PortalSet
@@ -150,5 +153,31 @@ class TrainingObservationTest : FunSpec({
         env.step(pass.action)
         val c = ObservationBuilder().build(env.state, me, env.legalActions()).observation
         c.stateDigest shouldNotBe a.stateDigest
+    }
+
+    test("triggered-ability ordering is exposed as its own structured decision kind") {
+        val env = newEnv()
+        val player = env.playerIds[0]
+        val pending = OrderTriggeredAbilitiesDecision(
+            id = "trigger-order",
+            playerId = player,
+            prompt = "Order triggered abilities",
+            context = DecisionContext(),
+            abilities = listOf(
+                TriggerOrderItem("first", "First source", "First trigger"),
+                TriggerOrderItem("second", "Second source", "Second trigger")
+            )
+        )
+
+        val result = ObservationBuilder().build(
+            env.state.copy(pendingDecision = pending),
+            player,
+            emptyList()
+        )
+        val view = (result.observation as TrainingObservation).pendingDecision.shouldNotBeNull()
+
+        view.kind shouldBe PendingDecisionKind.ORDER_TRIGGERED_ABILITIES
+        view.requiresStructuredResponse.shouldBeTrue()
+        result.registry.decisionResponses shouldBe emptyList()
     }
 })

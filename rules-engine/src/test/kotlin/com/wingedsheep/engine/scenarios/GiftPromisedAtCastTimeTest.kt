@@ -1,6 +1,7 @@
 package com.wingedsheep.engine.scenarios
 
 import com.wingedsheep.engine.core.CastSpell
+import com.wingedsheep.engine.core.OrderTriggeredAbilitiesDecision
 import com.wingedsheep.engine.state.components.battlefield.AttachedToComponent
 import com.wingedsheep.engine.state.components.battlefield.CountersComponent
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
@@ -343,8 +344,10 @@ class GiftPromisedAtCastTimeTest : ScenarioTestBase() {
                 val handsBefore = players.associateWith { driver.state.getZone(it, Zone.HAND).size }
                 driver.submitSuccess(CastSpell(caster, scrapshooter, giftRecipient = secondOpponent))
                 var passes = 0
-                while (driver.state.stack.isNotEmpty() && driver.state.pendingDecision == null && passes++ < 30) {
-                    driver.passPriority(driver.priorityPlayer!!)
+                while ((driver.state.stack.isNotEmpty() || driver.state.pendingDecision is OrderTriggeredAbilitiesDecision) && passes++ < 30) {
+                    if (!driver.submitTriggerOrderInListedOrder()) {
+                        driver.passPriority(driver.priorityPlayer!!)
+                    }
                 }
 
                 withClue("only the promised opponent draws") {

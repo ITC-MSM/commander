@@ -108,8 +108,9 @@ class AbilityIdentityTest : FunSpec({
 
         driver.giveColorlessMana(player, 1)
         val bear = driver.putCardInHand(player, "Identity Bear")
-        driver.castSpell(player, bear).isSuccess shouldBe true
+        driver.castSpell(player, bear).error shouldBe null
         driver.bothPass() // resolve the bear; it enters and both Soul Wardens trigger
+        driver.submitTriggerOrderInListedOrder() shouldBe true
 
         val soulWardenTriggers = driver.state.stack.mapNotNull {
             driver.state.getEntity(it)?.get<TriggeredAbilityOnStackComponent>()

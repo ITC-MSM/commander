@@ -33,7 +33,7 @@ class StormStackOrderTest : FunSpec({
         driver.replaceState(driver.state.copy(spellsCastThisTurn = 1))
         repeat(4) { driver.putLandOnBattlefield(caster, "Swamp") }
         val tendrils = driver.putCardInHand(caster, "Tendrils of Agony")
-        driver.castSpell(caster, tendrils, listOf(opponent)).isSuccess shouldBe true
+        driver.castSpell(caster, tendrils, listOf(opponent)).error shouldBe null
 
         val stack = driver.state.stack
         stack.size shouldBe 2
@@ -74,7 +74,8 @@ class StormStackOrderTest : FunSpec({
 
         repeat(4) { driver.putLandOnBattlefield(caster, "Swamp") }
         val tendrils = driver.putCardInHand(caster, "Tendrils of Agony")
-        driver.castSpell(caster, tendrils, listOf(opponent)).isSuccess shouldBe true
+        driver.castSpell(caster, tendrils, listOf(opponent)).error shouldBe null
+        driver.submitTriggerOrderInListedOrder() shouldBe true
 
         val stack = driver.state.stack
         stack.first() shouldBe tendrils

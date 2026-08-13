@@ -54,7 +54,11 @@ TREE_RE = re.compile(r'=\s*card\("((?:[^"\\]|\\.)*)"')
 
 def git(*args: str) -> str:
     return subprocess.run(
-        ["git", *args], cwd=REPO, capture_output=True, text=True, check=True
+        # Git patches contain Oracle/card-name Unicode.  On Windows `text=True` otherwise
+        # decodes with the active code page (often cp1252), which makes a full-history rebuild
+        # fail before the tracker artifacts can be refreshed.
+        ["git", *args], cwd=REPO, capture_output=True, text=True,
+        encoding="utf-8", errors="replace", check=True
     ).stdout
 
 

@@ -7,7 +7,13 @@ import com.wingedsheep.engine.support.GameTestDriver
 import com.wingedsheep.engine.support.TestCards
 import com.wingedsheep.mtg.sets.definitions.atq.cards.SageOfLatNam
 import com.wingedsheep.sdk.core.Step
+import com.wingedsheep.sdk.core.Zone
+import com.wingedsheep.sdk.dsl.Effects
+import com.wingedsheep.sdk.dsl.Triggers
+import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Deck
+import com.wingedsheep.sdk.scripting.GameObjectFilter
+import com.wingedsheep.sdk.scripting.TriggerBinding
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldContainAll
@@ -32,9 +38,24 @@ import io.kotest.matchers.types.shouldBeInstanceOf
  */
 class SacrificeCostActivationScenarioTest : FunSpec({
 
+    val artifactCostWatcher = card("Artifact Cost Watcher") {
+        manaCost = "{W}"
+        typeLine = "Creature — Human"
+        power = 1
+        toughness = 1
+        triggeredAbility {
+            trigger = Triggers.leavesBattlefield(
+                filter = GameObjectFilter.Artifact.youControl(),
+                to = Zone.GRAVEYARD,
+                binding = TriggerBinding.ANY,
+            )
+            effect = Effects.GainLife(1)
+        }
+    }
+
     fun createDriver(): GameTestDriver {
         val driver = GameTestDriver()
-        driver.registerCards(TestCards.all + listOf(SageOfLatNam))
+        driver.registerCards(TestCards.all + listOf(SageOfLatNam, artifactCostWatcher))
         return driver
     }
 
@@ -143,5 +164,21 @@ class SacrificeCostActivationScenarioTest : FunSpec({
         // Resolve Sage's ability off the stack so "Draw a card" happens.
         driver.bothPass()
         driver.getHandSize(alice) shouldBe handBefore + 1
+    }
+
+    test("ordinary sacrifice cost puts its leaves-graveyard trigger on the stack") {
+        val driver = createDriver()
+        driver.initMirrorMatch(deck = Deck.of("Island" to 30, "Forest" to 30))
+        val alice = driver.activePlayer!!
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        val sage = driver.readySage(alice)
+        driver.putCreatureOnBattlefield(alice, "Artifact Cost Watcher")
+        driver.putPermanentOnBattlefield(alice, "Artifact Creature")
+
+        driver.submit(ActivateAbility(playerId = alice, sourceId = sage, abilityId = abilityId)).error shouldBe null
+        // The cost trigger is above the activated ability and resolves first.
+        driver.bothPass().error shouldBe null
+        driver.getLifeTotal(alice) shouldBe 21
     }
 })

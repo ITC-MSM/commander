@@ -63,6 +63,7 @@ export interface GameplaySliceActions {
   submitDecision: (selectedCards: readonly EntityId[]) => void
   submitTargetsDecision: (selectedTargets: Record<number, readonly EntityId[]>) => void
   submitOrderedDecision: (orderedObjects: readonly EntityId[]) => void
+  submitTriggeredAbilitiesOrder: (orderedAbilityIds: readonly string[]) => void
   submitYesNoDecision: (choice: boolean) => void
   submitBatchYesNoDecision: (choice: boolean, applyToAll: boolean) => void
   submitNumberDecision: (number: number) => void
@@ -224,6 +225,20 @@ export const createGameplaySlice: SliceCreator<GameplaySlice> = (set, get) => ({
       },
     }
     getWebSocket()?.send(createSubmitActionMessage(action))
+  },
+
+  submitTriggeredAbilitiesOrder: (orderedAbilityIds) => {
+    const { pendingDecision, playerId } = get()
+    if (!pendingDecision || !playerId) return
+    getWebSocket()?.send(createSubmitActionMessage({
+      type: 'SubmitDecision' as const,
+      playerId: pendingDecision.playerId,
+      response: {
+        type: 'TriggeredAbilitiesOrderedResponse' as const,
+        decisionId: pendingDecision.id,
+        orderedAbilityIds: [...orderedAbilityIds],
+      },
+    }))
   },
 
   submitYesNoDecision: (choice) => {

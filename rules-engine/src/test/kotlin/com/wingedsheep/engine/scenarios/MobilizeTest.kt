@@ -98,6 +98,7 @@ class MobilizeTest : FunSpec({
 
         // Advance to the end step; the delayed trigger goes on the stack — resolve it.
         driver.passPriorityUntil(com.wingedsheep.sdk.core.Step.END)
+        driver.submitTriggerOrderInListedOrder()
         while (driver.state.stack.isNotEmpty()) driver.bothPass()
 
         // The token has been sacrificed and no longer exists on the battlefield.
@@ -126,6 +127,7 @@ class MobilizeTest : FunSpec({
         driver.state.delayedTriggers.size shouldBe 2
 
         driver.passPriorityUntil(com.wingedsheep.sdk.core.Step.END)
+        driver.submitTriggerOrderInListedOrder()
         while (driver.state.stack.isNotEmpty()) driver.bothPass()
 
         driver.warriorTokens(attacker).size shouldBe 0

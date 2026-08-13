@@ -1,0 +1,217 @@
+#!/usr/bin/env python3
+"""Generate and verify the honest card-readiness manifest.
+
+The manifest intentionally does *not* infer verification from a Kotlin definition,
+test filename, or catalog presence.  Verification needs an explicit ledger record
+with reproducible test/CI evidence.  This makes an empty ledger truthful: existing
+definitions remain IMPLEMENTED_UNVERIFIED, not silently release-ready.
+"""
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import re
+import subprocess
+import sys
+from collections import Counter
+from pathlib import Path
+
+TOOL_VERSION = "1"
+REPO = Path(__file__).resolve().parent.parent
+TOTALS = REPO / "game-server/src/main/resources/coverage/set-totals.json"
+LEDGER = REPO / "coverage/card-readiness-ledger.json"
+TRIAGE_LEDGER = REPO / "coverage/card-implementation-ledger.json"
+OUTPUT = REPO / "game-server/src/main/resources/coverage/card-readiness.json"
+DEFINITIONS = REPO / "mtg-sets/src/main/kotlin/com/wingedsheep/mtg/sets/definitions"
+CARD_RE = re.compile(r'\b(?:card|basicLand)\(\s*"([^"]+)"')
+PRINTING_RE = re.compile(r'\bname\s*=\s*"([^"]+)"')
+
+
+def git(*args: str) -> str:
+    try:
+        return subprocess.check_output(["git", *args], cwd=REPO, text=True, encoding="utf-8").strip()
+    except (OSError, subprocess.CalledProcessError):
+        return "unknown"
+
+
+def content_sha256(path: Path) -> str:
+    """Hash canonical UTF-8 text so a Windows checkout and Linux CI agree."""
+    text = path.read_text(encoding="utf-8").replace("\r\n", "\n")
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def canonical_cards(totals: list[dict]) -> tuple[dict[str, set[str]], dict[str, dict]]:
+    sets_by_card: dict[str, set[str]] = {}
+    exclusions: dict[str, dict] = {}
+    for set_data in totals:
+        for pool in ("draft", "extra"):
+            for card in set_data.get(pool, []):
+                name = card["name"].split(" // ", 1)[0].strip()
+                sets_by_card.setdefault(name, set()).add(set_data["code"])
+                if card.get("notPlanned"):
+                    exclusions[name] = card["notPlanned"]
+    return sets_by_card, exclusions
+
+
+def implemented_cards() -> set[str]:
+    names: set[str] = set()
+    for path in DEFINITIONS.glob("**/cards/*.kt"):
+        text = path.read_text(encoding="utf-8")
+        names.update(CARD_RE.findall(text))
+        names.update(PRINTING_RE.findall(text))
+    return {name.split(" // ", 1)[0].strip() for name in names}
+
+
+def validate_ledger(ledger: dict, canonical: set[str], implemented: set[str]) -> None:
+    if ledger.get("schemaVersion") != 1:
+        raise ValueError("card-readiness-ledger.json must declare schemaVersion 1")
+    seen: set[str] = set()
+    for record in ledger.get("verified", []):
+        name = record.get("name")
+        evidence = record.get("evidence", {})
+        if not isinstance(name, str) or name not in canonical:
+            raise ValueError(f"verified card is not in the canonical universe: {name!r}")
+        if name not in implemented:
+            raise ValueError(f"verified card has no current implementation: {name}")
+        if name in seen:
+            raise ValueError(f"duplicate ledger record: {name}")
+        seen.add(name)
+        for key in ("scenarioTest", "rulesGate", "ciRun"):
+            if not isinstance(evidence.get(key), str) or not evidence[key].strip():
+                raise ValueError(f"verified card {name} lacks evidence.{key}")
+    for record in ledger.get("blocked", []):
+        name = record.get("name")
+        if not isinstance(name, str) or name not in canonical:
+            raise ValueError(f"blocked card is not in the canonical universe: {name!r}")
+        if name in seen:
+            raise ValueError(f"duplicate ledger record: {name}")
+        seen.add(name)
+        if not isinstance(record.get("blocker"), str) or not record["blocker"].strip():
+            raise ValueError(f"blocked card {name} lacks a blocker")
+
+
+def triage_blocked_names() -> set[str]:
+    """Reuse the per-set work ledger's reviewed BLOCKED_FEATURE classification."""
+    if not TRIAGE_LEDGER.is_file():
+        return set()
+    payload = json.loads(TRIAGE_LEDGER.read_text(encoding="utf-8"))
+    return {
+        row["name"].split(" // ", 1)[0].strip()
+        for set_entry in payload.get("sets", [])
+        for row in set_entry.get("rows", [])
+        if row.get("status") == "BLOCKED_FEATURE"
+    }
+
+
+def build_manifest() -> dict:
+    totals = json.loads(TOTALS.read_text(encoding="utf-8"))
+    ledger = json.loads(LEDGER.read_text(encoding="utf-8"))
+    canonical_by_card, exclusions = canonical_cards(totals)
+    canonical = set(canonical_by_card)
+    implemented = implemented_cards()
+    validate_ledger(ledger, canonical, implemented)
+    verified = {r["name"]: r for r in ledger.get("verified", [])}
+    blocked = {r["name"]: r for r in ledger.get("blocked", [])}
+    triage_blocked = triage_blocked_names()
+    statuses: Counter[str] = Counter()
+    samples: dict[str, list[dict]] = {status: [] for status in (
+        "IMPLEMENTED_UNVERIFIED", "IMPLEMENTED_VERIFIED", "BLOCKED_FEATURE", "NOT_PLANNED", "UNMATCHED_TRIAGE"
+    )}
+    # The manifest is a compact generated gate, while the ledger remains the reviewable
+    # per-card source of evidence.  Samples are diagnostic only, never a denominator.
+    for name in sorted(canonical, key=str.casefold):
+        if name in verified:
+            status, detail = "IMPLEMENTED_VERIFIED", {"name": name, "evidence": verified[name]["evidence"]}
+        elif name in blocked:
+            status, detail = "BLOCKED_FEATURE", {"name": name, "blocker": blocked[name]["blocker"]}
+        elif name in triage_blocked:
+            status, detail = "BLOCKED_FEATURE", {"name": name, "blocker": "See coverage/card-implementation-ledger.json"}
+        elif name in exclusions and name not in implemented:
+            status, detail = "NOT_PLANNED", {"name": name, "reason": exclusions[name]}
+        elif name in implemented:
+            status, detail = "IMPLEMENTED_UNVERIFIED", {"name": name}
+        else:
+            status, detail = "UNMATCHED_TRIAGE", {"name": name}
+        statuses[status] += 1
+        if len(samples[status]) < 3:
+            detail["sets"] = sorted(canonical_by_card[name])
+            samples[status].append(detail)
+    commit = git("rev-parse", "HEAD")
+    return {
+        "schemaVersion": 1,
+        "toolVersion": TOOL_VERSION,
+        "generatedFrom": {
+            "commit": commit,
+            "commitTimestamp": git("show", "-s", "--format=%cI", "HEAD"),
+            "catalogSource": "coverage/set-totals.json",
+            "catalogSha256": content_sha256(TOTALS),
+            "ledgerSource": "coverage/card-readiness-ledger.json",
+            "ledgerSha256": content_sha256(LEDGER),
+            "triageLedgerSource": "coverage/card-implementation-ledger.json",
+            "triageLedgerSha256": content_sha256(TRIAGE_LEDGER) if TRIAGE_LEDGER.is_file() else None,
+        },
+        "semantics": {
+            "catalogCoverage": "Separate endpoint/view. It measures authored catalog presence only.",
+            "verified": "Only explicit ledger evidence with scenario test, rules gate, and CI run is verified.",
+            "releaseEligible": False,
+            "releaseEligibleReason": "A non-zero IMPLEMENTED_UNVERIFIED, BLOCKED_FEATURE, or UNMATCHED_TRIAGE count blocks release eligibility.",
+        },
+        "counts": {key: statuses[key] for key in sorted(samples)},
+        "evidenceLedger": {"verified": ledger.get("verified", []), "blocked": ledger.get("blocked", [])},
+        "samples": samples,
+    }
+
+
+def encoded(manifest: dict) -> str:
+    return json.dumps(manifest, indent=2, ensure_ascii=False, sort_keys=True) + "\n"
+
+
+def self_test() -> None:
+    # The safety properties that prevent optimistic verification are enforced by validation.
+    try:
+        validate_ledger({"schemaVersion": 1, "verified": [{"name": "A", "evidence": {}}]}, {"A"}, {"A"})
+    except ValueError as error:
+        assert "lacks evidence.scenarioTest" in str(error)
+    else:
+        raise AssertionError("missing verification evidence was accepted")
+    try:
+        validate_ledger({"schemaVersion": 1, "verified": [{"name": "A", "evidence": {"scenarioTest": "x", "rulesGate": "x", "ciRun": "x"}}]}, {"A"}, set())
+    except ValueError as error:
+        assert "no current implementation" in str(error)
+    else:
+        raise AssertionError("unimplemented card was verified")
+    print("gen-card-readiness self-test: PASS")
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--check", action="store_true", help="fail if committed manifest differs from generated output")
+    parser.add_argument("--print", action="store_true", dest="print_only", help="write manifest JSON to stdout")
+    parser.add_argument("--self-test", action="store_true")
+    args = parser.parse_args()
+    if args.self_test:
+        self_test()
+        return 0
+    manifest = build_manifest()
+    result = encoded(manifest)
+    if args.print_only:
+        sys.stdout.write(result)
+        return 0
+    if args.check:
+        try:
+            current = json.loads(OUTPUT.read_text(encoding="utf-8"))
+        except (FileNotFoundError, json.JSONDecodeError):
+            current = None
+        if current != manifest:
+            print("card-readiness manifest is stale; run scripts/gen-card-readiness", file=sys.stderr)
+            return 1
+        print("card-readiness manifest: current")
+        return 0
+    OUTPUT.write_text(result, encoding="utf-8")
+    print(f"wrote {OUTPUT.relative_to(REPO)}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -52,17 +52,11 @@ class DeclareBlockersPriorityWindowTest : FunSpec({
         // applied automatically when the step advances to COMBAT_DAMAGE.
         driver.declareBlockers(defender, mapOf(blocker to listOf(beast)))
 
-        // After blocks are committed, the defending player holds priority (no pending decision).
+        // After every defender has committed blockers, the active player gets the ordinary
+        // declare-blockers priority window (no pending decision).
         driver.state.pendingDecision.shouldBeNull()
-        driver.state.priorityPlayerId shouldBe defender
-
-        // Defending player passes. CR: priority should now pass to the ACTIVE player,
-        // still in the declare-blockers step, with NO combat damage dealt yet.
-        driver.submit(PassPriority(defender))
-
-        driver.state.pendingDecision.shouldBeNull()
-        driver.currentStep shouldBe Step.DECLARE_BLOCKERS
         driver.state.priorityPlayerId shouldBe attacker
+        driver.currentStep shouldBe Step.DECLARE_BLOCKERS
         // No damage dealt: the 2/1 blocker is unharmed and still on the battlefield.
         driver.getCardName(blocker) shouldBe "Savannah Lions"
         driver.getLifeTotal(defender) shouldBe 20

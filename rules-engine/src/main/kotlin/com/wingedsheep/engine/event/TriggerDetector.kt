@@ -1164,13 +1164,23 @@ class TriggerDetector(
                         if (blockerFilter == null) {
                             val isBlocked = event.blockers.values.any { it.contains(entityId) }
                             if (isBlocked) {
+                                val defendingPlayerId = state.getEntity(entityId)
+                                    ?.get<com.wingedsheep.engine.state.components.combat.AttackingComponent>()
+                                    ?.defenderId
+                                    ?.let { defenderId ->
+                                        com.wingedsheep.engine.mechanics.combat.CombatDefenders
+                                            .defendingPlayerOf(state, defenderId)
+                                    }
                                 triggers.add(
                                     PendingTrigger(
                                         ability = ability,
                                         sourceId = entityId,
                                         sourceName = cardComponent.name,
                                         controllerId = controllerId,
-                                        triggerContext = TriggerContext(triggeringEntityId = entityId)
+                                        triggerContext = TriggerContext(
+                                            triggeringEntityId = entityId,
+                                            defendingPlayerId = defendingPlayerId,
+                                        )
                                     )
                                 )
                             }

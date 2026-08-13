@@ -438,7 +438,7 @@ export function HomeScreen({
                       a debugging one — it sat under LAB, behind an "advanced" caption that told
                       players it wasn't for them. */}
                   <button onClick={() => navigate('/set-completion')} className={styles.secondaryButton}>
-                    Set Completion
+                    Catalog Coverage
                   </button>
                 </div>
               </section>

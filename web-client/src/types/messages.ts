@@ -482,6 +482,18 @@ export interface OrderObjectsDecision extends PendingDecisionBase {
   readonly cardInfo?: Record<EntityId, SearchCardInfo>
 }
 
+/** CR 603.3b ordering of simultaneous triggered-ability instances. */
+export interface OrderTriggeredAbilitiesDecision extends PendingDecisionBase {
+  readonly type: 'OrderTriggeredAbilitiesDecision'
+  readonly abilities: readonly TriggerOrderItem[]
+}
+
+export interface TriggerOrderItem {
+  readonly id: string
+  readonly sourceName: string
+  readonly description: string
+}
+
 /**
  * Player must choose a number (e.g., how many cards to draw).
  */
@@ -761,6 +773,7 @@ export type PendingDecision =
   | SearchLibraryDecision
   | ReorderLibraryDecision
   | OrderObjectsDecision
+  | OrderTriggeredAbilitiesDecision
   | ChooseNumberDecision
   | ChooseOptionDecision
   | ChooseReplacementDecision

@@ -516,6 +516,7 @@ data class EffectContext(
             triggerLastKnownBlockingOrBlockedByIds = ability.triggerLastKnownBlockingOrBlockedByIds,
             triggeringEntityId = ability.triggeringEntityId,
             triggeringPlayerId = ability.triggeringPlayerId,
+            defendingPlayerId = ability.defendingPlayerId,
             targetingSourceEntityId = ability.targetingSourceEntityId,
             triggerUnattachedFromEntityId = ability.triggerUnattachedFromEntityId,
             triggerLastKnownPower = ability.lastKnownPower,

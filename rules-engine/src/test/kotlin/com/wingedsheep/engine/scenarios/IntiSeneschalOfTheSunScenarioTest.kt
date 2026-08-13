@@ -3,6 +3,7 @@ package com.wingedsheep.engine.scenarios
 import com.wingedsheep.engine.core.ChooseTargetsDecision
 import com.wingedsheep.engine.core.SelectCardsDecision
 import com.wingedsheep.engine.core.SelectManaSourcesDecision
+import com.wingedsheep.engine.core.OrderTriggeredAbilitiesDecision
 import com.wingedsheep.engine.core.YesNoDecision
 import com.wingedsheep.engine.mechanics.layers.StateProjector
 import com.wingedsheep.engine.state.ZoneKey
@@ -73,6 +74,7 @@ class IntiSeneschalOfTheSunScenarioTest : FunSpec({
                 is SelectCardsDecision -> submitCardSelection(you, dec.options.take(dec.minSelections.coerceAtLeast(1)))
                 is ChooseTargetsDecision -> { submitTargetSelection(you, listOf(target)); targeted = true }
                 is SelectManaSourcesDecision -> submitManaAutoPayOrDecline(you, autoPay = false)
+                is OrderTriggeredAbilitiesDecision -> submitTriggerOrderInListedOrder()
                 else -> if (state.stack.isNotEmpty()) bothPass() else return targeted
             }
         }
@@ -131,6 +133,7 @@ class IntiSeneschalOfTheSunScenarioTest : FunSpec({
         while (guard++ < 40) {
             when (val dec = d.pendingDecision) {
                 is SelectCardsDecision -> d.submitCardSelection(you, dec.options.take(dec.minSelections.coerceAtLeast(1)))
+                is OrderTriggeredAbilitiesDecision -> d.submitTriggerOrderInListedOrder()
                 else -> if (d.state.stack.isNotEmpty()) d.bothPass() else break
             }
         }

@@ -92,6 +92,10 @@ class TriggerAbilityResolver(
         // creature that has the keyword (intrinsic or granted).
         val flankingAbilities = getFlankingTriggeredAbilities(entityId, state)
 
+        // Afflict N (CR 702.130) is likewise a keyword-derived becomes-blocked trigger.  Keep
+        // every Numeric instance separate: multiple instances of afflict trigger separately.
+        val afflictAbilities = getAfflictTriggeredAbilities(entityId, cardDefinitionId, state)
+
         val ringBearerAbilities = getRingBearerAbilities(entityId, state)
 
         // A suspended card (CR 702.62) gains the owner's-upkeep countdown-and-cast ability
@@ -106,7 +110,7 @@ class TriggerAbilityResolver(
         val siegeAbilities = getSiegeDefeatAbilities(entityId, state)
 
         val allGranted = grantedAbilities + staticGrantedAbilities + attachedGrantedAbilities +
-            selfGrantedAbilities + wardAbilities + flankingAbilities + ringBearerAbilities +
+            selfGrantedAbilities + wardAbilities + flankingAbilities + afflictAbilities + ringBearerAbilities +
             suspendAbilities + paradigmAbilities + siegeAbilities
         val combined = if (allGranted.isNotEmpty()) base + allGranted else base
 
@@ -275,6 +279,9 @@ class TriggerAbilityResolver(
         val flankingAbilities = if (hasLostAbilities) emptyList()
             else getFlankingTriggeredAbilities(entityId, state)
 
+        val afflictAbilities = if (hasLostAbilities) emptyList()
+            else getAfflictTriggeredAbilities(entityId, cardDefinitionId, state)
+
         // The Ring emblem's abilities belong to the emblem (a player object), not the creature, so
         // they survive "loses all abilities" effects on the Ring-bearer (CR 701.54c).
         val ringBearerAbilities = getRingBearerAbilities(entityId, state)
@@ -288,7 +295,7 @@ class TriggerAbilityResolver(
         val siegeAbilities = getSiegeDefeatAbilities(entityId, state)
 
         val allGranted = grantedAbilities + staticGrantedAbilities + attachedGrantedAbilities +
-            selfGrantedAbilities + wardAbilities + flankingAbilities + ringBearerAbilities +
+            selfGrantedAbilities + wardAbilities + flankingAbilities + afflictAbilities + ringBearerAbilities +
             suspendAbilities + paradigmAbilities + siegeAbilities
         val combined = if (allGranted.isNotEmpty()) base + allGranted else base
 
@@ -683,6 +690,33 @@ class TriggerAbilityResolver(
         } else {
             emptyList()
         }
+
+    /**
+     * Afflict N (CR 702.130) derives an unfiltered SELF becomes-blocked trigger for every
+     * intrinsic Numeric(AFFLICT, N) ability.  `BecomesBlockedEvent` fires once when the attacker
+     * first becomes blocked, even when several creatures block it; separate Afflict abilities
+     * remain separate trigger instances.  The projected keyword check means effects that remove
+     * Afflict (including "loses all abilities") suppress it without reading printed state.
+     *
+     * Afflict's N is part of the keyword ability itself, so the generic bare GrantKeyword surface
+     * intentionally cannot invent an amount.  A future parameterized grant should feed this same
+     * resolver rather than collapsing instances into one summed trigger.
+     */
+    private fun getAfflictTriggeredAbilities(
+        entityId: EntityId,
+        cardDefinitionId: String,
+        state: GameState,
+    ): List<TriggeredAbility> {
+        if (!state.projectedState.hasKeyword(entityId, com.wingedsheep.sdk.core.Keyword.AFFLICT)) return emptyList()
+        return cardRegistry.getCard(cardDefinitionId)
+            ?.keywordAbilities
+            ?.filterIsInstance<KeywordAbility.Numeric>()
+            ?.filter { it.keyword == com.wingedsheep.sdk.core.Keyword.AFFLICT }
+            ?.mapIndexed { instance, ability ->
+                com.wingedsheep.sdk.scripting.Afflict.becomesBlockedTrigger(ability.n, instance)
+            }
+            ?: emptyList()
+    }
 
     private fun createWardTriggeredAbility(cost: WardCost, source: String): TriggeredAbility {
         return TriggeredAbility(

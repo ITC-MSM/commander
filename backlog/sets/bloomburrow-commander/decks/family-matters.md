@@ -52,7 +52,7 @@
 
 ## Instants (5)
 
-- [ ] 1 Aetherize
+- [x] 1 Aetherize
 - [ ] 1 Path to Exile
 - [ ] 1 Pull from Tomorrow
 - [ ] 1 Rapid Hybridization
@@ -61,7 +61,7 @@
 ## Sorceries (8)
 
 - [ ] 1 Calamity of Cinders
-- [ ] 1 Chart a Course
+- [x] 1 Chart a Course
 - [ ] 1 Cut a Deal
 - [ ] 1 Dusk // Dawn
 - [ ] 1 Martial Coup
@@ -74,10 +74,10 @@
 - [x] 1 Arcane Signet
 - [ ] 1 Azorius Signet
 - [ ] 1 Bident of Thassa
-- [ ] 1 Boros Signet
+- [x] 1 Boros Signet
 - [x] 1 Fellwar Stone
 - [x] 1 Helm of the Host
-- [ ] 1 Izzet Signet
+- [x] 1 Izzet Signet
 - [x] 1 Mind Stone
 - [x] 1 Sol Ring
 

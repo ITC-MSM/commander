@@ -74,6 +74,24 @@ class BattleMenuTest : FunSpec({
         driver.getLifeTotal(me) shouldBe (lifeBefore + 4)
     }
 
+    test("caster keeps priority after making a cast-time mode choice") {
+        val driver = createDriver()
+        driver.initMirrorMatch(deck = Deck.of("Plains" to 40), startingLife = 20)
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+        val me = driver.activePlayer!!
+
+        val spell = driver.putCardInHand(me, "Battle Menu")
+        driver.giveColorlessMana(me, 1)
+        driver.giveMana(me, Color.WHITE, 1)
+        driver.submit(CastSpell(playerId = me, cardId = spell))
+        val mode = driver.pendingDecision.shouldBeInstanceOf<ChooseOptionDecision>()
+        val itemIndex = mode.options.indexOfFirst { it.contains("Item") }
+        driver.submitDecision(me, OptionChosenResponse(mode.id, itemIndex))
+
+        // CR 117.3c: choosing a mode is part of casting; the caster receives priority.
+        driver.priorityPlayer shouldBe me
+    }
+
     test("Ability mode — target creature gets +0/+4 until end of turn") {
         val driver = createDriver()
         driver.initMirrorMatch(deck = Deck.of("Plains" to 40), startingLife = 20)

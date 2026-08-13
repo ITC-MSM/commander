@@ -32,18 +32,29 @@ object CombatDefenders {
         return state.getEntity(defenderId)?.get<ControllerComponent>()?.playerId ?: defenderId
     }
 
-    /** Every distinct defending player in the current combat: anyone who has a creature attacking
-     *  them (or their planeswalkers/battles) — and, under shared team turns (Two-Headed Giant), their
+    /** Every distinct defending player in the current combat. Under Attack Multiple Players, every
+     *  active opponent is defending (including opponents not directly attacked); under other attack
+     *  modes, this is anyone attacked (or their shared-turn team). Under shared team turns (Two-Headed Giant), their
      *  whole team (CR 805.10a: every member of the nonactive team is a defending player, so an
      *  un-attacked teammate may still declare blockers to protect the team). Without shared team
      *  turns — Team vs. Team (CR 808) and non-team games — only the directly-attacked players defend
      *  (`sharedTurnTeam` is a singleton there), so a teammate can't block for you. */
-    fun defendingPlayers(state: GameState): Set<EntityId> =
-        state.getBattlefield()
+    fun defendingPlayers(state: GameState): Set<EntityId> {
+        val directlyAttacked = state.getBattlefield()
             .mapNotNull { state.getEntity(it)?.get<AttackingComponent>()?.defenderId }
             .map { defendingPlayerOf(state, it) }
+            .toSet()
+        // CR 802.4's sequential all-opponents declaration applies only once more than one
+        // opponent/planeswalker-controller is attacked. A one-defender combat keeps the
+        // ordinary single-defender declaration path.
+        if (state.attackMode == com.wingedsheep.sdk.core.AttackMode.MULTIPLE && directlyAttacked.size > 1) {
+            return state.activePlayerId?.let { state.getOpponents(it).toSet() } ?: emptySet()
+        }
+        return directlyAttacked
             .flatMap { state.sharedTurnTeam(it) }
             .toSet()
+            .intersect(state.activePlayers.toSet())
+    }
 
     /** True if [playerId] is a defending player in the current combat. */
     fun isDefendingPlayer(state: GameState, playerId: EntityId): Boolean =
@@ -89,4 +100,11 @@ object CombatDefenders {
             .map { order[(startIdx + it) % order.size] }
             .filter { it in defenders }
     }
+
+    /** The only defender allowed to submit a blocker declaration at this boundary. */
+    fun nextDefenderToDeclare(state: GameState): EntityId? =
+        defendingPlayersInApnapOrder(state).firstOrNull { defender ->
+            state.getEntity(defender)
+                ?.has<com.wingedsheep.engine.state.components.combat.BlockersDeclaredThisCombatComponent>() != true
+        }
 }

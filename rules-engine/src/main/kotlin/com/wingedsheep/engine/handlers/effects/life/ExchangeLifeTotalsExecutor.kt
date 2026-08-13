@@ -7,6 +7,7 @@ import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.DamageUtils
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.handlers.effects.drawing.DrawCardPrimitive
+import com.wingedsheep.engine.handlers.effects.drawing.DrawLoop
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.identity.LifeTotalComponent
 import com.wingedsheep.sdk.model.EntityId
@@ -61,13 +62,27 @@ class ExchangeLifeTotalsExecutor(
         // "If you lost life this way, draw that many cards." Measure the controller's actual life
         // loss post-exchange so any life-loss modifier is reflected.
         if (effect.drawEqualToLifeLost) {
-            var remaining = myLife - newState.lifeTotal(controllerId)
-            while (remaining > 0) {
-                val result = drawPrimitive.drawOne(newState, controllerId)
-                newState = result.state
-                events.addAll(result.events)
-                if (result.failed) break // empty library: the failed draw already lost the game
-                remaining--
+            val count = myLife - newState.lifeTotal(controllerId)
+            if (count > 0) {
+                // This previously called the primitive in a local loop, which
+                // could neither pause for CR 903.9b nor preserve the standard
+                // aggregate CardsDrawnEvent contract. The shared loop keeps
+                // the life events ahead of the draw batch and makes a
+                // Commander decision resume the remaining draws exactly once.
+                val drawResult = DrawLoop.run(
+                    state = newState,
+                    playerId = controllerId,
+                    count = count,
+                    primitive = drawPrimitive,
+                    dispatcher = null,
+                    isDrawStep = false,
+                    context = context
+                )
+                newState = drawResult.state
+                events.addAll(drawResult.events)
+                if (drawResult.pendingDecision != null) {
+                    return EffectResult.paused(newState, drawResult.pendingDecision, events)
+                }
             }
         }
 

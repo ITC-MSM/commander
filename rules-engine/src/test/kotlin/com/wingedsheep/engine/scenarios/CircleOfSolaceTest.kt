@@ -209,6 +209,9 @@ class CircleOfSolaceTest : FunSpec({
         )
         driver.bothPass() // resolve first activation
 
+        // Resolution returns priority to the active player, not the Circle controller.
+        // Let that player pass before the second sorcery-speed activation.
+        driver.passPriority(activePlayer).isSuccess shouldBe true
         driver.submit(
             ActivateAbility(
                 playerId = opponent,

@@ -45,7 +45,6 @@ import com.wingedsheep.engine.state.components.combat.DamageAssignmentOrderCompo
 import com.wingedsheep.engine.state.components.combat.DealtFirstStrikeDamageComponent
 import com.wingedsheep.engine.state.components.combat.RequiresManualDamageAssignmentComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
-import com.wingedsheep.engine.state.components.identity.CommanderComponent
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.engine.state.components.identity.FaceDownComponent
 import com.wingedsheep.engine.state.components.identity.MorphDataComponent
@@ -104,19 +103,6 @@ data class ZoneChangeRedirectResult(
 object ZoneMovementUtils {
 
     private val predicateEvaluator = PredicateEvaluator()
-
-    /**
-     * Destinations that the commander zone-change replacement can intercept (CR 903.9).
-     * Battlefield, stack, and command itself are intentionally excluded — commanders enter
-     * the battlefield like any other permanent, can sit on the stack while resolving, and
-     * "moving to the command zone" while already there is a no-op.
-     */
-    private val COMMANDER_DIVERT_DESTINATIONS = setOf(
-        Zone.GRAVEYARD,
-        Zone.EXILE,
-        Zone.HAND,
-        Zone.LIBRARY,
-    )
 
     /**
      * Apply Saga entry setup to an entity entering the battlefield (Rule 714.3a).
@@ -700,24 +686,11 @@ object ZoneMovementUtils {
             return ZoneChangeRedirectResult(Zone.EXILE)
         }
 
-        // Commander zone-change shortcut (CR 903.9). When `alwaysDivertToCommand` is enabled
-        // on a Commander-enabled format, a card with CommanderComponent that would move to
-        // graveyard / exile / hand / library from any other zone is silently diverted to the
-        // command zone. Token copies of a commander aren't the commander itself (CR 903.10a)
-        // and never carry CommanderComponent, so the TokenComponent guard is implicit.
-        //
-        // The default path leaves the destination unchanged — the commander reaches the
-        // intended zone and the CR 903.9a state-based action (see CommanderZoneChoiceCheck)
-        // prompts the owner before priority is granted.
-        if (container.has<CommanderComponent>() &&
-            toZone in COMMANDER_DIVERT_DESTINATIONS &&
-            fromZone != Zone.COMMAND
-        ) {
-            val format = state.format
-            if (format.usesCommanders && format.alwaysDivertToCommand) {
-                return ZoneChangeRedirectResult(Zone.COMMAND)
-            }
-        }
+        // Commander zone choices are deliberately not handled by this synchronous helper.
+        // CR 903.9a is a state-based action after a move to graveyard or exile, while CR 903.9b
+        // is an optional, owner-controlled replacement before a move to the owner's hand or
+        // library. The latter needs the pauseable replacement-event pipeline so it can compete
+        // correctly under CR 616; silently changing a destination here would be rules-wrong.
 
         // Check for finality counter — if a permanent with a finality counter
         // would die (go from battlefield to graveyard), exile it instead.

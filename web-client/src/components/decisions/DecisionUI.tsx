@@ -6,6 +6,7 @@ import { useResponsive } from '@/hooks/useResponsive.ts'
 import { LibrarySearchUI } from './LibrarySearchUI'
 import { ReorderCardsUI } from './ReorderCardsUI'
 import { OrderBlockersUI } from './OrderBlockersUI'
+import { OrderTriggeredAbilitiesUI } from './OrderTriggeredAbilitiesUI'
 import { CombatDamageAssignmentModal } from './CombatDamageAssignmentModal'
 import { CombatResolutionBoard } from './CombatResolutionBoard'
 import { YesNoDecisionUI } from './YesNoDecisionUI'
@@ -88,6 +89,10 @@ export function DecisionUI() {
     }
     // Other ordering decisions could use a generic ordering UI (not yet implemented)
     return null
+  }
+
+  if (pendingDecision.type === 'OrderTriggeredAbilitiesDecision') {
+    return <div className={styles.overlay}><OrderTriggeredAbilitiesUI key={pendingDecision.id} decision={pendingDecision} /></div>
   }
 
   // Handle YesNoDecision (e.g., "You may shuffle your library")

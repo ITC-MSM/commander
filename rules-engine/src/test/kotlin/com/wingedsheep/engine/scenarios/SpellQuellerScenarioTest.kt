@@ -85,6 +85,10 @@ class SpellQuellerScenarioTest : FunSpec({
         val (driver, me, opp) = quellTheBears()
         val queller = driver.findPermanent(me, "Spell Queller")!!
 
+        // This is the opponent's turn.  After Queller's ETB resolves, priority correctly returns
+        // to that turn's active player, so they must pass before we can cast the Bolt.
+        driver.passPriority(opp).isSuccess shouldBe true
+
         // Kill our own Queller with a Lightning Bolt (2/3 takes 3 damage).
         val bolt = driver.putCardInHand(me, "Lightning Bolt")
         driver.giveMana(me, Color.RED, 1)
@@ -107,6 +111,9 @@ class SpellQuellerScenarioTest : FunSpec({
     test("the owner may decline, and the card stays exiled") {
         val (driver, me, opp) = quellTheBears()
         val queller = driver.findPermanent(me, "Spell Queller")!!
+
+        // As above, let the active player pass the post-resolution priority window to us.
+        driver.passPriority(opp).isSuccess shouldBe true
 
         val bolt = driver.putCardInHand(me, "Lightning Bolt")
         driver.giveMana(me, Color.RED, 1)

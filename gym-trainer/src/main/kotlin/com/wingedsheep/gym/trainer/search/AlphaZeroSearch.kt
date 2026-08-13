@@ -18,6 +18,7 @@ import com.wingedsheep.engine.core.ModesChosenResponse
 import com.wingedsheep.engine.core.NumberChosenResponse
 import com.wingedsheep.engine.core.OptionChosenResponse
 import com.wingedsheep.engine.core.OrderObjectsDecision
+import com.wingedsheep.engine.core.OrderTriggeredAbilitiesDecision
 import com.wingedsheep.engine.core.PendingDecision
 import com.wingedsheep.engine.core.ReorderLibraryDecision
 import com.wingedsheep.engine.core.SearchLibraryDecision
@@ -25,6 +26,7 @@ import com.wingedsheep.engine.core.SelectCardsDecision
 import com.wingedsheep.engine.core.SelectManaSourcesDecision
 import com.wingedsheep.engine.core.SplitPilesDecision
 import com.wingedsheep.engine.core.SubmitDecision
+import com.wingedsheep.engine.core.TriggeredAbilitiesOrderedResponse
 import com.wingedsheep.engine.core.BatchYesNoDecision
 import com.wingedsheep.engine.core.BatchYesNoResponse
 import com.wingedsheep.engine.core.YesNoDecision
@@ -284,6 +286,7 @@ class AlphaZeroSearch<T>(
         is ChooseReplacementDecision,
         is DistributeDecision,
         is OrderObjectsDecision,
+        is OrderTriggeredAbilitiesDecision,
         is SplitPilesDecision,
         is SearchLibraryDecision,
         is ReorderLibraryDecision,
@@ -429,6 +432,11 @@ class RandomStructuredResolver(private val rng: Random = Random.Default) : Struc
                 val picked = available.shuffled(rng).take(n).map { it.index }
                 ModesChosenResponse(decision.id, picked)
             }
+            is OrderTriggeredAbilitiesDecision ->
+                TriggeredAbilitiesOrderedResponse(
+                    decision.id,
+                    decision.abilities.shuffled(rng).map { it.id }
+                )
             else -> throw UnsupportedOperationException(
                 "RandomStructuredResolver does not yet handle ${decision::class.simpleName}; " +
                     "provide a custom StructuredDecisionResolver"

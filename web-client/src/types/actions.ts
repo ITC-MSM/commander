@@ -332,10 +332,12 @@ export interface ChooseManaColorAction {
 }
 
 export interface DecisionResponse {
+  readonly type?: string
   readonly decisionId: string
   readonly selectedEntityIds?: readonly EntityId[]
   readonly selectedIndex?: number
   readonly confirmed?: boolean
+  readonly orderedAbilityIds?: readonly string[]
 }
 
 export interface SubmitDecisionAction {

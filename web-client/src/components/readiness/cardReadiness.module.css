@@ -1,0 +1,18 @@
+.page { max-width: 1120px; margin: 0 auto; padding: 32px 20px 56px; color: #eaf0f8; }
+.header { display: flex; gap: 24px; justify-content: space-between; align-items: flex-start; }
+.header h1 { margin: 4px 0; font-size: clamp(2rem, 5vw, 3rem); }
+.header p, .reason { color: #b5c4d6; max-width: 780px; }
+.eyebrow { margin: 0; color: #71c6ff; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; font-size: .76rem; }
+.blocked, .pass { padding: 10px 14px; border-radius: 8px; font-weight: 700; white-space: nowrap; }
+.blocked { color: #ffd0cb; background: #5c2525; border: 1px solid #af4a41; }
+.pass { color: #c8f5d1; background: #245432; border: 1px solid #4ea663; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(205px, 1fr)); gap: 14px; margin: 26px 0; }
+.card { background: #172536; border: 1px solid #30445d; border-radius: 10px; padding: 16px; min-height: 155px; }
+.card span { display: block; color: #b5c4d6; min-height: 2.4em; }
+.card strong { display: block; font-size: 2rem; margin: 8px 0; }
+.card ul { padding-left: 18px; color: #91a6bb; font-size: .84rem; margin: 0; }
+.provenance { background: #111c2a; border-left: 3px solid #568cb7; padding: 18px; }
+.provenance h2 { margin-top: 0; }
+.provenance dt { color: #91a6bb; margin-top: 9px; }.provenance dd { margin: 2px 0; overflow-wrap: anywhere; }
+.provenance code { font-size: .82em; }.error { color: #ffaaa1; }
+@media (max-width: 560px) { .header { display: block; }.blocked, .pass { display: inline-block; margin-top: 12px; } }

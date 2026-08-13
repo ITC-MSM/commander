@@ -95,6 +95,10 @@ class HearthbornBattlerTest : FunSpec({
         driver.passPriority(player1)
         driver.getLifeTotal(player1) shouldBe 17
 
+        // CR 117.3b: the active player, not the resolving nonactive player's spell,
+        // receives priority after Lightning Bolt resolves.
+        driver.priorityPlayer shouldBe player1
+
         // After bolt resolves, active player (player1) gets priority
         // Pass to player 2 so they can cast
         driver.passPriority(player1)

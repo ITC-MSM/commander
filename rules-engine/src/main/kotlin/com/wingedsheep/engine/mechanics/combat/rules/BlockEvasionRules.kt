@@ -102,6 +102,31 @@ class FearRule : BlockEvasionRule {
 }
 
 /**
+ * Intimidate: Can only be blocked by artifact creatures or creatures that share a color with it.
+ *
+ * Both clauses use the current projected characteristics. In particular, a temporary color or
+ * type-changing continuous effect can make an otherwise ineligible blocker legal (or the reverse).
+ */
+class IntimidateRule : BlockEvasionRule {
+    override fun check(ctx: BlockCheckContext): String? {
+        if (!ctx.projected.hasKeyword(ctx.attackerId, Keyword.INTIMIDATE)) return null
+
+        val blockerCard = ctx.state.getEntity(ctx.blockerId)?.get<CardComponent>() ?: return null
+        val isArtifactCreature =
+            ctx.projected.isCreature(ctx.blockerId) && ctx.projected.hasType(ctx.blockerId, "ARTIFACT")
+        val sharesColor = ctx.projected.getColors(ctx.attackerId)
+            .intersect(ctx.projected.getColors(ctx.blockerId))
+            .isNotEmpty()
+
+        if (!isArtifactCreature && !sharesColor) {
+            val attackerName = ctx.state.getEntity(ctx.attackerId)?.get<CardComponent>()?.name ?: "Creature"
+            return "${blockerCard.name} cannot block $attackerName (intimidate)"
+        }
+        return null
+    }
+}
+
+/**
  * Landwalk: Cannot be blocked if defending player controls land of that type.
  */
 class LandwalkRule : BlockEvasionRule {
@@ -681,6 +706,7 @@ fun defaultBlockEvasionRules(
     HorsemanshipRule(),
     ShadowRule(),
     FearRule(),
+    IntimidateRule(),
     LandwalkRule(),
     CantBeBlockedByRule(predicateEvaluator),
     CantBeBlockedExceptByColorRule(),

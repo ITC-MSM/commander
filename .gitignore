@@ -206,3 +206,6 @@ scripts/__pycache__/
 # Generated ECL training corpora and reports (large, reproducible benchmark output)
 /data/ecl-training*.json
 /ai/data/ecl-training*.json
+
+# Local-only staging secrets
+.env.staging

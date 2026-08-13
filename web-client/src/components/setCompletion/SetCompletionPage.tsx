@@ -135,7 +135,12 @@ export function SetCompletionPage() {
         <button className={styles.backButton} onClick={() => navigate('/')}>
           ← Back to menu
         </button>
-        <h1 className={styles.title}>Set Completion</h1>
+        <h1
+          className={styles.title}
+          title="Catalog presence only — it does not certify Oracle, rules, Commander, or release readiness."
+        >
+          Catalog Coverage
+        </h1>
         <div className={styles.topbarSpacer} />
       </header>
 
@@ -143,7 +148,7 @@ export function SetCompletionPage() {
         <button
           className={`${styles.summary} ${styles.summaryButton}`}
           onClick={() => setShowProgress(true)}
-          title="View implementation progress over time"
+          title="View catalog implementation progress over time. Catalog presence is not rules verification."
         >
           {(() => {
             // Headline is the DISTINCT figure (reprints deduped by name) so it answers "how much of

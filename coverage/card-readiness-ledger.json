@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "_comment": [
+    "This is evidence input for the generated readiness manifest, not a card backlog.",
+    "A card is IMPLEMENTED_VERIFIED only when it has a record here with reproducible evidence.",
+    "Cards absent from this file are classified mechanically by scripts/gen-card-readiness:",
+    "implemented cards are IMPLEMENTED_UNVERIFIED; remaining canonical cards are UNMATCHED_TRIAGE.",
+    "Permanent exclusions remain owned by card-exclusions.json and become NOT_PLANNED."
+  ],
+  "verified": [],
+  "blocked": []
+}

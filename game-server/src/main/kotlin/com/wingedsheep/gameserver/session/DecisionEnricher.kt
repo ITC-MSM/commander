@@ -80,6 +80,7 @@ class DecisionEnricher(private val cardRegistry: CardRegistry) {
                     else cardInfo.copy(imageUri = imageUriFor(state, entityId))
                 }
             )
+            is OrderTriggeredAbilitiesDecision -> decision
             is SplitPilesDecision -> decision.copy(
                 cardInfo = decision.cardInfo?.mapValues { (entityId, cardInfo) ->
                     cardInfo.copy(imageUri = imageUriFor(state, entityId))
@@ -130,6 +131,7 @@ class DecisionEnricher(private val cardRegistry: CardRegistry) {
             is ChooseNumberDecision -> "Choosing a number"
             is DistributeDecision -> "Distributing"
             is OrderObjectsDecision -> "Ordering blockers"
+            is OrderTriggeredAbilitiesDecision -> "Ordering triggered abilities"
             is SplitPilesDecision -> "Splitting piles"
             is SearchLibraryDecision -> "Searching library"
             is ReorderLibraryDecision -> "Reordering cards"

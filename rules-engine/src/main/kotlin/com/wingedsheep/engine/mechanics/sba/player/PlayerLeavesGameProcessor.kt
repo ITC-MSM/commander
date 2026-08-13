@@ -46,6 +46,18 @@ object PlayerLeavesGameProcessor {
     fun process(state: GameState, leaver: EntityId, reason: GameEndReason): ExecutionResult {
         var s = state
 
+        // A player may concede while their blocker-tax decision is pending. That decision can no
+        // longer be answered; discard its matching top continuation before the multiplayer
+        // blocker coordinator selects the next live defender. Other pending decisions remain
+        // untouched: this processor is deliberately not a general continuation-cancellation API.
+        val pending = s.pendingDecision
+        if (pending?.playerId == leaver) {
+            val top = s.peekContinuation()
+            if (top?.decisionId == pending.id) {
+                s = s.popContinuation().second.clearPendingDecision()
+            }
+        }
+
         // 1. End any effect granting the leaver control of an object (CR 800.4a). Removing
         //    the floating effect lets the object revert to its owner on the next projection.
         s = s.copy(

@@ -6,6 +6,17 @@ import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.*
 import com.wingedsheep.sdk.scripting.references.Player
+import com.wingedsheep.sdk.scripting.CommanderZoneReplacement
+import com.wingedsheep.sdk.core.Zone
+import com.wingedsheep.engine.handlers.effects.ZoneEntryOptions
+import com.wingedsheep.engine.state.ZoneKey
+import com.wingedsheep.engine.state.components.identity.CardComponent
+import com.wingedsheep.engine.state.components.identity.ControllerComponent
+import com.wingedsheep.engine.state.components.identity.TokenComponent
+import com.wingedsheep.sdk.scripting.predicates.CardPredicate
+import com.wingedsheep.sdk.scripting.predicates.ControllerPredicate
+import com.wingedsheep.sdk.scripting.predicates.evaluateWith
+import com.wingedsheep.sdk.scripting.RedirectZoneChangeWithEffect
 import kotlinx.serialization.Serializable
 
 /**
@@ -37,6 +48,15 @@ sealed interface PendingGameEvent {
      * between multiple competing replacement effects (CR 616.1).
      */
     val affectedPlayerId: EntityId
+
+    /**
+     * Player who orders competing replacement effects for this event.
+     *
+     * Most pending events affect a player directly, so this is
+     * [affectedPlayerId]. A zone change affects an object instead, and its
+     * controller makes the CR 616 ordering choice.
+     */
+    fun replacementChoicePlayerId(state: GameState): EntityId = affectedPlayerId
 
     /**
      * Check whether the given [pattern] describes this event.
@@ -72,6 +92,7 @@ sealed interface PendingGameEvent {
      * @param decisionId Unique ID for the decision
      * @param gathered The matched replacement effect
      * @param state Current game state
+     * @param alreadyApplied Replacement identities already used in this event chain
      * @param context Execution context
      * @return An [OptionalPromptResult] with the decision and continuation, or null
      */
@@ -79,6 +100,7 @@ sealed interface PendingGameEvent {
         decisionId: String,
         gathered: GatheredReplacement,
         state: GameState,
+        alreadyApplied: Set<ReplacementEffectIdentity>,
         context: EffectContext?
     ): OptionalPromptResult? = null
 
@@ -111,6 +133,106 @@ sealed interface PendingGameEvent {
      * post-replacement fields.
      */
     fun performContinuation(state: GameState): ContinuationFrame? = null
+
+    /** A card zone transition before it is mechanically performed. */
+    @Serializable
+    data class ZoneChangePending(
+        val entityId: EntityId,
+        override val affectedPlayerId: EntityId,
+        val fromZoneKey: ZoneKey,
+        val destination: Zone,
+        val options: ZoneEntryOptions = ZoneEntryOptions(),
+        /** Preserve a redirect-with-effect's "linked to this source" rider. */
+        val linkExileToSource: Boolean = false
+    ) : PendingGameEvent {
+        fun ownerId(state: GameState): EntityId? = state.getEntity(entityId)?.get<CardComponent>()?.ownerId
+
+        override fun replacementChoicePlayerId(state: GameState): EntityId =
+            state.projectedState.getController(entityId)
+                ?: state.getEntity(entityId)?.get<ControllerComponent>()?.playerId
+                ?: affectedPlayerId
+
+        override fun matches(pattern: EventPattern, sourceControllerId: EntityId, state: GameState, context: EffectContext?): Boolean {
+            val zoneEvent = pattern as? EventPattern.ZoneChangeEvent ?: return false
+            if (zoneEvent.from != null && zoneEvent.from != fromZoneKey.zoneType) return false
+            if (zoneEvent.to != null && zoneEvent.to != destination) return false
+            if (zoneEvent.excludeTo != null && zoneEvent.excludeTo == destination) return false
+            val container = state.getEntity(entityId) ?: return false
+            val card = container.get<CardComponent>() ?: return false
+            val filter = zoneEvent.filter
+            if (filter.cardPredicates.any { predicate ->
+                when (predicate) {
+                    CardPredicate.IsCreature -> !card.typeLine.isCreature
+                    CardPredicate.IsNontoken -> container.has<TokenComponent>()
+                    CardPredicate.IsToken -> !container.has<TokenComponent>()
+                    CardPredicate.IsLand -> !card.typeLine.isLand
+                    CardPredicate.IsArtifact -> !card.typeLine.isArtifact
+                    CardPredicate.IsEnchantment -> !card.typeLine.isEnchantment
+                    CardPredicate.IsNonland -> card.typeLine.isLand
+                    CardPredicate.IsNoncreature -> card.typeLine.isCreature
+                    CardPredicate.IsNonenchantment -> card.typeLine.isEnchantment
+                    CardPredicate.IsNonartifact -> card.typeLine.isArtifact
+                    CardPredicate.IsPermanent -> !card.typeLine.isPermanent
+                    CardPredicate.IsLegendary -> !card.typeLine.isLegendary
+                    CardPredicate.IsNonlegendary -> card.typeLine.isLegendary
+                    else -> false
+                }
+            }) return false
+            return filter.controllerPredicate?.evaluateWith { predicate ->
+                when (predicate) {
+                    ControllerPredicate.OwnedByOpponent -> card.ownerId != null && card.ownerId != sourceControllerId
+                    ControllerPredicate.OwnedByYou -> card.ownerId == sourceControllerId
+                    ControllerPredicate.ControlledByYou -> container.get<ControllerComponent>()?.playerId == sourceControllerId
+                    ControllerPredicate.ControlledByOpponent -> container.get<ControllerComponent>()?.playerId != null && container.get<ControllerComponent>()?.playerId != sourceControllerId
+                    else -> null
+                }
+            } ?: true
+        }
+
+        override fun applyReplacement(effect: ReplacementEffect, state: GameState): ReplacementOutcome = when (effect) {
+            is CommanderZoneReplacement -> ReplacementOutcome.Modified(copy(destination = Zone.COMMAND))
+            is RedirectZoneChange -> ReplacementOutcome.Modified(copy(
+                destination = effect.newDestination,
+                options = if (effect.shuffleIntoLibrary && effect.newDestination == Zone.LIBRARY) {
+                    options.copy(libraryPlacement = com.wingedsheep.engine.handlers.effects.LibraryPlacement.Shuffled)
+                } else options
+            ))
+            is RedirectZoneChangeWithEffect -> ReplacementOutcome.Replaced(
+                newEffect = effect.additionalEffect,
+                // The replacement first performs its redirected zone event.  The
+                // generic replacement resumer then executes the rider exactly once.
+                replacementEvent = copy(
+                    destination = effect.newDestination,
+                    linkExileToSource = effect.linkToSource
+                )
+            )
+            else -> error("Unsupported zone replacement '${effect::class.simpleName}'")
+        }
+
+        override fun createOptionalPrompt(
+            decisionId: String,
+            gathered: GatheredReplacement,
+            state: GameState,
+            alreadyApplied: Set<ReplacementEffectIdentity>,
+            context: EffectContext?
+        ): OptionalPromptResult? {
+            if (gathered.effect !is CommanderZoneReplacement) return null
+            val cardName = state.getEntity(entityId)?.get<CardComponent>()?.name ?: "your commander"
+            val destinationLabel = if (destination == Zone.HAND) "your hand" else "your library"
+            val owner = ownerId(state) ?: return null
+            val decision = YesNoDecision(
+                id = decisionId, playerId = owner,
+                prompt = "Put $cardName into the command zone instead of putting it into $destinationLabel?",
+                context = DecisionContext(sourceId = entityId, sourceName = cardName, phase = DecisionPhase.RESOLUTION)
+            )
+            return OptionalPromptResult(decision, OptionalReplacementContinuation(
+                decisionId, this, gathered, alreadyApplied, context
+            ))
+        }
+
+        override fun performContinuation(state: GameState): ContinuationFrame? =
+            ZoneChangePerformContinuation(entityId = entityId, destination = destination, options = options, fromZoneKey = fromZoneKey)
+    }
 
     /**
      * Draw event: a player is about to draw cards from their library.
@@ -172,6 +294,7 @@ sealed interface PendingGameEvent {
             decisionId: String,
             gathered: GatheredReplacement,
             state: GameState,
+            alreadyApplied: Set<ReplacementEffectIdentity>,
             context: EffectContext?
         ): OptionalPromptResult? {
             val replaceEffect = gathered.effect as? ReplaceDrawWithEffect ?: return null

@@ -166,6 +166,7 @@ empty. Post a typed `DecisionResponse` to `POST /envs/{id}/decision`. The JSON d
 | `CHOOSE_NUMBER` | `NumberChosenResponse` | `number: int` |
 | `DISTRIBUTE` | `DistributionResponse` | `distribution: { "<entityId>": int }` |
 | `ORDER_OBJECTS` | `OrderedResponse` | `orderedObjects: ["<entityId>", …]` |
+| `ORDER_TRIGGERED_ABILITIES` | `TriggeredAbilitiesOrderedResponse` | `orderedAbilityIds: ["<trigger-instance-id>", …]` |
 | `SPLIT_PILES` | `PilesSplitResponse` | `piles: [["<id>",…], ["<id>",…]]` |
 | `CHOOSE_OPTION` | `OptionChosenResponse` | `optionIndex: int` |
 | `CHOOSE_REPLACEMENT` | `ReplacementChosenResponse` | `fromIndex: int, toIndex: int` |
@@ -198,12 +199,44 @@ Source of truth for these shapes:
   abort if exceeded — a runaway count is itself a finding (probably a trigger loop).
 - **Detect stalls** via `stateDigest`: if a full round-trip of passes by both players doesn't change
   it and the game isn't over, you're looping.
-- **Reproducibility:** pin `startingPlayerIndex` and keep the exact decklist. The engine's own
-  randomness (draws) isn't seedable here, so capture the full action transcript to replay a bug.
+- **Reproducibility:** pin `startingPlayerIndex`, the engine game seed, the policy seed, and the
+  exact decklist. Preserve the full action transcript before classifying a failure.
 - **Snapshot/fork** before a risky line: `POST /envs/{id}/snapshot` → `{handle}`, then
   `POST /envs/{id}/restore {"handle": …}` to retry a different decision from the same point. Useful
   for testing both branches of a modal/choice without replaying the whole game.
 - **Clean up:** `curl -X DELETE localhost:8081/envs -d '{"envIds":["'"$ENV"'"]}'`.
+
+### Invariant-checking runs (engine/gym tests)
+
+Exploratory HTTP play finds visible mistakes; invariant-enabled in-process simulations also reject
+states that cannot legally be represented. The engine offers this as an opt-in observer, so it adds
+no work to production sessions:
+
+```kotlin
+val env = GameEnvironment.create(
+    registry,
+    observer = InvariantCheckingActionObserver(),
+)
+```
+
+After every submitted action it verifies that zone and stack references exist, no object appears in
+two locations, every stack entry is a stack object, player routing refers to a real seat, and a
+rejected action emitted neither state changes nor events. Use it for seed-based Commander smoke
+traces and fuzz runs. An invariant failure is a test failure: preserve the seed, deck configuration,
+and action/decision transcript, then turn the minimized trace into a scenario regression.
+
+### Deterministic JSON transcripts (in-process simulation)
+
+`SeededSimulationRunner` is the non-HTTP evidence harness used by the gym tests. It records the
+game seed, policy seed, complete setup, every submitted action/decision, an all-information digest
+before and after each action, emitted event types, turn number, and pending-decision kind.
+`SimulationTranscript.toJson()` preserves that evidence as JSON. Replay does **not** trust the
+file blindly: `runner.replay(config, transcript)` re-enumerates each priority action and validates
+each decision response against the newly created pending decision before checking every recorded
+boundary. A tampered digest or no-longer-legal action therefore fails replay.
+
+Use it for deterministic Commander pod smoke/fuzz runs; use the focused four-seat scenarios for
+rules claims about priority, the stack, replacement effects, APNAP ordering, and elimination.
 
 ---
 
@@ -211,8 +244,12 @@ Source of truth for these shapes:
 
 A self-play bug is only worth as much as its reproduction. Once you isolate one:
 
-1. Note the minimal board state right before the broken action (from the observation).
-2. Reproduce it as a Kotest **scenario test** (`ScenarioTestBase`) or a **manual scenario JSON**, not
+1. Classify it through the mandatory [rules-validation protocol](rules-validation-protocol.md) first.
+   A failed simulation may be expected stack/priority behaviour or a harness error; preserve its seed
+   and transcript, obtain the blind rules-oracle result, and do not change engine code before that
+   classification.
+2. Note the minimal board state right before the broken action (from the observation).
+3. Reproduce it as a Kotest **scenario test** (`ScenarioTestBase`) or a **manual scenario JSON**, not
    another self-play run — see [`add-card`](../.claude/skills) conventions and existing
    `rules-engine` scenario tests.
-3. Fix the card/engine, and leave the scenario test behind so it can't regress.
+4. Fix the card/engine, and leave the scenario test behind so it can't regress.

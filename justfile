@@ -175,6 +175,17 @@ check:
 card-status *ARGS:
     scripts/card-status {{ARGS}}
 
+# Verify the committed unresolved-card ledger is an exact offline rendering of
+# the Scryfall-derived catalogue, exclusions, reviewed status overrides, and Kotlin scan.
+[group: 'build']
+check-card-ledger:
+    scripts/card-ledger.py --check
+
+# Refresh the committed unresolved-card ledger after a reviewed card/catalogue/override change.
+[group: 'build']
+write-card-ledger:
+    scripts/card-ledger.py --write
+
 # Build the Kotlin coverage tooling once so the recipes below can call its CLI (fast no-op when
 # up to date). The bridge + lenses live in the :mtgish-tooling module (Kotlin port of the mtgish spike).
 _coverage-tool:

@@ -77,6 +77,7 @@ class DecisionResponder(
             is ChooseNumberDecision -> respondNumber(state, decision, playerId)
             is DistributeDecision -> respondDistribute(state, decision, playerId)
             is OrderObjectsDecision -> respondOrder(state, decision, playerId)
+            is OrderTriggeredAbilitiesDecision -> TriggeredAbilitiesOrderedResponse(decision.id, decision.abilities.map { it.id })
             is SplitPilesDecision -> respondSplitPiles(state, decision, playerId)
             is ChooseOptionDecision -> respondOption(state, decision, playerId)
             is ChooseReplacementDecision -> respondReplacement(decision)

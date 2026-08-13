@@ -1,7 +1,6 @@
 package com.wingedsheep.engine.handlers.effects.zones
 
 import com.wingedsheep.engine.core.EffectResult
-import com.wingedsheep.engine.core.ZoneChangeEvent
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.TargetResolutionUtils
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
@@ -11,7 +10,10 @@ import com.wingedsheep.engine.state.components.battlefield.GraveyardEntryTurnCom
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.scripting.effects.ReturnCreaturesPutInGraveyardThisTurnEffect
+import com.wingedsheep.sdk.scripting.effects.CompositeEffect
+import com.wingedsheep.sdk.scripting.effects.MoveToZoneEffect
 import com.wingedsheep.sdk.scripting.references.Player
+import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import kotlin.reflect.KClass
 
 /**
@@ -21,7 +23,9 @@ import kotlin.reflect.KClass
  * GraveyardEntryTurnComponent matching the current turn number, and returns
  * them to their owner's hand.
  */
-class ReturnCreaturesPutInGraveyardThisTurnExecutor : EffectExecutor<ReturnCreaturesPutInGraveyardThisTurnEffect> {
+class ReturnCreaturesPutInGraveyardThisTurnExecutor(
+    private val recurse: (GameState, com.wingedsheep.sdk.scripting.effects.Effect, EffectContext) -> EffectResult
+) : EffectExecutor<ReturnCreaturesPutInGraveyardThisTurnEffect> {
 
     override val effectType: KClass<ReturnCreaturesPutInGraveyardThisTurnEffect> =
         ReturnCreaturesPutInGraveyardThisTurnEffect::class
@@ -47,29 +51,22 @@ class ReturnCreaturesPutInGraveyardThisTurnExecutor : EffectExecutor<ReturnCreat
             return EffectResult.success(state)
         }
 
-        var newState = state
-        val events = mutableListOf<com.wingedsheep.engine.core.GameEvent>()
-
-        for (entityId in creaturesToReturn) {
-            val cardComponent = newState.getEntity(entityId)?.get<CardComponent>() ?: continue
-            val ownerId = cardComponent.ownerId ?: playerId
-            val handKey = ZoneKey(ownerId, Zone.HAND)
-
-            newState = newState.removeFromZone(graveyardKey, entityId)
-            newState = newState.addToZone(handKey, entityId)
-
-            events.add(
-                ZoneChangeEvent(
-                    entityId = entityId,
-                    entityName = cardComponent.name,
-                    fromZone = Zone.GRAVEYARD,
-                    toZone = Zone.HAND,
-                    ownerId = ownerId
+        // Freeze the eligible set at resolution time, then delegate each physical move to the
+        // generic move effect.  CompositeEffect's continuation sits below a paused Commander
+        // replacement decision, so a CR 903.9b answer completes exactly one move before the
+        // next card is considered.  This replaces the former direct remove/add bypass, which
+        // could silently put a commander into hand without offering its owner the replacement.
+        return recurse(
+            state,
+            CompositeEffect(creaturesToReturn.map { entityId ->
+                MoveToZoneEffect(
+                    target = EffectTarget.SpecificEntity(entityId),
+                    destination = Zone.HAND,
+                    fromZone = Zone.GRAVEYARD
                 )
-            )
-        }
-
-        return EffectResult.success(newState, events)
+            }),
+            context
+        )
     }
 
     private fun resolvePlayer(player: Player, context: EffectContext, state: GameState) =

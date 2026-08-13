@@ -47,8 +47,8 @@ class PiratePeddlersTest : FunSpec({
     // Drain the whole stack — the sorcery resolves into two per-permanent sacrifice triggers.
     fun GameTestDriver.resolveStack() {
         var guard = 0
-        while (state.stack.isNotEmpty() && guard < 50) {
-            bothPass()
+        while ((state.stack.isNotEmpty() || pendingDecision is com.wingedsheep.engine.core.OrderTriggeredAbilitiesDecision) && guard < 50) {
+            if (!submitTriggerOrderInListedOrder()) bothPass()
             guard++
         }
     }

@@ -3,5 +3,7 @@ web-client/dist
 .git
 .github
 .idea
+.gradle
+**/build
 *.md
 docs/

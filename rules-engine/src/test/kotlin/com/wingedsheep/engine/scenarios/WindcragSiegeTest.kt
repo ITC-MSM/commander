@@ -13,6 +13,7 @@ import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.engine.core.ChooseTargetsDecision
+import com.wingedsheep.engine.core.OrderTriggeredAbilitiesDecision
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
@@ -23,9 +24,11 @@ import io.kotest.matchers.shouldBe
  */
 private fun resolveAttackTriggers(driver: GameTestDriver, you: EntityId, attacker: EntityId) {
     var guard = 0
-    while ((driver.state.stack.isNotEmpty() || driver.state.pendingDecision is ChooseTargetsDecision) && guard++ < 30) {
+    while ((driver.state.stack.isNotEmpty() || driver.state.pendingDecision is ChooseTargetsDecision || driver.state.pendingDecision is OrderTriggeredAbilitiesDecision) && guard++ < 30) {
         if (driver.state.pendingDecision is ChooseTargetsDecision) {
             driver.submitTargetSelection(you, listOf(attacker))
+        } else if (driver.submitTriggerOrderInListedOrder()) {
+            // Deterministic test order; production asks the controller.
         } else {
             driver.bothPass()
         }

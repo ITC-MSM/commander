@@ -1,5 +1,7 @@
 package com.wingedsheep.engine.scenarios
 
+import com.wingedsheep.engine.core.OrderTriggeredAbilitiesDecision
+import com.wingedsheep.engine.core.TriggeredAbilitiesOrderedResponse
 import com.wingedsheep.engine.core.CardsSelectedResponse
 import com.wingedsheep.engine.core.OrderedResponse
 import com.wingedsheep.engine.core.ReorderLibraryDecision
@@ -124,7 +126,17 @@ class SurveilTriggerScenarioTest : FunSpec({
 
     fun GameTestDriver.resolveStack() {
         var guard = 0
-        while (stackSize > 0 && guard++ < 10) bothPass()
+        while (stackSize > 0 && guard++ < 10) {
+            val decision = pendingDecision
+            if (decision is OrderTriggeredAbilitiesDecision) {
+                submitDecision(
+                    decision.playerId,
+                    TriggeredAbilitiesOrderedResponse(decision.id, decision.abilities.map { it.id })
+                )
+            } else {
+                bothPass()
+            }
+        }
     }
 
     // Cast the named scry/surveil spell, then drive all resolution-time decisions:
@@ -136,6 +148,11 @@ class SurveilTriggerScenarioTest : FunSpec({
         bothPass()
         repeat(4) {
             when (val decision = pendingDecision) {
+                is OrderTriggeredAbilitiesDecision ->
+                    submitDecision(
+                        decision.playerId,
+                        TriggeredAbilitiesOrderedResponse(decision.id, decision.abilities.map { it.id })
+                    )
                 is SelectCardsDecision ->
                     submitDecision(player, CardsSelectedResponse(decision.id, emptyList()))
                 is ReorderLibraryDecision ->

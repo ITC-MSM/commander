@@ -21,8 +21,27 @@ class CoreAutoResumerModule(
 
     override fun autoResumers(): List<AutoResumer<*>> = listOf(
         autoResumer(PendingTriggersContinuation::class) { state, continuation, events, _ ->
-            val result = services.triggerProcessor.processTriggers(state, continuation.remainingTriggers)
+            val result = if (continuation.alreadyOrdered) {
+                services.triggerProcessor.processAlreadyOrderedTriggers(state, continuation.remainingTriggers)
+            } else {
+                services.triggerProcessor.processTriggers(state, continuation.remainingTriggers)
+            }
             mergeAndContinue(result, events)
+        },
+
+        autoResumer(TriggerPlacementWaveContinuation::class) { state, continuation, events, checkForMore ->
+            val result = services.triggerProcessor.resumePlacementWave(state, continuation, events)
+            // `resumePlacementWave` owns detection for the placement events it receives.  Keep
+            // that provenance when the continuation resumes or pauses: otherwise the enclosing
+            // SubmitDecisionHandler scans the same BecomesTargetEvent again and puts a second
+            // Ward trigger on the stack after modal-trigger target selection.
+            if (result.isPaused) {
+                ExecutionResult.paused(result.state, result.pendingDecision!!, events + result.events)
+                    .copy(triggersAlreadyProcessed = result.triggersAlreadyProcessed)
+            } else {
+                checkForMore(result.newState, events + result.events)
+                    .copy(triggersAlreadyProcessed = result.triggersAlreadyProcessed)
+            }
         },
 
         autoResumer(ForEachContinuation::class, canResume = { it.remainingItems.isNotEmpty() }) { state, continuation, events, checkForMore ->
@@ -64,6 +83,37 @@ class CoreAutoResumerModule(
                 }
             } else {
                 checkForMore(state, events)
+            }
+        },
+
+        autoResumer(DrawCardAfterZoneChangeContinuation::class) { state, continuation, events, checkForMore ->
+            val hand = com.wingedsheep.engine.state.ZoneKey(
+                continuation.drawingPlayerId,
+                com.wingedsheep.sdk.core.Zone.HAND
+            )
+            // A Commander redirected to command (or another replacement sent
+            // the card elsewhere) was not drawn. If it did reach hand, finish
+            // precisely the bookkeeping that a synchronous primitive draw
+            // would have performed, and keep the public event order: aggregate
+            // CardsDrawnEvent before first-draw reveal/miracle events.
+            if (continuation.cardId !in state.getZone(hand)) {
+                checkForMore(state, events)
+            } else {
+                val result = com.wingedsheep.engine.handlers.effects.drawing.DrawCardPrimitive(services.cardRegistry)
+                    .finishMovedToHand(state, continuation.drawingPlayerId, continuation.cardId)
+                val card = result.state.getEntity(continuation.cardId)
+                    ?.get<com.wingedsheep.engine.state.components.identity.CardComponent>()
+                val aggregate = CardsDrawnEvent(
+                    continuation.drawingPlayerId,
+                    1,
+                    listOf(continuation.cardId),
+                    listOf(card?.name ?: "Card")
+                )
+                val tracked = result.state.copy(
+                    lastCardDrawnThisTurnByPlayer = result.state.lastCardDrawnThisTurnByPlayer +
+                        (continuation.drawingPlayerId to continuation.cardId)
+                )
+                checkForMore(tracked, events + aggregate + result.events)
             }
         },
 

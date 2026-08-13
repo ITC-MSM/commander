@@ -2,7 +2,9 @@ package com.wingedsheep.engine.scenarios
 
 import com.wingedsheep.engine.core.ActivateAbility
 import com.wingedsheep.engine.core.ChooseTargetsDecision
+import com.wingedsheep.engine.core.OrderTriggeredAbilitiesDecision
 import com.wingedsheep.engine.core.SelectCardsDecision
+import com.wingedsheep.engine.core.TriggeredAbilitiesOrderedResponse
 import com.wingedsheep.engine.core.YesNoDecision
 import com.wingedsheep.engine.mechanics.layers.StateProjector
 import com.wingedsheep.engine.state.ZoneKey
@@ -103,7 +105,19 @@ class DireFlailScenarioTest : FunSpec({
 
     fun GameTestDriver.drainStack() {
         var guard = 0
-        while (state.stack.isNotEmpty() && pendingDecision == null && guard++ < 20) bothPass()
+        while ((state.stack.isNotEmpty() || pendingDecision is OrderTriggeredAbilitiesDecision) && guard++ < 20) {
+            val order = pendingDecision as? OrderTriggeredAbilitiesDecision
+            if (order != null) {
+                submitDecision(
+                    order.playerId,
+                    TriggeredAbilitiesOrderedResponse(order.id, order.abilities.map { it.id }),
+                )
+            } else if (pendingDecision == null) {
+                bothPass()
+            } else {
+                break
+            }
+        }
     }
 
     fun GameTestDriver.resolveUntilDecision() {
@@ -435,6 +449,13 @@ class DireFlailScenarioTest : FunSpec({
         var guard = 0
         while (driver.pendingDecision != null && guard++ < 20) {
             when (val d = driver.pendingDecision) {
+                // Both granted attack abilities trigger simultaneously.  Under the explicit
+                // trigger-ordering rule the controller must first place those two abilities
+                // on the stack before either optional sacrifice prompt can be answered.
+                is OrderTriggeredAbilitiesDecision -> driver.submitDecision(
+                    d.playerId,
+                    TriggeredAbilitiesOrderedResponse(d.id, d.abilities.map { it.id }),
+                ).error shouldBe null
                 is YesNoDecision -> driver.submitYesNo(p1, true).error shouldBe null
                 is ChooseTargetsDecision -> {
                     val legal = d.legalTargets[0].orEmpty()

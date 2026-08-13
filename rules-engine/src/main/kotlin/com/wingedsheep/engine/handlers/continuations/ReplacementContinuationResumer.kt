@@ -20,12 +20,71 @@ class ReplacementContinuationResumer(
 ) : ContinuationResumerModule, AutoResumerModule {
 
     override fun resumers(): List<ContinuationResumer<*>> = listOf(
-        resumer(ReplacementChoiceContinuation::class, ::resumeReplacementChoice)
+        resumer(ReplacementChoiceContinuation::class, ::resumeReplacementChoice),
+        resumer(OptionalReplacementContinuation::class, ::resumeOptionalReplacement)
     )
+
+    private fun resumeOptionalReplacement(
+        state: GameState,
+        continuation: OptionalReplacementContinuation,
+        response: DecisionResponse,
+        checkForMore: CheckForMore
+    ): ExecutionResult {
+        if (response !is YesNoResponse) {
+            return ExecutionResult.error(state, "Expected yes/no response for optional replacement")
+        }
+        val applied = continuation.alreadyApplied + continuation.replacement.identity
+        val result = if (response.choice) {
+            processor.applySingle(state, continuation.replacement, continuation.pendingEvent, continuation.alreadyApplied)
+        } else {
+            processor.process(
+                state.copy(activeReplacementChain = applied), continuation.pendingEvent,
+                continuation.context, applied
+            )
+        }
+        return finishPendingEvent(state, continuation.pendingEvent, continuation.context, result, checkForMore)
+    }
 
     override fun autoResumers(): List<AutoResumer<*>> = listOf(
         autoResumer(ReplacementResolveContinuation::class) { state, continuation, events, checkForMore ->
             resumeReplacementResolve(state, continuation, events, checkForMore)
+        },
+        autoResumer(ZoneChangePerformContinuation::class) { state, continuation, events, checkForMore ->
+            val result = com.wingedsheep.engine.handlers.effects.ZoneTransitionService.moveToZone(
+                state, continuation.entityId, continuation.destination,
+                continuation.options.copy(
+                    skipZoneChangeRedirect = true,
+                    linkExileToSourceId = continuation.linkExileToSourceId
+                ), continuation.fromZoneKey
+            )
+            val rider = continuation.postMoveEffect
+            val transitionEvents = if (continuation.options.suppressZoneChangeEvent) emptyList() else result.events
+            if (rider == null) {
+                checkForMore(result.state, events + transitionEvents)
+            } else {
+                val context = continuation.postMoveContext
+                    ?: EffectContext(null, continuation.entityId)
+                val riderResult = services.effectExecutorRegistry.execute(result.state, rider, context)
+                if (riderResult.isPaused) riderResult.toExecutionResult()
+                else if (riderResult.error != null) riderResult.toExecutionResult()
+                else checkForMore(riderResult.state, events + transitionEvents + riderResult.events)
+            }
+        },
+        autoResumer(DeferredStackZoneMoveContinuation::class) { state, continuation, events, checkForMore ->
+            val attempt = com.wingedsheep.engine.handlers.effects.ZoneTransitionService.attemptMoveToZone(
+                state = state,
+                entityId = continuation.entityId,
+                destinationZone = continuation.destination,
+                options = continuation.options,
+                fromZoneKey = com.wingedsheep.engine.state.ZoneKey(
+                    continuation.ownerId, com.wingedsheep.sdk.core.Zone.STACK
+                )
+            )
+            if (attempt.isPaused) {
+                ExecutionResult.paused(attempt.state, attempt.pendingDecision!!, events + attempt.events)
+            } else {
+                checkForMore(attempt.state, events + attempt.events)
+            }
         }
     )
 
@@ -66,6 +125,23 @@ class ReplacementContinuationResumer(
         val stateWithRemaining = continuation.pendingEvent.remainderContinuation(state)
             ?.let { state.pushContinuation(it) }
             ?: state
+
+        // Selecting the Commander option from a CR 616 ordering prompt only
+        // selects its place in the chain. CR 903.9b still gives the commander
+        // owner the separate choice to apply that optional replacement.
+        if (chosen.effect is com.wingedsheep.sdk.scripting.CommanderZoneReplacement) {
+            val optionalResult = processor.presentOptionalReplacement(
+                stateWithRemaining,
+                continuation.pendingEvent,
+                chosen,
+                continuation.alreadyApplied,
+                context
+            )
+            return when (optionalResult) {
+                is ProcessorResult.Paused -> ExecutionResult.paused(optionalResult.state, optionalResult.decision)
+                else -> error("Commander replacement must present its owner with an optional-replacement decision")
+            }
+        }
 
         // Compute the outcome.
         val result = processor.applySingle(
@@ -114,6 +190,36 @@ class ReplacementContinuationResumer(
         }
     }
 
+    /** Complete a generic pending-event chain after a decision without dropping a modified event. */
+    private fun finishPendingEvent(
+        originalState: GameState,
+        pendingEvent: PendingGameEvent,
+        context: EffectContext?,
+        result: ProcessorResult,
+        checkForMore: CheckForMore
+    ): ExecutionResult = when (result) {
+        is ProcessorResult.Paused -> ExecutionResult.paused(result.state, result.decision)
+        is ProcessorResult.Pass -> {
+            // This event has settled without another replacement. Its chain is
+            // per-event (CR 614.5), so never leak identities into the physical
+            // move or the caller's next event.
+            val cleared = originalState.copy(activeReplacementChain = null)
+            val frame = pendingEvent.performContinuation(cleared)
+            checkForMore(frame?.let { cleared.pushContinuation(it) } ?: cleared, emptyList())
+        }
+        is ProcessorResult.Resolved -> when (val outcome = result.outcome) {
+            is ReplacementOutcome.Modified -> {
+                val cleared = result.state.copy(activeReplacementChain = null)
+                val frame = outcome.modifiedEvent.performContinuation(cleared)
+                checkForMore(frame?.let { cleared.pushContinuation(it) } ?: cleared, emptyList())
+            }
+            is ReplacementOutcome.Consumed -> checkForMore(result.state.copy(activeReplacementChain = null), emptyList())
+            is ReplacementOutcome.Replaced -> handleReplacedOutcome(
+                result.state.copy(activeReplacementChain = null), outcome, result.executionContext ?: context, checkForMore
+            )
+        }
+    }
+
     /**
      * Auto-resume after a replacement chain has fully resolved. Pops the
      * [ReplacementResolveContinuation] and calls checkForMore so the original
@@ -141,6 +247,20 @@ class ReplacementContinuationResumer(
         context: EffectContext?,
         checkForMore: CheckForMore
     ): ExecutionResult {
+        val zoneEvent = outcome.replacementEvent as? PendingGameEvent.ZoneChangePending
+        if (zoneEvent != null) {
+            val linkSource = if (zoneEvent.linkExileToSource) context?.sourceId else null
+            val perform = ZoneChangePerformContinuation(
+                entityId = zoneEvent.entityId,
+                destination = zoneEvent.destination,
+                options = zoneEvent.options,
+                fromZoneKey = zoneEvent.fromZoneKey,
+                postMoveEffect = outcome.newEffect,
+                postMoveContext = context,
+                linkExileToSourceId = linkSource
+            )
+            return checkForMore(state.copy(activeReplacementChain = null).pushContinuation(perform), emptyList())
+        }
         val resumeContinuation = ReplacementResolveContinuation(
             decisionId = "pending"
         )
