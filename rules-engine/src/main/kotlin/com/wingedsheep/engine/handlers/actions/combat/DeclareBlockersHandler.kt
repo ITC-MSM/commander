@@ -37,9 +37,16 @@ class DeclareBlockersHandler(
         if (state.step != Step.DECLARE_BLOCKERS) {
             return "You can only declare blockers during the declare blockers step"
         }
-        // Shared-turn teams submit one combined block declaration (CR 805.10d), so their
-        // existing team combat path remains a single action rather than a per-seat cursor.
+        // Shared-turn teams submit one combined block declaration (CR 805.10d), rather than
+        // stepping through their seats one at a time.
         val isSharedTurnTeam = state.sharedTurnTeam(action.playerId).size > 1
+        if (isSharedTurnTeam && state.sharedTurnTeam(action.playerId).any { defenderId ->
+                state.getEntity(defenderId)
+                    ?.has<com.wingedsheep.engine.state.components.combat.BlockersDeclaredThisCombatComponent>() == true
+            }
+        ) {
+            return "Your team has already declared blockers this combat"
+        }
         // Declaring blockers is a turn-based action, not an ordinary priority action.
         // The priority marker still belongs to the active player when this step begins,
         // so it must not be used to reject the first defender in a normal duel.  In a
@@ -61,15 +68,6 @@ class DeclareBlockersHandler(
 
         if (!result.isSuccess) {
             return result
-        }
-
-        if (state.sharedTurnTeam(action.playerId).size > 1) {
-            return BlockDeclarationFinalizer.finishSharedTurnTeam(
-                result.newState,
-                result.events,
-                triggerDetector,
-                triggerProcessor,
-            )
         }
 
         return BlockDeclarationFinalizer.finish(

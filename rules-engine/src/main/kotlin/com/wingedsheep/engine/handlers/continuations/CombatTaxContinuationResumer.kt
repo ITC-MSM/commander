@@ -128,14 +128,6 @@ class CombatTaxContinuationResumer(
             taxEvents = paid.events,
         )
         if (!committed.isSuccess) return committed
-        if (committed.newState.sharedTurnTeam(continuation.blockingPlayer).size > 1) {
-            return BlockDeclarationFinalizer.finishSharedTurnTeam(
-                committed.newState,
-                committed.events,
-                services.triggerDetector,
-                services.triggerProcessor,
-            )
-        }
         return BlockDeclarationFinalizer.finish(
             committed.newState,
             committed.events,

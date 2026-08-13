@@ -126,8 +126,9 @@ enum class DamageAssignmentReason {
 data object AttackersDeclaredThisCombatComponent : Component
 
 /**
- * Marker component added to the defending player when blockers have been declared this combat.
- * This is used to prevent the DeclareBlockers action from being offered again,
+ * Marker component added to each declaring defender when blockers have been declared this combat.
+ * A shared-turn team receives it on both teammates after its one combined declaration. This is
+ * used to prevent the DeclareBlockers action from being offered again,
  * even if no creatures were selected to block.
  * Cleared at END_COMBAT.
  */

@@ -24,31 +24,10 @@ import java.util.UUID
  * SBAs, poll state triggers once after stabilization, place the combined trigger wave, then give
  * the active player priority. Intermediate declarations do none of that work.
  *
- * Shared-turn team combat keeps its existing single-declaration path; this helper does not attempt
- * to redesign or validate the combined Two-Headed Giant declaration rules.
+ * A shared-turn team is marked as complete by its one atomic declaration, then takes this same
+ * final boundary as every other completed block declaration.
  */
 internal object BlockDeclarationFinalizer {
-    /** Preserve the pre-FFA shared-turn-team declaration behavior unchanged. */
-    fun finishSharedTurnTeam(
-        state: GameState,
-        events: List<GameEvent>,
-        triggerDetector: TriggerDetector,
-        triggerProcessor: TriggerProcessor,
-    ): ExecutionResult {
-        val triggers = triggerDetector.detectTriggers(state, events)
-        if (triggers.isEmpty()) return ExecutionResult.success(state, events)
-        val triggerResult = triggerProcessor.processTriggers(state, triggers)
-        return if (triggerResult.isPaused) {
-            ExecutionResult.paused(
-                triggerResult.state,
-                triggerResult.pendingDecision!!,
-                events + triggerResult.events,
-            )
-        } else {
-            ExecutionResult.success(triggerResult.newState, events + triggerResult.events)
-        }
-    }
-
     fun finishIfComplete(
         state: GameState,
         triggerDetector: TriggerDetector,

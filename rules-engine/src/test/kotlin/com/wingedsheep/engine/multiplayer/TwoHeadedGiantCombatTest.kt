@@ -5,6 +5,7 @@ import com.wingedsheep.engine.core.DeclareAttackers
 import com.wingedsheep.engine.core.DeclareBlockers
 import com.wingedsheep.engine.core.GameConfig
 import com.wingedsheep.engine.core.GameInitializer
+import com.wingedsheep.engine.core.BlockersDeclaredEvent
 import com.wingedsheep.engine.core.PlayerConfig
 import com.wingedsheep.engine.mechanics.combat.CombatDefenders
 import com.wingedsheep.engine.registry.CardRegistry
@@ -13,11 +14,16 @@ import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.combat.AttackersDeclaredThisCombatComponent
 import com.wingedsheep.engine.state.components.combat.AttackingComponent
+import com.wingedsheep.engine.state.components.combat.BlockedComponent
+import com.wingedsheep.engine.state.components.combat.BlockersDeclaredThisCombatComponent
+import com.wingedsheep.engine.state.components.combat.BlockingComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.engine.state.components.identity.OwnerComponent
+import com.wingedsheep.mtg.sets.definitions.ori.cards.ArchangelOfTithes
 import com.wingedsheep.sdk.core.Format
 import com.wingedsheep.sdk.core.ManaCost
+import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.Phase
 import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.core.Subtype
@@ -52,7 +58,30 @@ class TwoHeadedGiantCombatTest : FunSpec({
         toughness = 2
     )
 
-    fun registry() = CardRegistry().also { it.register(bear) }
+    val menaceBear = CardDefinition.creature(
+        name = "Menace Combat Test Bear",
+        manaCost = ManaCost.parse("{1}{G}"),
+        subtypes = setOf(Subtype("Bear")),
+        power = 2,
+        toughness = 2,
+        keywords = setOf(Keyword.MENACE),
+    )
+
+    val flyingBear = CardDefinition.creature(
+        name = "Flying Combat Test Bear",
+        manaCost = ManaCost.parse("{1}{G}"),
+        subtypes = setOf(Subtype("Bear")),
+        power = 2,
+        toughness = 2,
+        keywords = setOf(Keyword.FLYING),
+    )
+
+    fun registry() = CardRegistry().also {
+        it.register(bear)
+        it.register(menaceBear)
+        it.register(flyingBear)
+        it.register(ArchangelOfTithes)
+    }
 
     fun init2hg(): Pair<GameState, List<EntityId>> {
         val deck = Deck(cards = List(40) { bear.name })
@@ -70,15 +99,20 @@ class TwoHeadedGiantCombatTest : FunSpec({
 
     /** Put a 2/2 bear on [owner]'s battlefield (untapped, not summoning sick). If [attacking] is
      *  set, it enters already declared as an attacker against that defender. */
-    fun GameState.withBear(owner: EntityId, attacking: EntityId? = null): Pair<GameState, EntityId> {
+    fun GameState.withBear(
+        owner: EntityId,
+        attacking: EntityId? = null,
+        definition: CardDefinition = bear,
+    ): Pair<GameState, EntityId> {
         val id = EntityId.generate()
         var container = ComponentContainer.of(
             CardComponent(
-                cardDefinitionId = bear.name,
-                name = bear.name,
-                manaCost = bear.manaCost,
-                typeLine = bear.typeLine,
-                baseStats = bear.creatureStats,
+                cardDefinitionId = definition.name,
+                name = definition.name,
+                manaCost = definition.manaCost,
+                typeLine = definition.typeLine,
+                baseStats = definition.creatureStats,
+                baseKeywords = definition.keywords,
                 ownerId = owner
             ),
             OwnerComponent(owner),
@@ -149,5 +183,94 @@ class TwoHeadedGiantCombatTest : FunSpec({
 
         // p1 is on the attacking team, so it may not block (the active team never blocks).
         proc.process(state, DeclareBlockers(p[1], mapOf(blkP1 to listOf(atk)))).result.isSuccess.shouldBeFalse()
+    }
+
+    test("one atomic team map combines both defenders' blockers for menace, then reaches the normal boundary (CR 805.10d)") {
+        val (base, p) = init2hg()
+        val (s1, menace) = base.withBear(p[0], attacking = p[2], definition = menaceBear)
+        val (s2, blkP2) = s1.withBear(p[2])
+        val (s3, blkP3) = s2.withBear(p[3])
+        var state = s3.updateEntity(p[0]) { it.with(AttackersDeclaredThisCombatComponent) }
+        state = state.copy(step = Step.DECLARE_BLOCKERS, phase = Phase.COMBAT).withPriority(p[2])
+        val proc = ActionProcessor(registry())
+
+        val result = proc.process(
+            state,
+            DeclareBlockers(p[2], mapOf(blkP2 to listOf(menace), blkP3 to listOf(menace)))
+        ).result
+
+        result.isSuccess.shouldBeTrue()
+        result.events.filterIsInstance<BlockersDeclaredEvent>().size shouldBe 1
+        result.newState.getEntity(menace)!!.get<BlockedComponent>()!!.blockerIds.toSet() shouldBe setOf(blkP2, blkP3)
+        result.newState.getEntity(blkP2)!!.get<BlockingComponent>()!!.blockedAttackerIds shouldBe listOf(menace)
+        result.newState.getEntity(blkP3)!!.get<BlockingComponent>()!!.blockedAttackerIds shouldBe listOf(menace)
+        result.newState.getEntity(p[2])!!.has<BlockersDeclaredThisCombatComponent>().shouldBeTrue()
+        result.newState.getEntity(p[3])!!.has<BlockersDeclaredThisCombatComponent>().shouldBeTrue()
+        // The completed team declaration goes through the ordinary final SBA/trigger boundary.
+        result.newState.priorityPlayerId shouldBe p[0]
+    }
+
+    test("a one-creature combined team map cannot block a menace attacker (CR 805.10d)") {
+        val (base, p) = init2hg()
+        val (s1, menace) = base.withBear(p[0], attacking = p[2], definition = menaceBear)
+        val (s2, blkP3) = s1.withBear(p[3])
+        var state = s2.updateEntity(p[0]) { it.with(AttackersDeclaredThisCombatComponent) }
+        state = state.copy(step = Step.DECLARE_BLOCKERS, phase = Phase.COMBAT).withPriority(p[2])
+
+        ActionProcessor(registry()).process(
+            state,
+            DeclareBlockers(p[2], mapOf(blkP3 to listOf(menace)))
+        ).result.isSuccess.shouldBeFalse()
+    }
+
+    test("a defending team cannot submit a second blockers declaration after its atomic map") {
+        val (base, p) = init2hg()
+        val (s1, atk) = base.withBear(p[0], attacking = p[2])
+        val (s2, firstBlocker) = s1.withBear(p[2])
+        val (s3, laterBlocker) = s2.withBear(p[3])
+        var state = s3.updateEntity(p[0]) { it.with(AttackersDeclaredThisCombatComponent) }
+        state = state.copy(step = Step.DECLARE_BLOCKERS, phase = Phase.COMBAT).withPriority(p[2])
+        val proc = ActionProcessor(registry())
+
+        val first = proc.process(state, DeclareBlockers(p[2], mapOf(firstBlocker to listOf(atk)))).result
+        first.isSuccess.shouldBeTrue()
+        val second = proc.process(first.newState, DeclareBlockers(p[3], mapOf(laterBlocker to listOf(atk)))).result
+
+        second.isSuccess.shouldBeFalse()
+        second.newState shouldBe first.newState
+        second.events.size shouldBe 0
+    }
+
+    test("a combined defending-team map rejects a blocker controlled by the attacking team") {
+        val (base, p) = init2hg()
+        val (s1, atk) = base.withBear(p[0], attacking = p[2])
+        val (s2, offTeamBlocker) = s1.withBear(p[1])
+        var state = s2.updateEntity(p[0]) { it.with(AttackersDeclaredThisCombatComponent) }
+        state = state.copy(step = Step.DECLARE_BLOCKERS, phase = Phase.COMBAT).withPriority(p[2])
+
+        ActionProcessor(registry()).process(
+            state,
+            DeclareBlockers(p[2], mapOf(offTeamBlocker to listOf(atk)))
+        ).result.isSuccess.shouldBeFalse()
+    }
+
+    test("a taxed multi-controller team map rejects atomically before declaring blockers") {
+        val (base, p) = init2hg()
+        // The attacking Archangel's active BlockTax would require one player to pay for both
+        // teammates' blockers. That multi-controller payment flow is deliberately unsupported.
+        val (s1, archangel) = base.withBear(p[0], attacking = p[2], definition = ArchangelOfTithes)
+        val (s2, blkP2) = s1.withBear(p[2], definition = flyingBear)
+        val (s3, blkP3) = s2.withBear(p[3], definition = flyingBear)
+        var state = s3.updateEntity(p[0]) { it.with(AttackersDeclaredThisCombatComponent) }
+        state = state.copy(step = Step.DECLARE_BLOCKERS, phase = Phase.COMBAT).withPriority(p[2])
+
+        val result = ActionProcessor(registry()).process(
+            state,
+            DeclareBlockers(p[2], mapOf(blkP2 to listOf(archangel), blkP3 to listOf(archangel)))
+        ).result
+
+        result.isSuccess.shouldBeFalse()
+        result.events.filterIsInstance<BlockersDeclaredEvent>() shouldBe emptyList()
+        result.newState shouldBe state
     }
 })

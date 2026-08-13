@@ -959,6 +959,9 @@ class TurnManager(
     fun getValidBlockers(state: GameState, playerId: EntityId): List<EntityId> {
         val battlefield = state.getBattlefield()
         val projected = state.projectedState
+        // CR 805.10d: the nonactive shared-turn team declares one combined block, so either
+        // teammate's creatures are eligible in the submitting defender's map.
+        val eligibleControllers = state.sharedTurnTeam(playerId).toSet()
 
         return battlefield.filter { entityId ->
             val container = state.getEntity(entityId) ?: return@filter false
@@ -966,7 +969,7 @@ class TurnManager(
             val controller = projected.getController(entityId)
             val projectedTypes = projected.getProjectedValues(entityId)?.types ?: emptySet()
 
-            if ("CREATURE" !in projectedTypes || controller != playerId) {
+            if ("CREATURE" !in projectedTypes || controller !in eligibleControllers) {
                 return@filter false
             }
 
@@ -974,7 +977,7 @@ class TurnManager(
                 return@filter false
             }
 
-            if (!combatManager.canCreatureBlockAnyAttacker(state, entityId, playerId)) {
+            if (!combatManager.canCreatureBlockAnyAttacker(state, entityId, controller ?: playerId)) {
                 return@filter false
             }
 

@@ -132,6 +132,13 @@ internal class BlockPhaseManager(
             return ExecutionResult.error(state, projectedMustBlockValidation)
         }
 
+        // A single player can pay ordinary block taxes. A combined shared-team declaration may
+        // contain blockers with different controllers, so it cannot truthfully use that one-payer
+        // continuation. Keep that route explicitly unsupported until multi-controller payment is
+        // an atomic decision flow; never silently charge or accept it.
+        val sharedTeamDeclaration = state.sharedTurnTeam(blockingPlayer).size > 1
+        val blockerControllers = blockers.keys.mapNotNull { state.projectedState.getController(it) }.toSet()
+
         // Calculate (but don't pay) the block tax. If non-zero, pause for the blocking
         // player to confirm — same reasoning as attack taxes: don't tap their mana
         // without consent.
@@ -139,6 +146,15 @@ internal class BlockPhaseManager(
         val totalBlockTax = calculatePerCreatureTax(state, blockers.keys, projected) +
             calculateBlockTax(state, blockers.keys, projected)
         if (totalBlockTax > 0) {
+            // The existing payment continuation has exactly one payer.  In a shared-team
+            // declaration it is safe only when every taxed blocker belongs to that submitter;
+            // never charge a teammate's cost to the representative player.
+            if (sharedTeamDeclaration && blockerControllers != setOf(blockingPlayer)) {
+                return ExecutionResult.error(
+                    state,
+                    "Combined Two-Headed Giant blocks with block taxes are not supported yet"
+                )
+            }
             return pauseForBlockTaxConfirmation(state, blockingPlayer, blockers, totalBlockTax)
         }
 
@@ -212,9 +228,12 @@ internal class BlockPhaseManager(
             }
         }
 
-        // Mark that blockers have been declared this combat (even if empty)
-        newState = newState.updateEntity(blockingPlayer) { container ->
-            container.with(BlockersDeclaredThisCombatComponent)
+        // CR 805.10d: this is one combined declaration for the defending shared-turn team.
+        // Mark every teammate so the APNAP coordinator cannot request a second declaration.
+        for (defenderId in state.sharedTurnTeam(blockingPlayer)) {
+            newState = newState.updateEntity(defenderId) { container ->
+                container.with(BlockersDeclaredThisCombatComponent)
+            }
         }
 
         val blockerNameMap = expandedBlockers.keys.associateWith { state.getEntity(it)?.get<CardComponent>()?.name ?: "Creature" }
@@ -290,7 +309,7 @@ internal class BlockPhaseManager(
         for ((blockerId, attackerId) in provokeConstraints) {
             if (blockerId !in potentialBlockers) continue
             val controller = projected.getController(blockerId)
-            if (controller != blockingPlayer) continue
+            if (controller !in state.sharedTurnTeam(blockingPlayer)) continue
             val attackerContainer = state.getEntity(attackerId) ?: continue
             if (!attackerContainer.has<AttackingComponent>()) continue
             if (!canCreatureBlockAttacker(state, blockerId, attackerId, blockingPlayer, projected)) continue
@@ -335,7 +354,7 @@ internal class BlockPhaseManager(
             return "Only creatures can block: ${cardComponent.name}"
         }
         val controller = projected.getController(blockerId)
-        if (controller != blockingPlayer) {
+        if (controller !in state.sharedTurnTeam(blockingPlayer)) {
             return "You don't control ${cardComponent.name}"
         }
 
@@ -360,7 +379,7 @@ internal class BlockPhaseManager(
         }
 
         if (!isFaceDown) {
-            val cantBlockUnlessError = validateCantBlockUnless(state, blockerId, blockingPlayer, projected)
+            val cantBlockUnlessError = validateCantBlockUnless(state, blockerId, controller ?: blockingPlayer, projected)
             if (cantBlockUnlessError != null) return cantBlockUnlessError
         }
 
@@ -393,7 +412,7 @@ internal class BlockPhaseManager(
                 return "${cardComponent.name} can't block a creature attacking another player"
             }
 
-            val evasionValidation = validateCanBlock(state, blockerId, attackerId, blockingPlayer)
+            val evasionValidation = validateCanBlock(state, blockerId, attackerId, controller ?: blockingPlayer)
             if (evasionValidation != null) {
                 return evasionValidation
             }
@@ -488,7 +507,9 @@ internal class BlockPhaseManager(
             projected = projected,
             attackerId = attackerId,
             blockerId = blockerId,
-            blockingPlayer = blockingPlayer,
+            // Shared-team validation may be initiated by either defender. Evasion and any
+            // controller-relative restriction belong to the creature's actual controller.
+            blockingPlayer = projected.getController(blockerId) ?: blockingPlayer,
             cardRegistry = cardRegistry
         )
         return blockEvasionRules.all { it.check(ctx) == null }
@@ -841,7 +862,7 @@ internal class BlockPhaseManager(
 
         for ((blockerId, attackerId) in provokeConstraints) {
             val controller = projected.getController(blockerId)
-            if (controller != blockingPlayer) continue
+            if (controller !in state.sharedTurnTeam(blockingPlayer)) continue
 
             val blockerContainer = state.getEntity(blockerId) ?: continue
             if (blockerId !in state.getBattlefield()) continue
@@ -1036,7 +1057,7 @@ internal class BlockPhaseManager(
                 val controller = projected.getController(entityId)
 
                 projected.isCreature(entityId) &&
-                    controller == blockingPlayer &&
+                    controller in state.sharedTurnTeam(blockingPlayer) &&
                     !container.has<TappedComponent>()
             }
     }
