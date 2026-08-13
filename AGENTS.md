@@ -17,8 +17,8 @@ docs it points at; load those when the work needs them.
   unrelated failure, opening the PR is allowed; disclose the failure and the verification that did pass
   in the PR body.
 - **Route to the matching skill, don't freelance:**
-  - Implementing a card, from a backlog file or by name → **`add-card`** (Scryfall lookup, oracle
-    errata, canonical-printing placement, scenario test).
+  - Implementing a card — or a batch of them — from a backlog file or by name → **`add-card`** (Scryfall
+    lookup, oracle errata, canonical-printing placement, scenario test).
   - Any engine/SDK/server/client capability that isn't a single card — effect, trigger, condition,
     keyword, decision flow → **`add-feature`** (composition-first design, cross-layer tracing, perf + UX).
   - Running the build/test gates and reading the results → **`verify`**.
@@ -33,7 +33,9 @@ docs it points at; load those when the work needs them.
   files, not one `FooBatchScenarioTest`. Batched files hide which card a failure belongs to, make
   `just test-class` useless for a single card, and turn every later edit into a merge conflict between
   agents. Engine-level tests (a mechanic, a replacement effect) are the exception — those are named for
-  the mechanic and may exercise several cards.
+  the mechanic and may exercise several cards. This bans the shared test *file*, not the shared *PR*:
+  bundling several cards that all compose existing primitives into one PR is the house shape, and
+  `CONTRIBUTING.md` encourages it. A card needing new engine vocabulary still gets a PR of its own.
 - **Keep [`docs/card-sdk-language-reference.md`](docs/card-sdk-language-reference.md) in sync.** Every SDK
   addition or change — effect, trigger, condition, keyword, dynamic amount, modal shape, replacement
   effect — updates it in the *same* change. It's the canonical catalog; drift makes it useless.
@@ -127,3 +129,4 @@ It is **predictive and non-authoritative — never a card loader.** Two rules fo
 | [`e2e-test-patterns.md`](docs/e2e-test-patterns.md) | Playwright fixtures, GamePage helpers, scenario config |
 | [`gym-deckbuild-env.md`](docs/gym-deckbuild-env.md) | Sealed deckbuild gym env + custom win-rate reward |
 | [`gym-self-play-testing.md`](docs/gym-self-play-testing.md) | Driving the gym server over HTTP to surface broken cards |
+| [`agent-loops/`](docs/agent-loops/) | Long-running set-implementation prompts for Claude Code `/loop` and Codex `/goal` |
