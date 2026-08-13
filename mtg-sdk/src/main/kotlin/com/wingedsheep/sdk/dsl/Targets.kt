@@ -191,6 +191,12 @@ object Targets {
     val Land: TargetRequirement = TargetPermanent(filter = TargetFilter.Land)
 
     /**
+     * Target permanent you control — "target permanent you control gains protection …"
+     * (Razor Barrier). The mirror of [PermanentOpponentControls].
+     */
+    val PermanentYouControl: TargetRequirement = TargetPermanent(filter = TargetFilter.PermanentYouControl)
+
+    /**
      * Target permanent an opponent controls.
      */
     val PermanentOpponentControls: TargetRequirement = TargetPermanent(filter = TargetFilter.PermanentOpponentControls)
