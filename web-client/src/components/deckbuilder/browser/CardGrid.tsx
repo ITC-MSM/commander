@@ -21,6 +21,7 @@ export function CardGrid({
   onRemove,
   hasMore,
   onShowMore,
+  compact = false,
 }: {
   cards: CardSummary[]
   /** Copies already placed, keyed by card name — rendered as a badge on the tile. */
@@ -29,6 +30,8 @@ export function CardGrid({
   onRemove: (name: string) => void
   hasMore: boolean
   onShowMore: () => void
+  /** Denser tiles, for narrow side panes. */
+  compact?: boolean
 }) {
   const [hoverCard, setHoverCard] = useState<CardSummary | null>(null)
   const dfc = useDfcHoverFlip(
@@ -58,10 +61,12 @@ export function CardGrid({
   )
   const handleTileLeave = useCallback(() => setHoverCard(null), [])
 
+  const gridClass = compact ? styles.gridCompact : styles.grid
+
   if (cards.length === 0) {
     return (
       <div className={styles.gridScroll}>
-        <div className={styles.grid}>
+        <div className={gridClass}>
           <div className={styles.emptyState}>No cards match the current filters.</div>
         </div>
       </div>
@@ -71,7 +76,7 @@ export function CardGrid({
   return (
     <>
       <div className={styles.gridScroll}>
-        <div className={styles.grid}>
+        <div className={gridClass}>
           {cards.map((card) => (
             <CardTile
               key={card.name}

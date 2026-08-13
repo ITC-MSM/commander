@@ -33,6 +33,7 @@ export function CardBrowser({
   actionHint,
   initialQuery = '',
   filtersOpenByDefault = false,
+  compact = true,
 }: {
   catalog: CardSummary[]
   setInfos: SetInfo[]
@@ -52,6 +53,8 @@ export function CardBrowser({
   actionHint?: React.ReactNode
   initialQuery?: string
   filtersOpenByDefault?: boolean
+  /** Denser card tiles — on by default, since this component is built for a side pane. */
+  compact?: boolean
 }) {
   const [query, setQuery] = useState(initialQuery)
   const [sortMode, setSortMode] = useState<SortMode>('name')
@@ -134,6 +137,7 @@ export function CardBrowser({
                 onRemove={onRemove}
                 hasMore={displayed.length < filtered.length}
                 onShowMore={() => setVisibleCount((c) => c + PAGE_SIZE)}
+                compact={compact}
               />
             )}
           </div>

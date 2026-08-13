@@ -418,6 +418,30 @@ are gated on `players.length > 2`).
 Dev loop: the scenario builder (`POST /api/scenarios`) accepts an N-player `players` seat
 list (3-4 seats ⇒ hotseat) — see `ScenarioSeat` in `ScenarioDtos.kt`.
 
+### Shared card browser (`components/deckbuilder/browser/`)
+
+The deckbuilder's browsing experience is a reusable module, not a page-private one: `SearchBar`
+(Scryfall-style query + sort + syntax help), `FilterSection` (set combobox, colour/type/subtype/
+rarity/keyword chips, numeric ranges — all round-tripped through the raw query string),
+`CardGrid` (lazy images, count badges, draggable tiles), `HoverFollowPreview`, `useCardCatalog`
+(`/api/cards` + `/api/sets`), `useSetPrintingOverride` (reprint art for an active `s:` filter),
+and the `cardDrag` payload every card surface speaks. `CardBrowser` composes them for callers
+that just need "find me a card" in a side pane; `DeckbuilderPage` composes the same pieces into
+its own three-column layout. All of them share `deckbuilder.module.css`.
+
+### Scenario builder (`components/scenario/`)
+
+Split pane: `CardBrowser` on the left, an editable board on the right, divider position
+persisted in localStorage. `builderState.ts` holds the editing model — an ordered seat list, so
+3-4 player pods edit exactly like duels — plus the pure mutations and the `toSpec`/`fromSpec`
+conversions to the wire `ScenarioSpec`; `builderHistory.ts` wraps it in an undo/redo stack
+(⌘Z / ⇧⌘Z). `ScenarioBoard.tsx` renders each seat's zones as drop targets holding real card
+images (tapped permanents lie sideways, counters and attachments show as badges, pile zones
+collapse duplicates to ×N), and `CardEditorModal.tsx` edits one battlefield permanent —
+tapped / summoning sickness, counters of any type, `attachedTo`, and the pre-set "as this
+enters, choose …" values. Cards arrive by drag from the browser, by drag between zones, or by
+click into the currently targeted zone (with an ×N multiplier for filling libraries).
+
 ## 3D Layout
 
 ### Coordinate System
