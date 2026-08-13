@@ -1,12 +1,20 @@
 package com.wingedsheep.engine.multiplayer
 
 import com.wingedsheep.engine.core.ActionProcessor
+import com.wingedsheep.engine.core.ActivateAbility
+import com.wingedsheep.engine.core.BlockTaxManaSelectionContinuation
+import com.wingedsheep.engine.core.ContinuationFrame
 import com.wingedsheep.engine.core.DeclareAttackers
 import com.wingedsheep.engine.core.DeclareBlockers
+import com.wingedsheep.engine.core.Concede
 import com.wingedsheep.engine.core.GameConfig
 import com.wingedsheep.engine.core.GameInitializer
 import com.wingedsheep.engine.core.BlockersDeclaredEvent
 import com.wingedsheep.engine.core.PlayerConfig
+import com.wingedsheep.engine.core.ManaSourcesSelectedResponse
+import com.wingedsheep.engine.core.SelectManaSourcesDecision
+import com.wingedsheep.engine.core.SubmitDecision
+import com.wingedsheep.engine.core.TappedEvent
 import com.wingedsheep.engine.mechanics.combat.CombatDefenders
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.ComponentContainer
@@ -17,6 +25,7 @@ import com.wingedsheep.engine.state.components.combat.AttackingComponent
 import com.wingedsheep.engine.state.components.combat.BlockedComponent
 import com.wingedsheep.engine.state.components.combat.BlockersDeclaredThisCombatComponent
 import com.wingedsheep.engine.state.components.combat.BlockingComponent
+import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.engine.state.components.identity.OwnerComponent
@@ -31,10 +40,17 @@ import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
+import com.wingedsheep.sdk.scripting.AbilityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
+import io.kotest.assertions.throwables.shouldNotThrowAny
+import io.kotest.matchers.types.shouldBeInstanceOf
 import io.kotest.matchers.shouldBe
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonObject
 
 /**
  * Two-Headed Giant — Phase 5: combined combat (CR 805.10).
@@ -81,6 +97,7 @@ class TwoHeadedGiantCombatTest : FunSpec({
         it.register(menaceBear)
         it.register(flyingBear)
         it.register(ArchangelOfTithes)
+        it.register(CardDefinition.basicLand("Plains", Subtype.PLAINS))
     }
 
     fun init2hg(): Pair<GameState, List<EntityId>> {
@@ -121,6 +138,35 @@ class TwoHeadedGiantCombatTest : FunSpec({
         if (attacking != null) container = container.with(AttackingComponent(defenderId = attacking))
         val next = withEntity(id, container).addToZone(ZoneKey(owner, Zone.BATTLEFIELD), id)
         return next to id
+    }
+
+    fun GameState.withPlains(owner: EntityId): Pair<GameState, EntityId> {
+        val definition = CardDefinition.basicLand("Plains", Subtype.PLAINS)
+        val id = EntityId.generate()
+        val container = ComponentContainer.of(
+            CardComponent(
+                cardDefinitionId = definition.name,
+                name = definition.name,
+                manaCost = definition.manaCost,
+                typeLine = definition.typeLine,
+                ownerId = owner,
+            ),
+            OwnerComponent(owner),
+            ControllerComponent(owner),
+        )
+        return withEntity(id, container).addToZone(ZoneKey(owner, Zone.BATTLEFIELD), id) to id
+    }
+
+    fun taxedTeamBlockState(): Triple<GameState, List<EntityId>, List<EntityId>> {
+        val (base, p) = init2hg()
+        val (s1, archangel) = base.withBear(p[0], attacking = p[2], definition = ArchangelOfTithes)
+        val (s2, blkP2) = s1.withBear(p[2], definition = flyingBear)
+        val (s3, blkP3) = s2.withBear(p[3], definition = flyingBear)
+        val (s4, landP2) = s3.withPlains(p[2])
+        val (s5, landP3) = s4.withPlains(p[3])
+        var state = s5.updateEntity(p[0]) { it.with(AttackersDeclaredThisCombatComponent) }
+        state = state.copy(step = Step.DECLARE_BLOCKERS, phase = Phase.COMBAT).withPriority(p[2])
+        return Triple(state, p, listOf(archangel, blkP2, blkP3, landP2, landP3))
     }
 
     test("a creature attacks the opposing team, never a teammate (CR 805.10b)") {
@@ -254,23 +300,228 @@ class TwoHeadedGiantCombatTest : FunSpec({
         ).result.isSuccess.shouldBeFalse()
     }
 
-    test("a taxed multi-controller team map rejects atomically before declaring blockers") {
-        val (base, p) = init2hg()
-        // The attacking Archangel's active BlockTax would require one player to pay for both
-        // teammates' blockers. That multi-controller payment flow is deliberately unsupported.
-        val (s1, archangel) = base.withBear(p[0], attacking = p[2], definition = ArchangelOfTithes)
-        val (s2, blkP2) = s1.withBear(p[2], definition = flyingBear)
-        val (s3, blkP3) = s2.withBear(p[3], definition = flyingBear)
-        var state = s3.updateEntity(p[0]) { it.with(AttackersDeclaredThisCombatComponent) }
-        state = state.copy(step = Step.DECLARE_BLOCKERS, phase = Phase.COMBAT).withPriority(p[2])
+    test("a taxed combined team map collects pay-pay intents then pays and commits once") {
+        val (state, p, objects) = taxedTeamBlockState()
+        val (archangel, blkP2, blkP3, landP2, landP3) = objects
+        val proc = ActionProcessor(registry())
 
-        val result = ActionProcessor(registry()).process(
+        val declared = proc.process(
             state,
-            DeclareBlockers(p[2], mapOf(blkP2 to listOf(archangel), blkP3 to listOf(archangel)))
+            DeclareBlockers(p[2], mapOf(blkP2 to listOf(archangel), blkP3 to listOf(archangel))),
+        ).result
+        val p2Prompt = declared.pendingDecision.shouldBeInstanceOf<SelectManaSourcesDecision>()
+        p2Prompt.playerId shouldBe p[2]
+        declared.newState.getEntity(landP2)!!.has<TappedComponent>().shouldBeFalse()
+        declared.newState.getEntity(landP3)!!.has<TappedComponent>().shouldBeFalse()
+        declared.events.filterIsInstance<BlockersDeclaredEvent>() shouldBe emptyList()
+
+        val p2Accepted = proc.process(
+            declared.newState,
+            SubmitDecision(p[2], ManaSourcesSelectedResponse(p2Prompt.id, selectedSources = listOf(landP2))),
+        ).result
+        val p3Prompt = p2Accepted.pendingDecision.shouldBeInstanceOf<SelectManaSourcesDecision>()
+        p3Prompt.playerId shouldBe p[3]
+        // The second prompt is still inside the same turn-based action; priority did not pass.
+        p2Accepted.newState.priorityPlayerId shouldBe p[2]
+        p2Accepted.newState.getEntity(landP2)!!.has<TappedComponent>().shouldBeFalse()
+        p2Accepted.newState.getEntity(landP3)!!.has<TappedComponent>().shouldBeFalse()
+        p2Accepted.events.filterIsInstance<TappedEvent>() shouldBe emptyList()
+
+        val paid = proc.process(
+            p2Accepted.newState,
+            SubmitDecision(p[3], ManaSourcesSelectedResponse(p3Prompt.id, selectedSources = listOf(landP3))),
+        ).result
+        paid.isSuccess.shouldBeTrue()
+        paid.events.filterIsInstance<BlockersDeclaredEvent>().size shouldBe 1
+        paid.events.filterIsInstance<TappedEvent>().map { it.entityId }.toSet() shouldBe setOf(landP2, landP3)
+        paid.newState.getEntity(landP2)!!.has<TappedComponent>().shouldBeTrue()
+        paid.newState.getEntity(landP3)!!.has<TappedComponent>().shouldBeTrue()
+        paid.newState.getEntity(blkP2)!!.has<BlockingComponent>().shouldBeTrue()
+        paid.newState.getEntity(blkP3)!!.has<BlockingComponent>().shouldBeTrue()
+    }
+
+    test("a teammate declining after the first intent rolls the combined block back fully") {
+        val (state, p, objects) = taxedTeamBlockState()
+        val (archangel, blkP2, blkP3, landP2, landP3) = objects
+        val proc = ActionProcessor(registry())
+        val declared = proc.process(
+            state,
+            DeclareBlockers(p[2], mapOf(blkP2 to listOf(archangel), blkP3 to listOf(archangel))),
+        ).result
+        val p2Prompt = declared.pendingDecision.shouldBeInstanceOf<SelectManaSourcesDecision>()
+        val p2Accepted = proc.process(
+            declared.newState,
+            SubmitDecision(p[2], ManaSourcesSelectedResponse(p2Prompt.id, selectedSources = listOf(landP2))),
+        ).result
+        val p3Prompt = p2Accepted.pendingDecision.shouldBeInstanceOf<SelectManaSourcesDecision>()
+
+        val declined = proc.process(
+            p2Accepted.newState,
+            SubmitDecision(p[3], ManaSourcesSelectedResponse(p3Prompt.id, declined = true)),
+        ).result
+        declined.isSuccess.shouldBeTrue()
+        declined.pendingDecision shouldBe null
+        declined.newState.getEntity(landP2)!!.has<TappedComponent>().shouldBeFalse()
+        declined.newState.getEntity(landP3)!!.has<TappedComponent>().shouldBeFalse()
+        declined.newState.getEntity(blkP2)!!.has<BlockingComponent>().shouldBeFalse()
+        declined.newState.getEntity(blkP3)!!.has<BlockingComponent>().shouldBeFalse()
+        declined.newState.getEntity(p[2])!!.has<BlockersDeclaredThisCombatComponent>().shouldBeFalse()
+        declined.events.filterIsInstance<TappedEvent>() shouldBe emptyList()
+        declined.events.filterIsInstance<BlockersDeclaredEvent>() shouldBe emptyList()
+    }
+
+    test("a payer conceding during atomic team block-tax collection cancels the whole proposal") {
+        val (state, p, objects) = taxedTeamBlockState()
+        val (archangel, blkP2, blkP3, landP2, landP3) = objects
+        val proc = ActionProcessor(registry())
+        val declared = proc.process(
+            state,
+            DeclareBlockers(p[2], mapOf(blkP2 to listOf(archangel), blkP3 to listOf(archangel))),
+        ).result
+        val p2Prompt = declared.pendingDecision.shouldBeInstanceOf<SelectManaSourcesDecision>()
+        val p2Accepted = proc.process(
+            declared.newState,
+            SubmitDecision(p[2], ManaSourcesSelectedResponse(p2Prompt.id, selectedSources = listOf(landP2))),
+        ).result
+        val p3Prompt = p2Accepted.pendingDecision.shouldBeInstanceOf<SelectManaSourcesDecision>()
+        p3Prompt.playerId shouldBe p[3]
+
+        val conceded = proc.process(
+            p2Accepted.newState,
+            Concede(p[2]),
         ).result
 
-        result.isSuccess.shouldBeFalse()
-        result.events.filterIsInstance<BlockersDeclaredEvent>() shouldBe emptyList()
-        result.newState shouldBe state
+        conceded.pendingDecision shouldBe null
+        conceded.newState.getEntity(landP3)!!.has<TappedComponent>().shouldBeFalse()
+        conceded.newState.getEntity(blkP3)!!.has<BlockingComponent>().shouldBeFalse()
+        conceded.events.filterIsInstance<BlockersDeclaredEvent>() shouldBe emptyList()
+    }
+
+    test("p2 submitting a p3-only taxed block gives the payment prompt to p3") {
+        val (state, p, objects) = taxedTeamBlockState()
+        val (archangel, _, blkP3) = objects
+
+        val declared = ActionProcessor(registry()).process(
+            state,
+            DeclareBlockers(p[2], mapOf(blkP3 to listOf(archangel))),
+        ).result
+
+        declared.pendingDecision.shouldBeInstanceOf<SelectManaSourcesDecision>().playerId shouldBe p[3]
+    }
+
+    test("a direct mana ability is rejected without mutation while a combined team block-tax prompt is pending") {
+        val (state, p, objects) = taxedTeamBlockState()
+        val (archangel, blkP2, blkP3, landP2, landP3) = objects
+        val proc = ActionProcessor(registry())
+        val declared = proc.process(
+            state,
+            DeclareBlockers(p[2], mapOf(blkP2 to listOf(archangel), blkP3 to listOf(archangel))),
+        ).result
+        declared.pendingDecision.shouldBeInstanceOf<SelectManaSourcesDecision>().playerId shouldBe p[2]
+
+        val p2DirectMana = proc.process(
+            declared.newState,
+            ActivateAbility(p[2], landP2, AbilityId.intrinsicMana('W')),
+        ).result
+
+        p2DirectMana.isSuccess.shouldBeFalse()
+        p2DirectMana.newState shouldBe declared.newState
+        p2DirectMana.events shouldBe emptyList()
+
+        val p2Prompt = declared.pendingDecision.shouldBeInstanceOf<SelectManaSourcesDecision>()
+        val p2Accepted = proc.process(
+            declared.newState,
+            SubmitDecision(p[2], ManaSourcesSelectedResponse(p2Prompt.id, selectedSources = listOf(landP2))),
+        ).result
+        p2Accepted.pendingDecision.shouldBeInstanceOf<SelectManaSourcesDecision>().playerId shouldBe p[3]
+
+        val p3DirectMana = proc.process(
+            p2Accepted.newState,
+            ActivateAbility(p[3], landP3, AbilityId.intrinsicMana('W')),
+        ).result
+
+        p3DirectMana.isSuccess.shouldBeFalse()
+        p3DirectMana.newState shouldBe p2Accepted.newState
+        p3DirectMana.events shouldBe emptyList()
+    }
+
+    test("a direct mana ability is rejected without mutation for a p3-only team block-tax payer") {
+        val (state, p, objects) = taxedTeamBlockState()
+        val (archangel, _, blkP3, _, landP3) = objects
+        val proc = ActionProcessor(registry())
+        val declared = proc.process(
+            state,
+            DeclareBlockers(p[2], mapOf(blkP3 to listOf(archangel))),
+        ).result
+        declared.pendingDecision.shouldBeInstanceOf<SelectManaSourcesDecision>().playerId shouldBe p[3]
+
+        val directMana = proc.process(
+            declared.newState,
+            ActivateAbility(p[3], landP3, AbilityId.intrinsicMana('W')),
+        ).result
+
+        directMana.isSuccess.shouldBeFalse()
+        directMana.newState shouldBe declared.newState
+        directMana.events shouldBe emptyList()
+    }
+
+    test("block-tax payment rejects forged and duplicate sources without mutating state") {
+        val (state, p, objects) = taxedTeamBlockState()
+        val (archangel, blkP2, _, landP2, landP3) = objects
+        val proc = ActionProcessor(registry())
+        val declared = proc.process(
+            state,
+            DeclareBlockers(p[2], mapOf(blkP2 to listOf(archangel))),
+        ).result
+        val prompt = declared.pendingDecision.shouldBeInstanceOf<SelectManaSourcesDecision>()
+
+        val forged = proc.process(
+            declared.newState,
+            SubmitDecision(p[2], ManaSourcesSelectedResponse(prompt.id, selectedSources = listOf(landP3))),
+        ).result
+        forged.isSuccess.shouldBeFalse()
+        forged.newState shouldBe declared.newState
+        forged.events shouldBe emptyList()
+
+        val duplicate = shouldNotThrowAny {
+            proc.process(
+                declared.newState,
+                SubmitDecision(p[2], ManaSourcesSelectedResponse(prompt.id, selectedSources = listOf(landP2, landP2))),
+            ).result
+        }
+        duplicate.isSuccess.shouldBeFalse()
+        duplicate.newState shouldBe declared.newState
+        duplicate.events shouldBe emptyList()
+    }
+
+    test("legacy paused block-tax continuation still decodes as a one-payer payment") {
+        val json = Json {
+            serializersModule = com.wingedsheep.engine.core.engineSerializersModule
+            encodeDefaults = true
+        }
+        val original: ContinuationFrame = BlockTaxManaSelectionContinuation(
+            decisionId = "legacy-block-tax",
+            blockingPlayer = EntityId.of("defender"),
+            blockers = emptyMap(),
+            manaCost = com.wingedsheep.sdk.core.ManaCost.parse("{1}"),
+            availableSources = emptyList(),
+            autoPaySuggestion = emptyList(),
+        )
+        val objectPayload = json.parseToJsonElement(
+            json.encodeToString(ContinuationFrame.serializer(), original),
+        ).jsonObject.toMutableMap()
+        // This is exactly the old persisted shape: no atomic-plan fields existed yet.
+        objectPayload.remove("payerPlans")
+        objectPayload.remove("payerIndex")
+        objectPayload.remove("acceptedIntents")
+
+        val decoded = json.decodeFromString(
+            ContinuationFrame.serializer(),
+            JsonObject(objectPayload).toString(),
+        ).shouldBeInstanceOf<BlockTaxManaSelectionContinuation>()
+
+        decoded.payerPlans shouldBe emptyList()
+        decoded.manaCost shouldBe com.wingedsheep.sdk.core.ManaCost.parse("{1}")
+        decoded.blockingPlayer shouldBe EntityId.of("defender")
     }
 })

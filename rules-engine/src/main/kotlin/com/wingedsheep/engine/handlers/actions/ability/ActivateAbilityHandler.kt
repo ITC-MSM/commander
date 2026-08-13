@@ -175,6 +175,18 @@ class ActivateAbilityHandler(
         if (manaPaymentWindow != null && !ability.isManaAbility) {
             return "Only mana abilities can be activated while paying a cost"
         }
+        // A shared-team block-tax declaration is represented by several sequential payment
+        // prompts, but it remains one atomic turn-based action.  Its accepted source choices are
+        // deliberately collected as zero-mutation intents until every payer agrees. Allowing a
+        // player to activate an arbitrary mana ability here would mutate the game between those
+        // prompts and make a later decline impossible to roll back. The explicit, locked source
+        // menu remains available through SubmitDecision.
+        if (manaPaymentWindow != null &&
+            ManaPaymentWindow.isAtomicTeamBlockTaxWindow(state) &&
+            ability.isManaAbility
+        ) {
+            return "Mana abilities cannot be activated during an atomic team block-tax payment"
+        }
 
         // Check that the card is in the correct zone for this ability
         if (ability.activateFromZone != Zone.BATTLEFIELD) {

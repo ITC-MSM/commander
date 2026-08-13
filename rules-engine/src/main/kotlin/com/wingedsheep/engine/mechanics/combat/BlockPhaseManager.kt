@@ -132,30 +132,20 @@ internal class BlockPhaseManager(
             return ExecutionResult.error(state, projectedMustBlockValidation)
         }
 
-        // A single player can pay ordinary block taxes. A combined shared-team declaration may
-        // contain blockers with different controllers, so it cannot truthfully use that one-payer
-        // continuation. Keep that route explicitly unsupported until multi-controller payment is
-        // an atomic decision flow; never silently charge or accept it.
-        val sharedTeamDeclaration = state.sharedTurnTeam(blockingPlayer).size > 1
-        val blockerControllers = blockers.keys.mapNotNull { state.projectedState.getController(it) }.toSet()
-
-        // Calculate (but don't pay) the block tax. If non-zero, pause for the blocking
-        // player to confirm — same reasoning as attack taxes: don't tap their mana
-        // without consent.
+        // Calculate each controller's fixed share without paying anything. In shared-team combat,
+        // one representative submits the map but each teammate pays only for creatures they
+        // control. The resulting amounts are carried through the decision chain and are never
+        // recomputed between prompts.
         val projected = state.projectedState
-        val totalBlockTax = calculatePerCreatureTax(state, blockers.keys, projected) +
-            calculateBlockTax(state, blockers.keys, projected)
-        if (totalBlockTax > 0) {
-            // The existing payment continuation has exactly one payer.  In a shared-team
-            // declaration it is safe only when every taxed blocker belongs to that submitter;
-            // never charge a teammate's cost to the representative player.
-            if (sharedTeamDeclaration && blockerControllers != setOf(blockingPlayer)) {
-                return ExecutionResult.error(
-                    state,
-                    "Combined Two-Headed Giant blocks with block taxes are not supported yet"
-                )
-            }
-            return pauseForBlockTaxConfirmation(state, blockingPlayer, blockers, totalBlockTax)
+        val blockerIdsByController = blockers.keys.groupBy { blockerId ->
+            projected.getController(blockerId)!! // validateBlocker established a team controller
+        }
+        val taxByPayer = blockerIdsByController.mapValues { (_, payerBlockers) ->
+            val ids = payerBlockers.toSet()
+            calculatePerCreatureTax(state, ids, projected) + calculateBlockTax(state, ids, projected)
+        }.filterValues { it > 0 }
+        if (taxByPayer.isNotEmpty()) {
+            return pauseForBlockTaxConfirmation(state, blockingPlayer, blockers, taxByPayer)
         }
 
         return commitBlockDeclaration(state, blockingPlayer, blockers, taxEvents = emptyList())
@@ -1140,48 +1130,86 @@ internal class BlockPhaseManager(
         state: GameState,
         blockingPlayer: EntityId,
         blockers: Map<EntityId, List<EntityId>>,
-        totalTax: Int,
+        taxByPayer: Map<EntityId, Int>,
     ): ExecutionResult {
-        val manaCost = com.wingedsheep.sdk.core.ManaCost(
-            List(totalTax) { com.wingedsheep.sdk.core.ManaSymbol.generic(1) }
-        )
         val manaSolver = com.wingedsheep.engine.mechanics.mana.ManaSolver(cardRegistry)
-        val sources = manaSolver.findAvailableManaSources(state, blockingPlayer)
-        val sourceOptions = sources.map { source ->
-            com.wingedsheep.engine.core.ManaSourceOption(
-                entityId = source.entityId,
-                name = source.name,
-                producesColors = source.producesColors,
-                producesColorless = source.producesColorless,
-                requiresSacrifice = source.requiresSacrifice,
-                requiresTappingAnotherPermanent = source.tapPermanentsSubCost != null,
+        val atomicTeamPayment = state.sharedTurnTeam(blockingPlayer).size > 1
+        val payerOrder = state.sharedTurnTeam(blockingPlayer).filter(taxByPayer::containsKey)
+        val payerPlans = payerOrder.map { payerId ->
+            val totalTax = taxByPayer.getValue(payerId)
+            val manaCost = com.wingedsheep.sdk.core.ManaCost(
+                List(totalTax) { com.wingedsheep.sdk.core.ManaSymbol.generic(1) }
+            )
+            // Only the new atomic shared-team path needs a side-effect-free source subset:
+            // teammates may still decline later. Keep the established one-player tax payment
+            // surface intact, including its solver support for complex mana abilities.
+            val sources = manaSolver.findAvailableManaSources(state, payerId).let { candidates ->
+                if (!atomicTeamPayment) candidates else candidates.filter { source ->
+                    !source.requiresSacrifice &&
+                        source.tapPermanentsSubCost == null &&
+                        !source.hasPainCost &&
+                        source.painAmount == 0 &&
+                        source.manaAmount == 1 &&
+                        source.bonusManaPerTap == 0 &&
+                        source.bonusManaColorlessPerTap == 0 &&
+                        source.restriction == null &&
+                        source.colorRestrictions.isEmpty() &&
+                        source.colorActivationManaCost.isEmpty() &&
+                        source.colorPainCost.isEmpty() &&
+                        source.colorlessPainCost == 0 &&
+                        source.colorsRequiringSacrifice.isEmpty()
+                }
+            }
+            val sourceOptions = sources.map { source ->
+                com.wingedsheep.engine.core.ManaSourceOption(
+                    entityId = source.entityId,
+                    name = source.name,
+                    producesColors = source.producesColors,
+                    producesColorless = source.producesColorless,
+                    requiresSacrifice = source.requiresSacrifice,
+                    requiresTappingAnotherPermanent = source.tapPermanentsSubCost != null,
+                )
+            }
+            val pool = state.getEntity(payerId)?.get<ManaPoolComponent>()?.let {
+                ManaPool(it.white, it.blue, it.black, it.red, it.green, it.colorless)
+            } ?: ManaPool()
+            val remainingCost = pool.payPartial(manaCost).remainingCost
+            val solution = if (remainingCost.isEmpty()) null else {
+                manaSolver.solve(
+                    state = state,
+                    playerId = payerId,
+                    cost = remainingCost,
+                    precomputedSources = sources,
+                )
+            }
+            com.wingedsheep.engine.core.BlockTaxPayerPlan(
+                payerId = payerId,
+                manaCost = manaCost,
+                availableSources = sourceOptions,
+                autoPaySuggestion = solution?.sources?.map { it.entityId } ?: emptyList(),
             )
         }
-        val solution = manaSolver.solve(state, blockingPlayer, manaCost)
-        val autoPaySuggestion = solution?.sources?.map { it.entityId } ?: emptyList()
-
+        val firstPlan = payerPlans.first()
         val decisionId = java.util.UUID.randomUUID().toString()
         val decision = com.wingedsheep.engine.core.SelectManaSourcesDecision(
             id = decisionId,
-            playerId = blockingPlayer,
-            prompt = "Pay {$totalTax} to block with the declared creatures",
+            playerId = firstPlan.payerId,
+            prompt = "Pay {${firstPlan.manaCost.cmc}} to block with your declared creatures",
             context = com.wingedsheep.engine.core.DecisionContext(
                 sourceId = null,
                 sourceName = "Block tax",
                 phase = com.wingedsheep.engine.core.DecisionPhase.COMBAT,
             ),
-            availableSources = sourceOptions,
-            requiredCost = manaCost.toString(),
-            autoPaySuggestion = autoPaySuggestion,
+            availableSources = firstPlan.availableSources,
+            requiredCost = firstPlan.manaCost.toString(),
+            autoPaySuggestion = firstPlan.autoPaySuggestion,
             canDecline = true,
         )
         val continuation = com.wingedsheep.engine.core.BlockTaxManaSelectionContinuation(
             decisionId = decisionId,
             blockingPlayer = blockingPlayer,
             blockers = blockers,
-            manaCost = manaCost,
-            availableSources = sourceOptions,
-            autoPaySuggestion = autoPaySuggestion,
+            payerPlans = payerPlans,
         )
         return ExecutionResult.paused(
             state.withPendingDecision(decision).pushContinuation(continuation),

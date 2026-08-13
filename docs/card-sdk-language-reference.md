@@ -5311,7 +5311,12 @@ staticAbility {
   optional `condition` holds — is on the battlefield, every declared blocker is taxed `amountPerBlocker`
   (multiple sources stack). The optional `condition` gates the tax on the source's own state — e.g.
   Archangel uses `Conditions.SourceIsAttacking` ("As long as this creature is attacking, …"). Block
-  declaration pauses for the same mana-source confirmation as the attack tax. The pre-existing
+  declaration pauses for the same mana-source confirmation as the attack tax. In Two-Headed Giant,
+  the engine fixes each controller's share when the combined block is proposed, collects one
+  zero-mutation intent from each payer, and applies all payments plus the single declaration only
+  after everyone accepts; declining or invalidating any intent rolls the whole proposal back. This
+  atomic team path currently admits simple one-mana tap-only sources; sacrifice, secondary-tap,
+  pain, activation-mana, restricted, and multi-mana sources remain unsupported there. The pre-existing
   per-creature-type block tax (Whipgrass Entangler) uses `AttackBlockTaxPerCreatureType` floating
   effects instead.
 - `CantBeAttackedWithout(keyword, attackerFilter = null)` — Form of the Dragon-style "Creatures

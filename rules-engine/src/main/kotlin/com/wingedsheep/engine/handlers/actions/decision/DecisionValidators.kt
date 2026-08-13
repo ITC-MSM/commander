@@ -80,7 +80,7 @@ object DecisionValidators {
             is CombatResolutionDecision -> validateCombatResolution(decision, response)
             is SearchLibraryDecision -> validateLibrarySearch(decision, response)
             is ReorderLibraryDecision -> validateLibraryReorder(decision, response)
-            is SelectManaSourcesDecision -> validateManaSourcesSelection(response)
+            is SelectManaSourcesDecision -> validateManaSourcesSelection(decision, response)
             is BatchYesNoDecision -> validateBatchYesNo(response)
         }
     }
@@ -551,9 +551,19 @@ object DecisionValidators {
         return null
     }
 
-    private fun validateManaSourcesSelection(response: DecisionResponse): String? {
+    private fun validateManaSourcesSelection(
+        decision: SelectManaSourcesDecision,
+        response: DecisionResponse,
+    ): String? {
         if (response !is ManaSourcesSelectedResponse) {
             return "Expected mana sources selected response"
+        }
+        if (response.selectedSources.size != response.selectedSources.toSet().size) {
+            return "A mana source cannot be selected more than once"
+        }
+        val availableIds = decision.availableSources.map { it.entityId }.toSet()
+        if (response.selectedSources.any { it !in availableIds }) {
+            return "Selected mana source is not available for this payment"
         }
         return null
     }

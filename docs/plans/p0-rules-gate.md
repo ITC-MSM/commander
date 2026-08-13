@@ -35,13 +35,15 @@ green card-definition count or a successful UI build does not satisfy it.
 
 ## Explicit scope boundary
 
-The Two-Headed Giant/shared-turn combined defending-team declaration is implemented for
-ordinary no-tax blocks: one defender submits an atomic map containing blockers controlled by
-either teammate, the entire map is validated together, both teammates are marked as having
-declared, and the normal trigger/SBA/priority boundary follows. Multi-controller declarations
-where a block tax applies remain explicitly unsupported; they must not be accepted until a
-single atomic multi-player payment flow and its regression matrix exist. This evidence is
-separate from the FFA Commander simulation evidence above.
+The Two-Headed Giant/shared-turn combined defending-team declaration is atomic: one defender
+submits a map containing blockers controlled by either teammate, the entire map is validated
+together, and each controller with a tax share receives their own block-tax prompt. Payment responses are
+collected as zero-mutation intents; only after every payer accepts are all simple tap-only mana
+payments applied to a candidate state and the block committed once. Any decline, forged source,
+duplicate source, or failed payment leaves mana, blockers, and declaration markers unchanged.
+This first payment slice deliberately excludes sources with sacrifice, secondary tap, pain,
+activation-mana, restricted-mana, or multi-mana side effects. Those source shapes remain an
+explicit implementation gap, separate from the FFA Commander simulation evidence above.
 
 ## Next implementation order
 

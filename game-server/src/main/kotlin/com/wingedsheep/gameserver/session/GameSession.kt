@@ -862,6 +862,14 @@ class GameSession(
     fun getLegalActions(playerId: EntityId): List<LegalActionInfo> {
         val state = gameState ?: return emptyList()
 
+        // This is one atomic turn-based declaration, not an ordinary mana-payment window.
+        // Do this before actor routing: a team member may be represented by a different actor,
+        // but no seat may receive independently activatable mana abilities while the proposal is
+        // still reversible.
+        if (ManaPaymentWindow.isAtomicTeamBlockTaxWindow(state)) {
+            return emptyList()
+        }
+
         // CR 605.3a — while a rule or effect is asking this seat for a mana payment (ward, "you may
         // pay {B}", an attack tax) they hold no priority, but they may still activate mana
         // abilities. Offer exactly those: the pre-computed source menu on the decision only covers

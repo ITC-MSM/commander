@@ -1,16 +1,35 @@
 package com.wingedsheep.gameserver.session
 
+import com.wingedsheep.engine.core.BlockTaxManaSelectionContinuation
+import com.wingedsheep.engine.core.BlockTaxPayerPlan
+import com.wingedsheep.engine.core.DecisionContext
+import com.wingedsheep.engine.core.ManaSourceOption
+import com.wingedsheep.engine.core.SelectManaSourcesDecision
+import com.wingedsheep.engine.state.ComponentContainer
+import com.wingedsheep.engine.state.GameState
+import com.wingedsheep.engine.state.ZoneKey
+import com.wingedsheep.engine.mechanics.mana.ManaPaymentWindow
+import com.wingedsheep.engine.state.components.identity.CardComponent
+import com.wingedsheep.engine.state.components.identity.ControllerComponent
+import com.wingedsheep.engine.state.components.identity.OwnerComponent
 import com.wingedsheep.engine.state.components.identity.LifeTotalComponent
 import com.wingedsheep.gameserver.ScenarioTestBase
 import com.wingedsheep.gameserver.protocol.ServerMessage
+import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.core.Format
+import com.wingedsheep.sdk.core.ManaCost
+import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.core.Zone
+import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.booleans.shouldBeTrue
+import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import io.kotest.matchers.types.shouldBeInstanceOf
 import io.mockk.every
 import io.mockk.mockk
 import org.springframework.web.socket.WebSocketSession
@@ -40,6 +59,24 @@ class TwoHeadedGiantSessionTest : ScenarioTestBase() {
         }
         session.startGame()
         return session to ids
+    }
+
+    /** Add an untapped basic mana source so the pending source menu is materially non-empty. */
+    private fun GameState.withPlains(owner: EntityId): Pair<GameState, EntityId> {
+        val definition = CardDefinition.basicLand("Plains", Subtype.PLAINS)
+        val id = EntityId.generate()
+        val permanent = ComponentContainer.of(
+            CardComponent(
+                cardDefinitionId = definition.name,
+                name = definition.name,
+                manaCost = definition.manaCost,
+                typeLine = definition.typeLine,
+                ownerId = owner,
+            ),
+            OwnerComponent(owner),
+            ControllerComponent(owner),
+        )
+        return withEntity(id, permanent).addToZone(ZoneKey(owner, Zone.BATTLEFIELD), id) to id
     }
 
     init {
@@ -113,6 +150,60 @@ class TwoHeadedGiantSessionTest : ScenarioTestBase() {
                 it.isVisible shouldBe false
                 it.cardIds.size shouldBe 0
             }
+        }
+
+        test("atomic team block-tax source decision stays visible but offers no separate mana actions") {
+            val (session, ids) = started2hg()
+            val payer = ids[2]
+            val (withLand, plains) = session.getStateForTesting()!!.withPlains(payer)
+            val source = ManaSourceOption(
+                entityId = plains,
+                name = "Plains",
+                producesColors = setOf(Color.WHITE),
+                producesColorless = false,
+            )
+            val decision = SelectManaSourcesDecision(
+                id = "atomic-team-block-tax",
+                playerId = payer,
+                prompt = "Pay {1} to declare blockers?",
+                context = DecisionContext(),
+                availableSources = listOf(source),
+                requiredCost = "{1}",
+                autoPaySuggestion = listOf(plains),
+                canDecline = true,
+            )
+            val atomicBlockTax = BlockTaxManaSelectionContinuation(
+                decisionId = decision.id,
+                blockingPlayer = payer,
+                blockers = emptyMap(),
+                payerPlans = listOf(
+                    BlockTaxPayerPlan(
+                        payerId = payer,
+                        manaCost = ManaCost.parse("{1}"),
+                        availableSources = listOf(source),
+                        autoPaySuggestion = listOf(plains),
+                    ),
+                ),
+            )
+            val paused = withLand
+                .withPendingDecision(decision)
+                .pushContinuation(atomicBlockTax)
+            session.injectStateForDevScenario(paused)
+            // injectStateForDevScenario deliberately clears connected sessions; re-attach this
+            // fixture's seats so the client-state route is exercised, not only the engine state.
+            ids.forEachIndexed { i, id ->
+                session.addPlayer(PlayerSession(mockWs("atomic-ws$i"), id, "Player${i + 1}"), mapOf("Forest" to 40))
+            }
+
+            ManaPaymentWindow.isAtomicTeamBlockTaxWindow(session.getStateForTesting()!!).shouldBeTrue()
+            session.getLegalActions(payer).shouldBeEmpty()
+
+            val update = session.createStateUpdate(payer, emptyList()) as ServerMessage.StateUpdate
+            update.legalActions.shouldBeEmpty()
+            val visible = update.pendingDecision.shouldBeInstanceOf<SelectManaSourcesDecision>()
+            visible.id shouldBe decision.id
+            visible.playerId shouldBe payer
+            visible.availableSources.map { it.entityId } shouldContainExactly listOf(plains)
         }
 
         test("non-team game is unchanged: no team index, every other seat is an opponent") {

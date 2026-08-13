@@ -7,6 +7,7 @@ import com.wingedsheep.engine.core.PermanentsSacrificedEvent
 import com.wingedsheep.engine.core.TappedEvent
 import com.wingedsheep.engine.core.ReopenManaPaymentDecisionContinuation
 import com.wingedsheep.engine.core.SelectManaSourcesDecision
+import com.wingedsheep.engine.core.BlockTaxManaSelectionContinuation
 import com.wingedsheep.engine.core.GameEvent
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
@@ -49,6 +50,18 @@ object ManaPaymentWindow {
     fun openFor(state: GameState, actorId: EntityId): SelectManaSourcesDecision? {
         val decision = state.pendingDecision as? SelectManaSourcesDecision ?: return null
         return decision.takeIf { state.actorFor(it.playerId) == actorId }
+    }
+
+    /**
+     * A combined shared-team block-tax payment must remain transactional: source choices are
+     * collected as intents and a later teammate may still decline the entire declaration.  Unlike
+     * ordinary payment windows, arbitrary mana-ability activation would mutate state in between
+     * those intents and cannot be rolled back safely.  The locked decision's own source menu is
+     * therefore the sole payment surface for this narrow atomic flow.
+     */
+    fun isAtomicTeamBlockTaxWindow(state: GameState): Boolean {
+        val continuation = state.peekContinuation() as? BlockTaxManaSelectionContinuation ?: return false
+        return state.sharedTurnTeam(continuation.blockingPlayer).size > 1
     }
 
     /**

@@ -3,6 +3,7 @@ package com.wingedsheep.engine.mechanics.sba.player
 import com.wingedsheep.engine.core.ExecutionResult
 import com.wingedsheep.engine.core.GameEndReason
 import com.wingedsheep.engine.core.PlayerLeftGameEvent
+import com.wingedsheep.engine.core.BlockTaxManaSelectionContinuation
 import com.wingedsheep.engine.mechanics.layers.SerializableModification
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.combat.BlockedComponent
@@ -51,11 +52,23 @@ object PlayerLeavesGameProcessor {
         // blocker coordinator selects the next live defender. Other pending decisions remain
         // untouched: this processor is deliberately not a general continuation-cancellation API.
         val pending = s.pendingDecision
-        if (pending?.playerId == leaver) {
-            val top = s.peekContinuation()
-            if (top?.decisionId == pending.id) {
-                s = s.popContinuation().second.clearPendingDecision()
-            }
+        val top = s.peekContinuation()
+        val atomicTeamBlockTax = top as? BlockTaxManaSelectionContinuation
+        val leavesAtomicTeamTax = atomicTeamBlockTax != null &&
+            (atomicTeamBlockTax.blockingPlayer == leaver ||
+                atomicTeamBlockTax.payerPlans.any { it.payerId == leaver } ||
+                atomicTeamBlockTax.blockers.keys.any { blockerId ->
+                    s.projectedState.getController(blockerId) == leaver
+                })
+        if (pending != null &&
+            (pending.playerId == leaver || leavesAtomicTeamTax) &&
+            top?.decisionId == pending.id
+        ) {
+            // A combined team payment collects only intents. If any representative or payer
+            // leaves, the whole uncommitted declaration is abandoned; keeping a prompt for a
+            // remaining teammate would otherwise strand a continuation that references departed
+            // resources.
+            s = s.popContinuation().second.clearPendingDecision()
         }
 
         // 1. End any effect granting the leaver control of an object (CR 800.4a). Removing

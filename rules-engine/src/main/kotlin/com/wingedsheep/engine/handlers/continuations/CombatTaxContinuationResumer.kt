@@ -2,6 +2,8 @@ package com.wingedsheep.engine.handlers.continuations
 
 import com.wingedsheep.engine.core.AttackTaxManaSelectionContinuation
 import com.wingedsheep.engine.core.BlockTaxManaSelectionContinuation
+import com.wingedsheep.engine.core.BlockTaxPayerPlan
+import com.wingedsheep.engine.core.BlockTaxPaymentIntent
 import com.wingedsheep.engine.core.BlockDeclarationSbaBoundaryContinuation
 import com.wingedsheep.engine.core.BlockDeclarationPostPlacementContinuation
 import com.wingedsheep.engine.core.DecisionResponse
@@ -10,14 +12,19 @@ import com.wingedsheep.engine.core.GameEvent
 import com.wingedsheep.engine.core.ManaSourceOption
 import com.wingedsheep.engine.core.ManaSourcesSelectedResponse
 import com.wingedsheep.engine.core.PostDecisionHandling
+import com.wingedsheep.engine.core.SelectManaSourcesDecision
+import com.wingedsheep.engine.core.DecisionContext
+import com.wingedsheep.engine.core.DecisionPhase
 import com.wingedsheep.engine.core.tap
 import com.wingedsheep.engine.mechanics.mana.ManaPool
 import com.wingedsheep.engine.mechanics.mana.ManaSolver
 import com.wingedsheep.engine.handlers.actions.combat.BlockDeclarationFinalizer
 import com.wingedsheep.engine.state.GameState
+import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.state.components.player.ManaPoolComponent
 import com.wingedsheep.sdk.core.ManaCost
 import com.wingedsheep.sdk.model.EntityId
+import java.util.UUID
 
 /**
  * Resumes attack / block declarations that paused for the player to pick mana sources
@@ -110,24 +117,106 @@ class CombatTaxContinuationResumer(
         if (response !is ManaSourcesSelectedResponse) {
             return ExecutionResult.error(state, "Expected mana sources selected response for block tax")
         }
-        if (response.isDecline(floatingCovers(state, continuation.blockingPlayer, continuation.manaCost))) {
-            // Declining cancels this proposed declaration. The same defender still owns the
-            // turn-based declaration action; this is not a priority/SBA boundary.
+        val legacyPlan = continuation.payerPlans.isEmpty()
+        val payerPlans = if (legacyPlan) {
+            val legacyManaCost = continuation.manaCost
+                ?: return ExecutionResult.error(state, "Missing payer plan for block tax")
+            listOf(
+                BlockTaxPayerPlan(
+                    payerId = continuation.blockingPlayer,
+                    manaCost = legacyManaCost,
+                    availableSources = continuation.availableSources,
+                    autoPaySuggestion = continuation.autoPaySuggestion,
+                )
+            )
+        } else continuation.payerPlans
+        val plan = payerPlans.getOrNull(continuation.payerIndex)
+            ?: return ExecutionResult.error(state, "Missing payer plan for block tax")
+        if (response.isDecline(floatingCovers(state, plan.payerId, plan.manaCost))) {
+            // No prior payer has changed game state: declining any prompt rolls the whole proposed
+            // team declaration back and keeps the defending team at its turn-based action.
             return ExecutionResult.success(state).copy(
                 postDecisionHandling = PostDecisionHandling.RETURN_AS_IS,
             )
         }
 
-        val paid = payTax(state, continuation.blockingPlayer, continuation.manaCost, continuation.availableSources, response)
-            ?: return ExecutionResult.error(state, "Cannot pay block tax of ${continuation.manaCost}")
+        // Preserve the established single-player payment flow.  It may use complex mana
+        // abilities and the solver's normal auto-pay semantics; only a shared-team proposal
+        // needs the deferred, side-effect-free intent transaction below.
+        if (legacyPlan || state.sharedTurnTeam(continuation.blockingPlayer).size <= 1) {
+            val paid = payTax(
+                state,
+                plan.payerId,
+                plan.manaCost,
+                plan.availableSources,
+                response,
+            ) ?: return ExecutionResult.error(state, "Cannot pay block tax of ${plan.manaCost}")
+            val committed = services.combatManager.blockPhase.commitBlockDeclaration(
+                state = paid.state,
+                blockingPlayer = continuation.blockingPlayer,
+                blockers = continuation.blockers,
+                taxEvents = paid.events,
+            )
+            if (!committed.isSuccess) return committed
+            return BlockDeclarationFinalizer.finish(
+                committed.newState,
+                committed.events,
+                services.triggerDetector,
+                services.triggerProcessor,
+                services.sbaChecker,
+                services.stateTriggerPoller,
+            )
+        }
+
+        val intent = BlockTaxPaymentIntent(
+            payerId = plan.payerId,
+            selectedSources = response.selectedSources,
+            autoPay = response.autoPay,
+        )
+        // Validate this intent against the immutable plan on a throw-away candidate. The returned
+        // state/events are deliberately discarded until every teammate has accepted.
+        if (payTax(state, plan, intent) == null) {
+            return ExecutionResult.error(state, "Cannot pay block tax of ${plan.manaCost}")
+        }
+
+        val accepted = continuation.acceptedIntents + intent
+        val nextIndex = continuation.payerIndex + 1
+        if (nextIndex < payerPlans.size) {
+            val nextPlan = payerPlans[nextIndex]
+            val decisionId = UUID.randomUUID().toString()
+            val decision = blockTaxDecision(decisionId, nextPlan)
+            val nextContinuation = continuation.copy(
+                decisionId = decisionId,
+                payerIndex = nextIndex,
+                acceptedIntents = accepted,
+            )
+            return ExecutionResult.paused(
+                state.withPendingDecision(decision).pushContinuation(nextContinuation),
+                decision,
+            ).copy(postDecisionHandling = PostDecisionHandling.RETURN_AS_IS)
+        }
+
+        // Every intent is now known. Apply them to one candidate state; if any application fails,
+        // return the untouched pre-payment state and emit no mana/block events.
+        var paidState = state
+        val taxEvents = mutableListOf<GameEvent>()
+        if (accepted.size != payerPlans.size) {
+            return ExecutionResult.error(state, "Incomplete block-tax payment intents")
+        }
+        for ((payerPlan, acceptedIntent) in payerPlans.zip(accepted)) {
+            val paid = payTax(paidState, payerPlan, acceptedIntent)
+                ?: return ExecutionResult.error(state, "Cannot pay block tax of ${payerPlan.manaCost}")
+            paidState = paid.state
+            taxEvents += paid.events
+        }
 
         val committed = services.combatManager.blockPhase.commitBlockDeclaration(
-            state = paid.state,
+            state = paidState,
             blockingPlayer = continuation.blockingPlayer,
             blockers = continuation.blockers,
-            taxEvents = paid.events,
+            taxEvents = taxEvents,
         )
-        if (!committed.isSuccess) return committed
+        if (!committed.isSuccess) return ExecutionResult.error(state, committed.error ?: "Cannot commit block declaration")
         return BlockDeclarationFinalizer.finish(
             committed.newState,
             committed.events,
@@ -140,12 +229,107 @@ class CombatTaxContinuationResumer(
 
     private data class TaxPayment(val state: GameState, val events: List<GameEvent>)
 
+    private fun blockTaxDecision(decisionId: String, plan: BlockTaxPayerPlan): SelectManaSourcesDecision =
+        SelectManaSourcesDecision(
+            id = decisionId,
+            playerId = plan.payerId,
+            prompt = "Pay {${plan.manaCost.cmc}} to block with your declared creatures",
+            context = DecisionContext(
+                sourceId = null,
+                sourceName = "Block tax",
+                phase = DecisionPhase.COMBAT,
+            ),
+            availableSources = plan.availableSources,
+            requiredCost = plan.manaCost.toString(),
+            autoPaySuggestion = plan.autoPaySuggestion,
+            canDecline = true,
+        )
+
+    /** Existing single-payer attack-tax path, including solver-driven auto-pay. */
     private fun payTax(
         state: GameState,
         playerId: EntityId,
         manaCost: ManaCost,
         availableSources: List<ManaSourceOption>,
         response: ManaSourcesSelectedResponse,
+    ): TaxPayment? {
+        if (!response.autoPay) {
+            if (response.selectedSources.size != response.selectedSources.toSet().size) return null
+            return payTax(state, playerId, manaCost, availableSources, response.selectedSources)
+        }
+
+        val playerEntity = state.getEntity(playerId) ?: return null
+        val poolComponent = playerEntity.get<ManaPoolComponent>() ?: return null
+        var pool = ManaPool(
+            poolComponent.white, poolComponent.blue, poolComponent.black,
+            poolComponent.red, poolComponent.green, poolComponent.colorless,
+        )
+        val partial = pool.payPartial(manaCost)
+        var currentState = state
+        val events = mutableListOf<GameEvent>()
+        if (!partial.remainingCost.isEmpty()) {
+            val solution = ManaSolver(services.cardRegistry).solve(currentState, playerId, partial.remainingCost)
+                ?: return null
+            for (source in solution.sources) {
+                val (tappedState, tapEvent) = tap(currentState, source.entityId)
+                currentState = tappedState
+                tapEvent?.let(events::add)
+            }
+            for ((_, production) in solution.manaProduced) {
+                pool = if (production.color != null) {
+                    pool.add(production.color, production.amount)
+                } else {
+                    pool.addColorless(production.colorless)
+                }
+            }
+        }
+        val newPool = pool.pay(manaCost) ?: return null
+        currentState = currentState.updateEntity(playerId) { container ->
+            container.with(
+                ManaPoolComponent(
+                    white = newPool.white, blue = newPool.blue, black = newPool.black,
+                    red = newPool.red, green = newPool.green, colorless = newPool.colorless,
+                )
+            )
+        }
+        return TaxPayment(currentState, events)
+    }
+
+    private fun payTax(
+        state: GameState,
+        plan: BlockTaxPayerPlan,
+        intent: BlockTaxPaymentIntent,
+    ): TaxPayment? {
+        if (intent.payerId != plan.payerId) return null
+        val selectedSources = if (intent.autoPay) plan.autoPaySuggestion else intent.selectedSources
+        if (selectedSources.size != selectedSources.toSet().size) return null
+        val availableById = plan.availableSources.associateBy { it.entityId }
+        if (selectedSources.any { it !in availableById }) return null
+
+        // Recheck the fixed source identities before candidate mutation. This rejects forged,
+        // off-controller, missing, and already-tapped sources even if a stale client submits them.
+        for (sourceId in selectedSources) {
+            if (sourceId !in state.getBattlefield()) return null
+            val source = state.getEntity(sourceId) ?: return null
+            if (state.projectedState.getController(sourceId) != plan.payerId) return null
+            if (source.has<TappedComponent>()) return null
+        }
+
+        return payTax(
+            state = state,
+            playerId = plan.payerId,
+            manaCost = plan.manaCost,
+            availableSources = plan.availableSources,
+            selectedSources = selectedSources,
+        )
+    }
+
+    private fun payTax(
+        state: GameState,
+        playerId: EntityId,
+        manaCost: ManaCost,
+        availableSources: List<ManaSourceOption>,
+        selectedSources: List<EntityId>,
     ): TaxPayment? {
         val playerEntity = state.getEntity(playerId) ?: return null
         val poolComponent = playerEntity.get<ManaPoolComponent>() ?: return null
@@ -160,38 +344,17 @@ class CombatTaxContinuationResumer(
         val events = mutableListOf<GameEvent>()
 
         if (!remainingCost.isEmpty()) {
-            if (response.autoPay) {
-                val solver = ManaSolver(services.cardRegistry)
-                val solution = solver.solve(currentState, playerId, remainingCost) ?: return null
-                for (source in solution.sources) {
-                    val (tappedState, tapEvent) = tap(currentState, source.entityId)
-                    currentState = tappedState
-                    tapEvent?.let(events::add)
-                }
-                for ((_, production) in solution.manaProduced) {
-                    pool = if (production.color != null) {
-                        pool.add(production.color, production.amount)
-                    } else {
-                        pool.addColorless(production.colorless)
-                    }
-                }
-            } else {
-                val sourceMap = availableSources.associateBy { it.entityId }
-                for (sourceId in response.selectedSources) {
-                    val source = sourceMap[sourceId] ?: return null
-                    if (source.requiresSacrifice || source.requiresTappingAnotherPermanent) {
-                        // Combat-tax payment doesn't support sac / sub-cost sources yet — fall back
-                        // to returning null so the caller errors with a clear message.
-                        return null
-                    }
-                    val (tappedState, tapEvent) = tap(currentState, sourceId)
-                    currentState = tappedState
-                    tapEvent?.let(events::add)
-                    pool = when {
-                        source.producesColors.isNotEmpty() -> pool.add(source.producesColors.first())
-                        source.producesColorless -> pool.addColorless(1)
-                        else -> pool
-                    }
+            val sourceMap = availableSources.associateBy { it.entityId }
+            for (sourceId in selectedSources) {
+                val source = sourceMap[sourceId] ?: return null
+                if (source.requiresSacrifice || source.requiresTappingAnotherPermanent) return null
+                val (tappedState, tapEvent) = tap(currentState, sourceId)
+                currentState = tappedState
+                tapEvent?.let(events::add)
+                pool = when {
+                    source.producesColors.isNotEmpty() -> pool.add(source.producesColors.first())
+                    source.producesColorless -> pool.addColorless(1)
+                    else -> pool
                 }
             }
         }
