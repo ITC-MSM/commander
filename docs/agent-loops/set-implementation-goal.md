@@ -33,7 +33,14 @@ than the file does, and they are the ones that break an unattended overnight run
 ## The command
 
 Substitute the set name for `<SET>` in both places. The batch policy and the reasoning behind it are in
-[Why batches](set-implementation-loop.md#why-batches).
+[Why batches](set-implementation-loop.md#why-batches); why the PR scan is set-scoped is in
+[Why the set scope matters](set-implementation-loop.md#why-the-set-scope-matters) — it bites harder
+here, since a goal survives compaction and can spend a whole overnight run on the wrong PR.
+
+The worktree rule ([Why a worktree](set-implementation-loop.md#why-a-worktree)) is restated inside
+the objective for the same reason: Codex has no `EnterWorktree` to keep the session pinned, so after
+a compaction the only thing that remembers the work isn't happening on `main` is the objective text.
+Hence the explicit "re-check `git worktree list` and `pwd`" in step 1.
 
 ```
 /goal Implement every unimplemented card in MTG set <SET>, one reviewed PR at a time.
@@ -45,13 +52,13 @@ These are Claude Code skills, not Codex commands — read the file when the step
 - .agents/skills/verify/SKILL.md         which build/test gate to run
 
 Repeat until the set is done:
-1. Re-orient from real state — `gh pr list --author @me --state open --json number,title,reviewDecision,statusCheckRollup` and the current branch. After a compaction, re-read; never assume where you left off.
-2. No PR of ours open → pick the next unimplemented cards from <SET> (diff the set's card list against the definitions under mtg-sets). Group up to five that all compose from existing Effects.*/Patterns.* into one batch and follow add-card, preferring cards sharing a colour, mechanic, or cycle. A card needing a large new engine/SDK capability is NOT batchable — give it its own PR via add-feature. Verify once for the batch per verify/SKILL.md, then open the PR.
-3. PR open, unreviewed → follow review-changes on it.
+1. Re-orient from real state — `gh pr list --author @me --state open --json number,title,headRefName,files,reviewDecision,statusCheckRollup`, `git worktree list`, `pwd`, and the current branch. After a compaction, re-read; never assume where you left off or which tree you are in. A PR belongs to this goal only if it ships <SET> content — judge that by its changed files (definitions under the set's package, that set's snapshot), not by its title alone. Open PRs for other sets or other work are outside the goal: leave them alone, do not review, fix, or merge them.
+2. No <SET> PR of ours open → work in your own worktree, never in the shared main checkout: reuse the worktree holding this set's in-flight branch if there is one, else `git worktree add .claude/worktrees/<set>-cards -b worktree-<set>-cards main`. Every file path, every `just` gate, every commit and `gh` call runs from that worktree — a command that leaves it gates the wrong tree and reports a green for a build that never saw your cards. Then pick the next unimplemented cards from <SET> (diff the set's card list against the definitions under mtg-sets). Group up to five that all compose from existing Effects.*/Patterns.* into one batch and follow add-card, preferring cards sharing a colour, mechanic, or cycle. A card needing a large new engine/SDK capability is NOT batchable — give it its own PR via add-feature. Verify once for the batch per verify/SKILL.md, then open the PR.
+3. <SET> PR open, unreviewed → follow review-changes on it.
 4. Findings unresolved → fix, re-verify, push.
-5. Clean and checks green → `gh pr merge --squash --delete-branch`, back to main, pull.
+5. Clean and checks green → `gh pr merge --squash --delete-branch` from the main checkout (not from inside the branch's own worktree, or the local branch delete fails), then `git worktree remove` that worktree, back to main, pull. The next batch branches a fresh worktree from updated main.
 
-Constraints: one batch or one feature per PR, never two in flight. A card that turns out to need new SDK vocabulary drops out of the batch — reset its commit, note it, ship the rest. Build only through `just`, never raw ./gradlew, and gate once per batch rather than per card. Each card still gets its own definition file and its own scenario test file — never a shared batch test. Never revert, stash, or discard changes you did not make; if someone else's work breaks the build, report it and mark the goal blocked.
+Constraints: one batch or one feature per PR, never two <SET> PRs in flight — a PR for some other set does not block you from starting one here. A card that turns out to need new SDK vocabulary drops out of the batch — reset its commit, note it, ship the rest. Build only through `just`, never raw ./gradlew, and gate once per batch rather than per card. Each card still gets its own definition file and its own scenario test file — never a shared batch test. Never revert, stash, or discard changes you did not make; if someone else's work breaks the build, report it and mark the goal blocked.
 
 Done when every card in <SET> is implemented and merged. If a card turns on a rules question you can't confirm against the Comprehensive Rules, mark blocked rather than guessing.
 ```
