@@ -1407,15 +1407,16 @@ data object EquipAbilitiesAtInstantSpeed : StaticAbility {
 }
 
 /**
- * The controller may pay {0} rather than the equip cost of the first equip ability they
- * activate during each of their turns (Forge Anew). The engine zeroes the mana cost of the
- * controller's first equip activation each turn while this is active and tracks the count via
- * the per-turn `EquipActivationsThisTurnComponent`.
+ * The controller may pay {0} rather than the equip cost of the first equip ability they activate
+ * each turn (Kíli the Resourceful; Forge Anew narrows the usable timing to its controller's turns).
+ * The {0} is an alternative cost for the activation and replaces the entire equip cost, including
+ * nonmana parts. The engine
+ * tracks the activation count via the per-turn `EquipActivationsThisTurnComponent`.
  */
 @SerialName("FreeFirstEquipEachTurn")
 @Serializable
 data object FreeFirstEquipEachTurn : StaticAbility {
-    override val description: String = "You may pay {0} rather than pay the equip cost of the first equip ability you activate during each of your turns"
+    override val description: String = "You may pay {0} rather than pay the equip cost of the first equip ability you activate each turn"
 }
 
 /**
