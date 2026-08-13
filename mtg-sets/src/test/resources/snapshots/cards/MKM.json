@@ -1613,6 +1613,107 @@
     ]
 }
 
+// Concealed Weapon
+{
+    "name": "Concealed Weapon",
+    "manaCost": "{1}{R}",
+    "typeLine": "Artifact — Equipment",
+    "oracleText": "Equipped creature gets +3/+0.\nDisguise {2}{R} (You may cast this card face down for {3} as a 2/2 creature with ward {2}. Turn it face up any time for its disguise cost.)\nWhen this Equipment is turned face up, attach it to target creature you control.\nEquip {1}{R}",
+    "keywordAbilities": [
+        {
+            "type": "Disguise",
+            "disguiseCost": {
+                "type": "PayAtom",
+                "atom": {
+                    "type": "AtomMana",
+                    "cost": "{2}{R}"
+                }
+            }
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "TurnFaceUpEvent",
+                "effect": "AttachEquipment",
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature ctrl:you"
+                    }
+                },
+                "descriptionOverride": "When this Equipment is turned face up, attach it to target creature you control."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{1}{R}"
+                    }
+                },
+                "effect": {
+                    "type": "AttachEquipment",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "creature you control"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        },
+                        "id": "creature you control"
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "isEquipAbility": true
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 3,
+                "toughnessBonus": 0
+            }
+        ]
+    },
+    "equipCost": "{1}{R}",
+    "metadata": {
+        "collectorNumber": "117",
+        "rarity": "UNCOMMON",
+        "artist": "Nicholas Elias",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/8/38e31fa6-a445-47c6-a73f-135087f6d760.jpg?1783912886",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "Attaching Concealed Weapon with its triggered ability isn't the same as using its equip ability. You don't pay mana for the attachment, and the timing restrictions for equip abilities don't apply."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "If the target creature becomes an illegal target, Concealed Weapon remains on the battlefield unattached."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "You may turn Concealed Weapon face up even if you don't control any creatures."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "Any time you have priority, you may turn the face-down creature face up by revealing what its disguise cost is and paying that cost. This is a special action. It doesn't use the stack and can't be responded to. Only a face-down permanent can be turned face up this way; a face-down spell cannot."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Convenient Target
 {
     "name": "Convenient Target",
@@ -1926,6 +2027,76 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Crowd-Control Warden
+{
+    "name": "Crowd-Control Warden",
+    "manaCost": "{3}{G}{W}",
+    "typeLine": "Creature — Centaur Soldier",
+    "oracleText": "As this creature enters or is turned face up, put X +1/+1 counters on it, where X is the number of other creatures you control.\nDisguise {3}{G/W}{G/W} (You may cast this card face down for {3} as a 2/2 creature with ward {2}. Turn it face up any time for its disguise cost.)",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywordAbilities": [
+        {
+            "type": "Disguise",
+            "disguiseCost": {
+                "type": "PayAtom",
+                "atom": {
+                    "type": "AtomMana",
+                    "cost": "{3}{G/W}{G/W}"
+                }
+            },
+            "faceUpEffect": {
+                "type": "AddDynamicCounters",
+                "counterType": "+1/+1",
+                "amount": {
+                    "type": "AggregateBattlefield",
+                    "player": "You",
+                    "filter": "creature",
+                    "excludeSelf": true
+                },
+                "target": "Self"
+            }
+        }
+    ],
+    "script": {
+        "replacementEffects": [
+            {
+                "type": "EntersWithDynamicCounters",
+                "count": {
+                    "type": "AggregateBattlefield",
+                    "player": "You",
+                    "filter": "creature"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "193",
+        "artist": "Diego Gisbert",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/d/cdf0578f-4966-4ecd-81e1-83ae13126f13.jpg?1783912856",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "If Crowd-Control Warden enters the battlefield at the same time as one or more creatures, those creatures won't count for the purposes of Crowd-Control Warden's first ability."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "Any time you have priority, you may turn the face-down creature face up by revealing what its disguise cost is and paying that cost. This is a special action. It doesn't use the stack and can't be responded to. Only a face-down permanent can be turned face up this way; a face-down spell cannot."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "Because the permanent is on the battlefield both before and after it's turned face up, turning a permanent face up doesn't cause any enters-the-battlefield abilities to trigger."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN",
+        "WHITE"
     ]
 }
 
@@ -3371,6 +3542,145 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Flourishing Bloom-Kin
+{
+    "name": "Flourishing Bloom-Kin",
+    "manaCost": "{1}{G}",
+    "typeLine": "Creature — Plant Elemental",
+    "oracleText": "This creature gets +1/+1 for each Forest you control.\nDisguise {4}{G}\nWhen this creature is turned face up, search your library for up to two Forest cards and reveal them. Put one of them onto the battlefield tapped and the other into your hand, then shuffle.",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 0
+    },
+    "keywordAbilities": [
+        {
+            "type": "Disguise",
+            "disguiseCost": {
+                "type": "PayAtom",
+                "atom": {
+                    "type": "AtomMana",
+                    "cost": "{4}{G}"
+                }
+            }
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "TurnFaceUpEvent",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Library",
+                                "filter": "land Forest"
+                            },
+                            "storeAs": "searchable"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "searchable",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 2
+                                }
+                            },
+                            "storeSelected": "found",
+                            "prompt": "Search your library for up to two Forest cards"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "found",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "toBattlefield",
+                            "storeRemainder": "toHand",
+                            "prompt": "Choose which Forest enters the battlefield tapped; the other goes to your hand.",
+                            "selectedLabel": "Onto the battlefield tapped",
+                            "remainderLabel": "Into your hand"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "toBattlefield",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Battlefield",
+                                "placement": "Tapped"
+                            },
+                            "revealed": true
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "toHand",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Hand"
+                            },
+                            "revealed": true
+                        },
+                        "ShuffleLibrary",
+                        "EmitLibrarySearchedEvent"
+                    ]
+                },
+                "descriptionOverride": "When this creature is turned face up, search your library for up to two Forest cards and reveal them. Put one of them onto the battlefield tapped and the other into your hand, then shuffle."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "GrantDynamicStats",
+                "filter": {
+                    "baseFilter": "permanent",
+                    "scope": "Self"
+                },
+                "powerBonus": {
+                    "type": "AggregateBattlefield",
+                    "player": "You",
+                    "filter": "land Forest"
+                },
+                "toughnessBonus": {
+                    "type": "AggregateBattlefield",
+                    "player": "You",
+                    "filter": "land Forest"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "160",
+        "rarity": "UNCOMMON",
+        "artist": "Ben Hill",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/d/5ddcb31e-9301-44f1-b138-0573fbf56a47.jpg?1783912867",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "If you find only one Forest card with Flourishing Bloom-Kin's last ability, you'll put it onto the battlefield tapped. You won't have the option to put it into your hand."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "Any time you have priority, you may turn the face-down creature face up by revealing what its disguise cost is and paying that cost. This is a special action. It doesn't use the stack and can't be responded to. Only a face-down permanent can be turned face up this way; a face-down spell cannot."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "Because the permanent is on the battlefield both before and after it's turned face up, turning a permanent face up doesn't cause any enters-the-battlefield abilities to trigger."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 
@@ -7035,6 +7345,216 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Polygraph Orb
+{
+    "name": "Polygraph Orb",
+    "manaCost": "{4}{B}",
+    "typeLine": "Artifact",
+    "oracleText": "When this artifact enters, look at the top four cards of your library. Put two of them into your hand and the rest into your graveyard. You lose 2 life.\n{2}, {T}, Collect evidence 3: Each opponent loses 3 life unless they discard a card or sacrifice a creature. (To collect evidence 3, exile cards with total mana value 3 or greater from your graveyard.)",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "GatherCards",
+                                    "source": {
+                                        "type": "TopOfLibrary",
+                                        "count": {
+                                            "type": "Fixed",
+                                            "amount": 4
+                                        }
+                                    },
+                                    "storeAs": "looked"
+                                },
+                                {
+                                    "type": "SelectFromCollection",
+                                    "from": "looked",
+                                    "selection": {
+                                        "type": "ChooseExactly",
+                                        "count": {
+                                            "type": "Fixed",
+                                            "amount": 2
+                                        }
+                                    },
+                                    "storeSelected": "kept",
+                                    "storeRemainder": "rest",
+                                    "selectedLabel": "Put in hand",
+                                    "remainderLabel": "Put in graveyard"
+                                },
+                                {
+                                    "type": "MoveCollection",
+                                    "from": "kept",
+                                    "destination": {
+                                        "type": "ToZone",
+                                        "zone": "Hand"
+                                    }
+                                },
+                                {
+                                    "type": "MoveCollection",
+                                    "from": "rest",
+                                    "destination": {
+                                        "type": "ToZone",
+                                        "zone": "Graveyard"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "type": "LoseLife",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 2
+                            },
+                            "target": "Controller"
+                        }
+                    ]
+                },
+                "descriptionOverride": "When this artifact enters, look at the top four cards of your library. Put two of them into your hand and the rest into your graveyard. You lose 2 life."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}"
+                            }
+                        },
+                        "CostTap",
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomCollectEvidence",
+                                "amount": 3
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Players",
+                        "players": "EachOpponent"
+                    },
+                    "body": {
+                        "type": "ChooseAction",
+                        "choices": [
+                            {
+                                "label": "Discard a card",
+                                "effect": {
+                                    "type": "Composite",
+                                    "effects": [
+                                        {
+                                            "type": "GatherCards",
+                                            "source": {
+                                                "type": "FromZone",
+                                                "zone": "Hand"
+                                            },
+                                            "storeAs": "hand"
+                                        },
+                                        {
+                                            "type": "SelectFromCollection",
+                                            "from": "hand",
+                                            "selection": {
+                                                "type": "ChooseExactly",
+                                                "count": {
+                                                    "type": "Fixed",
+                                                    "amount": 1
+                                                }
+                                            },
+                                            "storeSelected": "discarded",
+                                            "prompt": "Choose 1 card to discard"
+                                        },
+                                        {
+                                            "type": "MoveCollection",
+                                            "from": "discarded",
+                                            "destination": {
+                                                "type": "ToZone",
+                                                "zone": "Graveyard"
+                                            },
+                                            "moveType": "Discard"
+                                        }
+                                    ]
+                                },
+                                "feasibilityCheck": {
+                                    "type": "HasCardsInZone",
+                                    "zone": "Hand"
+                                }
+                            },
+                            {
+                                "label": "Sacrifice a creature",
+                                "effect": {
+                                    "type": "ForceSacrifice",
+                                    "filter": "creature",
+                                    "target": "Controller"
+                                },
+                                "feasibilityCheck": {
+                                    "type": "ControlsPermanentMatching",
+                                    "filter": "creature"
+                                }
+                            },
+                            {
+                                "label": "Lose 3 life",
+                                "effect": {
+                                    "type": "LoseLife",
+                                    "amount": {
+                                        "type": "Fixed",
+                                        "amount": 3
+                                    },
+                                    "target": "Controller"
+                                }
+                            }
+                        ]
+                    }
+                },
+                "descriptionOverride": "Each opponent loses 3 life unless they discard a card or sacrifice a creature."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "99",
+        "rarity": "UNCOMMON",
+        "artist": "Jokubas Uogintas",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/6/a6cc4c6f-4a84-4d42-89fa-7405f7ad6ba0.jpg?1783912893",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "While resolving Polygraph Orb's last ability, your opponent chooses a card to be discarded without revealing it, chooses a creature to be sacrificed, or chooses to do neither. Then that player discards that card, sacrifices that creature, or loses 3 life. Your opponent can always choose to lose 3 life, even if they have cards to discard or creatures to sacrifice."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "In a multiplayer game, each opponent in turn order makes their choice once, then all of the actions occur simultaneously."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "If you can't exile enough cards to meet or exceed the required mana value, you can't choose to collect evidence at all."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "Once you've announced that you're casting a spell, players can't take actions until you've finished doing so. Notably, opponents can't try to remove cards from your graveyard to stop you from collecting evidence."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 
