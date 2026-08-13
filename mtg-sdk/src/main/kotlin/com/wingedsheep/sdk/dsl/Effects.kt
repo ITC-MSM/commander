@@ -2,6 +2,7 @@ package com.wingedsheep.sdk.dsl
 
 import com.wingedsheep.sdk.core.AbilityFlag
 import com.wingedsheep.sdk.core.BendType
+import com.wingedsheep.sdk.core.CardType
 import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.core.CounterType
 import com.wingedsheep.sdk.core.Counters
@@ -2789,6 +2790,22 @@ object Effects {
         target: EffectTarget = EffectTarget.ContextTarget(0),
         duration: Duration = Duration.EndOfTurn
     ): Effect = GrantKeywordEffect("PROTECTION_FROM_${color.name}", target, duration)
+
+    /**
+     * Grant protection from a fixed card type to a target (no player choice).
+     * "Target permanent you control gains protection from artifacts …" (Razor Barrier)
+     *
+     * The card-type sibling of [GrantProtectionFromColor], composing [GrantKeywordEffect] with
+     * the `PROTECTION_FROM_CARDTYPE_<TYPE>` string keyword — the same projected keyword the
+     * printed `KeywordAbility.Protection(ProtectionScope.CardType(...))` static and the
+     * player-chosen [GrantProtectionFromChosenCardType] both produce, so targeting, blocking,
+     * and combat damage all read it from one place.
+     */
+    fun GrantProtectionFromCardType(
+        cardType: CardType,
+        target: EffectTarget = EffectTarget.ContextTarget(0),
+        duration: Duration = Duration.EndOfTurn
+    ): Effect = GrantKeywordEffect("PROTECTION_FROM_CARDTYPE_${cardType.name}", target, duration)
 
     /**
      * Choose a color, then run [then] with the chosen color exposed via the effect
