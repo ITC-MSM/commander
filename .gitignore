@@ -206,3 +206,7 @@ scripts/__pycache__/
 # Generated ECL training corpora and reports (large, reproducible benchmark output)
 /data/ecl-training*.json
 /ai/data/ecl-training*.json
+
+# Python bytecode anywhere (scripts/ tools are imported from several roots)
+__pycache__/
+*.py[cod]
