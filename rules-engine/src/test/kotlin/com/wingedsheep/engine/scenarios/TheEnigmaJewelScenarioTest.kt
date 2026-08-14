@@ -204,9 +204,9 @@ class TheEnigmaJewelScenarioTest : FunSpec({
     fun GameTestDriver.abilitiesOn(player: EntityId, source: EntityId): List<ActivateAbility> =
         legalActions(player).mapNotNull { it.action as? ActivateAbility }.filter { it.sourceId == source }
 
-    // A granted ability's synthesized id is "exiled_<exiledEntity>_<printedAbilityId>", so this
+    // A granted ability's synthesized id is "donor_<donorEntity>_<printedAbilityId>", so this
     // fragment identifies the ability contributed by a specific exiled material entity.
-    fun fromMaterial(material: EntityId) = "exiled_${material.value}_"
+    fun fromMaterial(material: EntityId) = "donor_${material.value}_"
 
     /** Craft The Enigma Jewel using [materials]; returns the (same) entity, now the Locus. */
     fun GameTestDriver.craftJewel(player: EntityId, jewel: EntityId, materials: List<EntityId>): EntityId {

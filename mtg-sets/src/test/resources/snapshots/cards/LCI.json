@@ -18748,8 +18748,8 @@
             ],
             "staticAbilities": [
                 {
-                    "type": "HasAllActivatedAbilitiesOfExiledCards",
-                    "source": "Crafted",
+                    "type": "HasAllActivatedAbilitiesOfCards",
+                    "donors": "CraftMaterials",
                     "oncePerTurnEach": true
                 }
             ]

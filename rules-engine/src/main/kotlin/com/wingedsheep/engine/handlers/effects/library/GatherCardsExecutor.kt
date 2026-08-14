@@ -233,7 +233,7 @@ class GatherCardsExecutor : EffectExecutor<GatherCardsEffect> {
 
             is CardSource.CraftedMaterials -> {
                 // The cards exiled to Craft this permanent (CraftedFromExiledComponent), filtered to
-                // those still in exile — the gather-pipeline twin of ExiledCardsSource.CRAFTED.
+                // those still in exile — the gather-pipeline twin of DonorCards.CRAFT_MATERIALS.
                 // Backs The Grim Captain's "put an exiled creature card used to craft it" clause.
                 val sourceId = context.sourceId
                     ?: return EffectResult.error(state, "No source entity for CraftedMaterials")

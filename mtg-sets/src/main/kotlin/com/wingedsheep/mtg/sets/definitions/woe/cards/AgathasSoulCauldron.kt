@@ -4,10 +4,12 @@ import com.wingedsheep.sdk.core.Counters
 import com.wingedsheep.sdk.dsl.Conditions
 import com.wingedsheep.sdk.dsl.Costs
 import com.wingedsheep.sdk.dsl.Effects
+import com.wingedsheep.sdk.dsl.Filters
 import com.wingedsheep.sdk.dsl.Targets
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
-import com.wingedsheep.sdk.scripting.HasAllActivatedAbilitiesOfExiledCards
+import com.wingedsheep.sdk.scripting.DonorCards
+import com.wingedsheep.sdk.scripting.HasAllActivatedAbilitiesOfCards
 import com.wingedsheep.sdk.scripting.SpendAnyManaTypeForActivatedAbilities
 import com.wingedsheep.sdk.scripting.effects.ConditionalEffect
 import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
@@ -30,8 +32,8 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  *    colored/colorless requirements of the mana cost of any ability activated from a creature you
  *    control (CR 609.4b), so the granted (and printed) abilities of your creatures can be paid with
  *    mana of any type. Same engine seam as Sharkey, Tyrant of the Shire (there scoped to Self).
- *  - [HasAllActivatedAbilitiesOfExiledCards] with a battlefield filter ("creatures you control
- *    with a +1/+1 counter") and `creatureCardsOnly = true`: every creature card in the Cauldron's
+ *  - [HasAllActivatedAbilitiesOfCards] with a battlefield `receivedBy` filter ("creatures you control
+ *    with a +1/+1 counter") and `cardFilter = Creature`: every creature card in the Cauldron's
  *    linked-exile pile lends its activated abilities to each such creature, with that creature as
  *    the abilities' source (so `{T}` taps it and self-references bind to it — the printed ruling).
  *  - The `{T}` activated ability exiles a targeted graveyard card linked to the Cauldron, then —
@@ -63,9 +65,10 @@ val AgathasSoulCauldron = card("Agatha's Soul Cauldron") {
     // "Creatures you control with +1/+1 counters on them have all activated abilities of all
     // creature cards exiled with Agatha's Soul Cauldron."
     staticAbility {
-        ability = HasAllActivatedAbilitiesOfExiledCards(
-            filter = GroupFilter.AllCreaturesYouControl.withCounter(Counters.PLUS_ONE_PLUS_ONE),
-            creatureCardsOnly = true
+        ability = HasAllActivatedAbilitiesOfCards(
+            donors = DonorCards.LINKED_EXILE,
+            cardFilter = Filters.Creature,
+            receivedBy = GroupFilter.AllCreaturesYouControl.withCounter(Counters.PLUS_ONE_PLUS_ONE)
         )
     }
 

@@ -47,7 +47,7 @@ import com.wingedsheep.sdk.scripting.values.DynamicAmount
  *    and `CraftSlotMatching` (engine) does the matching in `canPay`, the legal-action enumerator,
  *    and payment. The union of the slots stays in `filter`, so the flat BF+GY candidate gathering
  *    and the client's material overlay work unchanged.
- *  - **`CardSource.CraftedMaterials`** — the gather-pipeline twin of `ExiledCardsSource.CRAFTED`,
+ *  - **`CardSource.CraftedMaterials`** — the gather-pipeline twin of `DonorCards.CRAFT_MATERIALS`,
  *    reading the source's `CraftedFromExiledComponent` (the cards exiled to craft it) filtered to
  *    those still in exile. It powers the attack trigger's second sentence.
  *

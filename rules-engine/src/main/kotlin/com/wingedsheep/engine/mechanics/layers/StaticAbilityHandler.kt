@@ -118,7 +118,7 @@ import com.wingedsheep.sdk.scripting.DivideCombatDamageFreely
 import com.wingedsheep.sdk.scripting.ExtraLoyaltyActivation
 import com.wingedsheep.sdk.scripting.GainActivatedAbilitiesOfPermanents
 import com.wingedsheep.sdk.scripting.GrantActivatedAbility
-import com.wingedsheep.sdk.scripting.HasAllActivatedAbilitiesOfExiledCards
+import com.wingedsheep.sdk.scripting.HasAllActivatedAbilitiesOfCards
 import com.wingedsheep.sdk.scripting.SpendAnyManaTypeForActivatedAbilities
 import com.wingedsheep.sdk.scripting.GrantAdditionalLandDrop
 import com.wingedsheep.sdk.scripting.GrantAlternativeCastingCost
@@ -1001,7 +1001,7 @@ class StaticAbilityHandler(
             // Activated abilities (ActivateAbilityHandler / ActivatedAbilityEnumerator):
             is ExtraLoyaltyActivation,
             is GrantActivatedAbility,
-            is HasAllActivatedAbilitiesOfExiledCards,
+            is HasAllActivatedAbilitiesOfCards,
             is com.wingedsheep.sdk.scripting.HasAbilitiesOfChosenLinkedExiledCard,
             is GainActivatedAbilitiesOfPermanents,
             is SpendAnyManaTypeForActivatedAbilities,
