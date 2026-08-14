@@ -503,18 +503,32 @@ class EffectAndTriggerContinuationResumer(
             return checkForMore(state, emptyList())
         }
 
-        val result = services.effectExecutorRegistry
+        val branchResult = services.effectExecutorRegistry
             .execute(state, effectToExecute, continuation.effectContext)
-            .toExecutionResult()
+        val result = branchResult.toExecutionResult()
 
         if (result.isPaused) {
             return result
         }
 
+        // The branch's pipeline storage belongs to the frame beneath, exactly as a drained composite's
+        // does in [resumeEffect]. A gate sits *inside* a composite ("you may discard your hand. Draw X
+        // cards, where X is the number of cards discarded this way" — Balin, Loremaster), so the
+        // later siblings are the readers of whatever the `then` branch gathered. Dropping it here made
+        // the same card work or not depending on whether the may-question happened to be asked: an
+        // auto-answered or skipped gate runs `then` synchronously and keeps its storage, while a
+        // prompted one lost it and the sibling read an unset variable as 0.
+        val stateWithCollections = exposeCollectionsToNextFrame(
+            result.state,
+            continuation.effectContext.pipeline.storedCollections + branchResult.updatedCollections,
+            continuation.effectContext.pipeline.storedNumbers + branchResult.updatedStoredNumbers,
+            continuation.effectContext.pipeline.chosenValues + branchResult.updatedChosenValues,
+        )
+
         // Preserve `triggersAlreadyProcessed` across the continuation drain: if the gated effect ran
         // a nested cast that already stacked its cast-triggers (Vaan casting an opponent's card via
         // MayEffect), SubmitDecisionHandler must not re-detect the same SpellCastEvent.
-        return checkForMore(result.state, result.events.toList())
+        return checkForMore(stateWithCollections, result.events.toList())
             .copy(triggersAlreadyProcessed = result.triggersAlreadyProcessed)
     }
 

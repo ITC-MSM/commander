@@ -126,6 +126,23 @@ enum class Keyword(val displayName: String) {
     AFFINITY("Affinity"),
 
     /**
+     * Improvise (CR 702.126). "For each generic mana in this spell's total cost, you may tap an
+     * untapped artifact you control rather than pay that mana."
+     *
+     * A static ability that functions only while the spell is on the stack (CR 702.126a). It is
+     * neither an additional nor an alternative cost and applies only *after* the total cost is
+     * determined (CR 702.126b), so it can never pay a colored pip and never changes the spell's
+     * mana value; multiple instances are redundant (CR 702.126c).
+     *
+     * Mechanically it is the artifacts-only case of the shared "tap permanents, each paying {1}
+     * generic" rail — the taps travel in
+     * [com.wingedsheep.sdk.scripting.AlternativePaymentChoice.tapForGenericPermanents], exactly
+     * like a waterbend cost's taps. Grantable to other spells via
+     * [com.wingedsheep.sdk.scripting.GrantKeywordToOwnSpells] (Ironheart, Clever Champion).
+     */
+    IMPROVISE("Improvise"),
+
+    /**
      * Emerge [cost] (CR 702.119, Eldritch Moon). "You may cast this spell by paying [cost] and
      * sacrificing a creature rather than paying its mana cost. If you chose to pay this spell's
      * emerge cost, its total cost is reduced by an amount of generic mana equal to the sacrificed

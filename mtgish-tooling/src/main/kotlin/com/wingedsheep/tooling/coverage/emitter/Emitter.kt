@@ -440,8 +440,11 @@ object Emitter {
      *  the keyword as `[equip-filter, cost]`. We render the bare `equipAbility("{cost}")` (which
      *  synthesises the canonical sorcery-speed attach ability) ONLY for the unrestricted "any creature"
      *  filter with a pure-mana cost. Equip-quality variants ("equip legendary creature", a creature-type
-     *  restriction) and non-mana costs aren't expressible by `equipAbility`, so they return null ->
-     *  scaffold rather than silently drop the restriction. */
+     *  restriction) and non-mana costs return null -> scaffold rather than silently drop the
+     *  restriction. The SDK *can* express the quality variants — `equipAbility(cost, quality = …,
+     *  targetFilter = …)`, CR 702.6c — but translating mtgish's permanent-filter IR into a
+     *  `TargetFilter` (and into the human wording `quality` carries) isn't implemented here, so
+     *  declining stays the correct output. */
     private fun equipAbilityLine(rule: JsonObject): List<Stmt>? {
         val args = rule["args"].asArr ?: return null
         if (args.size != 2) return null

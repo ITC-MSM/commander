@@ -5241,6 +5241,72 @@
     ]
 }
 
+// Nightmare Lash
+{
+    "name": "Nightmare Lash",
+    "manaCost": "{4}",
+    "typeLine": "Artifact — Equipment",
+    "oracleText": "Equipped creature gets +1/+1 for each Swamp you control.\nEquip—Pay 3 life.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomPayLife",
+                        "amount": 3
+                    }
+                },
+                "effect": {
+                    "type": "AttachEquipment",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature you control"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        },
+                        "id": "target creature you control"
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "isEquipAbility": true
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "GrantDynamicStats",
+                "filter": {
+                    "baseFilter": "permanent",
+                    "scope": "AttachedTo"
+                },
+                "powerBonus": {
+                    "type": "AggregateBattlefield",
+                    "player": "You",
+                    "filter": "land Swamp"
+                },
+                "toughnessBonus": {
+                    "type": "AggregateBattlefield",
+                    "player": "You",
+                    "filter": "land Swamp"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "219",
+        "rarity": "RARE",
+        "artist": "Puddnhead",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/f/7f8e3fa6-494c-412f-90cc-36d45cd2b175.jpg?1783944510"
+    },
+    "colorIdentityOverride": []
+}
+
 // Nim Devourer
 {
     "name": "Nim Devourer",
@@ -5634,6 +5700,45 @@
     "colorIdentityOverride": []
 }
 
+// Override
+{
+    "name": "Override",
+    "manaCost": "{2}{U}",
+    "typeLine": "Instant",
+    "oracleText": "Counter target spell unless its controller pays {1} for each artifact you control.",
+    "script": {
+        "spellEffect": {
+            "type": "Counter",
+            "condition": {
+                "type": "CounterCondition.UnlessPaysDynamic",
+                "amount": {
+                    "type": "AggregateBattlefield",
+                    "player": "You",
+                    "filter": "artifact"
+                }
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": {},
+                    "zone": "Stack"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "45",
+        "artist": "Hugh Jamieson",
+        "flavorText": "\"The Knowledge Pool has all the answers—especially 'No.'\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/5/35964fa6-800d-41d6-9f82-fb9c87deee56.jpg?1783944553"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Pentavus
 {
     "name": "Pentavus",
@@ -5803,6 +5908,85 @@
     "colorIdentityOverride": [
         "GREEN"
     ]
+}
+
+// Power Conduit
+{
+    "name": "Power Conduit",
+    "manaCost": "{2}",
+    "typeLine": "Artifact",
+    "oracleText": "{T}, Remove a counter from a permanent you control: Choose one —\n• Put a charge counter on target artifact.\n• Put a +1/+1 counter on target creature.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        "CostTap",
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": "AtomRemoveCounters"
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "Modal",
+                    "modes": [
+                        {
+                            "effect": {
+                                "type": "AddCounters",
+                                "counterType": "charge",
+                                "count": 1,
+                                "target": {
+                                    "type": "ContextTarget",
+                                    "index": 0
+                                }
+                            },
+                            "targetRequirements": [
+                                {
+                                    "type": "TargetObject",
+                                    "filter": {
+                                        "baseFilter": "artifact"
+                                    }
+                                }
+                            ],
+                            "description": "Put a charge counter on target artifact"
+                        },
+                        {
+                            "effect": {
+                                "type": "AddCounters",
+                                "counterType": "+1/+1",
+                                "count": 1,
+                                "target": {
+                                    "type": "ContextTarget",
+                                    "index": 0
+                                }
+                            },
+                            "targetRequirements": [
+                                {
+                                    "type": "TargetObject",
+                                    "filter": {
+                                        "baseFilter": "creature"
+                                    }
+                                }
+                            ],
+                            "description": "Put a +1/+1 counter on target creature"
+                        }
+                    ]
+                },
+                "descriptionOverride": "{T}, Remove a counter from a permanent you control: Choose one — Put a charge counter on target artifact; or put a +1/+1 counter on target creature."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "229",
+        "rarity": "UNCOMMON",
+        "artist": "Todd Lockwood",
+        "flavorText": "Never content, vedalken artificers continually tinker with their creations.",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/0/b0f5c84f-1924-4a4a-84c1-00dcb756e9c9.jpg?1783944506"
+    },
+    "colorIdentityOverride": []
 }
 
 // Predator's Strike
@@ -6007,6 +6191,63 @@
         "artist": "John Matson",
         "flavorText": "\"The nim raid our homes without warning. We must defend our homes without hesitation.\"",
         "imageUri": "https://cards.scryfall.io/normal/front/4/b/4be510c8-fc01-4374-ac04-7968d24480fe.jpg"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Razor Barrier
+{
+    "name": "Razor Barrier",
+    "manaCost": "{1}{W}",
+    "typeLine": "Instant",
+    "oracleText": "Target permanent you control gains protection from artifacts or from the color of your choice until end of turn.",
+    "script": {
+        "spellEffect": {
+            "type": "ChooseAction",
+            "choices": [
+                {
+                    "label": "Protection from artifacts",
+                    "effect": {
+                        "type": "GrantKeyword",
+                        "keyword": "PROTECTION_FROM_CARDTYPE_ARTIFACT",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target permanent you control"
+                        }
+                    }
+                },
+                {
+                    "label": "Protection from the color of your choice",
+                    "effect": {
+                        "type": "ChooseColorThen",
+                        "then": {
+                            "type": "GrantProtectionFromChosenColor",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target permanent you control"
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "permanent ctrl:you"
+                },
+                "id": "target permanent you control"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "17",
+        "artist": "Ron Spencer",
+        "flavorText": "\"We protect our homelands. Why should they not protect us?\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/7/6743fab2-75b4-4eb8-b416-b5f052473393.jpg?1783944560"
     },
     "colorIdentityOverride": [
         "WHITE"
@@ -7389,6 +7630,69 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Soul Nova
+{
+    "name": "Soul Nova",
+    "manaCost": "{3}{W}{W}",
+    "typeLine": "Instant",
+    "oracleText": "Exile target attacking creature and all Equipment attached to it.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherCards",
+                    "source": {
+                        "type": "AttachedToTarget",
+                        "host": {
+                            "type": "BoundVariable",
+                            "name": "target attacking creature"
+                        },
+                        "filter": "artifact Equipment"
+                    },
+                    "storeAs": "gathered0"
+                },
+                {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target attacking creature"
+                    },
+                    "destination": "Exile"
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "gathered0",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Exile"
+                    }
+                }
+            ],
+            "descriptionOverride": "Exile target attacking creature and all Equipment attached to it."
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature attacking"
+                },
+                "id": "target attacking creature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "25",
+        "rarity": "UNCOMMON",
+        "artist": "Keith Garletts",
+        "flavorText": "Within seconds, the nim was consumed in blinding sunfire. Afterwards, only a puddle of molten iron remained.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/8/f862682d-cbf3-4c35-83d0-76883b0ac105.jpg?1783944557"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 

@@ -3,7 +3,7 @@
 **Set Size:** 276 booster cards (collector numbers 1-276; basic lands 277-296 and showcase
 variants 297+ are excluded)
 **Release Date:** June 26, 2026
-**Implemented:** 245 / 276
+**Implemented:** 250 / 276
 - [x] Agent 13, Sharon Carter
 - [x] Agent Maria Hill
 - [x] Agent of Atlas
@@ -54,7 +54,7 @@ variants 297+ are excluded)
 - [x] Bold Biochemist
 - [x] Bruce Banner // The Incredible Hulk
 - [x] Depower
-- [ ] Echo, Perceptive Prodigy
+- [x] Echo, Perceptive Prodigy
 - [x] Falcon, Winged Wonder
 - [x] Falcon's Wing Harness
 - [x] Frozen in Ice
@@ -63,7 +63,7 @@ variants 297+ are excluded)
 - [x] Hydraulic Helper
 - [x] I Am Iron Man
 - [x] Iron Lad, Diverging Destiny
-- [ ] Ironheart, Clever Champion
+- [x] Ironheart, Clever Champion
 - [x] Justice, Vance Astrovik
 - [ ] Kang the Conqueror
 - [ ] Kid Loki
@@ -149,7 +149,7 @@ variants 297+ are excluded)
 - [ ] Loki Laufeyson
 - [x] Machinesmith Automaton
 - [x] Misty Knight, Hero for Hire
-- [ ] Mjölnir, Hammer of Thor
+- [x] Mjölnir, Hammer of Thor
 - [x] Photon Blast Barrage
 - [x] Quicksilver, Brash Blur
 - [x] Red Hulk
@@ -228,7 +228,7 @@ variants 297+ are excluded)
 - [x] The Mighty Thor, Jane Foster
 - [x] Moon Girl and Devil Dinosaur
 - [x] The Ruinous Wrecking Crew
-- [ ] Scientist Supreme of A.I.M.
+- [x] Scientist Supreme of A.I.M.
 - [x] The Serpent Society
 - [x] Speedball, New Warrior
 - [x] Spider-Man, To the Rescue
@@ -246,7 +246,7 @@ variants 297+ are excluded)
 - [ ] Wolverine, Fierce Fighter
 - [x] Worlds Within Worlds
 - [x] A.I.M. Synthoids
-- [ ] Arc Reactor
+- [x] Arc Reactor
 - [x] Captain America's Shield
 - [x] Cosmic Cube
 - [x] Dependable Quinjet

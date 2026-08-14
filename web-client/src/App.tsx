@@ -9,7 +9,7 @@ import { ModalModeSelector } from './components/ui/ModalModeSelector'
 import { BlightVariableSelector } from './components/ui/BlightVariableSelector'
 import { PayXLifeSelector } from './components/ui/PayXLifeSelector'
 import { ConvokeSelector } from './components/ui/ConvokeSelector'
-import { WaterbendSelector } from './components/ui/WaterbendSelector'
+import { TapForGenericSelector } from './components/ui/TapForGenericSelector'
 import { HarmonizeSelector } from './components/ui/HarmonizeSelector'
 import { TapForPowerSelector } from './components/ui/TapForPowerSelector'
 import { DelveSelector } from './components/ui/DelveSelector'
@@ -380,8 +380,8 @@ export default function App() {
       {/* Convoke selection overlay (when casting spells with Convoke) */}
       {showGame && <ConvokeSelector />}
 
-      {/* Waterbend selection overlay (activated abilities with a waterbend cost) */}
-      {showGame && <WaterbendSelector />}
+      {/* Tap-for-generic selection overlay (improvise CR 702.126 / waterbend costs) */}
+      {showGame && <TapForGenericSelector />}
 
       {/* Harmonize creature-tap overlay (when casting from graveyard via Harmonize) */}
       {showGame && <HarmonizeSelector />}

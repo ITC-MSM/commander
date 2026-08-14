@@ -3299,9 +3299,6 @@
     ]
   },
   "HOB": {
-    "boosterfun": [
-      "Great Gilded Boat"
-    ],
     "bundle": [
       "The Misty Mountains Cold"
     ],
@@ -3309,10 +3306,41 @@
       "Smaug the Magnificent"
     ],
     "surgefoil": [
+      "Azog, Moria's Ruin",
+      "Bard, King of Dale",
+      "Belladonna Took",
       "Beorn the Fierce",
+      "Bilbo, Luckwearer",
+      "Bilbo, Thief in the Night",
+      "Bofur, Reliable Guardian",
+      "Dancing from Dark to Dawn",
+      "Desert Were-Worm",
+      "Desolation of Smaug",
+      "Elven Passage",
+      "Fateful Discovery",
+      "Gandalf, Goblins' Bane",
+      "Gleaming Splendor",
+      "Glóin the Mighty",
+      "Gollum, Riddle Master",
+      "Great Ugly-Looking Goblin",
+      "Head of the Hunt",
+      "Iron Hills Blacksmith",
+      "Last Light of Durin's Day",
+      "Most Decrepit Old Bird",
       "My Precious",
+      "Orcrist, Goblin-cleaver",
       "Plains",
-      "The Arkenstone"
+      "Smaug the Magnificent",
+      "Smaug, Wicked Worm",
+      "Sting, Bilbo's Sword",
+      "The Arkenstone",
+      "The Lonely Mountain",
+      "The Lord of the Eagles",
+      "The Notary Hobbits",
+      "The Queen of Dale",
+      "Thorin, Mountain-king",
+      "Thranduil, Sindarin Liege",
+      "Thranduil, the Elvenking"
     ],
     "universesbeyond": [
       "Along the Crooked Way",

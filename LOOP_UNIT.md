@@ -1,67 +1,103 @@
-# loop-msh-u07 — Ward with a non-listed cost
+# u10 — Equip worthy (Mjölnir, Hammer of Thor)
 
-Feature unit: two new `WardCost` variants plus the two MSH cards they unblock.
-
-## SDK
-
-- `WardCost.PlayerCounters(counterType, amount)` — counters placed on the **paying player**
-  (CR 122.1). Facade `KeywordAbility.wardPlayerCounters(Counters.POISON, 5)`. The only ward cost with
-  no affordability gate.
-- `WardCost.Choice(options)` — OR disjunction, sibling of `Composite`'s AND. Facades
-  `KeywordAbility.wardChoice(...)` and the named `wardDiscardOrPay("{2}")`. Modelled on
-  `AdditionalCost.Choice` / `PayCost.Choice`; the prompt follows `CostPaymentService.choicePrompt`
-  (payable options only + trailing decline, reduced list stored on the continuation).
-- `WardCost.clause` — new property: the self-contained verb phrase ("discard a card", "pay {2}") as
-  opposed to `description`'s object phrase. Only `Choice` reads it, so no existing card's rendered
-  text changes.
-
-## Engine
-
-- `WardCounterEffectExecutor`: two new branches; `canPayWardCost` is now the single source of truth
-  for "unpayable → counter without a prompt" and the four pre-existing inline can-pay checks were
-  folded into it.
-- Two continuations (`CounterUnlessPlayerCountersContinuation`, `WardCostChoiceContinuation`) in
-  `ManaContinuations.kt`, registered in `Serialization.kt`, resumed in
-  `ManaPaymentContinuationResumer`. The choice resumer routes the chosen option through the existing
-  `chargeNextWardPartOrNull`, so the spell-left-the-stack guard and composite chaining stay
-  single-sourced.
-- Counters are placed via the ordinary `AddCountersEffect` executor with the payer as controller —
-  replacement effects, `CountersAddedEvent` and the ten-poison SBA all follow for free.
+Branch `loop-msh-u10`, off `origin/main`. PR body: `build/pr/loop-msh-u10-body.md`.
 
 ## Cards
 
-- **The Serpent Society** [226] — deathtouch; `wardPlayerCounters(Counters.POISON, 5)`; OTHER-bound
-  dies trigger filtered by `withKeyword(DEATHTOUCH)` (matched against LKI) → `Effects.Sacrifice`
-  nontoken over `Player.EachOpponent`.
-- **Titania, Rugged Rumbler** [235] — `Costs.additional.DiscardOrPay("{2}")` +
-  `KeywordAbility.wardDiscardOrPay("{2}")`. Same printed shape on both rails, deliberately
-  matching facade names; the types stay separate because the additional cost's mana leg folds into
-  the spell's mana cost at cast time and the ward's does not.
+- **Mjölnir, Hammer of Thor** (MSH #146) — Legendary Equipment. ETB 4 damage to up to one target
+  creature; `DoubleDamage(source = SourceFilter.EquippedCreature)`; `equipAbility(quality = "worthy")`;
+  from-hand `Costs.DiscardSelf` ability sweeping 2 damage to each creature via
+  `Effects.ForEachInGroup`. Composes existing primitives except for the two SDK additions below.
 
-## Also
+## SDK
 
-- `docs/card-sdk-language-reference.md` — ward section extended for both variants and the two-rail
-  note.
-- `backlog/sets/marvel-super-heroes/cards.md` — both ticked, count 239 → 241.
-- `backlog/sets/marvel-super-heroes/mechanics.md` — section rewritten as SHIPPED; blocked count
-  33 → 31.
-- `mtgish-tooling` `CardStructure.kt` — `wardKeywordLine` learned `_Cost: "Or"` via a new
-  `wardCostExpr` leg renderer; existing single-cost branches unchanged, no corpus ward uses `Or`, so
-  no golden moves. The IR has no player-counter cost tag, so `PlayerCounters` is not taught.
+1. `equipAbility(cost, genericCostReduction, quality, targetFilter)` — CR 702.6c "Equip [quality]".
+   `quality` is wording (becomes the target requirement's id/label); `targetFilter` is the rules half
+   and must stay controller-scoped. No new target machinery — it is an ordinary `TargetFilter` on an
+   ordinary `TargetRequirement`.
+2. `SourceFilter.EquippedCreature` — the brief's "one-line mirror", verified: `RecipientFilter` already
+   had the pair in a shared branch, `SourceFilter` had only `EnchantedCreature`.
+   `DamageUtils.damageSourceMatches` now handles both in one branch. That matcher is shared by
+   prevention/doubling/modification and by combat + noncombat, so nothing else needed touching.
 
-## Things worth a second opinion
+## Convergence (deliberate, beyond the one card)
 
-`WardPlayerCountersTest`, `WardCostChoiceTest` (engine-level, one per mechanic),
-`TheSerpentSocietyScenarioTest`, `TitaniaRuggedRumblerScenarioTest` (one per card).
+Five printed "Equip [quality]" cards were hand-rolling the shape as bare `activatedAbility { }` blocks
+**without `isEquipAbility`**: Blackblade Reforged, Bilbo's Ring, Dúnedain Blade, Ghostfire Blade,
+Pirate Hat. Converged onto the facade. This fixes a real pre-existing bug (Forge Anew / Eowyn /
+instant-speed-equip all skipped those abilities) and is the reason five set snapshots move, not one.
+Non-mana equip costs (Dissection Tools et al.) stay hand-rolled — the facade parses a mana cost only,
+and those five already set the flag.
 
-## Unsure / worth a reviewer's eye
+## Tests
 
-- `WardCost.clause` duplicates information with `description`. The alternative — making `description`
-  the full clause everywhere and dropping the per-renderer verb prefixes — is cleaner but rewrites
-  the rendered text of every existing ward card and moves a lot of snapshots; I chose not to.
-- `canPayWardCost` for `Composite` is a snapshot check (all parts payable *now*). Paying an earlier
-  part could in principle make a later one unpayable; the per-part handler still counters at that
-  point, so behaviour is right, but a `Choice` over a `Composite` could offer a leg that later fails.
-  No printed card has that shape.
-- The ward `Choice` picker labels are generated from `clause` ("Discard a card" / "Pay {2}" /
-  "Counter spell"). Not seen in a running client.
+- `MjolnirHammerOfThorScenarioTest` (rules-engine) — one file, one card.
+- `EquipQualityVariantTest` (mtg-sets) — mechanic-level, catalog-wide invariants.
+
+## Gate
+
+Per-module (shared box, ~2.5 GiB free — a full `just test` has been OOM-killing this week):
+
+- `scripts/gradle-locked :mtg-sdk:test :mtg-sets:test :rules-engine:test` — **11095 PASSED, 0 FAILED**,
+  BUILD SUCCESSFUL, exit 0. Log: `build/pr/loop-msh-u10-gate.log`.
+- `scripts/gradle-locked :ai:test :mtgish-tooling:test :game-server:test` — **1046 PASSED, 0 FAILED**,
+  BUILD SUCCESSFUL, exit 0. Log: `build/pr/loop-msh-u10-gate2.log`.
+- `just rebless-cards` — BUILD SUCCESSFUL. **Five snapshots move, not one**: MSH (the new card) plus
+  DOM/KTK/LCI/LTR (the convergence: `descriptionOverride` → `isEquipAbility`, Bilbo's Ring's label, and
+  a new `equipCost "{7}"` on Blackblade Reforged which previously had none). No other card moved.
+- `just check-card-printing "Mjölnir, Hammer of Thor"` — ok, canonical in the earliest real printing.
+- `just fix-backlog` — headers in sync (239 → 240 hand-bumped).
+
+Not done: no web-client playthrough, no e2e, no UX pass from either seat.
+
+## Things I'm unsure about — reviewer, look here
+
+- ~~**Menu text change on five existing cards.**~~ **Resolved in the review round.** Rather than
+  choose between the printed wording and cost-reduction awareness, `ActivatedAbility.describeWithCost`
+  now renders any `isEquipAbility` ability as its printed line — "Equip {3}" (CR 702.6a),
+  "Equip Human {1}" (CR 702.6c), "Equip—Pay 3 life" for a non-mana cost — against the *effective*
+  cost. That restores the printed text on all five and gets the discount-aware label too, which a
+  static `descriptionOverride` could never do. The new `equipQuality` field carries the wording. Note
+  this changes the menu text for *every* Equipment in the catalog, not just the converged ones.
+- **Scope.** The convergence is wider than "the card it unblocks". I did it because the run's standing
+  lesson is "don't add a parallel rail where one can be shared" and the parallel rail already existed
+  with a latent bug. If the reviewer disagrees, the card + SDK halves stand alone without it.
+- **`equipCost` metadata on a restricted equip.** `equipAbility` sets `equipCost` unconditionally, so a
+  card with both a restricted and a plain equip ends up with the last one's cost (unchanged from
+  before for all five converged cards, since the plain one is declared last in each). Mjölnir has only
+  the restricted equip, so its `equipCost` is `{1}` — which is what the linter's
+  "nothing can ever be attached" check wants, but it does mean `equipCost` is not always the
+  unrestricted cost.
+- **Three unconverged `SourceFilter` matchers** in `DamageUtils` (`DamageBonusComponent`, max-damage
+  cap, `ReplaceDamageWithMill`) still hand-roll `Any`/`Matching`-only subsets. Pre-existing drift from
+  the shared matcher the doc comment at `DamageUtils` ~L1390 describes; left alone as out of scope, but
+  it is the kind of thing that bites later.
+- I did **not** add a "worthy" keyword/reminder-text entry that the brief suggested. Scryfall says
+  exactly one printed card uses the term, so it would be a one-card SDK concept; the card's own
+  reminder text carries the definition.
+
+## Review round 2 — fixes applied
+
+- **`damageDoublersAffectingSource` was O(battlefield) per card.** It ran from
+  `ClientStateTransformer.buildCardActiveEffects` for every card on every state push, making the view
+  path quadratic. Now driven off the maintained `AttachmentsComponent` reverse index (the same one
+  `TriggerAbilityResolver` and `DestroyAllEquipmentOnTargetExecutor` use), with an early return for
+  the un-attached common case.
+- **Two more cards were still hand-rolling "Equip [quality]"** — Thinking Cap ("Equip Detective {1}",
+  MKM) and Wizard's Staff ("Equip Wizard {1}", HOB). Both *did* set `isEquipAbility`, so they weren't
+  invisible to the engine like the original five, but both froze their cost in a
+  `descriptionOverride`. Converged onto the facade. `EquipQualityVariantTest` found them — it is now
+  three catalog-wide *properties* rather than a hardcoded card list, so it needs no edit per new
+  Equipment and keys "is this restricted?" off the target filter rather than the prompt label.
+- **The Irencrag's redundant `descriptionOverride = "Equip {3}"`** dropped — the renderer produces
+  exactly that, and now does so against the discounted cost.
+- **Playtest board fixed.** Frodo Baggins ({G}{W} Legendary Halfling Scout) is *worthy*, so it was a
+  second legal equip target and covered no failing clause; swapped for Hercules, Prince of Power
+  (mono-green legendary Hero). Thor is now the only worthy target and each other creature fails
+  exactly one clause. (The `a516b0ec2d` commit message also names "Skyward Spider", which was never in
+  the file — read the file, not that message.)
+- **Doc-accuracy.** `isAttachmentScopedSource`'s KDoc no longer claims a type-level invariant that
+  `SourceFilter.Self` would break; it states the catalog fact instead. The Aura half
+  (`SourceFilter.EnchantedCreature` + `DoubleDamage`) is documented as unreachable from the current
+  catalog — shared-matcher generality, not behaviour under test.
+- **Client:** `double-damage` gained the tooltip border colour its badge style already had.

@@ -1232,14 +1232,36 @@ class ActivateAbilityHandler(
                     } ?: emptyMap()
             } else emptyMap()
 
-        // Snapshot the source's projected P/T before a self-exile / self-sacrifice cost moves it
-        // off the battlefield (CR 112.7a / 608.2h), so an effect that reads its own power — e.g.
-        // "Sacrifice this creature: it deals damage equal to its power" (Ghitu Fire-Eater, Cinder
-        // Shade, Blazing Bomb's Blow Up) — sees the pre-sacrifice power rather than zero. Mirrors
-        // lastKnownSourceCounters above.
+        // Snapshot the source's projected characteristics before a self-exile / self-sacrifice cost
+        // moves it off the battlefield (CR 113.7a / 608.2h), so an effect that reads its own power —
+        // e.g. "Sacrifice this creature: it deals damage equal to its power" (Ghitu Fire-Eater,
+        // Cinder Shade, Blazing Bomb's Blow Up) — sees the pre-sacrifice power rather than zero.
+        // Mirrors lastKnownSourceCounters above.
+        //
+        // The projected *type line* and token-ness ride along because for a **token** source this
+        // snapshot is the only surviving record of the object at all: CR 704.5d sweeps a token out
+        // of any non-battlefield zone as a state-based action and the entity is deleted outright,
+        // so by the time the ability sits on the stack `state.getEntity(sourceId)` is null. That is
+        // what lets "copy target activated ability you control from an artifact source" (Scientist
+        // Supreme of A.I.M.) still see a cracked Clue as an artifact source — see
+        // `CardPredicate.AbilitySourceMatches` in PredicateEvaluator. Reading the *projected* type
+        // line here also gets the animated-artifact / crewed-Vehicle source right.
+        //
+        // The state-aware `captureEntitySnapshots` overload already freezes token-ness and the
+        // name; only the projected type line, keywords and card-definition id are layered on top.
         val lastKnownSourceSnapshot: com.wingedsheep.engine.state.components.stack.EntitySnapshot? =
             if (costExilesOrSacrificesSelf(effectiveCost)) {
-                captureEntitySnapshots(listOf(action.sourceId), currentState.projectedState).firstOrNull()
+                captureEntitySnapshots(listOf(action.sourceId), currentState)
+                    .firstOrNull()
+                    ?.copy(
+                        typeLine = com.wingedsheep.engine.state.components.stack.projectedTypeLine(
+                            currentState, action.sourceId
+                        ),
+                        keywords = currentState.projectedState.getKeywords(action.sourceId),
+                        cardDefinitionId = currentState.getEntity(action.sourceId)
+                            ?.get<com.wingedsheep.engine.state.components.identity.CardComponent>()
+                            ?.cardDefinitionId,
+                    )
             } else null
 
         // Snapshot the entity ids attached to the source before a self-exile / self-sacrifice cost

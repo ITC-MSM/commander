@@ -4,7 +4,7 @@
     "name": "The Hobbit",
     "releaseDate": "2026-08-14",
     "setType": "expansion",
-    "standardLegal": false,
+    "standardLegal": true,
     "draft": [],
     "extra": [
       {
@@ -17,6 +17,33 @@
         "group": "Promos"
       },
       {
+        "name": "Azog, Moria's Ruin",
+        "img": "https://cards.scryfall.io/normal/front/1/3/135da718-affc-46ba-be57-c12c23b54dad.jpg",
+        "products": [
+          "surgefoil",
+          "universesbeyond"
+        ],
+        "group": "Special Art"
+      },
+      {
+        "name": "Bard, King of Dale",
+        "img": "https://cards.scryfall.io/normal/front/c/0/c05c2aa6-29c7-40f8-872e-91099b9225c4.jpg",
+        "products": [
+          "surgefoil",
+          "universesbeyond"
+        ],
+        "group": "Special Art"
+      },
+      {
+        "name": "Belladonna Took",
+        "img": "https://cards.scryfall.io/normal/front/8/8/88f0c189-c9ed-4ea3-ae62-3d8ac6c7fecf.jpg",
+        "products": [
+          "surgefoil",
+          "universesbeyond"
+        ],
+        "group": "Special Art"
+      },
+      {
         "name": "Beorn the Fierce",
         "img": "https://cards.scryfall.io/normal/front/3/6/367d5f8b-77ee-47f7-bc71-972d62c280a9.jpg",
         "products": [
@@ -26,10 +53,154 @@
         "group": "Special Art"
       },
       {
-        "name": "Great Gilded Boat",
-        "img": "https://cards.scryfall.io/normal/front/b/2/b2fb3995-5b43-4776-88b2-346d353edee0.jpg",
+        "name": "Bilbo, Luckwearer",
+        "img": "https://cards.scryfall.io/normal/front/8/b/8bff0aa6-16d9-4c83-b598-ef00a3b33d2c.jpg",
         "products": [
-          "boosterfun",
+          "surgefoil",
+          "universesbeyond"
+        ],
+        "group": "Special Art"
+      },
+      {
+        "name": "Bilbo, Thief in the Night",
+        "img": "https://cards.scryfall.io/normal/front/4/8/484c7f83-8339-4ae1-8350-68ce1f7d05a3.jpg",
+        "products": [
+          "surgefoil",
+          "universesbeyond"
+        ],
+        "group": "Special Art"
+      },
+      {
+        "name": "Bofur, Reliable Guardian",
+        "img": "https://cards.scryfall.io/normal/front/6/b/6b8e6435-7de4-41d5-bc7d-8e24c11897d0.jpg",
+        "products": [
+          "surgefoil",
+          "universesbeyond"
+        ],
+        "group": "Special Art"
+      },
+      {
+        "name": "Dancing from Dark to Dawn",
+        "img": "https://cards.scryfall.io/normal/front/5/5/550cd0b6-ca61-4db7-9d20-0b68c48066f9.jpg",
+        "products": [
+          "surgefoil",
+          "universesbeyond"
+        ],
+        "group": "Special Art"
+      },
+      {
+        "name": "Desert Were-Worm",
+        "img": "https://cards.scryfall.io/normal/front/f/c/fc12c22a-11ff-4fb0-bc42-dd8490b8efb7.jpg",
+        "products": [
+          "surgefoil",
+          "universesbeyond"
+        ],
+        "group": "Special Art"
+      },
+      {
+        "name": "Desolation of Smaug",
+        "img": "https://cards.scryfall.io/normal/front/2/4/2462358b-52c8-49b2-8d97-d65a9188f8f7.jpg",
+        "products": [
+          "surgefoil",
+          "universesbeyond"
+        ],
+        "group": "Special Art"
+      },
+      {
+        "name": "Elven Passage",
+        "img": "https://cards.scryfall.io/normal/front/d/d/dd1fd2ab-2565-4798-a832-fc849df82f74.jpg",
+        "products": [
+          "surgefoil",
+          "universesbeyond"
+        ],
+        "group": "Special Art"
+      },
+      {
+        "name": "Fateful Discovery",
+        "img": "https://cards.scryfall.io/normal/front/a/1/a1142fa1-b861-4876-aa48-402af35aaa63.jpg",
+        "products": [
+          "surgefoil",
+          "universesbeyond"
+        ],
+        "group": "Special Art"
+      },
+      {
+        "name": "Gandalf, Goblins' Bane",
+        "img": "https://cards.scryfall.io/normal/front/9/b/9b0d29a1-7da9-4fb3-8536-8ff8d8acae0b.jpg",
+        "products": [
+          "surgefoil",
+          "universesbeyond"
+        ],
+        "group": "Special Art"
+      },
+      {
+        "name": "Gleaming Splendor",
+        "img": "https://cards.scryfall.io/normal/front/3/b/3b087bd4-bbb7-4963-bdb6-0a700ff19a04.jpg",
+        "products": [
+          "surgefoil",
+          "universesbeyond"
+        ],
+        "group": "Special Art"
+      },
+      {
+        "name": "Glóin the Mighty",
+        "img": "https://cards.scryfall.io/normal/front/5/7/5793b8eb-2fc5-454d-8fa2-20346fef167a.jpg",
+        "products": [
+          "surgefoil",
+          "universesbeyond"
+        ],
+        "group": "Special Art"
+      },
+      {
+        "name": "Gollum, Riddle Master",
+        "img": "https://cards.scryfall.io/normal/front/b/b/bbdc7e37-c65a-497a-92b7-a30a6e369c71.jpg",
+        "products": [
+          "surgefoil",
+          "universesbeyond"
+        ],
+        "group": "Special Art"
+      },
+      {
+        "name": "Great Ugly-Looking Goblin",
+        "img": "https://cards.scryfall.io/normal/front/c/8/c87f6004-e1cf-42b2-9647-322bc4939339.jpg",
+        "products": [
+          "surgefoil",
+          "universesbeyond"
+        ],
+        "group": "Special Art"
+      },
+      {
+        "name": "Head of the Hunt",
+        "img": "https://cards.scryfall.io/normal/front/3/f/3ffe34d4-72f4-4562-a948-8909b9321e59.jpg",
+        "products": [
+          "surgefoil",
+          "universesbeyond"
+        ],
+        "group": "Special Art"
+      },
+      {
+        "name": "Iron Hills Blacksmith",
+        "img": "https://cards.scryfall.io/normal/front/3/7/370e09c2-36c5-4662-8350-1db798afad3e.jpg",
+        "products": [
+          "surgefoil",
+          "universesbeyond"
+        ],
+        "group": "Special Art"
+      },
+      {
+        "name": "Last Light of Durin's Day",
+        "img": "https://cards.scryfall.io/normal/front/d/f/df29484b-de4b-4bab-995a-7605745780d9.jpg",
+        "products": [
+          "surgefoil",
+          "universesbeyond"
+        ],
+        "group": "Special Art"
+      },
+      {
+        "name": "Most Decrepit Old Bird",
+        "img": "https://cards.scryfall.io/normal/front/2/d/2d838feb-89f2-4cdb-a5ab-ec880f28d873.jpg",
+        "products": [
+          "surgefoil",
           "universesbeyond"
         ],
         "group": "Special Art"
@@ -37,6 +208,15 @@
       {
         "name": "My Precious",
         "img": "https://cards.scryfall.io/normal/front/1/5/15ae4d50-be2f-412c-bb6b-b0a06b60474a.jpg",
+        "products": [
+          "surgefoil",
+          "universesbeyond"
+        ],
+        "group": "Special Art"
+      },
+      {
+        "name": "Orcrist, Goblin-cleaver",
+        "img": "https://cards.scryfall.io/normal/front/f/5/f54f1c1d-6a22-43e9-a842-0a1ae25b323c.jpg",
         "products": [
           "surgefoil",
           "universesbeyond"
@@ -53,8 +233,99 @@
         "group": "Special Art"
       },
       {
+        "name": "Smaug the Magnificent",
+        "img": "https://cards.scryfall.io/normal/front/6/a/6a5d8fad-2ffd-4645-8c49-907999b6cecf.jpg",
+        "products": [
+          "headliner",
+          "surgefoil",
+          "universesbeyond"
+        ],
+        "group": "Special Art"
+      },
+      {
+        "name": "Smaug, Wicked Worm",
+        "img": "https://cards.scryfall.io/normal/front/1/9/19cc91f0-e724-41ac-b6d8-9a293bd63b42.jpg",
+        "products": [
+          "surgefoil",
+          "universesbeyond"
+        ],
+        "group": "Special Art"
+      },
+      {
+        "name": "Sting, Bilbo's Sword",
+        "img": "https://cards.scryfall.io/normal/front/d/6/d6a8d698-c454-42c4-ad4e-9a7625d5569f.jpg",
+        "products": [
+          "surgefoil",
+          "universesbeyond"
+        ],
+        "group": "Special Art"
+      },
+      {
         "name": "The Arkenstone",
         "img": "https://cards.scryfall.io/normal/front/a/5/a56a88ba-fcfa-4b56-bdae-a080b297b871.jpg",
+        "products": [
+          "surgefoil",
+          "universesbeyond"
+        ],
+        "group": "Special Art"
+      },
+      {
+        "name": "The Lonely Mountain",
+        "img": "https://cards.scryfall.io/normal/front/b/3/b39ebc4d-a01a-4401-ab3a-bf6142c93b47.jpg",
+        "products": [
+          "surgefoil",
+          "universesbeyond"
+        ],
+        "group": "Special Art"
+      },
+      {
+        "name": "The Lord of the Eagles",
+        "img": "https://cards.scryfall.io/normal/front/f/a/fa0554fc-9448-4ae2-8712-4f4f7af3c7b4.jpg",
+        "products": [
+          "surgefoil",
+          "universesbeyond"
+        ],
+        "group": "Special Art"
+      },
+      {
+        "name": "The Notary Hobbits",
+        "img": "https://cards.scryfall.io/normal/front/d/8/d876315f-b269-4254-a517-905c6e927462.jpg",
+        "products": [
+          "surgefoil",
+          "universesbeyond"
+        ],
+        "group": "Special Art"
+      },
+      {
+        "name": "The Queen of Dale",
+        "img": "https://cards.scryfall.io/normal/front/c/9/c977fb5f-4436-41d0-af68-93b6d05897e5.jpg",
+        "products": [
+          "surgefoil",
+          "universesbeyond"
+        ],
+        "group": "Special Art"
+      },
+      {
+        "name": "Thorin, Mountain-king",
+        "img": "https://cards.scryfall.io/normal/front/1/1/117347af-0dd7-4350-901d-8c8a81387e22.jpg",
+        "products": [
+          "surgefoil",
+          "universesbeyond"
+        ],
+        "group": "Special Art"
+      },
+      {
+        "name": "Thranduil, Sindarin Liege",
+        "img": "https://cards.scryfall.io/normal/front/4/8/481870ee-d1f7-421b-86e1-570ea933bbbc.jpg",
+        "products": [
+          "surgefoil",
+          "universesbeyond"
+        ],
+        "group": "Special Art"
+      },
+      {
+        "name": "Thranduil, the Elvenking",
+        "img": "https://cards.scryfall.io/normal/front/f/e/fe2fe8fa-3b99-44c1-bab9-922e5c864952.jpg",
         "products": [
           "surgefoil",
           "universesbeyond"
@@ -86,14 +357,6 @@
         "group": "Other Cards"
       },
       {
-        "name": "Azog, Moria's Ruin",
-        "img": "https://cards.scryfall.io/normal/front/1/3/135da718-affc-46ba-be57-c12c23b54dad.jpg",
-        "products": [
-          "universesbeyond"
-        ],
-        "group": "Other Cards"
-      },
-      {
         "name": "Balin, Loremaster",
         "img": "https://cards.scryfall.io/normal/front/4/2/42d7ca7b-c983-40fd-ad57-59f6972bb375.jpg",
         "products": [
@@ -118,24 +381,8 @@
         "group": "Other Cards"
       },
       {
-        "name": "Bard, King of Dale",
-        "img": "https://cards.scryfall.io/normal/front/c/0/c05c2aa6-29c7-40f8-872e-91099b9225c4.jpg",
-        "products": [
-          "universesbeyond"
-        ],
-        "group": "Other Cards"
-      },
-      {
         "name": "Bejeweled Warg",
         "img": "https://cards.scryfall.io/normal/front/e/9/e95eba5c-e0d6-46b4-a0be-8e373b2185ea.jpg",
-        "products": [
-          "universesbeyond"
-        ],
-        "group": "Other Cards"
-      },
-      {
-        "name": "Belladonna Took",
-        "img": "https://cards.scryfall.io/normal/front/8/8/88f0c189-c9ed-4ea3-ae62-3d8ac6c7fecf.jpg",
         "products": [
           "universesbeyond"
         ],
@@ -184,30 +431,6 @@
       {
         "name": "Bilbo's Gambit",
         "img": "https://cards.scryfall.io/normal/front/4/5/45ad01f0-cda8-4931-82bb-cb4949e56ae9.jpg",
-        "products": [
-          "universesbeyond"
-        ],
-        "group": "Other Cards"
-      },
-      {
-        "name": "Bilbo, Luckwearer",
-        "img": "https://cards.scryfall.io/normal/front/8/b/8bff0aa6-16d9-4c83-b598-ef00a3b33d2c.jpg",
-        "products": [
-          "universesbeyond"
-        ],
-        "group": "Other Cards"
-      },
-      {
-        "name": "Bilbo, Thief in the Night",
-        "img": "https://cards.scryfall.io/normal/front/4/8/484c7f83-8339-4ae1-8350-68ce1f7d05a3.jpg",
-        "products": [
-          "universesbeyond"
-        ],
-        "group": "Other Cards"
-      },
-      {
-        "name": "Bofur, Reliable Guardian",
-        "img": "https://cards.scryfall.io/normal/front/6/b/6b8e6435-7de4-41d5-bc7d-8e24c11897d0.jpg",
         "products": [
           "universesbeyond"
         ],
@@ -302,32 +525,8 @@
         "group": "Other Cards"
       },
       {
-        "name": "Dancing from Dark to Dawn",
-        "img": "https://cards.scryfall.io/normal/front/5/5/550cd0b6-ca61-4db7-9d20-0b68c48066f9.jpg",
-        "products": [
-          "universesbeyond"
-        ],
-        "group": "Other Cards"
-      },
-      {
-        "name": "Desert Were-Worm",
-        "img": "https://cards.scryfall.io/normal/front/f/c/fc12c22a-11ff-4fb0-bc42-dd8490b8efb7.jpg",
-        "products": [
-          "universesbeyond"
-        ],
-        "group": "Other Cards"
-      },
-      {
         "name": "Desolation Prowler",
         "img": "https://cards.scryfall.io/normal/front/6/3/63c87009-ff1b-44b9-88b1-e26219094c67.jpg",
-        "products": [
-          "universesbeyond"
-        ],
-        "group": "Other Cards"
-      },
-      {
-        "name": "Desolation of Smaug",
-        "img": "https://cards.scryfall.io/normal/front/2/4/2462358b-52c8-49b2-8d97-d65a9188f8f7.jpg",
         "products": [
           "universesbeyond"
         ],
@@ -462,14 +661,6 @@
         "group": "Other Cards"
       },
       {
-        "name": "Elven Passage",
-        "img": "https://cards.scryfall.io/normal/front/d/d/dd1fd2ab-2565-4798-a832-fc849df82f74.jpg",
-        "products": [
-          "universesbeyond"
-        ],
-        "group": "Other Cards"
-      },
-      {
         "name": "Elven Raft-Steerer",
         "img": "https://cards.scryfall.io/normal/front/c/1/c141695c-c108-41d5-85cb-1f7485d9d533.jpg",
         "products": [
@@ -510,14 +701,6 @@
         "group": "Other Cards"
       },
       {
-        "name": "Fateful Discovery",
-        "img": "https://cards.scryfall.io/normal/front/a/1/a1142fa1-b861-4876-aa48-402af35aaa63.jpg",
-        "products": [
-          "universesbeyond"
-        ],
-        "group": "Other Cards"
-      },
-      {
         "name": "Fearsome Goblin Pair",
         "img": "https://cards.scryfall.io/normal/front/2/e/2efe2dc7-3eaa-47f6-b1ae-f974c4a8ae79.jpg",
         "products": [
@@ -552,14 +735,6 @@
       {
         "name": "Galion, Elvenking's Butler",
         "img": "https://cards.scryfall.io/normal/front/9/8/985bd676-58c4-42c7-a570-1b413e9aa94c.jpg",
-        "products": [
-          "universesbeyond"
-        ],
-        "group": "Other Cards"
-      },
-      {
-        "name": "Gandalf, Goblins' Bane",
-        "img": "https://cards.scryfall.io/normal/front/9/b/9b0d29a1-7da9-4fb3-8536-8ff8d8acae0b.jpg",
         "products": [
           "universesbeyond"
         ],
@@ -622,22 +797,6 @@
         "group": "Other Cards"
       },
       {
-        "name": "Gleaming Splendor",
-        "img": "https://cards.scryfall.io/normal/front/3/b/3b087bd4-bbb7-4963-bdb6-0a700ff19a04.jpg",
-        "products": [
-          "universesbeyond"
-        ],
-        "group": "Other Cards"
-      },
-      {
-        "name": "Glóin the Mighty",
-        "img": "https://cards.scryfall.io/normal/front/5/7/5793b8eb-2fc5-454d-8fa2-20346fef167a.jpg",
-        "products": [
-          "universesbeyond"
-        ],
-        "group": "Other Cards"
-      },
-      {
         "name": "Gnashing of Teeth",
         "img": "https://cards.scryfall.io/normal/front/5/d/5d485d70-c7b9-40a4-9089-5e7f1c2b9213.jpg",
         "products": [
@@ -678,14 +837,6 @@
         "group": "Other Cards"
       },
       {
-        "name": "Gollum, Riddle Master",
-        "img": "https://cards.scryfall.io/normal/front/b/b/bbdc7e37-c65a-497a-92b7-a30a6e369c71.jpg",
-        "products": [
-          "universesbeyond"
-        ],
-        "group": "Other Cards"
-      },
-      {
         "name": "Gollum, Silent Slinker",
         "img": "https://cards.scryfall.io/normal/front/6/c/6cfaa182-3fec-4907-8814-b4d29c33cec3.jpg",
         "products": [
@@ -702,8 +853,8 @@
         "group": "Other Cards"
       },
       {
-        "name": "Great Ugly-Looking Goblin",
-        "img": "https://cards.scryfall.io/normal/front/c/8/c87f6004-e1cf-42b2-9647-322bc4939339.jpg",
+        "name": "Great Gilded Boat",
+        "img": "https://cards.scryfall.io/normal/front/b/2/b2fb3995-5b43-4776-88b2-346d353edee0.jpg",
         "products": [
           "universesbeyond"
         ],
@@ -720,14 +871,6 @@
       {
         "name": "Gundabad Opportunist",
         "img": "https://cards.scryfall.io/normal/front/b/c/bc4a60b8-a5bb-4dbf-8d48-95caf757eac3.jpg",
-        "products": [
-          "universesbeyond"
-        ],
-        "group": "Other Cards"
-      },
-      {
-        "name": "Head of the Hunt",
-        "img": "https://cards.scryfall.io/normal/front/3/f/3ffe34d4-72f4-4562-a948-8909b9321e59.jpg",
         "products": [
           "universesbeyond"
         ],
@@ -752,14 +895,6 @@
       {
         "name": "Iron Hills",
         "img": "https://cards.scryfall.io/normal/front/7/8/78045c43-5cbe-48ff-837d-e7c6baac2937.jpg",
-        "products": [
-          "universesbeyond"
-        ],
-        "group": "Other Cards"
-      },
-      {
-        "name": "Iron Hills Blacksmith",
-        "img": "https://cards.scryfall.io/normal/front/3/7/370e09c2-36c5-4662-8350-1db798afad3e.jpg",
         "products": [
           "universesbeyond"
         ],
@@ -840,14 +975,6 @@
       {
         "name": "Large Bear",
         "img": "https://cards.scryfall.io/normal/front/5/0/50202288-f433-4b56-8f60-349bda7b4f6b.jpg",
-        "products": [
-          "universesbeyond"
-        ],
-        "group": "Other Cards"
-      },
-      {
-        "name": "Last Light of Durin's Day",
-        "img": "https://cards.scryfall.io/normal/front/d/f/df29484b-de4b-4bab-995a-7605745780d9.jpg",
         "products": [
           "universesbeyond"
         ],
@@ -942,14 +1069,6 @@
         "group": "Other Cards"
       },
       {
-        "name": "Most Decrepit Old Bird",
-        "img": "https://cards.scryfall.io/normal/front/2/d/2d838feb-89f2-4cdb-a5ab-ec880f28d873.jpg",
-        "products": [
-          "universesbeyond"
-        ],
-        "group": "Other Cards"
-      },
-      {
         "name": "Mountain",
         "img": "https://cards.scryfall.io/normal/front/c/4/c49d378e-9549-4320-b3c6-1aeb216d1e98.jpg",
         "products": [
@@ -1000,14 +1119,6 @@
       {
         "name": "Old Thrush",
         "img": "https://cards.scryfall.io/normal/front/3/a/3ad02b56-13ec-46ef-92bd-ae078b8bb517.jpg",
-        "products": [
-          "universesbeyond"
-        ],
-        "group": "Other Cards"
-      },
-      {
-        "name": "Orcrist, Goblin-cleaver",
-        "img": "https://cards.scryfall.io/normal/front/f/5/f54f1c1d-6a22-43e9-a842-0a1ae25b323c.jpg",
         "products": [
           "universesbeyond"
         ],
@@ -1166,25 +1277,8 @@
         "group": "Other Cards"
       },
       {
-        "name": "Smaug the Magnificent",
-        "img": "https://cards.scryfall.io/normal/front/6/a/6a5d8fad-2ffd-4645-8c49-907999b6cecf.jpg",
-        "products": [
-          "headliner",
-          "universesbeyond"
-        ],
-        "group": "Other Cards"
-      },
-      {
         "name": "Smaug's Fury",
         "img": "https://cards.scryfall.io/normal/front/a/1/a16f203a-785e-4c78-9410-fb9f8a0ffa01.jpg",
-        "products": [
-          "universesbeyond"
-        ],
-        "group": "Other Cards"
-      },
-      {
-        "name": "Smaug, Wicked Worm",
-        "img": "https://cards.scryfall.io/normal/front/1/9/19cc91f0-e724-41ac-b6d8-9a293bd63b42.jpg",
         "products": [
           "universesbeyond"
         ],
@@ -1209,14 +1303,6 @@
       {
         "name": "Sound the Trumpets",
         "img": "https://cards.scryfall.io/normal/front/d/d/dd32a1dd-3541-4572-a717-1deabc14b827.jpg",
-        "products": [
-          "universesbeyond"
-        ],
-        "group": "Other Cards"
-      },
-      {
-        "name": "Sting, Bilbo's Sword",
-        "img": "https://cards.scryfall.io/normal/front/d/6/d6a8d698-c454-42c4-ad4e-9a7625d5569f.jpg",
         "products": [
           "universesbeyond"
         ],
@@ -1303,22 +1389,6 @@
         "group": "Other Cards"
       },
       {
-        "name": "The Lonely Mountain",
-        "img": "https://cards.scryfall.io/normal/front/b/3/b39ebc4d-a01a-4401-ab3a-bf6142c93b47.jpg",
-        "products": [
-          "universesbeyond"
-        ],
-        "group": "Other Cards"
-      },
-      {
-        "name": "The Lord of the Eagles",
-        "img": "https://cards.scryfall.io/normal/front/f/a/fa0554fc-9448-4ae2-8712-4f4f7af3c7b4.jpg",
-        "products": [
-          "universesbeyond"
-        ],
-        "group": "Other Cards"
-      },
-      {
         "name": "The Master of Lake-town",
         "img": "https://cards.scryfall.io/normal/front/3/7/3788ada6-34a9-41af-a31c-2d090550e503.jpg",
         "products": [
@@ -1329,22 +1399,6 @@
       {
         "name": "The Mountain-king's Return",
         "img": "https://cards.scryfall.io/normal/front/6/8/68f4893d-e9a5-4f89-ade3-9ab78a834ad5.jpg",
-        "products": [
-          "universesbeyond"
-        ],
-        "group": "Other Cards"
-      },
-      {
-        "name": "The Notary Hobbits",
-        "img": "https://cards.scryfall.io/normal/front/d/8/d876315f-b269-4254-a517-905c6e927462.jpg",
-        "products": [
-          "universesbeyond"
-        ],
-        "group": "Other Cards"
-      },
-      {
-        "name": "The Queen of Dale",
-        "img": "https://cards.scryfall.io/normal/front/c/9/c977fb5f-4436-41d0-af68-93b6d05897e5.jpg",
         "products": [
           "universesbeyond"
         ],
@@ -1375,14 +1429,6 @@
         "group": "Other Cards"
       },
       {
-        "name": "Thorin, Mountain-king",
-        "img": "https://cards.scryfall.io/normal/front/1/1/117347af-0dd7-4350-901d-8c8a81387e22.jpg",
-        "products": [
-          "universesbeyond"
-        ],
-        "group": "Other Cards"
-      },
-      {
         "name": "Thranduil's Company",
         "img": "https://cards.scryfall.io/normal/front/a/b/abdb9d4e-e6ca-409b-b589-0cf71724340b.jpg",
         "products": [
@@ -1393,22 +1439,6 @@
       {
         "name": "Thranduil's Decree",
         "img": "https://cards.scryfall.io/normal/front/e/4/e4ded4c1-0e3e-47c5-8fdc-e7c187f68b12.jpg",
-        "products": [
-          "universesbeyond"
-        ],
-        "group": "Other Cards"
-      },
-      {
-        "name": "Thranduil, Sindarin Liege",
-        "img": "https://cards.scryfall.io/normal/front/4/8/481870ee-d1f7-421b-86e1-570ea933bbbc.jpg",
-        "products": [
-          "universesbeyond"
-        ],
-        "group": "Other Cards"
-      },
-      {
-        "name": "Thranduil, the Elvenking",
-        "img": "https://cards.scryfall.io/normal/front/f/e/fe2fe8fa-3b99-44c1-bab9-922e5c864952.jpg",
         "products": [
           "universesbeyond"
         ],

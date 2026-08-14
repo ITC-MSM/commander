@@ -19,6 +19,7 @@ import com.wingedsheep.engine.handlers.PredicateEvaluator
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.battlefield.AttachedToComponent
+import com.wingedsheep.engine.state.components.battlefield.AttachmentsComponent
 import com.wingedsheep.engine.state.components.battlefield.CountersComponent
 import com.wingedsheep.engine.state.components.battlefield.DamageComponent
 import com.wingedsheep.engine.state.components.battlefield.DamageDealtByPlayersThisTurnComponent
@@ -85,11 +86,16 @@ sealed interface DeflectOutcome {
 }
 
 /**
- * One [DoubleDamage] replacement that currently applies to damage dealt to a player, as reported by
- * [DamageUtils.damageDoublersAffectingPlayer] for the client's player badges.
+ * One [DoubleDamage] replacement that currently applies, as reported by
+ * [DamageUtils.damageDoublersAffectingPlayer] for the client's player badges (damage dealt *to* a
+ * player) and by [DamageUtils.damageDoublersAffectingSource] for the card badge on an
+ * equipped/enchanted creature (damage dealt *by* that creature).
  */
 data class ActiveDamageDoubler(
-    /** The battlefield permanent hosting the replacement (Twinflame Tyrant, Gratuitous Violence). */
+    /**
+     * The battlefield permanent hosting the replacement (Twinflame Tyrant, Gratuitous Violence, or
+     * the Equipment in the attachment-scoped case — Mjölnir, Hammer of Thor).
+     */
     val sourceId: EntityId,
     val sourceName: String,
     /** Whether the doubling is scoped to combat or noncombat damage (CR 616 damage-type filter). */
@@ -1411,7 +1417,10 @@ object DamageUtils {
     ): Boolean = when (filter) {
         is SourceFilter.Any -> true
         is SourceFilter.Self -> sourceId != null && sourceId == hostId
-        is SourceFilter.EnchantedCreature -> {
+        // "Enchanted creature" / "equipped creature" on the source side — damage dealt *by* the
+        // permanent this replacement's host is attached to. Same lookup for both, mirroring how
+        // [damageRecipientMatches] shares a branch for the RecipientFilter pair.
+        is SourceFilter.EnchantedCreature, is SourceFilter.EquippedCreature -> {
             val attachedTo = state.getEntity(hostId)?.get<AttachedToComponent>()?.targetId
             sourceId != null && sourceId == attachedTo
         }
@@ -1497,6 +1506,22 @@ object DamageUtils {
     }
 
     /**
+     * Whether a [DoubleDamage]'s source filter is attachment-scoped — "damage *equipped/enchanted
+     * creature* would deal" (Mjölnir, Hammer of Thor).
+     *
+     * These are the one source shape that is a property of a *specific* creature rather than of the
+     * damage's recipient, which is why [damageDoublersAffectingPlayer] excludes them and
+     * [damageDoublersAffectingSource] owns them instead. No other [SourceFilter] paired with a
+     * [DoubleDamage] in the catalog is source-specific — every one of them is
+     * [SourceFilter.Matching] scoped by controller (Twinflame Tyrant, Gratuitous Violence, The
+     * Rollercrusher Ride, Collective Inferno, Kuja, Neriv) — so "damage dealt to you can be doubled"
+     * stays honest for those without a concrete source in hand. [SourceFilter.Self] would be the
+     * next shape to need this treatment if a card ever pairs it with doubling.
+     */
+    private fun isAttachmentScopedSource(filter: SourceFilter): Boolean =
+        filter is SourceFilter.EquippedCreature || filter is SourceFilter.EnchantedCreature
+
+    /**
      * Battlefield permanents whose [DoubleDamage] replacement currently applies to damage dealt to
      * [playerId] — what the client turns into the player's "damage doubled" badge, the counterpart
      * of the prevention-shield badges.
@@ -1505,6 +1530,13 @@ object DamageUtils {
      * Tyrants means two entries and quadrupled damage. Recipient-side only — the source-side filter
      * needs a concrete damage source to evaluate, so an entry means "damage dealt to this player
      * can be doubled by this permanent", not that every instance will be.
+     *
+     * The one exception is an attachment-scoped source ([isAttachmentScopedSource]): an unattached
+     * Equipment doubles nothing at all, and once attached the doubling is a property of the creature
+     * it is on, not of whoever might be damaged. Those are reported by
+     * [damageDoublersAffectingSource] and badged on that creature instead — otherwise a Mjölnir
+     * sitting unequipped on the battlefield warns *both* players that damage dealt to them is
+     * doubled, which is false in both directions.
      */
     fun damageDoublersAffectingPlayer(state: GameState, playerId: EntityId): List<ActiveDamageDoubler> {
         val projected = state.projectedState
@@ -1519,6 +1551,7 @@ object DamageUtils {
                 if (effect !is DoubleDamage) continue
                 val damageEvent = effect.appliesTo
                 if (damageEvent !is EventPattern.DamageEvent) continue
+                if (isAttachmentScopedSource(damageEvent.source)) continue
 
                 // Gated doublers (The Rollercrusher Ride's delirium) only warn while the gate holds.
                 if (effect.restrictions.isNotEmpty()) {
@@ -1531,6 +1564,64 @@ object DamageUtils {
                     hostId = entityId, hostControllerId = hostControllerId,
                 )
                 if (!matches) continue
+
+                doublers.add(
+                    ActiveDamageDoubler(
+                        sourceId = entityId,
+                        sourceName = container.get<CardComponent>()?.name ?: "A permanent",
+                        damageType = damageEvent.damageType,
+                    )
+                )
+            }
+        }
+
+        return doublers
+    }
+
+    /**
+     * Battlefield permanents whose attachment-scoped [DoubleDamage] currently doubles damage dealt
+     * *by* [sourceId] — the source-side counterpart of [damageDoublersAffectingPlayer], which the
+     * client turns into a badge on the equipped/enchanted creature itself.
+     *
+     * Attachment is the whole condition: only permanents attached to [sourceId] are considered, so
+     * the badge appears exactly when the doubling can actually apply and follows the Equipment as it
+     * moves. One entry per applicable replacement, matching the once-each rule (CR 616.1) that
+     * [damageDoublersAffectingPlayer] documents.
+     *
+     * Driven off the maintained [AttachmentsComponent] reverse index rather than a battlefield scan:
+     * this runs from `ClientStateTransformer.buildCardActiveEffects` for *every* card on *every*
+     * state push, so scanning would make the view path quadratic in battlefield size. The un-attached
+     * case — overwhelmingly the common one — costs a single component lookup.
+     *
+     * Only the Equipment half is reachable from the current catalog; no card pairs [DoubleDamage]
+     * with [SourceFilter.EnchantedCreature] yet, so the Aura half is generality carried by the shared
+     * matcher rather than behaviour under test.
+     */
+    fun damageDoublersAffectingSource(state: GameState, sourceId: EntityId): List<ActiveDamageDoubler> {
+        val attachedIds = state.getEntity(sourceId)?.get<AttachmentsComponent>()?.attachedIds.orEmpty()
+        if (attachedIds.isEmpty()) return emptyList()
+
+        val doublers = mutableListOf<ActiveDamageDoubler>()
+
+        for (entityId in attachedIds) {
+            val container = state.getEntity(entityId) ?: continue
+            val replacementComponent = container.get<ReplacementEffectSourceComponent>() ?: continue
+            val hostControllerId = replacementHostController(state, entityId) ?: continue
+            // The forward link is what [damageSourceMatches] reads when the damage actually
+            // resolves, so the badge agrees with the replacement rather than with the index alone.
+            if (container.get<AttachedToComponent>()?.targetId != sourceId) continue
+
+            for (effect in replacementComponent.replacementEffects) {
+                if (effect !is DoubleDamage) continue
+                val damageEvent = effect.appliesTo
+                if (damageEvent !is EventPattern.DamageEvent) continue
+                if (!isAttachmentScopedSource(damageEvent.source)) continue
+
+                // Gated doublers only badge while the gate holds — same rule as the player badge.
+                if (effect.restrictions.isNotEmpty()) {
+                    val context = EffectContext(sourceId = entityId, controllerId = hostControllerId)
+                    if (effect.restrictions.any { !conditionEvaluator.evaluate(state, it, context) }) continue
+                }
 
                 doublers.add(
                     ActiveDamageDoubler(

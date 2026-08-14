@@ -8,6 +8,7 @@ import com.wingedsheep.engine.legalactions.EnumerationContext
 import com.wingedsheep.engine.legalactions.LegalAction
 import com.wingedsheep.engine.legalactions.ModalEnumerationMode
 import com.wingedsheep.engine.legalactions.ModalLegalEnumeration
+import com.wingedsheep.engine.legalactions.TapForGenericPermanentData
 import com.wingedsheep.engine.legalactions.TapForPowerCreatureData
 import com.wingedsheep.engine.legalactions.TargetInfo
 import com.wingedsheep.engine.legalactions.utils.SelectionCostPresentation
@@ -38,6 +39,7 @@ import com.wingedsheep.sdk.scripting.effects.Mode
 import com.wingedsheep.sdk.scripting.effects.ModalEffect
 import com.wingedsheep.engine.mechanics.mana.ManaSource
 import com.wingedsheep.engine.mechanics.mana.SpellPaymentContext
+import com.wingedsheep.engine.mechanics.mana.TapForGeneric
 import com.wingedsheep.engine.mechanics.mana.spellPaymentContextFor
 
 /**
@@ -443,7 +445,7 @@ class CastSpellEnumerator : ActionEnumerator {
             val spellWaterbend = cardDef.script.spellWaterbend
             val mandatoryWaterbend = spellWaterbend != null && !spellWaterbend.optional
             val waterbendPermanents = if (spellWaterbend != null) {
-                context.costUtils.findWaterbendPermanents(state, playerId)
+                context.costUtils.findTapForGenericPermanents(state, playerId, TapForGeneric.WATERBEND)
             } else emptyList()
             if (mandatoryWaterbend) {
                 effectiveCost = effectiveCost + if (spellWaterbend.isX) {
@@ -466,6 +468,15 @@ class CastSpellEnumerator : ActionEnumerator {
             // MV4+ mana) counts — including on the convoke/delve/waterbend tap-to-help paths.
             val spellContext = spellPaymentContextFor(cardComponent)
 
+            // Improvise (CR 702.126) — printed, or granted at runtime by a battlefield permanent
+            // (Ironheart, Clever Champion: "Noncreature spells you cast have improvise"). Unlike
+            // waterbend it is not an additional cost (CR 702.126b), so nothing is added to the
+            // cost here; the taps just help pay the generic already in it, artifacts only.
+            val hasImprovise = context.grantedKeywordResolver.hasKeyword(state, playerId, cardDef, Keyword.IMPROVISE)
+            val improviseArtifacts = if (hasImprovise) {
+                context.costUtils.findTapForGenericPermanents(state, playerId, TapForGeneric.IMPROVISE)
+            } else emptyList()
+
             val hasDelve = context.grantedKeywordResolver.hasKeyword(state, playerId, cardDef, Keyword.DELVE)
             val delveCards = if (hasDelve) {
                 context.costUtils.findDelveCards(state, playerId)
@@ -485,24 +496,52 @@ class CastSpellEnumerator : ActionEnumerator {
 
             // For Convoke/Delve spells, check if affordable with alternative payment help
             val cachedSources = context.availableManaSources
+            // Improvise can ride along on a convoke or delve spell — the grant is by card type
+            // ("Noncreature spells you cast have improvise"), and every delve spell and most
+            // convoke spells are noncreature, so the combination is ordinary rather than exotic.
+            // `CastSpellHandler` already applies convoke/delve and then improvise in sequence, so
+            // affordability has to consider both together or a legal cast is never offered at all
+            // (an unaffordable cast is dropped, not greyed out). Evaluated as an extra disjunct
+            // rather than folded into the calls above: an artifact that taps for more than {1}
+            // (Arc Reactor) is worth more as a mana source than as an improvise tap, so the
+            // no-taps configuration has to stay reachable on its own.
+            val improviseHelp = improviseArtifacts.takeIf { hasImprovise && it.isNotEmpty() }.orEmpty()
             val canAfford = if (hasConvoke && convokeCreatures != null && convokeCreatures.isNotEmpty()) {
                 context.manaSolver.canPay(state, playerId, payableCost, spellContext = spellContext, precomputedSources = cachedSources) ||
                     context.costUtils.canAffordWithConvoke(
                         state, playerId, payableCost, convokeCreatures,
                         precomputedSources = cachedSources, spellContext = spellContext
-                    )
+                    ) ||
+                    (improviseHelp.isNotEmpty() && context.costUtils.canAffordWithConvoke(
+                        state, playerId, payableCost, convokeCreatures,
+                        precomputedSources = cachedSources, spellContext = spellContext,
+                        tapForGenericPermanents = improviseHelp
+                    ))
             } else if (hasDelve && delveCards != null && delveCards.isNotEmpty()) {
                 context.manaSolver.canPay(state, playerId, payableCost, spellContext = spellContext, precomputedSources = cachedSources) ||
                     context.costUtils.canAffordWithDelve(
                         state, playerId, payableCost, delveCards,
                         precomputedSources = cachedSources, spellContext = spellContext
-                    )
+                    ) ||
+                    (improviseHelp.isNotEmpty() && context.costUtils.canAffordWithDelve(
+                        state, playerId, payableCost, delveCards,
+                        precomputedSources = cachedSources, spellContext = spellContext,
+                        tapForGenericPermanents = improviseHelp
+                    ))
             } else if (mandatoryWaterbend) {
                 // payableCost already includes the mandatory waterbend {N}; taps can cover up to {N}.
                 context.manaSolver.canPay(state, playerId, payableCost, spellContext = spellContext, precomputedSources = cachedSources) ||
-                    context.costUtils.canAffordWithWaterbend(
+                    context.costUtils.canAffordWithTapForGeneric(
                         state, playerId, payableCost,
                         waterbendPermanents.take(spellWaterbend.amount),
+                        precomputedSources = cachedSources, spellContext = spellContext
+                    )
+            } else if (improviseHelp.isNotEmpty()) {
+                // CR 702.126a: each tapped artifact pays {1} of the *generic* in the total cost,
+                // so the colored pips still have to come from mana.
+                context.manaSolver.canPay(state, playerId, payableCost, spellContext = spellContext, precomputedSources = cachedSources) ||
+                    context.costUtils.canAffordWithTapForGeneric(
+                        state, playerId, payableCost, improviseHelp,
                         precomputedSources = cachedSources, spellContext = spellContext
                     )
             } else {
@@ -671,9 +710,27 @@ class CastSpellEnumerator : ActionEnumerator {
                 // For waterbend {X}, each tappable artifact/creature pays {1} of the X generic, so
                 // it raises the X ceiling like an extra mana source.
                 val waterbendAvailable = if (spellWaterbend?.isX == true) waterbendPermanents.size else 0
+                // TODO(improvise+{X}): improvise is deliberately NOT counted here, and that is a
+                // known *gap*, not correct behaviour. CR 601.2b announces X before CR 601.2f
+                // determines the total cost, and CR 702.126a bounds the taps at the generic in that
+                // total cost — so improvise does pay the X-derived generic. The Whir of Invention
+                // ruling spells it out: "if you cast [it] and choose X to be 3, the total cost is
+                // {3}{U}{U}{U}. If you tap two artifacts, you'll have to pay {1}{U}{U}{U}."
+                // Four printed cards reach this: Whir of Invention, Universal Surveillance,
+                // Saheeli's Directive, Battle at the Bridge. None of them is implemented yet, and
+                // no MSH card has improvise with {X}, so nothing in the repo is wrong today —
+                // the ceiling merely under-offers, which can never produce an unpayable action.
+                // The reason it is not fixed here is that the ceiling can't move on its own: the
+                // payment side (`AlternativePaymentHandler.applyTapForGeneric`) stops tapping once
+                // the *printed* generic runs out, so a raised ceiling would offer an X the handler
+                // then refuses to pay. Closing it means folding X into the cost the way
+                // `waterbend {X}` does and charging the leftover against the X mana the way
+                // `CastSpellHandler.harmonizePaymentXValue` already does — plus lifting the client
+                // cap in `pipelinePhases.ts`. Do it with the first improvise-{X} card.
                 val fixedCost = effectiveCost.cmc  // X contributes 0 to CMC
                 val xSymbolCount = effectiveCost.xCount.coerceAtLeast(1)
-                ((availableSources + delveAvailable + waterbendAvailable - fixedCost) / xSymbolCount).coerceAtLeast(0)
+                ((availableSources + delveAvailable + waterbendAvailable - fixedCost) / xSymbolCount)
+                    .coerceAtLeast(0)
             } else null
 
             // Always include mana cost string for cast actions
@@ -938,6 +995,8 @@ class CastSpellEnumerator : ActionEnumerator {
                                     targetDescription = firstReq.description,
                                     targetRequirements = if (modeTargetInfos.size > 1) modeTargetInfos else null,
                                     xConstrainsTargetManaValue = firstInfo.xConstrainsManaValue,
+                                    xConstrainsTargetManaValueExactly = firstInfo.xConstrainsManaValueExactly,
+                                    xConstrainsTargetPower = firstInfo.xConstrainsPower,
                                     xConstrainsTargetCount = firstInfo.xConstrainsCount,
                                     hasXCost = hasXCost,
                                     maxAffordableX = maxAffordableX,
@@ -1168,6 +1227,8 @@ class CastSpellEnumerator : ActionEnumerator {
                                 targetDescription = firstReq.description,
                                 targetRequirements = if (targetReqInfos.size > 1) targetReqInfos else null,
                                 xConstrainsTargetManaValue = firstReqInfo.xConstrainsManaValue,
+                                xConstrainsTargetManaValueExactly = firstReqInfo.xConstrainsManaValueExactly,
+                                xConstrainsTargetPower = firstReqInfo.xConstrainsPower,
                                 xConstrainsTargetCount = firstReqInfo.xConstrainsCount,
                                 hasXCost = hasXCost,
                                 maxAffordableX = maxAffordableX,
@@ -1196,6 +1257,8 @@ class CastSpellEnumerator : ActionEnumerator {
                                 targetDescription = firstReq.description,
                                 targetRequirements = if (targetReqInfos.size > 1) targetReqInfos else null,
                                 xConstrainsTargetManaValue = firstReqInfo.xConstrainsManaValue,
+                                xConstrainsTargetManaValueExactly = firstReqInfo.xConstrainsManaValueExactly,
+                                xConstrainsTargetPower = firstReqInfo.xConstrainsPower,
                                 xConstrainsTargetCount = firstReqInfo.xConstrainsCount,
                                 manaCostString = altCostInfo.first,
                                 requiresDamageDistribution = requiresDamageDistribution,
@@ -1216,6 +1279,8 @@ class CastSpellEnumerator : ActionEnumerator {
                                 targetDescription = firstReq.description,
                                 targetRequirements = if (targetReqInfos.size > 1) targetReqInfos else null,
                                 xConstrainsTargetManaValue = firstReqInfo.xConstrainsManaValue,
+                                xConstrainsTargetManaValueExactly = firstReqInfo.xConstrainsManaValueExactly,
+                                xConstrainsTargetPower = firstReqInfo.xConstrainsPower,
                                 xConstrainsTargetCount = firstReqInfo.xConstrainsCount,
                                 manaCostString = selfAltCostResult.manaCostString,
                                 additionalCostInfo = selfAltCostResult.additionalCostInfo,
@@ -1237,6 +1302,8 @@ class CastSpellEnumerator : ActionEnumerator {
                                 targetDescription = firstReq.description,
                                 targetRequirements = if (targetReqInfos.size > 1) targetReqInfos else null,
                                 xConstrainsTargetManaValue = firstReqInfo.xConstrainsManaValue,
+                                xConstrainsTargetManaValueExactly = firstReqInfo.xConstrainsManaValueExactly,
+                                xConstrainsTargetPower = firstReqInfo.xConstrainsPower,
                                 xConstrainsTargetCount = firstReqInfo.xConstrainsCount,
                                 manaCostString = evokeCostResult.manaCostString,
                                 autoTapPreview = evokeCostResult.autoTapPreview
@@ -1254,6 +1321,8 @@ class CastSpellEnumerator : ActionEnumerator {
                                 targetDescription = firstReq.description,
                                 targetRequirements = if (targetReqInfos.size > 1) targetReqInfos else null,
                                 xConstrainsTargetManaValue = firstReqInfo.xConstrainsManaValue,
+                                xConstrainsTargetManaValueExactly = firstReqInfo.xConstrainsManaValueExactly,
+                                xConstrainsTargetPower = firstReqInfo.xConstrainsPower,
                                 xConstrainsTargetCount = firstReqInfo.xConstrainsCount,
                                 manaCostString = impendingCostResult.manaCostString,
                                 autoTapPreview = impendingCostResult.autoTapPreview
@@ -1271,6 +1340,8 @@ class CastSpellEnumerator : ActionEnumerator {
                                 targetDescription = firstReq.description,
                                 targetRequirements = if (targetReqInfos.size > 1) targetReqInfos else null,
                                 xConstrainsTargetManaValue = firstReqInfo.xConstrainsManaValue,
+                                xConstrainsTargetManaValueExactly = firstReqInfo.xConstrainsManaValueExactly,
+                                xConstrainsTargetPower = firstReqInfo.xConstrainsPower,
                                 xConstrainsTargetCount = firstReqInfo.xConstrainsCount,
                                 manaCostString = miracleCostResult.manaCostString,
                                 autoTapPreview = miracleCostResult.autoTapPreview
@@ -1288,6 +1359,8 @@ class CastSpellEnumerator : ActionEnumerator {
                                 targetDescription = firstReq.description,
                                 targetRequirements = if (targetReqInfos.size > 1) targetReqInfos else null,
                                 xConstrainsTargetManaValue = firstReqInfo.xConstrainsManaValue,
+                                xConstrainsTargetManaValueExactly = firstReqInfo.xConstrainsManaValueExactly,
+                                xConstrainsTargetPower = firstReqInfo.xConstrainsPower,
                                 xConstrainsTargetCount = firstReqInfo.xConstrainsCount,
                                 manaCostString = freeCastResult.manaCostString,
                                 requiresDamageDistribution = requiresDamageDistribution,
@@ -1308,6 +1381,8 @@ class CastSpellEnumerator : ActionEnumerator {
                                 targetDescription = firstReq.description,
                                 targetRequirements = if (targetReqInfos.size > 1) targetReqInfos else null,
                                 xConstrainsTargetManaValue = firstReqInfo.xConstrainsManaValue,
+                                xConstrainsTargetManaValueExactly = firstReqInfo.xConstrainsManaValueExactly,
+                                xConstrainsTargetPower = firstReqInfo.xConstrainsPower,
                                 xConstrainsTargetCount = firstReqInfo.xConstrainsCount,
                                 additionalCostInfo = path.costInfo,
                                 manaCostString = path.manaCostString,
@@ -1423,8 +1498,76 @@ class CastSpellEnumerator : ActionEnumerator {
 
         return expandGiftPromise(
             context,
-            applySpellWaterbendMetadata(context, expandChoiceAdditionalCosts(context, result))
+            applyImproviseMetadata(
+                context,
+                applySpellWaterbendMetadata(context, expandChoiceAdditionalCosts(context, result))
+            )
         )
+    }
+
+    /**
+     * Post-process: surface **improvise** (CR 702.126) on the cast actions already enumerated.
+     *
+     * Improvise is neither an additional nor an alternative cost (CR 702.126b), so — unlike the
+     * waterbend pass — this adds no second action and changes no cost: it only attaches the
+     * tap-to-help metadata (eligible untapped artifacts, the "improvise" label, no cap beyond the
+     * generic in the cost) so the client can offer the payment. Doing it here rather than at each
+     * `LegalAction(...)` emission site means every cast shape — plain, modal, kicked, or-pay,
+     * split — gets it for free.
+     *
+     * The keyword is resolved through the granted-keyword resolver, so a spell that only has
+     * improvise because of Ironheart, Clever Champion is covered identically to a printed one.
+     * Actions that already carry a tap-for-generic payment (a waterbend cost) are left alone —
+     * one tap payment per action, and no card has both.
+     *
+     * Also stamps [LegalAction.tapForGenericRequired] — whether the taps are *needed* or merely
+     * offered. That costs one extra `canPay` per improvise-eligible cast, which is why it is
+     * computed behind the two gates above (no untapped artifacts, or no improvise → no call).
+     */
+    private fun applyImproviseMetadata(
+        context: EnumerationContext,
+        actions: List<LegalAction>
+    ): List<LegalAction> {
+        val state = context.state
+        // Both lookups scan the battlefield, so memoize: the artifacts per caster, and the keyword
+        // answer per (caster, card definition) — a hand of modal/kicked variants otherwise re-asks
+        // the same question for every emitted action.
+        val artifactsByPlayer = mutableMapOf<EntityId, List<TapForGenericPermanentData>>()
+        val hasImproviseByCard = mutableMapOf<Pair<EntityId, String>, Boolean>()
+        return actions.map { la ->
+            val cs = la.action as? CastSpell
+            if (cs == null || la.hasTapForGeneric) return@map la
+            // Cheapest gate first: with no untapped artifacts there is nothing to offer either way.
+            val artifacts = artifactsByPlayer.getOrPut(cs.playerId) {
+                context.costUtils.findTapForGenericPermanents(state, cs.playerId, TapForGeneric.IMPROVISE)
+            }
+            if (artifacts.isEmpty()) return@map la
+            val cardComponent = state.getEntity(cs.cardId)?.get<CardComponent>() ?: return@map la
+            val cardDef = context.cardRegistry.getCard(cardComponent.cardDefinitionId) ?: return@map la
+            val hasImprovise = hasImproviseByCard.getOrPut(cs.playerId to cardComponent.cardDefinitionId) {
+                context.grantedKeywordResolver.hasKeyword(state, cs.playerId, cardDef, Keyword.IMPROVISE)
+            }
+            if (!hasImprovise) return@map la
+            // Are the taps needed, or just offered? Improvise is optional (CR 702.126a "you may"),
+            // and an automatic payer that always fills it can tap a mana rock for {1} that was
+            // worth more as mana and make its own cast unpayable — see [LegalAction.tapForGenericRequired].
+            val payableWithManaAlone = la.manaCostString?.let { costString ->
+                context.manaSolver.canPay(
+                    state, cs.playerId, ManaCost.parse(costString),
+                    spellContext = spellPaymentContextFor(cardComponent),
+                    precomputedSources = context.availableManaSources
+                )
+            } ?: false
+            la.copy(
+                hasTapForGeneric = true,
+                tapForGenericPermanents = artifacts,
+                // No cap: CR 702.126a bounds the taps at the generic mana in the total cost, which
+                // the client derives from the cost itself.
+                tapForGenericAmount = null,
+                tapForGenericLabel = TapForGeneric.IMPROVISE.label,
+                tapForGenericRequired = !payableWithManaAlone
+            )
+        }
     }
 
     /**
@@ -1532,7 +1675,7 @@ class CastSpellEnumerator : ActionEnumerator {
      * and gains a second, paid variant costing {N} more — offered only when affordable with mana
      * plus up to {N} taps. The `{X}` shape (Crashing Wave, Foggy Swamp Visions) is a *mandatory*
      * cost whose {X} is already folded into the cast action upstream (so it reads as X-carrying);
-     * here it just gains the tap metadata, with [LegalAction.waterbendAmount] left null so the
+     * here it just gains the tap metadata, with [LegalAction.tapForGenericAmount] left null so the
      * client caps taps at the chosen X.
      */
     private fun applySpellWaterbendMetadata(
@@ -1551,16 +1694,17 @@ class CastSpellEnumerator : ActionEnumerator {
                 out.add(la)
                 continue
             }
-            val perms = context.costUtils.findWaterbendPermanents(state, cs.playerId)
+            val perms = context.costUtils.findTapForGenericPermanents(state, cs.playerId, TapForGeneric.WATERBEND)
             // The tap cap N the client enforces: a fixed amount, or null for "waterbend {X}"
             // (the client uses the chosen xValue).
             val waterbendCap = if (wb.isX) null else wb.amount
             if (!wb.optional) {
                 // Mandatory: {N}/{X} is already in la.manaCostString; attach tap metadata + paid flag.
                 out.add(la.copy(
-                    hasWaterbend = true,
-                    waterbendPermanents = perms,
-                    waterbendAmount = waterbendCap,
+                    hasTapForGeneric = true,
+                    tapForGenericPermanents = perms,
+                    tapForGenericAmount = waterbendCap,
+                    tapForGenericLabel = TapForGeneric.WATERBEND.label,
                     action = cs.copy(wasWaterbendPaid = true)
                 ))
             } else {
@@ -1569,7 +1713,7 @@ class CastSpellEnumerator : ActionEnumerator {
                 val baseCost = la.manaCostString?.let { ManaCost.parse(it) }
                 if (!la.affordable || baseCost == null) continue
                 val paidCost = baseCost + ManaCost.parse("{${wb.amount}}")
-                val affordablePaid = context.costUtils.canAffordWithWaterbend(
+                val affordablePaid = context.costUtils.canAffordWithTapForGeneric(
                     state, cs.playerId, paidCost, perms.take(wb.amount),
                     precomputedSources = context.availableManaSources,
                     // Eligible conditional floating mana counts toward the paid variant too.
@@ -1580,9 +1724,10 @@ class CastSpellEnumerator : ActionEnumerator {
                 out.add(la.copy(
                     description = la.description + " (waterbend {${wb.amount}})",
                     manaCostString = paidCost.toString(),
-                    hasWaterbend = true,
-                    waterbendPermanents = perms,
-                    waterbendAmount = waterbendCap,
+                    hasTapForGeneric = true,
+                    tapForGenericPermanents = perms,
+                    tapForGenericAmount = waterbendCap,
+                    tapForGenericLabel = TapForGeneric.WATERBEND.label,
                     // The unpaid action's auto-tap preview was solved for the cheaper base cost;
                     // it would pre-select too few lands for the paid {base+N}. Clear it so the
                     // client recomputes the preview against the higher paid cost.

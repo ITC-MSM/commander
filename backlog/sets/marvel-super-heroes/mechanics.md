@@ -6,9 +6,9 @@ keyword, or engine capability) — not pure card authoring.
 
 Scope: the 276 booster cards (collector numbers 1–276). Triaged against the SDK on 2026-08-04,
 updated 2026-08-07 after **power-up** and the **per-turn effect budget** shipped, 2026-08-08
-after **teamwork** shipped in full, and 2026-08-10 after **copy-with-exceptions** and
-**ward with a non-listed cost** shipped.
-**27 of the 276 are blocked**; every other card is buildable from existing primitives.
+after **teamwork** shipped in full, and 2026-08-10 after **copy-with-exceptions**,
+**ward with a non-listed cost**, the **ability-source predicate on stack targets** and **improvise**
+shipped. **23 of the 276 are blocked**; every other card is buildable from existing primitives.
 
 Supported today and *not* a blocker despite looking like one: **power-up** (see the first section
 below — the keyword, its once-only limit and its pip-wise cost reduction all ship), **harness / ∞ abilities**
@@ -203,22 +203,54 @@ Blocked card: **Captain America, Super-Soldier** [9]. Its second clause is alrea
 `GrantHexproofToController` + `GrantKeyword(HEXPROOF, Heroes)` under a `ConditionalStaticAbility`
 gated on `Conditions.SourceHasCounter`.
 
-## Equip worthy — 1 card ⛔
+## Equip worthy — SHIPPED ✅ (1 card implemented)
 
 > Equip worthy {1} *(A creature is worthy if it's a legendary non-Villain that's red and/or white.)*
 
-An equip ability whose attach target is filtered. `equipAbility(cost, genericCostReduction)`
-(`mtg-sdk/.../dsl/CardBuilder.kt`) hard-codes `TargetCreature(filter = TargetFilter.CreatureYouControl)`
-with no override, so the restriction cannot be authored. Needed: a `targetFilter: TargetFilter? = null`
-parameter on `equipAbility` (the hand-rolled `activatedAbility { isEquipAbility = true }` escape hatch
-would also work if it accepted the filter), plus a "worthy" reminder-text / keyword-display entry.
+Implemented 2026-08-10 as a **`quality` + `targetFilter` pair on the existing `equipAbility` facade**,
+with the five existing cards that were hand-rolling the shape converged onto it — not as a second
+authoring path beside them. (Four of those five print an actual "Equip [quality]" ability; Ghostfire
+Blade is the exception — see below.)
 
-Same card, second gap: "Double all damage equipped creature would deal" wants
-`DoubleDamage(appliesTo = DamageEvent(source = <the equipped creature>))`, but `SourceFilter`
-(`mtg-sdk/.../scripting/events/EventFilters.kt`) has only `EnchantedCreature` on the source side —
-`RecipientFilter` has an `EquippedCreature` case and `SourceFilter` does not. A one-line mirror.
+1. **`equipAbility(cost, genericCostReduction, quality, targetFilter)`**
+   (`mtg-sdk/.../dsl/CardBuilder.kt`). CR 702.6c is the rule: an equip ability may further restrict
+   its targets ("Equip [quality]" / "Equip [quality] creature") and "may legally target only a
+   creature that's controlled by the player activating the ability and that has the chosen quality".
+   `quality` supplies the wording, in two places: `ActivatedAbility.equipQuality`, which makes
+   `describeWithCost` render the ability as its printed line ("Equip worthy {1}") against the
+   *effective* cost, so an equip discount rewrites the menu text a `descriptionOverride` would have
+   frozen; and the target requirement's id/label ("worthy creature you control"), which is the
+   targeting prompt and `LegalActionInfo.targetDescription`. `targetFilter` is the rules half.
+   Blackblade Reforged, Bilbo's Ring, Dúnedain Blade, Ghostfire Blade and Pirate Hat were each
+   hand-rolling this as a bare `activatedAbility { }` **without `isEquipAbility`**, so Forge Anew's
+   free first equip, Eowyn's equip discount and instant-speed-equip permissions all silently skipped
+   their restricted halves; converging them onto the facade fixes that. Non-mana equip costs
+   ("Equip—Sacrifice a creature") still use the hand-rolled escape hatch — the facade parses a mana
+   cost only. `EquipQualityVariantTest` (mtg-sets) pins both catalog-wide invariants: every
+   `isEquipAbility` ability is sorcery-speed and targets a single creature you control.
 
-Blocked card: **Mjölnir, Hammer of Thor** [146].
+   Of those five, only Blackblade Reforged, Bilbo's Ring, Dúnedain Blade and Pirate Hat print a
+   CR 702.6c quality restriction. **Ghostfire Blade does not** — it prints one "Equip {3}" plus
+   "This Equipment's equip ability costs {2} less to activate if it targets a colorless creature",
+   and our extra {1} ability is a *model* of that reduction (behaviourally equivalent, and older
+   than the facade's `genericCostReduction` rail, which is how it would be written today). It rides
+   the same rail; it is not a printed "Equip [quality]" card.
+
+   "Worthy" itself is **not** an SDK concept — a Scryfall search for the term returns exactly one
+   card, so it is spelled out on Mjölnir from existing predicates
+   (`.legendary().notSubtype(Subtype.VILLAIN).withAnyColor(RED, WHITE).youControl()`) and the card's
+   own printed reminder text carries the definition. No keyword-display entry was added.
+
+2. **`SourceFilter.EquippedCreature`** (`mtg-sdk/.../scripting/events/EventFilters.kt`) — the mirror
+   was real and is one line plus one engine branch: `DamageUtils.damageSourceMatches` now handles
+   `SourceFilter.EnchantedCreature, SourceFilter.EquippedCreature` in a shared branch exactly as
+   `damageRecipientMatches` already did for the `RecipientFilter` pair. That single matcher is used by
+   prevention, doubling and flat/dynamic damage modification alike, and by both the combat and
+   noncombat damage paths, so "Double all damage equipped creature would deal" is
+   `DoubleDamage(appliesTo = DamageEvent(source = SourceFilter.EquippedCreature))` with no further
+   plumbing.
+
+Card: **Mjölnir, Hammer of Thor** [146].
 
 ## Copy-with-exceptions: name, added types, longer durations — SHIPPED ✅ (all 3 cards implemented)
 
@@ -266,34 +298,58 @@ with its re-firing trigger.
 **Implemented (3):** Shuri, Wakandan Inventor [75] · Absorbing Man [199] · Taskmaster, Mercenary
 Mimic [232].
 
-## Improvise (CR 702.126) — 2 cards ⛔
+## Improvise (CR 702.126) — SHIPPED ✅ (2 of 2 cards unblocked)
 
-No `IMPROVISE` anywhere; `Keyword` has `CONVOKE`, `DELVE`, `AFFINITY` but not improvise. The closest
-analogue is **waterbend**, described in the SDK as literally "a generic-only convoke+improvise" —
-improvise is a strict subset of it (artifacts only), and `AlternativePaymentChoice.waterbendPermanents`
-already taps artifacts *and* creatures for `{1}` each. Needed: `Keyword.IMPROVISE`; an
-`improvisedArtifacts: Set<EntityId>` field on `AlternativePaymentChoice`; an `applyImprovise` branch in
-`AlternativePaymentHandler` mirroring `applyWaterbend`/`applyConvoke`; and the field threaded through
-`GameAction` / `PendingDecision` / `ManaContinuations` / `LegalAction` / `LegalActionEnricher` /
-`CastSpellEnumerator` plus client UI and AI payment heuristics — the same surface convoke occupies.
+Shipped 2026-08-10 against the verified rule text: CR 702.126a "For each generic mana in this spell's
+total cost, you may tap an untapped artifact you control rather than pay that mana", 702.126b (neither
+an additional nor an alternative cost; applies only *after* the total cost is determined), 702.126c
+(multiple instances are redundant).
 
-Blocked cards: **Ironheart, Clever Champion** [60] · **Arc Reactor** [243]. Ironheart's second line
-("Noncreature spells you cast have improvise") then needs no extra work —
-`SpellStaticAbilities.GrantsKeywordToSpells` is built for exactly this and already handles
-cost-modifying keywords.
+The triage above proposed a fourth parallel payment field (`improvisedArtifacts`) beside
+`convokedCreatures`, `harmonizeCreature` and `waterbendPermanents`. That was **not** what shipped.
+Improvise and waterbend are the same mechanism with different eligibility, so the two were converged
+onto one rail instead:
 
-## Ability-source predicate on stack targets — 2 cards ⛔
+- `AlternativePaymentChoice.waterbendPermanents` was renamed `tapForGenericPermanents` and is now the
+  single carrier for "tap permanents you control, each paying {1} generic".
+- The eligibility rule is a value, `TapForGeneric.IMPROVISE` (artifacts) / `TapForGeneric.WATERBEND`
+  (artifacts or creatures), consumed by one `AlternativePaymentHandler.applyTapForGeneric` and one
+  `CostEnumerationUtils.findTapForGenericPermanents` / `canAffordWithTapForGeneric`.
+- `LegalAction` / the DTO / the client renamed to match, plus a `tapForGenericLabel` so the one HUD
+  (`TapForGenericSelector`, `tapForGeneric` pipeline phase) names the mechanic being paid.
 
-Abilities on the stack carry no `CardComponent`, and `PredicateEvaluator.matchesCardPredicate`
-(`rules-engine/.../handlers/PredicateEvaluator.kt`) bails out on them, so `GameObjectFilter.Artifact`
-is always false for an ability. `Targets.ActivatedOrTriggeredAbilityYouControl` and
-`Effects.CopyTargetSpellOrAbility` both exist (precedent `fin/cards/GogoMasterOfMimicry.kt`) — what is
-missing is restricting the target by its **source**. Needed: a `CardPredicate.AbilitySourceMatches(filter)`
-resolved in the evaluator's stack branch against the ability's `sourceEntityId`, matched with
-last-known information since the source may have left. The concept already exists engine-side as the
-static `CantBeTargetedBySourceTypeAbilities`.
+A further keyword of this shape is now one enum entry, not a new field + handler branch + UI.
+Card-side authoring is just `keywords(Keyword.IMPROVISE)`.
 
-Blocked cards: **Echo, Perceptive Prodigy** [51] (creature source) · **Scientist Supreme of A.I.M.**
+Unblocked cards: **Ironheart, Clever Champion** [60] · **Arc Reactor** [243]. Ironheart's second line
+("Noncreature spells you cast have improvise") needed no extra work —
+`GrantKeywordToOwnSpells(Keyword.IMPROVISE, GameObjectFilter.Noncreature)` resolves through the same
+`GrantedKeywordResolver` every cost keyword uses.
+
+## Ability-source predicate on stack targets — SHIPPED ✅ (2 of 2 cards unblocked)
+
+Shipped 2026-08-10. An ability on the stack is its own object with none of its source's
+characteristics (CR 113.3b/c), so a type predicate applied to the ability entity is never true.
+`CardPredicate.AbilitySourceMatches(subfilter)` redirects the match onto the ability's **source**
+(CR 113.7) — `ActivatedAbilityOnStackComponent.sourceId` / `TriggeredAbilityOnStackComponent.sourceId`
+— and evaluates the subfilter there, in the evaluator's stack branch alongside
+`CardPredicate.TargetsMatching`. The source is read from the projection while it is on the
+battlefield and from its printed characteristics once it has left, so a dead creature's dies trigger
+is still "from a creature source" (CR 113.7a, and CR 608.2b for the resolution-time re-check) — the
+same source resolution `CantBeTargetedBySourceTypeAbilities` uses.
+
+Authoring: `Targets.ActivatedOrTriggeredAbilityYouControlFrom(GameObjectFilter.Creature)`, or the
+`.abilitySourceMatches(...)` chain on `GameObjectFilter` / `TargetFilter`. See
+`docs/card-sdk-language-reference.md`.
+
+Shipped alongside, because the cards were unplayable without it: the legal-action enumerator
+(`TargetEnumerationUtils.findValidSpellTargets`) filtered *every* stack target down to spells, so no
+ability-targeting card — including the already-shipped Gogo, Master of Mimicry and Peter Parker's
+Camera — was ever **offered** an ability as a legal target, even though `TargetFinder` accepted one
+when the action was submitted. Both readers now go through the single
+`StackObjectTargeting.permitsAbilities` seam.
+
+**Unblocked (2):** Echo, Perceptive Prodigy [51] (creature source) · Scientist Supreme of A.I.M.
 [225] (artifact source).
 
 ## Ward with a non-listed cost — SHIPPED ✅ (both cards implemented)

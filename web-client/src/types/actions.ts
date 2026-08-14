@@ -90,8 +90,11 @@ export interface AlternativePaymentChoice {
   readonly convokedCreatures: Record<EntityId, ConvokePayment>
   /** Single creature tapped for Harmonize, reducing the generic cost by its power. */
   readonly harmonizeCreature?: EntityId | null
-  /** Untapped artifacts/creatures tapped for Waterbend, each paying {1} generic. */
-  readonly waterbendPermanents?: readonly EntityId[]
+  /**
+   * Untapped permanents tapped for a tap-for-generic payment (improvise CR 702.126 / waterbend),
+   * each paying {1} generic.
+   */
+  readonly tapForGenericPermanents?: readonly EntityId[]
 }
 
 export interface ConvokePayment {

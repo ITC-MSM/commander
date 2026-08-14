@@ -1,18 +1,44 @@
 ---
 name: add-card
-description: Implements new Magic: The Gathering cards for the Argentum Engine. Use when adding a new card, the user provides a card name to implement, or asks to implement a specific MTG card.
-argument-hint: <card-name> [--set <set-code>]
+description: Implements new Magic: The Gathering cards for the Argentum Engine. Use when adding a new card, the user provides one or more card names to implement, or asks to implement a specific MTG card. Several cards that reuse existing primitives can be implemented together into one PR.
+argument-hint: <card-name>[, <card-name>…] [--set <set-code>]
 ---
 
 # Add MTG Card
 
-Implement the card named in the request. `--set <set-code>` is optional and defaults to `por` (Portal).
+Implement the card — or cards — named in the request. `--set <set-code>` is optional and defaults to `por`
+(Portal).
 
 Deeper references, load when the step calls for them:
 
 - [`examples.md`](examples.md) — card definition, effect, and test templates for every common shape
 - [`new-sdk-types.md`](new-sdk-types.md) — wiring a new effect/trigger/keyword/counter type (Step 4)
 - [`reprints.md`](reprints.md) — adding a `Printing` row for an already-implemented card (Step 1)
+
+## Batching: several simple cards, one PR
+
+`CONTRIBUTING.md` sets the policy. Cards built entirely from existing `Effects.*` / `Patterns.*` **may
+share one branch and one PR** — that's the house shape (`Add five Aetherdrift cards`), and it amortizes one
+30-minute gate slot over all of them. A card that needs *new* engine vocabulary does **not** batch: it gets
+its own PR, with tests for the primitive itself, so a regression in it can be reverted without touching
+unrelated cards.
+
+Given several card names:
+
+- Run **Steps 0–9 once per card**, committing each card separately (Step 10's commit rule) so a bad card
+  can be dropped without unpicking the others.
+- Run **Step 10's gate once**, at the end, for the whole batch. Don't gate per card.
+- **A card that turns out to need new SDK vocabulary leaves the batch** the moment Step 4 says so. Reset
+  its commit, report it as dropped, and ship the rest. Do not grow the PR to cover it, and do not
+  fake it with an existing primitive that only works in the common case.
+
+Three things stay strictly per-card no matter the batch size: its own `{CardName}.kt`, its own
+`{CardName}ScenarioTest.kt` where Step 5 calls for a test (**never** a shared `{Something}BatchScenarioTest`
+— AGENTS.md → Hard rules), and its own Step 9 re-verify against Scryfall. Batching is a PR-shape decision;
+it never merges two cards' work into one artifact.
+
+Keep a batch to roughly five cards, and prefer cards that share a colour, mechanic, or cycle — a reviewer
+reading five cards built on one idea evaluates that idea five times, instead of five ideas once.
 
 ## Guiding principle: rules-faithful, no shortcuts
 
@@ -145,6 +171,10 @@ If the card genuinely needs new vocabulary, the bar and the wiring:
 [`new-sdk-types.md`](new-sdk-types.md). If it's a whole mechanic rather than one primitive, switch to the
 **`add-feature`** skill.
 
+**This is the step that ejects a card from a batch.** The moment a card needs a new effect, executor,
+condition, or keyword, it stops being batchable: reset its commit, note it as dropped, and finish the other
+cards. It becomes its own PR — with tests for the primitive, not just for the card that uses it.
+
 ## Step 5: Tests
 
 **Only if Step 4 added new vocabulary.** A card built purely from existing primitives is covered by the
@@ -237,12 +267,22 @@ entirely, and "until end of turn" wired as a permanent effect.
 
 ## Step 10: Verify and commit
 
-Run the gates via the **`verify`** skill — `just build` for a card on existing effects, `just test` when
-Step 4 added engine behavior. Expect a `CardDefinitionSnapshotTest` diff; re-bless with
-`just rebless-cards` and confirm **only your card** moved in the golden.
+Run the gates via the **`verify`** skill — `just build` for cards on existing effects, `just test` when
+Step 4 added engine behavior. **Once for the whole batch, after every card is written** — not per card;
+`just` holds the machine to two concurrent builds and queues the rest for up to 30 minutes. Expect a
+`CardDefinitionSnapshotTest` diff; re-bless with `just rebless-cards` and confirm **only your cards** moved
+in the golden. An unrelated card moving means you changed shared SDK behavior — stop and report it rather
+than re-blessing past it.
 
-If `backlog/sets/{set-name}/cards.md` lists the card, tick it (`- [ ]` → `- [x]`) and run
+Run `just check-card-printing "<Card Name>"` for each card.
+
+If `backlog/sets/{set-name}/cards.md` lists the cards, tick them (`- [ ]` → `- [x]`) and run
 `just fix-backlog` to resync the header count.
 
-Then commit: `Add {Card Name} to {Set Name}` (or `Add {Card Name} with {new mechanic} support`). **Commit
-to the current branch — do not create a new one**, even on `main`. Don't push.
+Then commit **each card separately**: `Add {Card Name} to {Set Name}` (or `Add {Card Name} with {new
+mechanic} support`), so a card can be dropped later without unpicking the others. **Commit to the current
+branch — do not create a new one**, even on `main`. Don't push.
+
+A batch PR title follows the house style — terse and imperative, `Add five Aetherdrift cards`. The body
+gets one line per card (name, what it does, which existing primitives it composes), plus any card dropped
+from the batch and why.

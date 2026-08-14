@@ -18217,8 +18217,7 @@
                                 }
                             ],
                             "timing": "SorcerySpeed",
-                            "isEquipAbility": true,
-                            "descriptionOverride": "Equip {3}"
+                            "isEquipAbility": true
                         },
                         "grantedStaticAbilities": [
                             {

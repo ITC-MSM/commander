@@ -113,9 +113,10 @@ class LegalActionEnricher(
             additionalCostInfo = action.additionalCostInfo?.toDto(),
             hasConvoke = action.hasConvoke,
             validConvokeCreatures = action.convokeCreatures?.map { it.toDto() },
-            hasWaterbend = action.hasWaterbend,
-            validWaterbendPermanents = action.waterbendPermanents?.map { it.toDto() },
-            waterbendAmount = action.waterbendAmount,
+            hasTapForGeneric = action.hasTapForGeneric,
+            validTapForGenericPermanents = action.tapForGenericPermanents?.map { it.toDto() },
+            tapForGenericAmount = action.tapForGenericAmount,
+            tapForGenericLabel = action.tapForGenericLabel,
             hasDelve = action.hasDelve,
             validDelveCards = action.delveCards?.map { it.toDto() },
             minDelveNeeded = action.minDelveNeeded,
@@ -163,11 +164,12 @@ class LegalActionEnricher(
         action.delveCards?.takeIf { it.isNotEmpty() }?.let { cards ->
             floor = floor.reduceGeneric(cards.size)
         }
-        // Waterbend: each tapped artifact/creature pays {1} of the generic, capped at the waterbend
-        // {N}. A null `waterbendAmount` is the "waterbend {X}" shape, whose cap is the X the player
-        // hasn't chosen yet — every tappable permanent counts toward the floor there.
-        action.waterbendPermanents?.takeIf { it.isNotEmpty() }?.let { permanents ->
-            floor = floor.reduceGeneric(action.waterbendAmount?.coerceAtMost(permanents.size) ?: permanents.size)
+        // Tap-for-generic (improvise CR 702.126a, waterbend): each tapped permanent pays {1} of the
+        // generic, capped at `tapForGenericAmount` where one applies (waterbend {N}). A null cap is
+        // improvise or the "waterbend {X}" shape, whose bound is just the generic in the cost —
+        // every tappable permanent counts toward the floor there.
+        action.tapForGenericPermanents?.takeIf { it.isNotEmpty() }?.let { permanents ->
+            floor = floor.reduceGeneric(action.tapForGenericAmount?.coerceAtMost(permanents.size) ?: permanents.size)
         }
         // Harmonize: at most one creature may be tapped, so the floor comes from the best power on
         // offer, not from their sum.
@@ -186,7 +188,7 @@ class LegalActionEnricher(
         action.autoTapPreview != null ||
             (action.hasXCost && action.manaCostString != null) ||
             action.hasConvoke ||
-            action.hasWaterbend ||
+            action.hasTapForGeneric ||
             action.hasDelve ||
             action.hasHarmonize
 
@@ -288,7 +290,7 @@ class LegalActionEnricher(
         colors = colors
     )
 
-    private fun WaterbendPermanentData.toDto() = WaterbendPermanentInfo(
+    private fun TapForGenericPermanentData.toDto() = TapForGenericPermanentInfo(
         entityId = entityId,
         name = name,
         isCreature = isCreature

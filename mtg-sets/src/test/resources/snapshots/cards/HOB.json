@@ -194,6 +194,255 @@
     ]
 }
 
+// Azog, Moria's Ruin
+{
+    "name": "Azog, Moria's Ruin",
+    "manaCost": "{2}{B}",
+    "typeLine": "Legendary Creature — Goblin Soldier",
+    "oracleText": "When Azog enters, destroy up to one other target creature. Its controller amasses Goblins X, where X is that creature's power. If you controlled that creature, draw a card. (To amass Goblins X, that player puts X +1/+1 counters on an Army they control. It's also a Goblin. If they don't control an Army, they create a 0/0 black Goblin Army creature token first.)",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.WhenCondition",
+                        "condition": {
+                            "type": "EntityMatches",
+                            "entity": {
+                                "type": "ContextTarget",
+                                "index": 0
+                            },
+                            "filter": "creature ctrl:you"
+                        }
+                    },
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "StoreNumber",
+                                "name": "azogTargetPower",
+                                "amount": {
+                                    "type": "EntityProperty",
+                                    "entity": "Target",
+                                    "numericProperty": "Power"
+                                }
+                            },
+                            {
+                                "type": "MoveToZone",
+                                "target": {
+                                    "type": "BoundVariable",
+                                    "name": "up to one other target creature"
+                                },
+                                "destination": "Graveyard",
+                                "byDestruction": true
+                            },
+                            {
+                                "type": "ForEach",
+                                "space": {
+                                    "type": "IterationSpace.Players",
+                                    "players": {
+                                        "type": "ControllerOf",
+                                        "targetDescription": "that creature"
+                                    }
+                                },
+                                "body": {
+                                    "type": "Amass",
+                                    "amount": {
+                                        "type": "VariableReference",
+                                        "variableName": "azogTargetPower"
+                                    },
+                                    "subtype": "Goblin"
+                                }
+                            },
+                            {
+                                "type": "DrawCards",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            }
+                        ]
+                    },
+                    "otherwise": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "StoreNumber",
+                                "name": "azogTargetPower",
+                                "amount": {
+                                    "type": "EntityProperty",
+                                    "entity": "Target",
+                                    "numericProperty": "Power"
+                                }
+                            },
+                            {
+                                "type": "MoveToZone",
+                                "target": {
+                                    "type": "BoundVariable",
+                                    "name": "up to one other target creature"
+                                },
+                                "destination": "Graveyard",
+                                "byDestruction": true
+                            },
+                            {
+                                "type": "ForEach",
+                                "space": {
+                                    "type": "IterationSpace.Players",
+                                    "players": {
+                                        "type": "ControllerOf",
+                                        "targetDescription": "that creature"
+                                    }
+                                },
+                                "body": {
+                                    "type": "Amass",
+                                    "amount": {
+                                        "type": "VariableReference",
+                                        "variableName": "azogTargetPower"
+                                    },
+                                    "subtype": "Goblin"
+                                }
+                            }
+                        ]
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "optional": true,
+                    "filter": {
+                        "baseFilter": "creature",
+                        "excludeSelf": true
+                    },
+                    "id": "up to one other target creature"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "61",
+        "rarity": "RARE",
+        "artist": "Miklós Ligeti",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/3/135da718-affc-46ba-be57-c12c23b54dad.jpg?1784798028",
+        "rulings": [
+            {
+                "date": "2026-06-29",
+                "text": "If no target is chosen for Azog's ability, \"its controller\" is undefined and no player amasses Goblins."
+            },
+            {
+                "date": "2026-06-29",
+                "text": "Use the power of the creature as it last existed on the battlefield to determine the value of X."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Balin, Loremaster
+{
+    "name": "Balin, Loremaster",
+    "manaCost": "{3}{R}{R}",
+    "typeLine": "Legendary Creature — Dwarf Bard",
+    "oracleText": "Storied (If you control three or more artifacts, legendaries, and/or Sagas, you have an enduring story for the rest of the game.)\nWhenever Balin or another Dwarf you control enters, you may discard your hand. Draw X cards, where X is the number of cards discarded this way. If you have an enduring story, Balin deals X damage to each opponent.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "STORIED"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "creature Dwarf ctrl:you",
+                    "to": "Battlefield"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "Gated",
+                            "gate": "Gate.MayDecide",
+                            "then": {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "GatherCards",
+                                        "source": {
+                                            "type": "FromZone",
+                                            "zone": "Hand"
+                                        },
+                                        "storeAs": "discardedHand"
+                                    },
+                                    {
+                                        "type": "MoveCollection",
+                                        "from": "discardedHand",
+                                        "destination": {
+                                            "type": "ToZone",
+                                            "zone": "Graveyard"
+                                        },
+                                        "moveType": "Discard"
+                                    }
+                                ]
+                            },
+                            "descriptionOverride": "You may discard your hand."
+                        },
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "VariableReference",
+                                "variableName": "discardedHand_count"
+                            }
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": "PlayerHasEnduringStory"
+                            },
+                            "then": {
+                                "type": "DealDamage",
+                                "amount": {
+                                    "type": "VariableReference",
+                                    "variableName": "discardedHand_count"
+                                },
+                                "target": {
+                                    "type": "PlayerRef",
+                                    "player": "EachOpponent"
+                                }
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "Whenever Balin or another Dwarf you control enters, you may discard your hand. Draw X cards, where X is the number of cards discarded this way. If you have an enduring story, Balin deals X damage to each opponent."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "87",
+        "rarity": "RARE",
+        "artist": "Colin Boyer",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/2/42d7ca7b-c983-40fd-ad57-59f6972bb375.jpg?1785496498"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Bard the Bowman
 {
     "name": "Bard the Bowman",
@@ -436,6 +685,65 @@
     ]
 }
 
+// Bard, King of Dale
+{
+    "name": "Bard, King of Dale",
+    "manaCost": "{4}{W}{U}",
+    "typeLine": "Legendary Creature — Human Noble Archer",
+    "oracleText": "Reach, vigilance\nIf you would draw a card except the first one you draw in each of your draw steps, draw two cards instead.\nIf one or more tokens would be created under your control, twice that many of those tokens are created instead.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 5
+    },
+    "keywords": [
+        "REACH",
+        "VIGILANCE"
+    ],
+    "script": {
+        "replacementEffects": [
+            {
+                "type": "ReplaceDrawWith",
+                "replacementEffect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 2
+                    }
+                },
+                "appliesTo": {
+                    "type": "DrawEvent",
+                    "exceptFirstInDrawStep": true
+                }
+            },
+            "MultiplyTokenCreation"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "144",
+        "rarity": "MYTHIC",
+        "artist": "Xabi Gaztelua",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/0/c05c2aa6-29c7-40f8-872e-91099b9225c4.jpg?1784377008",
+        "rulings": [
+            {
+                "date": "2026-06-29",
+                "text": "If two or more replacement effects would apply to a card-drawing event, the player drawing the card chooses the order in which to apply them."
+            },
+            {
+                "date": "2026-06-29",
+                "text": "Bard's last ability only applies to tokens that are created. Copies of permanent spells that resolve become tokens on the battlefield, but those tokens are not created and will not be doubled by Bard's ability."
+            },
+            {
+                "date": "2026-06-29",
+                "text": "The effects of multiple Bard, King of Dale token abilities are cumulative. Two Bards create four times the number of tokens."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLUE"
+    ]
+}
+
 // Bejeweled Warg
 {
     "name": "Bejeweled Warg",
@@ -502,6 +810,106 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Belladonna Took
+{
+    "name": "Belladonna Took",
+    "manaCost": "{1}{W}",
+    "typeLine": "Legendary Creature — Halfling Citizen",
+    "oracleText": "Whenever a token you control enters, you gain 1 life if this is the first time this ability has resolved this turn. If it's the second time, draw a card. If it's the third time, put a +1/+1 counter on each creature you control.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "token ctrl:you",
+                    "to": "Battlefield"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        "IncrementAbilityResolutionCount",
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "SourceAbilityResolvedNTimesThisTurn",
+                                    "count": 1
+                                }
+                            },
+                            "then": {
+                                "type": "GainLife",
+                                "amount": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            }
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "SourceAbilityResolvedNTimesThisTurn",
+                                    "count": 2
+                                }
+                            },
+                            "then": {
+                                "type": "DrawCards",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            }
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "SourceAbilityResolvedNTimesThisTurn",
+                                    "count": 3
+                                }
+                            },
+                            "then": {
+                                "type": "ForEach",
+                                "space": {
+                                    "type": "IterationSpace.Group",
+                                    "filter": {
+                                        "baseFilter": "creature ctrl:you"
+                                    }
+                                },
+                                "body": {
+                                    "type": "AddCounters",
+                                    "counterType": "+1/+1",
+                                    "count": 1,
+                                    "target": "Self"
+                                }
+                            }
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "4",
+        "rarity": "RARE",
+        "artist": "Xabi Gaztelua",
+        "flavorText": "Once in a while, members of the Took clan would go and have adventures.",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/8/88f0c189-c9ed-4ea3-ae62-3d8ac6c7fecf.jpg?1784894804"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 
@@ -736,6 +1144,86 @@
                 }
             }
         }
+    ]
+}
+
+// Bifur, Melodic Rider
+{
+    "name": "Bifur, Melodic Rider",
+    "manaCost": "{4}{R/W}{R/W}",
+    "typeLine": "Legendary Creature — Dwarf Bard",
+    "oracleText": "Storied (If you control three or more artifacts, legendaries, and/or Sagas, you have an enduring story for the rest of the game.)\nWhenever Bifur enters or attacks, put a +1/+1 counter on target creature.\nAs long as you have an enduring story, if a triggered ability of a Dwarf you control triggers, that ability triggers an additional time.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 5
+    },
+    "keywords": [
+        "STORIED"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature"
+                    },
+                    "id": "target creature"
+                }
+            },
+            {
+                "id": "ability_2",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature"
+                    },
+                    "id": "target creature"
+                }
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "AdditionalSourceTriggers",
+                "sourceFilter": "creature Dwarf ctrl:you",
+                "excludeSelf": false,
+                "condition": "PlayerHasEnduringStory"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "147",
+        "rarity": "UNCOMMON",
+        "artist": "Kieran Yanner",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/e/ee88cc80-8fbf-451c-b2b8-09158426c26a.jpg?1784377019"
+    },
+    "colorIdentityOverride": [
+        "RED",
+        "WHITE"
     ]
 }
 
@@ -2761,6 +3249,79 @@
     ]
 }
 
+// Dwalin, Weaponmaster
+{
+    "name": "Dwalin, Weaponmaster",
+    "manaCost": "{1}{R/W}",
+    "typeLine": "Legendary Creature — Dwarf Warrior",
+    "oracleText": "First strike\nWhenever Dwalin enters or attacks, put a hone counter on each Equipment you control. (Each hone counter on an Equipment grants +1/+0 to equipped creature.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "keywords": [
+        "FIRST_STRIKE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": "artifact Equipment ctrl:you"
+                        }
+                    },
+                    "body": {
+                        "type": "AddCounters",
+                        "counterType": "hone",
+                        "count": 1,
+                        "target": "Self"
+                    }
+                },
+                "descriptionOverride": "Whenever Dwalin enters, put a hone counter on each Equipment you control."
+            },
+            {
+                "id": "ability_2",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": "artifact Equipment ctrl:you"
+                        }
+                    },
+                    "body": {
+                        "type": "AddCounters",
+                        "counterType": "hone",
+                        "count": 1,
+                        "target": "Self"
+                    }
+                },
+                "descriptionOverride": "Whenever Dwalin attacks, put a hone counter on each Equipment you control."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "154",
+        "rarity": "RARE",
+        "artist": "Marco Teixeira",
+        "flavorText": "The Company had lost a great deal, but they had killed the Great Goblin and many others besides. All in all, they had the best of it.",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/9/196d9287-a37d-4b27-a83b-a5489a54f081.jpg?1785496508"
+    },
+    "colorIdentityOverride": [
+        "RED",
+        "WHITE"
+    ]
+}
+
 // Dwarven Mattock
 {
     "name": "Dwarven Mattock",
@@ -4651,6 +5212,127 @@
     ]
 }
 
+// Glamdring, Foe-hammer
+{
+    "name": "Glamdring, Foe-hammer",
+    "manaCost": "{2}",
+    "typeLine": "Legendary Artifact — Equipment",
+    "oracleText": "Instant and sorcery spells you cast cost {X} less to cast, where X is equipped creature's power.\nEquip {2} ({2}: Attach to target creature you control. Equip only as a sorcery.)",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{2}"
+                    }
+                },
+                "effect": {
+                    "type": "AttachEquipment",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "creature you control"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        },
+                        "id": "creature you control"
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "isEquipAbility": true
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifySpellCost",
+                "target": {
+                    "type": "YouCast",
+                    "filter": "instant|sorcery"
+                },
+                "modification": {
+                    "type": "ReduceGenericBy",
+                    "source": {
+                        "type": "AttachedPermanentProperty",
+                        "property": "Power"
+                    }
+                }
+            }
+        ]
+    },
+    "equipCost": "{2}",
+    "metadata": {
+        "collectorNumber": "174",
+        "rarity": "RARE",
+        "artist": "Chris Cold",
+        "flavorText": "Suddenly a sword flashed in its own light.",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/5/a5cfbfde-783e-46ca-b3cf-11f16209d6cb.jpg?1785496394"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ],
+    "layout": "ADVENTURE",
+    "cardFaces": [
+        {
+            "name": "Gleam of Death",
+            "manaCost": "{3}{U}",
+            "typeLine": "Sorcery — Adventure",
+            "oracleText": "Mill six cards, then put all instant and sorcery cards from among them into your hand. (Then exile this card. You may cast the artifact later from exile.)",
+            "script": {
+                "spellEffect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 6
+                                },
+                                "isMill": true
+                            },
+                            "storeAs": "milled"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "milled",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            }
+                        },
+                        {
+                            "type": "FilterCollection",
+                            "from": "milled",
+                            "filter": {
+                                "type": "MatchesFilter",
+                                "filter": "instant|sorcery"
+                            },
+                            "storeMatching": "spells",
+                            "storeNonMatching": "rest"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "spells",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Hand"
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+    ]
+}
+
 // Gleaming Splendor
 {
     "name": "Gleaming Splendor",
@@ -5218,6 +5900,189 @@
     ]
 }
 
+// Gollum, Riddle Master
+{
+    "name": "Gollum, Riddle Master",
+    "manaCost": "{1}{B}",
+    "typeLine": "Legendary Creature — Halfling Horror",
+    "oracleText": "As Gollum enters, choose odd or even. (Zero is even.)\nWhenever an opponent casts a spell with mana value of the chosen quality, choose one that hasn't been chosen —\n• Put a +1/+1 counter on Gollum.\n• Each opponent loses 2 life and you gain 2 life.\n• Draw a card.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            "ManaValueIsOdd"
+                        ]
+                    },
+                    "player": "EachOpponent"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Modal",
+                    "modes": [
+                        {
+                            "effect": {
+                                "type": "AddCounters",
+                                "counterType": "+1/+1",
+                                "count": 1,
+                                "target": "Self"
+                            },
+                            "description": "Put a +1/+1 counter on Gollum"
+                        },
+                        {
+                            "effect": {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "LoseLife",
+                                        "amount": {
+                                            "type": "Fixed",
+                                            "amount": 2
+                                        },
+                                        "target": {
+                                            "type": "PlayerRef",
+                                            "player": "EachOpponent"
+                                        }
+                                    },
+                                    {
+                                        "type": "GainLife",
+                                        "amount": {
+                                            "type": "Fixed",
+                                            "amount": 2
+                                        }
+                                    }
+                                ]
+                            },
+                            "description": "Each opponent loses 2 life and you gain 2 life"
+                        },
+                        {
+                            "effect": {
+                                "type": "DrawCards",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            }
+                        }
+                    ],
+                    "excludePreviouslyChosenModes": true,
+                    "countsAsModalSpell": false
+                },
+                "triggerCondition": {
+                    "type": "SourceChosenModeIs",
+                    "modeId": "odd"
+                },
+                "descriptionOverride": "Whenever an opponent casts a spell with an odd mana value, choose one that hasn't been chosen."
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            "ManaValueIsEven"
+                        ]
+                    },
+                    "player": "EachOpponent"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Modal",
+                    "modes": [
+                        {
+                            "effect": {
+                                "type": "AddCounters",
+                                "counterType": "+1/+1",
+                                "count": 1,
+                                "target": "Self"
+                            },
+                            "description": "Put a +1/+1 counter on Gollum"
+                        },
+                        {
+                            "effect": {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "LoseLife",
+                                        "amount": {
+                                            "type": "Fixed",
+                                            "amount": 2
+                                        },
+                                        "target": {
+                                            "type": "PlayerRef",
+                                            "player": "EachOpponent"
+                                        }
+                                    },
+                                    {
+                                        "type": "GainLife",
+                                        "amount": {
+                                            "type": "Fixed",
+                                            "amount": 2
+                                        }
+                                    }
+                                ]
+                            },
+                            "description": "Each opponent loses 2 life and you gain 2 life"
+                        },
+                        {
+                            "effect": {
+                                "type": "DrawCards",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            }
+                        }
+                    ],
+                    "excludePreviouslyChosenModes": true,
+                    "countsAsModalSpell": false
+                },
+                "triggerCondition": {
+                    "type": "SourceChosenModeIs",
+                    "modeId": "even"
+                },
+                "descriptionOverride": "Whenever an opponent casts a spell with an even mana value, choose one that hasn't been chosen."
+            }
+        ],
+        "replacementEffects": [
+            {
+                "type": "EntersWithChoice",
+                "choiceType": "MODE",
+                "modeOptions": [
+                    {
+                        "id": "odd",
+                        "label": "Odd",
+                        "description": "Trigger on opponents' spells with an odd mana value.",
+                        "iconKey": "odd"
+                    },
+                    {
+                        "id": "even",
+                        "label": "Even",
+                        "description": "Trigger on opponents' spells with an even mana value. (Zero is even.)",
+                        "iconKey": "even"
+                    }
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "70",
+        "rarity": "MYTHIC",
+        "artist": "Irvin Rodriguez",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/b/bbdc7e37-c65a-497a-92b7-a30a6e369c71.jpg?1784376959"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Gollum, Silent Slinker
 {
     "name": "Gollum, Silent Slinker",
@@ -5736,6 +6601,78 @@
     "colorIdentityOverride": []
 }
 
+// Inside Information
+{
+    "name": "Inside Information",
+    "manaCost": "{X}{B}{B}",
+    "typeLine": "Sorcery",
+    "oracleText": "Exile the top X cards of target opponent's library. You may play those cards this turn. If you cast a spell this way, pay life equal to its mana value rather than pay its mana cost.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherCards",
+                    "source": {
+                        "type": "TopOfLibrary",
+                        "count": "XValue",
+                        "player": "TargetOpponent"
+                    },
+                    "storeAs": "insideInformationExiled"
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "insideInformationExiled",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Exile",
+                        "player": "TargetOpponent"
+                    }
+                },
+                {
+                    "type": "GrantMayPlayFromExile",
+                    "from": "insideInformationExiled"
+                },
+                {
+                    "type": "GrantPlayWithoutPayingCost",
+                    "from": "insideInformationExiled"
+                },
+                {
+                    "type": "GrantPlayWithAdditionalCost",
+                    "from": "insideInformationExiled",
+                    "additionalCost": "PayLifeEqualToManaValueOfSpell"
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetOpponent",
+                "id": "target opponent"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "76",
+        "rarity": "MYTHIC",
+        "artist": "Sean Vo",
+        "flavorText": "\"Old fool!\" Bilbo thought. \"Why, there is a large patch in the hollow of his left breast as bare as a snail out of its shell!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/7/9763bd56-fa4b-4907-ad15-c3f040c5fc0a.jpg?1785152426",
+        "rulings": [
+            {
+                "date": "2026-06-29",
+                "text": "If you cast a spell for another cost rather than pay its mana cost, you can't choose another alternative cost. You may still pay optional additional costs and must pay mandatory additional costs."
+            },
+            {
+                "date": "2026-06-29",
+                "text": "You must follow all normal timing rules when playing a land or casting a spell exiled with Inside Information."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Iron Hills
 {
     "name": "Iron Hills",
@@ -6018,6 +6955,69 @@
         "flavorText": "\"I forgot to mention that with the map went a key, a small and curious key.\"\n—Gandalf, to Thorin",
         "imageUri": "https://cards.scryfall.io/normal/front/8/9/898c14a2-d897-4341-83ed-eee666df9648.jpg?1785412757"
     }
+}
+
+// Kíli the Resourceful
+{
+    "name": "Kíli the Resourceful",
+    "manaCost": "{1}{W}",
+    "typeLine": "Legendary Creature — Dwarf Scout",
+    "oracleText": "Storied (If you control three or more artifacts, legendaries, and/or Sagas, you have an enduring story for the rest of the game.)\nAs long as you have an enduring story, you may pay {0} rather than pay the equip cost of the first equip ability you activate each turn.\nWhenever another Dwarf or Equipment you control enters, draw a card. This ability triggers only once each turn.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 2
+    },
+    "keywords": [
+        "STORIED"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": {
+                        "cardPredicates": [
+                            {
+                                "type": "HasAnyOfSubtypes",
+                                "subtypes": [
+                                    "Dwarf",
+                                    "Equipment"
+                                ]
+                            }
+                        ],
+                        "controllerPredicate": "ControlledByYou"
+                    },
+                    "to": "Battlefield"
+                },
+                "binding": "OTHER",
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "oncePerTurn": true
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": "FreeFirstEquipEachTurn",
+                "condition": "PlayerHasEnduringStory"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "17",
+        "rarity": "RARE",
+        "artist": "Yuhong Ding",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/8/1805532f-6d99-47d0-9529-5f5831a7fdc8.jpg?1785496242"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
 }
 
 // Lake-town
@@ -7405,6 +8405,104 @@
                         }
                     ]
                 }
+            }
+        }
+    ]
+}
+
+// My Precious
+{
+    "name": "My Precious",
+    "manaCost": "{3}",
+    "typeLine": "Legendary Artifact — Equipment",
+    "oracleText": "Equipped creature has hexproof and can't be blocked.\nEquip—{2}, Pay 2 life.",
+    "flags": [
+        "CANT_BE_BLOCKED"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}"
+                            }
+                        },
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomPayLife",
+                                "amount": 2
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "AttachEquipment",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "creature you control"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        },
+                        "id": "creature you control"
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "isEquipAbility": true
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "GrantKeyword",
+                "keyword": "HEXPROOF"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "176",
+        "rarity": "RARE",
+        "artist": "Valera Lutfullina",
+        "flavorText": "\"It won't see us, will it, my precious?\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/5/15ae4d50-be2f-412c-bb6b-b0a06b60474a.jpg?1783902783"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ],
+    "layout": "ADVENTURE",
+    "cardFaces": [
+        {
+            "name": "Allure of Power",
+            "manaCost": "{1}{B}",
+            "typeLine": "Instant — Adventure",
+            "oracleText": "As an additional cost to cast this spell, sacrifice a creature.\nDraw two cards. (Then exile this card. You may cast the artifact later from exile.)",
+            "script": {
+                "spellEffect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 2
+                    }
+                },
+                "additionalCosts": [
+                    {
+                        "type": "AdditionalAtom",
+                        "atom": {
+                            "type": "AtomSacrifice",
+                            "filter": "creature"
+                        }
+                    }
+                ]
             }
         }
     ]
@@ -8832,6 +9930,280 @@
     ]
 }
 
+// Riddles in the Dark
+{
+    "name": "Riddles in the Dark",
+    "manaCost": "{2}{U}",
+    "typeLine": "Instant",
+    "oracleText": "Look at the top four cards of your library and separate them into a face-down pile and a face-up pile. An opponent chooses one of the piles. Put that pile into your hand and the other into your graveyard.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherCards",
+                    "source": {
+                        "type": "TopOfLibrary",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 4
+                        }
+                    },
+                    "storeAs": "looked"
+                },
+                {
+                    "type": "ConditionalOnCollection",
+                    "collection": "looked",
+                    "ifNotEmpty": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "looked",
+                                "selection": "ChooseAnyNumber",
+                                "storeSelected": "faceUp",
+                                "storeRemainder": "faceDown",
+                                "prompt": "Separate the top four cards into a face-up pile and a face-down pile. The cards you select are placed face up; the rest stay face down.",
+                                "selectedLabel": "Face-up pile",
+                                "remainderLabel": "Face-down pile",
+                                "showAllCards": true,
+                                "alwaysPrompt": true
+                            },
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromVariable",
+                                    "variableName": "faceUp"
+                                },
+                                "storeAs": "faceUpRevealed",
+                                "revealed": true
+                            },
+                            {
+                                "type": "ChoosePile",
+                                "pileA": "faceUpRevealed",
+                                "pileB": "faceDown",
+                                "pileALabel": "Face-up pile",
+                                "pileBLabel": "Face-down pile",
+                                "chooser": "Opponent",
+                                "storeChosenAs": "chosenPile4",
+                                "storeOtherAs": "otherPile4",
+                                "prompt": "Choose a pile. That pile goes to your opponent's hand; the other goes to their graveyard."
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "chosenPile4",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Hand"
+                                }
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "otherPile4",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Graveyard"
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "53",
+        "rarity": "RARE",
+        "artist": "Lorenzo Mastroianni",
+        "flavorText": "\"What have I got in my pocket?\"\n—Bilbo",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/6/a6129286-7437-4ba4-be55-586a22cd67ca.jpg?1783902787",
+        "rulings": [
+            {
+                "date": "2026-06-29",
+                "text": "You may split the cards into one pile of four and one pile of zero. Either pile may be the face-up pile."
+            },
+            {
+                "date": "2026-06-29",
+                "text": "You don't have to reveal the cards in the face-down pile if you put it into your hand."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Roads Go Ever, Ever On
+{
+    "name": "Roads Go Ever, Ever On",
+    "manaCost": "{1}{W}",
+    "typeLine": "Enchantment — Saga",
+    "oracleText": "(As this Saga enters and after your draw step, add a lore counter. Sacrifice after IV.)\nI — Search your library for up to two basic Plains cards, exile them, then shuffle. You gain 2 life.\nII, III — Put a card exiled with this Saga into its owner's hand.\nIV — Whenever you attack this turn, target creature you control gets +1/+1 until end of turn for each Plains you control.",
+    "script": {
+        "sagaChapters": [
+            {
+                "chapter": 1,
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Library",
+                                "filter": "basicland Plains"
+                            },
+                            "storeAs": "roadsSearchable"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "roadsSearchable",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 2
+                                }
+                            },
+                            "storeSelected": "roadsExiled",
+                            "prompt": "Search your library for up to two basic Plains cards"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "roadsExiled",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile"
+                            },
+                            "linkToSource": true
+                        },
+                        "ShuffleLibrary",
+                        {
+                            "type": "GainLife",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 2
+                            }
+                        }
+                    ]
+                }
+            },
+            {
+                "chapter": 2,
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": "FromLinkedExile",
+                            "storeAs": "roadsLinked"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "roadsLinked",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "roadsReturned",
+                            "prompt": "Choose a card exiled with Roads Go Ever, Ever On to put into its owner's hand"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "roadsReturned",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Hand"
+                            },
+                            "unlinkFromSource": true
+                        }
+                    ]
+                }
+            },
+            {
+                "chapter": 3,
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": "FromLinkedExile",
+                            "storeAs": "roadsLinked"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "roadsLinked",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "roadsReturned",
+                            "prompt": "Choose a card exiled with Roads Go Ever, Ever On to put into its owner's hand"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "roadsReturned",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Hand"
+                            },
+                            "unlinkFromSource": true
+                        }
+                    ]
+                }
+            },
+            {
+                "chapter": 4,
+                "effect": {
+                    "type": "CreateDelayedTrigger",
+                    "effect": {
+                        "type": "ModifyStats",
+                        "powerModifier": {
+                            "type": "AggregateBattlefield",
+                            "player": "You",
+                            "filter": "land Plains"
+                        },
+                        "toughnessModifier": {
+                            "type": "AggregateBattlefield",
+                            "player": "You",
+                            "filter": "land Plains"
+                        },
+                        "target": {
+                            "type": "ContextTarget",
+                            "index": 0
+                        }
+                    },
+                    "trigger": {
+                        "event": "YouAttackEvent",
+                        "binding": "ANY"
+                    },
+                    "targetRequirement": {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        }
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "25",
+        "rarity": "RARE",
+        "artist": "Rovina Cai",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/3/b3c1ebd6-967f-4b8c-8f1f-442ce8c1da24.jpg?1784673434"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Roll-Roll-Roll-Roll
 {
     "name": "Roll-Roll-Roll-Roll",
@@ -9580,6 +10952,102 @@
     "colorIdentityOverride": [
         "BLUE"
     ]
+}
+
+// Sting, Bilbo's Sword
+{
+    "name": "Sting, Bilbo's Sword",
+    "manaCost": "{2}",
+    "typeLine": "Legendary Artifact — Equipment",
+    "oracleText": "Flash\nWhen Sting enters, put a hone counter on Sting for each creature target opponent controls. Attach Sting to up to one target creature you control. (Each hone counter on an Equipment grants +1/+0 to equipped creature.)\nEquip {3} ({3}: Attach to target creature you control. Equip only as a sorcery.)",
+    "keywords": [
+        "FLASH"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "AddDynamicCounters",
+                            "counterType": "hone",
+                            "amount": {
+                                "type": "AggregateBattlefield",
+                                "player": "TargetOpponent",
+                                "filter": "creature"
+                            },
+                            "target": "Self"
+                        },
+                        {
+                            "type": "AttachEquipment",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "up to one target creature you control"
+                            }
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetOpponent",
+                    "id": "target opponent"
+                },
+                "additionalTargetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "optional": true,
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        },
+                        "id": "up to one target creature you control"
+                    }
+                ],
+                "descriptionOverride": "When Sting enters, put a hone counter on Sting for each creature target opponent controls. Attach Sting to up to one target creature you control."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{3}"
+                    }
+                },
+                "effect": {
+                    "type": "AttachEquipment",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "creature you control"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        },
+                        "id": "creature you control"
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "isEquipAbility": true
+            }
+        ]
+    },
+    "equipCost": "{3}",
+    "metadata": {
+        "collectorNumber": "178",
+        "rarity": "RARE",
+        "artist": "Tomas Duchek",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/6/d6a8d698-c454-42c4-ad4e-9a7625d5569f.jpg?1784377051"
+    }
 }
 
 // Stir Up Trouble
@@ -12726,7 +14194,7 @@
                     "type": "AttachEquipment",
                     "target": {
                         "type": "BoundVariable",
-                        "name": "target Wizard you control"
+                        "name": "Wizard creature you control"
                     }
                 },
                 "targetRequirements": [
@@ -12735,12 +14203,12 @@
                         "filter": {
                             "baseFilter": "creature Wizard ctrl:you"
                         },
-                        "id": "target Wizard you control"
+                        "id": "Wizard creature you control"
                     }
                 ],
                 "timing": "SorcerySpeed",
                 "isEquipAbility": true,
-                "descriptionOverride": "Equip Wizard {1}"
+                "equipQuality": "Wizard"
             },
             {
                 "id": "ability_2",

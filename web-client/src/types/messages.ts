@@ -881,16 +881,22 @@ export interface LegalActionInfo {
   readonly hasConvoke?: boolean
   /** Creatures that can be tapped to help pay for Convoke */
   readonly validConvokeCreatures?: readonly ConvokeCreatureInfo[]
-  /** Whether this ability/spell has a Waterbend cost (Avatar: The Last Airbender) */
-  readonly hasWaterbend?: boolean
-  /** Artifacts/creatures that can be tapped to help pay a Waterbend cost (each pays {1} generic) */
-  readonly validWaterbendPermanents?: readonly WaterbendPermanentInfo[]
+  /**
+   * Whether this ability/spell offers a tap-for-generic payment — tap untapped permanents you
+   * control, each paying {1} of the generic in the cost. Improvise (CR 702.126, artifacts only)
+   * and Waterbend (artifacts or creatures) both arrive this way; `tapForGenericLabel` says which.
+   */
+  readonly hasTapForGeneric?: boolean
+  /** Permanents that can be tapped to help pay, each for {1} generic */
+  readonly validTapForGenericPermanents?: readonly TapForGenericPermanentInfo[]
   /**
    * Tap cap for a spell-level waterbend cost — at most this many permanents may be tapped (one
-   * per generic in the waterbend {N}). Absent for an ability waterbend (cap = the cost's generic)
-   * and for the "waterbend {X}" shape (cap = the chosen xValue).
+   * per generic in the waterbend {N}). Absent when the cap is just the generic in the cost:
+   * improvise, an ability waterbend, and the "waterbend {X}" shape (cap = the chosen xValue).
    */
-  readonly waterbendAmount?: number
+  readonly tapForGenericAmount?: number
+  /** Player-facing verb for the tap payment — `"improvise"` / `"waterbend"`. */
+  readonly tapForGenericLabel?: string
   /** Whether this spell has Delve */
   readonly hasDelve?: boolean
   /** Cards in graveyard that can be exiled for Delve */
@@ -1027,10 +1033,11 @@ export interface ConvokeCreatureInfo {
 }
 
 /**
- * Information about an artifact/creature that can be tapped for Waterbend. Generic-only,
+ * Information about a permanent that can be tapped for a tap-for-generic payment (improvise /
+ * waterbend). Generic-only,
  * so no color is carried. [isCreature] distinguishes creatures from artifacts for UI only.
  */
-export interface WaterbendPermanentInfo {
+export interface TapForGenericPermanentInfo {
   readonly entityId: EntityId
   readonly name: string
   readonly isCreature: boolean

@@ -8,6 +8,7 @@ import com.wingedsheep.engine.mechanics.mana.CostCalculator
 import com.wingedsheep.engine.mechanics.mana.ManaSolver
 import com.wingedsheep.engine.mechanics.mana.ManaSource
 import com.wingedsheep.engine.mechanics.mana.SpellPaymentContext
+import com.wingedsheep.engine.mechanics.mana.TapForGeneric
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
@@ -207,6 +208,11 @@ class CostEnumerationUtils(
      * mana only to cast spells with mana value 4 or greater" (Ashling, Rimebound) — counts toward
      * affordability when it is eligible for *this* payment. Passing null ignores restricted mana
      * entirely, which under-reports affordability and hides the cast from the client.
+     *
+     * [tapForGenericPermanents] lets a *second* payment help on the same spell — improvise
+     * (CR 702.126) is grantable over a whole card type (Ironheart, Clever Champion), so it lands
+     * on convoke spells that never printed it. Each such tap pays {1} generic on top of convoke's
+     * own reduction, exactly as `CastSpellHandler` applies them in sequence.
      */
     fun canAffordWithConvoke(
         state: GameState,
@@ -214,17 +220,23 @@ class CostEnumerationUtils(
         manaCost: ManaCost,
         convokeCreatures: List<ConvokeCreatureData>,
         precomputedSources: List<ManaSource>? = null,
-        spellContext: SpellPaymentContext? = null
+        spellContext: SpellPaymentContext? = null,
+        tapForGenericPermanents: List<TapForGenericPermanentData> = emptyList()
     ): Boolean {
         // Convoke creatures with their own mana abilities (e.g. Llanowar Elves) appear in
         // both lists — but tapping the creature can pay either a convoke pip or a mana
         // ability, never both. Exclude them from the mana-source count so the totals
         // don't double-up.
         val convokeIds = convokeCreatures.mapTo(mutableSetOf()) { it.entityId }
+        // An artifact *creature* qualifies for both convoke and improvise, but one tap pays one
+        // of them — `applyTapForGeneric` skips anything convoke already tapped. Drop the overlap
+        // so it isn't counted twice here either.
+        val tapPermanents = tapForGenericPermanents.filter { it.entityId !in convokeIds }
+        val tapIds = tapPermanents.mapTo(mutableSetOf()) { it.entityId }
         val sourcesForMana = (precomputedSources ?: manaSolver.findAvailableManaSources(state, playerId))
-            .filter { it.entityId !in convokeIds }
+            .filter { it.entityId !in convokeIds && it.entityId !in tapIds }
         val availableMana = manaSolver.getAvailableManaCount(state, playerId, sourcesForMana, spellContext)
-        val totalResources = availableMana + convokeCreatures.size
+        val totalResources = availableMana + convokeCreatures.size + tapPermanents.size
         if (totalResources < manaCost.cmc) return false
 
         val coloredRequirements = manaCost.colorCount
@@ -241,57 +253,62 @@ class CostEnumerationUtils(
         }
         val genericRequired = manaCost.genericAmount
         val creaturesForGeneric = convokeCreatures.size - creaturesUsedForColors
-        val resourcesForGeneric = availableMana + creaturesForGeneric
+        // Tap-for-generic is generic-only, so it joins the generic pool and never the colored one.
+        val resourcesForGeneric = availableMana + creaturesForGeneric + tapPermanents.size
         return resourcesForGeneric >= genericRequired
     }
 
-    // --- Waterbend ---
+    // --- Tap-for-generic (Improvise CR 702.126 / Waterbend) ---
 
     /**
-     * Untapped artifacts/creatures the player controls that may be tapped for a Waterbend cost.
-     * Projected types are used so animated lands / type-changed permanents are honored.
+     * Untapped permanents the player controls that may be tapped for a tap-for-generic payment —
+     * artifacts only for [TapForGeneric.IMPROVISE], artifacts or creatures for
+     * [TapForGeneric.WATERBEND]. Projected types are used so animated lands / type-changed
+     * permanents are honored.
      */
-    fun findWaterbendPermanents(state: GameState, playerId: EntityId): List<WaterbendPermanentData> {
+    fun findTapForGenericPermanents(
+        state: GameState,
+        playerId: EntityId,
+        eligibility: TapForGeneric
+    ): List<TapForGenericPermanentData> {
         val projected = state.projectedState
         return projected.getBattlefieldControlledBy(playerId).mapNotNull { entityId ->
             val container = state.getEntity(entityId) ?: return@mapNotNull null
             val cardComponent = container.get<CardComponent>() ?: return@mapNotNull null
-            val isCreature = projected.isCreature(entityId)
-            val isArtifact = projected.hasType(entityId, "ARTIFACT")
-            if (!isCreature && !isArtifact) return@mapNotNull null
+            if (!eligibility.matches(projected, entityId)) return@mapNotNull null
             if (container.has<TappedComponent>()) return@mapNotNull null
-            WaterbendPermanentData(entityId, cardComponent.name, isCreature)
+            TapForGenericPermanentData(entityId, cardComponent.name, projected.isCreature(entityId))
         }
     }
 
     /**
-     * Whether [manaCost] is payable with the help of waterbend taps. Each tapped permanent pays
-     * exactly {1} generic, so colored pips must come from mana sources; the generic portion may
-     * be covered by mana sources and/or waterbend permanents. A permanent tapped for waterbend
-     * can't also be a mana source, so any that double as mana sources are excluded from the mana
-     * count. [spellContext] lets eligible conditional floating mana count — see
+     * Whether [manaCost] is payable with the help of tap-for-generic taps (improvise/waterbend).
+     * Each tapped permanent pays exactly {1} generic, so colored pips must come from mana sources;
+     * the generic portion may be covered by mana sources and/or tapped permanents. A permanent
+     * tapped this way can't also be a mana source, so any that double as mana sources are excluded
+     * from the mana count. [spellContext] lets eligible conditional floating mana count — see
      * [canAffordWithConvoke].
      */
-    fun canAffordWithWaterbend(
+    fun canAffordWithTapForGeneric(
         state: GameState,
         playerId: EntityId,
         manaCost: ManaCost,
-        waterbendPermanents: List<WaterbendPermanentData>,
+        tapPermanents: List<TapForGenericPermanentData>,
         precomputedSources: List<ManaSource>? = null,
         spellContext: SpellPaymentContext? = null
     ): Boolean {
-        val waterbendIds = waterbendPermanents.mapTo(mutableSetOf()) { it.entityId }
+        val tapIds = tapPermanents.mapTo(mutableSetOf()) { it.entityId }
         val sourcesForMana = (precomputedSources ?: manaSolver.findAvailableManaSources(state, playerId))
-            .filter { it.entityId !in waterbendIds }
+            .filter { it.entityId !in tapIds }
         val availableMana = manaSolver.getAvailableManaCount(state, playerId, sourcesForMana, spellContext)
 
-        // Colored pips can only be paid by mana — waterbend is generic-only.
+        // Colored pips can only be paid by mana — these payments are generic-only.
         val coloredRequired = manaCost.colorCount.values.sum()
         if (availableMana < coloredRequired) return false
 
         val genericRequired = manaCost.genericAmount
         val manaLeftForGeneric = availableMana - coloredRequired
-        val resourcesForGeneric = manaLeftForGeneric + waterbendPermanents.size
+        val resourcesForGeneric = manaLeftForGeneric + tapPermanents.size
         return resourcesForGeneric >= genericRequired
     }
 
@@ -396,17 +413,31 @@ class CostEnumerationUtils(
         }
     }
 
-    /** [spellContext] lets eligible conditional floating mana count — see [canAffordWithConvoke]. */
+    /**
+     * [spellContext] lets eligible conditional floating mana count — see [canAffordWithConvoke].
+     *
+     * [tapForGenericPermanents] lets improvise (CR 702.126) help pay what delve leaves behind —
+     * delve spells are noncreature, so Ironheart, Clever Champion grants improvise to every one of
+     * them. Delve exiles first, then each tap pays {1} of the remaining generic, matching the order
+     * `CastSpellHandler` applies them in.
+     */
     fun canAffordWithDelve(
         state: GameState,
         playerId: EntityId,
         manaCost: ManaCost,
         delveCards: List<DelveCardData>,
         precomputedSources: List<ManaSource>? = null,
-        spellContext: SpellPaymentContext? = null
+        spellContext: SpellPaymentContext? = null,
+        tapForGenericPermanents: List<TapForGenericPermanentData> = emptyList()
     ): Boolean {
         val maxDelve = minOf(delveCards.size, manaCost.genericAmount)
         val reducedCost = manaCost.reduceGeneric(maxDelve)
+        if (tapForGenericPermanents.isNotEmpty()) {
+            return canAffordWithTapForGeneric(
+                state, playerId, reducedCost, tapForGenericPermanents,
+                precomputedSources = precomputedSources, spellContext = spellContext
+            )
+        }
         return manaSolver.canPay(
             state, playerId, reducedCost,
             precomputedSources = precomputedSources, spellContext = spellContext

@@ -11,6 +11,7 @@ import com.wingedsheep.engine.mechanics.layers.ProjectedState
 import com.wingedsheep.engine.mechanics.targeting.ControllerHexproof
 import com.wingedsheep.engine.mechanics.targeting.ControllerShroud
 import com.wingedsheep.engine.mechanics.targeting.PlayerTargetRestriction
+import com.wingedsheep.engine.mechanics.targeting.StackObjectTargeting
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
@@ -461,32 +462,12 @@ class TargetFinder(
         // names an ability predicate (Stifle's "counter target ability", Willbender's "spell or
         // ability", Return the Favor's "spell or ability"). For spells the predicate decides as
         // before. This is the single seam where both spells and abilities become legal targets.
-        val abilitiesAllowed = filterPermitsAbilitiesOnStack(filter.baseFilter)
+        val abilitiesAllowed = StackObjectTargeting.permitsAbilities(filter.baseFilter)
         return state.stack.filter { stackId ->
             val isAbility = !state.isSpellOnStack(stackId)
             if (isAbility && !abilitiesAllowed) return@filter false
             predicateEvaluator.matches(state, state.projectedState, stackId, filter.baseFilter, predicateContext)
         }
-    }
-
-    /**
-     * Does this filter explicitly permit *abilities* on the stack (as opposed to only spells)?
-     * True iff any [CardPredicate] in the filter — including inside [CardPredicate.Or] / `And`
-     * branches and [GameObjectFilter.anyOf] sub-filters — names an ability predicate. Keeps the
-     * default "target spell" filters (base `Any`, with no ability predicate) spell-only.
-     */
-    private fun filterPermitsAbilitiesOnStack(filter: GameObjectFilter): Boolean {
-        fun predicateNamesAbility(p: CardPredicate): Boolean = when (p) {
-            CardPredicate.IsActivatedOrTriggeredAbility,
-            CardPredicate.IsTriggeredAbility,
-            CardPredicate.IsActivatedAbility -> true
-            is CardPredicate.Or -> p.predicates.any(::predicateNamesAbility)
-            is CardPredicate.And -> p.predicates.any(::predicateNamesAbility)
-            is CardPredicate.Not -> predicateNamesAbility(p.predicate)
-            else -> false
-        }
-        return filter.cardPredicates.any(::predicateNamesAbility) ||
-            filter.anyOf.any { filterPermitsAbilitiesOnStack(it) }
     }
 
     /**

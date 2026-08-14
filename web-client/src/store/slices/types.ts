@@ -8,7 +8,7 @@ import type {
   GameAction,
   LegalActionInfo,
   ConvokeCreatureInfo,
-  WaterbendPermanentInfo,
+  TapForGenericPermanentInfo,
   TapForPowerCreatureInfo,
   DelveCardInfo,
   HarmonizeCreatureInfo,
@@ -422,24 +422,28 @@ export interface ModalModeSelectionState {
 }
 
 /**
- * Waterbend selection state (Avatar: The Last Airbender). Like Convoke but generic-only —
- * each tapped artifact/creature pays {1} of the generic cost, with no color choice.
+ * Tap-for-generic selection state — the one HUD behind every "tap untapped permanents you
+ * control, each paying {1} generic" payment. Like Convoke but generic-only: no color choice.
+ * Improvise (CR 702.126, artifacts only) and Waterbend (artifacts or creatures) differ only in
+ * [label] and in which permanents the server put in [validPermanents].
  */
-export interface WaterbendSelectionState {
+export interface TapForGenericSelectionState {
   actionInfo: LegalActionInfo
   cardName: string
-  /** The cost being paid (the waterbend cost's mana string) */
+  /** The cost being paid (the mana string the taps come off) */
   manaCost: string
-  /** Entity ids of permanents selected to tap for waterbend */
+  /** Entity ids of permanents selected to tap */
   selectedPermanents: EntityId[]
-  /** All valid artifacts/creatures that can be tapped */
-  validPermanents: readonly WaterbendPermanentInfo[]
+  /** All valid permanents that can be tapped, as sent by the server */
+  validPermanents: readonly TapForGenericPermanentInfo[]
   /**
-   * Maximum number of permanents that may be tapped — one per generic in the waterbend {N}
-   * (CR). For a spell-level waterbend this is the waterbend amount (the chosen X for the
-   * "waterbend {X}" shape); for an ability waterbend it's the generic in the cost.
+   * Maximum number of permanents that may be tapped — one per generic mana being paid this way.
+   * For a spell-level waterbend cost that is its amount N (the chosen X for "waterbend {X}");
+   * for improvise and an ability waterbend it is the generic in the cost.
    */
   maxTaps: number
+  /** Player-facing verb — `"improvise"` / `"waterbend"`. Shown in the HUD. */
+  label: string
 }
 
 /**
@@ -790,7 +794,7 @@ export type PipelinePhase =
   | { type: 'xSelection' }
   | { type: 'delve' }
   | { type: 'convoke' }
-  | { type: 'waterbend' }
+  | { type: 'tapForGeneric' }
   | { type: 'harmonize' }
   | { type: 'manaSource' }
   | { type: 'costPayment' }
@@ -821,7 +825,7 @@ export type PhaseResult =
   | { type: 'xSelection'; xValue: number; isRepeatCount?: boolean }
   | { type: 'delve'; delvedCards: EntityId[]; modifiedManaCost: string }
   | { type: 'convoke'; convokedCreatures: Record<string, { color: string | null }> }
-  | { type: 'waterbend'; waterbendPermanents: EntityId[] }
+  | { type: 'tapForGeneric'; tapForGenericPermanents: EntityId[] }
   | { type: 'harmonize'; harmonizeCreature: EntityId | null; reduction: number }
   | { type: 'manaSource'; selectedSources: EntityId[] }
   | { type: 'costPayment'; costType: string; selectedTargets: EntityId[] }
@@ -1063,7 +1067,7 @@ export type GameStore = {
   xSelectionState: XSelectionState | null
   modalModeSelectionState: ModalModeSelectionState | null
   convokeSelectionState: ConvokeSelectionState | null
-  waterbendSelectionState: WaterbendSelectionState | null
+  tapForGenericSelectionState: TapForGenericSelectionState | null
   tapForPowerSelectionState: TapForPowerSelectionState | null
   delveSelectionState: DelveSelectionState | null
   manaColorSelectionState: ManaColorSelectionState | null
@@ -1165,10 +1169,10 @@ export type GameStore = {
   toggleConvokeCreature: (entityId: EntityId, name: string, payingColor: string | null) => void
   cancelConvokeSelection: () => void
   confirmConvokeSelection: () => void
-  startWaterbendSelection: (state: WaterbendSelectionState) => void
-  toggleWaterbendPermanent: (entityId: EntityId) => void
-  cancelWaterbendSelection: () => void
-  confirmWaterbendSelection: () => void
+  startTapForGenericSelection: (state: TapForGenericSelectionState) => void
+  toggleTapForGenericPermanent: (entityId: EntityId) => void
+  cancelTapForGenericSelection: () => void
+  confirmTapForGenericSelection: () => void
   harmonizeSelectionState: HarmonizeSelectionState | null
   startHarmonizeSelection: (state: HarmonizeSelectionState) => void
   toggleHarmonizeCreature: (entityId: EntityId) => void

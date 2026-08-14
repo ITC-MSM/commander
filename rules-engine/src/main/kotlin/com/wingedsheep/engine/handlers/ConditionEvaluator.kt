@@ -139,6 +139,7 @@ import com.wingedsheep.sdk.scripting.conditions.PlayerCastSpellsThisTurn
 import com.wingedsheep.sdk.scripting.conditions.PlayerCommittedCrimeThisTurn
 import com.wingedsheep.sdk.scripting.conditions.PlayerHasCitysBlessing
 import com.wingedsheep.sdk.scripting.conditions.PlayerHasEnduringStory
+import com.wingedsheep.sdk.scripting.conditions.PlayerControlsMostPermanents
 import com.wingedsheep.sdk.scripting.conditions.PlayerHasMostLife
 import com.wingedsheep.sdk.scripting.conditions.TriggeringPlayerIs
 import com.wingedsheep.sdk.scripting.conditions.RingHasTemptedPlayerAtLeast
@@ -450,6 +451,9 @@ class ConditionEvaluator(
                     state.turnOrder.all { state.lifeTotal(it) <= life }
                 }
             }
+
+            is PlayerControlsMostPermanents ->
+                evaluatePlayerControlsMostPermanentsCtx(state, condition, ctx)
 
             is RingHasTemptedPlayerAtLeast -> {
                 val playerId = resolvePlayer(state, condition.player, ctx)
@@ -862,6 +866,38 @@ class ConditionEvaluator(
             }
         }
         return if (condition.negate) !found else found
+    }
+
+    /**
+     * "Controls the most [filter], or is tied for the most" — the board-count sibling of
+     * [PlayerHasMostLife]. Counts every player's matching permanents off the *projected*
+     * battlefield (so an animated land counts as a creature) and returns true when nobody has
+     * strictly more than the named player. `state.turnOrder` is the comparison set, matching
+     * [PlayerHasMostLife]; a player with zero matches still qualifies when everyone has zero,
+     * exactly as "the most" reads with an empty board.
+     */
+    private fun evaluatePlayerControlsMostPermanentsCtx(
+        state: GameState,
+        condition: PlayerControlsMostPermanents,
+        ctx: ConditionEvaluationContext
+    ): Boolean {
+        val playerId = resolvePlayer(state, condition.player, ctx) ?: return false
+        val projected = ctx.projectedStateFor(state)
+        val predicateEvaluator = PredicateEvaluator()
+        val predicateContext = when (ctx) {
+            is Resolution -> PredicateContext.fromEffectContext(ctx.effectContext)
+            is Projection -> PredicateContext(controllerId = playerId, sourceId = ctx.sourceId)
+        }
+
+        val counts = state.getBattlefield()
+            .filter { entityId ->
+                predicateEvaluator.matches(state, projected, entityId, condition.filter, predicateContext)
+            }
+            .groupingBy { entityId -> projected.getController(entityId) }
+            .eachCount()
+
+        val mine = counts[playerId] ?: 0
+        return state.turnOrder.all { (counts[it] ?: 0) <= mine }
     }
 
     private fun evaluateSourceIsModifiedCtx(state: GameState, ctx: ConditionEvaluationContext): Boolean {

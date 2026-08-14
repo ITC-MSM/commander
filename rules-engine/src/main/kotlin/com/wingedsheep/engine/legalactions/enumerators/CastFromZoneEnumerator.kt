@@ -45,6 +45,7 @@ import com.wingedsheep.engine.mechanics.MayhemGrants
 import com.wingedsheep.engine.mechanics.WarpGrants
 import com.wingedsheep.engine.mechanics.mana.SpellPaymentContext
 import com.wingedsheep.engine.mechanics.mana.spellPaymentContextFor
+import com.wingedsheep.engine.mechanics.mana.TapForGeneric
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
 
 /**
@@ -172,6 +173,8 @@ class CastFromZoneEnumerator : ActionEnumerator {
                             targetDescription = firstReq.description,
                             targetRequirements = if (targetInfos.size > 1) targetInfos else null,
                             xConstrainsTargetManaValue = firstInfo.xConstrainsManaValue,
+                            xConstrainsTargetManaValueExactly = firstInfo.xConstrainsManaValueExactly,
+                            xConstrainsTargetPower = firstInfo.xConstrainsPower,
                             xConstrainsTargetCount = firstInfo.xConstrainsCount,
                             hasXCost = hasXCost,
                             maxAffordableX = maxAffordableX,
@@ -323,6 +326,8 @@ class CastFromZoneEnumerator : ActionEnumerator {
                                         targetDescription = firstReq.description,
                                         targetRequirements = if (targetInfos.size > 1) targetInfos else null,
                                         xConstrainsTargetManaValue = firstInfo.xConstrainsManaValue,
+                                        xConstrainsTargetManaValueExactly = firstInfo.xConstrainsManaValueExactly,
+                                        xConstrainsTargetPower = firstInfo.xConstrainsPower,
                                         xConstrainsTargetCount = firstInfo.xConstrainsCount,
                                         hasXCost = hasXCost,
                                         maxAffordableX = maxAffordableX,
@@ -524,9 +529,9 @@ class CastFromZoneEnumerator : ActionEnumerator {
                             state, playerId, effectiveCost,
                             precomputedSources = context.availableManaSources, spellContext = spellContext
                         ) ||
-                        (fixedAltWaterbend != null && context.costUtils.canAffordWithWaterbend(
+                        (fixedAltWaterbend != null && context.costUtils.canAffordWithTapForGeneric(
                             state, playerId, effectiveCost,
-                            context.costUtils.findWaterbendPermanents(state, playerId)
+                            context.costUtils.findTapForGenericPermanents(state, playerId, TapForGeneric.WATERBEND)
                                 .take(fixedAltWaterbend.fixedCost.genericAmount),
                             precomputedSources = context.availableManaSources,
                             spellContext = spellContext
@@ -543,10 +548,10 @@ class CastFromZoneEnumerator : ActionEnumerator {
 
                     // Build additional cost info from runtime component
                     val exileAdditionalCostInfo = runtimeAdditionalCost?.let { comp ->
-                        buildRuntimeAdditionalCostInfo(state, playerId, comp)
+                        buildRuntimeAdditionalCostInfo(state, playerId, cardId, comp)
                     }
                     val canPayAdditionalCost = exileAdditionalCostInfo == null ||
-                        checkRuntimeAdditionalCostAffordability(state, playerId, runtimeAdditionalCost)
+                        checkRuntimeAdditionalCostAffordability(state, playerId, cardId, runtimeAdditionalCost)
 
                     // Honour the card's printed BlightOrPay additional cost when casting from exile
                     // (e.g. Cinder Strike granted via Sanar's "you may cast" permission). If the
@@ -599,6 +604,8 @@ class CastFromZoneEnumerator : ActionEnumerator {
                                         targetDescription = firstReq.description,
                                         targetRequirements = if (targetInfos.size > 1) targetInfos else null,
                                         xConstrainsTargetManaValue = firstInfo.xConstrainsManaValue,
+                                        xConstrainsTargetManaValueExactly = firstInfo.xConstrainsManaValueExactly,
+                                        xConstrainsTargetPower = firstInfo.xConstrainsPower,
                                         xConstrainsTargetCount = firstInfo.xConstrainsCount,
                                         manaCostString = costString,
                                         hasXCost = hasXCost,
@@ -680,7 +687,8 @@ class CastFromZoneEnumerator : ActionEnumerator {
                                 manaCostString = costString,
                                 hasXCost = hasXCost,
                                 maxAffordableX = maxAffordableX,
-                                sourceZone = sourceZoneLabel
+                                sourceZone = sourceZoneLabel,
+                                additionalCostInfo = exileAdditionalCostInfo,
                             )
                         )
                     }
@@ -742,9 +750,11 @@ class CastFromZoneEnumerator : ActionEnumerator {
                 ?.get<PlayWithFixedAlternativeManaCostComponent>()
                 ?.takeIf { it.controllerId == playerId && it.waterbend } ?: continue
             result[i] = la.copy(
-                hasWaterbend = true,
-                waterbendPermanents = context.costUtils.findWaterbendPermanents(state, playerId),
-                waterbendAmount = fixedAlt.fixedCost.genericAmount
+                hasTapForGeneric = true,
+                tapForGenericPermanents =
+                    context.costUtils.findTapForGenericPermanents(state, playerId, TapForGeneric.WATERBEND),
+                tapForGenericAmount = fixedAlt.fixedCost.genericAmount,
+                tapForGenericLabel = TapForGeneric.WATERBEND.label
             )
         }
 
@@ -911,6 +921,8 @@ class CastFromZoneEnumerator : ActionEnumerator {
                                         targetDescription = firstReq.description,
                                         targetRequirements = if (targetInfos.size > 1) targetInfos else null,
                                         xConstrainsTargetManaValue = firstInfo.xConstrainsManaValue,
+                                        xConstrainsTargetManaValueExactly = firstInfo.xConstrainsManaValueExactly,
+                                        xConstrainsTargetPower = firstInfo.xConstrainsPower,
                                         xConstrainsTargetCount = firstInfo.xConstrainsCount,
                                         manaCostString = costString,
                                         sourceZone = "EXILE",
@@ -1092,6 +1104,8 @@ class CastFromZoneEnumerator : ActionEnumerator {
                                         targetDescription = firstReq.description,
                                         targetRequirements = if (targetInfos.size > 1) targetInfos else null,
                                         xConstrainsTargetManaValue = firstInfo.xConstrainsManaValue,
+                                        xConstrainsTargetManaValueExactly = firstInfo.xConstrainsManaValueExactly,
+                                        xConstrainsTargetPower = firstInfo.xConstrainsPower,
                                         xConstrainsTargetCount = firstInfo.xConstrainsCount,
                                         manaCostString = costString,
                                         sourceZone = sourceZoneName,
@@ -2668,29 +2682,33 @@ class CastFromZoneEnumerator : ActionEnumerator {
     private fun buildRuntimeAdditionalCostInfo(
         state: GameState,
         playerId: EntityId,
+        cardId: EntityId,
         component: PlayWithAdditionalCostComponent
     ): AdditionalCostData? {
         val cost = component.additionalCosts.firstOrNull() ?: return null
         val discardAtom = (cost as? AdditionalCost.Atom)?.atom as? CostAtom.Discard
-        return if (discardAtom != null) {
-            val handCards = state.getZone(ZoneKey(playerId, Zone.HAND))
-            AdditionalCostData(
-                description = discardAtom.description.replaceFirstChar { it.uppercase() },
-                costType = "DiscardCard",
-                validDiscardTargets = handCards.toList(),
-                discardCount = discardAtom.count
-            )
-        } else {
-            AdditionalCostData(
-                description = cost.description,
-                costType = "Other"
-            )
+        return when {
+            discardAtom != null -> {
+                val handCards = state.getZone(ZoneKey(playerId, Zone.HAND))
+                AdditionalCostData(
+                    description = discardAtom.description.replaceFirstChar { it.uppercase() },
+                    costType = "DiscardCard",
+                    validDiscardTargets = handCards.toList(),
+                    discardCount = discardAtom.count
+                )
+            }
+            cost is AdditionalCost.PayLifeEqualToManaValueOfSpell -> {
+                val amount = state.getEntity(cardId)?.get<CardComponent>()?.manaCost?.cmc ?: 0
+                AdditionalCostData(description = "Pay $amount life", costType = "PayLife")
+            }
+            else -> AdditionalCostData(description = cost.description, costType = "Other")
         }
     }
 
     private fun checkRuntimeAdditionalCostAffordability(
         state: GameState,
         playerId: EntityId,
+        cardId: EntityId,
         component: PlayWithAdditionalCostComponent
     ): Boolean {
         for (cost in component.additionalCosts) {
@@ -2699,7 +2717,10 @@ class CastFromZoneEnumerator : ActionEnumerator {
                     val handSize = state.getZone(ZoneKey(playerId, Zone.HAND)).size
                     if (handSize < atom.count) return false
                 }
-                else -> {} // Other cost types can be added as needed
+                else -> if (cost is AdditionalCost.PayLifeEqualToManaValueOfSpell) {
+                    val amount = state.getEntity(cardId)?.get<CardComponent>()?.manaCost?.cmc ?: 0
+                    if (state.lifeTotal(playerId) < amount) return false
+                }
             }
         }
         return true

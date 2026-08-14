@@ -103,10 +103,19 @@ data class LegalActionInfo(
     val additionalCostInfo: AdditionalCostInfo? = null,
     val hasConvoke: Boolean = false,
     val validConvokeCreatures: List<ConvokeCreatureInfo>? = null,
-    val hasWaterbend: Boolean = false,
-    val validWaterbendPermanents: List<WaterbendPermanentInfo>? = null,
-    /** Tap cap for a spell-level waterbend cost; null for ability waterbend or the {X} shape. */
-    val waterbendAmount: Int? = null,
+    /**
+     * Tap-for-generic payment (improvise CR 702.126, waterbend): tap untapped permanents you
+     * control, each paying {1} of the generic mana in the cost.
+     */
+    val hasTapForGeneric: Boolean = false,
+    val validTapForGenericPermanents: List<TapForGenericPermanentInfo>? = null,
+    /**
+     * Tap cap for a spell-level waterbend cost; null when the cap is just the generic in the cost
+     * (improvise, ability waterbend, the "waterbend {X}" shape).
+     */
+    val tapForGenericAmount: Int? = null,
+    /** Player-facing verb for the tap payment — `"improvise"` / `"waterbend"`. */
+    val tapForGenericLabel: String? = null,
     val hasDelve: Boolean = false,
     val validDelveCards: List<DelveCardInfo>? = null,
     val minDelveNeeded: Int? = null,
@@ -201,7 +210,7 @@ data class ConvokeCreatureInfo(
 )
 
 @Serializable
-data class WaterbendPermanentInfo(
+data class TapForGenericPermanentInfo(
     val entityId: EntityId,
     val name: String,
     val isCreature: Boolean

@@ -3,6 +3,7 @@ package com.wingedsheep.sdk.scripting
 import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.scripting.costs.CostAtom
+import com.wingedsheep.sdk.scripting.costs.manaCostOrNull
 import com.wingedsheep.sdk.scripting.effects.Effect
 import com.wingedsheep.sdk.scripting.targets.TargetRequirement
 import com.wingedsheep.sdk.scripting.text.TextReplaceable
@@ -32,6 +33,17 @@ data class ActivatedAbility(
      * and "the first equip ability you activate each turn costs {0}" (Forge Anew).
      */
     val isEquipAbility: Boolean = false,
+    /**
+     * The quality of an "Equip [quality]" variant (CR 702.6c) — `"Human"` for Dúnedain Blade's
+     * *Equip Human {1}*, `"worthy"` for Mjölnir, Hammer of Thor. Null for a plain equip ability and
+     * for everything that isn't one.
+     *
+     * Wording only: the rules half is the [targetRequirements] filter, which is what decides legal
+     * targets. This exists so [describeWithCost] can render the printed "Equip [quality] [cost]"
+     * line instead of the generated "[cost]: Attach this equipment to …", *and* keep doing so when a
+     * cost reduction rewrites the cost — which a static `descriptionOverride` could not.
+     */
+    val equipQuality: String? = null,
     val activateFromZone: Zone = Zone.BATTLEFIELD,
     val descriptionOverride: String? = null,
     val hasConvoke: Boolean = false,
@@ -156,6 +168,17 @@ data class ActivatedAbility(
     fun describeWithCost(effectiveCost: AbilityCost): String {
         // A waterbend cost renders as "Waterbend {N}" (the keyword action precedes the cost).
         val base = effectiveCost.description.ifEmpty { "{0}" }
+        // An equip ability is *printed* as "Equip [cost]" (CR 702.6a) or "Equip [quality] [cost]"
+        // (CR 702.6c) — never as the attach effect's generated text. Rendering it here rather than
+        // via a per-card descriptionOverride means Eowyn's discount and Forge Anew's free first
+        // equip rewrite the cost in the menu, which a static override could not.
+        //
+        // A non-mana equip cost takes the printed em dash instead of a space — "Equip—Sacrifice a
+        // creature" (Demonmail Hauberk, Dissection Tools), not "Equip Sacrifice a creature".
+        if (isEquipAbility) {
+            val keyword = "Equip" + (equipQuality?.let { " $it" } ?: "")
+            return if (effectiveCost.manaCostOrNull != null) "$keyword $base" else "$keyword—$base"
+        }
         val costText = if (hasWaterbend) "Waterbend $base" else base
         // An exhaust or power-up ability prefixes its keyword before the (already
         // waterbend-prefixed) cost. The two never co-occur — both mean "activate only once".

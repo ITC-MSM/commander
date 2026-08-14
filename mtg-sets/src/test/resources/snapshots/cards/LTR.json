@@ -1342,7 +1342,7 @@
                     "type": "AttachEquipment",
                     "target": {
                         "type": "BoundVariable",
-                        "name": "Halfling you control"
+                        "name": "Halfling creature you control"
                     }
                 },
                 "targetRequirements": [
@@ -1351,10 +1351,12 @@
                         "filter": {
                             "baseFilter": "creature Halfling ctrl:you"
                         },
-                        "id": "Halfling you control"
+                        "id": "Halfling creature you control"
                     }
                 ],
-                "timing": "SorcerySpeed"
+                "timing": "SorcerySpeed",
+                "isEquipAbility": true,
+                "equipQuality": "Halfling"
             },
             {
                 "id": "ability_3",
@@ -3201,7 +3203,8 @@
                     }
                 ],
                 "timing": "SorcerySpeed",
-                "descriptionOverride": "Equip Human {1}"
+                "isEquipAbility": true,
+                "equipQuality": "Human"
             },
             {
                 "id": "ability_2",

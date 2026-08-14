@@ -40,6 +40,7 @@ import com.wingedsheep.engine.state.components.player.PermanentEnteredFaceDownTh
 import com.wingedsheep.engine.state.components.player.PermanentLeftBattlefieldThisTurnComponent
 import com.wingedsheep.engine.state.components.player.CreatureLeftBattlefieldThisTurnComponent
 import com.wingedsheep.engine.state.components.player.PermanentsSacrificedThisTurnComponent
+import com.wingedsheep.engine.state.components.player.CreatureCardsPutIntoGraveyardThisTurnComponent
 import com.wingedsheep.engine.state.components.player.PlayerDescendedThisTurnComponent
 import com.wingedsheep.engine.state.components.player.SacrificedArtifactThisTurnComponent
 import com.wingedsheep.engine.state.components.player.SacrificedFoodThisTurnComponent
@@ -757,6 +758,22 @@ object ZoneTransitionService {
             }
         }
 
+        // 8d2. "A creature card was put into your graveyard from anywhere this turn" (Macabre
+        // Reconstruction). The creature-typed slice of the same arrival: any origin zone, keyed
+        // on the owner, tokens excluded. Turn history — reanimating the card later in the turn
+        // doesn't undo the count.
+        if (actualDestZone == Zone.GRAVEYARD &&
+            fromZone != Zone.GRAVEYARD &&
+            cardComponent.typeLine.isCreature &&
+            !container.has<TokenComponent>()
+        ) {
+            newState = newState.updateEntity(ownerId) { playerContainer ->
+                val existing = playerContainer.get<CreatureCardsPutIntoGraveyardThisTurnComponent>()
+                    ?: CreatureCardsPutIntoGraveyardThisTurnComponent()
+                playerContainer.with(CreatureCardsPutIntoGraveyardThisTurnComponent(existing.count + 1))
+            }
+        }
+
         // 8e. Madness (CR 702.35a) — this move was a discard that the madness replacement diverted
         // into exile. Mark the card so only a *discarded-into-exile* card gets the CR 702.35a cast
         // offer, and publish the madness cost as a fixed alternative mana cost so the ordinary
@@ -1230,25 +1247,19 @@ object ZoneTransitionService {
      * firing for creatures Ygra turned into Food artifacts).
      *
      * Falls back to the base typeLine if projection has no entry for the entity.
+     *
+     * Delegates to the shared
+     * [com.wingedsheep.engine.state.components.stack.projectedTypeLine] so the cost-time capture
+     * (`ActivateAbilityHandler`'s `lastKnownSourceSnapshot`) freezes exactly the same type line
+     * this path does — one implementation, not two that can drift.
      */
     private fun buildProjectedTypeLine(
         cardComponent: CardComponent,
         state: GameState,
         entityId: EntityId
-    ): TypeLine {
-        val baseTypeLine = cardComponent.typeLine
-        val projected = state.projectedState.getProjectedValues(entityId) ?: return baseTypeLine
-
-        val cardTypes = projected.types
-            .mapNotNull { runCatching { CardType.valueOf(it) }.getOrNull() }
-            .toSet()
-            .ifEmpty { baseTypeLine.cardTypes }
-        val subtypes = projected.subtypes.map { Subtype(it) }.toSet()
-        return baseTypeLine.copy(
-            cardTypes = cardTypes,
-            subtypes = subtypes
-        )
-    }
+    ): TypeLine = com.wingedsheep.engine.state.components.stack.projectedTypeLine(
+        state, entityId, cardComponent.typeLine
+    )
 
     /**
      * Find which zone an entity is currently in.

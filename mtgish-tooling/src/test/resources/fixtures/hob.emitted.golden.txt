@@ -162,6 +162,7 @@ val AzogMoriasRuin = card("Azog, Moria's Ruin") {
 
 package com.wingedsheep.mtg.sets.generated.demo.cards
 
+import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
 
@@ -181,7 +182,8 @@ val BalinLoremaster = card("Balin, Loremaster") {
     oracleText = "Storied (If you control three or more artifacts, legendaries, and/or Sagas, you have an enduring story for the rest of the game.)\nWhenever Balin or another Dwarf you control enters, you may discard your hand. Draw X cards, where X is the number of cards discarded this way. If you have an enduring story, Balin deals X damage to each opponent."
     power = 4
     toughness = 4
-    // STRUCTURE needs human wiring: Storied
+    keywords(Keyword.STORIED)
+    // STRUCTURE needs human wiring: DiscardHand, MayActions, trigger-shape
     metadata {
         rarity = Rarity.RARE
         collectorNumber = "87"
@@ -516,8 +518,14 @@ val BeornReluctantHost = card("Beorn, Reluctant Host") {
 
 package com.wingedsheep.mtg.sets.generated.demo.cards
 
+import com.wingedsheep.sdk.core.Counters
+import com.wingedsheep.sdk.core.Keyword
+import com.wingedsheep.sdk.dsl.Triggers
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
+import com.wingedsheep.sdk.scripting.effects.AddCountersEffect
+import com.wingedsheep.sdk.scripting.filters.unified.TargetFilter
+import com.wingedsheep.sdk.scripting.targets.TargetCreature
 
 
 /**
@@ -536,7 +544,18 @@ val BifurMelodicRider = card("Bifur, Melodic Rider") {
     oracleText = "Storied (If you control three or more artifacts, legendaries, and/or Sagas, you have an enduring story for the rest of the game.)\nWhenever Bifur enters or attacks, put a +1/+1 counter on target creature.\nAs long as you have an enduring story, if an ability of a Dwarf you control triggers, that ability triggers an additional time."
     power = 4
     toughness = 5
-    // STRUCTURE needs human wiring: Storied
+    keywords(Keyword.STORIED)
+    triggeredAbility {
+        trigger = Triggers.EntersBattlefield
+        val t = target("target", TargetCreature(filter = TargetFilter.Creature))
+        effect = AddCountersEffect(counterType = Counters.PLUS_ONE_PLUS_ONE, count = 1, target = t)
+    }
+    triggeredAbility {
+        trigger = Triggers.Attacks
+        val t = target("target", TargetCreature(filter = TargetFilter.Creature))
+        effect = AddCountersEffect(counterType = Counters.PLUS_ONE_PLUS_ONE, count = 1, target = t)
+    }
+    // STRUCTURE needs human wiring: If
     metadata {
         rarity = Rarity.UNCOMMON
         collectorNumber = "147"
@@ -830,6 +849,7 @@ val BolgsCompany = card("Bolg's Company") {
 
 package com.wingedsheep.mtg.sets.generated.demo.cards
 
+import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
 
@@ -849,7 +869,8 @@ val BomburGentleDreamer = card("Bombur, Gentle Dreamer") {
     oracleText = "Storied (If you control three or more artifacts, legendaries, and/or Sagas, you have an enduring story for the rest of the game.)\nBombur doesn't untap during your untap step unless you have an enduring story."
     power = 5
     toughness = 3
-    // STRUCTURE needs human wiring: Storied
+    keywords(Keyword.STORIED)
+    // STRUCTURE needs human wiring: Unless
     metadata {
         rarity = Rarity.UNCOMMON
         collectorNumber = "88"
@@ -1829,8 +1850,8 @@ val DainLordOfTheIronHills = card("Dáin, Lord of the Iron Hills") {
     oracleText = "Vigilance\nStoried (If you control three or more artifacts, legendaries, and/or Sagas, you have an enduring story for the rest of the game.)\nAs long as you have an enduring story, creatures can't attack you unless their controller pays {1} for each of those creatures."
     power = 2
     toughness = 2
-    keywords(Keyword.VIGILANCE)
-    // STRUCTURE needs human wiring: Storied
+    keywords(Keyword.VIGILANCE, Keyword.STORIED)
+    // STRUCTURE needs human wiring: If
     metadata {
         rarity = Rarity.UNCOMMON
         collectorNumber = "8"
@@ -2360,6 +2381,7 @@ val FrontPorchSentries = card("Front Porch Sentries") {
 
 package com.wingedsheep.mtg.sets.generated.demo.cards
 
+import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
 
@@ -2380,7 +2402,8 @@ val FiliThePathfinder = card("Fíli the Pathfinder") {
     oracleText = "Storied (If you control three or more artifacts, legendaries, and/or Sagas, you have an enduring story for the rest of the game.)\nAs long as you have an enduring story, creatures you control get +1/+1.\nWhenever Fíli or another nontoken Dwarf you control enters, create a 2/2 red Dwarf creature token."
     power = 2
     toughness = 2
-    // STRUCTURE needs human wiring: Storied
+    keywords(Keyword.STORIED)
+    // STRUCTURE needs human wiring: If
     metadata {
         rarity = Rarity.RARE
         collectorNumber = "14"
@@ -3608,6 +3631,7 @@ val KeyToTheSideDoor = card("Key to the Side-Door") {
 
 package com.wingedsheep.mtg.sets.generated.demo.cards
 
+import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
 
@@ -3628,7 +3652,8 @@ val KiliTheResourceful = card("Kíli the Resourceful") {
     oracleText = "Storied (If you control three or more artifacts, legendaries, and/or Sagas, you have an enduring story for the rest of the game.)\nAs long as you have an enduring story, you may pay {0} rather than pay the equip cost of the first equip ability you activate each turn.\nWhenever another Dwarf or Equipment you control enters, draw a card. This ability triggers only once each turn."
     power = 1
     toughness = 2
-    // STRUCTURE needs human wiring: Storied
+    keywords(Keyword.STORIED)
+    // STRUCTURE needs human wiring: If
     metadata {
         rarity = Rarity.RARE
         collectorNumber = "17"
@@ -4805,6 +4830,7 @@ val OrdinaryBear = card("Ordinary Bear") {
 
 package com.wingedsheep.mtg.sets.generated.demo.cards
 
+import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
 
@@ -4824,7 +4850,8 @@ val OriKeeperOfSongs = card("Ori, Keeper of Songs") {
     oracleText = "Storied (If you control three or more artifacts, legendaries, and/or Sagas, you have an enduring story for the rest of the game.)\nAs long as you have an enduring story, Ori gets +1/+0 and has vigilance."
     power = 3
     toughness = 3
-    // STRUCTURE needs human wiring: Storied
+    keywords(Keyword.STORIED)
+    // STRUCTURE needs human wiring: If
     metadata {
         rarity = Rarity.COMMON
         collectorNumber = "23"
@@ -6492,8 +6519,8 @@ val ThorinOakenshield = card("Thorin Oakenshield") {
     oracleText = "Trample\nStoried (If you control three or more artifacts, legendaries, and/or Sagas, you have an enduring story for the rest of the game.)\nAs long as you have an enduring story, artifacts and creatures you control have ward {1}."
     power = 3
     toughness = 2
-    keywords(Keyword.TRAMPLE)
-    // STRUCTURE needs human wiring: Storied
+    keywords(Keyword.TRAMPLE, Keyword.STORIED)
+    // STRUCTURE needs human wiring: If
     metadata {
         rarity = Rarity.UNCOMMON
         collectorNumber = "165"
@@ -7478,6 +7505,7 @@ val WoodlandWeavemaster = card("Woodland Weavemaster") {
 
 package com.wingedsheep.mtg.sets.generated.demo.cards
 
+import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
 
@@ -7498,7 +7526,8 @@ val OinTheBrave = card("Óin the Brave") {
     oracleText = "Storied (If you control three or more artifacts, legendaries, and/or Sagas, you have an enduring story for the rest of the game.)\nAs long as you have an enduring story, Óin gets +1/+0 and has haste.\n{1}, {T}, Discard a card: Draw a card."
     power = 1
     toughness = 3
-    // STRUCTURE needs human wiring: Storied
+    keywords(Keyword.STORIED)
+    // STRUCTURE needs human wiring: If
     metadata {
         rarity = Rarity.COMMON
         collectorNumber = "106"

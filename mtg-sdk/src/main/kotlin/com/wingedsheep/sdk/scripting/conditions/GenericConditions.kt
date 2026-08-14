@@ -207,6 +207,34 @@ data class PlayerHasMostLife(val player: Player) : Condition {
 }
 
 /**
+ * True when [player] controls the most permanents matching [filter], or is tied for the most,
+ * among all players (their count ≥ every player's). The board-count sibling of
+ * [PlayerHasMostLife] — the same shape a binary [Compare] can't express, since it needs the max
+ * over every player rather than a fixed threshold.
+ *
+ * Counts are read from the projected battlefield, so type-changing continuous effects (an animated
+ * land, a creature that lost its types) are honored.
+ *
+ * No Witnesses: "Each player who controls the most creatures investigates" — a per-player loop
+ * whose body is gated on `PlayerControlsMostPermanents(Player.You, GameObjectFilter.Creature)`,
+ * which inside the loop asks about the iterated player. Ties are included, exactly as printed.
+ */
+@SerialName("PlayerControlsMostPermanents")
+@Serializable
+data class PlayerControlsMostPermanents(
+    val player: Player,
+    val filter: GameObjectFilter = GameObjectFilter.Creature,
+) : Condition {
+    override val description: String =
+        "if ${player.description} controls the most ${filter.description} or is tied for the most"
+
+    override fun applyTextReplacement(replacer: TextReplacer): Condition {
+        val newFilter = filter.applyTextReplacement(replacer)
+        return if (newFilter !== filter) copy(filter = newFilter) else this
+    }
+}
+
+/**
  * A unary arithmetic property a single number can satisfy, tested by [NumberMatches].
  *
  * Distinct from [ComparisonOperator], which is *binary* (compares two amounts). These are

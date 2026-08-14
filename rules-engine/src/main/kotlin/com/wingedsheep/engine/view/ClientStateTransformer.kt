@@ -2458,6 +2458,27 @@ class ClientStateTransformer(
             }
         }
 
+        // Damage this creature deals is doubled by an Equipment/Aura attached to it (Mjölnir,
+        // Hammer of Thor). This is the source-side mirror of the player badges built in
+        // buildPlayerActiveEffects: the doubling is a property of *this* creature's outgoing damage,
+        // so it belongs here rather than warning every player that damage dealt to them is doubled.
+        // Attachment is checked by the engine, so the badge is absent while the Equipment is unequipped.
+        for (doubler in DamageUtils.damageDoublersAffectingSource(state, entityId)) {
+            val scope = when (doubler.damageType) {
+                is DamageType.Combat -> "Combat damage"
+                is DamageType.NonCombat -> "Noncombat damage"
+                is DamageType.Any -> "Damage"
+            }
+            effects.add(
+                ClientCardEffect(
+                    effectId = "damage_doubled_source_${doubler.sourceId.value}",
+                    name = "Damage Doubled",
+                    description = "$scope this creature deals is doubled by ${doubler.sourceName}",
+                    icon = "double-damage"
+                )
+            )
+        }
+
         // Check all floating effects that affect this entity
         var preventDamageTotal = 0
         var regenerationShieldCount = 0

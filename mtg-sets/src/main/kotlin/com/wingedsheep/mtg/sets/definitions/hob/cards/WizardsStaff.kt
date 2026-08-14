@@ -2,17 +2,13 @@ package com.wingedsheep.mtg.sets.definitions.hob.cards
 
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.Subtype
-import com.wingedsheep.sdk.dsl.Costs
-import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.Filters
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.AdditionalSourceTriggers
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.GrantKeyword
-import com.wingedsheep.sdk.scripting.TimingRule
 import com.wingedsheep.sdk.scripting.filters.unified.TargetFilter
-import com.wingedsheep.sdk.scripting.targets.TargetCreature
 
 /**
  * Wizard's Staff — The Hobbit #59
@@ -33,8 +29,8 @@ import com.wingedsheep.sdk.scripting.targets.TargetCreature
  *    [AdditionalSourceTriggers] covers; per its rulings this is one extra firing, not a copy, so
  *    modes and targets are chosen independently for each instance.
  *  - Two equip costs are two separate equip-flagged activated abilities — the Bilbo's Ring shape.
- *    `equipAbility(...)` handles the generic "Equip {3}"; the Wizard-restricted one is hand-rolled
- *    because the facade has no target-filter parameter.
+ *    Both go through `equipAbility(...)`; the Wizard-restricted one is an "Equip [quality]" variant
+ *    (CR 702.6c) authored with the facade's `quality`/`targetFilter` pair.
  */
 val WizardsStaff = card("Wizard's Staff") {
     manaCost = "{1}{U}"
@@ -58,18 +54,12 @@ val WizardsStaff = card("Wizard's Staff") {
         )
     }
 
-    // Equip Wizard {1}: Attach to target Wizard you control. Equip only as a sorcery.
-    activatedAbility {
-        isEquipAbility = true
-        cost = Costs.Mana("{1}")
-        timing = TimingRule.SorcerySpeed
-        val wizard = target(
-            "target Wizard you control",
-            TargetCreature(filter = TargetFilter.CreatureYouControl.withSubtype(Subtype.WIZARD))
-        )
-        effect = Effects.AttachEquipment(wizard)
-        description = "Equip Wizard {1}"
-    }
+    // Equip Wizard {1}: Attach to target Wizard you control. Equip only as a sorcery (CR 702.6c).
+    equipAbility(
+        "{1}",
+        quality = "Wizard",
+        targetFilter = TargetFilter.CreatureYouControl.withSubtype(Subtype.WIZARD),
+    )
 
     equipAbility("{3}")
 
