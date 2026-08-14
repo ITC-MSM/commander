@@ -217,6 +217,56 @@
     ]
 }
 
+// Auriok Steelshaper
+{
+    "name": "Auriok Steelshaper",
+    "manaCost": "{1}{W}",
+    "typeLine": "Creature — Human Soldier",
+    "oracleText": "Equip costs you pay cost {1} less.\nAs long as this creature is equipped, each creature you control that's a Soldier or a Knight gets +1/+1.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ReduceEquipCost",
+                "amount": 1
+            },
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "ModifyStats",
+                    "powerBonus": 1,
+                    "toughnessBonus": 1,
+                    "filter": {
+                        "baseFilter": "creature Soldier|Knight ctrl:you"
+                    }
+                },
+                "condition": {
+                    "type": "EntityMatches",
+                    "entity": "Self",
+                    "filter": {
+                        "statePredicates": [
+                            "IsEquipped"
+                        ]
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "4",
+        "rarity": "RARE",
+        "artist": "Dany Orizio",
+        "flavorText": "They put their safety in his hands. He puts sharpened steel in theirs.",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/d/4dd09c01-5a77-4992-96ae-c395a5966a92.jpg?1783944563"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Auriok Transfixer
 {
     "name": "Auriok Transfixer",
@@ -3605,6 +3655,65 @@
     ]
 }
 
+// Leveler
+{
+    "name": "Leveler",
+    "manaCost": "{5}",
+    "typeLine": "Artifact Creature — Juggernaut",
+    "oracleText": "When this creature enters, exile all cards from your library.",
+    "creatureStats": {
+        "power": 10,
+        "toughness": 10
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Library"
+                            },
+                            "storeAs": "library"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "library",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile"
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "When this creature enters, exile all cards from your library."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "195",
+        "rarity": "RARE",
+        "artist": "Carl Critchlow",
+        "flavorText": "Once a century, the levelers rip through every corner of Mirrodin, obeying the commands of an unseen master.",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/3/03ffa3c3-dd29-47eb-abf2-7951fadb5c37.jpg?1783944515",
+        "rulings": [
+            {
+                "date": "2021-03-19",
+                "text": "You won't lose the game until you try to draw from the empty library."
+            }
+        ]
+    },
+    "colorIdentityOverride": []
+}
+
 // Lifespark Spellbomb
 {
     "name": "Lifespark Spellbomb",
@@ -5525,6 +5634,113 @@
     "colorIdentityOverride": []
 }
 
+// Pentavus
+{
+    "name": "Pentavus",
+    "manaCost": "{7}",
+    "typeLine": "Artifact Creature — Construct",
+    "oracleText": "This creature enters with five +1/+1 counters on it.\n{1}, Remove a +1/+1 counter from this creature: Create a 1/1 colorless Pentavite artifact creature token with flying.\n{1}, Sacrifice a Pentavite: Put a +1/+1 counter on this creature.",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 0
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}"
+                            }
+                        },
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomRemoveCounters",
+                                "counterType": "+1/+1",
+                                "self": true
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [],
+                    "creatureTypes": [
+                        "Pentavite"
+                    ],
+                    "keywords": [
+                        "FLYING"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/4/f/4fbb0dc6-2f9e-4389-8a90-531e94009bfb.jpg?1783944459",
+                    "artifactToken": true
+                },
+                "descriptionOverride": "{1}, Remove a +1/+1 counter from this creature: Create a 1/1 colorless Pentavite artifact creature token with flying."
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}"
+                            }
+                        },
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomSacrifice",
+                                "filter": "creature Pentavite"
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": "Self"
+                },
+                "descriptionOverride": "{1}, Sacrifice a Pentavite: Put a +1/+1 counter on this creature."
+            }
+        ],
+        "replacementEffects": [
+            {
+                "type": "EntersWithCounters",
+                "count": 5,
+                "selfOnly": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "226",
+        "rarity": "RARE",
+        "artist": "Greg Staples",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/2/32a11f0a-7547-4fda-a8ed-caf76ce98f10.jpg?1783944509",
+        "rulings": [
+            {
+                "date": "2011-09-22",
+                "text": "You can remove any +1/+1 counter on Pentavus to activate its first activated ability, not just ones created by Pentavus's other abilities."
+            },
+            {
+                "date": "2011-09-22",
+                "text": "You can sacrifice any Pentavite creature you control (such as an Adaptive Automaton with Pentavite as its chosen type) to activate Pentavus's second activated ability, not just ones created by Pentavus's other abilities."
+            }
+        ]
+    },
+    "colorIdentityOverride": []
+}
+
 // Pewter Golem
 {
     "name": "Pewter Golem",
@@ -7176,6 +7392,39 @@
     ]
 }
 
+// Sphere of Purity
+{
+    "name": "Sphere of Purity",
+    "manaCost": "{3}{W}",
+    "typeLine": "Enchantment",
+    "oracleText": "If an artifact would deal damage to you, prevent 1 of that damage.",
+    "script": {
+        "replacementEffects": [
+            {
+                "type": "PreventDamage",
+                "amount": 1,
+                "appliesTo": {
+                    "type": "DamageEvent",
+                    "recipient": "You",
+                    "source": {
+                        "type": "SourceMatching",
+                        "filter": "artifact"
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "26",
+        "artist": "Thomas Gianni",
+        "flavorText": "Purity rejects artifice.",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/9/392944d5-bff1-4125-86db-68d05682a430.jpg?1783944557"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Spikeshot Goblin
 {
     "name": "Spikeshot Goblin",
@@ -7471,6 +7720,95 @@
     "colorIdentityOverride": [
         "GREEN"
     ]
+}
+
+// Synod Sanctum
+{
+    "name": "Synod Sanctum",
+    "manaCost": "{1}",
+    "typeLine": "Artifact",
+    "oracleText": "{2}, {T}: Exile target permanent you control.\n{2}, Sacrifice this artifact: Return all cards exiled with this artifact to the battlefield under your control.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target permanent you control"
+                    },
+                    "destination": "Exile",
+                    "linkToSource": true
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "permanent ctrl:you"
+                        },
+                        "id": "target permanent you control"
+                    }
+                ],
+                "descriptionOverride": "{2}, {T}: Exile target permanent you control."
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}"
+                            }
+                        },
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": "FromLinkedExile",
+                            "storeAs": "exiled"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "exiled",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Battlefield"
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "{2}, Sacrifice this artifact: Return all cards exiled with this artifact to the battlefield under your control."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "252",
+        "rarity": "UNCOMMON",
+        "artist": "Dana Knutson",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/5/45f2ab6e-019e-4e72-be06-9c8cd97d54d4.jpg?1783944501"
+    },
+    "colorIdentityOverride": []
 }
 
 // Taj-Nar Swordsmith
