@@ -2121,7 +2121,10 @@
             }
         ],
         "staticAbilities": [
-            "HasAllActivatedAbilitiesOfExiledCards"
+            {
+                "type": "HasAllActivatedAbilitiesOfCards",
+                "donors": "LinkedExile"
+            }
         ]
     },
     "metadata": {

@@ -2916,35 +2916,36 @@ class ActivateAbilityHandler(
                     }
                     else -> rawAbility
                 }
-                // "[filter] have all activated abilities of the [creature] cards exiled with/to craft
-                // this" (Territory Forge / Locus of Enlightenment = Self; Agatha's Soul Cauldron =
-                // creatures you control with a +1/+1 counter). Mirror
-                // CastPermissionUtils.getStaticGrantedAbilitiesWithGranter: grant each pile ability
-                // (linked or crafted, per `ability.source`) to every matching permanent, recording the
+                // "[receivedBy] have all activated abilities of the [cardFilter] cards exiled with/to
+                // craft this / in your graveyard" (Territory Forge / Locus of Enlightenment /
+                // Thranduil = Self; Agatha's Soul Cauldron = creatures you control with a +1/+1
+                // counter). Mirror CastPermissionUtils.getStaticGrantedAbilitiesWithGranter: grant each
+                // donor ability (per `ability.donors`) to every matching permanent, recording the
                 // *receiver* as the granter so `{T}`/self-references bind to the permanent that gained
                 // the ability. When `oncePerTurnEach` is set (Locus), the util re-stamps each ability
-                // with an exiled-card-derived AbilityId + once-per-turn cap.
-                if (ability is com.wingedsheep.sdk.scripting.HasAllActivatedAbilitiesOfExiledCards) {
-                    val receives = when (val scope = ability.filter.scope) {
+                // with a donor-derived AbilityId + once-per-turn cap.
+                if (ability is com.wingedsheep.sdk.scripting.HasAllActivatedAbilitiesOfCards) {
+                    val receives = when (val scope = ability.receivedBy.scope) {
                         is Scope.Self -> permanentId == entityId
                         is Scope.Specific -> scope.entityId == entityId
                         is Scope.AttachedTo -> container.get<AttachedToComponent>()?.targetId == entityId
                         is Scope.SoulbondPair ->
                             com.wingedsheep.engine.mechanics.SoulbondPairing.isInPairOf(state, permanentId, entityId)
                         is Scope.Battlefield -> {
-                            if (ability.filter.excludeSelf && permanentId == entityId) false
+                            if (ability.receivedBy.excludeSelf && permanentId == entityId) false
                             else {
                                 val granterController = state.projectedState.getController(permanentId)
                                 granterController != null && predicateEvaluator.matches(
-                                    state, state.projectedState, entityId, ability.filter.baseFilter,
+                                    state, state.projectedState, entityId, ability.receivedBy.baseFilter,
                                     PredicateContext(controllerId = granterController, sourceId = permanentId)
                                 )
                             }
                         }
                     }
                     if (receives) {
-                        for (granted in com.wingedsheep.engine.legalactions.utils.exiledCardsActivatedAbilities(
-                            state, permanentId, cardRegistry, ability.source, ability.creatureCardsOnly, ability.oncePerTurnEach
+                        for (granted in com.wingedsheep.engine.legalactions.utils.donorCardsActivatedAbilities(
+                            state, permanentId, cardRegistry, predicateEvaluator,
+                            ability.donors, ability.cardFilter, ability.oncePerTurnEach
                         )) {
                             result.add(granted to entityId)
                         }

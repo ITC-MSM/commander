@@ -312,8 +312,10 @@
                 }
             },
             {
-                "type": "HasAllActivatedAbilitiesOfExiledCards",
-                "filter": {
+                "type": "HasAllActivatedAbilitiesOfCards",
+                "donors": "LinkedExile",
+                "cardFilter": "creature",
+                "receivedBy": {
                     "baseFilter": {
                         "cardPredicates": [
                             "IsCreature"
@@ -326,8 +328,7 @@
                         ],
                         "controllerPredicate": "ControlledByYou"
                     }
-                },
-                "creatureCardsOnly": true
+                }
             }
         ]
     },

@@ -227,7 +227,7 @@ sealed interface CardSource {
     /**
      * The cards exiled to Craft the source permanent (its
      * [com.wingedsheep.engine.state.components.battlefield.CraftedFromExiledComponent]), filtered
-     * to those still in exile. The gather counterpart of `ExiledCardsSource.CRAFTED` (which the
+     * to those still in exile. The gather counterpart of `DonorCards.CRAFT_MATERIALS` (which the
      * back-face CDAs read): where that feeds ability grants and dynamic amounts, this feeds a
      * gather → select → move pipeline.
      *
