@@ -1463,11 +1463,15 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   chosen* creature card whose mana value equals `manaValue` (the Momir Basic Vanguard avatar's payoff —
   "Momir Vig, Simic Visionary": `{X}, Discard a card`). The candidate pool is the active
   `Format.MomirBasic.eligibleCreatureNames` (every creature across all sets, stored pre-sorted for
-  replay-stable RNG); the executor filters it to `cmc == manaValue`, picks
+  replay-stable RNG); the executor filters it to `cmc == manaValue && !hasNoManaCost`, picks
   one with the game's seeded `GameRng`, and mints a token copy via `TokenFromDefinition` (the minting
   path for a bare `CardDefinition`, sibling to the in-zone token-copy path). If no creature has that
   mana value, nothing is created (the cost was still paid). The minted token's own `{X}` reads 0 — it
   never went on the stack. Pass `DynamicAmount.XValue` for "mana value X".
+  The `hasNoManaCost` exclusion is what keeps `X = 0` from flipping a meld result (CR 701.42) such as
+  Hanweir, the Writhing Township: no mana cost is an *unpayable* cost (CR 202.1b / CR 118.6), so its
+  mana value is 0 while it is not a card anyone could cast. A printed `{0}` (Ornithopter) is payable
+  and stays eligible.
 - `CreateTreasure(count?, tapped?, controller?, imageUri?)` — Treasure tokens. `count` accepts an `Int` or a `DynamicAmount`
   (the latter evaluated at resolution, e.g. `CreateTreasure(DynamicAmounts.sourcePower(), tapped = true)`
   for Goldvein Hydra's "create a number of tapped Treasure tokens equal to its power"). `controller`

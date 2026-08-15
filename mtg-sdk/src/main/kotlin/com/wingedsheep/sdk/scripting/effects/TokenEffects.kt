@@ -623,6 +623,11 @@ data class CreateTokenCopyOfTargetEffect(
  * seeded RNG (replay-stable). If no creature has that mana value, nothing happens (the cost was
  * still paid). The minted token's own `{X}` reads 0 (it never went on the stack).
  *
+ * Creatures with [com.wingedsheep.sdk.model.CardDefinition.hasNoManaCost] are never candidates:
+ * having no mana cost is an *unpayable* cost (CR 202.1b / CR 118.6), so they'd land in the
+ * `[manaValue] == 0` bucket while being uncastable non-cards (the meld results, CR 701.42). A
+ * printed `{0}` is payable and stays eligible.
+ *
  * Parameterized over [manaValue] (a [DynamicAmount]) rather than baking in "X" so the same
  * primitive serves any "random creature of mana value N" effect; the avatar passes
  * [DynamicAmount.XValue].

@@ -8,6 +8,7 @@ import com.wingedsheep.engine.mechanics.layers.StaticAbilityHandler
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.sdk.core.Format
+import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.scripting.effects.CreateRandomCreatureTokenWithManaValueEffect
 import kotlin.reflect.KClass
 
@@ -23,6 +24,15 @@ import kotlin.reflect.KClass
  *     (not re-collected from the registry, whose map order is unspecified) and re-sorted by name so
  *     the candidate order is deterministic regardless of how the pool was supplied — a precondition
  *     for replay-stable RNG.
+ *
+ *     Creatures with genuinely **no mana cost** ([CardDefinition.hasNoManaCost]) are dropped, and
+ *     dropped here rather than only at the pool's source: the pool is opaque data supplied from
+ *     outside the engine, so this is the only place the exclusion can be guaranteed. A card with
+ *     no mana cost has mana value 0 (CR 202.1b — no mana cost is an *unpayable* cost, CR 118.6),
+ *     which silently lands it in the X=0 bucket even though it is not a card anybody could ever
+ *     cast: in practice these are the meld results (CR 701.42) such as
+ *     Hanweir, the Writhing Township, which exist in the corpus but are never real deck cards.
+ *     "{0}" is a *printed*, payable cost and stays eligible (Ornithopter, Memnite).
  *  2. **Select** — `GameRng.pick` over the sorted candidates, threading the advanced RNG back onto
  *     the state. If no creature has that mana value, nothing happens (the activation cost was still
  *     paid — CR: an effect that can't do anything does nothing).
@@ -51,7 +61,7 @@ class CreateRandomCreatureTokenWithManaValueExecutor(
 
         val candidates = pool
             .mapNotNull { cardRegistry.getCard(it) }
-            .filter { it.isCreature && it.cmc == manaValue }
+            .filter { it.isCreature && !it.hasNoManaCost && it.cmc == manaValue }
             .sortedBy { it.name }
 
         if (candidates.isEmpty()) {

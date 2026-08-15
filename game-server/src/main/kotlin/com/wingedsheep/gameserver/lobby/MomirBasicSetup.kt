@@ -2,6 +2,7 @@ package com.wingedsheep.gameserver.lobby
 
 import com.wingedsheep.mtg.sets.MtgSetCatalog
 import com.wingedsheep.sdk.core.Format
+import com.wingedsheep.sdk.model.CardDefinition
 
 /**
  * Server-side setup helpers for the Momir Basic Vanguard format ([Format.MomirBasic]).
@@ -34,6 +35,14 @@ object MomirBasicSetup {
      * `GameRng.pick` is replay-stable (it filters this list by mana value and picks, never
      * re-collecting from the card registry's unspecified map order).
      *
+     * Creatures printed with genuinely no mana cost ([CardDefinition.hasNoManaCost]) are left out.
+     * Their mana value is 0, so they would otherwise be most of what `{X}` with X=0 flips into, yet
+     * they are not cards a player could ever cast (CR 202.1b / CR 118.6 — having no mana cost is an
+     * unpayable cost). In the corpus these are the meld results (CR 701.42) — Hanweir, the Writhing
+     * Township and friends — defined so their characteristics exist, but never a card anyone owns;
+     * the same reason `BoosterGenerator` and `FormatCardPool` drop them. A printed "{0}" is a
+     * payable cost, so Ornithopter and friends stay in.
+     *
      * Unknown set codes are skipped. The result is exactly what
      * [Format.MomirBasic.eligibleCreatureNames] expects.
      */
@@ -41,7 +50,7 @@ object MomirBasicSetup {
         setCodes
             .mapNotNull { MtgSetCatalog.byCode(it) }
             .flatMap { it.cards }
-            .filter { it.isCreature }
+            .filter { it.isCreature && !it.hasNoManaCost }
             .map { it.name }
             .distinct()
             .sorted()
