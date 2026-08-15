@@ -2209,6 +2209,7 @@ const passiveCounterPalette: Record<string, CounterBadgePalette> = {
   NEST: { bg: 'rgba(25, 55, 25, 0.95)', border: 'rgba(120, 200, 110, 0.65)', color: '#a8e090', glow: 'rgba(120, 200, 110, 0.55)' },
   PAGE: { bg: 'rgba(35, 30, 55, 0.95)', border: 'rgba(160, 150, 220, 0.65)', color: '#bcb4e8', glow: 'rgba(160, 150, 220, 0.5)' },
   REV: { bg: 'rgba(60, 30, 15, 0.95)', border: 'rgba(230, 140, 70, 0.7)', color: '#f0b070', glow: 'rgba(230, 140, 70, 0.55)' },
+  BLOODSTAIN: { bg: 'rgba(56, 14, 18, 0.95)', border: 'rgba(212, 78, 82, 0.72)', color: '#f0a0a2', glow: 'rgba(212, 78, 82, 0.55)' },
   SOUL: { bg: 'rgba(30, 20, 40, 0.95)', border: 'rgba(150, 110, 190, 0.7)', color: '#c0a0e0', glow: 'rgba(150, 110, 190, 0.55)' },
   DIVINITY: { bg: 'rgba(48, 38, 70, 0.95)', border: 'rgba(190, 165, 235, 0.75)', color: '#d8c8f5', glow: 'rgba(190, 165, 235, 0.6)' },
   POSSESSION: { bg: 'rgba(45, 20, 60, 0.95)', border: 'rgba(180, 110, 220, 0.7)', color: '#cda0e8', glow: 'rgba(180, 110, 220, 0.55)' },

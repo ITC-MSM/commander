@@ -982,6 +982,158 @@
     ]
 }
 
+// Blood Spatter Analysis
+{
+    "name": "Blood Spatter Analysis",
+    "manaCost": "{B}{R}",
+    "typeLine": "Enchantment",
+    "oracleText": "When this enchantment enters, it deals 3 damage to target creature an opponent controls.\nWhenever one or more creatures die, mill a card and put a bloodstain counter on this enchantment. Then sacrifice it if it has five or more bloodstain counters on it. When you do, return target creature card from your graveyard to your hand.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 3
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature an opponent controls"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature ctrl:opponent"
+                    },
+                    "id": "target creature an opponent controls"
+                },
+                "descriptionOverride": "When this enchantment enters, it deals 3 damage to target creature an opponent controls."
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "CreaturesYouControlDiedEvent",
+                    "filter": "creature ctrl:any"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                },
+                                "isMill": true
+                            },
+                            "storeAs": "milled"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "milled",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            }
+                        },
+                        {
+                            "type": "AddCounters",
+                            "counterType": "bloodstain",
+                            "count": 1,
+                            "target": "Self"
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "Compare",
+                                    "left": {
+                                        "type": "EntityProperty",
+                                        "entity": "Source",
+                                        "numericProperty": {
+                                            "type": "CounterCount",
+                                            "counterType": {
+                                                "type": "Named",
+                                                "name": "bloodstain"
+                                            }
+                                        }
+                                    },
+                                    "operator": "GTE",
+                                    "right": {
+                                        "type": "Fixed",
+                                        "amount": 5
+                                    }
+                                }
+                            },
+                            "then": {
+                                "type": "ReflexiveTrigger",
+                                "action": {
+                                    "type": "SacrificeTarget",
+                                    "target": "Self"
+                                },
+                                "optional": false,
+                                "reflexiveEffect": {
+                                    "type": "MoveToZone",
+                                    "target": {
+                                        "type": "ContextTarget",
+                                        "index": 0
+                                    },
+                                    "destination": "Hand"
+                                },
+                                "reflexiveTargetRequirements": [
+                                    {
+                                        "type": "TargetObject",
+                                        "filter": {
+                                            "baseFilter": "creature own:you",
+                                            "zone": "Graveyard"
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "Whenever one or more creatures die, mill a card and put a bloodstain counter on this enchantment. Then sacrifice it if it has five or more bloodstain counters on it. When you do, return target creature card from your graveyard to your hand."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "189",
+        "rarity": "RARE",
+        "artist": "Jokubas Uogintas",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/b/2b80feb8-5cc8-4e91-ac22-a733305a67de.jpg?1783912856",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "Blood Spatter Analysis is sacrificed for having five or more bloodstain counters on it only while its second ability is resolving. If you put a fifth counter on it some other way, it won't be immediately sacrificed."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "You don't choose a target creature card to return from your graveyard to your hand at the time Blood Spatter Analysis's second ability triggers. Rather, a second \"reflexive\" ability triggers when you sacrifice Blood Spatter Analysis this way. You choose a target for that ability as it goes on the stack. Each player may respond to this triggered ability as normal."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "Blood Spatter Analysis's reflexive triggered ability triggers and returns a creature card to your hand only if you sacrifice it while resolving its second ability. It won't trigger if you sacrifice it for any other reason."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "RED"
+    ]
+}
+
 // Bolrac-Clan Basher
 {
     "name": "Bolrac-Clan Basher",
@@ -2845,6 +2997,58 @@
     },
     "colorIdentityOverride": [
         "RED",
+        "WHITE"
+    ]
+}
+
+// Doorkeeper Thrull
+{
+    "name": "Doorkeeper Thrull",
+    "manaCost": "{1}{W}",
+    "typeLine": "Creature — Thrull",
+    "oracleText": "Flash\nFlying\nArtifacts and creatures entering don't cause abilities to trigger.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 2
+    },
+    "keywords": [
+        "FLASH",
+        "FLYING"
+    ],
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "SuppressEntersTriggers",
+                "filter": "creature|artifact"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "13",
+        "rarity": "RARE",
+        "artist": "Camille Alquier",
+        "flavorText": "Parties at Karlov Manor are strictly invitation only.",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/0/80a1cd28-d2a5-4d1a-aa03-a6a5958ae432.jpg?1783912925",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "Replacement effects, such as a permanent entering the battlefield tapped or with counters on it, are unaffected. Abilities that apply \"as [this permanent] enters the battlefield\" are replacement effects."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "The trigger event doesn't have to specify artifacts or creatures entering the battlefield. For example, Tireless Tracker has an ability that says \"Whenever a land enters the battlefield under your control, investigate.\" If an artifact land or creature land enters the battlefield under your control, that ability won't trigger."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "Look at the permanent as it exists on the battlefield, taking into account continuous effects, to determine whether any triggered abilities will trigger."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "If Doorkeeper Thrull and another creature or an artifact enter the battlefield at the same time, neither one will cause triggered abilities to trigger when they enter the battlefield."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
         "WHITE"
     ]
 }
@@ -6946,6 +7150,89 @@
     ]
 }
 
+// Magnetic Snuffler
+{
+    "name": "Magnetic Snuffler",
+    "manaCost": "{5}",
+    "typeLine": "Artifact Creature — Construct",
+    "oracleText": "When this creature enters, return target Equipment card from your graveyard to the battlefield attached to this creature.\nWhenever you sacrifice an artifact, put a +1/+1 counter on this creature.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "MoveToZone",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target Equipment card from your graveyard"
+                            },
+                            "destination": "Battlefield",
+                            "controllerOverride": "Controller"
+                        },
+                        {
+                            "type": "AttachTargetEquipmentToCreature",
+                            "equipmentTarget": {
+                                "type": "BoundVariable",
+                                "name": "target Equipment card from your graveyard"
+                            },
+                            "creatureTarget": "Self"
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "artifact Equipment own:you",
+                        "zone": "Graveyard"
+                    },
+                    "id": "target Equipment card from your graveyard"
+                },
+                "descriptionOverride": "When this creature enters, return target Equipment card from your graveyard to the battlefield attached to this creature."
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "PermanentsSacrificedEvent",
+                    "filter": "artifact",
+                    "perPermanent": true
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": "Self"
+                },
+                "descriptionOverride": "Whenever you sacrifice an artifact, put a +1/+1 counter on this creature."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "254",
+        "rarity": "UNCOMMON",
+        "artist": "Daniel Ljunggren",
+        "flavorText": "It recovers precious jewelry, murder weapons, and discarded food tins with equal excitement.",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/0/70476534-2fc7-4872-a009-3380dd5ce2ab.jpg?1783912830",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "You may target an Equipment card that can't legally be attached to Magnetic Snuffler with its first ability. If you do, it will enter the battlefield unattached."
+            }
+        ]
+    }
+}
+
 // Make Your Move
 {
     "name": "Make Your Move",
@@ -8769,6 +9056,77 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Pyrotechnic Performer
+{
+    "name": "Pyrotechnic Performer",
+    "manaCost": "{1}{R}",
+    "typeLine": "Creature — Lizard Assassin",
+    "oracleText": "Disguise {R} (You may cast this card face down for {3} as a 2/2 creature with ward {2}. Turn it face up any time for its disguise cost.)\nWhenever this creature or another creature you control is turned face up, that creature deals damage equal to its power to each opponent.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "keywordAbilities": [
+        {
+            "type": "Disguise",
+            "disguiseCost": {
+                "type": "PayAtom",
+                "atom": {
+                    "type": "AtomMana",
+                    "cost": "{R}"
+                }
+            }
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "CreatureTurnedFaceUpEvent",
+                "binding": "ANY",
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "EntityProperty",
+                        "entity": "Triggering",
+                        "numericProperty": "Power"
+                    },
+                    "target": {
+                        "type": "PlayerRef",
+                        "player": "EachOpponent"
+                    },
+                    "damageSource": "TriggeringEntity"
+                },
+                "descriptionOverride": "Whenever this creature or another creature you control is turned face up, that creature deals damage equal to its power to each opponent."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "140",
+        "rarity": "RARE",
+        "artist": "Peter Polach",
+        "flavorText": "\"Let's get this party started.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/f/0fa5671b-2651-4944-a50a-c768ec70229e.jpg?1783912874",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "If a creature that is turned face up leaves the battlefield before Pyrotechnic Performer's triggered ability resolves, use that creature's power as it last existed on the battlefield to determine how much damage it deals."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "Any time you have priority, you may turn the face-down creature face up by revealing what its disguise cost is and paying that cost. This is a special action. It doesn't use the stack and can't be responded to. Only a face-down permanent can be turned face up this way; a face-down spell cannot."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "Because the permanent is on the battlefield both before and after it's turned face up, turning a permanent face up doesn't cause any enters-the-battlefield abilities to trigger."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
