@@ -26,7 +26,7 @@ val VoidmageProdigy = card("Voidmage Prodigy") {
     activatedAbility {
         cost = Costs.Composite(
             Costs.Mana("{U}{U}"),
-            Costs.Sacrifice(GameObjectFilter.Creature.withSubtype("Wizard"))
+            Costs.Sacrifice(GameObjectFilter.Permanent.withSubtype("Wizard"))
         )
         target = Targets.Spell
         effect = CounterEffect()

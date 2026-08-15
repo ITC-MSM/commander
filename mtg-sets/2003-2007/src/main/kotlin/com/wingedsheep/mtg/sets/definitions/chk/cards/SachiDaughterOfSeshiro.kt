@@ -50,7 +50,7 @@ val SachiDaughterOfSeshiro = card("Sachi, Daughter of Seshiro") {
                 isManaAbility = true,
                 timing = TimingRule.ManaAbility
             ),
-            filter = GroupFilter(GameObjectFilter.Creature.withSubtype(Subtype.SHAMAN).youControl())
+            filter = GroupFilter(GameObjectFilter.Permanent.withSubtype(Subtype.SHAMAN).youControl())
         )
     }
     metadata {

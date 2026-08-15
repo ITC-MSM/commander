@@ -31,7 +31,7 @@ val TheodenKingOfRohan = card("Théoden, King of Rohan") {
 
     triggeredAbility {
         trigger = Triggers.entersBattlefield(
-            filter = GameObjectFilter.Creature.youControl().withSubtype("Human"),
+            filter = GameObjectFilter.Permanent.youControl().withSubtype("Human"),
             binding = TriggerBinding.ANY
         )
         target = TargetCreature(

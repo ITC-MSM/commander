@@ -23,8 +23,8 @@ val ShiftingSliver = card("Shifting Sliver") {
 
     staticAbility {
         ability = CantBeBlockedExceptBy(
-            blockerFilter = GameObjectFilter.Creature.withSubtype("Sliver"),
-            filter = GroupFilter(GameObjectFilter.Creature.withSubtype("Sliver"))
+            blockerFilter = GameObjectFilter.Permanent.withSubtype("Sliver"),
+            filter = GroupFilter(GameObjectFilter.Permanent.withSubtype("Sliver"))
         )
     }
 

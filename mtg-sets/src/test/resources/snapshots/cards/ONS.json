@@ -335,7 +335,7 @@
                     "atom": {
                         "type": "AtomTapPermanents",
                         "count": 5,
-                        "filter": "creature Cleric"
+                        "filter": "permanent Cleric"
                     }
                 },
                 "effect": {
@@ -613,7 +613,7 @@
                     "atom": {
                         "type": "AtomTapPermanents",
                         "count": 2,
-                        "filter": "creature Wizard"
+                        "filter": "permanent Wizard"
                     }
                 },
                 "effect": {
@@ -1598,7 +1598,7 @@
                     "atom": {
                         "type": "AtomTapPermanents",
                         "count": 2,
-                        "filter": "creature Elf"
+                        "filter": "permanent Elf"
                     }
                 },
                 "effect": "AddManaOfChoice",
@@ -1972,7 +1972,7 @@
                     {
                         "type": "TargetObject",
                         "filter": {
-                            "baseFilter": "creature Zombie"
+                            "baseFilter": "permanent Zombie"
                         },
                         "id": "target"
                     }
@@ -2168,7 +2168,7 @@
                             "type": "CostAtomWrapper",
                             "atom": {
                                 "type": "AtomSacrifice",
-                                "filter": "creature Cleric"
+                                "filter": "permanent Cleric"
                             }
                         }
                     ]
@@ -2425,7 +2425,7 @@
                     "atom": {
                         "type": "AtomTapPermanents",
                         "count": 5,
-                        "filter": "creature Soldier"
+                        "filter": "permanent Soldier"
                     }
                 },
                 "effect": {
@@ -2479,7 +2479,7 @@
                     "atom": {
                         "type": "AtomTapPermanents",
                         "count": 2,
-                        "filter": "creature Soldier"
+                        "filter": "permanent Soldier"
                     }
                 },
                 "effect": {
@@ -7582,7 +7582,7 @@
                     "type": "CostAtomWrapper",
                     "atom": {
                         "type": "AtomSacrifice",
-                        "filter": "creature Goblin"
+                        "filter": "permanent Goblin"
                     }
                 },
                 "effect": {
@@ -11831,7 +11831,7 @@
                     "type": "CostAtomWrapper",
                     "atom": {
                         "type": "AtomSacrifice",
-                        "filter": "creature Beast"
+                        "filter": "permanent Beast"
                     }
                 },
                 "effect": {
@@ -12386,7 +12386,7 @@
                     {
                         "type": "TargetObject",
                         "filter": {
-                            "baseFilter": "creature Wizard ctrl:you"
+                            "baseFilter": "permanent Wizard ctrl:you"
                         },
                         "id": "target"
                     }
@@ -13177,7 +13177,7 @@
                             "type": "CostAtomWrapper",
                             "atom": {
                                 "type": "AtomSacrifice",
-                                "filter": "creature Bird"
+                                "filter": "permanent Bird"
                             }
                         }
                     ]
@@ -13928,7 +13928,7 @@
                     "atom": {
                         "type": "AtomTapPermanents",
                         "count": 5,
-                        "filter": "creature Goblin"
+                        "filter": "permanent Goblin"
                     }
                 },
                 "effect": {
@@ -14001,7 +14001,7 @@
                     "type": "CostAtomWrapper",
                     "atom": {
                         "type": "AtomSacrifice",
-                        "filter": "creature Goblin"
+                        "filter": "permanent Goblin"
                     }
                 },
                 "effect": {
@@ -14743,7 +14743,7 @@
                     "atom": {
                         "type": "AtomTapPermanents",
                         "count": 2,
-                        "filter": "creature Beast"
+                        "filter": "permanent Beast"
                     }
                 },
                 "effect": {
@@ -16947,7 +16947,7 @@
                             "type": "CostAtomWrapper",
                             "atom": {
                                 "type": "AtomSacrifice",
-                                "filter": "creature Wizard"
+                                "filter": "permanent Wizard"
                             }
                         }
                     ]
@@ -17071,7 +17071,7 @@
                             "type": "CostAtomWrapper",
                             "atom": {
                                 "type": "AtomSacrifice",
-                                "filter": "creature Wall"
+                                "filter": "permanent Wall"
                             }
                         }
                     ]
@@ -17322,7 +17322,7 @@
                     "amount": {
                         "type": "AggregateBattlefield",
                         "player": "Each",
-                        "filter": "creature Elf"
+                        "filter": "permanent Elf"
                     }
                 }
             }
@@ -17717,7 +17717,7 @@
                     {
                         "type": "TargetObject",
                         "filter": {
-                            "baseFilter": "creature Elf"
+                            "baseFilter": "permanent Elf"
                         },
                         "id": "target"
                     }
@@ -17748,12 +17748,12 @@
             "powerModifier": {
                 "type": "AggregateBattlefield",
                 "player": "Each",
-                "filter": "creature Elf"
+                "filter": "permanent Elf"
             },
             "toughnessModifier": {
                 "type": "AggregateBattlefield",
                 "player": "Each",
-                "filter": "creature Elf"
+                "filter": "permanent Elf"
             },
             "target": {
                 "type": "BoundVariable",

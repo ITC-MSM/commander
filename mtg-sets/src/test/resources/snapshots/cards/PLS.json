@@ -223,7 +223,7 @@
                             "type": "CostAtomWrapper",
                             "atom": {
                                 "type": "AtomSacrifice",
-                                "filter": "creature Zombie"
+                                "filter": "permanent Zombie"
                             }
                         }
                     ]
@@ -901,7 +901,7 @@
                     {
                         "type": "TargetObject",
                         "filter": {
-                            "baseFilter": "creature Zombie own:you",
+                            "baseFilter": "permanent Zombie own:you",
                             "zone": "Graveyard"
                         },
                         "id": "target"
@@ -1057,7 +1057,7 @@
                     "type": "CostAtomWrapper",
                     "atom": {
                         "type": "AtomSacrifice",
-                        "filter": "creature Saproling"
+                        "filter": "permanent Saproling"
                     }
                 },
                 "effect": {

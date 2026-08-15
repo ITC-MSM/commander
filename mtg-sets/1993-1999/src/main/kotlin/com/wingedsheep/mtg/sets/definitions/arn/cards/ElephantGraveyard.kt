@@ -32,7 +32,7 @@ val ElephantGraveyard = card("Elephant Graveyard") {
         cost = Costs.Tap
         val elephant = target(
             "target Elephant",
-            TargetObject(filter = TargetFilter(GameObjectFilter.Creature.withSubtype("Elephant")))
+            TargetObject(filter = TargetFilter(GameObjectFilter.Permanent.withSubtype("Elephant")))
         )
         effect = RegenerateEffect(elephant)
     }

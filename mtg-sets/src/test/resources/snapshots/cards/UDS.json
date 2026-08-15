@@ -927,7 +927,7 @@
                 "targetRequirement": {
                     "type": "TargetObject",
                     "filter": {
-                        "baseFilter": "creature Wall"
+                        "baseFilter": "permanent Wall"
                     },
                     "id": "target"
                 }

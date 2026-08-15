@@ -38,7 +38,7 @@ val AngelOfFlightAlabaster = card("Angel of Flight Alabaster") {
             "target",
             TargetObject(
                 filter = TargetFilter(
-                    GameObjectFilter.Creature.withSubtype(Subtype.SPIRIT).ownedByYou(),
+                    GameObjectFilter.Permanent.withSubtype(Subtype.SPIRIT).ownedByYou(),
                     zone = Zone.GRAVEYARD
                 )
             )

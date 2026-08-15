@@ -2991,7 +2991,7 @@
                 "id": "ability_1",
                 "trigger": {
                     "type": "ZoneChangeEvent",
-                    "filter": "creature Human ctrl:you",
+                    "filter": "permanent Human ctrl:you",
                     "to": "Battlefield"
                 },
                 "binding": "OTHER",
@@ -5926,7 +5926,7 @@
                 "id": "ability_1",
                 "trigger": {
                     "type": "ZoneChangeEvent",
-                    "filter": "creature Zombie nontoken ctrl:you",
+                    "filter": "permanent Zombie nontoken ctrl:you",
                     "from": "Battlefield",
                     "to": "Graveyard"
                 },

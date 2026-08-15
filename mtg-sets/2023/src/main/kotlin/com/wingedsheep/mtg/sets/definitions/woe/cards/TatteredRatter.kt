@@ -33,7 +33,7 @@ val TatteredRatter = card("Tattered Ratter") {
 
     triggeredAbility {
         trigger = Triggers.becomesBlocked(
-            filter = GameObjectFilter.Creature.withSubtype("Rat").youControl(),
+            filter = GameObjectFilter.Permanent.withSubtype("Rat").youControl(),
             binding = TriggerBinding.ANY,
         )
         effect = Effects.ModifyStats(2, 0, EffectTarget.TriggeringEntity)

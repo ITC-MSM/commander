@@ -25,7 +25,7 @@ val AliBaba = card("Ali Baba") {
 
     activatedAbility {
         cost = Costs.Mana("{R}")
-        val wall = target("target Wall", TargetObject(filter = TargetFilter(GameObjectFilter.Creature.withSubtype("Wall"))))
+        val wall = target("target Wall", TargetObject(filter = TargetFilter(GameObjectFilter.Permanent.withSubtype("Wall"))))
         effect = Effects.Tap(wall)
     }
 

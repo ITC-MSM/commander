@@ -15492,7 +15492,7 @@
                 "powerBonus": 1,
                 "toughnessBonus": 1,
                 "filter": {
-                    "baseFilter": "creature Dragon ctrl:you",
+                    "baseFilter": "permanent Dragon ctrl:you",
                     "excludeSelf": true
                 }
             }

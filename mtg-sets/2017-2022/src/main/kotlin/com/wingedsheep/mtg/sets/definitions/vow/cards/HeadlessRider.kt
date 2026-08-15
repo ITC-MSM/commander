@@ -33,7 +33,7 @@ val HeadlessRider = card("Headless Rider") {
 
     triggeredAbility {
         trigger = Triggers.leavesBattlefield(
-            filter = GameObjectFilter.Creature.withSubtype("Zombie").youControl().nontoken(),
+            filter = GameObjectFilter.Permanent.withSubtype("Zombie").youControl().nontoken(),
             to = Zone.GRAVEYARD,
             binding = TriggerBinding.ANY
         )

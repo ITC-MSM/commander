@@ -35,7 +35,7 @@ val ImperialHellkite = card("Imperial Hellkite") {
         trigger = Triggers.TurnedFaceUp
         effect = MayEffect(
             Patterns.Library.searchLibrary(
-                filter = GameObjectFilter.Creature.withSubtype("Dragon"),
+                filter = GameObjectFilter.Permanent.withSubtype("Dragon"),
                 count = 1,
                 destination = SearchDestination.HAND,
                 reveal = true,

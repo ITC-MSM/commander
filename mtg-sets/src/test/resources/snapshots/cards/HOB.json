@@ -4309,7 +4309,7 @@
                     {
                         "type": "TargetObject",
                         "filter": {
-                            "baseFilter": "creature Elf ctrl:you"
+                            "baseFilter": "permanent Elf ctrl:you"
                         },
                         "id": "target Elf you control"
                     }
@@ -6788,7 +6788,7 @@
                     {
                         "type": "TargetObject",
                         "filter": {
-                            "baseFilter": "creature Dwarf ctrl:you"
+                            "baseFilter": "permanent Dwarf ctrl:you"
                         },
                         "id": "target Dwarf you control"
                     }
@@ -7135,7 +7135,7 @@
                     {
                         "type": "TargetObject",
                         "filter": {
-                            "baseFilter": "creature Human ctrl:you"
+                            "baseFilter": "permanent Human ctrl:you"
                         },
                         "id": "target Human you control"
                     }

@@ -31,7 +31,7 @@ val StromkirkNoble = card("Stromkirk Noble") {
     power = 1
     toughness = 1
     staticAbility {
-        ability = CantBeBlockedBy(blockerFilter = GameObjectFilter.Creature.withSubtype(Subtype.HUMAN))
+        ability = CantBeBlockedBy(blockerFilter = GameObjectFilter.Permanent.withSubtype(Subtype.HUMAN))
     }
     triggeredAbility {
         trigger = Triggers.DealsCombatDamageToPlayer

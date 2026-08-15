@@ -31,7 +31,7 @@ val SpectralShepherd = card("Spectral Shepherd") {
     activatedAbility {
         cost = Costs.Mana("{1}{U}")
         target = TargetObject(
-            filter = TargetFilter(GameObjectFilter.Creature.youControl().withSubtype("Spirit"))
+            filter = TargetFilter(GameObjectFilter.Permanent.youControl().withSubtype("Spirit"))
         )
         effect = Effects.ReturnToHand(EffectTarget.ContextTarget(0))
     }

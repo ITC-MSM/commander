@@ -30,7 +30,7 @@ val BladestitchedSkaab = card("Bladestitched Skaab") {
         ability = ModifyStats(
             powerBonus = 1,
             toughnessBonus = 0,
-            filter = GroupFilter(GameObjectFilter.Creature.withSubtype(Subtype.ZOMBIE).youControl(), excludeSelf = true)
+            filter = GroupFilter(GameObjectFilter.Permanent.withSubtype(Subtype.ZOMBIE).youControl(), excludeSelf = true)
         )
     }
     metadata {

@@ -23,7 +23,7 @@ val CatapultMaster = card("Catapult Master") {
     oracleText = "Tap five untapped Soldiers you control: Exile target creature."
 
     activatedAbility {
-        cost = Costs.TapPermanents(5, GameObjectFilter.Creature.withSubtype("Soldier"))
+        cost = Costs.TapPermanents(5, GameObjectFilter.Permanent.withSubtype("Soldier"))
         val t = target("target", Targets.Creature)
         effect = Effects.Move(t, Zone.EXILE)
     }

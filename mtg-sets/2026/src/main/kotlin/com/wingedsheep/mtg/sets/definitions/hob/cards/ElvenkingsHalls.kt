@@ -51,7 +51,7 @@ val ElvenkingsHalls = card("Elvenking's Halls") {
         cost = Costs.Composite(Costs.Mana("{2}{G}{U}"), Costs.Tap, Costs.SacrificeSelf)
         val elf = target(
             "target Elf you control",
-            TargetCreature(filter = TargetFilter.CreatureYouControl.withSubtype(Subtype.ELF))
+            TargetCreature(filter = TargetFilter.PermanentYouControl.withSubtype(Subtype.ELF))
         )
         effect = Effects.AddCounters(Counters.PLUS_ONE_PLUS_ONE, 2, elf)
         timing = TimingRule.SorcerySpeed

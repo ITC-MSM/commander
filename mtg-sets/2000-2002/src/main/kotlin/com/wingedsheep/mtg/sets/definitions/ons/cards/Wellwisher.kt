@@ -24,7 +24,7 @@ val Wellwisher = card("Wellwisher") {
 
     activatedAbility {
         cost = AbilityCost.Tap
-        effect = GainLifeEffect(DynamicAmounts.creaturesWithSubtype(Subtype("Elf")))
+        effect = GainLifeEffect(DynamicAmounts.permanentsWithSubtype(Subtype("Elf")))
     }
 
     metadata {

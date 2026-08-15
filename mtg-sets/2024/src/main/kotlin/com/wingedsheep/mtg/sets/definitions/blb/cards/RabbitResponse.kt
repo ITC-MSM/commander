@@ -26,7 +26,7 @@ val RabbitResponse = card("Rabbit Response") {
             2, 1,
             GroupFilter(GameObjectFilter.Creature.youControl())
         ).then(ConditionalEffect(
-            condition = Conditions.ControlCreatureOfType(Subtype("Rabbit")),
+            condition = Conditions.ControlPermanentOfType(Subtype("Rabbit")),
             effect = Patterns.Library.scry(2)
         ))
     }

@@ -27,7 +27,7 @@ val TurtlePower = card("Turtle Power!") {
         ability = ModifyStats(
             2,
             2,
-            filter = GroupFilter(GameObjectFilter.Creature.withSubtype("Turtle").youControl()),
+            filter = GroupFilter(GameObjectFilter.Permanent.withSubtype("Turtle").youControl()),
         )
     }
 

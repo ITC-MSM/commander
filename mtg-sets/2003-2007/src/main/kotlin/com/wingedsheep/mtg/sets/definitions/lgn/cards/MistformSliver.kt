@@ -26,7 +26,7 @@ val MistformSliver = card("Mistform Sliver") {
     toughness = 1
     oracleText = "All Slivers have \"{1}: This permanent becomes the creature type of your choice in addition to its other types until end of turn.\""
 
-    val sliverFilter = GroupFilter(GameObjectFilter.Creature.withSubtype("Sliver"))
+    val sliverFilter = GroupFilter(GameObjectFilter.Permanent.withSubtype("Sliver"))
 
     staticAbility {
         ability = GrantActivatedAbility(

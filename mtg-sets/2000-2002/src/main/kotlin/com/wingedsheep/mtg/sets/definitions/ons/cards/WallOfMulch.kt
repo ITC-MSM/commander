@@ -28,7 +28,7 @@ val WallOfMulch = card("Wall of Mulch") {
     activatedAbility {
         cost = Costs.Composite(
             Costs.Mana("{G}"),
-            Costs.Sacrifice(GameObjectFilter.Creature.withSubtype("Wall"))
+            Costs.Sacrifice(GameObjectFilter.Permanent.withSubtype("Wall"))
         )
         effect = Effects.DrawCards(1)
     }

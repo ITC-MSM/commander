@@ -32,7 +32,7 @@ val WirewoodHivemaster = card("Wirewood Hivemaster") {
             event = ZoneChangeEvent(
                 filter = GameObjectFilter(
                     cardPredicates = listOf(
-                        CardPredicate.IsCreature,
+                        CardPredicate.IsPermanent,
                         CardPredicate.HasSubtype(Subtype("Elf")),
                         CardPredicate.IsNontoken
                     )

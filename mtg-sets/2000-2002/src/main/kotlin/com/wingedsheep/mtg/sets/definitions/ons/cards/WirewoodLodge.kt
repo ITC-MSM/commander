@@ -32,7 +32,7 @@ val WirewoodLodge = card("Wirewood Lodge") {
     activatedAbility {
         cost = Costs.Composite(Costs.Mana("{G}"), Costs.Tap)
         val t = target("target", TargetPermanent(
-            filter = TargetFilter(GameObjectFilter.Creature.withSubtype("Elf"))
+            filter = TargetFilter(GameObjectFilter.Permanent.withSubtype("Elf"))
         ))
         effect = TapUntapEffect(
             target = t,

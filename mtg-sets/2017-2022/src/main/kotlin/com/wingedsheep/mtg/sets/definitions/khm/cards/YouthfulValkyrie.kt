@@ -34,7 +34,7 @@ val YouthfulValkyrie = card("Youthful Valkyrie") {
     keywords(Keyword.FLYING)
     triggeredAbility {
         trigger = Triggers.entersBattlefield(
-            filter = GameObjectFilter.Creature.withSubtype(Subtype.ANGEL).youControl(),
+            filter = GameObjectFilter.Permanent.withSubtype(Subtype.ANGEL).youControl(),
             binding = TriggerBinding.OTHER
         )
         effect = AddCountersEffect(counterType = Counters.PLUS_ONE_PLUS_ONE, count = 1, target = EffectTarget.Self)

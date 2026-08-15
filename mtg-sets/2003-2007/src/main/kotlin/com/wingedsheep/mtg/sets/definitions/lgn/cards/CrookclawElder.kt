@@ -28,12 +28,12 @@ val CrookclawElder = card("Crookclaw Elder") {
     keywords(Keyword.FLYING)
 
     activatedAbility {
-        cost = Costs.TapPermanents(2, GameObjectFilter.Creature.withSubtype("Bird"))
+        cost = Costs.TapPermanents(2, GameObjectFilter.Permanent.withSubtype("Bird"))
         effect = Effects.DrawCards(1)
     }
 
     activatedAbility {
-        cost = Costs.TapPermanents(2, GameObjectFilter.Creature.withSubtype("Wizard"))
+        cost = Costs.TapPermanents(2, GameObjectFilter.Permanent.withSubtype("Wizard"))
         val creature = target("creature", Targets.Creature)
         effect = Effects.GrantKeyword(Keyword.FLYING, creature)
     }

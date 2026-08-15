@@ -27,11 +27,11 @@ val GravebornMuse = card("Graveborn Muse") {
     triggeredAbility {
         trigger = Triggers.YourUpkeep
         effect = Effects.DrawCards(
-            count = DynamicAmount.AggregateBattlefield(Player.You, GameObjectFilter.Creature.withSubtype("Zombie")),
+            count = DynamicAmount.AggregateBattlefield(Player.You, GameObjectFilter.Permanent.withSubtype("Zombie")),
             target = EffectTarget.Controller
         ).then(
             Effects.LoseLife(
-                amount = DynamicAmount.AggregateBattlefield(Player.You, GameObjectFilter.Creature.withSubtype("Zombie")),
+                amount = DynamicAmount.AggregateBattlefield(Player.You, GameObjectFilter.Permanent.withSubtype("Zombie")),
                 target = EffectTarget.Controller
             )
         )

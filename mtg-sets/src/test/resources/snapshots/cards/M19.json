@@ -1182,7 +1182,7 @@
                     "amount": {
                         "type": "AggregateBattlefield",
                         "player": "You",
-                        "filter": "creature Goblin"
+                        "filter": "permanent Goblin"
                     },
                     "target": {
                         "type": "BoundVariable",

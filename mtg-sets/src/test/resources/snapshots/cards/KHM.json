@@ -461,7 +461,7 @@
                 "id": "ability_1",
                 "trigger": {
                     "type": "ZoneChangeEvent",
-                    "filter": "creature Angel ctrl:you",
+                    "filter": "permanent Angel ctrl:you",
                     "to": "Battlefield"
                 },
                 "binding": "OTHER",

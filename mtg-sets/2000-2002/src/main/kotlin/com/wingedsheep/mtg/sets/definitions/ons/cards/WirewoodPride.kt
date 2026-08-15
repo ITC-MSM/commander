@@ -22,7 +22,7 @@ val WirewoodPride = card("Wirewood Pride") {
 
     spell {
         val t = target("target", TargetCreature(filter = TargetFilter.Creature))
-        val elfCount = DynamicAmounts.creaturesWithSubtype(Subtype("Elf"))
+        val elfCount = DynamicAmounts.permanentsWithSubtype(Subtype("Elf"))
         effect = Effects.ModifyStats(
             power = elfCount,
             toughness = elfCount,

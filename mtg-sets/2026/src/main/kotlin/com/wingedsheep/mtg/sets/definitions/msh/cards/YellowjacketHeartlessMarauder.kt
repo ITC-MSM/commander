@@ -35,7 +35,7 @@ val YellowjacketHeartlessMarauder = card("Yellowjacket, Heartless Marauder") {
 
     triggeredAbility {
         trigger = Triggers.entersBattlefield(
-            filter = GameObjectFilter.Creature.withSubtype(Subtype.VILLAIN).youControl(),
+            filter = GameObjectFilter.Permanent.withSubtype(Subtype.VILLAIN).youControl(),
             binding = TriggerBinding.OTHER
         )
         effect = Effects.Composite(

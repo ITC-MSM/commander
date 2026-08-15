@@ -27,7 +27,7 @@ val TimberwatchElf = card("Timberwatch Elf") {
     activatedAbility {
         cost = AbilityCost.Tap
         val t = target("target", TargetCreature(filter = TargetFilter.Creature))
-        val elfCount = DynamicAmounts.creaturesWithSubtype(Subtype("Elf"))
+        val elfCount = DynamicAmounts.permanentsWithSubtype(Subtype("Elf"))
         effect = Effects.ModifyStats(
             power = elfCount,
             toughness = elfCount,

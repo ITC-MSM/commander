@@ -209,6 +209,19 @@ object DynamicAmounts {
     fun creaturesWithSubtype(subtype: Subtype): DynamicAmount =
         battlefield(Player.Each, GameObjectFilter.Creature.withSubtype(subtype)).count()
 
+    /**
+     * The number of *permanents* with [subtype] on the battlefield — what a **bare** tribal noun
+     * counts.
+     *
+     * "…where X is the number of **Slivers** on the battlefield" counts every Sliver permanent,
+     * while "the number of **Sliver creatures**" counts only the creatures. Oracle spells the two
+     * differently and means two different things, so they are two facades rather than one:
+     * [creaturesWithSubtype] is the adjectival form's counterpart. Reach for this one whenever the
+     * printed text is the bare noun.
+     */
+    fun permanentsWithSubtype(subtype: Subtype): DynamicAmount =
+        battlefield(Player.Each, GameObjectFilter.Permanent.withSubtype(subtype)).count()
+
     fun landsWithSubtype(subtype: Subtype): DynamicAmount =
         battlefield(Player.You, GameObjectFilter.Land.withSubtype(subtype)).count()
 

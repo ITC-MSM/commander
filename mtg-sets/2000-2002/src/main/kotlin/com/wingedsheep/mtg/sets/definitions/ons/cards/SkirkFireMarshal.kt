@@ -32,7 +32,7 @@ val SkirkFireMarshal = card("Skirk Fire Marshal") {
     keywordAbility(KeywordAbility.Protection(ProtectionScope.Color(Color.RED)))
 
     activatedAbility {
-        cost = Costs.TapPermanents(5, GameObjectFilter.Creature.withSubtype("Goblin"))
+        cost = Costs.TapPermanents(5, GameObjectFilter.Permanent.withSubtype("Goblin"))
         effect = Effects.ForEachInGroup(GroupFilter.AllCreatures, DealDamageEffect(10, EffectTarget.Self)) then Effects.ForEachPlayer(Player.Each, listOf(Effects.DealDamage(10, EffectTarget.Controller)))
     }
 

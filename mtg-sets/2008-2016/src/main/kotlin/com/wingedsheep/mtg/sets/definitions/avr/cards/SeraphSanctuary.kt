@@ -33,7 +33,7 @@ val SeraphSanctuary = card("Seraph Sanctuary") {
 
     triggeredAbility {
         trigger = Triggers.entersBattlefield(
-            filter = GameObjectFilter.Creature.withSubtype(Subtype.ANGEL).youControl(),
+            filter = GameObjectFilter.Permanent.withSubtype(Subtype.ANGEL).youControl(),
             binding = TriggerBinding.ANY,
         )
         effect = Effects.GainLife(1)

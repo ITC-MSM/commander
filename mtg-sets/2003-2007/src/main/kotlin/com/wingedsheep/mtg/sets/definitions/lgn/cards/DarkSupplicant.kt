@@ -28,7 +28,7 @@ val DarkSupplicant = card("Dark Supplicant") {
     activatedAbility {
         cost = Costs.Composite(
             Costs.Tap,
-            Costs.SacrificeMultiple(3, GameObjectFilter.Creature.withSubtype("Cleric"))
+            Costs.SacrificeMultiple(3, GameObjectFilter.Permanent.withSubtype("Cleric"))
         )
         effect = Patterns.Library.searchMultipleZones(
             zones = listOf(Zone.GRAVEYARD, Zone.HAND, Zone.LIBRARY),

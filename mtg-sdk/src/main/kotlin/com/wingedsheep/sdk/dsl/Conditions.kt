@@ -422,6 +422,16 @@ object Conditions {
         Exists(Player.You, Zone.BATTLEFIELD, GameObjectFilter.Creature.withSubtype(subtype))
 
     /**
+     * If you control a *permanent* of a specific type — what "if you control a **Rabbit**" asks.
+     *
+     * The bare tribal noun means any permanent with the subtype, not only a creature with it;
+     * [ControlCreatureOfType] is the counterpart for the adjectival "a Rabbit creature". Two
+     * facades because Oracle spells the two differently and means two different things.
+     */
+    fun ControlPermanentOfType(subtype: Subtype): ConditionInterface =
+        Exists(Player.You, Zone.BATTLEFIELD, GameObjectFilter.Permanent.withSubtype(subtype))
+
+    /**
      * If a player controls more creatures of the given subtype than each other player.
      */
     fun APlayerControlsMostOfSubtype(subtype: Subtype): ConditionInterface =

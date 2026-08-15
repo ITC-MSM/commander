@@ -371,7 +371,7 @@
                 "id": "ability_1",
                 "trigger": {
                     "type": "BecomesBlockedEvent",
-                    "filter": "creature Beast"
+                    "filter": "permanent Beast"
                 },
                 "binding": "ANY",
                 "effect": {
@@ -659,7 +659,7 @@
                     "optional": true
                 },
                 "filter": {
-                    "baseFilter": "creature Sliver"
+                    "baseFilter": "permanent Sliver"
                 }
             }
         ]
@@ -1036,7 +1036,7 @@
                     "type": "CostAtomWrapper",
                     "atom": {
                         "type": "AtomSacrifice",
-                        "filter": "creature Goblin"
+                        "filter": "permanent Goblin"
                     }
                 },
                 "effect": {
@@ -1103,7 +1103,7 @@
                     "type": "Exists",
                     "player": "You",
                     "zone": "Battlefield",
-                    "filter": "creature Bird"
+                    "filter": "permanent Bird"
                 }
             },
             {
@@ -1120,7 +1120,7 @@
                     "type": "Exists",
                     "player": "You",
                     "zone": "Battlefield",
-                    "filter": "creature Bird"
+                    "filter": "permanent Bird"
                 }
             }
         ]
@@ -1179,7 +1179,7 @@
                             "source": {
                                 "type": "FromZone",
                                 "zone": "Library",
-                                "filter": "creature Zombie"
+                                "filter": "permanent Zombie"
                             },
                             "storeAs": "searchable"
                         },
@@ -1350,7 +1350,7 @@
                     "atom": {
                         "type": "AtomTapPermanents",
                         "count": 2,
-                        "filter": "creature Bird"
+                        "filter": "permanent Bird"
                     }
                 },
                 "effect": {
@@ -1368,7 +1368,7 @@
                     "atom": {
                         "type": "AtomTapPermanents",
                         "count": 2,
-                        "filter": "creature Wizard"
+                        "filter": "permanent Wizard"
                     }
                 },
                 "effect": {
@@ -1430,13 +1430,13 @@
                         {
                             "type": "TargetObject",
                             "filter": {
-                                "baseFilter": "creature Sliver"
+                                "baseFilter": "permanent Sliver"
                             }
                         }
                     ]
                 },
                 "filter": {
-                    "baseFilter": "creature Sliver"
+                    "baseFilter": "permanent Sliver"
                 }
             }
         ]
@@ -1474,7 +1474,7 @@
                             "type": "CostAtomWrapper",
                             "atom": {
                                 "type": "AtomSacrifice",
-                                "filter": "creature Cleric",
+                                "filter": "permanent Cleric",
                                 "count": 3
                             }
                         }
@@ -1766,7 +1766,7 @@
                             "type": "CostAtomWrapper",
                             "atom": {
                                 "type": "AtomSacrifice",
-                                "filter": "creature Zombie"
+                                "filter": "permanent Zombie"
                             }
                         }
                     ]
@@ -2250,7 +2250,7 @@
                             "type": "CostAtomWrapper",
                             "atom": {
                                 "type": "AtomSacrifice",
-                                "filter": "creature Goblin"
+                                "filter": "permanent Goblin"
                             }
                         }
                     ]
@@ -2520,7 +2520,7 @@
                     }
                 },
                 "filter": {
-                    "baseFilter": "creature Sliver"
+                    "baseFilter": "permanent Sliver"
                 }
             }
         ]
@@ -2651,7 +2651,7 @@
             {
                 "type": "CantBlock",
                 "filter": {
-                    "baseFilter": "creature Beast"
+                    "baseFilter": "permanent Beast"
                 }
             }
         ]
@@ -2782,7 +2782,7 @@
                         "amount": {
                             "type": "AggregateBattlefield",
                             "player": "Each",
-                            "filter": "creature Goblin"
+                            "filter": "permanent Goblin"
                         },
                         "target": {
                             "type": "BoundVariable",
@@ -2840,7 +2840,7 @@
                         "amount": {
                             "type": "AggregateBattlefield",
                             "player": "Each",
-                            "filter": "creature Zombie"
+                            "filter": "permanent Zombie"
                         },
                         "target": {
                             "type": "BoundVariable",
@@ -3498,7 +3498,7 @@
                             "type": "CostAtomWrapper",
                             "atom": {
                                 "type": "AtomSacrifice",
-                                "filter": "creature Goblin"
+                                "filter": "permanent Goblin"
                             }
                         }
                     ]
@@ -3556,7 +3556,7 @@
                     "type": "CostAtomWrapper",
                     "atom": {
                         "type": "AtomSacrifice",
-                        "filter": "creature Goblin"
+                        "filter": "permanent Goblin"
                     }
                 },
                 "effect": {
@@ -3604,7 +3604,7 @@
                             "count": {
                                 "type": "AggregateBattlefield",
                                 "player": "You",
-                                "filter": "creature Zombie"
+                                "filter": "permanent Zombie"
                             }
                         },
                         {
@@ -3612,7 +3612,7 @@
                             "amount": {
                                 "type": "AggregateBattlefield",
                                 "player": "You",
-                                "filter": "creature Zombie"
+                                "filter": "permanent Zombie"
                             },
                             "target": "Controller"
                         }
@@ -3911,7 +3911,7 @@
                                 "source": {
                                     "type": "FromZone",
                                     "zone": "Library",
-                                    "filter": "creature Dragon"
+                                    "filter": "permanent Dragon"
                                 },
                                 "storeAs": "searchable"
                             },
@@ -4096,7 +4096,7 @@
                             "atom": {
                                 "type": "AtomTapPermanents",
                                 "count": 2,
-                                "filter": "creature Bird"
+                                "filter": "permanent Bird"
                             }
                         }
                     ]
@@ -4521,7 +4521,7 @@
                         "powerModifier": {
                             "type": "AggregateBattlefield",
                             "player": "Each",
-                            "filter": "creature Sliver"
+                            "filter": "permanent Sliver"
                         },
                         "toughnessModifier": {
                             "type": "Fixed",
@@ -4542,7 +4542,7 @@
                     ]
                 },
                 "filter": {
-                    "baseFilter": "creature Sliver"
+                    "baseFilter": "permanent Sliver"
                 }
             }
         ]
@@ -4743,7 +4743,7 @@
                     }
                 },
                 "filter": {
-                    "baseFilter": "creature Sliver"
+                    "baseFilter": "permanent Sliver"
                 }
             }
         ]
@@ -4968,7 +4968,7 @@
                 "id": "ability_1",
                 "trigger": {
                     "type": "ZoneChangeEvent",
-                    "filter": "creature Zombie",
+                    "filter": "permanent Zombie",
                     "to": "Battlefield"
                 },
                 "binding": "ANY",
@@ -5487,7 +5487,7 @@
                     "count": {
                         "type": "AggregateBattlefield",
                         "player": "You",
-                        "filter": "creature Wizard"
+                        "filter": "permanent Wizard"
                     }
                 }
             }
@@ -5793,7 +5793,7 @@
                 "type": "CantBeBlockedExceptBy",
                 "blockerFilter": {
                     "cardPredicates": [
-                        "IsCreature",
+                        "IsPermanent",
                         {
                             "type": "HasSubtype",
                             "subtype": "Sliver"
@@ -5801,7 +5801,7 @@
                     ]
                 },
                 "filter": {
-                    "baseFilter": "creature Sliver"
+                    "baseFilter": "permanent Sliver"
                 }
             }
         ]
@@ -6187,7 +6187,7 @@
                     "type": "Exists",
                     "player": "You",
                     "zone": "Battlefield",
-                    "filter": "creature Beast"
+                    "filter": "permanent Beast"
                 }
             },
             {
@@ -6204,7 +6204,7 @@
                     "type": "Exists",
                     "player": "You",
                     "zone": "Battlefield",
-                    "filter": "creature Beast"
+                    "filter": "permanent Beast"
                 }
             }
         ]
@@ -6657,7 +6657,7 @@
                     "optional": true
                 },
                 "filter": {
-                    "baseFilter": "creature Sliver"
+                    "baseFilter": "permanent Sliver"
                 }
             }
         ]
@@ -6694,12 +6694,12 @@
                     "powerModifier": {
                         "type": "AggregateBattlefield",
                         "player": "Each",
-                        "filter": "creature Elf"
+                        "filter": "permanent Elf"
                     },
                     "toughnessModifier": {
                         "type": "AggregateBattlefield",
                         "player": "Each",
-                        "filter": "creature Elf"
+                        "filter": "permanent Elf"
                     },
                     "target": {
                         "type": "BoundVariable",
@@ -6745,7 +6745,7 @@
                 "id": "ability_1",
                 "trigger": {
                     "type": "ZoneChangeEvent",
-                    "filter": "creature Beast",
+                    "filter": "permanent Beast",
                     "to": "Battlefield"
                 },
                 "binding": "ANY",
@@ -6810,7 +6810,7 @@
                     }
                 },
                 "filter": {
-                    "baseFilter": "creature Sliver"
+                    "baseFilter": "permanent Sliver"
                 }
             }
         ]
@@ -7047,12 +7047,12 @@
                     "powerModifier": {
                         "type": "AggregateBattlefield",
                         "player": "Each",
-                        "filter": "creature Cleric"
+                        "filter": "permanent Cleric"
                     },
                     "toughnessModifier": {
                         "type": "AggregateBattlefield",
                         "player": "Each",
-                        "filter": "creature Cleric"
+                        "filter": "permanent Cleric"
                     },
                     "target": "Self"
                 }
@@ -7663,7 +7663,7 @@
                     "amount": {
                         "type": "AggregateBattlefield",
                         "player": "Each",
-                        "filter": "creature Elf"
+                        "filter": "permanent Elf"
                     }
                 },
                 "timing": "ManaAbility",
@@ -7699,7 +7699,7 @@
                 "id": "ability_1",
                 "trigger": {
                     "type": "ZoneChangeEvent",
-                    "filter": "creature Elf nontoken",
+                    "filter": "permanent Elf nontoken",
                     "to": "Battlefield"
                 },
                 "binding": "OTHER",

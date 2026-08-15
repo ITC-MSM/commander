@@ -25,7 +25,7 @@ val SkirkProspector = card("Skirk Prospector") {
     oracleText = "Sacrifice a Goblin: Add {R}."
 
     activatedAbility {
-        cost = Costs.Sacrifice(GameObjectFilter.Creature.withSubtype("Goblin"))
+        cost = Costs.Sacrifice(GameObjectFilter.Permanent.withSubtype("Goblin"))
         effect = AddManaEffect(Color.RED)
         manaAbility = true
         timing = TimingRule.ManaAbility

@@ -25,7 +25,7 @@ val SpurredWolverine = card("Spurred Wolverine") {
     oracleText = "Tap two untapped Beasts you control: Target creature gains first strike until end of turn."
 
     activatedAbility {
-        cost = Costs.TapPermanents(2, GameObjectFilter.Creature.withSubtype("Beast"))
+        cost = Costs.TapPermanents(2, GameObjectFilter.Permanent.withSubtype("Beast"))
         val t = target("target", TargetCreature())
         effect = GrantKeywordEffect(Keyword.FIRST_STRIKE, t)
     }

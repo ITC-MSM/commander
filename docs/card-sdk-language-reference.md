@@ -8316,6 +8316,29 @@ Numbers computed at resolution time.
 - `AggregateZone(player, zone, filter?, aggregation?)` — count cards in a zone.
 - `CountPermanentsOfType(player, subtype)` — count by creature type.
 - `CountCreaturesYouControl` — shorthand for "your creatures".
+
+#### A bare tribal noun means *permanents*, not creatures
+
+Oracle spells two different scopes and means two different things, and the SDK has a facade for each.
+**"the number of Slivers on the battlefield"** — the bare noun — counts every Sliver *permanent*;
+**"the number of Sliver creatures"** — the adjectival form — counts only the creatures. Read the
+printed text and pick accordingly; they coincide for almost every card, which is exactly why picking
+by habit went unnoticed for a long time (Argentum Assay's differential gate found it, and the
+migration that followed touched 103 cards).
+
+| Printed | Facade |
+|---|---|
+| "the number of **Zombies**" | `DynamicAmounts.permanentsWithSubtype(subtype)` |
+| "the number of **Zombie creatures**" | `DynamicAmounts.creaturesWithSubtype(subtype)` |
+| "if you control a **Zombie**" | `Conditions.ControlPermanentOfType(subtype)` |
+| "if you control a **Zombie creature**" | `Conditions.ControlCreatureOfType(subtype)` |
+| "target **Zombie card** in your graveyard" | `TargetFilter.PermanentInYourGraveyard.withSubtype(…)` |
+| "target **Zombie creature card** in your graveyard" | `TargetFilter.CreatureInYourGraveyard.withSubtype(…)` |
+| "other **Zombies** you control" | `GameObjectFilter.Permanent.withSubtype(…)` |
+| "other **Zombie creatures** you control" | `GameObjectFilter.Creature.withSubtype(…)` |
+
+Zombie Master is the card that shows the distinction is deliberate rather than stylistic: it prints
+both spellings, and the ability its bare-noun line grants says "Regenerate this **permanent**".
 - Facades: `DynamicAmounts.equipmentYouControl(player = You)` — Equipment you control (counts
   permanents whose projected subtypes include Equipment), and `equippedCreaturesYouControl(player = You)`
   — creatures with at least one Equipment attached (`GameObjectFilter.Creature.equipped()`). Used by

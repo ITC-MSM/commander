@@ -32,7 +32,7 @@ val MagmaSliver = card("Magma Sliver") {
     toughness = 3
     oracleText = "All Slivers have \"{T}: Target Sliver creature gets +X/+0 until end of turn, where X is the number of Slivers on the battlefield.\""
 
-    val sliverFilter = GroupFilter(GameObjectFilter.Creature.withSubtype("Sliver"))
+    val sliverFilter = GroupFilter(GameObjectFilter.Permanent.withSubtype("Sliver"))
 
     staticAbility {
         ability = GrantActivatedAbility(
@@ -40,7 +40,7 @@ val MagmaSliver = card("Magma Sliver") {
                 id = AbilityId.generate(),
                 cost = Costs.Tap,
                 effect = Effects.ModifyStats(
-                    power = DynamicAmounts.creaturesWithSubtype(Subtype.SLIVER),
+                    power = DynamicAmounts.permanentsWithSubtype(Subtype.SLIVER),
                     toughness = DynamicAmount.Fixed(0),
                     target = EffectTarget.ContextTarget(0)
                 ),

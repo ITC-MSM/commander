@@ -27,7 +27,7 @@ val CatapultSquad = card("Catapult Squad") {
     activatedAbility {
         cost = Costs.TapPermanents(
             count = 2,
-            filter = GameObjectFilter.Creature.withSubtype("Soldier")
+            filter = GameObjectFilter.Permanent.withSubtype("Soldier")
         )
         val t = target("target", TargetPermanent(filter = TargetFilter.AttackingOrBlockingCreature))
         effect = DealDamageEffect(2, t)

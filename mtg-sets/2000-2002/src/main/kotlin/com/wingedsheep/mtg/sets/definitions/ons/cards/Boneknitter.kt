@@ -28,7 +28,7 @@ val Boneknitter = card("Boneknitter") {
     activatedAbility {
         cost = Costs.Mana("{1}{B}")
         val t = target("target", TargetPermanent(
-            filter = TargetFilter(GameObjectFilter.Creature.withSubtype("Zombie"))
+            filter = TargetFilter(GameObjectFilter.Permanent.withSubtype("Zombie"))
         ))
         effect = RegenerateEffect(t)
     }

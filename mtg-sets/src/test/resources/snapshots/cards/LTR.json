@@ -4374,7 +4374,7 @@
                 "id": "ability_1",
                 "trigger": {
                     "type": "ZoneChangeEvent",
-                    "filter": "creature Human ctrl:you",
+                    "filter": "permanent Human ctrl:you",
                     "to": "Battlefield"
                 },
                 "binding": "ANY",
@@ -18479,7 +18479,7 @@
                 "id": "ability_1",
                 "trigger": {
                     "type": "ZoneChangeEvent",
-                    "filter": "creature Human ctrl:you",
+                    "filter": "permanent Human ctrl:you",
                     "to": "Battlefield"
                 },
                 "binding": "ANY",

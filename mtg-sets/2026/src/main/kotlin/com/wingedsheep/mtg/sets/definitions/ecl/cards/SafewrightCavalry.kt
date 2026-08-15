@@ -34,7 +34,7 @@ val SafewrightCavalry = card("Safewright Cavalry") {
         cost = Costs.Mana("{5}")
         val elf = target(
             "target Elf you control",
-            TargetCreature(filter = TargetFilter.CreatureYouControl.withSubtype(Subtype.ELF))
+            TargetCreature(filter = TargetFilter.PermanentYouControl.withSubtype(Subtype.ELF))
         )
         effect = Effects.ModifyStats(2, 2, elf)
     }

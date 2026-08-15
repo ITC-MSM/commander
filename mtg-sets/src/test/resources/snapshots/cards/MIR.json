@@ -2240,7 +2240,7 @@
                             "type": "CostAtomWrapper",
                             "atom": {
                                 "type": "AtomSacrifice",
-                                "filter": "creature Goblin"
+                                "filter": "permanent Goblin"
                             }
                         }
                     ]
