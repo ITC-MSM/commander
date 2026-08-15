@@ -1424,7 +1424,15 @@
                     {
                         "type": "TargetObject",
                         "filter": {
-                            "baseFilter": "land"
+                            "baseFilter": {
+                                "cardPredicates": [
+                                    "IsLand",
+                                    {
+                                        "type": "Not",
+                                        "predicate": "IsBasicLand"
+                                    }
+                                ]
+                            }
                         },
                         "id": "target"
                     }

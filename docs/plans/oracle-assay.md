@@ -243,7 +243,7 @@ class that the touchstone structurally cannot. **Brought forward ahead of Phase 
 above: the gate has to exist before grammar breadth, or the breadth is unverified.
 
 **Outcome.** `just assay-differential` runs over all 8,874 committed goldens. Of those, 890 clear
-every scoping guard and are compared: **882 confirmed (99.1%), 8 classified divergences**. It found
+every scoping guard and are compared: **884 confirmed (99.3%), 6 classified divergences**. It found
 the predicted class on its first run — multi-quality protection read as one ability where CR 702.16g makes it two,
 reversible and wrong — plus two "one concept, two spellings" findings in the SDK. All five opening
 divergences are now fixed: the grammar reads a joined quality list as several abilities (and

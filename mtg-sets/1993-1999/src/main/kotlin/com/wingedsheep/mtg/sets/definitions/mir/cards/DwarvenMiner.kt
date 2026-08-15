@@ -29,7 +29,9 @@ val DwarvenMiner = card("Dwarven Miner") {
     toughness = 2
     activatedAbility {
         cost = Costs.Composite(Costs.Mana("{2}{R}"), Costs.Tap)
-        val t = target("target", TargetPermanent(filter = TargetFilter.Land))
+        // Shipped as TargetFilter.Land, so it destroyed basic lands too — the printed "nonbasic"
+        // was dropped. Found by the Assay differential gate; see DwarvenMinerScenarioTest.
+        val t = target("target", TargetPermanent(filter = TargetFilter.NonbasicLand))
         effect = Effects.Move(t, Zone.GRAVEYARD, byDestruction = true)
     }
     metadata {

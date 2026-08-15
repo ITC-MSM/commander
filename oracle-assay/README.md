@@ -153,8 +153,8 @@ named population bucket instead and the denominator stays visible.
     Oracle text differs from golden  242
     golden would not decode            0
 
-  Confirmed — models agree           882   991.0‰ (99.1%)
-  DIVERGENT — read every one           8
+  Confirmed — models agree           884   993.3‰ (99.3%)
+  DIVERGENT — read every one           6
 ```
 
 The divergence count is not meant to stay at zero — it rises every time the grammar reaches a new
