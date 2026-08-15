@@ -1,5 +1,6 @@
 package com.wingedsheep.assay.grammar
 
+import com.wingedsheep.sdk.core.AbilityFlag
 import com.wingedsheep.sdk.model.CardScript
 import com.wingedsheep.sdk.scripting.KeywordAbility
 
@@ -22,6 +23,17 @@ import com.wingedsheep.sdk.scripting.KeywordAbility
 data class CardFragment(
     val keywordAbilities: List<KeywordAbility> = emptyList(),
     val script: CardScript = CardScript.EMPTY,
+    /**
+     * `CardDefinition.flags` — the third behavioural slot, and the only one that is not a keyword or
+     * part of the script.
+     *
+     * It exists because "This creature can't be blocked." is `AbilityFlag.CANT_BE_BLOCKED` rather
+     * than a `StaticAbility`, so a line can reach a field neither of the other two slots covers.
+     * That the SDK has two places to say a combat restriction — a flag for the unconditional form
+     * and a static for every filtered one — is a finding rather than something this type should
+     * paper over, and holding both is what lets the differential see it.
+     */
+    val flags: Set<AbilityFlag> = emptySet(),
 ) {
 
     /**
@@ -48,9 +60,14 @@ data class CardFragment(
         if (script.auraTarget != null && other.script.auraTarget != null) return null
         return CardFragment(
             keywordAbilities = keywordAbilities + other.keywordAbilities,
+            flags = flags + other.flags,
             script = CardScript(
                 spellEffect = script.spellEffect ?: other.script.spellEffect,
                 targetRequirements = script.targetRequirements + other.script.targetRequirements,
+                // A spell states its casting restrictions and its additional costs on lines of their
+                // own, so both accumulate across lines exactly as the ability lists do.
+                castRestrictions = script.castRestrictions + other.script.castRestrictions,
+                additionalCosts = script.additionalCosts + other.script.additionalCosts,
                 // Triggered abilities are a list on purpose: one card, several trigger lines, in
                 // printed order. Unlike the spell effect there is nothing to collide over. The same
                 // holds for activated abilities — and a *single* line can contribute several of
@@ -65,7 +82,7 @@ data class CardFragment(
         )
     }
 
-    val isEmpty: Boolean get() = keywordAbilities.isEmpty() && script == CardScript.EMPTY
+    val isEmpty: Boolean get() = keywordAbilities.isEmpty() && flags.isEmpty() && script == CardScript.EMPTY
 
     companion object {
         val EMPTY = CardFragment()
@@ -82,6 +99,6 @@ data class CardFragment(
          */
         const val MODELLED_SLOTS_NOTE =
             "spellEffect, targetRequirements, triggeredAbilities, activatedAbilities, " +
-                "staticAbilities, replacementEffects, auraTarget"
+                "staticAbilities, replacementEffects, auraTarget, castRestrictions, additionalCosts"
     }
 }

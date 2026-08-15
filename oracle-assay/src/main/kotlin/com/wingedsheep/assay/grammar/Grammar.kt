@@ -1,5 +1,6 @@
 package com.wingedsheep.assay.grammar
 
+import com.wingedsheep.assay.normalize.Normalizer
 import com.wingedsheep.assay.syntax.Bindings
 import com.wingedsheep.assay.syntax.Phrase
 import com.wingedsheep.assay.syntax.alternate
@@ -7,6 +8,7 @@ import com.wingedsheep.assay.syntax.bind
 import com.wingedsheep.assay.syntax.oneOf
 import com.wingedsheep.assay.syntax.phrase
 import com.wingedsheep.assay.syntax.separated
+import com.wingedsheep.sdk.core.AbilityFlag
 import com.wingedsheep.sdk.model.CardScript
 import com.wingedsheep.sdk.scripting.KeywordAbility
 
@@ -237,9 +239,58 @@ object Grammar {
         match { if (it.isEmpty) Bindings.EMPTY else null }
     }
 
+    /**
+     * "Cast this spell only during the declare attackers step and only if you've been attacked this
+     * step." — a line that constrains rather than does.
+     *
+     * The first line kind whose fragment carries no effect at all, which is why it is a line rather
+     * than a clause: nothing in [Steps] could hold it, and a `CardScript` keeps it in a slot of its
+     * own.
+     */
+    private val castRestrictionLine: Phrase<CardFragment> =
+        phrase("{restrictions}", name = "a casting restriction line") {
+            slot("restrictions", Restrictions.castLine)
+            build { CardFragment.of(CardScript(castRestrictions = it.value("restrictions"))) }
+            match { fragment ->
+                val restrictions = fragment.script.castRestrictions.takeIf { it.isNotEmpty() }
+                    ?: return@match null
+                if (fragment != CardFragment.of(CardScript(castRestrictions = restrictions))) return@match null
+                bind("restrictions" to restrictions)
+            }
+        }
+
+    /** "As an additional cost to cast this spell, sacrifice a creature." — the same shape, one slot over. */
+    private val additionalCostLine: Phrase<CardFragment> =
+        phrase("{costs}", name = "an additional cost line") {
+            slot("costs", Restrictions.additionalCostLine)
+            build { CardFragment.of(CardScript(additionalCosts = it.value("costs"))) }
+            match { fragment ->
+                val costs = fragment.script.additionalCosts.takeIf { it.isNotEmpty() } ?: return@match null
+                if (fragment != CardFragment.of(CardScript(additionalCosts = costs))) return@match null
+                bind("costs" to costs)
+            }
+        }
+
+    /**
+     * "~ can't be blocked." — the one line whose whole content is a `CardDefinition` flag.
+     *
+     * A flag rather than a static because that is how the SDK spells the *unconditional* form; every
+     * filtered one ("can't be blocked by black creatures") is a `StaticAbility` in [Statics]. Two
+     * places to say one kind of thing is a finding the differential can now see, which is the reason
+     * [CardFragment] grew a slot for it rather than the grammar picking whichever it preferred.
+     */
+    private val flagLine: Phrase<CardFragment> =
+        phrase("${Normalizer.SELF} can't be blocked.", name = "a flag line") {
+            build { CardFragment(flags = setOf(AbilityFlag.CANT_BE_BLOCKED)) }
+            match { if (it == CardFragment(flags = setOf(AbilityFlag.CANT_BE_BLOCKED))) Bindings.EMPTY else null }
+        }
+
     val abilityLine: Phrase<CardFragment> = oneOf(
         "an ability line",
         emptyLine,
+        castRestrictionLine,
+        additionalCostLine,
+        flagLine,
         keywordLine,
         semicolonKeywordLine,
         spellLine,

@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.scripting.filters.unified.TargetFilter
 import com.wingedsheep.sdk.scripting.targets.TargetPermanent
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 
 /**
@@ -216,5 +217,45 @@ class StepsTest : StringSpec({
         )
 
         Grammar.abilityLine.printLine(other) shouldBe null
+    }
+
+    // The mass effects: one iteration over a GroupFilter with the per-member effect written against
+    // EffectTarget.Self. Four printed shapes for one model, which is why the templates are
+    // enumerated and the group filter is Filters slotted whole.
+    "a group effect is one iteration over a filter" {
+        fragment("Creatures you control get +1/+1 until end of turn.") shouldBe CardFragment(
+            script = CardScript(
+                spellEffect = Effects.ForEachInGroup(
+                    com.wingedsheep.sdk.scripting.filters.unified.GroupFilter(
+                        GameObjectFilter.Creature.youControl()
+                    ),
+                    Effects.ModifyStats(1, 1, com.wingedsheep.sdk.scripting.targets.EffectTarget.Self),
+                )
+            )
+        )
+        roundTrips("Creatures you control get +1/+1 until end of turn.")
+        roundTrips("White creatures get +2/+0 until end of turn.")
+        roundTrips("Creatures you control gain reach until end of turn.")
+        roundTrips("Destroy all white creatures.")
+        roundTrips("Untap all creatures you control.")
+        roundTrips("Tap all other creatures.")
+        roundTrips("~ deals 1 damage to each attacking creature.")
+    }
+
+    // `noRegenerate` is a field on the same iteration rather than a second effect, so the rule spans
+    // both printed sentences and the plain sweep refuses to print a value carrying it.
+    "a sweep that forbids regeneration is its own sentence pair" {
+        roundTrips("Destroy all creatures. They can't be regenerated.")
+        fragment("Destroy all creatures. They can't be regenerated.") shouldNotBe
+            fragment("Destroy all creatures.")
+    }
+
+    // Both leaves in one file: a quantity of cards is a word, a quantity of life or damage a numeral.
+    "the counted verbs keep the two number conventions apart" {
+        roundTrips("You gain 3 life.")
+        roundTrips("You gain 1 life for each Forest on the battlefield.")
+        roundTrips("You gain 2 life for each Mountain target opponent controls.")
+        roundTrips("~ deals X damage to any target.")
+        roundTrips("Target creature gets +3/+3 and gains flying until end of turn.")
     }
 })

@@ -8,8 +8,11 @@ import com.wingedsheep.sdk.scripting.targets.AnyTarget
 import com.wingedsheep.sdk.scripting.filters.unified.TargetFilter
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.scripting.targets.TargetObject
+import com.wingedsheep.sdk.scripting.targets.TargetOpponent
+import com.wingedsheep.sdk.scripting.targets.TargetOpponentOrPlaneswalker
 import com.wingedsheep.sdk.scripting.targets.TargetPermanent
 import com.wingedsheep.sdk.scripting.targets.TargetPlayer
+import com.wingedsheep.sdk.scripting.targets.TargetPlayerOrPlaneswalker
 import com.wingedsheep.sdk.scripting.targets.TargetRequirement
 
 /**
@@ -51,6 +54,15 @@ object Targets {
      * it. Worth an `id` parameter on the facade; noted rather than changed here.
      */
     fun player(): TargetRequirement = TargetPlayer(id = SLOT)
+
+    /** "target opponent" — the requirement half, constructed directly for the reason [player] is. */
+    fun opponent(): TargetRequirement = TargetOpponent(id = SLOT)
+
+    /** "target opponent or planeswalker" — the modern damage-redirection wording (CR 115.7b). */
+    fun opponentOrPlaneswalker(): TargetRequirement = TargetOpponentOrPlaneswalker(id = SLOT)
+
+    /** …and its any-player sibling, which older burn spells print instead. */
+    fun playerOrPlaneswalker(): TargetRequirement = TargetPlayerOrPlaneswalker(id = SLOT)
 
     /**
      * "any target" — the burn-spell requirement, covering any creature, player or planeswalker.

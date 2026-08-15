@@ -120,8 +120,9 @@ class DifferentialTest : StringSpec({
     // compared: the keywords it did not see would look like agreement, and the gate would be
     // reporting confidence it has not earned.
     "a card the grammar cannot read whole is excluded, not silently confirmed" {
-        val card = oracleCard("Doom Blade", "Destroy target nonblack creature.")
-        val result = differential.compare(implemented(definition("Doom Blade", "Destroy target nonblack creature.")), index(card))
+        val text = "Whenever a creature you control dies, put a +1/+1 counter on target creature."
+        val card = oracleCard("Unread Card", text)
+        val result = differential.compare(implemented(definition("Unread Card", text)), index(card))
 
         result.population shouldBe Population.NOT_COVERED
         result.verdict shouldBe null

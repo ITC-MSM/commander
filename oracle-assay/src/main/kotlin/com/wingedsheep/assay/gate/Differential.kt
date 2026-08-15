@@ -279,7 +279,7 @@ class Differential(private val touchstone: Touchstone = Touchstone()) {
         val tree = CardSerialization.json.parseToJsonElement(json)
         return CardSerialization.json.encodeToString(
             JsonElement.serializer(),
-            canonicalizeAbilities(normalizeSlots(tree)),
+            Folds.flattenComposites(canonicalizeAbilities(normalizeSlots(tree))),
         )
     }
 
@@ -454,6 +454,51 @@ internal object Folds {
         if (parameterized.isEmpty()) return abilities
         return abilities.filterNot { it is KeywordAbility.Simple && it.keyword in parameterized }.toSet()
     }
+
+    /**
+     * **A plain `CompositeEffect` nested inside another is the same sequence as its flattening.**
+     *
+     * `CompositeEffect` is an ordered run of effects and nothing else: with `stopOnError` false and
+     * no `descriptionOverride`, the executor runs its members in order, so `[a, [b, c]]` and
+     * `[a, b, c]` are the same value written two ways. The corpus writes it both ways for one
+     * sentence — Cruel Tutor nests `Patterns.Library.searchLibrary` inside its outer composite while
+     * Bitter Revelation splices the same recipe's steps into a flat one, and Angelic Blessing's
+     * "gets +2/+2 and gains flying" is a two-element composite on its own and three flat elements
+     * when a "Scry 1." follows it.
+     *
+     * The fold is narrow on purpose. A composite carrying `stopOnError`, a `descriptionOverride` or
+     * description amounts says something about how its members run or read, so it is left alone and
+     * a difference in one still diverges. Ordering is untouched: `[a, [c, b]]` flattens to
+     * `[a, c, b]` and still disagrees with `[a, b, c]`, which is the difference worth catching.
+     */
+    fun flattenComposites(element: JsonElement): JsonElement = when (element) {
+        is JsonObject -> {
+            val walked = JsonObject(element.mapValues { flattenComposites(it.value) })
+            if (isPlainComposite(walked)) {
+                JsonObject(walked + ("effects" to JsonArray(spliceMembers(walked))))
+            } else {
+                walked
+            }
+        }
+
+        is JsonArray -> JsonArray(element.map(::flattenComposites))
+        else -> element
+    }
+
+    /** A composite with nothing said about how it runs or reads — the only shape safe to splice. */
+    private fun isPlainComposite(element: JsonObject): Boolean =
+        (element["type"] as? JsonPrimitive)?.content == "Composite" &&
+            element["effects"] is JsonArray &&
+            element.keys.none { it == "stopOnError" || it == "descriptionOverride" || it == "descriptionAmounts" }
+
+    private fun spliceMembers(composite: JsonObject): List<JsonElement> =
+        (composite.getValue("effects") as JsonArray).flatMap { member ->
+            if (member is JsonObject && isPlainComposite(member)) {
+                (member.getValue("effects") as JsonArray).toList()
+            } else {
+                listOf(member)
+            }
+        }
 }
 
 /** Why a hand-written card was or was not compared. The denominator is never hidden. */

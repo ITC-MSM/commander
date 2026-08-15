@@ -16,9 +16,23 @@ triggers ("When ~ enters, …", "At the beginning of your upkeep, …"), which i
 started comparing whole *abilities* rather than keyword lists, and where it found its first bug in a
 hand-written card. The **land band** followed — mana abilities and "~ enters tapped." — the first
 family where whole-card coverage moved with line coverage, because a land is a one-to-three-line card
-and those are the two sentences on it. The **aura band** is the most recent: `Enchant <filter>` and
-the attached-permanent statics, which opened `staticAbilities` — the largest `CardScript` slot the
+and those are the two sentences on it. The **aura band** followed: `Enchant <filter>` and the
+attached-permanent statics, which opened `staticAbilities` — the largest `CardScript` slot the
 differential could not see into, and the one every later static family lands in.
+
+The most recent is the **Portal band**, and it is the first one measured against a whole *set* rather
+than against a rule family: `just assay-gate --set POR` now reads **200 of Portal's 200 cards** end
+to end. Getting there was not two hundred rules — it was the machinery a set needs before any of its
+cards can be read whole. **A line is a sequence of clauses**, so a card printing two sentences reuses
+the effect vocabulary twice instead of restating it capitalized; **a noun phrase is a layered cascade
+in two grammatical numbers**, so "black creatures you control" and "creatures with power 2 or
+greater" are compositions rather than rules; **two anaphors** ("that creature", "it") are separate
+vocabularies because they point at different objects; and **three restriction vocabularies** —
+casting, activation, additional costs — reach the `CardScript` slots that say when a card may be
+played rather than what it does. Nearly everything else was rows in those lists. Whole-corpus
+coverage went from 3,004 cards to 4,287 in the same change, which is the argument for picking a set
+as the target rather than picking the number.
+
 Nothing here changes `:mtgish-tooling`, which stays authoritative until a per-set cutover replaces it
 (Phase 5). Assay is **not a runtime card loader** and never will be.
 
@@ -60,11 +74,14 @@ its own population. The Set *column* still shows the representative printing, an
 syntax/     Phrase kernel — templates, slots, both directions, memoization, the parse cap
 normalize/  Scryfall text -> canonical ability lines, every pass with its inverse; reminder glosses
 corpus/     the Scryfall Oracle bulk: download, cache, stream; per-set membership for `--set`
-grammar/    the rules, by topic — Primitives, Keywords, Cardinals, Filters, Targets, Steps, Triggers,
-            Mana, Costs, Activated, Replacements, Statics
-            Steps covers draw, destroy/exile/tap/untap/bounce, life, scry/surveil, damage, pump and
-            adding mana; Activated is the cost-colon-effect sentence, which slots Steps whole;
-            Statics is the continuous-ability slot, opened on the aura payoff lines
+grammar/    the rules, by topic — Primitives, Keywords, Cardinals, Conditions, Filters, Targets,
+            Steps, Continuations, Triggers, Mana, Costs, Activated, Replacements, Statics,
+            Restrictions, and the effect-topic files Library, Hand, Combat, Graveyard, Stack,
+            SelfSteps
+            Steps is the clause vocabulary and the sentence/sequence machinery every other file
+            slots into; Activated is the cost-colon-effect sentence; Statics is the continuous-
+            ability slot; Restrictions is the three "when may this happen" vocabularies;
+            Continuations and SelfSteps are the two anaphors ("that creature" / "it")
 gate/       the touchstone, the fineness report, the differential
 explore/    the browser UI — a loopback HTTP server over the live grammar and both gates
 cli/        assay parse | explain | gate | report | differential | explore | corpus
@@ -105,16 +122,17 @@ non-zero on. Declines are not failures.
 Cards assayed                    34882
 Ability lines                    66793  (39059 unique)
 
-Round-trips byte-exact           17977   269.1‰ (26.9%)
-Alternate spelling normalized    30
-Declined                         48786
+Round-trips byte-exact           19746   295.6‰ (29.6%)
+Alternate spelling normalized    318
+Declined                         46729
 Ambiguous — distinct readings    0
 Print mismatch                   0
 Normalization not invertible     0
 Full inverse not reproduced      0
 
-Cards fully covered              3004 / 34882   86.1‰ (8.6%)
+Cards fully covered              4287 / 34882   122.9‰ (12.3%)
 Vanilla + keyword-only cards     1440 / 1712   841.1‰ (84.1%)   <- Phase 1 target
+Portal (set POR)                 200 / 200     1000.0‰ (100%)   <- the Portal band's target
 Reminder-text glosses            2870 matched · 114 differed · 956 unglossed
 ```
 
@@ -124,6 +142,13 @@ The machinery holds: **zero** ambiguities, print mismatches, or non-invertible n
 across 66,793 ability lines. The 84.1% on Phase 1's own target class is not the round trip
 faltering — every remaining line in that class declines because the SDK has no vocabulary for the
 keyword, which `just assay-report --scope` lists in rank order.
+
+**A whole set at 1000‰ is worth more than the percentage it moved.** A rule family's coverage number
+says how much of one shape the grammar reads; a *set* is an arbitrary cross-section of Magic, so
+reading all of one means the grammar has no systematic hole in that era rather than no hole in that
+family. Portal is a deliberately simple set, which is what makes it the right first one — and the
+318 alternate spellings above are mostly its doing, because a card printing "A and B" or "A, then B"
+now reads correctly and prints back as the full-stop form.
 
 ## What Phase 1 already found
 
@@ -168,17 +193,17 @@ partially-read card would count a keyword Assay never saw as agreement, so every
 named population bucket instead and the denominator stays visible.
 
 ```
-  Hand-written cards                 8874
-    compared                         930
-    not yet covered by the grammar   7342
-    script slot not modelled yet      39
-    lines do not fold into one card   20
+  Hand-written cards                 9114
+    compared                         1636
+    not yet covered by the grammar   6830
+    script slot not modelled yet      65
+    lines do not fold into one card   40
     multi-face (out of scope)        301
     Oracle text differs from golden  242
     golden would not decode            0
 
-  Confirmed — models agree           924   993.5‰ (99.4%)
-  DIVERGENT — read every one           6
+  Confirmed — models agree           1606   981.7‰ (98.2%)
+  DIVERGENT — read every one           30
 ```
 
 The divergence count is not meant to stay at zero — it rises every time the grammar reaches a new
@@ -189,6 +214,12 @@ the population all agreed, and a by-hand sweep of every golden printing one of t
 found no disagreement either. That is a fact about the cards rather than about the gate — an aura in
 this band is two lines with nothing to drop, where the bugs the gate has found were all a clause
 lost *inside* a filter on a longer sentence.
+
+The **Portal band** took the compared population from 930 cards to 1,636 and the divergence count
+from 6 to 30, which is the ratio the gate is supposed to have: six new cards read for every one that
+disagrees. All thirty are classified below and they fall into six families, four of which are the
+already-open "two SDK spellings of one thing" findings. Two are new bugs in hand-written cards, and
+one was a bug in the parser that only this gate could have caught.
 
 Five separate things have to hold before a card is compared, and each has its own bucket. Every one
 of them was added after the gate was caught claiming a check nobody had performed:
@@ -208,6 +239,45 @@ each one has to say why it is not a difference.
 
 ### What the gate has found
 
+- **Two more bugs of the Meteor Golem class, from the Portal band.** **Recollect** prints "Return
+  target card from **your** graveyard to your hand" and filters on `TargetFilter.CardInGraveyard`,
+  which is *any* graveyard — so it can be pointed at an opponent's. **Eternal Witness** is the same
+  card text inside an enters trigger and has the same filter. Elven Cache and Déjà Vu, the other two
+  cards printing that sentence, both scope it with `ownedByYou()`, which is what makes these two a
+  bug rather than a spelling. Both are generated renders that dropped a word, and both carry the
+  clause they do not implement in their own `oracleText`. Fixed, each with the scenario test that
+  asserts the *negative* — a card in an opponent's graveyard is not a legal target — which is the
+  half that fails without the fix.
+
+  A grep for the same filter found a third of the class the gate could not have: **Revive** prints
+  "Return target **green** card from **your** graveyard to your hand" and filters on the unowned,
+  uncoloured `CardInGraveyard`, so it ignores both words. It is not fixed here because the grammar
+  declines its line — no rule reads a colour on a card noun — so the differential never compared it,
+  and a fix wants the rule first so the gate can confirm it.
+- **A parser bug of the reversible-but-wrong class — found, and fixed.** "Untap target creature. It
+  gets +2/+4 until end of turn." read "it" as the *source* rather than as the target the first clause
+  chose, because the same four words mean the source in "Whenever this creature attacks, it gets
+  +2/+0". The line round-tripped byte-perfectly the whole time and meant a different creature, which
+  is exactly what the touchstone structurally cannot see. The fix is the split between
+  `SelfSteps.anaphoric` and `Continuations`: an anaphor resolves to the most recently mentioned
+  object, so once a clause has introduced a target the pronoun is that target, and the two
+  vocabularies are reachable from disjoint positions so no text has both readings. It affected
+  Inspirit and Gerrard's Command.
+- **"Deals N damage to each creature and each player" has two SDK spellings, and eight cards use the
+  minority one.** `DealDamage(n, PlayerRef(Player.Each))` and
+  `ForEachPlayerEffect(Player.Each, [DealDamage(n, Controller)])` are equivalent for a fixed amount —
+  the second rebinds a controller the sentence does not need. Earthquake and Hurricane write the
+  first and are confirmed; Fire Tempest, Howling Gale, Volcanic Spray, Magma Giant, Devastate,
+  Hammerfist Giant, Rain of Embers and Steam Blast write the second and diverge. The grammar emits
+  one, per the rule that two SDK spellings get one rule and a finding. Nothing is broken; it is one
+  `Effects` helper away from the corpus having a single spelling.
+- **A nested plain `CompositeEffect` is the same sequence as its flattening — folded, narrowly.**
+  Cruel Tutor nests `Patterns.Library.searchLibrary` inside its outer composite and Bitter Revelation
+  splices the same recipe's steps into a flat one, for the same printed sentence; Angelic Blessing's
+  "gets +2/+2 and gains flying" is a two-element composite alone and three flat elements once a
+  "Scry 1." follows it. A composite with `stopOnError` false and no description override is an
+  ordered run and nothing more, so the two are one value written two ways. The fold splices only that
+  shape and never reorders, so `[a, [c, b]]` still disagrees with `[a, b, c]`.
 - **A bug in a hand-written card — the outcome this whole thing is for.** Meteor Golem's printed text
   is "destroy target nonland permanent **an opponent controls**"; its definition filtered on
   `TargetFilter.NonlandPermanent`, so the golem could be pointed at its own controller's board and

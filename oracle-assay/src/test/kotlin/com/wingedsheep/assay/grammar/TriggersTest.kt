@@ -3,6 +3,7 @@ package com.wingedsheep.assay.grammar
 import com.wingedsheep.assay.syntax.ParseOutcome
 import com.wingedsheep.assay.syntax.parseLine
 import com.wingedsheep.assay.syntax.printLine
+import com.wingedsheep.sdk.dsl.Conditions
 import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.model.CardScript
 import com.wingedsheep.sdk.scripting.AbilityId
@@ -100,9 +101,10 @@ class TriggersTest : StringSpec({
             "At the beginning of each upkeep, draw a card."
     }
 
-    // Fail-closed, the same rule the step matchers follow: an ability carrying anything the sentence
-    // does not spell must refuse to print rather than print a sentence that drops it.
-    "an ability with content the prefix does not spell refuses to print" {
+    // "You may …" is not unspellable content: a triggered ability's `optional` flag and a spell's
+    // `MayEffect` are two SDK spellings of one sentence, and `Triggers.abilityFor` lowers between
+    // them so the printed form is the same either way.
+    "the optional flag is the trigger's spelling of \"you may\"" {
         val optional = TriggeredAbility(
             id = AbilityId("trigger"),
             trigger = SdkTriggers.EntersBattlefield.event,
@@ -113,6 +115,25 @@ class TriggersTest : StringSpec({
 
         Grammar.abilityLine.printLine(
             CardFragment(script = CardScript(triggeredAbilities = listOf(optional)))
+        ) shouldBe "When ~ enters, you may draw a card."
+        fragment("When ~ enters, you may draw a card.") shouldBe
+            CardFragment(script = CardScript(triggeredAbilities = listOf(optional)))
+    }
+
+    // Fail-closed, the same rule the step matchers follow: an ability carrying anything the sentence
+    // does not spell must refuse to print rather than print a sentence that drops it. An
+    // intervening-if condition (CR 603.4) is the example — no trigger rule spells one.
+    "an ability with content the prefix does not spell refuses to print" {
+        val gated = TriggeredAbility(
+            id = AbilityId("trigger"),
+            trigger = SdkTriggers.EntersBattlefield.event,
+            binding = SdkTriggers.EntersBattlefield.binding,
+            effect = Effects.DrawCards(1),
+            triggerCondition = Conditions.OpponentControlsMoreLands,
+        )
+
+        Grammar.abilityLine.printLine(
+            CardFragment(script = CardScript(triggeredAbilities = listOf(gated)))
         ) shouldBe null
     }
 
