@@ -76,9 +76,17 @@ object Keywords {
         }
     }
 
-    /** "flying" — a keyword with no parameters at all, the bulk of the corpus by line count. */
-    private fun simple(keyword: Keyword, surface: String = keyword.displayName.lowercase()): Phrase<KeywordAbility> =
-        constant(surface, KeywordAbility.of(keyword))
+    /**
+     * "flying" — a keyword with no parameters at all, the bulk of the corpus by line count.
+     *
+     * A *spelling* rather than a rule, because the same vocabulary is needed twice over: as a
+     * [KeywordAbility] when the word is the whole line, and as a bare [Keyword] when another
+     * sentence names it ("Enchanted creature has flying."). Both lists are derived from this one, so
+     * a keyword can never be readable in one context and not the other, and neither list can drift
+     * to a different surface form for the same word.
+     */
+    private fun simple(keyword: Keyword, surface: String = keyword.displayName.lowercase()): Pair<Keyword, String> =
+        keyword to surface
 
     // ---------------------------------------------------------------------------------------
     // Simple keywords
@@ -94,7 +102,7 @@ object Keywords {
      * [KeywordAbility] rather than [KeywordAbility.Simple]; they are registered below as
      * [dedicatedObjects]. Registering both spellings would be genuine ambiguity.
      */
-    private val simpleKeywords: List<Phrase<KeywordAbility>> = listOf(
+    private val SIMPLE_KEYWORDS: List<Pair<Keyword, String>> = listOf(
         // Evasion
         simple(Keyword.FLYING),
         simple(Keyword.MENACE),
@@ -150,6 +158,21 @@ object Keywords {
         simple(Keyword.NIGHTBOUND),
         simple(Keyword.START_YOUR_ENGINES, surface = "start your engines!"),
     )
+
+    private val simpleKeywords: List<Phrase<KeywordAbility>> =
+        SIMPLE_KEYWORDS.map { (keyword, surface) -> constant(surface, KeywordAbility.of(keyword)) }
+
+    /**
+     * The same words as a bare [Keyword] — what a sentence needs when it *names* a keyword instead
+     * of having one ("Enchanted creature has flying.", `GrantKeyword(Keyword.FLYING)`).
+     *
+     * Only the parameterless keywords are here, and that is the honest boundary rather than an
+     * omission: a parameterized keyword names a value the SDK's granted-keyword statics have nowhere
+     * to put, since they carry a keyword and not a `KeywordAbility`. "Enchanted creature has ward
+     * {2}." therefore declines, which is the correct answer until the SDK can hold the parameter.
+     */
+    val keyword: Phrase<Keyword> =
+        oneOf("a keyword", SIMPLE_KEYWORDS.map { (keyword, surface) -> constant(surface, keyword) })
 
     /**
      * Keywords the SDK models as their own object rather than as [KeywordAbility.Simple].

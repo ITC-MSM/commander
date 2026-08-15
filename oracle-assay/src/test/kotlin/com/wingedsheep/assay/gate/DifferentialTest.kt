@@ -17,6 +17,7 @@ import com.wingedsheep.sdk.scripting.AbilityId
 import com.wingedsheep.sdk.scripting.ActivatedAbility
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.KeywordAbility
+import com.wingedsheep.sdk.scripting.ModifyStats
 import com.wingedsheep.sdk.scripting.TimingRule
 import com.wingedsheep.sdk.scripting.filters.unified.TargetFilter
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
@@ -286,6 +287,33 @@ class DifferentialTest : StringSpec({
         val theirs = destroyScript("target creature to destroy", EffectTarget.BoundVariable("target creature to destroy"))
 
         differential.normalizeSlotNames(mine) shouldBe differential.normalizeSlotNames(theirs)
+    }
+
+    // An Aura's restriction is a `TargetRequirement` like any other, declared under its own key.
+    // The goldens leave it unnamed and the grammar always mints a name, so without `auraTarget` in
+    // REQUIREMENT_KEYS every Aura in the corpus would report as divergent over an id that is in
+    // neither model — the same shape as the four other ways this gate has found to lie to itself.
+    "an aura's attachment restriction is normalized like every other requirement" {
+        fun aura(slot: String?) = CardScript(
+            auraTarget = TargetPermanent(filter = TargetFilter(GameObjectFilter.Creature), id = slot),
+            staticAbilities = listOf(ModifyStats(1, 2)),
+        )
+
+        differential.normalizeSlotNames(aura(null)) shouldBe differential.normalizeSlotNames(aura("target"))
+    }
+
+    // …and it is numbered *after* the spell's own requirements, because that is the order
+    // `CastSpellHandler` builds the flat target list in.
+    "an aura's restriction is numbered after the spell's own requirements" {
+        val script = CardScript(
+            spellEffect = Effects.Destroy(EffectTarget.ContextTarget(0)),
+            targetRequirements = listOf(TargetPermanent(filter = TargetFilter(GameObjectFilter.Land))),
+            auraTarget = TargetPermanent(filter = TargetFilter(GameObjectFilter.Creature)),
+        )
+
+        differential.normalizeSlotNames(script).contains("\"slot_1\"") shouldBe true
+        differential.normalizeSlotNames(script.copy(auraTarget = null)) shouldNotBe
+            differential.normalizeSlotNames(script)
     }
 
     // The SDK's own words: `BoundVariable` is "safer and more self-documenting than

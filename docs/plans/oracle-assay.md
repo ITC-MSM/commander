@@ -215,6 +215,30 @@ is the next work:
    "Activate only as a sorcery".
 9. `Replacements.kt` ✅ "~ enters tapped." and the shock-land form. Still to come: the check-land
    `unlessCondition`, which is the condition family's first customer.
+10. `Statics.kt` ✅ the aura band — `Enchant <filter>` (in `Targets`, since the SDK models it as a
+    `TargetRequirement` and not as a keyword), "Enchanted creature gets +N/+N.", "Enchanted creature
+    has <keyword>.", and the joined "gets +N/+N **and has** <keyword>." which denotes two abilities
+    from one sentence. Still to come: the lord pump ("Creatures you control get +1/+1."), which
+    needs a `GroupFilter` vocabulary — a *different type* from the `GameObjectFilter` `Filters`
+    produces, so it is its own decision; the combat restrictions ("~ can't block.", "~ can block
+    only creatures with flying.", "~ attacks each combat if able."); "doesn't untap during its
+    controller's untap step"; and the control-change static ("You control enchanted creature.").
+
+    **The win here is the slot, not the count, and it was chosen on that basis.** 225 aura cards
+    decline in total and their tail is long and varied; the three sentences above are 30-odd whole
+    cards. What they buy is `staticAbilities` — the largest `CardScript` slot the differential could
+    not see into, and the one every later static family lands in. The greedy-cover ranking makes the
+    point: the combat restrictions above are 41 sole-blocked cards between them and they are now one
+    family in one file rather than a slot that did not exist.
+
+    **Equip is not the same shape, and the band is where that stopped being one finding.** Enchant
+    and Equip were reported together in Phase 1 as "two keyword abilities of identical shape modelled
+    two different ways". Enchant turned out to be a plain `TargetRequirement` in a plain `CardScript`
+    slot, so it reads as an ordinary filtered target and the whole of `Filters` arrives with it.
+    Equip lowers at authoring time into `CardDefinition.equipCost` *and* a synthesized activated
+    ability carrying its own timing, effect and target requirement — a lowering to reproduce rather
+    than a sentence to read, and one that reaches past `CardScript` into a slot `CardFragment` does
+    not model. Reading it is a `CardFragment` design change, not a rule.
 
    **The land band is the first family where whole-card coverage moved with line coverage.** Lands
    are one-to-three-line cards, so 819 mana-ability lines and 319 tapped-entry lines over cards that
@@ -242,8 +266,8 @@ Turn the implemented corpus into the semantic oracle. This is what catches the r
 class that the touchstone structurally cannot. **Brought forward ahead of Phase 2** per the MVP
 above: the gate has to exist before grammar breadth, or the breadth is unverified.
 
-**Outcome.** `just assay-differential` runs over all 8,874 committed goldens. Of those, 890 clear
-every scoping guard and are compared: **884 confirmed (99.3%), 6 classified divergences**. It found
+**Outcome.** `just assay-differential` runs over all 8,874 committed goldens. Of those, 930 clear
+every scoping guard and are compared: **924 confirmed (99.4%), 6 classified divergences**. It found
 the predicted class on its first run — multi-quality protection read as one ability where CR 702.16g makes it two,
 reversible and wrong — plus two "one concept, two spellings" findings in the SDK. All five opening
 divergences are now fixed: the grammar reads a joined quality list as several abilities (and
@@ -272,6 +296,18 @@ in hand-written cards** — Voltaic Construct untapping any creature *or* artifa
 "artifact creature", and Dwarven Miner destroying basic lands where the text says "nonbasic". Both
 are generated renders that dropped a clause, the same shape as Meteor Golem. That closes the "at
 least one genuine bug found in a hand-written card" clause, three times over.
+
+**The aura band is the first new card class that added no divergence at all**, and that is worth
+recording rather than glossing. Opening `staticAbilities` and `auraTarget` took the compared
+population from 890 to 930 and every one of the 40 agreed; a by-hand sweep of every golden printing
+one of the three aura sentences — comparing the printed numbers and keyword against the card's own
+`staticAbilities`, independent of whether Assay covers the whole card — found no disagreement
+either. The pattern that held for three classes ("a divergence appears the first time the grammar
+reads a class") is not a law: an aura in this band is two lines with nothing to drop, where every bug
+the gate has found was a clause lost *inside* a filter on a longer sentence. Widening the guards was
+still the expensive half — `REQUIREMENT_KEYS` needed `auraTarget` or all 40 would have diverged over
+an id in neither model, and `carriesUnreadAbilities` needed a `staticAbilities` count or the
+hand-rolled-affinity cards would have.
 
 1. **`gate/Differential.kt`** — done, over keyword abilities plus `spellEffect`,
    `targetRequirements`, `triggeredAbilities`, `activatedAbilities` and `replacementEffects`. The

@@ -16,7 +16,9 @@ triggers ("When ~ enters, …", "At the beginning of your upkeep, …"), which i
 started comparing whole *abilities* rather than keyword lists, and where it found its first bug in a
 hand-written card. The **land band** followed — mana abilities and "~ enters tapped." — the first
 family where whole-card coverage moved with line coverage, because a land is a one-to-three-line card
-and those are the two sentences on it.
+and those are the two sentences on it. The **aura band** is the most recent: `Enchant <filter>` and
+the attached-permanent statics, which opened `staticAbilities` — the largest `CardScript` slot the
+differential could not see into, and the one every later static family lands in.
 Nothing here changes `:mtgish-tooling`, which stays authoritative until a per-set cutover replaces it
 (Phase 5). Assay is **not a runtime card loader** and never will be.
 
@@ -46,9 +48,10 @@ syntax/     Phrase kernel — templates, slots, both directions, memoization, th
 normalize/  Scryfall text -> canonical ability lines, every pass with its inverse; reminder glosses
 corpus/     the Scryfall Oracle bulk: download, cache, stream
 grammar/    the rules, by topic — Primitives, Keywords, Cardinals, Filters, Targets, Steps, Triggers,
-            Mana, Costs, Activated, Replacements
+            Mana, Costs, Activated, Replacements, Statics
             Steps covers draw, destroy/exile/tap/untap/bounce, life, scry/surveil, damage, pump and
-            adding mana; Activated is the cost-colon-effect sentence, which slots Steps whole
+            adding mana; Activated is the cost-colon-effect sentence, which slots Steps whole;
+            Statics is the continuous-ability slot, opened on the aura payoff lines
 gate/       the touchstone, the fineness report, the differential
 explore/    the browser UI — a loopback HTTP server over the live grammar and both gates
 cli/        assay parse | explain | gate | report | differential | explore | corpus
@@ -89,15 +92,15 @@ non-zero on. Declines are not failures.
 Cards assayed                    34882
 Ability lines                    66793  (39059 unique)
 
-Round-trips byte-exact           16454   246.3‰ (24.6%)
+Round-trips byte-exact           17977   269.1‰ (26.9%)
 Alternate spelling normalized    30
-Declined                         50309
+Declined                         48786
 Ambiguous — distinct readings    0
 Print mismatch                   0
 Normalization not invertible     0
 Full inverse not reproduced      0
 
-Cards fully covered              2886 / 34882   82.7‰ (8.3%)
+Cards fully covered              3004 / 34882   86.1‰ (8.6%)
 Vanilla + keyword-only cards     1440 / 1712   841.1‰ (84.1%)   <- Phase 1 target
 Reminder-text glosses            2870 matched · 114 differed · 956 unglossed
 ```
@@ -115,8 +118,16 @@ The report is two documents at once, and the second one is about `mtg-sdk`:
 
 - **Two keyword abilities of identical shape are modelled two different ways.** `Enchant creature`
   (1,289 cards) is an aura's attachment restriction and `Equip {2}` (621 cards) is a
-  `CardDefinition.equipCost` field — neither is a `KeywordAbility`, so neither has anything to
-  parse *into*. They are the two largest keyword-only decline families in the corpus.
+  `CardDefinition.equipCost` field — neither is a `KeywordAbility`, so neither had anything to
+  parse *into*. They were the two largest keyword-only decline families in the corpus.
+  **Only one of them turned out to be a sentence.** Enchant is a plain `TargetRequirement` in a
+  plain `CardScript` slot, so the aura band reads it as an ordinary filtered target and the whole of
+  `Filters` arrives with it — "Enchant land" and "Enchant creature you control" are rows in a list,
+  not rules. Equip is not the same shape at all: it lowers at authoring time into `equipCost` *and*
+  a synthesized activated ability with its own timing, effect and target requirement, so reading it
+  means reproducing a lowering rather than a sentence, and it reaches past `CardScript` into a slot
+  `CardFragment` does not model. That is why it is still declined, and why the pair stopped being
+  one finding.
 - **`PROTECTION_FROM_EACH_OPPONENT` and `ProtectionScope.EachOpponent` are two spellings of one
   thing.** Registering both would be genuine ambiguity, so the grammar deliberately spells it only
   one way (see `Primitives.protectionScope`).
@@ -145,22 +156,26 @@ named population bucket instead and the denominator stays visible.
 
 ```
   Hand-written cards                 8874
-    compared                         890
-    not yet covered by the grammar   7382
+    compared                         930
+    not yet covered by the grammar   7342
     script slot not modelled yet      39
     lines do not fold into one card   20
     multi-face (out of scope)        301
     Oracle text differs from golden  242
     golden would not decode            0
 
-  Confirmed — models agree           884   993.3‰ (99.3%)
+  Confirmed — models agree           924   993.5‰ (99.4%)
   DIVERGENT — read every one           6
 ```
 
 The divergence count is not meant to stay at zero — it rises every time the grammar reaches a new
 class of card, and each rise is the gate earning its keep. The five it opened with, the eight the
 first band of spell rules produced, and the six the land band produced are all fixed or classified
-below.
+below. The aura band is the first new card class that added **none**: the 40 auras it brought into
+the population all agreed, and a by-hand sweep of every golden printing one of those three sentences
+found no disagreement either. That is a fact about the cards rather than about the gate — an aura in
+this band is two lines with nothing to drop, where the bugs the gate has found were all a clause
+lost *inside* a filter on a longer sentence.
 
 Five separate things have to hold before a card is compared, and each has its own bucket. Every one
 of them was added after the gate was caught claiming a check nobody had performed:
@@ -282,6 +297,25 @@ each one has to say why it is not a difference.
   of how cards happen to be authored rather than a stated equivalence, and an ability with
   `timing = ManaAbility` and `isManaAbility = false` would print as a mana ability and use the stack.
   Folding would stop the gate noticing that.
+- **Open: "enchanted creature", "enchanted land" and "equipped creature" are one model.**
+  `GroupFilter.attachedCreature()` is `GameObjectFilter.Permanent` scoped to `AttachedTo` — it says
+  *the thing this is attached to* and nothing about that thing being a creature, or about the
+  attachment being an Aura. So all three printed forms denote the identical value, and registering
+  more than one rule for it would be genuine ambiguity: several printed forms, one model, nothing
+  for the printer to choose. The grammar spells exactly one, the noun nearly every card uses, and
+  the others decline. This is not an SDK gap — the model is right, and which word a card prints is a
+  function of its *type line*, the same class of printed-shape information as the self-reference
+  noun ("this creature" vs "this Equipment") that `Normalizer` already records and restores. When
+  the equipment forms are read, they belong in that pass and not as a second rule.
+- **`mtg-sdk` has no `Statics` facade.** `dsl` publishes `Effects`, `Triggers`, `Costs` and
+  `Conditions`; static abilities have nothing, and hand-written cards construct them directly
+  (`staticAbility { ability = ModifyStats(1, 2) }`). The constructor is the curated surface here, so
+  `Statics` builds through it — the same situation `Replacements` is in with `EntersTapped`. Two
+  facades missing for the two ability kinds that never got one is a small, consistent SDK finding.
+  Related, and worth knowing before reading a golden: **two SDK types share
+  `@SerialName("ModifyStats")`** — the `StaticAbility` and `ModifyStatsEffect`, the effect behind
+  "Target creature gets +3/+3 until end of turn." Different polymorphic hierarchies, so nothing
+  clashes, but one card's JSON can show both under one type name.
 - **Open: `ManaColorSet.Specific` is a second spelling of a dual land's line.** 165 cards write
   "{T}: Add {B} or {G}." as two `AddManaEffect` abilities sharing a cost, and 13 write it as one
   `AddManaOfChoiceEffect(ManaColorSet.Specific(...))`. Unlike the other entries in this list the

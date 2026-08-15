@@ -164,8 +164,12 @@ class KeywordGrammarTest : StringSpec({
         Grammar.abilityLine.printLine(fragment) shouldBe "Flying, banding"
     }
 
+    // "Enchant creature" used to be this example and is now read by `Targets.enchant`. Equip is the
+    // other half of the same Phase 1 finding and is still the honest one: it lowers at authoring
+    // time into `CardDefinition.equipCost` *plus* a synthesized activated ability, so there is
+    // nothing for a keyword rule to parse it into and the decline names a real gap.
     "text outside the grammar declines, and says where" {
-        val declined = Grammar.abilityLine.parseLine("Enchant creature")
+        val declined = Grammar.abilityLine.parseLine("Equip {2}")
             .shouldBeInstanceOf<ParseOutcome.Declined>()
         declined.reason shouldBe com.wingedsheep.assay.syntax.DeclineReason.NO_PARSE
     }

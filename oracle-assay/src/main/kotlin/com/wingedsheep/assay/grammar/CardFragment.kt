@@ -42,6 +42,10 @@ data class CardFragment(
      */
     fun merge(other: CardFragment): CardFragment? {
         if (script.spellEffect != null && other.script.spellEffect != null) return null
+        // An Aura declares one attachment restriction, so two lines both spelling "Enchant …" is the
+        // same collision as two spell effects: a card the grammar has misread, or a card shape it
+        // has no model for. Neither line may be dropped silently.
+        if (script.auraTarget != null && other.script.auraTarget != null) return null
         return CardFragment(
             keywordAbilities = keywordAbilities + other.keywordAbilities,
             script = CardScript(
@@ -50,10 +54,13 @@ data class CardFragment(
                 // Triggered abilities are a list on purpose: one card, several trigger lines, in
                 // printed order. Unlike the spell effect there is nothing to collide over. The same
                 // holds for activated abilities — and a *single* line can contribute several of
-                // them, since "{T}: Add {B} or {G}." is two — and for replacement effects.
+                // them, since "{T}: Add {B} or {G}." is two — for static abilities, which is how an
+                // aura's two payoff lines fold, and for replacement effects.
                 triggeredAbilities = script.triggeredAbilities + other.script.triggeredAbilities,
                 activatedAbilities = script.activatedAbilities + other.script.activatedAbilities,
+                staticAbilities = script.staticAbilities + other.script.staticAbilities,
                 replacementEffects = script.replacementEffects + other.script.replacementEffects,
+                auraTarget = script.auraTarget ?: other.script.auraTarget,
             ),
         )
     }
@@ -74,6 +81,7 @@ data class CardFragment(
          * grammar means adding it in both places, and this note is the pointer between them.
          */
         const val MODELLED_SLOTS_NOTE =
-            "spellEffect, targetRequirements, triggeredAbilities, activatedAbilities, replacementEffects"
+            "spellEffect, targetRequirements, triggeredAbilities, activatedAbilities, " +
+                "staticAbilities, replacementEffects, auraTarget"
     }
 }

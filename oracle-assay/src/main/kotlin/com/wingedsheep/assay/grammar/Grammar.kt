@@ -182,6 +182,39 @@ object Grammar {
         }
     }
 
+    /**
+     * A line that is one Aura's attachment restriction — "Enchant creature".
+     *
+     * The only line in the grammar whose whole content is a `TargetRequirement`. Wrapped here for
+     * the same reason the others are: [Targets] stays about targeting and knows nothing about the
+     * fact that this particular requirement is a line rather than a clause.
+     */
+    private val enchantLine: Phrase<CardFragment> = phrase("{enchant}", name = "an enchant line") {
+        slot("enchant", Targets.enchant)
+        build { CardFragment.of(CardScript(auraTarget = it.value("enchant"))) }
+        match { fragment ->
+            val target = fragment.script.auraTarget ?: return@match null
+            if (fragment.keywordAbilities.isNotEmpty()) return@match null
+            if (fragment.script != CardScript(auraTarget = target)) return@match null
+            bind("enchant" to target)
+        }
+    }
+
+    /**
+     * A line that is one static ability — "Enchanted creature gets +1/+2." — or the two a single
+     * printed line can denote, since "Enchanted creature gets +2/+2 and has flying." is two.
+     */
+    private val staticLine: Phrase<CardFragment> = phrase("{statics}", name = "a static ability line") {
+        slot("statics", Statics.line)
+        build { CardFragment.of(CardScript(staticAbilities = it.value("statics"))) }
+        match { fragment ->
+            val abilities = fragment.script.staticAbilities
+            if (abilities.isEmpty() || fragment.keywordAbilities.isNotEmpty()) return@match null
+            if (fragment.script != CardScript(staticAbilities = abilities)) return@match null
+            bind("statics" to abilities)
+        }
+    }
+
     /** A line that is one replacement effect — "~ enters tapped." */
     private val replacementLine: Phrase<CardFragment> = phrase("{replacement}", name = "a replacement effect line") {
         slot("replacement", Replacements.replacement)
@@ -213,5 +246,7 @@ object Grammar {
         triggerLine,
         activatedLine,
         replacementLine,
+        enchantLine,
+        staticLine,
     )
 }

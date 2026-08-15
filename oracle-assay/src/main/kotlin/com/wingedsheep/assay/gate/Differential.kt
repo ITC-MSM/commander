@@ -28,8 +28,15 @@ private val ABILITY_LISTS = listOf("triggeredAbilities", "activatedAbilities")
  * `ContextTarget`'s index counts them — `TriggeredAbility.allTargetRequirements` is
  * `targetRequirement` then `additionalTargetRequirements`, and `CardScript` /`ActivatedAbility`
  * each keep one plural list. See `Differential.normalizeOwner`.
+ *
+ * `auraTarget` is last because that is where the engine puts it: `CastSpellHandler` builds a spell's
+ * flat target list as `targetRequirements` followed by the Aura's own restriction, so a positional
+ * reference on an Aura counts the spell's requirements first. It is here at all because it is a
+ * `TargetRequirement` like the others — the golden declares it with no `id` and the grammar always
+ * mints one, so without this entry every Aura would diverge over a name in neither model.
  */
-private val REQUIREMENT_KEYS = listOf("targetRequirement", "targetRequirements", "additionalTargetRequirements")
+private val REQUIREMENT_KEYS =
+    listOf("targetRequirement", "targetRequirements", "additionalTargetRequirements", "auraTarget")
 
 /**
  * Gate 2 — the **differential**: Assay's reading of a card against the definition a human wrote
@@ -208,6 +215,12 @@ class Differential(private val touchstone: Touchstone = Touchstone()) {
     private fun carriesUnreadAbilities(card: CardScript, text: CardScript): Boolean =
         card.triggeredAbilities.size > text.triggeredAbilities.size ||
             card.activatedAbilities.size > text.activatedAbilities.size ||
+            // Statics get the lowering too, and the corpus already has one: affinity is spelled as
+            // `KeywordAbility.Affinity` on Frogmite and hand-rolled as a `ModifySpellCost` static on
+            // Qumulox and the Darksteel golems, whose printed line is the bare keyword either way.
+            // Without this count those cards would report as divergent on the day `staticAbilities`
+            // opened, over a second SDK spelling nobody's text said twice.
+            card.staticAbilities.size > text.staticAbilities.size ||
             card.replacementEffects.size > text.replacementEffects.size
 
     /**
@@ -220,7 +233,9 @@ class Differential(private val touchstone: Touchstone = Touchstone()) {
         targetRequirements = script.targetRequirements,
         triggeredAbilities = script.triggeredAbilities,
         activatedAbilities = script.activatedAbilities,
+        staticAbilities = script.staticAbilities,
         replacementEffects = script.replacementEffects,
+        auraTarget = script.auraTarget,
     )
 
     private fun unmodelledSlots(script: CardScript) = script.copy(
@@ -228,7 +243,9 @@ class Differential(private val touchstone: Touchstone = Touchstone()) {
         targetRequirements = emptyList(),
         triggeredAbilities = emptyList(),
         activatedAbilities = emptyList(),
+        staticAbilities = emptyList(),
         replacementEffects = emptyList(),
+        auraTarget = null,
     )
 
     /**

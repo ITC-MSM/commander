@@ -1,5 +1,8 @@
 package com.wingedsheep.assay.grammar
 
+import com.wingedsheep.assay.syntax.Phrase
+import com.wingedsheep.assay.syntax.bind
+import com.wingedsheep.assay.syntax.phrase
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.targets.AnyTarget
 import com.wingedsheep.sdk.scripting.filters.unified.TargetFilter
@@ -20,10 +23,14 @@ import com.wingedsheep.sdk.scripting.targets.TargetRequirement
  * models that differ only in what they called a slot are the same model, and neither the round trip
  * nor the differential should be able to see the difference.
  *
- * This file has no [com.wingedsheep.assay.syntax.Phrase] in it yet on purpose. A target is not a
- * line, and the phrasings that introduce one ("Target player draws…", "Destroy target creature")
- * are inseparable from the step that consumes it — English puts the verb and its object in one
- * clause, and so does the rule. What lives here is the vocabulary those rules share.
+ * Almost nothing here is a [com.wingedsheep.assay.syntax.Phrase], and that is on purpose: a target
+ * is not a line, and the phrasings that introduce one ("Target player draws…", "Destroy target
+ * creature") are inseparable from the step that consumes it — English puts the verb and its object
+ * in one clause, and so does the rule. What lives here is the vocabulary those rules share.
+ *
+ * [enchant] is the exception, and it is one because Magic makes it one: an Aura's attachment
+ * restriction *is* a whole printed line with no verb in it, and the model it denotes is a bare
+ * `TargetRequirement`. There is nowhere else for it to live.
  */
 object Targets {
 
@@ -82,5 +89,32 @@ object Targets {
     fun permanentFilter(requirement: TargetRequirement): GameObjectFilter? {
         val base = (requirement as? TargetObject)?.filter?.baseFilter ?: return null
         return base.takeIf { requirement == permanent(it) }
+    }
+
+    /**
+     * "Enchant creature" — an Aura's attachment restriction, and the whole of its printed line.
+     *
+     * ### Why this is not a keyword ability
+     *
+     * Enchant *is* a keyword ability in the Comprehensive Rules (702.5), and it is the largest
+     * keyword-only decline family in the corpus at 1,289 cards — but `mtg-sdk` models it as
+     * [com.wingedsheep.sdk.model.CardScript.auraTarget], a plain `TargetRequirement`, so there is no
+     * `KeywordAbility` for [Keywords] to parse it into. That mismatch was Phase 1's first reported
+     * finding; this rule is the answer to it, and it is a rule about a *target*, not about a keyword.
+     *
+     * Equip, the other half of that finding, is deliberately still absent. It looks like the same
+     * shape and is not: `Equip {2}` lowers at authoring time into `CardDefinition.equipCost` *and* a
+     * synthesized activated ability carrying its own timing, effect and target requirement — a
+     * lowering to reproduce rather than a sentence to read, and one that reaches past `CardScript`
+     * into a slot [CardFragment] does not model. Enchant needs none of that.
+     *
+     * The restriction is spelled through [permanent] like every other filtered target, so the whole
+     * of [Filters] arrives with it: "Enchant creature you control" and "Enchant land" are already
+     * rows in a list this rule slots rather than rules of their own.
+     */
+    val enchant: Phrase<TargetRequirement> = phrase("enchant {filter}", name = "enchant") {
+        slot("filter", Filters.filter)
+        build { permanent(it.value("filter")) }
+        match { requirement -> permanentFilter(requirement)?.let { bind("filter" to it) } }
     }
 }
