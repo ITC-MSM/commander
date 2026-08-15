@@ -2,6 +2,7 @@ package com.wingedsheep.assay.explore
 
 import com.wingedsheep.assay.corpus.OracleCard
 import com.wingedsheep.assay.corpus.OracleFace
+import com.wingedsheep.assay.corpus.SetCards
 import com.wingedsheep.assay.gate.CardComparison
 import com.wingedsheep.assay.gate.CardResult
 import com.wingedsheep.assay.gate.Differential
@@ -173,6 +174,11 @@ internal object Views {
             // than looking like the end of a list.
             put("total", index.rows.count(filter::accepts))
             put("offset", offset)
+            // The set filter's own denominator: how many cards were *printed* in the set, against
+            // however many of them the corpus reached. Without it a set with an unimplemented half
+            // reads as a set the sweep lost cards from.
+            put("setPrinted", filter.setCards?.size ?: 0)
+            put("setUnresolved", filter.setUnresolved)
             put(
                 "rows",
                 buildJsonArray {
@@ -547,15 +553,25 @@ internal data class ParseRequest(
 /** The card table's filters, as the query string carries them. */
 internal data class CardFilter(
     val state: String?,
+    /** What the user typed in the set box, kept only so the page can say which set it resolved. */
     val set: String?,
+    /**
+     * The cards printed in [set], resolved by [com.wingedsheep.assay.corpus.SetMembership] — `null`
+     * when the code is unknown, which matches **nothing**. Filtering on [CardRow.setCode] instead
+     * would silently show a quarter of Portal and call it the set.
+     */
+    val setCards: SetCards?,
     val query: String?,
     val scopeOnly: Boolean,
     val goldenOnly: Boolean,
     private val goldens: Set<String>,
 ) {
+    /** True when a set was asked for and could not be resolved — the page says so rather than lying. */
+    val setUnresolved: Boolean get() = set != null && setCards == null
+
     fun accepts(row: CardRow): Boolean {
         if (scopeOnly && !row.inScope) return false
-        if (set != null && !set.equals(row.setCode, ignoreCase = true)) return false
+        if (set != null && setCards?.contains(row.oracleId, row.name) != true) return false
         if (goldenOnly && row.name !in goldens && row.name.substringBefore(" // ") !in goldens) return false
         if (query != null && !row.name.lowercase(Locale.ROOT).contains(query.lowercase(Locale.ROOT))) return false
         return when (state) {

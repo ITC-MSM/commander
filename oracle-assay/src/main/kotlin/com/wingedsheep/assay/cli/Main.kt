@@ -3,6 +3,7 @@ package com.wingedsheep.assay.cli
 import com.wingedsheep.assay.corpus.ImplementedCorpus
 import com.wingedsheep.assay.corpus.OracleCard
 import com.wingedsheep.assay.corpus.OracleCorpus
+import com.wingedsheep.assay.corpus.SetMembership
 import com.wingedsheep.assay.gate.Differential
 import com.wingedsheep.assay.gate.FinenessReport
 import com.wingedsheep.assay.gate.LineVerdict
@@ -70,8 +71,9 @@ private fun usage() = System.err.println(
 
     Options:
       --limit N        assay only the first N cards (a fast smoke run)
-      --set CODE       restrict to one set code — Scryfall's for gate/report, the golden's
-                       file name for differential
+      --set CODE       restrict to one set — every card *printed* in it for gate/report (a small
+                       per-set list is fetched from Scryfall and cached), the golden's file name
+                       for differential
       --scope          restrict to vanilla + keyword-only cards — Phase 1's own target, so the
                        decline table becomes exactly the list of what is blocking that number
       --implemented    restrict to cards that already have a hand-written golden, so the decline
@@ -255,6 +257,19 @@ private fun gate(flags: Flags, gating: Boolean): Int {
     val builder = FinenessReport.builder()
     val setFilter = flags.str("set")?.uppercase()
     val limit = flags.int("limit")
+
+    // Membership, not the corpus's `setCode` — that field is a card's *representative* printing, so
+    // filtering on it silently drops most of any old or heavily reprinted set. See [SetMembership].
+    val setCards = setFilter?.let {
+        SetMembership.of(it, refresh = flags.has("refresh")) ?: run {
+            System.err.println(
+                "assay: no set \"$it\" — Scryfall knows no such code, or it is unreachable and " +
+                    "nothing is cached at ${SetMembership.cacheFile(it)}"
+            )
+            return 2
+        }
+    }
+
     val declineLines = mutableListOf<String>()
 
     val scopeOnly = flags.has("scope")
@@ -276,7 +291,7 @@ private fun gate(flags: Flags, gating: Boolean): Int {
 
     var seen = 0
     for (card in OracleCorpus.cards(refresh = flags.has("refresh"))) {
-        if (setFilter != null && card.setCode != setFilter) continue
+        if (setCards != null && !setCards.contains(card)) continue
         if (implementedOnly && !isImplemented(card, implemented)) continue
         val result = touchstone.assay(card)
         if (scopeOnly && !result.inPhase1Scope) continue
@@ -293,7 +308,7 @@ private fun gate(flags: Flags, gating: Boolean): Int {
     val population = listOfNotNull(
         "cards with a hand-written golden".takeIf { implementedOnly },
         "vanilla + keyword-only (Phase 1 scope)".takeIf { scopeOnly },
-        setFilter?.let { "set $it" },
+        setCards?.let { "set ${it.code.uppercase()} — ${it.size} cards printed in it" },
     ).joinToString(" · ").ifEmpty { null }
     println(report.render(topDeclines = flags.int("top") ?: 20, population = population))
 

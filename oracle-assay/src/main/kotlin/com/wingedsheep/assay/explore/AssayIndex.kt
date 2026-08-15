@@ -215,6 +215,7 @@ class AssayIndex(
             shapes: List<String>,
         ) = CardRow(
             name = card.name,
+            oracleId = card.oracleId,
             setCode = card.setCode,
             layout = card.layout,
             faces = card.faces.size,
@@ -337,6 +338,9 @@ private class Grouping {
  */
 data class CardRow(
     val name: String,
+    /** Carried so the set filter can join on Oracle ID rather than on name. See `SetMembership`. */
+    val oracleId: String?,
+    /** The card's *representative* printing — what Scryfall shows it under, not where it was printed. */
     val setCode: String?,
     val layout: String,
     val faces: Int,

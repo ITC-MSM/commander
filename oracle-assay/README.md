@@ -31,6 +31,7 @@ just assay-gate                     # the touchstone over the whole corpus; exit
 just assay-report --top 40          # the same numbers, always exit 0
 just assay-report --scope           # restricted to Phase 1's own target class
 just assay-report --implemented     # restricted to cards that already have a golden — the *grammar* backlog
+just assay-report --set POR         # restricted to one set — every card *printed* in it
 just assay-differential             # Assay's readings vs. the hand-written cards
 just assay-explore                  # all of the above in a browser, on the live grammar
 just assay corpus --refresh         # re-download the Scryfall Oracle bulk (~24 MB, cached 7 days)
@@ -41,12 +42,24 @@ The corpus is Scryfall's `oracle_cards` bulk file, cached at
 `:mtgish-tooling` use, under a `_bulk-` prefix that cannot collide with a set code. Scryfall serves
 it as gzipped JSONL, so it streams a card at a time.
 
+**`--set` is membership, and it has to be.** One object per Oracle ID means each card carries a
+single *representative* printing, so its `set` field says which printing Scryfall shows it under —
+not which sets it was printed in. Filtering on that field showed **53 of Portal's 200 cards**: Blaze
+is shown as `bbd`, Raise Dead as `w17`, Wild Griffin as `cn2`, and Portal's own reprints of older
+cards are credited to the older set, so a set loses cards in both directions. `--set` and the
+explorer's set box therefore ask Scryfall for the set's card list and join on Oracle ID
+(`corpus/SetMembership.kt`), cached per set at `~/.cache/scryfall/_setlist-<code>.tsv`. Per set
+rather than one global index because the filter is always one set at a time — a `default_cards`
+Oracle-ID → sets map costs a 77 MB download to answer a ~200 KB question. A set that cannot be
+resolved matches **nothing** and says so; degrading to the whole corpus would be a report lying about
+its own population. The Set *column* still shows the representative printing, and is labelled as such.
+
 ## Where things are
 
 ```
 syntax/     Phrase kernel — templates, slots, both directions, memoization, the parse cap
 normalize/  Scryfall text -> canonical ability lines, every pass with its inverse; reminder glosses
-corpus/     the Scryfall Oracle bulk: download, cache, stream
+corpus/     the Scryfall Oracle bulk: download, cache, stream; per-set membership for `--set`
 grammar/    the rules, by topic — Primitives, Keywords, Cardinals, Filters, Targets, Steps, Triggers,
             Mana, Costs, Activated, Replacements, Statics
             Steps covers draw, destroy/exile/tap/untap/bounce, life, scry/surveil, damage, pump and

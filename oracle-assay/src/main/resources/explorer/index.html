@@ -778,6 +778,18 @@ async function viewCards() {
   const states = [["", "all"], ["round-trip", "round-trip"], ["variant", "variant"],
                   ["vanilla", "vanilla"], ["declined", "declined"]];
 
+  /* The set filter is membership — every card *printed* in the set — so it needs its own
+     denominator. `total` is what the corpus reached; `setPrinted` is what the set holds. */
+  const setNote = !cardFilter.set.trim() ? ""
+    : d.setUnresolved
+      ? '<p class="lead" style="margin-top:.6rem;color:var(--bad)">No set <b class="mono">' +
+        esc(cardFilter.set) + "</b> — Scryfall knows no such code, or it is unreachable and nothing " +
+        "is cached. Nothing is being shown rather than everything.</p>"
+      : '<p class="lead" style="margin-top:.6rem">' + fmt(d.total) + " of the " + fmt(d.setPrinted) +
+        " cards printed in <b class=\"mono\">" + esc(cardFilter.set.toUpperCase()) + "</b>. Membership " +
+        "comes from Scryfall's per-set list, not from the Set column — that column is the one " +
+        "printing the Oracle bulk shows a card under, which for a reprint is rarely this set.</p>";
+
   el("view").innerHTML = `
     <div class="crumb"><a href="#">overview</a> <span>/</span> <span>cards</span></div>
     <h1>The corpus, as assayed</h1>
@@ -789,13 +801,15 @@ async function viewCards() {
       <div class="seg">${states.map(([v, l]) =>
         '<button data-state="' + v + '"' + (cardFilter.state === v ? ' class="on"' : "") + ">" + l + "</button>").join("")}</div>
       <input id="cq" class="grow" placeholder="name contains…" value="${esc(cardFilter.q)}" autocomplete="off" spellcheck="false">
-      <input id="cset" style="width:5.5rem" placeholder="set" value="${esc(cardFilter.set)}" autocomplete="off" spellcheck="false">
+      <input id="cset" style="width:5.5rem" placeholder="set" value="${esc(cardFilter.set)}" autocomplete="off" spellcheck="false"
+             title="every card printed in the set — Scryfall's per-set list, not the Set column">
       <button class="chip${cardFilter.scope ? " on" : ""}" id="cscope" title="vanilla + keyword-only — Phase 1's own target class">in scope</button>
       <button class="chip${cardFilter.golden ? " on" : ""}" id="cgold" title="cards that already have a hand-written definition">hand-written</button>
       <span class="cnt">${fmt(d.total)} cards</span>
     </div>
+    ${setNote}
     <div class="tablewrap"><table>
-      <thead><tr><th>Card</th><th>Set</th><th class="num">Lines</th><th>Verdict</th><th>Blocked on</th></tr></thead>
+      <thead><tr><th>Card</th><th title="the printing the Oracle bulk shows this card under — one per Oracle ID, so a reprint is credited to its newest set">Set</th><th class="num">Lines</th><th>Verdict</th><th>Blocked on</th></tr></thead>
       <tbody>${cardFilter.rows.map(cardRowHTML).join("")}</tbody>
     </table></div>
     ${cardFilter.rows.length < d.total

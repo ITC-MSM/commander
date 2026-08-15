@@ -9,8 +9,6 @@ import java.io.BufferedReader
 import java.io.File
 import java.io.IOException
 import java.io.InputStreamReader
-import java.net.HttpURLConnection
-import java.net.URI
 import java.nio.charset.StandardCharsets
 import java.time.Duration
 import java.time.Instant
@@ -25,15 +23,14 @@ import java.util.zip.GZIPInputStream
  *
  * The download is cached next to the per-set caches that `:mtgish-tooling` and `scripts/card-status`
  * already share (`~/.cache/scryfall/`), under a distinct `_bulk-` prefix so it cannot collide with
- * a set code. Assay does not read or write those per-set files: it needs the whole corpus, not a
- * set at a time, and sharing a *directory* is all the coupling that is wanted.
+ * a set code. Assay does not read or write *their* files — it needs the whole corpus, not a set at a
+ * time, and sharing a *directory* is all the coupling that is wanted. [SetMembership] keeps its own
+ * per-set lists there under a `_setlist-` prefix, for the one question this file cannot answer:
+ * `setCode` is a card's representative printing, not the sets it was printed in.
  */
 object OracleCorpus {
 
     private const val BULK_INDEX = "https://api.scryfall.com/bulk-data"
-    private const val USER_AGENT = "argentum-assay/1.0"
-    private const val CONNECT_TIMEOUT_MS = 10_000
-    private const val READ_TIMEOUT_MS = 120_000
 
     /** How long a downloaded bulk file is considered current. Scryfall rebuilds it daily. */
     private val FRESH_FOR: Duration = Duration.ofDays(7)
@@ -140,27 +137,13 @@ object OracleCorpus {
         Instant.ofEpochMilli(BULK_FILE.lastModified()).isAfter(Instant.now().minus(FRESH_FOR))
 
     private fun bulkDownloadUri(): String {
-        val payload = json.parseToJsonElement(get(BULK_INDEX)).jsonObject
+        val payload = json.parseToJsonElement(ScryfallHttp.get(BULK_INDEX)).jsonObject
         val entries = (payload["data"] as? JsonArray)?.filterIsInstance<JsonObject>().orEmpty()
         val oracle = entries.firstOrNull { it.str("type") == "oracle_cards" }
             ?: error("Scryfall bulk-data index has no oracle_cards entry")
         return oracle.str("jsonl_download_uri")
             ?: oracle.str("download_uri")
             ?: error("oracle_cards entry has no download URI")
-    }
-
-    private fun get(url: String): String {
-        val conn = URI(url).toURL().openConnection() as HttpURLConnection
-        conn.setRequestProperty("User-Agent", USER_AGENT)
-        conn.setRequestProperty("Accept", "application/json")
-        conn.connectTimeout = CONNECT_TIMEOUT_MS
-        conn.readTimeout = READ_TIMEOUT_MS
-        try {
-            if (conn.responseCode >= 400) error("$url -> HTTP ${conn.responseCode}")
-            return conn.inputStream.readBytes().toString(StandardCharsets.UTF_8)
-        } finally {
-            conn.disconnect()
-        }
     }
 
     /**
@@ -171,12 +154,9 @@ object OracleCorpus {
         System.err.println("assay: downloading the Oracle bulk from Scryfall (~24 MB) …")
         target.parentFile.mkdirs()
         val tmp = File(target.parentFile, "${target.name}.part")
-        val conn = URI(url).toURL().openConnection() as HttpURLConnection
-        conn.setRequestProperty("User-Agent", USER_AGENT)
-        conn.connectTimeout = CONNECT_TIMEOUT_MS
-        conn.readTimeout = READ_TIMEOUT_MS
+        val conn = ScryfallHttp.open(url)
         try {
-            if (conn.responseCode >= 400) error("$url -> HTTP ${conn.responseCode}")
+            if (conn.responseCode >= 400) throw ScryfallHttpException(conn.responseCode, url)
             conn.inputStream.use { input -> tmp.outputStream().use { output -> input.copyTo(output) } }
         } finally {
             conn.disconnect()

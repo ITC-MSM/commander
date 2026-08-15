@@ -2,6 +2,7 @@ package com.wingedsheep.assay.explore
 
 import com.sun.net.httpserver.HttpExchange
 import com.sun.net.httpserver.HttpServer
+import com.wingedsheep.assay.corpus.SetMembership
 import com.wingedsheep.assay.gate.Differential
 import com.wingedsheep.assay.gate.DifferentialReport
 import com.wingedsheep.assay.gate.Touchstone
@@ -131,9 +132,16 @@ class ExploreServer(private val port: Int, private val refresh: Boolean = false)
     // -------------------------------------------------------------------------------------------
 
     private fun cards(exchange: HttpExchange): JsonElement = ready { index ->
+        val set = exchange.param("set")?.takeIf { it.isNotBlank() }
         val filter = CardFilter(
             state = exchange.param("state"),
-            set = exchange.param("set"),
+            set = set,
+            // Resolved here rather than during the sweep, and on the request thread. A set list is
+            // ~200 KB and then memoized for the process, so exactly one request per set pays for it;
+            // pre-loading every set at startup would download 1,047 lists to serve a filter most
+            // sessions never touch, and baking membership into the sweep would make the corpus
+            // depend on the network for a question only this filter asks.
+            setCards = set?.let { SetMembership.of(it) },
             query = exchange.param("q")?.takeIf { it.isNotBlank() },
             scopeOnly = exchange.param("scope") == "1",
             goldenOnly = exchange.param("golden") == "1",
