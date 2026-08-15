@@ -1,5 +1,7 @@
 package com.wingedsheep.ai.engine
 
+import com.wingedsheep.engine.state.components.battlefield.HasBecomeTappedComponent
+import com.wingedsheep.engine.state.components.battlefield.TargetedByControllerThisTurnComponent
 import com.wingedsheep.engine.support.GameTestDriver
 import com.wingedsheep.engine.support.TestCards
 import com.wingedsheep.sdk.core.DayNight
@@ -69,6 +71,35 @@ class StateProgressTest : FunSpec({
         }
         withClue("dayNight") {
             StateProgress.digest(base.copy(dayNight = DayNight.NIGHT)) shouldNotBe here
+        }
+    }
+
+    test("an it-happened memory on a permanent is bookkeeping, not a position") {
+        // The other half of what `normalized` excludes: `IGNORED_COMPONENTS`, applied in the
+        // per-object walk. Pinned here rather than only in LoopingActionAiTest so a refactor of the
+        // ignore list fails in the file that documents it.
+        //
+        // Injected rather than produced by a real tap on purpose: `tap()` also sets
+        // TappedComponent, which *is* a position change. What must be invisible is the stamp it
+        // writes alongside — Aphetto Alchemist's self-untap pays its own cost back and leaves
+        // nothing but that stamp behind, and a digest that read it would call the no-op progress.
+        val driver = GameTestDriver().apply {
+            registerCards(TestCards.all)
+            initMirrorMatch(deck = Deck.of("Forest" to 40), skipMulligans = true, startingPlayer = 0)
+        }
+        val bears = driver.putCreatureOnBattlefield(driver.player1, "Grizzly Bears")
+        val base = driver.state
+        val here = StateProgress.digest(base)
+
+        withClue("HasBecomeTappedComponent") {
+            val stamped = base.updateEntity(bears) { it.with(HasBecomeTappedComponent(base.turnNumber)) }
+            StateProgress.digest(stamped) shouldBe here
+        }
+        withClue("TargetedByControllerThisTurnComponent") {
+            val targeted = base.updateEntity(bears) {
+                it.with(TargetedByControllerThisTurnComponent(setOf(driver.player1)))
+            }
+            StateProgress.digest(targeted) shouldBe here
         }
     }
 

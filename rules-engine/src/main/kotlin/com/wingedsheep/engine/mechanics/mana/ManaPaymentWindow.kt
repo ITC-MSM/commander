@@ -188,7 +188,11 @@ object ManaPaymentWindow {
             ?.get<com.wingedsheep.engine.state.components.identity.ControllerComponent>()?.playerId
             ?: fallbackControllerId
         val events = mutableListOf<GameEvent>(
-            com.wingedsheep.engine.core.TappedEvent(sourceId, source.name)
+            com.wingedsheep.engine.core.TappedEvent(
+                sourceId,
+                source.name,
+                firstThisTurn = com.wingedsheep.engine.core.isFirstTapThisTurn(state, sourceId)
+            )
         )
         val preState = com.wingedsheep.engine.handlers.effects.ZoneTransitionService
             .trackPermanentSacrifice(state, listOf(sourceId), controller)

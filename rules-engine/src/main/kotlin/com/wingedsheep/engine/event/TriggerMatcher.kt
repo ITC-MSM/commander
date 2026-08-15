@@ -478,6 +478,9 @@ class TriggerMatcher(
                 // which is what every cause-agnostic "becomes tapped" trigger keeps meaning.
                 val reason = trigger.reason
                 if (reason != null && event.reason != reason) return false
+                // "… if it's the **first time** that permanent has become tapped this turn" — the
+                // per-permanent window, computed on the event by `tap()` before it stamped this tap.
+                if (trigger.firstTimeEachTurn && !event.firstThisTurn) return false
                 // "Whenever you tap …" — only a tap this trigger's controller caused counts.
                 val tapper = trigger.tapper
                 if (tapper != null) {

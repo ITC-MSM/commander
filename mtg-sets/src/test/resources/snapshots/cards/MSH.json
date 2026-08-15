@@ -3175,6 +3175,51 @@
     "colorIdentityOverride": []
 }
 
+// Captain America, Living Legend
+{
+    "name": "Captain America, Living Legend",
+    "manaCost": "{1}{W}{U}",
+    "typeLine": "Legendary Creature — Human Soldier Hero",
+    "oracleText": "Vigilance\nWhenever a creature you control becomes tapped during your turn, if it's the first time that creature has become tapped this turn, untap it.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 4
+    },
+    "keywords": [
+        "VIGILANCE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "TapEvent",
+                    "filter": "creature ctrl:you",
+                    "firstTimeEachTurn": true
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "TapUntap",
+                    "target": "TriggeringEntity",
+                    "tap": false
+                },
+                "triggerRestriction": "IsYourTurn"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "210",
+        "rarity": "UNCOMMON",
+        "artist": "Smirtouille",
+        "flavorText": "\"They say the world moved on without me, but as long as injustice exists, I'm still needed here.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/5/6516f292-469d-4092-b099-97c698f373cd.jpg?1783902903"
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLUE"
+    ]
+}
+
 // Captain America, Super-Soldier
 {
     "name": "Captain America, Super-Soldier",

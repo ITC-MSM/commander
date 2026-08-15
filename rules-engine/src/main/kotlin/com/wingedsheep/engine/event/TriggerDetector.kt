@@ -2396,8 +2396,12 @@ class TriggerDetector(
                 // fires a "to pay a teamwork cost" batch trigger, on its teamwork taps alone.
                 val tapper = trigger.tapper
                 val reason = trigger.reason
+                val firstTimeEachTurn = trigger.firstTimeEachTurn
                 val tappedIds = tapEvents.filter { event ->
                     if (reason != null && event.reason != reason) return@filter false
+                    // The per-permanent "first time it became tapped this turn" window narrows the
+                    // batch too, exactly like the cause and tapper axes above.
+                    if (firstTimeEachTurn && !event.firstThisTurn) return@filter false
                     if (tapper == null) return@filter true
                     event.tappedById != null &&
                         matcher.matchesPlayer(tapper, event.tappedById, entry.controllerId)

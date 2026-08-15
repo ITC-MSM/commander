@@ -1,118 +1,114 @@
-# loop-msh-u32 — Red Guardian, Super-Soldier + active per-turn "dealt damage" predicate
+# loop-msh-u25 — Captain America, Living Legend + a per-permanent "first time tapped this turn" window
 
-Base branch: **`loop-msh-u23`** (not `main`). Stacked. Since u23 was itself rebased onto
-`origin/main`, `main` *is* now an ancestor, but the u23 commits below this branch are not upstream
-yet — this still waits for u23 to land before it can be opened on its own.
+Base branch: **`loop-msh-u32`** (not `main`). Stacked. Since u32 sits on u23, which was itself
+rebased onto `origin/main`, `main` *is* now an ancestor, but the u23 and u32 commits below this
+branch are not upstream yet — this still waits for those to land before it can be opened on its own.
 
 ## The primitive
 
-- **`StatePredicate.HasDealtDamage` grew a window parameter** — `data object` → `data class
-  HasDealtDamage(val thisTurnOnly: Boolean = false)`
-  (`mtg-sdk/.../scripting/predicates/StatePredicate.kt`). Default `false` keeps the existing
-  lifetime reading; `true` is the new "dealt damage **this turn**".
-- **`HasDealtDamageComponent` grew a turn stamp** — `data object` → `data class
-  HasDealtDamageComponent(val lastDealtDamageTurn: Int)`
-  (`rules-engine/.../state/components/battlefield/BattlefieldComponents.kt`). Presence answers the
-  lifetime window; `lastDealtDamageTurn == state.turnNumber` answers the per-turn one. No default on
-  the parameter, so no stamp site can forget to record the turn.
-- **Why one marker, not a parallel `DealtDamageThisTurnComponent`** (which is what the MSH triage note
-  proposed): a damage path physically cannot record one window without recording the other, which is
-  the u23 failure mode. It also needs no `CleanupPhaseManager` wiring — a stale stamp stops matching
-  on its own once the turn number moves.
-- **Shared read**: `rules-engine/.../handlers/predicates/HasDealtDamagePredicate.kt`, mirroring
-  u23's `ReceivedCounterThisTurnPredicate.kt`.
-- **Dispatch sites wired**: `PredicateEvaluator`, `AffectsFilterResolver`, `TriggerMatcher` and
-  `BeginningPhaseManager` — all four answer exactly, none falls open. The untap helper takes only a
-  container, but it doesn't need `state.turnNumber`: every caller runs during an untap step, the first
-  step of the turn (CR 500.1 / 501.1) with no priority (CR 500.3) and with `turnNumber` already
-  incremented, so the per-turn window is `false` for every permanent and the lifetime window is the
-  marker's presence.
-- **Naming-trap fix (deliberate, in scope)**: `ObjectFilter`/`TargetFilter.dealtDamageThisTurn()` used
-  to mean the **passive** `WasDealtDamageThisTurn`. It is renamed `.wasDealtDamageThisTurn()`, and the
-  active predicate takes the *new* name `.hasDealtDamageThisTurn()` — the short name is retired, not
-  reused, so an un-rebased branch still saying `.dealtDamageThisTurn()` fails to compile at the call
-  site instead of silently flipping to the opposite set of permanents. All 5 existing call sites
-  updated (Crushing Pain, Qutrub Forayer, Rooftop Assassin, Stingblade Assassin), plus the mtgish
-  emitter and its test.
-- **Not a bug fix after all**: `CombatDamageManager.applyDamageReflection` (Harsh Justice) now stamps
-  `HasDealtDamageComponent` too, but tracing the control flow shows its only caller,
-  `applyDamageToPlayer`, already stamped the same creature under the same guard on the way in — so the
-  line changes no current behaviour. Kept as a function-local invariant ("every path that emits a
-  `DamageDealtEvent` stamps its source"), with the comment saying so plainly.
+- **`EventPattern.TapEvent` grew `firstTimeEachTurn: Boolean = false`**
+  (`mtg-sdk/.../scripting/EventPattern.kt`) — the same axis name the four existing first-time events
+  already use (`LifeGainEvent`, `BecameSaddledEvent`, `CountersPlacedEvent`, `BecomesTargetEvent`).
+  Surfaced on `Triggers.becomesTapped(...)` and `Triggers.OneOrMoreBecomeTapped(...)`.
+- **`TappedEvent` grew `firstThisTurn: Boolean = true`** (`rules-engine/.../core/GameEvent.kt`),
+  mirroring `BecameSaddledEvent.firstThisTurn`.
+- **`HasBecomeTappedComponent(lastBecameTappedTurn: Int)`**
+  (`rules-engine/.../state/components/battlefield/BattlefieldComponents.kt`) — a turn *stamp*, not a
+  cleanup-cleared marker, following u32's `HasDealtDamageComponent` rather than u23's
+  `ReceivedCountersThisTurnComponent`: the window closes on its own when `turnNumber` moves, so there
+  is no `CleanupPhaseManager` entry to forget. Stripped on zone change (`ZoneMovementUtils`, CR 400.7).
+- **Computed in the `tap()` atom** (`rules-engine/.../core/TapHelpers.kt`), read before the stamp is
+  written. `isFirstTapThisTurn(state, entityId)` is the shared read, also used by the two
+  mana-payment sites that hand-build a `TappedEvent` for a `{T}, Sacrifice this` source.
+- **Match sites wired:** `TriggerMatcher` (per-event) and `TriggerDetector.detectTapBatchTriggers`
+  (batch — narrows the batch to its first-time taps, like `reason`/`tapper` already do).
+- **`ai/.../StateProgress.kt`**: `HasBecomeTappedComponent` added to `IGNORED_COMPONENTS`. A bare
+  tap now writes a component, which made Aphetto Alchemist's self-targeted `{T}: Untap target` read as
+  a new position and reopened the infinite-activation bug `LoopingActionAiTest` guards (3 of its 4
+  tests failed on the gate). It sits next to `TargetedByControllerThisTurnComponent`, Valiant's marker
+  — same shape, same reason. u23's/u32's markers do not need the entry: both are only ever written
+  alongside a real board change.
 
-## Damage paths verified (each stamps the marker with the current turn)
+Path enumeration is *mostly* closed by construction rather than by a list: `TapEventEnforcementTest`
+bans open-coded `with(TappedComponent)` outside its enters-tapped/cleanup allowlist, so tap
+transitions go through `tap()`. `git grep "TappedEvent("` finds exactly three production construction
+sites; all three are handled. One caveat remains, written down in the code rather than glossed:
 
-| Path | Where | Covered by |
-|---|---|---|
-| All noncombat damage (effect executors, fight, divided, per-entity, exile-from-top, combat continuation resumer) | `DamageUtils.dealDamageToTarget`, function-level below every recipient branch | test + code read |
-| Combat damage to a player | `CombatDamageManager.applyDamageToPlayer` | test |
-| Combat damage to a creature (incl. wither) | `CombatDamageManager.dealFinalDamage` creature branch | test |
-| Redirected combat damage to a player | `dealFinalDamage` player branch | code read only |
-| Combat damage to planeswalker / battle | `removeCountersForDamage` | test |
-| Combat damage reflection (Harsh Justice) | `applyDamageReflection` (redundant with the caller's stamp) | test |
+- **The guard is a text scan with two holes**, both currently benign: its regex misses
+  `components.add(TappedComponent)` (the token executors), and it scans only
+  `rules-engine/src/main/kotlin`, so `game-server`'s scenario builder is out of range. Every current
+  hit of both kinds is a legitimate enters-tapped site.
 
-Enumeration method: every `DamageDealtEvent(` emission site and every `with(DamageComponent(` site in
-non-test source. There are exactly two damage implementations — `DamageUtils.dealDamageToTarget` and
-`CombatDamageManager` — so the set is closed.
+**Regeneration's tap is now routed through `tap()`** (`ZoneMovementUtils.applyRegenerationReplacement`).
+CR 701.19a makes it a real tap ("…remove all damage marked on it and *its controller taps it*"), so it
+emits a `TappedEvent` and stamps the window like any other tap. That fixes both directions at once: the
+trigger now fires on a regeneration tap (Captain America; and Deeproot Pilgrimage, which had silently
+missed it since before this unit), and the stamp closes the stale window that handed out a second
+"first tap" later in the same turn. `MoveCollectionExecutor` was dropping the returned events on the
+floor and now folds them in. Covered by `RegenerationTapEventTest` plus one end-to-end case in
+`CaptainAmericaLivingLegendScenarioTest`.
 
 ## The card
 
-`Red Guardian, Super-Soldier` (MSH #34, {2}{W} 2/2 Legendary Human Soldier Villain, Flash). ETB
-destroys target creature an opponent controls that dealt damage this turn. Uses
-`TargetFilter.Creature.hasDealtDamageThisTurn().opponentControls()` + `Effects.Destroy(t)` — no
-card-specific engine code. MSH is the only printing, so canonical placement is here.
+`Captain America, Living Legend` (MSH #210, {1}{W}{U} 3/4 Legendary Human Soldier Hero, vigilance).
+`Triggers.becomesTapped(binding = ANY, filter = Creature.youControl(), firstTimeEachTurn = true)` +
+`triggerCondition = Conditions.IsYourTurn` + `Effects.Untap(EffectTarget.TriggeringEntity)`. No
+card-specific engine code. MSH is the earliest real printing, so canonical placement is here.
+
+## Why not `oncePerTurn`
+
+`oncePerTurn` caps the **ability** at one firing per turn; this card's clause names the **creature**.
+With three creatures tapped in a turn, `oncePerTurn` untaps one and `firstTimeEachTurn` untaps three.
+The two are orthogonal and composable; `FirstTimeTappedThisTurnScenarioTest` runs them head-to-head on
+the same board.
 
 ## Tests
 
-- `rules-engine/.../predicates/HasDealtDamagePredicateTest.kt` — the primitive: window logic against
-  the shared helper (no marker / this-turn marker / earlier-turn marker / passive marker), plus the
-  recording paths played out in real games (combat→player, combat→creature, combat→planeswalker
-  loyalty, a Harsh Justice reflection, activated-ability noncombat, spell damage stamps nobody, turn
-  boundary, zone change clears).
-- `rules-engine/.../scenarios/RedGuardianSuperSoldierScenarioTest.kt` — the card: happy path, the
-  passive-vs-active discrimination (Shocked creature is *not* a target), the per-turn-vs-lifetime
-  discrimination (dealt damage last turn is *not* a target), the controller half, and noncombat damage.
-  Each negative case asserts the *decision*: the stack drained with no target choice ever offered
-  (CR 603.3d). Survival alone can't fail — `resolveStack()` halts on a pending decision, so a
-  wrongly-matching predicate would leave the victim alive with the trigger still waiting.
-- `AffectsFilterResolverStatePredicateTest` — projection dispatch, both windows.
-- `TargetRecoveryTest` — emitter renders both voices.
+- `rules-engine/.../scenarios/FirstTimeTappedThisTurnScenarioTest.kt` — the primitive: two creatures
+  each firing, the `oncePerTurn` contrast, tap→untap→re-tap in one turn, the turn boundary, a creature
+  that *entered* tapped, the zone change (the stamp is stripped **and** the replayed object's window
+  reopens — it is tapped again in the same turn and fires again), five tapping paths (attack declaration, `Effects.Tap`,
+  crew, teamwork cost, a spell's mana payment), both batch directions, description rendering and
+  serialization round-trip. Trigger firing is asserted as a **library** delta (the payoff draws), and
+  every negative case first asserts the tap really happened with `firstThisTurn == false` — so no test
+  can pass by nothing having been tapped.
+- `rules-engine/.../scenarios/CaptainAmericaLivingLegendScenarioTest.kt` — the card: both directions of
+  all three riders, plus vigilance, self-untap, and an attacker untapping without leaving combat. The
+  vigilance case asserts on the **event** (`declareAttackers` emits no `TappedEvent` for him), because
+  asserting "he ends up untapped" passes with vigilance removed — his own trigger would untap him.
+- `ai/.../StateProgressTest.kt` — one case pinning the `IGNORED_COMPONENTS` entry in the file that
+  documents the exclusions, alongside `LoopingActionAiTest`'s behavioural coverage.
 
 ## Gate
 
-> **Invalidated by a rebase.** The result below was measured against the *old*, pre-squash
-> `loop-msh-u23` tip (`3632d6b2ce`), on a much older `origin/main`. This branch has since been
-> replayed onto the squashed u23 (`8e3c8bdfd5`), which carries ~15.8k changed files from upstream
-> — including the per-era `mtg-sets/` split that moved this card to `mtg-sets/2026/`. **Nothing
-> below has been re-run on the new base.** Re-gate before reporting green.
-
-`just test` — **passed** (`BUILD SUCCESSFUL`, zero failures). `:rules-engine:test` ran in full on the
-final pass; other modules were `UP-TO-DATE` from earlier green runs. `just rebless-cards` moved only
-`MSH.json` (+63/-0, the new card only). `just coverage-fixtures --rebless` moved two golden lines, both
-the passive rename. `just check-card-printing` clean. `just fix-backlog` → 255 / 276.
-
-Took three gate runs: a stale Kotlin daemon holding this worktree's cache, then the expected MSH
-snapshot golden, then four failures in my own new tests — all harness misuse (blocker step not
-advanced, a cross-turn test decking a player on an empty library, priority not handed back after the
-opponent acted), none an engine bug.
+`just test` — **passed**, zero failures. `just rebless-cards` moved only `MSH.json` (+45/−0, my card
+only). `just check-card-printing` clean. `just fix-backlog` → 256 / 276. Three runs: a Kotlin-daemon
+OOM (environmental, fixed by `./gradlew --stop` on idle daemons), then the snapshot golden + the
+`LoopingActionAiTest` regression above, then one bug in my own turn-boundary test (a
+`passUntilPhase(PRECOMBAT_MAIN)` issued while already in precombat main returns instantly, so it never
+crossed a turn). `ConniveTargetingTest` timed out on run 2 and passed on run 3 — untouched by this
+change, documented as flaky under load.
 
 ## Things I'm unsure about / did not verify
 
-- Redirected combat damage to a player (Glarecaster-style) is verified by reading the code, **not** by
-  a test. Planeswalker damage and the reflection path now have tests.
-- The active mtgish IR tag `DealtDamageThisTurn` is a **guess**. The local corpus
-  (`mtgish-tooling/data/mtgish.lines.json`) is a truncated 1 MiB sample predating MSH and contains only
-  passive spellings, so nothing confirms mtgish emits the bare tag for the active voice. Fail-safe in
-  both directions — if the guess is wrong the render branch simply never fires — but it is unverified.
-- `HasDealtDamageComponent(lastDealtDamageTurn)` has **no default**, on purpose: every stamp site must
-  name the turn. The cost is that a live game persisted before this change (Redis, `PersistentGameSession`)
-  fails to decode on restore with a `MissingFieldException`. TTL'd live state, no migration layer in the
-  repo — flagged rather than defaulted, because `= 0` would let a future stamp site silently record
-  "never, this turn".
-- No manual playthrough in the web client, no UX pass from both seats, no e2e. A playtest scenario JSON
-  is shipped at `manual-scenarios/sets/msh/loop-msh-u32-red-guardian.json` but nobody has run it.
-- I widened five mtgish emitter "can't render alongside" lists from `"WasDealtDamageThisTurn"` to
-  `"DealtDamageThisTurn"` (a substring, so it catches both voices). This only ever declines *more*,
-  never less, but it is a behaviour change to the generator's shortcut branches.
-- The `TriggerMatcher` dispatch site is exercised by no test: no card uses the predicate as a trigger
-  filter yet, so the first card that does will be its first coverage.
+- **No mtgish bridge/emitter entry — a verified negative, not an unchecked one.** The corpus that
+  *is* in the worktree is `mtgish-tooling/src/test/resources/fixtures/*.json` (set-scoped IR samples).
+  Grepped: it carries first-time tags for other events —
+  `WhenACreatureAttacksForTheFirstTimeEachTurn`,
+  `WhenAPlayerAttacksWithAnyNumberOfGroupCreaturesForTheFirstTimeEachTurn`,
+  `WhenAPlayerGainsLifeForTheFirstTimeEachTurn` — and in the tapped family only
+  `WhenAPermanentBecomesTapped` and `WhenAPermanentIsTappedForMana`, with **no first-time variant**.
+  So there is nothing to map: the existing `WhenAPermanentBecomesTapped` capability covers the shape
+  the emitter renders (SELF `Triggers.BecomesTapped`), which is unchanged, and inventing a tag name
+  would be a fabricated capability claim. (The earlier note here said the corpus was absent; it named
+  a path that doesn't exist rather than checking the fixtures.)
+- `TappedEvent.firstThisTurn` defaults to **`true`** (matching `BecameSaddledEvent`). Every production
+  site passes it explicitly, so the default only affects hand-constructed events and legacy decodes;
+  a `false` default would silently under-fire instead. Arguable either way.
+- `HasBecomeTappedComponent` has no default on its parameter, on purpose — so a live game state
+  persisted before this change fails to decode on restore, exactly as u32's `HasDealtDamageComponent`
+  does. TTL'd live state, no migration layer in the repo.
+- No manual playthrough in the web client, no UX pass from both seats, no e2e. The playtest scenario
+  `manual-scenarios/sets/msh/loop-msh-u25-captain-america-living-legend.json` is shipped but unrun.
+- The `firstTimeEachTurn` axis is exposed on `OneOrMoreBecomeTapped` for symmetry with `reason`; no
+  printed card uses that combination yet, so its only coverage is the two batch tests here.

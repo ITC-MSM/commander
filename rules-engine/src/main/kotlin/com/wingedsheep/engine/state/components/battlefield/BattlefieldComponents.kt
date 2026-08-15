@@ -1204,6 +1204,34 @@ data object WasDealtDamageThisTurnComponent : Component
 data class HasDealtDamageComponent(val lastDealtDamageTurn: Int) : Component
 
 /**
+ * Records the turn a permanent most recently *became tapped* (CR 701.26a — a transition from
+ * untapped to tapped, which is what emits a `TappedEvent`).
+ *
+ * Read by [com.wingedsheep.engine.core.tap] immediately *before* it stamps the new turn, to compute
+ * `TappedEvent.firstThisTurn` for the per-permanent "if it's the first time that creature has become
+ * tapped this turn" trigger rider (`EventPattern.TapEvent.firstTimeEachTurn`, Captain America,
+ * Living Legend).
+ *
+ * Deliberately a turn *stamp*, not a cleared marker: the window expires on its own once
+ * [com.wingedsheep.engine.state.GameState.turnNumber] moves past the stamp, so there is no
+ * `CleanupPhaseManager` entry to forget (the same reasoning as [HasDealtDamageComponent]). It IS
+ * stripped when the permanent changes zones (`ZoneMovementUtils`), because what comes back is a new
+ * object with no memory of having been tapped (CR 400.7).
+ *
+ * A permanent that *enters the battlefield tapped* never became tapped, so it is never stamped here
+ * — tapping it later that turn is correctly still its first time.
+ *
+ * Regeneration's tap (CR 701.19a — "its controller taps it") stamps here like any other tap:
+ * `ZoneMovementUtils.applyRegenerationReplacement` routes through [com.wingedsheep.engine.core.tap],
+ * so a creature regenerated while untapped is stamped and a later tap that turn correctly reads as
+ * *not* its first.
+ *
+ * [lastBecameTappedTurn] has no default: every stamp site must name the turn it is recording.
+ */
+@Serializable
+data class HasBecomeTappedComponent(val lastBecameTappedTurn: Int) : Component
+
+/**
  * Marks a permanent as having dealt combat damage to a player since entering the battlefield.
  * NOT cleared at end of turn — persists for the permanent's lifetime on the battlefield.
  * Used for StatePredicate.HasDealtCombatDamageToPlayer and SourceHasDealtCombatDamageToPlayer condition.

@@ -1572,13 +1572,23 @@ object Triggers {
      * [reason] restricts *why* the permanent became tapped — null (the default) is the
      * cause-agnostic wording, [TapReason.TEAMWORK] the "to pay a teamwork cost" one. Use
      * [BecomesTappedForTeamwork] for the SELF teamwork shape.
+     *
+     * [firstTimeEachTurn] restricts to the first time *that permanent* became tapped this turn
+     * ("if it's the first time that creature has become tapped this turn" — Captain America, Living
+     * Legend). Per-permanent, so with `TriggerBinding.ANY` it fires once for each creature's first
+     * tap; the per-*ability* cap is `oncePerTurn` on the triggered ability instead, and the two mean
+     * different things. See [TapEvent.firstTimeEachTurn].
      */
     fun becomesTapped(
         binding: TriggerBinding = TriggerBinding.SELF,
         filter: GameObjectFilter? = null,
-        reason: TapReason? = null
+        reason: TapReason? = null,
+        firstTimeEachTurn: Boolean = false
     ): TriggerSpec =
-        TriggerSpec(event = TapEvent(filter, reason = reason), binding = binding)
+        TriggerSpec(
+            event = TapEvent(filter, reason = reason, firstTimeEachTurn = firstTimeEachTurn),
+            binding = binding
+        )
 
     /**
      * Generic "becomes untapped" factory — use [BecomesUntapped] for SELF; reach for this factory
@@ -1602,12 +1612,28 @@ object Triggers {
      * (the default) is the cause-agnostic wording. A batch mixing causes is *narrowed* to the taps
      * matching [reason] rather than discarded, the same way [YouTap]'s batch narrows by tapper, so
      * the trigger still fires once on the matching subset.
+     *
+     * [firstTimeEachTurn] narrows the batch the same way, to the permanents this was the first tap
+     * of this turn — "whenever one or more … become tapped for the first time this turn". **That
+     * semantics is chosen by analogy with [reason]/`tapper` and is unconfirmed by a printed card:**
+     * no card combines the batch wording with a first-time clause, and the other reading ("fire only
+     * on the first tap *batch* this turn") is not obviously wrong. Check the first real card against
+     * both readings rather than assuming this one.
      */
     fun OneOrMoreBecomeTapped(
         filter: GameObjectFilter,
         reason: TapReason? = null,
+        firstTimeEachTurn: Boolean = false,
     ): TriggerSpec =
-        TriggerSpec(event = TapEvent(filter = filter, batch = true, reason = reason), binding = TriggerBinding.ANY)
+        TriggerSpec(
+            event = TapEvent(
+                filter = filter,
+                batch = true,
+                reason = reason,
+                firstTimeEachTurn = firstTimeEachTurn
+            ),
+            binding = TriggerBinding.ANY
+        )
 
     /**
      * Whenever **you tap** an untapped permanent matching [filter] — the active wording of the

@@ -1590,7 +1590,26 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
          * classified, so its meaning would quietly shrink the day a new cause is named, and it
          * renders as no clause at all in [description]. No printed card wants it.
          */
-        val reason: TapReason? = null
+        val reason: TapReason? = null,
+        /**
+         * Restrict to the **first time each permanent became tapped this turn** — the per-permanent
+         * "if it's the first time that creature has become tapped this turn" rider (Captain America,
+         * Living Legend).
+         *
+         * Per-*permanent*, not per-*ability*: with several creatures tapping in the same turn the
+         * trigger fires once for each of them, and a creature that untaps and taps again that turn
+         * fires it no second time. That is exactly what `oncePerTurn` on the ability cannot express —
+         * `oncePerTurn` caps the *ability* at one firing per turn, so it would answer only the first
+         * creature. The two are composable and mean different things; reach for this one whenever the
+         * printed "first time" clause names the object rather than the ability.
+         *
+         * The window is a *becomes tapped* window, not a *was tapped* one: a permanent that **entered
+         * the battlefield tapped** never became tapped (CR 701.26a — only untapped permanents can be
+         * tapped), so tapping it later that turn is still its first time. Batch triggers narrow to the
+         * first-time taps in the batch rather than being discarded, the same way [reason] and [tapper]
+         * narrow.
+         */
+        val firstTimeEachTurn: Boolean = false
     ) : EventPattern {
         override val description: String = buildString {
             if (tapper != null) {
@@ -1606,6 +1625,7 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
                 append(" ")
                 append(reason.description)
             }
+            if (firstTimeEachTurn) append(" for the first time each turn")
         }
         override fun applyTextReplacement(replacer: TextReplacer): EventPattern {
             val newFilter = filter?.applyTextReplacement(replacer)

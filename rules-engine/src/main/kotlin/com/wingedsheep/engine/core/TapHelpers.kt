@@ -2,6 +2,7 @@ package com.wingedsheep.engine.core
 
 import com.wingedsheep.engine.mechanics.layers.ProjectedState
 import com.wingedsheep.engine.state.GameState
+import com.wingedsheep.engine.state.components.battlefield.HasBecomeTappedComponent
 import com.wingedsheep.engine.state.components.battlefield.CountersComponent
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
@@ -36,9 +37,11 @@ import com.wingedsheep.sdk.scripting.TapReason
  * ```
  *
  * **Not for permanents entering tapped.** A permanent that *enters the battlefield
- * tapped* (taplands, tokens created tapped, phased-in-tapped, sneak/regeneration) is
+ * tapped* (taplands, tokens created tapped, phased-in-tapped, sneak) is
  * not transitioning from untapped to tapped, so those sites set [TappedComponent]
  * directly and emit no event — they are the allowlist in `TapEventEnforcementTest`.
+ * Regeneration is *not* one of these: it genuinely taps (CR 701.19a) and so calls
+ * this atom like any other tap.
  *
  * **Attribution.** [TappedEvent.tappedById] records *who tapped it*, which the "whenever you tap a
  * creature an opponent controls" trigger family reads. It defaults to the permanent's own
@@ -67,6 +70,20 @@ import com.wingedsheep.sdk.scripting.TapReason
  * classified one, because a card reading that cause would then fire wrongly. Only the teamwork
  * additional-cost payment classifies itself today; see [TapReason] for how to add the next cause.
  *
+ * **First time each turn.** [TappedEvent.firstThisTurn] records whether this was the first time the
+ * permanent became tapped this turn, which the per-permanent "if it's the first time that creature
+ * has become tapped this turn" rider reads
+ * ([com.wingedsheep.sdk.scripting.EventPattern.TapEvent.firstTimeEachTurn], Captain America, Living
+ * Legend). Computing it here covers every tap path that goes through this atom — attack declaration,
+ * convoke/crew/teamwork and other cost payments, `Effects.Tap`, mana abilities and mana payment,
+ * continuation resumers, and regeneration — with no per-site threading to forget, and
+ * `TapEventEnforcementTest` keeps new bypasses from being added by banning open-coded
+ * `with(TappedComponent)` outside its allowlist.
+ *
+ * Every remaining allowlisted site is a permanent entering the battlefield tapped or
+ * leave-the-battlefield cleanup, neither of which is a transition — so the allowlist no longer
+ * grandfathers any real tap.
+ *
  * @param tappedById the player causing the tap; null (the default) attributes it to the permanent's
  *   controller.
  * @param reason why the permanent is becoming tapped; [TapReason.UNSPECIFIED] (the default) leaves
@@ -88,8 +105,29 @@ fun tap(
     val tapper = tappedById
         ?: state.projectedState.getController(entityId)
         ?: container.get<ControllerComponent>()?.playerId
-    val newState = state.updateEntity(entityId) { it.with(TappedComponent) }
-    return newState to TappedEvent(entityId, cardName, tapper, reason)
+    // Read the "first time this turn" answer *before* stamping this tap onto the marker.
+    val firstThisTurn = isFirstTapThisTurn(state, entityId)
+    val newState = state.updateEntity(entityId) {
+        it.with(TappedComponent).with(HasBecomeTappedComponent(state.turnNumber))
+    }
+    return newState to TappedEvent(entityId, cardName, tapper, reason, firstThisTurn)
+}
+
+/**
+ * Whether a tap of [entityId] happening now would be the **first time it became tapped this turn** —
+ * i.e. it carries no [HasBecomeTappedComponent] stamp from the current turn.
+ *
+ * The read half of the per-permanent first-time-tapped window, the analogue of
+ * `DamageUtils.isFirstCounterThisTurn`. [tap] calls it before stamping; the two mana-payment sites
+ * that emit a [TappedEvent] for a `{T}, Sacrifice this` source (a Treasure) without ever setting
+ * [TappedComponent] — the permanent leaves the battlefield instead — call it directly, so their
+ * events carry the same honestly-computed flag rather than a hopeful default.
+ *
+ * True for an unknown entity: nothing has recorded a tap for it this turn.
+ */
+fun isFirstTapThisTurn(state: GameState, entityId: EntityId): Boolean {
+    val stamp = state.getEntity(entityId)?.get<HasBecomeTappedComponent>() ?: return true
+    return stamp.lastBecameTappedTurn != state.turnNumber
 }
 
 /**

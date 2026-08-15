@@ -3,6 +3,7 @@ package com.wingedsheep.engine.handlers.effects
 import com.wingedsheep.engine.core.CountersAddedEvent
 import com.wingedsheep.engine.core.EffectResult
 import com.wingedsheep.engine.core.consumeShieldCounter
+import com.wingedsheep.engine.core.tap
 import com.wingedsheep.engine.core.ZoneChangeEvent
 import com.wingedsheep.engine.core.PermanentsSacrificedEvent
 import com.wingedsheep.engine.core.GameEvent as EngineGameEvent
@@ -20,6 +21,7 @@ import com.wingedsheep.engine.state.components.battlefield.CountersComponent
 import com.wingedsheep.engine.state.components.battlefield.DamageComponent
 import com.wingedsheep.engine.state.components.battlefield.DamageDealtToCreaturesThisTurnComponent
 import com.wingedsheep.engine.state.components.battlefield.HasDealtCombatDamageToPlayerComponent
+import com.wingedsheep.engine.state.components.battlefield.HasBecomeTappedComponent
 import com.wingedsheep.engine.state.components.battlefield.HasDealtDamageComponent
 import com.wingedsheep.engine.state.components.battlefield.WasDealtDamageThisTurnComponent
 import com.wingedsheep.engine.state.components.battlefield.EnteredThisTurnComponent
@@ -464,6 +466,9 @@ object ZoneMovementUtils {
             .without<DamageDealtToCreaturesThisTurnComponent>()
             .without<WasDealtDamageThisTurnComponent>()
             .without<HasDealtDamageComponent>()
+            // A permanent that leaves and returns is a new object (CR 400.7) that has never become
+            // tapped, so its "first time tapped this turn" window starts over.
+            .without<HasBecomeTappedComponent>()
             .without<HasDealtCombatDamageToPlayerComponent>()
             .without<CountersComponent>()
             // A battle's protector is a designation on the battlefield object (CR 310.8); the
@@ -968,9 +973,13 @@ object ZoneMovementUtils {
      * Apply regeneration replacement effect: tap the creature, remove all damage,
      * and remove it from combat. The creature stays on the battlefield.
      *
+     * The tap runs through [com.wingedsheep.engine.core.tap], so callers must fold the returned
+     * events into their own result or "becomes tapped" triggers silently go missing.
+     *
      * @param state The current game state (shield already consumed)
      * @param entityId The entity being regenerated
-     * @return ExecutionResult with the regenerated creature still on the battlefield
+     * @return ExecutionResult with the regenerated creature still on the battlefield, carrying the
+     *   [com.wingedsheep.engine.core.TappedEvent] when the creature was untapped
      */
     fun applyRegenerationReplacement(state: GameState, entityId: EntityId): EffectResult {
         val entity = state.getEntity(entityId)
@@ -979,10 +988,23 @@ object ZoneMovementUtils {
         val isAttacking = entity.has<AttackingComponent>()
         val isBlocking = entity.has<BlockingComponent>()
 
-        // Tap, remove damage, and strip combat components from the regenerated creature
-        var newState = state.updateEntity(entityId) { c ->
-            c.with(TappedComponent)
-                .without<DamageComponent>()
+        // CR 701.19a: "…instead remove all damage marked on it and its controller taps it. If it's
+        // an attacking or blocking creature, remove it from combat." The tap is a real tap
+        // transition, so it goes through the `tap()` atom rather than being open-coded: that emits
+        // the [TappedEvent] "becomes tapped" triggers read (Captain America, Living Legend;
+        // Deeproot Pilgrimage) and writes the `HasBecomeTappedComponent` turn stamp, so a later tap
+        // that turn is correctly *not* the creature's first. `tap()` attributes the tap to the
+        // permanent's controller by default, which is what "its controller taps it" asks for.
+        //
+        // Regenerating an *already tapped* creature is not a transition — CR 701.26a, only untapped
+        // permanents can be tapped — so `tap()` no-ops and emits nothing. The rest of the
+        // replacement (damage removal, combat removal) still applies, which is why the tap is taken
+        // separately from the component strip below rather than folded into it.
+        val (tappedState, tappedEvent) = tap(state, entityId)
+
+        // Remove damage and strip combat components from the regenerated creature
+        var newState = tappedState.updateEntity(entityId) { c ->
+            c.without<DamageComponent>()
                 .without<AttackingComponent>()
                 .without<BlockingComponent>()
                 .without<BlockedComponent>()
@@ -1024,7 +1046,7 @@ object ZoneMovementUtils {
             }
         }
 
-        return EffectResult.success(newState)
+        return EffectResult.success(newState, listOfNotNull(tappedEvent))
     }
 
     /**

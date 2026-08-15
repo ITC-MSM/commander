@@ -521,7 +521,8 @@ expressible today via `ReflexiveTriggerEffect` over `Effects.ChooseAction` with 
 `EventPattern.TapEvent` carries only `filter`, `batch`, `tapper`, and no per-entity tap history exists.
 The `firstTimeEachTurn` gate exists on `LifeGainEvent`, `BecameSaddledEvent`, `CountersPlacedEvent` and
 `BecomesTargetEvent`, each backed by an event-specific `firstThisTurn` flag computed in
-`TriggerMatcher`. Needed: a `BecameTappedThisTurnComponent` (cleared in `CleanupPhaseManager`), a
+`TriggerMatcher`. Needed: a `HasBecomeTappedComponent` (a turn stamp, so nothing to clear in
+`CleanupPhaseManager` — this is what shipped), a
 `firstThisTurn` field on `TappedEvent`, a `firstTimeEachTurn` field on `TapEvent`, and the matching
 `TriggerMatcher` branch. The "during your turn" half is already `Conditions.IsYourTurn`.
 
