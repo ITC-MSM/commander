@@ -165,6 +165,25 @@ arena-budget-scaling GAMES="300" SET="BLB" SEED="20260727":
 clean:
     ./gradlew clean
 
+# Skips the current worktree, anything whose sources changed within DAYS, anything a running
+# java/gradle process references, and refuses to run at all while a gradle-locked slot is held.
+#   just prune-worktrees                 # what would go, 7-day threshold
+#   just prune-worktrees 14 --apply      # delete it
+# Reclaim disk from build/ + .gradle/ in stale worktrees (DRY RUN unless --apply)
+[group: 'env']
+prune-worktrees DAYS="7" *ARGS:
+    scripts/prune-worktree-builds.sh --days {{DAYS}} {{ARGS}}
+
+# `org.gradle.daemon.idletimeout` covers only the Gradle daemon; the Kotlin compile daemon is a
+# separate 6g JVM that outlives it, and a handful of hours-old idle ones is what pushes the box
+# into swap and makes the next compile OOM. Never touches kotlin-lsp.
+#   just kill-daemons                    # what would be reaped, 60-minute threshold
+#   just kill-daemons 30 --apply         # kill anything idle for 30m+
+# Reap idle Kotlin/Gradle compile daemons (DRY RUN unless --apply)
+[group: 'env']
+kill-daemons MIN_AGE="60" *ARGS:
+    scripts/kill-stale-daemons.sh --min-age {{MIN_AGE}} {{ARGS}}
+
 # Format and check code
 [group: 'build']
 check:

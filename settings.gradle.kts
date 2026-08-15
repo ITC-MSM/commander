@@ -22,11 +22,18 @@ plugins {
 // recompiles and retests everything from cold. When GRADLE_BUILD_CACHE_DIR is set (see .github/workflows/ci.yml),
 // we point the build cache at a workspace path that ci.yml caches with a prefix-matched actions/cache key,
 // giving real cross-commit reuse. Unset locally, so developer builds keep the default Gradle user-home cache.
-System.getenv("GRADLE_BUILD_CACHE_DIR")?.let { cacheDir ->
-    buildCache {
-        local {
+//
+// `removeUnusedEntriesAfterDays` is set unconditionally: Gradle's default retention let the local
+// cache grow to 19 GB in ~/.gradle/caches/build-cache-1 on a developer box, because every worktree's
+// build writes into the same shared cache and nothing ever expired entries for branches that are long
+// merged. A week is comfortably longer than the useful life of an entry here — the sets that actually
+// get rebuilt daily are re-seeded on every build.
+buildCache {
+    local {
+        System.getenv("GRADLE_BUILD_CACHE_DIR")?.let { cacheDir ->
             directory = java.io.File(cacheDir)
         }
+        removeUnusedEntriesAfterDays = 7
     }
 }
 
