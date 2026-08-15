@@ -70,6 +70,7 @@ enum class CounterType {
     NEST,
     PAGE,
     REV,
+    BLOODSTAIN,
     SOUL,
     DIVINITY,
     DOOM,
@@ -300,6 +301,14 @@ object Counters {
      * the count to scale the equipped creature's power bonus (+X/+0). No inherent rule.
      */
     const val REV = "rev"
+
+    /**
+     * Bloodstain counter (MKM — Blood Spatter Analysis). Passive storage counter with no inherent
+     * rule; the enchantment's own "whenever one or more creatures die" trigger accumulates one and
+     * the same trigger reads the count to decide whether to sacrifice itself at five or more. No
+     * inherent rule.
+     */
+    const val BLOODSTAIN = "bloodstain"
 
     /**
      * Soul counter (FDN — Ravenous Amulet). Passive storage counter with no inherent rule; the

@@ -9759,6 +9759,12 @@ substitution.
   `rev` (`Counters.REV`): DSK — Chainsaw, whose "whenever one or more creatures die" batched trigger accumulates one
   per death batch and whose `+X/+0` static reads the count via `DynamicAmounts.countersOnSelf(...)` applied to the
   equipped creature — another pure passive counter with no inherent rule.
+  `bloodstain` (`Counters.BLOODSTAIN`): MKM — Blood Spatter Analysis, whose "whenever one or more creatures die"
+  batched trigger accumulates one per death batch and then, *in the same resolution*, tests
+  `Conditions.SourceCounterCountAtLeast(Counters.BLOODSTAIN, 5)` to decide whether to sacrifice itself. The threshold
+  deliberately lives inside the trigger rather than in a state trigger/SBA: per the card's ruling, a fifth counter
+  arriving by any other route (proliferate, a doubler) does *not* sacrifice it — another pure passive counter with no
+  inherent rule.
   `soul` (`Counters.SOUL`): FDN — Ravenous Amulet, whose `{1},{T}, sacrifice a creature: draw` ability accumulates
   one per activation and whose `{4},{T}, sacrifice this: each opponent loses life` ability reads the count via
   `DynamicAmounts.countersOnSelf(CounterTypeFilter.Named(Counters.SOUL))` — another pure passive counter with no
