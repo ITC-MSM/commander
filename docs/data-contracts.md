@@ -525,6 +525,39 @@ shape + builder via `ScenarioBuilderService` / `ScenarioSessionFactory`).
   `aiPlayer` for back-compat.
 - Validation rejects unknown card names and (production) enforces per-zone + total card caps,
   returning `400` with `{ "errors": ["Unknown card: …", …] }`.
+- `customCards` (optional) is a list of **Scryfall(-style) card objects, as JSON strings**. Argentum
+  Assay compiles each into a real `CardDefinition` and registers it in a `CardRegistry` overlay for
+  that session only, so its name can be used in any zone like a corpus card. Requires
+  `game.dev-endpoints.enabled`; a card any of whose printed lines Assay cannot read is refused with
+  the line that stopped it. The sources travel with the scenario (JSON, file, share link) — without
+  them the names do not resolve and the request fails with `Unknown card`.
+
+**Dev-only: `POST /api/dev/scenarios/assay`** (`AssayCompileRequest` → `AssayCompileResponse`) —
+compile one pasted card without starting a game. Always `200`; a card that does not compile is the
+answer, not an error.
+
+```json
+// request
+{ "json": "{\"name\":\"Argentum Sentinel\",\"mana_cost\":\"{2}{W}\", …}" }
+
+// response
+{
+  "cardName": "Argentum Sentinel",
+  "compiled": true,
+  "lines": [
+    { "index": 0, "text": "Flying, vigilance", "verdict": "ROUND_TRIP" },
+    { "index": 1, "text": "When ~ enters, draw a card.", "verdict": "ROUND_TRIP" }
+  ],
+  "declines": [],
+  "warnings": [],
+  "definition": { "name": "Argentum Sentinel", "…": "the compiled CardDefinition" }
+}
+```
+
+`verdict` is the touchstone's own vocabulary (`ROUND_TRIP` | `VARIANT` | `DECLINED` | `AMBIGUOUS` |
+`MISMATCH`); `printed` carries the canonical spelling of a `VARIANT`, and `explanation` carries
+`assay explain`'s caret for a line that declined. Lines are shown normalized, where `~` is the
+card's own name.
 
 **Response** (`ScenarioResponse`)
 

@@ -18,10 +18,12 @@ import { CardBrowser, useCardCatalog, type CardDragPayload } from '@/components/
 import type { CardSummary } from '@/components/deckbuilder/cardFilter'
 import { CardEditorModal } from './CardEditorModal'
 import { ScenarioBoard, type BoardTarget } from './ScenarioBoard'
+import { CustomCardPanel } from './CustomCardPanel'
 import {
   MODE_HINT,
   PHASES,
   addCardToZone,
+  addCustomCard,
   clearSeat,
   emptyBuilderState,
   emptySeat,
@@ -29,10 +31,12 @@ import {
   moveCard,
   placedCounts,
   removeCardAt,
+  removeCustomCard,
   toSpec,
   updateBattlefieldCard,
   type BuilderSeat,
   type BuilderState,
+  type CustomCard,
 } from './builderState'
 import { useUndoable } from './builderHistory'
 import {
@@ -78,6 +82,7 @@ export function ScenarioBuilderPage() {
 
   const [jsonText, setJsonText] = useState('')
   const [jsonOpen, setJsonOpen] = useState(false)
+  const [customOpen, setCustomOpen] = useState(false)
   const [status, setStatus] = useState<string | null>(null)
   const [errors, setErrors] = useState<string[]>([])
   const [starting, setStarting] = useState(false)
@@ -111,6 +116,22 @@ export function ScenarioBuilderPage() {
       )
     },
     [addCard, copies, target.zone, targetSeat],
+  )
+
+  const handleAddCustomCard = useCallback(
+    (card: CustomCard) => {
+      commit((prev) => addCustomCard(prev, card))
+      setStatus(`${card.name} compiled — add it to a zone from the custom cards panel.`)
+    },
+    [commit],
+  )
+
+  const handleRemoveCustomCard = useCallback(
+    (name: string) => {
+      commit((prev) => removeCustomCard(prev, name))
+      setStatus(`${name} removed from the scenario.`)
+    },
+    [commit],
   )
 
   /** Shift/right-click in the browser grid removes the most recent copy of that card. */
@@ -650,6 +671,14 @@ export function ScenarioBuilderPage() {
               + Seat
             </button>
             <div className={styles.spacer} />
+            <button
+              type="button"
+              className={styles.ghostBtn}
+              onClick={() => setCustomOpen((o) => !o)}
+              title="Paste a Scryfall card and have Assay compile it for this scenario"
+            >
+              {customOpen ? 'Hide custom cards' : `Custom cards${state.customCards.length ? ` (${state.customCards.length})` : ''}`}
+            </button>
             <button type="button" className={styles.ghostBtn} onClick={() => setJsonOpen((o) => !o)}>
               {jsonOpen ? 'Hide JSON' : 'Edit as JSON'}
             </button>
@@ -684,6 +713,22 @@ export function ScenarioBuilderPage() {
             onClearSeat={handleClearSeat}
             onRemoveSeat={handleRemoveSeat}
           />
+
+          {customOpen && (
+            <CustomCardPanel
+              cards={state.customCards}
+              onAdd={handleAddCustomCard}
+              onRemove={handleRemoveCustomCard}
+              onPlace={(name) => {
+                if (!targetSeat) return
+                addCard(name, targetSeat.id, target.zone, copies)
+                setStatus(
+                  `${copies > 1 ? `${copies}× ` : ''}${name} → ${targetSeat.name}’s ${ZONE_LABEL[target.zone].toLowerCase()}.`,
+                )
+              }}
+              placeHint={`${targetSeat?.name ?? 'seat'}’s ${ZONE_LABEL[target.zone].toLowerCase()}`}
+            />
+          )}
 
           {jsonOpen && (
             <div className={styles.jsonDrawer}>

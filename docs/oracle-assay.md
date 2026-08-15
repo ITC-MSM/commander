@@ -314,7 +314,8 @@ oracle-assay/            // deps: mtg-sdk only (no engine, no server)
     Keywords.kt   Triggers.kt Costs.kt    Statics.kt
   render/                // typed model -> cardDef source; Patterns folds
   gate/                  // touchstone, differential, behavioural, fineness report
-  cli/                   // assay parse | gate | report | explain
+  compile/               // a whole reading -> CardDefinition (the custom-card sandbox)
+  cli/                   // assay parse | compile | gate | report | explain
 ```
 
 It is deliberately **not a runtime loader**, and the house rule stands unchanged: a generated card is
@@ -324,6 +325,15 @@ to review quickly; it does not make review optional.
 One capability comes free and is a product feature rather than tooling: a parser running in the JVM
 on the SDK's own types means **Argentum can accept user-authored cards** — paste Scryfall-shaped
 JSON, get a playable definition, with declines reported in plain language.
+
+**That capability has shipped, in the narrowest form that keeps the "not a loader" rule true.** The
+Scenario Builder has a *Custom cards* panel (dev endpoints only): paste a card object, see each
+printed line with its verdict and a caret on any token the parse died on, and — when Assay reads the
+card *whole* — put the compiled card into any zone and play it. `compile/CardCompiler.kt` does the
+reading; `game-server`'s `AssayCardService` registers the result in a `CardRegistry` overlay scoped
+to one scenario session. A card with even one unreadable line is refused rather than approximated,
+and nothing about the corpus changes: shipped cards are still hand-written `cardDef`s with scenario
+tests. `just assay compile --file card.json` is the same path without a server.
 
 ## Fineness
 

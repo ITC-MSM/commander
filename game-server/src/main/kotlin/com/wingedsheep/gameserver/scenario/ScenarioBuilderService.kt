@@ -35,6 +35,13 @@ import java.util.concurrent.atomic.AtomicLong
 data class ScenarioBuildResult(
     val state: GameState,
     val playerIds: List<EntityId>,
+    /**
+     * The registry the state was built against, and the one the session has to be *played*
+     * against. Normally the live corpus registry; a scenario carrying custom cards
+     * ([AssayCardService]) gets an overlay, and a session handed the parent instead would fail to
+     * resolve the very cards it was built with.
+     */
+    val cardRegistry: CardRegistry,
 ) {
     val player1Id: EntityId get() = playerIds[0]
     val player2Id: EntityId get() = playerIds[1]
@@ -63,7 +70,15 @@ class ScenarioBuilderService(
      * when [enforceLimits] is set (production) — size caps, so the public endpoint rejects
      * abusive or malformed input cleanly instead of throwing deep in the builder.
      */
-    fun validate(request: ScenarioRequest, enforceLimits: Boolean): List<String> {
+    fun validate(
+        request: ScenarioRequest,
+        enforceLimits: Boolean,
+        /**
+         * The registry names are checked against. Defaults to the live corpus; a scenario with
+         * custom cards passes the overlay so its own cards are not reported as unknown.
+         */
+        registry: CardRegistry = cardRegistry,
+    ): List<String> {
         val errors = mutableListOf<String>()
         var total = 0
 
@@ -74,7 +89,7 @@ class ScenarioBuilderService(
                 errors += "Too many cards in $label (${list.size}); max $MAX_CARDS_PER_ZONE."
             }
             for (name in list) {
-                if (!cardRegistry.hasCard(name)) errors += "Unknown card: $name"
+                if (!registry.hasCard(name)) errors += "Unknown card: $name"
             }
         }
 
@@ -91,7 +106,7 @@ class ScenarioBuilderService(
                 errors += "Too many cards on $label battlefield (${battlefield.size}); max $MAX_CARDS_PER_ZONE."
             }
             for (card in battlefield) {
-                if (!cardRegistry.hasCard(card.name)) errors += "Unknown card: ${card.name}"
+                if (!registry.hasCard(card.name)) errors += "Unknown card: ${card.name}"
                 card.counters?.keys?.forEach { key ->
                     if (runCatching { CounterType.valueOf(key) }.isFailure) {
                         errors += "Unknown counter type '$key' on ${card.name}."
@@ -127,9 +142,13 @@ class ScenarioBuilderService(
     }
 
     /** Construct the scenario state. Assumes [validate] has already passed. */
-    fun buildScenario(request: ScenarioRequest): ScenarioBuildResult {
+    fun buildScenario(
+        request: ScenarioRequest,
+        /** The registry cards are resolved from — the custom-card overlay, when there is one. */
+        registry: CardRegistry = cardRegistry,
+    ): ScenarioBuildResult {
         val seats = request.seats()
-        val builder = ScenarioBuilder(cardRegistry)
+        val builder = ScenarioBuilder(registry)
         builder.withPlayers(seats.map { it.first })
 
         seats.forEachIndexed { i, (_, config) -> applyPlayer(builder, i + 1, config) }
@@ -143,7 +162,7 @@ class ScenarioBuilderService(
         request.teams?.let { builder.withTeams(it, teamVsTeam = request.teamVsTeam == true) }
 
         val (state, playerIds) = builder.build()
-        return ScenarioBuildResult(state, playerIds)
+        return ScenarioBuildResult(state, playerIds, registry)
     }
 
     private fun applyPlayer(builder: ScenarioBuilder, n: Int, config: PlayerConfig?) {

@@ -34,6 +34,18 @@ export interface BuilderState {
   /** 1-based seat number. */
   activePlayer: number
   mode: ScenarioMode
+  /**
+   * Scryfall(-style) card objects compiled by Argentum Assay for this scenario only. They travel
+   * with the scenario — JSON, file, share link — because a scenario that referenced a card the
+   * recipient's server has never heard of would fail to start with "Unknown card".
+   */
+  customCards: CustomCard[]
+}
+
+/** A compiled custom card: the pasted source, plus the name the server read out of it. */
+export interface CustomCard {
+  name: string
+  json: string
 }
 
 export const PHASES = ['BEGINNING', 'PRECOMBAT_MAIN', 'COMBAT', 'POSTCOMBAT_MAIN', 'ENDING'] as const
@@ -70,6 +82,34 @@ export function emptyBuilderState(): BuilderState {
     phase: 'PRECOMBAT_MAIN',
     activePlayer: 1,
     mode: 'SELF',
+    customCards: [],
+  }
+}
+
+export function addCustomCard(state: BuilderState, card: CustomCard): BuilderState {
+  // Re-checking a card the tester already added replaces it, so iterating on a custom card's text
+  // does not leave the older reading behind for the server to compile as well.
+  const rest = state.customCards.filter((c) => c.name !== card.name)
+  return { ...state, customCards: [...rest, card] }
+}
+
+/**
+ * Drop a custom card, and every copy of it on the board — the name stops resolving the moment its
+ * source is gone, and a scenario left holding it would be rejected as an unknown card.
+ */
+export function removeCustomCard(state: BuilderState, name: string): BuilderState {
+  return {
+    ...state,
+    customCards: state.customCards.filter((c) => c.name !== name),
+    seats: state.seats.map((seat) => ({
+      ...seat,
+      battlefield: seat.battlefield.filter((c) => c.name !== name),
+      hand: seat.hand.filter((n) => n !== name),
+      graveyard: seat.graveyard.filter((n) => n !== name),
+      exile: seat.exile.filter((n) => n !== name),
+      library: seat.library.filter((n) => n !== name),
+      commanders: seat.commanders.filter((n) => n !== name),
+    })),
   }
 }
 
@@ -269,6 +309,7 @@ export function toSpec(state: BuilderState): ScenarioSpec {
     activePlayer: state.activePlayer,
     mode: state.mode,
   }
+  if (state.customCards.length) spec.customCards = state.customCards.map((c) => c.json)
   if (rest.length > 0) {
     // N-player pod: send the full seat list (the server prefers it over the legacy two-seat
     // fields). Pods only support hotseat.
@@ -307,5 +348,20 @@ export function fromSpec(spec: ScenarioSpec): BuilderState {
     phase: spec.phase ?? 'PRECOMBAT_MAIN',
     activePlayer: spec.activePlayer ?? 1,
     mode: seats.length > 2 ? 'SELF' : (spec.mode ?? (spec.aiPlayer != null ? 'AI' : 'SELF')),
+    customCards: (spec.customCards ?? []).map((json) => ({ name: customCardName(json), json })),
+  }
+}
+
+/**
+ * The name a pasted card object declares. Read client-side only to label the card in the builder;
+ * the server reads the same field through Assay, and its reading is the one that counts.
+ */
+export function customCardName(json: string): string {
+  try {
+    const parsed: unknown = JSON.parse(json)
+    const name = (parsed as { name?: unknown }).name
+    return typeof name === 'string' && name ? name : 'Unnamed card'
+  } catch {
+    return 'Unnamed card'
   }
 }

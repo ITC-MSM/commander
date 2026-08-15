@@ -52,6 +52,41 @@ export interface ScenarioSpec {
   priorityPlayer?: number
   mode?: ScenarioMode
   aiPlayer?: number
+  /**
+   * Custom cards, each a Scryfall(-style) card object as pasted. The server compiles them with
+   * Argentum Assay and registers them for this session only, so their names can be used in any
+   * zone exactly like corpus cards. Requires dev endpoints to be enabled on the server.
+   */
+  customCards?: string[]
+}
+
+/** One printed line as Assay read it (mirrors the backend `AssayLineReading`). */
+export interface AssayLineReading {
+  index: number
+  text: string
+  /** The touchstone's own verdict: ROUND_TRIP | VARIANT | DECLINED | AMBIGUOUS | MISMATCH. */
+  verdict: string
+  /** The canonical spelling, when the line was written a different legal way. */
+  printed?: string
+  /** `assay explain`'s caret, pointing at the token the parse died on. */
+  explanation?: string
+}
+
+export interface AssayDecline {
+  kind: string
+  detail: string
+  lineIndex?: number
+  line?: string
+}
+
+/** Response from `POST /api/dev/scenarios/assay` (mirrors the backend `AssayCompileResponse`). */
+export interface AssayCompileResponse {
+  cardName: string | null
+  compiled: boolean
+  lines: AssayLineReading[]
+  declines: AssayDecline[]
+  warnings: string[]
+  definition?: unknown
 }
 
 export interface ScenarioPlayerInfo {

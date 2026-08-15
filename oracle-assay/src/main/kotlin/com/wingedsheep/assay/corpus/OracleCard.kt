@@ -11,6 +11,25 @@ data class OracleFace(
     val oracleText: String,
     val typeLine: String = "",
     val manaCost: String = "",
+    /**
+     * The printed characteristics that are *not* text: power/toughness, a planeswalker's starting
+     * loyalty, a battle's starting defense. Kept as the strings Scryfall prints rather than numbers,
+     * because `*` and `1+*` are printed values the grammar has no model for and the reader must not
+     * silently turn into a zero — [com.wingedsheep.assay.compile.CardCompiler] declines on them.
+     *
+     * Nothing in `grammar/` or `normalize/` reads these: they are card *header* fields, and the only
+     * consumer is the compiler, which needs a whole `CardDefinition` rather than a whole reading.
+     */
+    val power: String? = null,
+    val toughness: String? = null,
+    val loyalty: String? = null,
+    val defense: String? = null,
+    /**
+     * `image_uris.normal`, when the pasted object carries one. The only presentation field in the
+     * corpus model, and it is here for one reason: the compiler's output is *played*, and a board of
+     * art-less tiles is unreadable. No rule, gate or report reads it.
+     */
+    val imageUri: String? = null,
 )
 
 /**

@@ -2,6 +2,9 @@ package com.wingedsheep.gameserver.controller
 
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.gameserver.ai.AiGameManager
+import com.wingedsheep.gameserver.scenario.AssayCardService
+import com.wingedsheep.gameserver.scenario.AssayCompileRequest
+import com.wingedsheep.gameserver.scenario.AssayCompileResponse
 import com.wingedsheep.gameserver.scenario.PlayerInfo
 import com.wingedsheep.gameserver.scenario.ScenarioBuilderService
 import com.wingedsheep.gameserver.scenario.ScenarioRequest
@@ -37,6 +40,7 @@ class DevScenarioController(
     private val aiGameManager: AiGameManager,
     private val scenarioBuilderService: ScenarioBuilderService,
     private val scenarioSessionFactory: ScenarioSessionFactory,
+    private val assayCardService: AssayCardService,
 ) {
 
     /**
@@ -387,14 +391,18 @@ class DevScenarioController(
             return badRequest("AI is not enabled on this server. Set game.ai.enabled=true to play scenarios against the AI.")
         }
 
+        // Custom cards first: they define names the zone validation below has to know about.
+        val custom = assayCardService.resolve(request)
+
         // Dev workflow is permissive: validate for clean error messages but don't enforce caps.
-        val errors = scenarioBuilderService.validate(request, enforceLimits = false)
+        val errors = custom.errors +
+            scenarioBuilderService.validate(request, enforceLimits = false, registry = custom.registry)
         if (errors.isNotEmpty()) {
             return badRequest(errors.joinToString("; "))
         }
 
         return try {
-            val build = scenarioBuilderService.buildScenario(request)
+            val build = scenarioBuilderService.buildScenario(request, registry = custom.registry)
             // Stable "p1"/"p2" tokens keep the bookmark-a-browser-tab dev workflow.
             val response = scenarioSessionFactory.createSession(
                 build = build,
@@ -419,6 +427,27 @@ class DevScenarioController(
                 message = message,
             )
         )
+
+    /**
+     * Compile one pasted Scryfall(-style) card object with Argentum Assay, without starting a game.
+     *
+     * This is the Scenario Builder's "check this card" button, and the answer it gives is the one
+     * the gates give: each printed line with the touchstone's own verdict, the canonical spelling
+     * where the author wrote a legal variant, and — for a line no rule reads — `assay explain`'s
+     * caret on the token the parse died on. A card compiles only when Assay reads **every** line;
+     * see [com.wingedsheep.gameserver.scenario.AssayCardService].
+     *
+     * Always 200: a card that will not compile is this endpoint's *product*, not an error.
+     */
+    @PostMapping("/assay")
+    @Operation(
+        summary = "Compile a custom card with Argentum Assay",
+        description = "Reads a Scryfall(-style) card object into a real CardDefinition, or reports " +
+            "exactly which printed line stopped it. Also the check for cards that have no Scryfall " +
+            "entry at all — the JSON is just the card's printed characteristics.",
+    )
+    fun assayCard(@RequestBody request: AssayCompileRequest): ResponseEntity<AssayCompileResponse> =
+        ResponseEntity.ok(assayCardService.inspect(request.json))
 
     /**
      * List available cards for scenario building.

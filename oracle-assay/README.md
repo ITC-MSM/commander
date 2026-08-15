@@ -43,13 +43,17 @@ coverage went from 3,004 cards to 4,287 in the same change, which is the argumen
 as the target rather than picking the number.
 
 Nothing here changes `:mtgish-tooling`, which stays authoritative until a per-set cutover replaces it
-(Phase 5). Assay is **not a runtime card loader** and never will be.
+(Phase 5). Assay is **not a runtime card loader** and never will be — with one carved-out exception,
+the [custom-card sandbox](#the-compiler-and-the-custom-card-sandbox), which compiles a *pasted* card
+for a dev-gated Scenario Builder session and never touches the corpus.
 
 ## Commands
 
 ```bash
 just assay parse "Serra Angel"      # normalized lines + the SDK model each parses to
 just assay explain "Wall of Omens"  # the same, with a caret on the token a decline died on
+just assay compile "Serra Angel"    # the reading as a whole CardDefinition (JSON on stdout)
+just assay compile --file card.json # …from a pasted Scryfall object — the custom-card path
 just assay-gate                     # the touchstone over the whole corpus; exit 1 on a bug
 just assay-report --top 40          # the same numbers, always exit 0
 just assay-report --scope           # restricted to Phase 1's own target class
@@ -92,8 +96,9 @@ grammar/    the rules, by topic — Primitives, Keywords, Cardinals, Conditions,
             ability slot; Restrictions is the three "when may this happen" vocabularies;
             Continuations and SelfSteps are the two anaphors ("that creature" / "it")
 gate/       the touchstone, the fineness report, the differential
+compile/    a whole reading as a CardDefinition — the custom-card sandbox's engine
 explore/    the browser UI — a loopback HTTP server over the live grammar and both gates
-cli/        assay parse | explain | gate | report | differential | explore | corpus
+cli/        assay parse | explain | compile | gate | report | differential | explore | corpus
 ```
 
 ## The three things that make this different
@@ -669,6 +674,49 @@ de-pluralized to `Subtype("Plain")` — the "Elves" → `Elve` failure, live on 
 round-tripping perfectly the whole time. `Primitives.pluralSubtype` now ranks candidate readings
 against the SDK's own type lists instead of guessing. Running it then surfaced the join and
 slot-completeness holes above, each of which was the gate finding a way it could have lied.
+
+## The compiler and the custom-card sandbox
+
+`assay compile` takes a reading the whole way: Scryfall JSON in, a `CardDefinition` out.
+
+```bash
+just assay compile "Serra Angel"       # a corpus card
+just assay compile --file card.json    # a card that has no Scryfall entry at all
+```
+
+The Scenario Builder is where that becomes useful. Its **Custom cards** panel (dev endpoints only)
+takes a pasted card object, shows what Assay read — each printed line with its verdict, the
+canonical spelling where the author wrote a legal variant, and the caret on the token a decline died
+on — and then lets you put the compiled card into any zone and *play* it. The question Assay was
+built to answer becomes something you can hold: **is this card expressible in Argentum's vocabulary,
+and what exactly does it say?**
+
+Four constraints keep this from being the card loader this module refuses to be, and all four are in
+code rather than in a convention:
+
+- **Dev-gated.** `AssayCardService` reads `game.dev-endpoints.enabled`, and the player-facing
+  `/api/scenarios` is gated by the same service rather than by a second check.
+- **Session-scoped.** The compiled card goes into a `CardRegistry` overlay for that one scenario —
+  never the live corpus, never a deck, never another game. Drop the source and the name stops
+  resolving, which the tests pin.
+- **Whole cards only.** A card any of whose lines Assay cannot read is *refused*, with the line that
+  stopped it. Nothing here can produce a card missing an ability, which would look right on the
+  board and test green.
+- **The corpus is still hand-written.** Ground truth stays a `cardDef` with a passing scenario test.
+  Nothing loads `mtg-sets` through this, and the module's own dependency is still `:mtg-sdk` alone.
+
+Two things the compiler does that the grammar deliberately does not. It reads the **header** —
+mana cost, type line, power/toughness, loyalty, defense — which is not Oracle text and which no rule
+touches; a `*` power declines rather than becoming 0, because mapping a characteristic-defining
+ability into the stat slot is grammar work nobody has done. And it **re-mints ability ids**: the
+grammar mints one fixed constant per family (no printed word determines an id, and the differential
+normalizes by position), but a played card is dispatched on those ids, so two abilities sharing one
+would activate the wrong ability.
+
+At today's fineness — the "cards fully covered" line in `just assay-report`, well under a fifth of
+the corpus — pasting a *random* real card more often declines than compiles. That is the tool working: the decline names the missing capability, and it
+is the same ranked backlog `assay-report` produces. A custom card written in canonical templating
+inside a covered family compiles, and one that does not is usually a card to reword.
 
 ## The explorer
 

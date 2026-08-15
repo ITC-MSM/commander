@@ -81,7 +81,17 @@ data class ScenarioRequest(
      * The other seat is connected normally over WebSocket with the returned token. Scenarios
      * always use the in-process engine AI — no LLM, no API key.
      */
-    val aiPlayer: Int? = null
+    val aiPlayer: Int? = null,
+    /**
+     * Custom cards for this scenario, each a Scryfall(-style) card object as pasted. Compiled by
+     * Argentum Assay into real `CardDefinition`s and registered into a **session-scoped** overlay
+     * registry, so the names below can be used in any zone exactly like corpus cards while never
+     * touching the live corpus. Dev-gated; see [AssayCardService].
+     *
+     * A card whose Oracle text Assay cannot read *whole* is rejected with the line that stopped it —
+     * a partially-read card would test green while missing an ability.
+     */
+    val customCards: List<String>? = null,
 ) {
     /** The effective mode, deriving from [aiPlayer] when [mode] is unset. */
     val effectiveMode: ScenarioMode

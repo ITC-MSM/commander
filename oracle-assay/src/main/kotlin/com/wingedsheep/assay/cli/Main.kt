@@ -1,5 +1,7 @@
 package com.wingedsheep.assay.cli
 
+import com.wingedsheep.assay.compile.CardCompiler
+import com.wingedsheep.assay.compile.CompileResult
 import com.wingedsheep.assay.corpus.ImplementedCorpus
 import com.wingedsheep.assay.corpus.OracleCard
 import com.wingedsheep.assay.corpus.OracleCorpus
@@ -10,6 +12,7 @@ import com.wingedsheep.assay.gate.LineVerdict
 import com.wingedsheep.assay.gate.Touchstone
 import com.wingedsheep.assay.explore.ExploreServer
 import com.wingedsheep.assay.syntax.explain
+import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.CardScript
 import com.wingedsheep.sdk.serialization.CardSerialization
 import kotlin.system.exitProcess
@@ -39,6 +42,7 @@ fun main(args: Array<String>) {
     when (command) {
         "parse" -> exitProcess(parse(flags, explainDeclines = false))
         "explain" -> exitProcess(parse(flags, explainDeclines = true))
+        "compile" -> exitProcess(compile(flags))
         "gate" -> exitProcess(gate(flags, gating = true))
         "report" -> exitProcess(gate(flags, gating = false))
         "differential" -> exitProcess(differential(flags))
@@ -63,6 +67,8 @@ private fun usage() = System.err.println(
 
       assay parse <card name>        parse one card and print its model
       assay explain <card name>      parse one card, showing where declines died
+      assay compile <card name>      compile a card into a CardDefinition (`--file f.json` to
+                                     compile pasted Scryfall JSON — a custom card needs no corpus)
       assay gate [options]           run the touchstone; exits 1 on ambiguity/mismatch
       assay report [options]         the same report, always exits 0
       assay differential [options]   diff Assay's readings against the hand-written cards
@@ -70,6 +76,8 @@ private fun usage() = System.err.println(
       assay corpus [--refresh]       show or refresh the cached Scryfall Oracle bulk
 
     Options:
+      --file PATH      compile: read the Scryfall(-style) card object from a file instead of
+                       looking a name up in the corpus — the path a custom card takes
       --limit N        assay only the first N cards (a fast smoke run)
       --set CODE       restrict to one set — every card *printed* in it for gate/report (a small
                        per-set list is fetched from Scryfall and cached), the golden's file name
@@ -175,6 +183,55 @@ private fun parse(flags: Flags, explainDeclines: Boolean): Int {
     // parse/explain are inspection commands: a declined card is information, not a failing run.
     // `assay gate` is the thing that exits non-zero, and only on a bug.
     return 0
+}
+
+/**
+ * `assay compile` — the reading turned into a card the engine could be handed.
+ *
+ * Two inputs, one path: `--file` reads a pasted Scryfall(-style) object, which is how a **custom**
+ * card with no Scryfall entry is compiled, and a bare name looks the card up in the corpus. Both go
+ * through [CardCompiler], so what the Scenario Builder plays is what this prints.
+ *
+ * Exits 1 on a decline, because unlike `parse` this command is asked for an artifact rather than for
+ * information: a caller that got no card wants to know without reading the output.
+ */
+private fun compile(flags: Flags): Int {
+    val file = flags.str("file")
+    val result = if (file != null) {
+        val text = runCatching { java.io.File(file).readText() }.getOrElse {
+            System.err.println("assay: cannot read $file (${it.message})")
+            return 2
+        }
+        CardCompiler.compile(text)
+    } else {
+        val wanted = flags.rest.trim()
+        if (wanted.isEmpty()) {
+            System.err.println("assay: give a card name, or --file <scryfall.json>")
+            return 2
+        }
+        val card = findCard(wanted) ?: run {
+            System.err.println("assay: no card named '$wanted' in the Oracle bulk")
+            return 1
+        }
+        CardCompiler.compile(card)
+    }
+
+    return when (result) {
+        is CompileResult.Compiled -> {
+            println(CardSerialization.json.encodeToString(CardDefinition.serializer(), result.definition))
+            result.warnings.forEach { System.err.println("warning: $it") }
+            0
+        }
+
+        is CompileResult.Declined -> {
+            System.err.println("assay: ${result.cardName ?: "card"} did not compile")
+            result.declines.forEach { decline ->
+                val where = decline.line?.let { " (line ${decline.lineIndex}: \"$it\")" } ?: ""
+                System.err.println("  ${decline.kind}: ${decline.detail}$where")
+            }
+            1
+        }
+    }
 }
 
 /**

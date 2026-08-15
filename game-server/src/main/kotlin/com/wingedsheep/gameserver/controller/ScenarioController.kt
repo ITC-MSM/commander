@@ -5,6 +5,7 @@ import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.gameserver.ai.AiGameManager
 import com.wingedsheep.gameserver.persistence.persistenceJson
 import com.wingedsheep.gameserver.replay.ReplayService
+import com.wingedsheep.gameserver.scenario.AssayCardService
 import com.wingedsheep.gameserver.scenario.ScenarioBuilderService
 import com.wingedsheep.gameserver.scenario.ScenarioMode
 import com.wingedsheep.gameserver.scenario.ScenarioRequest
@@ -39,6 +40,7 @@ class ScenarioController(
     private val scenarioBuilderService: ScenarioBuilderService,
     private val scenarioSessionFactory: ScenarioSessionFactory,
     private val replayService: ReplayService,
+    private val assayCardService: AssayCardService,
 ) {
     private val logger = LoggerFactory.getLogger(ScenarioController::class.java)
 
@@ -65,13 +67,17 @@ class ScenarioController(
                 .body(errorBody(listOf("AI is not enabled on this server.")))
         }
 
-        val errors = scenarioBuilderService.validate(request, enforceLimits = true)
+        // Custom cards are dev-gated inside the service, so this endpoint rejects them by the same
+        // rule rather than by a second check that could drift from it.
+        val custom = assayCardService.resolve(request)
+        val errors = custom.errors +
+            scenarioBuilderService.validate(request, enforceLimits = true, registry = custom.registry)
         if (errors.isNotEmpty()) {
             return ResponseEntity.badRequest().body(errorBody(errors))
         }
 
         return try {
-            val build = scenarioBuilderService.buildScenario(request)
+            val build = scenarioBuilderService.buildScenario(request, registry = custom.registry)
             // Production: random per-seat tokens, no localhost open-URLs in the message.
             val response: ScenarioResponse = scenarioSessionFactory.createSession(
                 build = build,

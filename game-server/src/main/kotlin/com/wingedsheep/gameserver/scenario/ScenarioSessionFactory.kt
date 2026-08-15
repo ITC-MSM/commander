@@ -56,9 +56,18 @@ class ScenarioSessionFactory(
         val player1Id = build.player1Id
         val player2Id = build.player2Id
 
+        // The build's registry, not the injected one: a scenario carrying custom cards was built
+        // against an overlay ([AssayCardService]), and a session that could not resolve those names
+        // would show blank cards for the very cards the scenario exists to test. It *is* the live
+        // registry for every ordinary scenario, so this costs nothing on that path.
+        val playRegistry = build.cardRegistry
         val gameSession = GameSession(
-            cardRegistry = cardRegistry,
-            stateTransformer = stateTransformer,
+            cardRegistry = playRegistry,
+            stateTransformer = if (playRegistry === cardRegistry) {
+                stateTransformer
+            } else {
+                ClientStateTransformer(playRegistry)
+            },
             printingRegistry = printingRegistry,
             // Without this a scenario mints every token with the engine-wide generic art for its
             // creature type, so the one surface built for eyeballing a card is the one that shows

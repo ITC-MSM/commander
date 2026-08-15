@@ -797,3 +797,127 @@
   color: #e2e8f0;
   font-size: 16px;
 }
+
+/* --- custom cards (Assay) ----------------------------------------------------------------- */
+
+.assayResult {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border: 1px solid #1e293b;
+  border-radius: 6px;
+  padding: 8px;
+  background: #020617;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.assayHeadOk {
+  font-size: 12px;
+  font-weight: 600;
+  color: #86efac;
+}
+
+.assayHeadBad {
+  font-size: 12px;
+  font-weight: 600;
+  color: #fca5a5;
+}
+
+.assayError {
+  font-size: 11px;
+  color: #fca5a5;
+  line-height: 1.35;
+}
+
+.assayWarning {
+  font-size: 11px;
+  color: #fcd34d;
+  line-height: 1.35;
+}
+
+.assayLines {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.assayLines li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 11px;
+}
+
+.assayLineText {
+  color: #e2e8f0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.assayPrinted {
+  color: #94a3b8;
+  font-style: italic;
+}
+
+.verdictOk,
+.verdictVariant,
+.verdictBad {
+  flex: 0 0 auto;
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.verdictOk {
+  background: #14532d;
+  color: #86efac;
+}
+
+.verdictVariant {
+  background: #1e3a5f;
+  color: #93c5fd;
+}
+
+.verdictBad {
+  background: #7f1d1d;
+  color: #fecaca;
+}
+
+/* The decline caret is column-aligned text — it only means anything in a monospace block. */
+.assayCaret {
+  flex: 1 0 100%;
+  margin: 0;
+  padding: 6px 8px;
+  background: #0b1220;
+  border-radius: 4px;
+  color: #cbd5e1;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px;
+  line-height: 1.4;
+  white-space: pre;
+  overflow-x: auto;
+}
+
+.customCardList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.customCardRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.customCardName {
+  flex: 1;
+  font-size: 12px;
+  color: #e2e8f0;
+}

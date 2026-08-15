@@ -41,16 +41,6 @@ object OracleCorpus {
     private val json = Json { ignoreUnknownKeys = true; isLenient = true }
 
     /**
-     * Layouts that carry no Oracle text worth assaying — art cards, tokens the corpus mints
-     * elsewhere, and the acorn-adjacent formats the design's non-goals rule out. Excluded from the
-     * corpus rather than declined, because counting them as declines would make the fineness
-     * denominator dishonest in our favour *and* against us at the same time.
-     */
-    private val EXCLUDED_LAYOUTS = setOf(
-        "art_series", "token", "double_faced_token", "emblem", "vanguard", "scheme", "planar",
-    )
-
-    /**
      * Every assayable card, streamed. The sequence reads the gzip lazily, so `--limit` genuinely
      * stops early instead of parsing 38k cards first.
      *
@@ -65,7 +55,7 @@ object OracleCorpus {
                         val line = reader.readLine() ?: break
                         val trimmed = line.trim().trimEnd(',')
                         if (trimmed.isEmpty() || trimmed == "[" || trimmed == "]") continue
-                        val card = runCatching { toCard(json.parseToJsonElement(trimmed).jsonObject) }.getOrNull()
+                        val card = ScryfallJson.read(trimmed)
                         if (card != null) yield(card)
                     }
                 }
@@ -77,48 +67,12 @@ object OracleCorpus {
 
     fun cacheFile(): File = BULK_FILE
 
-    private fun toCard(obj: JsonObject): OracleCard? {
-        val layout = obj.str("layout") ?: "normal"
-        if (layout in EXCLUDED_LAYOUTS) return null
-        if ((obj.str("lang") ?: "en") != "en") return null
-        val name = obj.str("name") ?: return null
-
-        val faces = (obj["card_faces"] as? JsonArray)
-            ?.filterIsInstance<JsonObject>()
-            ?.map { face ->
-                OracleFace(
-                    name = face.str("name") ?: name,
-                    oracleText = face.str("oracle_text") ?: "",
-                    typeLine = face.str("type_line") ?: obj.str("type_line") ?: "",
-                    manaCost = face.str("mana_cost") ?: "",
-                )
-            }
-            ?: listOf(
-                OracleFace(
-                    name = name,
-                    oracleText = obj.str("oracle_text") ?: "",
-                    typeLine = obj.str("type_line") ?: "",
-                    manaCost = obj.str("mana_cost") ?: "",
-                )
-            )
-
-        return OracleCard(
-            name = name,
-            oracleId = obj.str("oracle_id"),
-            layout = layout,
-            setCode = obj.str("set")?.uppercase(),
-            scryfallKeywords = (obj["keywords"] as? JsonArray)?.mapNotNull { (it as? JsonPrimitive)?.content }
-                ?: emptyList(),
-            faces = faces,
-        )
-    }
-
-    private fun JsonObject.str(key: String): String? =
-        (this[key] as? JsonPrimitive)?.takeIf { it.isString }?.content
-
     // -----------------------------------------------------------------------------------------
     // Download
     // -----------------------------------------------------------------------------------------
+
+    private fun JsonObject.str(key: String): String? =
+        (this[key] as? JsonPrimitive)?.takeIf { it.isString }?.content
 
     private fun ensureBulk(refresh: Boolean): File {
         if (!refresh && isCached() && isFresh()) return BULK_FILE

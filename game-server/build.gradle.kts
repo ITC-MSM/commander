@@ -13,6 +13,10 @@ dependencies {
     implementation(project(":mtg-sets"))
     implementation(project(":mtg-search"))
     implementation(project(":ai"))
+    // Argentum Assay — Oracle text -> CardDefinition, for the Scenario Builder's custom-card
+    // sandbox only (dev-gated; see AssayCardService). Assay stays an auditor: nothing here loads
+    // the card corpus through it, and a compiled card never leaves the session that asked for it.
+    implementation(project(":oracle-assay"))
     implementation(libs.bundles.kotlinxEcosystem)
     implementation(libs.bundles.springBootWeb)
     implementation(libs.springBootStarterDataRedis)

@@ -18,6 +18,22 @@ and a continuously-updated `mtg-sdk` gap report ranked by cards blocked. It is *
 loader** and never will be; ground truth stays a human-authored `cardDef` with a passing scenario
 test.
 
+**The one carve-out: the Scenario Builder's custom-card sandbox.** `compile/CardCompiler.kt` turns a
+Scryfall(-style) card object into a whole `CardDefinition`, and `game-server` depends on this module
+to offer that in the builder — paste a card, see what Assay reads, play it. It is the design's own
+"Custom cards" note made executable, and it stays inside the rule because of four constraints that
+are enforced in code rather than by convention:
+
+- **Dev-gated** — `AssayCardService` reads `game.dev-endpoints.enabled`, and the *player-facing*
+  `/api/scenarios` goes through the same gate rather than a second one that could drift.
+- **Session-scoped** — a compiled card is registered into a `CardRegistry` overlay for one scenario.
+  It cannot be drafted, deck-built, persisted, or seen by another game, and the corpus is untouched.
+- **Whole cards only** — a card any of whose lines Assay cannot read is refused, with the line that
+  stopped it. There is no best-effort mode and no flag to add one; a card that silently dropped an
+  ability would test *green* and mean nothing.
+- **Still not a loader** — nothing loads `mtg-sets` through this. The corpus is hand-written cards
+  with scenario tests, exactly as before, and this module's own dependency stays `:mtg-sdk` only.
+
 `:mtg-sdk` is the **only** production dependency, and that is load-bearing rather than tidy. Not
 `:rules-engine`, not `:mtg-sets`, not `:mtgish-tooling` — a dependency on the engine invites a
 runtime loader, and one on the incumbent pipeline re-imports the vocabulary Assay exists to replace.
@@ -342,6 +358,31 @@ Three consequences worth getting right before the first custom set:
 The payoff is that Assay becomes a design-time tool as well as an audit: *is this card expressible in
 canonical Magic templating, and what exactly does it say?* — answered mechanically, with generated
 Oracle text as the by-product.
+
+## The compiler (`compile/`) and the Scenario Builder sandbox
+
+`CardCompiler` is that design-time tool with the last step taken: the answer to "what exactly does it
+say?" is a `CardDefinition`, and the Scenario Builder plays it. `just assay compile --file card.json`
+is the same path from the command line, and a custom card takes it without a corpus at all.
+
+Rules for working on it:
+
+- **Fail-closed is the whole design.** A card compiles only if normalization holds, *every* line is
+  `ROUND_TRIP` or `VARIANT`, the fragments fold into one card, the printed header parses, and
+  `CardValidator` passes. Each failure is a named `CompileDecline` carrying the line that caused it.
+  Loosening any of these to make more cards playable inverts what the module is for — the decline is
+  the product, and a card that compiled with an ability missing would look right on the board.
+- **The reader is shared, not copied.** Pasted JSON goes through `corpus/ScryfallJson.kt`, the same
+  function the bulk file streams through. A second reader would mean the gates no longer say
+  anything about what the builder plays.
+- **The header is the compiler's business; the text is the grammar's.** Power/toughness, loyalty and
+  defense live on `OracleFace` and only this package reads them. A `*` power declines — mapping a
+  characteristic-defining ability into the stat slot is grammar work nobody has done, and reading it
+  as 0 is the reversible-but-wrong class in one line.
+- **Ability ids are re-minted here and nowhere else.** The grammar mints a fixed constant per family
+  because no printed word determines an id and the differential normalizes by position. A *played*
+  card cannot share ids — activation dispatches on them — so the compiler assigns fresh ones. That
+  asymmetry is deliberate; do not "fix" either half to match the other.
 
 ## The explorer (`explore/`)
 
