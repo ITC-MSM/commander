@@ -107,7 +107,8 @@ class CastSpellEnumerator : ActionEnumerator {
                         // The land primary is always an available alternative, so surface the
                         // spell face even when unaffordable (grayed out in the drag-to-play menu).
                         enumerateSecondaryFace(
-                            context, cardId, landCardDef, result, primaryFaceAffordable = true
+                            context, cardId, landCardDef, cardComponent, result,
+                            primaryFaceAffordable = true
                         )
                     }
                 }
@@ -165,7 +166,8 @@ class CastSpellEnumerator : ActionEnumerator {
                     state, playerId, primaryFaceCost, precomputedSources = context.availableManaSources
                 )
                 secondaryFaceAffordable = enumerateSecondaryFace(
-                    context, cardId, cardDef, result, primaryFaceAffordable = primaryFaceAffordable
+                    context, cardId, cardDef, cardComponent, result,
+                    primaryFaceAffordable = primaryFaceAffordable
                 )
                 // Don't `continue` — let the surrounding loop also enumerate the primary face.
             }
@@ -3010,10 +3012,10 @@ class CastSpellEnumerator : ActionEnumerator {
      * cast path; this method only adds the alternative-characteristics cast that uses
      * [CastSpell.faceIndex] = 0.
      *
-     * Supports mana cost, instant/sorcery timing, and per-face target requirements. Additional
-     * costs declared on the face's script are honoured for affordability but the full
-     * additional-cost UX (sacrifice picker, blight, etc.) is not yet wired for these faces —
-     * cards that need that can extend this method later.
+     * Supports mana cost (including an {X} in the face's own cost), instant/sorcery timing, and
+     * per-face target requirements. Additional costs declared on the face's script are honoured
+     * for affordability but the full additional-cost UX (sacrifice picker, blight, etc.) is not
+     * yet wired for these faces — cards that need that can extend this method later.
      *
      * @param primaryFaceAffordable Whether the card's primary (creature) face is affordable.
      *        When the secondary face is unaffordable but the primary is affordable, a grayed-out
@@ -3139,6 +3141,7 @@ class CastSpellEnumerator : ActionEnumerator {
         context: EnumerationContext,
         cardId: EntityId,
         cardDef: CardDefinition,
+        cardComponent: CardComponent,
         result: MutableList<LegalAction>,
         primaryFaceAffordable: Boolean,
     ): Boolean {
@@ -3153,8 +3156,12 @@ class CastSpellEnumerator : ActionEnumerator {
         val effectiveCost = context.costCalculator
             .calculateEffectiveCostWithAlternativeBase(state, cardDef, face.manaCost, playerId)
         val cachedSources = context.availableManaSources
+        // Same payment context `CastSpellHandler.validatePayment` builds for this cast, so
+        // conditional mana ("spend only to cast …") is judged identically on both sides and the
+        // X ceiling below can never offer more than validation will accept.
+        val spellContext = spellPaymentContextFor(cardComponent)
         val canAfford = context.manaSolver
-            .canPay(state, playerId, effectiveCost, precomputedSources = cachedSources)
+            .canPay(state, playerId, effectiveCost, precomputedSources = cachedSources, spellContext = spellContext)
         if (!canAfford) {
             // Secondary face is unaffordable. If the primary face is affordable, still surface
             // this face as a grayed-out option so the drag-to-play menu presents both and the
@@ -3181,12 +3188,29 @@ class CastSpellEnumerator : ActionEnumerator {
         }
         val manaCostString = effectiveCost.toString()
 
+        // {X} in the *face's* mana cost (An Unexpected Party // At the Door — "{X}{2}{W}, Create X
+        // 2/2 red Dwarf creature tokens"). Without these two fields the client never opens the
+        // X picker, so the face casts at X = 0 and the spell does nothing. The ceiling is the
+        // plain-mana one the primary cast path computes; convoke/delve/waterbend are not wired
+        // for secondary faces, so none of their ceiling contributions apply here.
+        val hasXCost = effectiveCost.hasX
+        val maxAffordableX: Int? = if (hasXCost) {
+            val availableSources = context.manaSolver.getAvailableManaCount(
+                state, playerId, precomputedSources = cachedSources, spellContext = spellContext
+            )
+            val fixedCost = effectiveCost.cmc // X contributes 0 to CMC
+            val xSymbolCount = effectiveCost.xCount.coerceAtLeast(1)
+            ((availableSources - fixedCost) / xSymbolCount).coerceAtLeast(0)
+        } else null
+
         if (targetReqs.isEmpty()) {
             result.add(
                 LegalAction(
                     actionType = "CastSpell",
                     description = "Cast ${face.name}",
                     action = CastSpell(playerId, cardId, faceIndex = 0),
+                    hasXCost = hasXCost,
+                    maxAffordableX = maxAffordableX,
                     manaCostString = manaCostString,
                     autoTapPreview = autoTapPreview,
                 )
@@ -3209,6 +3233,12 @@ class CastSpellEnumerator : ActionEnumerator {
                 minTargets = firstReq.effectiveMinCount,
                 targetDescription = firstReq.description,
                 targetRequirements = if (targetInfos.size > 1) targetInfos else null,
+                xConstrainsTargetManaValue = firstInfo.xConstrainsManaValue,
+                xConstrainsTargetManaValueExactly = firstInfo.xConstrainsManaValueExactly,
+                xConstrainsTargetPower = firstInfo.xConstrainsPower,
+                xConstrainsTargetCount = firstInfo.xConstrainsCount,
+                hasXCost = hasXCost,
+                maxAffordableX = maxAffordableX,
                 manaCostString = manaCostString,
                 autoTapPreview = autoTapPreview,
             )
