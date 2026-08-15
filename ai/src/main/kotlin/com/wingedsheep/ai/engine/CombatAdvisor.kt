@@ -131,7 +131,14 @@ class CombatAdvisor(
             )
         }
 
-        return DeclareAttackers(playerId, seedMap)
+        // Local search may have added attackers back on top of an already-trimmed seed, so the tax
+        // is re-priced against the plan we are about to submit. See [CombatTaxBudget].
+        return DeclareAttackers(
+            playerId,
+            CombatTaxBudget.affordableAttack(
+                state, projected, playerId, cardRegistry, seedMap, mandatory.toSet()
+            ),
+        )
     }
 
     /**
@@ -263,10 +270,15 @@ class CombatAdvisor(
         // ── Menace fix: remove illegal single-blocker assignments for menace attackers ──
         fixMenaceAssignments(state, projected, bestMap, validBlockers, assignedBlockers)
 
-        return DeclareBlockers(
-            playerId,
-            legalizeBlockerPlan(state, playerId, bestMap, mandatoryBlockerIds)
+        // ── Block tax: a plan we cannot pay for is a plan we would only decline (see
+        // [CombatTaxBudget]) ──
+        val affordable = CombatTaxBudget.affordableBlock(
+            state, projected, playerId, cardRegistry,
+            legalizeBlockerPlan(state, playerId, bestMap, mandatoryBlockerIds),
+            mandatoryBlockerIds,
         )
+
+        return DeclareBlockers(playerId, affordable)
     }
 
     /**

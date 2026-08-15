@@ -17,7 +17,7 @@ import io.kotest.matchers.types.shouldBeInstanceOf
  *
  * A Ghostly Prison behind the storied gate. The gate rides `AttackTax.condition` rather than a
  * `ConditionalStaticAbility` wrapper, and that is exactly what these tests pin:
- * `AttackPhaseManager.calculateTotalAttackTax` scans `cardDef.staticAbilities` **raw**, matching only
+ * `CombatTaxes.attackTax` scans `cardDef.staticAbilities` **raw**, matching only
  * a bare `AttackTax`, so a wrapped ability would tax nothing at all and the "off" case below would
  * pass for the wrong reason. Asserting both directions is what separates "gate works" from "gate
  * never fires".

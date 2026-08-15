@@ -67,7 +67,13 @@ object CombatSeed {
 
         // ── Lethal check: alpha-strike if damage gets through even with optimal blocking ──
         if (CombatMath.isLethalAttack(state, projected, validAttackers, opponentCreatures, opponentLife)) {
-            return AttackSeed(validAttackers.associateWith { opponentId }, opponentId, lethal = true)
+            val alphaStrike = validAttackers.associateWith { opponentId }
+            val affordable = CombatTaxBudget.affordableAttack(
+                state, projected, playerId, cardRegistry, alphaStrike, mandatory.toSet()
+            )
+            // A trimmed alpha strike is not the attack the lethal check approved, so it goes back to
+            // being an ordinary plan for the caller's local search to improve on.
+            return AttackSeed(affordable, opponentId, lethal = affordable.size == alphaStrike.size)
         }
 
         // ── Heuristic seed: no-downside and clearly profitable attackers ──
@@ -180,7 +186,15 @@ object CombatSeed {
             }
         }
 
-        return AttackSeed(seedMap, opponentId, lethal = false)
+        // A plan whose attack tax we cannot pay is one we would be asked to pay for and could only
+        // decline, ending up back at this same choice — see [CombatTaxBudget].
+        return AttackSeed(
+            CombatTaxBudget.affordableAttack(
+                state, projected, playerId, cardRegistry, seedMap, mandatory.toSet()
+            ),
+            opponentId,
+            lethal = false,
+        )
     }
 
     /**

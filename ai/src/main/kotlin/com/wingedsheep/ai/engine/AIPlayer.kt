@@ -303,7 +303,7 @@ class AIPlayer(
             val engine = PlayoutEngine(
                 cardRegistry = cardRegistry,
                 evaluator = evaluator,
-                policy = PlayoutPolicy(playoutCombat, intents, settings),
+                policy = PlayoutPolicy(playoutCombat, intents, settings, cardRegistry),
                 decisions = FastDecisionResponder(intents),
                 settings = settings,
                 winProbabilityScale = winProbabilityScale,

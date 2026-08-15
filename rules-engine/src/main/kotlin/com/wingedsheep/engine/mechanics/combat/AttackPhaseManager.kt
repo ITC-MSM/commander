@@ -2,7 +2,6 @@ package com.wingedsheep.engine.mechanics.combat
 
 import com.wingedsheep.engine.core.*
 import com.wingedsheep.engine.mechanics.layers.ProjectedState
-import com.wingedsheep.engine.mechanics.layers.SerializableModification
 import com.wingedsheep.engine.mechanics.mana.ManaPool
 import com.wingedsheep.engine.mechanics.mana.ManaSolver
 import com.wingedsheep.engine.registry.CardRegistry
@@ -23,10 +22,8 @@ import com.wingedsheep.engine.mechanics.combat.rules.AttackCheckContext
 import com.wingedsheep.engine.mechanics.combat.rules.AttackDefenderRule
 import com.wingedsheep.engine.mechanics.combat.rules.AttackRestrictionRule
 import com.wingedsheep.sdk.core.Keyword
-import com.wingedsheep.sdk.core.ManaCost
 import com.wingedsheep.sdk.core.ManaSymbol
 import com.wingedsheep.sdk.model.EntityId
-import com.wingedsheep.sdk.scripting.AttackTax
 import com.wingedsheep.sdk.scripting.AttackerCountLimit
 import com.wingedsheep.sdk.scripting.CantAttackUnlessCoAttacker
 import com.wingedsheep.sdk.scripting.MustAttack
@@ -51,7 +48,6 @@ internal class AttackPhaseManager(
     private val manaAbilitySideEffectExecutor: com.wingedsheep.engine.mechanics.mana.ManaAbilitySideEffectExecutor,
 ) {
 
-    private val dynamicAmountEvaluator = com.wingedsheep.engine.handlers.DynamicAmountEvaluator()
     private val predicateEvaluator = PredicateEvaluator()
     private val conditionEvaluator = com.wingedsheep.engine.handlers.ConditionEvaluator()
 
@@ -154,7 +150,7 @@ internal class AttackPhaseManager(
         // Calculate (but don't pay) the attack tax. If non-zero, pause for the attacking
         // player to confirm before we tap any of their mana — otherwise auto-tapping the
         // pool would steal sources they were saving for instants/post-combat plays.
-        val totalTax = calculateTotalAttackTax(state, attackingPlayer, attackers, projected)
+        val totalTax = calculateTotalAttackTax(state, attackers, projected)
         if (totalTax > 0) {
             return pauseForAttackTaxConfirmation(state, attackingPlayer, attackers, totalTax, bands)
         }
@@ -736,78 +732,12 @@ internal class AttackPhaseManager(
     /**
      * Compute the total generic-mana attack tax owed for [attackers] without paying it.
      * Used by [declareAttackers] to decide whether to pause for player confirmation
-     * before tapping any mana.
+     * before tapping any mana. Shared with the AI via [CombatTaxes], which prices a
+     * proposed attack before proposing it.
      */
     internal fun calculateTotalAttackTax(
         state: GameState,
-        attackingPlayer: EntityId,
         attackers: Map<EntityId, EntityId>,
         projected: ProjectedState
-    ): Int {
-        if (attackers.isEmpty()) return 0
-        val attackersPerDefender = mutableMapOf<EntityId, Int>()
-        for ((_, defenderId) in attackers) {
-            val defenderPlayerId = if (state.turnOrder.contains(defenderId)) {
-                defenderId
-            } else {
-                projected.getController(defenderId)
-            }
-            if (defenderPlayerId != null) {
-                attackersPerDefender[defenderPlayerId] = (attackersPerDefender[defenderPlayerId] ?: 0) + 1
-            }
-        }
-
-        var totalGenericTax = 0
-        for ((defenderId, attackerCount) in attackersPerDefender) {
-            val defenderPermanents = projected.getBattlefieldControlledBy(defenderId)
-            for (entityId in defenderPermanents) {
-                val container = state.getEntity(entityId) ?: continue
-                val cardComponent = container.get<CardComponent>() ?: continue
-                val cardDef = cardRegistry.getCard(cardComponent.cardDefinitionId) ?: continue
-                for (ability in cardDef.staticAbilities) {
-                    if (ability is AttackTax) {
-                        val ctx = com.wingedsheep.engine.handlers.EffectContext(
-                            sourceId = entityId,
-                            controllerId = defenderId,
-                        )
-                        // Gate on the source's state (e.g. Archangel of Tithes — only while untapped).
-                        val condition = ability.condition
-                        if (condition != null && !conditionEvaluator.evaluate(state, condition, ctx)) {
-                            continue
-                        }
-                        val taxPerAttacker = maxOf(0, dynamicAmountEvaluator.evaluate(state, ability.amountPerAttacker, ctx, projected))
-                        totalGenericTax += taxPerAttacker * attackerCount
-                    }
-                }
-            }
-        }
-
-        totalGenericTax += calculatePerCreatureTax(state, attackers.keys, projected)
-        return totalGenericTax
-    }
-
-    /**
-     * Calculate per-creature tax from AttackBlockTaxPerCreatureType floating effects.
-     */
-    private fun calculatePerCreatureTax(
-        state: GameState,
-        creatureIds: Set<EntityId>,
-        projected: ProjectedState
-    ): Int {
-        var totalTax = 0
-        for (creatureId in creatureIds) {
-            for (floatingEffect in state.floatingEffects) {
-                val mod = floatingEffect.effect.modification
-                if (mod !is SerializableModification.AttackBlockTaxPerCreatureType) continue
-                if (creatureId !in floatingEffect.effect.affectedEntities) continue
-
-                val creatureTypeCount = state.getBattlefield().count { entityId ->
-                    projected.isCreature(entityId) && projected.hasSubtype(entityId, mod.creatureType)
-                }
-                val costPerCreature = ManaCost.parse(mod.manaCostPer).cmc
-                totalTax += costPerCreature * creatureTypeCount
-            }
-        }
-        return totalTax
-    }
+    ): Int = CombatTaxes.attackTax(state, cardRegistry, attackers, projected)
 }
