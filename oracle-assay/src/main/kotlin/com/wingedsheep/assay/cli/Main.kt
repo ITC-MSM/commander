@@ -70,6 +70,9 @@ private fun usage() = System.err.println(
                        file name for differential
       --scope          restrict to vanilla + keyword-only cards — Phase 1's own target, so the
                        decline table becomes exactly the list of what is blocking that number
+      --implemented    restrict to cards that already have a hand-written golden, so the decline
+                       table becomes the *grammar* backlog: gaps whose answer is already written
+                       and which the differential confirms the moment they parse
       --top N          how many decline families (or divergences) to list
       --refresh        re-download the bulk file before running
       --declines       after the report, list every declined line (long)
@@ -166,6 +169,13 @@ private fun parse(flags: Flags, explainDeclines: Boolean): Int {
     return 0
 }
 
+/**
+ * Golden headers carry Scryfall's name verbatim, so the full name is the match. The front-face
+ * fallback covers the handful of goldens filed under one half of a split card's name.
+ */
+private fun isImplemented(card: OracleCard, implemented: Set<String>): Boolean =
+    card.name.lowercase() in implemented || card.name.substringBefore(" // ").lowercase() in implemented
+
 private fun findCard(name: String): OracleCard? {
     val wanted = name.lowercase()
     return OracleCorpus.cards().firstOrNull {
@@ -207,9 +217,25 @@ private fun gate(flags: Flags, gating: Boolean): Int {
 
     val scopeOnly = flags.has("scope")
 
+    // `--implemented` splits the decline list by whether someone has already written the card.
+    // A declined line on a card that has a golden is a *grammar* gap whose known-good answer is
+    // sitting in the goldens, and the differential confirms it the moment it parses; a declined
+    // line on a card nobody has implemented may be an *SDK* gap, which is add-feature work with a
+    // far longer lead time. Ranked together they are one undifferentiated list.
+    val implementedOnly = flags.has("implemented")
+    if (implementedOnly && !ImplementedCorpus.isAvailable()) {
+        System.err.println(
+            "assay: no hand-written card goldens at ${ImplementedCorpus.snapshotDir()} — " +
+                "run `just test-class CardDefinitionSnapshotTest` to generate them"
+        )
+        return 2
+    }
+    val implemented = if (implementedOnly) ImplementedCorpus.names().mapTo(HashSet()) { it.lowercase() } else emptySet()
+
     var seen = 0
     for (card in OracleCorpus.cards(refresh = flags.has("refresh"))) {
         if (setFilter != null && card.setCode != setFilter) continue
+        if (implementedOnly && !isImplemented(card, implemented)) continue
         val result = touchstone.assay(card)
         if (scopeOnly && !result.inPhase1Scope) continue
         builder.add(result)
@@ -222,7 +248,12 @@ private fun gate(flags: Flags, gating: Boolean): Int {
     }
 
     val report = builder.build()
-    println(report.render(topDeclines = flags.int("top") ?: 20))
+    val population = listOfNotNull(
+        "cards with a hand-written golden".takeIf { implementedOnly },
+        "vanilla + keyword-only (Phase 1 scope)".takeIf { scopeOnly },
+        setFilter?.let { "set $it" },
+    ).joinToString(" · ").ifEmpty { null }
+    println(report.render(topDeclines = flags.int("top") ?: 20, population = population))
 
     if (declineLines.isNotEmpty()) {
         println()

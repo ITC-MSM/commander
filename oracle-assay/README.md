@@ -24,6 +24,7 @@ just assay explain "Wall of Omens"  # the same, with a caret on the token a decl
 just assay-gate                     # the touchstone over the whole corpus; exit 1 on a bug
 just assay-report --top 40          # the same numbers, always exit 0
 just assay-report --scope           # restricted to Phase 1's own target class
+just assay-report --implemented     # restricted to cards that already have a golden — the *grammar* backlog
 just assay-differential             # Assay's readings vs. the hand-written cards
 just assay corpus --refresh         # re-download the Scryfall Oracle bulk (~24 MB, cached 7 days)
 ```

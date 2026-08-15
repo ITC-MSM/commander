@@ -226,13 +226,19 @@ list top-down by cards blocked and let the percentage be the consequence. 2,250 
 statement about sequencing, not a ceiling; a rule that unlocks one card and joins no family needs a
 stated reason.
 
-**Split the decline list by what is already implemented.** The ~8,900 hand-written cards are each
-proof that the SDK can express that card. So a declined line on a card that already has a golden is a
-**grammar** gap whose known-good answer is sitting in the goldens — the cheapest work in the module,
-and confirmable by the differential the moment it parses. A declined line on a card nobody has
-implemented may be an **SDK** gap, which is `add-feature` work with a much longer lead time. Ranking
-those two populations separately turns one long list into two backlogs that different people can work
-in parallel, and it is the fastest route to the 100%.
+**Split the decline list by what is already implemented** — `just assay-report --implemented`. The
+~8,900 hand-written cards are each proof that the SDK can express that card. So a declined line on a
+card that already has a golden is a **grammar** gap whose known-good answer is sitting in the goldens
+— the cheapest work in the module, and confirmable by the differential the moment it parses. A
+declined line on a card nobody has implemented may be an **SDK** gap, which is `add-feature` work with
+a much longer lead time. Ranking those two populations separately turns one long list into two
+backlogs that different people can work in parallel, and it is the fastest route to the 100%.
+
+The split re-weights the list rather than reordering it wholesale, which is itself the finding: the
+top families are the same in both populations, so the grammar backlog and the SDK backlog are being
+blocked by the same missing sentence shapes rather than by different ones. Where it does diverge is
+worth reading — Phase 1's own target class is 97.1% over implemented cards against 84.1% corpus-wide,
+because the keywords with no `Keyword` constant are exactly the keywords no card here uses yet.
 
 **Keep the gate fast, because a gate nobody runs before pushing catches nothing.** A whole-corpus run
 is ~5s at Phase 1 size. Three levers when it stops being, in order, none of which changes any rule's

@@ -41,19 +41,35 @@ object ImplementedCorpus {
      *
      * @param root repository root; discovered from the working directory when null.
      */
-    fun cards(root: File? = null): Sequence<ImplementedCard> {
-        val dir = snapshotDir(root)
-        val files = dir.listFiles { f: File -> f.isFile && f.extension == "json" }
-            ?.sortedBy { it.name }
-            .orEmpty()
-        return files.asSequence().flatMap { file ->
+    fun cards(root: File? = null): Sequence<ImplementedCard> =
+        snapshotFiles(root).asSequence().flatMap { file ->
             val setCode = file.nameWithoutExtension
             splitEntries(file.readText()).asSequence().map { (name, json) ->
                 val card = runCatching { CardLoader.fromJsonPreservingIds(json) }.getOrNull()
                 ImplementedCard(name = name, setCode = setCode, definition = card)
             }
         }
-    }
+
+    /**
+     * Just the names, without decoding a single definition.
+     *
+     * The decline report's `--implemented` split asks a set-membership question — *does this card
+     * already have a golden?* — and nothing else. Answering it through [cards] would decode 8,874
+     * `CardDefinition`s to look at their headers, which costs more than the entire touchstone run
+     * it is meant to scope.
+     *
+     * Names are the Scryfall names verbatim, split cards included ("Wax // Wane"), because that is
+     * what `CardDefinitionSnapshotTest` writes into the header.
+     */
+    fun names(root: File? = null): Set<String> =
+        snapshotFiles(root)
+            .flatMap { file -> file.readLines().filter { it.startsWith("// ") } }
+            .mapTo(mutableSetOf()) { it.removePrefix("// ").trim() }
+
+    private fun snapshotFiles(root: File?): List<File> =
+        snapshotDir(root).listFiles { f: File -> f.isFile && f.extension == "json" }
+            ?.sortedBy { it.name }
+            .orEmpty()
 
     /** True when the goldens are where they are expected to be, so the CLI can say so before running. */
     fun isAvailable(root: File? = null): Boolean =

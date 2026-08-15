@@ -46,10 +46,19 @@ class FinenessReport private constructor(
         get() = normalizationFailures.isEmpty() && restoreFailures.isEmpty() &&
             ambiguities.isEmpty() && mismatches.isEmpty()
 
-    fun render(topDeclines: Int = 20): String = buildString {
+    /**
+     * @param population names the subset the numbers were measured over, when it is not the whole
+     *   corpus. A fineness number without its denominator's *definition* beside it is the easiest
+     *   way for two runs to be compared that never measured the same thing.
+     */
+    fun render(topDeclines: Int = 20, population: String? = null): String = buildString {
         appendLine("Argentum Assay — fineness")
         appendLine("=".repeat(78))
         appendLine()
+        if (population != null) {
+            appendLine(row("Population", population))
+            appendLine()
+        }
         appendLine(row("Cards assayed", cards.toString()))
         appendLine(row("Faces", "$faces  ($vanillaFaces vanilla)"))
         appendLine(row("Ability lines", "$lineInstances  ($uniqueLines unique)"))
