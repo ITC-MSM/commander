@@ -73,14 +73,15 @@ class TouchstoneTest : StringSpec({
         result.roundTrips shouldBe false
     }
 
-    // The uncovered line is an activated ability, which no rule reaches yet. It used to be an ETB
-    // trigger, until the grammar learned to read one — a fixture for "text outside the grammar" has
-    // to be replaced whenever the grammar catches up with it, and that is the healthy direction.
+    // The uncovered line is a mana ability whose colour is a *choice* — a different SDK effect
+    // from the fixed-symbol one, and the family the design says to decline rather than approximate.
+    // The fixture was an ETB trigger, then "{T}: Add {G}.", and each time the grammar caught up with
+    // it it had to be replaced; that is the healthy direction.
     "text outside the grammar declines and is attributed to the token it died on" {
-        val result = touchstone.assay(card("Llanowar Elves", "Defender\n{T}: Add {G}."))
+        val result = touchstone.assay(card("Birds of Paradise", "Flying\n{T}: Add one mana of any color."))
 
         result.lines.map { it.verdict } shouldBe listOf(LineVerdict.ROUND_TRIP, LineVerdict.DECLINED)
-        result.lines.last().declineToken shouldBe "{T}:"
+        result.lines.last().declineToken shouldBe "one"
         result.covered shouldBe false
     }
 
@@ -108,7 +109,7 @@ class TouchstoneTest : StringSpec({
         val report = FinenessReport.builder()
             .add(touchstone.assay(card("Serra Angel", "Flying\nVigilance", listOf("Flying", "Vigilance"))))
             .add(touchstone.assay(card("Grizzly Bears", "")))
-            .add(touchstone.assay(card("Llanowar Elves", "Defender\n{T}: Add {G}.")))
+            .add(touchstone.assay(card("Birds of Paradise", "Flying\n{T}: Add one mana of any color.")))
             .build()
 
         report.cards shouldBe 3
@@ -117,7 +118,7 @@ class TouchstoneTest : StringSpec({
         report.instancesByVerdict[LineVerdict.DECLINED] shouldBe 1
         report.cardsCovered shouldBe 2
         report.clean shouldBe true
-        report.declines.single().token shouldBe "{T}:"
+        report.declines.single().token shouldBe "one"
         report.declines.single().cards shouldBe 1
     }
 
@@ -132,7 +133,7 @@ class TouchstoneTest : StringSpec({
         FinenessReport.permil(1439, 1712) shouldBe (840.5 plusOrMinus 0.05)
         val report = FinenessReport.builder()
             .add(touchstone.assay(card("Serra Angel", "Flying", listOf("Flying"))))
-            .add(touchstone.assay(card("Llanowar Elves", "{T}: Add {G}.")))
+            .add(touchstone.assay(card("Birds of Paradise", "{T}: Add one mana of any color.")))
             .build()
         report.render().contains("500.0‰ (50.0%)") shouldBe true
     }

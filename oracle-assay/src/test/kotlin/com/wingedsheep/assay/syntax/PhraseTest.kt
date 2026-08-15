@@ -154,7 +154,55 @@ class PhraseTest : StringSpec({
     }
 
     "a line starting with a symbol passes through sentence case untouched" {
-        SentenceCase.decapitalize("{T}: Add {C}.") shouldBe "{T}: Add {C}."
-        SentenceCase.capitalize("{T}: Add {C}.") shouldBe "{T}: Add {C}."
+        SentenceCase.decapitalize("{T}, {Q}") shouldBe "{T}, {Q}"
+        SentenceCase.capitalize("{T}, {Q}") shouldBe "{T}, {Q}"
+    }
+
+    // An activated ability's effect clause is a sentence start too, which is what lets the mid-
+    // sentence Steps templates be slotted after a cost colon instead of being restated capitalized.
+    "an ability cost's colon starts a sentence, in both directions" {
+        SentenceCase.decapitalize("{T}: Add {C}.") shouldBe "{T}: add {C}."
+        SentenceCase.capitalize("{T}: add {C}.") shouldBe "{T}: Add {C}."
+        SentenceCase.decapitalize("Creatures you control have \"{T}: Add {G}.\"") shouldBe
+            "creatures you control have \"{T}: add {G}.\""
+    }
+
+    "a lowercase clause after a cost colon declines, for the same reason a lowercase line does" {
+        SentenceCase.decapitalize("• Setting: a land") shouldBe null
+    }
+
+    // `shape` exists for the explorer, which walks the wired grammar from its root entry point. It
+    // is read-only and never consulted while parsing or printing, so what these assert is that
+    // every combinator describes itself — a new one that forgot to would silently make a whole
+    // subtree of the grammar invisible rather than failing anywhere.
+
+    "every combinator describes its own structure" {
+        val flying = constant("flying", "F")
+        val strike = constant("first strike", "S")
+
+        phrase<Int>("draw {n} cards") { slot("n", cardinal); build { it.int("n") }; match { bind("n" to it) } }
+            .shape.shouldBeInstanceOf<RuleShape.Template>().template shouldBe "draw {n} cards"
+        oneOf("kw", flying, strike).shape.shouldBeInstanceOf<RuleShape.Choice>().alternatives shouldBe
+            listOf(flying, strike)
+        separated("kws", flying, "; ", min = 2).shape.shouldBeInstanceOf<RuleShape.Run>().separator shouldBe "; "
+        alternate(flying).shape.shouldBeInstanceOf<RuleShape.Alternate>().inner shouldBe flying
+        cardinal.shape.shouldBeInstanceOf<RuleShape.Leaf>().pattern shouldBe """0|[1-9][0-9]*"""
+    }
+
+    "the structure walk reaches every rule a phrase is built from" {
+        val leaf = constant("flying", "F")
+        val run = separated("kws", leaf, ", ")
+        val line = phrase<List<String>>("{kws}") {
+            slot("kws", run)
+            build { it.value<List<String>>("kws") }
+            match { bind("kws" to it) }
+        }
+        val root = oneOf("root", line)
+
+        val seen = mutableSetOf<Phrase<*>>()
+        fun walk(p: Phrase<*>) { if (seen.add(p)) p.shape.children.forEach(::walk) }
+        walk(root)
+
+        seen shouldBe setOf(root, line, run, leaf)
     }
 })

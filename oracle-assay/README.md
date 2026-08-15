@@ -14,7 +14,9 @@ vocabulary, the one-verb spell effects (draw, destroy, exile, tap, untap, return
 verbs (life, scry, surveil, damage, pump) and the **trigger prefix** — the event triggers and the step
 triggers ("When ~ enters, …", "At the beginning of your upkeep, …"), which is where the differential
 started comparing whole *abilities* rather than keyword lists, and where it found its first bug in a
-hand-written card.
+hand-written card. The **land band** followed — mana abilities and "~ enters tapped." — the first
+family where whole-card coverage moved with line coverage, because a land is a one-to-three-line card
+and those are the two sentences on it.
 Nothing here changes `:mtgish-tooling`, which stays authoritative until a per-set cutover replaces it
 (Phase 5). Assay is **not a runtime card loader** and never will be.
 
@@ -28,6 +30,7 @@ just assay-report --top 40          # the same numbers, always exit 0
 just assay-report --scope           # restricted to Phase 1's own target class
 just assay-report --implemented     # restricted to cards that already have a golden — the *grammar* backlog
 just assay-differential             # Assay's readings vs. the hand-written cards
+just assay-explore                  # all of the above in a browser, on the live grammar
 just assay corpus --refresh         # re-download the Scryfall Oracle bulk (~24 MB, cached 7 days)
 ```
 
@@ -42,10 +45,13 @@ it as gzipped JSONL, so it streams a card at a time.
 syntax/     Phrase kernel — templates, slots, both directions, memoization, the parse cap
 normalize/  Scryfall text -> canonical ability lines, every pass with its inverse; reminder glosses
 corpus/     the Scryfall Oracle bulk: download, cache, stream
-grammar/    the rules, by topic — Primitives, Keywords, Cardinals, Filters, Targets, Steps, Triggers
-            Steps covers draw, destroy/exile/tap/untap/bounce, life, scry/surveil, damage, and pump
-gate/       the touchstone and the fineness report
-cli/        assay parse | explain | gate | report | corpus
+grammar/    the rules, by topic — Primitives, Keywords, Cardinals, Filters, Targets, Steps, Triggers,
+            Mana, Costs, Activated, Replacements
+            Steps covers draw, destroy/exile/tap/untap/bounce, life, scry/surveil, damage, pump and
+            adding mana; Activated is the cost-colon-effect sentence, which slots Steps whole
+gate/       the touchstone, the fineness report, the differential
+explore/    the browser UI — a loopback HTTP server over the live grammar and both gates
+cli/        assay parse | explain | gate | report | differential | explore | corpus
 ```
 
 ## The three things that make this different
@@ -83,15 +89,15 @@ non-zero on. Declines are not failures.
 Cards assayed                    34882
 Ability lines                    66793  (39059 unique)
 
-Round-trips byte-exact           14300   214.1‰ (21.4%)
+Round-trips byte-exact           16454   246.3‰ (24.6%)
 Alternate spelling normalized    30
-Declined                         52463
+Declined                         50309
 Ambiguous — distinct readings    0
 Print mismatch                   0
 Normalization not invertible     0
 Full inverse not reproduced      0
 
-Cards fully covered              2389 / 34882   68.5‰ (6.8%)
+Cards fully covered              2886 / 34882   82.7‰ (8.3%)
 Vanilla + keyword-only cards     1440 / 1712   841.1‰ (84.1%)   <- Phase 1 target
 Reminder-text glosses            2870 matched · 114 differed · 956 unglossed
 ```
@@ -139,21 +145,22 @@ named population bucket instead and the denominator stays visible.
 
 ```
   Hand-written cards                 8874
-    compared                         653
-    not yet covered by the grammar   7619
+    compared                         890
+    not yet covered by the grammar   7382
     script slot not modelled yet      39
     lines do not fold into one card   20
     multi-face (out of scope)        301
     Oracle text differs from golden  242
     golden would not decode            0
 
-  Confirmed — models agree           650   995.4‰ (99.5%)
-  DIVERGENT — read every one           3
+  Confirmed — models agree           882   991.0‰ (99.1%)
+  DIVERGENT — read every one           8
 ```
 
 The divergence count is not meant to stay at zero — it rises every time the grammar reaches a new
-class of card, and each rise is the gate earning its keep. The five it opened with and the eight the
-first band of spell rules produced are all fixed or classified below.
+class of card, and each rise is the gate earning its keep. The five it opened with, the eight the
+first band of spell rules produced, and the six the land band produced are all fixed or classified
+below.
 
 Five separate things have to hold before a card is compared, and each has its own bucket. Every one
 of them was added after the gate was caught claiming a check nobody had performed:
@@ -164,7 +171,7 @@ of them was added after the gate was caught claiming a check nobody had performe
 | The text is the **same text** | A golden carries the wording it was authored from; if that is not what Scryfall serves, Assay is reading one card and diffing another. Compared normalized, so inconsistently-included reminder text is not a difference. |
 | The definition uses only **modelled slots** | A keyword the SDK lowers to a triggered ability at authoring time leaves content the grammar cannot produce. Confirming it would claim a check nobody performed. |
 | The lines **fold into one card** | A `CardScript` has one `spellEffect`; a card printing two effect paragraphs means a sequence the grammar has no rule for. Neither keeping the first nor concatenating them is honest, so it is counted. |
-| The card has no **unread triggers** | A keyword the SDK lowers at authoring time — prowess, provoke, rampage, training, mobilize — puts a triggered ability in the script that no text line prints. A card carrying more triggers than Assay read is carrying content nobody printed. One-directional: *Assay* having more would mean the grammar invented an ability, and that must diverge loudly. |
+| The card has no **unread abilities** | A keyword the SDK lowers at authoring time puts an ability in the script that no text line prints — prowess, provoke, rampage, training and mobilize become triggers; cycling, equip, morph and level up become activated abilities. A card carrying more of either than Assay read is carrying content nobody printed. One-directional: *Assay* having more would mean the grammar invented an ability, and that must diverge loudly. |
 
 A divergence never fails the build — it is a finding to classify as **parser bug**, **card bug**, or
 **fold**. Only an undecodable golden exits non-zero. The fold list lives in `gate/Differential.kt`
@@ -181,6 +188,17 @@ each one has to say why it is not a difference.
   control is **not** in `legalTargets` — which is the half that fails without the fix.
   This is also the answer to "why not just diff the printed text": nothing about the card *looked*
   wrong, and its own `oracleText` field carried the clause it did not implement.
+- **Two more of exactly that class, from the land band's first run.** Opening `activatedAbilities`
+  took the compared population from 653 cards to 890 and immediately found both:
+  **Voltaic Construct** prints "{2}: Untap target **artifact creature**" and filtered on
+  `TargetFilter.CreatureOrArtifact` — an `Or` where the text is a conjunction, so it untapped any
+  creature *or* any artifact, a strictly larger set than the card allows. **Dwarven Miner** prints
+  "{2}{R}, {T}: Destroy target **nonbasic** land" and filtered on `TargetFilter.Land`, so it destroyed
+  basic lands. Both are generated renders that dropped a clause, both were committed with their own
+  `oracleText` carrying the clause they did not implement, and both are fixed with a scenario test
+  asserting the *negative* — the permanent the text excludes is not in `legalTargets` — which is the
+  half that fails without the fix. Three such bugs in three new card classes is the pattern the gate
+  predicted: a divergence appears the first time the grammar reads a class, not later.
 - **A parser bug of exactly the class this gate exists for — fixed.** Assay read "protection from
   black and from red" as one `Protection(Colors([BLACK, RED]))`; the cards spell it as two
   `Protection(Color)` abilities. **The cards were right** — CR 702.16g: *"'Protection from [quality A]
@@ -211,6 +229,15 @@ each one has to say why it is not a difference.
   reported as divergent over a difference that was in neither model. It now walks the JSON tree and
   rewrites only `id` / `name` *values*. Every one of the three has been the gate finding a way it
   could have lied; none was found by reading the code.
+- **The gate lying to itself, for the fourth time — the slot fold was scoped to the wrong thing.**
+  The positional-reference fold below numbers a script's target slots so `ContextTarget(0)` and a
+  named requirement compare equal, and it numbered them *card-wide*, starting at the root. But a
+  `ContextTarget`'s index counts within its own **owner** — a `CardScript`, a `TriggeredAbility` and
+  an `ActivatedAbility` each declare their own requirements — and a card-wide counter that never
+  descended into an ability simply stopped. It agreed with every card for as long as the grammar
+  produced only top-level requirements; Trench Wurm, whose whole script is one activated ability with
+  a positional target, is what a card looks like when it stops agreeing. Numbering is now per owner.
+  The pattern holds: each of the four was found by *running* the gate on a new card class.
 - **A positional target reference and a named one — folded, with the SDK's own words for it.**
   Murderous Compulsion and Ureni's Rebuff refer to their target as `ContextTarget(0)` against an
   unnamed requirement; Assay always mints a name. The SDK documents `BoundVariable` as "safer and
@@ -242,12 +269,69 @@ each one has to say why it is not a difference.
   text as two abilities, which is how all but one card in the corpus writes it — Ureni, the Song
   Unending uses `Colors`. The scope is engine-supported (`CardEntityFactory`, `PlayerProtectionRules`)
   so nothing is broken; it is one card and one type away from the corpus having a single spelling.
+- **Open: a mana ability says so twice, and 24 abilities say it once.** `ActivatedAbility` carries
+  `isManaAbility: Boolean` *and* `timing: TimingRule.ManaAbility`, and `TimingRule.ManaAbility`'s own
+  KDoc claims the rules meaning — "does NOT go on the stack (Rule 605.3a)", "can be activated during
+  mana payment even without priority" — that the engine actually implements off `isManaAbility`
+  everywhere. 620 hand-written mana abilities set both; 24 set only `isManaAbility`, because
+  `activatedAbility { manaAbility = true }` sets that flag and leaves `timing` at its `InstantSpeed`
+  default. The grammar derives both from CR 605.1a and emits the majority, so Bog Initiate, Wirewood
+  Elf and Elvish Aberration diverge. Nothing is broken — every engine read is on `isManaAbility`, and
+  the one site that tests `timing == InstantSpeed` (the AI's `ExpiringGrantWindow`) returns early on
+  `isManaAbility` first — but this is **not folded**, because the two fields agreeing is a property
+  of how cards happen to be authored rather than a stated equivalence, and an ability with
+  `timing = ManaAbility` and `isManaAbility = false` would print as a mana ability and use the stack.
+  Folding would stop the gate noticing that.
+- **Open: `ManaColorSet.Specific` is a second spelling of a dual land's line.** 165 cards write
+  "{T}: Add {B} or {G}." as two `AddManaEffect` abilities sharing a cost, and 13 write it as one
+  `AddManaOfChoiceEffect(ManaColorSet.Specific(...))`. Unlike the other entries in this list the
+  split has a *reason*: every card in the smaller group carries a rider the two-ability form cannot
+  express correctly — "Activate only once each turn" on two abilities permits two activations — so
+  the type earns its place. The grammar emits the majority and never emits `Specific`, and none of
+  the 13 is compared today because each one's rider declines anyway.
 
 And the gate paid for itself before its first report: writing it surfaced that "Plains"
 de-pluralized to `Subtype("Plain")` — the "Elves" → `Elve` failure, live on the basic land types,
 round-tripping perfectly the whole time. `Primitives.pluralSubtype` now ranks candidate readings
 against the SDK's own type lists instead of guessing. Running it then surfaced the join and
 slot-completeness holes above, each of which was the gate finding a way it could have lied.
+
+## The explorer
+
+`just assay-explore` serves the whole module in a browser: the fineness numbers, the ranked
+declines with the cards behind each one, every card's reading beside its printed text, the wired
+grammar, the differential, and a box for text that was never printed.
+
+**It runs against the grammar on this classpath, not a snapshot of it.** That is the difference
+between this and the [mtgish model explorer](https://github.com/i5jb/mtgish) it is modelled on: that
+page had to precompute its data and ship the parser as WebAssembly, because the parser was Go in
+another repository and the page could not call it. Assay is ours and already linked, so a rule you
+just edited is one restart away from being re-measured, and a custom card runs the identical
+[`Touchstone`] path a corpus card runs — normalization, self-reference abstraction, reminder
+stripping and the invertibility check included — instead of an approximation of it.
+`com.sun.net.httpserver` is in the JDK, so the SDK-only dependency rule is untouched.
+
+Two things it shows that no CLI report does:
+
+- **Which cards are behind a decline family**, and how many of those already have a hand-written
+  golden. `assay report` ranks the families; clicking one is the backlog it names, split into the
+  grammar gaps (answer already written, differential confirms it the moment it parses) and the
+  possible SDK gaps.
+- **Both rankings side by side.** Keying declines by the token a line *died on* answers "what is the
+  grammar missing"; keying them by the **sentence shape** — the line with numbers and mana symbols
+  collapsed — answers "what should I write next", and they disagree sharply. The token ranking's top
+  row is `Whenever` at 5,070 cards, which names no piece of work; the shape ranking's is
+  `Enchant creature` at 921 cards, which is one rule.
+
+The corpus sweep (~5s) runs in the background at startup, so the live parser and the rule tree are
+usable before the numbers land; the differential runs on first request and is then cached, because
+it decodes 8,874 goldens and most sessions never open it.
+
+**Rule usage numbers are exact rather than indicative.** The kernel records no parse provenance — a
+reading is a value, and the rule that produced it is gone by the time the gate sees it. But the
+*print* side is deterministic: `oneOf` prints through the first canonical alternative that can
+express the value, so "which rule printed this" has one answer, and it is the same walk the round
+trip depends on. A rule showing no usage printed nothing in 34,882 cards.
 
 ## Adding a rule
 
@@ -256,7 +340,7 @@ slot-completeness holes above, each of which was the gate finding a way it could
 3. `just assay-gate` — the number that matters is that `MISMATCH` and `AMBIGUOUS` stay 0.
 4. Add the surface form to `KeywordGrammarTest`'s round-trip list.
 
-Two traps the kernel cannot catch for you:
+Three traps the kernel cannot catch for you:
 
 - **A `match` half that quietly matches nothing** still compiles and still parses; it shows up on
   the corpus as a print mismatch far from its cause. The `every keyword rule can print what it
@@ -264,3 +348,8 @@ Two traps the kernel cannot catch for you:
 - **Reversible but wrong.** "Elves" de-pluralizes to `Elve` and round-trips perfectly while meaning
   nothing. The touchstone structurally cannot catch that class — run `just assay-differential`, which
   is the general answer and has already caught two of these.
+- **Templates are mid-sentence, and a line has more than one sentence in it.** Write `"draw a card."`
+  and `"add {mana}."`, never `"Draw a card."` — `syntax/SentenceCase.kt` decapitalizes the line's
+  first word *and* the clause after each ability cost's `": "`, then recapitalizes both on the way
+  out. That is what lets `{T}: Add {G}.` be `Costs.cost` plus an unmodified `Steps` rule instead of a
+  second, capitalized copy of the effect vocabulary.

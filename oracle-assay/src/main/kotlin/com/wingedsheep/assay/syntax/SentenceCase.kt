@@ -16,23 +16,55 @@ package com.wingedsheep.assay.syntax
  * Lines that start with a symbol or digit — `"{T}: Add {C}."`, `"1 or more"` — pass through
  * untouched in both directions, which is why the guard is on *lowercase* specifically rather than
  * on "not uppercase".
+ *
+ * ## A line has more than one sentence start
+ *
+ * `"{T}: Add {C}."` capitalizes "Add", and `"{2}, {T}: Draw a card."` capitalizes "Draw", because
+ * an activated ability's effect clause begins a sentence after the cost colon. That is the same
+ * templating rule the line start obeys, applied at every place Oracle applies it, so it belongs
+ * here rather than in a grammar combinator — the alternative is every activated-ability rule
+ * spelling its effect clause capitalized, which is exactly the re-spelling that would stop
+ * [com.wingedsheep.assay.grammar.Steps] being slottable into a new sentence context.
+ *
+ * The rule is Wizards' and the corpus states it: of 14,042 `": "` occurrences in Oracle text, 32
+ * are followed by a lowercase letter, and all 32 are prose enumerations on the "hero's journey"
+ * cards ("• Setting: a land") rather than ability costs. Those lines decline, which is what
+ * [decapitalize] returning null means, and they declined before this too.
  */
 object SentenceCase {
 
-    /** Line as the grammar sees it, or null when the leading character makes the inverse a guess. */
+    /**
+     * Where Oracle starts a sentence inside one ability line: the line itself, and each clause
+     * after an ability cost's `": "`.
+     *
+     * Positions rather than a rewrite, because both directions need the same list and a
+     * one-character-for-one-character substitution keeps every index stable between them.
+     */
+    private fun sentenceStarts(line: String): List<Int> =
+        (listOf(0) + COST_COLON.findAll(line).map { it.range.last + 1 }).filter { it < line.length }
+
+    /** Line as the grammar sees it, or null when a leading character makes the inverse a guess. */
     fun decapitalize(line: String): String? {
-        val first = line.firstOrNull() ?: return line
-        if (first.isLowerCase()) return null
-        if (!first.isUpperCase()) return line
-        return first.lowercaseChar() + line.substring(1)
+        val chars = line.toCharArray()
+        for (at in sentenceStarts(line)) {
+            val c = chars[at]
+            if (c.isLowerCase()) return null
+            if (c.isUpperCase()) chars[at] = c.lowercaseChar()
+        }
+        return String(chars)
     }
 
     /** Inverse of [decapitalize]: the printed line as Oracle templating spells it. */
     fun capitalize(line: String): String {
-        val first = line.firstOrNull() ?: return line
-        if (!first.isLowerCase()) return line
-        return first.uppercaseChar() + line.substring(1)
+        val chars = line.toCharArray()
+        for (at in sentenceStarts(line)) {
+            val c = chars[at]
+            if (c.isLowerCase()) chars[at] = c.uppercaseChar()
+        }
+        return String(chars)
     }
+
+    private val COST_COLON = Regex(": ")
 }
 
 /** Parse a whole sentence-cased ability line. */

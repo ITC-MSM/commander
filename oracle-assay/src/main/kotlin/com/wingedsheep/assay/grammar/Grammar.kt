@@ -165,6 +165,36 @@ object Grammar {
     }
 
     /**
+     * A line that is one activated ability — "{T}: Add {G}." — or the several a single printed
+     * line can denote, since "{T}: Add {B} or {G}." is two abilities sharing a cost.
+     *
+     * Wrapped here for the same reason [spellLine] and [triggerLine] are: [Activated]'s rules stay
+     * about abilities and know nothing about which of a card's slots they land in.
+     */
+    private val activatedLine: Phrase<CardFragment> = phrase("{abilities}", name = "an activated ability line") {
+        slot("abilities", Activated.abilities)
+        build { CardFragment.of(CardScript(activatedAbilities = it.value("abilities"))) }
+        match { fragment ->
+            val abilities = fragment.script.activatedAbilities
+            if (abilities.isEmpty() || fragment.keywordAbilities.isNotEmpty()) return@match null
+            if (fragment.script != CardScript(activatedAbilities = abilities)) return@match null
+            bind("abilities" to abilities)
+        }
+    }
+
+    /** A line that is one replacement effect — "~ enters tapped." */
+    private val replacementLine: Phrase<CardFragment> = phrase("{replacement}", name = "a replacement effect line") {
+        slot("replacement", Replacements.replacement)
+        build { CardFragment.of(CardScript(replacementEffects = listOf(it.value("replacement")))) }
+        match { fragment ->
+            val replacement = fragment.script.replacementEffects.singleOrNull() ?: return@match null
+            if (fragment.keywordAbilities.isNotEmpty()) return@match null
+            if (fragment.script != CardScript(replacementEffects = listOf(replacement))) return@match null
+            bind("replacement" to replacement)
+        }
+    }
+
+    /**
      * The empty line. It exists as a rule rather than as a special case in the gate because a
      * reminder-only line normalizes to "" and must still print back to "" — and because a vanilla
      * card, the easy quarter of the corpus, is exactly a face with no lines at all.
@@ -174,6 +204,14 @@ object Grammar {
         match { if (it.isEmpty) Bindings.EMPTY else null }
     }
 
-    val abilityLine: Phrase<CardFragment> =
-        oneOf("an ability line", emptyLine, keywordLine, semicolonKeywordLine, spellLine, triggerLine)
+    val abilityLine: Phrase<CardFragment> = oneOf(
+        "an ability line",
+        emptyLine,
+        keywordLine,
+        semicolonKeywordLine,
+        spellLine,
+        triggerLine,
+        activatedLine,
+        replacementLine,
+    )
 }

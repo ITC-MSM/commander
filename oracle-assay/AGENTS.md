@@ -60,7 +60,14 @@ review, it is a change to decline.
 - **Two SDK spellings of one thing get one rule, and a finding.** Registering both is genuine
   ambiguity. `Primitives.protectionScope` deliberately never emits
   `Simple(PROTECTION_FROM_EACH_OPPONENT)`; `ProtectionScope.Colors` is a scope the grammar never
-  produces. Each such omission carries a KDoc paragraph naming it as an SDK finding.
+  produces; `Mana` never emits `ManaColorSet.Specific`, which 13 cards use for a dual land's line
+  where 165 use two abilities. Each such omission carries a KDoc paragraph naming it as an SDK
+  finding.
+- **A value the SDK carries twice is derived, not spelled.** `ActivatedAbility` says a mana ability
+  is one in `isManaAbility` *and* in `timing`; no printed word says either, and CR 605.1a defines it
+  as a property of the effect and the target list. `Activated.abilityFor` therefore computes both,
+  which is the only reading that stays true when a rule later produces an ability the corpus has not
+  seen. A rule that copied a majority value it had not derived would be reading a habit.
 
 ## Generalizing: fewer mappings, not more
 
@@ -130,6 +137,14 @@ gated — a normalization that cannot round-trip its own output would let any gr
 Corollary: **never "fix" a `VARIANT` by adding a field to the model.** A variant already says the
 right thing — the reading survived, only the spelling moved. Encoding the spelling would be a lie
 about where the information lives.
+
+**Case is the same kind of information, and lives one step further out.** `syntax/SentenceCase.kt`
+sits at the text boundary rather than in a normalization pass, because it moves nothing — it only
+lowercases a letter Oracle templating guarantees is uppercase. It does that at *every* sentence start
+in a line: the first word, and the clause after each ability cost's `": "`. Templates are therefore
+written mid-sentence throughout, and that is what lets `Activated` slot `Steps.step` unchanged rather
+than restating every verb capitalized. If you find yourself wanting a capital inside a template, the
+answer is almost certainly another sentence start this file should know about.
 
 ## Ambiguity is a factoring signal
 
@@ -268,7 +283,8 @@ commit.
 
 **Structure that survives 40 grammar files:** one file per semantic family, never per set or card;
 dependencies a DAG through each family's public entry `val` (`Steps` → `Filters`/`Targets`/
-`Cardinals`, `Triggers` → `Steps`); `Grammar.kt` the only place families are combined. Rule names
+`Cardinals`/`Mana`, `Triggers` → `Steps`, `Activated` → `Costs`/`Steps`/`Mana`); `Grammar.kt` the
+only place families are combined. Rule names
 stay unique and name their family, so an ambiguity diagnostic can identify both sides. Every family
 gets the `every rule can print what it parses` meta-test through a shared helper, and a family that
 is written but never wired into `Grammar` should fail a test rather than sit as dead code.

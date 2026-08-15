@@ -205,6 +205,31 @@ is the next work:
    table's rank overstates a prefix and understates a verb — the ranking is by the token a line *died
    on*, and a line dies on its first unknown token, which for a trigger is whatever follows the comma
    only once the prefix is known. Read the ranked *sentences* (below) before believing a rank.
+7. `Mana.kt` ✅ "Add {G}", "Add {C}{C}", and the choice form "Add {B} or {G}" / "Add {W}, {U}, or {B}",
+   which denotes *several* abilities rather than one effect with options. Still to come: "one mana of
+   any color" and the rest of `ManaColorSet` (48 + 19 implemented cards), the "deals 1 damage to you"
+   painland rider, and dynamic amounts.
+8. `Costs.kt` + `Activated.kt` ✅ the cost-colon-effect sentence — `{T}`, `{2}, {T}` and a bare mana
+   cost, with the clause after the colon slotting `Steps.step` whole. Still to come: the rest of the
+   cost vocabulary (sacrifice, pay life, discard, remove counters), `ActivationRestriction`, and
+   "Activate only as a sorcery".
+9. `Replacements.kt` ✅ "~ enters tapped." and the shock-land form. Still to come: the check-land
+   `unlessCondition`, which is the condition family's first customer.
+
+   **The land band is the first family where whole-card coverage moved with line coverage.** Lands
+   are one-to-three-line cards, so 819 mana-ability lines and 319 tapped-entry lines over cards that
+   already have a golden are mostly the *same* cards, and the two rule families together moved
+   whole-card coverage by 497 against 2,154 lines. That ratio is what "rank sentences, not dead
+   tokens" is for, and it is the opposite of the step triggers' — worth reading beside them.
+
+   **Sentence case turned out to be a line property with more than one sentence in it.** An activated
+   ability's effect clause is capitalized after the cost colon, so slotting the mid-sentence `Steps`
+   templates after a colon needed the case shift to happen somewhere. It went where the line-initial
+   one already lives — `syntax/SentenceCase.kt`, at the text boundary — rather than into a grammar
+   combinator, because the alternative is every activated-ability rule restating its effect clause
+   capitalized, which is exactly the re-spelling that stops `Steps` being slottable. The rule is
+   Wizards': of 14,042 `": "` occurrences in the corpus, 32 are followed by a lowercase letter, and
+   all 32 are prose enumerations on the "hero's journey" cards rather than ability costs.
 
 **Acceptance:** POR, LEA and a modern set (DFT or FDN) each report fineness; the per-set whole-render
 rate is directly comparable to `:mtgish-tooling`'s `gN` figure in the coverage dashboard.
@@ -217,8 +242,8 @@ Turn the implemented corpus into the semantic oracle. This is what catches the r
 class that the touchstone structurally cannot. **Brought forward ahead of Phase 2** per the MVP
 above: the gate has to exist before grammar breadth, or the breadth is unverified.
 
-**Outcome.** `just assay-differential` runs over all 8,874 committed goldens. Of those, 537 clear
-every scoping guard and are compared: **536 confirmed (99.8%), 1 classified divergence**. It found
+**Outcome.** `just assay-differential` runs over all 8,874 committed goldens. Of those, 890 clear
+every scoping guard and are compared: **882 confirmed (99.1%), 8 classified divergences**. It found
 the predicted class on its first run — multi-quality protection read as one ability where CR 702.16g makes it two,
 reversible and wrong — plus two "one concept, two spellings" findings in the SDK. All five opening
 divergences are now fixed: the grammar reads a joined quality list as several abilities (and
@@ -237,23 +262,32 @@ paths, deliberately not folded.
 the golden's text must be the *same text* Scryfall serves (compared normalized, since goldens carry
 reminder text inconsistently); the definition must use only *modelled slots*; and the card's lines
 must *fold into one card* — two lines that both parse as the spell effect mean a sequence the grammar
-cannot spell, which used to throw and now counts; and the card must carry no *unread triggers*, since
-a keyword the SDK lowers at authoring time puts an ability in the script that no text line prints.
-Every card failing one lands in a named bucket rather than being confirmed.
+cannot spell, which used to throw and now counts; and the card must carry no *unread abilities*,
+since a keyword the SDK lowers at authoring time puts an ability in the script that no text line
+prints. Every card failing one lands in a named bucket rather than being confirmed.
 
-1. **`gate/Differential.kt`** — done, over keyword abilities plus `spellEffect` and
-   `targetRequirements`. The comparison grows with the grammar, and the three guards above are what
-   keep each addition honest. Triggered and static abilities follow as Phase 2 reaches them.
+**And the land band was where it paid the MVP's outstanding clause.** Opening `activatedAbilities`
+and `replacementEffects` took the compared population from 653 to 890 and found **two genuine bugs
+in hand-written cards** — Voltaic Construct untapping any creature *or* artifact where the text says
+"artifact creature", and Dwarven Miner destroying basic lands where the text says "nonbasic". Both
+are generated renders that dropped a clause, the same shape as Meteor Golem. That closes the "at
+least one genuine bug found in a hand-written card" clause, three times over.
+
+1. **`gate/Differential.kt`** — done, over keyword abilities plus `spellEffect`,
+   `targetRequirements`, `triggeredAbilities`, `activatedAbilities` and `replacementEffects`. The
+   comparison grows with the grammar, and the guards above are what keep each addition honest. Static
+   abilities follow as Phase 2 reaches them.
 2. **An explicit fold list** — done, as `Folds` in the same file, currently one entry: a bare
    `Keyword` implied by a parameterized `KeywordAbility` of the same keyword, which is a
    `CardDefinition` index entry the SDK populates on purpose rather than a second ability. Reviewed,
    never grown silently.
 3. **Triage every divergence.** Ongoing, and the point. The opening five are closed: three were the
    protection-join parser bug, two were the flanking spelling — the first a bug in Assay, the second
-   a dead type in the SDK. A divergence that turns out to be a bug in a hand-written card is still
-   the outcome worth most, and none has appeared yet; the MVP's "at least one genuine bug found in a
-   hand-written card" clause is therefore still open, and is an argument for reaching new card
-   classes rather than for polishing this one.
+   a dead type in the SDK. The land band added six, of which two are the genuine card bugs above,
+   one was the gate's own slot normalization not reaching a requirement declared inside an ability
+   (fixed — `ContextTarget`'s index is per-owner, and a card-wide counter stopped at the root), and
+   three are a new standing SDK finding: mana-ability-ness is carried by two fields and 24
+   hand-written abilities set only one of them.
 
 **The oracle is a file read, not a dependency.** `:oracle-assay` still depends on `:mtg-sdk` alone.
 The goldens under `mtg-sets/src/test/resources/snapshots/cards/` are data, decoded by `mtg-sdk`'s own

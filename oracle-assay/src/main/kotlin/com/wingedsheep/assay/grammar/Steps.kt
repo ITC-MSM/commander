@@ -290,10 +290,17 @@ object Steps {
         ) { Effects.ReturnToHand(it) },
     )
 
-    /** Every step rule, as one alternation. Grows with the family. */
+    /**
+     * Every step rule, as one alternation. Grows with the family.
+     *
+     * [Mana.added] is a member declared elsewhere: producing mana is a spell effect in its own
+     * right (Dark Ritual) *and* the effect clause of nearly every activated ability, so its two
+     * halves — the sentence and the choice form that denotes several abilities — are kept together
+     * in [Mana] rather than split across two files by which slot each one reaches.
+     */
     val all: List<Phrase<CardScript>> =
         listOf(drawOne, drawMany, targetPlayerDrawsOne, targetPlayerDrawsMany) +
-            countedSteps + damageToTargetPermanent + pumpTargetPermanent + permanentSteps
+            countedSteps + damageToTargetPermanent + pumpTargetPermanent + permanentSteps + Mana.added
 
     val step: Phrase<CardScript> = oneOf("a spell effect", all)
 

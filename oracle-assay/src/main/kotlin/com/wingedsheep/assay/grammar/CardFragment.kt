@@ -48,8 +48,12 @@ data class CardFragment(
                 spellEffect = script.spellEffect ?: other.script.spellEffect,
                 targetRequirements = script.targetRequirements + other.script.targetRequirements,
                 // Triggered abilities are a list on purpose: one card, several trigger lines, in
-                // printed order. Unlike the spell effect there is nothing to collide over.
+                // printed order. Unlike the spell effect there is nothing to collide over. The same
+                // holds for activated abilities — and a *single* line can contribute several of
+                // them, since "{T}: Add {B} or {G}." is two — and for replacement effects.
                 triggeredAbilities = script.triggeredAbilities + other.script.triggeredAbilities,
+                activatedAbilities = script.activatedAbilities + other.script.activatedAbilities,
+                replacementEffects = script.replacementEffects + other.script.replacementEffects,
             ),
         )
     }
@@ -69,6 +73,7 @@ data class CardFragment(
          * `Differential.compare`'s completeness check cannot drift apart — adding a slot to the
          * grammar means adding it in both places, and this note is the pointer between them.
          */
-        const val MODELLED_SLOTS_NOTE = "spellEffect, targetRequirements, triggeredAbilities"
+        const val MODELLED_SLOTS_NOTE =
+            "spellEffect, targetRequirements, triggeredAbilities, activatedAbilities, replacementEffects"
     }
 }

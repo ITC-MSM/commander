@@ -20,6 +20,17 @@ import java.util.Locale
 /** The keys whose string *values* can be a target-slot reference. See `Differential.renameSlots`. */
 private val SLOT_REFERENCE_KEYS = setOf("id", "name")
 
+/** The `CardScript` fields holding a list of abilities with a generated id. See `canonicalizeAbilities`. */
+private val ABILITY_LISTS = listOf("triggeredAbilities", "activatedAbilities")
+
+/**
+ * The keys under which a requirement-owning object declares its target slots, in the order
+ * `ContextTarget`'s index counts them — `TriggeredAbility.allTargetRequirements` is
+ * `targetRequirement` then `additionalTargetRequirements`, and `CardScript` /`ActivatedAbility`
+ * each keep one plural list. See `Differential.normalizeOwner`.
+ */
+private val REQUIREMENT_KEYS = listOf("targetRequirement", "targetRequirements", "additionalTargetRequirements")
+
 /**
  * Gate 2 — the **differential**: Assay's reading of a card against the definition a human wrote
  * from the same text.
@@ -140,17 +151,18 @@ class Differential(private val touchstone: Touchstone = Touchstone()) {
             script = modelledSlots(definition.script),
         )
 
-        // The other half of the modelled-slot guard, now that `triggeredAbilities` is a slot the
-        // grammar reaches. A keyword the SDK lowers at authoring time — prowess, provoke, rampage,
-        // training, mobilize — puts a triggered ability in the script that *no text line prints*:
-        // the printed line is the keyword, which Assay reads as a keyword. So a card carrying more
-        // triggers than Assay read is carrying content nobody printed, and comparing its script
-        // would report the lowering as a divergence on every such card.
+        // The other half of the modelled-slot guard, now that whole *ability lists* are slots the
+        // grammar reaches. A keyword the SDK lowers at authoring time puts an ability in the script
+        // that *no text line prints*: the printed line is the keyword, which Assay reads as a
+        // keyword. Triggers get this from prowess, provoke, rampage, training and mobilize;
+        // activated abilities get it from cycling, equip, morph and level up. So a card carrying
+        // more abilities than Assay read is carrying content nobody printed, and comparing its
+        // script would report the lowering as a divergence on every such card.
         //
         // One-directional on purpose. The card having more is the lowering; **Assay** having more
         // would mean the grammar invented an ability, which must diverge loudly and not be excused
         // by this guard.
-        if (fromCard.script.triggeredAbilities.size > fromText.script.triggeredAbilities.size) {
+        if (carriesUnreadAbilities(fromCard.script, fromText.script)) {
             return CardComparison(implemented, card, Population.SCRIPT_NOT_MODELLED)
         }
 
@@ -187,6 +199,18 @@ class Differential(private val touchstone: Touchstone = Touchstone()) {
     }
 
     /**
+     * Does the hand-written card carry abilities in a modelled list that no printed line produced?
+     *
+     * By count rather than by content, because the check runs *before* the comparison and its job
+     * is only to spot a lowering. A card and a text that carry the same number of abilities but
+     * different ones is exactly what the comparison is for.
+     */
+    private fun carriesUnreadAbilities(card: CardScript, text: CardScript): Boolean =
+        card.triggeredAbilities.size > text.triggeredAbilities.size ||
+            card.activatedAbilities.size > text.activatedAbilities.size ||
+            card.replacementEffects.size > text.replacementEffects.size
+
+    /**
      * The `CardScript` slots the grammar can produce — [CardFragment.MODELLED_SLOTS_NOTE] — and its
      * complement. Written as a `copy` pair rather than a field list so the two stay exhaustive
      * between them however many fields `CardScript` grows.
@@ -195,10 +219,17 @@ class Differential(private val touchstone: Touchstone = Touchstone()) {
         spellEffect = script.spellEffect,
         targetRequirements = script.targetRequirements,
         triggeredAbilities = script.triggeredAbilities,
+        activatedAbilities = script.activatedAbilities,
+        replacementEffects = script.replacementEffects,
     )
 
-    private fun unmodelledSlots(script: CardScript) =
-        script.copy(spellEffect = null, targetRequirements = emptyList(), triggeredAbilities = emptyList())
+    private fun unmodelledSlots(script: CardScript) = script.copy(
+        spellEffect = null,
+        targetRequirements = emptyList(),
+        triggeredAbilities = emptyList(),
+        activatedAbilities = emptyList(),
+        replacementEffects = emptyList(),
+    )
 
     /**
      * Rename target slots to their position, on both sides, before comparing.
@@ -217,24 +248,95 @@ class Differential(private val touchstone: Touchstone = Touchstone()) {
      * cards reported as divergent over a difference that was not in either model. Walking the tree
      * and rewriting only string *values* under `id` / `name` keeps the original intent — rename the
      * declared slots, touch nothing else — without the collision.
+     *
+     * **Scoped per requirement-owner, because that is what a slot number means.** A `CardScript`,
+     * a `TriggeredAbility` and an `ActivatedAbility` each declare their own requirements, and
+     * `ContextTarget(0)` inside an ability indexes *that ability's* list — so numbering has to
+     * restart at each owner rather than run across the card. A global counter happened to agree
+     * while the grammar only produced top-level requirements; Trench Wurm, whose whole script is
+     * one activated ability with a positional target, is what a card looks like when it stops
+     * agreeing.
      */
     internal fun normalizeSlotNames(script: CardScript): String {
-        val slots = (script.targetRequirements + script.triggeredAbilities.flatMap { it.allTargetRequirements })
-            .mapNotNull { it.id }.distinct()
-            .withIndex().associate { (index, id) -> id to slotName(index) }
         val json = CardSerialization.json.encodeToString(CardScript.serializer(), script)
-        val renamed = renameSlots(CardSerialization.json.parseToJsonElement(json), slots)
+        val tree = CardSerialization.json.parseToJsonElement(json)
         return CardSerialization.json.encodeToString(
             JsonElement.serializer(),
-            canonicalizeAbilities(stampSlotIds(renamed)),
+            canonicalizeAbilities(normalizeSlots(tree)),
         )
     }
 
     private fun slotName(index: Int) = "slot_$index"
 
     /**
-     * Drop the two things about a triggered ability that no printed text determines: its id, and an
-     * authored `descriptionOverride`.
+     * Find every requirement-owning object in the tree and normalize each one's slots in isolation.
+     *
+     * An owner is any object that declares requirements under one of [REQUIREMENT_KEYS] — the root
+     * script, a triggered ability, an activated ability. Objects that declare none are walked
+     * through, because a card whose only requirements live inside an ability has a root that owns
+     * nothing.
+     */
+    private fun normalizeSlots(element: JsonElement): JsonElement = when {
+        element is JsonObject && element.keys.any { it in REQUIREMENT_KEYS } -> normalizeOwner(element)
+        element is JsonObject -> JsonObject(element.mapValues { normalizeSlots(it.value) })
+        element is JsonArray -> JsonArray(element.map(::normalizeSlots))
+        else -> element
+    }
+
+    /**
+     * Stamp one owner's requirements with their positional names and rewrite every reference to
+     * them inside it.
+     *
+     * Stamping rather than only renaming, because the declared `id` is optional in the SDK — a card
+     * whose effects refer to their target positionally never needs one — so renaming alone would
+     * leave one side carrying `"id": "slot_0"` and the other no `id` at all, over a difference that
+     * is not in either model.
+     */
+    private fun normalizeOwner(owner: JsonObject): JsonObject {
+        var position = 0
+        val names = mutableMapOf<String, String>()
+        // Positions are assigned in REQUIREMENT_KEYS order rather than in the object's own key
+        // order, because that is the order `ContextTarget`'s index counts them in.
+        val stamped = REQUIREMENT_KEYS.mapNotNull { key ->
+            val declared = owner[key] ?: return@mapNotNull null
+            val requirements = (declared as? JsonArray) ?: JsonArray(listOf(declared))
+            val slots = requirements.map { requirement ->
+                val slot = slotName(position++)
+                val fields = requirement as? JsonObject ?: return@map requirement
+                (fields["id"] as? JsonPrimitive)?.takeIf { it.isString }?.let { names[it.content] = slot }
+                JsonObject(fields + ("id" to JsonPrimitive(slot)))
+            }
+            key to if (declared is JsonArray) JsonArray(slots) else slots.single()
+        }.toMap()
+
+        return JsonObject(
+            owner.mapValues { (key, value) ->
+                stamped[key] ?: rewriteReferences(value, names)
+            }
+        )
+    }
+
+    /**
+     * Rewrite references to this owner's slots, stopping at any nested owner so its own numbering
+     * applies inside it.
+     */
+    private fun rewriteReferences(element: JsonElement, names: Map<String, String>): JsonElement = when {
+        element is JsonObject && element.keys.any { it in REQUIREMENT_KEYS } -> normalizeSlots(element)
+        element is JsonObject -> positionalReference(element) ?: JsonObject(
+            element.mapValues { (key, value) ->
+                val renamed = (value as? JsonPrimitive)?.takeIf { it.isString }?.content?.let(names::get)
+                if (key in SLOT_REFERENCE_KEYS && renamed != null) JsonPrimitive(renamed)
+                else rewriteReferences(value, names)
+            }
+        )
+
+        element is JsonArray -> JsonArray(element.map { rewriteReferences(it, names) })
+        else -> element
+    }
+
+    /**
+     * Drop the two things about an ability that no printed text determines: its id, and an authored
+     * `descriptionOverride`.
      *
      * An `AbilityId` is arbitrary in exactly the way a target slot's name is, and more obviously so:
      * the DSL generates them from a counter, which is why Kavu Climber's golden says `"ability_1"`.
@@ -245,35 +347,23 @@ class Differential(private val touchstone: Touchstone = Touchstone()) {
      * overrides the auto-generated one" — presentation, never executed. An author writes one when
      * the generated sentence reads badly; a parser never would, since the sentence it was parsing is
      * right there. Comparing it would report every such card as divergent over its UI string.
+     *
+     * Both lists get the same treatment, and activated abilities need it at least as badly: the
+     * override on an `ActivatedAbility` is what renders its menu label, so authors reach for it far
+     * more often — Mishra's Workshop, Creeping Peeper and Ashnod's Altar all carry one that is
+     * simply the card's own printed line. Scoping it to triggered abilities only, which is where
+     * Phase 1 established the rule, would have reported each of those as a divergence over a UI
+     * string the moment the grammar could read them.
      */
     private fun canonicalizeAbilities(script: JsonElement): JsonElement {
         val root = script as? JsonObject ?: return script
-        val abilities = root["triggeredAbilities"] as? JsonArray ?: return script
-        val stamped = abilities.mapIndexed { index, ability ->
-            val fields = (ability as? JsonObject) ?: return@mapIndexed ability
-            JsonObject(fields - "descriptionOverride" + ("id" to JsonPrimitive("ability_$index")))
-        }
-        return JsonObject(root + ("triggeredAbilities" to JsonArray(stamped)))
-    }
-
-    /**
-     * Rename declared slot ids wherever they appear as an `id` or `name` *value*.
-     *
-     * Narrow on purpose, in both directions: only those two keys, and only values that are a slot
-     * this script actually declares. A broader rewrite could make two genuinely different models
-     * compare equal, which is the one kind of bug a gate must never contain.
-     */
-    private fun renameSlots(element: JsonElement, slots: Map<String, String>): JsonElement = when (element) {
-        is JsonObject -> positionalReference(element) ?: JsonObject(
-            element.mapValues { (key, value) ->
-                val renamed = (value as? JsonPrimitive)?.takeIf { it.isString }?.content?.let(slots::get)
-                if (key in SLOT_REFERENCE_KEYS && renamed != null) JsonPrimitive(renamed)
-                else renameSlots(value, slots)
-            }
-        )
-
-        is JsonArray -> JsonArray(element.map { renameSlots(it, slots) })
-        else -> element
+        return JsonObject(root + ABILITY_LISTS.mapNotNull { key ->
+            val abilities = root[key] as? JsonArray ?: return@mapNotNull null
+            key to JsonArray(abilities.mapIndexed { index, ability ->
+                val fields = (ability as? JsonObject) ?: return@mapIndexed ability
+                JsonObject(fields - "descriptionOverride" + ("id" to JsonPrimitive("${key}_$index")))
+            })
+        })
     }
 
     /**
@@ -285,11 +375,11 @@ class Differential(private val touchstone: Touchstone = Touchstone()) {
      * instead of by position. Hand-written cards use both; the grammar always mints a name, because a
      * rule that spelled the index would have to know how many requirements the *card* ends up with.
      *
-     * Rewriting the positional form into the named one — paired with [stampSlotIds], which gives
-     * every requirement its positional name whether or not the author wrote an `id` — makes the
-     * comparison about *which requirement an effect reads*, which is the thing that carries meaning.
-     * It stays closed on the case that matters: `ContextTarget(1)` normalizes to `slot_1` and still
-     * diverges from anything reading `slot_0`.
+     * Rewriting the positional form into the named one — paired with the stamping in
+     * [normalizeOwner], which gives every requirement its positional name whether or not the author
+     * wrote an `id` — makes the comparison about *which requirement an effect reads*, which is the
+     * thing that carries meaning. It stays closed on the case that matters: `ContextTarget(1)`
+     * normalizes to `slot_1` and still diverges from anything reading `slot_0`.
      */
     private fun positionalReference(element: JsonObject): JsonElement? {
         if ((element["type"] as? JsonPrimitive)?.content != "ContextTarget") return null
@@ -297,23 +387,6 @@ class Differential(private val touchstone: Touchstone = Touchstone()) {
         return JsonObject(
             mapOf("type" to JsonPrimitive("BoundVariable"), "name" to JsonPrimitive(slotName(index)))
         )
-    }
-
-    /**
-     * Give every target requirement the name of its position, replacing whatever it was called.
-     *
-     * The declared `id` is optional in the SDK — a card whose effects refer to their target
-     * positionally never needs one — so renaming is not enough on its own: one side would carry
-     * `"id": "slot_0"` and the other no `id` at all, over a difference that is not in either model.
-     */
-    private fun stampSlotIds(script: JsonElement): JsonElement {
-        val root = script as? JsonObject ?: return script
-        val requirements = root["targetRequirements"] as? JsonArray ?: return script
-        val stamped = requirements.mapIndexed { index, requirement ->
-            val fields = (requirement as? JsonObject) ?: return@mapIndexed requirement
-            JsonObject(fields + ("id" to JsonPrimitive(slotName(index))))
-        }
-        return JsonObject(root + ("targetRequirements" to JsonArray(stamped)))
     }
 
     /**

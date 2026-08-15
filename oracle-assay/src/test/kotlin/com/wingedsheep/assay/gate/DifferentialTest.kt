@@ -4,6 +4,7 @@ import com.wingedsheep.assay.corpus.ImplementedCard
 import com.wingedsheep.assay.corpus.ImplementedCorpus
 import com.wingedsheep.assay.corpus.OracleCard
 import com.wingedsheep.assay.corpus.OracleFace
+import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.ManaCost
 import com.wingedsheep.sdk.core.TypeLine
@@ -11,8 +12,12 @@ import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.CardScript
 import com.wingedsheep.sdk.model.CreatureStats
+import com.wingedsheep.sdk.scripting.AbilityCost
+import com.wingedsheep.sdk.scripting.AbilityId
+import com.wingedsheep.sdk.scripting.ActivatedAbility
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.KeywordAbility
+import com.wingedsheep.sdk.scripting.TimingRule
 import com.wingedsheep.sdk.scripting.filters.unified.TargetFilter
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.scripting.targets.TargetPermanent
@@ -122,9 +127,10 @@ class DifferentialTest : StringSpec({
     }
 
     "a card whose text is partly readable is still excluded" {
-        val card = oracleCard("Llanowar Elves", "Flying\n{T}: Add {G}.")
+        val text = "Flying\n{T}: Add one mana of any color."
+        val card = oracleCard("Birds of Paradise", text)
         val result = differential.compare(
-            implemented(definition("Llanowar Elves", "Flying\n{T}: Add {G}.", keywords = setOf(Keyword.FLYING))),
+            implemented(definition("Birds of Paradise", text, keywords = setOf(Keyword.FLYING))),
             index(card),
         )
 
@@ -298,6 +304,50 @@ class DifferentialTest : StringSpec({
         val second = destroyScript(null, EffectTarget.ContextTarget(1))
 
         differential.normalizeSlotNames(first) shouldNotBe differential.normalizeSlotNames(second)
+    }
+
+    // Trench Wurm: the whole script is one activated ability whose target is referred to
+    // positionally. The numbering has to restart at each requirement-owner, because that is what
+    // `ContextTarget`'s index counts — a card-wide counter reached the root and stopped.
+    "a requirement declared inside an ability is normalized in that ability's own scope" {
+        fun ability(slot: String?, reference: EffectTarget) = CardScript(
+            activatedAbilities = listOf(
+                ActivatedAbility(
+                    id = AbilityId("whatever"),
+                    cost = AbilityCost.Tap,
+                    effect = Effects.Destroy(reference),
+                    targetRequirements = listOf(
+                        TargetPermanent(filter = TargetFilter(GameObjectFilter.Creature), id = slot)
+                    ),
+                )
+            )
+        )
+
+        differential.normalizeSlotNames(ability("target", EffectTarget.BoundVariable("target"))) shouldBe
+            differential.normalizeSlotNames(ability(null, EffectTarget.ContextTarget(0)))
+        differential.normalizeSlotNames(ability("target", EffectTarget.BoundVariable("target"))) shouldNotBe
+            differential.normalizeSlotNames(ability(null, EffectTarget.ContextTarget(1)))
+    }
+
+    // The `descriptionOverride` rule Phase 1 established for triggered abilities, which activated
+    // abilities need at least as badly: the override is what renders an ability's menu label, so
+    // authors write one far more often — and it is presentation, never executed.
+    "an authored ability label is not a difference in what the card does" {
+        fun tapForGreen(label: String?) = CardScript(
+            activatedAbilities = listOf(
+                ActivatedAbility(
+                    id = AbilityId("whatever"),
+                    cost = AbilityCost.Tap,
+                    effect = Effects.AddMana(Color.GREEN),
+                    timing = TimingRule.ManaAbility,
+                    isManaAbility = true,
+                    descriptionOverride = label,
+                )
+            )
+        )
+
+        differential.normalizeSlotNames(tapForGreen(null)) shouldBe
+            differential.normalizeSlotNames(tapForGreen("{T}: Add {G}."))
     }
 
     // ---------------------------------------------------------------------------------------
