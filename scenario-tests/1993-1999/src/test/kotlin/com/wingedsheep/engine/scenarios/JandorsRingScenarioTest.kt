@@ -106,8 +106,12 @@ class JandorsRingScenarioTest : ScenarioTestBase() {
 
                 val ring = game.findPermanent("Jandor's Ring")!!
                 val ringActivations = game.getLegalActions(1).filter { info ->
-                    (info.action as? ActivateAbility)?.sourceId == ring &&
-                        info.action.abilityId == ringAbilityId
+                    // Bound to a local rather than smart-cast in place: `info.action` is a public
+                    // property of another module, which Kotlin will not smart-cast.
+                    val activation = info.action as? ActivateAbility
+                    activation != null &&
+                        activation.sourceId == ring &&
+                        activation.abilityId == ringAbilityId
                 }
                 // The enumerator still emits the ability as a greyed-out unaffordable entry so
                 // the UI can show "you can't activate this yet" — the ability is not omitted
@@ -134,8 +138,12 @@ class JandorsRingScenarioTest : ScenarioTestBase() {
 
                 val ring = game.findPermanent("Jandor's Ring")!!
                 val ringActivations = game.getLegalActions(1).filter { info ->
-                    (info.action as? ActivateAbility)?.sourceId == ring &&
-                        info.action.abilityId == ringAbilityId
+                    // Bound to a local rather than smart-cast in place: `info.action` is a public
+                    // property of another module, which Kotlin will not smart-cast.
+                    val activation = info.action as? ActivateAbility
+                    activation != null &&
+                        activation.sourceId == ring &&
+                        activation.abilityId == ringAbilityId
                 }
                 withClue(
                     "Per Scryfall ruling: 'If you do not have the card still in your hand, " +

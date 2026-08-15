@@ -7,8 +7,6 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.shouldBe
-import java.nio.file.Files
-import java.nio.file.Paths
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import kotlin.io.path.name
@@ -20,18 +18,11 @@ class MtgSetCatalogTest : FunSpec({
     // CardDiscovery.findSets). A set declared as something other than an `object`, or otherwise
     // missed by the classpath scan, would silently vanish from the catalog — this catches it.
     test("every <Name>Set.kt under definitions is discovered into MtgSetCatalog.all") {
-        val definitionsDir = Paths.get(
-            "src/main/kotlin/com/wingedsheep/mtg/sets/definitions"
-        ).toAbsolutePath()
-
-        val setFilesInTree = Files.walk(definitionsDir).use { stream ->
-            stream
-                .filter { it.name.endsWith("Set.kt") }
-                .filter { it.readText().contains(": MtgSet") }
-                .map { it.name.removeSuffix(".kt") }
-                .toList()
-                .sorted()
-        }
+        val setFilesInTree = SetSourceRoots.definitionFiles()
+            .filter { it.name.endsWith("Set.kt") }
+            .filter { it.readText().contains(": MtgSet") }
+            .map { it.name.removeSuffix(".kt") }
+            .sorted()
 
         val registeredNames = MtgSetCatalog.all
             .map { it::class.simpleName!! }

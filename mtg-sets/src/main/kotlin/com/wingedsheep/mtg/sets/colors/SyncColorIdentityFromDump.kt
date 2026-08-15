@@ -11,9 +11,9 @@ import java.nio.file.Paths
 /**
  * Offline sync against a Scryfall bulk-data dump (the "All Cards" or "Default Cards" JSON).
  * Streams every printing, builds a `name -> color_identity` map, then walks every card
- * definition file under `mtg-sets/src/main/kotlin/com/wingedsheep/mtg/sets/definitions/.../cards/`
- * and rewrites it in place to add or update an explicit `colorIdentity = "..."` line in the
- * `card(...) { ... }` builder block.
+ * definition file under every card module's `definitions/.../cards/` — the corpus is split across
+ * `:mtg-sets-core` and the `:mtg-sets-<era>` modules — and rewrites each in place to add or update
+ * an explicit `colorIdentity = "..."` line in the `card(...) { ... }` builder block.
  *
  * Run: `./gradlew :mtg-sets:syncColorIdentityFromDump --args="/path/to/all-cards-YYYYMMDDhhmmss.json"`.
  *
@@ -34,8 +34,17 @@ fun main(args: Array<String>) {
     val dumpPath = Paths.get(dumpArg)
     require(Files.exists(dumpPath)) { "Dump not found: $dumpPath" }
 
-    val cardsRoot = Paths.get("mtg-sets/src/main/kotlin/com/wingedsheep/mtg/sets/definitions")
-    require(Files.exists(cardsRoot)) { "Card definitions root not found: $cardsRoot" }
+    // Card definitions live in every `mtg-sets*` module that has a definitions/ tree, so a new era
+    // module is picked up without touching this task. Run from the repo root (the Gradle task sets
+    // workingDir accordingly).
+    val cardsRoots = Files.list(Paths.get("")).use { stream ->
+        stream
+            .filter { it.fileName.toString().startsWith("mtg-sets") }
+            .map { it.resolve("src/main/kotlin/com/wingedsheep/mtg/sets/definitions") }
+            .filter { Files.isDirectory(it) }
+            .toList()
+    }
+    require(cardsRoots.isNotEmpty()) { "No card definition modules found under ${Paths.get("").toAbsolutePath()}" }
 
     println("Scanning $dumpPath for color identities…")
     val parser = Json { ignoreUnknownKeys = true; isLenient = false }
@@ -62,12 +71,14 @@ fun main(args: Array<String>) {
     }
     println("Indexed ${identities.size} unique card names from $scanned printings.")
 
-    val cardFiles = Files.walk(cardsRoot).use { stream ->
-        stream
-            .filter { Files.isRegularFile(it) }
-            .filter { it.fileName.toString().endsWith(".kt") }
-            .filter { !it.fileName.toString().endsWith("Set.kt") }
-            .toList()
+    val cardFiles = cardsRoots.flatMap { root ->
+        Files.walk(root).use { stream ->
+            stream
+                .filter { Files.isRegularFile(it) }
+                .filter { it.fileName.toString().endsWith(".kt") }
+                .filter { !it.fileName.toString().endsWith("Set.kt") }
+                .toList()
+        }
     }
 
     var patched = 0

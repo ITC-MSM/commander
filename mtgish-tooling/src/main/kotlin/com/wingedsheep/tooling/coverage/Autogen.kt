@@ -274,7 +274,8 @@ object Autogen {
 
     private fun modeWriteAll(setCode: String, effects: Set<String>, keywords: Set<String>, outdir: String?, completeOnly: Boolean, skipReprints: Boolean, onlyExisting: Boolean): Int {
         val (names, idx) = allWithMtgish(setCode)
-        val out = if (outdir != null) File(outdir) else File(DEFINITIONS_ROOT, "${setDirSegment(setCode)}/cards")
+        val setDir = setDirSegment(setCode)
+        val out = if (outdir != null) File(outdir) else File(definitionsRootFor(setDir), "$setDir/cards")
         // --only-existing: refresh just the cards this tool previously generated into `out`, in place.
         // Computed BEFORE any delete, by the mtgish marker in each file — so hand-made cards (and the
         // blanket wipe below) are skipped and only tool-authored files are replaced.
@@ -364,7 +365,8 @@ object Autogen {
                 System.err.println("relocate: \"$name\" -> ${earliest.uppercase()} renders incomplete; left in ${setCode.uppercase()}")
                 continue
             }
-            val dir = File(DEFINITIONS_ROOT, "${setDirSegment(earliest)}/cards").apply { mkdirs() }
+            val earliestDir = setDirSegment(earliest)
+            val dir = File(definitionsRootFor(earliestDir), "$earliestDir/cards").apply { mkdirs() }
             File(dir, sourceFileName(name)).writeText(res.text)
             moved++
             perSet.merge(earliest.uppercase(), 1, Int::plus)

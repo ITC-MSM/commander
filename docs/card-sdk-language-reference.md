@@ -1515,7 +1515,7 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   3. the engine-wide generic fallback — `TokenArt.IMAGES` by creature type for creature tokens, or the
      canonical `PredefinedTokens.kt` printing for Treasure/Map/….
 
-  Layer 2's bulk half is `mtg-sets/src/main/resources/tokens.json`, one entry per token printing of every
+  Layer 2's bulk half is `mtg-sets-core/src/main/resources/tokens.json`, one entry per token printing of every
   set that has a Scryfall token set (`t<code>`), refreshed with **`just token-art-sync`**. You rarely
   touch it: it is machine-owned and regenerated wholesale. The two halves are combined by
   `TokenArtData.forSet(set)` — hand-authored rows plus the synced rows for identities the set doesn't
@@ -10466,7 +10466,7 @@ the linter).
 | Keywords           | `mtg-sdk/src/main/kotlin/.../core/Keyword.kt`                   |
 | Card model         | `mtg-sdk/src/main/kotlin/.../model/CardDefinition.kt`           |
 | Dynamic amounts    | `mtg-sdk/src/main/kotlin/.../scripting/values/DynamicAmount.kt` |
-| Real card examples | `mtg-sets/src/main/kotlin/.../definitions/blb/cards/`           |
+| Real card examples | `just where BLB` → `mtg-sets-<era>/.../definitions/blb/cards/`   |
 
 For step-by-step authoring workflow see [`api-guide.md`](api-guide.md) (and use the `add-card` skill);
 for hard cases see [`managing-complex-and-rare-abilities.md`](managing-complex-and-rare-abilities.md).

@@ -46,7 +46,10 @@ docs it points at; load those when the work needs them.
 | Module | Purpose | Deps |
 |--------|---------|------|
 | `mtg-sdk` | DSLs, data models, primitives — pure data, no logic | — |
-| `mtg-sets` | Card definitions (Portal, Alpha, Onslaught, …) | sdk |
+| `mtg-sets` | Aggregator — re-exports the whole card corpus; catalog, Scryfall sync, corpus-wide tests | sdk, sets-* |
+| `mtg-sets-core` | `CardDiscovery`, token art, the setless `custom/` cards | sdk |
+| `mtg-sets-<era>` | Card definitions, one module per fixed release-year range, chained oldest→newest | sdk, sets-core |
+| `scenario-tests/<era>` | Card scenario tests, mirroring the card eras | engine, sets |
 | `rules-engine` | Core MTG rules (zero server deps) | sdk |
 | `ai` | Built-in AI player + draft/deckbuild advisors | engine, sdk |
 | `mtg-search` | Scryfall-style search query language over a `SearchCard` projection | — |
@@ -57,6 +60,17 @@ docs it points at; load those when the work needs them.
 
 **Key principle:** the engine is pure (no card-specific code), content is data-driven (no execution
 logic), and the API is an anti-corruption layer between engine and clients.
+
+**Finding a set's module.** The card corpus and its scenario tests are split by release year so that
+no single Kotlin compilation holds all of it — that split is why the build stopped running the
+compile daemon out of heap. You never need to memorise the mapping:
+
+```bash
+just where MRD              # -> mtg-sets-2003-2007/... and scenario-tests/2003-2007
+just test-class MyrIncubatorScenarioTest   # finds the file, runs only its module
+```
+
+Depend on `project(":mtg-sets")` as before — it re-exports every era, so nothing downstream changed.
 
 ## Load-bearing rules
 
@@ -118,6 +132,7 @@ It is **predictive and non-authoritative — never a card loader.** Two rules fo
 | Doc | Topic |
 |-----|-------|
 | [`architecture-principles.md`](docs/architecture-principles.md) | Core design (ECS, continuations, layer system, mana, priority) |
+| [`build-performance-plan.md`](docs/build-performance-plan.md) | Why the card corpus and scenario suite are split into per-era modules; daemon heap and cache tuning |
 | [`sdk-design-principles.md`](docs/sdk-design-principles.md) | The bar for a new SDK type: composition, reusability, naming |
 | [`card-sdk-language-reference.md`](docs/card-sdk-language-reference.md) | Full card SDK / DSL catalog — update on any SDK change |
 | [`api-guide.md`](docs/api-guide.md) | Adding cards/mechanics step-by-step |

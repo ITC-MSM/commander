@@ -22,20 +22,18 @@ plugins {
 // recompiles and retests everything from cold. When GRADLE_BUILD_CACHE_DIR is set (see .github/workflows/ci.yml),
 // we point the build cache at a workspace path that ci.yml caches with a prefix-matched actions/cache key,
 // giving real cross-commit reuse. Unset locally, so developer builds keep the default Gradle user-home cache.
-//
-// `removeUnusedEntriesAfterDays` is set unconditionally: Gradle's default retention let the local
-// cache grow to 19 GB in ~/.gradle/caches/build-cache-1 on a developer box, because every worktree's
-// build writes into the same shared cache and nothing ever expired entries for branches that are long
-// merged. A week is comfortably longer than the useful life of an entry here — the sets that actually
-// get rebuilt daily are re-seeded on every build.
-buildCache {
-    local {
-        System.getenv("GRADLE_BUILD_CACHE_DIR")?.let { cacheDir ->
+System.getenv("GRADLE_BUILD_CACHE_DIR")?.let { cacheDir ->
+    buildCache {
+        local {
             directory = java.io.File(cacheDir)
         }
-        removeUnusedEntriesAfterDays = 7
     }
 }
+
+// Cache *retention* (the local build cache had grown to 19 GB) cannot be set from here: Gradle
+// rejects it as "modified from an unsafe location" because it governs the shared Gradle user home,
+// not this build. It lives in gradle/init.d/argentum-cache-retention.init.gradle.kts instead —
+// install it with `just install-gradle-init`.
 
 // Include subprojects in the build.
 // If there are changes in only one of the projects, Gradle will rebuild only the one that has changed.
@@ -45,6 +43,36 @@ include(":rules-engine")
 include(":mtg-sdk")
 include(":mtg-sets")
 include(":mtg-search")
+
+// The card corpus, split out of :mtg-sets. `:mtg-sets` still re-exports all of it, so every
+// existing `project(":mtg-sets")` dependency is unchanged — this only bounds how much Kotlin has to
+// compile at once. Era boundaries are FIXED year ranges chained oldest-to-newest: a new release year
+// appends a module, and no set ever moves between them.
+include(":mtg-sets-core")
+include(":mtg-sets-1993-1999")
+include(":mtg-sets-2000-2002")
+include(":mtg-sets-2003-2007")
+include(":mtg-sets-2008-2016")
+include(":mtg-sets-2017-2022")
+include(":mtg-sets-2023")
+include(":mtg-sets-2024")
+include(":mtg-sets-2025")
+include(":mtg-sets-2026")
+
+// Card scenario tests, mirroring the card modules era for era: a test for an Outlaws of Thunder
+// Junction card lives in `:scenario-tests:2024` next to `:mtg-sets-2024`, so a set's PR touches one
+// pair of modules. They depend on the `:mtg-sets` aggregator, not on a single era, so every
+// scenario still sees the whole catalog — the era only decides where a file lives.
+// Engine tests (not about a specific card) stay in `:rules-engine`'s own suite.
+include(":scenario-tests:1993-1999")
+include(":scenario-tests:2000-2002")
+include(":scenario-tests:2003-2007")
+include(":scenario-tests:2008-2016")
+include(":scenario-tests:2017-2022")
+include(":scenario-tests:2023")
+include(":scenario-tests:2024")
+include(":scenario-tests:2025")
+include(":scenario-tests:2026")
 include(":ai")
 include(":gym")
 include(":gym-server")

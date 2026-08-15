@@ -6,8 +6,8 @@ can reuse existing rules. Update this file whenever a new rule lands on `main`.
 
 The bullets below are evidence-based: each entry corresponds to a DSL primitive
 that is wired through the rules engine and exercised by at least one implemented
-card under `mtg-sets/src/main/kotlin/com/wingedsheep/mtg/sets/definitions/` or a
-passing scenario test under `rules-engine/src/test/kotlin/.../scenarios/`. When in
+card under `mtg-sets-<era>/src/main/kotlin/com/wingedsheep/mtg/sets/definitions/` or a
+passing scenario test under `scenario-tests/<era>/src/test/kotlin/.../scenarios/`. When in
 doubt, leave it out — the planner will conservatively schedule a rule-plan.
 
 ## Keywords

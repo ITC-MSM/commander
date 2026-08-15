@@ -26,10 +26,11 @@ waiting on.
 |---|---|
 | Card using only existing effects | `just build` |
 | Card or feature with new engine behavior | `just test` |
-| Engine-only | `just test-rules` |
+| Engine-only | `just test-rules` (engine tests + every card scenario) |
+| One set's card scenarios | `just test-scenarios <era>` (`just where <SET>` gives the era) |
 | Server/DTO/masking | `just test-server` |
 | AI advisors / draft heuristics | `just test-ai` |
-| One class (rules-engine) | `just test-class <ClassName>` |
+| One class (any module) | `just test-class <ClassName>` |
 | Card snapshots after an intentional change | `just rebless-cards` |
 | Web client | `cd web-client && npm run typecheck` |
 | Visual / UX mechanic | `just e2e-test <pattern>` |

@@ -167,8 +167,12 @@ class EmergeKeywordTest : FunSpec({
         val actions = enumerator.enumerate(driver.state, player, EnumerationMode.FULL)
 
         val emerge = actions.firstOrNull { la ->
-            (la.action as? CastSpell)?.cardId == gryff &&
-                la.action.alternativeCostType == AlternativeCostType.EMERGE
+            // Bound to a local rather than smart-cast in place: `la.action` is a public property
+            // of another module, which Kotlin will not smart-cast.
+            val cast = la.action as? CastSpell
+            cast != null &&
+                cast.cardId == gryff &&
+                cast.alternativeCostType == AlternativeCostType.EMERGE
         }
         emerge shouldNotBe null
         emerge!!.actionType shouldBe "CastWithAlternativeCost"
@@ -189,8 +193,12 @@ class EmergeKeywordTest : FunSpec({
         val enumerator = LegalActionEnumerator.create(driver.cardRegistry)
         val actions = enumerator.enumerate(driver.state, player, EnumerationMode.FULL)
         val emerge = actions.first { la ->
-            (la.action as? CastSpell)?.cardId == gryff &&
-                la.action.alternativeCostType == AlternativeCostType.EMERGE
+            // Bound to a local rather than smart-cast in place: `la.action` is a public property
+            // of another module, which Kotlin will not smart-cast.
+            val cast = la.action as? CastSpell
+            cast != null &&
+                cast.cardId == gryff &&
+                cast.alternativeCostType == AlternativeCostType.EMERGE
         }
 
         val costs = emerge.additionalCostInfo!!.costAfterSacrifice
@@ -220,8 +228,12 @@ class EmergeKeywordTest : FunSpec({
         val actions = enumerator.enumerate(driver.state, player, EnumerationMode.FULL)
 
         actions.none { la ->
-            (la.action as? CastSpell)?.cardId == gryff &&
-                la.action.alternativeCostType == AlternativeCostType.EMERGE
+            // Bound to a local rather than smart-cast in place: `la.action` is a public property
+            // of another module, which Kotlin will not smart-cast.
+            val cast = la.action as? CastSpell
+            cast != null &&
+                cast.cardId == gryff &&
+                cast.alternativeCostType == AlternativeCostType.EMERGE
         } shouldBe true
     }
 
@@ -236,8 +248,12 @@ class EmergeKeywordTest : FunSpec({
         val actions = enumerator.enumerate(driver.state, player, EnumerationMode.FULL)
 
         actions.none { la ->
-            (la.action as? CastSpell)?.cardId == gryff &&
-                la.action.alternativeCostType == AlternativeCostType.EMERGE
+            // Bound to a local rather than smart-cast in place: `la.action` is a public property
+            // of another module, which Kotlin will not smart-cast.
+            val cast = la.action as? CastSpell
+            cast != null &&
+                cast.cardId == gryff &&
+                cast.alternativeCostType == AlternativeCostType.EMERGE
         } shouldBe true
     }
 
@@ -254,8 +270,10 @@ class EmergeKeywordTest : FunSpec({
         val enumerator = LegalActionEnumerator.create(driver.cardRegistry)
         val actions = enumerator.enumerate(driver.state, player, EnumerationMode.FULL)
         fun emergeFor(cardId: com.wingedsheep.sdk.model.EntityId) = actions.any { la ->
-            (la.action as? CastSpell)?.cardId == cardId &&
-                la.action.alternativeCostType == AlternativeCostType.EMERGE
+            val cast = la.action as? CastSpell
+            cast != null &&
+                cast.cardId == cardId &&
+                cast.alternativeCostType == AlternativeCostType.EMERGE
         }
 
         emergeFor(gryff) shouldBe false
