@@ -1731,50 +1731,53 @@
                     "to": "Battlefield"
                 },
                 "effect": {
-                    "type": "Composite",
-                    "effects": [
-                        {
-                            "type": "GatherCards",
-                            "source": {
-                                "type": "FromZone",
-                                "zone": "Hand",
-                                "player": {
-                                    "type": "ContextPlayer",
-                                    "index": 0
-                                }
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Hand",
+                                    "player": {
+                                        "type": "ContextPlayer",
+                                        "index": 0
+                                    }
+                                },
+                                "storeAs": "hand"
                             },
-                            "storeAs": "hand"
-                        },
-                        {
-                            "type": "SelectFromCollection",
-                            "from": "hand",
-                            "selection": {
-                                "type": "ChooseExactly",
-                                "count": {
-                                    "type": "Fixed",
-                                    "amount": 1
-                                }
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "hand",
+                                "selection": {
+                                    "type": "ChooseExactly",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "chooser": "TargetPlayer",
+                                "storeSelected": "discarded",
+                                "prompt": "Choose 1 card to discard"
                             },
-                            "chooser": "TargetPlayer",
-                            "storeSelected": "discarded",
-                            "prompt": "Choose 1 card to discard"
-                        },
-                        {
-                            "type": "MoveCollection",
-                            "from": "discarded",
-                            "destination": {
-                                "type": "ToZone",
-                                "zone": "Graveyard",
-                                "player": {
-                                    "type": "ContextPlayer",
-                                    "index": 0
-                                }
-                            },
-                            "moveType": "Discard"
-                        }
-                    ]
+                            {
+                                "type": "MoveCollection",
+                                "from": "discarded",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Graveyard",
+                                    "player": {
+                                        "type": "ContextPlayer",
+                                        "index": 0
+                                    }
+                                },
+                                "moveType": "Discard"
+                            }
+                        ]
+                    }
                 },
-                "optional": true,
                 "targetRequirement": {
                     "type": "TargetOpponent",
                     "id": "target"
@@ -2525,14 +2528,17 @@
                     "to": "Battlefield"
                 },
                 "effect": {
-                    "type": "MoveToZone",
-                    "target": {
-                        "type": "BoundVariable",
-                        "name": "target"
-                    },
-                    "destination": "Hand"
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target"
+                        },
+                        "destination": "Hand"
+                    }
                 },
-                "optional": true,
                 "targetRequirement": {
                     "type": "TargetObject",
                     "filter": {
@@ -4419,13 +4425,16 @@
                 "id": "ability_1",
                 "trigger": "AttackEvent",
                 "effect": {
-                    "type": "TapUntap",
-                    "target": {
-                        "type": "BoundVariable",
-                        "name": "target"
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "TapUntap",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target"
+                        }
                     }
                 },
-                "optional": true,
                 "targetRequirement": {
                     "type": "TargetObject",
                     "filter": {
@@ -4466,15 +4475,18 @@
                     "to": "Battlefield"
                 },
                 "effect": {
-                    "type": "MoveToZone",
-                    "target": {
-                        "type": "BoundVariable",
-                        "name": "target"
-                    },
-                    "destination": "Graveyard",
-                    "byDestruction": true
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target"
+                        },
+                        "destination": "Graveyard",
+                        "byDestruction": true
+                    }
                 },
-                "optional": true,
                 "targetRequirement": {
                     "type": "TargetObject",
                     "filter": {

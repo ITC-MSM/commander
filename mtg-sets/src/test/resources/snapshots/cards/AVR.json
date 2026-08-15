@@ -833,20 +833,23 @@
                 },
                 "binding": "OTHER",
                 "effect": {
-                    "type": "Composite",
-                    "effects": [
-                        {
-                            "type": "GatherCards",
-                            "source": "TriggeringEntity",
-                            "storeAs": "gathered0"
-                        },
-                        {
-                            "type": "PairWithSource",
-                            "from": "gathered0"
-                        }
-                    ]
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": "TriggeringEntity",
+                                "storeAs": "gathered0"
+                            },
+                            {
+                                "type": "PairWithSource",
+                                "from": "gathered0"
+                            }
+                        ]
+                    }
                 },
-                "optional": true,
                 "interveningIf": {
                     "type": "EntityMatches",
                     "entity": "Self",
@@ -1502,20 +1505,23 @@
                 },
                 "binding": "OTHER",
                 "effect": {
-                    "type": "Composite",
-                    "effects": [
-                        {
-                            "type": "GatherCards",
-                            "source": "TriggeringEntity",
-                            "storeAs": "gathered0"
-                        },
-                        {
-                            "type": "PairWithSource",
-                            "from": "gathered0"
-                        }
-                    ]
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": "TriggeringEntity",
+                                "storeAs": "gathered0"
+                            },
+                            {
+                                "type": "PairWithSource",
+                                "from": "gathered0"
+                            }
+                        ]
+                    }
                 },
-                "optional": true,
                 "interveningIf": {
                     "type": "EntityMatches",
                     "entity": "Self",

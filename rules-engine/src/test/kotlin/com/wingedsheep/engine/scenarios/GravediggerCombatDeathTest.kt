@@ -87,9 +87,10 @@ class GravediggerCombatDeathTest : FunSpec({
         // Gravedigger should be on battlefield
         driver.findPermanent(activePlayer, "Gravedigger") shouldNotBe null
 
-        // The ETB trigger should fire - should prompt for target selection
+        // The ETB trigger fires and asks its "you may" first; accepting prompts for the target
         driver.isPaused shouldBe true
         driver.pendingDecision.shouldNotBeNull()
+        driver.submitYesNo(activePlayer, true)
         driver.pendingDecision.shouldBeInstanceOf<ChooseTargetsDecision>()
 
         val targetDecision = driver.pendingDecision as ChooseTargetsDecision

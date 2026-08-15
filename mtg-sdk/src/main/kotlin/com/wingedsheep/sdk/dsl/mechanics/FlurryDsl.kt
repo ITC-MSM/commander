@@ -26,8 +26,9 @@ fun CardBuilder.flurry(init: TriggeredAbilityBuilder.() -> Unit) {
     builder.init()
     builder.trigger = Triggers.NthSpellCast(2, Player.You)
     val ability = builder.build()
+    // No "you may " prefix to add: `optional = true` has already been lowered into a consent gate,
+    // and a gated effect's own description opens with "You may …".
     val effectText = (builder.description ?: buildString {
-        if (ability.optional) append("you may ")
         ability.targetRequirement?.let { append(it.description); append(" ") }
         append(ability.effect.description.replaceFirstChar { it.lowercase() })
         ability.elseEffect?.let {

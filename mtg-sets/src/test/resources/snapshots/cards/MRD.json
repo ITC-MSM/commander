@@ -3415,14 +3415,17 @@
                 "id": "ability_1",
                 "trigger": "BecomesBlockedEvent",
                 "effect": {
-                    "type": "MoveToZone",
-                    "target": {
-                        "type": "BoundVariable",
-                        "name": "target card named Groffskithur from your graveyard"
-                    },
-                    "destination": "Hand"
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target card named Groffskithur from your graveyard"
+                        },
+                        "destination": "Hand"
+                    }
                 },
-                "optional": true,
                 "targetRequirement": {
                     "type": "TargetObject",
                     "filter": {
@@ -4043,13 +4046,16 @@
                 },
                 "binding": "ANY",
                 "effect": {
-                    "type": "GainLife",
-                    "amount": {
-                        "type": "Fixed",
-                        "amount": 1
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "GainLife",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 1
+                        }
                     }
-                },
-                "optional": true
+                }
             }
         ]
     },
@@ -4751,13 +4757,16 @@
                 },
                 "binding": "ANY",
                 "effect": {
-                    "type": "TapUntap",
-                    "target": {
-                        "type": "BoundVariable",
-                        "name": "target"
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "TapUntap",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target"
+                        }
                     }
                 },
-                "optional": true,
                 "targetRequirement": {
                     "type": "TargetObject",
                     "filter": {
@@ -4823,20 +4832,23 @@
                 },
                 "binding": "ANY",
                 "effect": {
-                    "type": "CreateToken",
-                    "power": 1,
-                    "toughness": 1,
-                    "colors": [
-                        "WHITE"
-                    ],
-                    "creatureTypes": [
-                        "Spirit"
-                    ],
-                    "keywords": [
-                        "FLYING"
-                    ]
-                },
-                "optional": true
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "CreateToken",
+                        "power": 1,
+                        "toughness": 1,
+                        "colors": [
+                            "WHITE"
+                        ],
+                        "creatureTypes": [
+                            "Spirit"
+                        ],
+                        "keywords": [
+                            "FLYING"
+                        ]
+                    }
+                }
             }
         ]
     },
@@ -5345,14 +5357,17 @@
                     "to": "Battlefield"
                 },
                 "effect": {
-                    "type": "MoveToZone",
-                    "target": {
-                        "type": "BoundVariable",
-                        "name": "card"
-                    },
-                    "destination": "Hand"
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "card"
+                        },
+                        "destination": "Hand"
+                    }
                 },
-                "optional": true,
                 "targetRequirement": {
                     "type": "TargetObject",
                     "filter": {
@@ -6915,13 +6930,16 @@
                 "id": "ability_1",
                 "trigger": "BlockEvent",
                 "effect": {
-                    "type": "DrawCards",
-                    "count": {
-                        "type": "Fixed",
-                        "amount": 1
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "DrawCards",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 1
+                        }
                     }
-                },
-                "optional": true
+                }
             }
         ]
     },
@@ -8463,43 +8481,46 @@
                     "to": "Battlefield"
                 },
                 "effect": {
-                    "type": "Composite",
-                    "effects": [
-                        {
-                            "type": "GatherCards",
-                            "source": {
-                                "type": "FromZone",
-                                "zone": "Library",
-                                "filter": "basicland"
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Library",
+                                    "filter": "basicland"
+                                },
+                                "storeAs": "searchable"
                             },
-                            "storeAs": "searchable"
-                        },
-                        {
-                            "type": "SelectFromCollection",
-                            "from": "searchable",
-                            "selection": {
-                                "type": "ChooseUpTo",
-                                "count": {
-                                    "type": "Fixed",
-                                    "amount": 1
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "searchable",
+                                "selection": {
+                                    "type": "ChooseUpTo",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "storeSelected": "found"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "found",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Battlefield",
+                                    "placement": "Tapped"
                                 }
                             },
-                            "storeSelected": "found"
-                        },
-                        {
-                            "type": "MoveCollection",
-                            "from": "found",
-                            "destination": {
-                                "type": "ToZone",
-                                "zone": "Battlefield",
-                                "placement": "Tapped"
-                            }
-                        },
-                        "ShuffleLibrary",
-                        "EmitLibrarySearchedEvent"
-                    ]
-                },
-                "optional": true
+                            "ShuffleLibrary",
+                            "EmitLibrarySearchedEvent"
+                        ]
+                    }
+                }
             },
             {
                 "id": "ability_2",
@@ -8509,13 +8530,16 @@
                     "to": "Graveyard"
                 },
                 "effect": {
-                    "type": "DrawCards",
-                    "count": {
-                        "type": "Fixed",
-                        "amount": 1
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "DrawCards",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 1
+                        }
                     }
-                },
-                "optional": true
+                }
             }
         ]
     },
@@ -11317,14 +11341,17 @@
                     "recipient": "AnyPlayer"
                 },
                 "effect": {
-                    "type": "MoveToZone",
-                    "target": {
-                        "type": "BoundVariable",
-                        "name": "target creature card"
-                    },
-                    "destination": "Hand"
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target creature card"
+                        },
+                        "destination": "Hand"
+                    }
                 },
-                "optional": true,
                 "targetRequirement": {
                     "type": "TargetObject",
                     "filter": {

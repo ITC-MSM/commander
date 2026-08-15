@@ -23,6 +23,7 @@ import com.wingedsheep.sdk.scripting.effects.Effect
 import com.wingedsheep.sdk.scripting.effects.FeasibilityCheck
 import com.wingedsheep.sdk.scripting.effects.Gate
 import com.wingedsheep.sdk.scripting.effects.GatedEffect
+import com.wingedsheep.sdk.scripting.effects.isConsentGate
 import com.wingedsheep.sdk.scripting.effects.ModalEffect
 import com.wingedsheep.sdk.scripting.effects.SacrificeEffect
 import com.wingedsheep.engine.handlers.effects.composite.ModalEffectExecutor
@@ -348,59 +349,42 @@ class TriggerProcessor(
             return processTargetedTrigger(currentState, trigger, targetRequirement)
         }
 
-        // A no-target optional trigger has no target-selection step to carry the decline through,
-        // so the targeted path's may handling never runs and `optional` (plus any `elseEffect`)
-        // was silently dropped — the trigger resolved as mandatory (the latent bug that made
-        // Yawgmoth Demon do nothing and Song of Stupefaction mill without asking). Lower it into
-        // the unified GatedEffect(Gate.MayDecide) frame so GatedEffectExecutor owns the
-        // resolution-time yes/no and runs `elseEffect` (if any) on decline. Skip the wrap when the
-        // effect already carries its own consent gate (a May* GatedEffect, e.g. `Effects.May` or
-        // an optional mana payment) — double-wrapping would prompt twice. Feasibility derived from
-        // the may-action lets an impossible "may" (e.g. "you may sacrifice an artifact" with no
-        // artifact) fall straight to the else with no prompt — the no-target analogue of
-        // "no legal targets → else".
-        if (ability.optional && !ability.effect.ownsConsentGate()) {
-            val gated = GatedEffect(
-                gate = Gate.MayDecide(feasibility = impliedMayFeasibility(ability.effect)),
-                then = ability.effect,
-                otherwise = ability.elseEffect
-            )
-            return putTriggerOnStack(currentState, trigger, emptyList(), gated)
-        }
-
-        // No targets required - put directly on stack
-        return putTriggerOnStack(currentState, trigger, emptyList())
+        // No targets required — put directly on stack, with one derivation applied on the way.
+        return putTriggerOnStack(
+            currentState,
+            trigger,
+            emptyList(),
+            ability.effect.withImpliedMayFeasibility()
+        )
     }
 
     /**
-     * Does this effect already carry its own consent gate — a `May*` [GatedEffect] the executor will
-     * turn into a resolution-time yes/no? Used to keep `optional` from wrapping a second "you may"
-     * around an effect that already asks, which would prompt twice.
+     * Stamp the feasibility a no-target "you may [action]" implies onto its consent gate, so
+     * "you may … If you don't, …" skips the prompt and runs its else branch when the action is
+     * impossible — the player can't, so they "don't". The no-target analogue of
+     * "no legal targets → else".
      *
-     * Looks through a [Gate.OnceEachTurn] because `withEffectBudgetGate` lowers a capped optional
-     * ability to `OnceEachTurn(spend = false) → May… → OnceEachTurn() → effect`; the consent gate is
-     * still there, one level down.
+     * **Derived here rather than stored on the card**, and that is the point. Nothing in the printed
+     * text says it: "you may sacrifice an artifact" and "you may draw a card" are the same sentence
+     * shape, and which one is unanswerable follows from the *effect*, not from the wording. A card
+     * that spelled it would be recording a fact it does not know, and a second card written the
+     * other way would then mean something different by accident. Only a gate with no feasibility of
+     * its own is touched — a card that states one (Provisions Merchant) is saying something the
+     * effect cannot imply, and it wins.
+     *
+     * A [SacrificeEffect] is always controller-self and needs the controller to control enough
+     * matching permanents; other actions (draw, gain life, add a counter) are always feasible
+     * (`null` → always prompt). Extend as further impossible-when-empty may-actions appear.
      */
-    private fun Effect.ownsConsentGate(): Boolean {
-        val gated = this as? GatedEffect ?: return false
-        return when (gated.gate) {
-            is Gate.MayDecide, is Gate.MayPay, is Gate.MayPayX -> true
-            is Gate.OnceEachTurn -> gated.then.ownsConsentGate()
-            else -> false
+    private fun Effect.withImpliedMayFeasibility(): Effect {
+        val gated = this as? GatedEffect ?: return this
+        val gate = gated.gate as? Gate.MayDecide ?: return this
+        if (gate.feasibility != null) return this
+        val implied = when (val action = gated.then) {
+            is SacrificeEffect -> FeasibilityCheck.ControlsPermanentMatching(action.filter, action.count)
+            else -> return this
         }
-    }
-
-    /**
-     * The feasibility a no-target "may" action implies, so a "you may [action]. If you don't, …"
-     * trigger skips the prompt and runs its else branch when the action is impossible (the player
-     * can't, so they "don't"). A [SacrificeEffect] is always controller-self and needs the
-     * controller to control enough matching permanents; other actions (draw, gain life, add a
-     * counter) are always feasible (`null` → always prompt). Extend as further
-     * impossible-when-empty may-actions appear.
-     */
-    private fun impliedMayFeasibility(effect: Effect): FeasibilityCheck? = when (effect) {
-        is SacrificeEffect -> FeasibilityCheck.ControlsPermanentMatching(effect.filter, effect.count)
-        else -> null
+        return gated.copy(gate = gate.copy(feasibility = implied))
     }
 
     /**
@@ -664,8 +648,16 @@ class TriggerProcessor(
         for ((index, req) in allRequirements.withIndex()) {
             val legalTargets = allLegalTargets[index] ?: emptyList()
             if (legalTargets.isEmpty() && req.effectiveMinCount > 0) {
-                if (ability.elseEffect != null) {
-                    return putTriggerOnStack(state, trigger, emptyList(), ability.elseEffect)
+                // The else branch is in one of two places, and both are the same printed clause.
+                // A mandatory ability writes "…; otherwise, X" as `elseEffect`. A "you may … If you
+                // don't, X" ability keeps its else inside the consent gate, because that is where
+                // *declining* is decided — but a target it cannot choose is the other way of not
+                // doing it (Entrails Feaster taps when no graveyard holds a creature card), so the
+                // clause has to run from here too rather than be lost with the fizzled ability.
+                val declineBranch = ability.elseEffect
+                    ?: (ability.effect as? GatedEffect)?.takeIf { it.gate.isConsentGate }?.otherwise
+                if (declineBranch != null) {
+                    return putTriggerOnStack(state, trigger, emptyList(), declineBranch)
                 }
                 return ExecutionResult.success(
                     state,
@@ -683,15 +675,14 @@ class TriggerProcessor(
         // Auto-select player targets when there's exactly one legal target and requirement is for exactly one target.
         // Only applies for single-target abilities (not multi-target).
         //
-        // NOT when the ability is `optional`. A targeted "you may" carries its consent solely through
-        // the target-selection decision's `minTargets = 0` (see `requirementInfos` below) — skipping
-        // that decision skips the decline, and the trigger goes on the stack as mandatory. That is
-        // fail-open: in a two-player game "you may have target opponent discard a card" (Ebon Dragon)
-        // never asked, it just made them discard. The optimization's premise — "there is only one
-        // choice, so don't prompt" — is false here: declining is a second choice. (An `optional`
-        // *requirement*, `TargetPlayer(optional = true)` for "up to one target player", already skips
-        // this branch via `effectiveMinCount == 0`.)
-        if (allRequirements.size == 1 && !ability.optional) {
+        // Safe for a "you may" ability now that consent is a gate rather than a flag: either the
+        // yes/no was already asked and answered before this ran (`processMayThenTargetTrigger`
+        // unwraps the gate and calls back in), or the gate is still on the effect and will ask at
+        // resolution. Neither reading is "there is only one choice, so don't prompt" applied to the
+        // decline — which is what made this branch fail open while the flag existed, so that
+        // "you may have target opponent discard a card" (Ebon Dragon) never asked in a two-player
+        // game. An "up to one target player" requirement skips this via `effectiveMinCount == 0`.
+        if (allRequirements.size == 1) {
             val isPlayerTarget = targetRequirement is com.wingedsheep.sdk.scripting.targets.TargetPlayer ||
                                  targetRequirement is com.wingedsheep.sdk.scripting.targets.TargetOpponent
             val legalTargets = allLegalTargets[0] ?: emptyList()
@@ -702,10 +693,17 @@ class TriggerProcessor(
             }
         }
 
-        // Create target requirement infos for the decision
-        // If the ability is optional (e.g., "you may"), allow selecting 0 targets to decline
+        // Create target requirement infos for the decision.
+        //
+        // A slot's minimum is the *requirement's* — "up to one" allows zero, "target creature" does
+        // not. A "you may" ability used to force every slot to zero here so that choosing nothing
+        // was how you declined; that was the `optional` flag's second, unrelated meaning, and it was
+        // wrong twice over. CR 603.3d chooses targets for a "you may" trigger like any other and
+        // puts the choice at resolution, and an ability whose target is mandatory has to be removed
+        // from the stack when there is no legal one (the loop above) rather than resolve targetless.
+        // Consent is now a gate on the effect, answered on its own — either before this method runs
+        // (`processMayThenTargetTrigger`) or as the ability resolves.
         val requirementInfos = allRequirements.mapIndexed { index, req ->
-            val effectiveMinTargets = if (ability.optional) 0 else req.effectiveMinCount
             // "Any number of target ..." (unlimited) caps at however many legal targets exist,
             // mirroring the cast-time path (TargetEnumerationUtils). Using req.count (always 1
             // for an unlimited requirement) would wrongly clamp the decision to a single target.
@@ -713,7 +711,7 @@ class TriggerProcessor(
             TargetRequirementInfo(
                 index = index,
                 description = req.description,
-                minTargets = effectiveMinTargets,
+                minTargets = req.effectiveMinCount,
                 maxTargets = maxTargets,
                 sameOwner = (req as? com.wingedsheep.sdk.scripting.targets.TargetObject)?.sameOwner == true,
                 totalManaValueAtMost = resolveTotalManaValueAtMost(state, trigger, req),
@@ -1591,10 +1589,6 @@ class TriggerProcessor(
      * rather than only being exercised when a capped ability happens to trigger in a game.
      */
     companion object {
-
-        /** Gates that represent the printed "you may" — the ones a budget must be spent *inside* of. */
-        private val Gate.isConsentGate: Boolean
-            get() = this is Gate.MayDecide || this is Gate.MayPay || this is Gate.MayPayX
 
         /**
          * Wrap [effect] in the [Gate.OnceEachTurn] budget gates for `effectOncePerTurn` — the

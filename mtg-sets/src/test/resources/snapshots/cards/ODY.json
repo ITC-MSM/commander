@@ -367,14 +367,17 @@
                     "to": "Battlefield"
                 },
                 "effect": {
-                    "type": "MoveToZone",
-                    "target": {
-                        "type": "BoundVariable",
-                        "name": "target"
-                    },
-                    "destination": "Hand"
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target"
+                        },
+                        "destination": "Hand"
+                    }
                 },
-                "optional": true,
                 "targetRequirement": {
                     "type": "TargetObject",
                     "filter": {
@@ -549,13 +552,16 @@
                     "to": "Graveyard"
                 },
                 "effect": {
-                    "type": "DrawCards",
-                    "count": {
-                        "type": "Fixed",
-                        "amount": 1
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "DrawCards",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 1
+                        }
                     }
-                },
-                "optional": true
+                }
             }
         ]
     },

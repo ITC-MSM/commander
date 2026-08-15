@@ -2487,43 +2487,46 @@
                     "to": "Graveyard"
                 },
                 "effect": {
-                    "type": "Composite",
-                    "effects": [
-                        {
-                            "type": "GatherCards",
-                            "source": {
-                                "type": "FromZone",
-                                "zone": "Library",
-                                "filter": "basicland"
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Library",
+                                    "filter": "basicland"
+                                },
+                                "storeAs": "searchable"
                             },
-                            "storeAs": "searchable"
-                        },
-                        {
-                            "type": "SelectFromCollection",
-                            "from": "searchable",
-                            "selection": {
-                                "type": "ChooseUpTo",
-                                "count": {
-                                    "type": "Fixed",
-                                    "amount": 2
-                                }
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "searchable",
+                                "selection": {
+                                    "type": "ChooseUpTo",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 2
+                                    }
+                                },
+                                "storeSelected": "found"
                             },
-                            "storeSelected": "found"
-                        },
-                        {
-                            "type": "MoveCollection",
-                            "from": "found",
-                            "destination": {
-                                "type": "ToZone",
-                                "zone": "Hand"
+                            {
+                                "type": "MoveCollection",
+                                "from": "found",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Hand"
+                                },
+                                "revealed": true
                             },
-                            "revealed": true
-                        },
-                        "ShuffleLibrary",
-                        "EmitLibrarySearchedEvent"
-                    ]
-                },
-                "optional": true
+                            "ShuffleLibrary",
+                            "EmitLibrarySearchedEvent"
+                        ]
+                    }
+                }
             }
         ],
         "activatedAbilities": [

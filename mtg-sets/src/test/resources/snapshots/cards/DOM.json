@@ -5169,14 +5169,17 @@
                     "to": "Battlefield"
                 },
                 "effect": {
-                    "type": "MoveToZone",
-                    "target": {
-                        "type": "BoundVariable",
-                        "name": "historic"
-                    },
-                    "destination": "Hand"
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "historic"
+                        },
+                        "destination": "Hand"
+                    }
                 },
-                "optional": true,
                 "targetRequirement": {
                     "type": "TargetObject",
                     "filter": {
@@ -9648,15 +9651,18 @@
                     "to": "Battlefield"
                 },
                 "effect": {
-                    "type": "MoveToZone",
-                    "target": {
-                        "type": "BoundVariable",
-                        "name": "historic card in your graveyard"
-                    },
-                    "destination": "Exile",
-                    "linkToSource": true
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "historic card in your graveyard"
+                        },
+                        "destination": "Exile",
+                        "linkToSource": true
+                    }
                 },
-                "optional": true,
                 "targetRequirement": {
                     "type": "TargetObject",
                     "filter": {

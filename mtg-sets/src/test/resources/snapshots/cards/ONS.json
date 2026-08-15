@@ -670,15 +670,18 @@
                     "to": "Graveyard"
                 },
                 "effect": {
-                    "type": "MoveToZone",
-                    "target": {
-                        "type": "BoundVariable",
-                        "name": "target"
-                    },
-                    "destination": "Library",
-                    "placement": "Top"
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target"
+                        },
+                        "destination": "Library",
+                        "placement": "Top"
+                    }
                 },
-                "optional": true,
                 "targetRequirement": {
                     "type": "TargetObject",
                     "filter": {
@@ -2958,13 +2961,16 @@
                 "id": "ability_1",
                 "trigger": "CycleEvent",
                 "effect": {
-                    "type": "TapUntap",
-                    "target": {
-                        "type": "BoundVariable",
-                        "name": "target"
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "TapUntap",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target"
+                        }
                     }
                 },
-                "optional": true,
                 "targetRequirement": {
                     "type": "TargetObject",
                     "filter": {
@@ -5789,25 +5795,32 @@
                 },
                 "binding": "ANY",
                 "effect": {
-                    "type": "Composite",
-                    "effects": [
-                        {
-                            "type": "MoveToZone",
-                            "target": {
-                                "type": "BoundVariable",
-                                "name": "target"
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "MoveToZone",
+                                "target": {
+                                    "type": "BoundVariable",
+                                    "name": "target"
+                                },
+                                "destination": "Exile"
                             },
-                            "destination": "Exile"
-                        },
-                        {
-                            "type": "AddCounters",
-                            "counterType": "+1/+1",
-                            "count": 1,
-                            "target": "Self"
-                        }
-                    ]
+                            {
+                                "type": "AddCounters",
+                                "counterType": "+1/+1",
+                                "count": 1,
+                                "target": "Self"
+                            }
+                        ]
+                    },
+                    "otherwise": {
+                        "type": "TapUntap",
+                        "target": "Self"
+                    }
                 },
-                "optional": true,
                 "targetRequirement": {
                     "type": "TargetObject",
                     "filter": {
@@ -5815,10 +5828,6 @@
                         "zone": "Graveyard"
                     },
                     "id": "target"
-                },
-                "elseEffect": {
-                    "type": "TapUntap",
-                    "target": "Self"
                 }
             }
         ]
@@ -10973,14 +10982,17 @@
                 },
                 "binding": "ANY",
                 "effect": {
-                    "type": "MoveToZone",
-                    "target": {
-                        "type": "BoundVariable",
-                        "name": "target"
-                    },
-                    "destination": "Hand"
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target"
+                        },
+                        "destination": "Hand"
+                    }
                 },
-                "optional": true,
                 "targetRequirement": {
                     "type": "TargetObject",
                     "filter": {

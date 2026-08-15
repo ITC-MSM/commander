@@ -7,6 +7,7 @@ import com.wingedsheep.mtg.sets.definitions.por.cards.Gravedigger
 import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
+import com.wingedsheep.sdk.scripting.effects.ownsConsentGate
 import com.wingedsheep.sdk.scripting.targets.TargetObject
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
@@ -29,7 +30,8 @@ class GravediggerTest : FunSpec({
         gravedigger.triggeredAbilities.size shouldBe 1
 
         val etbAbility = gravedigger.triggeredAbilities.first()
-        etbAbility.optional shouldBe true
+        // "you may" is a consent gate on the effect, not a flag beside it.
+        etbAbility.effect.ownsConsentGate() shouldBe true
         etbAbility.targetRequirement.shouldNotBeNull()
         etbAbility.targetRequirement.shouldBeInstanceOf<TargetObject>()
     }
@@ -67,9 +69,10 @@ class GravediggerTest : FunSpec({
         // Gravedigger should be on the battlefield
         driver.findPermanent(activePlayer, "Gravedigger") shouldNotBe null
 
-        // The ETB trigger should have fired and we should have a target selection decision
+        // The ETB trigger fires and asks the "you may" first; accepting leads to target selection.
         driver.isPaused shouldBe true
         driver.pendingDecision.shouldNotBeNull()
+        driver.submitYesNo(activePlayer, true)
         driver.pendingDecision.shouldBeInstanceOf<ChooseTargetsDecision>()
 
         val targetDecision = driver.pendingDecision as ChooseTargetsDecision

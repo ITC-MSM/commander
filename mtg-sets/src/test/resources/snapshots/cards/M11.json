@@ -243,44 +243,47 @@
                     "to": "Battlefield"
                 },
                 "effect": {
-                    "type": "Composite",
-                    "effects": [
-                        {
-                            "type": "GatherCards",
-                            "source": {
-                                "type": "FromZone",
-                                "zone": "Library",
-                                "filter": "artifact"
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Library",
+                                    "filter": "artifact"
+                                },
+                                "storeAs": "hoardSearchable"
                             },
-                            "storeAs": "hoardSearchable"
-                        },
-                        {
-                            "type": "SelectFromCollection",
-                            "from": "hoardSearchable",
-                            "selection": {
-                                "type": "ChooseUpTo",
-                                "count": {
-                                    "type": "Fixed",
-                                    "amount": 1
-                                }
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "hoardSearchable",
+                                "selection": {
+                                    "type": "ChooseUpTo",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "storeSelected": "hoardFound",
+                                "prompt": "Search for an artifact card to exile"
                             },
-                            "storeSelected": "hoardFound",
-                            "prompt": "Search for an artifact card to exile"
-                        },
-                        {
-                            "type": "MoveCollection",
-                            "from": "hoardFound",
-                            "destination": {
-                                "type": "ToZone",
-                                "zone": "Exile"
+                            {
+                                "type": "MoveCollection",
+                                "from": "hoardFound",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Exile"
+                                },
+                                "linkToSource": true
                             },
-                            "linkToSource": true
-                        },
-                        "ShuffleLibrary",
-                        "EmitLibrarySearchedEvent"
-                    ]
-                },
-                "optional": true
+                            "ShuffleLibrary",
+                            "EmitLibrarySearchedEvent"
+                        ]
+                    }
+                }
             },
             {
                 "id": "ability_2",
@@ -290,24 +293,27 @@
                     "to": "Graveyard"
                 },
                 "effect": {
-                    "type": "Composite",
-                    "effects": [
-                        {
-                            "type": "GatherCards",
-                            "source": "FromLinkedExile",
-                            "storeAs": "hoardExiled"
-                        },
-                        {
-                            "type": "MoveCollection",
-                            "from": "hoardExiled",
-                            "destination": {
-                                "type": "ToZone",
-                                "zone": "Hand"
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": "FromLinkedExile",
+                                "storeAs": "hoardExiled"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "hoardExiled",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Hand"
+                                }
                             }
-                        }
-                    ]
-                },
-                "optional": true
+                        ]
+                    }
+                }
             }
         ]
     },

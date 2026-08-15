@@ -23,7 +23,7 @@ import com.wingedsheep.sdk.scripting.targets.TargetObject
  * across two opponents' graveyards. It is a *targeting* restriction, checked when targets are chosen
  * and re-checked on resolution — not a resolution-time filter.
  *
- * "Up to two" makes the whole ability optional in the targeting sense (`optional = true`): it still
+ * "Up to two" is [TargetObject.optional] on the *requirement*, not a "you may" on the ability: it still
  * goes on the stack with zero targets when every graveyard is empty, and it resolves doing nothing
  * rather than being removed for lack of targets (CR 608.2b).
  */

@@ -3986,13 +3986,16 @@
                 },
                 "binding": "ANY",
                 "effect": {
-                    "type": "Sacrifice",
-                    "filter": "artifact|enchantment|token"
-                },
-                "optional": true,
-                "elseEffect": {
-                    "type": "TapUntap",
-                    "target": "Self"
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Sacrifice",
+                        "filter": "artifact|enchantment|token"
+                    },
+                    "otherwise": {
+                        "type": "TapUntap",
+                        "target": "Self"
+                    }
                 }
             }
         ]
@@ -16171,23 +16174,26 @@
                     "to": "Battlefield"
                 },
                 "effect": {
-                    "type": "Composite",
-                    "effects": [
-                        {
-                            "type": "MoveToZone",
-                            "target": {
-                                "type": "BoundVariable",
-                                "name": "target"
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "MoveToZone",
+                                "target": {
+                                    "type": "BoundVariable",
+                                    "name": "target"
+                                },
+                                "destination": "Hand"
                             },
-                            "destination": "Hand"
-                        },
-                        {
-                            "type": "Scry",
-                            "count": 2
-                        }
-                    ]
+                            {
+                                "type": "Scry",
+                                "count": 2
+                            }
+                        ]
+                    }
                 },
-                "optional": true,
                 "targetRequirement": {
                     "type": "TargetObject",
                     "filter": {

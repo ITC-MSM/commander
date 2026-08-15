@@ -2514,17 +2514,20 @@
                     "to": "Battlefield"
                 },
                 "effect": {
-                    "type": "DealDamage",
-                    "amount": {
-                        "type": "Fixed",
-                        "amount": 4
-                    },
-                    "target": {
-                        "type": "BoundVariable",
-                        "name": "target"
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "DealDamage",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 4
+                        },
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target"
+                        }
                     }
                 },
-                "optional": true,
                 "targetRequirement": {
                     "type": "TargetObject",
                     "filter": {
@@ -5463,15 +5466,18 @@
                     "to": "Battlefield"
                 },
                 "effect": {
-                    "type": "MoveToZone",
-                    "target": {
-                        "type": "BoundVariable",
-                        "name": "target"
-                    },
-                    "destination": "Graveyard",
-                    "byDestruction": true
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target"
+                        },
+                        "destination": "Graveyard",
+                        "byDestruction": true
+                    }
                 },
-                "optional": true,
                 "targetRequirement": {
                     "type": "TargetObject",
                     "filter": {

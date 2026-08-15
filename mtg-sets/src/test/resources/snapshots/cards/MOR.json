@@ -164,12 +164,15 @@
                 },
                 "binding": "ANY",
                 "effect": {
-                    "type": "AddCounters",
-                    "counterType": "+1/+1",
-                    "count": 1,
-                    "target": "Self"
-                },
-                "optional": true
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "AddCounters",
+                        "counterType": "+1/+1",
+                        "count": 1,
+                        "target": "Self"
+                    }
+                }
             }
         ]
     },

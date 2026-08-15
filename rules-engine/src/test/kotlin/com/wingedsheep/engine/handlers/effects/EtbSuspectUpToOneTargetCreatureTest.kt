@@ -7,10 +7,10 @@ import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.dsl.Effects
-import com.wingedsheep.sdk.dsl.Targets
 import com.wingedsheep.sdk.dsl.Triggers
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Deck
+import com.wingedsheep.sdk.scripting.targets.TargetCreature
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
@@ -41,8 +41,11 @@ class EtbSuspectUpToOneTargetCreatureTest : FunSpec({
 
         triggeredAbility {
             trigger = Triggers.EntersBattlefield
-            optional = true
-            val t = target("target creature", Targets.Creature)
+            // "*Up to one* target creature" is an optional **requirement**, not an optional
+            // ability: the ability is mandatory and the slot may be left empty. The two used to be
+            // spelled the same way — `optional = true` on the ability forced every slot's minimum
+            // to zero — and this card was written the wrong way round because of it.
+            val t = target("target creature", TargetCreature(optional = true))
             effect = Effects.Suspect(t)
         }
     }

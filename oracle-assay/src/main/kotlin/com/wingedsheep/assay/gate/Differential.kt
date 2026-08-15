@@ -281,10 +281,8 @@ class Differential(private val touchstone: Touchstone = Touchstone()) {
             JsonElement.serializer(),
             sortKeys(
                 Folds.dropPresentation(
-                    Folds.liftTriggerConsent(
-                        Folds.flattenComposites(
-                            canonicalizeGrantedAbilities(canonicalizeAbilities(normalizeSlots(tree))),
-                        ),
+                    Folds.flattenComposites(
+                        canonicalizeGrantedAbilities(canonicalizeAbilities(normalizeSlots(tree))),
                     ),
                 ),
             ),
@@ -534,51 +532,12 @@ internal object Folds {
 
     private val PRESENTATION_KEYS = setOf("imageUri", "message", "prompt", "descriptionOverride")
 
-    /**
-     * **A trigger's `optional` flag is a `Gate.MayDecide` around its effect — the engine says so.**
-     *
-     * "Whenever this creature deals combat damage to a player, **you may** draw a card." has two
-     * spellings in `mtg-sdk`: `TriggeredAbility.optional = true` (106 cards) and a `MayEffect`
-     * wrapped round the effect (214 cards). Neither is a house style anyone chose — and the reason
-     * they are the same value is not an argument made here but code in the engine:
-     * `TriggerProcessor.putOnStack` reads the flag and *builds the other spelling*, wrapping the
-     * effect in `GatedEffect(Gate.MayDecide, then = effect, otherwise = elseEffect)` before the
-     * ability ever reaches the stack — and skips the wrap when the effect `ownsConsentGate()`
-     * already, precisely so the two spellings don't double-prompt. One lowers into the other on
-     * every game, which is what this fold list's bar asks for.
-     *
-     * Normalized toward the flag, because that is the form Assay's [Triggers] lowering produces:
-     * the gate is unwrapped, `optional` is stamped, and a gate's `otherwise` becomes the ability's
-     * `elseEffect` — the same three moves the engine makes, run backwards.
-     *
-     * **Only a bare `Gate.MayDecide` folds.** A gate carrying a `feasibility` (Provisions Merchant)
-     * or a `prompt` says something the flag form cannot, and the engine *derives* feasibility from
-     * the effect rather than copying it — so folding those would be claiming an equivalence the
-     * lowering does not establish. They stay divergent, which is correct: they are a third thing.
-     */
-    fun liftTriggerConsent(element: JsonElement): JsonElement = when (element) {
-        is JsonObject -> {
-            val walked = JsonObject(element.mapValues { liftTriggerConsent(it.value) })
-            if ("trigger" in walked) unwrapMayEffect(walked) else walked
-        }
-
-        is JsonArray -> JsonArray(element.map(::liftTriggerConsent))
-        else -> element
-    }
-
-    private fun unwrapMayEffect(ability: JsonObject): JsonObject {
-        if (ability["optional"] != null || "elseEffect" in ability) return ability
-        val effect = ability["effect"] as? JsonObject ?: return ability
-        if ((effect["type"] as? JsonPrimitive)?.content != "Gated") return ability
-        // A bare `Gate.MayDecide` is `{"type": "Gate.MayDecide"}` and nothing else; a gate with a
-        // `feasibility` or a `prompt` carries fields the flag form has nowhere to put.
-        val gate = effect["gate"] as? JsonObject ?: return ability
-        if ((gate["type"] as? JsonPrimitive)?.content != "Gate.MayDecide" || gate.size != 1) return ability
-        if (effect.keys.any { it !in setOf("type", "gate", "then", "otherwise") }) return ability
-        val lifted = ability + ("effect" to effect.getValue("then")) +
-            ("optional" to JsonPrimitive(true))
-        return JsonObject(effect["otherwise"]?.let { lifted + ("elseEffect" to it) } ?: lifted)
-    }
+    // `liftTriggerConsent` used to live here, bridging `TriggeredAbility.optional = true` (106 cards)
+    // and a `MayEffect` around the effect (214 cards) — two SDK spellings of "you may" that the
+    // engine already lowered one into the other on every game. It is gone because the *SDK* is: the
+    // flag was deleted and the gate is the model, so both sides now produce the same value and there
+    // is nothing left to fold. That is the outcome a fold entry should be aiming at; the fold list
+    // shrinks when the thing it was hiding gets fixed.
 
     /**
      * **A parameterless marker implied by a parameterized ability of the same keyword.**

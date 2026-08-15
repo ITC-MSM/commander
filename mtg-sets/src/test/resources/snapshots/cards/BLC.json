@@ -223,12 +223,15 @@
                 },
                 "binding": "ANY",
                 "effect": {
-                    "type": "AddCounters",
-                    "counterType": "quest",
-                    "count": 1,
-                    "target": "Self"
-                },
-                "optional": true
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "AddCounters",
+                        "counterType": "quest",
+                        "count": 1,
+                        "target": "Self"
+                    }
+                }
             }
         ],
         "staticAbilities": [
@@ -1599,14 +1602,17 @@
                     "id": "ability_2",
                     "trigger": "AttackEvent",
                     "effect": {
-                        "type": "Fight",
-                        "target1": "Self",
-                        "target2": {
-                            "type": "ContextTarget",
-                            "index": 0
+                        "type": "Gated",
+                        "gate": "Gate.MayDecide",
+                        "then": {
+                            "type": "Fight",
+                            "target1": "Self",
+                            "target2": {
+                                "type": "ContextTarget",
+                                "index": 0
+                            }
                         }
                     },
-                    "optional": true,
                     "targetRequirement": {
                         "type": "TargetObject",
                         "filter": {

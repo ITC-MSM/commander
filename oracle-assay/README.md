@@ -562,8 +562,7 @@ Found the way all five were, by running it on a card class it had never reached.
     Blood Celebrant, Goblin Clearcutter and Wirewood Channeler instant-speed abilities that use the
     stack. Chromatic Sphere remains, because its mana step is inside a composite.
   - **"You may" on a triggered ability (~10).** `optional = true` versus a `MayEffect` wrapping the
-    effect. `Triggers` lowers the English into the flag, which is what most cards carry; the rest
-    are the minority spelling.
+    effect. *Since resolved by removing the flag from the SDK — see the closed finding below.*
   - **A mass effect written as a pipeline (~19).** `ForEachInGroup` versus a `Patterns.Group` recipe
     for the same sweep, and the already-documented `DealDamage(n, PlayerRef(Each))` versus
     `ForEachPlayer` split for "each creature and each player".
@@ -712,6 +711,19 @@ Found the way all five were, by running it on a card class it had never reached.
   text as two abilities, which is how all but one card in the corpus writes it — Ureni, the Song
   Unending uses `Colors`. The scope is engine-supported (`CardEntityFactory`, `PlayerProtectionRules`)
   so nothing is broken; it is one card and one type away from the corpus having a single spelling.
+- **Closed, by deleting the field: a trigger's "you may" said itself twice.** `TriggeredAbility`
+  carried an `optional: Boolean` beside its effect, and 106 cards used it where 214 wrapped the
+  effect in a `MayEffect` — one sentence, two SDK spellings, bridged here by a `liftTriggerConsent`
+  fold. The fold's own justification was the argument for removing the flag: it cited
+  `TriggerProcessor.putOnStack` *building* `GatedEffect(Gate.MayDecide, then, otherwise)` from the
+  flag on every game, which is a lowering, not an equivalence someone asserted. So the flag went and
+  the gate is the model; `optional = true` survives only as a DSL shorthand that lowers in `build()`.
+  Both halves of `Triggers.abilityFor`/`scriptFor` lost their lowering, `Granted` lost the same three
+  lines, and the fold was deleted. The divergence count did not move, which is what proves the fold
+  was folding nothing but the spelling. Two further conflations came out with it, both engine-side:
+  a targeted "you may" used to carry its consent by forcing every target slot's minimum to zero
+  (so "target creature" silently became "up to one", against CR 603.3d), and the single-legal-player
+  target auto-select had to be disabled for optional abilities to stop that consent being skipped.
 - **Open: a mana ability says so twice, and 24 abilities say it once.** `ActivatedAbility` carries
   `isManaAbility: Boolean` *and* `timing: TimingRule.ManaAbility`, and `TimingRule.ManaAbility`'s own
   KDoc claims the rules meaning — "does NOT go on the stack (Rule 605.3a)", "can be activated during
