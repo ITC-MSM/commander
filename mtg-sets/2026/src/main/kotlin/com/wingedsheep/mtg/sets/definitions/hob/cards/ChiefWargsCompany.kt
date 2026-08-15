@@ -66,7 +66,6 @@ val ChiefWargsCompany = card("Chief Warg's Company") {
             colors = setOf(Color.GREEN),
             creatureTypes = setOf("Wolf"),
             controller = EffectTarget.Controller,
-            imageUri = "https://cards.scryfall.io/normal/front/d/5/d5f1e139-3054-4273-8a4d-faaaa9c383a8.jpg?1783924694",
         )
         description = "At the beginning of your upkeep, create a 2/2 green Wolf creature token."
     }

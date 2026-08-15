@@ -74,7 +74,6 @@ private fun mistyMountainsChapter(): Effect =
                         creatureTypes = setOf("Dragon"),
                         keywords = setOf(Keyword.FLYING),
                         controller = EffectTarget.Controller,
-                        imageUri = "https://cards.scryfall.io/normal/front/1/e/1e4408fa-8037-42f1-989e-2da84867f76c.jpg?1785497692",
                     ),
                     successCriterion = SuccessCriterion.PermanentsSacrificed,
                 )

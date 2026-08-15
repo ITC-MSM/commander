@@ -96,7 +96,6 @@ val TheEaglesAreComing = card("The Eagles Are Coming!") {
                         colors = setOf(Color.WHITE),
                         creatureTypes = setOf("Bird", "Soldier"),
                         keywords = setOf(Keyword.FLYING),
-                        imageUri = "https://cards.scryfall.io/normal/front/9/e/9ed2d2f3-e1b0-41e0-a29d-31624e5e9004.jpg?1785524352"
                     )
                 )
             )

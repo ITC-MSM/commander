@@ -49,7 +49,6 @@ val HeadOfTheHunt = card("Head of the Hunt") {
                 toughness = 2,
                 colors = setOf(Color.GREEN),
                 creatureTypes = setOf("Wolf"),
-                imageUri = "https://cards.scryfall.io/normal/front/e/0/e07312b9-f3c1-4e36-88fc-b29cde581eb6.jpg?1785497932",
             ),
             appliesTo = EventPattern.ZoneChangeEvent(
                 filter = GameObjectFilter.Creature.opponentControls(),

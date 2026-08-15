@@ -35,7 +35,6 @@ private fun stoneBoulderToken() = CreateTokenEffect(
     keywords = setOf(Keyword.DEFENDER),
     name = "Stone Boulder",
     artifactToken = true,
-    imageUri = "https://cards.scryfall.io/normal/front/3/4/3440e247-a733-4609-9d80-d4a5fc58ae46.jpg?1785502811",
 )
 
 val StoneGiantOfHighPass = card("Stone-Giant of High Pass") {
