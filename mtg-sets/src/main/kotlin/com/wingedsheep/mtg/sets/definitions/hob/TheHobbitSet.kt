@@ -17,7 +17,9 @@ object TheHobbitSet : MtgSet {
     override val code = "HOB"
     override val displayName = "The Hobbit"
     override val releaseDate = "2026-08-14"
-    override val sealedSupported = false
+    // Complete as of release (193/193). `sealedSupported` gates `fullyImplemented`, so leaving it
+    // false would keep a finished set out of the lobby's draft/sealed picker.
+    override val sealedSupported = true
 
     override val cards: List<CardDefinition> by lazy {
         CardDiscovery.findIn(CARDS_PACKAGE)
