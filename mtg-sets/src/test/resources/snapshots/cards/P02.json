@@ -1,3 +1,23 @@
+// Alaborn Trooper
+{
+    "name": "Alaborn Trooper",
+    "manaCost": "{2}{W}",
+    "typeLine": "Creature — Human Soldier",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "metadata": {
+        "collectorNumber": "4",
+        "artist": "Lubov",
+        "flavorText": "\"I dedicate my body to my country And my life to my King.\"\n—Alaborn Soldier's Oath",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/1/e1cd30b4-4ed8-467e-808e-b0caf4196d90.jpg?1783946495"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Angel of Mercy
 {
     "name": "Angel of Mercy",
@@ -65,6 +85,26 @@
     ]
 }
 
+// Barbtooth Wurm
+{
+    "name": "Barbtooth Wurm",
+    "manaCost": "{5}{G}",
+    "typeLine": "Creature — Wurm",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 4
+    },
+    "metadata": {
+        "collectorNumber": "122",
+        "artist": "Rebecca Guay",
+        "flavorText": "In its lair lies a carpet of bones.",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/f/0f627db9-c63e-4353-94f4-3e28db7b222a.jpg?1783946458"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Bear Cub
 {
     "name": "Bear Cub",
@@ -115,6 +155,46 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Dakmor Scorpion
+{
+    "name": "Dakmor Scorpion",
+    "manaCost": "{1}{B}",
+    "typeLine": "Creature — Scorpion",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "metadata": {
+        "collectorNumber": "70",
+        "artist": "Randy Gallegos",
+        "flavorText": "A scorpion this big you won't find curled up in your boot. Maybe *around* your boot, but not *in* it.",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/d/2d860dee-93a9-48e5-ba7a-80ad8cdc84e4.jpg?1783946477"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Goblin Cavaliers
+{
+    "name": "Goblin Cavaliers",
+    "manaCost": "{2}{R}",
+    "typeLine": "Creature — Goblin",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "metadata": {
+        "collectorNumber": "95",
+        "artist": "DiTerlizzi",
+        "flavorText": "They get along so well with their goats because they're practically goats themselves.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/d/edc6ea02-0642-4fc5-b50c-543dc393bfdd.jpg?1783946467"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
@@ -190,6 +270,26 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Golden Bear
+{
+    "name": "Golden Bear",
+    "manaCost": "{3}{G}",
+    "typeLine": "Creature — Bear",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 3
+    },
+    "metadata": {
+        "collectorNumber": "127",
+        "artist": "Una Fricker",
+        "flavorText": "The elvish scout was scrupulous about the truth. She told the traders that gold lay nearby.",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/7/d7dfc789-7ea0-4eb8-8c3b-2c50fd52cbab.jpg?1783946455"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 
@@ -282,6 +382,27 @@
     ]
 }
 
+// Obsidian Giant
+{
+    "name": "Obsidian Giant",
+    "manaCost": "{4}{R}",
+    "typeLine": "Creature — Giant",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "metadata": {
+        "collectorNumber": "109",
+        "rarity": "UNCOMMON",
+        "artist": "David A. Cherry",
+        "flavorText": "After a while, ships stopped sailing within his reach.",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/a/aad8a194-cee7-4671-8310-19357fc1a450.jpg?1783946462"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Ogre Taskmaster
 {
     "name": "Ogre Taskmaster",
@@ -306,6 +427,46 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Ogre Warrior
+{
+    "name": "Ogre Warrior",
+    "manaCost": "{3}{R}",
+    "typeLine": "Creature — Ogre Warrior",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "metadata": {
+        "collectorNumber": "113",
+        "artist": "Jeff Miracola",
+        "flavorText": "Assault and battery included.",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/6/66e72970-df1f-4ded-a686-036008555a76.jpg?1783946462"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Plated Wurm
+{
+    "name": "Plated Wurm",
+    "manaCost": "{4}{G}",
+    "typeLine": "Creature — Wurm",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 5
+    },
+    "metadata": {
+        "collectorNumber": "141",
+        "artist": "Daniel Gelon",
+        "flavorText": "\"I'd hate to see the bird that could get *this* wurm!\"\n—Alaborn soldier",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/5/b51f8724-8f26-4a9d-b586-4223354ae7fc.jpg?1783946449"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 
@@ -454,6 +615,46 @@
     ]
 }
 
+// Talas Merchant
+{
+    "name": "Talas Merchant",
+    "manaCost": "{1}{U}",
+    "typeLine": "Creature — Human Pirate",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 3
+    },
+    "metadata": {
+        "collectorNumber": "50",
+        "artist": "Lubov",
+        "flavorText": "The trader let loose a laugh that made all around him check their purses.",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/f/2f779d7e-6e37-49bc-b76d-3bb490ff142b.jpg?1783946482"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Trokin High Guard
+{
+    "name": "Trokin High Guard",
+    "manaCost": "{3}{W}",
+    "typeLine": "Creature — Human Knight",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "metadata": {
+        "collectorNumber": "26",
+        "artist": "Ron Spencer",
+        "flavorText": "Battle tempers soldiers as fire tempers steel.",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/c/9c2b9302-fca6-43ca-a01c-03aec51acd0d.jpg?1783946490"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Vampiric Spirit
 {
     "name": "Vampiric Spirit",
@@ -494,6 +695,26 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Volunteer Militia
+{
+    "name": "Volunteer Militia",
+    "manaCost": "{W}",
+    "typeLine": "Creature — Human Soldier",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 2
+    },
+    "metadata": {
+        "collectorNumber": "28",
+        "artist": "Keith Parkinson",
+        "flavorText": "People fight hardest on their own soil.",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/e/de307b2e-9a1c-4f95-887f-14c9d99577aa.jpg?1783946489"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 

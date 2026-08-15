@@ -203,6 +203,66 @@
     "colorIdentityOverride": []
 }
 
+// Oreskos Swiftclaw
+{
+    "name": "Oreskos Swiftclaw",
+    "manaCost": "{1}{W}",
+    "typeLine": "Creature — Cat Warrior",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 1
+    },
+    "metadata": {
+        "collectorNumber": "20",
+        "artist": "James Ryman",
+        "flavorText": "After the Battle of Pharagax Bridge, the Champion spent many months among the leonin of Oreskos. She found that they were quick to take offense, not because they were thin-skinned, but because they were always eager for a fight.\n—*The Theriad*",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/3/03c67b91-7f05-44b1-9e99-3e2094434f6a.jpg?1783939456"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Pensive Minotaur
+{
+    "name": "Pensive Minotaur",
+    "manaCost": "{2}{R}",
+    "typeLine": "Creature — Minotaur Warrior",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "metadata": {
+        "collectorNumber": "105",
+        "artist": "Svetlin Velinov",
+        "flavorText": "The Champion and her companions marched through the night, but the battle was over before they arrived. In the middle of the carnage sat a solitary minotaur, lost in what seemed to the Champion to be thought.\n—*The Theriad*",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/0/902b462a-a552-42d4-91f0-bd33cd9cb719.jpg?1783939421"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Rotted Hulk
+{
+    "name": "Rotted Hulk",
+    "manaCost": "{3}{B}",
+    "typeLine": "Creature — Elemental",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 5
+    },
+    "metadata": {
+        "collectorNumber": "81",
+        "artist": "Raymond Swanland",
+        "flavorText": "The hulk rose from the sea and loomed over the Champion. Pinned beneath the twisting, rotted planks of wood was the body of Kaliaros, the helmsman of her former crew, and beside him the captain, Photine.\n—*The Theriad*",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/0/1066644a-ac62-4809-805c-607c645613c5.jpg?1783939431"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Temple of Epiphany
 {
     "name": "Temple of Epiphany",

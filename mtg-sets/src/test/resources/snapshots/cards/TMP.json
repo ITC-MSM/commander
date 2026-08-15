@@ -1349,6 +1349,26 @@
     ]
 }
 
+// Lowland Giant
+{
+    "name": "Lowland Giant",
+    "manaCost": "{2}{R}{R}",
+    "typeLine": "Creature — Giant",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 3
+    },
+    "metadata": {
+        "collectorNumber": "187",
+        "artist": "Paolo Parente",
+        "flavorText": "\"Faugh!\" snorted Tahngarth. \"Why would it make a meal of something like you?\" Squee looked relieved. \"No,\" he continued, \"you'd make a much better toothpick.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/3/7398dec7-5e60-43c0-81a0-ab49beb37077.jpg?1783946627"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Manta Riders
 {
     "name": "Manta Riders",
@@ -1510,6 +1530,24 @@
         "artist": "D. Alexander Gregory",
         "imageUri": "https://cards.scryfall.io/normal/front/b/a/ba69c3d3-6fb5-478d-93ba-341dd3ace97d.jpg?1562056379"
     }
+}
+
+// Metallic Sliver
+{
+    "name": "Metallic Sliver",
+    "manaCost": "{1}",
+    "typeLine": "Artifact Creature — Sliver",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "metadata": {
+        "collectorNumber": "297",
+        "artist": "Allen Williams",
+        "flavorText": "When the clever counterfeit was accepted by the hive, Volrath's influence upon the slivers grew even stronger.",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/0/30143f4f-9846-448d-8797-8fe0bc0cc5df.jpg?1783946602"
+    },
+    "colorIdentityOverride": []
 }
 
 // Mindwhip Sliver

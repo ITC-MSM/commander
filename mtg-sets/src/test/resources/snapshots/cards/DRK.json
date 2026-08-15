@@ -103,6 +103,26 @@
     "colorIdentityOverride": []
 }
 
+// Goblin Hero
+{
+    "name": "Goblin Hero",
+    "manaCost": "{2}{R}",
+    "typeLine": "Creature — Goblin",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "metadata": {
+        "collectorNumber": "66",
+        "artist": "Mark Tedin",
+        "flavorText": "They attacked in an orgy of rage and madness, but only one seemed as focused on killing us as on the sheer joy of battle.",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/1/7135a569-e5d3-4a1f-924b-bdb86926b4e1.jpg?1783947934"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Inferno
 {
     "name": "Inferno",
@@ -160,6 +180,27 @@
     ]
 }
 
+// Scarwood Goblins
+{
+    "name": "Scarwood Goblins",
+    "manaCost": "{R}{G}",
+    "typeLine": "Creature — Goblin",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "metadata": {
+        "collectorNumber": "94",
+        "artist": "Ron Spencer",
+        "flavorText": "Larger and more cunning than most Goblins, Scarwood Goblins are thankfully found only in isolated pockets.",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/5/5542d236-af43-43b8-b30f-8980d74bbdd0.jpg?1783947928"
+    },
+    "colorIdentityOverride": [
+        "RED",
+        "GREEN"
+    ]
+}
+
 // Skull of Orm
 {
     "name": "Skull of Orm",
@@ -212,4 +253,24 @@
         "imageUri": "https://cards.scryfall.io/normal/front/a/a/aa1d9bb5-972a-4705-bf22-0fa1e974dd26.jpg"
     },
     "colorIdentityOverride": []
+}
+
+// Squire
+{
+    "name": "Squire",
+    "manaCost": "{1}{W}",
+    "typeLine": "Creature — Human Soldier",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 2
+    },
+    "metadata": {
+        "collectorNumber": "17",
+        "artist": "Dennis Detwiller",
+        "flavorText": "\"Of twenty yeer of age he was, I gesse.\nOf his stature he was of even lengthe,\nAnd wonderly deliver, and greete of strengthe.\"\n—Geoffrey Chaucer, *The Canterbury Tales*",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/7/374df061-ebd2-4f1f-9a6e-7940a49197a9.jpg?1783947948"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
 }

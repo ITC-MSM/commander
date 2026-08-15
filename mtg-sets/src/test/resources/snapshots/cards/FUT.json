@@ -1,3 +1,60 @@
+// Blade of the Sixth Pride
+{
+    "name": "Blade of the Sixth Pride",
+    "manaCost": "{1}{W}",
+    "typeLine": "Creature — Cat Rebel",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 1
+    },
+    "metadata": {
+        "collectorNumber": "19",
+        "artist": "Justin Sweet",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/6/f6ccfe28-ec08-4751-b65c-c40b2bafa955.jpg?1783943127"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Blind Phantasm
+{
+    "name": "Blind Phantasm",
+    "manaCost": "{2}{U}",
+    "typeLine": "Creature — Illusion",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "metadata": {
+        "collectorNumber": "49",
+        "artist": "Khang Le",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/b/6b26ee7b-de1a-4a39-9580-89941c3d0f21.jpg?1783943118"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Fomori Nomad
+{
+    "name": "Fomori Nomad",
+    "manaCost": "{4}{R}",
+    "typeLine": "Creature — Nomad Giant",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "metadata": {
+        "collectorNumber": "114",
+        "artist": "Raymond Swanland",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/2/8216b3f3-b9b6-4d90-a624-c1b9b7bdf953.jpg?1783943103"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Mass of Ghouls
 {
     "name": "Mass of Ghouls",
@@ -14,6 +71,25 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Nessian Courser
+{
+    "name": "Nessian Courser",
+    "manaCost": "{2}{G}",
+    "typeLine": "Creature — Centaur Warrior",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "metadata": {
+        "collectorNumber": "148",
+        "artist": "Vance Kovacs",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/8/88b18b70-f656-4426-a3e5-69cf61fdaad1.jpg?1783943095"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 

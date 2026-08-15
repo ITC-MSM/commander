@@ -1,3 +1,21 @@
+// Hexplate Golem
+{
+    "name": "Hexplate Golem",
+    "manaCost": "{7}",
+    "typeLine": "Artifact Creature — Golem",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 7
+    },
+    "metadata": {
+        "collectorNumber": "109",
+        "artist": "Matt Cavotta",
+        "flavorText": "\"Use everything. Iron, rust, scrap . . . even the ground must join our cause.\"\n—Ezuri, renegade leader",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/9/49b913f3-6581-45ae-9cdb-274c2ccd8899.jpg?1783941369"
+    },
+    "colorIdentityOverride": []
+}
+
 // Lumengrid Gargoyle
 {
     "name": "Lumengrid Gargoyle",
@@ -92,6 +110,47 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Ogre Resister
+{
+    "name": "Ogre Resister",
+    "manaCost": "{2}{R}{R}",
+    "typeLine": "Creature — Ogre",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 3
+    },
+    "metadata": {
+        "collectorNumber": "72",
+        "artist": "Efrem Palacios",
+        "flavorText": "He didn't have a word for \"home,\" but he knew it was something to be defended.",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/0/60b7407d-f677-403b-893c-361df456009a.jpg?1783941377"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Quilled Slagwurm
+{
+    "name": "Quilled Slagwurm",
+    "manaCost": "{4}{G}{G}{G}",
+    "typeLine": "Creature — Phyrexian Wurm",
+    "creatureStats": {
+        "power": 8,
+        "toughness": 8
+    },
+    "metadata": {
+        "collectorNumber": "89",
+        "rarity": "UNCOMMON",
+        "artist": "Matt Stewart",
+        "flavorText": "Vorinclex removed its teeth so it wouldn't waste time chewing before moving to the next kill.",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/2/12c597b9-5024-42bd-b500-5ef6a3accda6.jpg?1783941373"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 

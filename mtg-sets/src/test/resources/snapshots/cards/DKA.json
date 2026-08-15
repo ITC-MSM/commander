@@ -748,6 +748,26 @@
     "colorIdentityOverride": []
 }
 
+// Hollowhenge Beast
+{
+    "name": "Hollowhenge Beast",
+    "manaCost": "{3}{G}{G}",
+    "typeLine": "Creature — Beast",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 5
+    },
+    "metadata": {
+        "collectorNumber": "118",
+        "artist": "Dave Kendall",
+        "flavorText": "In a world of monsters, it's the stuff of nightmares.",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/5/052ab91f-ac01-43f4-9276-9af35dbfbf71.jpg?1783940805"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Huntmaster of the Fells
 {
     "name": "Huntmaster of the Fells",
@@ -1213,6 +1233,46 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Russet Wolves
+{
+    "name": "Russet Wolves",
+    "manaCost": "{3}{R}",
+    "typeLine": "Creature — Wolf",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "metadata": {
+        "collectorNumber": "102",
+        "artist": "Christopher Moeller",
+        "flavorText": "\"The wolves of our valley are bred to detest the scent of ghouls. For centuries they have kept our estates clear of such carrion.\"\n—Olivia Voldaren",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/3/b3c7c972-5a11-4709-b3ef-e2acb3b51dd9.jpg?1783940814"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Sanctuary Cat
+{
+    "name": "Sanctuary Cat",
+    "manaCost": "{W}",
+    "typeLine": "Creature — Cat",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 2
+    },
+    "metadata": {
+        "collectorNumber": "19",
+        "artist": "David Palumbo",
+        "flavorText": "Cats prowl the corridors of Avacyn's churches in search of devils or signs of their mischief.",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/6/96865440-01ad-40f2-90d7-9ecd0b4efecc.jpg?1783940850"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 

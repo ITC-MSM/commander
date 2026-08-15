@@ -1,3 +1,63 @@
+// Flameborn Viron
+{
+    "name": "Flameborn Viron",
+    "manaCost": "{4}{R}{R}",
+    "typeLine": "Creature — Phyrexian Insect",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 4
+    },
+    "metadata": {
+        "collectorNumber": "83",
+        "artist": "Svetlin Velinov",
+        "flavorText": "\"Large or small, all will toil for the Great Work.\"\n—Decree of Urabrask",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/6/9601ea62-a609-4bc5-a2f0-f7615b4dd5fa.jpg?1783941308"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Loxodon Convert
+{
+    "name": "Loxodon Convert",
+    "manaCost": "{3}{W}",
+    "typeLine": "Creature — Phyrexian Elephant Soldier",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 2
+    },
+    "metadata": {
+        "collectorNumber": "14",
+        "artist": "Adrian Smith",
+        "flavorText": "Just one drop of the glistening oil can eventually stain even a soul as stalwart as a loxodon's beyond redemption.",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/0/00c050c3-4f50-4bb6-8477-6737887ca10d.jpg?1783941325"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Rotted Hystrix
+{
+    "name": "Rotted Hystrix",
+    "manaCost": "{4}{G}",
+    "typeLine": "Creature — Phyrexian Beast",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 6
+    },
+    "metadata": {
+        "collectorNumber": "120",
+        "artist": "Dave Allsop",
+        "flavorText": "Vorinclex had no grand plan. The oil did its own work, evolving creatures into worthy predators.",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/b/7bcae97d-468a-4e16-bfed-d2946f64784c.jpg?1783941299"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Torpor Orb
 {
     "name": "Torpor Orb",

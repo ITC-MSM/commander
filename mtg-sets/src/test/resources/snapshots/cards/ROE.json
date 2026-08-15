@@ -232,6 +232,66 @@
     ]
 }
 
+// Jwari Scuttler
+{
+    "name": "Jwari Scuttler",
+    "manaCost": "{2}{U}",
+    "typeLine": "Creature — Crab",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "metadata": {
+        "collectorNumber": "73",
+        "artist": "Andrew Robinson",
+        "flavorText": "\"Yeah, they've got a lot of meat. The only downside to eating 'em is that you often find human bones and body parts inside.\"\n—Jaby, Silundi Sea nomad",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/4/04129038-3b02-418a-862a-229e9dde339b.jpg?1783941995"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Lagac Lizard
+{
+    "name": "Lagac Lizard",
+    "manaCost": "{3}{R}",
+    "typeLine": "Creature — Lizard",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "metadata": {
+        "collectorNumber": "154",
+        "artist": "Svetlin Velinov",
+        "flavorText": "Tracing their ancestry back to Zendikar's earliest forms of life, lagac lizards have seen the comings and goings of planeswalkers and the Eldrazi, and the rise of the vampire clans, none of which has changed them one bit.",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/4/b47e9cfa-5547-4ef3-9e36-8d0f36dfa59a.jpg?1783941974"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Nema Siltlurker
+{
+    "name": "Nema Siltlurker",
+    "manaCost": "{4}{G}",
+    "typeLine": "Creature — Lizard",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 5
+    },
+    "metadata": {
+        "collectorNumber": "200",
+        "artist": "Wayne Reynolds",
+        "flavorText": "In one gargantuan bite, it will swallow not only you but also the riverbank you were standing on.",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/4/a477e081-949f-4cf0-b0d2-b9bdff6c760d.jpg?1783941961"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Pelakka Wurm
 {
     "name": "Pelakka Wurm",

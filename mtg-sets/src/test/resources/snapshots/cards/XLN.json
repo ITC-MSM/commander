@@ -1,3 +1,23 @@
+// Ancient Brontodon
+{
+    "name": "Ancient Brontodon",
+    "manaCost": "{6}{G}{G}",
+    "typeLine": "Creature — Dinosaur",
+    "creatureStats": {
+        "power": 9,
+        "toughness": 9
+    },
+    "metadata": {
+        "collectorNumber": "175",
+        "artist": "Jakub Kasper",
+        "flavorText": "It is taller than all but the tallest trees, and older than all but the oldest.",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/9/39421ce8-86d5-4739-b6fd-78d63c0bb258.jpg?1783935731"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Bishop's Soldier
 {
     "name": "Bishop's Soldier",
@@ -270,6 +290,44 @@
     ]
 }
 
+// Frenzied Raptor
+{
+    "name": "Frenzied Raptor",
+    "manaCost": "{2}{R}",
+    "typeLine": "Creature — Dinosaur",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 2
+    },
+    "metadata": {
+        "collectorNumber": "146",
+        "artist": "Jesper Ejsing",
+        "flavorText": "Sun Empire warriors are taught to emulate the fearless raptors that fling themselves against towers of horn and muscle a hundred times their size.",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/7/a7c3a1c9-ffa2-4990-aa4b-db9d688f1ed4.jpg?1783935745"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Gilded Sentinel
+{
+    "name": "Gilded Sentinel",
+    "manaCost": "{4}",
+    "typeLine": "Artifact Creature — Golem",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "metadata": {
+        "collectorNumber": "239",
+        "artist": "Izzy",
+        "flavorText": "The River Heralds fight to keep all others from reaching the golden city. The city has its own defenses.",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/1/01cc1a59-76bf-4721-b4a7-ef746f3d3990.jpg?1783935702"
+    },
+    "colorIdentityOverride": []
+}
+
 // Gishath, Sun's Avatar
 {
     "name": "Gishath, Sun's Avatar",
@@ -500,6 +558,46 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Headwater Sentries
+{
+    "name": "Headwater Sentries",
+    "manaCost": "{3}{U}",
+    "typeLine": "Creature — Merfolk Warrior",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 5
+    },
+    "metadata": {
+        "collectorNumber": "58",
+        "artist": "Naomi Baker",
+        "flavorText": "\"The elders say that if the intruders discovered the secret of the golden city, it would mean an end to our people.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/a/2af2c338-f5e9-4596-9435-c6aa965ae541.jpg?1783935781"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Looming Altisaur
+{
+    "name": "Looming Altisaur",
+    "manaCost": "{3}{W}",
+    "typeLine": "Creature — Dinosaur",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 7
+    },
+    "metadata": {
+        "collectorNumber": "23",
+        "artist": "Lars Grant-West",
+        "flavorText": "Nature can't be tamed, but the Sun Empire believes that humans are made stronger when they test themselves against the wild strength of the dinosaurs.",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/f/cfcff1c6-0db6-4ff6-b4af-d7048b426368.jpg?1783935797"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 
@@ -749,6 +847,46 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Queen's Bay Soldier
+{
+    "name": "Queen's Bay Soldier",
+    "manaCost": "{1}{B}",
+    "typeLine": "Creature — Vampire Soldier",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "metadata": {
+        "collectorNumber": "115",
+        "artist": "Jesper Ejsing",
+        "flavorText": "The soldiers of the Legion of Dusk have come to the colonies at Queen's Bay in search of glory and riches. They are veterans of centuries of warfare, and they thirst for conquest.",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/e/ce2ca2e6-f920-4529-88d2-d984bdb7490a.jpg?1783935757"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Raptor Companion
+{
+    "name": "Raptor Companion",
+    "manaCost": "{1}{W}",
+    "typeLine": "Creature — Dinosaur",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 1
+    },
+    "metadata": {
+        "collectorNumber": "31",
+        "artist": "Slawomir Maniak",
+        "flavorText": "A raptor will follow any order as long as that order is \"hunt,\" \"kill,\" or \"go for the guts.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/d/2d37fc42-0a7c-46b3-9270-333d370e479f.jpg?1783935794"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 

@@ -60,6 +60,26 @@
     ]
 }
 
+// Cliffhaven Sell-Sword
+{
+    "name": "Cliffhaven Sell-Sword",
+    "manaCost": "{1}{W}",
+    "typeLine": "Creature — Kor Warrior",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 1
+    },
+    "metadata": {
+        "collectorNumber": "8",
+        "artist": "Jason Rainville",
+        "flavorText": "\"I swing a sword. It's a simple life. A lot of adventurers just see me as some cheap muscle, but if my steel lets them return home with their lives and limbs intact, then I've done my job.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/f/7f334767-4353-4379-a934-fa67075db439.jpg?1783929421"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Crawling Barrens
 {
     "name": "Crawling Barrens",
@@ -350,6 +370,26 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Murasa Brute
+{
+    "name": "Murasa Brute",
+    "manaCost": "{2}{G}",
+    "typeLine": "Creature — Troll Warrior",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "metadata": {
+        "collectorNumber": "195",
+        "artist": "Caio Monteiro",
+        "flavorText": "Some adventuring parties are made up of old friends, their common bonds bolstering them in the face of peril. Other parties simply hire the biggest, meanest muscle they can find.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/f/efe1c5b2-4356-41ae-ab7e-ad9fc835a911.jpg?1783929336"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 

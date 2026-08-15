@@ -1,0 +1,18 @@
+// Shorecomber Crab
+{
+    "name": "Shorecomber Crab",
+    "manaCost": "{U}",
+    "typeLine": "Creature — Crab",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 4
+    },
+    "metadata": {
+        "collectorNumber": "32a",
+        "artist": "Chris Seaman",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/0/d0d899e1-bded-4e16-8ecc-cc07784af4bb.jpg?1783929831"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}

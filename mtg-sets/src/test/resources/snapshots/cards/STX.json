@@ -1,3 +1,23 @@
+// Ageless Guardian
+{
+    "name": "Ageless Guardian",
+    "manaCost": "{1}{W}",
+    "typeLine": "Creature — Spirit Soldier",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 4
+    },
+    "metadata": {
+        "collectorNumber": "8",
+        "artist": "Nicholas Gregory",
+        "flavorText": "Ancient ruins dot the world of Arcavios, most older than Strixhaven itself and many still guarded by soldiers from the Blood Age, centuries after their deaths.",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/a/4a5ff6af-402f-4bf6-a75b-dc1e0e40aff6.jpg?1783927397"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Burrog Befuddler
 {
     "name": "Burrog Befuddler",
@@ -313,6 +333,26 @@
             },
             "imageUri": "https://cards.scryfall.io/normal/back/0/d/0dba25e3-2b4f-45d4-965f-3834bcb359ee.jpg?1739656768"
         }
+    ]
+}
+
+// Spined Karok
+{
+    "name": "Spined Karok",
+    "manaCost": "{2}{G}",
+    "typeLine": "Creature — Crocodile",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 4
+    },
+    "metadata": {
+        "collectorNumber": "143",
+        "artist": "Filip Burburan",
+        "flavorText": "\"The bogs are deeper than you realize. Most of the space beneath the surface is taken up by these enormous karoks. You might think your feet are touching the bottom. They're probably not.\"\n—Gyome, Witherbloom chef",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/3/c37ae6b5-225a-410e-ab22-13e923bdfb65.jpg?1783927338"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 

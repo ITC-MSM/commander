@@ -443,6 +443,26 @@
     ]
 }
 
+// Imperial Outrider
+{
+    "name": "Imperial Outrider",
+    "manaCost": "{3}{W}",
+    "typeLine": "Creature — Human Knight",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 5
+    },
+    "metadata": {
+        "collectorNumber": "307",
+        "artist": "Scott Murphy",
+        "flavorText": "Her mount's hollow crest can produce a trumpeting warning that carries for miles, summoning more knights to her aid.",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/d/0dd3aca5-516f-4500-9d7f-95630401d3ae.jpg?1783932913"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Rapacious Dragon
 {
     "name": "Rapacious Dragon",

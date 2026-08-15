@@ -1,3 +1,23 @@
+// Feral Krushok
+{
+    "name": "Feral Krushok",
+    "manaCost": "{4}{G}",
+    "typeLine": "Creature — Beast",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 4
+    },
+    "metadata": {
+        "collectorNumber": "128",
+        "artist": "Kev Walker",
+        "flavorText": "In a stunning act of diplomacy, Yasova Dragonclaw ceded a portion of Temur lands to the Sultai. Her clan protested until they saw she had given the Sultai the breeding grounds of the krushoks. They hadn't realized she had a sense of humor.",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/0/5041996b-c265-4c4f-a52c-dfe29b2e282d.jpg?1783938681"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Flamewake Phoenix
 {
     "name": "Flamewake Phoenix",
@@ -59,6 +79,46 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Gore Swine
+{
+    "name": "Gore Swine",
+    "manaCost": "{2}{R}",
+    "typeLine": "Creature — Boar",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 1
+    },
+    "metadata": {
+        "collectorNumber": "103",
+        "artist": "Jack Wang",
+        "flavorText": "\"The Mardu are like the gore swine. We are wild, hunt in packs, and rarely clean the blood from our blades.\"\n—Vallash, Mardu warrior",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/1/31c36d53-1173-4a55-8fb8-63a624fde7de.jpg?1783938688"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Great-Horn Krushok
+{
+    "name": "Great-Horn Krushok",
+    "manaCost": "{4}{W}",
+    "typeLine": "Creature — Beast",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 5
+    },
+    "metadata": {
+        "collectorNumber": "13",
+        "artist": "YW Tang",
+        "flavorText": "Perfectly suited for life in the Shifting Wastes, the krushok is well protected by its horn, its hide, and its temper.",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/2/122e08cb-407b-4b3d-8af0-077ff96bf160.jpg?1783938713"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 

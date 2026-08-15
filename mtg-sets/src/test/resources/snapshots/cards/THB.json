@@ -44,6 +44,106 @@
     ]
 }
 
+// Nyxborn Brute
+{
+    "name": "Nyxborn Brute",
+    "manaCost": "{3}{R}{R}",
+    "typeLine": "Enchantment Creature — Cyclops",
+    "creatureStats": {
+        "power": 7,
+        "toughness": 3
+    },
+    "metadata": {
+        "collectorNumber": "144",
+        "artist": "Zoltan Boros",
+        "flavorText": "\"One-eyed and frightful, the cyclops\nlifted a boulder and hurled it\nseaward from cliff's edge, shattering\nmasts and scattering sailors.\"\n—*The Callapheia*",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/5/05bc4236-566f-401b-b9d7-f58126fa228b.jpg?1783931550"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Nyxborn Colossus
+{
+    "name": "Nyxborn Colossus",
+    "manaCost": "{3}{G}{G}{G}",
+    "typeLine": "Enchantment Creature — Giant",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 7
+    },
+    "metadata": {
+        "collectorNumber": "191",
+        "artist": "Mathias Kollros",
+        "flavorText": "\"Tree-tall giants confronted her, fiercely demanding her tribute;\nFox-cunning Callaphe's slippery speaking entangled their senses...\"\n—*The Callapheia*",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/b/8b4f003c-1e99-4e53-ad6d-81ff3c592b2c.jpg?1783931531"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Nyxborn Courser
+{
+    "name": "Nyxborn Courser",
+    "manaCost": "{1}{W}{W}",
+    "typeLine": "Enchantment Creature — Centaur Scout",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 4
+    },
+    "metadata": {
+        "collectorNumber": "29",
+        "artist": "Bastien L. Deharme",
+        "flavorText": "\"Storms drove them westward to Ketaphos; wide plains shimmered in starlight.\nCentaurs greeted them, offering gold-hued apples and grain-cakes.\"\n—*The Callapheia*",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/f/0fd32240-c003-4e18-adf1-e2e992c702b1.jpg?1783931593"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Nyxborn Marauder
+{
+    "name": "Nyxborn Marauder",
+    "manaCost": "{2}{B}{B}",
+    "typeLine": "Enchantment Creature — Minotaur",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 3
+    },
+    "metadata": {
+        "collectorNumber": "109",
+        "artist": "Steve Prescott",
+        "flavorText": "\"Callaphe guided them into the\ndarkness of Hetos, the bleak mire;\nBlood-horned minotaurs circled them,\naxes aglimmer in shadow.\"\n—*The Callapheia*",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/d/fd2a923a-1f9c-4a29-9c6b-344ae4d5ae8f.jpg?1783931562"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Nyxborn Seaguard
+{
+    "name": "Nyxborn Seaguard",
+    "manaCost": "{2}{U}{U}",
+    "typeLine": "Enchantment Creature — Merfolk Soldier",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 5
+    },
+    "metadata": {
+        "collectorNumber": "57",
+        "artist": "Simon Dominic",
+        "flavorText": "\"Storm-tossed and broken, Callaphe cried out to deep-dwelling Thassa.\nTritons came swiftly to save her, bringing her north to the Lindus.\"\n—*The Callapheia*",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/a/9ad0c7d7-0e44-496f-a2fc-fafc604cb1f1.jpg?1783931581"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Soul-Guide Lantern
 {
     "name": "Soul-Guide Lantern",

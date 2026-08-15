@@ -39,6 +39,26 @@
     "colorIdentityOverride": []
 }
 
+// Amphin Cutthroat
+{
+    "name": "Amphin Cutthroat",
+    "manaCost": "{3}{U}",
+    "typeLine": "Creature — Salamander Rogue",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 4
+    },
+    "metadata": {
+        "collectorNumber": "43",
+        "artist": "Howard Lyon",
+        "flavorText": "\"The amphin have long built their society in secret. While surface dwellers squabbled over trivial borders, they patiently expanded, building their ammonite temple-caves. Now amphin priests eye the shore, and amphin hunters gird for war.\"\n—Gor Muldrak, *Cryptohistories*",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/d/fd169064-9c7b-40bd-8be0-a89fcb28ae2f.jpg?1783941096"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Angelic Destiny
 {
     "name": "Angelic Destiny",
@@ -110,6 +130,46 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Armored Warhorse
+{
+    "name": "Armored Warhorse",
+    "manaCost": "{W}{W}",
+    "typeLine": "Creature — Horse",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "metadata": {
+        "collectorNumber": "7",
+        "artist": "rk post",
+        "flavorText": "\"When we of the Northern Verge claim a mount, no peasant's nag will do. It must be as strong as our virtue, and must join us of its own will.\"\n—Sarlena, paladin of the Northern Verge",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/2/52daf505-d436-4ea6-a157-4268af2ff7a8.jpg?1783941106"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Bonebreaker Giant
+{
+    "name": "Bonebreaker Giant",
+    "manaCost": "{4}{R}",
+    "typeLine": "Creature — Giant",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "metadata": {
+        "collectorNumber": "123",
+        "artist": "Kev Walker",
+        "flavorText": "One thing's for sure—his fists are harder than your skull.",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/c/cc17e5c1-a6b4-401b-95eb-1c01cd1da570.jpg?1783941073"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 

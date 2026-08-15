@@ -378,6 +378,26 @@
     ]
 }
 
+// Cowl Prowler
+{
+    "name": "Cowl Prowler",
+    "manaCost": "{4}{G}{G}",
+    "typeLine": "Creature — Wurm",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 6
+    },
+    "metadata": {
+        "collectorNumber": "149",
+        "artist": "Tomasz Jedruszek",
+        "flavorText": "Consulate guards who pursue fleeing renegades into the Cowl often become lost—occasionally permanently—in the city's wildest greenbelt.",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/a/8a1b25f4-f50c-4210-a03f-080a5e4e5708.jpg?1783937183"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Cultivator's Caravan
 {
     "name": "Cultivator's Caravan",
@@ -416,6 +436,26 @@
         "imageUri": "https://cards.scryfall.io/normal/front/b/4/b46b3726-4bc8-4e3a-bc6d-402c81663712.jpg"
     },
     "colorIdentityOverride": []
+}
+
+// Curio Vendor
+{
+    "name": "Curio Vendor",
+    "manaCost": "{1}{U}",
+    "typeLine": "Creature — Vedalken",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "metadata": {
+        "collectorNumber": "42",
+        "artist": "Igor Kieryluk",
+        "flavorText": "\"Step right up! Try your hand! It'll thrill the senses and boggle the mind!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/5/c598054a-26fa-40e7-8497-3da8eaf12aac.jpg?1783937222"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
 }
 
 // Filigree Familiar
@@ -651,6 +691,26 @@
     ]
 }
 
+// Prakhata Club Security
+{
+    "name": "Prakhata Club Security",
+    "manaCost": "{3}{B}",
+    "typeLine": "Creature — Aetherborn Warrior",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 4
+    },
+    "metadata": {
+        "collectorNumber": "98",
+        "artist": "Igor Kieryluk",
+        "flavorText": "It's rare that the Prakhata Club closes its doors. It's also rare that Lord Gonti meets with Consul Kambal. What are the odds the two would occur on the same day?",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/3/c32b73ce-cb25-4104-bccd-6b6a131790a9.jpg?1783937200"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Spirebluff Canal
 {
     "name": "Spirebluff Canal",
@@ -717,6 +777,66 @@
     },
     "colorIdentityOverride": [
         "BLUE",
+        "RED"
+    ]
+}
+
+// Tasseled Dromedary
+{
+    "name": "Tasseled Dromedary",
+    "manaCost": "{W}",
+    "typeLine": "Creature — Camel",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 4
+    },
+    "metadata": {
+        "collectorNumber": "30",
+        "artist": "Raoul Vitale",
+        "flavorText": "There is no dress code for the Inventors' Fair, but you'll be hard-pressed to find anyone or anything not done up in their finest.",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/c/9cef3bf2-55cf-4f42-9ec0-fa921ef22311.jpg?1783937227"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Terrain Elemental
+{
+    "name": "Terrain Elemental",
+    "manaCost": "{1}{G}",
+    "typeLine": "Creature — Elemental",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "metadata": {
+        "collectorNumber": "272",
+        "artist": "Magali Villeneuve",
+        "flavorText": "\"You tread upon the land all the time, yet you seem dismayed when it moves to step on you.\"\n—Nissa Revane",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/2/32b89e5c-ffb4-406f-99d1-ec2797aca061.jpg?1783937136"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Terror of the Fairgrounds
+{
+    "name": "Terror of the Fairgrounds",
+    "manaCost": "{3}{R}",
+    "typeLine": "Creature — Gremlin",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 2
+    },
+    "metadata": {
+        "collectorNumber": "137",
+        "artist": "Filip Burburan",
+        "flavorText": "\"Consider this a high alert, people. Permission to destroy on sight. Either we take it down or it'll take down the Fair.\"\n—Pav, gremlin watch",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/4/04623df9-8fa9-44cc-b528-c2c484626d1f.jpg?1783937185"
+    },
+    "colorIdentityOverride": [
         "RED"
     ]
 }

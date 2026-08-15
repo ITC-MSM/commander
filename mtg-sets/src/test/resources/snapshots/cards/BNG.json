@@ -1,3 +1,63 @@
+// Cyclops of One-Eyed Pass
+{
+    "name": "Cyclops of One-Eyed Pass",
+    "manaCost": "{2}{R}{R}",
+    "typeLine": "Creature — Cyclops",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 2
+    },
+    "metadata": {
+        "collectorNumber": "90",
+        "artist": "Kev Walker",
+        "flavorText": "The Champion armed herself to face the cyclops, heedless of her companions' despair. \"How will you defeat it with only one spear?\" asked young Althemone. The Champion raised her weapon. \"It has but one eye.\"\n—*The Theriad*",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/1/71a25c69-8e57-4a44-955a-da1541bbe0fe.jpg?1783939550"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Great Hart
+{
+    "name": "Great Hart",
+    "manaCost": "{3}{W}",
+    "typeLine": "Creature — Elk",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 4
+    },
+    "metadata": {
+        "collectorNumber": "15",
+        "artist": "Christopher Moeller",
+        "flavorText": "The great hart stood like a statue, its hide painted gold by the dawn. The Champion laid down her weapons and stepped forward within an arm's length of the beast. The hart, sacred to Heliod and bathed in the god's own light, bowed to the Champion, marking her as the Chosen of the Sun God.\n—*The Theriad*",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/0/70cd7d2b-e9c4-4900-89a0-f6eb0c6cb22b.jpg?1783939581"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Swordwise Centaur
+{
+    "name": "Swordwise Centaur",
+    "manaCost": "{G}{G}",
+    "typeLine": "Creature — Centaur Warrior",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "metadata": {
+        "collectorNumber": "142",
+        "artist": "Slawomir Maniak",
+        "flavorText": "The girl who would become the Champion of the Sun hacked furiously at the practice dummy. At last she stopped, breathing heavily, and looked up at her instructor. \"So much anger,\" said the centaur. \"I will teach you the ways of war, child. But first you must make peace with yourself.\"\n—*The Theriad*",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/7/1776ebd7-91fc-49e1-a978-f2012162d1cf.jpg?1783939527"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Temple of Enlightenment
 {
     "name": "Temple of Enlightenment",

@@ -112,6 +112,46 @@
     ]
 }
 
+// Defiant Khenra
+{
+    "name": "Defiant Khenra",
+    "manaCost": "{1}{R}",
+    "typeLine": "Creature — Jackal Warrior",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "metadata": {
+        "collectorNumber": "89",
+        "artist": "David Palumbo",
+        "flavorText": "There were those who saw the death of the gods and the city's collapse as a final test of worth. Some believed it meant the God-Pharaoh had been killed. Only a few realized they had been deceived.",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/7/67e3983d-b1ed-46a9-9ab0-96c4d0d77050.jpg?1783936030"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Dutiful Servants
+{
+    "name": "Dutiful Servants",
+    "manaCost": "{3}{W}",
+    "typeLine": "Creature — Zombie",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 5
+    },
+    "metadata": {
+        "collectorNumber": "12",
+        "artist": "Volkan Baǵa",
+        "flavorText": "Buildings crumbled and monuments fell. The river bled and the sky wept tears of fire. All the while, servants silently continued their work, oblivious to it all.",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/6/7684db4c-6eff-4da1-a410-48d707fb5bf1.jpg?1783936063"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Firebrand Archer
 {
     "name": "Firebrand Archer",
@@ -157,5 +197,25 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Harrier Naga
+{
+    "name": "Harrier Naga",
+    "manaCost": "{2}{G}",
+    "typeLine": "Creature — Snake Warrior",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "metadata": {
+        "collectorNumber": "118",
+        "artist": "Filip Burburan",
+        "flavorText": "She trusts that the potent poisons of her darts will reach the enemy before the enemy reaches her.",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/c/bcdc68c9-f5f3-4c5b-80df-85508cf15f84.jpg?1783936019"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }

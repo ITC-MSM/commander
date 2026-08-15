@@ -615,6 +615,26 @@
     ]
 }
 
+// Kraken Hatchling
+{
+    "name": "Kraken Hatchling",
+    "manaCost": "{U}",
+    "typeLine": "Creature — Kraken",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 4
+    },
+    "metadata": {
+        "collectorNumber": "50",
+        "artist": "Jason Felix",
+        "flavorText": "A spike and a maul are needed to crack their shells, but the taste is worth the effort.",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/5/45d100a3-93f2-428c-8f54-8807e71f2638.jpg?1783942164"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Marsh Flats
 {
     "name": "Marsh Flats",
@@ -757,6 +777,26 @@
         "imageUri": "https://cards.scryfall.io/normal/front/2/4/24a5cc2c-0fbf-4a5f-b175-6e0ffd0d0787.jpg?1783942123"
     },
     "colorIdentityOverride": []
+}
+
+// Pillarfield Ox
+{
+    "name": "Pillarfield Ox",
+    "manaCost": "{3}{W}",
+    "typeLine": "Creature — Ox",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 4
+    },
+    "metadata": {
+        "collectorNumber": "31",
+        "artist": "Andrew Robinson",
+        "flavorText": "These stubborn and unpredictable oxen inspire the plains nomads' most colorful curses.",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/7/d70a8ff1-f0cf-4aef-ad90-06902f98d434.jpg?1783942168"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
 }
 
 // Rampaging Baloths
@@ -1034,6 +1074,44 @@
     "colorIdentityOverride": []
 }
 
+// Shatterskull Giant
+{
+    "name": "Shatterskull Giant",
+    "manaCost": "{2}{R}{R}",
+    "typeLine": "Creature — Giant Warrior",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 3
+    },
+    "metadata": {
+        "collectorNumber": "148",
+        "artist": "Kekai Kotaki",
+        "flavorText": "\"Now I know why they call it Shatterskull Pass. Rocks fell all night like hammers smashing an anvil. It's no wonder the giants are angry all the time.\"\n—Mitra, Bala Ged missionary",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/c/9cfbb4dd-56a2-4a94-9b15-b3ef8b2f1d0b.jpg?1783942140"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Stonework Puma
+{
+    "name": "Stonework Puma",
+    "manaCost": "{3}",
+    "typeLine": "Artifact Creature — Cat Ally",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "metadata": {
+        "collectorNumber": "207",
+        "artist": "Christopher Moeller",
+        "flavorText": "\"We suffer uneasy ground, unstable alliances, and unpredictable magic. Something you can truly trust is worth more than a chest of gold.\"\n—Nikou, Joraga bard",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/5/05460615-4c24-487f-841a-ca14106e5688.jpg?1783942125"
+    },
+    "colorIdentityOverride": []
+}
+
 // Vampire Nighthawk
 {
     "name": "Vampire Nighthawk",
@@ -1057,6 +1135,26 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Vastwood Gorger
+{
+    "name": "Vastwood Gorger",
+    "manaCost": "{5}{G}",
+    "typeLine": "Creature — Wurm",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 6
+    },
+    "metadata": {
+        "collectorNumber": "192",
+        "artist": "Kieran Yanner",
+        "flavorText": "\"I've known true ferocity and power. Those brazen 'planar-walkers' have no idea what wild really means.\"\n—Chadir the Navigator",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/c/bc5daf96-ceae-4c9a-95cd-f6d706e9b1fa.jpg?1783942129"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 

@@ -114,6 +114,27 @@
     ]
 }
 
+// Trained Orgg
+{
+    "name": "Trained Orgg",
+    "manaCost": "{6}{R}",
+    "typeLine": "Creature — Orgg",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 6
+    },
+    "metadata": {
+        "collectorNumber": "120",
+        "rarity": "RARE",
+        "artist": "Eric Peterson",
+        "flavorText": "All orggs know how to kill; training teaches them *what* to kill.",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/2/425540b0-c826-4814-b0df-032264b1c237.jpg?1783946025"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Vizzerdrix
 {
     "name": "Vizzerdrix",
@@ -132,5 +153,25 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Willow Elf
+{
+    "name": "Willow Elf",
+    "manaCost": "{G}",
+    "typeLine": "Creature — Elf",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "metadata": {
+        "collectorNumber": "152",
+        "artist": "DiTerlizzi",
+        "flavorText": "The forest lives in the elf as the elf lives in the forest.",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/8/b8f0750c-1cce-4088-a848-f11fe3694d89.jpg?1783946018"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }

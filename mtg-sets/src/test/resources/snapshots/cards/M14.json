@@ -66,6 +66,27 @@
     "colorIdentityOverride": []
 }
 
+// Kalonian Tusker
+{
+    "name": "Kalonian Tusker",
+    "manaCost": "{G}{G}",
+    "typeLine": "Creature — Beast",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "metadata": {
+        "collectorNumber": "182",
+        "rarity": "UNCOMMON",
+        "artist": "Svetlin Velinov",
+        "flavorText": "\"And all this time I thought *we* were tracking *it*.\"\n—Juruk, Kalonian tracker",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/3/135946fc-fe67-401f-821d-d7145c63f030.jpg?1783939902"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Mindsparker
 {
     "name": "Mindsparker",
@@ -134,6 +155,26 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Minotaur Abomination
+{
+    "name": "Minotaur Abomination",
+    "manaCost": "{4}{B}{B}",
+    "typeLine": "Creature — Zombie Minotaur",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 6
+    },
+    "metadata": {
+        "collectorNumber": "107",
+        "artist": "Karl Kopinski",
+        "flavorText": "\"Look at that. Shuffling, wobbling, entrails placed haphazardly. It's shameful. Who would let that kind of work flap about for all to see?\"\n—Lestin, necromancer",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/d/9dca75a1-443d-4f8e-b12b-2aada3a8e3e4.jpg?1783939921"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 
@@ -232,6 +273,26 @@
     ]
 }
 
+// Regathan Firecat
+{
+    "name": "Regathan Firecat",
+    "manaCost": "{2}{R}",
+    "typeLine": "Creature — Elemental Cat",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 1
+    },
+    "metadata": {
+        "collectorNumber": "150",
+        "artist": "Eric Velhagen",
+        "flavorText": "It stalks the Regathan highlands, leaving behind melted snow, scorched earth, and the charred corpses of would-be temple robbers.",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/b/4b4df1dd-886d-4fe7-b3f7-2dca044de41c.jpg?1783939911"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Rise of the Dark Realms
 {
     "name": "Rise of the Dark Realms",
@@ -273,6 +334,44 @@
     "colorIdentityOverride": [
         "BLACK"
     ]
+}
+
+// Rumbling Baloth
+{
+    "name": "Rumbling Baloth",
+    "manaCost": "{2}{G}{G}",
+    "typeLine": "Creature — Beast",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "metadata": {
+        "collectorNumber": "193",
+        "artist": "Jesper Ejsing",
+        "flavorText": "In the dim light beneath the vast trees of Deepglade, baloths prowl in search of prey. Their guttural calls are more felt than heard, but their attack scream carries for miles.",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/8/d8610ff1-064b-4c75-a8df-d3b076370d1e.jpg?1783939900"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Sliver Construct
+{
+    "name": "Sliver Construct",
+    "manaCost": "{3}",
+    "typeLine": "Artifact Creature — Sliver Construct",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "metadata": {
+        "collectorNumber": "218",
+        "artist": "Mathias Kollros",
+        "flavorText": "Slivers destroy those who come close to the Skep, the central hive. Shards of torn metal litter the ground as a warning to any artificers inquisitive about the hive's inner workings.",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/1/3129645a-221c-4eb5-88fd-12cc742a1dfe.jpg?1783939893"
+    },
+    "colorIdentityOverride": []
 }
 
 // Sporemound
@@ -317,5 +416,25 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Undead Minotaur
+{
+    "name": "Undead Minotaur",
+    "manaCost": "{2}{B}",
+    "typeLine": "Creature — Zombie Minotaur",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "metadata": {
+        "collectorNumber": "119",
+        "artist": "Karl Kopinski",
+        "flavorText": "\"The work that went into creating this magnificent specimen. Horrific, deadly, well-balanced. Not all necromancers do elegant work like this.\"\n—Lestin, necromancer",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/e/5e5ae910-ee1d-4958-92d9-0b06872913c6.jpg?1783939918"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }

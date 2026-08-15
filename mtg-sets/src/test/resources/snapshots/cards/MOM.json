@@ -395,3 +395,25 @@
         "GREEN"
     ]
 }
+
+// Yargle and Multani
+{
+    "name": "Yargle and Multani",
+    "manaCost": "{3}{B}{B}{G}",
+    "typeLine": "Legendary Creature — Frog Spirit Elemental",
+    "creatureStats": {
+        "power": 18,
+        "toughness": 6
+    },
+    "metadata": {
+        "collectorNumber": "256",
+        "rarity": "RARE",
+        "artist": "Slawomir Maniak",
+        "flavorText": "\"I've heard much about you from my daughter,\" Multani rumbled. \"There was a time when I'd balk at your aid, phantom, but she has shown me the merit in Urborg's strange ways.\"\n\"Gnshhagghkkapphribbit,\" replied Yargle.",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/c/9c15e244-14cc-46a5-abd4-66a58d1c0dd0.jpg?1783916936"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "GREEN"
+    ]
+}

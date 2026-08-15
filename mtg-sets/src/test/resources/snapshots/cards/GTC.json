@@ -478,6 +478,26 @@
     ]
 }
 
+// Gutter Skulk
+{
+    "name": "Gutter Skulk",
+    "manaCost": "{1}{B}",
+    "typeLine": "Creature — Zombie Rat",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "metadata": {
+        "collectorNumber": "67",
+        "artist": "Mark Winters",
+        "flavorText": "Upon finding his warehouse infested, Gaven didn't know whether to get an exterminator or an exorcist.",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/3/830c7c77-20c4-429f-88c7-b85ab7a0e38b.jpg?1783940131"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Ivy Lane Denizen
 {
     "name": "Ivy Lane Denizen",
@@ -664,6 +684,27 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Ruination Wurm
+{
+    "name": "Ruination Wurm",
+    "manaCost": "{4}{R}{G}",
+    "typeLine": "Creature — Wurm",
+    "creatureStats": {
+        "power": 7,
+        "toughness": 6
+    },
+    "metadata": {
+        "collectorNumber": "192",
+        "artist": "Dave Kendall",
+        "flavorText": "When the architects of Ravnica claim a structure will stand against a wurm, they never mention for how long.",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/e/ce04d1ee-2605-472d-b3ee-24800342e9af.jpg?1783940101"
+    },
+    "colorIdentityOverride": [
+        "RED",
+        "GREEN"
     ]
 }
 

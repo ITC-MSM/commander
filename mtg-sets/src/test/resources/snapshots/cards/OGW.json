@@ -1,3 +1,23 @@
+// Ancient Crab
+{
+    "name": "Ancient Crab",
+    "manaCost": "{1}{U}{U}",
+    "typeLine": "Creature — Crab",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 5
+    },
+    "metadata": {
+        "collectorNumber": "50",
+        "artist": "Steve Prescott",
+        "flavorText": "After the fall of Sea Gate and the draining of the Halimar basin, the crab set off to find a new home.",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/8/783794e3-fe0c-4014-ae5a-6c249af23ddc.jpg?1783937919"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Ayli, Eternal Pilgrim
 {
     "name": "Ayli, Eternal Pilgrim",
@@ -121,6 +141,26 @@
     "colorIdentityOverride": [
         "WHITE",
         "BLACK"
+    ]
+}
+
+// Canopy Gorger
+{
+    "name": "Canopy Gorger",
+    "manaCost": "{4}{G}{G}",
+    "typeLine": "Creature — Wurm",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 5
+    },
+    "metadata": {
+        "collectorNumber": "129",
+        "artist": "Lake Hurwitz",
+        "flavorText": "The settlement's defenders were glad to have such a massive, ferocious creature join the fight—but less glad to see it flatten their homes along the way.",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/b/cbc8957d-769c-4630-9544-56cea8c847c2.jpg?1783937902"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 

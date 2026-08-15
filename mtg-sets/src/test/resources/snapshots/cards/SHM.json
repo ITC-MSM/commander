@@ -68,6 +68,48 @@
     ]
 }
 
+// Loamdragger Giant
+{
+    "name": "Loamdragger Giant",
+    "manaCost": "{4}{R/G}{R/G}{R/G}",
+    "typeLine": "Creature — Giant Warrior",
+    "creatureStats": {
+        "power": 7,
+        "toughness": 6
+    },
+    "metadata": {
+        "collectorNumber": "210",
+        "artist": "Pete Venters",
+        "flavorText": "Giants sleep soundly and long, sometimes for long enough that a crust of earth and moss grows over them. But inevitably something disturbs their slumber, and they wake unhappy.",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/a/0a27bbe4-5341-4b2b-9ae8-eb56585a9c3a.jpg?1783942721"
+    },
+    "colorIdentityOverride": [
+        "RED",
+        "GREEN"
+    ]
+}
+
+// Old Ghastbark
+{
+    "name": "Old Ghastbark",
+    "manaCost": "{3}{G/W}{G/W}",
+    "typeLine": "Creature — Treefolk Warrior",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 6
+    },
+    "metadata": {
+        "collectorNumber": "232",
+        "artist": "Thomas M. Baxa",
+        "flavorText": "\"Beware of trees that talk. Their words are threats. And mind the ones that sway and creak. They too threaten us, but in a foreign tongue.\"\n—*The Book of Other Folk*",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/b/5b5ab941-89cc-4fdd-a916-3a54651f6478.jpg?1783942716"
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "GREEN"
+    ]
+}
+
 // Wilt-Leaf Liege
 {
     "name": "Wilt-Leaf Liege",

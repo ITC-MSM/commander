@@ -1,3 +1,45 @@
+// Barbary Apes
+{
+    "name": "Barbary Apes",
+    "manaCost": "{1}{G}",
+    "typeLine": "Creature — Ape",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "metadata": {
+        "collectorNumber": "176",
+        "artist": "Bryon Wackwitz",
+        "flavorText": "Unpredictable in the extreme, these carnivorous apes will prey even upon their own kind.",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/f/df25ffdd-995d-46ae-856b-f6368f9438ed.jpg?1783948049"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Barktooth Warbeard
+{
+    "name": "Barktooth Warbeard",
+    "manaCost": "{4}{B}{R}{R}",
+    "typeLine": "Legendary Creature — Human Warrior",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 5
+    },
+    "metadata": {
+        "collectorNumber": "221",
+        "rarity": "UNCOMMON",
+        "artist": "Andi Rusu",
+        "flavorText": "He is devious and cunning, in both appearance and deed. Beware the Warbeard, for this brute bites as well as he barks!",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/e/0ea52228-f8ad-4623-9e05-f162473bfc03.jpg?1783948041"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "RED"
+    ]
+}
+
 // Boomerang
 {
     "name": "Boomerang",
@@ -31,6 +73,66 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Crimson Kobolds
+{
+    "name": "Crimson Kobolds",
+    "manaCost": "{0}",
+    "typeLine": "Creature — Kobold",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 1
+    },
+    "metadata": {
+        "collectorNumber": "139",
+        "artist": "Anson Maddocks",
+        "flavorText": "\"Kobolds are harmless.\" —Bearand the Bold, epitaph",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/3/13696657-aeef-4add-9a3b-8137fce01fe3.jpg?1783948057"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Crookshank Kobolds
+{
+    "name": "Crookshank Kobolds",
+    "manaCost": "{0}",
+    "typeLine": "Creature — Kobold",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 1
+    },
+    "metadata": {
+        "collectorNumber": "141",
+        "artist": "Christopher Rush",
+        "flavorText": "The Crookshank military boasts a standing army of nearly twenty-four million, give or take twenty-two million.",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/a/7af6b119-7db4-49dd-aaa4-044b8c133f13.jpg?1783948058"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Durkwood Boars
+{
+    "name": "Durkwood Boars",
+    "manaCost": "{4}{G}",
+    "typeLine": "Creature — Boar",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "metadata": {
+        "collectorNumber": "182",
+        "artist": "Mike Kimble",
+        "flavorText": "\"And the unclean spirits went out, and entered the swine; and the herd ran violently . . .\" —Mark 5:13",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/d/8d41f08b-68fb-45f2-bdc9-488baedc7d6f.jpg?1783948049"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 
@@ -84,6 +186,26 @@
     ]
 }
 
+// Headless Horseman
+{
+    "name": "Headless Horseman",
+    "manaCost": "{2}{B}",
+    "typeLine": "Creature — Zombie Knight",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "metadata": {
+        "collectorNumber": "102",
+        "artist": "Quinton Hoover",
+        "flavorText": "\". . . [T]he ghost rides forth to the scene of battle in nightly quest of his head . . . he sometimes passes along the Hollow, like a midnight blast . . .\"\n—Washington Irving, The Legend of Sleepy Hollow",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/1/d1aa37c8-98fa-4984-b09b-cf65ad84e97b.jpg?1783948066"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Holy Day
 {
     "name": "Holy Day",
@@ -106,6 +228,156 @@
     ]
 }
 
+// Jasmine Boreal
+{
+    "name": "Jasmine Boreal",
+    "manaCost": "{3}{G}{W}",
+    "typeLine": "Legendary Creature — Human",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 5
+    },
+    "metadata": {
+        "collectorNumber": "233",
+        "rarity": "UNCOMMON",
+        "artist": "Richard Kane Ferguson",
+        "flavorText": "\"Peace must prevail, even if the wicked must die.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/b/db6ef678-4ce9-48d6-aa4f-2afd9a1ad724.jpg?1783948038"
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "GREEN"
+    ]
+}
+
+// Jedit Ojanen
+{
+    "name": "Jedit Ojanen",
+    "manaCost": "{4}{W}{W}{U}",
+    "typeLine": "Legendary Creature — Cat Warrior",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 5
+    },
+    "metadata": {
+        "collectorNumber": "234",
+        "rarity": "UNCOMMON",
+        "artist": "Mark Poole",
+        "flavorText": "Mightiest of the Cat Warriors, Jedit Ojanen forsook the forests of his tribe and took service with the Robaran Mercenaries, rising through their ranks to lead them in the battle for Efrava.",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/7/97b80124-2b59-425c-93cc-9b032e631c6e.jpg?1783948038"
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLUE"
+    ]
+}
+
+// Jerrard of the Closed Fist
+{
+    "name": "Jerrard of the Closed Fist",
+    "manaCost": "{3}{R}{G}{G}",
+    "typeLine": "Legendary Creature — Human Knight",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 5
+    },
+    "metadata": {
+        "collectorNumber": "235",
+        "rarity": "UNCOMMON",
+        "artist": "Andi Rusu",
+        "flavorText": "Once, the order of the Closed Fist reached throughout the Kb'Briann Highlands. Now, Jerrard alone remains to uphold their standard.",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/f/7f841918-813b-4784-ab57-907185b0a355.jpg?1783948038"
+    },
+    "colorIdentityOverride": [
+        "RED",
+        "GREEN"
+    ]
+}
+
+// Kasimir the Lone Wolf
+{
+    "name": "Kasimir the Lone Wolf",
+    "manaCost": "{4}{W}{U}",
+    "typeLine": "Legendary Creature — Human Warrior",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 3
+    },
+    "metadata": {
+        "collectorNumber": "237",
+        "rarity": "UNCOMMON",
+        "artist": "Richard Kane Ferguson",
+        "flavorText": "Popular indeed is the tale of how Kasimir was once a Holy man who renounced his order to take up the sword. But this tale is no more likely than any other.",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/5/45b1e60d-54dd-41cd-b9a2-00890725a3df.jpg?1783948037"
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLUE"
+    ]
+}
+
+// Keepers of the Faith
+{
+    "name": "Keepers of the Faith",
+    "manaCost": "{1}{W}{W}",
+    "typeLine": "Creature — Human Cleric",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "metadata": {
+        "collectorNumber": "24",
+        "artist": "Daniel Gelon",
+        "flavorText": "And then the Archangel Anthius spoke to them, saying, \"Fear shall be vanquished by the Sword of Faith.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/6/b63a69ae-99ce-4d26-88b7-784793c43cd4.jpg?1783948083"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Kobolds of Kher Keep
+{
+    "name": "Kobolds of Kher Keep",
+    "manaCost": "{0}",
+    "typeLine": "Creature — Kobold",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 1
+    },
+    "metadata": {
+        "collectorNumber": "157",
+        "artist": "Julie Baroh",
+        "flavorText": "Kher Keep is unique among fortresses: impervious to aerial assault but defenseless from the ground.",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/f/df0320d9-7c2a-456a-9159-1b4fae67bfb5.jpg?1783948054"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Lady Orca
+{
+    "name": "Lady Orca",
+    "manaCost": "{5}{B}{R}",
+    "typeLine": "Legendary Creature — Demon",
+    "creatureStats": {
+        "power": 7,
+        "toughness": 4
+    },
+    "metadata": {
+        "collectorNumber": "241",
+        "rarity": "UNCOMMON",
+        "artist": "Sandra Everingham",
+        "flavorText": "\"I do not remember what he said to her. I remember her fiery eyes, fixed upon him for an instant. I remember a flash, and the hot breath of sudden flames made me turn away. When I looked again, Angus was gone.\" —A Wayfarer, on meeting Lady Orca",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/2/b2779553-74eb-42ba-97d0-96269f48c269.jpg?1783948036"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "RED"
+    ]
+}
+
 // Moss Monster
 {
     "name": "Moss Monster",
@@ -123,6 +395,26 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Raging Bull
+{
+    "name": "Raging Bull",
+    "manaCost": "{2}{R}",
+    "typeLine": "Creature — Ox",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "metadata": {
+        "collectorNumber": "163",
+        "artist": "Randy Asplund-Faith",
+        "flavorText": "\"Sometimes the bulls win, and sometimes the bears win. But the bulls have more fun.\"\n—Anonymous",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/c/ec10a51c-d2c3-4d14-9a71-9e59155bf980.jpg?1783948052"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
@@ -192,6 +484,116 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Sir Shandlar of Eberyn
+{
+    "name": "Sir Shandlar of Eberyn",
+    "manaCost": "{4}{G}{W}",
+    "typeLine": "Legendary Creature — Human Knight",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 7
+    },
+    "metadata": {
+        "collectorNumber": "257",
+        "rarity": "UNCOMMON",
+        "artist": "Andi Rusu",
+        "flavorText": "\"Remember Sir Shandlar! Remember and stand firm!\" —rallying cry of the Eberyn militia",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/1/31570ded-f5e3-44c4-b95f-294ac10b2cd2.jpg?1783948033"
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "GREEN"
+    ]
+}
+
+// Sivitri Scarzam
+{
+    "name": "Sivitri Scarzam",
+    "manaCost": "{5}{U}{B}",
+    "typeLine": "Legendary Creature — Human",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 4
+    },
+    "metadata": {
+        "collectorNumber": "258",
+        "rarity": "UNCOMMON",
+        "artist": "NéNé Thomas",
+        "flavorText": "Even the brave have cause to tremble at the sight of Sivitri Scarzam. Who else has tamed Scarzam's Dragon?",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/c/9c12ee9e-db13-4b4d-a061-b6566f538f09.jpg?1783948032"
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "BLACK"
+    ]
+}
+
+// The Lady of the Mountain
+{
+    "name": "The Lady of the Mountain",
+    "manaCost": "{4}{R}{G}",
+    "typeLine": "Legendary Creature — Giant",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 5
+    },
+    "metadata": {
+        "collectorNumber": "263",
+        "rarity": "UNCOMMON",
+        "artist": "Richard Kane Ferguson",
+        "flavorText": "Her given name has been lost in the mists of time. Legend says that her silent vigil will one day be ended by the one who, pure of heart and spirit, calls out that name again.",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/3/83717eb2-220e-4086-be09-dee9174798b8.jpg?1783948032"
+    },
+    "colorIdentityOverride": [
+        "RED",
+        "GREEN"
+    ]
+}
+
+// Tobias Andrion
+{
+    "name": "Tobias Andrion",
+    "manaCost": "{3}{W}{U}",
+    "typeLine": "Legendary Creature — Human Advisor",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "metadata": {
+        "collectorNumber": "264",
+        "rarity": "UNCOMMON",
+        "artist": "Andi Rusu",
+        "flavorText": "Administrator of the military state of Sheoltun, Tobias is the military right arm of the empire and the figurehead of its freedom.",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/a/cac56eda-5ed3-4abd-beec-f5063fbf930a.jpg?1783948031"
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLUE"
+    ]
+}
+
+// Torsten Von Ursus
+{
+    "name": "Torsten Von Ursus",
+    "manaCost": "{3}{G}{G}{W}",
+    "typeLine": "Legendary Creature — Human Soldier",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 5
+    },
+    "metadata": {
+        "collectorNumber": "266",
+        "rarity": "UNCOMMON",
+        "artist": "Mark Poole",
+        "flavorText": "\"How can you accuse me of evil? Though these deeds be unsavory, no one will argue: good shall follow from them.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/f/5fd99522-4a91-4ccd-91bf-5f32a6ac3510.jpg?1783948031"
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "GREEN"
     ]
 }
 

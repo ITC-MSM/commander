@@ -38,6 +38,26 @@
     ]
 }
 
+// Barbarian Horde
+{
+    "name": "Barbarian Horde",
+    "manaCost": "{3}{R}",
+    "typeLine": "Creature — Human Barbarian Soldier",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "metadata": {
+        "collectorNumber": "101",
+        "artist": "Kuang Sheng",
+        "flavorText": "Only twenty years after the Sima clan united the empire, invading barbarians divided it again.",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/1/d1f930c2-e828-4566-b2df-3b054f311be5.jpg?1783946109"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Corrupt Court Official
 {
     "name": "Corrupt Court Official",
@@ -118,6 +138,66 @@
     ]
 }
 
+// Forest Bear
+{
+    "name": "Forest Bear",
+    "manaCost": "{1}{G}",
+    "typeLine": "Creature — Bear",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "metadata": {
+        "collectorNumber": "135",
+        "artist": "Wang Yuqun",
+        "flavorText": "Fish and bear paws—one can't have both.\n—Chinese idiom meaning \"you can't have it both ways\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/a/fae9abc7-ecd3-4042-a5b0-5f2b24491fa6.jpg?1783946101"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Independent Troops
+{
+    "name": "Independent Troops",
+    "manaCost": "{1}{R}",
+    "typeLine": "Creature — Human Soldier",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "metadata": {
+        "collectorNumber": "114",
+        "artist": "Kuang Sheng",
+        "flavorText": "\"The empire, long united, must divide, and long divided, must unite.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/f/ff7a4769-7a64-4016-8db0-b56c6b98aff3.jpg?1783946106"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Meng Huo's Horde
+{
+    "name": "Meng Huo's Horde",
+    "manaCost": "{4}{G}",
+    "typeLine": "Creature — Human Soldier",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 5
+    },
+    "metadata": {
+        "collectorNumber": "143",
+        "artist": "Li Tie",
+        "flavorText": "Through his allies, Meng Huo commanded several hundred thousand troops composed of cavalry, rattan-armored warriors, infantry, naked men with swords, and wild animals.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/1/e1642802-055e-44d2-a261-c2a45ad515e8.jpg?1783946099"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Peach Garden Oath
 {
     "name": "Peach Garden Oath",
@@ -147,6 +227,66 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Shu Elite Infantry
+{
+    "name": "Shu Elite Infantry",
+    "manaCost": "{3}{W}",
+    "typeLine": "Creature — Human Soldier",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "metadata": {
+        "collectorNumber": "22",
+        "artist": "Song Shikai",
+        "flavorText": "Kongming's first campaign against the Wei kingdom was a rousing success until an arrogant Shu general, Ma Su, foolishly lost the city of Jieting.",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/6/36bcd751-1142-4e72-9d87-7a25c74c038b.jpg?1783946128"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Shu Foot Soldiers
+{
+    "name": "Shu Foot Soldiers",
+    "manaCost": "{2}{W}",
+    "typeLine": "Creature — Human Soldier",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "metadata": {
+        "collectorNumber": "24",
+        "artist": "Xu Tan",
+        "flavorText": "Liu Bei lost many men at the battle of Runan because of his lack of strategy. It wasn't until he met Kongming that he began to truly succeed as a leader.",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/d/cd4268d5-f27b-44a5-91f6-6c90521825fd.jpg?1783946127"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Southern Elephant
+{
+    "name": "Southern Elephant",
+    "manaCost": "{3}{G}",
+    "typeLine": "Creature — Elephant",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 4
+    },
+    "metadata": {
+        "collectorNumber": "146",
+        "artist": "Wang Yuqun",
+        "flavorText": "While defending their southern borders, both the Wu and Shu kingdoms fought against the barbarians' trained elephants.",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/7/87e138c7-1166-4e20-b039-e94c1319ad42.jpg?1783946098"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 
@@ -217,6 +357,26 @@
     ]
 }
 
+// Straw Soldiers
+{
+    "name": "Straw Soldiers",
+    "manaCost": "{1}{U}",
+    "typeLine": "Creature — Scarecrow Soldier",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 3
+    },
+    "metadata": {
+        "collectorNumber": "54",
+        "artist": "Cai Tingting",
+        "flavorText": "The overnight appearance of miles of \"armed\" Wu forts at Guangling frightened a much vaster Wei force into fleeing for their lives.",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/a/8ae5ba21-eb8e-4663-bfd8-3e19a0c10774.jpg?1783946120"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Three Visits
 {
     "name": "Three Visits",
@@ -269,5 +429,65 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Trained Jackal
+{
+    "name": "Trained Jackal",
+    "manaCost": "{G}",
+    "typeLine": "Creature — Jackal",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 2
+    },
+    "metadata": {
+        "collectorNumber": "155",
+        "artist": "Yang Jun Kwon",
+        "flavorText": "To taunt a man into action, call him a coward. To insult him beyond forgiveness, call him a jackal.",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/1/01deb3cc-91e8-4ef3-964f-f36c6a21207c.jpg?1783946096"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Wei Infantry
+{
+    "name": "Wei Infantry",
+    "manaCost": "{1}{B}",
+    "typeLine": "Creature — Human Soldier",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "metadata": {
+        "collectorNumber": "88",
+        "artist": "LHQ",
+        "flavorText": "Wei won the battle of Hefei when Zhang Liao defeated Sun Quan and then foiled a Wu scheme to incite rebellion.",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/2/72c6465f-3144-4faf-b248-a9fb941dc002.jpg?1783946112"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Wu Infantry
+{
+    "name": "Wu Infantry",
+    "manaCost": "{1}{U}",
+    "typeLine": "Creature — Human Soldier",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "metadata": {
+        "collectorNumber": "59",
+        "artist": "Xu Xiaoming",
+        "flavorText": "The first battle of Hefei was Sun Quan's last as a field general. From then on he let his generals command in the field while he directed battle from behind the front lines.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/b/ebe4115e-7ca3-4996-a390-133c2e6d09b7.jpg?1783946119"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }

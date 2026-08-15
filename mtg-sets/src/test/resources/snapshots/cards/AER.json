@@ -1,3 +1,23 @@
+// Bastion Enforcer
+{
+    "name": "Bastion Enforcer",
+    "manaCost": "{2}{W}",
+    "typeLine": "Creature — Dwarf Soldier",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "metadata": {
+        "collectorNumber": "8",
+        "artist": "Matt Stewart",
+        "flavorText": "Headquartered at the Bastion of the Honorable, the Consulate's enforcers are charged with the impossible task of keeping the peace.",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/8/88b9c0f7-d49b-4d74-9038-44954054ce21.jpg?1783936782"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Druid of the Cowl
 {
     "name": "Druid of the Cowl",
@@ -30,6 +50,26 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Lathnu Sailback
+{
+    "name": "Lathnu Sailback",
+    "manaCost": "{4}{R}",
+    "typeLine": "Creature — Lizard",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 4
+    },
+    "metadata": {
+        "collectorNumber": "89",
+        "artist": "Christopher Burdett",
+        "flavorText": "Travelers to Lathnu, high on the Devra Cliffs, need not fear the political strife of Ghirapur . . . but they have other dangers to worry about.",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/3/33998799-f31b-4522-93b2-0c34c570ebf7.jpg?1783936752"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
@@ -93,6 +133,24 @@
                 "text": "Creatures of the chosen type that enter the battlefield at the same time as Metallic Mimic won't enter with an additional +1/+1 counter."
             }
         ]
+    },
+    "colorIdentityOverride": []
+}
+
+// Prizefighter Construct
+{
+    "name": "Prizefighter Construct",
+    "manaCost": "{5}",
+    "typeLine": "Artifact Creature — Construct",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 2
+    },
+    "metadata": {
+        "collectorNumber": "172",
+        "artist": "Daniel Ljunggren",
+        "flavorText": "The Scrappers, an underground group with a passion for automaton brawls, had renegade leanings even before the Consulate's crackdown. It didn't take long for them to lend their best brawlers to the conflict.",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/e/8e389c92-b54b-46b3-a7ab-b8a5a2a7d380.jpg?1783936720"
     },
     "colorIdentityOverride": []
 }

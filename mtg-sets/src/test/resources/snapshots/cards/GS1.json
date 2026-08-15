@@ -39,3 +39,63 @@
         "WHITE"
     ]
 }
+
+// Armored Whirl Turtle
+{
+    "name": "Armored Whirl Turtle",
+    "manaCost": "{2}{U}",
+    "typeLine": "Creature — Turtle",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 5
+    },
+    "metadata": {
+        "collectorNumber": "7",
+        "artist": "Tingting Yeh",
+        "flavorText": "Not all enormous beasts are quick to anger.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/c/fcc87fdf-6473-4b91-a8b9-2986e57dc071.jpg?1783934633"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Ferocious Zheng
+{
+    "name": "Ferocious Zheng",
+    "manaCost": "{2}{G}{G}",
+    "typeLine": "Creature — Cat Beast",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "metadata": {
+        "collectorNumber": "28",
+        "artist": "Yutaka Li",
+        "flavorText": "Known for their glowing horn and stone-rattling roar, zheng are the fiercest predators in the forest. Few survived before Jiang Yanggu came.",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/a/7a6d1184-15e0-4b41-ba2d-4f68e91c61d4.jpg?1783934626"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Leopard-Spotted Jiao
+{
+    "name": "Leopard-Spotted Jiao",
+    "manaCost": "{1}{R}",
+    "typeLine": "Creature — Beast",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 1
+    },
+    "metadata": {
+        "collectorNumber": "23",
+        "artist": "Shinchuen Chen",
+        "flavorText": "This strange beast has the hide of a leopard, the howl of a dog, and the horns of an ox.",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/1/91df110f-85d2-41cb-96b6-6c79cebfada7.jpg?1783934627"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}

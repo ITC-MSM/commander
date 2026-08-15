@@ -46,6 +46,26 @@
     ]
 }
 
+// Axebane Beast
+{
+    "name": "Axebane Beast",
+    "manaCost": "{3}{G}",
+    "typeLine": "Creature — Beast",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 4
+    },
+    "metadata": {
+        "collectorNumber": "121",
+        "artist": "Sam Rowan",
+        "flavorText": "\"Imagine a gigantic pine cone that's extremely territorial and always in a foul mood.\"\n—Zhosmir, urban huntmaster",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/f/2f420b35-1f73-41c8-a15f-1aee4af0999c.jpg?1783933673"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Biogenic Upgrade
 {
     "name": "Biogenic Upgrade",
@@ -125,6 +145,66 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Catacomb Crocodile
+{
+    "name": "Catacomb Crocodile",
+    "manaCost": "{4}{B}",
+    "typeLine": "Creature — Crocodile",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 7
+    },
+    "metadata": {
+        "collectorNumber": "67",
+        "artist": "Nils Hamm",
+        "flavorText": "\"I am sewer-king!\" said Rat. \"I am quick and cunning and I know every tunnel.\"\n\"No, I am king!\" said Zombie. \"I am cold and deadly and no rot can harm me.\"\nThen Croc came and ate them both.",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/4/440c53f0-7922-4e14-802d-d7a22f8fed85.jpg?1783933696"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Coral Commando
+{
+    "name": "Coral Commando",
+    "manaCost": "{2}{U}",
+    "typeLine": "Creature — Merfolk Warrior",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "metadata": {
+        "collectorNumber": "36",
+        "artist": "Alex Konstad",
+        "flavorText": "Few Ravnicans are aware of the vast reefs in their world's hidden ocean. Far beneath the great sinkholes, where the light is blue and dim, merfolk tend the coral labyrinths that feed the benthic ecosystem.",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/8/889cc2a0-d9a6-4368-92e0-055a7d7bf9d1.jpg?1783933710"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Feral Maaka
+{
+    "name": "Feral Maaka",
+    "manaCost": "{1}{R}",
+    "typeLine": "Creature — Cat",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "metadata": {
+        "collectorNumber": "100",
+        "artist": "Jonathan Kuo",
+        "flavorText": "\"Lost are the lush meadows and verdant forests, where maaka prowled and lammasu soared. Lost are the wilds, where our hearts were free.\"\n—Daiva, Gruul storyteller",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/c/3c969aa0-b0e5-42cd-abba-0a3c7266142c.jpg?1783933682"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
@@ -399,6 +479,26 @@
     "colorIdentityOverride": [
         "GREEN",
         "BLUE"
+    ]
+}
+
+// Prowling Caracal
+{
+    "name": "Prowling Caracal",
+    "manaCost": "{1}{W}",
+    "typeLine": "Creature — Cat",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 1
+    },
+    "metadata": {
+        "collectorNumber": "17",
+        "artist": "Jonathan Kuo",
+        "flavorText": "A hunter in the city requires the utmost cunning to survive. It must pounce only if the kill is certain, and leave the remains where no one will see.",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/5/c5382fc4-3384-449e-a83f-43a59158d55b.jpg?1783933719"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 
