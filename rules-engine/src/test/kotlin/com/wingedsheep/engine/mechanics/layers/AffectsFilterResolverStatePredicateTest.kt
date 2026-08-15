@@ -9,6 +9,7 @@ import com.wingedsheep.engine.state.components.battlefield.CountersComponent
 import com.wingedsheep.engine.state.components.battlefield.EnteredThisTurnComponent
 import com.wingedsheep.engine.state.components.battlefield.HasDealtCombatDamageToPlayerComponent
 import com.wingedsheep.engine.state.components.battlefield.HasDealtDamageComponent
+import com.wingedsheep.engine.state.components.battlefield.ReceivedCountersThisTurnComponent
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.state.components.battlefield.WasDealtDamageThisTurnComponent
 import com.wingedsheep.engine.state.components.combat.AttackingComponent
@@ -310,6 +311,131 @@ class AffectsFilterResolverStatePredicateTest : FunSpec({
         )
         val matched = resolver.resolveAffectedEntities(state, morphCapable, filterWith(StatePredicate.HasMorphAbility))
         matched shouldContainExactlyInAnyOrder setOf(morphCapable)
+    }
+
+    // =========================================================================
+    // Counter history — ReceivedCounterThisTurn
+    // =========================================================================
+
+    test("ReceivedCounterThisTurn with no narrowing matches any permanent carrying the marker") {
+        val marked = EntityId.generate()
+        val markedTypeless = EntityId.generate()
+        val unmarked = EntityId.generate()
+        val state = battlefield(
+            listOf(
+                marked to container(
+                    playerA, creature(playerA),
+                    ReceivedCountersThisTurnComponent(counterTypes = setOf("stun"))
+                ),
+                // A placement path that couldn't name a kind stamps the bare marker; the widest
+                // reading must still match it.
+                markedTypeless to container(playerA, creature(playerA), ReceivedCountersThisTurnComponent()),
+                unmarked to container(playerA, creature(playerA))
+            )
+        )
+        val matched = resolver.resolveAffectedEntities(
+            state, marked, filterWith(StatePredicate.ReceivedCounterThisTurn())
+        )
+        matched shouldContainExactlyInAnyOrder setOf(marked, markedTypeless)
+    }
+
+    test("ReceivedCounterThisTurn scoped to +1/+1 ignores other counter kinds") {
+        val gotPlusOne = EntityId.generate()
+        val gotStun = EntityId.generate()
+        val state = battlefield(
+            listOf(
+                gotPlusOne to container(
+                    playerA, creature(playerA),
+                    ReceivedCountersThisTurnComponent(counterTypes = setOf("+1/+1"))
+                ),
+                gotStun to container(
+                    playerA, creature(playerA),
+                    ReceivedCountersThisTurnComponent(counterTypes = setOf("stun"))
+                )
+            )
+        )
+        val matched = resolver.resolveAffectedEntities(
+            state, gotPlusOne, filterWith(StatePredicate.ReceivedCounterThisTurn(counterType = "+1/+1"))
+        )
+        matched shouldContainExactlyInAnyOrder setOf(gotPlusOne)
+    }
+
+    test("ReceivedCounterThisTurn with placedByController ignores counters an opponent put on") {
+        val youPlaced = EntityId.generate()
+        val opponentPlaced = EntityId.generate()
+        val state = battlefield(
+            listOf(
+                youPlaced to container(
+                    playerA, creature(playerA),
+                    ReceivedCountersThisTurnComponent(
+                        counterTypes = setOf("+1/+1"),
+                        typesFromController = setOf("+1/+1")
+                    )
+                ),
+                // An opponent proliferating your creature records the kind but not the placer leg.
+                opponentPlaced to container(
+                    playerA, creature(playerA),
+                    ReceivedCountersThisTurnComponent(counterTypes = setOf("+1/+1"))
+                )
+            )
+        )
+        val matched = resolver.resolveAffectedEntities(
+            state,
+            youPlaced,
+            filterWith(StatePredicate.ReceivedCounterThisTurn("+1/+1", placedByController = true))
+        )
+        matched shouldContainExactlyInAnyOrder setOf(youPlaced)
+    }
+
+    test("ReceivedCounterThisTurn still matches after the counters themselves are gone") {
+        // The marker is stamped at placement time, so a creature whose +1/+1 counter was since
+        // removed (or annihilated by a -1/-1 counter) keeps matching — "what you put on it this
+        // turn", not "what is on it now". No CountersComponent at all here.
+        val hadCounter = EntityId.generate()
+        val neverHad = EntityId.generate()
+        val state = battlefield(
+            listOf(
+                hadCounter to container(
+                    playerA, creature(playerA),
+                    ReceivedCountersThisTurnComponent(
+                        counterTypes = setOf("+1/+1"),
+                        typesFromController = setOf("+1/+1")
+                    )
+                ),
+                neverHad to container(
+                    playerA, creature(playerA),
+                    CountersComponent(mapOf(CounterType.PLUS_ONE_PLUS_ONE to 1))
+                )
+            )
+        )
+        val matched = resolver.resolveAffectedEntities(
+            state,
+            hadCounter,
+            filterWith(StatePredicate.ReceivedCounterThisTurn("+1/+1", placedByController = true))
+        )
+        // The creature that merely *has* a +1/+1 counter (e.g. it entered play with one on a
+        // previous turn) carries no marker and must not match.
+        matched shouldContainExactlyInAnyOrder setOf(hadCounter)
+    }
+
+    test("ReceivedCounterThisTurn narrowed by kind does not match a bare marker") {
+        // The type-scoped reading has to go through the recorded kinds, so a placement path that
+        // stamped no kind fails closed rather than satisfying "+1/+1 counters".
+        val bare = EntityId.generate()
+        val typed = EntityId.generate()
+        val state = battlefield(
+            listOf(
+                bare to container(playerA, creature(playerA), ReceivedCountersThisTurnComponent()),
+                typed to container(
+                    playerA, creature(playerA),
+                    ReceivedCountersThisTurnComponent(counterTypes = setOf("+1/+1"))
+                )
+            )
+        )
+        val matched = resolver.resolveAffectedEntities(
+            state, typed, filterWith(StatePredicate.ReceivedCounterThisTurn("+1/+1"))
+        )
+        matched shouldContainExactlyInAnyOrder setOf(typed)
     }
 
     // =========================================================================

@@ -3454,6 +3454,22 @@ This is the player-arm prerequisite for the planned composable mixed `TargetUnio
   any kind, or none at all. `.withoutCounters()` is `StatePredicate.Not(HasAnyCounter)` for "with no
   counters on it" (Heartless Act). All three are also on `TargetFilter`
   (`TargetFilter.Creature.withoutCounters()`).
+- `.receivedCounterThisTurn(counterType = null, placedByController = false)` — one or more counters were
+  **put on** the permanent this turn; backed by `StatePredicate.ReceivedCounterThisTurn`. The
+  counter-history counterpart of `.dealtDamageThisTurn()`: the facts are recorded at *placement* time on
+  the per-permanent `ReceivedCountersThisTurnComponent`, so the predicate keeps matching after the
+  counters have been removed again — "what you put on it this turn", not "what is on it now" (use
+  `.withCounter(type)` for the latter). Cleared at end-of-turn cleanup. Both parameters default to the
+  widest reading and narrow it along the two axes printed cards vary: `counterType` (e.g.
+  `Counters.PLUS_ONE_PLUS_ONE`) to one kind, and `placedByController` to counters the permanent's own
+  controller put on — the "**you've** put" half, which on the "creature you control" filters these clauses
+  always carry means you. Every placement path records both axes: resolution effects, explore, moved and
+  distributed counters, and wither combat damage record the actual placer, while a permanent that
+  *entered* with counters — including a token created with counters on it — counts with its own
+  controller as the placer (CR 122.6a). Kid Loki: `Filters.Group.creatures { youControl().receivedCounterThisTurn(
+  Counters.PLUS_ONE_PLUS_ONE, placedByController = true) }` for "each creature you control that you've put
+  one or more +1/+1 counters on this turn has hexproof". The source-scoped view of the same predicate is
+  `Conditions.SourceReceivedCounterThisTurn(...)`, which is just `SourceMatches` over it.
 - `.dealtDamageThisTurn()` — was dealt damage this turn (marked-damage *history*, not current marked
   damage); backed by `StatePredicate.WasDealtDamageThisTurn`. Survives damage removal / leaving combat;
   cleared at end-of-turn cleanup. For "...that was dealt damage this turn" (Rooftop Assassin, Unsparing
@@ -7828,11 +7844,15 @@ that works in both resolution and static-ability (projection) contexts.
 - `SourceIsModified` — has counters, attached Equipment, or controller-owned Aura
   attached (CR 700.4). Kept as a dedicated condition because the controller-of-Aura
   match isn't expressible via the generic `EntityMatches` filter machinery.
-- `SourceReceivedCounterThisTurn` — "if you put a counter on this creature this turn." True while the source
-  carries the per-turn `ReceivedCountersThisTurnComponent` marker (stamped by the counter-placement path, cleared
-  at cleanup). Distinct from `SourceHasCounter` (which checks current counters): this fires even if the counter was
-  later removed, and stays false if the source merely entered with counters from a *prior* turn. Used as the
-  end-step intervening-if of Secrets of Strixhaven's Fractal Tender.
+- `SourceReceivedCounterThisTurn(counterType = null, placedByYou = false)` — "if you put a counter on this creature
+  this turn." `SourceMatches(GameObjectFilter.Any.receivedCounterThisTurn(...))`, i.e. the source-scoped view of
+  `StatePredicate.ReceivedCounterThisTurn`; the filter-level form covers "each creature you control that you've
+  put …" (Kid Loki). True while the source carries the per-turn `ReceivedCountersThisTurnComponent` marker
+  (stamped by the counter-placement path, cleared at cleanup). Distinct from `SourceHasCounter` (which checks
+  current counters): this fires even if the counter was later removed, and stays false if the source merely
+  entered with counters on a *prior* turn. Narrow with `counterType` ("+1/+1 counters") and `placedByYou`
+  ("**you've** put"). Used as the end-step intervening-if of Secrets of Strixhaven's Fractal Tender and the
+  flying gate of Beast, Erudite Aerialist.
 - `SourceHasSubtype(subtype)` — `SourceMatches(GameObjectFilter.Any.withSubtype(...))`;
   Changeling is honored.
 - `SourceHasKeyword(keyword)` — `SourceMatches(GameObjectFilter.Any.withKeyword(...))`.

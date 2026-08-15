@@ -2875,7 +2875,8 @@ class CastSpellHandler(
                                 currentState = DamageUtils.markCounterPlacedOnCreature(
                                     currentState,
                                     action.playerId,
-                                    targetId
+                                    targetId,
+                                    Counters.MINUS_ONE_MINUS_ONE
                                 )
                                 val targetName = targetContainer.get<CardComponent>()?.name ?: "Creature"
                                 events.add(CountersAddedEvent(
@@ -2904,7 +2905,8 @@ class CastSpellHandler(
                                 currentState = DamageUtils.markCounterPlacedOnCreature(
                                     currentState,
                                     action.playerId,
-                                    targetId
+                                    targetId,
+                                    Counters.MINUS_ONE_MINUS_ONE
                                 )
                                 val targetName = targetContainer.get<CardComponent>()?.name ?: "Creature"
                                 events.add(CountersAddedEvent(

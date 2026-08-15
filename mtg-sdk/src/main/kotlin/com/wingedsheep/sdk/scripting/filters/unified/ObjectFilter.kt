@@ -767,6 +767,24 @@ data class GameObjectFilter(
     )
 
     /**
+     * Must have had one or more counters put on it this turn — the counter-history counterpart of
+     * [dealtDamageThisTurn]. Recorded at placement time, so it survives the counters being removed
+     * again; cleared at end-of-turn cleanup.
+     *
+     * [counterType] scopes it to one kind ("one or more **+1/+1** counters") and
+     * [placedByController] to counters the permanent's own controller put on ("**you've** put").
+     * Used by Kid Loki's "each creature you control that you've put one or more +1/+1 counters on
+     * this turn"; `Conditions.SourceReceivedCounterThisTurn` is this predicate under `SourceMatches`.
+     */
+    fun receivedCounterThisTurn(
+        counterType: String? = null,
+        placedByController: Boolean = false
+    ) = copy(
+        statePredicates = statePredicates +
+            StatePredicate.ReceivedCounterThisTurn(counterType, placedByController)
+    )
+
+    /**
      * Must have been dealt damage this turn (marked-damage *history*, not current marked damage).
      * Survives damage removal / leaving combat; cleared at end-of-turn cleanup. Used by
      * "...that was dealt damage this turn" (Rooftop Assassin, Unsparing Boltcaster).

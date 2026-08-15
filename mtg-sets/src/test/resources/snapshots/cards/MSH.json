@@ -2194,9 +2194,17 @@
                     }
                 },
                 "condition": {
-                    "type": "SourceReceivedCounterThisTurn",
-                    "counterType": "+1/+1",
-                    "placedByYou": true
+                    "type": "EntityMatches",
+                    "entity": "Self",
+                    "filter": {
+                        "statePredicates": [
+                            {
+                                "type": "ReceivedCounterThisTurn",
+                                "counterType": "+1/+1",
+                                "placedByController": true
+                            }
+                        ]
+                    }
                 }
             }
         ]
@@ -8536,6 +8544,68 @@
     "colorIdentityOverride": [
         "BLUE",
         "BLACK"
+    ]
+}
+
+// Kid Loki
+{
+    "name": "Kid Loki",
+    "manaCost": "{U}",
+    "typeLine": "Legendary Creature — God Hero Villain",
+    "oracleText": "Each creature you control that you've put one or more +1/+1 counters on this turn has hexproof.\nWhenever you draw your second card each turn, put a +1/+1 counter on Kid Loki.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "NthCardDrawnEvent",
+                    "nthCard": 2
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": "Self"
+                },
+                "descriptionOverride": "Whenever you draw your second card each turn, put a +1/+1 counter on Kid Loki."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "GrantKeyword",
+                "keyword": "HEXPROOF",
+                "filter": {
+                    "baseFilter": {
+                        "cardPredicates": [
+                            "IsCreature"
+                        ],
+                        "statePredicates": [
+                            {
+                                "type": "ReceivedCounterThisTurn",
+                                "counterType": "+1/+1",
+                                "placedByController": true
+                            }
+                        ],
+                        "controllerPredicate": "ControlledByYou"
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "63",
+        "rarity": "UNCOMMON",
+        "artist": "Mintautas Šukys",
+        "flavorText": "\"A lie is nothing but a story. We can choose to tell a different one.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/c/5c9ff69e-6489-49f3-b401-64856f0b7c11.jpg?1783902956"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 

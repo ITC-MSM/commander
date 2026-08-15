@@ -709,8 +709,6 @@ wins in whichever PR next touches the area:
 - `ReplacementEffect.ModifyCounterPlacement` has no `placedByYou` flag (its sibling
   `DoubleCounterPlacement` does). Doc Samson [164] is therefore modelled as the Winding Constrictor "if
   counters would be put" wording rather than the printed "**If you would put** …".
-- `Conditions.SourceReceivedCounterThisTurn` matches any counter kind, not a specific one. Beast [206]
-  reads "one or more **+1/+1** counters"; a `counterType` parameter would make it exact.
 - `Keyword.EXTORT` does not exist. The Kingpin of Crime [220] composes it exactly as
   `Triggers.YouCastSpell` + `MayPayManaEffect("{W/B}", DrainLife(1))`; promote it to a real keyword when
   a second extort card lands.

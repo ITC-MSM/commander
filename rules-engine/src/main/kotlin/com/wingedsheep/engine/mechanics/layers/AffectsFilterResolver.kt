@@ -4,6 +4,7 @@ import com.wingedsheep.engine.state.components.battlefield.chosenColor
 import com.wingedsheep.engine.state.components.battlefield.chosenCreatureType
 import com.wingedsheep.engine.state.components.battlefield.CastChoicesComponent
 import com.wingedsheep.engine.state.components.battlefield.ChoiceValue
+import com.wingedsheep.engine.handlers.predicates.receivedCounterThisTurn
 import com.wingedsheep.engine.state.ComponentContainer
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.battlefield.AttachmentsComponent
@@ -468,6 +469,12 @@ internal class AffectsFilterResolver {
         // group-static projection.
         StatePredicate.ExiledWithSource -> false
         StatePredicate.EnteredThisTurn -> container.has<EnteredThisTurnComponent>()
+        // Counter history — the per-permanent marker, so a group static gated on "each creature you
+        // control that you've put one or more +1/+1 counters on this turn" (Kid Loki) resolves
+        // during projection. Plain per-entity state with no source-relative half, so the answer here
+        // is identical to PredicateEvaluator's.
+        is StatePredicate.ReceivedCounterThisTurn ->
+            receivedCounterThisTurn(container, predicate)
         StatePredicate.WasDealtDamageThisTurn -> container.has<WasDealtDamageThisTurnComponent>()
         StatePredicate.HasDealtDamage -> container.has<HasDealtDamageComponent>()
         StatePredicate.HasDealtCombatDamageToPlayer -> container.has<HasDealtCombatDamageToPlayerComponent>()

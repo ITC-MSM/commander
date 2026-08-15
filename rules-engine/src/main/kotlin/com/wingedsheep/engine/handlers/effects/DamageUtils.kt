@@ -772,9 +772,11 @@ object DamageUtils {
      * [com.wingedsheep.engine.state.components.battlefield.ReceivedCountersThisTurnComponent]
      * marker (for "first time counters this turn" triggers, Stalwart Successor).
      *
-     * [counterType] is optional because a few placement paths don't have a single kind to name; when
-     * given, it is recorded on the marker so type-scoped conditions ("you've put one or more +1/+1
-     * counters on ~ this turn", Beast, Erudite Aerialist) can tell kinds apart. The placer is
+     * [counterType] is required: it is recorded on the marker so type-scoped counter-history
+     * conditions ("you've put one or more +1/+1 counters on ~ this turn" — Beast, Erudite
+     * Aerialist; Kid Loki's filter) can tell kinds apart. Paths that place several kinds at once
+     * (doubling, moving every kind) call this once per kind rather than once with no kind, because
+     * a kind-less mark cannot satisfy a type-scoped filter. The placer is
      * compared against the target's *projected* controller at placement time so the "you've put"
      * axis is recorded too — both facts have to be captured now, since the counters themselves may
      * be gone by the time the condition is read.
@@ -783,7 +785,7 @@ object DamageUtils {
         state: GameState,
         placerId: EntityId,
         targetId: EntityId,
-        counterType: String? = null
+        counterType: String
     ): GameState {
         if (!state.projectedState.isCreature(targetId)) return state
         val byController = state.projectedState.getController(targetId) == placerId
@@ -808,19 +810,54 @@ object DamageUtils {
      *
      * Unlike [isFirstCounterThisTurn] + [markCounterPlacedOnCreature], this performs no
      * projected creature/zone check, so it also covers the enters-with-counters path where the
-     * permanent is not yet on the battlefield (CR confirms a permanent entering with counters has
-     * those counters "put on" it). Stamping the marker on a non-creature is harmless: the trigger's
-     * own "creature you control" filter re-checks type. This intentionally does *not* set the
-     * placer's "you put a counter on a creature this turn" marker — that path stays as it was.
+     * permanent is not yet on the battlefield (CR 122.6a: an object entering with counters has
+     * those counters put on it, by its controller unless the effect names another player).
+     * Stamping the marker on a non-creature is harmless: the trigger's own "creature you control"
+     * filter re-checks type.
+     *
+     * [counterType] and the placed-by-controller flag are the same two axes
+     * [markCounterPlacedOnCreature] records, and every caller should supply them so the type- and
+     * placer-scoped readings of `StatePredicate.ReceivedCounterThisTurn` (Kid Loki, Beast, Erudite
+     * Aerialist) see this placement. There are two ways to give the placer, and which one a caller
+     * uses is decided by whether the target is on the battlefield yet:
+     *
+     *  - **[placerId]** — the normal, on-battlefield case (explore, moved counters, distributed
+     *    counters, wither damage). The flag is derived here by comparing the placer against the
+     *    target's *projected* controller, exactly as [markCounterPlacedOnCreature] does, so a call
+     *    site can never let a hand-computed boolean drift out of sync with the id it already holds.
+     *  - **[byController]** — the enters-with-counters case, where the object is not on the
+     *    battlefield yet and so has no projected controller to compare against. CR 122.6a fixes the
+     *    answer to `true` there regardless of whose effect caused the counters.
+     *
+     * Callers with genuinely no kind and no placer in hand omit both and stamp the bare marker,
+     * which still answers the widest "something landed here this turn" reading.
+     *
+     * This deliberately does *not* set the placer's [com.wingedsheep.engine.state.components.player.PutCounterOnCreatureThisTurnComponent]
+     * ("if you put a counter on a creature this turn", Lasting Tarfire), which stays exclusive to
+     * [markCounterPlacedOnCreature]. The reason is the enters-with case this function exists for:
+     * the object is not on the battlefield when the counters are placed, so the projected
+     * creature check that marker depends on cannot be made, and stamping it unconditionally would
+     * credit a player for putting a counter on an artifact or an enchantment. Widening it for the
+     * on-battlefield callers alone is a real gap (explore does put a counter on a creature), but no
+     * card demands it yet and it is a behaviour change to a shared player-scoped tracker rather
+     * than a per-permanent one — worth its own change, not a rider on this one.
      */
-    fun recordCounterPlacement(state: GameState, targetId: EntityId): Pair<GameState, Boolean> {
+    fun recordCounterPlacement(
+        state: GameState,
+        targetId: EntityId,
+        counterType: String,
+        placerId: EntityId? = null,
+        byController: Boolean = false
+    ): Pair<GameState, Boolean> {
+        val placedByController = byController ||
+            (placerId != null && state.projectedState.getController(targetId) == placerId)
         val first = state.getEntity(targetId)
             ?.has<com.wingedsheep.engine.state.components.battlefield.ReceivedCountersThisTurnComponent>() != true
         val newState = state.updateEntity(targetId) { container ->
-            container.with(
-                container.get<com.wingedsheep.engine.state.components.battlefield.ReceivedCountersThisTurnComponent>()
-                    ?: com.wingedsheep.engine.state.components.battlefield.ReceivedCountersThisTurnComponent()
-            )
+            val existing = container
+                .get<com.wingedsheep.engine.state.components.battlefield.ReceivedCountersThisTurnComponent>()
+                ?: com.wingedsheep.engine.state.components.battlefield.ReceivedCountersThisTurnComponent()
+            container.with(existing.with(counterType, placedByController))
         }
         return newState to first
     }

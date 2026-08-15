@@ -4,6 +4,7 @@ import com.wingedsheep.engine.state.components.battlefield.chosenCreatureType
 import com.wingedsheep.engine.state.components.battlefield.chosenColor
 import com.wingedsheep.engine.state.components.battlefield.CastChoicesComponent
 import com.wingedsheep.engine.state.components.battlefield.ChoiceValue
+import com.wingedsheep.engine.handlers.predicates.receivedCounterThisTurn
 import com.wingedsheep.engine.mechanics.layers.ProjectedState
 import com.wingedsheep.engine.mechanics.layers.ProjectedValues
 import com.wingedsheep.engine.state.GameState
@@ -1326,6 +1327,13 @@ class PredicateEvaluator {
             StatePredicate.EnteredThisTurn -> {
                 container.has<EnteredThisTurnComponent>()
             }
+
+            // Counter history — "one or more counters were put on it this turn", optionally scoped
+            // to a kind and to placements by the permanent's own controller. Reads the per-turn
+            // marker rather than the live counters, so it survives their removal. Also the engine
+            // side of Conditions.SourceReceivedCounterThisTurn (SourceMatches over this predicate).
+            is StatePredicate.ReceivedCounterThisTurn ->
+                receivedCounterThisTurn(container, predicate)
 
             // Damage state
             StatePredicate.WasDealtDamageThisTurn -> {
