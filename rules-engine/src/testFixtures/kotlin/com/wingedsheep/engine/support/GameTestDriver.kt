@@ -1283,8 +1283,12 @@ class GameTestDriver {
     /**
      * During combat declaration steps, auto-submit empty declarations so that
      * PassPriority can proceed. This mirrors what the game server's auto-pass does.
+     *
+     * Public rather than `internal`: a dozen scenario tests call it directly to skip past a combat
+     * they don't care about, and they now live in the `:scenario-tests:*` modules rather than
+     * alongside these fixtures, where `internal` would not reach them.
      */
-    internal fun autoSubmitCombatDeclarationIfNeeded() {
+    fun autoSubmitCombatDeclarationIfNeeded() {
         val priorityPlayer = state.priorityPlayerId ?: return
         if (state.step == Step.DECLARE_ATTACKERS && priorityPlayer == state.activePlayerId) {
             val attackersDeclared = state.getEntity(priorityPlayer)

@@ -46,9 +46,9 @@ from datetime import date, timedelta
 from pathlib import Path
 
 from card_exclusions import load_exclusions
+from set_dirs import iter_set_dirs
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-DEFINITIONS_ROOT = REPO_ROOT / "mtg-sets/src/main/kotlin/com/wingedsheep/mtg/sets/definitions"
 CACHE_ROOT = Path.home() / ".cache" / "scryfall"
 SCRYFALL_BASE = "https://api.scryfall.com"
 USER_AGENT = "argentum-engine-card-status/1.0"
@@ -141,7 +141,7 @@ def front_face(name: str) -> str:
 
 def discover_sets() -> list[SetInfo]:
     out: list[SetInfo] = []
-    for dir_ in sorted(DEFINITIONS_ROOT.iterdir()):
+    for dir_ in sorted(iter_set_dirs(), key=lambda p: p.name):
         if not dir_.is_dir() or dir_.name in SKIP_FOLDERS:
             continue
         set_kt = next((p for p in dir_.glob("*Set.kt") if p.is_file()), None)

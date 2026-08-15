@@ -3,9 +3,6 @@ package com.wingedsheep.mtg.sets
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
-import java.nio.file.Files
-import java.nio.file.Paths
-import kotlin.io.path.name
 import kotlin.io.path.readText
 
 /**
@@ -25,20 +22,14 @@ class PatternsNamespaceTest : FunSpec({
     )
 
     test("card definitions reach pattern recipes through the Patterns index, not the bare objects") {
-        val definitionsDir = Paths.get(
-            "src/main/kotlin/com/wingedsheep/mtg/sets/definitions"
-        ).toAbsolutePath()
-
         val violations = mutableListOf<String>()
 
-        Files.walk(definitionsDir).use { stream ->
-            stream.filter { it.name.endsWith(".kt") }.forEach { path ->
-                stripCommentsAndImports(path.readText()).forEachIndexed { idx, line ->
-                    val match = forbidden.find(line) ?: return@forEachIndexed
-                    val domain = match.groupValues[1]
-                    val rel = definitionsDir.parent.parent.relativize(path)
-                    violations += "$rel:${idx + 1}  →  use `Patterns.$domain.` instead of `${match.value}`"
-                }
+        SetSourceRoots.definitionFiles().forEach { path ->
+            stripCommentsAndImports(path.readText()).forEachIndexed { idx, line ->
+                val match = forbidden.find(line) ?: return@forEachIndexed
+                val domain = match.groupValues[1]
+                val rel = SetSourceRoots.relativize(path)
+                violations += "$rel:${idx + 1}  →  use `Patterns.$domain.` instead of `${match.value}`"
             }
         }
 

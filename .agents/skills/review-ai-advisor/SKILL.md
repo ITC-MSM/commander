@@ -16,7 +16,8 @@ needs a custom AI advisor, implement one if necessary, and check it off the list
 
 ## Step 2: Read the Card Definition
 
-1. Find the card's definition file in `mtg-sets/src/main/kotlin/com/wingedsheep/mtg/sets/definitions/blb/cards/`
+1. Find the card's definition file (`just where BLB` prints the module; cards are under
+   `<module>/src/main/kotlin/com/wingedsheep/mtg/sets/definitions/blb/cards/`)
 2. Read it fully. Understand what the card does: its type, effects, targets, triggers, keywords.
 
 ## Step 3: Read the Current Advisor Module

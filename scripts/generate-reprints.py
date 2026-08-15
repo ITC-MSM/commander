@@ -34,10 +34,15 @@ import time
 from collections import defaultdict
 from pathlib import Path
 
-from set_dirs import dir_for_codes, scaffolded_set_codes, set_dir_codes
+from set_dirs import (
+    dir_for_codes,
+    iter_card_files,
+    root_for_set,
+    scaffolded_set_codes,
+    set_dir_codes,
+)
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-DEFINITIONS_ROOT = REPO_ROOT / "mtg-sets/src/main/kotlin/com/wingedsheep/mtg/sets/definitions"
 PRINTINGS_CACHE = Path.home() / ".cache" / "scryfall" / "printings"
 SET_CACHE = Path.home() / ".cache" / "scryfall"
 CACHE_TTL_DAYS = 30
@@ -75,7 +80,7 @@ def scan_definitions() -> tuple[dict[str, str], dict[str, set[str]]]:
     canonical: dict[str, str] = {}
     reprints: dict[str, set[str]] = defaultdict(set)
     codes = set_dir_codes()
-    for kt in DEFINITIONS_ROOT.glob("*/cards/*.kt"):
+    for kt in iter_card_files():
         text = kt.read_text(encoding="utf-8")
         set_code = codes.get(kt.parts[-3], kt.parts[-3])
         card_names = {m.group(1) for m in CARD_DSL_RE.finditer(text)}
@@ -225,7 +230,7 @@ def main() -> int:
                 skipped_nocache += 1
                 continue
             pkg_dir = dir_for.get(sc, sc)
-            out_dir = DEFINITIONS_ROOT / pkg_dir / "cards"
+            out_dir = root_for_set(pkg_dir) / pkg_dir / "cards"
             if not out_dir.is_dir():
                 continue
             out_file = out_dir / f"{pascal(name)}Reprint.kt"

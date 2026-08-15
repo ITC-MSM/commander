@@ -30,6 +30,11 @@ System.getenv("GRADLE_BUILD_CACHE_DIR")?.let { cacheDir ->
     }
 }
 
+// Cache *retention* (the local build cache had grown to 19 GB) cannot be set from here: Gradle
+// rejects it as "modified from an unsafe location" because it governs the shared Gradle user home,
+// not this build. It lives in gradle/init.d/argentum-cache-retention.init.gradle.kts instead —
+// install it with `just install-gradle-init`.
+
 // Include subprojects in the build.
 // If there are changes in only one of the projects, Gradle will rebuild only the one that has changed.
 // Learn more about structuring projects with Gradle - https://docs.gradle.org/8.7/userguide/multi_project_builds.html
@@ -38,6 +43,36 @@ include(":rules-engine")
 include(":mtg-sdk")
 include(":mtg-sets")
 include(":mtg-search")
+
+// The card corpus, split out of :mtg-sets. `:mtg-sets` still re-exports all of it, so every
+// existing `project(":mtg-sets")` dependency is unchanged — this only bounds how much Kotlin has to
+// compile at once. Era boundaries are FIXED year ranges chained oldest-to-newest: a new release year
+// appends a module, and no set ever moves between them.
+include(":mtg-sets-core")
+include(":mtg-sets-1993-1999")
+include(":mtg-sets-2000-2002")
+include(":mtg-sets-2003-2007")
+include(":mtg-sets-2008-2016")
+include(":mtg-sets-2017-2022")
+include(":mtg-sets-2023")
+include(":mtg-sets-2024")
+include(":mtg-sets-2025")
+include(":mtg-sets-2026")
+
+// Card scenario tests, mirroring the card modules era for era: a test for an Outlaws of Thunder
+// Junction card lives in `:scenario-tests:2024` next to `:mtg-sets-2024`, so a set's PR touches one
+// pair of modules. They depend on the `:mtg-sets` aggregator, not on a single era, so every
+// scenario still sees the whole catalog — the era only decides where a file lives.
+// Engine tests (not about a specific card) stay in `:rules-engine`'s own suite.
+include(":scenario-tests:1993-1999")
+include(":scenario-tests:2000-2002")
+include(":scenario-tests:2003-2007")
+include(":scenario-tests:2008-2016")
+include(":scenario-tests:2017-2022")
+include(":scenario-tests:2023")
+include(":scenario-tests:2024")
+include(":scenario-tests:2025")
+include(":scenario-tests:2026")
 include(":ai")
 include(":gym")
 include(":gym-server")

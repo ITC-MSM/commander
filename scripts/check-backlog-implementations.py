@@ -25,10 +25,11 @@ import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from set_dirs import root_for_set
+
 REPO_ROOT = Path(__file__).resolve().parent.parent
 BACKLOG_GLOB = "backlog/sets/*/cards.md"
 DECKS_GLOB = "backlog/sets/*/decks/*.md"
-DEFINITIONS_ROOT = REPO_ROOT / "mtg-sets/src/main/kotlin/com/wingedsheep/mtg/sets/definitions"
 
 SET_CODE_RE = re.compile(r"^#\s+.*\(([A-Z]+)\)\s+-\s+Card Checklist", re.MULTILINE)
 UNCHECKED_LINE_RE = re.compile(r"^- \[ \] (.+)$")
@@ -103,7 +104,8 @@ def build_report(backlog_path: Path, *, kind: str = "checklist") -> SetReport:
         set_code, unchecked = scan_deck(backlog_path)
     else:
         set_code, unchecked = scan_backlog(backlog_path)
-    cards_dir = DEFINITIONS_ROOT / set_code.lower() / "cards" if set_code else None
+    set_dir = set_code.lower() if set_code else None
+    cards_dir = root_for_set(set_dir) / set_dir / "cards" if set_dir else None
     implemented = scan_implementations(cards_dir) if cards_dir else set()
     drifters = [
         (line_no, raw)

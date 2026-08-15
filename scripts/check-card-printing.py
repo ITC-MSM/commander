@@ -37,10 +37,9 @@ import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
 
-from set_dirs import scaffolded_set_codes, set_dir_codes
+from set_dirs import iter_card_files, scaffolded_set_codes, set_dir_codes
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-DEFINITIONS_ROOT = REPO_ROOT / "mtg-sets/src/main/kotlin/com/wingedsheep/mtg/sets/definitions"
 CACHE_ROOT = Path.home() / ".cache" / "scryfall" / "printings"
 SCRYFALL_BASE = "https://api.scryfall.com"
 USER_AGENT = "argentum-engine-check-card-printing/1.0"
@@ -151,7 +150,7 @@ def find_canonical(card_name: str) -> tuple[str, Path] | None:
     """Return (set_code_lower, file_path) of the file with `card("Name") { ... }`."""
     front = card_name.split(" // ", 1)[0].strip()
     codes = set_dir_codes()
-    for kt in DEFINITIONS_ROOT.glob("*/cards/*.kt"):
+    for kt in iter_card_files():
         text = kt.read_text(encoding="utf-8")
         for m in CARD_DSL_RE.finditer(text):
             if m.group(1) in (card_name, front):
@@ -168,7 +167,7 @@ def find_reprint_rows(card_name: str) -> dict[str, Path]:
     front = card_name.split(" // ", 1)[0].strip()
     result: dict[str, Path] = {}
     codes = set_dir_codes()
-    for kt in DEFINITIONS_ROOT.glob("*/cards/*.kt"):
+    for kt in iter_card_files():
         text = kt.read_text(encoding="utf-8")
         if "Printing(" not in text:
             continue

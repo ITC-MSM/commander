@@ -49,7 +49,7 @@ object Scryfall {
     fun discoverSets(): List<SetInfo> {
         discoverSetsCache?.let { return it }
         val out = mutableListOf<SetInfo>()
-        val dirs = DEFINITIONS_ROOT.listFiles()?.sortedBy { it.name } ?: emptyList()
+        val dirs = DEFINITIONS_ROOTS.flatMap { it.listFiles().orEmpty().asList() }.sortedBy { it.name }
         for (dir in dirs) {
             if (!dir.isDirectory || dir.name in SKIP_FOLDERS) continue
             val setKt = dir.listFiles { f -> f.isFile && f.name.endsWith("Set.kt") }?.firstOrNull() ?: continue

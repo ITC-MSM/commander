@@ -15,10 +15,17 @@ build:
 test:
     scripts/gradle-locked test
 
-# Run tests for rules-engine only
+# Card scenarios now live in the per-era `:scenario-tests:*` modules, so both are run here —
+# same coverage as before the split.
+# Run the engine's own tests plus every card scenario
 [group: 'build']
 test-rules:
-    scripts/gradle-locked :rules-engine:test
+    scripts/gradle-locked :rules-engine:test :scenario-tests:test
+
+# Run only the card scenario suite, or one era of it (e.g. just test-scenarios 2024)
+[group: 'build']
+test-scenarios ERA="":
+    scripts/gradle-locked :scenario-tests{{ if ERA == "" { "" } else { ":" + ERA } }}:test
 
 # Run tests for game-server only
 [group: 'build']
@@ -35,10 +42,20 @@ test-ai:
 test-gym:
     scripts/gradle-locked :gym:test
 
+# Card definitions and their scenario tests are split across per-era modules so no single Kotlin
+# compilation holds the whole corpus. Nobody has to remember which year a set shipped — ask.
+#   just where MRD                 just where "Myr Incubator"
+# Locate a set or card: which module holds its cards and its tests
+[group: 'build']
+where QUERY:
+    scripts/where "{{QUERY}}"
+
+# Tests live in several modules now — scripts/test-class finds the file and runs only its module's
+# test task, which is also the fast path: just that module's compilation has to be up to date.
 # Run a specific test class (e.g., just test-class CreatureStatsTest)
 [group: 'build']
-test-class CLASS:
-    scripts/gradle-locked :rules-engine:test --tests "{{CLASS}}"
+test-class CLASS *ARGS:
+    scripts/test-class "{{CLASS}}" {{ARGS}}
 
 # Re-bless per-set card snapshot goldens after an intentional change (review the diff: only your cards should move)
 [group: 'build']
@@ -164,6 +181,35 @@ arena-budget-scaling GAMES="300" SET="BLB" SEED="20260727":
 [group: 'build']
 clean:
     ./gradlew clean
+
+# Cache retention governs the shared Gradle user home, so Gradle refuses to let a project set it —
+# it has to be a machine-level opt-in. Without it nothing ever expires build-cache entries from
+# branches merged weeks ago; the local cache had reached 19 GB.
+# Install the Gradle cache-retention init script into ~/.gradle/init.d
+[group: 'env']
+install-gradle-init:
+    @mkdir -p ~/.gradle/init.d
+    cp gradle/init.d/argentum-cache-retention.init.gradle.kts ~/.gradle/init.d/
+    @echo "Installed ~/.gradle/init.d/argentum-cache-retention.init.gradle.kts (applies to every Gradle build on this machine)."
+
+# Skips the current worktree, anything whose sources changed within DAYS, anything a running
+# java/gradle process references, and refuses to run at all while a gradle-locked slot is held.
+#   just prune-worktrees                 # what would go, 7-day threshold
+#   just prune-worktrees 14 --apply      # delete it
+# Reclaim disk from build/ + .gradle/ in stale worktrees (DRY RUN unless --apply)
+[group: 'env']
+prune-worktrees DAYS="7" *ARGS:
+    scripts/prune-worktree-builds.sh --days {{DAYS}} {{ARGS}}
+
+# `org.gradle.daemon.idletimeout` covers only the Gradle daemon; the Kotlin compile daemon is a
+# separate 6g JVM that outlives it, and a handful of hours-old idle ones is what pushes the box
+# into swap and makes the next compile OOM. Never touches kotlin-lsp.
+#   just kill-daemons                    # what would be reaped, 60-minute threshold
+#   just kill-daemons 30 --apply         # kill anything idle for 30m+
+# Reap idle Kotlin/Gradle compile daemons (DRY RUN unless --apply)
+[group: 'env']
+kill-daemons MIN_AGE="60" *ARGS:
+    scripts/kill-stale-daemons.sh --min-age {{MIN_AGE}} {{ARGS}}
 
 # Format and check code
 [group: 'build']

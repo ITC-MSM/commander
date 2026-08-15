@@ -3,15 +3,33 @@
 package buildsrc.convention
 
 import org.gradle.api.tasks.testing.logging.TestLogEvent
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     // Apply the Kotlin JVM plugin to add support for Kotlin in JVM projects.
     kotlin("jvm")
+    // For the `api` configuration: the split card-definition modules re-export each other along a
+    // chronological chain, and `:mtg-sets` re-exports the whole chain, so consumers still see the
+    // full corpus through a single `project(":mtg-sets")` dependency.
+    `java-library`
 }
 
 kotlin {
     // Use a specific Java version to make it easier to work in different environments.
     jvmToolchain(21)
+}
+
+// Bound concurrent Kotlin compilations build-wide — they all share one compile-daemon heap, so
+// without this the peak is workers.max × the largest source set. See KotlinCompileThrottle.
+val kotlinCompileThrottle =
+    gradle.sharedServices.registerIfAbsent("kotlinCompileThrottle", KotlinCompileThrottle::class) {
+        maxParallelUsages.set(
+            (project.findProperty("kotlinCompileParallelism") as String? ?: "2").toInt()
+        )
+    }
+
+tasks.withType<KotlinCompile>().configureEach {
+    usesService(kotlinCompileThrottle)
 }
 
 tasks.withType<Test>().configureEach {

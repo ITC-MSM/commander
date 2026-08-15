@@ -187,8 +187,11 @@ The LLM AI receives the same masked game state as a human player and responds th
 ```
 argentum-engine/
 ├── mtg-sdk/              # Shared contract — DSLs, data models, primitives
-├── mtg-sets/             # Card definitions (Portal, Onslaught, Legions, Scourge, Khans, Dominaria)
+├── mtg-sets/             # Aggregator — re-exports the whole card corpus, plus the set catalog
+├── mtg-sets-core/        # CardDiscovery, token art, cards belonging to no set
+├── mtg-sets-<era>/       # Card definitions, one module per release-year range (`just where <SET>`)
 ├── rules-engine/         # Core MTG rules engine (no server dependencies)
+├── scenario-tests/       # Card scenario tests, mirroring the card eras
 ├── gym/           # RL/MCTS environment wrapper (GameEnvironment, MultiEnvService)
 ├── gym-server/    # Spring Boot HTTP transport for gym (Python trainers)
 ├── gym-trainer/   # JVM-side MCTS + self-play SPI for AlphaZero-style projects

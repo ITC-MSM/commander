@@ -3,9 +3,6 @@ package com.wingedsheep.mtg.sets
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
-import java.nio.file.Files
-import java.nio.file.Paths
-import kotlin.io.path.name
 import kotlin.io.path.readText
 
 /**
@@ -33,20 +30,14 @@ class FacadeBoundaryTest : FunSpec({
     )
 
     test("card definitions construct effects/costs via the Effects/Costs facades, not raw types") {
-        val definitionsDir = Paths.get(
-            "src/main/kotlin/com/wingedsheep/mtg/sets/definitions"
-        ).toAbsolutePath()
-
         val violations = mutableListOf<String>()
 
-        Files.walk(definitionsDir).use { stream ->
-            stream.filter { it.name.endsWith(".kt") }.forEach { path ->
-                stripCommentsAndImports(path.readText()).forEachIndexed { idx, line ->
-                    for ((regex, hint) in forbidden) {
-                        if (regex.containsMatchIn(line)) {
-                            val rel = definitionsDir.parent.parent.relativize(path)
-                            violations += "$rel:${idx + 1}  →  use $hint instead of `${regex.find(line)!!.value}`"
-                        }
+        SetSourceRoots.definitionFiles().forEach { path ->
+            stripCommentsAndImports(path.readText()).forEachIndexed { idx, line ->
+                for ((regex, hint) in forbidden) {
+                    if (regex.containsMatchIn(line)) {
+                        val rel = SetSourceRoots.relativize(path)
+                        violations += "$rel:${idx + 1}  →  use $hint instead of `${regex.find(line)!!.value}`"
                     }
                 }
             }

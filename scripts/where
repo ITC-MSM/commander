@@ -1,0 +1,94 @@
+#!/usr/bin/env python3
+"""Locate a set or a card in the split module layout.
+
+Card definitions live in `mtg-sets-<era>` modules (fixed release-year ranges) and their scenario
+tests in the mirroring `scenario-tests/<era>`, so that no single Kotlin compilation has to hold the
+whole corpus. Nobody should have to remember which year a set came out in — ask instead:
+
+    scripts/where MRD                  # a set code
+    scripts/where mrd                  # or its directory name
+    scripts/where "Myr Incubator"      # or a card name
+"""
+
+from __future__ import annotations
+
+import re
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from set_dirs import REPO_ROOT, dir_for_codes, iter_card_files, set_dir_codes  # noqa: E402
+
+CARD_DSL_RE = re.compile(r'\bcard\(\s*"([^"]+)"')
+
+
+def module_of(path: Path) -> str:
+    return path.relative_to(REPO_ROOT).parts[0]
+
+
+def scenario_module(era_module: str) -> Path | None:
+    """`mtg-sets-2024` -> `scenario-tests/2024`, if that module exists."""
+    era = era_module.removeprefix("mtg-sets-")
+    candidate = REPO_ROOT / "scenario-tests" / era
+    return candidate if candidate.is_dir() else None
+
+
+def report_set(dir_name: str, code: str) -> None:
+    from set_dirs import root_for_set
+
+    cards_root = root_for_set(dir_name)
+    module = module_of(cards_root)
+    print(f"set {code.upper()} ({dir_name})")
+    print(f"  cards   {(cards_root / dir_name).relative_to(REPO_ROOT)}")
+    print(f"  module  :{module}")
+    scen = scenario_module(module)
+    if scen:
+        print(f"  tests   {scen.relative_to(REPO_ROOT)}  (:scenario-tests:{scen.name})")
+    else:
+        print("  tests   (no scenario module for this era yet — it is created with the first test)")
+
+
+def main(argv: list[str]) -> int:
+    if not argv:
+        print(__doc__, file=sys.stderr)
+        return 2
+    query = argv[0]
+
+    codes = set_dir_codes()          # dir -> code
+    dirs = dir_for_codes()           # code -> dir
+
+    if query.lower() in dirs:
+        report_set(dirs[query.lower()], query.lower())
+        return 0
+    if query in codes:
+        report_set(query, codes[query])
+        return 0
+
+    # Fall back to a card-name search.
+    front = query.split(" // ", 1)[0].strip()
+    hits = []
+    for kt in iter_card_files():
+        text = kt.read_text(encoding="utf-8", errors="replace")
+        if any(m.group(1) in (query, front) for m in CARD_DSL_RE.finditer(text)):
+            hits.append(kt)
+    if not hits:
+        print(f"where: no set code, set directory, or card named '{query}'", file=sys.stderr)
+        return 1
+
+    for kt in hits:
+        module = module_of(kt)
+        set_dir = kt.parts[-3]
+        print(f"card \"{query}\" — {codes.get(set_dir, set_dir).upper()}")
+        print(f"  file    {kt.relative_to(REPO_ROOT)}")
+        print(f"  module  :{module}")
+        scen = scenario_module(module)
+        if scen:
+            stem = kt.name[:-3]
+            test = scen / "src/test/kotlin/com/wingedsheep/engine/scenarios" / f"{stem}ScenarioTest.kt"
+            marker = "" if test.exists() else "  (not written yet)"
+            print(f"  test    {test.relative_to(REPO_ROOT)}{marker}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main(sys.argv[1:]))

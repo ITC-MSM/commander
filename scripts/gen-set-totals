@@ -60,9 +60,9 @@ from datetime import date, timedelta
 from pathlib import Path
 
 from card_exclusions import load_exclusions, load_reasons
+from set_dirs import iter_set_dirs
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-DEFINITIONS_ROOT = REPO_ROOT / "mtg-sets/src/main/kotlin/com/wingedsheep/mtg/sets/definitions"
 OUTPUT = REPO_ROOT / "game-server/src/main/resources/coverage/set-totals.json"
 PRODUCTS_OUTPUT = REPO_ROOT / "game-server/src/main/resources/coverage/set-products.json"
 CACHE_ROOT = Path.home() / ".cache" / "scryfall"
@@ -130,7 +130,7 @@ def extra_group(product_ids: list[str]) -> str:
 def discover_sets() -> list[tuple[str, str]]:
     """(code, displayName) for every catalogued set, mirroring scripts/card-status."""
     out: list[tuple[str, str]] = []
-    for dir_ in sorted(DEFINITIONS_ROOT.iterdir()):
+    for dir_ in sorted(iter_set_dirs(), key=lambda p: p.name):
         if not dir_.is_dir() or dir_.name in SKIP_FOLDERS:
             continue
         set_kt = next((p for p in dir_.glob("*Set.kt") if p.is_file()), None)

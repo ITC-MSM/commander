@@ -26,8 +26,17 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: engine            # the biggest suite (~1200 scenario tests)
+          - name: engine            # the engine's own tests (card scenarios are the groups below)
             tasks: ":rules-engine:test"
+          - name: scenarios-old     # card scenarios, sets released up to 2022
+            tasks: >-
+              :scenario-tests:1993-1999:test :scenario-tests:2000-2002:test
+              :scenario-tests:2003-2007:test :scenario-tests:2008-2016:test
+              :scenario-tests:2017-2022:test
+          - name: scenarios-2023-24 # card scenarios, the two biggest recent eras
+            tasks: ":scenario-tests:2023:test :scenario-tests:2024:test"
+          - name: scenarios-2025-26
+            tasks: ":scenario-tests:2025:test :scenario-tests:2026:test"
           - name: server            # Spring Boot integration tests; compiles the full module graph
             tasks: ":game-server:test"
           - name: content           # SDK + card definitions + AI advisors

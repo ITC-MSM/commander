@@ -23,7 +23,7 @@ import java.nio.file.Paths
 import java.time.Duration
 
 /**
- * One-shot Scryfall sync populating `mtg-sets/src/main/resources/tokens.json` — the bulk token
+ * One-shot Scryfall sync populating `mtg-sets-core/src/main/resources/tokens.json` — the bulk token
  * art behind [TokenArtData].
  *
  * For every registered set, fetches Scryfall's matching token set (`t<code>`) and writes one row
@@ -66,7 +66,7 @@ private data class Row(
 
 private val serializer = MapSerializer(String.serializer(), ListSerializer(Row.serializer()))
 
-private val TARGET = Paths.get("mtg-sets/src/main/resources/tokens.json")
+private val TARGET = Paths.get("mtg-sets-core/src/main/resources/tokens.json")
 
 fun main() {
     val setCodes = MtgSetCatalog.all.map { it.code }.distinct().sorted()

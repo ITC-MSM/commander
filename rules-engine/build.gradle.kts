@@ -19,6 +19,9 @@ dependencies {
     testFixturesImplementation(kotlin("reflect"))
     // ScenarioTestBase extends Kotest's FunSpec, so the fixtures need the Kotest API on their classpath.
     testFixturesImplementation(libs.kotestRunner)
+    // LegalActionAssertions is a matcher library for consumers, so its assertions are part of the
+    // fixtures' API rather than an internal detail.
+    testFixturesApi(libs.kotestAssertions)
 
     testImplementation(project(":mtg-sets"))
     testImplementation(libs.kotestRunner)

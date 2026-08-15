@@ -186,8 +186,10 @@ class JenniferWaltersScenarioTest : ScenarioTestBase() {
                     when (val decision = game.getPendingDecision()) {
                         is ChooseTargetsDecision -> game.selectTargets(listOf(game.player2Id))
                         is YesNoDecision -> {
-                            decision.hint.shouldNotBeNull()
-                            hints += decision.hint
+                            // Use the value shouldNotBeNull() returns rather than re-reading the
+                            // property: `hint` is declared in another module, so Kotlin will not
+                            // smart-cast it to non-null here.
+                            hints += decision.hint.shouldNotBeNull()
                             game.answerYesNo(false)
                         }
                         null -> {

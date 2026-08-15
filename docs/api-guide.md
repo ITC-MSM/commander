@@ -15,10 +15,12 @@ architectural reasoning behind the engine, see [`architecture-principles.md`](ar
 
 ## 1. Adding a New Card
 
-Cards live in **`mtg-sets`**, one file per card, under the set's `cards/` package:
+Cards live in the **`mtg-sets-<era>`** modules, one file per card, under the set's `cards/` package.
+The corpus is split by release year so no single Kotlin compilation holds all of it; `just where LGN`
+prints the module for a set, and `project(":mtg-sets")` still re-exports every era to consumers.
 
 ```text
-mtg-sets/src/main/kotlin/com/wingedsheep/mtg/sets/definitions/
+mtg-sets-2003-2007/src/main/kotlin/com/wingedsheep/mtg/sets/definitions/
   └── lgn/
       ├── LegionsSet.kt
       └── cards/
@@ -102,8 +104,10 @@ val BellowingCrier = card("Bellowing Crier") {
 
 ### Step 1: Create the package
 
+Put it in the module for the set's release year — `mtg-sets-2026` for something shipping now:
+
 ```text
-mtg-sets/src/main/kotlin/com/wingedsheep/mtg/sets/definitions/
+mtg-sets-2026/src/main/kotlin/com/wingedsheep/mtg/sets/definitions/
   └── mns/
       ├── MyNewSet.kt
       └── cards/
@@ -157,7 +161,7 @@ Optional overrides commonly used by real sets:
 
 ### Step 3: Register in `MtgSetCatalog`
 
-Open `mtg-sets/src/main/kotlin/com/wingedsheep/mtg/sets/MtgSetCatalog.kt` and add your set object to
+Open `mtg-sets/src/main/kotlin/com/wingedsheep/mtg/sets/MtgSetCatalog.kt` (the aggregator) and add your set object to
 the `all` list:
 
 ```kotlin
