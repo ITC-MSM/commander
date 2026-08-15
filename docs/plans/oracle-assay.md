@@ -56,27 +56,41 @@ Three parts, in this order:
    cardinals → a small filter/target vocabulary → a handful of pipeline steps → the trigger prefix.
    The decline table ranks this for us: `Whenever` (6,450 cards) and `When` (6,054) are the top two
    families by a wide margin, so triggers are neither deferrable nor a guess.
-   *Half done.* `Cardinals` (number words), `Targets` (the requirement/reference pair), `Filters`
-   (the noun phrase, with its controller clause) and `Steps` (draw, destroy, exile, tap, untap,
-   return to hand — every one-verb spell over a targeted permanent) are in, and the line model
-   widened from `List<KeywordAbility>` to [`CardFragment`] so a line can fill either behavioural slot
-   a card has. Whole-card coverage 1,744 → 1,906; the differential's compared population 449 → 505,
-   and it is now comparing *spells* rather than keyword lists, which is what produced the eight
-   findings above.
+   *Done.* `Cardinals` (number words), `Targets` (the requirement/reference pair), `Filters` (the
+   noun phrase, with its controller clause), `Steps` (draw, destroy, exile, tap, untap, return to
+   hand — every one-verb spell over a targeted permanent) and `Triggers` (the ETB / dies / attacks /
+   blocks / combat-damage prefixes) are in. Whole-card coverage 1,744 → **2,014**; the differential's
+   compared population 449 → **537**.
 
-   **The trigger prefix is the remaining half**, and it is a bigger step than the rules above: a
-   trigger is a new `CardScript` slot, so it needs the fragment, the modelled-slot guard and the
-   differential's comparison widened together — and it raises three questions the effect rules never
-   had to answer. Where a triggered ability declares its *targets*; whether an authored
-   `descriptionOverride` is content or presentation (cards set it, a parser never would); and what to
-   do with `AbilityId`, which is arbitrary in exactly the way a target slot's name is and will need
-   the same normalization.
+   The trigger prefix answered its three open questions this way. A triggered ability keeps its
+   target on the *ability* (`TriggeredAbility.targetRequirement`), so the rule slots `Steps.step`
+   whole and lifts the resulting `CardScript` onto it — which means every step rule enriches every
+   trigger rule for free. `AbilityId` is arbitrary in exactly the way a slot name is (the DSL
+   generates it from a counter), so the grammar mints one constant and the differential normalizes by
+   position. And `descriptionOverride` is presentation by the SDK's own definition — "overrides the
+   auto-generated one" — so it is stripped on both sides rather than compared.
+
+   It also needed a normalization pass, not a grammar rule: modern templating writes a card's
+   self-reference as "this creature" rather than as its name, and the *noun* is a function of the
+   type line that the model has nowhere to put. Both spellings now abstract to `~`, restored
+   positionally — the same treatment the name pass already gave. That alone pulled 219 cards out of
+   the `Oracle text differs from golden` bucket, because goldens and Scryfall disagreed on which
+   spelling they carried.
+
 3. **A third number in the fineness report** — beside "round-trips byte-exact" and "declined", a
-   *confirmed* row: whole cards whose model matches the hand-written definition.
+   *confirmed* row: whole cards whose model matches the hand-written definition. *Done*, as the
+   differential report's own summary.
 
 **Done when:** several hundred implemented cards parse whole *and* differentially confirm; every
 divergence is classified with none unexplained; at least one genuine bug has been found in a
 hand-written card; `MISMATCH` and `AMBIGUOUS` are still 0.
+
+**✅ Met, 2026-08-15.** 537 cards compared and 536 confirmed; one standing divergence, classified
+(`TargetCreatureOrPlaneswalker` versus the general filtered target — two fully-wired parallel engine
+paths, deliberately not folded); `MISMATCH` and `AMBIGUOUS` still 0 across 66,793 ability lines. The
+bug in a hand-written card is **Meteor Golem**, whose printed "an opponent controls" was missing from
+its target filter, so it could destroy its own controller's permanents — fixed, with a scenario test
+that asserts the negative and fails without the fix.
 
 Explicitly out: the renderer, per-set cutover, and closing the ~40 missing `Keyword` constants —
 that last one is ranked content work with no risk attached, and it inflates Phase 1's number without
@@ -162,19 +176,24 @@ pass round-trips; `assay explain <card>` prints the token a decline died on. —
 
 ---
 
-## Phase 2 — The pipeline family
+## Phase 2 — The pipeline family 🚧 FIRST BAND SHIPPED
 
 The largest and most mechanical share of the corpus, and the part where the SDK vocabulary already
 lines up. This is where the fineness curve should climb steeply.
 
-Grammar, roughly in dependency order:
+Grammar, roughly in dependency order — the first band of each is in, and the remainder of each line
+is the next work:
 
-1. `Cardinals.kt` — "a", "two", "X", "that many", "equal to the number of…" → `DynamicAmount`
-2. `Filters.kt` — type/subtype/colour/power/toughness/controller predicates → `GameObjectFilter`
+1. `Cardinals.kt` ✅ number words. Still to come: "X", "that many", "equal to the number of…"
+2. `Filters.kt` ✅ type and controller. Still to come: subtype, colour, power/toughness, "other"
 3. `Zones.kt` — "your library", "the top three cards of", "your graveyard" → `CardSource`
-4. `Targets.kt` — "target creature", "any target", "up to two target…" → `TargetRequirement`
-5. `Steps.kt` — destroy / sacrifice / exile / draw / mill / discard / return / tap / untap, all as
-   pipeline steps over one selection
+4. `Targets.kt` ✅ "target creature" over a filter. Still to come: "any target", "up to two target…"
+5. `Steps.kt` ✅ draw / destroy / exile / tap / untap / return to hand, one verb over one target.
+   Still to come: sacrifice, mill, discard, counter, damage, counters, tokens, and the *sequence* —
+   two effect sentences in one card, which the differential currently buckets as "lines do not fold"
+6. `Triggers.kt` ✅ enters / dies / attacks / blocks / deals combat damage to a player. Still to come:
+   the other party's triggers ("whenever a creature you control dies"), phase triggers ("at the
+   beginning of your upkeep" — 2,049 cards), "you may", and intervening-if
 
 **Acceptance:** POR, LEA and a modern set (DFT or FDN) each report fineness; the per-set whole-render
 rate is directly comparable to `:mtgish-tooling`'s `gN` figure in the coverage dashboard.
@@ -187,8 +206,8 @@ Turn the implemented corpus into the semantic oracle. This is what catches the r
 class that the touchstone structurally cannot. **Brought forward ahead of Phase 2** per the MVP
 above: the gate has to exist before grammar breadth, or the breadth is unverified.
 
-**Outcome.** `just assay-differential` runs over all 8,874 committed goldens. Of those, 505 clear
-every scoping guard and are compared: **504 confirmed (99.8%), 1 classified divergence**. It found
+**Outcome.** `just assay-differential` runs over all 8,874 committed goldens. Of those, 537 clear
+every scoping guard and are compared: **536 confirmed (99.8%), 1 classified divergence**. It found
 the predicted class on its first run — multi-quality protection read as one ability where CR 702.16g makes it two,
 reversible and wrong — plus two "one concept, two spellings" findings in the SDK. All five opening
 divergences are now fixed: the grammar reads a joined quality list as several abilities (and
@@ -203,12 +222,13 @@ SDK's own statement that they are the same link), and one is a standing finding 
 `TargetCreatureOrPlaneswalker` versus the general filtered target, two fully-wired *parallel* engine
 paths, deliberately not folded.
 
-**Four guards, three of them found by the gate lying to itself once.** Assay must read every *line*;
+**Five guards, most of them found by the gate lying to itself once.** Assay must read every *line*;
 the golden's text must be the *same text* Scryfall serves (compared normalized, since goldens carry
 reminder text inconsistently); the definition must use only *modelled slots*; and the card's lines
 must *fold into one card* — two lines that both parse as the spell effect mean a sequence the grammar
-cannot spell, which used to throw and now counts. Every card failing one lands in a named bucket
-rather than being confirmed.
+cannot spell, which used to throw and now counts; and the card must carry no *unread triggers*, since
+a keyword the SDK lowers at authoring time puts an ability in the script that no text line prints.
+Every card failing one lands in a named bucket rather than being confirmed.
 
 1. **`gate/Differential.kt`** — done, over keyword abilities plus `spellEffect` and
    `targetRequirements`. The comparison grows with the grammar, and the three guards above are what

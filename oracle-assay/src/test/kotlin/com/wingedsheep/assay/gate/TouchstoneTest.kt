@@ -73,11 +73,14 @@ class TouchstoneTest : StringSpec({
         result.roundTrips shouldBe false
     }
 
+    // The uncovered line is an activated ability, which no rule reaches yet. It used to be an ETB
+    // trigger, until the grammar learned to read one — a fixture for "text outside the grammar" has
+    // to be replaced whenever the grammar catches up with it, and that is the healthy direction.
     "text outside the grammar declines and is attributed to the token it died on" {
-        val result = touchstone.assay(card("Wall of Omens", "Defender\nWhen this creature enters, draw a card."))
+        val result = touchstone.assay(card("Llanowar Elves", "Defender\n{T}: Add {G}."))
 
         result.lines.map { it.verdict } shouldBe listOf(LineVerdict.ROUND_TRIP, LineVerdict.DECLINED)
-        result.lines.last().declineToken shouldBe "When"
+        result.lines.last().declineToken shouldBe "{T}:"
         result.covered shouldBe false
     }
 
@@ -105,7 +108,7 @@ class TouchstoneTest : StringSpec({
         val report = FinenessReport.builder()
             .add(touchstone.assay(card("Serra Angel", "Flying\nVigilance", listOf("Flying", "Vigilance"))))
             .add(touchstone.assay(card("Grizzly Bears", "")))
-            .add(touchstone.assay(card("Wall of Omens", "Defender\nWhen this creature enters, draw a card.")))
+            .add(touchstone.assay(card("Llanowar Elves", "Defender\n{T}: Add {G}.")))
             .build()
 
         report.cards shouldBe 3
@@ -114,7 +117,7 @@ class TouchstoneTest : StringSpec({
         report.instancesByVerdict[LineVerdict.DECLINED] shouldBe 1
         report.cardsCovered shouldBe 2
         report.clean shouldBe true
-        report.declines.single().token shouldBe "When"
+        report.declines.single().token shouldBe "{T}:"
         report.declines.single().cards shouldBe 1
     }
 
@@ -129,7 +132,7 @@ class TouchstoneTest : StringSpec({
         FinenessReport.permil(1439, 1712) shouldBe (840.5 plusOrMinus 0.05)
         val report = FinenessReport.builder()
             .add(touchstone.assay(card("Serra Angel", "Flying", listOf("Flying"))))
-            .add(touchstone.assay(card("Wall of Omens", "When this creature enters, draw a card.")))
+            .add(touchstone.assay(card("Llanowar Elves", "{T}: Add {G}.")))
             .build()
         report.render().contains("500.0‰ (50.0%)") shouldBe true
     }

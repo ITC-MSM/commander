@@ -140,6 +140,20 @@ class Differential(private val touchstone: Touchstone = Touchstone()) {
             script = modelledSlots(definition.script),
         )
 
+        // The other half of the modelled-slot guard, now that `triggeredAbilities` is a slot the
+        // grammar reaches. A keyword the SDK lowers at authoring time — prowess, provoke, rampage,
+        // training, mobilize — puts a triggered ability in the script that *no text line prints*:
+        // the printed line is the keyword, which Assay reads as a keyword. So a card carrying more
+        // triggers than Assay read is carrying content nobody printed, and comparing its script
+        // would report the lowering as a divergence on every such card.
+        //
+        // One-directional on purpose. The card having more is the lowering; **Assay** having more
+        // would mean the grammar invented an ability, which must diverge loudly and not be excused
+        // by this guard.
+        if (fromCard.script.triggeredAbilities.size > fromText.script.triggeredAbilities.size) {
+            return CardComparison(implemented, card, Population.SCRIPT_NOT_MODELLED)
+        }
+
         val textKeywords = Folds.apply(fromText.keywordAbilities.toSet())
         val cardKeywords = Folds.apply(fromCard.keywordAbilities.toSet())
         val scriptsAgree = normalizeSlotNames(fromText.script) == normalizeSlotNames(fromCard.script)
@@ -177,11 +191,14 @@ class Differential(private val touchstone: Touchstone = Touchstone()) {
      * complement. Written as a `copy` pair rather than a field list so the two stay exhaustive
      * between them however many fields `CardScript` grows.
      */
-    private fun modelledSlots(script: CardScript) =
-        CardScript(spellEffect = script.spellEffect, targetRequirements = script.targetRequirements)
+    private fun modelledSlots(script: CardScript) = CardScript(
+        spellEffect = script.spellEffect,
+        targetRequirements = script.targetRequirements,
+        triggeredAbilities = script.triggeredAbilities,
+    )
 
     private fun unmodelledSlots(script: CardScript) =
-        script.copy(spellEffect = null, targetRequirements = emptyList())
+        script.copy(spellEffect = null, targetRequirements = emptyList(), triggeredAbilities = emptyList())
 
     /**
      * Rename target slots to their position, on both sides, before comparing.
@@ -202,14 +219,42 @@ class Differential(private val touchstone: Touchstone = Touchstone()) {
      * declared slots, touch nothing else — without the collision.
      */
     internal fun normalizeSlotNames(script: CardScript): String {
-        val slots = script.targetRequirements.mapNotNull { it.id }.distinct()
+        val slots = (script.targetRequirements + script.triggeredAbilities.flatMap { it.allTargetRequirements })
+            .mapNotNull { it.id }.distinct()
             .withIndex().associate { (index, id) -> id to slotName(index) }
         val json = CardSerialization.json.encodeToString(CardScript.serializer(), script)
         val renamed = renameSlots(CardSerialization.json.parseToJsonElement(json), slots)
-        return CardSerialization.json.encodeToString(JsonElement.serializer(), stampSlotIds(renamed))
+        return CardSerialization.json.encodeToString(
+            JsonElement.serializer(),
+            canonicalizeAbilities(stampSlotIds(renamed)),
+        )
     }
 
     private fun slotName(index: Int) = "slot_$index"
+
+    /**
+     * Drop the two things about a triggered ability that no printed text determines: its id, and an
+     * authored `descriptionOverride`.
+     *
+     * An `AbilityId` is arbitrary in exactly the way a target slot's name is, and more obviously so:
+     * the DSL generates them from a counter, which is why Kavu Climber's golden says `"ability_1"`.
+     * Comparing it would measure the order the cards happened to be constructed in.
+     * `CardDefinitionSnapshotTest.normalizeAbilityIds` does the same for the goldens themselves.
+     *
+     * `descriptionOverride` is the SDK's own words "optional human-readable description that
+     * overrides the auto-generated one" — presentation, never executed. An author writes one when
+     * the generated sentence reads badly; a parser never would, since the sentence it was parsing is
+     * right there. Comparing it would report every such card as divergent over its UI string.
+     */
+    private fun canonicalizeAbilities(script: JsonElement): JsonElement {
+        val root = script as? JsonObject ?: return script
+        val abilities = root["triggeredAbilities"] as? JsonArray ?: return script
+        val stamped = abilities.mapIndexed { index, ability ->
+            val fields = (ability as? JsonObject) ?: return@mapIndexed ability
+            JsonObject(fields - "descriptionOverride" + ("id" to JsonPrimitive("ability_$index")))
+        }
+        return JsonObject(root + ("triggeredAbilities" to JsonArray(stamped)))
+    }
 
     /**
      * Rename declared slot ids wherever they appear as an `id` or `name` *value*.

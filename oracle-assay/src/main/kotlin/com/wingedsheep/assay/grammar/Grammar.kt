@@ -148,6 +148,23 @@ object Grammar {
     }
 
     /**
+     * A line that is one triggered ability — "When ~ enters, draw a card."
+     *
+     * Wrapped here rather than in [Triggers] for the same reason [spellLine] is: the rules stay
+     * about abilities and know nothing about which of a card's slots they land in.
+     */
+    private val triggerLine: Phrase<CardFragment> = phrase("{trigger}", name = "a triggered ability line") {
+        slot("trigger", Triggers.trigger)
+        build { CardFragment.of(CardScript(triggeredAbilities = listOf(it.value("trigger")))) }
+        match { fragment ->
+            val ability = fragment.script.triggeredAbilities.singleOrNull() ?: return@match null
+            if (fragment.keywordAbilities.isNotEmpty()) return@match null
+            if (fragment.script != CardScript(triggeredAbilities = listOf(ability))) return@match null
+            bind("trigger" to ability)
+        }
+    }
+
+    /**
      * The empty line. It exists as a rule rather than as a special case in the gate because a
      * reminder-only line normalizes to "" and must still print back to "" — and because a vanilla
      * card, the easy quarter of the corpus, is exactly a face with no lines at all.
@@ -158,5 +175,5 @@ object Grammar {
     }
 
     val abilityLine: Phrase<CardFragment> =
-        oneOf("an ability line", emptyLine, keywordLine, semicolonKeywordLine, spellLine)
+        oneOf("an ability line", emptyLine, keywordLine, semicolonKeywordLine, spellLine, triggerLine)
 }

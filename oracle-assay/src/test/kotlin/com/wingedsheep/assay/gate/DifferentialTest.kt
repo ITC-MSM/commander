@@ -122,9 +122,9 @@ class DifferentialTest : StringSpec({
     }
 
     "a card whose text is partly readable is still excluded" {
-        val card = oracleCard("Wall of Omens", "Flying\nWhen this creature enters, draw a card.")
+        val card = oracleCard("Llanowar Elves", "Flying\n{T}: Add {G}.")
         val result = differential.compare(
-            implemented(definition("Wall of Omens", "Flying\nWhen this creature enters, draw a card.", keywords = setOf(Keyword.FLYING))),
+            implemented(definition("Llanowar Elves", "Flying\n{T}: Add {G}.", keywords = setOf(Keyword.FLYING))),
             index(card),
         )
 

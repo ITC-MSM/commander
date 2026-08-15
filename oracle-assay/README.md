@@ -10,10 +10,11 @@ Design: [`docs/oracle-assay.md`](../docs/oracle-assay.md) · Build order:
 **Phase 1 is implemented: the kernel, invertible normalization, the touchstone gate, and a grammar
 covering vanilla cards and keyword-only abilities. The differential gate is live** over the class the
 grammar reads whole, and the first band of the pipeline family is in — cardinals, a filter and target
-vocabulary, and the one-verb spell effects (draw, destroy, exile, tap, untap, return to hand), which
-is where the differential started comparing *spells* rather than keyword lists. Nothing here changes
-`:mtgish-tooling`, which stays authoritative until a per-set cutover replaces it (Phase 5). Assay is
-**not a runtime card loader** and never will be.
+vocabulary, the one-verb spell effects (draw, destroy, exile, tap, untap, return to hand) and the
+**trigger prefix** ("When ~ enters, …"), which is where the differential started comparing whole
+*abilities* rather than keyword lists, and where it found its first bug in a hand-written card.
+Nothing here changes `:mtgish-tooling`, which stays authoritative until a per-set cutover replaces it
+(Phase 5). Assay is **not a runtime card loader** and never will be.
 
 ## Commands
 
@@ -38,7 +39,7 @@ it as gzipped JSONL, so it streams a card at a time.
 syntax/     Phrase kernel — templates, slots, both directions, memoization, the parse cap
 normalize/  Scryfall text -> canonical ability lines, every pass with its inverse; reminder glosses
 corpus/     the Scryfall Oracle bulk: download, cache, stream
-grammar/    the rules, by topic — Primitives, Keywords, then Cardinals/Filters/Targets/Steps
+grammar/    the rules, by topic — Primitives, Keywords, Cardinals, Filters, Targets, Steps, Triggers
 gate/       the touchstone and the fineness report
 cli/        assay parse | explain | gate | report | corpus
 ```
@@ -76,17 +77,17 @@ non-zero on. Declines are not failures.
 
 ```
 Cards assayed                    34882
-Ability lines                    66793  (39746 unique)
+Ability lines                    66793  (39059 unique)
 
-Round-trips byte-exact           13253   198.4‰ (19.8%)
+Round-trips byte-exact           13515   202.3‰ (20.2%)
 Alternate spelling normalized    30
-Declined                         53510
+Declined                         53248
 Ambiguous — distinct readings    0
 Print mismatch                   0
 Normalization not invertible     0
 Full inverse not reproduced      0
 
-Cards fully covered              1906 / 34882   54.6‰ (5.5%)
+Cards fully covered              2014 / 34882   57.7‰ (5.8%)
 Vanilla + keyword-only cards     1440 / 1712   841.1‰ (84.1%)   <- Phase 1 target
 Reminder-text glosses            2870 matched · 114 differed · 956 unglossed
 ```
@@ -134,15 +135,15 @@ named population bucket instead and the denominator stays visible.
 
 ```
   Hand-written cards                 8874
-    compared                         505
-    not yet covered by the grammar   7566
+    compared                         537
+    not yet covered by the grammar   7753
     script slot not modelled yet      34
     lines do not fold into one card    7
     multi-face (out of scope)        301
-    Oracle text differs from golden  461
+    Oracle text differs from golden  242
     golden would not decode            0
 
-  Confirmed — models agree           504   998.0‰ (99.8%)
+  Confirmed — models agree           536   998.1‰ (99.8%)
   DIVERGENT — read every one           1
 ```
 
@@ -150,7 +151,8 @@ The divergence count is not meant to stay at zero — it rises every time the gr
 class of card, and each rise is the gate earning its keep. The five it opened with and the eight the
 first band of spell rules produced are all fixed or classified below.
 
-Three separate things have to hold before a card is compared, and each has its own bucket:
+Five separate things have to hold before a card is compared, and each has its own bucket. Every one
+of them was added after the gate was caught claiming a check nobody had performed:
 
 | Guard | Why |
 |---|---|
@@ -158,6 +160,7 @@ Three separate things have to hold before a card is compared, and each has its o
 | The text is the **same text** | A golden carries the wording it was authored from; if that is not what Scryfall serves, Assay is reading one card and diffing another. Compared normalized, so inconsistently-included reminder text is not a difference. |
 | The definition uses only **modelled slots** | A keyword the SDK lowers to a triggered ability at authoring time leaves content the grammar cannot produce. Confirming it would claim a check nobody performed. |
 | The lines **fold into one card** | A `CardScript` has one `spellEffect`; a card printing two effect paragraphs means a sequence the grammar has no rule for. Neither keeping the first nor concatenating them is honest, so it is counted. |
+| The card has no **unread triggers** | A keyword the SDK lowers at authoring time — prowess, provoke, rampage, training, mobilize — puts a triggered ability in the script that no text line prints. A card carrying more triggers than Assay read is carrying content nobody printed. One-directional: *Assay* having more would mean the grammar invented an ability, and that must diverge loudly. |
 
 A divergence never fails the build — it is a finding to classify as **parser bug**, **card bug**, or
 **fold**. Only an undecodable golden exits non-zero. The fold list lives in `gate/Differential.kt`
@@ -166,6 +169,14 @@ each one has to say why it is not a difference.
 
 ### What the gate has found
 
+- **A bug in a hand-written card — the outcome this whole thing is for.** Meteor Golem's printed text
+  is "destroy target nonland permanent **an opponent controls**"; its definition filtered on
+  `TargetFilter.NonlandPermanent`, so the golem could be pointed at its own controller's board and
+  the engine offered those permanents as legal targets. A generated render that dropped a clause,
+  committed and unnoticed. Fixed with a scenario test asserting the negative — a permanent you
+  control is **not** in `legalTargets` — which is the half that fails without the fix.
+  This is also the answer to "why not just diff the printed text": nothing about the card *looked*
+  wrong, and its own `oracleText` field carried the clause it did not implement.
 - **A parser bug of exactly the class this gate exists for — fixed.** Assay read "protection from
   black and from red" as one `Protection(Colors([BLACK, RED]))`; the cards spell it as two
   `Protection(Color)` abilities. **The cards were right** — CR 702.16g: *"'Protection from [quality A]

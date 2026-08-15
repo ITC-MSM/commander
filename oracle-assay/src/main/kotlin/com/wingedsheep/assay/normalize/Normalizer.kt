@@ -51,20 +51,48 @@ object Normalizer {
     }
 
     /**
+     * The permanent nouns a card uses to refer to *itself* — "When **this creature** enters".
+     *
+     * Modern templating replaced the card's own name with a type noun, so a self-reference has two
+     * printed shapes and they mean the same thing: `TriggerBinding.SELF`, the source object. Both
+     * therefore abstract to the same [SELF] token, which is what lets one trigger rule read
+     * "When this creature enters" and "When ~ enters" without either spelling being privileged.
+     *
+     * **The noun is not recoverable from the model, and does not need to be.** It is a function of
+     * the card's type line — an artifact creature prints "this creature", an Equipment prints "this
+     * Equipment" — and the model has nowhere to put it. Recording the surface form and restoring it
+     * positionally, exactly as the name pass does, keeps the printed word without the grammar ever
+     * having to know it. The alternative, a rule per noun with one canonical spelling, would report
+     * thousands of cards as VARIANT for information normalization can simply keep.
+     *
+     * Only nouns naming a *permanent* are listed. "This spell" and "this card" are self-references
+     * too, in the stack and the graveyard, but no rule reaches them yet and abstracting text nothing
+     * reads buys nothing.
+     */
+    private val SELF_NOUNS = listOf(
+        "creature", "artifact", "enchantment", "land", "permanent", "planeswalker",
+        "Aura", "Equipment", "Vehicle", "token", "Saga", "Class", "Siege", "Contraption",
+        "Spacecraft", "battle",
+    ).flatMap { listOf("this $it", "This $it") }
+
+    /**
      * The surface forms that refer to the card itself, longest first so that
      * "Kenrith, the Returned King" wins over the bare "Kenrith" it contains — the Comprehensive
      * Rules' *legend name* rule lets a legendary card's own text refer to it by the short name.
      *
      * Known limitation, deliberately not papered over: a short name that occurs inside a *longer*
      * proper noun in the card's own text — Kher Keep making "Kobolds of Kher Keep" — is abstracted
-     * too. The round trip is unaffected (the form is recorded and restored verbatim), but the model
-     * would be wrong, so the rules that read `~` must not treat it as authoritative inside a
-     * quoted name. Nothing in the Phase 1 grammar does.
+     * too, and so is a [SELF_NOUNS] phrase inside a *granted* ability, where "this creature" means
+     * the enchanted creature rather than the source ("Enchanted creature has 'When this creature
+     * dies, …'"). The round trip is unaffected in both cases — the form is recorded and restored
+     * verbatim — but the model would be wrong, so the rules that read `~` must not treat it as
+     * authoritative inside a quoted ability. Nothing in the grammar does.
      */
     internal fun selfReferenceForms(faceName: String): List<String> {
         val forms = linkedSetOf(faceName)
         val comma = faceName.indexOf(", ")
         if (comma > 0) forms.add(faceName.substring(0, comma))
+        forms.addAll(SELF_NOUNS)
         return forms.filter { it.isNotBlank() }.sortedByDescending { it.length }
     }
 
