@@ -558,7 +558,7 @@
                 "targetRequirement": {
                     "type": "TargetObject",
                     "filter": {
-                        "baseFilter": "nonland permanent"
+                        "baseFilter": "nonland permanent ctrl:opponent"
                     },
                     "id": "target"
                 }
