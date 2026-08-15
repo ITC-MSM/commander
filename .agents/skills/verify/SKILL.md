@@ -12,9 +12,10 @@ Multiple agents work in this repo in parallel, each worktree a separate Gradle r
 spawns its own 4g daemon + 4g Kotlin daemon + 2g test JVM and grabs every core; three concurrent runs
 thrash hard enough that tests cross the 300s hang-watchdog and *every* agent times out.
 
-The `just` recipes route through `scripts/gradle-locked`, a machine-global lock
-(`~/.cache/argentum/gradle.lock`, 30m timeout via `GRADLE_LOCK_TIMEOUT`) that serializes heavy runs
-across all worktrees. Others queue instead of competing.
+The `just` recipes route through `scripts/gradle-locked`, a machine-global two-slot semaphore
+(`~/.cache/argentum/gradle.lock{,.2}`, 30m timeout via `GRADLE_LOCK_TIMEOUT`) that permits two heavy
+runs across all worktrees. Further runs queue instead of competing. `GRADLE_LOCK_SLOTS` overrides the
+capacity when a machine needs a different limit.
 
 Verify once at the end rather than after each edit — each run costs a lock slot the other agents are
 waiting on.

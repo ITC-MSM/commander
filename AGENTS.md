@@ -95,8 +95,9 @@ These are the ones that have actually caused bugs here.
 `just --list` is the self-documenting index (groups: build, dev, e2e, env, ai).
 
 **Always run heavy builds through `just`, never raw `./gradlew`.** Parallel agents each spawn their own
-daemons and thrash the box into watchdog timeouts; the `just` recipes serialize through a machine-global
-lock. The `verify` skill covers which gate to run for which change and how to read the results.
+daemons and thrash the box into watchdog timeouts; the `just` recipes limit the machine to two concurrent
+builds through a machine-global semaphore. The `verify` skill covers which gate to run for which change
+and how to read the results.
 
 ## mtgish coverage + auto-gen tooling
 

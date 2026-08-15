@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# gradle-locked — run `./gradlew "$@"` under a machine-global exclusive lock.
+# gradle-locked — run `./gradlew "$@"` under a machine-global build semaphore.
 #
 # Why: each git worktree is a separate Gradle root, so N agents working in
 # parallel each spawn their own Gradle daemon (-Xmx4g) + Kotlin daemon (-Xmx4g)
@@ -10,11 +10,10 @@
 # hard cap (see TestHangGuard) and the whole run is halted — every agent "times
 # out" at once.
 #
-# This wrapper serializes the heavy invocations: only one runs at a time across
-# ALL worktrees on this machine; the rest queue (with a visible message) and run
-# as soon as the lock frees. A single build already saturates 8 cores, so almost
-# no real parallelism is lost — and "serialized but passing" beats "parallel but
-# all failing".
+# This wrapper limits heavy invocations to two at a time across ALL worktrees on
+# this machine; the rest queue (with a visible message) and run as soon as a slot
+# frees. Three concurrent builds oversubscribe the machine, while two let agents
+# make progress in parallel without crossing that threshold.
 #
 # The lock lives at a fixed, worktree-independent path so every worktree's copy
 # of this script contends for the same lock. shlock (shipped with macOS) is
@@ -24,12 +23,19 @@
 # Tunables (env):
 #   GRADLE_LOCK_TIMEOUT  seconds to wait before giving up (default 1800 = 30m)
 #   GRADLE_LOCK_FILE     override the lock path (default ~/.cache/argentum/gradle.lock)
+#   GRADLE_LOCK_SLOTS    maximum concurrent Gradle runs (default 2)
 
 set -euo pipefail
 
 LOCK_FILE="${GRADLE_LOCK_FILE:-$HOME/.cache/argentum/gradle.lock}"
 TIMEOUT="${GRADLE_LOCK_TIMEOUT:-1800}"
+SLOTS="${GRADLE_LOCK_SLOTS:-2}"
 POLL=5
+
+if ! [[ "$SLOTS" =~ ^[1-9][0-9]*$ ]]; then
+    echo "gradle-locked: GRADLE_LOCK_SLOTS must be a positive integer (got '$SLOTS')." >&2
+    exit 2
+fi
 
 mkdir -p "$(dirname "$LOCK_FILE")"
 
@@ -39,21 +45,37 @@ if ! command -v shlock >/dev/null 2>&1; then
 fi
 
 elapsed=0
-until shlock -f "$LOCK_FILE" -p $$; do
-    holder="$(cat "$LOCK_FILE" 2>/dev/null || echo '?')"
+acquired_lock=""
+while [ -z "$acquired_lock" ]; do
+    for ((slot = 1; slot <= SLOTS; slot++)); do
+        # Keep slot 1 at the historical path so a build started by an older
+        # version of this wrapper still consumes one of the available slots.
+        slot_lock="$LOCK_FILE"
+        if [ "$slot" -gt 1 ]; then
+            slot_lock="${LOCK_FILE}.${slot}"
+        fi
+        if shlock -f "$slot_lock" -p $$; then
+            acquired_lock="$slot_lock"
+            break
+        fi
+    done
+
+    if [ -n "$acquired_lock" ]; then
+        break
+    fi
+
     if [ "$elapsed" -ge "$TIMEOUT" ]; then
-        echo "gradle-locked: gave up after ${TIMEOUT}s waiting for Gradle lock (held by PID $holder)." >&2
-        echo "gradle-locked: if that PID is dead, remove $LOCK_FILE and retry." >&2
+        echo "gradle-locked: gave up after ${TIMEOUT}s waiting for one of ${SLOTS} Gradle slots." >&2
         exit 1
     fi
     if [ "$elapsed" -eq 0 ]; then
-        echo "gradle-locked: another Gradle run (PID $holder) is in progress — queuing (timeout ${TIMEOUT}s)..." >&2
+        echo "gradle-locked: all ${SLOTS} Gradle slots are busy — queuing (timeout ${TIMEOUT}s)..." >&2
     fi
     sleep "$POLL"
     elapsed=$((elapsed + POLL))
 done
 
 # We hold the lock; ensure it is released on any exit (success, failure, signal).
-trap 'rm -f "$LOCK_FILE"' EXIT INT TERM
+trap 'rm -f "$acquired_lock"' EXIT INT TERM
 
 ./gradlew "$@"
