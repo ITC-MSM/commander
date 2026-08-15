@@ -17,6 +17,7 @@ import com.wingedsheep.sdk.dsl.Targets as SdkTargets
 import com.wingedsheep.sdk.model.CardScript
 import com.wingedsheep.sdk.scripting.conditions.Condition
 import com.wingedsheep.sdk.scripting.GameObjectFilter
+import com.wingedsheep.sdk.scripting.effects.AddCountersEffect
 import com.wingedsheep.sdk.scripting.effects.CardSource
 import com.wingedsheep.sdk.scripting.effects.CompositeEffect
 import com.wingedsheep.sdk.scripting.effects.GatherCardsEffect
@@ -638,6 +639,53 @@ object Steps {
                 bind("filter" to filter, "mod" to modifiers)
             }
         }
+    }
+
+    /**
+     * "Put a +1/+1 counter on target creature.", "Put two -1/-1 counters on target Sliver you
+     * control." — the counter verb over a noun phrase this clause chooses.
+     *
+     * ### Two rules for one verb, because English has two quantities
+     *
+     * The singular carries no number at all — its quantity *is* the article, which
+     * [Primitives.singularCounterKind] owns — and the plural takes [Cardinals.word], which starts at
+     * two. Disjoint domains, so one printed form per model and nothing for the printer to choose:
+     * the same split [drawOne] and [drawMany] are, for the same reason, and the reason neither may
+     * borrow the other's leaf.
+     *
+     * The count is a **word** here and a numeral in [damageToTargetPermanent] two rules up. That is
+     * not an inconsistency to tidy: Oracle spells a quantity of counters as a word ("put two +1/+1
+     * counters") and a quantity of damage or life as a numeral ("deals 2 damage"), and the two
+     * conventions live in the same sentence often enough that a rule using the wrong one would fail
+     * to read the cards it was written for.
+     */
+    private val putCountersOnTargetPermanent: List<Phrase<CardScript>> = run {
+        fun scriptFor(kind: String, count: Int, filter: GameObjectFilter) = CardScript(
+            spellEffect = Effects.AddCounters(kind, count, Targets.bound()),
+            targetRequirements = listOf(Targets.permanent(filter)),
+        )
+        fun rule(template: String, name: String, quantity: Phrase<*>?) =
+            phrase(template, name = name) {
+                slot("kind", if (quantity == null) Primitives.singularCounterKind else Primitives.counterKind)
+                if (quantity != null) slot("n", quantity)
+                slot("filter", Filters.filter)
+                build {
+                    scriptFor(it.value("kind"), if (quantity == null) 1 else it.int("n"), it.value("filter"))
+                }
+                match { script ->
+                    val (kind, count) = countersAdded(script.spellEffect, Targets.bound()) ?: return@match null
+                    if (quantity == null && count != 1) return@match null
+                    if (quantity != null && !(count >= 2 && Cardinals.spellable(count))) return@match null
+                    val requirement = script.targetRequirements.singleOrNull() ?: return@match null
+                    val filter = Targets.permanentFilter(requirement) ?: return@match null
+                    if (script != scriptFor(kind, count, filter)) return@match null
+                    bind("kind" to kind, "n" to count, "filter" to filter)
+                }
+            }
+        listOf(
+            rule("put {kind} counter on target {filter}", "put a counter on a target", null),
+            rule("put {n} {kind} counters on target {filter}", "put counters on a target", Cardinals.word),
+        )
     }
 
     /** "Target creature gains flying until end of turn." — the pump rule's keyword sibling. */
@@ -1440,6 +1488,7 @@ object Steps {
             pumpTargetPermanent +
             grantToTargetPermanent +
             pumpAndGrantTarget +
+            putCountersOnTargetPermanent +
             permanentSteps +
             groupSteps +
             drawForEach +
@@ -1762,6 +1811,21 @@ object Steps {
     internal fun lifeLost(effect: Effect): Int? = (effect as? LoseLifeEffect)?.amount?.fixed()
 
     internal fun damageDealt(effect: Effect): Int? = (effect as? DealDamageEffect)?.amount?.fixed()
+
+    /**
+     * The kind and the count an `AddCounters` effect carries, aimed at [target].
+     *
+     * The target is checked *here* rather than by the caller because it is what tells the three
+     * counter sentences apart — the source's own ("put a +1/+1 counter on ~"), the spell's chosen
+     * one ("…on target creature") and the one an earlier clause chose ("…on it"). All three build
+     * the same effect with a different [EffectTarget], so a reader that ignored it would let each
+     * rule print the others' sentence.
+     */
+    internal fun countersAdded(effect: Effect?, target: EffectTarget): Pair<String, Int>? {
+        val add = effect as? AddCountersEffect ?: return null
+        if (add.target != target) return null
+        return add.counterType to add.count
+    }
 
     /** The two fixed bonuses a `ModifyStats` effect carries, or null for a dynamic one. */
     internal fun fixedModifiers(effect: Effect?): Pair<Int, Int>? {
