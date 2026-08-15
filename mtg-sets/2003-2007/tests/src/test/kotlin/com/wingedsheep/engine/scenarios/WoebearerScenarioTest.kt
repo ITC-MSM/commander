@@ -1,6 +1,7 @@
 package com.wingedsheep.engine.scenarios
 
 import com.wingedsheep.engine.core.ChooseTargetsDecision
+import com.wingedsheep.engine.core.YesNoDecision
 import com.wingedsheep.engine.support.ScenarioTestBase
 import com.wingedsheep.sdk.core.Phase
 import com.wingedsheep.sdk.core.Step
@@ -30,7 +31,12 @@ class WoebearerScenarioTest : ScenarioTestBase() {
         }
         passUntilPhase(Phase.COMBAT, Step.COMBAT_DAMAGE)
         resolveStack()
-        if (hasPendingDecision() && getPendingDecision() !is ChooseTargetsDecision) {
+        // Anything that is not already the trigger's own decision (its "you may", then its target)
+        // is a combat-damage assignment still owed.
+        if (hasPendingDecision() &&
+            getPendingDecision() !is ChooseTargetsDecision &&
+            getPendingDecision() !is YesNoDecision
+        ) {
             submitDefaultCombatDamage()
             resolveStack()
         }
@@ -54,6 +60,8 @@ class WoebearerScenarioTest : ScenarioTestBase() {
                     game.getLifeTotal(2) shouldBe 18
                 }
 
+                // The "you may" is answered before targeting is reached.
+                game.answerYesNo(true)
                 val decision = game.getPendingDecision()
                 withClue("The trigger should ask for a target; got $decision") {
                     decision.shouldBeInstanceOf<ChooseTargetsDecision>()
@@ -82,16 +90,13 @@ class WoebearerScenarioTest : ScenarioTestBase() {
 
                 game.connectWithWoebearer()
 
-                // A targeted "you may" carries its consent through the target decision itself:
-                // `optional = true` drops minTargets to 0, so choosing nothing *is* the decline.
+                // A "you may" is a consent gate on the effect, so the decline is its own yes/no and
+                // comes before any target is chosen — no picking a card you mean to leave behind.
                 val decision = game.getPendingDecision()
-                withClue("The trigger should ask for a target; got $decision") {
-                    decision.shouldBeInstanceOf<ChooseTargetsDecision>()
+                withClue("The trigger should ask the may; got $decision") {
+                    decision.shouldBeInstanceOf<YesNoDecision>()
                 }
-                withClue("An optional trigger must allow selecting zero targets") {
-                    (decision as ChooseTargetsDecision).targetRequirements.single().minTargets shouldBe 0
-                }
-                game.skipTargets()
+                game.answerYesNo(false)
                 game.resolveStack()
 
                 withClue("Grizzly Bears should still be in the graveyard") {
@@ -112,6 +117,8 @@ class WoebearerScenarioTest : ScenarioTestBase() {
 
                 game.connectWithWoebearer()
 
+                // The "you may" is answered before targeting is reached.
+                game.answerYesNo(true)
                 val decision = game.getPendingDecision()
                 withClue("The trigger should ask for a target; got $decision") {
                     decision.shouldBeInstanceOf<ChooseTargetsDecision>()

@@ -6717,12 +6717,15 @@
                     "to": "Graveyard"
                 },
                 "effect": {
-                    "type": "MoveToZone",
-                    "target": "Self",
-                    "destination": "Library",
-                    "positionFromTop": 4
-                },
-                "optional": true
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "MoveToZone",
+                        "target": "Self",
+                        "destination": "Library",
+                        "positionFromTop": 4
+                    }
+                }
             }
         ]
     },

@@ -573,11 +573,14 @@
                 "trigger": "SpellCastEvent",
                 "binding": "ANY",
                 "effect": {
-                    "type": "TapUntap",
-                    "target": "Self",
-                    "tap": false
-                },
-                "optional": true
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "TapUntap",
+                        "target": "Self",
+                        "tap": false
+                    }
+                }
             }
         ],
         "activatedAbilities": [

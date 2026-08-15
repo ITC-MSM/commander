@@ -62,7 +62,8 @@ class OversoldCemeteryTest : FunSpec({
         // Advance to the controller's upkeep
         advanceToPlayerUpkeep(driver, activePlayer)
 
-        // Trigger should fire - target selection decision
+        // Trigger should fire — the "you may" comes first, then target selection
+        driver.submitYesNo(activePlayer, true)
         driver.pendingDecision.shouldBeInstanceOf<ChooseTargetsDecision>()
 
         val targetDecision = driver.pendingDecision as ChooseTargetsDecision
@@ -162,6 +163,7 @@ class OversoldCemeteryTest : FunSpec({
         advanceToPlayerUpkeep(driver, activePlayer)
 
         // Select target and resolve
+        driver.submitYesNo(activePlayer, true)
         driver.pendingDecision.shouldBeInstanceOf<ChooseTargetsDecision>()
         driver.submitTargetSelection(activePlayer, listOf(target))
         driver.bothPass()
@@ -196,6 +198,7 @@ class OversoldCemeteryTest : FunSpec({
         // Advance to upkeep
         advanceToPlayerUpkeep(driver, activePlayer)
 
+        driver.submitYesNo(activePlayer, true)
         driver.pendingDecision.shouldBeInstanceOf<ChooseTargetsDecision>()
         val targetDecision = driver.pendingDecision as ChooseTargetsDecision
         val legalTargets = targetDecision.legalTargets[0] ?: emptyList()

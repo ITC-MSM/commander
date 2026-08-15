@@ -603,8 +603,11 @@
             {
                 "id": "ability_1",
                 "trigger": "AttackEvent",
-                "effect": "Provoke",
-                "optional": true,
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": "Provoke"
+                },
                 "targetRequirement": {
                     "type": "TargetObject",
                     "filter": {
@@ -648,15 +651,18 @@
                         "recipient": "AnyPlayer"
                     },
                     "effect": {
-                        "type": "CreateToken",
-                        "power": 1,
-                        "toughness": 1,
-                        "colors": [],
-                        "creatureTypes": [
-                            "Sliver"
-                        ]
-                    },
-                    "optional": true
+                        "type": "Gated",
+                        "gate": "Gate.MayDecide",
+                        "then": {
+                            "type": "CreateToken",
+                            "power": 1,
+                            "toughness": 1,
+                            "colors": [],
+                            "creatureTypes": [
+                                "Sliver"
+                            ]
+                        }
+                    }
                 },
                 "filter": {
                     "baseFilter": "permanent Sliver"
@@ -960,17 +966,20 @@
                 "id": "ability_1",
                 "trigger": "TurnFaceUpEvent",
                 "effect": {
-                    "type": "ExchangeControl",
-                    "target1": {
-                        "type": "BoundVariable",
-                        "name": "creature you control"
-                    },
-                    "target2": {
-                        "type": "BoundVariable",
-                        "name": "creature an opponent controls"
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "ExchangeControl",
+                        "target1": {
+                            "type": "BoundVariable",
+                            "name": "creature you control"
+                        },
+                        "target2": {
+                            "type": "BoundVariable",
+                            "name": "creature an opponent controls"
+                        }
                     }
                 },
-                "optional": true,
                 "targetRequirement": {
                     "type": "TargetObject",
                     "filter": {
@@ -1306,8 +1315,11 @@
             {
                 "id": "ability_1",
                 "trigger": "AttackEvent",
-                "effect": "Provoke",
-                "optional": true,
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": "Provoke"
+                },
                 "targetRequirement": {
                     "type": "TargetObject",
                     "filter": {
@@ -1928,8 +1940,11 @@
             {
                 "id": "ability_1",
                 "trigger": "AttackEvent",
-                "effect": "Provoke",
-                "optional": true,
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": "Provoke"
+                },
                 "targetRequirement": {
                     "type": "TargetObject",
                     "filter": {
@@ -2556,8 +2571,11 @@
             {
                 "id": "ability_1",
                 "trigger": "AttackEvent",
-                "effect": "Provoke",
-                "optional": true,
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": "Provoke"
+                },
                 "targetRequirement": {
                     "type": "TargetObject",
                     "filter": {
@@ -3454,8 +3472,11 @@
             {
                 "id": "ability_1",
                 "trigger": "AttackEvent",
-                "effect": "Provoke",
-                "optional": true,
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": "Provoke"
+                },
                 "targetRequirement": {
                     "type": "TargetObject",
                     "filter": {
@@ -3844,8 +3865,11 @@
                 "ability": {
                     "id": "ability_1",
                     "trigger": "AttackEvent",
-                    "effect": "Provoke",
-                    "optional": true,
+                    "effect": {
+                        "type": "Gated",
+                        "gate": "Gate.MayDecide",
+                        "then": "Provoke"
+                    },
                     "targetRequirement": {
                         "type": "TargetObject",
                         "filter": {
@@ -4267,8 +4291,11 @@
             {
                 "id": "ability_1",
                 "trigger": "AttackEvent",
-                "effect": "Provoke",
-                "optional": true,
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": "Provoke"
+                },
                 "targetRequirement": {
                     "type": "TargetObject",
                     "filter": {
@@ -4446,8 +4473,11 @@
             {
                 "id": "ability_1",
                 "trigger": "AttackEvent",
-                "effect": "Provoke",
-                "optional": true,
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": "Provoke"
+                },
                 "targetRequirement": {
                     "type": "TargetObject",
                     "filter": {
@@ -4587,13 +4617,16 @@
                 "id": "ability_1",
                 "trigger": "TurnFaceUpEvent",
                 "effect": {
-                    "type": "TurnFaceDown",
-                    "target": {
-                        "type": "BoundVariable",
-                        "name": "creature with a morph ability"
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "TurnFaceDown",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "creature with a morph ability"
+                        }
                     }
                 },
-                "optional": true,
                 "targetRequirement": {
                     "type": "TargetObject",
                     "filter": {
@@ -6587,8 +6620,11 @@
             {
                 "id": "ability_1",
                 "trigger": "AttackEvent",
-                "effect": "Provoke",
-                "optional": true,
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": "Provoke"
+                },
                 "targetRequirement": {
                     "type": "TargetObject",
                     "filter": {
@@ -6648,13 +6684,16 @@
                         "recipient": "AnyPlayer"
                     },
                     "effect": {
-                        "type": "DrawCards",
-                        "count": {
-                            "type": "Fixed",
-                            "amount": 1
+                        "type": "Gated",
+                        "gate": "Gate.MayDecide",
+                        "then": {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
                         }
-                    },
-                    "optional": true
+                    }
                 },
                 "filter": {
                     "baseFilter": "permanent Sliver"
@@ -6750,13 +6789,16 @@
                 },
                 "binding": "ANY",
                 "effect": {
-                    "type": "GainLife",
-                    "amount": {
-                        "type": "Fixed",
-                        "amount": 3
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "GainLife",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 3
+                        }
                     }
-                },
-                "optional": true
+                }
             }
         ]
     },
@@ -7704,18 +7746,21 @@
                 },
                 "binding": "OTHER",
                 "effect": {
-                    "type": "CreateToken",
-                    "power": 1,
-                    "toughness": 1,
-                    "colors": [
-                        "GREEN"
-                    ],
-                    "creatureTypes": [
-                        "Insect"
-                    ],
-                    "imageUri": "https://cards.scryfall.io/normal/front/a/a/aa47df37-f246-4f80-a944-008cdf347dad.jpg?1561757793"
-                },
-                "optional": true
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "CreateToken",
+                        "power": 1,
+                        "toughness": 1,
+                        "colors": [
+                            "GREEN"
+                        ],
+                        "creatureTypes": [
+                            "Insect"
+                        ],
+                        "imageUri": "https://cards.scryfall.io/normal/front/a/a/aa47df37-f246-4f80-a944-008cdf347dad.jpg?1561757793"
+                    }
+                }
             }
         ]
     },

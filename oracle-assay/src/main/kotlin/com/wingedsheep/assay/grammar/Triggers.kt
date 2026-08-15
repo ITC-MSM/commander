@@ -16,7 +16,6 @@ import com.wingedsheep.sdk.scripting.TriggerBinding
 import com.wingedsheep.sdk.scripting.effects.ConditionalEffect
 import com.wingedsheep.sdk.scripting.effects.Gate
 import com.wingedsheep.sdk.scripting.effects.GatedEffect
-import com.wingedsheep.sdk.scripting.effects.MayEffect
 import com.wingedsheep.sdk.scripting.TriggerSpec
 import com.wingedsheep.sdk.scripting.conditions.Condition
 import com.wingedsheep.sdk.scripting.TriggeredAbility
@@ -84,22 +83,19 @@ object Triggers {
     }
 
     /**
-     * Build the ability a trigger's effect clause denotes — **including the lowering of "you may".**
+     * Build the ability a trigger's effect clause denotes.
      *
-     * A triggered ability spells the controller's choice with its own `optional` flag, which is what
-     * every hand-written card sets; a spell spells the identical English as a `MayEffect` around the
-     * effect, because a spell has no such flag. Both are real SDK spellings of one sentence, so
-     * reading "you may …" here has to *lower* one into the other rather than register a second rule:
-     * a rule per spelling would be two readings of one text, which is the ambiguity the design says
-     * never to resolve by picking one.
-     *
-     * The lowering runs in both directions — [scriptFor] wraps `optional` back into a `MayEffect`
-     * before the comparison — so the round trip is over the same value in both halves.
+     * **"You may …" needs nothing done to it here, and that is new.** A triggered ability used to
+     * spell the controller's choice with an `optional` flag of its own while a spell spelled the
+     * identical English as a `MayEffect`, so this function had to lower one into the other — one
+     * sentence, two SDK spellings, and a rule per spelling would have been two readings of one text.
+     * `TriggeredAbility.optional` is gone; the gate the engine always built from it is the model
+     * now, and a trigger's effect clause is the same value a spell's clause is. The lowering, its
+     * inverse in [scriptFor], and the differential fold that bridged the two spellings all deleted
+     * together.
      */
     private fun abilityFor(spec: TriggerSpec, script: CardScript): TriggeredAbility? {
         val effect = script.spellEffect ?: return null
-        val may = (effect as? GatedEffect)
-            ?.takeIf { it.gate is Gate.MayDecide && it == MayEffect(it.then) }
         return TriggeredAbility(
             id = ID,
             trigger = spec.event,
@@ -123,14 +119,13 @@ object Triggers {
             // Cavalry and Seasoned Warrenguard have scenario tests asserting exactly that — and
             // ~100 for other trigger-time restrictions. Rechecking all of them uniformly fails
             // those two tests, so the engine fix needs "if" and "while" separated first.
-            effect = liftInterveningIf(may?.then ?: effect),
+            effect = liftInterveningIf(effect),
             triggerCondition = interveningIf(effect),
             // A `TriggeredAbility` keeps its first requirement in a field of its own and the rest in
             // a list beside it, which is the shape a clause declaring two targets lands in —
             // Chromeshell Crab's exchange. The split is the SDK's; nothing in the text says it.
             targetRequirement = script.targetRequirements.firstOrNull(),
             additionalTargetRequirements = script.targetRequirements.drop(1),
-            optional = may != null,
         )
     }
 
@@ -153,21 +148,18 @@ object Triggers {
         if (interveningIf(effect) != null) (effect as GatedEffect).then else effect
 
     /**
-     * The inverse of the lowering: the clause script an ability's effect and targets denote.
+     * The clause script an ability's effect and targets denote — the inverse of [abilityFor].
      *
-     * The two wrappers go back on in the order [abilityFor] took them off — the intervening-if
-     * inside, "you may" outside — so the round trip is over the same value in both halves.
+     * One wrapper to put back, the intervening-if [abilityFor] lifted, so the round trip is over the
+     * same value in both halves.
      */
-    private fun scriptFor(ability: TriggeredAbility): CardScript {
-        val conditioned = ability.triggerCondition
+    private fun scriptFor(ability: TriggeredAbility): CardScript = CardScript(
+        spellEffect = ability.triggerCondition
             ?.let { ConditionalEffect(condition = it, effect = ability.effect) }
-            ?: ability.effect
-        return CardScript(
-            spellEffect = if (ability.optional) MayEffect(conditioned) else conditioned,
-            targetRequirements = listOfNotNull(ability.targetRequirement) +
-                ability.additionalTargetRequirements,
-        )
-    }
+            ?: ability.effect,
+        targetRequirements = listOfNotNull(ability.targetRequirement) +
+            ability.additionalTargetRequirements,
+    )
 
     /**
      * The trigger events with an unambiguous one-clause surface form.

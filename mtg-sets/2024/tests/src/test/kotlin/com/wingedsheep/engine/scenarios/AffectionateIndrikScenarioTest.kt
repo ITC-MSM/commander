@@ -40,8 +40,9 @@ class AffectionateIndrikScenarioTest : FunSpec({
         val indrik = driver.putCardInHand(driver.player1, "Affectionate Indrik")
         driver.giveMana(driver.player1, Color.GREEN, 6)
         driver.castSpell(driver.player1, indrik).isSuccess shouldBe true
-        driver.bothPass() // resolve the Indrik; its enters trigger asks for a target
+        driver.bothPass() // resolve the Indrik; its enters trigger asks its "you may", then a target
 
+        driver.submitYesNo(driver.player1, true)
         val decision = driver.pendingDecision.shouldBeInstanceOf<ChooseTargetsDecision>()
         // The Indrik itself is a creature you control, and so is Grizzly Bears — neither may be
         // offered. Only the opponent's Minotaur Warrior is a legal fight target.
@@ -58,6 +59,7 @@ class AffectionateIndrikScenarioTest : FunSpec({
         driver.castSpell(driver.player1, indrik).isSuccess shouldBe true
         driver.bothPass()
 
+        driver.submitYesNo(driver.player1, true)
         driver.submitTargetSelection(driver.player1, listOf(theirs))
         driver.bothPass() // resolve the triggered ability
 

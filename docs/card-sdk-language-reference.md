@@ -3964,20 +3964,37 @@ table because the prompt looks identical. Rather than mis-place the gate silentl
 throws, and `EffectOncePerTurnLoweringTest` sweeps every card in the pool for the shape so the
 failure lands at build time rather than mid-game.
 
-**`optional` = "you may [effect]"; `elseEffect` adds "If you don't, [elseEffect]."** For a
-**targeted** trigger, `optional` lets the player choose 0 targets to decline, and `elseEffect` runs
-on decline or when no legal targets exist (Entrails Feaster: "you may exile a creature card from a
-graveyard … if you don't, tap this"). A **no-target** optional trigger lowers to a
-`GatedEffect(Gate.MayDecide, then = effect, otherwise = elseEffect)` resolved by the unified gated
-executor — a resolution-time yes/no whose "no" runs `elseEffect` (or nothing when there is none,
-e.g. Song of Stupefaction's "you may mill two cards"); the wrap is skipped when `effect` already
-carries its own consent gate (a `May*`-gated `GatedEffect`), so an authored `Effects.May` never
-double-prompts. The may-action's feasibility is
-derived from `effect` (a `SacrificeEffect` needs the controller to control a matching permanent), so
-an impossible "may" skips the prompt and runs `elseEffect` directly — the no-target analogue of "no
-legal targets → else" (Yawgmoth Demon: "you may sacrifice an artifact. If you don't, tap this
-creature and it deals 2 damage to you" — with no artifact the tax just applies). Always-feasible
-bodies (gain life, draw, add a counter) always prompt.
+**`optional` = "you may [effect]" — a DSL shorthand, not a field on the model.** `build()` lowers it
+to `MayEffect(effect, otherwise = elseEffect)`, i.e. a `GatedEffect(Gate.MayDecide, …)` around the
+effect, and clears `elseEffect`. `TriggeredAbility` has **no** `optional` flag: it had one, the
+engine read it and constructed exactly this gate before the ability reached the stack, and two
+spellings of one fact meant a card could be written either way and a differential fold had to bridge
+them. Writing `MayEffect(...)` by hand is equivalent and is the only option outside the DSL
+(`TriggeredAbility.create` takes no `optional`). Setting `optional = true` on an effect that already
+owns a consent gate is rejected at build time rather than prompting twice.
+
+What that gets you, uniformly, for targeted and untargeted triggers alike:
+
+- **The yes/no is its own decision.** For a **no-target** trigger the unified gated executor asks it
+  at resolution and runs the gate's `otherwise` on "no" (or nothing when there is none, e.g. Song of
+  Stupefaction's "you may mill two cards"). For a **targeted** trigger `TriggerProcessor` asks it as
+  the ability goes on the stack and only then selects targets, so declining never costs you a target
+  choice first — and the trigger becomes eligible for batching and for a remembered auto-answer, both
+  of which key on the gate.
+- **Targets follow CR 603.3d.** A slot's minimum is the *requirement's*: "target creature" stays
+  mandatory and the ability is removed from the stack when nothing is legal. "Up to one target
+  creature" is an optional **requirement** (`TargetCreature(optional = true)`), which is a different
+  statement and now has a different spelling.
+- **`elseEffect` keeps its own meaning.** On a mandatory ability it is still the branch for target
+  selection producing nothing. A "you may … If you don't, …" ability carries that clause inside the
+  gate; the no-legal-target path reads it from there too, so Entrails Feaster ("you may exile a
+  creature card from a graveyard … if you don't, tap this") still taps with every graveyard empty.
+- **Feasibility is derived, never authored.** `TriggerProcessor` stamps it onto a no-target
+  `Gate.MayDecide` from the effect — a `SacrificeEffect` needs the controller to control a matching
+  permanent — so an impossible "may" skips the prompt and runs the else directly (Yawgmoth Demon:
+  "you may sacrifice an artifact. If you don't, tap this creature and it deals 2 damage to you" —
+  with no artifact the tax just applies). A gate that states its own `feasibility` keeps it.
+  Always-feasible bodies (gain life, draw, add a counter) always prompt.
 
 ### Zone change
 

@@ -72,9 +72,11 @@ class AphettoVultureTest : FunSpec({
         // Vulture should be dead
         driver.findPermanent(activePlayer, "Aphetto Vulture") shouldBe null
 
-        // Death trigger should fire - should have a target selection decision
+        // Death trigger should fire. "You may …" is a consent gate on the effect, so the yes/no
+        // comes first and target selection follows the acceptance.
         driver.isPaused shouldBe true
         driver.pendingDecision.shouldNotBeNull()
+        driver.submitYesNo(activePlayer, true)
         driver.pendingDecision.shouldBeInstanceOf<ChooseTargetsDecision>()
 
         val targetDecision = driver.pendingDecision as ChooseTargetsDecision
@@ -111,6 +113,7 @@ class AphettoVultureTest : FunSpec({
 
         // Death trigger should fire
         driver.isPaused shouldBe true
+        driver.submitYesNo(activePlayer, true)
         driver.pendingDecision.shouldBeInstanceOf<ChooseTargetsDecision>()
 
         val targetDecision = driver.pendingDecision as ChooseTargetsDecision
@@ -146,7 +149,8 @@ class AphettoVultureTest : FunSpec({
         // Resolve bolt
         driver.bothPass()
 
-        // Select the zombie as target
+        // Accept the "you may", then select the zombie as target
+        driver.submitYesNo(activePlayer, true)
         driver.pendingDecision.shouldBeInstanceOf<ChooseTargetsDecision>()
         driver.submitTargetSelection(activePlayer, listOf(zombieInGraveyard))
 
@@ -191,6 +195,7 @@ class AphettoVultureTest : FunSpec({
         // Vulture itself is a Zombie, so it's now in the graveyard and is a valid target.
         // The trigger should still fire because Aphetto Vulture itself is a Zombie in the graveyard.
         driver.isPaused shouldBe true
+        driver.submitYesNo(activePlayer, true)
         driver.pendingDecision.shouldBeInstanceOf<ChooseTargetsDecision>()
 
         val targetDecision = driver.pendingDecision as ChooseTargetsDecision
@@ -235,6 +240,7 @@ class AphettoVultureTest : FunSpec({
 
         // Trigger should fire (Aphetto Vulture itself is a Zombie in our graveyard)
         driver.isPaused shouldBe true
+        driver.submitYesNo(activePlayer, true)
         driver.pendingDecision.shouldBeInstanceOf<ChooseTargetsDecision>()
 
         val targetDecision = driver.pendingDecision as ChooseTargetsDecision

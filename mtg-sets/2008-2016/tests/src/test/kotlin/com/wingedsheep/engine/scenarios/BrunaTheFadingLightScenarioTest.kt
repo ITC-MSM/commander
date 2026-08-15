@@ -2,6 +2,7 @@ package com.wingedsheep.engine.scenarios
 
 import com.wingedsheep.engine.core.ChooseTargetsDecision
 import com.wingedsheep.engine.core.TargetsResponse
+import com.wingedsheep.engine.core.YesNoDecision
 import com.wingedsheep.engine.support.ScenarioTestBase
 import io.kotest.assertions.withClue
 import io.kotest.matchers.collections.shouldContain
@@ -35,6 +36,9 @@ class BrunaTheFadingLightScenarioTest : ScenarioTestBase() {
                 }
 
                 game.resolveStack()
+                // "you may return …" — the consent gate is answered before targeting.
+                game.getPendingDecision().shouldBeInstanceOf<YesNoDecision>()
+                game.answerYesNo(true)
                 val targetDecision = game.getPendingDecision().shouldBeInstanceOf<ChooseTargetsDecision>()
                 val human = game.findCardsInGraveyard(1, "Glory Seeker").single()
                 val bear = game.findCardsInGraveyard(1, "Grizzly Bears").single()

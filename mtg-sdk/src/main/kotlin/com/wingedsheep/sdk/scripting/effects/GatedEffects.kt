@@ -342,6 +342,30 @@ fun OptionalCostEffect(
 )
 
 /**
+ * Gates that are the printed **"you may"** — the controller's own consent to the effect, as opposed
+ * to a state test ([Gate.WhenCondition]) or a bookkeeping cap ([Gate.OnceEachTurn]).
+ *
+ * One list, in the SDK, because three layers ask the same question about the same value: the DSL
+ * refuses to lower `optional = true` onto an effect that already asks, the engine's
+ * `effectOncePerTurn` lowering has to place its budget gate *inside* this gate, and the trigger
+ * processor decides where a "you may" is answered by whether the effect owns one.
+ */
+val Gate.isConsentGate: Boolean
+    get() = this is Gate.MayDecide || this is Gate.MayPay || this is Gate.MayPayX
+
+/**
+ * Does this effect already ask its controller for consent before doing anything?
+ *
+ * Looks through a [Gate.OnceEachTurn] because the `effectOncePerTurn` lowering sandwiches a capped
+ * optional ability as `OnceEachTurn(spend = false) → May… → OnceEachTurn() → effect`; the consent
+ * gate is still there, one level down.
+ */
+fun Effect.ownsConsentGate(): Boolean {
+    val gated = this as? GatedEffect ?: return false
+    return gated.gate.isConsentGate || (gated.gate is Gate.OnceEachTurn && gated.then.ownsConsentGate())
+}
+
+/**
  * "You may [effect]." — the player may choose to perform or skip [effect].
  *
  * Backwards-compatible facade preserved for the cards that authored against the former

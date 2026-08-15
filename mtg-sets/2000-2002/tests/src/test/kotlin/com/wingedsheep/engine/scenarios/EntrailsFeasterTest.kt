@@ -1,6 +1,7 @@
 package com.wingedsheep.engine.scenarios
 
 import com.wingedsheep.engine.core.ChooseTargetsDecision
+import com.wingedsheep.engine.core.YesNoDecision
 import com.wingedsheep.engine.mechanics.layers.StateProjector
 import com.wingedsheep.engine.support.GameTestDriver
 import com.wingedsheep.engine.support.TestCards
@@ -60,14 +61,15 @@ class EntrailsFeasterTest : FunSpec({
         // Advance to the controller's upkeep
         advanceToPlayerUpkeep(driver, activePlayer)
 
-        // Trigger should fire - target selection decision
+        // The trigger targets, and its "you may … If you don't, …" is answered as it *resolves*
+        // (CR 603.3d picks targets on announcement; the consent gate's own executor asks later).
         driver.pendingDecision.shouldBeInstanceOf<ChooseTargetsDecision>()
-
-        // Choose the creature in graveyard as target
         driver.submitTargetSelection(activePlayer, listOf(creature))
 
-        // Resolve the trigger
+        // Resolve the trigger, accepting the may
         driver.bothPass()
+        driver.pendingDecision.shouldBeInstanceOf<YesNoDecision>()
+        driver.submitYesNo(activePlayer, true)
 
         // Creature should be exiled
         driver.state.getGraveyard(activePlayer).contains(creature) shouldBe false
@@ -92,18 +94,19 @@ class EntrailsFeasterTest : FunSpec({
         driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
 
         val feaster = driver.putCreatureOnBattlefield(activePlayer, "Entrails Feaster")
-        driver.putCardInGraveyard(activePlayer, "Grizzly Bears")
+        val creature = driver.putCardInGraveyard(activePlayer, "Grizzly Bears")
 
         advanceToPlayerUpkeep(driver, activePlayer)
 
-        // Trigger fires - target selection
+        // The target is mandatory ("a creature card" is modelled as a target), so it is chosen on
+        // announcement whether or not the exile happens; the decline is the may-question below.
         driver.pendingDecision.shouldBeInstanceOf<ChooseTargetsDecision>()
+        driver.submitTargetSelection(activePlayer, listOf(creature))
 
-        // Decline by selecting 0 targets
-        driver.submitTargetSelection(activePlayer, emptyList())
-
-        // Resolve the else effect (tap)
+        // Decline at resolution; the gate's `otherwise` — the printed "If you don't, …" — taps.
         driver.bothPass()
+        driver.pendingDecision.shouldBeInstanceOf<YesNoDecision>()
+        driver.submitYesNo(activePlayer, false)
 
         // Feaster should be tapped
         driver.isTapped(feaster) shouldBe true
@@ -170,6 +173,7 @@ class EntrailsFeasterTest : FunSpec({
         // Exile it
         driver.submitTargetSelection(activePlayer, listOf(oppCreature))
         driver.bothPass()
+        driver.submitYesNo(activePlayer, true)
 
         // Creature should be exiled from opponent's graveyard
         driver.state.getGraveyard(opponent).contains(oppCreature) shouldBe false

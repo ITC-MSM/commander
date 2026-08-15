@@ -7676,48 +7676,51 @@
                 "id": "ability_1",
                 "trigger": "AttackEvent",
                 "effect": {
-                    "type": "Composite",
-                    "effects": [
-                        {
-                            "type": "GatherCards",
-                            "source": {
-                                "type": "FromZone",
-                                "zone": "Hand"
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Hand"
+                                },
+                                "storeAs": "hand"
                             },
-                            "storeAs": "hand"
-                        },
-                        {
-                            "type": "SelectFromCollection",
-                            "from": "hand",
-                            "selection": {
-                                "type": "ChooseExactly",
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "hand",
+                                "selection": {
+                                    "type": "ChooseExactly",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "storeSelected": "discarded",
+                                "prompt": "Choose a card to discard"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "discarded",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Graveyard"
+                                },
+                                "moveType": "Discard"
+                            },
+                            {
+                                "type": "DrawCards",
                                 "count": {
-                                    "type": "Fixed",
-                                    "amount": 1
+                                    "type": "VariableReference",
+                                    "variableName": "discarded_count"
                                 }
-                            },
-                            "storeSelected": "discarded",
-                            "prompt": "Choose a card to discard"
-                        },
-                        {
-                            "type": "MoveCollection",
-                            "from": "discarded",
-                            "destination": {
-                                "type": "ToZone",
-                                "zone": "Graveyard"
-                            },
-                            "moveType": "Discard"
-                        },
-                        {
-                            "type": "DrawCards",
-                            "count": {
-                                "type": "VariableReference",
-                                "variableName": "discarded_count"
                             }
-                        }
-                    ]
-                },
-                "optional": true
+                        ]
+                    }
+                }
             }
         ],
         "staticAbilities": [
@@ -8678,10 +8681,13 @@
                 },
                 "binding": "ANY",
                 "effect": {
-                    "type": "AttachEquipment",
-                    "target": "TriggeringEntity"
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "AttachEquipment",
+                        "target": "TriggeringEntity"
+                    }
                 },
-                "optional": true,
                 "descriptionOverride": "Whenever a Ninja you control enters, you may attach this Equipment to it."
             }
         ],

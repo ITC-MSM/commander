@@ -1,6 +1,7 @@
 package com.wingedsheep.engine.scenarios
 
 import com.wingedsheep.engine.core.ChooseTargetsDecision
+import com.wingedsheep.engine.core.YesNoDecision
 import com.wingedsheep.engine.support.GameTestDriver
 import com.wingedsheep.engine.support.TestCards
 import com.wingedsheep.sdk.core.Color
@@ -63,10 +64,11 @@ class SerpentAssassinTest : FunSpec({
         // Serpent Assassin should be on the battlefield
         driver.findPermanent(activePlayer, "Serpent Assassin") shouldNotBe null
 
-        // The ETB trigger should have fired and we should have a target selection decision
-        // Since the ability has a targetRequirement, the engine should pause for target selection
+        // The ETB trigger fires and asks the "you may" first; accepting it leads to target selection.
         driver.isPaused shouldBe true
         driver.pendingDecision.shouldNotBeNull()
+        driver.pendingDecision.shouldBeInstanceOf<YesNoDecision>()
+        driver.submitYesNo(activePlayer, true)
         driver.pendingDecision.shouldBeInstanceOf<ChooseTargetsDecision>()
 
         val targetDecision = driver.pendingDecision as ChooseTargetsDecision
@@ -171,16 +173,16 @@ class SerpentAssassinTest : FunSpec({
         // Serpent Assassin should be on the battlefield
         driver.findPermanent(activePlayer, "Serpent Assassin") shouldNotBe null
 
-        // The ability fires and we can select a target or decline
-        // "you may destroy" means the player can choose not to use the ability
+        // "you may destroy" means the player can choose not to use the ability — and the decline is
+        // the yes/no, not an empty target selection. Once accepted the target is *mandatory*
+        // (CR 603.3d: "target nonblack creature", not "up to one"), which is what minTargets says.
         driver.isPaused shouldBe true
+        driver.pendingDecision.shouldBeInstanceOf<YesNoDecision>()
+        driver.submitYesNo(activePlayer, true)
+
         driver.pendingDecision.shouldBeInstanceOf<ChooseTargetsDecision>()
-
         val targetDecision = driver.pendingDecision as ChooseTargetsDecision
-        val minTargets = targetDecision.targetRequirements.firstOrNull()?.minTargets ?: 0
-
-        // For optional abilities, minTargets is 0 allowing the player to decline
-        minTargets shouldBe 0
+        targetDecision.targetRequirements.first().minTargets shouldBe 1
 
         // Submit the target selection (choose Grizzly Bears to use the ability)
         driver.submitTargetSelection(activePlayer, listOf(grizzlyBears))
@@ -195,7 +197,7 @@ class SerpentAssassinTest : FunSpec({
         driver.getGraveyardCardNames(opponent) shouldContain "Grizzly Bears"
     }
 
-    test("Serpent Assassin ETB trigger can be declined by selecting no targets") {
+    test("Serpent Assassin ETB trigger can be declined at the may-question") {
         val driver = createDriver()
         driver.initMirrorMatch(
             deck = Deck.of(
@@ -225,12 +227,12 @@ class SerpentAssassinTest : FunSpec({
         // Serpent Assassin should be on the battlefield
         driver.findPermanent(activePlayer, "Serpent Assassin") shouldNotBe null
 
-        // The ability fires - player chooses to decline by selecting 0 targets
+        // The ability fires and asks the "you may" before anything else is chosen — the player never
+        // has to pick a target they intend to spare.
         driver.isPaused shouldBe true
-        driver.pendingDecision.shouldBeInstanceOf<ChooseTargetsDecision>()
+        driver.pendingDecision.shouldBeInstanceOf<YesNoDecision>()
 
-        // Decline the ability by submitting empty target selection
-        val declineResult = driver.submitTargetSelection(activePlayer, emptyList())
+        val declineResult = driver.submitYesNo(activePlayer, false)
         declineResult.isSuccess shouldBe true
 
         // The game should continue without the ability on the stack

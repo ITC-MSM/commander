@@ -17,14 +17,17 @@
                     "to": "Battlefield"
                 },
                 "effect": {
-                    "type": "Fight",
-                    "target1": "Self",
-                    "target2": {
-                        "type": "BoundVariable",
-                        "name": "target creature you don't control"
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Fight",
+                        "target1": "Self",
+                        "target2": {
+                            "type": "BoundVariable",
+                            "name": "target creature you don't control"
+                        }
                     }
                 },
-                "optional": true,
                 "targetRequirement": {
                     "type": "TargetObject",
                     "filter": {

@@ -1,7 +1,6 @@
 package com.wingedsheep.engine.scenarios
 
-import com.wingedsheep.engine.core.ChooseTargetsDecision
-import com.wingedsheep.engine.core.TargetsResponse
+import com.wingedsheep.engine.core.YesNoDecision
 import com.wingedsheep.engine.support.ScenarioTestBase
 import com.wingedsheep.sdk.core.ManaCost
 import com.wingedsheep.sdk.core.Phase
@@ -10,6 +9,7 @@ import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.model.CardDefinition
 import io.kotest.assertions.withClue
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeInstanceOf
 
 /**
  * Scenario test for Ebon Dragon (POR #91) — {5}{B}{B} Creature — Dragon, 5/4.
@@ -17,14 +17,15 @@ import io.kotest.matchers.shouldBe
  * "Flying
  *  When this creature enters, you may have target opponent discard a card."
  *
- * The card is modelled as `optional = true` on the triggered ability plus a `TargetOpponent`
- * requirement, which makes it the regression case for the fail-open bug in
- * `TriggerProcessor.processTargetedTrigger`: with a single legal opponent the processor used to
- * auto-select that opponent and put the trigger straight on the stack, skipping the
- * target-selection decision whose `minTargets = 0` is what carries the "you may" decline. The
- * opponent discarded whether or not the controller wanted them to.
+ * A "you may" plus a `TargetOpponent` requirement, which makes it the regression case for a
+ * fail-open bug in `TriggerProcessor.processTargetedTrigger`: with a single legal opponent the
+ * processor auto-selected that opponent and put the trigger straight on the stack, and back when
+ * consent rode on the target-selection decision's `minTargets = 0` that skipped the decline
+ * entirely — the opponent discarded whether or not the controller wanted them to.
  *
- * Both branches are covered — accepting discards, declining does not.
+ * The auto-select is back and is fine, because consent is now a gate on the effect and is answered
+ * before targeting is reached at all. That is what these two tests pin: the may-question is raised,
+ * and each answer does what it says.
  */
 class EbonDragonScenarioTest : ScenarioTestBase() {
 
@@ -54,14 +55,11 @@ class EbonDragonScenarioTest : ScenarioTestBase() {
                 game.castSpell(1, "Ebon Dragon").error shouldBe null
                 game.resolveStack()
 
-                val targetDecision = game.state.pendingDecision as? ChooseTargetsDecision
-                    ?: error("expected a ChooseTargetsDecision for the may/target; got ${game.state.pendingDecision}")
-
-                withClue("the optional trigger must offer the decline (minTargets = 0)") {
-                    targetDecision.targetRequirements.single().minTargets shouldBe 0
+                withClue("the optional trigger must ask before doing anything") {
+                    game.state.pendingDecision.shouldBeInstanceOf<YesNoDecision>()
                 }
 
-                game.submitDecision(TargetsResponse(targetDecision.id, mapOf(0 to listOf(game.player2Id))))
+                game.answerYesNo(true)
                 game.resolveStack()
 
                 withClue("Player 2 should have discarded their only card") {
@@ -83,10 +81,8 @@ class EbonDragonScenarioTest : ScenarioTestBase() {
                 game.castSpell(1, "Ebon Dragon").error shouldBe null
                 game.resolveStack()
 
-                val targetDecision = game.state.pendingDecision as? ChooseTargetsDecision
-                    ?: error("expected a ChooseTargetsDecision for the may/target; got ${game.state.pendingDecision}")
-
-                game.submitDecision(TargetsResponse(targetDecision.id, mapOf(0 to emptyList())))
+                game.state.pendingDecision.shouldBeInstanceOf<YesNoDecision>()
+                game.answerYesNo(false)
                 game.resolveStack()
 
                 withClue("declining must not make Player 2 discard") {

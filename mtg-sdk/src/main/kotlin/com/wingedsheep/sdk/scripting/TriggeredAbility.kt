@@ -22,11 +22,28 @@ data class TriggeredAbility(
     val id: AbilityId,
     val trigger: EventPattern,
     val binding: TriggerBinding = TriggerBinding.SELF,
+    /**
+     * What the ability does.
+     *
+     * **A printed "you may" lives here, as a [com.wingedsheep.sdk.scripting.effects.Gate.MayDecide]
+     * around the effect** — there is no `optional` flag beside it. There used to be one, and it was
+     * the same fact written twice: the engine read it and *built* this gate before the ability
+     * reached the stack, so every game lowered one spelling into the other. The DSL still writes
+     * `optional = true` (see `TriggeredAbilityBuilder.optional`); that is a shorthand the builder
+     * lowers, not a second field on the model.
+     */
     val effect: Effect,
-    val optional: Boolean = false,
     val targetRequirement: TargetRequirement? = null,
     /** Additional target requirements for multi-target triggered abilities (e.g., exchange control). */
     val additionalTargetRequirements: List<TargetRequirement> = emptyList(),
+    /**
+     * The branch taken when target selection produces nothing — a declined "up to N" slot, or a
+     * mandatory slot with no legal target (CR 603.3d).
+     *
+     * Not the same position as a consent gate's `otherwise`, which is the branch taken when the
+     * controller *declines* at resolution. A "you may … If you don't, …" ability carries its else
+     * inside the gate; this field is the announcement-time one.
+     */
     val elseEffect: Effect? = null,
     /**
      * The zones this ability's trigger condition functions in (CR 113.6b — "an ability that states
@@ -112,7 +129,6 @@ data class TriggeredAbility(
                 append(", ")
                 append(triggerCondition.description)
             }
-            if (optional) append(", you may")
             append(", ")
             if (targetRequirement != null) {
                 append(targetRequirement.description)
@@ -158,7 +174,6 @@ data class TriggeredAbility(
             trigger: EventPattern,
             binding: TriggerBinding = TriggerBinding.SELF,
             effect: Effect,
-            optional: Boolean = false,
             targetRequirement: TargetRequirement? = null,
             additionalTargetRequirements: List<TargetRequirement> = emptyList(),
             elseEffect: Effect? = null,
@@ -175,7 +190,6 @@ data class TriggeredAbility(
                 trigger = trigger,
                 binding = binding,
                 effect = effect,
-                optional = optional,
                 targetRequirement = targetRequirement,
                 additionalTargetRequirements = additionalTargetRequirements,
                 elseEffect = elseEffect,
