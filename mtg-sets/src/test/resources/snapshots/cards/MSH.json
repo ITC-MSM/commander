@@ -11735,6 +11735,69 @@
     ]
 }
 
+// Red Guardian, Super-Soldier
+{
+    "name": "Red Guardian, Super-Soldier",
+    "manaCost": "{2}{W}",
+    "typeLine": "Legendary Creature — Human Soldier Villain",
+    "oracleText": "Flash\nWhen Red Guardian enters, destroy target creature an opponent controls that dealt damage this turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "FLASH"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    },
+                    "destination": "Graveyard",
+                    "byDestruction": true
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": {
+                            "cardPredicates": [
+                                "IsCreature"
+                            ],
+                            "statePredicates": [
+                                {
+                                    "type": "HasDealtDamage",
+                                    "thisTurnOnly": true
+                                }
+                            ],
+                            "controllerPredicate": "ControlledByOpponent"
+                        }
+                    },
+                    "id": "target"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "34",
+        "rarity": "UNCOMMON",
+        "artist": "Lee Woo-chul",
+        "flavorText": "\"You fight for your nation, Captain America. I fight for mine.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/0/c08f8163-319a-4a31-b15a-93974cacd5b7.jpg?1783902967"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Red Hulk
 {
     "name": "Red Hulk",

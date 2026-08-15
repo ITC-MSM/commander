@@ -427,10 +427,13 @@ object DamageUtils {
             }
         }
 
-        // Mark source as having dealt damage (lifetime tracking)
+        // Mark source as having dealt damage. Sits below every recipient branch (player /
+        // planeswalker / battle / creature, wither included), so one stamp covers all noncombat damage
+        // — the effect executors, fight, and the combat continuation resumer all reach here. The turn
+        // stamp is what `StatePredicate.HasDealtDamage(thisTurnOnly = true)` reads.
         if (sourceId != null && sourceId in newState.getBattlefield()) {
             newState = newState.updateEntity(sourceId) { container ->
-                container.with(HasDealtDamageComponent)
+                container.with(HasDealtDamageComponent(newState.turnNumber))
             }
         }
 

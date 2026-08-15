@@ -25,7 +25,7 @@ import com.wingedsheep.sdk.scripting.targets.TargetObject
  *
  * Modal ETB trigger. The "single graveyard" constraint on mode two is the cross-target
  * [TargetObject.sameOwner] flag (same modeling as Arashin Sunshield); the dealt-damage mode
- * gates its target with [TargetFilter.dealtDamageThisTurn].
+ * gates its target with [TargetFilter.wasDealtDamageThisTurn].
  */
 val QutrubForayer = card("Qutrub Forayer") {
     manaCost = "{2}{B}"
@@ -44,7 +44,7 @@ val QutrubForayer = card("Qutrub Forayer") {
             Mode(
                 effect = Effects.Destroy(EffectTarget.ContextTarget(0)),
                 targetRequirements = listOf(
-                    TargetCreature(filter = TargetFilter.Creature.dealtDamageThisTurn())
+                    TargetCreature(filter = TargetFilter.Creature.wasDealtDamageThisTurn())
                 ),
                 description = "Destroy target creature that was dealt damage this turn"
             ),

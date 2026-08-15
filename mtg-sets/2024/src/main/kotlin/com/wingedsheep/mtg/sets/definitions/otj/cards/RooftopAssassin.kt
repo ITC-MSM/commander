@@ -38,7 +38,7 @@ val RooftopAssassin = card("Rooftop Assassin") {
         val t = target(
             "target",
             TargetCreature(
-                filter = TargetFilter.Creature.dealtDamageThisTurn().opponentControls()
+                filter = TargetFilter.Creature.wasDealtDamageThisTurn().opponentControls()
             )
         )
         effect = Effects.Destroy(t)

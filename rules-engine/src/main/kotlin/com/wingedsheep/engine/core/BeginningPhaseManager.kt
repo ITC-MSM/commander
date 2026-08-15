@@ -10,6 +10,7 @@ import com.wingedsheep.engine.state.components.battlefield.CountersComponent
 import com.wingedsheep.engine.state.components.battlefield.SagaComponent
 import com.wingedsheep.engine.state.components.battlefield.EnteredThisTurnComponent
 import com.wingedsheep.engine.state.components.battlefield.ExertedComponent
+import com.wingedsheep.engine.state.components.battlefield.HasDealtDamageComponent
 import com.wingedsheep.engine.state.components.battlefield.PhasedOutComponent
 import com.wingedsheep.engine.state.components.battlefield.SummoningSicknessComponent
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
@@ -470,6 +471,16 @@ class BeginningPhaseManager(
         // every permanent by the time the untap step runs on a normal turn.
         is StatePredicate.ReceivedCounterThisTurn ->
             receivedCounterThisTurn(container, predicate)
+        // Damage history is likewise plain per-entity state, and both windows are answerable here
+        // without the turn number. Every caller of this helper runs during an untap step — the first
+        // step of the first phase of a turn (CR 500.1 / 501.1), in which no player receives priority
+        // (CR 500.3) — and `turnNumber` has already been incremented by the time it runs, so nothing
+        // can have dealt damage *this* turn yet: the per-turn window is exactly `false` for every
+        // permanent. Falling into the "no constraint" group below would answer `true` instead, which
+        // for an "each creature that dealt damage this turn" untap filter is the maximally wrong
+        // answer (match everything rather than nothing). The lifetime window is just the marker.
+        is StatePredicate.HasDealtDamage ->
+            if (predicate.thisTurnOnly) false else container.has<HasDealtDamageComponent>()
         is StatePredicate.HasCounter -> {
             val countersComponent = container.get<CountersComponent>()
             if (countersComponent == null) {
@@ -511,7 +522,6 @@ class BeginningPhaseManager(
         StatePredicate.CreatedBySource,
         StatePredicate.EnteredThisTurn,
         StatePredicate.WasDealtDamageThisTurn,
-        StatePredicate.HasDealtDamage,
         StatePredicate.HasDealtCombatDamageToPlayer,
         StatePredicate.DealtCombatDamageToSourceControllerThisTurn,
         StatePredicate.ControllerDealtCombatDamageBySourceThisTurn,

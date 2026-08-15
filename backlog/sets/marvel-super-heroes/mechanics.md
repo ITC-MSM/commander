@@ -549,7 +549,7 @@ and nothing returns each card to the zone it came from. Needed: a `ReturnLinkedE
    plus its branch in the attack-legality check. (The "or block creatures you control" half is already
    `CantBeBlockedBy`.)
 
-### Per-turn "dealt damage this turn" predicate — **Red Guardian, Super-Soldier** [34]
+### Per-turn "dealt damage this turn" predicate — **Red Guardian, Super-Soldier** [34] — SHIPPED ✅
 "Destroy target creature an opponent controls **that dealt damage this turn**" — a per-turn record of
 damage *inflicted*. Three near-misses, none usable:
 `StatePredicate.WasDealtDamageThisTurn` is the **passive** direction (damage received);
@@ -561,10 +561,17 @@ battlefield lifetime, never cleared at end of turn
 dealt damage in any earlier turn; and the remaining damage-history predicates
 (`HasDealtCombatDamageToPlayer`, `DealtCombatDamageToSourceControllerThisTurn`,
 `ControllerDealtCombatDamageBySourceThisTurn`) are combat- and recipient-specific, missing noncombat
-damage and damage to creatures. Needed: `StatePredicate.DealtDamageThisTurn` plus a per-turn
-`DealtDamageThisTurnComponent` stamped in `DamageUtils` / `CombatDamageManager` alongside
-`HasDealtDamageComponent`, cleared in `CleanupPhaseManager`, and wired into `PredicateEvaluator`,
-`AffectsFilterResolver`, `TriggerMatcher`, `BeginningPhaseManager` and `Serialization`.
+damage and damage to creatures.
+
+Shipped **without** the parallel `DealtDamageThisTurnComponent` this note proposed. Instead
+`StatePredicate.HasDealtDamage` grew a `thisTurnOnly` window parameter, and `HasDealtDamageComponent`
+grew a `lastDealtDamageTurn` stamp: presence answers the lifetime window, the stamp against
+`state.turnNumber` answers the per-turn one. One marker means no damage path can record one window
+without recording the other, and no `CleanupPhaseManager` wiring is needed — the stamp expires by
+itself. Filter surface: `.hasDealtDamageThisTurn()` (active) alongside the renamed
+`.wasDealtDamageThisTurn()` (passive), which used to own the misleading shorter name
+`.dealtDamageThisTurn()` — retired rather than reused, so a stale caller fails to compile instead of
+silently flipping voice.
 
 ### "Do this only once each turn" (CR 603.2h) — not the trigger cap — SHIPPED ✅ (2 cards unblocked)
 > Whenever a creature you control is dealt damage, you may have The Sensational She-Hulk deal that

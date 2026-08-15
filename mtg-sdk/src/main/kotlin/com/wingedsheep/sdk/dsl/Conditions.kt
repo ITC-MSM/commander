@@ -1089,10 +1089,7 @@ object Conditions {
 
     /** If this creature has dealt damage at least once since entering the battlefield. */
     val SourceHasDealtDamage: ConditionInterface =
-        SourceMatches(
-            com.wingedsheep.sdk.scripting.GameObjectFilter.Any
-                .copy(statePredicates = listOf(StatePredicate.HasDealtDamage))
-        )
+        SourceMatches(com.wingedsheep.sdk.scripting.GameObjectFilter.Any.hasDealtDamage())
 
     /** If this creature has dealt combat damage to a player (Saboteur-style payoffs). */
     val SourceHasDealtCombatDamageToPlayer: ConditionInterface =

@@ -4,6 +4,7 @@ import com.wingedsheep.engine.state.components.battlefield.chosenColor
 import com.wingedsheep.engine.state.components.battlefield.chosenCreatureType
 import com.wingedsheep.engine.state.components.battlefield.CastChoicesComponent
 import com.wingedsheep.engine.state.components.battlefield.ChoiceValue
+import com.wingedsheep.engine.handlers.predicates.hasDealtDamage
 import com.wingedsheep.engine.handlers.predicates.receivedCounterThisTurn
 import com.wingedsheep.engine.state.ComponentContainer
 import com.wingedsheep.engine.state.GameState
@@ -11,7 +12,6 @@ import com.wingedsheep.engine.state.components.battlefield.AttachmentsComponent
 import com.wingedsheep.engine.state.components.battlefield.CountersComponent
 import com.wingedsheep.engine.state.components.battlefield.EnteredThisTurnComponent
 import com.wingedsheep.engine.state.components.battlefield.HasDealtCombatDamageToPlayerComponent
-import com.wingedsheep.engine.state.components.battlefield.HasDealtDamageComponent
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.state.components.battlefield.WasDealtDamageThisTurnComponent
 import com.wingedsheep.engine.state.components.combat.AttackedThisCombatComponent
@@ -476,7 +476,11 @@ internal class AffectsFilterResolver {
         is StatePredicate.ReceivedCounterThisTurn ->
             receivedCounterThisTurn(container, predicate)
         StatePredicate.WasDealtDamageThisTurn -> container.has<WasDealtDamageThisTurnComponent>()
-        StatePredicate.HasDealtDamage -> container.has<HasDealtDamageComponent>()
+        // Damage history — plain per-entity state with no source-relative half, so a group static
+        // gated on "each creature that dealt damage this turn" resolves during projection and gives
+        // the identical answer to PredicateEvaluator's.
+        is StatePredicate.HasDealtDamage ->
+            hasDealtDamage(container, state.turnNumber, predicate)
         StatePredicate.HasDealtCombatDamageToPlayer -> container.has<HasDealtCombatDamageToPlayerComponent>()
         StatePredicate.AttackedThisTurn -> {
             val controllerId = container.get<ControllerComponent>()?.playerId

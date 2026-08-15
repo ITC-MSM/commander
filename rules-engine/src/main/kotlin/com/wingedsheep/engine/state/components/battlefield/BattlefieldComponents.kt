@@ -1185,12 +1185,23 @@ data class CraftedFromExiledComponent(
 data object WasDealtDamageThisTurnComponent : Component
 
 /**
- * Marks a permanent as having dealt damage since entering the battlefield.
- * NOT cleared at end of turn — persists for the permanent's lifetime on the battlefield.
- * Used for StatePredicate.HasDealtDamage and SourceHasDealtDamage condition.
+ * Marks a permanent as having dealt damage, and records the turn it last did so.
+ *
+ * One marker answers both windows of `StatePredicate.HasDealtDamage`: its presence means "has dealt
+ * damage since entering the battlefield" (`thisTurnOnly = false`, the `SourceHasDealtDamage`
+ * condition), and [lastDealtDamageTurn] `== state.turnNumber` means "dealt damage this turn"
+ * (`thisTurnOnly = true`). Keeping them on one component is what makes the per-turn window safe: a
+ * damage path physically cannot record the lifetime fact without recording the turn as well.
+ *
+ * NOT cleared at end of turn, and deliberately so — the per-turn window expires on its own once
+ * [GameState.turnNumber] moves past the stamp, with no cleanup wiring to forget. It IS stripped when
+ * the permanent changes zones (`ZoneMovementUtils`), because what comes back is a new object with no
+ * memory of dealing damage (CR 400.7).
+ *
+ * [lastDealtDamageTurn] has no default: every stamp site must name the turn it is recording.
  */
 @Serializable
-data object HasDealtDamageComponent : Component
+data class HasDealtDamageComponent(val lastDealtDamageTurn: Int) : Component
 
 /**
  * Marks a permanent as having dealt combat damage to a player since entering the battlefield.

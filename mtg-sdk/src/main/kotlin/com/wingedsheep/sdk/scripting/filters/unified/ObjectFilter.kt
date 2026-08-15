@@ -768,7 +768,7 @@ data class GameObjectFilter(
 
     /**
      * Must have had one or more counters put on it this turn — the counter-history counterpart of
-     * [dealtDamageThisTurn]. Recorded at placement time, so it survives the counters being removed
+     * [wasDealtDamageThisTurn]. Recorded at placement time, so it survives the counters being removed
      * again; cleared at end-of-turn cleanup.
      *
      * [counterType] scopes it to one kind ("one or more **+1/+1** counters") and
@@ -785,12 +785,37 @@ data class GameObjectFilter(
     )
 
     /**
-     * Must have been dealt damage this turn (marked-damage *history*, not current marked damage).
-     * Survives damage removal / leaving combat; cleared at end-of-turn cleanup. Used by
-     * "...that was dealt damage this turn" (Rooftop Assassin, Unsparing Boltcaster).
+     * Must have been dealt damage this turn — the **passive** voice (damage *received*), marked-damage
+     * *history* rather than current marked damage. Survives damage removal / leaving combat; cleared at
+     * end-of-turn cleanup. Used by "...that was dealt damage this turn" (Rooftop Assassin, Unsparing
+     * Boltcaster). The active-voice counterpart is [hasDealtDamageThisTurn].
      */
-    fun dealtDamageThisTurn() = copy(
+    fun wasDealtDamageThisTurn() = copy(
         statePredicates = statePredicates + StatePredicate.WasDealtDamageThisTurn
+    )
+
+    /**
+     * Must have **dealt** damage this turn — the active voice, and the mirror of
+     * [wasDealtDamageThisTurn]. Combat and noncombat damage both count, to any recipient. Used by
+     * "target creature an opponent controls that dealt damage this turn" (Red Guardian,
+     * Super-Soldier).
+     *
+     * Named `hasDealtDamageThisTurn`, not the shorter `dealtDamageThisTurn`, deliberately: the short
+     * name used to mean the *passive* predicate above. Retiring it outright turns any un-rebased
+     * caller into a compile error at the exact line instead of a silent flip to the opposite set of
+     * permanents. It also pairs with [hasDealtDamage], the same predicate's lifetime window.
+     */
+    fun hasDealtDamageThisTurn() = copy(
+        statePredicates = statePredicates + StatePredicate.HasDealtDamage(thisTurnOnly = true)
+    )
+
+    /**
+     * Must have dealt damage at least once since entering the battlefield — [hasDealtDamageThisTurn]
+     * widened to the permanent's whole lifetime as the current object. `Conditions.SourceHasDealtDamage`
+     * is this predicate under `SourceMatches` (Karakyk Guardian).
+     */
+    fun hasDealtDamage() = copy(
+        statePredicates = statePredicates + StatePredicate.HasDealtDamage()
     )
 
     /**

@@ -3470,7 +3470,7 @@ This is the player-arm prerequisite for the planned composable mixed `TargetUnio
   (`TargetFilter.Creature.withoutCounters()`).
 - `.receivedCounterThisTurn(counterType = null, placedByController = false)` — one or more counters were
   **put on** the permanent this turn; backed by `StatePredicate.ReceivedCounterThisTurn`. The
-  counter-history counterpart of `.dealtDamageThisTurn()`: the facts are recorded at *placement* time on
+  counter-history counterpart of `.wasDealtDamageThisTurn()`: the facts are recorded at *placement* time on
   the per-permanent `ReceivedCountersThisTurnComponent`, so the predicate keeps matching after the
   counters have been removed again — "what you put on it this turn", not "what is on it now" (use
   `.withCounter(type)` for the latter). Cleared at end-of-turn cleanup. Both parameters default to the
@@ -3484,10 +3484,27 @@ This is the player-arm prerequisite for the planned composable mixed `TargetUnio
   Counters.PLUS_ONE_PLUS_ONE, placedByController = true) }` for "each creature you control that you've put
   one or more +1/+1 counters on this turn has hexproof". The source-scoped view of the same predicate is
   `Conditions.SourceReceivedCounterThisTurn(...)`, which is just `SourceMatches` over it.
-- `.dealtDamageThisTurn()` — was dealt damage this turn (marked-damage *history*, not current marked
-  damage); backed by `StatePredicate.WasDealtDamageThisTurn`. Survives damage removal / leaving combat;
-  cleared at end-of-turn cleanup. For "...that was dealt damage this turn" (Rooftop Assassin, Unsparing
-  Boltcaster). Also available on `TargetFilter` (`TargetFilter.Creature.dealtDamageThisTurn()`).
+- `.wasDealtDamageThisTurn()` — **passive**: was dealt damage this turn (marked-damage *history*, not
+  current marked damage); backed by `StatePredicate.WasDealtDamageThisTurn`. Survives damage removal /
+  leaving combat; cleared at end-of-turn cleanup. For "...that **was** dealt damage this turn" (Rooftop
+  Assassin, Unsparing Boltcaster). Also on `TargetFilter`
+  (`TargetFilter.Creature.wasDealtDamageThisTurn()`). *Do not confuse with
+  `.hasDealtDamageThisTurn()` below — the two mean opposite things.* The bare `.dealtDamageThisTurn()`
+  that used to name this predicate is **retired**, so a stale caller fails to compile rather than
+  silently flipping voice.
+- `.hasDealtDamageThisTurn()` / `.hasDealtDamage()` — **active**: the permanent *dealt* damage, in the
+  current turn or at any point since it entered the battlefield. Both are
+  `StatePredicate.HasDealtDamage(thisTurnOnly)`, one predicate with a window parameter rather than two
+  types: it reads the per-permanent `HasDealtDamageComponent`, whose presence answers the lifetime
+  window and whose recorded turn number answers the per-turn one. Nothing is cleared at end of turn —
+  the stamp just stops matching — and every damage-dealing path records both windows in one write, so
+  neither can silently drift from the other. Combat and noncombat damage both count, to any recipient
+  (player, creature, planeswalker, battle); "dealt **combat** damage" specifically has its own
+  recipient-scoped predicates below. Both windows reset when the permanent changes zones (CR 400.7).
+  `.hasDealtDamageThisTurn()` is also on `TargetFilter` — "destroy target creature an opponent controls
+  that dealt damage this turn" (Red Guardian, Super-Soldier) is
+  `TargetFilter.Creature.hasDealtDamageThisTurn().opponentControls()`. The source-scoped view of the
+  lifetime window is `Conditions.SourceHasDealtDamage` (Karakyk Guardian).
 - `.dealtCombatDamageToSourceControllerThisTurn()` — source-relative: creature dealt combat damage
   *this turn* to the player who controls the effect's source; backed by
   `StatePredicate.DealtCombatDamageToSourceControllerThisTurn`. Resolves `context.sourceId`'s
@@ -7894,6 +7911,9 @@ that works in both resolution and static-ability (projection) contexts.
 - `SourceAttackedOrBlockedThisCombat` — `Any(SourceAttackedThisCombat, SourceBlockedThisCombat)`.
   Used as the intervening-if on Clockwork Avian's `EachEndOfCombat` counter-shed trigger.
 - `SourceHasDealtDamage` — source has dealt damage since entering the battlefield.
+  `SourceMatches(GameObjectFilter.Any.hasDealtDamage())`, i.e. the source-scoped view of
+  `StatePredicate.HasDealtDamage()`. For the per-turn window of the same predicate, put
+  `.hasDealtDamageThisTurn()` on the filter directly.
 - `SourceHasDealtCombatDamageToPlayer` — saboteur-style payoff gate.
 - `SourceIsModified` — has counters, attached Equipment, or controller-owned Aura
   attached (CR 700.4). Kept as a dedicated condition because the controller-of-Aura

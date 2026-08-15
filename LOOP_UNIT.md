@@ -1,103 +1,118 @@
-# u10 — Equip worthy (Mjölnir, Hammer of Thor)
+# loop-msh-u32 — Red Guardian, Super-Soldier + active per-turn "dealt damage" predicate
 
-Branch `loop-msh-u10`, off `origin/main`. PR body: `build/pr/loop-msh-u10-body.md`.
+Base branch: **`loop-msh-u23`** (not `main`). Stacked. Since u23 was itself rebased onto
+`origin/main`, `main` *is* now an ancestor, but the u23 commits below this branch are not upstream
+yet — this still waits for u23 to land before it can be opened on its own.
 
-## Cards
+## The primitive
 
-- **Mjölnir, Hammer of Thor** (MSH #146) — Legendary Equipment. ETB 4 damage to up to one target
-  creature; `DoubleDamage(source = SourceFilter.EquippedCreature)`; `equipAbility(quality = "worthy")`;
-  from-hand `Costs.DiscardSelf` ability sweeping 2 damage to each creature via
-  `Effects.ForEachInGroup`. Composes existing primitives except for the two SDK additions below.
+- **`StatePredicate.HasDealtDamage` grew a window parameter** — `data object` → `data class
+  HasDealtDamage(val thisTurnOnly: Boolean = false)`
+  (`mtg-sdk/.../scripting/predicates/StatePredicate.kt`). Default `false` keeps the existing
+  lifetime reading; `true` is the new "dealt damage **this turn**".
+- **`HasDealtDamageComponent` grew a turn stamp** — `data object` → `data class
+  HasDealtDamageComponent(val lastDealtDamageTurn: Int)`
+  (`rules-engine/.../state/components/battlefield/BattlefieldComponents.kt`). Presence answers the
+  lifetime window; `lastDealtDamageTurn == state.turnNumber` answers the per-turn one. No default on
+  the parameter, so no stamp site can forget to record the turn.
+- **Why one marker, not a parallel `DealtDamageThisTurnComponent`** (which is what the MSH triage note
+  proposed): a damage path physically cannot record one window without recording the other, which is
+  the u23 failure mode. It also needs no `CleanupPhaseManager` wiring — a stale stamp stops matching
+  on its own once the turn number moves.
+- **Shared read**: `rules-engine/.../handlers/predicates/HasDealtDamagePredicate.kt`, mirroring
+  u23's `ReceivedCounterThisTurnPredicate.kt`.
+- **Dispatch sites wired**: `PredicateEvaluator`, `AffectsFilterResolver`, `TriggerMatcher` and
+  `BeginningPhaseManager` — all four answer exactly, none falls open. The untap helper takes only a
+  container, but it doesn't need `state.turnNumber`: every caller runs during an untap step, the first
+  step of the turn (CR 500.1 / 501.1) with no priority (CR 500.3) and with `turnNumber` already
+  incremented, so the per-turn window is `false` for every permanent and the lifetime window is the
+  marker's presence.
+- **Naming-trap fix (deliberate, in scope)**: `ObjectFilter`/`TargetFilter.dealtDamageThisTurn()` used
+  to mean the **passive** `WasDealtDamageThisTurn`. It is renamed `.wasDealtDamageThisTurn()`, and the
+  active predicate takes the *new* name `.hasDealtDamageThisTurn()` — the short name is retired, not
+  reused, so an un-rebased branch still saying `.dealtDamageThisTurn()` fails to compile at the call
+  site instead of silently flipping to the opposite set of permanents. All 5 existing call sites
+  updated (Crushing Pain, Qutrub Forayer, Rooftop Assassin, Stingblade Assassin), plus the mtgish
+  emitter and its test.
+- **Not a bug fix after all**: `CombatDamageManager.applyDamageReflection` (Harsh Justice) now stamps
+  `HasDealtDamageComponent` too, but tracing the control flow shows its only caller,
+  `applyDamageToPlayer`, already stamped the same creature under the same guard on the way in — so the
+  line changes no current behaviour. Kept as a function-local invariant ("every path that emits a
+  `DamageDealtEvent` stamps its source"), with the comment saying so plainly.
 
-## SDK
+## Damage paths verified (each stamps the marker with the current turn)
 
-1. `equipAbility(cost, genericCostReduction, quality, targetFilter)` — CR 702.6c "Equip [quality]".
-   `quality` is wording (becomes the target requirement's id/label); `targetFilter` is the rules half
-   and must stay controller-scoped. No new target machinery — it is an ordinary `TargetFilter` on an
-   ordinary `TargetRequirement`.
-2. `SourceFilter.EquippedCreature` — the brief's "one-line mirror", verified: `RecipientFilter` already
-   had the pair in a shared branch, `SourceFilter` had only `EnchantedCreature`.
-   `DamageUtils.damageSourceMatches` now handles both in one branch. That matcher is shared by
-   prevention/doubling/modification and by combat + noncombat, so nothing else needed touching.
+| Path | Where | Covered by |
+|---|---|---|
+| All noncombat damage (effect executors, fight, divided, per-entity, exile-from-top, combat continuation resumer) | `DamageUtils.dealDamageToTarget`, function-level below every recipient branch | test + code read |
+| Combat damage to a player | `CombatDamageManager.applyDamageToPlayer` | test |
+| Combat damage to a creature (incl. wither) | `CombatDamageManager.dealFinalDamage` creature branch | test |
+| Redirected combat damage to a player | `dealFinalDamage` player branch | code read only |
+| Combat damage to planeswalker / battle | `removeCountersForDamage` | test |
+| Combat damage reflection (Harsh Justice) | `applyDamageReflection` (redundant with the caller's stamp) | test |
 
-## Convergence (deliberate, beyond the one card)
+Enumeration method: every `DamageDealtEvent(` emission site and every `with(DamageComponent(` site in
+non-test source. There are exactly two damage implementations — `DamageUtils.dealDamageToTarget` and
+`CombatDamageManager` — so the set is closed.
 
-Five printed "Equip [quality]" cards were hand-rolling the shape as bare `activatedAbility { }` blocks
-**without `isEquipAbility`**: Blackblade Reforged, Bilbo's Ring, Dúnedain Blade, Ghostfire Blade,
-Pirate Hat. Converged onto the facade. This fixes a real pre-existing bug (Forge Anew / Eowyn /
-instant-speed-equip all skipped those abilities) and is the reason five set snapshots move, not one.
-Non-mana equip costs (Dissection Tools et al.) stay hand-rolled — the facade parses a mana cost only,
-and those five already set the flag.
+## The card
+
+`Red Guardian, Super-Soldier` (MSH #34, {2}{W} 2/2 Legendary Human Soldier Villain, Flash). ETB
+destroys target creature an opponent controls that dealt damage this turn. Uses
+`TargetFilter.Creature.hasDealtDamageThisTurn().opponentControls()` + `Effects.Destroy(t)` — no
+card-specific engine code. MSH is the only printing, so canonical placement is here.
 
 ## Tests
 
-- `MjolnirHammerOfThorScenarioTest` (rules-engine) — one file, one card.
-- `EquipQualityVariantTest` (mtg-sets) — mechanic-level, catalog-wide invariants.
+- `rules-engine/.../predicates/HasDealtDamagePredicateTest.kt` — the primitive: window logic against
+  the shared helper (no marker / this-turn marker / earlier-turn marker / passive marker), plus the
+  recording paths played out in real games (combat→player, combat→creature, combat→planeswalker
+  loyalty, a Harsh Justice reflection, activated-ability noncombat, spell damage stamps nobody, turn
+  boundary, zone change clears).
+- `rules-engine/.../scenarios/RedGuardianSuperSoldierScenarioTest.kt` — the card: happy path, the
+  passive-vs-active discrimination (Shocked creature is *not* a target), the per-turn-vs-lifetime
+  discrimination (dealt damage last turn is *not* a target), the controller half, and noncombat damage.
+  Each negative case asserts the *decision*: the stack drained with no target choice ever offered
+  (CR 603.3d). Survival alone can't fail — `resolveStack()` halts on a pending decision, so a
+  wrongly-matching predicate would leave the victim alive with the trigger still waiting.
+- `AffectsFilterResolverStatePredicateTest` — projection dispatch, both windows.
+- `TargetRecoveryTest` — emitter renders both voices.
 
 ## Gate
 
-Per-module (shared box, ~2.5 GiB free — a full `just test` has been OOM-killing this week):
+> **Invalidated by a rebase.** The result below was measured against the *old*, pre-squash
+> `loop-msh-u23` tip (`3632d6b2ce`), on a much older `origin/main`. This branch has since been
+> replayed onto the squashed u23 (`8e3c8bdfd5`), which carries ~15.8k changed files from upstream
+> — including the per-era `mtg-sets/` split that moved this card to `mtg-sets/2026/`. **Nothing
+> below has been re-run on the new base.** Re-gate before reporting green.
 
-- `scripts/gradle-locked :mtg-sdk:test :mtg-sets:test :rules-engine:test` — **11095 PASSED, 0 FAILED**,
-  BUILD SUCCESSFUL, exit 0. Log: `build/pr/loop-msh-u10-gate.log`.
-- `scripts/gradle-locked :ai:test :mtgish-tooling:test :game-server:test` — **1046 PASSED, 0 FAILED**,
-  BUILD SUCCESSFUL, exit 0. Log: `build/pr/loop-msh-u10-gate2.log`.
-- `just rebless-cards` — BUILD SUCCESSFUL. **Five snapshots move, not one**: MSH (the new card) plus
-  DOM/KTK/LCI/LTR (the convergence: `descriptionOverride` → `isEquipAbility`, Bilbo's Ring's label, and
-  a new `equipCost "{7}"` on Blackblade Reforged which previously had none). No other card moved.
-- `just check-card-printing "Mjölnir, Hammer of Thor"` — ok, canonical in the earliest real printing.
-- `just fix-backlog` — headers in sync (239 → 240 hand-bumped).
+`just test` — **passed** (`BUILD SUCCESSFUL`, zero failures). `:rules-engine:test` ran in full on the
+final pass; other modules were `UP-TO-DATE` from earlier green runs. `just rebless-cards` moved only
+`MSH.json` (+63/-0, the new card only). `just coverage-fixtures --rebless` moved two golden lines, both
+the passive rename. `just check-card-printing` clean. `just fix-backlog` → 255 / 276.
 
-Not done: no web-client playthrough, no e2e, no UX pass from either seat.
+Took three gate runs: a stale Kotlin daemon holding this worktree's cache, then the expected MSH
+snapshot golden, then four failures in my own new tests — all harness misuse (blocker step not
+advanced, a cross-turn test decking a player on an empty library, priority not handed back after the
+opponent acted), none an engine bug.
 
-## Things I'm unsure about — reviewer, look here
+## Things I'm unsure about / did not verify
 
-- ~~**Menu text change on five existing cards.**~~ **Resolved in the review round.** Rather than
-  choose between the printed wording and cost-reduction awareness, `ActivatedAbility.describeWithCost`
-  now renders any `isEquipAbility` ability as its printed line — "Equip {3}" (CR 702.6a),
-  "Equip Human {1}" (CR 702.6c), "Equip—Pay 3 life" for a non-mana cost — against the *effective*
-  cost. That restores the printed text on all five and gets the discount-aware label too, which a
-  static `descriptionOverride` could never do. The new `equipQuality` field carries the wording. Note
-  this changes the menu text for *every* Equipment in the catalog, not just the converged ones.
-- **Scope.** The convergence is wider than "the card it unblocks". I did it because the run's standing
-  lesson is "don't add a parallel rail where one can be shared" and the parallel rail already existed
-  with a latent bug. If the reviewer disagrees, the card + SDK halves stand alone without it.
-- **`equipCost` metadata on a restricted equip.** `equipAbility` sets `equipCost` unconditionally, so a
-  card with both a restricted and a plain equip ends up with the last one's cost (unchanged from
-  before for all five converged cards, since the plain one is declared last in each). Mjölnir has only
-  the restricted equip, so its `equipCost` is `{1}` — which is what the linter's
-  "nothing can ever be attached" check wants, but it does mean `equipCost` is not always the
-  unrestricted cost.
-- **Three unconverged `SourceFilter` matchers** in `DamageUtils` (`DamageBonusComponent`, max-damage
-  cap, `ReplaceDamageWithMill`) still hand-roll `Any`/`Matching`-only subsets. Pre-existing drift from
-  the shared matcher the doc comment at `DamageUtils` ~L1390 describes; left alone as out of scope, but
-  it is the kind of thing that bites later.
-- I did **not** add a "worthy" keyword/reminder-text entry that the brief suggested. Scryfall says
-  exactly one printed card uses the term, so it would be a one-card SDK concept; the card's own
-  reminder text carries the definition.
-
-## Review round 2 — fixes applied
-
-- **`damageDoublersAffectingSource` was O(battlefield) per card.** It ran from
-  `ClientStateTransformer.buildCardActiveEffects` for every card on every state push, making the view
-  path quadratic. Now driven off the maintained `AttachmentsComponent` reverse index (the same one
-  `TriggerAbilityResolver` and `DestroyAllEquipmentOnTargetExecutor` use), with an early return for
-  the un-attached common case.
-- **Two more cards were still hand-rolling "Equip [quality]"** — Thinking Cap ("Equip Detective {1}",
-  MKM) and Wizard's Staff ("Equip Wizard {1}", HOB). Both *did* set `isEquipAbility`, so they weren't
-  invisible to the engine like the original five, but both froze their cost in a
-  `descriptionOverride`. Converged onto the facade. `EquipQualityVariantTest` found them — it is now
-  three catalog-wide *properties* rather than a hardcoded card list, so it needs no edit per new
-  Equipment and keys "is this restricted?" off the target filter rather than the prompt label.
-- **The Irencrag's redundant `descriptionOverride = "Equip {3}"`** dropped — the renderer produces
-  exactly that, and now does so against the discounted cost.
-- **Playtest board fixed.** Frodo Baggins ({G}{W} Legendary Halfling Scout) is *worthy*, so it was a
-  second legal equip target and covered no failing clause; swapped for Hercules, Prince of Power
-  (mono-green legendary Hero). Thor is now the only worthy target and each other creature fails
-  exactly one clause. (The `a516b0ec2d` commit message also names "Skyward Spider", which was never in
-  the file — read the file, not that message.)
-- **Doc-accuracy.** `isAttachmentScopedSource`'s KDoc no longer claims a type-level invariant that
-  `SourceFilter.Self` would break; it states the catalog fact instead. The Aura half
-  (`SourceFilter.EnchantedCreature` + `DoubleDamage`) is documented as unreachable from the current
-  catalog — shared-matcher generality, not behaviour under test.
-- **Client:** `double-damage` gained the tooltip border colour its badge style already had.
+- Redirected combat damage to a player (Glarecaster-style) is verified by reading the code, **not** by
+  a test. Planeswalker damage and the reflection path now have tests.
+- The active mtgish IR tag `DealtDamageThisTurn` is a **guess**. The local corpus
+  (`mtgish-tooling/data/mtgish.lines.json`) is a truncated 1 MiB sample predating MSH and contains only
+  passive spellings, so nothing confirms mtgish emits the bare tag for the active voice. Fail-safe in
+  both directions — if the guess is wrong the render branch simply never fires — but it is unverified.
+- `HasDealtDamageComponent(lastDealtDamageTurn)` has **no default**, on purpose: every stamp site must
+  name the turn. The cost is that a live game persisted before this change (Redis, `PersistentGameSession`)
+  fails to decode on restore with a `MissingFieldException`. TTL'd live state, no migration layer in the
+  repo — flagged rather than defaulted, because `= 0` would let a future stamp site silently record
+  "never, this turn".
+- No manual playthrough in the web client, no UX pass from both seats, no e2e. A playtest scenario JSON
+  is shipped at `manual-scenarios/sets/msh/loop-msh-u32-red-guardian.json` but nobody has run it.
+- I widened five mtgish emitter "can't render alongside" lists from `"WasDealtDamageThisTurn"` to
+  `"DealtDamageThisTurn"` (a substring, so it catches both voices). This only ever declines *more*,
+  never less, but it is a behaviour change to the generator's shortcut branches.
+- The `TriggerMatcher` dispatch site is exercised by no test: no card uses the predicate as a trigger
+  filter yet, so the first card that does will be its first coverage.

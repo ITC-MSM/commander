@@ -263,11 +263,36 @@ sealed interface StatePredicate {
         override val description: String = "was dealt damage this turn"
     }
 
-    /** Has dealt damage (ever, since entering the battlefield) */
+    /**
+     * This permanent has *dealt* damage — the active voice, mirroring [WasDealtDamageThisTurn]'s
+     * passive one. [thisTurnOnly] picks the window:
+     *
+     *  - `false` (default, the widest reading): ever, since it entered the battlefield — "as long as
+     *    this creature hasn't dealt damage" (Karakyk Guardian), via `Conditions.SourceHasDealtDamage`.
+     *  - `true`: during the current turn only — "target creature an opponent controls that dealt
+     *    damage this turn" (Red Guardian, Super-Soldier).
+     *
+     * One fact, two windows, so both read the same per-permanent marker rather than a parallel
+     * tracker: the engine's `HasDealtDamageComponent` records the turn number of the permanent's most
+     * recent damage, which every damage-dealing path stamps. Presence answers the lifetime window;
+     * comparing the stamp against the current turn answers the per-turn one. Nothing has to be
+     * cleared at end of turn — a stale stamp simply stops matching once the turn number moves on —
+     * and no damage path can record one window without recording the other.
+     *
+     * Both windows reset when the permanent changes zones (CR 400.7 — it comes back a new object with
+     * no memory), which is what "that dealt damage this turn" asks for: the object in front of you
+     * must be the one that dealt it.
+     *
+     * Damage *type* is not an axis here — combat and noncombat damage both count, matching the
+     * printed wording. "Dealt combat damage" specifically has its own predicates
+     * ([HasDealtCombatDamageToPlayer], [DealtCombatDamageToSourceControllerThisTurn]) because those
+     * also scope by recipient.
+     */
     @SerialName("HasDealtDamage")
     @Serializable
-    data object HasDealtDamage : History {
-        override val description: String = "has dealt damage"
+    data class HasDealtDamage(val thisTurnOnly: Boolean = false) : History {
+        override val description: String =
+            if (thisTurnOnly) "dealt damage this turn" else "has dealt damage"
     }
 
     /** Has dealt combat damage to a player (ever, since entering the battlefield) */

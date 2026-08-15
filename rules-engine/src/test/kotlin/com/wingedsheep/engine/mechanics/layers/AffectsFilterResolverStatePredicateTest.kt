@@ -244,17 +244,36 @@ class AffectsFilterResolverStatePredicateTest : FunSpec({
         matched shouldContainExactlyInAnyOrder setOf(damaged)
     }
 
-    test("HasDealtDamage matches only creatures with HasDealtDamageComponent") {
-        val attacker = EntityId.generate()
+    test("HasDealtDamage matches every creature with a marker, whatever turn it was stamped") {
+        val thisTurn = EntityId.generate()
+        val earlierTurn = EntityId.generate()
         val passive = EntityId.generate()
         val state = battlefield(
             listOf(
-                attacker to container(playerA, creature(playerA), HasDealtDamageComponent),
+                thisTurn to container(playerA, creature(playerA), HasDealtDamageComponent(5)),
+                earlierTurn to container(playerA, creature(playerA), HasDealtDamageComponent(3)),
                 passive to container(playerA, creature(playerA))
             )
+        ).copy(turnNumber = 5)
+        val matched = resolver.resolveAffectedEntities(state, thisTurn, filterWith(StatePredicate.HasDealtDamage()))
+        matched shouldContainExactlyInAnyOrder setOf(thisTurn, earlierTurn)
+    }
+
+    test("HasDealtDamage(thisTurnOnly) matches only creatures whose marker names the current turn") {
+        val thisTurn = EntityId.generate()
+        val earlierTurn = EntityId.generate()
+        val passive = EntityId.generate()
+        val state = battlefield(
+            listOf(
+                thisTurn to container(playerA, creature(playerA), HasDealtDamageComponent(5)),
+                earlierTurn to container(playerA, creature(playerA), HasDealtDamageComponent(3)),
+                passive to container(playerA, creature(playerA))
+            )
+        ).copy(turnNumber = 5)
+        val matched = resolver.resolveAffectedEntities(
+            state, thisTurn, filterWith(StatePredicate.HasDealtDamage(thisTurnOnly = true))
         )
-        val matched = resolver.resolveAffectedEntities(state, attacker, filterWith(StatePredicate.HasDealtDamage))
-        matched shouldContainExactlyInAnyOrder setOf(attacker)
+        matched shouldContainExactlyInAnyOrder setOf(thisTurn)
     }
 
     test("HasDealtCombatDamageToPlayer matches only creatures that dealt combat damage to a player") {
