@@ -7,6 +7,7 @@ import com.wingedsheep.assay.gate.Differential
 import com.wingedsheep.assay.gate.FinenessReport
 import com.wingedsheep.assay.gate.LineVerdict
 import com.wingedsheep.assay.gate.Touchstone
+import com.wingedsheep.assay.explore.ExploreServer
 import com.wingedsheep.assay.syntax.explain
 import com.wingedsheep.sdk.model.CardScript
 import com.wingedsheep.sdk.serialization.CardSerialization
@@ -21,6 +22,7 @@ import kotlin.system.exitProcess
  * assay gate                     the touchstone over the whole corpus; non-zero exit on a bug
  * assay report                   the same numbers, always exit 0 — for reading, not gating
  * assay differential             Assay's readings vs. the hand-written cards (gate 2)
+ * assay explore                  the same material in a browser, against the live grammar
  * assay corpus --refresh         re-download the Scryfall Oracle bulk
  * ```
  */
@@ -39,6 +41,7 @@ fun main(args: Array<String>) {
         "gate" -> exitProcess(gate(flags, gating = true))
         "report" -> exitProcess(gate(flags, gating = false))
         "differential" -> exitProcess(differential(flags))
+        "explore" -> exitProcess(explore(flags))
         "corpus" -> exitProcess(corpus(flags))
         "-h", "--help", "help" -> {
             usage()
@@ -62,6 +65,7 @@ private fun usage() = System.err.println(
       assay gate [options]           run the touchstone; exits 1 on ambiguity/mismatch
       assay report [options]         the same report, always exits 0
       assay differential [options]   diff Assay's readings against the hand-written cards
+      assay explore [--port N]       browse all of the above against the live grammar
       assay corpus [--refresh]       show or refresh the cached Scryfall Oracle bulk
 
     Options:
@@ -76,6 +80,8 @@ private fun usage() = System.err.println(
       --top N          how many decline families (or divergences) to list
       --refresh        re-download the bulk file before running
       --declines       after the report, list every declined line (long)
+      --port N         explore: port to serve on (0 picks a free one; default 7345)
+      --no-open        explore: do not open a browser
     """.trimIndent()
 )
 
@@ -207,6 +213,42 @@ private fun differential(flags: Flags): Int {
     System.err.println("assay: differential FAILED — a golden would not decode")
     return 1
 }
+
+/**
+ * The explorer. Serves on loopback only and blocks until interrupted.
+ *
+ * The corpus sweep runs on a background thread inside [ExploreServer], so the page is up before the
+ * numbers are — deliberately, since the live parser and the rule tree need no corpus at all and are
+ * useful in the five seconds the sweep takes.
+ */
+private fun explore(flags: Flags): Int {
+    val requested = flags.int("port") ?: DEFAULT_EXPLORE_PORT
+    val port = try {
+        ExploreServer(requested, refresh = flags.has("refresh")).start()
+    } catch (e: java.io.IOException) {
+        System.err.println("assay: could not serve on port $requested (${e.message}) — try --port 0")
+        return 1
+    }
+    val url = "http://127.0.0.1:$port/"
+    println("Argentum Assay — explorer at $url")
+    println("Indexing the corpus in the background; the page shows its progress. Ctrl-C to stop.")
+    if (!flags.has("no-open")) openBrowser(url)
+    // The HttpServer's threads are daemons' peers, not the process lifetime — park the main thread.
+    Thread.currentThread().join()
+    return 0
+}
+
+/** Best-effort. A browser that will not open is a printed URL, never an error. */
+private fun openBrowser(url: String) {
+    val command = when {
+        System.getProperty("os.name").orEmpty().startsWith("Mac") -> listOf("open", url)
+        System.getProperty("os.name").orEmpty().startsWith("Windows") -> listOf("cmd", "/c", "start", url)
+        else -> listOf("xdg-open", url)
+    }
+    runCatching { ProcessBuilder(command).start() }
+}
+
+private const val DEFAULT_EXPLORE_PORT = 7345
 
 private fun gate(flags: Flags, gating: Boolean): Int {
     val touchstone = Touchstone()

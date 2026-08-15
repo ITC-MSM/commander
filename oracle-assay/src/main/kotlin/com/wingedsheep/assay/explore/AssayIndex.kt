@@ -31,8 +31,12 @@ import java.util.Locale
 class AssayIndex(
     val report: FinenessReport,
     val declines: List<DeclineFamily>,
+    val shapes: List<DeclineFamily>,
+    val unlockCurves: Map<Ranking, List<Int>>,
     val cards: List<OracleCard>,
     val rows: List<CardRow>,
+    /** Cards per [Companion.state] — the corpus in four buckets, which is the headline picture. */
+    val stateCounts: Map<String, Int>,
     val ruleUsage: Map<Int, RuleUsage>,
     val goldenNames: Set<String>,
     val corpusFile: String,
@@ -67,7 +71,11 @@ class AssayIndex(
     fun hasGolden(name: String): Boolean =
         name in goldenNames || name.substringBefore(" // ") in goldenNames
 
-    fun decline(token: String): DeclineFamily? = declines.firstOrNull { it.token == token }
+    fun families(ranking: Ranking): List<DeclineFamily> =
+        if (ranking == Ranking.SHAPE) shapes else declines
+
+    fun decline(token: String, ranking: Ranking): DeclineFamily? =
+        families(ranking).firstOrNull { it.token == token }
 
     /**
      * Prefix-and-substring name search, ranked so an exact prefix wins.
@@ -96,10 +104,6 @@ class AssayIndex(
 
     companion object {
 
-        /** Cards named per decline family, and lines shown as examples. Bounded, like the report's. */
-        private const val MAX_CARDS_PER_FAMILY = 400
-        private const val MAX_EXAMPLES_PER_FAMILY = 12
-
         /**
          * The sweep. One pass over the corpus, feeding the same [FinenessReport.Builder] the gate
          * uses so the explorer's headline numbers are the gate's numbers rather than a second
@@ -116,26 +120,26 @@ class AssayIndex(
 
             val cards = mutableListOf<OracleCard>()
             val rows = mutableListOf<CardRow>()
-            val familyLines = LinkedHashMap<String, Int>()
-            val familyCards = LinkedHashMap<String, MutableSet<String>>()
-            val familyExamples = LinkedHashMap<String, MutableSet<String>>()
+            val byToken = Grouping()
+            val byShape = Grouping()
 
             var seen = 0
             for (card in OracleCorpus.cards(refresh = refresh)) {
                 val result = touchstone.assay(card)
                 fineness.add(result)
                 cards.add(card)
-                rows.add(row(card, result))
+
+                val declined = result.lines.filter { it.verdict == LineVerdict.DECLINED }
+                // Interned through the grouping's own key set, so a card's shape list holds the same
+                // String instances the ranking does rather than 52,463 fresh copies.
+                val tokens = declined.mapNotNull { it.declineToken }.distinct()
+                val shapes = declined.map { skeleton(it.line) }.distinct()
+                rows.add(row(card, result, tokens, shapes))
                 attribution.observe(result)
 
-                for (line in result.lines) {
-                    if (line.verdict != LineVerdict.DECLINED) continue
-                    val token = line.declineToken ?: "<unknown>"
-                    familyLines.merge(token, 1, Int::plus)
-                    familyCards.getOrPut(token) { LinkedHashSet() }
-                        .let { if (it.size < MAX_CARDS_PER_FAMILY) it.add(card.name) }
-                    familyExamples.getOrPut(token) { LinkedHashSet() }
-                        .let { if (it.size < MAX_EXAMPLES_PER_FAMILY) it.add(line.line) }
+                for ((index, line) in declined.withIndex()) {
+                    byToken.add(line.declineToken ?: "<unknown>", card.name, line.line)
+                    byShape.add(shapes.getOrElse(index) { skeleton(line.line) }, card.name, line.line)
                 }
 
                 seen++
@@ -147,23 +151,24 @@ class AssayIndex(
             // the implemented/unimplemented split of every decline family costs one directory read.
             val goldens = runCatching { ImplementedCorpus.names() }.getOrDefault(emptySet())
 
-            val declines = familyLines.map { (token, lines) ->
-                val blocked = familyCards[token].orEmpty()
-                DeclineFamily(
-                    token = token,
-                    cards = blocked.size,
-                    lines = lines,
-                    implemented = blocked.count { it in goldens || it.substringBefore(" // ") in goldens },
-                    cardNames = blocked.toList(),
-                    examples = familyExamples[token].orEmpty().toList(),
-                )
-            }.sortedWith(compareByDescending<DeclineFamily> { it.cards }.thenByDescending { it.lines })
+            // Unlocks and the curve are computed for the SHAPE ranking only, and that restriction is
+            // the finding rather than a shortcut. Both numbers are claims about *work*: "write this
+            // and that many cards become covered". A sentence shape is a unit of work — one rule
+            // reads every line of it. A dead token is not: a line dies at its first unknown token,
+            // so "every declined line of this card died at `Whenever`" says nothing has been read
+            // and implies no rule. Computing it anyway produced a curve claiming the top 400 token
+            // families cover 93% of Magic, against 15% for the top 400 shapes. The token ranking
+            // keeps its own honest question — what is the grammar missing — and gives up this one.
+            val shapeFamilies = Unlocks.annotate(byShape.build(goldens), rows) { it.declineShapes }
 
             return AssayIndex(
                 report = fineness.build(),
-                declines = declines,
+                declines = byToken.build(goldens),
+                shapes = shapeFamilies,
+                unlockCurves = mapOf(Ranking.SHAPE to Unlocks.curve(shapeFamilies, rows) { it.declineShapes }),
                 cards = cards,
                 rows = rows,
+                stateCounts = rows.groupingBy(::state).eachCount(),
                 ruleUsage = attribution.usage(),
                 goldenNames = goldens,
                 corpusFile = OracleCorpus.cacheFile().path,
@@ -171,7 +176,44 @@ class AssayIndex(
             )
         }
 
-        private fun row(card: OracleCard, result: CardResult) = CardRow(
+        /**
+         * The four states a card can be in, which is the split the corpus bar and the card table
+         * both use. **Vanilla is a covered state**, not a neutral one — a card with no rules text is
+         * read completely and correctly, and colouring it like a decline was actively misleading
+         * about a fifth of the corpus.
+         */
+        internal fun state(row: CardRow) = when {
+            row.vanilla -> "vanilla"
+            row.roundTrips -> "round-trip"
+            row.covered -> "variant"
+            else -> "declined"
+        }
+
+        /**
+         * The sentence a declined line *is*, with the parts that differ between two printings of it
+         * collapsed: mana and tap symbols to `{§}`, numbers to `#`. Self-reference is already
+         * abstracted to `~` by [com.wingedsheep.assay.normalize.Normalizer], so a card's own name
+         * does not fragment its shape.
+         *
+         * This is the second ranking, and it exists because the first one answers a different
+         * question than the one someone choosing work is asking. A line dies on its *first* unknown
+         * token, so a trigger whose prefix is already known dies somewhere after the comma while a
+         * trigger whose prefix is unknown dies on "At" — one missing verb lands in several token
+         * buckets, and a missing prefix looks larger than it is. Ranking by shape puts the whole
+         * sentence in one row, which is the unit a rule is actually written for.
+         */
+        internal fun skeleton(line: String): String =
+            line.replace(SYMBOL, "{§}").replace(NUMBER, "#")
+
+        private val SYMBOL = Regex("""\{[^}]*}""")
+        private val NUMBER = Regex("""\b\d+\b""")
+
+        private fun row(
+            card: OracleCard,
+            result: CardResult,
+            tokens: List<String>,
+            shapes: List<String>,
+        ) = CardRow(
             name = card.name,
             setCode = card.setCode,
             layout = card.layout,
@@ -181,9 +223,111 @@ class AssayIndex(
             covered = result.covered,
             inScope = result.inPhase1Scope,
             vanilla = card.isVanilla,
-            declineTokens = result.lines.filter { it.verdict == LineVerdict.DECLINED }
-                .mapNotNull { it.declineToken }.distinct(),
+            declineTokens = tokens,
+            declineShapes = shapes,
         )
+    }
+}
+
+/**
+ * How the decline list is keyed.
+ *
+ * Two rankings because they answer two questions, and the module's guidance is explicit that they
+ * disagree in ways that change what you write next. [TOKEN] is "what is the grammar missing";
+ * [SHAPE] is "what sentence should I write a rule for".
+ */
+enum class Ranking { TOKEN, SHAPE }
+
+/**
+ * **Cards blocked is not cards unlocked**, and the gap between them is the most useful number here.
+ *
+ * A card is covered only when *every* one of its lines parses, so a family's card count says how
+ * many cards mention it — not how many would come into coverage if it were written. The module's
+ * own worked example: 410 cards decline on "At the beginning of…", and adding every step-trigger
+ * prefix moved whole-card coverage by 23, because the other 387 were blocked on their effect clause
+ * all along. A ranked list showing only the 410 sends you at the wrong work.
+ *
+ * Two derived numbers close that gap, and both are exact rather than estimated:
+ *
+ * - [DeclineFamily.unlocks] — cards this family is the *only* thing blocking. Write this one rule
+ *   and exactly that many cards become covered.
+ * - [AssayIndex.unlockCurve] — cards covered after implementing the top *N* families in rank order,
+ *   cumulatively. Computed by giving each declined card the worst rank among its own families: a
+ *   card joins the covered set at exactly the N where its last blocker is reached.
+ *
+ * Both are computed for [Ranking.SHAPE] only; see the note at the call site for why applying them to
+ * dead tokens yields a number that is well-defined and means nothing.
+ */
+private object Unlocks {
+
+    /** How far down the ranked list the curve is reported. Beyond this the tail is flat and long. */
+    private const val CURVE_LENGTH = 400
+
+    fun annotate(
+        families: List<DeclineFamily>,
+        rows: List<CardRow>,
+        keysOf: (CardRow) -> List<String>,
+    ): List<DeclineFamily> {
+        val soleBlocker = HashMap<String, Int>()
+        for (row in rows) {
+            val keys = keysOf(row)
+            if (keys.size == 1) soleBlocker.merge(keys.single(), 1, Int::plus)
+        }
+        return families.map { it.copy(unlocks = soleBlocker[it.token] ?: 0) }
+    }
+
+    /** Cards covered after the top *N* families, for N = 1..[CURVE_LENGTH]. Index 0 is N = 1. */
+    fun curve(families: List<DeclineFamily>, rows: List<CardRow>, keysOf: (CardRow) -> List<String>): List<Int> {
+        val rank = families.withIndex().associate { (index, family) -> family.token to index }
+        val length = minOf(families.size, CURVE_LENGTH)
+        val joiningAt = IntArray(length)
+        for (row in rows) {
+            val keys = keysOf(row)
+            if (keys.isEmpty()) continue
+            // The card becomes covered once its *last* remaining blocker is written; a card with any
+            // blocker outside the reported prefix simply never joins within it.
+            val last = keys.maxOf { rank[it] ?: Int.MAX_VALUE }
+            if (last < length) joiningAt[last]++
+        }
+        var running = rows.count { it.covered }
+        return joiningAt.map { running += it; running }
+    }
+}
+
+/** Accumulates one keying of the declined lines: counts, the cards behind them, example lines. */
+private class Grouping {
+
+    private val lines = LinkedHashMap<String, Int>()
+    private val cards = LinkedHashMap<String, MutableSet<String>>()
+    private val examples = LinkedHashMap<String, MutableSet<String>>()
+
+    fun add(key: String, cardName: String, line: String) {
+        lines.merge(key, 1, Int::plus)
+        // Uncapped, because this set is what the *ranking* is computed from — capping it made the
+        // top of the list a plateau of families that all reported exactly the cap. It costs nothing:
+        // the total number of (family, card) pairs is bounded by the number of declined lines.
+        cards.getOrPut(key) { LinkedHashSet() }.add(cardName)
+        examples.getOrPut(key) { LinkedHashSet() }.let { if (it.size < MAX_EXAMPLES) it.add(line) }
+    }
+
+    fun build(goldens: Set<String>): List<DeclineFamily> =
+        lines.map { (key, count) ->
+            val blocked = cards[key].orEmpty()
+            DeclineFamily(
+                token = key,
+                cards = blocked.size,
+                lines = count,
+                implemented = blocked.count { it in goldens || it.substringBefore(" // ") in goldens },
+                // The *shown* list is bounded — a page does not need 900 names — but the count above
+                // is the real one, and the page says so when it is showing fewer.
+                cardNames = blocked.take(MAX_SHOWN_CARDS),
+                examples = examples[key].orEmpty().toList(),
+            )
+        }.sortedWith(compareByDescending<DeclineFamily> { it.cards }.thenByDescending { it.lines })
+
+    private companion object {
+        const val MAX_SHOWN_CARDS = 400
+        const val MAX_EXAMPLES = 12
     }
 }
 
@@ -202,6 +346,7 @@ data class CardRow(
     val inScope: Boolean,
     val vanilla: Boolean,
     val declineTokens: List<String>,
+    val declineShapes: List<String>,
 )
 
 /**
@@ -216,9 +361,12 @@ data class CardRow(
  */
 data class DeclineFamily(
     val token: String,
+    /** Cards that mention this family — how big the gap looks. */
     val cards: Int,
     val lines: Int,
     val implemented: Int,
+    /** Cards this family is the *only* blocker of — how big the gap actually is. See [Unlocks]. */
+    val unlocks: Int = 0,
     val cardNames: List<String>,
     val examples: List<String>,
 )

@@ -299,6 +299,39 @@ The payoff is that Assay becomes a design-time tool as well as an audit: *is thi
 canonical Magic templating, and what exactly does it say?* — answered mechanically, with generated
 Oracle text as the by-product.
 
+## The explorer (`explore/`)
+
+`just assay-explore` is the browser UI. Three rules keep it from becoming a second, drifting
+implementation of the thing it displays.
+
+**It is a view, never a second source of truth.** Every number it shows comes out of
+`FinenessReport`, `Touchstone` or `Differential` — the same objects the CLI renders as text. If the
+explorer needs a number the gates do not produce, the number goes in the *gate* and both read it.
+An explorer that computed its own fineness would make two reports that can disagree, and the one
+people look at would be the one nobody gates on.
+
+**It calls the live grammar; it never precomputes a payload.** The mtgish model explorer this is
+modelled on had to embed its data and ship the parser as WebAssembly, because the parser lived in
+another repository. Ours is on the classpath. Do not "optimize" a view by baking a snapshot into a
+resource — the whole value is that a rule you just edited is one restart away from being re-measured.
+
+**No new production dependency, and no path back to being a loader.** `com.sun.net.httpserver` is in
+the JDK; that is why the SDK-only rule still holds, and it is the constraint to check before reaching
+for a framework. The server binds loopback only and holds no state a request can mutate.
+
+Two supporting pieces have their own reasons:
+
+- **`Phrase.shape`** is read-only structural introspection on the kernel, and it is walked from
+  `Grammar.abilityLine` rather than assembled from each family's published rule list. Walking from
+  the root can only show rules that are *wired*; a hand-maintained index would also show a family
+  written but reached from nothing. It is never consulted by `parseHere` or `unparse`, which is what
+  makes it safe to have there at all — a new combinator should override it, and nothing should ever
+  branch on it inside `grammar/`.
+- **Rule usage numbers come from the print side.** The kernel records no parse provenance, but
+  `oneOf` prints through the first canonical alternative that can express a value, so "which rule
+  printed this" is exact. Do not replace it with a re-match to attribute a number: that would be a
+  second, unverified implementation of the half the round trip depends on.
+
 ## Style
 
 The KDoc in this module is unusually dense on purpose: **every non-obvious rule states why it is not
@@ -321,6 +354,7 @@ just assay-gate                     # touchstone over the corpus; exit 1 on a bu
 just assay-gate --limit 2000        # fast smoke run while iterating
 just assay-report --top 40          # the same numbers, always exit 0 — the SDK gap report
 just assay-differential             # Assay's readings vs. the hand-written cards
+just assay-explore                  # all of the above in a browser, on the live grammar
 ```
 
 Unit tests are Kotest string-spec under `src/test/kotlin/com/wingedsheep/assay/`, named for the

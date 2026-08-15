@@ -7,6 +7,7 @@ import com.wingedsheep.assay.gate.CardResult
 import com.wingedsheep.assay.gate.Differential
 import com.wingedsheep.assay.gate.DifferentialReport
 import com.wingedsheep.assay.gate.FinenessReport
+import com.wingedsheep.assay.gate.LineResult
 import com.wingedsheep.assay.gate.LineVerdict
 import com.wingedsheep.assay.gate.Population
 import com.wingedsheep.assay.gate.Touchstone
@@ -59,6 +60,8 @@ internal object Views {
         put("cardsRoundTripped", report.cardsRoundTripped)
         put("redundantReadingLines", report.redundantReadingLines)
         put("declineFamilies", index.declines.size)
+        put("shapeFamilies", index.shapes.size)
+        put("states", counts(index.stateCounts))
         put("verdicts", counts(LineVerdict.entries.associate { it.name to report.instancesByVerdict[it].orZero() }))
         put("uniqueVerdicts", counts(LineVerdict.entries.associate { it.name to report.uniqueByVerdict[it].orZero() }))
         put("glosses", counts(report.glossCounts.entries.associate { (verdict, count) -> verdict.name to count }))
@@ -87,18 +90,29 @@ internal object Views {
     // Declines — the ranked SDK / grammar gap report
     // -------------------------------------------------------------------------------------------
 
-    fun declines(index: AssayIndex, query: String?, limit: Int): JsonObject {
+    fun declines(index: AssayIndex, ranking: Ranking, query: String?, limit: Int): JsonObject {
         val needle = query?.trim()?.lowercase(Locale.ROOT).orEmpty()
-        val matching = index.declines.filter {
+        val all = index.families(ranking)
+        val matching = all.filter {
             needle.isEmpty() ||
                 it.token.lowercase(Locale.ROOT).contains(needle) ||
                 it.examples.any { line -> line.lowercase(Locale.ROOT).contains(needle) }
         }
         return buildJsonObject {
-            put("total", index.declines.size)
+            put("ranking", ranking.name)
+            put("total", all.size)
+            put("tokenFamilies", index.declines.size)
+            put("shapeFamilies", index.shapes.size)
             put("matching", matching.size)
             put("declinedLines", index.report.instancesByVerdict[LineVerdict.DECLINED].orZero())
             put("goldensAvailable", index.goldenNames.isNotEmpty())
+            put("cardsCovered", index.report.cardsCovered)
+            put("corpusCards", index.report.cards)
+            // Over the *unfiltered* ranking: it answers "what does working the top of this list
+            // buy", and a text filter does not change the list you would work. Absent for the token
+            // ranking, deliberately — see AssayIndex.build.
+            put("unlockCurve", JsonArray(index.unlockCurves[ranking].orEmpty().map(::JsonPrimitive)))
+            put("hasUnlocks", ranking == Ranking.SHAPE)
             put(
                 "families",
                 buildJsonArray {
@@ -107,6 +121,7 @@ internal object Views {
                             buildJsonObject {
                                 put("token", family.token)
                                 put("cards", family.cards)
+                                put("unlocks", family.unlocks)
                                 put("lines", family.lines)
                                 put("implemented", family.implemented)
                                 put("examples", strings(family.examples))
@@ -118,11 +133,14 @@ internal object Views {
         }
     }
 
-    fun decline(index: AssayIndex, token: String): JsonObject? {
-        val family = index.decline(token) ?: return null
+    fun decline(index: AssayIndex, ranking: Ranking, token: String): JsonObject? {
+        val family = index.decline(token, ranking) ?: return null
         return buildJsonObject {
+            put("ranking", ranking.name)
+            put("hasUnlocks", ranking == Ranking.SHAPE)
             put("token", family.token)
             put("cards", family.cards)
+            put("unlocks", family.unlocks)
             put("lines", family.lines)
             put("implemented", family.implemented)
             put("examples", strings(family.examples))
@@ -177,12 +195,7 @@ internal object Views {
         }
     }
 
-    private fun state(row: CardRow) = when {
-        row.vanilla -> "vanilla"
-        row.roundTrips -> "round-trip"
-        row.covered -> "variant"
-        else -> "declined"
-    }
+    private fun state(row: CardRow) = AssayIndex.state(row)
 
     fun search(index: AssayIndex, query: String): JsonObject = buildJsonObject {
         put(

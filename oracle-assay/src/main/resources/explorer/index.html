@@ -1,0 +1,1325 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Argentum Assay — Explorer</title>
+<style>
+  :root {
+    color-scheme: light;
+    --ground:   #F5F7F8;
+    --surface:  #FFFFFF;
+    --sunken:   #EBEEF0;
+    --ink:      #14181B;
+    --muted:    #58636D;
+    --faint:    #8A949D;
+    --hair:     #DBE0E4;
+    --hair-2:   #C7CFD5;
+    --accent:   #0B7462;
+    --accent-w: #E2F0EC;
+    --ochre:    #9C6A1E;
+    --ochre-w:  #F4EBDA;
+    --bad:      #A3242B;
+    --bad-w:    #F6E3E3;
+    --shadow:   0 1px 2px rgba(20,24,27,.05), 0 10px 28px -18px rgba(20,24,27,.28);
+    --sel:      #E2F0EC;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --ground:  #0E1114; --surface: #161A1E; --sunken: #1C2227;
+      --ink:     #E6EAEC; --muted:   #98A3AC; --faint:  #6E7A83;
+      --hair:    #272E34; --hair-2:  #39424A;
+      --accent:  #4EC4AB; --accent-w:#16302C;
+      --ochre:   #D3A055; --ochre-w: #2E2618;
+      --bad:     #E4787C; --bad-w:   #331B1D;
+      --shadow:  0 1px 2px rgba(0,0,0,.5), 0 10px 28px -18px rgba(0,0,0,.8);
+      --sel:     #16302C;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0; background: var(--ground); color: var(--ink);
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+    font-size: 14px; line-height: 1.5; -webkit-font-smoothing: antialiased; overflow: hidden;
+  }
+  .mono, code, pre { font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace; }
+  button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; border-radius: 2px; }
+  ::selection { background: var(--sel); }
+  a { color: var(--accent); }
+
+  .app { display: grid; grid-template-rows: auto 1fr; height: 100dvh; }
+
+  /* ---- topbar ---- */
+  .topbar {
+    display: flex; align-items: center; gap: 1rem; padding: .5rem .85rem;
+    border-bottom: 1px solid var(--hair); background: var(--surface); position: relative; z-index: 40;
+  }
+  .brand {
+    font-family: ui-monospace, Menlo, monospace; font-size: .82rem; font-weight: 600;
+    display: flex; align-items: baseline; gap: .5rem; white-space: nowrap;
+  }
+  .brand .sub { font-weight: 400; color: var(--faint); font-size: .68rem; letter-spacing: .09em; text-transform: uppercase; }
+
+  .searchwrap { position: relative; flex: 1; max-width: 34rem; }
+  #q {
+    width: 100%; font-family: ui-monospace, Menlo, monospace; font-size: .8rem;
+    padding: .42rem .7rem .42rem 1.9rem; border: 1px solid var(--hair-2); border-radius: 3px;
+    background: var(--ground); color: var(--ink);
+  }
+  #q::placeholder { color: var(--faint); }
+  .searchwrap .mag { position: absolute; left: .6rem; top: 50%; transform: translateY(-50%); color: var(--faint); font-size: .78rem; pointer-events: none; }
+  .searchwrap .kbd { position: absolute; right: .5rem; top: 50%; transform: translateY(-50%); color: var(--faint); font-size: .65rem; pointer-events: none; font-family: ui-monospace, Menlo, monospace; }
+  .results {
+    position: absolute; top: calc(100% + .35rem); left: 0; right: 0; background: var(--surface);
+    border: 1px solid var(--hair-2); border-radius: 3px; box-shadow: var(--shadow);
+    max-height: 70vh; overflow-y: auto; display: none;
+  }
+  .results.on { display: block; }
+  .results .sec {
+    font-family: ui-monospace, Menlo, monospace; font-size: .62rem; text-transform: uppercase;
+    letter-spacing: .12em; color: var(--faint); padding: .5rem .7rem .25rem;
+    position: sticky; top: 0; background: var(--surface);
+  }
+  .results .row { display: flex; align-items: baseline; gap: .5rem; width: 100%; text-align: left; padding: .28rem .7rem; font-size: .78rem; }
+  .results .row.cur { background: var(--sel); }
+  .results .row .rt { margin-left: auto; color: var(--faint); font-size: .68rem; font-family: ui-monospace, Menlo, monospace; }
+  .results .none { padding: .6rem .7rem; color: var(--faint); font-size: .78rem; }
+
+  .status { margin-left: auto; display: flex; align-items: center; gap: .55rem; font-size: .68rem; color: var(--faint); white-space: nowrap; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--faint); }
+  .dot.ok { background: var(--accent); }
+  .dot.bad { background: var(--bad); }
+  .dot.load { background: var(--ochre); animation: pulse 1.1s ease-in-out infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1 } 50% { opacity: .25 } }
+  @media (prefers-reduced-motion: reduce) { .dot.load { animation: none } }
+  .iconbtn { padding: .25rem .45rem; border: 1px solid var(--hair-2); border-radius: 3px; font-size: .7rem; color: var(--muted); }
+  .iconbtn:hover { color: var(--accent); border-color: var(--accent); }
+
+  /* ---- shell ---- */
+  .split { display: grid; grid-template-columns: 15rem minmax(0, 1fr); min-height: 0; }
+  @media (max-width: 60rem) {
+    .split { grid-template-columns: minmax(0, 1fr); }
+    aside { display: none; }
+    aside.show { display: flex; position: absolute; inset: 3rem 0 0; z-index: 30; }
+  }
+  aside { border-right: 1px solid var(--hair); background: var(--surface); display: flex; flex-direction: column; min-height: 0; }
+  .nav { padding: .5rem .4rem; border-bottom: 1px solid var(--hair); display: flex; flex-direction: column; gap: 1px; }
+  .nav button {
+    text-align: left; padding: .3rem .55rem; border-radius: 3px; font-size: .78rem; color: var(--muted);
+    display: flex; align-items: baseline; gap: .5rem;
+  }
+  .nav button .n { margin-left: auto; font-size: .66rem; color: var(--faint); font-variant-numeric: tabular-nums; font-family: ui-monospace, Menlo, monospace; }
+  .nav button:hover { background: var(--ground); color: var(--ink); }
+  .nav button.on { background: var(--sel); color: var(--accent); }
+  .nav button.on .n { color: var(--accent); }
+  .railbody { overflow-y: auto; flex: 1; padding: .3rem 0 2rem; }
+  .railhdr {
+    font-family: ui-monospace, Menlo, monospace; font-size: .6rem; text-transform: uppercase;
+    letter-spacing: .12em; color: var(--faint); padding: .7rem .6rem .25rem;
+    position: sticky; top: 0; background: var(--surface); z-index: 1;
+  }
+  .rl {
+    display: grid; grid-template-columns: 1fr auto; gap: .5rem; align-items: baseline; width: 100%;
+    text-align: left; padding: .18rem .6rem; font-family: ui-monospace, Menlo, monospace;
+    font-size: .72rem; color: var(--muted); border-left: 2px solid transparent; overflow-wrap: anywhere;
+  }
+  .rl:hover { background: var(--ground); color: var(--ink); }
+  .rl.on { background: var(--sel); color: var(--accent); border-left-color: var(--accent); }
+  .rl .n { font-size: .66rem; color: var(--faint); font-variant-numeric: tabular-nums; }
+  .rl.on .n { color: var(--accent); }
+
+  main { overflow-y: auto; min-height: 0; }
+  .pad { padding: 1.4rem 1.6rem 6rem; max-width: 66rem; }
+  @media (max-width: 60rem) { .pad { padding: 1rem .9rem 5rem; } }
+
+  /* ---- type ---- */
+  h1 { font-family: ui-monospace, Menlo, monospace; font-size: 1.5rem; font-weight: 600; letter-spacing: -.02em; margin: 0; line-height: 1.15; }
+  h2 { font-family: ui-monospace, Menlo, monospace; font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .14em; margin: 0 0 .7rem; padding-bottom: .4rem; border-bottom: 1px solid var(--hair-2); }
+  h3 { font-family: ui-monospace, Menlo, monospace; font-size: .66rem; font-weight: 600; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); margin: 0 0 .45rem; }
+  p { margin: 0 0 .7rem; max-width: 46rem; color: var(--muted); }
+  p:last-child { margin-bottom: 0; }
+  .lead { font-size: .93rem; }
+  .crumb { display: flex; align-items: center; gap: .4rem; font-family: ui-monospace, Menlo, monospace; font-size: .68rem; color: var(--faint); margin-bottom: .5rem; }
+  .crumb a { color: var(--muted); text-decoration: none; }
+  .crumb a:hover { color: var(--accent); }
+  .block { margin-top: 1.5rem; }
+  .headline { display: flex; flex-wrap: wrap; align-items: baseline; gap: .6rem; margin-bottom: .6rem; }
+  .tag { font-family: ui-monospace, Menlo, monospace; font-size: .62rem; text-transform: uppercase; letter-spacing: .09em; padding: .1rem .4rem; border: 1px solid var(--hair-2); border-radius: 2px; color: var(--muted); white-space: nowrap; }
+  .tag.k { color: var(--accent); border-color: var(--accent); background: var(--accent-w); }
+  /* Vanilla is a COVERED state — no rules text is read completely and correctly, and it is a fifth
+     of the corpus. It reads as accent, hollow rather than filled, so it is legible as "covered, by
+     a different route" instead of being mistaken for a decline. */
+  .tag.v { color: var(--accent); border-color: var(--accent); background: transparent; }
+  .tag.w { color: var(--ochre); border-color: var(--ochre); background: var(--ochre-w); }
+  .tag.b { color: var(--bad); border-color: var(--bad); background: var(--bad-w); }
+  .empty { color: var(--faint); padding: 1.1rem; border: 1px dashed var(--hair-2); border-radius: 3px; font-size: .82rem; }
+
+  /* ---- stats ---- */
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr)); gap: 1px; background: var(--hair); border: 1px solid var(--hair); }
+  .stat { background: var(--surface); padding: .75rem .85rem; }
+  .stat .v { font-family: ui-monospace, Menlo, monospace; font-size: 1.3rem; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: -.02em; display: block; }
+  .stat .v.ok { color: var(--accent); } .stat .v.bad { color: var(--bad); }
+  .stat .k { display: block; font-size: .61rem; text-transform: uppercase; letter-spacing: .09em; color: var(--faint); }
+  .stat .s { display: block; margin-top: .15rem; font-size: .66rem; color: var(--faint); font-family: ui-monospace, Menlo, monospace; }
+
+  /* ---- tables ---- */
+  .tablewrap { overflow-x: auto; border: 1px solid var(--hair); background: var(--surface); box-shadow: var(--shadow); }
+  table { border-collapse: collapse; width: 100%; font-size: .78rem; }
+  th { text-align: left; font-family: ui-monospace, Menlo, monospace; font-size: .61rem; text-transform: uppercase; letter-spacing: .1em; color: var(--faint); font-weight: 500; padding: .45rem .7rem; border-bottom: 1px solid var(--hair); background: var(--sunken); white-space: nowrap; }
+  td { padding: .3rem .7rem; border-bottom: 1px solid var(--hair); vertical-align: baseline; }
+  tr:last-child td { border-bottom: 0; }
+  tbody tr:hover { background: var(--ground); }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; font-family: ui-monospace, Menlo, monospace; }
+  td.nm { font-family: ui-monospace, Menlo, monospace; }
+  td.nm a { text-decoration: none; }
+  td.nm a:hover { text-decoration: underline; }
+  .clickrow { cursor: pointer; }
+
+  .meter { display: inline-block; width: 6rem; height: 6px; background: var(--sunken); border-radius: 1px; overflow: hidden; vertical-align: middle; }
+  .meter i { display: block; height: 100%; background: var(--accent); }
+  .meter i.split { background: var(--ochre); }
+
+  /* ---- corpus bar: the whole corpus in one row, by card state ---- */
+  .corpus { display: flex; height: 2.4rem; border: 1px solid var(--hair); background: var(--surface); overflow: hidden; }
+  .corpus button { position: relative; min-width: 2px; transition: filter .12s; }
+  .corpus button:hover { filter: brightness(1.25); }
+  .corpus .s-round-trip { background: var(--accent); }
+  .corpus .s-vanilla    { background: var(--accent); opacity: .42; }
+  .corpus .s-variant    { background: var(--ochre); }
+  .corpus .s-declined   { background: var(--sunken); }
+  .corpuskey { display: flex; flex-wrap: wrap; gap: .1rem 1.1rem; margin-top: .5rem; font-size: .72rem; }
+  .corpuskey button { display: flex; align-items: baseline; gap: .35rem; color: var(--muted); }
+  .corpuskey button:hover { color: var(--ink); }
+  .corpuskey .sw { width: .6rem; height: .6rem; border-radius: 1px; flex: none; align-self: center; }
+  .corpuskey .sw.s-round-trip { background: var(--accent); }
+  .corpuskey .sw.s-vanilla    { background: var(--accent); opacity: .42; }
+  .corpuskey .sw.s-variant    { background: var(--ochre); }
+  .corpuskey .sw.s-declined   { background: var(--hair-2); }
+  .corpuskey .nn { font-family: ui-monospace, Menlo, monospace; font-variant-numeric: tabular-nums; color: var(--ink); }
+  .corpuskey .pp { color: var(--faint); font-family: ui-monospace, Menlo, monospace; }
+
+  /* ---- unlock curve ---- */
+  .curve { border: 1px solid var(--hair); background: var(--surface); padding: .8rem .9rem .5rem; }
+  .curve svg { display: block; width: 100%; height: 7rem; overflow: visible; }
+  .curve .area { fill: var(--accent); opacity: .16; }
+  .curve .line { fill: none; stroke: var(--accent); stroke-width: 1.5; }
+  .curve .base { stroke: var(--hair-2); stroke-width: 1; stroke-dasharray: 3 3; }
+  .curve .mk { stroke: var(--hair-2); stroke-width: 1; }
+  .curve text { font-family: ui-monospace, Menlo, monospace; font-size: 9px; fill: var(--faint); }
+
+  /* ---- rows / toolbar ---- */
+  .toolrow { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; margin-bottom: .7rem; }
+  .toolrow input, .toolrow select {
+    font-family: ui-monospace, Menlo, monospace; font-size: .74rem; padding: .28rem .5rem;
+    border: 1px solid var(--hair-2); border-radius: 3px; background: var(--surface); color: var(--ink);
+  }
+  .toolrow input.grow { flex: 1; min-width: 11rem; }
+  .seg { display: flex; border: 1px solid var(--hair-2); border-radius: 3px; overflow: hidden; }
+  .seg button { padding: .26rem .5rem; font-size: .68rem; font-family: ui-monospace, Menlo, monospace; color: var(--muted); }
+  .seg button.on { background: var(--accent-w); color: var(--accent); }
+  .cnt { font-size: .68rem; color: var(--faint); font-variant-numeric: tabular-nums; font-family: ui-monospace, Menlo, monospace; margin-left: auto; }
+  .chip { font-size: .68rem; padding: .16rem .42rem; border: 1px solid var(--hair-2); border-radius: 2px; color: var(--muted); background: var(--surface); text-decoration: none; display: inline-block; }
+  .chip:hover { border-color: var(--accent); color: var(--accent); }
+  .chip.on { background: var(--accent); border-color: var(--accent); color: var(--surface); }
+  .chips { display: flex; flex-wrap: wrap; gap: .28rem; }
+  .primary { background: var(--accent); color: #fff; padding: .32rem .8rem; border-radius: 3px; font-size: .78rem; }
+  :root:not([data-theme="light"]) .primary { color: #0E1114; }
+
+  /* ---- card page ---- */
+  .sxs { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1.25fr); gap: 1.2rem; align-items: start; }
+  @media (max-width: 60rem) { .sxs { grid-template-columns: minmax(0,1fr); } }
+  .face { border: 1px solid var(--hair); background: var(--surface); padding: .7rem .8rem; margin-bottom: .7rem; box-shadow: var(--shadow); }
+  .fname { display: flex; justify-content: space-between; gap: .6rem; font-weight: 600; font-family: ui-monospace, Menlo, monospace; font-size: .84rem; }
+  .ftype { color: var(--muted); font-size: .74rem; margin: .1rem 0 .5rem; font-family: ui-monospace, Menlo, monospace; }
+  .ftext p { color: var(--ink); font-size: .82rem; margin: 0 0 .35rem; }
+  .pip { display: inline-block; min-width: 1.05em; padding: 0 .18em; text-align: center; border-radius: 1em; background: var(--sunken); color: var(--ink); font-size: .68rem; font-family: ui-monospace, Menlo, monospace; line-height: 1.5; }
+
+  .line { border: 1px solid var(--hair); background: var(--surface); margin-bottom: .55rem; box-shadow: var(--shadow); }
+  .line > .head { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: .6rem; align-items: baseline; padding: .4rem .7rem; border-bottom: 1px solid var(--hair); }
+  .line.rt > .head { border-left: 2px solid var(--accent); }
+  .line.va > .head { border-left: 2px solid var(--ochre); }
+  .line.de > .head { border-left: 2px solid var(--hair-2); }
+  .line.er > .head { border-left: 2px solid var(--bad); }
+  .line .lt { font-family: ui-monospace, Menlo, monospace; font-size: .78rem; overflow-wrap: anywhere; }
+  .line .body { padding: .5rem .7rem; display: flex; flex-direction: column; gap: .5rem; }
+  .kv { display: grid; grid-template-columns: 5.5rem minmax(0,1fr); gap: .5rem; font-size: .74rem; }
+  .kv .k { color: var(--faint); font-family: ui-monospace, Menlo, monospace; font-size: .62rem; text-transform: uppercase; letter-spacing: .08em; padding-top: .12rem; }
+  pre.code { margin: 0; font-size: .72rem; background: var(--sunken); padding: .5rem .6rem; border-radius: 3px; overflow-x: auto; white-space: pre; color: var(--ink); }
+  pre.caret { margin: 0; font-size: .74rem; background: var(--sunken); padding: .5rem .6rem; border-radius: 3px; overflow-x: auto; white-space: pre; color: var(--muted); }
+  pre.caret b { color: var(--bad); font-weight: 600; }
+  .struct { font-family: ui-monospace, Menlo, monospace; font-size: .73rem; overflow-wrap: anywhere; }
+  .struct .d { color: var(--faint); }
+
+  details.raw { margin-top: .3rem; }
+  details.raw summary { font-size: .68rem; color: var(--faint); cursor: pointer; font-family: ui-monospace, Menlo, monospace; }
+
+  .form { display: flex; flex-direction: column; gap: .5rem; }
+  .form label { display: flex; flex-direction: column; gap: .2rem; font-size: .66rem; text-transform: uppercase; letter-spacing: .08em; color: var(--faint); font-family: ui-monospace, Menlo, monospace; }
+  .form input, .form textarea {
+    font-family: ui-monospace, Menlo, monospace; font-size: .78rem; padding: .35rem .5rem;
+    border: 1px solid var(--hair-2); border-radius: 3px; background: var(--surface); color: var(--ink);
+    text-transform: none; letter-spacing: normal;
+  }
+  .form .pair { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
+
+  .note { font-size: .72rem; color: var(--faint); }
+  .callout { border-left: 2px solid var(--accent); background: var(--surface); padding: .6rem .8rem; margin-top: 1.2rem; }
+  .callout .h { font-family: ui-monospace, Menlo, monospace; font-size: .64rem; text-transform: uppercase; letter-spacing: .1em; color: var(--accent); display: block; margin-bottom: .25rem; }
+  .callout p { font-size: .78rem; }
+  .foot { margin-top: 2.5rem; padding-top: .8rem; border-top: 1px solid var(--hair); font-size: .7rem; color: var(--faint); }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <div class="brand"><button id="home">assay</button><span class="sub">explorer</span></div>
+    <div class="searchwrap">
+      <span class="mag">&#x2315;</span>
+      <input id="q" type="text" autocomplete="off" spellcheck="false"
+             placeholder="a card name, or a decline family&hellip;" aria-label="Search">
+      <span class="kbd">/</span>
+      <div class="results" id="res"></div>
+    </div>
+    <div class="status">
+      <span class="dot load" id="dot"></span><span id="stat">starting</span>
+      <button class="iconbtn" id="menu" title="Toggle nav">&#x2261;</button>
+    </div>
+  </div>
+
+  <div class="split">
+    <aside id="rail">
+      <div class="nav" id="nav"></div>
+      <div class="railbody" id="railbody"></div>
+    </aside>
+    <main id="main"><div class="pad" id="view"></div></main>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+/* =========================== plumbing =========================== */
+
+const el   = (id) => document.getElementById(id);
+const esc  = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
+const fmt  = (n) => (n ?? 0).toLocaleString("en-US");
+/* The gates report parts per thousand, per the assay this module is named for. The page converts
+   to percent — two decimals, so a corpus of 34,882 cards still moves the number visibly. */
+const pct  = (permil) => (permil / 10).toFixed(2) + "%";
+const share = (part, whole) => whole ? (100 * part / whole).toFixed(2) + "%" : "0%";
+const go   = (hash) => { location.hash = hash; };
+const qs   = (o) => Object.entries(o).filter(([, v]) => v !== null && v !== undefined && v !== "")
+                    .map(([k, v]) => k + "=" + encodeURIComponent(v)).join("&");
+
+async function api(path, params) {
+  const url = "/api/" + path + (params ? "?" + qs(params) : "");
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(path + " -> " + r.status);
+  return await r.json();
+}
+
+async function post(path, body) {
+  const r = await fetch("/api/" + path, {
+    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+  });
+  if (!r.ok) throw new Error(path + " -> " + r.status);
+  return await r.json();
+}
+
+/* The sweep runs in the background; every corpus-backed payload can come back as a placeholder. */
+const indexing = (d) => d && d.indexing === true;
+
+function indexingHTML(d) {
+  if (d.error) return '<div class="empty">The corpus sweep failed: ' + esc(d.error) +
+    '<br><br>The live parser and the grammar tree do not need the corpus — ' +
+    '<a href="#parse">parse some text</a> or <a href="#grammar">read the rules</a>.</div>';
+  return '<div class="empty">Sweeping the corpus — ' + fmt(d.swept) +
+    ' cards so far. This page refreshes itself when it lands.<br><br>' +
+    'Meanwhile: <a href="#parse">the live parser</a> and <a href="#grammar">the grammar</a> ' +
+    'are ready now, because neither needs the corpus.</div>';
+}
+
+/* =========================== status =========================== */
+
+let READY = false, OVERVIEW = null;
+
+async function pollStatus() {
+  let d;
+  try { d = await api("status"); } catch (e) { setStatus("bad", "server gone"); return; }
+  if (d.error) { setStatus("bad", "sweep failed"); READY = false; return; }
+  if (!d.ready) {
+    setStatus("load", "indexing " + fmt(d.swept));
+    setTimeout(pollStatus, 700);
+    return;
+  }
+  const first = !READY;
+  READY = true;
+  OVERVIEW = await api("overview");
+  setStatus(OVERVIEW.clean ? "ok" : "bad",
+    fmt(OVERVIEW.cards) + " cards · " + (OVERVIEW.clean ? "gate clean" : "GATE RED"));
+  buildNav();
+  if (first) route();
+}
+
+function setStatus(cls, text) {
+  el("dot").className = "dot " + cls;
+  el("stat").textContent = text;
+}
+
+/* =========================== nav =========================== */
+
+const SECTIONS = [
+  ["", "Overview", () => null],
+  ["cards", "Cards", (o) => o && fmt(o.cards)],
+  ["declines", "Declines", (o) => o && fmt(o.declineFamilies)],
+  ["grammar", "Grammar", () => null],
+  ["differential", "Differential", (o) => o && fmt(o.goldens)],
+  ["parse", "Parse text", () => null],
+];
+
+function buildNav() {
+  const here = (location.hash || "#").slice(1).split("/")[0];
+  el("nav").innerHTML = SECTIONS.map(([id, label, count]) => {
+    const n = count(OVERVIEW);
+    return '<button data-go="#' + id + '"' + (id === here ? ' class="on"' : "") + ">" +
+      esc(label) + (n ? '<span class="n">' + n + "</span>" : "") + "</button>";
+  }).join("");
+  for (const b of el("nav").querySelectorAll("[data-go]")) {
+    b.onclick = () => { go(b.dataset.go); el("rail").classList.remove("show"); };
+  }
+}
+
+function rail(header, rows) {
+  el("railbody").innerHTML = rows.length
+    ? '<div class="railhdr">' + esc(header) + "</div>" + rows.join("")
+    : "";
+  for (const b of el("railbody").querySelectorAll("[data-go]")) {
+    b.onclick = () => { go(b.dataset.go); el("rail").classList.remove("show"); };
+  }
+}
+
+/* =========================== routing =========================== */
+
+window.addEventListener("hashchange", route);
+
+/* The hash is sliced *before* decoding: a card can be named "Wax // Wane" and a decline family can
+   be a whole sentence, so a decoded slash would split a segment that is not a segment boundary. */
+function route() {
+  const h = location.hash || "";
+  el("main").scrollTop = 0;
+  buildNav();
+  if (h.startsWith("#c/")) viewCard(decodeURIComponent(h.slice(3)));
+  else if (h.startsWith("#d/")) {
+    const rest = h.slice(3);
+    const cut = rest.indexOf("/");
+    viewDecline(rest.slice(0, cut) === "shape" ? "shape" : "token", decodeURIComponent(rest.slice(cut + 1)));
+  }
+  else if (h.startsWith("#g/")) viewGrammar(decodeURIComponent(h.slice(3)));
+  else if (h.startsWith("#cards")) {
+    // `#cards/declined` is a link target from the overview's verdict table; arriving by it presets
+    // the filter, and every later interaction owns the filter state instead of the hash.
+    const preset = h.split("/")[1];
+    if (preset !== undefined) { cardFilter.state = decodeURIComponent(preset); }
+    cardFilter.offset = 0; cardFilter.rows = [];
+    viewCards();
+  }
+  else if (h.startsWith("#declines")) viewDeclines();
+  else if (h.startsWith("#grammar")) viewGrammar(null);
+  else if (h.startsWith("#differential")) viewDifferential();
+  else if (h.startsWith("#parse")) viewParse();
+  else viewOverview();
+}
+
+/* =========================== overview =========================== */
+
+async function viewOverview() {
+  rail("", []);
+  const d = OVERVIEW || await api("overview");
+  if (indexing(d)) { el("view").innerHTML = introHTML() + indexingHTML(d); return; }
+
+  const v = d.verdicts, bugs = v.MISMATCH + v.AMBIGUOUS + d.normalizationFailures.length + d.restoreFailures.length;
+
+  el("view").innerHTML = introHTML() + `
+    <div class="block">
+      <h2>The corpus, by card</h2>
+      ${corpusBar(d)}
+    </div>
+
+    <div class="stats" style="margin-top:1.4rem">
+      <div class="stat"><span class="v ok">${share(d.cardsCovered, d.cards)}</span><span class="k">Cards fully covered</span>
+        <span class="s">${fmt(d.cardsCovered)} / ${fmt(d.cards)}</span></div>
+      <div class="stat"><span class="v">${pct(d.inScopeFineness)}</span><span class="k">Phase 1 target class</span>
+        <span class="s">${fmt(d.inScopeCovered)} / ${fmt(d.inScopeCards)} cards</span></div>
+      <div class="stat"><span class="v">${pct(d.fineness)}</span><span class="k">Lines round-tripped</span>
+        <span class="s">${fmt(v.ROUND_TRIP)} / ${fmt(d.lineInstances)}</span></div>
+      <div class="stat"><span class="v">${fmt(v.DECLINED)}</span><span class="k">Declined lines</span>
+        <span class="s">${fmt(d.shapeFamilies)} sentence shapes</span></div>
+      <div class="stat"><span class="v ${bugs ? "bad" : "ok"}">${fmt(bugs)}</span><span class="k">Must be zero</span>
+        <span class="s">mismatch + ambiguity</span></div>
+    </div>
+
+    <div class="block">
+      <h2>Every ability line, by verdict</h2>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Verdict</th><th>Meaning</th><th class="num">Lines</th><th class="num">Share</th><th class="num">Unique</th><th></th></tr></thead>
+        <tbody>
+          ${verdictRow("ROUND_TRIP", "Printed back byte-for-byte.", d, "round-trip")}
+          ${verdictRow("VARIANT", "Alternate spelling normalized; the model survived unchanged.", d, "variant")}
+          ${verdictRow("DECLINED", "Not covered. Counted and ranked — not a bug.", d, "declined")}
+          ${verdictRow("AMBIGUOUS", "Two rules, two models, one text. <b>Must be 0.</b>", d, null)}
+          ${verdictRow("MISMATCH", "Printed something it does not read back. <b>Must be 0.</b>", d, null)}
+        </tbody>
+      </table></div>
+      <p class="note" style="margin-top:.5rem">Normalization not invertible:
+        <b>${d.normalizationFailures.length}</b> · full inverse not reproduced:
+        <b>${d.restoreFailures.length}</b> · redundant readings (same model):
+        <b>${fmt(d.redundantReadingLines)}</b> · reminder glosses:
+        ${fmt(d.glosses.MATCHED || 0)} matched, ${fmt(d.glosses.DIFFERED || 0)} differed,
+        ${fmt(d.glosses.UNGLOSSED || 0)} unglossed.</p>
+    </div>
+
+    ${bugList("Print mismatches", d.mismatches)}
+    ${bugList("Ambiguities", d.ambiguities)}
+    ${bugList("Normalization not invertible", d.normalizationFailures)}
+    ${bugList("Full inverse not reproduced", d.restoreFailures)}
+
+    <div class="block" id="topdeclines"></div>
+
+    <div class="callout">
+      <span class="h">Reading these numbers</span>
+      <p>Fineness is parts per thousand, per the assay this module is named for — so 841.1‰ is
+      84.1%. The percentage is printed beside it so neither reading can be the wrong one.</p>
+      <p>A <b>decline is not a failure</b>. It is the product: unparseable text is counted and named
+      rather than approximated, and the bottom of that list is a continuously-updated report of what
+      <code>mtg-sdk</code> cannot yet express, ranked by cards blocked.</p>
+    </div>
+
+    <div class="foot">
+      Corpus <code>${esc(d.corpusFile)}</code> · swept in ${(d.sweepMillis / 1000).toFixed(1)}s ·
+      ${fmt(d.goldens)} hand-written goldens on disk. Numbers are the gate's own
+      — this page reads <code>FinenessReport</code>, it does not recompute it.
+    </div>`;
+
+  for (const b of el("view").querySelectorAll(".corpus [data-state], .corpuskey [data-state]")) {
+    b.onclick = () => go("#cards/" + b.dataset.state);
+  }
+
+  const dec = await api("declines", { by: "shape", limit: 12 });
+  if (!indexing(dec)) {
+    el("topdeclines").innerHTML = "<h2>Top declines, by sentence shape</h2>" +
+      declineTable(dec.families, dec.goldensAvailable, dec.ranking, dec.hasUnlocks) +
+      '<p class="note" style="margin-top:.5rem">' + fmt(dec.total) +
+      ' shapes in all, ' + fmt(dec.tokenFamilies) + ' families keyed by the token they died on — ' +
+      '<a href="#declines">both rankings, and why they disagree</a>.</p>';
+  }
+}
+
+/* The whole corpus as one row: four card states, to scale, each a link into the filtered table.
+   Covered states are on the left so the boundary between "read" and "not read" is one edge. */
+const STATE_ORDER = ["round-trip", "vanilla", "variant", "declined"];
+
+function corpusBar(d) {
+  const total = d.cards || 1;
+  const seg = (s) => {
+    const n = d.states[s] || 0;
+    return '<button class="s-' + s + '" style="flex:' + n + ' 0 0" data-state="' + s + '" title="' +
+      esc(s + " — " + fmt(n) + " cards, " + share(n, total) + ": " + STATE_NOTE[s]) + '"></button>';
+  };
+  const key = (s) => {
+    const n = d.states[s] || 0;
+    return '<button data-state="' + s + '"><span class="sw s-' + s + '"></span>' +
+      esc(s) + ' <span class="nn">' + fmt(n) + '</span> <span class="pp">' + share(n, total) + "</span></button>";
+  };
+  return '<div class="corpus">' + STATE_ORDER.map(seg).join("") + "</div>" +
+    '<div class="corpuskey">' + STATE_ORDER.map(key).join("") + "</div>" +
+    '<p class="note" style="margin-top:.6rem">Three of these four are <b>covered</b>: a vanilla card ' +
+    "has no rules text and is read completely, and a variant only had a spelling normalized. " +
+    "Together that is <b>" + share(d.cardsCovered, total) + "</b> of Magic that <code>mtg-sdk</code> " +
+    "can express and Assay can read back.</p>";
+}
+
+function introHTML() {
+  return `
+    <h1>Argentum Assay</h1>
+    <p class="lead" style="margin-top:.5rem">A bidirectional Oracle-text grammar: Scryfall JSON in,
+    <code>mtg-sdk</code> models out, with every rule written in <em>both</em> directions so the whole
+    corpus proves it without a human reading the output. This page is that corpus, those rules, and
+    both gates — served by the grammar that is on the classpath right now, so a rule you just
+    edited is a restart away from being re-measured.</p>`;
+}
+
+function verdictRow(key, meaning, d, filter) {
+  const n = d.verdicts[key] || 0, u = d.uniqueVerdicts[key] || 0;
+  const pctWidth = d.lineInstances ? Math.round(100 * n / d.lineInstances) : 0;
+  const cls = key === "ROUND_TRIP" ? "" : key === "VARIANT" ? "split" : "";
+  const bad = (key === "AMBIGUOUS" || key === "MISMATCH") && n > 0;
+  return `<tr${filter ? ' class="clickrow" onclick="go(\'#cards/' + filter + '\')"' : ""}>
+    <td class="nm"><span class="tag ${bad ? "b" : key === "ROUND_TRIP" ? "k" : key === "VARIANT" ? "w" : ""}">${key}</span></td>
+    <td style="color:var(--muted)">${meaning}</td>
+    <td class="num">${fmt(n)}</td>
+    <td class="num" style="color:var(--muted)">${share(n, d.lineInstances)}</td>
+    <td class="num" style="color:var(--muted)">${fmt(u)}</td>
+    <td><span class="meter"><i class="${cls}" style="width:${pctWidth}%"></i></span></td>
+  </tr>`;
+}
+
+function bugList(title, items) {
+  if (!items || !items.length) return "";
+  return '<div class="block"><h2 style="color:var(--bad);border-color:var(--bad)">' + esc(title) +
+    "</h2><ul>" + items.map((i) => '<li class="mono" style="font-size:.76rem">' + esc(i) + "</li>").join("") +
+    "</ul></div>";
+}
+
+/* =========================== declines =========================== */
+
+function declineTable(families, showImplemented, ranking, showUnlocks) {
+  const max = families.reduce((m, f) => Math.max(m, f.cards), 1);
+  const by = ranking === "SHAPE" ? "shape" : "token";
+  return '<div class="tablewrap"><table><thead><tr>' +
+    "<th>" + (ranking === "SHAPE" ? "Sentence shape" : "Died on") + "</th>" +
+    '<th class="num" title="cards that mention it — how big the gap looks">Blocks</th>' +
+    (showUnlocks ? '<th class="num" title="cards this is the ONLY remaining blocker of — write it and exactly this many become covered">Unlocks</th>' : "") +
+    (showImplemented ? '<th class="num" title="of the blocked cards, how many already have a hand-written golden">Hand-written</th>' : "") +
+    '<th class="num">Lines</th><th></th><th>Example line</th>' +
+    "</tr></thead><tbody>" +
+    families.map((f) => {
+      const w = Math.round(100 * Math.sqrt(f.cards / max));
+      const iw = f.cards ? Math.round(w * f.implemented / f.cards) : 0;
+      const link = "#d/" + by + "/" + encodeURIComponent(f.token);
+      return '<tr class="clickrow" onclick="go(\'' + link + "')\">" +
+        '<td class="nm"><a href="' + link + '">' + esc(f.token.slice(0, 70)) + "</a></td>" +
+        '<td class="num">' + fmt(f.cards) + "</td>" +
+        (showUnlocks ? '<td class="num" style="color:' + (f.unlocks ? "var(--accent)" : "var(--faint)") + '">' +
+          (f.unlocks ? fmt(f.unlocks) : "—") + "</td>" : "") +
+        (showImplemented ? '<td class="num" style="color:var(--ochre)">' + fmt(f.implemented) + "</td>" : "") +
+        '<td class="num" style="color:var(--muted)">' + fmt(f.lines) + "</td>" +
+        '<td><span class="meter"><i style="width:' + w + '%"></i>' +
+          (iw ? '<i class="split" style="width:' + iw + '%;margin-top:-6px"></i>' : "") + "</span></td>" +
+        '<td class="mono" style="color:var(--muted);font-size:.73rem">' + esc((f.examples[0] || "").slice(0, 64)) + "</td>" +
+        "</tr>";
+    }).join("") +
+    "</tbody></table></div>";
+}
+
+/* The ranked list as a plan: cards covered after implementing the top N families, cumulatively.
+   A card joins only when its LAST remaining blocker is written, which is why this is far below the
+   sum of the Blocks column and is the number worth planning against. */
+function unlockCurve(curve, covered, total) {
+  if (!curve || curve.length < 2) return "";
+  const W = 640, H = 96, lo = covered, hi = curve[curve.length - 1];
+  const span = Math.max(1, hi - lo);
+  const x = (i) => (i / (curve.length - 1)) * W;
+  const y = (n) => H - ((n - lo) / span) * H;
+  const line = curve.map((n, i) => (i ? "L" : "M") + x(i).toFixed(1) + " " + y(n).toFixed(1)).join(" ");
+  const marks = [10, 25, 50, 100, 200, curve.length].filter((n, i, a) => n <= curve.length && a.indexOf(n) === i);
+
+  return `<div class="curve">
+    <svg viewBox="0 -8 ${W} ${H + 22}" preserveAspectRatio="none" role="img"
+         aria-label="cards covered after implementing the top N families">
+      <path class="area" d="${line} L ${W} ${H} L 0 ${H} Z"></path>
+      <path class="line" d="${line}"></path>
+      <line class="base" x1="0" y1="${H}" x2="${W}" y2="${H}"></line>
+      ${marks.map((n) => {
+        const px = x(n - 1);
+        return '<line class="mk" x1="' + px.toFixed(1) + '" y1="' + y(curve[n - 1]).toFixed(1) +
+          '" x2="' + px.toFixed(1) + '" y2="' + H + '"></line>' +
+          '<text x="' + px.toFixed(1) + '" y="' + (H + 14) + '" text-anchor="' +
+          (n === curve.length ? "end" : "middle") + '">' + n + "</text>";
+      }).join("")}
+    </svg>
+    <div class="corpuskey" style="margin-top:.6rem">
+      ${marks.map((n) => '<span style="color:var(--muted);display:flex;gap:.35rem;align-items:baseline">top ' +
+        n + ' <span class="nn">' + share(curve[n - 1], total) + '</span> <span class="pp">+' +
+        fmt(curve[n - 1] - covered) + " cards</span></span>").join("")}
+    </div>
+    <p class="note" style="margin-top:.5rem">Cards <em>covered</em>, not cards mentioned: a card joins
+    only when its last remaining blocker is written. That is why this curve sits far below the sum of
+    the <b>Blocks</b> column — and it is the number to plan against.</p>
+  </div>`;
+}
+
+let declineQuery = "", declineBy = "token";
+
+async function viewDeclines() {
+  const d = await api("declines", { by: declineBy, q: declineQuery, limit: 250 });
+  if (indexing(d)) { el("view").innerHTML = indexingHTML(d); return; }
+  const shape = d.ranking === "SHAPE";
+
+  el("view").innerHTML = `
+    <div class="crumb"><a href="#">overview</a> <span>/</span> <span>declines</span></div>
+    <h1>What the grammar refuses</h1>
+    <p class="lead" style="margin-top:.5rem">Every declined line, ranked by cards blocked. This is the
+    module's primary product: a decline names a missing capability in Argentum's own vocabulary rather
+    than in a third ontology's.</p>
+    <p>The two rankings answer <em>different questions</em> and they disagree in ways that change the
+    work. <b>Died on</b> keys each line by the token its parse stopped at — the right key for "what is
+    the grammar missing". <b>Sentence shape</b> keys it by the whole line with numbers and symbols
+    collapsed — the right key for "what should I write next", because a line dies on its <em>first</em>
+    unknown token, so one missing verb scatters across several token buckets and a missing prefix looks
+    larger than it is.</p>
+    <p><b>Implemented</b> is the other split worth working from. A declined line on a card that already
+    has a hand-written golden is a <em>grammar</em> gap whose known-good answer is already written, and
+    the differential confirms it the moment it parses. A declined line on a card nobody has implemented
+    may be an <em>SDK</em> gap, which is far longer work.</p>
+    <div class="toolrow" style="margin-top:1.1rem">
+      <div class="seg">
+        <button data-by="token"${shape ? "" : ' class="on"'}>died on · ${fmt(d.tokenFamilies)}</button>
+        <button data-by="shape"${shape ? ' class="on"' : ""}>sentence shape · ${fmt(d.shapeFamilies)}</button>
+      </div>
+      <input id="df" class="grow" placeholder="filter…" value="${esc(declineQuery)}"
+             autocomplete="off" spellcheck="false">
+      <span class="cnt">${fmt(d.matching)} of ${fmt(d.total)} · ${fmt(d.declinedLines)} lines</span>
+    </div>
+    <div class="block" style="margin-top:0">
+      <h2>What working the top of this list buys</h2>
+      ${d.hasUnlocks ? unlockCurve(d.unlockCurve, d.cardsCovered, d.corpusCards) : `<div class="empty">
+        There is no such number for this ranking, and that is the point. A curve like this is a claim
+        about <em>work</em> — write the top N and that many cards become covered — and a dead token is
+        not a unit of work: a line stops at its <em>first</em> unknown token, so "every declined line
+        of this card died at <code>Whenever</code>" says nothing has been read and implies no rule.
+        Computing it anyway claimed the top 400 token families cover 93% of Magic, against 15% for the
+        top 400 sentence shapes. <button class="linky" style="color:var(--accent)" data-by="shape">Switch
+        to sentence shape</button> to see the honest one.</div>`}
+    </div>
+    <div class="block">
+    ${d.families.length ? declineTable(d.families, d.goldensAvailable, d.ranking, d.hasUnlocks)
+                        : '<div class="empty">Nothing matches that filter.</div>'}
+    ${d.matching > d.families.length ? '<p class="note" style="margin-top:.5rem">Showing the first ' +
+      fmt(d.families.length) + '. Narrow the filter to see further down.</p>' : ""}
+    </div>`;
+
+  // Covers the seg toggle and the "switch to sentence shape" link inside the empty-curve note.
+  for (const b of el("view").querySelectorAll("[data-by]")) {
+    b.onclick = () => { declineBy = b.dataset.by; viewDeclines(); };
+  }
+  const input = el("df");
+  let timer = null;
+  input.oninput = () => {
+    declineQuery = input.value;
+    clearTimeout(timer);
+    timer = setTimeout(() => { const at = input.selectionStart; viewDeclines().then(() => {
+      const next = el("df"); if (next) { next.focus(); next.setSelectionRange(at, at); }
+    }); }, 200);
+  };
+
+  rail("Top families", d.families.slice(0, 60).map((f) =>
+    '<button class="rl" data-go="#d/' + declineBy + "/" + encodeURIComponent(f.token) +
+    '"><span>' + esc(f.token.slice(0, 44)) + '</span><span class="n">' + fmt(f.cards) + "</span></button>"));
+}
+
+async function viewDecline(by, token) {
+  const d = await api("decline", { by, token });
+  if (indexing(d)) { el("view").innerHTML = indexingHTML(d); return; }
+  if (d.error) { el("view").innerHTML = '<div class="empty">' + esc(d.error) + "</div>"; return; }
+  const shape = d.ranking === "SHAPE";
+
+  el("view").innerHTML = `
+    <div class="crumb"><a href="#">overview</a> <span>/</span> <a href="#declines">declines</a></div>
+    <div class="headline"><h1 style="font-size:1.1rem">${esc(d.token)}</h1>
+      <span class="tag">${shape ? "sentence shape" : "decline family"}</span></div>
+    <p>${shape
+      ? "Every line of this shape, with numbers and mana symbols collapsed. They are one row because " +
+        "one rule would read all " + fmt(d.lines) + " of them."
+      : "Every one of these lines parsed as far as this token and stopped. They are one family because " +
+        "they died in the same place, which is what makes them one piece of work rather than " + fmt(d.cards) + "."}</p>
+
+    <div class="stats" style="margin-top:1rem">
+      <div class="stat"><span class="v">${fmt(d.cards)}</span><span class="k">Cards blocked</span>
+        <span class="s">how big it looks</span></div>
+      ${d.hasUnlocks ? `<div class="stat"><span class="v ok">${fmt(d.unlocks)}</span>
+        <span class="k">Cards unlocked</span><span class="s">the only thing blocking them</span></div>` : ""}
+      <div class="stat"><span class="v">${fmt(d.lines)}</span><span class="k">Lines</span></div>
+      <div class="stat"><span class="v" style="color:var(--ochre)">${fmt(d.implemented)}</span>
+        <span class="k">Already hand-written</span><span class="s">grammar gap, not SDK gap</span></div>
+    </div>
+    ${d.hasUnlocks ? '<p class="note" style="margin-top:.6rem">The other ' + fmt(d.cards - d.unlocks) +
+      " cards decline on something else as well, so writing this alone does not cover them — it is " +
+      "still progress on every one of them, just not the whole of any.</p>" : ""}
+
+    <div class="block">
+      <h2>Example lines</h2>
+      <div class="tablewrap"><table><tbody>${d.examples.map((e) =>
+        '<tr><td class="mono" style="font-size:.76rem">' + esc(e) + "</td></tr>").join("")}</tbody></table></div>
+    </div>
+
+    <div class="block">
+      <h2>Cards behind it</h2>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Card</th><th>Set</th><th>Golden</th></tr></thead>
+        <tbody>${d.blocked.map((c) => `<tr>
+          <td class="nm"><a href="#c/${encodeURIComponent(c.name)}">${esc(c.name)}</a></td>
+          <td style="color:var(--muted)" class="mono">${esc(c.set)}</td>
+          <td>${c.golden ? '<span class="tag w">hand-written</span>' : ""}</td>
+        </tr>`).join("")}</tbody>
+      </table></div>
+      ${d.blocked.length < d.cards ? '<p class="note" style="margin-top:.5rem">Showing ' +
+        fmt(d.blocked.length) + " of " + fmt(d.cards) + " — the list is capped.</p>" : ""}
+    </div>`;
+  rail("", []);
+}
+
+/* =========================== cards =========================== */
+
+const cardFilter = { state: "", q: "", set: "", scope: false, golden: false, offset: 0, rows: [] };
+
+async function viewCards() {
+  const d = await api("cards", {
+    state: cardFilter.state, q: cardFilter.q, set: cardFilter.set,
+    scope: cardFilter.scope ? 1 : "", golden: cardFilter.golden ? 1 : "",
+    offset: cardFilter.offset, limit: 100,
+  });
+  if (indexing(d)) { el("view").innerHTML = indexingHTML(d); return; }
+  cardFilter.rows = cardFilter.offset ? cardFilter.rows.concat(d.rows) : d.rows;
+
+  const states = [["", "all"], ["round-trip", "round-trip"], ["variant", "variant"],
+                  ["vanilla", "vanilla"], ["declined", "declined"]];
+
+  el("view").innerHTML = `
+    <div class="crumb"><a href="#">overview</a> <span>/</span> <span>cards</span></div>
+    <h1>The corpus, as assayed</h1>
+    <p class="lead" style="margin-top:.5rem">Every card in Scryfall's Oracle bulk with the verdict the
+    sweep gave it. <b>Round-trip</b> means every line printed back byte-for-byte; <b>variant</b> means
+    a spelling was normalized and nothing was lost; <b>declined</b> means at least one line is not yet
+    covered.</p>
+    <div class="toolrow" style="margin-top:1rem">
+      <div class="seg">${states.map(([v, l]) =>
+        '<button data-state="' + v + '"' + (cardFilter.state === v ? ' class="on"' : "") + ">" + l + "</button>").join("")}</div>
+      <input id="cq" class="grow" placeholder="name contains…" value="${esc(cardFilter.q)}" autocomplete="off" spellcheck="false">
+      <input id="cset" style="width:5.5rem" placeholder="set" value="${esc(cardFilter.set)}" autocomplete="off" spellcheck="false">
+      <button class="chip${cardFilter.scope ? " on" : ""}" id="cscope" title="vanilla + keyword-only — Phase 1's own target class">in scope</button>
+      <button class="chip${cardFilter.golden ? " on" : ""}" id="cgold" title="cards that already have a hand-written definition">hand-written</button>
+      <span class="cnt">${fmt(d.total)} cards</span>
+    </div>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Card</th><th>Set</th><th class="num">Lines</th><th>Verdict</th><th>Blocked on</th></tr></thead>
+      <tbody>${cardFilter.rows.map(cardRowHTML).join("")}</tbody>
+    </table></div>
+    ${cardFilter.rows.length < d.total
+      ? '<div style="margin-top:.7rem"><button class="chip" id="more">load ' +
+        fmt(Math.min(100, d.total - cardFilter.rows.length)) + " more of " + fmt(d.total) + "</button></div>"
+      : ""}`;
+
+  const reload = () => { cardFilter.offset = 0; cardFilter.rows = []; return viewCards(); };
+  for (const b of el("view").querySelectorAll("[data-state]")) {
+    b.onclick = () => { cardFilter.state = b.dataset.state; reload(); };
+  }
+  el("cscope").onclick = () => { cardFilter.scope = !cardFilter.scope; reload(); };
+  el("cgold").onclick = () => { cardFilter.golden = !cardFilter.golden; reload(); };
+
+  // Re-rendering replaces the input the user is typing in, so the caret is restored explicitly.
+  let timer = null;
+  const debounce = (field, id) => {
+    const node = el(id);
+    node.oninput = () => {
+      cardFilter[field] = node.value;
+      clearTimeout(timer);
+      const at = node.selectionStart;
+      timer = setTimeout(() => reload().then(() => {
+        const next = el(id);
+        if (next) { next.focus(); next.setSelectionRange(at, at); }
+      }), 250);
+    };
+  };
+  debounce("q", "cq");
+  debounce("set", "cset");
+  if (el("more")) el("more").onclick = () => { cardFilter.offset = cardFilter.rows.length; viewCards(); };
+  rail("", []);
+}
+
+/* Three of these four are covered states and one is not; the colours say so. */
+const STATE_TAG = {
+  "round-trip": '<span class="tag k">round-trip</span>',
+  "vanilla": '<span class="tag v" title="no rules text — read completely and correctly">vanilla</span>',
+  "variant": '<span class="tag w">variant</span>',
+  "declined": '<span class="tag">declined</span>',
+};
+const STATE_NOTE = {
+  "round-trip": "every line printed back byte-for-byte",
+  "vanilla": "no rules text at all — covered, trivially and completely",
+  "variant": "a spelling was normalized; the model survived unchanged",
+  "declined": "at least one line is not yet covered",
+};
+
+function cardRowHTML(r) {
+  return `<tr>
+    <td class="nm"><a href="#c/${encodeURIComponent(r.name)}">${esc(r.name)}</a>${
+      r.golden ? ' <span class="tag w" title="has a hand-written definition">HW</span>' : ""}</td>
+    <td class="mono" style="color:var(--muted)">${esc(r.set)}</td>
+    <td class="num" style="color:var(--muted)">${r.lines}</td>
+    <td>${STATE_TAG[r.state] || ""}</td>
+    <td class="mono" style="font-size:.72rem;color:var(--muted)">${
+      r.declines.slice(0, 3).map((t) => '<a href="#d/token/' + encodeURIComponent(t) + '">' + esc(t) + "</a>").join(", ")}</td>
+  </tr>`;
+}
+
+/* =========================== one card =========================== */
+
+async function viewCard(name) {
+  const d = await api("card", { name });
+  if (indexing(d)) { el("view").innerHTML = indexingHTML(d); return; }
+  if (d.error) {
+    el("view").innerHTML = '<div class="crumb"><a href="#">overview</a></div><div class="empty">' +
+      esc(d.error) + "</div>";
+    return;
+  }
+  el("view").innerHTML = `
+    <div class="crumb"><a href="#">overview</a> <span>/</span> <a href="#cards">cards</a> <span>/</span> <span>${esc(d.set)}</span></div>
+    <div class="headline">
+      <h1>${esc(d.name)}</h1>
+      ${d.roundTrips ? '<span class="tag k">round-trips</span>' : d.covered ? '<span class="tag w">covered</span>' : '<span class="tag">not covered</span>'}
+      ${d.inScope ? '<span class="tag" title="vanilla or keyword-only — Phase 1\'s target class">in scope</span>' : ""}
+      <span class="tag">${esc(d.layout)}</span>
+    </div>
+    ${assayHTML(d)}
+    ${goldenHTML(d.golden)}`;
+  rail("", []);
+}
+
+/* The two panes: what Wizards printed, and what Assay makes of it. */
+function assayHTML(d) {
+  return '<div class="sxs">' +
+    "<div><h3>Printed</h3>" + d.faces.map(faceHTML).join('<div class="note">//</div>') + "</div>" +
+    "<div><h3>Assay's reading</h3>" + d.faces.map(readingHTML).join("") + "</div>" +
+    "</div>";
+}
+
+function faceHTML(f) {
+  return `<div class="face">
+    <div class="fname"><span>${esc(f.name)}</span><span>${manaHTML(f.manaCost)}</span></div>
+    <div class="ftype">${esc(f.typeLine)}</div>
+    <div class="ftext">${rulesHTML(f.oracleText) || '<p style="color:var(--faint)">(no rules text)</p>'}</div>
+  </div>`;
+}
+
+const MANA_CLASS = { W: "w", U: "u", B: "b", R: "r", G: "g", C: "c" };
+const manaHTML = (cost) => (String(cost || "").match(/\{[^}]*\}/g) || [])
+  .map((s) => '<span class="pip">' + esc(s.slice(1, -1)) + "</span>").join("");
+const rulesHTML = (text) => String(text || "").split("\n")
+  .map((l) => l.trim() ? "<p>" + esc(l).replace(/\{[^}]*\}/g, (s) => manaHTML(s)) + "</p>" : "").join("");
+
+function readingHTML(face) {
+  let html = "";
+  if (!face.normalizationHolds) {
+    html += '<div class="empty" style="border-color:var(--bad);color:var(--bad)">' +
+      "Normalization is not invertible for this face — a bug in Assay, and it is gated.</div>";
+  }
+  if (face.vanilla) {
+    html += '<div class="empty">Vanilla — no rules text. Covered trivially, and a fifth of the corpus.</div>';
+  }
+  html += face.lines.map(lineHTML).join("");
+  if (face.glosses && face.glosses.length) {
+    html += '<div class="block"><h3>Reminder-text audit</h3>' + face.glosses.map((g) => `
+      <div class="line ${g.verdict === "MATCHED" ? "rt" : g.verdict === "DIFFERED" ? "va" : "de"}">
+        <div class="head"><span class="lt">${esc(g.keyword)}</span><span class="tag">${g.verdict}</span></div>
+        ${g.verdict === "DIFFERED" ? '<div class="body">' +
+          kv("printed", '<div class="struct">' + esc(g.printed) + "</div>") +
+          kv("ours", '<div class="struct">' + esc(g.regenerated) + "</div>") + "</div>" : ""}
+      </div>`).join("") +
+      '<p class="note">Regenerating a printed gloss from our own keyword model. Reported, never gated ' +
+      "— a difference means the model and the printed gloss disagree about what the keyword does.</p></div>";
+  }
+  return html;
+}
+
+const VERDICT_CLASS = { ROUND_TRIP: "rt", VARIANT: "va", DECLINED: "de", MISMATCH: "er", AMBIGUOUS: "er" };
+const VERDICT_TAG = { ROUND_TRIP: "k", VARIANT: "w", DECLINED: "", MISMATCH: "b", AMBIGUOUS: "b" };
+
+function lineHTML(line) {
+  const body = [];
+  if (line.keywords && line.keywords.length) {
+    body.push(kv("model", line.keywords.map((k) =>
+      '<div class="struct">' + esc(k.structure) + '<br><span class="d">' + esc(k.description) + "</span></div>").join("")));
+  }
+  if (line.script) body.push(kv("script", '<pre class="code">' + esc(prettyJSON(line.script)) + "</pre>"));
+  if (line.printed && line.printed !== line.text) {
+    body.push(kv("prints as", '<div class="struct">' + esc(line.printed) + "</div>"));
+  }
+  if (line.decline) body.push(kv("died at", caretHTML(line.text, line.decline)));
+  if (line.redundantReadings) {
+    body.push(kv("redundant", '<span class="note">' + line.redundantReadings +
+      " extra reading(s) produced the same model — grammar redundancy, reported not gated.</span>"));
+  }
+  return `<div class="line ${VERDICT_CLASS[line.verdict] || ""}">
+    <div class="head">
+      <span class="lt">${esc(line.text) || '<span style="color:var(--faint)">(empty line)</span>'}</span>
+      <span class="tag ${VERDICT_TAG[line.verdict]}">${line.verdict}</span>
+    </div>
+    ${body.length ? '<div class="body">' + body.join("") + "</div>" : ""}
+  </div>`;
+}
+
+const kv = (k, v) => '<div class="kv"><span class="k">' + esc(k) + "</span><div>" + v + "</div></div>";
+
+/* The caret `assay explain` draws, in HTML: the line, the column it died on, what it wanted there. */
+function caretHTML(text, d) {
+  const at = Math.max(0, Math.min(d.position, text.length));
+  const want = d.reason === "PARSE_CAP" ? "too many readings (parse cap) — needs left-factoring here"
+             : d.reason === "LEFT_RECURSION" ? "the rule re-entered itself here (left recursion)"
+             : "expected " + (d.expected.join(" | ") || "<nothing>");
+  return '<pre class="caret">' + esc(text) + "\n" + " ".repeat(at) + "<b>^ " + esc(want) + "</b></pre>";
+}
+
+function prettyJSON(s) {
+  try { return JSON.stringify(JSON.parse(s), null, 2); } catch (e) { return s; }
+}
+
+/* ---- the differential, for this one card ---- */
+
+function goldenHTML(g) {
+  if (!g) return "";
+  if (!g.present) {
+    return `<div class="block"><h2>Against the hand-written card</h2>
+      <div class="empty">No hand-written definition for this card, so the differential has nothing to
+      compare against. Its verdict here is the touchstone's alone — which proves the reading is
+      <em>reversible</em>, never that it is <em>right</em>.</div></div>`;
+  }
+  const ok = g.verdict === "CONFIRMED";
+  const diff = (g.onlyInText || []).length || (g.onlyInCard || []).length || g.textScript || g.cardScript;
+  return `<div class="block">
+    <h2>Against the hand-written card</h2>
+    <div class="headline">
+      ${g.verdict ? '<span class="tag ' + (ok ? "k" : "b") + '">' + g.verdict + "</span>"
+                  : '<span class="tag">not compared</span>'}
+      <span class="tag">${esc(g.population)}</span>
+      <span class="tag">${esc(g.set)}</span>
+    </div>
+    <p>${esc(g.populationNote)}</p>
+    ${diff ? `<div class="line er"><div class="body">
+      ${(g.onlyInText || []).length ? kv("text has", '<div class="struct">' + g.onlyInText.map(esc).join("<br>") + "</div>") : ""}
+      ${(g.onlyInCard || []).length ? kv("card has", '<div class="struct">' + g.onlyInCard.map(esc).join("<br>") + "</div>") : ""}
+      ${g.textScript ? kv("from text", '<pre class="code">' + esc(prettyJSON(g.textScript)) + "</pre>") : ""}
+      ${g.cardScript ? kv("on the card", '<pre class="code">' + esc(prettyJSON(g.cardScript)) + "</pre>") : ""}
+    </div></div>
+    <p class="note">A divergence is a finding to classify as <b>parser bug</b>, <b>card bug</b>, or
+    <b>fold</b> — never silenced to make a number look better. The one worth the most is a bug in
+    the hand-written card.</p>` : ""}
+    <details class="raw"><summary>the golden definition</summary>
+      <pre class="code" style="margin-top:.4rem">${esc(prettyJSON(g.json))}</pre></details>
+  </div>`;
+}
+
+/* =========================== grammar =========================== */
+
+let GRAMMAR = null;
+
+async function viewGrammar(focus) {
+  if (!GRAMMAR) GRAMMAR = await api("grammar");
+  const rules = GRAMMAR.rules, byId = new Map(rules.map((r) => [r.id, r]));
+
+  const groups = new Map();
+  for (const r of rules) {
+    if (!groups.has(r.group)) groups.set(r.group, []);
+    groups.get(r.group).push(r);
+  }
+  const ordered = [...groups.entries()].sort((a, b) => b[1].length - a[1].length);
+  const current = focus && groups.has(focus) ? focus : ordered[0][0];
+
+  rail("Rule groups", ordered.map(([g, rs]) =>
+    '<button class="rl' + (g === current ? " on" : "") + '" data-go="#g/' + encodeURIComponent(g) +
+    '"><span>' + esc(g) + '</span><span class="n">' + rs.length + "</span></button>"));
+
+  const used = rules.filter((r) => r.usageLines).length;
+  const mine = groups.get(current).slice().sort((a, b) => (b.usageLines || 0) - (a.usageLines || 0));
+
+  el("view").innerHTML = `
+    <div class="crumb"><a href="#">overview</a> <span>/</span> <a href="#grammar">grammar</a></div>
+    <h1>${esc(current)}</h1>
+    <p class="lead" style="margin-top:.5rem">Every rule reachable from the entry point, walked from
+    the root rather than assembled from a list — so what is here is the grammar that <em>runs</em>.
+    A rule sitting in a file but wired into nothing cannot appear.</p>
+
+    <div class="stats" style="margin-top:1rem">
+      <div class="stat"><span class="v">${fmt(rules.length)}</span><span class="k">Rules, wired</span></div>
+      <div class="stat"><span class="v">${fmt(ordered.length)}</span><span class="k">Groups</span></div>
+      <div class="stat"><span class="v">${fmt(used)}</span><span class="k">Printed something</span>
+        <span class="s">over the whole corpus</span></div>
+      <div class="stat"><span class="v">${fmt(rules.filter((r) => !r.canonical).length)}</span>
+        <span class="k">Alternate spellings</span><span class="s">parse, never print</span></div>
+    </div>
+
+    <div class="block">
+      <h2>${esc(current)} — ${mine.length} rules</h2>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Rule</th><th>Kind</th><th class="num">Lines</th><th class="num">Cards</th><th></th></tr></thead>
+        <tbody>${mine.map((r) => ruleRowHTML(r, byId, mine)).join("")}</tbody>
+      </table></div>
+      <p class="note" style="margin-top:.5rem"><b>Lines</b> and <b>cards</b> count what this rule was
+      the one to <em>print</em>. The kernel records no parse provenance, but printing is deterministic
+      — an alternation prints through the first canonical branch that can express the value —
+      so this is an exact answer rather than an estimate, and it is the same walk the round trip
+      depends on. Blank means the rule never printed anything in the whole corpus.</p>
+    </div>
+
+    <div class="callout">
+      <span class="h">Bidirectional or it doesn't ship</span>
+      <p>A canonical rule registers <code>build</code> (text&rarr;model) <em>and</em> <code>match</code>
+      (model&rarr;text), and the kernel refuses to construct one without both. That is what buys the
+      gate: <code>print(parse(normalize(t))) == normalize(t)</code>. An
+      <span class="tag">alternate</span> is the one exception — a second English spelling that
+      parses and never prints, so that one meaning keeps one printed form.</p>
+    </div>`;
+}
+
+const KIND_NOTE = {
+  template: "a surface template with slots",
+  choice: "an alternation — every branch is tried, so ambiguity is detected rather than hidden by ordering",
+  run: "a separator-joined run",
+  alternate: "parses, never prints",
+  leaf: "a regex leaf, verified against itself on every print",
+};
+
+function ruleRowHTML(r, byId, siblings) {
+  const detail =
+    r.kind === "template" ? '<code style="font-size:.72rem">' + esc(r.template) + "</code>" +
+      (r.slots && r.slots.length ? " " + r.slots.map((s) =>
+        '<span class="tag">' + esc(s.name) + " = " + esc(s.ruleName) + "</span>").join(" ") : "")
+    : r.kind === "leaf" ? '<code style="font-size:.7rem;color:var(--muted)">' + esc(r.pattern) + "</code>"
+    : r.kind === "run" ? '<span class="note">joined by "' + esc(r.separator) + '", at least ' + r.min + "</span>"
+    : r.kind === "choice" ? '<span class="note">' + (r.children || []).length + " alternatives</span>"
+    : "";
+  return `<tr>
+    <td class="nm">${esc(r.name)}${r.canonical ? "" : ' <span class="tag w">alternate</span>'}</td>
+    <td><span class="tag" title="${esc(KIND_NOTE[r.kind] || "")}">${esc(r.kind)}</span></td>
+    <td class="num">${r.usageLines ? fmt(r.usageLines) : '<span style="color:var(--faint)">—</span>'}</td>
+    <td class="num" style="color:var(--muted)">${r.usageCards ? fmt(r.usageCards) : ""}</td>
+    <td>${detail}</td>
+  </tr>`;
+}
+
+/* =========================== differential =========================== */
+
+let DIFFERENTIAL = null;
+
+async function viewDifferential() {
+  rail("", []);
+  const header = `
+    <div class="crumb"><a href="#">overview</a> <span>/</span> <span>differential</span></div>
+    <h1>Assay's reading vs. the hand-written card</h1>
+    <p class="lead" style="margin-top:.5rem">The touchstone proves a parse is <em>reversible</em>. It
+    structurally cannot prove the parse is <em>right</em> — "Elves" de-pluralizing to
+    <code>Elve</code> round-trips forever and means nothing. This is the gate that asks the other
+    question, against an asset the incumbent pipeline never had: the committed goldens for the cards a
+    human already wrote from the same text.</p>`;
+
+  if (!DIFFERENTIAL) {
+    el("view").innerHTML = header + `
+      <div class="block"><div class="empty">This one decodes every hand-written golden, so it runs on
+      demand rather than at startup. Give it a few seconds.<br><br>
+      <button class="primary" id="rundiff">Run the differential</button></div></div>`;
+    el("rundiff").onclick = async () => {
+      el("rundiff").textContent = "running…";
+      el("rundiff").disabled = true;
+      DIFFERENTIAL = await api("differential");
+      viewDifferential();
+    };
+    return;
+  }
+
+  const d = DIFFERENTIAL;
+  if (indexing(d)) { el("view").innerHTML = header + indexingHTML(d); DIFFERENTIAL = null; return; }
+  if (d.error) { el("view").innerHTML = header + '<div class="empty">' + esc(d.error) + "</div>"; DIFFERENTIAL = null; return; }
+
+  el("view").innerHTML = header + `
+    <div class="stats" style="margin-top:1.2rem">
+      <div class="stat"><span class="v">${fmt(d.cards)}</span><span class="k">Hand-written cards</span></div>
+      <div class="stat"><span class="v">${pct(d.agreement)}</span><span class="k">Agreement</span>
+        <span class="s">of those compared</span></div>
+      <div class="stat"><span class="v ok">${fmt(d.confirmed)}</span><span class="k">Confirmed</span></div>
+      <div class="stat"><span class="v ${d.divergent ? "bad" : ""}">${fmt(d.divergent)}</span>
+        <span class="k">Divergent</span><span class="s">read every one</span></div>
+    </div>
+
+    <div class="block">
+      <h2>Why each card was or was not compared</h2>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Population</th><th class="num">Cards</th><th>Why</th></tr></thead>
+        <tbody>${d.populations.map((p) => `<tr>
+          <td class="nm">${esc(p.name)}</td>
+          <td class="num">${fmt(p.count)}</td>
+          <td style="color:var(--muted)">${esc(p.note)}</td>
+        </tr>`).join("")}</tbody>
+      </table></div>
+      <p class="note" style="margin-top:.5rem">Scoping is <b>fail-closed</b>: a card is compared only
+      where Assay reads every line of it, the text is the same text, the definition uses only modelled
+      slots, and the lines fold into one card. Everything else lands in a named bucket so the
+      denominator stays visible — widening a guard to raise the compared count is the gate lying
+      to itself, and it has happened three times.</p>
+    </div>
+
+    ${d.undecodable.length ? bugList("Goldens that would not decode (must be 0)", d.undecodable) : ""}
+
+    <div class="block">
+      <h2>Divergences — ${fmt(d.divergent)}</h2>
+      ${d.divergences.length ? d.divergences.map(divergenceHTML).join("")
+        : '<div class="empty">None. That number is not meant to stay at zero — it rises every time ' +
+          "the grammar reaches a new class of card, and each rise is the gate earning its keep.</div>"}
+    </div>`;
+}
+
+function divergenceHTML(v) {
+  return `<div class="line er">
+    <div class="head">
+      <span class="lt"><a href="#c/${encodeURIComponent(v.name)}">${esc(v.name)}</a></span>
+      <span class="tag">${esc(v.set)}</span>
+    </div>
+    <div class="body">
+      ${v.onlyInText.length ? kv("text has", '<div class="struct">' + v.onlyInText.map(esc).join("<br>") + "</div>") : ""}
+      ${v.onlyInCard.length ? kv("card has", '<div class="struct">' + v.onlyInCard.map(esc).join("<br>") + "</div>") : ""}
+      ${v.textScript ? kv("from text", '<pre class="code">' + esc(prettyJSON(v.textScript)) + "</pre>") : ""}
+      ${v.cardScript ? kv("on the card", '<pre class="code">' + esc(prettyJSON(v.cardScript)) + "</pre>") : ""}
+    </div>
+  </div>`;
+}
+
+/* =========================== live parse =========================== */
+
+const SAMPLE = {
+  name: "Argentum Sentinel",
+  manaCost: "{2}{W}",
+  typeLine: "Creature — Human Soldier",
+  oracleText: "Flying, vigilance\nWhen Argentum Sentinel enters, draw a card.",
+};
+
+function viewParse() {
+  rail("", []);
+  el("view").innerHTML = `
+    <div class="crumb"><a href="#">overview</a> <span>/</span> <span>parse</span></div>
+    <h1>Text that was never printed</h1>
+    <p class="lead" style="margin-top:.5rem">Run any Oracle text through the grammar on this
+    classpath. Not a reimplementation and not a snapshot — the identical path a corpus card
+    takes, normalization and the invertibility check included, because the interesting half often
+    happens before the grammar starts.</p>
+    <p>For a <b>custom card</b> this inverts the usual rule: a real card that declines is an SDK gap
+    to fix, while a custom card that declines is usually a card to <em>reword</em>. Its text is
+    authorable, and text outside canonical Magic templating is text that will confuse players.</p>
+
+    <div class="sxs" style="margin-top:1.2rem">
+      <div>
+        <h3>Card</h3>
+        <div class="form">
+          <label>Name<input id="f-name" spellcheck="false"></label>
+          <div class="pair">
+            <label>Mana cost<input id="f-cost" spellcheck="false" placeholder="{2}{W}"></label>
+            <label>Type line<input id="f-type" spellcheck="false" placeholder="Creature — Human Soldier"></label>
+          </div>
+          <label>Rules text <span style="text-transform:none;letter-spacing:normal">one ability per line, as Oracle prints it</span>
+            <textarea id="f-text" rows="7" spellcheck="false"></textarea></label>
+          <div class="toolrow" style="margin:0">
+            <button class="primary" id="pgo">Parse</button>
+            <button class="chip" id="pfill">Load an example</button>
+          </div>
+          <p class="note" id="pnote">Self-reference is abstracted by name, so write the card's own
+          name the way Oracle text does.</p>
+        </div>
+      </div>
+      <div><h3>Assay's reading</h3><div id="pout"><div class="empty">Nothing parsed yet.</div></div></div>
+    </div>`;
+
+  el("pfill").onclick = () => {
+    el("f-name").value = SAMPLE.name; el("f-cost").value = SAMPLE.manaCost;
+    el("f-type").value = SAMPLE.typeLine; el("f-text").value = SAMPLE.oracleText;
+  };
+  el("pgo").onclick = runParse;
+  el("f-text").onkeydown = (e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) runParse(); };
+  el("f-name").focus();
+}
+
+async function runParse() {
+  const body = {
+    name: el("f-name").value.trim(),
+    manaCost: el("f-cost").value.trim(),
+    typeLine: el("f-type").value.trim(),
+    oracleText: el("f-text").value,
+  };
+  el("pnote").textContent = "Parsing…";
+  let d;
+  try { d = await post("parse", body); }
+  catch (e) { el("pnote").textContent = "The parser did not answer: " + e.message; return; }
+  el("pnote").innerHTML = d.roundTrips
+    ? "Every line round-tripped byte-for-byte."
+    : d.covered ? "Covered — one or more spellings were normalized, and nothing was lost."
+    : "At least one line declined. That is information, not a failure.";
+  el("pout").innerHTML = d.faces.map(readingHTML).join("");
+}
+
+/* =========================== search =========================== */
+
+let rows = [], cursor = -1, searchTimer = null;
+
+async function search(text) {
+  const box = el("res");
+  const q = text.trim();
+  if (q.length < 2 || !READY) { box.classList.remove("on"); rows = []; return; }
+  const d = await api("search", { q });
+  if (indexing(d)) return;
+
+  rows = [];
+  let html = "";
+  if (d.cards.length) {
+    html += '<div class="sec">Cards</div>';
+    for (const c of d.cards) {
+      rows.push("#c/" + encodeURIComponent(c.name));
+      html += '<button class="row"><span class="mono">' + esc(c.name) + "</span>" +
+        (c.golden ? ' <span class="tag w">HW</span>' : "") +
+        '<span class="rt">' + esc(c.set) + " · " + esc(c.state) + "</span></button>";
+    }
+  }
+  if (d.declines.length) {
+    html += '<div class="sec">Decline families</div>';
+    for (const t of d.declines) {
+      rows.push("#d/token/" + encodeURIComponent(t.token));
+      html += '<button class="row"><span class="mono">' + esc(t.token) +
+        '</span><span class="rt">' + fmt(t.cards) + " cards</span></button>";
+    }
+  }
+  box.innerHTML = html || '<div class="none">No match.</div>';
+  box.classList.add("on");
+  cursor = -1;
+  box.querySelectorAll(".row").forEach((r, i) => {
+    r.onclick = () => { go(rows[i]); closeSearch(); };
+  });
+}
+
+function moveCursor(d) {
+  const nodes = el("res").querySelectorAll(".row");
+  if (!nodes.length) return;
+  cursor = (cursor + d + nodes.length) % nodes.length;
+  nodes.forEach((r, i) => r.classList.toggle("cur", i === cursor));
+  nodes[cursor].scrollIntoView({ block: "nearest" });
+}
+
+function closeSearch() { el("res").classList.remove("on"); el("q").blur(); }
+
+el("q").addEventListener("input", (e) => {
+  clearTimeout(searchTimer);
+  const v = e.target.value;
+  searchTimer = setTimeout(() => search(v), 150);
+});
+el("q").addEventListener("keydown", (e) => {
+  if (e.key === "ArrowDown") { e.preventDefault(); moveCursor(1); }
+  else if (e.key === "ArrowUp") { e.preventDefault(); moveCursor(-1); }
+  else if (e.key === "Enter") { const i = cursor >= 0 ? cursor : 0; if (rows[i]) { go(rows[i]); closeSearch(); } }
+  else if (e.key === "Escape") closeSearch();
+});
+document.addEventListener("click", (e) => {
+  if (!e.target.closest(".searchwrap")) el("res").classList.remove("on");
+});
+document.addEventListener("keydown", (e) => {
+  if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
+  if (e.key === "/" || (e.key === "k" && (e.metaKey || e.ctrlKey))) { e.preventDefault(); el("q").focus(); el("q").select(); }
+});
+
+el("home").onclick = () => go("#");
+el("menu").onclick = () => el("rail").classList.toggle("show");
+window.go = go;
+
+buildNav();
+route();
+pollStatus();
+</script>
+</body>
+</html>

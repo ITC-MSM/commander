@@ -374,6 +374,16 @@ assay-report *ARGS: _assay-tool
 assay-differential *ARGS: _assay-tool
     @oracle-assay/build/install/oracle-assay/bin/oracle-assay differential {{ARGS}}
 
+# THE EXPLORER — all of the above in a browser, against the grammar on this classpath rather than a
+# snapshot of it. Serves on loopback and opens a tab; Ctrl-C to stop. The corpus sweep runs in the
+# background, so the live parser and the rule tree are usable before the numbers land.
+#   just assay-explore                   http://127.0.0.1:7345
+#   just assay-explore --port 0          pick any free port
+#   just assay-explore --no-open         don't open a browser
+[group: 'dev']
+assay-explore *ARGS: _assay-tool
+    @oracle-assay/build/install/oracle-assay/bin/oracle-assay explore {{ARGS}}
+
 # Verify backlog/sets/*/cards.md headers match actual [x] / [x]+[ ] counts
 [group: 'build']
 check-backlog:
