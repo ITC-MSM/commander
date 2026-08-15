@@ -11807,6 +11807,111 @@
     ]
 }
 
+// The Eagles Are Coming!
+{
+    "name": "The Eagles Are Coming!",
+    "manaCost": "{1}{W}",
+    "typeLine": "Instant",
+    "oracleText": "Kicker {2}{W}{W} (You may pay an additional {2}{W}{W} as you cast this spell.)\nChoose target creature you own. If this spell was kicked, instead choose any number of target creatures you own. Return each chosen creature to your hand. At the beginning of the next upkeep, create a 4/4 white Bird Soldier creature token with flying for each creature returned to your hand this way.",
+    "keywordAbilities": [
+        {
+            "type": "Kicker",
+            "manaCost": "{2}{W}{W}"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherCards",
+                    "source": "ChosenTargets",
+                    "storeAs": "chosen"
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "chosen",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Hand"
+                    },
+                    "storeMovedAs": "returned"
+                },
+                {
+                    "type": "CreateDelayedTrigger",
+                    "step": "UPKEEP",
+                    "effect": {
+                        "type": "CreateToken",
+                        "count": {
+                            "type": "DistinctEntitiesInCollections",
+                            "collections": [
+                                "returned"
+                            ]
+                        },
+                        "power": 4,
+                        "toughness": 4,
+                        "colors": [
+                            "WHITE"
+                        ],
+                        "creatureTypes": [
+                            "Bird",
+                            "Soldier"
+                        ],
+                        "keywords": [
+                            "FLYING"
+                        ],
+                        "imageUri": "https://cards.scryfall.io/normal/front/9/e/9ed2d2f3-e1b0-41e0-a29d-31624e5e9004.jpg?1785524352"
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature own:you"
+                }
+            }
+        ],
+        "kickerTargetRequirements": [
+            {
+                "type": "TargetObject",
+                "unlimited": true,
+                "filter": {
+                    "baseFilter": "creature own:you"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "12",
+        "rarity": "RARE",
+        "artist": "Zezhou Chen",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/b/0bda1b62-47fc-42c2-a841-ccad8ea0db48.jpg?1784376936",
+        "rulings": [
+            {
+                "date": "2026-06-29",
+                "text": "The kicker ability doesn't let you pay a kicker cost more than once."
+            },
+            {
+                "date": "2026-06-29",
+                "text": "Any creature tokens that were returned to your hand are counted by the delayed triggered ability. You'll get a Bird Soldier token for each of them."
+            },
+            {
+                "date": "2026-06-29",
+                "text": "If a spell's kicker cost was paid, the spell is \"kicked.\""
+            },
+            {
+                "date": "2026-06-29",
+                "text": "If you copy a kicked spell on the stack, the copy is also kicked."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // The Great Goblin
 {
     "name": "The Great Goblin",
