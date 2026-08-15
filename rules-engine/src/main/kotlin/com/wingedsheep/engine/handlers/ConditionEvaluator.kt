@@ -601,6 +601,13 @@ class ConditionEvaluator(
                 ifResolution { ctx ->
                     ctx.triggerLastKnownSubtypes.orEmpty().any { it.equals(condition.subtype, ignoreCase = true) }
                 }
+            is com.wingedsheep.sdk.scripting.conditions.TriggeringEntityHadCardType ->
+                // Card-type names are captured from the projected TypeLine's enum names (e.g.
+                // "CREATURE"); compare case-insensitively so card authors can pass either
+                // CardType.X.name or a literal.
+                ifResolution { ctx ->
+                    ctx.triggerLastKnownCardTypes.orEmpty().any { it.equals(condition.cardType, ignoreCase = true) }
+                }
             is TriggeringEntityWasNotPutByThisSource ->
                 ifResolution { evaluateTriggeringEntityWasNotPutByThisSource(state, it) }
             is TriggeringSpellHasSingleTarget -> ifResolution { evaluateTriggeringSpellHasSingleTarget(state, it) }

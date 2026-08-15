@@ -186,6 +186,25 @@ data class TriggeringEntityHadSubtype(val subtype: String) : Condition {
 }
 
 /**
+ * Condition: "if it was a <card type>" (intervening-if for dies/leaves triggers).
+ * Reads the last-known **projected** card types captured on the triggering entity at the moment it
+ * left the battlefield (Rule 603.10 last-known information), so a type set by a continuous effect —
+ * not just the printed type line — counts.
+ *
+ * The card-type sibling of [TriggeringEntityHadSubtype]. Used by self-recursion loop guards that
+ * turn the returning permanent into something that is no longer a creature: Tom, Bert, and William
+ * ("When this creature dies, if they were a creature, return them to the battlefield. They're an
+ * artifact"), where the second death is of an *artifact*, so the guard fails and the loop stops.
+ * A card in a graveyard has its printed type line back, so asking the live entity would answer
+ * "creature" forever — only the leave-time snapshot can tell the two deaths apart.
+ */
+@SerialName("TriggeringEntityHadCardType")
+@Serializable
+data class TriggeringEntityHadCardType(val cardType: String) : Condition {
+    override val description: String = "if it was a ${cardType.lowercase()}"
+}
+
+/**
  * Condition: "with a single target" — true iff the triggering spell or ability
  * has exactly one target chosen. Reads the triggering entity's TargetsComponent.
  * Used by cards like Spinerock Tyrant whose trigger fires only when you cast an

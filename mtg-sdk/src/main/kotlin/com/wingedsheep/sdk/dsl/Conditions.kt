@@ -1958,6 +1958,16 @@ object Conditions {
         com.wingedsheep.sdk.scripting.conditions.TriggeringEntityHadSubtype(subtype)
 
     /**
+     * If the triggering entity had [cardType] among its **projected** card types when it left the
+     * battlefield (CR 603.10 last-known information). The card-type sibling of
+     * [TriggeringEntityHadSubtype] — e.g. Tom, Bert, and William's
+     * `TriggeringEntityHadCardType(CardType.CREATURE.name)`, where returning as an artifact is what
+     * stops the death trigger looping.
+     */
+    fun TriggeringEntityHadCardType(cardType: String): ConditionInterface =
+        com.wingedsheep.sdk.scripting.conditions.TriggeringEntityHadCardType(cardType)
+
+    /**
      * If the triggering entity was NOT put onto the battlefield by this source's ability.
      * Used to break ETB-trigger loops on cards like Kodama of the East Tree:
      * "if it wasn't put onto the battlefield with this ability". Pair with

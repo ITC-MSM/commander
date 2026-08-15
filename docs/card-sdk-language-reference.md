@@ -7540,6 +7540,16 @@ answer it and would silently return `false`.
   where the Demon type the card grants itself on return (`Effects.AddCreatureType(..., Duration.Permanent)`)
   is what stops the second death from returning it again. Reads `TriggerContext.lastKnownSubtypes`,
   populated from the `ZoneChangeEvent`'s `EntitySnapshot.subtypes`.
+- `TriggeringEntityHadCardType(cardType)` — the card-type sibling of `TriggeringEntityHadSubtype`:
+  intervening-if for dies/leaves triggers, true when the triggering entity had `cardType` among its
+  **projected** card types the moment it left the battlefield (CR 603.10), so a type set by a
+  continuous effect counts and not just the printed line. Resolution-only; pass `CardType.X.name`
+  (matched case-insensitively). Tom, Bert, and William's `triggerCondition =
+  Conditions.TriggeringEntityHadCardType(CardType.CREATURE.name)` is the self-recursion guard for
+  "if they were a creature, return them … They're an artifact" — the second death is of the artifact
+  they came back as, so the guard fails and the loop stops. Reads
+  `TriggerContext.lastKnownCardTypes`, populated from the `ZoneChangeEvent`'s
+  `EntitySnapshot.typeLine`.
 - `TargetControlsCreature(target)` — target player has a creature.
 - `TargetControlsLand(target)` — target player has a land.
 - `TargetMatchesFilter(filter, targetIndex = 0)` — the context target matches a `GameObjectFilter`.
