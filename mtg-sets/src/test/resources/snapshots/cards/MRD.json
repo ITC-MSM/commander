@@ -161,6 +161,47 @@
     ]
 }
 
+// Assert Authority
+{
+    "name": "Assert Authority",
+    "manaCost": "{5}{U}{U}",
+    "typeLine": "Instant",
+    "oracleText": "Affinity for artifacts (This spell costs {1} less to cast for each artifact you control.)\nCounter target spell. If that spell is countered this way, exile it instead of putting it into its owner's graveyard.",
+    "keywords": [
+        "AFFINITY"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Affinity",
+            "forType": "ARTIFACT"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "Counter",
+            "counterDestination": "CounterDestination.Exile"
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": {},
+                    "zone": "Stack"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "30",
+        "rarity": "UNCOMMON",
+        "artist": "Greg Hildebrandt",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/c/fc339ed7-e1d4-4fe9-a4c4-b030d3e74c00.jpg?1783944557"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Auriok Bladewarden
 {
     "name": "Auriok Bladewarden",
@@ -658,6 +699,86 @@
         "imageUri": "https://cards.scryfall.io/normal/front/4/6/465a7990-c9f9-4716-a833-fd41458b9cee.jpg"
     },
     "colorIdentityOverride": []
+}
+
+// Bosh, Iron Golem
+{
+    "name": "Bosh, Iron Golem",
+    "manaCost": "{8}",
+    "typeLine": "Legendary Artifact Creature — Golem",
+    "oracleText": "Trample\n{3}{R}, Sacrifice an artifact: Bosh deals damage equal to the sacrificed artifact's mana value to any target.",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 7
+    },
+    "keywords": [
+        "TRAMPLE"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{3}{R}"
+                            }
+                        },
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomSacrifice",
+                                "filter": "artifact"
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "EntityProperty",
+                        "entity": "Sacrificed",
+                        "numericProperty": "ManaValue"
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "any target"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "AnyTarget",
+                        "id": "any target"
+                    }
+                ],
+                "descriptionOverride": "{3}{R}, Sacrifice an artifact: Bosh deals damage equal to the sacrificed artifact's mana value to any target."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "147",
+        "rarity": "RARE",
+        "artist": "Brom",
+        "flavorText": "As Glissa searches for the truth about Memnarch, Bosh searches to unearth the secrets of his past.",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/b/9bfe325c-8d3d-4543-9fcd-214525d4ab2a.jpg?1783944527",
+        "rulings": [
+            {
+                "date": "2020-08-07",
+                "text": "Bosh can be sacrificed to pay the cost of its last ability."
+            },
+            {
+                "date": "2020-08-07",
+                "text": "If an artifact on the battlefield has {X} in its mana cost, X is considered to be 0."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
 }
 
 // Broodstar
@@ -2376,6 +2497,55 @@
     ]
 }
 
+// Forge Armor
+{
+    "name": "Forge Armor",
+    "manaCost": "{4}{R}",
+    "typeLine": "Instant",
+    "oracleText": "As an additional cost to cast this spell, sacrifice an artifact.\nPut X +1/+1 counters on target creature, where X is the sacrificed artifact's mana value.",
+    "script": {
+        "spellEffect": {
+            "type": "AddDynamicCounters",
+            "counterType": "+1/+1",
+            "amount": {
+                "type": "EntityProperty",
+                "entity": "Sacrificed",
+                "numericProperty": "ManaValue"
+            },
+            "target": {
+                "type": "ContextTarget",
+                "index": 0
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                }
+            }
+        ],
+        "additionalCosts": [
+            {
+                "type": "AdditionalAtom",
+                "atom": {
+                    "type": "AtomSacrifice",
+                    "filter": "artifact"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "92",
+        "rarity": "UNCOMMON",
+        "artist": "Tony Szczudlo",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/8/2873b6d5-af76-498c-bc2d-a26c36be3cbd.jpg?1783944541"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Frogmite
 {
     "name": "Frogmite",
@@ -2489,6 +2659,53 @@
         "artist": "Martina Pilcerova",
         "flavorText": "Over such beauty, wars are fought. With such power, wars are won.",
         "imageUri": "https://cards.scryfall.io/normal/front/a/1/a1d5e4c8-dfd0-45bc-8000-ebfaccfefec3.jpg?1783944521"
+    },
+    "colorIdentityOverride": []
+}
+
+// Glimmervoid
+{
+    "name": "Glimmervoid",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "At the beginning of the end step, if you control no artifacts, sacrifice this land.\n{T}: Add one mana of any color.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "END",
+                    "player": "Each"
+                },
+                "binding": "ANY",
+                "effect": "SacrificeSelf",
+                "triggerCondition": {
+                    "type": "Exists",
+                    "player": "You",
+                    "zone": "Battlefield",
+                    "filter": "artifact",
+                    "negate": true
+                }
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": "CostTap",
+                "effect": "AddManaOfChoice",
+                "timing": "ManaAbility",
+                "isManaAbility": true,
+                "descriptionOverride": "{T}: Add one mana of any color."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "281",
+        "rarity": "RARE",
+        "artist": "Lars Grant-West",
+        "flavorText": "An empty canvas holds infinite possibilities.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/2/e2ab98a1-664c-4775-a3dd-22a15e2f836b.jpg?1783944493"
     },
     "colorIdentityOverride": []
 }
@@ -4438,6 +4655,80 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// March of the Machines
+{
+    "name": "March of the Machines",
+    "manaCost": "{3}{U}",
+    "typeLine": "Enchantment",
+    "oracleText": "Each noncreature artifact is an artifact creature with power and toughness each equal to its mana value. (Equipment that's a creature can't equip a creature.)",
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "GrantCardType",
+                "cardType": "CREATURE",
+                "filter": {
+                    "baseFilter": {
+                        "cardPredicates": [
+                            "IsArtifact",
+                            {
+                                "type": "Not",
+                                "predicate": "IsCreature"
+                            }
+                        ]
+                    }
+                }
+            },
+            {
+                "type": "SetBasePowerToughnessDynamicStatic",
+                "power": {
+                    "type": "EntityProperty",
+                    "entity": "AffectedEntity",
+                    "numericProperty": "ManaValue"
+                },
+                "toughness": {
+                    "type": "EntityProperty",
+                    "entity": "AffectedEntity",
+                    "numericProperty": "ManaValue"
+                },
+                "filter": {
+                    "baseFilter": {
+                        "cardPredicates": [
+                            "IsArtifact",
+                            {
+                                "type": "Not",
+                                "predicate": "IsCreature"
+                            }
+                        ]
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "42",
+        "rarity": "RARE",
+        "artist": "Ben Thompson",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/b/9bdcc966-7837-463f-ae26-1096f34ac8c0.jpg?1783944553",
+        "rulings": [
+            {
+                "date": "2004-12-01",
+                "text": "If an Equipment becomes a creature, it can no longer equip a creature. If it's currently attached to a creature, it becomes unattached (but remains on the battlefield). You can activate the Equipment's equip ability, but it won't do anything."
+            },
+            {
+                "date": "2004-12-01",
+                "text": "Each artifact land has a mana value of 0. March of the Machines makes them 0/0 creatures, which are put into the graveyard as a state-based action."
+            },
+            {
+                "date": "2007-07-15",
+                "text": "If a noncreature artifact becomes an artifact creature this way and then another effect animates it, the new effect overrides March of the Machines's effect."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 
