@@ -3567,6 +3567,24 @@ class CastSpellHandler(
             }
         }
 
+        // Bilbo, Thief in the Night: the instant/sorcery half of the same cast-this-way rider family
+        // — "if an instant or sorcery spell cast this way would be put into your graveyard, exile it
+        // instead". Scoped to the *specific* grant that authorized this cast, so a simultaneous
+        // graveyard-cast permission from another source is unaffected. `onlyIfResolved = false`
+        // because the replacement catches the countered/fizzled spell too (printed ruling: an
+        // Adventure spell that fails to resolve is still exiled by this effect).
+        if (graveyardCastRiderGrant?.exileInsteadOfGraveyard == true &&
+            cardComponent.typeLine.let { it.isInstant || it.isSorcery }
+        ) {
+            currentCastState = currentCastState.updateEntity(action.cardId) { c ->
+                c.with(
+                    com.wingedsheep.engine.state.components.identity.ExileAfterResolveComponent(
+                        onlyIfResolved = false
+                    )
+                )
+            }
+        }
+
         // Apply any spell riders carried by the mana that paid for this spell.
         // Some riders mutate the spell directly (e.g., Cavern's MakesSpellUncounterable
         // stamps a component) while others queue a triggered ability above the spell

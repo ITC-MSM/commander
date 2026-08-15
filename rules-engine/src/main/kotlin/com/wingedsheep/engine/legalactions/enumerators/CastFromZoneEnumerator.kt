@@ -2331,7 +2331,9 @@ class CastFromZoneEnumerator : ActionEnumerator {
             // The permission's cast-this-way entry rider, recorded on the action so the handler
             // applies exactly the permission the player chose, and surfaced in the action text so the
             // options read differently when riders differ.
-            val riderSelection = GraveyardCastRiderSelection(permission.entersWithCounter, permission.addedSubtypeOnEntry)
+            val riderSelection = GraveyardCastRiderSelection(
+                permission.entersWithCounter, permission.addedSubtypeOnEntry, permission.exileInsteadOfGraveyard
+            )
             val riderSuffix = graveyardRiderSuffix(permission)
 
             val graveyardCards = state.getZone(ZoneKey(playerId, Zone.GRAVEYARD))

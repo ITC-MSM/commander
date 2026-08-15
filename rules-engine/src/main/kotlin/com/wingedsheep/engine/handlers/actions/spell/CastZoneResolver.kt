@@ -313,7 +313,9 @@ class CastZoneResolver(
         val matches = applicableMayCastFromGraveyardGrants(state, playerId, cardId, cardComponent)
         if (selection != null) {
             matches.firstOrNull {
-                it.entersWithCounter == selection.entersWithCounter && it.addedSubtypeOnEntry == selection.addedSubtype
+                it.entersWithCounter == selection.entersWithCounter &&
+                    it.addedSubtypeOnEntry == selection.addedSubtype &&
+                    it.exileInsteadOfGraveyard == selection.exileInsteadOfGraveyard
             }?.let { return it }
         }
         return matches.firstOrNull { it.hasEntryRider } ?: matches.firstOrNull()

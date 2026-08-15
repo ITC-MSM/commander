@@ -1507,6 +1507,82 @@
     ]
 }
 
+// Bilbo, Thief in the Night
+{
+    "name": "Bilbo, Thief in the Night",
+    "manaCost": "{1}{U}",
+    "typeLine": "Legendary Creature — Halfling Rogue",
+    "oracleText": "Spells you cast from anywhere other than your hand cost {1} less to cast.\nWhenever Bilbo attacks, you may cast an artifact, instant, or sorcery spell from your graveyard. If an instant or sorcery spell cast this way would be put into your graveyard, exile it instead.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "GrantStaticAbility",
+                    "ability": {
+                        "type": "MayCastFromGraveyard",
+                        "filter": "artifact|instant|sorcery",
+                        "oncePerTurn": true,
+                        "exileInsteadOfGraveyard": true
+                    },
+                    "target": "Self"
+                },
+                "descriptionOverride": "Whenever Bilbo attacks, you may cast an artifact, instant, or sorcery spell from your graveyard. If an instant or sorcery spell cast this way would be put into your graveyard, exile it instead."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifySpellCost",
+                "target": {
+                    "type": "YouCastFromZones",
+                    "zones": [
+                        "Library",
+                        "Battlefield",
+                        "Graveyard",
+                        "Stack",
+                        "Exile",
+                        "Command",
+                        "Sideboard"
+                    ]
+                },
+                "modification": {
+                    "type": "ReduceGeneric",
+                    "amount": 1
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "33",
+        "rarity": "MYTHIC",
+        "artist": "Nia Kovalevski",
+        "flavorText": "\"I am an honest burglar, more or less.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/8/484c7f83-8339-4ae1-8350-68ce1f7d05a3.jpg?1783902786",
+        "rulings": [
+            {
+                "date": "2026-08-14",
+                "text": "To determine the total cost of a spell, start with the mana cost or alternative cost you're paying, add any cost increases, then apply any cost reductions (such as that of Bilbo, Thief in the Night). The mana value of the spell is determined only by its mana cost, no matter what the total cost to cast the spell was."
+            },
+            {
+                "date": "2026-08-14",
+                "text": "The cost reduction applies only to generic mana in the costs of spells you cast from anywhere other than your hand. It can't reduce requirements of a specific color of mana."
+            },
+            {
+                "date": "2026-08-14",
+                "text": "You can choose to cast an Adventure instant or sorcery spell from your graveyard as Bilbo's ability resolves. If that Adventure spell resolves, you can exile it using the replacement effect associated with the Adventure, and you can cast the permanent spell later from exile. If that Adventure spell fails to resolve (because it's countered or its targets become illegal), that card is exiled by the replacement effect created by Bilbo's ability; you can't cast the permanent spell later from exile."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Bofur, Reliable Guardian
 {
     "name": "Bofur, Reliable Guardian",
