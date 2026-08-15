@@ -37,6 +37,40 @@ object Primitives {
     )
 
     /**
+     * A power/toughness modifier pair — "+3/+3", "-2/-0", "+0/+2".
+     *
+     * ### Why this is one leaf and not two signed integers
+     *
+     * A zero modifier is printed with a sign the model cannot hold: `Fixed(0)` is `Fixed(0)`, but the
+     * text says "-2/-0" on one card and "+0/+2" on another. Two independent leaves could never
+     * choose, because neither can see the other component. One leaf can, and the corpus states the
+     * rule unambiguously — across all 38,626 Oracle texts a zero **always takes the sign of the other
+     * component**, and "+0/+0" is the only spelling when both are zero. There is no `+3/-0` or
+     * `-0/+2` in Magic. The touchstone holds this to a corpus-wide zero mismatches, which is the
+     * check that the rule is Wizards' and not this file's.
+     *
+     * The value is a bare [Pair] rather than a type of its own: both components go straight into
+     * `Effects.ModifyStats`, so nothing here is an intermediate representation of "what the text
+     * means" — it is the two numbers the printed pair carries, in the order it carries them.
+     */
+    val statModifiers: Phrase<Pair<Int, Int>> = token(
+        name = "a power/toughness modifier",
+        pattern = Regex("""[+-](?:0|[1-9][0-9]*)/[+-](?:0|[1-9][0-9]*)"""),
+        read = { text ->
+            val (power, toughness) = text.split("/")
+            power.toInt() to toughness.toInt()
+        },
+        write = { (power, toughness) -> "${signed(power, toughness)}/${signed(toughness, power)}" },
+    )
+
+    /** [value]'s printed form, taking [sibling]'s sign when it is zero and has none of its own. */
+    private fun signed(value: Int, sibling: Int): String = when {
+        value != 0 -> if (value > 0) "+$value" else "$value"
+        sibling < 0 -> "-0"
+        else -> "+0"
+    }
+
+    /**
      * A run of mana symbols — `{2}{U}`, `{W/P}`, `{X}`. Symbols are lexed as tokens and never as
      * prose (the design's symbol rule); a symbol the SDK's [ManaCost] cannot express — `{S}`, for
      * one — makes this leaf decline rather than throw, so the card is counted, not lost.

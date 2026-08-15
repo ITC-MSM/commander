@@ -1,6 +1,7 @@
 package com.wingedsheep.assay.grammar
 
 import com.wingedsheep.sdk.scripting.GameObjectFilter
+import com.wingedsheep.sdk.scripting.targets.AnyTarget
 import com.wingedsheep.sdk.scripting.filters.unified.TargetFilter
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.scripting.targets.TargetObject
@@ -43,6 +44,14 @@ object Targets {
      * it. Worth an `id` parameter on the facade; noted rather than changed here.
      */
     fun player(): TargetRequirement = TargetPlayer(id = SLOT)
+
+    /**
+     * "any target" — the burn-spell requirement, covering any creature, player or planeswalker.
+     *
+     * Constructed directly for the same reason [player] is: `dsl.Targets.Any` is a `val` fixed at
+     * `AnyTarget()`, and a requirement with no id cannot be referred to by the effect that reads it.
+     */
+    fun any(): TargetRequirement = AnyTarget(id = SLOT)
 
     /** …and the reference half, for the effect that acts on it. */
     fun bound(): EffectTarget = EffectTarget.BoundVariable(SLOT)

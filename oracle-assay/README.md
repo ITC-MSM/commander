@@ -41,6 +41,7 @@ syntax/     Phrase kernel — templates, slots, both directions, memoization, th
 normalize/  Scryfall text -> canonical ability lines, every pass with its inverse; reminder glosses
 corpus/     the Scryfall Oracle bulk: download, cache, stream
 grammar/    the rules, by topic — Primitives, Keywords, Cardinals, Filters, Targets, Steps, Triggers
+            Steps covers draw, destroy/exile/tap/untap/bounce, life, scry/surveil, damage, and pump
 gate/       the touchstone and the fineness report
 cli/        assay parse | explain | gate | report | corpus
 ```
@@ -80,15 +81,15 @@ non-zero on. Declines are not failures.
 Cards assayed                    34882
 Ability lines                    66793  (39059 unique)
 
-Round-trips byte-exact           13515   202.3‰ (20.2%)
+Round-trips byte-exact           14238   213.2‰ (21.3%)
 Alternate spelling normalized    30
-Declined                         53248
+Declined                         52525
 Ambiguous — distinct readings    0
 Print mismatch                   0
 Normalization not invertible     0
 Full inverse not reproduced      0
 
-Cards fully covered              2014 / 34882   57.7‰ (5.8%)
+Cards fully covered              2366 / 34882   67.8‰ (6.8%)
 Vanilla + keyword-only cards     1440 / 1712   841.1‰ (84.1%)   <- Phase 1 target
 Reminder-text glosses            2870 matched · 114 differed · 956 unglossed
 ```
@@ -136,16 +137,16 @@ named population bucket instead and the denominator stays visible.
 
 ```
   Hand-written cards                 8874
-    compared                         537
-    not yet covered by the grammar   7753
-    script slot not modelled yet      34
-    lines do not fold into one card    7
+    compared                         647
+    not yet covered by the grammar   7625
+    script slot not modelled yet      39
+    lines do not fold into one card   20
     multi-face (out of scope)        301
     Oracle text differs from golden  242
     golden would not decode            0
 
-  Confirmed — models agree           536   998.1‰ (99.8%)
-  DIVERGENT — read every one           1
+  Confirmed — models agree           644   995.4‰ (99.5%)
+  DIVERGENT — read every one           3
 ```
 
 The divergence count is not meant to stay at zero — it rises every time the grammar reaches a new
@@ -222,7 +223,19 @@ each one has to say why it is not a difference.
   hexproof / shroud / can't-be-targeted checks separately for each. That parallel implementation is
   the reason this is not folded: the two agreeing today is an accident of two code paths, not a
   stated equivalence, and folding would stop the gate from noticing if they drift. Unifying them is
-  an SDK cleanup with 17 card sites behind it.
+  an SDK cleanup with 17 card sites behind it. The damage rules added a second instance — Sear —
+  which is what a standing finding is supposed to do: it recurs, in a new sentence shape, unchanged.
+- **Open: "you" has two spellings, and asymmetric facade defaults are why.** Nightdrinker Moroii
+  writes "you lose 3 life" as `EffectTarget.PlayerRef(Player.You)`; 116 other sites write it as
+  `EffectTarget.Controller`, against 20 for the `PlayerRef` form, and the grammar emits the majority.
+  Both resolve to `context.controllerId` in the *same* `when` in `TargetResolutionUtils`, so nothing
+  is broken — but they are **not** interchangeable in general: the entity resolver in the same file
+  handles `Controller` and falls through to `null` for `PlayerRef(You)`. That asymmetry is why this
+  is not folded; a fold here would have to be scoped to player-directed effects to be true.
+  The mechanism that produced the split is worth naming: `Effects.GainLife` defaults its target to
+  `Controller` while `Effects.LoseLife` defaults to `PlayerRef(Player.TargetOpponent)`, so an author
+  writing "you gain" takes the default and one writing "you lose" must override — and reaches for the
+  shape the signature showed them.
 - **Still open: `ProtectionScope.Colors` is one of those spellings.** CR 702.16g defines the joined
   text as two abilities, which is how all but one card in the corpus writes it — Ureni, the Song
   Unending uses `Colors`. The scope is engine-supported (`CardEntityFactory`, `PlayerProtectionRules`)

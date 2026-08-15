@@ -188,8 +188,10 @@ is the next work:
 2. `Filters.kt` ✅ type and controller. Still to come: subtype, colour, power/toughness, "other"
 3. `Zones.kt` — "your library", "the top three cards of", "your graveyard" → `CardSource`
 4. `Targets.kt` ✅ "target creature" over a filter. Still to come: "any target", "up to two target…"
-5. `Steps.kt` ✅ draw / destroy / exile / tap / untap / return to hand, one verb over one target.
-   Still to come: sacrifice, mill, discard, counter, damage, counters, tokens, and the *sequence* —
+5. `Steps.kt` ✅ draw / destroy / exile / tap / untap / return to hand, one verb over one target;
+   ✅ the counted verbs — life gain and loss, scry, surveil, damage (to any target, to a player, to a
+   filtered permanent) and the pump spell with its `until end of turn`.
+   Still to come: sacrifice, mill, discard, counter, counters, tokens, and the *sequence* —
    two effect sentences in one card, which the differential currently buckets as "lines do not fold"
 6. `Triggers.kt` ✅ enters / dies / attacks / blocks / deals combat damage to a player. Still to come:
    the other party's triggers ("whenever a creature you control dies"), phase triggers ("at the

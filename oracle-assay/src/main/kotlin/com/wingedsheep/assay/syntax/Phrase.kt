@@ -41,6 +41,17 @@ abstract class Phrase<T> {
     /** Identity for memoization. Assigned once per rule instance; rules are constructed at init. */
     internal val id: Int = NEXT_ID.getAndIncrement()
 
+    /**
+     * What this rule is made of, for tooling that wants to *show* the grammar rather than run it.
+     *
+     * Read-only and never consulted by [parseHere] or [unparse], so it cannot affect a verdict —
+     * which is the whole reason it is allowed to exist here. The alternative was for each grammar
+     * family to publish its own rule list, and that would describe the grammar as *declared* rather
+     * than as *wired*: a family written but never reached from [com.wingedsheep.assay.grammar.Grammar]
+     * would still show up. Walking from the root entry point can only show rules that are live.
+     */
+    open val shape: RuleShape get() = RuleShape.Opaque
+
     /** Parse at [from], returning every reading. Implementations must not memoize; [parseAt] does. */
     protected abstract fun parseHere(ctx: ParseContext, from: Int): List<Parse<T>>
 
@@ -57,6 +68,44 @@ abstract class Phrase<T> {
 
 /** One successful reading: a value plus the offset just past the text it consumed. */
 data class Parse<out T>(val value: T, val end: Int)
+
+/**
+ * The structure of a rule, as [Phrase.shape] reports it. One case per kernel combinator.
+ *
+ * Deliberately not a rendering: it hands back the child [Phrase]s themselves so a walker decides how
+ * deep to go and what to do at each node. Nothing here is used to parse or print.
+ */
+sealed interface RuleShape {
+
+    /** The rules this one is built from, in the order the surface form mentions them. */
+    val children: List<Phrase<*>> get() = emptyList()
+
+    /** A rule declared from a surface template — the ordinary case. */
+    data class Template(val template: String, val slots: Map<String, Phrase<*>>) : RuleShape {
+        override val children: List<Phrase<*>> get() = slots.values.toList()
+    }
+
+    /** [oneOf] — an alternation. */
+    data class Choice(val alternatives: List<Phrase<*>>) : RuleShape {
+        override val children: List<Phrase<*>> get() = alternatives
+    }
+
+    /** [separated] — a separator-joined run. */
+    data class Run(val item: Phrase<*>, val separator: String, val min: Int) : RuleShape {
+        override val children: List<Phrase<*>> get() = listOf(item)
+    }
+
+    /** [alternate] — a spelling that parses and never prints. */
+    data class Alternate(val inner: Phrase<*>) : RuleShape {
+        override val children: List<Phrase<*>> get() = listOf(inner)
+    }
+
+    /** [token] — a regex leaf, where the kernel cannot see inside either half. */
+    data class Leaf(val pattern: String) : RuleShape
+
+    /** A rule that does not describe itself. No kernel combinator produces this today. */
+    data object Opaque : RuleShape
+}
 
 /** Why the grammar refused a span. Every decline is counted and ranked, never approximated. */
 enum class DeclineReason {
@@ -336,6 +385,8 @@ private class TemplatePhrase<T>(
     override val canonical: Boolean,
 ) : Phrase<T>() {
 
+    override val shape: RuleShape get() = RuleShape.Template(template, slots)
+
     override fun parseHere(ctx: ParseContext, from: Int): List<Parse<T>> {
         var frontier = listOf(emptyMap<String, Any?>() to from)
         for (part in parts) {
@@ -430,6 +481,8 @@ private class OneOfPhrase<T>(override val name: String, private val alternatives
         require(alternatives.isNotEmpty()) { "oneOf(\"$name\") needs at least one alternative" }
     }
 
+    override val shape: RuleShape get() = RuleShape.Choice(alternatives)
+
     override fun parseHere(ctx: ParseContext, from: Int): List<Parse<T>> =
         alternatives.flatMap { it.parseAt(ctx, from) }
 
@@ -451,6 +504,7 @@ fun <T> alternate(inner: Phrase<T>): Phrase<T> = AlternatePhrase(inner)
 private class AlternatePhrase<T>(private val inner: Phrase<T>) : Phrase<T>() {
     override val name: String get() = "${inner.name} (alternate)"
     override val canonical: Boolean get() = false
+    override val shape: RuleShape get() = RuleShape.Alternate(inner)
     override fun parseHere(ctx: ParseContext, from: Int): List<Parse<T>> = inner.parseAt(ctx, from)
     override fun unparse(value: T): String? = null
 }
@@ -477,6 +531,8 @@ private class SeparatedPhrase<T>(
     init {
         require(min >= 1) { "separated(\"$name\") needs min >= 1" }
     }
+
+    override val shape: RuleShape get() = RuleShape.Run(item, separator, min)
 
     override fun parseHere(ctx: ParseContext, from: Int): List<Parse<List<T>>> {
         val out = mutableListOf<Parse<List<T>>>()
@@ -527,6 +583,8 @@ private class TokenPhrase<T>(
     private val read: (String) -> T?,
     private val write: (T) -> String?,
 ) : Phrase<T>() {
+
+    override val shape: RuleShape get() = RuleShape.Leaf(pattern.pattern)
 
     override fun parseHere(ctx: ParseContext, from: Int): List<Parse<T>> {
         val m = pattern.matchAt(ctx.input, from) ?: run { ctx.fail(from, name); return emptyList() }

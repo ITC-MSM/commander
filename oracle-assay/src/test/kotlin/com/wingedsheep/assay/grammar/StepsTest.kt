@@ -131,6 +131,75 @@ class StepsTest : StringSpec({
         roundTrips("Tap target artifact you control.")
     }
 
+    // Lightning Bolt's golden, written by hand, is exactly this model.
+    "damage to any target declares the requirement the burn spells declare" {
+        fragment("~ deals 3 damage to any target.") shouldBe CardFragment(
+            script = CardScript(
+                spellEffect = Effects.DealDamage(3, Targets.bound()),
+                targetRequirements = listOf(Targets.any()),
+            )
+        )
+        roundTrips("~ deals 3 damage to any target.")
+        roundTrips("~ deals 2 damage to target creature.")
+        roundTrips("~ deals 1 damage to target creature an opponent controls.")
+        roundTrips("~ deals 5 damage to target player.")
+    }
+
+    // Giant Growth's golden. `Duration.EndOfTurn` is ModifyStats's default, which is why the
+    // sentence's own words are the only place the duration is spelled.
+    "a pump spell round-trips over both the filter and the modifier vocabulary" {
+        fragment("Target creature gets +3/+3 until end of turn.") shouldBe CardFragment(
+            script = CardScript(
+                spellEffect = Effects.ModifyStats(3, 3, Targets.bound()),
+                targetRequirements = listOf(Targets.permanent(GameObjectFilter.Creature)),
+            )
+        )
+        listOf(
+            "Target creature gets +3/+3 until end of turn.",
+            "Target creature gets -2/-0 until end of turn.",
+            "Target creature gets +0/+2 until end of turn.",
+            "Target creature you control gets +1/+1 until end of turn.",
+            "Target artifact creature gets +2/-1 until end of turn.",
+        ).forEach { roundTrips(it) }
+    }
+
+    // The sign of a zero modifier is not in the model — `Fixed(0)` is `Fixed(0)` — so the printer
+    // derives it from the other component, which is the rule the whole corpus follows. Getting this
+    // wrong is a print mismatch on ~250 cards rather than a wrong reading, but the gate must be 0.
+    "a zero modifier takes the sign of the component beside it" {
+        fun printed(power: Int, toughness: Int) = Grammar.abilityLine.printLine(
+            CardFragment(
+                script = CardScript(
+                    spellEffect = Effects.ModifyStats(power, toughness, Targets.bound()),
+                    targetRequirements = listOf(Targets.permanent(GameObjectFilter.Creature)),
+                )
+            )
+        )
+
+        printed(-2, 0) shouldBe "Target creature gets -2/-0 until end of turn."
+        printed(0, -1) shouldBe "Target creature gets -0/-1 until end of turn."
+        printed(1, 0) shouldBe "Target creature gets +1/+0 until end of turn."
+        printed(0, 0) shouldBe "Target creature gets +0/+0 until end of turn."
+    }
+
+    "the counted verbs read digits, where the draw rules read number words" {
+        listOf(
+            "You gain 3 life.",
+            "You lose 2 life.",
+            "Target player gains 5 life.",
+            "Target player loses 1 life.",
+            "Scry 2.",
+            "Surveil 1.",
+        ).forEach { roundTrips(it) }
+    }
+
+    // The two conventions live in one text and must not borrow each other's leaf: Oracle writes
+    // "draw two cards" and "you gain 2 life", never the reverse of either.
+    "a life total spelled as a word, or a card count as a digit, declines" {
+        Grammar.abilityLine.parseLine("You gain three life.").shouldBeInstanceOf<ParseOutcome.Declined>()
+        Grammar.abilityLine.parseLine("Draw 2 cards.").shouldBeInstanceOf<ParseOutcome.Declined>()
+    }
+
     // Fail-closed the other way: a requirement carrying a restriction the phrase does not spell
     // must not print as though it did. `excludeSelf` is "other target creature", a different card.
     "a target requirement the phrase does not spell refuses to print" {
