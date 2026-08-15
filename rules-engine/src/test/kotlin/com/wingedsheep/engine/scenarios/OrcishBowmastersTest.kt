@@ -197,9 +197,9 @@ class OrcishBowmastersTest : FunSpec({
 
         val draw2 = driver.putCardInHand(p2, "Draw Two Test")
         driver.castSpell(p2, draw2)
-        val pings = driver.resolveStackPinging(p1, p2)
+        driver.resolveStackPinging(p1, p2)
 
-        pings shouldBe 2
+        // Assert the semantic result, independent of how target-placement pauses are interleaved.
         driver.getLifeTotal(p2) shouldBe 18
         val army = driver.armiesControlledBy(p1).single()
         driver.plusOneCounters(army) shouldBe 2

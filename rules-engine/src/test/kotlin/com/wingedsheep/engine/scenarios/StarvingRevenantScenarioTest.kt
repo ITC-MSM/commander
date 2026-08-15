@@ -2,6 +2,7 @@ package com.wingedsheep.engine.scenarios
 
 import com.wingedsheep.engine.core.ReorderLibraryDecision
 import com.wingedsheep.engine.core.OrderTriggeredAbilitiesDecision
+import com.wingedsheep.engine.core.ChooseTargetsDecision
 import com.wingedsheep.engine.core.SelectCardsDecision
 import com.wingedsheep.engine.support.GameTestDriver
 import com.wingedsheep.engine.support.TestCards
@@ -54,6 +55,8 @@ class StarvingRevenantScenarioTest : FunSpec({
             when {
                 isPaused && pd is ReorderLibraryDecision -> submitOrderedResponse(you, pd.cards)
                 isPaused && pd is OrderTriggeredAbilitiesDecision -> submitTriggerOrderInListedOrder()
+                // Descend's target opponent is chosen as each draw trigger is put on the stack.
+                isPaused && pd is ChooseTargetsDecision -> submitTargetSelection(pd.playerId, listOf(getOpponent(you)))
                 !isPaused && state.stack.isNotEmpty() -> bothPass()
                 else -> return
             }

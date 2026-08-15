@@ -111,19 +111,19 @@ class EddieBrockScenarioTest : ScenarioTestBase() {
                 game.declareAttackers(mapOf("Venom, Lethal Protector" to 2)).error shouldBe null
                 game.resolveStack()
 
-                // "you may sacrifice another creature" — yes.
-                withClue("attack offers the optional sacrifice") {
-                    (game.getPendingDecision() is YesNoDecision) shouldBe true
-                }
-                game.answerYesNo(true)
-
-                // The sacrifice is a resolution-time choice; Grizzly Bears is the only other creature.
+                // The DSL's creature selection is locked while the trigger is put on the stack.
                 val grizzly = game.findPermanent("Grizzly Bears")!!
-                withClue("choosing the creature to sacrifice") {
+                withClue("choosing the creature before the optional trigger resolves") {
                     (game.getPendingDecision() is ChooseTargetsDecision) shouldBe true
                 }
                 game.selectTargets(listOf(grizzly))
-                if (game.getPendingDecision() == null) game.resolveStack()
+
+                // "You may sacrifice another creature" is answered only during resolution.
+                game.resolveStack()
+                withClue("attack offers the optional sacrifice after the creature is locked") {
+                    (game.getPendingDecision() is YesNoDecision) shouldBe true
+                }
+                game.answerYesNo(true)
 
                 // "draw X cards, then you may put a permanent card with mana value X or less ...".
                 withClue("a put-permanent-from-hand prompt is offered") {

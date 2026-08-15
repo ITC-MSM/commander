@@ -70,6 +70,14 @@ class DeathAndLeaveTriggerDetector(
         return DyingEntityInfo(cardDefId, event.entityName)
     }
 
+    /**
+     * A triggered ability of a permanent that left the battlefield is
+     * controlled by its last controller, not necessarily its owner (CR 603.3a,
+     * 603.10a).  Keep all leave-event paths on the same LKI rule.
+     */
+    private fun controllerBeforeLeaving(event: ZoneChangeEvent) =
+        event.lastKnown?.controllerId ?: event.ownerId
+
     fun detectDeathTriggers(
         state: GameState,
         statics: BattlefieldStaticsIndex,
@@ -88,7 +96,7 @@ class DeathAndLeaveTriggerDetector(
         // For "When this creature dies" - the creature might be in graveyard now
         // Look up abilities by card definition
         val abilities = abilityResolver.getTriggeredAbilities(entityId, info.cardDefinitionId, state, statics)
-        val controllerId = event.ownerId
+        val controllerId = controllerBeforeLeaving(event)
 
         for (ability in abilities) {
             if (!matcher.isDeathTrigger(ability.trigger)) continue
@@ -168,7 +176,7 @@ class DeathAndLeaveTriggerDetector(
             val info = resolveDyingEntity(state, deadEvent) ?: continue
 
             val abilities = abilityResolver.getTriggeredAbilities(deadEntityId, info.cardDefinitionId, state, statics)
-            val controllerId = deadEvent.ownerId
+            val controllerId = controllerBeforeLeaving(deadEvent)
 
             for (ability in abilities) {
                 for (otherDeathEvent in deathEvents) {
@@ -216,7 +224,7 @@ class DeathAndLeaveTriggerDetector(
         val cardComponent = container.get<CardComponent>() ?: return
 
         val abilities = abilityResolver.getTriggeredAbilities(auraEntityId, cardComponent.cardDefinitionId, state, statics)
-        val controllerId = event.ownerId
+        val controllerId = controllerBeforeLeaving(event)
 
         for (ability in abilities) {
             if (ability.binding != TriggerBinding.ATTACHED) continue
@@ -379,7 +387,7 @@ class DeathAndLeaveTriggerDetector(
                 ability = persistAbility,
                 sourceId = event.entityId,
                 sourceName = info.name,
-                controllerId = event.ownerId,
+                controllerId = controllerBeforeLeaving(event),
                 triggerContext = TriggerContext.fromEvent(event)
             )
         )
@@ -431,7 +439,7 @@ class DeathAndLeaveTriggerDetector(
                 ability = undyingAbility,
                 sourceId = event.entityId,
                 sourceName = info.name,
-                controllerId = event.ownerId,
+                controllerId = controllerBeforeLeaving(event),
                 triggerContext = TriggerContext.fromEvent(event)
             )
         )
@@ -500,7 +508,7 @@ class DeathAndLeaveTriggerDetector(
                 ability = enduringAbility,
                 sourceId = event.entityId,
                 sourceName = info.name,
-                controllerId = event.ownerId,
+                controllerId = controllerBeforeLeaving(event),
                 triggerContext = TriggerContext.fromEvent(event)
             )
         )
@@ -530,7 +538,7 @@ class DeathAndLeaveTriggerDetector(
         val info = resolveDyingEntity(state, event) ?: return
 
         val abilities = abilityResolver.getTriggeredAbilities(entityId, info.cardDefinitionId, state, statics)
-        val controllerId = event.ownerId
+        val controllerId = controllerBeforeLeaving(event)
 
         for (ability in abilities) {
             val isGenericLeave = matcher.isLeavesBattlefieldTrigger(ability.trigger)

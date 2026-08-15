@@ -24,7 +24,7 @@
     "NOT_PLANNED": "Permanent documented exclusion from coverage/card-exclusions.json; it is not an implementation claim."
   },
   "summary": {
-    "unresolved": 25643,
+    "unresolved": 25639,
     "notPlanned": 16,
     "setsWithRows": 132
   },
@@ -258,11 +258,11 @@
       "code": "CHK",
       "name": "Champions of Kamigawa",
       "releaseDate": "2004-10-01",
-      "rowCount": 222,
+      "rowCount": 221,
       "statusCounts": {
-        "UNMATCHED_TRIAGE": 222
+        "UNMATCHED_TRIAGE": 221
       },
-      "rowsSha256": "dd341f6a79cfe5bcbda01ff86a84c5a0323a5e122a43ae4beb58d4ebf0a7d2bd"
+      "rowsSha256": "1c4a231559db91c7402e591a1e6bc4e59077c06eb82e9182f0d046a3fae484dd"
     },
     {
       "code": "CLB",
@@ -539,11 +539,11 @@
       "code": "HOU",
       "name": "Hour of Devastation",
       "releaseDate": "2017-07-14",
-      "rowCount": 196,
+      "rowCount": 195,
       "statusCounts": {
-        "UNMATCHED_TRIAGE": 196
+        "UNMATCHED_TRIAGE": 195
       },
-      "rowsSha256": "ee4352b69513aab148ee36deadbfd81db56d3b42e769f49a3ae2d729ccf7b85f"
+      "rowsSha256": "4aa3436cc80c82610994116c2ce5cf45c7e56ed47b4db057d7d42b048c50fa30"
     },
     {
       "code": "ICE",
@@ -743,21 +743,21 @@
       "code": "M14",
       "name": "Magic 2014",
       "releaseDate": "2013-07-19",
-      "rowCount": 197,
+      "rowCount": 196,
       "statusCounts": {
-        "UNMATCHED_TRIAGE": 197
+        "UNMATCHED_TRIAGE": 196
       },
-      "rowsSha256": "6bf634bcbdf0ef59dcb50062da0d6fa74bb6d2e4147408854c6a0eccdaf73403"
+      "rowsSha256": "494a7cab985011c5d61c3ae9785f1d534d3d1627a072c62a25061384d4bbc6b7"
     },
     {
       "code": "M15",
       "name": "Magic 2015",
       "releaseDate": "2014-07-18",
-      "rowCount": 232,
+      "rowCount": 231,
       "statusCounts": {
-        "UNMATCHED_TRIAGE": 232
+        "UNMATCHED_TRIAGE": 231
       },
-      "rowsSha256": "097a42da29db9242ae9afaa37576daeac80c8021411ffac7650db19a2d98465d"
+      "rowsSha256": "186e73690e6e6782cd43507ca4e46a4722ce7df4b217cc0489230d4f8669c34e"
     },
     {
       "code": "M19",

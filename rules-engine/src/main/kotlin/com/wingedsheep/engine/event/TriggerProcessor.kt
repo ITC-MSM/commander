@@ -311,56 +311,17 @@ class TriggerProcessor(
     )
 
     /**
-     * The [BatchKey] for a trigger that would raise a put-on-stack may-question, or null if it is
-     * not batchable. A trigger is batchable iff it is an optional ("may") trigger that *also* targets
-     * (so the may-question is asked at put-on-stack time, the only point all simultaneous instances
-     * are in hand before priority — see backlog §B.4), it has a definition-scoped ability identity
-     * (synthesized sources like spell copies have none and are never grouped), and it would actually
-     * raise the question rather than fizzle for lack of legal targets.
+     * Targeted triggered abilities are never batched. Each must choose its own
+     * target while it is put on the stack (CR 603.3d); a “may” choice happens
+     * only when that individual stack object resolves.
      */
-    private fun batchKeyOf(state: GameState, trigger: PendingTrigger): BatchKey? {
-        val ability = trigger.ability
-        val targetRequirement = ability.targetRequirement ?: return null
-        if (ability.effect.asMayDecide() == null) return null
-        // An `effectOncePerTurn` ability is never batched: its whole point is picking *which* of the
-        // simultaneous instances gets the turn's single action (which damaged creature's number to
-        // mirror, which Villain connives). One shared yes/no would answer for all of them and take
-        // that choice away. It also never reaches the put-on-stack may-question at all — the
-        // lowering in `withEffectBudgetGate` moves consent to resolution time — but this guard reads
-        // the *un-lowered* ability, so it is still load-bearing.
-        if (ability.effectOncePerTurn) return null
-        val identity = state.abilityIdentityOf(trigger.sourceId, ability.id) ?: return null
-        // Mirror processMayThenTargetTrigger's fizzle guard: a trigger with no legal targets (for a
-        // mandatory-target requirement) fizzles without asking, so it must not join a batch.
-        val legalTargets = targetFinder.findLegalTargets(
-            state = state,
-            requirement = targetRequirement,
-            controllerId = trigger.controllerId,
-            sourceId = trigger.sourceId,
-            triggeringEntityId = trigger.triggerContext.triggeringEntityId,
-            // Carry the triggering player so a "target … that player controls" filter
-            // (ControllerPredicate.ControlledByTriggeringPlayer / ControlledByReferencedPlayer over
-            // Player.TriggeringPlayer) resolves identically here to the on-stack targeting path — a
-            // trigger whose associated player rides on triggeringPlayerId must reach the same
-            // legal-target verdict in this pre-check, or the may/pay question is wrongly skipped.
-            pipelineContext = com.wingedsheep.engine.handlers.PredicateContext(
-                controllerId = trigger.controllerId,
-                triggeringEntityId = trigger.triggerContext.triggeringEntityId,
-                triggeringPlayerId = trigger.triggerContext.triggeringPlayerId,
-                // The X carried by the triggering event (an {X} cycling cost, a megamorph turn-up)
-                // so an X-relative target filter — `manaValueEqualsX()` on Webstrike Elite's
-                // "artifact or enchantment with mana value X" — finds targets at legality time.
-                // Without it those predicates read an unbound X and match nothing.
-                xValue = trigger.triggerContext.xValue,
-                storedCollections = trigger.carriedPipeline?.storedCollections ?: emptyMap(),
-                chosenValues = trigger.carriedPipeline?.chosenValues ?: emptyMap(),
-                storedStringLists = trigger.carriedPipeline?.storedStringLists ?: emptyMap(),
-                storedSubtypeGroups = trigger.carriedPipeline?.storedSubtypeGroups ?: emptyMap(),
-            )
-        )
-        if (legalTargets.isEmpty() && targetRequirement.effectiveMinCount > 0) return null
-        return BatchKey(trigger.controllerId, identity)
-    }
+    /**
+     * A targeted triggered ability chooses its target while being put on the
+     * stack (CR 603.3d).  The former shared pre-stack prompt discarded that
+     * per-object choice, so targeted triggers are deliberately never batched.
+     */
+    @Suppress("UNUSED_PARAMETER")
+    private fun batchKeyOf(state: GameState, trigger: PendingTrigger): BatchKey? = null
 
     /**
      * The maximal contiguous run of batchable triggers starting at [index] that all share one
@@ -493,9 +454,9 @@ class TriggerProcessor(
 
         // If the effect is a bare "may" (lowered MayEffect) AND has targets, ask may first before
         // target selection. This gives the player a chance to decline before having to pick targets.
-        if (targetRequirement != null && ability.effect.asMayDecide() != null) {
-            return processMayThenTargetTrigger(currentState, trigger, targetRequirement)
-        }
+        // CR 603.3d requires targets to be chosen while this ability is put on
+        // the stack. Keep a MayEffect wrapped on that targeted stack object so
+        // its consent question is asked only at resolution.
 
         // Check if this ability requires targets
         if (targetRequirement != null) {

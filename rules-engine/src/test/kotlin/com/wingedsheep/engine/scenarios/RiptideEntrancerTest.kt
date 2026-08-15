@@ -22,9 +22,8 @@ import io.kotest.matchers.shouldBe
  * (This effect lasts indefinitely.)
  * Morph {U}{U}
  *
- * Engine flow: The trigger has both MayEffect and target, so the engine uses
- * processMayThenTargetTrigger: asks "may sacrifice?" first, then if yes, asks for
- * target selection, then puts the unwrapped composite effect on the stack.
+ * Engine flow: its target is chosen while the trigger is put on the stack. After
+ * priority passes, the MayEffect asks whether to sacrifice during resolution.
  */
 class RiptideEntrancerTest : FunSpec({
 
@@ -38,7 +37,7 @@ class RiptideEntrancerTest : FunSpec({
 
     /**
      * Drive combat through first strike to combat damage step.
-     * After this, a YesNoDecision is pending (the "may sacrifice?" question).
+     * After this, mandatory target selection is pending for the triggered ability.
      */
     fun driveToCombatDamage(driver: GameTestDriver, attacker: com.wingedsheep.sdk.model.EntityId, defender: com.wingedsheep.sdk.model.EntityId, entrancer: com.wingedsheep.sdk.model.EntityId) {
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
@@ -47,12 +46,12 @@ class RiptideEntrancerTest : FunSpec({
         driver.declareNoBlockers(defender)
         driver.bothPass()
 
-        // Skip first strike damage → combat damage dealt → trigger fires
-        // processMayThenTargetTrigger asks "may sacrifice?" first
+        // Skip first strike damage → combat damage dealt → trigger fires.
+        // The target is selected as the trigger goes on the stack.
         driver.bothPass()
 
         driver.currentStep shouldBe Step.COMBAT_DAMAGE
-        driver.pendingDecision shouldBe YesNoDecision::class.java.let { driver.pendingDecision }
+        (driver.pendingDecision is ChooseTargetsDecision) shouldBe true
     }
 
     test("gain control of opponent creature when choosing to sacrifice after combat damage") {
@@ -72,17 +71,15 @@ class RiptideEntrancerTest : FunSpec({
 
         driveToCombatDamage(driver, attacker, defender, entrancer)
 
-        // Step 1: "May sacrifice?" — answer yes
-        val yesNoDecision = driver.pendingDecision as YesNoDecision
-        driver.submitYesNo(yesNoDecision.playerId, true)
-
-        // Step 2: Choose target creature for gain control
+        // Step 1: Choose the mandatory target as the trigger is put on the stack.
         val chooseTargets = driver.pendingDecision as ChooseTargetsDecision
         driver.submitTargetSelection(chooseTargets.playerId, listOf(targetCreature))
 
-        // Step 3: Trigger is now on the stack — resolve it
+        // Step 2: Trigger is now on the stack. Its MayEffect asks only at resolution.
         driver.stackSize shouldBe 1
         driver.bothPass()
+        val yesNoDecision = driver.pendingDecision as YesNoDecision
+        driver.submitYesNo(yesNoDecision.playerId, true)
 
         // Entrancer should be in graveyard (sacrificed)
         driver.assertInGraveyard(attacker, "Riptide Entrancer")
@@ -112,7 +109,13 @@ class RiptideEntrancerTest : FunSpec({
 
         driveToCombatDamage(driver, attacker, defender, entrancer)
 
-        // Choose no - don't sacrifice
+        // Targeting remains mandatory even when the controller will later decline.
+        val chooseTargets = driver.pendingDecision as ChooseTargetsDecision
+        driver.submitTargetSelection(chooseTargets.playerId, listOf(targetCreature))
+        driver.stackSize shouldBe 1
+        driver.bothPass()
+
+        // Decline while the targeted ability resolves.
         val yesNoDecision = driver.pendingDecision as YesNoDecision
         driver.submitYesNo(yesNoDecision.playerId, false)
 

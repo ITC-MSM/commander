@@ -52,15 +52,14 @@ class MagitekScytheScenarioTest : FunSpec({
         driver.castSpell(me, scythe)
         driver.bothPass() // resolve the artifact -> it enters -> ETB trigger on stack
 
-        // Resolve the ETB trigger, answering its decisions: accept the "you may attach" and pick the
-        // creature to equip (order-agnostic).
-        repeat(8) {
-            when (driver.state.pendingDecision) {
-                is YesNoDecision -> driver.submitYesNo(me, true)
-                is ChooseTargetsDecision -> driver.submitTargetSelection(me, listOf(courser))
-                else -> if (driver.stackSize > 0) driver.bothPass() else return@repeat
-            }
-        }
+        // The creature target is locked while the ETB trigger is put on the stack.
+        (driver.pendingDecision is ChooseTargetsDecision) shouldBe true
+        driver.submitTargetSelection(me, listOf(courser))
+
+        // The "you may attach" choice is made only when that targeted trigger resolves.
+        driver.bothPass()
+        (driver.pendingDecision is YesNoDecision) shouldBe true
+        driver.submitYesNo(me, true)
 
         val swordId = driver.findPermanent(me, "Magitek Scythe")!!
         driver.state.getEntity(swordId)?.get<AttachedToComponent>()?.targetId shouldBe courser
@@ -82,10 +81,13 @@ class MagitekScytheScenarioTest : FunSpec({
         driver.giveMana(me, Color.RED, 4)
         driver.castSpell(me, scythe)
         driver.bothPass()
-        if (driver.stackSize > 0) driver.bothPass()
 
+        // Declining later does not make target declaration optional.
+        (driver.pendingDecision is ChooseTargetsDecision) shouldBe true
+        driver.submitTargetSelection(me, listOf(courser))
+        driver.bothPass()
+        (driver.pendingDecision is YesNoDecision) shouldBe true
         driver.submitYesNo(me, false)
-        if (driver.isPaused) driver.bothPass()
 
         val swordId = driver.findPermanent(me, "Magitek Scythe")!!
         driver.state.getEntity(swordId)?.get<AttachedToComponent>() shouldBe null

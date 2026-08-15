@@ -25,14 +25,19 @@ import io.kotest.matchers.shouldBe
 private fun resolveAttackTriggers(driver: GameTestDriver, you: EntityId, attacker: EntityId) {
     var guard = 0
     while ((driver.state.stack.isNotEmpty() || driver.state.pendingDecision is ChooseTargetsDecision || driver.state.pendingDecision is OrderTriggeredAbilitiesDecision) && guard++ < 30) {
-        if (driver.state.pendingDecision is ChooseTargetsDecision) {
-            driver.submitTargetSelection(you, listOf(attacker))
-        } else if (driver.submitTriggerOrderInListedOrder()) {
-            // Deterministic test order; production asks the controller.
-        } else {
-            driver.bothPass()
+        when (driver.state.pendingDecision) {
+            is ChooseTargetsDecision -> {
+                // Each mandatory target is chosen before that triggered ability is on the stack.
+                driver.submitTargetSelection(you, listOf(attacker))
+            }
+            is OrderTriggeredAbilitiesDecision -> {
+                // Deterministic test order; production asks the controller.
+                driver.submitTriggerOrderInListedOrder()
+            }
+            else -> driver.bothPass()
         }
     }
+    (guard < 30) shouldBe true
 }
 
 /**

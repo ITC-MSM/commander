@@ -1,6 +1,8 @@
 package com.wingedsheep.engine.scenarios
 
+import com.wingedsheep.engine.core.ChooseOptionDecision
 import com.wingedsheep.engine.core.ChooseTargetsDecision
+import com.wingedsheep.engine.core.OptionChosenResponse
 import com.wingedsheep.engine.core.OrderTriggeredAbilitiesDecision
 import com.wingedsheep.engine.core.TriggeredAbilitiesOrderedResponse
 import com.wingedsheep.engine.mechanics.layers.StateProjector
@@ -93,8 +95,26 @@ class ManifoldMouseValiantTest : FunSpec({
         driver.submitTargetSelection(driver.player1, listOf(mouse2))
         driver.acceptDefaultTriggerOrderIfNeeded()
 
-        // Resolve the stack — Valiant should be on top, +0/+2 applied.
-        driver.bothPass()
+        // Resolve until Valiant applies +0/+2. Target-placement continuations may leave a Mouse
+        // modal trigger above it, so service that choice without making stack adjacency part of
+        // this regression's contract.
+        var resolutionGuard = 0
+        while (projector.project(driver.state).getToughness(nettleGuard) != 3 && resolutionGuard < 10) {
+            resolutionGuard++
+            driver.acceptDefaultTriggerOrderIfNeeded()
+            when (val decision = driver.pendingDecision) {
+                is ChooseOptionDecision -> driver.submitDecision(
+                    decision.playerId,
+                    OptionChosenResponse(decision.id, 0)
+                )
+                null -> if (driver.getTopOfStack() != null) {
+                    driver.bothPass()
+                } else {
+                    error("Valiant did not reach the stack after both Mouse targets were selected")
+                }
+                else -> error("unexpected decision while resolving Valiant: $decision")
+            }
+        }
 
         val afterValiant = projector.project(driver.state)
         afterValiant.getToughness(nettleGuard) shouldBe 3
