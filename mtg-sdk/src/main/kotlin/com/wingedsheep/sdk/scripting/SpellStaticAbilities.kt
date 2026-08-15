@@ -417,12 +417,22 @@ data class GrantMadnessToOwnedCards(
  * no unlimited grant could have authorized the same cast. Pair with [duringYourTurnOnly] for
  * "once during each of your turns".
  *
+ * [exileInsteadOfGraveyard] is the third member of the cast-this-way rider family, but it applies to
+ * the *instant and sorcery* half rather than the permanent half: an instant or sorcery cast from the
+ * graveyard under this grant is exiled instead of being put into its owner's graveyard (Bilbo, Thief
+ * in the Night — "If an instant or sorcery spell cast this way would be put into your graveyard,
+ * exile it instead"). Unlike the "exile it as it resolves" triggers (Lilah, Goliath Daydreamer), this
+ * is a true replacement on the *would be put into your graveyard* event, so it also catches a spell
+ * that is countered or fizzles — per Bilbo's Adventure ruling.
+ *
  * @property filter The filter that spells must match (e.g., instant/sorcery, or any nonland card)
  * @property lifeCost The life cost to pay in addition to other costs (0 = free)
  * @property duringYourTurnOnly If true, only castable during your turn
  * @property entersWithCounter If set, a permanent cast this way enters with one such counter
  * @property addedSubtypeOnEntry If set, a permanent cast this way gains this subtype on entry
  * @property oncePerTurn If true, this grant authorizes at most one graveyard cast per turn
+ * @property exileInsteadOfGraveyard If true, an instant or sorcery cast this way is exiled rather
+ *   than put into its owner's graveyard — whether it resolves, is countered, or fizzles
  */
 @SerialName("MayCastFromGraveyard")
 @Serializable
@@ -432,7 +442,8 @@ data class MayCastFromGraveyard(
     val duringYourTurnOnly: Boolean = false,
     val entersWithCounter: com.wingedsheep.sdk.core.CounterType? = null,
     val addedSubtypeOnEntry: String? = null,
-    val oncePerTurn: Boolean = false
+    val oncePerTurn: Boolean = false,
+    val exileInsteadOfGraveyard: Boolean = false
 ) : StaticAbility {
     /** True when this grant carries a cast-this-way entry rider (finality counter / added subtype). */
     val hasEntryRider: Boolean get() = entersWithCounter != null || addedSubtypeOnEntry != null
@@ -451,6 +462,9 @@ data class MayCastFromGraveyard(
             if (entersWithCounter != null) append(" with a ${entersWithCounter.name.lowercase()} counter on it")
             if (entersWithCounter != null && addedSubtypeOnEntry != null) append(" and")
             if (addedSubtypeOnEntry != null) append(" is a $addedSubtypeOnEntry in addition to its other types")
+        }
+        if (exileInsteadOfGraveyard) {
+            append(". If an instant or sorcery spell cast this way would be put into your graveyard, exile it instead")
         }
     }
     override fun applyTextReplacement(replacer: TextReplacer): StaticAbility {

@@ -198,7 +198,15 @@ data class CastSpell(
 @Serializable
 data class GraveyardCastRiderSelection(
     val entersWithCounter: com.wingedsheep.sdk.core.CounterType? = null,
-    val addedSubtype: String? = null
+    val addedSubtype: String? = null,
+    /**
+     * The instant/sorcery-side rider (Bilbo, Thief in the Night's "exile it instead"). Part of the
+     * identity for the same reason the two entry-rider fields are: Bilbo's grant carries no *entry*
+     * rider, so without this it would be indistinguishable from a plain free grant such as
+     * Yawgmoth's Agenda when both apply to one card, and the handler's auto-pick could apply or skip
+     * the exile the player didn't choose.
+     */
+    val exileInsteadOfGraveyard: Boolean = false
 )
 
 /**

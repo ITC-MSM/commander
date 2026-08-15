@@ -5956,7 +5956,7 @@ riders, matching how the engine already treats e.g. City of Brass's damage durin
   taxed by {2} becomes `{2}, {T}:` — and there is no `manaFloor`, since costs only grow. Skyseer's
   Chariot: "Activated abilities of sources with the chosen name cost {2} more to activate" →
   `IncreaseActivatedAbilityCost(GroupFilter(GameObjectFilter.Any.namedFromChosenComponent()), DynamicAmount.Fixed(2))`.
-- `MayCastFromGraveyard(filter, lifeCost = 0, duringYourTurnOnly = false, entersWithCounter = null, addedSubtypeOnEntry = null, oncePerTurn = false)`
+- `MayCastFromGraveyard(filter, lifeCost = 0, duringYourTurnOnly = false, entersWithCounter = null, addedSubtypeOnEntry = null, oncePerTurn = false, exileInsteadOfGraveyard = false)`
   — cast spells matching `filter` from your graveyard following normal timing, optionally paying
   `lifeCost` life. Free for Yawgmoth's Agenda (`MayCastFromGraveyard(Nonland)`); `lifeCost = 1,
   duringYourTurnOnly = true` for Festival of Embers. **`oncePerTurn`** limits the grant to one cast
@@ -5988,6 +5988,17 @@ riders, matching how the engine already treats e.g. City of Brass's damage durin
   Osteomancer Adept's forage permission (`MayCastCreaturesFromGraveyardWithForageComponent`) shares it —
   `CastSpellHandler` freezes the same `GraveyardCastRiderComponent(entersWithCounter = FINALITY)` onto a
   forage-cast creature, applied on entry by the identical `StackResolver` path.
+  **Cast-this-way exile rider:** `exileInsteadOfGraveyard = true` is the instant/sorcery half of the
+  same rider family — "if an instant or sorcery spell cast this way would be put into your graveyard,
+  exile it instead" (Bilbo, Thief in the Night). `CastSpellHandler` stamps
+  `ExileAfterResolveComponent(onlyIfResolved = false)` on an instant/sorcery cast under a grant
+  carrying it, so the spell is exiled whether it resolves, is countered, or fizzles — unlike the
+  "exile it as it resolves" *triggers* (`Effects.MarkSpellPlotOnResolve`,
+  `Effects.MarkSpellExileWithCounters`), which leave a spell that failed to resolve in the graveyard.
+  Because the rider rides the authorizing grant rather than a zone-scoped trigger, it never leaks onto
+  a spell cast under a different graveyard-cast permission that happens to be active at the same time.
+  Bilbo = `GrantStaticAbility(MayCastFromGraveyard(Artifact or InstantOrSorcery, oncePerTurn = true,
+  exileInsteadOfGraveyard = true), EffectTarget.Self, Duration.EndOfTurn)` off an attack trigger.
   **Choosing among grants (CR 601.2b):** when several `MayCastFromGraveyard` grants apply to the same
   card at once (a free `Nonland` grant *and* the Tomb's rider `Creature` grant), the graveyard-cast
   enumerator offers one legal action per distinct permission — distinguished by life cost and entry
