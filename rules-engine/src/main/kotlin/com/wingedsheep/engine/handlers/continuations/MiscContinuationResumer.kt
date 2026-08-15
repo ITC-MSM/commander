@@ -601,8 +601,16 @@ class MiscContinuationResumer(
                 newState = newState.updateEntity(targetId) { container ->
                     container.with(targetCounters.withAdded(counterType, modifiedAmount))
                 }
+                // The distributing effect's controller is the placer (CR 122.5 for the "move"
+                // shape, plain placement for the "distribute N new counters" one); record the kind
+                // and the placer so the scoped readings of ReceivedCounterThisTurn see this.
                 val (afterMark, firstThisTurn) = com.wingedsheep.engine.handlers.effects.DamageUtils
-                    .recordCounterPlacement(newState, targetId)
+                    .recordCounterPlacement(
+                        newState,
+                        targetId,
+                        com.wingedsheep.engine.handlers.effects.permanent.counters.counterTypeToString(counterType),
+                        placerId = continuation.controllerId,
+                    )
                 newState = afterMark
 
                 val targetName = newState.getEntity(targetId)
@@ -766,7 +774,12 @@ class MiscContinuationResumer(
                         container.with(destCounters.withAdded(counterType, modified))
                     }
                     val (afterMark, firstThisTurn) = com.wingedsheep.engine.handlers.effects.DamageUtils
-                        .recordCounterPlacement(newState, continuation.destinationId)
+                        .recordCounterPlacement(
+                            newState,
+                            continuation.destinationId,
+                            com.wingedsheep.engine.handlers.effects.permanent.counters.counterTypeToString(counterType),
+                            placerId = continuation.controllerId,
+                        )
                     newState = afterMark
                     events.add(
                         CountersAddedEvent(
@@ -919,7 +932,12 @@ class MiscContinuationResumer(
                     container.with(before.withAdded(counterType, modifiedAmount))
                 }
                 val (afterMark, firstThisTurn) = com.wingedsheep.engine.handlers.effects.DamageUtils
-                    .recordCounterPlacement(newState, entityId)
+                    .recordCounterPlacement(
+                        newState,
+                        entityId,
+                        com.wingedsheep.engine.handlers.effects.permanent.counters.counterTypeToString(counterType),
+                        placerId = continuation.controllerId,
+                    )
                 newState = afterMark
                 events.add(
                     CountersAddedEvent(

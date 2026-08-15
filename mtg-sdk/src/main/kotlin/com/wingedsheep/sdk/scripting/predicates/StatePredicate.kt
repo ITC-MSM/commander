@@ -203,6 +203,56 @@ sealed interface StatePredicate {
     }
 
     // =============================================================================
+    // Counter History (History)
+    // =============================================================================
+
+    /**
+     * One or more counters were put on this permanent during the current turn — the filter-level
+     * form of "…that you've put one or more +1/+1 counters on this turn".
+     *
+     * Backed by the per-permanent `ReceivedCountersThisTurnComponent`, which the counter-placement
+     * paths stamp and end-of-turn cleanup clears. The facts are recorded **at placement time**, so
+     * the predicate keeps matching after the counters themselves have been removed — which is what
+     * the printed wording asks ("what you *put on* it", not "what is on it now"). Compose with
+     * [HasCounter] when a card really does want counters still present.
+     *
+     * Both parameters default to the widest reading and narrow it along the two axes printed cards
+     * vary:
+     *  - [counterType] (e.g. `Counters.PLUS_ONE_PLUS_ONE`) restricts it to one kind of counter, so a
+     *    stun or shield counter doesn't satisfy a "+1/+1 counters" clause.
+     *  - [placedByController] restricts it to counters put on by the permanent's own controller —
+     *    the "**you've** put" half. Named for the controller rather than "you" because that is what
+     *    the marker records (the placer is compared to the permanent's projected controller at
+     *    placement time); on the "creature **you control**" filters these clauses always carry, the
+     *    two readings coincide. An opponent proliferating your creature does not satisfy it.
+     *
+     * Used by Kid Loki ("Each creature you control that you've put one or more +1/+1 counters on
+     * this turn has hexproof") at group-static scope, and — via
+     * `Conditions.SourceReceivedCounterThisTurn`, which is `SourceMatches` over this predicate — by
+     * Beast, Erudite Aerialist and Fractal Tender at source scope.
+     */
+    @SerialName("ReceivedCounterThisTurn")
+    @Serializable
+    data class ReceivedCounterThisTurn(
+        val counterType: String? = null,
+        val placedByController: Boolean = false
+    ) : History {
+        // Rendered in the adjective slot a GameObjectFilter puts state predicates in, ahead of the
+        // type word — so it reads as a bare qualifying phrase, like "was dealt damage this turn".
+        // Kept as a *verb* phrase ("had … put on it …") rather than a subject-led one ("you've put
+        // …") so it also reads correctly through `EntityMatches(Self, …)`, which renders a filter
+        // as "if this ${filter.description}" — that is the source-scoped view this predicate backs
+        // via `Conditions.SourceReceivedCounterThisTurn`.
+        override val description: String = buildString {
+            append("had ")
+            append(counterType?.let { "one or more $it counters" } ?: "one or more counters")
+            append(" put on it ")
+            if (placedByController) append("by you ")
+            append("this turn")
+        }
+    }
+
+    // =============================================================================
     // Damage History (History)
     // =============================================================================
 

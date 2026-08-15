@@ -7,6 +7,7 @@ import com.wingedsheep.engine.handlers.PredicateEvaluator
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.handlers.effects.ReplacementEffectUtils
 import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
+import com.wingedsheep.engine.handlers.effects.permanent.counters.counterTypeToString
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.battlefield.CountersComponent
 import com.wingedsheep.engine.state.components.battlefield.ReplacementEffectSourceComponent
@@ -247,9 +248,26 @@ class ExploreEffectExecutor(
         val updated = state.updateEntity(creatureId) {
             it.with(current.withAdded(CounterType.PLUS_ONE_PLUS_ONE, count))
         }
+        // Record the kind and the placer, not just a bare marker: the exploring player is the one
+        // putting the counter on, so "each creature you control that you've put one or more +1/+1
+        // counters on this turn" (Kid Loki) covers a creature you made explore.
         val (newState, firstThisTurn) =
-            com.wingedsheep.engine.handlers.effects.DamageUtils.recordCounterPlacement(updated, creatureId)
+            com.wingedsheep.engine.handlers.effects.DamageUtils.recordCounterPlacement(
+                updated,
+                creatureId,
+                counterTypeToString(CounterType.PLUS_ONE_PLUS_ONE),
+                placerId = context.controllerId,
+            )
         val name = state.getEntity(creatureId)?.get<CardComponent>()?.name ?: ""
-        return newState to listOf(CountersAddedEvent(creatureId, "PLUS_ONE_PLUS_ONE", count, name, firstThisTurn, placedBy = context.controllerId))
+        return newState to listOf(
+            CountersAddedEvent(
+                creatureId,
+                counterTypeToString(CounterType.PLUS_ONE_PLUS_ONE),
+                count,
+                name,
+                firstThisTurn,
+                placedBy = context.controllerId,
+            )
+        )
     }
 }

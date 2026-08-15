@@ -779,7 +779,12 @@ data class TargetedByControllerThisTurnComponent(
  */
 @Serializable
 data class ReceivedCountersThisTurnComponent(
-    /** Counter types placed here this turn, by anyone. Empty when the placer path knew no type. */
+    /**
+     * Counter types placed here this turn, by anyone. Non-empty whenever this component exists:
+     * every placement records a kind, which is what lets the any-kind reading of
+     * `StatePredicate.ReceivedCounterThisTurn` be `counterTypes.isNotEmpty()` instead of a separate
+     * marker-presence test that the by-controller axis could not mirror.
+     */
     val counterTypes: Set<String> = emptySet(),
     /**
      * The subset of [counterTypes] placed by this permanent's own controller (as of the placement).
@@ -787,8 +792,7 @@ data class ReceivedCountersThisTurnComponent(
      */
     val typesFromController: Set<String> = emptySet()
 ) : Component {
-    fun with(counterType: String?, byController: Boolean): ReceivedCountersThisTurnComponent {
-        if (counterType == null) return this
+    fun with(counterType: String, byController: Boolean): ReceivedCountersThisTurnComponent {
         return copy(
             counterTypes = counterTypes + counterType,
             typesFromController =

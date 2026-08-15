@@ -2007,6 +2007,18 @@ class TriggerMatcher(
         // "whenever a paired creature …" trigger filter gates correctly instead of failing open.
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsPaired ->
             com.wingedsheep.engine.mechanics.SoulbondPairing.isPaired(state, entityId)
+        // Counter history is plain per-entity state, evaluable here, so a "whenever a creature you
+        // put a +1/+1 counter on this turn …" trigger filter gates exactly instead of failing open.
+        // The zone-change path above falls through to here rather than reading the event's LKI, so a
+        // permanent already gone from the battlefield answers from whatever marker its entity still
+        // carries, and fails closed if it carries none — the same conservative direction the counter
+        // predicates take there. No card needs the LKI reading yet; add it to
+        // matchesStatePredicateForZoneChangeTrigger when one does.
+        is com.wingedsheep.sdk.scripting.predicates.StatePredicate.ReceivedCounterThisTurn -> {
+            val container = state.getEntity(entityId)
+            container != null &&
+                com.wingedsheep.engine.handlers.predicates.receivedCounterThisTurn(container, predicate)
+        }
         // Graveyard-zone-only predicates; trigger gating never sees a stamped entity here.
         is com.wingedsheep.sdk.scripting.predicates.StatePredicate.PutIntoGraveyardThisTurn -> false
         is com.wingedsheep.sdk.scripting.predicates.StatePredicate.PutIntoGraveyardFromBattlefieldThisTurn -> false

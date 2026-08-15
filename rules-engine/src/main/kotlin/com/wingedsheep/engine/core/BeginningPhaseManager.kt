@@ -2,6 +2,7 @@ package com.wingedsheep.engine.core
 
 import com.wingedsheep.engine.handlers.DecisionHandler
 import com.wingedsheep.engine.handlers.EffectContext
+import com.wingedsheep.engine.handlers.predicates.receivedCounterThisTurn
 import com.wingedsheep.engine.state.ComponentContainer
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
@@ -464,6 +465,11 @@ class BeginningPhaseManager(
         StatePredicate.PutIntoGraveyardFromBattlefieldThisTurn -> false
         // No granter context in untap filtering — granter-relative exclusion is resolution-time only.
         StatePredicate.IsGrantingPermanent -> false
+        // Counter history is plain per-entity state, so answer it exactly rather than falling open.
+        // In practice cleanup wiped the marker at the end of the previous turn, so this is false for
+        // every permanent by the time the untap step runs on a normal turn.
+        is StatePredicate.ReceivedCounterThisTurn ->
+            receivedCounterThisTurn(container, predicate)
         is StatePredicate.HasCounter -> {
             val countersComponent = container.get<CountersComponent>()
             if (countersComponent == null) {
