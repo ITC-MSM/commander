@@ -135,15 +135,15 @@ object Granted {
     private fun abilityFor(spec: TriggerSpec, script: CardScript): TriggeredAbility? {
         val effect = script.spellEffect ?: return null
         if (script.targetRequirements.size > 1) return null
-        val gated = effect as? GatedEffect
-        val optional = gated != null && gated.gate is Gate.MayDecide && gated == MayEffect(gated.then)
+        val may = (effect as? GatedEffect)
+            ?.takeIf { it.gate is Gate.MayDecide && it == MayEffect(it.then) }
         return TriggeredAbility(
             id = ID,
             trigger = spec.event,
             binding = spec.binding,
-            effect = if (optional) (effect as GatedEffect).then else effect,
+            effect = may?.then ?: effect,
             targetRequirement = script.targetRequirements.singleOrNull(),
-            optional = optional,
+            optional = may != null,
         )
     }
 

@@ -98,9 +98,8 @@ object Triggers {
      */
     private fun abilityFor(spec: TriggerSpec, script: CardScript): TriggeredAbility? {
         val effect = script.spellEffect ?: return null
-        val gated = effect as? GatedEffect
-        val optional = gated != null && gated.gate is Gate.MayDecide &&
-            gated == MayEffect(gated.then)
+        val may = (effect as? GatedEffect)
+            ?.takeIf { it.gate is Gate.MayDecide && it == MayEffect(it.then) }
         return TriggeredAbility(
             id = ID,
             trigger = spec.event,
@@ -124,14 +123,14 @@ object Triggers {
             // Cavalry and Seasoned Warrenguard have scenario tests asserting exactly that — and
             // ~100 for other trigger-time restrictions. Rechecking all of them uniformly fails
             // those two tests, so the engine fix needs "if" and "while" separated first.
-            effect = liftInterveningIf(if (optional) (effect as GatedEffect).then else effect),
+            effect = liftInterveningIf(may?.then ?: effect),
             triggerCondition = interveningIf(effect),
             // A `TriggeredAbility` keeps its first requirement in a field of its own and the rest in
             // a list beside it, which is the shape a clause declaring two targets lands in —
             // Chromeshell Crab's exchange. The split is the SDK's; nothing in the text says it.
             targetRequirement = script.targetRequirements.firstOrNull(),
             additionalTargetRequirements = script.targetRequirements.drop(1),
-            optional = optional,
+            optional = may != null,
         )
     }
 
