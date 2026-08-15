@@ -829,8 +829,9 @@ object DamageUtils {
      *    battlefield yet and so has no projected controller to compare against. CR 122.6a fixes the
      *    answer to `true` there regardless of whose effect caused the counters.
      *
-     * Callers with genuinely no kind and no placer in hand omit both and stamp the bare marker,
-     * which still answers the widest "something landed here this turn" reading.
+     * [counterType] is required for that reason: a kind-less mark would satisfy neither the
+     * type-scoped reading nor the widest one, both of which answer from the recorded kind sets.
+     * A caller placing several kinds at once calls this once per kind.
      *
      * This deliberately does *not* set the placer's [com.wingedsheep.engine.state.components.player.PutCounterOnCreatureThisTurnComponent]
      * ("if you put a counter on a creature this turn", Lasting Tarfire), which stays exclusive to

@@ -317,7 +317,7 @@ class AffectsFilterResolverStatePredicateTest : FunSpec({
     // Counter history — ReceivedCounterThisTurn
     // =========================================================================
 
-    test("ReceivedCounterThisTurn with no narrowing matches any permanent carrying the marker") {
+    test("ReceivedCounterThisTurn with no narrowing matches any permanent with a recorded placement") {
         val marked = EntityId.generate()
         val markedTypeless = EntityId.generate()
         val unmarked = EntityId.generate()
@@ -327,8 +327,10 @@ class AffectsFilterResolverStatePredicateTest : FunSpec({
                     playerA, creature(playerA),
                     ReceivedCountersThisTurnComponent(counterTypes = setOf("stun"))
                 ),
-                // A placement path that couldn't name a kind stamps the bare marker; the widest
-                // reading must still match it.
+                // Unreachable in practice — `recordCounterPlacement` requires a counter kind, so
+                // every stamped marker names at least one. Present here to pin the widest reading
+                // to the recorded kinds rather than to marker presence, which is what keeps it
+                // symmetric with the placer-scoped reading (both are `isNotEmpty()` over a set).
                 markedTypeless to container(playerA, creature(playerA), ReceivedCountersThisTurnComponent()),
                 unmarked to container(playerA, creature(playerA))
             )
@@ -336,7 +338,7 @@ class AffectsFilterResolverStatePredicateTest : FunSpec({
         val matched = resolver.resolveAffectedEntities(
             state, marked, filterWith(StatePredicate.ReceivedCounterThisTurn())
         )
-        matched shouldContainExactlyInAnyOrder setOf(marked, markedTypeless)
+        matched shouldContainExactlyInAnyOrder setOf(marked)
     }
 
     test("ReceivedCounterThisTurn scoped to +1/+1 ignores other counter kinds") {
