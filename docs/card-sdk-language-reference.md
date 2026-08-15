@@ -8412,6 +8412,18 @@ Numbers computed at resolution time.
   That is how Nine-Lives Familiar's "with one fewer revival counter" —
   `Subtract(lastKnownSourceCounters(Named(Counters.REVIVAL)), Fixed(1))` — survives to the end step.
 
+  **Pipeline-scoped counts get the same treatment, board-state counts deliberately do not.** A
+  `CreateTokenEffect` scheduled into a delayed trigger has its `count` frozen at scheduling time *only
+  if* the amount reads the pipeline that produced it — `DistinctEntitiesInCollections`,
+  `DistinctCardTypesInCollections`, `ManaValueSumOfCollection`, `StoredCardManaValue`,
+  `VariableReference`, or any arithmetic tree containing one. Those live in the resolving
+  `EffectContext` and would silently read 0 an upkeep later. A *board-state* count
+  (`AggregateBattlefield`, …) is left lazy, because "at the beginning of your end step, create a token
+  for each creature you control" is supposed to count when the trigger fires. The Eagles Are Coming!
+  is the pipeline case: `moveTracked` records what actually reached the hand and
+  `DistinctEntitiesInCollections` counts those ids without looking them up in state, so a *token*
+  creature returned to hand still counts even though it ceased to exist (CR 111.7).
+
 ### Last-known damage dealt to the source (dies/leaves triggers)
 
 - `LastKnownDamageDealtToSource` — the total damage dealt to the source *this turn*, read as last-known

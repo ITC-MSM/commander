@@ -15,6 +15,7 @@ import com.wingedsheep.sdk.scripting.effects.AddManaEffect
 import com.wingedsheep.sdk.scripting.effects.CompositeEffect
 import com.wingedsheep.sdk.scripting.effects.CreateDelayedTriggerEffect
 import com.wingedsheep.sdk.scripting.effects.CreateTokenCopyOfTargetEffect
+import com.wingedsheep.sdk.scripting.effects.CreateTokenEffect
 import com.wingedsheep.sdk.scripting.effects.DelayedTriggerExpiry
 import com.wingedsheep.sdk.scripting.effects.DelayedTriggerTiming
 import com.wingedsheep.sdk.scripting.effects.DealDamagePerEntityInZoneEffect
@@ -240,6 +241,50 @@ class CreateDelayedTriggerExecutor : EffectExecutor<CreateDelayedTriggerEffect> 
     }
 
     /**
+     * Freeze [amount] into a [DynamicAmount.Fixed] **only if** some part of it reads the pipeline
+     * that is running this effect — a stored collection or a stored number. Those live in the
+     * `EffectContext` of the resolution that scheduled the delayed trigger and are gone by the time
+     * it fires, so a lazy read would silently answer 0.
+     *
+     * Anything else is returned untouched. That distinction is the whole point: a *board-state*
+     * amount ("for each creature you control") on a delayed trigger is supposed to be counted when
+     * the trigger fires, and blanket-snapshotting would silently freeze every such card to its
+     * scheduling-time value.
+     *
+     * When the tree does read the pipeline, the *whole* expression is evaluated now rather than
+     * only its pipeline leaves. That is the correct reading for the wording this exists to serve —
+     * "for each creature returned to your hand **this way**" is settled at the moment the returns
+     * happen — and it keeps the substitution a single evaluate rather than a partial rebuild.
+     */
+    private fun snapshotPipelineAmount(
+        amount: DynamicAmount,
+        context: EffectContext,
+        state: GameState
+    ): DynamicAmount {
+        if (!readsPipeline(amount)) return amount
+        return DynamicAmount.Fixed(dynamicAmountEvaluator.evaluate(state, amount, context))
+    }
+
+    /** Whether [amount] anywhere reads a pipeline-scoped collection or stored number. */
+    private fun readsPipeline(amount: DynamicAmount): Boolean = when (amount) {
+        is DynamicAmount.DistinctEntitiesInCollections,
+        is DynamicAmount.DistinctCardTypesInCollections,
+        is DynamicAmount.ManaValueSumOfCollection,
+        is DynamicAmount.StoredCardManaValue,
+        is DynamicAmount.VariableReference -> true
+
+        is DynamicAmount.Add -> readsPipeline(amount.left) || readsPipeline(amount.right)
+        is DynamicAmount.Subtract -> readsPipeline(amount.left) || readsPipeline(amount.right)
+        is DynamicAmount.Max -> readsPipeline(amount.left) || readsPipeline(amount.right)
+        is DynamicAmount.Min -> readsPipeline(amount.left) || readsPipeline(amount.right)
+        is DynamicAmount.Multiply -> readsPipeline(amount.amount)
+        is DynamicAmount.IfPositive -> readsPipeline(amount.amount)
+        is DynamicAmount.Power -> readsPipeline(amount.exponent)
+        is DynamicAmount.Conditional -> readsPipeline(amount.ifTrue) || readsPipeline(amount.ifFalse)
+        else -> false
+    }
+
+    /**
      * Recursively substitute context-dependent target references with concrete SpecificEntity
      * references using the current execution context.
      *
@@ -328,6 +373,17 @@ class CreateDelayedTriggerExecutor : EffectExecutor<CreateDelayedTriggerEffect> 
             is AddColorlessManaEffect -> {
                 val snapshot = snapshotAmount(effect.amount, context, state)
                 if (snapshot !== effect.amount) effect.copy(amount = snapshot) else effect
+            }
+            // "At the beginning of the next upkeep, create a 4/4 … token **for each creature
+            // returned to your hand this way**" (The Eagles Are Coming!). The count reads the
+            // pipeline collection that ran this effect, and that pipeline is gone by the time the
+            // trigger fires — a lazy read would find no collection and make zero tokens. Only
+            // pipeline-scoped reads are frozen (see [snapshotPipelineAmount]); a board-state count
+            // stays lazy so "at the beginning of your end step, create a token for each …" keeps
+            // counting when the card says to count.
+            is CreateTokenEffect -> {
+                val count = snapshotPipelineAmount(effect.count, context, state)
+                if (count !== effect.count) effect.copy(count = count) else effect
             }
             is DealDamagePerEntityInZoneEffect -> {
                 // Resolve collection name to concrete entity IDs from the pipeline
