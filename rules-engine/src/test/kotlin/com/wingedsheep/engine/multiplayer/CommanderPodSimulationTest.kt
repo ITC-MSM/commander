@@ -1,6 +1,7 @@
 package com.wingedsheep.engine.multiplayer
 
 import com.wingedsheep.engine.core.InvariantCheckingActionObserver
+import com.wingedsheep.engine.core.ActivateAbility
 import com.wingedsheep.engine.core.DamageDealtEvent
 import com.wingedsheep.engine.core.SpellFizzledEvent
 import com.wingedsheep.engine.core.OrderTriggeredAbilitiesDecision
@@ -14,6 +15,7 @@ import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.identity.CommanderComponent
 import com.wingedsheep.engine.state.components.battlefield.DamageComponent
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
+import com.wingedsheep.engine.state.components.stack.TriggeredAbilityOnStackComponent
 import com.wingedsheep.engine.support.GameTestDriver
 import com.wingedsheep.engine.support.TestCards
 import com.wingedsheep.sdk.core.Color
@@ -28,7 +30,12 @@ import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.scripting.KeywordAbility
+import com.wingedsheep.sdk.scripting.AdditionalCostPayment
+import com.wingedsheep.sdk.scripting.TriggerBinding
+import com.wingedsheep.sdk.scripting.effects.MayEffect
 import com.wingedsheep.mtg.sets.definitions.ori.cards.ArchangelOfTithes
+import com.wingedsheep.mtg.sets.definitions.inv.cards.PhyrexianAltar
+import com.wingedsheep.mtg.sets.definitions.avr.cards.BloodArtist
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
@@ -98,12 +105,24 @@ class CommanderPodSimulationTest : FunSpec({
             effect = Effects.GainLife(2)
         }
     }
+    // Test-local: Deathgreeter has no registered definition yet.
+    val deathgreeter = card("Deathgreeter") {
+        manaCost = "{B}"
+        typeLine = "Creature — Human Shaman"
+        power = 1
+        toughness = 1
+        oracleText = "Whenever another creature dies, you may gain 1 life."
+        triggeredAbility {
+            trigger = Triggers.AnyCreatureDies.copy(binding = TriggerBinding.OTHER)
+            effect = MayEffect(Effects.GainLife(1))
+        }
+    }
 
     fun pod(): Pair<GameTestDriver, List<com.wingedsheep.sdk.model.EntityId>> {
         val driver = GameTestDriver(InvariantCheckingActionObserver())
         driver.registerCards(TestCards.all + listOf(
             podCommander, wardedSentinel, doubleEtb, blockingWitness, doubleBlockingWitness,
-            ArchangelOfTithes,
+            ArchangelOfTithes, PhyrexianAltar, BloodArtist, deathgreeter,
         ))
         val players = driver.initMultiplayer(
             decks = List(4) { Deck(cards = List(99) { "Mountain" }) },
@@ -362,6 +381,108 @@ class CommanderPodSimulationTest : FunSpec({
         passRound(driver, players)
         driver.stackSize shouldBe 0
         driver.getLifeTotal(a) shouldBe 43
+        driver.priorityPlayer shouldBe a
+    }
+
+    test("APNAP-4P-TARGET-MAY-001: four-seat Commander orders death triggers locally, targets them, and asks Deathgreeter only on resolution") {
+        val (driver, players) = pod()
+        val (a, b, c, d) = players
+        driver.passPriorityUntil(com.wingedsheep.sdk.core.Step.PRECOMBAT_MAIN)
+        val altar = driver.putPermanentOnBattlefield(a, PhyrexianAltar.name)
+        driver.putCreatureOnBattlefield(a, BloodArtist.name)
+        driver.putCreatureOnBattlefield(a, deathgreeter.name)
+        driver.putCreatureOnBattlefield(b, BloodArtist.name)
+        driver.putCreatureOnBattlefield(c, BloodArtist.name)
+        driver.putCreatureOnBattlefield(d, BloodArtist.name)
+        val bear = driver.putCreatureOnBattlefield(a, wardedSentinel.name)
+        val lifeBefore = players.associateWith(driver::getLifeTotal)
+
+        driver.submit(
+            ActivateAbility(
+                playerId = a,
+                sourceId = altar,
+                abilityId = PhyrexianAltar.activatedAbilities.single().id,
+                costPayment = AdditionalCostPayment(sacrificedPermanents = listOf(bear)),
+                manaColorChoice = Color.BLACK,
+            )
+        ).error shouldBe null
+        driver.stackSize shouldBe 0
+        driver.getGraveyardCardNames(a).contains(wardedSentinel.name) shouldBe true
+
+        // Active A orders its two triggers first. A forged duplicate/omitted permutation is inert.
+        val aOrder = driver.pendingDecision.shouldBeInstanceOf<OrderTriggeredAbilitiesDecision>()
+        aOrder.playerId shouldBe a
+        val aAbilityIds = aOrder.abilities.associateBy { it.sourceName }
+        aAbilityIds.keys.sorted().shouldContainExactly(BloodArtist.name, deathgreeter.name)
+        val beforeForgedOrder = driver.state
+        driver.submitDecision(
+            a,
+            TriggeredAbilitiesOrderedResponse(aOrder.id, listOf(aOrder.abilities.first().id, aOrder.abilities.first().id)),
+        ).error shouldNotBe null
+        driver.state shouldBe beforeForgedOrder
+        driver.pendingDecision shouldBe aOrder
+
+        // A's Blood Artist, then Deathgreeter, are placed before B/C/D in APNAP order. Each Artist
+        // gets its target while being put on the stack; Deathgreeter's May remains for resolution.
+        val orderResult = driver.submitDecision(
+            a,
+            TriggeredAbilitiesOrderedResponse(
+                aOrder.id,
+                listOf(aAbilityIds.getValue(BloodArtist.name).id, aAbilityIds.getValue(deathgreeter.name).id),
+            ),
+        )
+        orderResult.error shouldBe null
+        driver.pendingDecision?.playerId shouldBe a
+        val aTargetResult = driver.submitTargetSelection(a, listOf(b))
+        aTargetResult.error shouldBe null
+        driver.pendingDecision?.playerId shouldBe b
+        driver.submitTargetSelection(b, listOf(a)).error shouldBe null
+        driver.pendingDecision?.playerId shouldBe c
+        driver.submitTargetSelection(c, listOf(a)).error shouldBe null
+        driver.pendingDecision?.playerId shouldBe d
+        driver.submitTargetSelection(d, listOf(a)).error shouldBe null
+        driver.pendingDecision shouldBe null
+        driver.stackSize shouldBe 5
+        driver.state.stack.map { stackObjectId ->
+            driver.state.getEntity(stackObjectId)?.get<TriggeredAbilityOnStackComponent>()?.sourceName
+        }.shouldContainExactly(
+            BloodArtist.name, deathgreeter.name, BloodArtist.name, BloodArtist.name, BloodArtist.name,
+        )
+
+        // D, C, B resolve first; each full pass round returns priority to active A.
+        repeat(3) {
+            passRound(driver, players)
+            driver.priorityPlayer shouldBe a
+        }
+        // Deathgreeter resolves next and only now exposes its optional choice. Decline it.
+        passRound(driver, players)
+        driver.pendingDecision?.playerId shouldBe a
+        driver.submitYesNo(a, choice = false).error shouldBe null
+        driver.priorityPlayer shouldBe a
+        passRound(driver, players)
+
+        driver.stackSize shouldBe 0
+        driver.priorityPlayer shouldBe a
+        driver.getLifeTotal(a) shouldBe lifeBefore.getValue(a) - 3 + 1
+        driver.getLifeTotal(b) shouldBe lifeBefore.getValue(b) - 1 + 1
+        driver.getLifeTotal(c) shouldBe lifeBefore.getValue(c) + 1
+        driver.getLifeTotal(d) shouldBe lifeBefore.getValue(d) + 1
+    }
+
+    test("Deathgreeter does not trigger when it dies itself") {
+        val (driver, players) = pod()
+        val (a, _, _, _) = players
+        driver.passPriorityUntil(com.wingedsheep.sdk.core.Step.PRECOMBAT_MAIN)
+        val greeter = driver.putCreatureOnBattlefield(a, deathgreeter.name)
+        driver.giveMana(a, Color.RED, 1)
+        val bolt = driver.putCardInHand(a, "Lightning Bolt")
+
+        driver.castSpellWithTargets(a, bolt, listOf(ChosenTarget.Permanent(greeter))).error shouldBe null
+        passRound(driver, players)
+
+        driver.stackSize shouldBe 0
+        driver.getGraveyardCardNames(a).contains(deathgreeter.name) shouldBe true
+        driver.pendingDecision shouldBe null
         driver.priorityPlayer shouldBe a
     }
 

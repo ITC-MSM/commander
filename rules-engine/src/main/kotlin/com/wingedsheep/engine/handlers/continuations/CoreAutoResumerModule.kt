@@ -20,13 +20,16 @@ class CoreAutoResumerModule(
 ) : AutoResumerModule {
 
     override fun autoResumers(): List<AutoResumer<*>> = listOf(
-        autoResumer(PendingTriggersContinuation::class) { state, continuation, events, _ ->
+        autoResumer(PendingTriggersContinuation::class) { state, continuation, events, checkForMore ->
             val result = if (continuation.alreadyOrdered) {
                 services.triggerProcessor.processAlreadyOrderedTriggers(state, continuation.remainingTriggers)
             } else {
                 services.triggerProcessor.processTriggers(state, continuation.remainingTriggers)
             }
-            mergeAndContinue(result, events)
+            // The remaining triggers may have been paused beneath an APNAP placement-wave
+            // continuation.  Once they drain, resume that wave so the next controller can
+            // order/target its triggers before priority is offered.
+            mergeAndContinue(result, events, checkForMore)
         },
 
         autoResumer(TriggerPlacementWaveContinuation::class) { state, continuation, events, checkForMore ->

@@ -4,6 +4,7 @@ import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.player.LossReason
 import com.wingedsheep.engine.state.components.player.PlayerLostComponent
+import com.wingedsheep.engine.state.components.stack.SpellOnStackComponent
 import com.wingedsheep.engine.support.TestCards
 import com.wingedsheep.sdk.core.Format
 import com.wingedsheep.sdk.core.ManaCost
@@ -63,6 +64,89 @@ class GameInvariantCheckerTest : FunSpec({
             InvariantViolation.EntityInMultipleLocations(card, ZoneKey(state.turnOrder.first(), Zone.LIBRARY).toString(), "stack")
     }
 
+    test("checker accepts legal controls and rejects corrupted structural routing") {
+        data class Control(
+            val name: String,
+            val legal: () -> com.wingedsheep.engine.state.GameState,
+            val corrupted: () -> com.wingedsheep.engine.state.GameState,
+            val expected: (com.wingedsheep.engine.state.GameState) -> InvariantViolation,
+        )
+
+        fun legalStackState(): com.wingedsheep.engine.state.GameState {
+            val state = validState()
+            val caster = state.turnOrder.first()
+            val libraryKey = ZoneKey(caster, Zone.LIBRARY)
+            val card = state.getZone(libraryKey).first()
+            return state.updateEntity(card) { it.with(SpellOnStackComponent(caster)) }.copy(
+                zones = state.zones + (libraryKey to state.getZone(libraryKey).filterNot { it == card }),
+                stack = listOf(card),
+            )
+        }
+
+        val controls = listOf(
+            Control(
+                name = "stack object has a stack component",
+                legal = ::legalStackState,
+                corrupted = {
+                    val state = validState()
+                    val card = state.getZone(ZoneKey(state.turnOrder.first(), Zone.LIBRARY)).first()
+                    state.copy(
+                        zones = state.zones + (ZoneKey(state.turnOrder.first(), Zone.LIBRARY) to
+                            state.getZone(ZoneKey(state.turnOrder.first(), Zone.LIBRARY)).filterNot { it == card }),
+                        stack = listOf(card),
+                    )
+                },
+                expected = { it.stack.single().let(InvariantViolation::StackEntityWithoutStackComponent) },
+            ),
+            Control(
+                name = "turn order has no duplicate players",
+                legal = ::validState,
+                corrupted = {
+                    val state = validState()
+                    state.copy(turnOrder = state.turnOrder + state.turnOrder.first())
+                },
+                expected = { InvariantViolation.DuplicateTurnOrderPlayer },
+            ),
+            Control(
+                name = "turn order contains only player entities",
+                legal = ::validState,
+                corrupted = {
+                    val state = validState()
+                    val card = state.getZone(ZoneKey(state.turnOrder.first(), Zone.LIBRARY)).first()
+                    state.copy(turnOrder = state.turnOrder + card)
+                },
+                expected = { it.turnOrder.last().let(InvariantViolation::TurnOrderEntityIsNotPlayer) },
+            ),
+            Control(
+                name = "active player is active",
+                legal = ::validState,
+                corrupted = { validState().copy(activePlayerId = EntityId("unknown-active")) },
+                expected = { InvariantViolation.UnknownActivePlayer(EntityId("unknown-active")) },
+            ),
+            Control(
+                name = "pending decision belongs to an active player",
+                legal = {
+                    val state = validState()
+                    state.withPendingDecision(
+                        YesNoDecision("legal-decision", state.turnOrder.first(), "Legal", DecisionContext())
+                    )
+                },
+                corrupted = {
+                    validState().withPendingDecision(
+                        YesNoDecision("corrupt-decision", EntityId("unknown-decision"), "Corrupt", DecisionContext())
+                    )
+                },
+                expected = { InvariantViolation.UnknownDecisionPlayer(EntityId("unknown-decision")) },
+            ),
+        )
+
+        controls.forEach { control ->
+            checker.check(control.legal()) shouldBe emptyList()
+            val corrupted = control.corrupted()
+            checker.check(corrupted) shouldContain control.expected(corrupted)
+        }
+    }
+
     test("checker rejects priority and pending input owned by a player who has left") {
         val state = validState()
         val departed = state.turnOrder.last()
@@ -90,12 +174,29 @@ class GameInvariantCheckerTest : FunSpec({
         rejected.state shouldBe state
         rejected.events shouldHaveSize 0
 
-        shouldThrow<IllegalStateException> {
-            observer.afterProcess(
-                state,
-                PassPriority(state.turnOrder.first()),
+        data class RejectedActionControl(
+            val name: String,
+            val rejected: ExecutionResult,
+            val expected: InvariantViolation,
+        )
+        listOf(
+            RejectedActionControl(
+                "state changes",
                 ExecutionResult.error(state.copy(turnNumber = state.turnNumber + 1), "synthetic rejection"),
-            )
+                InvariantViolation.RejectedActionChangedState,
+            ),
+            RejectedActionControl(
+                "events are emitted",
+                ExecutionResult.error(state, "synthetic rejection").copy(
+                    events = listOf(LifeChangedEvent(state.turnOrder.first(), 20, 19, LifeChangeReason.LIFE_LOSS))
+                ),
+                InvariantViolation.RejectedActionEmittedEvents,
+            ),
+        ).forEach { control ->
+            val exception = shouldThrow<InvariantViolationException> {
+                observer.afterProcess(state, PassPriority(state.turnOrder.first()), control.rejected)
+            }
+            exception.violations shouldContain control.expected
         }
     }
 
