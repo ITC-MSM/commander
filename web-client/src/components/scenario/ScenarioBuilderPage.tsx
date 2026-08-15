@@ -19,6 +19,7 @@ import type { CardSummary } from '@/components/deckbuilder/cardFilter'
 import { CardEditorModal } from './CardEditorModal'
 import { ScenarioBoard, type BoardTarget } from './ScenarioBoard'
 import { CustomCardPanel } from './CustomCardPanel'
+import { customCardSummary } from './customCardJson'
 import {
   MODE_HINT,
   PHASES,
@@ -465,6 +466,21 @@ export function ScenarioBuilderPage() {
 
   const counts = useMemo(() => placedCounts(state), [state])
 
+  /**
+   * The catalog, plus a summary per custom card read from its own pasted JSON — art, mana symbols,
+   * type line, P/T. Every surface that draws a card here already reads this index, so a compiled
+   * custom card renders like any other without those components knowing it is one.
+   */
+  const cardIndex = useMemo(() => {
+    if (state.customCards.length === 0) return index
+    const merged = { ...index }
+    for (const card of state.customCards) {
+      const summary = customCardSummary(card.json)
+      if (summary) merged[card.name] = summary
+    }
+    return merged
+  }, [index, state.customCards])
+
   const creatureTypes = useMemo(() => {
     const out = new Set<string>()
     for (const c of catalog) {
@@ -701,7 +717,7 @@ export function ScenarioBuilderPage() {
 
           <ScenarioBoard
             state={state}
-            index={index}
+            index={cardIndex}
             target={target}
             onTargetChange={setTarget}
             onSeatPatch={handleSeatPatch}
@@ -757,7 +773,7 @@ export function ScenarioBuilderPage() {
       {editing && editingCard && editingSeat && (
         <CardEditorModal
           card={editingCard}
-          summary={index[editingCard.name]}
+          summary={cardIndex[editingCard.name]}
           hostOptions={editingSeat.battlefield
             .filter((_, i) => i !== editing.index)
             .map((c) => c.name)}

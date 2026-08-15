@@ -13,6 +13,7 @@
 import { useState } from 'react'
 import type { AssayCompileResponse } from './types'
 import type { CustomCard } from './builderState'
+import { customCardImageUri } from './customCardJson'
 import styles from './ScenarioBuilder.module.css'
 
 const PLACEHOLDER = `{
@@ -88,6 +89,8 @@ export function CustomCardPanel({
     }
   }
 
+  const previewArt = result?.compiled ? customCardImageUri(json) : null
+
   const addCompiled = () => {
     if (!result?.compiled || !result.cardName) return
     onAdd({ name: result.cardName, json })
@@ -141,6 +144,12 @@ export function CustomCardPanel({
               : `${result.cardName ?? 'This card'} did not compile`}
           </div>
 
+          {/* The card's own art, when the pasted object carries `image_uris` — it is what the
+              board and the game will show, so seeing it here is the confirmation. */}
+          {previewArt && (
+            <img className={styles.assayArt} src={previewArt} alt={result.cardName ?? 'Custom card'} />
+          )}
+
           {result.lines.length > 0 && (
             <ul className={styles.assayLines}>
               {result.lines.map((line) => (
@@ -182,6 +191,13 @@ export function CustomCardPanel({
           <span className={styles.smallLabel}>In this scenario</span>
           {cards.map((card) => (
             <div key={card.name} className={styles.customCardRow}>
+              {customCardImageUri(card.json) && (
+                <img
+                  className={styles.customCardThumb}
+                  src={customCardImageUri(card.json)!}
+                  alt=""
+                />
+              )}
               <span className={styles.customCardName}>{card.name}</span>
               <button
                 type="button"

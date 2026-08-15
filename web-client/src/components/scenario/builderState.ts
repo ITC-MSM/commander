@@ -7,6 +7,7 @@
  * two-seat shape when there are only two seats (the server prefers `players` when present, but
  * the shorter form keeps share links small and matches every scenario JSON already checked in).
  */
+import { customCardName } from './customCardJson'
 import type {
   ScenarioBattlefieldCard,
   ScenarioMode,
@@ -349,19 +350,5 @@ export function fromSpec(spec: ScenarioSpec): BuilderState {
     activePlayer: spec.activePlayer ?? 1,
     mode: seats.length > 2 ? 'SELF' : (spec.mode ?? (spec.aiPlayer != null ? 'AI' : 'SELF')),
     customCards: (spec.customCards ?? []).map((json) => ({ name: customCardName(json), json })),
-  }
-}
-
-/**
- * The name a pasted card object declares. Read client-side only to label the card in the builder;
- * the server reads the same field through Assay, and its reading is the one that counts.
- */
-export function customCardName(json: string): string {
-  try {
-    const parsed: unknown = JSON.parse(json)
-    const name = (parsed as { name?: unknown }).name
-    return typeof name === 'string' && name ? name : 'Unnamed card'
-  } catch {
-    return 'Unnamed card'
   }
 }

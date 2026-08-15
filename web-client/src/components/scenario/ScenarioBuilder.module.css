@@ -904,6 +904,18 @@
   overflow-x: auto;
 }
 
+.assayArt {
+  width: 150px;
+  border-radius: 8px;
+  align-self: flex-start;
+}
+
+.customCardThumb {
+  width: 32px;
+  border-radius: 3px;
+  flex: 0 0 auto;
+}
+
 .customCardList {
   display: flex;
   flex-direction: column;
