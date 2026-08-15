@@ -1,0 +1,376 @@
+package com.wingedsheep.assay.grammar
+
+import com.wingedsheep.assay.syntax.Phrase
+import com.wingedsheep.assay.syntax.bind
+import com.wingedsheep.assay.syntax.constant
+import com.wingedsheep.assay.syntax.oneOf
+import com.wingedsheep.assay.syntax.phrase
+import com.wingedsheep.sdk.core.CardType
+import com.wingedsheep.sdk.core.Keyword
+import com.wingedsheep.sdk.core.ManaCost
+import com.wingedsheep.sdk.core.Subtype
+import com.wingedsheep.sdk.scripting.KeywordAbility
+import com.wingedsheep.sdk.scripting.ProtectionScope
+
+/**
+ * Phase 1's whole grammar: keyword abilities, and nothing else.
+ *
+ * Every rule targets an `mtg-sdk` [KeywordAbility] directly — there is no Assay IR — and every
+ * value is built through the SDK's own companion factories rather than raw constructors, for the
+ * same reason cards are: the factories are the curated surface, and a rule that reaches past them
+ * ages badly when the underlying shape changes.
+ *
+ * **Templates are written mid-sentence** (`"flying"`, not `"Flying"`). Sentence case is applied at
+ * the line boundary by [com.wingedsheep.assay.syntax.SentenceCase], which is what lets one rule
+ * serve both "Flying, vigilance" and "Vigilance, flying".
+ *
+ * ### What is deliberately absent
+ *
+ * The commonest keyword-only lines in the corpus that this grammar **declines** are declines for a
+ * reason worth reading, because a decline names a missing capability in Argentum's own vocabulary:
+ *
+ * - `Enchant …` (1,289 cards) — the SDK models enchant as an aura's attachment restriction, not as
+ *   a [KeywordAbility]. There is nothing here to parse *into*.
+ * - `Equip {N}` (621 cards) — equip is a field on `CardDefinition` (`equipCost`), likewise not a
+ *   [KeywordAbility]. Two keyword abilities of the same shape, modelled two different ways.
+ * - `Devoid`, `Partner`, `Infect`, `Fuse`, `Exalted`, `Myriad`, `Melee`, `Skulk` — no [Keyword]
+ *   enum constant exists, so the capability genuinely is not in the SDK yet.
+ *
+ * That list is the fineness report's top declines, and it is exactly the backlog signal the design
+ * promises: "can Argentum express this?" collapses into "did it parse?".
+ */
+object Keywords {
+
+    // ---------------------------------------------------------------------------------------
+    // Rule shapes shared by whole families
+    // ---------------------------------------------------------------------------------------
+
+    /** "flashback {2}{R}" — a keyword whose only parameter is a mana cost. */
+    private fun costKeyword(
+        surface: String,
+        toModel: (ManaCost) -> KeywordAbility,
+        fromModel: (KeywordAbility) -> ManaCost?,
+    ): Phrase<KeywordAbility> = phrase("$surface {cost}", name = "$surface <cost>") {
+        slot("cost", Primitives.manaCost)
+        build { toModel(it.value("cost")) }
+        match { ability -> fromModel(ability)?.let { bind("cost" to it) } }
+    }
+
+    /**
+     * "annihilator 2" — a keyword parameterized by a single integer, which the SDK models
+     * uniformly as [KeywordAbility.Numeric]. The `onceEachTurn` variant ("Crew 1. Activate only
+     * once each turn.") is a different surface form and is not matched here, so it declines
+     * rather than printing back without its second sentence.
+     */
+    private fun numericKeyword(
+        surface: String,
+        keyword: Keyword,
+        toModel: (Int) -> KeywordAbility,
+    ): Phrase<KeywordAbility> = phrase("$surface {n}", name = "$surface <n>") {
+        slot("n", Primitives.cardinal)
+        build { toModel(it.int("n")) }
+        match { ability ->
+            (ability as? KeywordAbility.Numeric)
+                ?.takeIf { it.keyword == keyword && !it.onceEachTurn }
+                ?.let { bind("n" to it.n) }
+        }
+    }
+
+    /** "flying" — a keyword with no parameters at all, the bulk of the corpus by line count. */
+    private fun simple(keyword: Keyword, surface: String = keyword.displayName.lowercase()): Phrase<KeywordAbility> =
+        constant(surface, KeywordAbility.of(keyword))
+
+    // ---------------------------------------------------------------------------------------
+    // Simple keywords
+    // ---------------------------------------------------------------------------------------
+
+    /**
+     * Allowlisted rather than derived from [Keyword.entries], because the enum contains constants
+     * that never stand alone as a line ("Ward", "Protection", "Craft") and constants whose printed
+     * form is an ability-word prefix rather than a keyword ("Max speed — …"). Deriving would mint
+     * rules for text that does not exist, and every one of them would be a chance to mis-print.
+     *
+     * Three keywords are absent on purpose because the SDK gives them a dedicated
+     * [KeywordAbility] rather than [KeywordAbility.Simple]; they are registered below as
+     * [dedicatedObjects]. Registering both spellings would be genuine ambiguity.
+     */
+    private val simpleKeywords: List<Phrase<KeywordAbility>> = listOf(
+        // Evasion
+        simple(Keyword.FLYING),
+        simple(Keyword.MENACE),
+        simple(Keyword.INTIMIDATE),
+        simple(Keyword.FEAR),
+        simple(Keyword.SHADOW),
+        simple(Keyword.HORSEMANSHIP),
+        // Landwalk
+        simple(Keyword.SWAMPWALK),
+        simple(Keyword.FORESTWALK),
+        simple(Keyword.ISLANDWALK),
+        simple(Keyword.MOUNTAINWALK),
+        simple(Keyword.PLAINSWALK),
+        simple(Keyword.DESERTWALK),
+        // Combat
+        simple(Keyword.FIRST_STRIKE),
+        simple(Keyword.DOUBLE_STRIKE),
+        simple(Keyword.TRAMPLE),
+        simple(Keyword.DEATHTOUCH),
+        simple(Keyword.LIFELINK),
+        simple(Keyword.VIGILANCE),
+        simple(Keyword.REACH),
+        simple(Keyword.PROVOKE),
+        simple(Keyword.BANDING),
+        simple(Keyword.WITHER),
+        simple(Keyword.TRAINING),
+        // Defense / speed
+        simple(Keyword.DEFENDER),
+        simple(Keyword.INDESTRUCTIBLE),
+        simple(Keyword.HEXPROOF),
+        simple(Keyword.SHROUD),
+        simple(Keyword.HASTE),
+        simple(Keyword.FLASH),
+        // Cost reduction and casting
+        simple(Keyword.CONVOKE),
+        simple(Keyword.DELVE),
+        simple(Keyword.IMPROVISE),
+        simple(Keyword.STORM),
+        simple(Keyword.CASCADE),
+        simple(Keyword.REBOUND),
+        // Static / triggered keyword abilities
+        simple(Keyword.PROWESS),
+        simple(Keyword.CHANGELING),
+        simple(Keyword.SOULBOND),
+        simple(Keyword.PERSIST),
+        simple(Keyword.UNDYING),
+        simple(Keyword.DECAYED),
+        simple(Keyword.EXPLOIT),
+        simple(Keyword.RIOT),
+        simple(Keyword.ASCEND),
+        simple(Keyword.DAYBOUND),
+        simple(Keyword.NIGHTBOUND),
+        simple(Keyword.START_YOUR_ENGINES, surface = "start your engines!"),
+    )
+
+    /** Keywords the SDK models as their own object rather than as [KeywordAbility.Simple]. */
+    private val dedicatedObjects: List<Phrase<KeywordAbility>> = listOf(
+        constant("flanking", KeywordAbility.Flanking),
+        constant("conspire", KeywordAbility.conspire()),
+        constant("increment", KeywordAbility.Increment),
+    )
+
+    // ---------------------------------------------------------------------------------------
+    // Parameterized keywords
+    // ---------------------------------------------------------------------------------------
+
+    private val protection: Phrase<KeywordAbility> = phrase("protection from {scope}", name = "protection") {
+        slot("scope", Primitives.protectionScope)
+        build { KeywordAbility.Protection(it.value("scope")) }
+        match { (it as? KeywordAbility.Protection)?.let { p -> bind("scope" to p.scope) } }
+    }
+
+    private val hexproofFrom: Phrase<KeywordAbility> = phrase("hexproof from {scope}", name = "hexproof from") {
+        slot("scope", Primitives.protectionScope)
+        build { KeywordAbility.Hexproof(it.value("scope")) }
+        match { (it as? KeywordAbility.Hexproof)?.let { h -> bind("scope" to h.scope) } }
+    }
+
+    private val wardMana: Phrase<KeywordAbility> = phrase("ward {cost}", name = "ward <cost>") {
+        slot("cost", Primitives.manaCost)
+        build { KeywordAbility.ward(it.value<ManaCost>("cost").toString()) }
+        match { ability ->
+            wardManaCost(ability)?.let { bind("cost" to it) }
+        }
+    }
+
+    /** "Ward—Pay 2 life." — the em-dash forms are full sentences and carry a terminal period. */
+    private val wardLife: Phrase<KeywordAbility> = phrase("ward—Pay {n} life.", name = "ward—pay life") {
+        slot("n", Primitives.cardinal)
+        build { KeywordAbility.wardLife(it.int("n")) }
+        match { ability ->
+            (ability as? KeywordAbility.Ward)?.cost
+                ?.let { it as? com.wingedsheep.sdk.scripting.effects.WardCost.Life }
+                ?.let { bind("n" to it.amount) }
+        }
+    }
+
+    private val affinityForType: Phrase<KeywordAbility> = oneOf(
+        "affinity for a card type",
+        listOf(CardType.ARTIFACT, CardType.CREATURE, CardType.ENCHANTMENT, CardType.LAND, CardType.INSTANT)
+            .map { type -> constant("affinity for ${type.displayName.lowercase()}s", KeywordAbility.Affinity(type)) },
+    )
+
+    private val affinityForSubtype: Phrase<KeywordAbility> =
+        phrase("affinity for {subtype}", name = "affinity for a subtype") {
+            slot("subtype", Primitives.pluralSubtype)
+            build { KeywordAbility.AffinityForSubtype(it.value("subtype")) }
+            match { (it as? KeywordAbility.AffinityForSubtype)?.let { a -> bind("subtype" to a.forSubtype) } }
+        }
+
+    private val suspend: Phrase<KeywordAbility> = phrase("suspend {n}—{cost}", name = "suspend") {
+        slot("n", Primitives.cardinal)
+        slot("cost", Primitives.manaCost)
+        build { KeywordAbility.suspend(it.value<ManaCost>("cost").toString(), it.int("n")) }
+        match {
+            (it as? KeywordAbility.Suspend)?.let { s -> bind("n" to s.timeCounters, "cost" to s.cost) }
+        }
+    }
+
+    private val impending: Phrase<KeywordAbility> = phrase("impending {n}—{cost}", name = "impending") {
+        slot("n", Primitives.cardinal)
+        slot("cost", Primitives.manaCost)
+        build { KeywordAbility.impending(it.int("n"), it.value<ManaCost>("cost").toString()) }
+        match { (it as? KeywordAbility.Impending)?.let { i -> bind("n" to i.time, "cost" to i.cost) } }
+    }
+
+    private val splice: Phrase<KeywordAbility> = phrase("splice onto Arcane {cost}", name = "splice onto Arcane") {
+        slot("cost", Primitives.manaCost)
+        build { KeywordAbility.splice(it.value<ManaCost>("cost").toString(), Subtype.ARCANE) }
+        match {
+            (it as? KeywordAbility.Splice)?.takeIf { s -> s.onto == Subtype.ARCANE }?.let { s -> bind("cost" to s.cost) }
+        }
+    }
+
+    private val numericKeywords: List<Phrase<KeywordAbility>> = listOf(
+        numericKeyword("annihilator", Keyword.ANNIHILATOR, KeywordAbility::annihilator),
+        numericKeyword("bushido", Keyword.BUSHIDO, KeywordAbility::bushido),
+        numericKeyword("rampage", Keyword.RAMPAGE, KeywordAbility::rampage),
+        numericKeyword("absorb", Keyword.ABSORB, KeywordAbility::absorb),
+        numericKeyword("afflict", Keyword.AFFLICT, KeywordAbility::afflict),
+        numericKeyword("toxic", Keyword.TOXIC, KeywordAbility::toxic),
+        numericKeyword("crew", Keyword.CREW) { KeywordAbility.crew(it) },
+        numericKeyword("saddle", Keyword.SADDLE, KeywordAbility::saddle),
+        numericKeyword("modular", Keyword.MODULAR, KeywordAbility::modular),
+        numericKeyword("fading", Keyword.FADING, KeywordAbility::fading),
+        numericKeyword("vanishing", Keyword.VANISHING, KeywordAbility::vanishing),
+        numericKeyword("renown", Keyword.RENOWN, KeywordAbility::renown),
+        numericKeyword("fabricate", Keyword.FABRICATE, KeywordAbility::fabricate),
+        numericKeyword("tribute", Keyword.TRIBUTE, KeywordAbility::tribute),
+        numericKeyword("mobilize", Keyword.MOBILIZE, KeywordAbility::mobilize),
+        numericKeyword("firebending", Keyword.FIREBENDING, KeywordAbility::firebending),
+        numericKeyword("hideaway", Keyword.HIDEAWAY, KeywordAbility::hideaway),
+    )
+
+    private val costKeywords: List<Phrase<KeywordAbility>> = listOf(
+        costKeyword("cycling", { KeywordAbility.cycling(it.toString()) }) { ability ->
+            (ability as? KeywordAbility.Cycling)
+                ?.takeIf { it.searchFilter == null && it.displayPrefix == "Cycling" }
+                ?.cost
+        },
+        costKeyword("flashback", { KeywordAbility.flashback(it.toString()) }) { ability ->
+            (ability as? KeywordAbility.Flashback)?.takeIf { it.additionalCost == null }?.cost
+        },
+        costKeyword("madness", { KeywordAbility.madness(it.toString()) }) { (it as? KeywordAbility.Madness)?.cost },
+        costKeyword("foretell", { KeywordAbility.foretell(it.toString()) }) { (it as? KeywordAbility.Foretell)?.cost },
+        costKeyword("plot", { KeywordAbility.plot(it.toString()) }) { (it as? KeywordAbility.Plot)?.cost },
+        costKeyword("disturb", { KeywordAbility.disturb(it.toString()) }) { (it as? KeywordAbility.Disturb)?.cost },
+        costKeyword("evoke", { KeywordAbility.evoke(it.toString()) }) { (it as? KeywordAbility.Evoke)?.cost },
+        costKeyword("emerge", { KeywordAbility.emerge(it.toString()) }) { (it as? KeywordAbility.Emerge)?.cost },
+        costKeyword("miracle", { KeywordAbility.miracle(it.toString()) }) { (it as? KeywordAbility.Miracle)?.cost },
+        costKeyword("dash", { KeywordAbility.dash(it.toString()) }) { (it as? KeywordAbility.Dash)?.cost },
+        costKeyword("warp", { KeywordAbility.warp(it.toString()) }) { (it as? KeywordAbility.Warp)?.cost },
+        costKeyword("cleave", { KeywordAbility.cleave(it.toString()) }) { (it as? KeywordAbility.Cleave)?.cost },
+        costKeyword("harmonize", { KeywordAbility.harmonize(it.toString()) }) { (it as? KeywordAbility.Harmonize)?.cost },
+        costKeyword("mayhem", { KeywordAbility.mayhem(it.toString()) }) { (it as? KeywordAbility.Mayhem)?.cost },
+        costKeyword("ninjutsu", { KeywordAbility.ninjutsu(it.toString()) }) { (it as? KeywordAbility.Ninjutsu)?.cost },
+        costKeyword("sneak", { KeywordAbility.sneak(it.toString()) }) { (it as? KeywordAbility.Sneak)?.cost },
+        costKeyword("web-slinging", { KeywordAbility.webSlinging(it.toString()) }) {
+            (it as? KeywordAbility.WebSlinging)?.cost
+        },
+        costKeyword("morph", { KeywordAbility.morph(it.toString()) }) { ability ->
+            (ability as? KeywordAbility.Morph)?.takeIf { it.faceUpEffect == null }?.let { manaOnly(it.morphCost) }
+        },
+        costKeyword("disguise", { KeywordAbility.disguise(it.toString()) }) { ability ->
+            (ability as? KeywordAbility.Disguise)?.takeIf { it.faceUpEffect == null }
+                ?.let { manaOnly(it.disguiseCost) }
+        },
+        costKeyword("kicker", { KeywordAbility.kicker(it) }) { ability ->
+            optionalAdditionalManaCost(ability, prefix = "Kicker", multi = false)
+        },
+        costKeyword("multikicker", { KeywordAbility.multikicker(it.toString()) }) { ability ->
+            optionalAdditionalManaCost(ability, prefix = "Multikicker", multi = true)
+        },
+        costKeyword("offspring", { KeywordAbility.offspring(it) }) { ability ->
+            optionalAdditionalManaCost(ability, prefix = "Offspring", multi = false)
+        },
+    )
+
+    /**
+     * Typecycling and basic landcycling — the same [KeywordAbility.Cycling] shape with a search
+     * filter and a display prefix.
+     *
+     * The type is enumerated rather than parsed into a slot, and the reason is worth recording: a
+     * `{type}cycling` slot needs the token to stop *before* the literal "cycling", which takes a
+     * lookahead — and a leaf whose pattern only matches in context cannot verify its own printed
+     * output the way [com.wingedsheep.assay.syntax.token] does. Eight constants keep that check
+     * intact. A ninth cycling type is one line, and until it is written the card declines, which
+     * is the correct behaviour rather than a silent approximation.
+     */
+    private val cyclingVariants: List<Phrase<KeywordAbility>> = buildList {
+        add(
+            costKeyword("basic landcycling", { KeywordAbility.basicLandcycling(it) }) { ability ->
+                (ability as? KeywordAbility.Cycling)?.takeIf { it.displayPrefix == "Basic landcycling" }?.cost
+            }
+        )
+        for (type in listOf("Plains", "Island", "Swamp", "Mountain", "Forest", "Wizard", "Sliver", "Halfling")) {
+            add(
+                costKeyword("${type.lowercase()}cycling", { KeywordAbility.typecycling(type, it) }) { ability ->
+                    (ability as? KeywordAbility.Cycling)?.takeIf { it.displayPrefix == "${type}cycling" }?.cost
+                }
+            )
+        }
+    }
+
+    private val casualty: Phrase<KeywordAbility> = phrase("casualty {n}", name = "casualty") {
+        slot("n", Primitives.cardinal)
+        build { KeywordAbility.casualty(it.int("n")) }
+        match { (it as? KeywordAbility.Casualty)?.let { c -> bind("n" to c.threshold) } }
+    }
+
+    private val devour: Phrase<KeywordAbility> = phrase("devour {n}", name = "devour") {
+        slot("n", Primitives.cardinal)
+        build { KeywordAbility.devour(it.int("n")) }
+        match {
+            (it as? KeywordAbility.Devour)?.takeIf { d -> d.variant.isBlank() }
+                ?.let { d -> bind("n" to d.multiplier) }
+        }
+    }
+
+    /** Every keyword-ability rule, in one place. Order is irrelevant to parsing; all are tried. */
+    val all: List<Phrase<KeywordAbility>> =
+        simpleKeywords + dedicatedObjects + numericKeywords + costKeywords + cyclingVariants + listOf(
+            protection,
+            hexproofFrom,
+            wardMana,
+            wardLife,
+            affinityForType,
+            affinityForSubtype,
+            suspend,
+            impending,
+            splice,
+            casualty,
+            devour,
+        )
+
+    // ---------------------------------------------------------------------------------------
+    // Model-side helpers for the `match` halves
+    // ---------------------------------------------------------------------------------------
+
+    private fun wardManaCost(ability: KeywordAbility): ManaCost? {
+        val cost = (ability as? KeywordAbility.Ward)?.cost as? com.wingedsheep.sdk.scripting.effects.WardCost.Mana
+        if (cost == null || cost.waterbend) return null
+        return runCatching { ManaCost.parse(cost.manaCost) }.getOrNull()
+    }
+
+    /** A [com.wingedsheep.sdk.scripting.costs.PayCost] that is nothing but mana, or null. */
+    private fun manaOnly(cost: com.wingedsheep.sdk.scripting.costs.PayCost): ManaCost? {
+        val atom = (cost as? com.wingedsheep.sdk.scripting.costs.PayCost.Atom)?.atom
+        return (atom as? com.wingedsheep.sdk.scripting.costs.CostAtom.Mana)?.cost
+    }
+
+    private fun optionalAdditionalManaCost(
+        ability: KeywordAbility,
+        prefix: String,
+        multi: Boolean,
+    ): ManaCost? = (ability as? KeywordAbility.OptionalAdditionalCost)
+        ?.takeIf { it.displayPrefix == prefix && it.multi == multi && it.additionalCost == null }
+        ?.manaCost
+}

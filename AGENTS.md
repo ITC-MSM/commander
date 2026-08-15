@@ -56,6 +56,7 @@ docs it points at; load those when the work needs them.
 | `gym` / `gym-server` / `gym-trainer` | RL/MCTS env + HTTP transport + self-play SPI | engine, sdk |
 | `game-server` | Spring Boot orchestration, WebSocket, state masking | engine, sdk |
 | `mtgish-tooling` | Predictive coverage / auto-gen analyzer | — (scans source as text) |
+| [`oracle-assay`](oracle-assay/README.md) | Argentum Assay — bidirectional Oracle-text parser + touchstone gate (`just assay-gate`) | sdk |
 | `web-client` | React UI (dumb terminal — no game logic) | — |
 
 **Key principle:** the engine is pure (no card-specific code), content is data-driven (no execution
@@ -147,4 +148,4 @@ It is **predictive and non-authoritative — never a card loader.** Two rules fo
 | [`gym-deckbuild-env.md`](docs/gym-deckbuild-env.md) | Sealed deckbuild gym env + custom win-rate reward |
 | [`gym-self-play-testing.md`](docs/gym-self-play-testing.md) | Driving the gym server over HTTP to surface broken cards |
 | [`agent-loops/`](docs/agent-loops/) | Long-running set-implementation prompts for Claude Code `/loop` and Codex `/goal` |
-| [`oracle-assay.md`](docs/oracle-assay.md) | **Proposal** — first-party Scryfall→SDK Oracle parser; also audits `mtg-sdk` vocabulary |
+| [`oracle-assay.md`](docs/oracle-assay.md) | Argentum Assay design — first-party Scryfall→SDK Oracle parser; also audits `mtg-sdk` vocabulary. **Phase 1 shipped** ([`:oracle-assay`](oracle-assay/README.md)); phases 2–6 are still proposals |

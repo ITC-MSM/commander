@@ -51,10 +51,47 @@ Neither costs anything to check, and both are cheap exits.
 
 ---
 
-## Phase 1 — Kernel, normalization, gate harness
+## Phase 1 — Kernel, normalization, gate harness ✅ SHIPPED
 
 The riskiest phase, because it decides whether the round trip is achievable at all. Deliberately
 paired with a trivial grammar so the *machinery* is what's under test.
+
+**Outcome.** The round trip holds. Over the whole Scryfall Oracle bulk — 34,882 cards, 35,776 faces,
+66,793 ability lines — the gate reports **0 ambiguities, 0 print mismatches, and 0 non-invertible
+normalizations**. Module docs and the command list: [`oracle-assay/README.md`](../../oracle-assay/README.md).
+
+```
+Round-trips byte-exact           12646   189.3‰ (18.9%)   (whole corpus; mostly Phase 2+ text)
+Alternate spelling normalized    30
+Declined                         54117
+Vanilla + keyword-only cards     1439 / 1712   840.5‰ (84.1%)   <- this phase's own target
+```
+
+Fineness is parts per thousand, so the target row reads **84.1%** — not 84.05%, and not 840%. The
+kill criterion above is written "~95% ‰", which is ambiguous by a factor of ten; the phase lands
+below it on either reading.
+
+The shortfall is not the round trip faltering. Every remaining line in that class declines for one
+reason: the SDK has no vocabulary for the keyword. `just assay-report --scope` ranks them — Exalted, Infect, Echo,
+Soulshift, Bloodthirst, Scavenge, Backup, Megamorph, Unleash, Extort, Evolve, Myriad, Unearth,
+Champion, Eternalize, Skulk, Melee, Battle cry, Reinforce, Devoid, Dethrone, Phasing, Cumulative
+upkeep, and ~40 more, none of which has a `Keyword` enum constant. Closing that list is content
+work with a ranked backlog attached, not a risk to the approach; the machinery it would run on is
+proved.
+
+Three findings the phase produced on the way, written up in the module README: `Enchant` and `Equip`
+are keyword abilities modelled as an aura restriction and a `CardDefinition` field respectively (the
+two largest keyword-only decline families, 1,289 and 621 cards); `PROTECTION_FROM_EACH_OPPONENT` and
+`ProtectionScope.EachOpponent` are two spellings of one thing; and printed reminder text is a
+function of the ability *and* the card's types, which a `KeywordAbility` alone cannot produce.
+
+**Risk that did not materialize.** Printing turned out to be underdetermined in exactly two places,
+and `canonical = false` resolved both cleanly: the semicolon separator ("Flying; banding", ~31 cards)
+and line grouping. Both are properties of the printed text that a flat model has no room for, so
+normalization owns the second and the first reports as a `VARIANT` — parsed correctly, printed
+canonically, model provably unchanged. That verdict is the one addition to the design's vocabulary
+this phase made, and it exists so that an alternate spelling is neither counted as a byte-exact
+round trip nor as a failure.
 
 New module `:oracle-assay` (`settings.gradle.kts`, `build.gradle.kts` modelled on
 `mtgish-tooling/build.gradle.kts` but with an `implementation(project(":mtg-sdk"))`).
@@ -74,10 +111,7 @@ New module `:oracle-assay` (`settings.gradle.kts`, `build.gradle.kts` modelled o
    `just assay-gate` / `just assay-report` recipes.
 
 **Acceptance:** fineness reported for the whole corpus; ambiguity count is 0; every normalization
-pass round-trips; `assay explain <card>` prints the token a decline died on.
-
-**Risk to watch:** if printing turns out to be underdetermined in ways `canonical = false` can't
-resolve cleanly, that is the signal to reconsider the whole approach — at the cost of one phase.
+pass round-trips; `assay explain <card>` prints the token a decline died on. — **All met.**
 
 ---
 

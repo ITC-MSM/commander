@@ -1,0 +1,166 @@
+package com.wingedsheep.assay.normalize
+
+import com.wingedsheep.assay.corpus.OracleFace
+
+/**
+ * Scryfall Oracle text → canonical ability lines, **and back**.
+ *
+ * The touchstone compares against normalized text, so normalization is load-bearing: if a pass
+ * throws information away, the round trip stops being a proof and becomes a formality — you can
+ * always pass a round trip by normalizing hard enough. Every pass here is therefore *invertible by
+ * construction*: what it removes or rewrites is recorded on the [NormalizedFace] it produces, and
+ * [NormalizedFace.restore] replays the inverses in reverse order to rebuild the original bytes.
+ *
+ * Passes, in order:
+ *
+ * | Pass | Forward | Inverse |
+ * |---|---|---|
+ * | Reminder text | strip ` (…)` spans | re-insert at the recorded offsets (or regenerate — see [Reminders]) |
+ * | Self-reference | the face's own name → `~`, longest-match first | put the recorded surface form back |
+ * | Ability split | one ability per line | join with `\n` |
+ *
+ * Two passes named in the design are handled elsewhere on purpose:
+ *
+ * - **Faces** are split by the corpus reader ([OracleFace]), because the split is Scryfall's own
+ *   and carries no information of ours to lose.
+ * - **Symbols** (`{T}`, `{2}{U}`, `[+1]`) are lexed by the grammar's leaf rules rather than
+ *   rewritten here. That is the stronger form of "never as prose": nothing moves, so there is no
+ *   inverse to get wrong.
+ *
+ * Sentence case is likewise not a pass — see [com.wingedsheep.assay.syntax.SentenceCase].
+ */
+object Normalizer {
+
+    /**
+     * Reminder text is stripped with any *spaces* in front of it but never a newline, so a
+     * reminder that occupies a whole line leaves an empty line behind rather than silently
+     * changing the ability count.
+     */
+    private val REMINDER_RE = Regex("""[ ]*\([^)]*\)""")
+
+    fun normalize(face: OracleFace): NormalizedFace {
+        val (stripped, reminders) = stripReminders(face.oracleText)
+        val (abstracted, selfRefs) = abstractSelfReference(stripped, selfReferenceForms(face.name))
+        return NormalizedFace(
+            faceName = face.name,
+            lines = abstracted.split("\n"),
+            reminders = reminders,
+            selfReferences = selfRefs,
+            raw = face.oracleText,
+        )
+    }
+
+    /**
+     * The surface forms that refer to the card itself, longest first so that
+     * "Kenrith, the Returned King" wins over the bare "Kenrith" it contains — the Comprehensive
+     * Rules' *legend name* rule lets a legendary card's own text refer to it by the short name.
+     *
+     * Known limitation, deliberately not papered over: a short name that occurs inside a *longer*
+     * proper noun in the card's own text — Kher Keep making "Kobolds of Kher Keep" — is abstracted
+     * too. The round trip is unaffected (the form is recorded and restored verbatim), but the model
+     * would be wrong, so the rules that read `~` must not treat it as authoritative inside a
+     * quoted name. Nothing in the Phase 1 grammar does.
+     */
+    internal fun selfReferenceForms(faceName: String): List<String> {
+        val forms = linkedSetOf(faceName)
+        val comma = faceName.indexOf(", ")
+        if (comma > 0) forms.add(faceName.substring(0, comma))
+        return forms.filter { it.isNotBlank() }.sortedByDescending { it.length }
+    }
+
+    private fun stripReminders(text: String): Pair<String, List<Removal>> {
+        val removals = mutableListOf<Removal>()
+        val out = StringBuilder()
+        var cursor = 0
+        for (m in REMINDER_RE.findAll(text)) {
+            out.append(text, cursor, m.range.first)
+            removals.add(Removal(out.length, m.value))
+            cursor = m.range.last + 1
+        }
+        out.append(text, cursor, text.length)
+        return out.toString() to removals
+    }
+
+    private fun abstractSelfReference(text: String, forms: List<String>): Pair<String, List<String>> {
+        if (forms.isEmpty()) return text to emptyList()
+        val replaced = mutableListOf<String>()
+        val out = StringBuilder()
+        var i = 0
+        while (i < text.length) {
+            val hit = forms.firstOrNull { form ->
+                text.startsWith(form, i) &&
+                    !isNameChar(text.getOrNull(i - 1)) &&
+                    !isNameChar(text.getOrNull(i + form.length))
+            }
+            if (hit != null) {
+                out.append(SELF)
+                replaced.add(hit)
+                i += hit.length
+            } else {
+                out.append(text[i])
+                i++
+            }
+        }
+        return out.toString() to replaced
+    }
+
+    private fun isNameChar(c: Char?): Boolean = c != null && (c.isLetterOrDigit() || c == '\'')
+
+    /** The self-reference placeholder. Oracle text never contains a literal tilde. */
+    const val SELF = "~"
+}
+
+/** A span removed by a normalization pass, plus where to put it back. */
+data class Removal(val offset: Int, val text: String)
+
+/**
+ * A face's Oracle text as canonical ability lines, carrying everything needed to undo the
+ * normalization exactly.
+ */
+data class NormalizedFace(
+    val faceName: String,
+    val lines: List<String>,
+    val reminders: List<Removal>,
+    val selfReferences: List<String>,
+    /** The face's original Oracle text — the byte string the touchstone compares against. */
+    val raw: String,
+) {
+
+    /** True for a face with no rules text: the vanilla case, which round-trips trivially. */
+    val isVanilla: Boolean get() = raw.isBlank()
+
+    /**
+     * The inverse of the whole pipeline: printed lines → the face's original Oracle text.
+     *
+     * Passing [lines] straight back must reproduce [raw] exactly; that identity is itself a gate
+     * (`assay gate --touchstone` checks it before it checks the grammar), because a normalization
+     * that cannot round-trip its own output would let any grammar look correct.
+     */
+    fun restore(printedLines: List<String>): String {
+        var text = printedLines.joinToString("\n")
+        text = restoreSelfReferences(text)
+        // Re-insert right to left so earlier offsets stay valid.
+        for (removal in reminders.asReversed()) {
+            if (removal.offset > text.length) return text  // printed text diverged; caller compares and fails
+            text = text.substring(0, removal.offset) + removal.text + text.substring(removal.offset)
+        }
+        return text
+    }
+
+    private fun restoreSelfReferences(text: String): String {
+        if (selfReferences.isEmpty()) return text
+        val out = StringBuilder()
+        var i = 0
+        var next = 0
+        while (i < text.length) {
+            if (text.startsWith(Normalizer.SELF, i) && next < selfReferences.size) {
+                out.append(selfReferences[next++])
+                i += Normalizer.SELF.length
+            } else {
+                out.append(text[i])
+                i++
+            }
+        }
+        return out.toString()
+    }
+}

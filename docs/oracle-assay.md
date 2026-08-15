@@ -4,9 +4,12 @@ A proposed first-party Oracle-text parser: Scryfall JSON in, `mtg-sdk` models ou
 where every rule is written in both directions so it proves itself against the whole corpus without
 a human reading the output.
 
-**Status: design proposal, not implemented.** The realization plan is
-[`docs/plans/oracle-assay.md`](plans/oracle-assay.md). Nothing here changes the existing
-`:mtgish-tooling` pipeline, which stays authoritative until a set-by-set cutover replaces it.
+**Status: Phase 1 shipped** — the `Phrase` kernel, invertible normalization, the touchstone gate,
+and a grammar covering vanilla cards and keyword-only abilities all live in
+[`:oracle-assay`](../oracle-assay/README.md). Phases 2–6 remain proposals. The realization plan and
+the numbers Phase 1 landed on are in [`docs/plans/oracle-assay.md`](plans/oracle-assay.md). Nothing
+here changes the existing `:mtgish-tooling` pipeline, which stays authoritative until a set-by-set
+cutover replaces it.
 
 ## The name
 

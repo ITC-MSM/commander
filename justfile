@@ -331,6 +331,37 @@ coverage-verify-all: _coverage-tool
         just coverage-verify "$s"
     done
 
+# Build the Argentum Assay CLI once so the recipes below can call it (fast no-op when up to date).
+# Assay is the first-party Oracle-text parser (docs/oracle-assay.md); it depends on :mtg-sdk only.
+_assay-tool:
+    @scripts/gradle-locked -q --console=plain :oracle-assay:installDist
+
+# Argentum Assay CLI passthrough — parse / explain / gate / report / corpus.
+#   just assay parse "Serra Angel"        normalized lines + the SDK model each parses to
+#   just assay explain "Wall of Omens"    the same, with a caret on the token a decline died on
+#   just assay corpus --refresh           re-download the Scryfall Oracle bulk (~24 MB, cached 7d)
+[group: 'build']
+assay *ARGS: _assay-tool
+    @oracle-assay/build/install/oracle-assay/bin/oracle-assay {{ARGS}}
+
+# TOUCHSTONE GATE — print(parse(normalize(t))) == normalize(t) over every Oracle text in the bulk.
+# Fails (exit 1) on ambiguity, print mismatch, or non-invertible normalization. Declines are NOT
+# failures: they are the coverage number and the ranked backlog.
+#   just assay-gate                 whole corpus
+#   just assay-gate --limit 2000    fast smoke run
+#   just assay-gate --set POR       one set
+[group: 'build']
+assay-gate *ARGS: _assay-tool
+    @oracle-assay/build/install/oracle-assay/bin/oracle-assay gate {{ARGS}}
+
+# The fineness report — the same numbers as the gate, always exit 0, for reading rather than gating.
+# The bottom table ("top declines, ranked by cards blocked") is a continuously-updated SDK gap
+# report: a card that cannot be expressed does not parse, and the decline names the gap.
+#   just assay-report --top 40
+[group: 'build']
+assay-report *ARGS: _assay-tool
+    @oracle-assay/build/install/oracle-assay/bin/oracle-assay report {{ARGS}}
+
 # Verify backlog/sets/*/cards.md headers match actual [x] / [x]+[ ] counts
 [group: 'build']
 check-backlog:

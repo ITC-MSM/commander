@@ -79,4 +79,8 @@ include(":gym-server")
 include(":gym-trainer")
 include(":mtgish-tooling")
 
+// Argentum Assay — the first-party Oracle-text parser (docs/oracle-assay.md). Depends on :mtg-sdk
+// only: the grammar parses directly into SDK types, and it is not a runtime card loader.
+include(":oracle-assay")
+
 rootProject.name = "argentum-engine"
