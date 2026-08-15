@@ -1,0 +1,59 @@
+// Capital Guard
+{
+    "name": "Capital Guard",
+    "manaCost": "{1}{R}",
+    "typeLine": "Creature — Human Soldier",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "metadata": {
+        "collectorNumber": "234",
+        "artist": "Nathaniel Himawan",
+        "flavorText": "Fire Nation guards rely more on fear than fire.",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/1/91cbed11-3b5c-4e7a-9b13-125c1fe5f22f.jpg?1783904780"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Kyoshi Warrior Guard
+{
+    "name": "Kyoshi Warrior Guard",
+    "manaCost": "{1}{W}",
+    "typeLine": "Creature — Human Warrior Ally",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "metadata": {
+        "collectorNumber": "216",
+        "artist": "Yunomachi",
+        "flavorText": "Kyoshi Warrior drills are designed to encourage individual discipline as well as uncompromising trust in their fellow warriors.",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/a/7a2acb28-c0e2-492b-a227-ef49e905e0fb.jpg?1783904787"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Warship Scout
+{
+    "name": "Warship Scout",
+    "manaCost": "{R}",
+    "typeLine": "Creature — Human Scout",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "metadata": {
+        "collectorNumber": "244",
+        "artist": "Brandon L. Hunt",
+        "flavorText": "\"For the glory of the Fire Nation!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/1/b1a95982-be16-465a-9c1b-1f4d875c0c40.jpg?1783904777"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}

@@ -1,0 +1,39 @@
+// Frost Ogre
+{
+    "name": "Frost Ogre",
+    "manaCost": "{3}{R}{R}",
+    "typeLine": "Creature — Ogre Warrior",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 3
+    },
+    "metadata": {
+        "collectorNumber": "102",
+        "artist": "Dan Murayama Scott",
+        "flavorText": "Mountain ogres allowed blizzards to sheathe them in ice, both to reinforce their armor and to hide their pungent musk from potential prey.",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/a/1a91e5f1-9179-4763-b7c9-b7ad5451f6d0.jpg?1783944191"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Gnarled Mass
+{
+    "name": "Gnarled Mass",
+    "manaCost": "{1}{G}{G}",
+    "typeLine": "Creature — Spirit",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "metadata": {
+        "collectorNumber": "127",
+        "artist": "Tony Szczudlo",
+        "flavorText": "\"On the fifty-seventh day of the Battle of Silk, the bell again tolled in hopes of summoning mortal aid. This time, a new breed of kami rose to answer its call.\"\n—*Great Battles of Kamigawa*",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/c/5c28728d-4839-4cdf-91d4-b9fb4b5d0449.jpg?1783944185"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}

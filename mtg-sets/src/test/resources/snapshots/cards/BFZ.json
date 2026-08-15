@@ -86,6 +86,26 @@
     ]
 }
 
+// Broodhunter Wurm
+{
+    "name": "Broodhunter Wurm",
+    "manaCost": "{3}{G}",
+    "typeLine": "Creature — Wurm",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 3
+    },
+    "metadata": {
+        "collectorNumber": "171",
+        "artist": "Svetlin Velinov",
+        "flavorText": "The native creatures of Zendikar have adapted to live under rocks and crawl through underbrush in order to avoid the most voracious predators. The Eldrazi have yet to make such adjustments.",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/1/c11c852d-9c7c-4d9b-8e79-70ea5ac865df.jpg?1783938188"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Cinder Glade
 {
     "name": "Cinder Glade",
@@ -122,6 +142,27 @@
     "colorIdentityOverride": [
         "RED",
         "GREEN"
+    ]
+}
+
+// Expedition Envoy
+{
+    "name": "Expedition Envoy",
+    "manaCost": "{W}",
+    "typeLine": "Creature — Human Scout Ally",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "metadata": {
+        "collectorNumber": "24",
+        "rarity": "UNCOMMON",
+        "artist": "David Palumbo",
+        "flavorText": "The unofficial motto of every expedition house is \"ready for anything,\" a phrase whose significance has been amplified since the emergence of the Eldrazi.",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/1/41193ef1-1619-4448-9905-26b05079c79a.jpg?1783938221"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 

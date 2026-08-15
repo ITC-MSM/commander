@@ -298,6 +298,26 @@
     ]
 }
 
+// Fresh Volunteers
+{
+    "name": "Fresh Volunteers",
+    "manaCost": "{1}{W}",
+    "typeLine": "Creature — Human Rebel",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "metadata": {
+        "collectorNumber": "20",
+        "artist": "Jeff Miracola",
+        "flavorText": "Every Cho-Arrim villager is a potential warrior; when they are called, they abandon their peaceful way of life and take up arms to defend it.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/0/e070ea4a-c417-405f-b788-78fb7ca2eaa5.jpg?1783945981"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Groundskeeper
 {
     "name": "Groundskeeper",
@@ -716,5 +736,25 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Wild Jhovall
+{
+    "name": "Wild Jhovall",
+    "manaCost": "{3}{R}",
+    "typeLine": "Creature — Cat",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "metadata": {
+        "collectorNumber": "227",
+        "artist": "Daren Bader",
+        "flavorText": "Jhovalls sharpen their claws on trees—or on Mercadians, if no trees are handy.",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/4/64bcc06a-de86-4387-882d-ead33e9c9e01.jpg?1783945930"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }

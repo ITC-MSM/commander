@@ -402,6 +402,24 @@
     ]
 }
 
+// Phyrexian Walker
+{
+    "name": "Phyrexian Walker",
+    "manaCost": "{0}",
+    "typeLine": "Artifact Creature — Phyrexian Construct",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 3
+    },
+    "metadata": {
+        "collectorNumber": "152",
+        "artist": "Bryan Talbot",
+        "flavorText": "\"I have heard terrible tales of black rains, ashen fields, and metal that screams. I have consoled myself that the tales were a myth of some fevered mind. But today I saw a walker—and now I fear the truth.\"\n—Kasib Ibn Naji, Letters",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/f/9f8a3979-2947-4692-8b2f-d4c07c534777.jpg?1783946973"
+    },
+    "colorIdentityOverride": []
+}
+
 // Prosperity
 {
     "name": "Prosperity",

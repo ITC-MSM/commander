@@ -71,6 +71,26 @@
     "colorIdentityOverride": []
 }
 
+// Canyon Minotaur
+{
+    "name": "Canyon Minotaur",
+    "manaCost": "{3}{R}",
+    "typeLine": "Creature — Minotaur Warrior",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "metadata": {
+        "collectorNumber": "60",
+        "artist": "Steve Prescott",
+        "flavorText": "On Jund, the deep canyons were the best places to hide. When the goblins wandered into Naya, they found that was not so true.",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/b/9b200790-43c7-42ae-9edf-89c8198a385b.jpg?1783942480"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Exotic Orchard
 {
     "name": "Exotic Orchard",
@@ -102,6 +122,31 @@
         "imageUri": "https://cards.scryfall.io/normal/front/6/a/6aae6480-4e71-4d94-a648-f80d3849d792.jpg?1562801539"
     },
     "colorIdentityOverride": []
+}
+
+// Fusion Elemental
+{
+    "name": "Fusion Elemental",
+    "manaCost": "{W}{U}{B}{R}{G}",
+    "typeLine": "Creature — Elemental",
+    "creatureStats": {
+        "power": 8,
+        "toughness": 8
+    },
+    "metadata": {
+        "collectorNumber": "107",
+        "rarity": "UNCOMMON",
+        "artist": "Michael Komarck",
+        "flavorText": "As the shards merged into the Maelstrom, their mana energies fused into new monstrosities.",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/6/c6712dbd-ee54-4fb7-93ab-64f8f07350f1.jpg?1783942469"
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLUE",
+        "BLACK",
+        "RED",
+        "GREEN"
+    ]
 }
 
 // Progenitus
@@ -237,4 +282,24 @@
         "imageUri": "https://cards.scryfall.io/normal/front/5/6/568df642-3ad7-401c-a133-edb56970c3a1.jpg"
     },
     "colorIdentityOverride": []
+}
+
+// Valiant Guard
+{
+    "name": "Valiant Guard",
+    "manaCost": "{W}",
+    "typeLine": "Creature — Human Soldier",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 3
+    },
+    "metadata": {
+        "collectorNumber": "19",
+        "artist": "Chris Rahn",
+        "flavorText": "As the outsiders invaded Bant, soldiers who once saw sigils as the highest marks of glory began to see the scars of battle as tokens of equal worth.",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/3/83ec1486-900b-4763-9b5b-390cb00aff02.jpg?1783942490"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
 }

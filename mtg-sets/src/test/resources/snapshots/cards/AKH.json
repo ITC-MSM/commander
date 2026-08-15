@@ -1,3 +1,23 @@
+// Colossapede
+{
+    "name": "Colossapede",
+    "manaCost": "{4}{G}",
+    "typeLine": "Creature — Insect",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 5
+    },
+    "metadata": {
+        "collectorNumber": "161",
+        "artist": "Jason Kang",
+        "flavorText": "\"If it is bigger, you must be faster. If it is stronger, you must be sharper. Anything less, and you will never seize a place in our God-Pharaoh's perfect afterlife.\"\n—Rhonas, god of strength",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/6/7642bfc5-ace8-419e-b57b-2b881bfe023e.jpg?1783936478"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Doomed Dissenter
 {
     "name": "Doomed Dissenter",
@@ -37,6 +57,26 @@
         "artist": "Tony Foti",
         "flavorText": "There is only one fate left to those banished from the God-Pharaoh's city.",
         "imageUri": "https://cards.scryfall.io/normal/front/a/1/a1c0b645-de43-46d0-84c1-03f295def217.jpg?1783936508"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Dune Beetle
+{
+    "name": "Dune Beetle",
+    "manaCost": "{1}{B}",
+    "typeLine": "Creature — Insect",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 4
+    },
+    "metadata": {
+        "collectorNumber": "89",
+        "artist": "Grzegorz Rutkowski",
+        "flavorText": "The scouring sands of Shefet polish its carapace, and the ranks of the cursed fill its belly.",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/2/923cb904-c725-4d57-bc17-7aa87a7cd8e0.jpg?1783936506"
     },
     "colorIdentityOverride": [
         "BLACK"
@@ -123,6 +163,26 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Hyena Pack
+{
+    "name": "Hyena Pack",
+    "manaCost": "{2}{R}{R}",
+    "typeLine": "Creature — Hyena",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 4
+    },
+    "metadata": {
+        "collectorNumber": "139",
+        "artist": "Winona Nelson",
+        "flavorText": "With carrion a rarity in the Broken Lands, the hyenas that stalk the deserts hunt in packs.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/9/f9fa8351-567e-4ef4-8346-c58e50c778a6.jpg?1783936487"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
@@ -247,6 +307,26 @@
     "colorIdentityOverride": [
         "RED",
         "GREEN"
+    ]
+}
+
+// Those Who Serve
+{
+    "name": "Those Who Serve",
+    "manaCost": "{2}{W}",
+    "typeLine": "Creature — Zombie",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 4
+    },
+    "metadata": {
+        "collectorNumber": "32",
+        "artist": "Volkan Baǵa",
+        "flavorText": "\"The dead perform all the work here—farming, building, teaching, even embalming their fellow mummies. The living need do nothing but train. What system could be more perfect?\"\n—Temmet, vizier of Naktamun",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/4/b4f27dd9-7ee4-4cdc-8f65-a4349b6aa47f.jpg?1783936530"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 

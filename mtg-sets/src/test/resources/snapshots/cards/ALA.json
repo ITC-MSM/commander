@@ -1,3 +1,23 @@
+// Cylian Elf
+{
+    "name": "Cylian Elf",
+    "manaCost": "{1}{G}",
+    "typeLine": "Creature — Elf Scout",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "metadata": {
+        "collectorNumber": "127",
+        "artist": "Steve Prescott",
+        "flavorText": "From her sunsail tent high above the forest floor, an elf harkener can hear the footfalls of a single creature through the cacophony of Naya's jungle sounds.",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/3/b3afaab6-4768-4852-a0b6-4e6a0295bde7.jpg?1783942555"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Death Baron
 {
     "name": "Death Baron",
@@ -132,6 +152,26 @@
     ]
 }
 
+// Dreg Reaver
+{
+    "name": "Dreg Reaver",
+    "manaCost": "{4}{B}",
+    "typeLine": "Creature — Zombie Beast",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 3
+    },
+    "metadata": {
+        "collectorNumber": "73",
+        "artist": "Thomas M. Baxa",
+        "flavorText": "\"On our thirty-fourth day of digging, we unearthed a chamber that contained the intact remains of several species long extinct from Grixis. One in particular should make a fine siege engine . . . .\"\n—Last notes of Shungus Nod, fleshcrafter",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/7/e7771eba-bc2d-40f2-bab4-5e9cc4fe8f34.jpg?1783942567"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Elvish Visionary
 {
     "name": "Elvish Visionary",
@@ -167,6 +207,69 @@
         "imageUri": "https://cards.scryfall.io/normal/front/f/a/faccfa5f-4d89-4a86-92d7-36cb5a16c5c9.jpg"
     },
     "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Incurable Ogre
+{
+    "name": "Incurable Ogre",
+    "manaCost": "{3}{R}",
+    "typeLine": "Creature — Ogre Mutant",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 1
+    },
+    "metadata": {
+        "collectorNumber": "105",
+        "artist": "Carl Critchlow",
+        "flavorText": "Each mutation causes the incurables to look vastly different from one another. They are left with only one thing in common: their insatiable lust for the slaughter.",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/a/5ad3381e-ae2f-40cf-8a7b-62375e9f453e.jpg?1783942560"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Jhessian Lookout
+{
+    "name": "Jhessian Lookout",
+    "manaCost": "{1}{U}",
+    "typeLine": "Creature — Human Scout",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "metadata": {
+        "collectorNumber": "46",
+        "artist": "Donato Giancola",
+        "flavorText": "She stands ready, always watchful, knowing that weeks of peace and serenity can be overturned by a single distant sail.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/5/f55b1b92-575e-4b6f-9179-21d0bc1acd11.jpg?1783942574"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Woolly Thoctar
+{
+    "name": "Woolly Thoctar",
+    "manaCost": "{R}{G}{W}",
+    "typeLine": "Creature — Beast",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 4
+    },
+    "metadata": {
+        "collectorNumber": "209",
+        "rarity": "UNCOMMON",
+        "artist": "Wayne Reynolds",
+        "flavorText": "One of the most ferocious and deadly gargantuans, the thoctar never sees its worshippers, but it often awakens surrounded by gifts and sacrifices.",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/d/7d5907d5-ae5c-4c9d-a5df-61f1c94f979d.jpg?1783942536"
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "RED",
         "GREEN"
     ]
 }

@@ -135,6 +135,26 @@
     ]
 }
 
+// Dwarven Trader
+{
+    "name": "Dwarven Trader",
+    "manaCost": "{R}",
+    "typeLine": "Creature — Dwarf",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "metadata": {
+        "collectorNumber": "72a",
+        "artist": "Margaret Organ-Kean",
+        "flavorText": "\"Their definition of 'fair profit' is certainly novel.\"\n—Reveka, Wizard Savant",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/d/4db9aa47-f42b-41e9-948c-8b012c3809fb.jpg?1783947283"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Merchant Scroll
 {
     "name": "Merchant Scroll",

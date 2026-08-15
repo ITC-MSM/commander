@@ -118,6 +118,26 @@
     ]
 }
 
+// Goblin Roughrider
+{
+    "name": "Goblin Roughrider",
+    "manaCost": "{2}{R}",
+    "typeLine": "Creature — Goblin Knight",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "metadata": {
+        "collectorNumber": "82",
+        "artist": "Jesper Ejsing",
+        "flavorText": "Astride the bucking creature, Gribble hurtled down the mountainside while his Grotag brethren cheered. It was at that moment that legend of the Skrill Tamer was born.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/7/e79787dd-6d2f-4773-aefe-16a4eb93d3cc.jpg?1783942050"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Kalastria Highborn
 {
     "name": "Kalastria Highborn",
@@ -188,6 +208,27 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Leatherback Baloth
+{
+    "name": "Leatherback Baloth",
+    "manaCost": "{G}{G}{G}",
+    "typeLine": "Creature — Beast",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 5
+    },
+    "metadata": {
+        "collectorNumber": "107",
+        "rarity": "UNCOMMON",
+        "artist": "Dave Kendall",
+        "flavorText": "Heavy enough to withstand the Roil, leatherback skeletons are havens for travelers in storms and landshifts.",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/5/55f97b4c-42c7-4986-a150-0b8de11f0537.jpg?1783942043"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 

@@ -1,3 +1,44 @@
+// Centaur Courser
+{
+    "name": "Centaur Courser",
+    "manaCost": "{2}{G}",
+    "typeLine": "Creature — Centaur Warrior",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "metadata": {
+        "collectorNumber": "172",
+        "artist": "Vance Kovacs",
+        "flavorText": "\"The centaurs are truly free. Never will they be tamed by temptation or controlled by fear. They live in total harmony, a feat not yet achieved by our kind.\"\n—Ramal, sage of Westgate",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/3/03354b67-7df2-4b4b-a996-a37550e58561.jpg?1783942365"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Elite Vanguard
+{
+    "name": "Elite Vanguard",
+    "manaCost": "{W}",
+    "typeLine": "Creature — Human Soldier",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "metadata": {
+        "collectorNumber": "9",
+        "rarity": "UNCOMMON",
+        "artist": "Mark Tedin",
+        "flavorText": "The vanguard is skilled at waging war alone. The enemy is often defeated before its reinforcements reach the front.",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/b/6bda0b4b-ab5a-4d91-9dd1-7a5a145b67f5.jpg?1783942403"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Elvish Archdruid
 {
     "name": "Elvish Archdruid",
@@ -202,5 +243,105 @@
     "colorIdentityOverride": [
         "RED",
         "GREEN"
+    ]
+}
+
+// Runeclaw Bear
+{
+    "name": "Runeclaw Bear",
+    "manaCost": "{1}{G}",
+    "typeLine": "Creature — Bear",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "metadata": {
+        "collectorNumber": "203",
+        "artist": "Jesper Ejsing",
+        "flavorText": "Bears aren't always as strong and as mean as you imagine. Some are even stronger and meaner.",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/6/268bd9d5-4da1-4cbf-83f9-47f7aac1cfc3.jpg?1783942358"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Siege Mastodon
+{
+    "name": "Siege Mastodon",
+    "manaCost": "{4}{W}",
+    "typeLine": "Creature — Elephant",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 5
+    },
+    "metadata": {
+        "collectorNumber": "30",
+        "artist": "Matt Cavotta",
+        "flavorText": "\"Defending the citadel is easy. I just take these big fellows outside the main gate and let the enemy take a good long look.\"\n—Mastodon keeper",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/8/287d4c56-1b75-4ac4-8be8-333b1aba982a.jpg?1783942399"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Silvercoat Lion
+{
+    "name": "Silvercoat Lion",
+    "manaCost": "{1}{W}",
+    "typeLine": "Creature — Cat",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "metadata": {
+        "collectorNumber": "32",
+        "artist": "Terese Nielsen",
+        "flavorText": "Hunters of every species on the savannah, silvercoats disdain camouflage in favor of total dominance of the food chain.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/a/ea82996f-a05f-4831-9bbd-3281ebca9a61.jpg?1783942398"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Warpath Ghoul
+{
+    "name": "Warpath Ghoul",
+    "manaCost": "{2}{B}",
+    "typeLine": "Creature — Zombie",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "metadata": {
+        "collectorNumber": "120",
+        "artist": "rk post",
+        "flavorText": "The battle was over, but the carnage continued for days.",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/c/2c6cc262-ba0c-4cca-ae9c-24a1824753e4.jpg?1783942377"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Zombie Goliath
+{
+    "name": "Zombie Goliath",
+    "manaCost": "{4}{B}",
+    "typeLine": "Creature — Zombie Giant",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 3
+    },
+    "metadata": {
+        "collectorNumber": "123",
+        "artist": "E. M. Gist",
+        "flavorText": "\"Phirax of Blood Ridge has sent a war giant at us? What, do I have to spell it out for you? Kill the giant, scoop out its skull, and drive it back to Blood Ridge. Honestly, what kind of necromancer minions are you?\"\n—Keren-Dur, necromancer lord",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/c/cc295834-af33-45ae-be4d-7a1987f85561.jpg?1783942376"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }

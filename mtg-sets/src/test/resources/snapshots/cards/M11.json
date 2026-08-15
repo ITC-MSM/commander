@@ -35,6 +35,46 @@
     ]
 }
 
+// Armored Cancrix
+{
+    "name": "Armored Cancrix",
+    "manaCost": "{4}{U}",
+    "typeLine": "Creature — Crab",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 5
+    },
+    "metadata": {
+        "collectorNumber": "44",
+        "artist": "Tomasz Jedruszek",
+        "flavorText": "Creatures displaced from time still turn up every year, stranded by the temporal disaster that once swept across Dominaria.",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/3/53ef0757-8eb0-4384-bf8e-9a7340144dfa.jpg?1783941828"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Barony Vampire
+{
+    "name": "Barony Vampire",
+    "manaCost": "{2}{B}",
+    "typeLine": "Creature — Vampire",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "metadata": {
+        "collectorNumber": "82",
+        "artist": "Daarken",
+        "flavorText": "\"Poor little sun-dweller out past curfew. And to think, you might have survived if it wasn't so close to suppertime.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/8/88583170-7b0e-4c02-b270-4859ba05d82b.jpg?1783941820"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Captivating Vampire
 {
     "name": "Captivating Vampire",
@@ -280,4 +320,63 @@
     "colorIdentityOverride": [
         "RED"
     ]
+}
+
+// Maritime Guard
+{
+    "name": "Maritime Guard",
+    "manaCost": "{1}{U}",
+    "typeLine": "Creature — Merfolk Soldier",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 3
+    },
+    "metadata": {
+        "collectorNumber": "63",
+        "artist": "Allen Williams",
+        "flavorText": "Once common in the Kapsho Seas, merfolk were hunted almost to extinction. They survived those dark days and emerged calculating and determined to endure.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/3/f365d82a-88a3-403b-92a6-91c9ccb3421f.jpg?1783941824"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Nether Horror
+{
+    "name": "Nether Horror",
+    "manaCost": "{3}{B}",
+    "typeLine": "Creature — Horror",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 2
+    },
+    "metadata": {
+        "collectorNumber": "108",
+        "artist": "Allen Williams",
+        "flavorText": "\"My dreams darkened and seeped into my waking hours. Spellcraft and nightmare merged to create this monstrosity.\"\n—Sunniva, witch of Holm Hollow",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/2/c217b672-c724-4fc2-936c-b3f0feaf6ea0.jpg?1783941813"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Stone Golem
+{
+    "name": "Stone Golem",
+    "manaCost": "{5}",
+    "typeLine": "Artifact Creature — Golem",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "metadata": {
+        "collectorNumber": "215",
+        "rarity": "UNCOMMON",
+        "artist": "Martina Pilcerova",
+        "flavorText": "The sculptor, like most artists, put his heart and soul in his work. But the newly awakened golem decided he wanted his creator's other, more tangible parts.",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/7/37d0876b-5026-4a0a-bf2f-e831593643a7.jpg?1783941788"
+    },
+    "colorIdentityOverride": []
 }

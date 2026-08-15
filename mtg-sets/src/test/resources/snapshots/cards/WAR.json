@@ -287,6 +287,46 @@
     ]
 }
 
+// Ironclad Krovod
+{
+    "name": "Ironclad Krovod",
+    "manaCost": "{3}{W}",
+    "typeLine": "Creature — Beast",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 5
+    },
+    "metadata": {
+        "collectorNumber": "19",
+        "artist": "Sam Rowan",
+        "flavorText": "\"We need to block the exits from the plaza! What's big, heavy, and available?\"\n—Gideon Jura",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/f/afb16895-6542-405e-9793-154ffc439f23.jpg?1783933481"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Lazotep Behemoth
+{
+    "name": "Lazotep Behemoth",
+    "manaCost": "{4}{B}",
+    "typeLine": "Creature — Zombie Hippo",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 4
+    },
+    "metadata": {
+        "collectorNumber": "95",
+        "artist": "Zezhou Chen",
+        "flavorText": "\"I know I should be more concerned. But a big, blue zombie-potamus from beyond the stars? This is what they're invading us with?\"\n—Mileva, Boros legionnaire",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/4/b4be6f22-e9e8-462a-956b-e1c78bbadacc.jpg?1783933444"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Liliana, Dreadhorde General
 {
     "name": "Liliana, Dreadhorde General",
@@ -462,6 +502,26 @@
     "startingLoyalty": 6,
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Naga Eternal
+{
+    "name": "Naga Eternal",
+    "manaCost": "{2}{U}",
+    "typeLine": "Creature — Zombie Snake",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "metadata": {
+        "collectorNumber": "60",
+        "artist": "Johann Bodin",
+        "flavorText": "\"I recognize that headdress. This one was feared even by her fellow initiates.\"\n—Samut",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/f/0f244233-f2e8-48f8-9106-e7cd186efd51.jpg?1783933461"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 

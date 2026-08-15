@@ -101,6 +101,26 @@
     ]
 }
 
+// Bogstomper
+{
+    "name": "Bogstomper",
+    "manaCost": "{4}{B}{B}",
+    "typeLine": "Creature — Beast",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 5
+    },
+    "metadata": {
+        "collectorNumber": "87",
+        "artist": "Jason Felix",
+        "flavorText": "\"They are gentle herbivores, despite their size. Approach cautiously, and hum a tune to let them know you mean no harm.\"\n—Vivien Reid",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/5/05145a8d-0bfb-4f07-87cf-65875310bdb4.jpg?1783934576"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Diamond Mare
 {
     "name": "Diamond Mare",
@@ -528,6 +548,26 @@
     ]
 }
 
+// Loxodon Line Breaker
+{
+    "name": "Loxodon Line Breaker",
+    "manaCost": "{2}{W}",
+    "typeLine": "Creature — Elephant Soldier",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "metadata": {
+        "collectorNumber": "24",
+        "artist": "Jesper Ejsing",
+        "flavorText": "Loxodons are firm in stature and spirit. No matter the odds, they are always first into battle.",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/2/928d4250-c379-4134-a263-7811c80a8760.jpg?1783934603"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Meteor Golem
 {
     "name": "Meteor Golem",
@@ -615,6 +655,26 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Onakke Ogre
+{
+    "name": "Onakke Ogre",
+    "manaCost": "{2}{R}",
+    "typeLine": "Creature — Ogre Warrior",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 2
+    },
+    "metadata": {
+        "collectorNumber": "153",
+        "artist": "Mathias Kollros",
+        "flavorText": "The ogres you know are nothing like the Onakke. Possessing both intellect and industry, they had brute strength without being brutish.",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/e/9e016da6-8800-47b4-9b96-1887677c795c.jpg?1783934548"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 

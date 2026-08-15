@@ -196,6 +196,46 @@
     ]
 }
 
+// Douser of Lights
+{
+    "name": "Douser of Lights",
+    "manaCost": "{4}{B}",
+    "typeLine": "Creature — Horror",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 5
+    },
+    "metadata": {
+        "collectorNumber": "70",
+        "artist": "Darek Zabrocki",
+        "flavorText": "The party of Rakdos revelers cackled and capered as the thing approached. It hissed, and they jabbed their torches at it, giggling when it recoiled. Then, one by one, the torches went out—and the screaming began.",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/c/7c554be7-6fd4-4642-aaa0-2781d9c388e4.jpg?1783934175"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Fearless Halberdier
+{
+    "name": "Fearless Halberdier",
+    "manaCost": "{2}{R}",
+    "typeLine": "Creature — Human Warrior",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "metadata": {
+        "collectorNumber": "100",
+        "artist": "Suzanne Helmigh",
+        "flavorText": "\"I spent some time in the Legion, but I'm done taking orders all day.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/0/30e04f16-89d0-4e75-a3cd-4dd64414050c.jpg?1783934164"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Healer's Hawk
 {
     "name": "Healer's Hawk",
@@ -391,5 +431,45 @@
     "colorIdentityOverride": [
         "BLUE",
         "RED"
+    ]
+}
+
+// Wild Ceratok
+{
+    "name": "Wild Ceratok",
+    "manaCost": "{3}{G}",
+    "typeLine": "Creature — Rhino",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 3
+    },
+    "metadata": {
+        "collectorNumber": "150",
+        "artist": "Svetlin Velinov",
+        "flavorText": "Once part of a wealthy merchant's private zoo, the herd roams feral throughout the Tenth, where it will remain until the guilds can agree to relocate, cull, or befriend it.",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/4/4464e11a-c5b9-40ea-8be0-dab29d14e289.jpg?1783934143"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Wishcoin Crab
+{
+    "name": "Wishcoin Crab",
+    "manaCost": "{3}{U}",
+    "typeLine": "Creature — Crab",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 5
+    },
+    "metadata": {
+        "collectorNumber": "60",
+        "artist": "James Paick",
+        "flavorText": "\"What wishes do they grant? Mostly pinching-related ones.\"\n—Omik, superintendent of waterworks",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/5/6580d6a2-ee21-4442-9842-18c65a172f49.jpg?1783934181"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }

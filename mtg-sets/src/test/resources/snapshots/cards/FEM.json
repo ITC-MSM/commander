@@ -57,3 +57,23 @@
         "WHITE"
     ]
 }
+
+// Vodalian Soldiers
+{
+    "name": "Vodalian Soldiers",
+    "manaCost": "{1}{U}",
+    "typeLine": "Creature — Merfolk Soldier",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 2
+    },
+    "metadata": {
+        "collectorNumber": "31a",
+        "artist": "Melissa A. Benson",
+        "flavorText": "\"Vodalian Soldiers had some unique advantages. Often they would ride into battle on war machines rumored to have come from the far northern oceans.\"\n—*Sarpadian Empires, vol. V*",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/e/7eb50256-9113-4b03-bcef-9aea24be8493.jpg?1783947907"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}

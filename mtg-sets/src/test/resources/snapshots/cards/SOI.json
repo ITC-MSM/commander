@@ -1154,6 +1154,26 @@
     ]
 }
 
+// Devilthorn Fox
+{
+    "name": "Devilthorn Fox",
+    "manaCost": "{1}{W}",
+    "typeLine": "Creature — Fox",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 1
+    },
+    "metadata": {
+        "collectorNumber": "14",
+        "artist": "Filip Burburan",
+        "flavorText": "On expeditions through Ashmouth, the hunters of Devilthorn Lodge rely on the cleverness of foxes to counteract the mischief of devils.",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/7/57bea4c2-7a15-4f31-938d-c4c906e4ebe7.jpg?1783937821"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Drunau Corpse Trawler
 {
     "name": "Drunau Corpse Trawler",
@@ -2114,6 +2134,26 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Hulking Devil
+{
+    "name": "Hulking Devil",
+    "manaCost": "{3}{R}",
+    "typeLine": "Creature — Devil",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 2
+    },
+    "metadata": {
+        "collectorNumber": "165",
+        "artist": "Joseph Meehan",
+        "flavorText": "Fear the patient devil, the one who is calm in the midst of chaos. Beware the silent devil, the one whose cackle does not mingle with the others.",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/3/031ecfc4-cc84-4f74-8eb1-3eaa234d8093.jpg?1783937750"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
@@ -3293,6 +3333,26 @@
     ]
 }
 
+// Seagraf Skaab
+{
+    "name": "Seagraf Skaab",
+    "manaCost": "{1}{U}",
+    "typeLine": "Creature — Zombie",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 3
+    },
+    "metadata": {
+        "collectorNumber": "84",
+        "artist": "Jama Jurabaev",
+        "flavorText": "\"Your recent work is an inspiration. I have the utmost respect for your approach, and your craft is impeccable. At your convenience, I would be honored to collaborate on a project.\"\n—Ludevic, letter to Geralf",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/6/065d497d-5cfd-43c9-8c86-9a1da3d7e17e.jpg?1783937788"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Second Harvest
 {
     "name": "Second Harvest",
@@ -3914,6 +3974,26 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Thornhide Wolves
+{
+    "name": "Thornhide Wolves",
+    "manaCost": "{4}{G}",
+    "typeLine": "Creature — Wolf",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 5
+    },
+    "metadata": {
+        "collectorNumber": "232",
+        "artist": "Scott Murphy",
+        "flavorText": "\"Halana grew brambles to create a barricade around our camp, hoping that it would keep the wolves out. That was a mistake for which we almost paid dearly.\"\n—Alena, trapper of Kessig",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/c/9c699b5f-a2de-4c87-a7bc-16be4bc0a8cd.jpg?1783937720"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 
@@ -4563,6 +4643,26 @@
     ]
 }
 
+// Vampire Noble
+{
+    "name": "Vampire Noble",
+    "manaCost": "{2}{B}",
+    "typeLine": "Creature — Vampire Noble",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "metadata": {
+        "collectorNumber": "143",
+        "artist": "Ryan Alexander Lee",
+        "flavorText": "\"No emergency is so dire that it cannot be dealt with elegantly.\"\n—Olivia Voldaren",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/2/b2435f17-0378-4480-8d56-d256245c7ced.jpg?1783937761"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Village Messenger
 {
     "name": "Village Messenger",
@@ -4851,6 +4951,24 @@
     "colorIdentityOverride": [
         "BLACK"
     ]
+}
+
+// Wicker Witch
+{
+    "name": "Wicker Witch",
+    "manaCost": "{3}",
+    "typeLine": "Artifact Creature — Scarecrow",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 1
+    },
+    "metadata": {
+        "collectorNumber": "268",
+        "artist": "Izzy",
+        "flavorText": "When there were no more crows to scare, it focused its efforts elsewhere.",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/e/ae115587-012d-40ff-a20d-270fabf2f8c6.jpg?1783937699"
+    },
+    "colorIdentityOverride": []
 }
 
 // Wild-Field Scarecrow

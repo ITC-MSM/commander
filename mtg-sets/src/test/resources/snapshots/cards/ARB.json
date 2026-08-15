@@ -1,3 +1,24 @@
+// Grizzled Leotau
+{
+    "name": "Grizzled Leotau",
+    "manaCost": "{G}{W}",
+    "typeLine": "Creature — Cat",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 5
+    },
+    "metadata": {
+        "collectorNumber": "69",
+        "artist": "Lars Grant-West",
+        "flavorText": "\"There is no glory in a death of age, as even the leotau know. As winter steals into their coats, they seek the deadliest lands, that they may die as they lived.\"\n—Aarsil the Blessed",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/b/2b388381-9e13-4ce7-b5b3-56a74cc23d93.jpg?1783942427"
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "GREEN"
+    ]
+}
+
 // Maelstrom Pulse
 {
     "name": "Maelstrom Pulse",
@@ -62,6 +83,27 @@
     },
     "colorIdentityOverride": [
         "BLACK",
+        "GREEN"
+    ]
+}
+
+// Rhox Brute
+{
+    "name": "Rhox Brute",
+    "manaCost": "{2}{R}{G}",
+    "typeLine": "Creature — Rhino Warrior",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "metadata": {
+        "collectorNumber": "59",
+        "artist": "Raymond Swanland",
+        "flavorText": "\"In this new world, I have seen the once-devout rhoxes take up arms with the savages of Jund. I would be offended, but I see the wisdom in their choice.\"\n—Gernan, Dawnray archer",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/3/237de286-5bf0-4c8e-8504-2d01d3133b55.jpg?1783942429"
+    },
+    "colorIdentityOverride": [
+        "RED",
         "GREEN"
     ]
 }

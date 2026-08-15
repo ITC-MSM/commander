@@ -1766,6 +1766,46 @@
     ]
 }
 
+// Nettle Swine
+{
+    "name": "Nettle Swine",
+    "manaCost": "{3}{G}",
+    "typeLine": "Creature — Boar",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 3
+    },
+    "metadata": {
+        "collectorNumber": "186",
+        "artist": "Christopher Moeller",
+        "flavorText": "\"I killed one and found bricks and bones in its belly. It had eaten a whole cottage, thatch and all.\"\n—Paulin, Somberwald trapper",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/5/75935f0e-9086-485b-b3e6-1a958fd0f2af.jpg?1783940664"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Raging Poltergeist
+{
+    "name": "Raging Poltergeist",
+    "manaCost": "{4}{R}",
+    "typeLine": "Creature — Spirit",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 1
+    },
+    "metadata": {
+        "collectorNumber": "150",
+        "artist": "Slawomir Maniak",
+        "flavorText": "Some tried cremating their dead to stop the ghoulcallers. But the dead returned, furious about their fate.",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/8/78833788-ffb2-43fc-9345-975f1cd46f38.jpg?1783940678"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Reforge the Soul
 {
     "name": "Reforge the Soul",
@@ -1833,6 +1873,26 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Renegade Demon
+{
+    "name": "Renegade Demon",
+    "manaCost": "{3}{B}{B}",
+    "typeLine": "Creature — Demon",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 3
+    },
+    "metadata": {
+        "collectorNumber": "118",
+        "artist": "Tomasz Jedruszek",
+        "flavorText": "\"Have you ever cornered a wounded vampire? That's a walk in the cathedral garden in comparison.\"\n—Tristen, Cathar Marshal",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/9/395696f8-9be2-4925-852f-b783850e1ca2.jpg?1783940692"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 
@@ -2381,6 +2441,27 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Vorstclaw
+{
+    "name": "Vorstclaw",
+    "manaCost": "{4}{G}{G}",
+    "typeLine": "Creature — Elemental Horror",
+    "creatureStats": {
+        "power": 7,
+        "toughness": 7
+    },
+    "metadata": {
+        "collectorNumber": "201",
+        "rarity": "UNCOMMON",
+        "artist": "Lucas Graciano",
+        "flavorText": "\"Where'd the werewolves go? Maybe *that* got hungry.\"\n—Halana of Ulvenwald",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/5/7591ee4f-9bfe-4419-84df-abf35d85bb94.jpg?1783940659"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 

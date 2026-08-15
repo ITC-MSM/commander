@@ -1,3 +1,41 @@
+// Borderland Minotaur
+{
+    "name": "Borderland Minotaur",
+    "manaCost": "{2}{R}{R}",
+    "typeLine": "Creature — Minotaur Warrior",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 3
+    },
+    "metadata": {
+        "collectorNumber": "114",
+        "artist": "Greg Staples",
+        "flavorText": "\"You have led us to triumph over the forces of Mogis!\" said Brygus the Brave, clapping the Champion on the back. The Champion wiped the sweat and blood from her brow. \"I count eight graves,\" she said. \"Too many to call this a victory.\"\n—*The Theriad*",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/c/9c7f6eb2-feae-4dc9-a009-0ad60f89a592.jpg?1783939766"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Bronze Sable
+{
+    "name": "Bronze Sable",
+    "manaCost": "{2}",
+    "typeLine": "Artifact Creature — Sable",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "metadata": {
+        "collectorNumber": "212",
+        "artist": "Jasper Sandner",
+        "flavorText": "The Champion stood alone between the horde of the Returned and the shrine to Karametra, cutting down scores among hundreds. She would have been overcome if not for the aid of the temple guardians whom Karametra awakened.\n—*The Theriad*",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/a/ba7e563d-964c-4afd-9e21-9d400f8719d4.jpg?1783939721"
+    },
+    "colorIdentityOverride": []
+}
+
 // Burnished Hart
 {
     "name": "Burnished Hart",
@@ -73,6 +111,26 @@
         "imageUri": "https://cards.scryfall.io/normal/front/7/7/772cbcba-9efa-4894-9b57-e73fd296333d.jpg"
     },
     "colorIdentityOverride": []
+}
+
+// Felhide Minotaur
+{
+    "name": "Felhide Minotaur",
+    "manaCost": "{2}{B}",
+    "typeLine": "Creature — Minotaur",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "metadata": {
+        "collectorNumber": "87",
+        "artist": "Kev Walker",
+        "flavorText": "With spear held high, the Champion came to meet Thyrogog of the Ashlands, who wore the old king's skin as a cloak and fed on the flesh of innocents. The foul minotaur raised the great axe called Goremaster and charged.\n—*The Theriad*",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/4/b4e424de-81be-4f90-a7a2-4102c8ba8989.jpg?1783939779"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
 }
 
 // Hero's Downfall
@@ -181,6 +239,46 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Pheres-Band Centaurs
+{
+    "name": "Pheres-Band Centaurs",
+    "manaCost": "{4}{G}",
+    "typeLine": "Creature — Centaur Warrior",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 7
+    },
+    "metadata": {
+        "collectorNumber": "171",
+        "artist": "Mark Winters",
+        "flavorText": "\"Poets speak of your unrivaled speed,\" the Champion said to the assembled centaurs, \"but it is plain to see that your true strength lies in your unwavering loyalty to one another.\"\n—*The Theriad*",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/1/2168fcf4-cf87-4ab8-9710-6ec672750a9a.jpg?1783939739"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Silent Artisan
+{
+    "name": "Silent Artisan",
+    "manaCost": "{3}{W}{W}",
+    "typeLine": "Creature — Giant",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 5
+    },
+    "metadata": {
+        "collectorNumber": "31",
+        "artist": "Anthony Palumbo",
+        "flavorText": "On the fourth day they passed through a forest of immense stacked stones. Althemone, youngest of the companions, called these pillars the work of a god, but the Champion knew better. She quickened her pace.\n—*The Theriad*",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/c/dce5647d-1546-4eff-a2a2-9e9ef26db533.jpg?1783939806"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 
@@ -474,6 +572,46 @@
     ]
 }
 
+// Traveling Philosopher
+{
+    "name": "Traveling Philosopher",
+    "manaCost": "{1}{W}",
+    "typeLine": "Creature — Human Advisor",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "metadata": {
+        "collectorNumber": "34",
+        "artist": "James Ryman",
+        "flavorText": "The Champion and the philosopher Olexa returned from the opposing camp at dusk. Behind them, the enemy raised sail and departed, breaking the siege. When asked what the two had done, the Champion replied, \"We spoke to them.\"\n—*The Theriad*",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/d/edad0276-45d1-45e5-a6b1-1cd2a99b4f2c.jpg?1783939808"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Triton Shorethief
+{
+    "name": "Triton Shorethief",
+    "manaCost": "{U}",
+    "typeLine": "Creature — Merfolk Rogue",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 2
+    },
+    "metadata": {
+        "collectorNumber": "70",
+        "artist": "Howard Lyon",
+        "flavorText": "At sunrise, the Champion and her companions awoke to find their supplies gone and Brygus, their sentry, dead. Carefully arranged piles of ornamental shells gave a clear warning: go no further.\n—*The Theriad*",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/8/d8f0fe22-dc89-4ad8-b5f6-6d91b61f1385.jpg?1783939787"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Wild Celebrants
 {
     "name": "Wild Celebrants",
@@ -520,5 +658,25 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Yoked Ox
+{
+    "name": "Yoked Ox",
+    "manaCost": "{W}",
+    "typeLine": "Creature — Ox",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 4
+    },
+    "metadata": {
+        "collectorNumber": "37",
+        "artist": "Ryan Yee",
+        "flavorText": "It was in fields of grain, not fields of battle, that the Champion learned to bear the yoke of duty to the gods. She worked the land long before she was called on to defend it.\n—*The Theriad*",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/2/12fc09d4-e6ce-428b-818b-b465093af88e.jpg?1783939803"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }

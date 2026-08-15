@@ -63,6 +63,26 @@
     ]
 }
 
+// Canal Monitor
+{
+    "name": "Canal Monitor",
+    "manaCost": "{4}{B}",
+    "typeLine": "Creature — Lizard",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 3
+    },
+    "metadata": {
+        "collectorNumber": "63",
+        "artist": "Zezhou Chen",
+        "flavorText": "The first goblin tried to swim the canal. The second built a raft. The last and craftiest goblin launched herself from a firecannon and soared over the canal, trailing smoke. All were eaten, but only one was cooked.",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/8/78226edc-87dd-4c38-987c-52aefe0f9531.jpg?1783935316"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Fanatical Firebrand
 {
     "name": "Fanatical Firebrand",
@@ -331,6 +351,46 @@
     ]
 }
 
+// Orazca Frillback
+{
+    "name": "Orazca Frillback",
+    "manaCost": "{2}{G}",
+    "typeLine": "Creature — Dinosaur",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 2
+    },
+    "metadata": {
+        "collectorNumber": "140",
+        "artist": "Simon Dominic",
+        "flavorText": "The frillbacks of Orazca soak up the sun on their tall spinal fins. They look slow and sleepy—until they catch the scent of prey.",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/0/00c81160-192c-4077-8ed1-3643919a2025.jpg?1783935284"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Orazca Raptor
+{
+    "name": "Orazca Raptor",
+    "manaCost": "{2}{R}{R}",
+    "typeLine": "Creature — Dinosaur",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 4
+    },
+    "metadata": {
+        "collectorNumber": "108",
+        "artist": "Jakub Kasper",
+        "flavorText": "\"If you come across a raptor in the city, stay perfectly still. At least then you'll be well rested when you die.\"\n—Captain Brandis Thorn",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/7/b7080f86-0a9f-4471-a52b-0d44d19e6e59.jpg?1783935296"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Path of Discovery
 {
     "name": "Path of Discovery",
@@ -388,6 +448,26 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Sworn Guardian
+{
+    "name": "Sworn Guardian",
+    "manaCost": "{1}{U}",
+    "typeLine": "Creature — Merfolk Warrior",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 3
+    },
+    "metadata": {
+        "collectorNumber": "58",
+        "artist": "Sara Winters",
+        "flavorText": "For the River Heralds, the Immortal Sun is an object of terror and devastation. The idea that anyone would retrieve it for their own use is utterly abhorrent.",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/4/6452ba94-6bb0-409c-99f7-71e6457c3f2a.jpg?1783935317"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 

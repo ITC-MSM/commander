@@ -34,6 +34,27 @@
     ]
 }
 
+// Indomitable Ancients
+{
+    "name": "Indomitable Ancients",
+    "manaCost": "{2}{W}{W}",
+    "typeLine": "Creature — Treefolk Warrior",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 10
+    },
+    "metadata": {
+        "collectorNumber": "13",
+        "rarity": "RARE",
+        "artist": "Pete Venters",
+        "flavorText": "\"Odum and Broadbark were the only beings mighty enough to challenge the giant Moran the Destroyer. Their battle lasted a hundred dawns, until Moran became so exhausted that he fell into namesleep. He awoke as Moran the Gardener.\"\n—*The Tale of Odum and Broadbark*",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/d/ddf33cb6-d159-4af3-8403-d0ac10af9894.jpg?1783942804"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Kindled Fury
 {
     "name": "Kindled Fury",

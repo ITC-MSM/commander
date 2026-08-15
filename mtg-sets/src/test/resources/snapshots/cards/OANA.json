@@ -1,0 +1,37 @@
+// Shrine Keeper
+{
+    "name": "Shrine Keeper",
+    "manaCost": "{W}{W}",
+    "typeLine": "Creature — Human Cleric",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "metadata": {
+        "collectorNumber": "10",
+        "artist": "Craig J Spearing",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/4/74f04961-c42e-41fb-a770-62c7d3d2b83a.jpg?1783934410"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Treetop Warden
+{
+    "name": "Treetop Warden",
+    "manaCost": "{1}{G}",
+    "typeLine": "Creature — Elf Warrior",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "metadata": {
+        "collectorNumber": "48",
+        "artist": "Colin Boyer",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/7/771341f5-11b2-4edc-aa41-088e852c058e.jpg?1783934405"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}

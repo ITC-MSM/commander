@@ -105,6 +105,26 @@
     ]
 }
 
+// Balduvian Bears
+{
+    "name": "Balduvian Bears",
+    "manaCost": "{1}{G}",
+    "typeLine": "Creature — Bear",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "metadata": {
+        "collectorNumber": "226",
+        "artist": "Quinton Hoover",
+        "flavorText": "\"They're a hardy bunch, but I'd still bet that they just slept through the worst of the cold times.\"\n—Disa the Restless, journal entry",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/f/ef5297cb-e763-4871-9cd3-0e2dbcc52095.jpg?1783947481"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Brainstorm
 {
     "name": "Brainstorm",
@@ -615,6 +635,26 @@
     ]
 }
 
+// Scaled Wurm
+{
+    "name": "Scaled Wurm",
+    "manaCost": "{7}{G}",
+    "typeLine": "Creature — Wurm",
+    "creatureStats": {
+        "power": 7,
+        "toughness": 6
+    },
+    "metadata": {
+        "collectorNumber": "262",
+        "artist": "Daniel Gelon",
+        "flavorText": "\"Flourishing during the Ice Age, these Wurms were the bane of all Kjeldorans. Their great size and ferocity made them the subject of countless nightmares—they embodied the worst of the Ice Age.\"\n—*Kjeldor: Ice Civilization*",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/9/499cd7fa-c86c-4a5f-b36d-8160e8a6af1f.jpg?1783947472"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Sulfurous Springs
 {
     "name": "Sulfurous Springs",
@@ -698,6 +738,26 @@
     },
     "colorIdentityOverride": [
         "BLACK",
+        "RED"
+    ]
+}
+
+// Tor Giant
+{
+    "name": "Tor Giant",
+    "manaCost": "{3}{R}",
+    "typeLine": "Creature — Giant",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "metadata": {
+        "collectorNumber": "220",
+        "artist": "Douglas Shuler",
+        "flavorText": "\"What do you do then? Run. Run very fast. Don't stop until you see the camp—or a bigger Giant.\"\n—Toothlicker Harj, Orcish Captain",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/e/7ef8f279-1a10-4685-99d6-bc971a7f922b.jpg?1783947482"
+    },
+    "colorIdentityOverride": [
         "RED"
     ]
 }

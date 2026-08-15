@@ -771,3 +771,23 @@
         "RED"
     ]
 }
+
+// Wandering Tombshell
+{
+    "name": "Wandering Tombshell",
+    "manaCost": "{3}{B}",
+    "typeLine": "Creature — Zombie Turtle",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 6
+    },
+    "metadata": {
+        "collectorNumber": "127",
+        "artist": "Yeong-Hao Han",
+        "flavorText": "The crumbling temples on the tortoise's back are monuments to the decadence of the ancient Sultai. Though it harkens back to the era of the khans, Silumgar allows it to walk his territory as a warning to those who would oppose him.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/6/e66e1d97-d676-471a-a140-deb39600a7a9.jpg?1783938592"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}

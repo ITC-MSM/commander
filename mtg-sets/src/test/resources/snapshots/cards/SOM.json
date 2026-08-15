@@ -1,3 +1,23 @@
+// Alpha Tyrranax
+{
+    "name": "Alpha Tyrranax",
+    "manaCost": "{4}{G}{G}",
+    "typeLine": "Creature — Dinosaur Beast",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 5
+    },
+    "metadata": {
+        "collectorNumber": "109",
+        "artist": "Dave Kendall",
+        "flavorText": "Hunger seized the tyrranax, and the Sylvok's vision quest ended in disaster.",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/a/4a2e5279-f28c-4a78-9f8a-16c9f72f8d38.jpg?1783941720"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Blackcleave Cliffs
 {
     "name": "Blackcleave Cliffs",
@@ -327,6 +347,65 @@
     ]
 }
 
+// Loxodon Wayfarer
+{
+    "name": "Loxodon Wayfarer",
+    "manaCost": "{2}{W}",
+    "typeLine": "Creature — Elephant Monk",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 5
+    },
+    "metadata": {
+        "collectorNumber": "15",
+        "artist": "Steven Belledin",
+        "flavorText": "The Mirran elders vanished with Memnarch, leaving behind a generation of wayward orphans.",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/5/356c5e6a-c0bd-43f7-bc84-a6ae8718a7a2.jpg?1783941744"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Memnite
+{
+    "name": "Memnite",
+    "manaCost": "{0}",
+    "typeLine": "Artifact Creature — Construct",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "metadata": {
+        "collectorNumber": "174",
+        "rarity": "UNCOMMON",
+        "artist": "Svetlin Velinov",
+        "flavorText": "Reminders of Memnarch's reign still skirr across Mirrodin, reminiscent of his form if not his power.",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/6/469cc4e0-49c0-4009-97ea-28e44addec69.jpg?1783941703"
+    },
+    "colorIdentityOverride": []
+}
+
+// Moriok Reaver
+{
+    "name": "Moriok Reaver",
+    "manaCost": "{2}{B}",
+    "typeLine": "Creature — Human Warrior",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "metadata": {
+        "collectorNumber": "70",
+        "artist": "Marc Simonetti",
+        "flavorText": "\"The Moriok are fools. They try so hard to gain my favor. All I want is for them to die quickly, to join the ranks of the nim.\"\n—Geth, Lord of the Vault",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/2/e2a0410f-95c5-49bf-856d-dea796c96e3b.jpg?1783941730"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Painful Quandary
 {
     "name": "Painful Quandary",
@@ -377,6 +456,44 @@
     "colorIdentityOverride": [
         "BLACK"
     ]
+}
+
+// Plated Seastrider
+{
+    "name": "Plated Seastrider",
+    "manaCost": "{U}{U}",
+    "typeLine": "Creature — Beast",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 4
+    },
+    "metadata": {
+        "collectorNumber": "38",
+        "artist": "Izzy",
+        "flavorText": "The Neurok buried entangling cables just under the Quicksilver Sea. One seastrider harvest can provide an army's worth of armor and shields.",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/7/97171611-c677-48a6-b081-98a27ecef979.jpg?1783941738"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Razorfield Thresher
+{
+    "name": "Razorfield Thresher",
+    "manaCost": "{7}",
+    "typeLine": "Artifact Creature — Construct",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 4
+    },
+    "metadata": {
+        "collectorNumber": "197",
+        "artist": "Karl Kopinski",
+        "flavorText": "DANGER! Keep appendages clear of front of machine. And rear of machine. And side of machine. And top of machine.",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/0/b0a74203-d342-489d-a584-bca78ef3331d.jpg?1783941698"
+    },
+    "colorIdentityOverride": []
 }
 
 // Razorverge Thicket
@@ -447,6 +564,26 @@
     "colorIdentityOverride": [
         "WHITE",
         "GREEN"
+    ]
+}
+
+// Scoria Elemental
+{
+    "name": "Scoria Elemental",
+    "manaCost": "{4}{R}",
+    "typeLine": "Creature — Elemental",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 1
+    },
+    "metadata": {
+        "collectorNumber": "102",
+        "artist": "Karl Kopinski",
+        "flavorText": "A single molten cord links it to the subterranean furnaces, drawing heat and metal from beneath Kuldotha. Until that bond is cut, it carves a swath of raw destruction.",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/a/ca4d9198-52a7-4dfe-8f7f-4fa6e19a2479.jpg?1783941723"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 

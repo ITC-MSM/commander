@@ -1,0 +1,39 @@
+// Black Widow, Natasha Romanoff
+{
+    "name": "Black Widow, Natasha Romanoff",
+    "manaCost": "{1}{R}",
+    "typeLine": "Legendary Creature — Human Assassin Hero",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "metadata": {
+        "collectorNumber": "846",
+        "artist": "Julia Vasilyeva",
+        "flavorText": "\"They tell me now that I'm an Avenger I can't kill anyone. You want to put that to the test?\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/f/2f3e2f33-9c31-4107-b9b4-a7e1d2d43bab.jpg?1783902994"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Happy Hogan, Dauntless Driver
+{
+    "name": "Happy Hogan, Dauntless Driver",
+    "manaCost": "{R}",
+    "typeLine": "Legendary Creature — Human Pilot",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "metadata": {
+        "collectorNumber": "545",
+        "artist": "Ivan Shavrin",
+        "flavorText": "\"Traffic is a little heavy this morning, Tony, but we'll get you there on time.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/1/4174e5fa-8e28-41c5-ba5c-4ec27b7cd4a3.jpg?1783903100"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}

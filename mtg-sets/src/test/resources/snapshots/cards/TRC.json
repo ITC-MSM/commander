@@ -1,0 +1,59 @@
+// Defense Force Aggressor
+{
+    "name": "Defense Force Aggressor",
+    "manaCost": "{R}",
+    "typeLine": "Creature — Klingon Warrior",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "metadata": {
+        "collectorNumber": "161",
+        "artist": "Josu Hernaiz",
+        "flavorText": "\"You play games with death, little warrior. I like it!\"\n—Captain Ma'ah",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/7/67380a35-1a15-4c45-8a24-3c6077af85db.jpg?1785981114"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Starfleet Crew
+{
+    "name": "Starfleet Crew",
+    "manaCost": "{1}{W}",
+    "typeLine": "Creature — Officer",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "metadata": {
+        "collectorNumber": "139",
+        "artist": "Runa I. Rosenberger",
+        "flavorText": "\"The first duty of every Starfleet officer is to the truth, whether it's scientific truth, or historical truth, or personal truth. It is the guiding principle on which Starfleet is based.\"\n—Captain Jean-Luc Picard",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/c/ecf2358f-542d-45c9-b5c5-c57b2b0c1122.jpg?1785981010"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Warship Flight Crew
+{
+    "name": "Warship Flight Crew",
+    "manaCost": "{1}{R}",
+    "typeLine": "Creature — Klingon Pilot",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "metadata": {
+        "collectorNumber": "168",
+        "artist": "Johann Bodin",
+        "flavorText": "Opponents write off Klingons as unthinking brutes at their own peril. When the Klingon Empire developed warp drive, humanity still relied on horse-drawn carts.",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/b/9b6d130a-60f7-410a-b45f-ad81dd203c8c.jpg?1785981141"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
