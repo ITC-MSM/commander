@@ -925,6 +925,97 @@
     "colorIdentityOverride": []
 }
 
+// Clockwork Dragon
+{
+    "name": "Clockwork Dragon",
+    "manaCost": "{7}",
+    "typeLine": "Artifact Creature — Dragon",
+    "oracleText": "Flying\nThis creature enters with six +1/+1 counters on it.\nWhenever this creature attacks or blocks, remove a +1/+1 counter from it at end of combat.\n{3}: Put a +1/+1 counter on this creature.",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 0
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "END_COMBAT",
+                    "player": "Each"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "RemoveCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": "Self"
+                },
+                "triggerCondition": {
+                    "type": "Any",
+                    "conditions": [
+                        {
+                            "type": "EntityMatches",
+                            "entity": "Self",
+                            "filter": {
+                                "statePredicates": [
+                                    "AttackedThisCombat"
+                                ]
+                            }
+                        },
+                        {
+                            "type": "EntityMatches",
+                            "entity": "Self",
+                            "filter": {
+                                "statePredicates": [
+                                    "BlockedThisCombat"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "Whenever this creature attacks or blocks, remove a +1/+1 counter from it at end of combat."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{3}"
+                    }
+                },
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": "Self"
+                },
+                "descriptionOverride": "{3}: Put a +1/+1 counter on this creature."
+            }
+        ],
+        "replacementEffects": [
+            {
+                "type": "EntersWithCounters",
+                "count": 6,
+                "selfOnly": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "155",
+        "rarity": "RARE",
+        "artist": "Arnie Swekel",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/a/ca6448da-b513-4bea-95f4-47bdfa0df078.jpg?1783944525"
+    },
+    "colorIdentityOverride": []
+}
+
 // Clockwork Vorrac
 {
     "name": "Clockwork Vorrac",
@@ -3852,6 +3943,60 @@
     "colorIdentityOverride": []
 }
 
+// Living Hive
+{
+    "name": "Living Hive",
+    "manaCost": "{6}{G}{G}",
+    "typeLine": "Creature — Elemental Insect",
+    "oracleText": "Trample\nWhenever this creature deals combat damage to a player, create that many 1/1 green Insect creature tokens.",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 6
+    },
+    "keywords": [
+        "TRAMPLE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "DealsDamageEvent",
+                    "damageType": "DamageCombat",
+                    "recipient": "AnyPlayer"
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "count": {
+                        "type": "ContextProperty",
+                        "key": "TRIGGER_DAMAGE_AMOUNT"
+                    },
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [
+                        "GREEN"
+                    ],
+                    "creatureTypes": [
+                        "Insect"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/a/a/aa47df37-f246-4f80-a944-008cdf347dad.jpg?1783944982"
+                },
+                "descriptionOverride": "Whenever this creature deals combat damage to a player, create that many 1/1 green Insect creature tokens."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "124",
+        "rarity": "RARE",
+        "artist": "Anthony S. Waters",
+        "flavorText": "In its center is a single red ant, a queen that regulates the hive's movements.",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/0/407dad3c-d721-412a-8b29-bc15be56d2fe.jpg?1783944534"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Lodestone Myr
 {
     "name": "Lodestone Myr",
@@ -4777,6 +4922,92 @@
         "artist": "Greg Staples",
         "flavorText": "Most myr monitor other species. Some myr monitor other myr.",
         "imageUri": "https://cards.scryfall.io/normal/front/e/e/eeeef899-a8b5-4416-a208-3bd5a0c7177b.jpg?1783944512"
+    },
+    "colorIdentityOverride": []
+}
+
+// Myr Incubator
+{
+    "name": "Myr Incubator",
+    "manaCost": "{6}",
+    "typeLine": "Artifact",
+    "oracleText": "{6}, {T}, Sacrifice this artifact: Search your library for any number of artifact cards, exile them, then create that many 1/1 colorless Myr artifact creature tokens. Then shuffle.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{6}"
+                            }
+                        },
+                        "CostTap",
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Library",
+                                "filter": "artifact"
+                            },
+                            "storeAs": "myrIncubatorSearchable"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "myrIncubatorSearchable",
+                            "selection": "ChooseAnyNumber",
+                            "storeSelected": "myrIncubatorFound",
+                            "prompt": "Search your library for any number of artifact cards"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "myrIncubatorFound",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile"
+                            }
+                        },
+                        {
+                            "type": "CreateToken",
+                            "count": {
+                                "type": "DistinctEntitiesInCollections",
+                                "collections": [
+                                    "myrIncubatorFound"
+                                ]
+                            },
+                            "power": 1,
+                            "toughness": 1,
+                            "colors": [],
+                            "creatureTypes": [
+                                "Myr"
+                            ],
+                            "imageUri": "https://cards.scryfall.io/normal/front/1/8/187cf6d5-c352-48f2-b8bf-fe1bf946e2ac.jpg?1783944459",
+                            "artifactToken": true
+                        },
+                        "ShuffleLibrary",
+                        "EmitLibrarySearchedEvent"
+                    ],
+                    "descriptionOverride": "Search your library for any number of artifact cards, exile them, then create that many 1/1 colorless Myr artifact creature tokens. Then shuffle."
+                },
+                "descriptionOverride": "{6}, {T}, Sacrifice this artifact: Search your library for any number of artifact cards, exile them, then create that many 1/1 colorless Myr artifact creature tokens. Then shuffle."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "212",
+        "rarity": "RARE",
+        "artist": "Alex Horley-Orlandelli",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/1/31b0f9ef-7404-4e05-b759-aaf1ebcfcb31.jpg?1783944512"
     },
     "colorIdentityOverride": []
 }
@@ -6287,6 +6518,81 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Reiver Demon
+{
+    "name": "Reiver Demon",
+    "manaCost": "{4}{B}{B}{B}{B}",
+    "typeLine": "Creature — Demon",
+    "oracleText": "Flying\nWhen this creature enters, if you cast it from your hand, destroy all nonartifact, nonblack creatures. They can't be regenerated.",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 6
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "BattlefieldMatching",
+                                "filter": {
+                                    "cardPredicates": [
+                                        "IsCreature",
+                                        "IsNonartifact",
+                                        {
+                                            "type": "NotColor",
+                                            "color": "BLACK"
+                                        }
+                                    ]
+                                }
+                            },
+                            "storeAs": "destroyAll_gathered"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "destroyAll_gathered",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            },
+                            "moveType": "Destroy",
+                            "noRegenerate": true
+                        }
+                    ]
+                },
+                "triggerCondition": "WasCastFromHand",
+                "descriptionOverride": "When this creature enters, if you cast it from your hand, destroy all nonartifact, nonblack creatures. They can't be regenerated."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "75",
+        "rarity": "RARE",
+        "artist": "Brom",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/1/d109abda-982f-4907-8b64-ec63e138bc42.jpg?1783944545",
+        "rulings": [
+            {
+                "date": "2013-09-20",
+                "text": "If a creature (such as Clone) enters the battlefield as a copy of this creature, the copy's \"enters-the-battlefield\" ability will still trigger as long as you cast that creature spell from your hand."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 
