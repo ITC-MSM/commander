@@ -3,7 +3,7 @@
 **Set Size:** 276 booster cards (collector numbers 1-276; basic lands 277-296 and showcase
 variants 297+ are excluded)
 **Release Date:** June 26, 2026
-**Implemented:** 250 / 276
+**Implemented:** 251 / 276
 - [x] Agent 13, Sharon Carter
 - [x] Agent Maria Hill
 - [x] Agent of Atlas
@@ -146,7 +146,7 @@ variants 297+ are excluded)
 - [x] K'un-Lun Warrior
 - [x] Kree Sentinel
 - [x] Lightning Strike
-- [ ] Loki Laufeyson
+- [x] Loki Laufeyson
 - [x] Machinesmith Automaton
 - [x] Misty Knight, Hero for Hire
 - [x] Mjölnir, Hammer of Thor

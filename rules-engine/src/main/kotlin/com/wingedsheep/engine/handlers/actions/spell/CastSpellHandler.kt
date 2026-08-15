@@ -3797,12 +3797,25 @@ class CastSpellHandler(
         // spellFilter (instant or sorcery by default, but e.g. "creature" is expressible), matched
         // against the spell just cast. Face-down spells have no characteristics, so they never match.
         if (!action.castFaceDown) {
-            val copyEvalContext = PredicateContext(controllerId = action.playerId)
             val matchingCopies = currentCastState.pendingSpellCopies.filter { pending ->
-                pending.controllerId == action.playerId &&
-                    predicateEvaluator.matches(
-                        currentCastState, currentCastState.projectedState, action.cardId, pending.spellFilter, copyEvalContext
-                    )
+                if (pending.controllerId != action.playerId) return@filter false
+                // The context carries the *rider's own* source, so a filter that reads a
+                // characteristic off the permanent that created the rider resolves against it at
+                // cast time — Loki Laufeyson's "with mana value less than or equal to Loki's
+                // power" is `manaValueAtMostDynamic(sourcePower())`, and the delayed trigger's
+                // condition is checked as the spell is cast, not when the rider was created.
+                // If the source has since left the battlefield, `lastKnownSourceSnapshot` carries
+                // what it last was there (stamped at departure by ZoneTransitionService), so the
+                // cap reads its last-known power rather than its printed one — CR 608.2h. Null
+                // while the source is still in play, which is the common case.
+                val copyEvalContext = PredicateContext(
+                    controllerId = action.playerId,
+                    sourceId = pending.sourceId,
+                    lastKnownSourceSnapshot = pending.lastKnownSourceSnapshot
+                )
+                predicateEvaluator.matches(
+                    currentCastState, currentCastState.projectedState, action.cardId, pending.spellFilter, copyEvalContext
+                )
             }
             if (matchingCopies.isNotEmpty()) {
                 val totalCopies = matchingCopies.sumOf { it.copies }
@@ -3848,12 +3861,18 @@ class CastSpellHandler(
         // spells aren't protected. Unlike the copy rider above, face-down spells aren't excluded — a
         // face-down spell is still "the next spell you cast", and the default Any filter matches it.
         run {
-            val uncounterableEvalContext = PredicateContext(controllerId = action.playerId)
             val matchingRiders = currentCastState.pendingUncounterableSpells.filter { pending ->
-                pending.controllerId == action.playerId &&
-                    predicateEvaluator.matches(
-                        currentCastState, currentCastState.projectedState, action.cardId, pending.spellFilter, uncounterableEvalContext
-                    )
+                if (pending.controllerId != action.playerId) return@filter false
+                // Same source-relative filter contract as the copy rider above: the entry's own
+                // sourceId goes into the context so `EntityReference.Source` resolves to the
+                // permanent that created the rider rather than to nothing.
+                val uncounterableEvalContext = PredicateContext(
+                    controllerId = action.playerId,
+                    sourceId = pending.sourceId
+                )
+                predicateEvaluator.matches(
+                    currentCastState, currentCastState.projectedState, action.cardId, pending.spellFilter, uncounterableEvalContext
+                )
             }
             if (matchingRiders.isNotEmpty()) {
                 val remainingRiders = currentCastState.pendingUncounterableSpells.filter { it !in matchingRiders }
@@ -3868,12 +3887,16 @@ class CastSpellHandler(
         // here we just remove the riders that matched the spell just cast, so only the *next*
         // matching spell is affected.
         run {
-            val affinityEvalContext = PredicateContext(controllerId = action.playerId)
             val matchingAffinityRiders = currentCastState.pendingNextSpellAffinities.filter { pending ->
-                pending.controllerId == action.playerId &&
-                    predicateEvaluator.matches(
-                        currentCastState, currentCastState.projectedState, action.cardId, pending.spellFilter, affinityEvalContext
-                    )
+                if (pending.controllerId != action.playerId) return@filter false
+                // Source-relative filters, as above.
+                val affinityEvalContext = PredicateContext(
+                    controllerId = action.playerId,
+                    sourceId = pending.sourceId
+                )
+                predicateEvaluator.matches(
+                    currentCastState, currentCastState.projectedState, action.cardId, pending.spellFilter, affinityEvalContext
+                )
             }
             if (matchingAffinityRiders.isNotEmpty()) {
                 currentCastState = currentCastState.copy(
