@@ -7,6 +7,7 @@ import com.wingedsheep.engine.handlers.DynamicAmountEvaluator
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.PredicateContext
 import com.wingedsheep.engine.handlers.PredicateEvaluator
+import com.wingedsheep.engine.handlers.effects.permanent.counters.counterTypeToString
 import com.wingedsheep.engine.mechanics.layers.Layer
 import com.wingedsheep.engine.mechanics.layers.SerializableModification
 import com.wingedsheep.engine.mechanics.layers.addFloatingEffect
@@ -76,7 +77,9 @@ object EntersWithReplacements {
                 if (count <= 0) return state to events
                 val current = state.getEntity(entityId)?.get<CountersComponent>() ?: CountersComponent()
                 var newState = state.updateEntity(entityId) { c -> c.with(current.withAdded(counterType, count)) }
-                val (afterMark, firstThisTurn) = DamageUtils.recordCounterPlacement(newState, entityId)
+                val (afterMark, firstThisTurn) = DamageUtils.recordCounterPlacement(
+                    newState, entityId, counterTypeToString(counterType), byController = true
+                )
                 newState = afterMark
                 events.add(CountersAddedEvent(entityId, "+1/+1", count, entityName, firstThisTurn, placedBy = controllerId))
                 newState to events
@@ -235,7 +238,12 @@ object EntersWithReplacements {
         var newState = state.updateEntity(entityId) { c ->
             c.with(current.withAdded(resolved, modifiedCount))
         }
-        val (afterMark, firstThisTurn) = DamageUtils.recordCounterPlacement(newState, entityId)
+        // CR 122.6a — the entering object's controller is the one putting these counters on, so the
+        // marker records both axes and a "you've put +1/+1 counters on it this turn" filter (Kid
+        // Loki) sees a creature that *entered* with them.
+        val (afterMark, firstThisTurn) = DamageUtils.recordCounterPlacement(
+            newState, entityId, counterTypeToString(resolved), byController = true
+        )
         newState = afterMark
         return newState to listOf(
             CountersAddedEvent(
@@ -294,7 +302,9 @@ object EntersWithReplacements {
                         newState = newState.updateEntity(enteringEntityId) { c ->
                             c.with(current.withAdded(counterType, modifiedCount))
                         }
-                        val (afterMark, firstThisTurn) = DamageUtils.recordCounterPlacement(newState, enteringEntityId)
+                        val (afterMark, firstThisTurn) = DamageUtils.recordCounterPlacement(
+                            newState, enteringEntityId, counterTypeToString(counterType), byController = true
+                        )
                         newState = afterMark
                         events.add(CountersAddedEvent(enteringEntityId, effect.counterType.description, modifiedCount, entityName, firstThisTurn, placedBy = enteringControllerId))
                     }
@@ -324,7 +334,9 @@ object EntersWithReplacements {
                             newState = newState.updateEntity(enteringEntityId) { c ->
                                 c.with(current.withAdded(counterType, modifiedCount))
                             }
-                            val (afterMark, firstThisTurn) = DamageUtils.recordCounterPlacement(newState, enteringEntityId)
+                            val (afterMark, firstThisTurn) = DamageUtils.recordCounterPlacement(
+                                newState, enteringEntityId, counterTypeToString(counterType), byController = true
+                            )
                             newState = afterMark
                             events.add(CountersAddedEvent(enteringEntityId, effect.counterType.description, modifiedCount, entityName, firstThisTurn, placedBy = enteringControllerId))
                         }

@@ -26,7 +26,7 @@ val EssenceSliver = card("Essence Sliver") {
     toughness = 3
     oracleText = "Whenever a Sliver deals damage, its controller gains that much life."
 
-    val sliverFilter = GroupFilter(GameObjectFilter.Creature.withSubtype("Sliver"))
+    val sliverFilter = GroupFilter(GameObjectFilter.Permanent.withSubtype("Sliver"))
 
     staticAbility {
         ability = GrantTriggeredAbility(

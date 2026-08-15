@@ -131,10 +131,11 @@ dependencies { "generatedCardsImplementation"(project(":mtg-sdk")) }
 
 // Run the :mtgish-tooling CLI's emit-all on its runtime classpath (build-time tool dependency only — keeps
 // :mtg-sets's main classpath free of the mtgish tooling).
-val mtgishTool: Configuration by configurations.creating { isCanBeResolved = true; isCanBeConsumed = false }
+val mtgishTool: Configuration =
+    configurations.create("mtgishTool") { isCanBeResolved = true; isCanBeConsumed = false }
 dependencies { mtgishTool(project(":mtgish-tooling")) }
 
-val emitGeneratedCards by tasks.registering(JavaExec::class) {
+val emitGeneratedCards = tasks.register<JavaExec>("emitGeneratedCards") {
     description = "Emit whole-renderable cards for -Pset=CODE via the mtgish bridge."
     group = "verification"
     workingDir = rootProject.projectDir

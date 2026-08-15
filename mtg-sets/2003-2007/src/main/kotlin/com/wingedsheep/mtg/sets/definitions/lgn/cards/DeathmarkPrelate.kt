@@ -32,7 +32,7 @@ val DeathmarkPrelate = card("Deathmark Prelate") {
         cost = Costs.Composite(
             Costs.Mana("{2}{B}"),
             Costs.Tap,
-            Costs.Sacrifice(GameObjectFilter.Creature.withSubtype("Zombie"))
+            Costs.Sacrifice(GameObjectFilter.Permanent.withSubtype("Zombie"))
         )
         timing = TimingRule.SorcerySpeed
         val t = target("non-Zombie creature", TargetCreature(filter = TargetFilter(GameObjectFilter.Creature.notSubtype(Subtype("Zombie")))))

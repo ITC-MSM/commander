@@ -24,7 +24,7 @@ val Deadapult = card("Deadapult") {
     typeLine = "Enchantment"
     oracleText = "{R}, Sacrifice a Zombie: This enchantment deals 2 damage to any target."
     activatedAbility {
-        cost = Costs.Composite(Costs.Mana("{R}"), Costs.Sacrifice(GameObjectFilter.Creature.withSubtype("Zombie")))
+        cost = Costs.Composite(Costs.Mana("{R}"), Costs.Sacrifice(GameObjectFilter.Permanent.withSubtype("Zombie")))
         val t = target("target", AnyTarget())
         effect = DealDamageEffect(2, t)
     }

@@ -34,65 +34,143 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  * Almost every card that prints one of these prints it inside a triggered ability ("When this
  * creature dies, put it on top of its owner's library"), and none of these rules knows that:
  * [Triggers] slots [Steps.step] whole, so the clause is the same clause wherever it lands.
+ *
+ * ### The third anaphor
+ *
+ * That last sentence holds everywhere but one place. A trigger whose event names a **filter**
+ * mentions an object of its own, and English resolves "it" to the most recent mention: "Whenever a
+ * Rat you control becomes blocked, **it** gets +2/+0" pumps the *Rat*, not the source. So the same
+ * clause denotes [EffectTarget.TriggeringEntity] there and [EffectTarget.Self] everywhere else,
+ * while the *name* still denotes the source in both.
+ *
+ * The vocabulary is therefore written once, as [retargetable], and instantiated per position rather
+ * than copied — the members, their models and their fail-closed matches are one piece of code, and
+ * only the subject's spelling and the target it denotes move. [Steps.step] takes the source reading
+ * and [Steps.triggeredStep] takes both, which is what keeps one printed form per model: in the
+ * filtered-trigger cascade the name reads the source and the pronoun reads the triggering entity, so
+ * the two surfaces are disjoint and neither can print the other's sentence.
  */
 object SelfSteps {
 
     /**
-     * "This creature gets +1/+1 until end of turn." — firebreathing's effect clause, and Charging
-     * Bandits' attack trigger spelled with the pronoun.
+     * The clauses whose object can be *any* single permanent the sentence has already fixed.
      *
-     * The subject is [Primitives.self], so both of Oracle's spellings read and the noun is what
-     * prints. That ordering is the corpus's: a card *naming* itself is how nearly every activated
-     * pump is templated ("{R}: This creature gets +1/+0 until end of turn."), while the pronoun only
-     * appears where an earlier clause in the same ability already named the source. Cards printing
-     * the pronoun come back as a [com.wingedsheep.assay.gate.LineVerdict.VARIANT], which says the
-     * reading was right and only the spelling moved.
+     * One shape, instantiated per anaphor position. [subject] is what stands in a `{self}` slot and
+     * [target] is what the whole clause acts on; the two move together, which is the entire content
+     * of the third-anaphor split described on this object.
+     *
+     * @param pronominal whether the members that spell the pronoun as a *literal* ("put **it** on
+     *   top of its owner's library") are included. They have no subject slot, so [subject] cannot
+     *   keep them apart: a position that reads the pronoun as something other than the source has to
+     *   take them, and one that reads only the name has to leave them out, or one text would have
+     *   two readings.
+     * @param tag distinguishes the rule names across instantiations so an ambiguity diagnostic can
+     *   still say which side it found.
      */
+    fun retargetable(
+        target: EffectTarget,
+        subject: Phrase<Unit>,
+        pronominal: Boolean,
+        tag: String,
+    ): List<Phrase<CardScript>> {
+        val named = listOf(
+            selfGets(target, subject, tag),
+            selfGetsAndGains(target, subject, tag),
+            selfGainsTwoKeywords(target, subject, tag),
+            selfLosesKeyword(target, subject, tag),
+            move("untap {self}", "untap$tag", Effects.Untap(target), subject),
+            move("regenerate {self}", "regenerate$tag", RegenerateEffect(target), subject),
+        ) + putCounters(target, subject, tag)
+        if (!pronominal) return named
+        return named + listOf(
+            putOnTop(target, tag),
+            move(
+                "shuffle it into its owner's library",
+                "shuffle$tag into its library",
+                Effects.Move(target, Zone.LIBRARY, ZonePlacement.Shuffled),
+                subject = null,
+            ),
+            move("exile it", "exile$tag", Effects.Move(target, Zone.EXILE), subject = null),
+            move(
+                "return it to its owner's hand",
+                "return$tag to its owner's hand",
+                Effects.Move(target, Zone.HAND),
+                subject = null,
+            ),
+            // "…return it to your hand." — Ghastly Remains. The same move: a card returning itself
+            // goes to its owner's hand, and the owner of a card you are returning from your own
+            // graveyard is you. Two printed forms, one model, so this one parses and never prints.
+            alternate(
+                move(
+                    "return it to your hand",
+                    "return$tag to your hand",
+                    Effects.Move(target, Zone.HAND),
+                    subject = null,
+                )
+            ),
+        )
+    }
+
     /**
      * "Put a +1/+1 counter on ~.", "Put two +1/+1 counters on it." — the counter verb aimed at the
      * source, and the single commonest effect shape in the whole hand-written corpus: 363 of the
      * 951 `AddCounters` a golden carries are exactly this one.
      *
-     * The subject is [Primitives.self], so both spellings read and the name is what prints, the same
-     * treatment [selfGets] gets. Being in [anaphoric] is what makes the pronoun safe: [Steps] drops
-     * this whole list from every position after the first in a sequence, so once a clause has
-     * introduced a target, "on it" is [Continuations]' to read and means that target. Registering the
-     * pronoun in both places would be two readings of one text — the bug the differential caught on
-     * "Untap target creature. It gets +2/+4", in a sentence where it would be just as invisible.
+     * The subject is a slot, so both spellings read and the name is what prints, the same treatment
+     * [selfGets] gets. Being in [anaphoric] is what makes the pronoun safe: [Steps] drops this whole
+     * list from every position after the first in a sequence, so once a clause has introduced a
+     * target, "on it" is [Continuations]' to read and means that target. Registering the pronoun in
+     * both places would be two readings of one text — the bug the differential caught on "Untap
+     * target creature. It gets +2/+4", in a sentence where it would be just as invisible.
      *
      * Singular and plural are two rules over disjoint quantities for [Steps]' reason; everything
      * about why is written there, on the targeted twin of this pair.
      */
-    private val putCountersOnSelf: List<Phrase<CardScript>> = run {
+    private fun putCounters(
+        target: EffectTarget,
+        subject: Phrase<Unit>,
+        tag: String,
+    ): List<Phrase<CardScript>> {
         fun scriptFor(kind: String, count: Int) =
-            CardScript(spellEffect = Effects.AddCounters(kind, count, EffectTarget.Self))
+            CardScript(spellEffect = Effects.AddCounters(kind, count, target))
         fun rule(template: String, name: String, quantity: Phrase<*>?) =
             phrase(template, name = name) {
                 slot("kind", if (quantity == null) Primitives.singularCounterKind else Primitives.counterKind)
                 if (quantity != null) slot("n", quantity)
-                slot("self", Primitives.self)
+                slot("self", subject)
                 build { scriptFor(it.value("kind"), if (quantity == null) 1 else it.int("n")) }
                 match { script ->
                     val (kind, count) =
-                        Steps.countersAdded(script.spellEffect, EffectTarget.Self) ?: return@match null
+                        Steps.countersAdded(script.spellEffect, target) ?: return@match null
                     if (quantity == null && count != 1) return@match null
                     if (quantity != null && !(count >= 2 && Cardinals.spellable(count))) return@match null
                     if (script != scriptFor(kind, count)) return@match null
                     bind("kind" to kind, "n" to count, "self" to Unit)
                 }
             }
-        listOf(
-            rule("put {kind} counter on {self}", "put a counter on the source", null),
-            rule("put {n} {kind} counters on {self}", "put counters on the source", Cardinals.word),
+        return listOf(
+            rule("put {kind} counter on {self}", "put a counter on$tag", null),
+            rule("put {n} {kind} counters on {self}", "put counters on$tag", Cardinals.word),
         )
     }
 
-    private val selfGets: Phrase<CardScript> = run {
+    /**
+     * "This creature gets +1/+1 until end of turn." — firebreathing's effect clause, and Charging
+     * Bandits' attack trigger spelled with the pronoun.
+     *
+     * The subject is a slot, so both of Oracle's spellings read and the noun is what prints. That
+     * ordering is the corpus's: a card *naming* itself is how nearly every activated pump is
+     * templated ("{R}: This creature gets +1/+0 until end of turn."), while the pronoun only appears
+     * where an earlier clause in the same ability already named the source. Cards printing the
+     * pronoun come back as a [com.wingedsheep.assay.gate.LineVerdict.VARIANT], which says the
+     * reading was right and only the spelling moved.
+     */
+    private fun selfGets(target: EffectTarget, subject: Phrase<Unit>, tag: String): Phrase<CardScript> {
         fun scriptFor(modifiers: Pair<Int, Int>) = CardScript(
-            spellEffect = Effects.ModifyStats(modifiers.first, modifiers.second, EffectTarget.Self)
+            spellEffect = Effects.ModifyStats(modifiers.first, modifiers.second, target)
         )
-        phrase("{self} gets {mod} until end of turn", name = "the source gets") {
-            slot("self", Primitives.self)
+        return phrase("{self} gets {mod} until end of turn", name = "$tag gets".trim()) {
+            slot("self", subject)
             slot("mod", Primitives.statModifiers)
             build { scriptFor(it.value("mod")) }
             match { script ->
@@ -111,17 +189,24 @@ object SelfSteps {
      * clause has no subject of its own in the text, and the model is a two-element composite over
      * one object. A [Steps.sequence] would need the second clause to name what it acts on.
      */
-    private val selfGetsAndGains: Phrase<CardScript> = run {
+    private fun selfGetsAndGains(
+        target: EffectTarget,
+        subject: Phrase<Unit>,
+        tag: String,
+    ): Phrase<CardScript> {
         fun scriptFor(modifiers: Pair<Int, Int>, keyword: Keyword) = CardScript(
             spellEffect = Effects.Composite(
                 listOf(
-                    Effects.ModifyStats(modifiers.first, modifiers.second, EffectTarget.Self),
-                    Effects.GrantKeyword(keyword, EffectTarget.Self),
+                    Effects.ModifyStats(modifiers.first, modifiers.second, target),
+                    Effects.GrantKeyword(keyword, target),
                 )
             )
         )
-        phrase("{self} gets {mod} and gains {kw} until end of turn", name = "the source gets and gains") {
-            slot("self", Primitives.self)
+        return phrase(
+            "{self} gets {mod} and gains {kw} until end of turn",
+            name = "$tag gets and gains".trim(),
+        ) {
+            slot("self", subject)
             slot("mod", Primitives.statModifiers)
             slot("kw", Keywords.keyword)
             build { scriptFor(it.value("mod"), it.value("kw")) }
@@ -136,17 +221,24 @@ object SelfSteps {
     }
 
     /** "~ gains flying and shroud until end of turn." — Warped Researcher. Two grants, one sentence. */
-    private val selfGainsTwoKeywords: Phrase<CardScript> = run {
+    private fun selfGainsTwoKeywords(
+        target: EffectTarget,
+        subject: Phrase<Unit>,
+        tag: String,
+    ): Phrase<CardScript> {
         fun scriptFor(first: Keyword, second: Keyword) = CardScript(
             spellEffect = Effects.Composite(
                 listOf(
-                    Effects.GrantKeyword(first, EffectTarget.Self),
-                    Effects.GrantKeyword(second, EffectTarget.Self),
+                    Effects.GrantKeyword(first, target),
+                    Effects.GrantKeyword(second, target),
                 )
             )
         )
-        phrase("{self} gains {kw} and {kw2} until end of turn", name = "the source gains two keywords") {
-            slot("self", Primitives.self)
+        return phrase(
+            "{self} gains {kw} and {kw2} until end of turn",
+            name = "$tag gains two keywords".trim(),
+        ) {
+            slot("self", subject)
             slot("kw", Keywords.keyword)
             slot("kw2", Keywords.keyword)
             build { scriptFor(it.value("kw"), it.value("kw2")) }
@@ -161,11 +253,15 @@ object SelfSteps {
     }
 
     /** "~ loses flying until end of turn." — Swooping Talon, the grant rules' negation. */
-    private val selfLosesKeyword: Phrase<CardScript> = run {
+    private fun selfLosesKeyword(
+        target: EffectTarget,
+        subject: Phrase<Unit>,
+        tag: String,
+    ): Phrase<CardScript> {
         fun scriptFor(keyword: Keyword) =
-            CardScript(spellEffect = Effects.RemoveKeyword(keyword, EffectTarget.Self))
-        phrase("{self} loses {kw} until end of turn", name = "the source loses a keyword") {
-            slot("self", Primitives.self)
+            CardScript(spellEffect = Effects.RemoveKeyword(keyword, target))
+        return phrase("{self} loses {kw} until end of turn", name = "$tag loses a keyword".trim()) {
+            slot("self", subject)
             slot("kw", Keywords.keyword)
             build { scriptFor(it.value("kw")) }
             match { script ->
@@ -174,6 +270,41 @@ object SelfSteps {
                 if (script != scriptFor(keyword)) return@match null
                 bind("self" to Unit, "kw" to keyword)
             }
+        }
+    }
+
+    /** "Put it on top of its owner's library." — Undying Beast's death trigger. */
+    private fun putOnTop(target: EffectTarget, tag: String): Phrase<CardScript> {
+        val script = CardScript(spellEffect = Effects.PutOnTopOfLibrary(target))
+        return phrase(
+            "put it on top of its owner's library",
+            name = "put$tag on top of its library",
+        ) {
+            build { script }
+            match { if (it == script) bind() else null }
+        }
+    }
+
+    /**
+     * The verbs whose object is one permanent and which carry nothing else — a move to a named zone,
+     * an untap, a regeneration.
+     *
+     * The subject slot is optional because the older members spell the pronoun as a literal ("return
+     * **it** to its owner's hand"), while the ones a card names itself in take a subject phrase.
+     * Both are the same rule shape; only the printed subject differs. A `null` [subject] is what
+     * [retargetable]'s `pronominal` flag gates on.
+     */
+    private fun move(
+        template: String,
+        name: String,
+        effect: Effect,
+        subject: Phrase<Unit>?,
+    ): Phrase<CardScript> {
+        val script = CardScript(spellEffect = effect)
+        return phrase(template, name = name) {
+            if (subject != null) slot("self", subject)
+            build { script }
+            match { if (it == script) bind("self" to Unit) else null }
         }
     }
 
@@ -198,15 +329,6 @@ object SelfSteps {
                 if (script != scriptFor(cost)) return@match null
                 bind("self" to Unit, "cost" to cost)
             }
-        }
-    }
-
-    /** "Put it on top of its owner's library." — Undying Beast's death trigger. */
-    private val putOnTop: Phrase<CardScript> = run {
-        val script = CardScript(spellEffect = Effects.PutOnTopOfLibrary(EffectTarget.Self))
-        phrase("put it on top of its owner's library", name = "put the source on top of its library") {
-            build { script }
-            match { if (it == script) bind() else null }
         }
     }
 
@@ -247,23 +369,6 @@ object SelfSteps {
             is CostAtom.Discard -> atom.filter
             is CostAtom.Sacrifice -> atom.filter
             else -> null
-        }
-    }
-
-    /**
-     * The verbs whose object is the source and which carry nothing else — a move to a named zone,
-     * an untap, a regeneration.
-     *
-     * The subject slot is optional in the template because the older members spell the pronoun as a
-     * literal ("return **it** to its owner's hand"), while the ones a card names itself in take
-     * [Primitives.self]. Both are the same rule shape; only the printed subject differs.
-     */
-    private fun moveSelf(template: String, name: String, effect: Effect): Phrase<CardScript> {
-        val script = CardScript(spellEffect = effect)
-        return phrase(template, name = name) {
-            if (template.contains("{self}")) slot("self", Primitives.self)
-            build { script }
-            match { if (it == script) bind("self" to Unit) else null }
         }
     }
 
@@ -316,50 +421,18 @@ object SelfSteps {
     }
 
     /**
-     * The clauses whose "it" is the **source**.
+     * The clauses that sacrifice the **source itself**, which no anaphor can move.
      *
-     * Kept apart from the rest because English resolves an anaphor to the most recently mentioned
-     * object: in "Whenever this creature attacks, it gets +2/+0" the only mention is the source, but
-     * in "Untap target creature. It gets +2/+4 until end of turn." it is the target the first clause
-     * introduced. So these rules are clauses in their own right and are *not* offered in a later
-     * position of a sequence — [Continuations] owns "it" there. Registering them in both places
-     * would be two readings of one text, which is ambiguity rather than a choice.
+     * `SacrificeSelfEffect` carries no [EffectTarget] at all — the SDK models "sacrifice this" as a
+     * verb about the source rather than a verb with an object — so these are not members of
+     * [retargetable] and a filtered trigger's "it" cannot reach them. That is the fail-closed
+     * answer, not a gap worked around: a card that meant "sacrifice the creature that triggered
+     * this" needs an effect the SDK does not have, so it declines and is counted.
      */
-    val anaphoric: List<Phrase<CardScript>> = listOf(
-        selfGets,
-        selfGetsAndGains,
-        selfGainsTwoKeywords,
-        selfLosesKeyword,
+    private val sacrificesSource: List<Phrase<CardScript>> = listOf(
         sacrificeUnlessPay,
-        putOnTop,
-        // The two bare verbs whose object is the source. "Untap it." after a morph trigger and
-        // "Regenerate ~." as an activated ability's whole effect are the same shape as the moves
-        // below, differing only in that the effect takes no destination.
-        moveSelf("untap {self}", "untap the source", Effects.Untap(EffectTarget.Self)),
-        moveSelf("regenerate {self}", "regenerate the source", RegenerateEffect(EffectTarget.Self)),
         sacrificeUnlessCounted,
         sacrificeUnlessRandomDiscard,
-        moveSelf(
-            "shuffle it into its owner's library",
-            "shuffle the source into its library",
-            Effects.Move(EffectTarget.Self, Zone.LIBRARY, ZonePlacement.Shuffled),
-        ),
-        moveSelf("exile it", "exile the source", Effects.Move(EffectTarget.Self, Zone.EXILE)),
-        moveSelf(
-            "return it to its owner's hand",
-            "return the source to its owner's hand",
-            Effects.Move(EffectTarget.Self, Zone.HAND),
-        ),
-        // "…return it to your hand." — Ghastly Remains. The same move: a card returning itself goes
-        // to its owner's hand, and the owner of a card you are returning from your own graveyard is
-        // you. Two printed forms, one model, so this one parses and never prints.
-        alternate(
-            moveSelf(
-                "return it to your hand",
-                "return the source to your hand",
-                Effects.Move(EffectTarget.Self, Zone.HAND),
-            )
-        ),
         sacrificeUnless(
             "sacrifice it unless you discard {filter} card",
             "sacrifice the source unless you discard",
@@ -368,7 +441,39 @@ object SelfSteps {
             "sacrifice it unless you sacrifice {filter}",
             "sacrifice the source unless you sacrifice",
         ) { Costs.pay.Sacrifice(it) },
-    ) + putCountersOnSelf
+    )
+
+    /**
+     * The clauses whose "it" is the **source** — what every position but a filtered trigger reads.
+     *
+     * Kept apart from the rest because English resolves an anaphor to the most recently mentioned
+     * object: in "Whenever this creature attacks, it gets +2/+0" the only mention is the source, but
+     * in "Untap target creature. It gets +2/+4 until end of turn." it is the target the first clause
+     * introduced. So these rules are clauses in their own right and are *not* offered in a later
+     * position of a sequence — [Continuations] owns "it" there. Registering them in both places
+     * would be two readings of one text, which is ambiguity rather than a choice.
+     */
+    val anaphoric: List<Phrase<CardScript>> =
+        retargetable(EffectTarget.Self, Primitives.self, pronominal = true, tag = " the source") +
+            sacrificesSource
+
+    /**
+     * The same vocabulary inside a **filtered** trigger, where the two spellings come apart.
+     *
+     * The name still reads the source and the pronoun now reads the object the trigger's filter
+     * matched, so the two instantiations have disjoint surfaces and disjoint models — one printed
+     * form per model, with nothing for the printer to choose. See the third-anaphor section on this
+     * object, and [Steps.triggeredStep] for the only cascade that takes this list.
+     */
+    val triggering: List<Phrase<CardScript>> =
+        retargetable(EffectTarget.Self, Primitives.selfNamed, pronominal = false, tag = " the named source") +
+            retargetable(
+                EffectTarget.TriggeringEntity,
+                Primitives.itPronoun,
+                pronominal = true,
+                tag = " the triggering permanent",
+            ) +
+            sacrificesSource
 
     /** Everything in this file that does not turn on the pronoun. Empty for now; the family is "it". */
     val clauses: List<Phrase<CardScript>> = emptyList()

@@ -359,6 +359,31 @@ object ZoneTransitionService {
             // the attachments now: the host's EntityId is reused across a blink (exile→battlefield),
             // so the SBA can't otherwise tell the host left and returned as a new object.
             newState = ZoneMovementUtils.markAttachmentsHostLeft(newState, entityId)
+
+            // Freeze last-known information onto any pending "copy your next spell" rider this
+            // permanent created (CR 608.2h / 113.7a). The rider outlives its source — the ability
+            // already resolved, so killing the source doesn't remove it — but its `spellFilter` may
+            // read the source's own characteristics, e.g. Loki Laufeyson's "mana value less than or
+            // equal to Loki's power". Once the source is gone the filter must use the characteristics
+            // it last had on the battlefield, not its printed ones.
+            //
+            // Stamped here, at departure, rather than when the rider was created: the source's power
+            // can change in between (Loki arms the rider at 2/1, powers up to 4/3, then dies — the
+            // cap is 4, not 2). Only the first departure stamps; a rider whose source already left
+            // keeps that snapshot, so a later blink of the same EntityId can't overwrite the
+            // last-known state the rider is entitled to read.
+            if (lastKnownSnapshot != null) {
+                val pending = newState.pendingSpellCopies
+                if (pending.any { it.sourceId == entityId && it.lastKnownSourceSnapshot == null }) {
+                    newState = newState.copy(
+                        pendingSpellCopies = pending.map { copy ->
+                            if (copy.sourceId == entityId && copy.lastKnownSourceSnapshot == null) {
+                                copy.copy(lastKnownSourceSnapshot = lastKnownSnapshot)
+                            } else copy
+                        }
+                    )
+                }
+            }
         }
 
         // 5. Strip face-down if leaving exile

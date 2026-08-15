@@ -2310,7 +2310,7 @@
                 "id": "ability_1",
                 "trigger": {
                     "type": "ZoneChangeEvent",
-                    "filter": "creature Ally ctrl:you",
+                    "filter": "permanent Ally ctrl:you",
                     "to": "Battlefield"
                 },
                 "binding": "OTHER",
@@ -22650,7 +22650,7 @@
                 "powerBonus": 1,
                 "toughnessBonus": 1,
                 "filter": {
-                    "baseFilter": "creature Ally ctrl:you",
+                    "baseFilter": "permanent Ally ctrl:you",
                     "excludeSelf": true
                 }
             }

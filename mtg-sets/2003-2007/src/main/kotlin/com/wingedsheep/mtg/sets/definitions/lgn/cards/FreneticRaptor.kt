@@ -23,7 +23,7 @@ val FreneticRaptor = card("Frenetic Raptor") {
 
     staticAbility {
         ability = CantBlock(
-            GroupFilter(GameObjectFilter.Creature.withSubtype("Beast"))
+            GroupFilter(GameObjectFilter.Permanent.withSubtype("Beast"))
         )
     }
 

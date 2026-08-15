@@ -40,7 +40,7 @@ val KavuMonarch = card("Kavu Monarch") {
 
     triggeredAbility {
         trigger = Triggers.entersBattlefield(
-            filter = GameObjectFilter.Creature.withSubtype("Kavu"),
+            filter = GameObjectFilter.Permanent.withSubtype("Kavu"),
             binding = TriggerBinding.OTHER
         )
         effect = Effects.AddCounters("+1/+1", 1, EffectTarget.Self)

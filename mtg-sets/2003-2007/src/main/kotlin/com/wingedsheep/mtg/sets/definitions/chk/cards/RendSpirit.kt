@@ -25,7 +25,7 @@ val RendSpirit = card("Rend Spirit") {
     typeLine = "Instant"
     oracleText = "Destroy target Spirit."
     spell {
-        val t = target("target", TargetCreature(filter = TargetFilter(GameObjectFilter.Creature.withSubtype("Spirit"))))
+        val t = target("target", TargetCreature(filter = TargetFilter(GameObjectFilter.Permanent.withSubtype("Spirit"))))
         effect = Effects.Move(t, Zone.GRAVEYARD, byDestruction = true)
     }
     metadata {

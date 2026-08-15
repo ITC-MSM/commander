@@ -29,7 +29,7 @@ val KitsuneDiviner = card("Kitsune Diviner") {
     toughness = 1
     activatedAbility {
         cost = Costs.Tap
-        val t = target("target", TargetCreature(filter = TargetFilter(GameObjectFilter.Creature.withSubtype("Spirit"))))
+        val t = target("target", TargetCreature(filter = TargetFilter(GameObjectFilter.Permanent.withSubtype("Spirit"))))
         effect = Effects.Tap(t)
     }
     metadata {

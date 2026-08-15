@@ -31,7 +31,7 @@ val AvatarEnthusiasts = card("Avatar Enthusiasts") {
     toughness = 2
     triggeredAbility {
         trigger = Triggers.entersBattlefield(
-            filter = GameObjectFilter.Creature.withSubtype(Subtype.ALLY).youControl(),
+            filter = GameObjectFilter.Permanent.withSubtype(Subtype.ALLY).youControl(),
             binding = TriggerBinding.OTHER
         )
         effect = AddCountersEffect(counterType = Counters.PLUS_ONE_PLUS_ONE, count = 1, target = EffectTarget.Self)

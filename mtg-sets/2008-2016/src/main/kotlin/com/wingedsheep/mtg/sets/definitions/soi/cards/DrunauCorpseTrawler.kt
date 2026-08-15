@@ -42,7 +42,7 @@ val DrunauCorpseTrawler = card("Drunau Corpse Trawler") {
     }
     activatedAbility {
         cost = Costs.Mana("{2}{B}")
-        val t = target("target", TargetCreature(filter = TargetFilter(GameObjectFilter.Creature.withSubtype("Zombie"))))
+        val t = target("target", TargetCreature(filter = TargetFilter(GameObjectFilter.Permanent.withSubtype("Zombie"))))
         effect = Effects.GrantKeyword(Keyword.DEATHTOUCH, t)
     }
     metadata {

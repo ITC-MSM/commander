@@ -1467,7 +1467,14 @@ object Steps {
         }
     }
 
-    private val atomicClauses: List<Phrase<CardScript>> =
+    /**
+     * Every atom that does **not** turn on the pronoun — what both cascades share.
+     *
+     * The anaphor vocabulary is the one thing a [Cascade] supplies for itself, because it is the one
+     * thing whose meaning depends on where the clause sits. Everything here means the same in every
+     * position, so it is built once.
+     */
+    private val nonAnaphoric: List<Phrase<CardScript>> =
         listOf(drawOne, drawMany, targetPlayerDrawsOne, targetPlayerDrawsMany) +
             countedSteps +
             xDamageSteps +
@@ -1509,8 +1516,7 @@ object Steps {
             Morph.clauses +
             CreatureTypes.clauses +
             Tokens.clauses +
-            SelfSteps.clauses +
-            SelfSteps.anaphoric
+            SelfSteps.clauses
 
     /**
      * One clause, plus the joined form of two.
@@ -1523,130 +1529,6 @@ object Steps {
      * [com.wingedsheep.assay.gate.LineVerdict.VARIANT], which says the reading was right and only
      * the spelling moved.
      */
-    /**
-     * The atoms alone, for the rules that wrap or join clauses without being one.
-     *
-     * Declared before everything built from it — object initializers run in declaration order, and a
-     * `val` reaching a later one reads a null out of a half-initialized object.
-     */
-    private val atom: Phrase<CardScript> = oneOf("a spell effect", atomicClauses)
-
-    /**
-     * "You may draw a card." — the controller chooses whether the clause happens.
-     *
-     * Wrapping rather than a vocabulary of its own, so every clause the grammar can read is
-     * optional-able for free. Note that a *triggered* ability spells the same English with its own
-     * `optional` flag instead; [Triggers] lowers this wrapper into that field, which is what keeps
-     * one printed form for the two SDK spellings.
-     */
-    private val mayClause: Phrase<CardScript> = phrase("you may {inner}", name = "you may") {
-        slot("inner", atom)
-        build { bindings -> wrap(bindings.value("inner")) { MayEffect(it) } }
-        match { script ->
-            val gated = script.spellEffect as? GatedEffect ?: return@match null
-            if (gated.gate !is Gate.MayDecide) return@match null
-            val inner = CardScript(spellEffect = gated.then, targetRequirements = script.targetRequirements)
-            if (wrap(inner) { MayEffect(it) } != script) return@match null
-            bind("inner" to inner)
-        }
-    }
-
-    /**
-     * "You may pay {B}{B}{B}. If you do, return it to your hand." — Ghastly Remains, Skirk Drill
-     * Sergeant, and Hollow Specter's `{X}` sibling.
-     *
-     * Two printed sentences and one wrapper, because the second is the *consequence* of the first:
-     * `Gate.MayPay` holds both the cost and what follows, so there is nothing for [sequenceClause] to
-     * split. A wrapper for the same reason [mayClause] is one — every clause the grammar can read
-     * becomes payable-for at no cost.
-     *
-     * The `{X}` form is a separate rule rather than a mana cost that happens to be `{X}`: the model
-     * is a different gate, because the player chooses the number rather than paying a printed one.
-     * The printed symbol is the same either way, so the mana rule **refuses `{X}` outright** —
-     * without that, Decree of Justice's cycling trigger has two readings with two different models,
-     * which is the hard ambiguity the design says never to resolve by ordering an alternation.
-     */
-    private val payX: ManaCost = ManaCost.parse("{X}")
-
-    private val mayPayClauses: List<Phrase<CardScript>> = listOf(
-        phrase("you may pay {cost}. if you do, {inner}", name = "you may pay a cost") {
-            slot("cost", Primitives.manaCost)
-            slot("inner", atom)
-            build { bindings ->
-                val cost = bindings.value<ManaCost>("cost")
-                if (cost == payX) return@build null
-                wrap(bindings.value("inner")) { MayPayManaEffect(cost, it) }
-            }
-            match { script ->
-                val gated = script.spellEffect as? GatedEffect ?: return@match null
-                val gate = gated.gate as? Gate.MayPay ?: return@match null
-                val cost = (gate.cost as? PayManaCostEffect)?.cost ?: return@match null
-                if (cost == payX) return@match null
-                val inner = CardScript(spellEffect = gated.then, targetRequirements = script.targetRequirements)
-                if (wrap(inner) { MayPayManaEffect(cost, it) } != script) return@match null
-                bind("cost" to cost, "inner" to inner)
-            }
-        },
-        phrase("you may pay {X}. if you do, {inner}", name = "you may pay X") {
-            slot("inner", atom)
-            build { bindings -> wrap(bindings.value("inner")) { MayPayXForEffect(it) } }
-            match { script ->
-                val gated = script.spellEffect as? GatedEffect ?: return@match null
-                if (gated.gate !is Gate.MayPayX) return@match null
-                val inner = CardScript(spellEffect = gated.then, targetRequirements = script.targetRequirements)
-                if (wrap(inner) { MayPayXForEffect(it) } != script) return@match null
-                bind("inner" to inner)
-            }
-        },
-    )
-
-    /**
-     * "If an opponent controls more lands than you, search your library for …" — Gift of Estates.
-     *
-     * The SDK lowers a spell's `condition` into a `ConditionalEffect` wrapping the whole effect, so
-     * this is a wrapper for the same reason [mayClause] is one, and the condition is the slot. The
-     * condition vocabulary is [Conditions]; it has two members, which is what a condition family
-     * looks like the first time cards need one.
-     */
-    private val conditionalClause: Phrase<CardScript> =
-        phrase("if {cond}, {inner}", name = "a conditional clause") {
-            slot("cond", Conditions.condition)
-            slot("inner", atom)
-            build { bindings ->
-                val condition = bindings.value<Condition>("cond")
-                wrap(bindings.value("inner")) { ConditionalEffect(condition, it) }
-            }
-            match { script ->
-                val gated = script.spellEffect as? GatedEffect ?: return@match null
-                val gate = gated.gate as? Gate.WhenCondition ?: return@match null
-                val inner = CardScript(spellEffect = gated.then, targetRequirements = script.targetRequirements)
-                if (wrap(inner) { ConditionalEffect(gate.condition, it) } != script) return@match null
-                bind("cond" to gate.condition, "inner" to inner)
-            }
-        }
-
-    /** Re-wrap a clause's effect, keeping the targets it declared. Shared by the two wrappers. */
-    private fun wrap(inner: CardScript, wrapper: (Effect) -> Effect): CardScript? {
-        val effect = inner.spellEffect ?: return null
-        if (inner != CardScript(spellEffect = effect, targetRequirements = inner.targetRequirements)) return null
-        return CardScript(spellEffect = wrapper(effect), targetRequirements = inner.targetRequirements)
-    }
-
-    /** One self-contained clause: an atom, or an atom under a wrapper. */
-    private val simpleClause: Phrase<CardScript> =
-        oneOf("a spell effect", atomicClauses + mayClause + conditionalClause + mayPayClauses)
-
-    /**
-     * A clause that can only be a *later* one: it refers back to something an earlier clause
-     * introduced, so it declares nothing of its own.
-     */
-    private val laterClause: Phrase<CardScript> = oneOf(
-        "a spell effect",
-        // Everything except the source-anaphora: once a clause has introduced a target, "it" means
-        // that target, and [Continuations] owns the pronoun from here on. See [SelfSteps.anaphoric].
-        (atomicClauses - SelfSteps.anaphoric.toSet()) + mayClause + conditionalClause + mayPayClauses +
-            Continuations.all,
-    )
 
     /**
      * What joins one clause to the next inside a line — a full stop, "and", or ", then".
@@ -1663,9 +1545,14 @@ object Steps {
      * separator could not read that line at all, and a join rule that was itself a clause would have
      * folded it into a *nested* composite — a model no card carries and nothing could print.
      */
-    private fun tail(separator: String, canonicalJoin: Boolean): Phrase<CardScript> {
-        val rule = phrase<CardScript>("$separator{clause}", name = "a later clause") {
-            slot("clause", laterClause)
+    private fun tail(
+        separator: String,
+        canonicalJoin: Boolean,
+        later: Phrase<CardScript>,
+        name: String,
+    ): Phrase<CardScript> {
+        val rule = phrase<CardScript>("$separator{clause}", name = name) {
+            slot("clause", later)
             build { it.value("clause") }
             match { bind("clause" to it) }
             canonical = canonicalJoin
@@ -1673,11 +1560,11 @@ object Steps {
         return if (canonicalJoin) rule else alternate(rule)
     }
 
-    private val tails: Phrase<CardScript> = oneOf(
-        "a later clause",
-        tail(". ", canonicalJoin = true),
-        tail(", then ", canonicalJoin = false),
-        tail(" and ", canonicalJoin = false),
+    private fun tailsOf(later: Phrase<CardScript>, name: String): Phrase<CardScript> = oneOf(
+        name,
+        tail(". ", canonicalJoin = true, later = later, name = name),
+        tail(", then ", canonicalJoin = false, later = later, name = name),
+        tail(" and ", canonicalJoin = false, later = later, name = name),
     )
 
     /**
@@ -1698,10 +1585,18 @@ object Steps {
      * and a model no position can print declines rather than being guessed at.
      *
      * The run's separator is the empty string because each tail carries its own; see [tail].
+     *
+     * The shape is a function rather than a rule because a line is not the only thing built out of
+     * clauses joined this way: a gate's consequence is too, and it joins a *narrower* vocabulary
+     * (see [gatedConsequence]). One shape, two members — which is when this file factors.
      */
-    private val sequenceClause: Phrase<CardScript> = phrase("{first}{rest}", name = "several clauses") {
-        slot("first", simpleClause)
-        slot("rest", separated("later clauses", tails, separator = "", min = 1))
+    private fun clauseRun(
+        first: Phrase<CardScript>,
+        later: Phrase<CardScript>,
+        name: String,
+    ): Phrase<CardScript> = phrase("{first}{rest}", name = name) {
+        slot("first", first)
+        slot("rest", separated(name, tailsOf(later, name), separator = "", min = 1))
         build { merge(listOf(it.value<CardScript>("first")) + it.value<List<CardScript>>("rest")) }
         match { script ->
             val composite = script.spellEffect as? CompositeEffect ?: return@match null
@@ -1709,11 +1604,18 @@ object Steps {
             if (composite != CompositeEffect(composite.effects)) return@match null
             val owner = composite.effects.indices.firstOrNull { index ->
                 val candidate = clauseParts(composite.effects, script.targetRequirements, index)
-                merge(candidate) == script && printable(candidate)
+                merge(candidate) == script && printable(candidate, first, later)
             } ?: return@match null
             val parts = clauseParts(composite.effects, script.targetRequirements, owner)
             bind("first" to parts.first(), "rest" to parts.drop(1))
         }
+    }
+
+    /** Re-wrap a clause's effect, keeping the targets it declared. Shared by the two wrappers. */
+    private fun wrap(inner: CardScript, wrapper: (Effect) -> Effect): CardScript? {
+        val effect = inner.spellEffect ?: return null
+        if (inner != CardScript(spellEffect = effect, targetRequirements = inner.targetRequirements)) return null
+        return CardScript(spellEffect = wrapper(effect), targetRequirements = inner.targetRequirements)
     }
 
     /** The line's clauses, with the whole line's requirements attached to clause [owner]. */
@@ -1729,18 +1631,11 @@ object Steps {
     }
 
     /** True when every clause of a split can be printed from the position it sits in. */
-    private fun printable(parts: List<CardScript>): Boolean =
-        simpleClause.unparse(parts.first()) != null && parts.drop(1).all { laterClause.unparse(it) != null }
-
-    /** Everything one clause position can hold. */
-    private val clause: Phrase<CardScript> = oneOf("a spell effect", simpleClause, sequenceClause)
-
-    /** One clause and the stop that ends it — what a whole effect line is. */
-    private val sentence: Phrase<CardScript> = phrase("{clause}.", name = "a sentence") {
-        slot("clause", clause)
-        build { it.value("clause") }
-        match { bind("clause" to it) }
-    }
+    private fun printable(
+        parts: List<CardScript>,
+        first: Phrase<CardScript>,
+        later: Phrase<CardScript>,
+    ): Boolean = first.unparse(parts.first()) != null && parts.drop(1).all { later.unparse(it) != null }
 
     /**
      * Fold clause scripts into the one script the line denotes, or null when they cannot be one.
@@ -1772,14 +1667,221 @@ object Steps {
     }
 
     /**
-     * What a spell's whole effect text denotes: one sentence, or a clause that ends itself.
+     * The whole clause cascade — atoms, the wrappers, the joins, the sentence — over **one** anaphor
+     * vocabulary.
      *
-     * [sentence] spells the full stop, which is right for every clause whose text ends on one. A
-     * clause ending *inside a quotation* does not — "…gains "This creature can't attack …."" closes
-     * on a quote mark — so those are offered beside it rather than inside it, and the two are
-     * disjoint by their last character.
+     * A class rather than a run of `val`s because there are two instances of it and they differ in
+     * exactly one place: what "it" points at. See [SelfSteps] for why a filtered trigger reads the
+     * pronoun as the object its filter matched, and why registering both readings in one cascade
+     * would be two models for one text rather than a choice. Everything above this line — every
+     * atom, every leaf, every filter — is shared between the two; only the ~dozen combinators here
+     * are built twice.
+     *
+     * @param tag suffixes the rule names so an ambiguity diagnostic can say which cascade it found.
      */
-    val step: Phrase<CardScript> = oneOf("a spell effect line", listOf(sentence) + Combat.selfTerminatingClauses)
+    private class Cascade(anaphora: List<Phrase<CardScript>>, val tag: String) {
+
+        /**
+         * The atoms alone, for the rules that wrap or join clauses without being one.
+         *
+         * Declared before everything built from it — initializers run in declaration order, and a
+         * `val` reaching a later one reads a null out of a half-initialized instance.
+         */
+        private val atom: Phrase<CardScript> = oneOf("a spell effect$tag", nonAnaphoric + anaphora)
+
+        /**
+         * The clauses a *gate's consequence* can be made of — atoms and [Continuations], joined.
+         *
+         * Deliberately narrower than [laterClause]: no gate wrapper is a member, so a consequence
+         * can never contain a second gate. That is what makes the scope unambiguous. "You may pay
+         * {B}. If you do, target player loses 2 life and you gain 2 life." has exactly one reading
+         * — the gate owns the whole sentence — because the outer run cannot split at " and " (a
+         * gate is not a member of [simpleClause] or [laterClause]) and this run cannot open a
+         * second gate. Registering a gate in both places would give one text two models, which is
+         * the hard ambiguity the design says never to resolve by ordering an alternation.
+         *
+         * This is also the reading Oracle templating intends: "If you do," introduces the
+         * *consequence* of the payment, and Extort's own reminder text is the worked example — "you
+         * may pay {W/B}. If you do, each opponent loses 1 life and you gain that much life." —
+         * where both halves of the join plainly depend on the payment.
+         */
+        private val laterAtom: Phrase<CardScript> = oneOf(
+            "a later spell effect$tag",
+            nonAnaphoric + Continuations.all,
+        )
+
+        private val gatedConsequence: Phrase<CardScript> = oneOf(
+            "a gated consequence$tag",
+            atom,
+            clauseRun(atom, laterAtom, name = "several gated clauses$tag"),
+        )
+
+        /**
+         * "You may draw a card." — the controller chooses whether the clause happens.
+         *
+         * Wrapping rather than a vocabulary of its own, so every clause the grammar can read is
+         * optional-able for free. Note that a *triggered* ability spells the same English with its
+         * own `optional` flag instead; [Triggers] lowers this wrapper into that field, which is
+         * what keeps one printed form for the two SDK spellings.
+         */
+        private val mayClause: Phrase<CardScript> = phrase("you may {inner}", name = "you may$tag") {
+            slot("inner", atom)
+            build { bindings -> wrap(bindings.value("inner")) { MayEffect(it) } }
+            match { script ->
+                val gated = script.spellEffect as? GatedEffect ?: return@match null
+                if (gated.gate !is Gate.MayDecide) return@match null
+                val inner = CardScript(spellEffect = gated.then, targetRequirements = script.targetRequirements)
+                if (wrap(inner) { MayEffect(it) } != script) return@match null
+                bind("inner" to inner)
+            }
+        }
+
+        /**
+         * "You may pay {B}{B}{B}. If you do, return it to your hand." — Ghastly Remains, Skirk
+         * Drill Sergeant, and Hollow Specter's `{X}` sibling.
+         *
+         * Two printed sentences and one wrapper, because the second is the *consequence* of the
+         * first: `Gate.MayPay` holds both the cost and what follows, so there is nothing for
+         * [sequenceClause] to split. A wrapper for the same reason [mayClause] is one — every
+         * clause the grammar can read becomes payable-for at no cost.
+         *
+         * The `{X}` form is a separate rule rather than a mana cost that happens to be `{X}`: the
+         * model is a different gate, because the player chooses the number rather than paying a
+         * printed one. The printed symbol is the same either way, so the mana rule **refuses `{X}`
+         * outright** — without that, Decree of Justice's cycling trigger has two readings with two
+         * different models, which is the hard ambiguity the design says never to resolve by
+         * ordering an alternation.
+         */
+        private val payX: ManaCost = ManaCost.parse("{X}")
+
+        private val mayPayClauses: List<Phrase<CardScript>> = listOf(
+            phrase("you may pay {cost}. if you do, {inner}", name = "you may pay a cost$tag") {
+                slot("cost", Primitives.manaCost)
+                slot("inner", gatedConsequence)
+                build { bindings ->
+                    val cost = bindings.value<ManaCost>("cost")
+                    if (cost == payX) return@build null
+                    wrap(bindings.value("inner")) { MayPayManaEffect(cost, it) }
+                }
+                match { script ->
+                    val gated = script.spellEffect as? GatedEffect ?: return@match null
+                    val gate = gated.gate as? Gate.MayPay ?: return@match null
+                    val cost = (gate.cost as? PayManaCostEffect)?.cost ?: return@match null
+                    if (cost == payX) return@match null
+                    val inner = CardScript(spellEffect = gated.then, targetRequirements = script.targetRequirements)
+                    if (wrap(inner) { MayPayManaEffect(cost, it) } != script) return@match null
+                    bind("cost" to cost, "inner" to inner)
+                }
+            },
+            phrase("you may pay {X}. if you do, {inner}", name = "you may pay X$tag") {
+                slot("inner", gatedConsequence)
+                build { bindings -> wrap(bindings.value("inner")) { MayPayXForEffect(it) } }
+                match { script ->
+                    val gated = script.spellEffect as? GatedEffect ?: return@match null
+                    if (gated.gate !is Gate.MayPayX) return@match null
+                    val inner = CardScript(spellEffect = gated.then, targetRequirements = script.targetRequirements)
+                    if (wrap(inner) { MayPayXForEffect(it) } != script) return@match null
+                    bind("inner" to inner)
+                }
+            },
+        )
+
+        /**
+         * "If an opponent controls more lands than you, search your library for …" — Gift of
+         * Estates.
+         *
+         * The SDK lowers a spell's `condition` into a `ConditionalEffect` wrapping the whole
+         * effect, so this is a wrapper for the same reason [mayClause] is one, and the condition is
+         * the slot. The condition vocabulary is [Conditions]; it has two members, which is what a
+         * condition family looks like the first time cards need one.
+         */
+        private val conditionalClause: Phrase<CardScript> =
+            phrase("if {cond}, {inner}", name = "a conditional clause$tag") {
+                slot("cond", Conditions.condition)
+                slot("inner", atom)
+                build { bindings ->
+                    val condition = bindings.value<Condition>("cond")
+                    wrap(bindings.value("inner")) { ConditionalEffect(condition, it) }
+                }
+                match { script ->
+                    val gated = script.spellEffect as? GatedEffect ?: return@match null
+                    val gate = gated.gate as? Gate.WhenCondition ?: return@match null
+                    val inner = CardScript(spellEffect = gated.then, targetRequirements = script.targetRequirements)
+                    if (wrap(inner) { ConditionalEffect(gate.condition, it) } != script) return@match null
+                    bind("cond" to gate.condition, "inner" to inner)
+                }
+            }
+
+        /**
+         * One self-contained clause: an atom, or an atom under a wrapper.
+         *
+         * The **pay-gates are not members**, and that omission is the rule that fixes their scope.
+         * A clause that can start a run can also be followed by a tail, and a gate that could be
+         * followed by a tail would read "You may pay {B}. If you do, A and B." two ways — the gate
+         * over `A` with `B` joined after it, or the gate over both. See [gatedConsequence]; the
+         * gates are offered at [clause] instead, where the sentence's full stop is the only thing
+         * that can follow them.
+         */
+        private val simpleClause: Phrase<CardScript> =
+            oneOf("a spell effect$tag", nonAnaphoric + anaphora + mayClause + conditionalClause)
+
+        /**
+         * A clause that can only be a *later* one: it refers back to something an earlier clause
+         * introduced, so it declares nothing of its own.
+         */
+        private val laterClause: Phrase<CardScript> = oneOf(
+            "a later spell effect$tag",
+            // Everything except the source-anaphora: once a clause has introduced a target, "it" means
+            // that target, and [Continuations] owns the pronoun from here on. See [SelfSteps.anaphoric].
+            nonAnaphoric + mayClause + conditionalClause + Continuations.all,
+        )
+
+        /** A whole line's clauses, joined. The shape and its KDoc are [clauseRun]. */
+        private val sequenceClause: Phrase<CardScript> =
+            clauseRun(simpleClause, laterClause, name = "several clauses$tag")
+
+        /**
+         * Everything one clause position can hold.
+         *
+         * The pay-gates sit here rather than in [simpleClause] because they are sentence-terminal:
+         * their consequence runs to the end of the sentence, so nothing can be joined after one.
+         * See [gatedConsequence].
+         */
+        private val clause: Phrase<CardScript> =
+            oneOf("a clause position$tag", listOf(simpleClause, sequenceClause) + mayPayClauses)
+
+        /** One clause and the stop that ends it — what a whole effect line is. */
+        private val sentence: Phrase<CardScript> = phrase("{clause}.", name = "a sentence$tag") {
+            slot("clause", clause)
+            build { it.value("clause") }
+            match { bind("clause" to it) }
+        }
+
+        /**
+         * What a spell's whole effect text denotes: one sentence, or a clause that ends itself.
+         *
+         * [sentence] spells the full stop, which is right for every clause whose text ends on one.
+         * A clause ending *inside a quotation* does not — "…gains "This creature can't attack ….""
+         * closes on a quote mark — so those are offered beside it rather than inside it, and the
+         * two are disjoint by their last character.
+         */
+        val step: Phrase<CardScript> =
+            oneOf("a spell effect line$tag", listOf(sentence) + Combat.selfTerminatingClauses)
+    }
+
+    private val sourceCascade = Cascade(SelfSteps.anaphoric, tag = "")
+
+    /** The cascade a filtered trigger's effect takes; see [SelfSteps.triggering]. */
+    private val triggeredCascade = Cascade(SelfSteps.triggering, tag = " in a filtered trigger")
+
+    val step: Phrase<CardScript> = sourceCascade.step
+
+    /**
+     * The same vocabulary for a trigger whose event names a filter, where "it" is the object that
+     * matched rather than the source. [Triggers.filteredTriggerRule] is the only caller, which is
+     * what keeps the third anaphor unreachable from every other position.
+     */
+    val triggeredStep: Phrase<CardScript> = triggeredCascade.step
 
     // ---------------------------------------------------------------------------------------
     // Model helpers — the `match` side, kept out of the rules so like rules read alike

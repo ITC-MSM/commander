@@ -4,6 +4,7 @@ import com.wingedsheep.engine.state.components.battlefield.chosenCreatureType
 import com.wingedsheep.engine.state.components.battlefield.chosenColor
 import com.wingedsheep.engine.state.components.battlefield.CastChoicesComponent
 import com.wingedsheep.engine.state.components.battlefield.ChoiceValue
+import com.wingedsheep.engine.handlers.predicates.receivedCounterThisTurn
 import com.wingedsheep.engine.mechanics.layers.ProjectedState
 import com.wingedsheep.engine.mechanics.layers.ProjectedValues
 import com.wingedsheep.engine.state.GameState
@@ -1119,6 +1120,14 @@ class PredicateEvaluator {
      * to resolve player-scoped amounts against (e.g. legal-action enumeration with no context), so
      * the predicate fails closed rather than treating the cap as 0 and silently matching only
      * mana-value-0 cards.
+     *
+     * [PredicateContext.lastKnownSourceSnapshot] is carried onto the reconstructed context so a
+     * source-relative amount keeps reading last-known information after the source has left the
+     * battlefield (CR 608.2h / 113.7a). [DynamicAmountEvaluator] already owns that rule for every
+     * [com.wingedsheep.engine.handlers.effects.LkiPolicy.LIVE_THEN_LKI] reference; without the
+     * snapshot threaded through, its LKI branch found nothing here and fell through to base
+     * characteristics — a pending "copy your next spell" rider capped on its dead source's power
+     * read the printed value instead of the pumped one.
      */
     private fun evaluateDynamicCap(
         state: GameState,
@@ -1130,6 +1139,7 @@ class PredicateEvaluator {
             sourceId = context.sourceId,
             controllerId = controllerId,
             xValue = context.xValue,
+            lastKnownSourceSnapshot = context.lastKnownSourceSnapshot,
         )
         return DynamicAmountEvaluator().evaluate(state, amount, effectContext)
     }
@@ -1317,6 +1327,13 @@ class PredicateEvaluator {
             StatePredicate.EnteredThisTurn -> {
                 container.has<EnteredThisTurnComponent>()
             }
+
+            // Counter history — "one or more counters were put on it this turn", optionally scoped
+            // to a kind and to placements by the permanent's own controller. Reads the per-turn
+            // marker rather than the live counters, so it survives their removal. Also the engine
+            // side of Conditions.SourceReceivedCounterThisTurn (SourceMatches over this predicate).
+            is StatePredicate.ReceivedCounterThisTurn ->
+                receivedCounterThisTurn(container, predicate)
 
             // Damage state
             StatePredicate.WasDealtDamageThisTurn -> {
@@ -1872,7 +1889,18 @@ data class PredicateContext(
      * filter. Read by [CardPredicate.SharesColorWithRecipient] so a source filter can be
      * relative to what's being damaged (Well-Laid Plans).
      */
-    val recipientId: EntityId? = null
+    val recipientId: EntityId? = null,
+    /**
+     * Last-known information for [sourceId] when the source has left the battlefield, threaded into
+     * the [EffectContext] that [PredicateEvaluator.evaluateDynamicCap] reconstructs so a
+     * source-relative [DynamicAmount] cap resolves against the characteristics the source last had
+     * (CR 608.2h / 113.7a) instead of falling through to its base characteristics.
+     *
+     * Null while the source is still on the battlefield — the evaluator's LKI branch only engages
+     * for an entity that is not in `state.getBattlefield()`, so a live source keeps reading
+     * projected state and a stale snapshot could not shadow it either way.
+     */
+    val lastKnownSourceSnapshot: EntitySnapshot? = null
 ) {
     /**
      * Resolve an [EffectTarget] reference to a concrete player [EntityId].

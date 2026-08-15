@@ -429,7 +429,7 @@ object Library {
             match { script ->
                 val steps = (script.spellEffect as? CompositeEffect)?.effects ?: return@match null
                 val select = steps.getOrNull(1) as? SelectFromCollectionEffect ?: return@match null
-                val filter = select.filter ?: return@match null
+                val filter = select.filter
                 if (script != scriptFor(filter)) return@match null
                 bind("filter" to filter)
             }

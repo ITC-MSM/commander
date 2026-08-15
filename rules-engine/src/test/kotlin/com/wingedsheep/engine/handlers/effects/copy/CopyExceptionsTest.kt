@@ -15,8 +15,8 @@ import com.wingedsheep.sdk.scripting.effects.CreateTokenCopyOfSourceEffect
 import com.wingedsheep.sdk.scripting.effects.CreateTokenCopyOfTargetEffect
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import io.kotest.core.spec.style.FunSpec
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.shouldNotBe
 
 /**
  * Mechanic-level test for **copy exceptions** (CR 707.9b) — the shared `CopyExceptions` vocabulary
@@ -148,9 +148,9 @@ class CopyExceptionsTest : FunSpec({
             plainArtifact(),
             CopyExceptions(powerOverride = 4, toughnessOverride = 4),
         )
-        result.baseStats shouldNotBe null
-        result.baseStats!!.power shouldBe CharacteristicValue.Fixed(4)
-        result.baseStats!!.toughness shouldBe CharacteristicValue.Fixed(4)
+        val stats = result.baseStats.shouldNotBeNull()
+        stats.power shouldBe CharacteristicValue.Fixed(4)
+        stats.toughness shouldBe CharacteristicValue.Fixed(4)
     }
 
     test("a half-specified P/T override keeps the copied value on the other half") {
@@ -158,8 +158,9 @@ class CopyExceptionsTest : FunSpec({
             legendaryArtifactBear(),
             CopyExceptions(powerOverride = 7),
         )
-        result.baseStats!!.power shouldBe CharacteristicValue.Fixed(7)
-        result.baseStats!!.toughness shouldBe CharacteristicValue.Fixed(2)
+        val stats = result.baseStats.shouldNotBeNull()
+        stats.power shouldBe CharacteristicValue.Fixed(7)
+        stats.toughness shouldBe CharacteristicValue.Fixed(2)
     }
 
     test("added keywords are unioned into the copy's base keywords") {

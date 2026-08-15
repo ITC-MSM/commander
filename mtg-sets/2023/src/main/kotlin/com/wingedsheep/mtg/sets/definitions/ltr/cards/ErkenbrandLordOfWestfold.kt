@@ -26,7 +26,7 @@ val ErkenbrandLordOfWestfold = card("Erkenbrand, Lord of Westfold") {
 
     triggeredAbility {
         trigger = Triggers.entersBattlefield(
-            filter = GameObjectFilter.Creature.youControl().withSubtype("Human"),
+            filter = GameObjectFilter.Permanent.youControl().withSubtype("Human"),
             binding = TriggerBinding.ANY
         )
         effect = Patterns.Group.modifyStatsForAll(

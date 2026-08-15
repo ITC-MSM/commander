@@ -30,7 +30,7 @@ val DawnhartDisciple = card("Dawnhart Disciple") {
     toughness = 2
     triggeredAbility {
         trigger = Triggers.entersBattlefield(
-            filter = GameObjectFilter.Creature.withSubtype(Subtype.HUMAN).youControl(),
+            filter = GameObjectFilter.Permanent.withSubtype(Subtype.HUMAN).youControl(),
             binding = TriggerBinding.OTHER
         )
         effect = Effects.ModifyStats(1, 1, EffectTarget.Self)

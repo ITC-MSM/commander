@@ -31,7 +31,7 @@ val SeasideHaven = card("Seaside Haven") {
         cost = Costs.Composite(
             Costs.Mana("{W}{U}"),
             Costs.Tap,
-            Costs.Sacrifice(GameObjectFilter.Creature.withSubtype("Bird"))
+            Costs.Sacrifice(GameObjectFilter.Permanent.withSubtype("Bird"))
         )
         effect = Effects.DrawCards(1)
     }

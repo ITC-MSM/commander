@@ -30,7 +30,7 @@ val RiptideDirector = card("Riptide Director") {
             Costs.Tap
         )
         effect = Effects.DrawCards(
-            DynamicAmounts.battlefield(Player.You, GameObjectFilter.Creature.withSubtype(Subtype.WIZARD)).count()
+            DynamicAmounts.battlefield(Player.You, GameObjectFilter.Permanent.withSubtype(Subtype.WIZARD)).count()
         )
     }
 

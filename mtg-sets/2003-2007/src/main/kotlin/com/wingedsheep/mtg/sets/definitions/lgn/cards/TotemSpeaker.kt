@@ -28,7 +28,7 @@ val TotemSpeaker = card("Totem Speaker") {
     triggeredAbility {
         trigger = TriggerSpec(
             event = ZoneChangeEvent(
-                filter = GameObjectFilter.Creature.withSubtype(Subtype.BEAST),
+                filter = GameObjectFilter.Permanent.withSubtype(Subtype.BEAST),
                 to = Zone.BATTLEFIELD
             ),
             binding = TriggerBinding.ANY

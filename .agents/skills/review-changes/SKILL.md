@@ -116,7 +116,7 @@ scaffolding the earlier set is out of scope.
 
 - **Projected vs base state** (`docs/architecture-principles.md` §2.3). Battlefield reads
   of type/subtype/color/keywords/P/T/controller MUST go through projection
-  (`predicateEvaluator.matchesWithProjection`, `projected.getSubtypes`,
+  (`predicateEvaluator.matches(state, projected, …)`, `projected.getSubtypes`,
   `projected.isCreature`, `state.projectedState.getController`). Flag base
   `ControllerComponent` or `cardComponent.typeLine.isCreature` on battlefield permanents.
 - **Layer 613.8.** New continuous-effect families: dependency-by-trial-application must

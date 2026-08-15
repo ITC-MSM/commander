@@ -220,35 +220,44 @@ object Filters {
         }
 
     /**
-     * "Slivers", "a Goblin", "target Sliver" — the subtype standing alone, with "creature" implied.
+     * "Slivers", "a Goblin", "target Sliver" — the subtype standing alone.
      *
-     * It denotes exactly what "Sliver creature" denotes, so registering it as a canonical rule would
-     * leave printing underdetermined between two real English spellings of one value. It is
-     * therefore an [alternate]: cards printing the bare noun read correctly and print back as the
-     * adjective form, which is a `VARIANT` — the reading was right and only the spelling moved.
+     * **It builds `Permanent`, not `Creature`, and that is the rules' reading rather than a
+     * convenience.** A bare creature-type noun names every *permanent* with the subtype; the
+     * adjectival "Sliver creature" is what narrows it to creatures. Zombie Master is the card that
+     * proves the distinction is deliberate rather than stylistic: its first line says "Other Zombie
+     * **creatures** have swampwalk" and its second says "Other **Zombies** have …", and the ability
+     * that second line grants is spelled "Regenerate this **permanent**".
+     *
+     * It denotes what "Sliver permanent" denotes, so registering it as a canonical rule would leave
+     * printing underdetermined between two real English spellings of one value. It is therefore an
+     * [alternate]: cards printing the bare noun read correctly and print back as the adjective form,
+     * which is a `VARIANT` — the reading was right and only the spelling moved.
      *
      * Unlike [subtyped] this leaf **is** ranked against the SDK's creature-type list, because here
-     * the word alone has to imply the card type. "Sliver" implying `Creature` is a guess, and a
-     * guess about a word the SDK does not name would be the reversible-but-wrong class:
-     * "target Scion" would read as a creature type nothing in Magic has.
+     * the word alone has to imply a type. A guess about a word the SDK does not name would be the
+     * reversible-but-wrong class: "target Scion" would read as a creature type nothing in Magic has.
      *
-     * **`Creature` rather than `Permanent`, and that is an approximation with a measured price.**
-     * A bare creature-type noun means every *permanent* with the subtype, which is why Zombie
-     * Master's second line says "Other **Zombies** have …" where its first says "Other Zombie
-     * **creatures** have …" — the wording is deliberate and its granted ability says "Regenerate
-     * this permanent". Building `Permanent.withSubtype` is therefore the reading the rules give.
-     * It was tried: the differential went from 45 divergences to 127, because 80-odd hand-written
-     * cards spell the bare noun as `Creature.withSubtype` and for all of them — every one a
-     * power/toughness or keyword grant, where only creatures can be affected anyway — the two
-     * filters do the same thing. So the majority reading stays, the price is that a card where the
-     * distinction *is* observable diverges, and Zombie Master is the one card in the corpus that
-     * does. It is recorded here rather than silenced, which is what a classified divergence means.
+     * ### History, because the measurement is the interesting part
+     *
+     * This read `Creature` for a long time, and the differential is what closed it. Flipping the
+     * line alone took the count from 2 divergences to **104** — 103 hand-written cards spelled the
+     * bare noun as a creature filter, and for nearly all of them the two select the same permanents,
+     * which is exactly why it survived review for so long. The flip was therefore reverted twice
+     * before it landed *with* its card migration, in that order: the cards first, then this line,
+     * with the differential as the check at every step. Flipping first would have left 103
+     * unexplained divergences, which is the gate lying about which side is wrong.
+     *
+     * The migration also named three gaps in the SDK's own vocabulary, each now a facade beside its
+     * creature-scoped twin: `DynamicAmounts.permanentsWithSubtype`,
+     * `Conditions.ControlPermanentOfType`, and `TargetFilter.PermanentInYourGraveyard`. That a
+     * bare-noun reading had no way to be *written* is the finding this module exists to produce.
      */
     private fun bareSubtype(plural: Boolean, name: String): Phrase<GameObjectFilter> =
         alternate(
             phrase<GameObjectFilter>("{subtype}", name = name) {
                 slot("subtype", if (plural) Primitives.pluralCreatureSubtype else Primitives.creatureSubtype)
-                build { GameObjectFilter.Creature.withSubtype(it.value<Subtype>("subtype")) }
+                build { GameObjectFilter.Permanent.withSubtype(it.value<Subtype>("subtype")) }
                 canonical = false
             }
         )

@@ -29,7 +29,7 @@ val BoldwyrAggressor = card("Boldwyr Aggressor") {
     staticAbility {
         ability = GrantKeyword(
             keyword = Keyword.DOUBLE_STRIKE,
-            filter = GroupFilter.AllCreaturesYouControl.withSubtype(Subtype.GIANT).other()
+            filter = GroupFilter.AllPermanentsYouControl.withSubtype(Subtype.GIANT).other()
         )
     }
 

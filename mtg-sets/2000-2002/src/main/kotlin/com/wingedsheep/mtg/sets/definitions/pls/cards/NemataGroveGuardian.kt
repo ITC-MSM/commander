@@ -40,7 +40,7 @@ val NemataGroveGuardian = card("Nemata, Grove Guardian") {
         )
     }
     activatedAbility {
-        cost = Costs.Sacrifice(GameObjectFilter.Creature.withSubtype("Saproling"))
+        cost = Costs.Sacrifice(GameObjectFilter.Permanent.withSubtype("Saproling"))
         effect = Effects.ForEachInGroup(
             GroupFilter(GameObjectFilter.Creature.withSubtype(Subtype.SAPROLING)),
             Effects.ModifyStats(1, 1, EffectTarget.Self)

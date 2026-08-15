@@ -82,11 +82,13 @@ class DoubleCountersExecutor : EffectExecutor<DoubleCountersEffect> {
                     firstThisTurn, placedBy = context.controllerId
                 )
             )
+            // Marked per kind, inside the loop, because the counter-history marker records which
+            // kinds landed: doubling +1/+1 counters must satisfy "you've put one or more +1/+1
+            // counters on it this turn" (Kid Loki), which a kind-less mark could not.
+            newState = DamageUtils.markCounterPlacedOnCreature(
+                newState, context.controllerId, targetId, counterTypeToString(counterType)
+            )
             firstThisTurn = false
-        }
-
-        if (events.isNotEmpty()) {
-            newState = DamageUtils.markCounterPlacedOnCreature(newState, context.controllerId, targetId)
         }
 
         return EffectResult.success(newState, events)

@@ -23,7 +23,7 @@ val RavenousBaloth = card("Ravenous Baloth") {
     oracleText = "Sacrifice a Beast: You gain 4 life."
 
     activatedAbility {
-        cost = Costs.Sacrifice(GameObjectFilter.Creature.withSubtype("Beast"))
+        cost = Costs.Sacrifice(GameObjectFilter.Permanent.withSubtype("Beast"))
         effect = GainLifeEffect(4)
     }
 

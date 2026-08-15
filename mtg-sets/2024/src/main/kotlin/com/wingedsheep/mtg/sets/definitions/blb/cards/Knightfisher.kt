@@ -38,7 +38,7 @@ val Knightfisher = card("Knightfisher") {
             event = ZoneChangeEvent(
                 filter = GameObjectFilter(
                     cardPredicates = listOf(
-                        CardPredicate.IsCreature,
+                        CardPredicate.IsPermanent,
                         CardPredicate.HasSubtype(Subtype("Bird")),
                         CardPredicate.IsNontoken
                     ),

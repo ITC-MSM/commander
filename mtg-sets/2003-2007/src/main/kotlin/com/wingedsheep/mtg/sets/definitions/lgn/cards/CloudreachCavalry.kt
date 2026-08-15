@@ -26,12 +26,12 @@ val CloudreachCavalry = card("Cloudreach Cavalry") {
 
     staticAbility {
         ability = ModifyStats(2, 2, GroupFilter.source())
-        condition = Conditions.ControlCreatureOfType(Subtype("Bird"))
+        condition = Conditions.ControlPermanentOfType(Subtype("Bird"))
     }
 
     staticAbility {
         ability = GrantKeyword(Keyword.FLYING, GroupFilter.source())
-        condition = Conditions.ControlCreatureOfType(Subtype("Bird"))
+        condition = Conditions.ControlPermanentOfType(Subtype("Bird"))
     }
 
     metadata {

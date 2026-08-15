@@ -652,7 +652,7 @@
                     {
                         "type": "TargetObject",
                         "filter": {
-                            "baseFilter": "creature Kavu"
+                            "baseFilter": "permanent Kavu"
                         },
                         "id": "target"
                     }

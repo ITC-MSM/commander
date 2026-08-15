@@ -230,6 +230,16 @@ class CreateTokenExecutor(
             }
             if (effect.initialCounters.isNotEmpty()) {
                 var counters = CountersComponent()
+                // A token created "with a +1/+1 counter on it" is given those counters as it
+                // enters, which CR 122.6 counts as counters being *put on* it, and CR 122.6a makes
+                // its controller the player putting them there. Stamp the same per-permanent
+                // history marker the ordinary placement paths do, so counter-history readings
+                // (Kid Loki's "you've put one or more +1/+1 counters on this turn") see the token
+                // and so a later placement on it reports firstThisTurn = false. No
+                // CountersAddedEvent is emitted: the counters arrive as part of the token's
+                // creation, not as a separate placement event.
+                var history = com.wingedsheep.engine.state.components.battlefield
+                    .ReceivedCountersThisTurnComponent()
                 for ((counterTypeStr, amount) in effect.initialCounters) {
                     val counterType = try {
                         CounterType.valueOf(
@@ -243,8 +253,16 @@ class CreateTokenExecutor(
                         CounterType.PLUS_ONE_PLUS_ONE
                     }
                     counters = counters.withAdded(counterType, amount)
+                    if (amount > 0) {
+                        history = history.with(
+                            com.wingedsheep.engine.handlers.effects.permanent.counters
+                                .counterTypeToString(counterType),
+                            byController = true,
+                        )
+                    }
                 }
                 container = container.with(counters)
+                if (history.counterTypes.isNotEmpty()) container = container.with(history)
             }
 
             newState = newState.withEntity(tokenId, container)

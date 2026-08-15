@@ -27,8 +27,8 @@ val VileDeacon = card("Vile Deacon") {
     triggeredAbility {
         trigger = Triggers.Attacks
         effect = Effects.ModifyStats(
-            power = DynamicAmount.AggregateBattlefield(Player.Each, GameObjectFilter.Creature.withSubtype("Cleric")),
-            toughness = DynamicAmount.AggregateBattlefield(Player.Each, GameObjectFilter.Creature.withSubtype("Cleric")),
+            power = DynamicAmount.AggregateBattlefield(Player.Each, GameObjectFilter.Permanent.withSubtype("Cleric")),
+            toughness = DynamicAmount.AggregateBattlefield(Player.Each, GameObjectFilter.Permanent.withSubtype("Cleric")),
             target = EffectTarget.Self
         )
     }

@@ -28,7 +28,7 @@ val CryptSliver = card("Crypt Sliver") {
     toughness = 1
     oracleText = "All Slivers have \"{T}: Regenerate target Sliver.\""
 
-    val sliverFilter = GroupFilter(GameObjectFilter.Creature.withSubtype("Sliver"))
+    val sliverFilter = GroupFilter(GameObjectFilter.Permanent.withSubtype("Sliver"))
 
     staticAbility {
         ability = GrantActivatedAbility(
@@ -37,7 +37,7 @@ val CryptSliver = card("Crypt Sliver") {
                 cost = Costs.Tap,
                 effect = RegenerateEffect(EffectTarget.ContextTarget(0)),
                 targetRequirement = TargetCreature(
-                    filter = TargetFilter(GameObjectFilter.Creature.withSubtype("Sliver"))
+                    filter = TargetFilter(GameObjectFilter.Permanent.withSubtype("Sliver"))
                 )
             ),
             filter = sliverFilter

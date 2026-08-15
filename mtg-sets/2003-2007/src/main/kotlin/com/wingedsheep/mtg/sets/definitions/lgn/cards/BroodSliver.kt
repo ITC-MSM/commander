@@ -26,7 +26,7 @@ val BroodSliver = card("Brood Sliver") {
     toughness = 3
     oracleText = "Whenever a Sliver deals combat damage to a player, its controller may create a 1/1 colorless Sliver creature token."
 
-    val sliverFilter = GroupFilter(GameObjectFilter.Creature.withSubtype("Sliver"))
+    val sliverFilter = GroupFilter(GameObjectFilter.Permanent.withSubtype("Sliver"))
 
     staticAbility {
         ability = GrantTriggeredAbility(

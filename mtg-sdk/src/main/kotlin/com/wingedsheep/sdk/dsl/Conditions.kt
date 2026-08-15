@@ -90,12 +90,20 @@ object Conditions {
      * to counters *you* put on — Beast, Erudite Aerialist ("as long as you've put one or more +1/+1
      * counters on Beast this turn") needs both:
      * `SourceReceivedCounterThisTurn(Counters.PLUS_ONE_PLUS_ONE, placedByYou = true)`.
+     *
+     * The self-scoped view of the general [StatePredicate.ReceivedCounterThisTurn]: this is
+     * [SourceMatches] over that predicate, so the source-scoped and filter-scoped readings ("each
+     * creature you control that you've put …" — Kid Loki) share one evaluator instead of running
+     * as parallel paths.
      */
     fun SourceReceivedCounterThisTurn(
         counterType: String? = null,
         placedByYou: Boolean = false
     ): ConditionInterface =
-        com.wingedsheep.sdk.scripting.conditions.SourceReceivedCounterThisTurn(counterType, placedByYou)
+        SourceMatches(
+            com.wingedsheep.sdk.scripting.GameObjectFilter.Any
+                .receivedCounterThisTurn(counterType, placedByYou)
+        )
 
     /**
      * If a permanent entered the battlefield face down under your control this turn (Duskmourn —
@@ -420,6 +428,16 @@ object Conditions {
      */
     fun ControlCreatureOfType(subtype: Subtype): ConditionInterface =
         Exists(Player.You, Zone.BATTLEFIELD, GameObjectFilter.Creature.withSubtype(subtype))
+
+    /**
+     * If you control a *permanent* of a specific type — what "if you control a **Rabbit**" asks.
+     *
+     * The bare tribal noun means any permanent with the subtype, not only a creature with it;
+     * [ControlCreatureOfType] is the counterpart for the adjectival "a Rabbit creature". Two
+     * facades because Oracle spells the two differently and means two different things.
+     */
+    fun ControlPermanentOfType(subtype: Subtype): ConditionInterface =
+        Exists(Player.You, Zone.BATTLEFIELD, GameObjectFilter.Permanent.withSubtype(subtype))
 
     /**
      * If a player controls more creatures of the given subtype than each other player.

@@ -249,7 +249,7 @@
                 "powerBonus": 1,
                 "toughnessBonus": 0,
                 "filter": {
-                    "baseFilter": "creature Zombie ctrl:you",
+                    "baseFilter": "permanent Zombie ctrl:you",
                     "excludeSelf": true
                 }
             }

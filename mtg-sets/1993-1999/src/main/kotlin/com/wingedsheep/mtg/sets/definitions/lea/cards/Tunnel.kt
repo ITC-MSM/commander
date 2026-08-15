@@ -21,7 +21,7 @@ val Tunnel = card("Tunnel") {
     typeLine = "Instant"
     oracleText = "Destroy target Wall. It can't be regenerated."
     spell {
-        val t = target("target", TargetCreature(filter = TargetFilter(GameObjectFilter.Creature.withSubtype("Wall"))))
+        val t = target("target", TargetCreature(filter = TargetFilter(GameObjectFilter.Permanent.withSubtype("Wall"))))
         effect = Effects.Destroy(t, noRegenerate = true)
     }
     metadata {

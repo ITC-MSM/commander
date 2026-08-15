@@ -32,7 +32,7 @@ val GoblinSoothsayer = card("Goblin Soothsayer") {
         cost = Costs.Composite(
             Costs.Mana("{R}"),
             Costs.Tap,
-            Costs.Sacrifice(GameObjectFilter.Creature.withSubtype("Goblin"))
+            Costs.Sacrifice(GameObjectFilter.Permanent.withSubtype("Goblin"))
         )
         effect = Effects.ForEachInGroup(
             GroupFilter(GameObjectFilter.Creature.withColor(Color.RED)),

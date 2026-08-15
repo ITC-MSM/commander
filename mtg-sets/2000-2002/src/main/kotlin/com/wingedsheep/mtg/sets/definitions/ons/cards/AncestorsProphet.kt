@@ -22,7 +22,7 @@ val AncestorsProphet = card("Ancestor's Prophet") {
     oracleText = "Tap five untapped Clerics you control: You gain 10 life."
 
     activatedAbility {
-        cost = Costs.TapPermanents(5, GameObjectFilter.Creature.withSubtype("Cleric"))
+        cost = Costs.TapPermanents(5, GameObjectFilter.Permanent.withSubtype("Cleric"))
         effect = GainLifeEffect(10)
     }
 

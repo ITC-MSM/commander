@@ -29,7 +29,7 @@ val NoxiousGhoul = card("Noxious Ghoul") {
     triggeredAbility {
         trigger = TriggerSpec(
             event = ZoneChangeEvent(
-                filter = GameObjectFilter.Creature.withSubtype(Subtype.ZOMBIE),
+                filter = GameObjectFilter.Permanent.withSubtype(Subtype.ZOMBIE),
                 to = Zone.BATTLEFIELD
             ),
             binding = TriggerBinding.ANY

@@ -361,12 +361,11 @@ named population bucket instead and the denominator stays visible.
     Oracle text differs from golden  203
     golden would not decode            0
 
-  Confirmed — models agree           2425   997.5‰ (99.8%)
-  DIVERGENT — read every one            6
+  Confirmed — models agree           2430   999.6‰ (100.0%)
+  DIVERGENT — read every one            1
 ```
 
-Four of those six are what the **sweep** left standing, and the other two are the counters band's,
-classified in its own section above. The sweep took the count from 122 to 4: every divergence the
+The one that remains is what the **sweep** left standing. The sweep took the count from 122 to 1: every divergence the
 gate had accumulated was read, classified as parser bug / card bug / fold, and acted on. What it
 found, by kind:
 
@@ -407,14 +406,80 @@ found, by kind:
   two tests. The engine fix needs "if" and "while" separated in the SDK first, which is its own
   change with a corpus migration behind it.
 
-The four that remain are classified, not unexplained:
+The sweep's last pass closed three more, one per kind — a card bug, a scope bug and the third
+anaphor — and each is worth reading for its shape rather than its card:
+
+- **Two card bugs, `TriggerBinding.OTHER` for text that says "an artifact you control"** (Donatello,
+  Way with Machines and Mm'menon, Uthros Exile). `OTHER` claims a self-exclusion the text does not
+  make, and neither card is an artifact, so nothing observable changes *today* — which is exactly the
+  reason it survived review, and exactly what "they happen to agree today is not a reason" rules out
+  as a fold. The reading only becomes observable if the creature is ever made an artifact.
+- **Kalastria Highborn — the gate's scope stopped at the first clause.** "You may pay {B}. If you do,
+  target player loses 2 life **and** you gain 2 life." read as `Composite[Gated{LoseLife}, GainLife]`,
+  i.e. you gained the life even when you declined to pay. The outer clause-sequence rule took the
+  " and " join before the gate could. The fix is structural rather than an alternation reorder: the
+  pay-gates are **no longer members of `simpleClause`/`laterClause`**, so nothing can be joined after
+  one, and their consequence slots a clause *run* that owns the rest of the sentence. That is one
+  reading, not a preferred one — and it is what Oracle templating means, as Extort's own reminder
+  text shows ("you may pay {W/B}. If you do, each opponent loses 1 life **and** you gain that much
+  life"). The run shape is now `Steps.clauseRun`, shared by the line and the consequence.
+- **Tattered Ratter — the third anaphor, and the reversible-but-wrong class again.** "Whenever a Rat
+  you control becomes blocked, **it** gets +2/+0" pumped the *Ratter*: `Primitives.self` and
+  `SelfSteps.anaphoric` both built `EffectTarget.Self`, and the wrong reading round-tripped
+  byte-perfectly. A blanket remap inside `filteredTriggerRule` would have broken "Whenever a creature
+  dies, **~** gets +1/+1", because after parsing the two spellings are the same model — the
+  distinction only exists at parse time. So the vocabulary is written once as
+  `SelfSteps.retargetable` and *instantiated per position*: the source cascade reads both spellings as
+  the source, and the filtered-trigger cascade reads the **name** as the source and the **pronoun** as
+  `EffectTarget.TriggeringEntity`. Disjoint surfaces, disjoint models, nothing for the printer to
+  choose. `Steps.Cascade` is the shape both instances share, so `Steps.step` is not duplicated — only
+  the dozen combinators above the atoms are built twice, and every leaf is shared. 545 filtered-trigger
+  lines in the corpus spell "it" in that position; the gate's round-trips rose by 4 and its
+  alternate-spelling count fell by the same 4, which is the pronoun becoming canonical for its own
+  model.
+
+### Zombie Master, and the 103 cards behind it
+
+The last card bug the sweep closed was the longest-standing one, and it is the clearest example of
+what this gate is *for*. `Filters.bareSubtype` read a bare tribal noun ("Zombies") as a **creature**
+filter. A bare creature-type noun actually names every *permanent* with the subtype — the adjectival
+"Zombie creatures" is what narrows it — and Zombie Master proves the distinction is deliberate rather
+than stylistic by printing both spellings on one card, with the ability its bare-noun line grants
+spelled "Regenerate this **permanent**".
+
+Flipping the one `build` took the differential from 2 divergences to **104**, which is why it had
+been reverted twice before: 103 hand-written cards spelled the bare noun as a creature filter, and
+for almost all of them the two select the same permanents. That is precisely why it survived review —
+an error that is unobservable on the cards that carry it is invisible to everything except a
+differential.
+
+It landed as a card migration *first*, then the grammar line, with the differential as the check at
+every step: 104 → 26 → 4 → 1. The residue at each stage was the interesting part, because the cards
+that did not fall to the mechanical edit were the ones spelling the filter some other way — and
+three of those turned out to be **gaps in the SDK's own vocabulary**, with no way to write the
+bare-noun reading at all:
+
+| Added | For the printed form |
+|---|---|
+| `DynamicAmounts.permanentsWithSubtype` | "the number of **Slivers** on the battlefield" |
+| `Conditions.ControlPermanentOfType` | "if you control a **Rabbit**" |
+| `TargetFilter.PermanentInYourGraveyard` | "target **Zombie card** from your graveyard" |
+
+Each sits beside its creature-scoped twin, and the reference doc now carries the table that says
+which to reach for. A reading the SDK could not express is the finding this module exists to
+produce; that it took a card migration to surface three of them is the argument for running the
+migration rather than filing the divergence.
+
+Twelve cards needed per-occurrence care rather than a blanket edit, and Kavu Monarch is the one to
+know: "Kavu **creatures** have trample" and "whenever another **Kavu** enters" are two filters in one
+card, and only the second moves. A replace-all would have round-tripped byte-perfectly and been
+wrong — the same class the gate exists to catch, reintroduced by the fix for it.
+
+The one that remains is classified, not unexplained:
 
 | Card | Classification |
 |---|---|
-| Zombie Master | The bare-tribal-noun approximation, **measured**: "Zombies" means every Zombie *permanent*, and reading it that way costs 80 other cards (45 → 127 divergences). The one card in the corpus where the distinction is observable, because its granted ability says "Regenerate this permanent". |
 | Lavaborn Muse | Carries the redundant resolution-time gate above. Correct under today's engine and divergent from the grammar; both stop being true when the "if"/"while" split lands. |
-| Tattered Ratter | Parser bug. "it" inside a *filtered* trigger means the triggering creature, not the source — the third anaphor position. Fixing it needs a clause vocabulary reachable only from `filteredTriggerRule`, since `Primitives.self` and `SelfSteps.anaphoric` both build `EffectTarget.Self` today. |
-| Kalastria Highborn | Parser bug. "You may pay {B}. If you do, A **and** B." — the outer clause-sequence rule takes the " and " join before the gate can, so B lands outside the gate. Fixing it by alternation order is what the design says never to do; the gate's scope has to run to the end of the sentence. |
 
 The divergence count is not meant to stay at zero — it rises every time the grammar reaches a new
 class of card, and each rise is the gate earning its keep. The five it opened with, the eight the

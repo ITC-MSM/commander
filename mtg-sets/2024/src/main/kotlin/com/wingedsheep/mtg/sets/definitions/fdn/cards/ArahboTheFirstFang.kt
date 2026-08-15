@@ -35,12 +35,12 @@ val ArahboTheFirstFang = card("Arahbo, the First Fang") {
         ability = ModifyStats(
             powerBonus = 1,
             toughnessBonus = 1,
-            filter = GroupFilter(GameObjectFilter.Creature.withSubtype(Subtype.CAT).youControl(), excludeSelf = true)
+            filter = GroupFilter(GameObjectFilter.Permanent.withSubtype(Subtype.CAT).youControl(), excludeSelf = true)
         )
     }
     triggeredAbility {
         trigger = Triggers.entersBattlefield(
-            filter = GameObjectFilter.Creature.withSubtype(Subtype.CAT).nontoken().youControl(),
+            filter = GameObjectFilter.Permanent.withSubtype(Subtype.CAT).nontoken().youControl(),
             binding = TriggerBinding.ANY
         )
         effect = Effects.CreateToken(

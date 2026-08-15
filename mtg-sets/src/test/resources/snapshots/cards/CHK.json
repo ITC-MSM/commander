@@ -1150,7 +1150,7 @@
                     {
                         "type": "TargetObject",
                         "filter": {
-                            "baseFilter": "creature Spirit"
+                            "baseFilter": "permanent Spirit"
                         },
                         "id": "target"
                     }
@@ -2234,7 +2234,7 @@
             {
                 "type": "TargetObject",
                 "filter": {
-                    "baseFilter": "creature Spirit"
+                    "baseFilter": "permanent Spirit"
                 },
                 "id": "target"
             }
@@ -2309,7 +2309,7 @@
                     "isManaAbility": true
                 },
                 "filter": {
-                    "baseFilter": "creature Shaman ctrl:you"
+                    "baseFilter": "permanent Shaman ctrl:you"
                 }
             }
         ]

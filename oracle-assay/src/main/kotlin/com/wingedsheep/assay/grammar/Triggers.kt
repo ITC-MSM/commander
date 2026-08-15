@@ -253,7 +253,11 @@ object Triggers {
     ): Phrase<TriggeredAbility> =
         phrase("$surface, {effect}", name = name) {
             slot("filter", if (article) Filters.indefinite else Filters.filter)
-            slot("effect", Steps.step)
+            // [Steps.triggeredStep], not [Steps.step]: this trigger's event mentions an object of its
+            // own, so "it" in the effect clause is that object rather than the source. See the
+            // third-anaphor section on [SelfSteps]; the differential caught Tattered Ratter reading
+            // "Whenever a Rat you control becomes blocked, it gets +2/+0" as pumping the *Ratter*.
+            slot("effect", Steps.triggeredStep)
             build { abilityFor(spec(it.value("filter")), it.value("effect")) }
             match { ability ->
                 val filter = triggeredFilter(ability) ?: return@match null

@@ -17313,7 +17313,7 @@
                 "id": "ability_1",
                 "trigger": {
                     "type": "BecomesBlockedEvent",
-                    "filter": "creature Rat ctrl:you"
+                    "filter": "permanent Rat ctrl:you"
                 },
                 "binding": "ANY",
                 "effect": {

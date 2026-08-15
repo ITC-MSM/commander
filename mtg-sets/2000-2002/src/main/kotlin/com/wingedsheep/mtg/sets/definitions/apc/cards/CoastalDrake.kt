@@ -33,7 +33,7 @@ val CoastalDrake = card("Coastal Drake") {
     keywords(Keyword.FLYING)
     activatedAbility {
         cost = Costs.Composite(Costs.Mana("{1}{U}"), Costs.Tap)
-        val t = target("target", TargetCreature(filter = TargetFilter(GameObjectFilter.Creature.withSubtype("Kavu"))))
+        val t = target("target", TargetCreature(filter = TargetFilter(GameObjectFilter.Permanent.withSubtype("Kavu"))))
         effect = Effects.Move(t, Zone.HAND)
     }
     metadata {

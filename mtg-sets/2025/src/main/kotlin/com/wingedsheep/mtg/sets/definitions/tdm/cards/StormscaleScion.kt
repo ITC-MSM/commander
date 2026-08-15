@@ -34,7 +34,7 @@ val StormscaleScion = card("Stormscale Scion") {
             powerBonus = 1,
             toughnessBonus = 1,
             filter = GroupFilter(
-                GameObjectFilter.Creature.withSubtype("Dragon").youControl(),
+                GameObjectFilter.Permanent.withSubtype("Dragon").youControl(),
                 excludeSelf = true
             )
         )
