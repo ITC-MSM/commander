@@ -10,9 +10,11 @@ Design: [`docs/oracle-assay.md`](../docs/oracle-assay.md) · Build order:
 **Phase 1 is implemented: the kernel, invertible normalization, the touchstone gate, and a grammar
 covering vanilla cards and keyword-only abilities. The differential gate is live** over the class the
 grammar reads whole, and the first band of the pipeline family is in — cardinals, a filter and target
-vocabulary, the one-verb spell effects (draw, destroy, exile, tap, untap, return to hand) and the
-**trigger prefix** ("When ~ enters, …"), which is where the differential started comparing whole
-*abilities* rather than keyword lists, and where it found its first bug in a hand-written card.
+vocabulary, the one-verb spell effects (draw, destroy, exile, tap, untap, return to hand), the counted
+verbs (life, scry, surveil, damage, pump) and the **trigger prefix** — the event triggers and the step
+triggers ("When ~ enters, …", "At the beginning of your upkeep, …"), which is where the differential
+started comparing whole *abilities* rather than keyword lists, and where it found its first bug in a
+hand-written card.
 Nothing here changes `:mtgish-tooling`, which stays authoritative until a per-set cutover replaces it
 (Phase 5). Assay is **not a runtime card loader** and never will be.
 
@@ -81,15 +83,15 @@ non-zero on. Declines are not failures.
 Cards assayed                    34882
 Ability lines                    66793  (39059 unique)
 
-Round-trips byte-exact           14238   213.2‰ (21.3%)
+Round-trips byte-exact           14300   214.1‰ (21.4%)
 Alternate spelling normalized    30
-Declined                         52525
+Declined                         52463
 Ambiguous — distinct readings    0
 Print mismatch                   0
 Normalization not invertible     0
 Full inverse not reproduced      0
 
-Cards fully covered              2366 / 34882   67.8‰ (6.8%)
+Cards fully covered              2389 / 34882   68.5‰ (6.8%)
 Vanilla + keyword-only cards     1440 / 1712   841.1‰ (84.1%)   <- Phase 1 target
 Reminder-text glosses            2870 matched · 114 differed · 956 unglossed
 ```
@@ -137,15 +139,15 @@ named population bucket instead and the denominator stays visible.
 
 ```
   Hand-written cards                 8874
-    compared                         647
-    not yet covered by the grammar   7625
+    compared                         653
+    not yet covered by the grammar   7619
     script slot not modelled yet      39
     lines do not fold into one card   20
     multi-face (out of scope)        301
     Oracle text differs from golden  242
     golden would not decode            0
 
-  Confirmed — models agree           644   995.4‰ (99.5%)
+  Confirmed — models agree           650   995.4‰ (99.5%)
   DIVERGENT — read every one           3
 ```
 

@@ -193,9 +193,18 @@ is the next work:
    filtered permanent) and the pump spell with its `until end of turn`.
    Still to come: sacrifice, mill, discard, counter, counters, tokens, and the *sequence* —
    two effect sentences in one card, which the differential currently buckets as "lines do not fold"
-6. `Triggers.kt` ✅ enters / dies / attacks / blocks / deals combat damage to a player. Still to come:
-   the other party's triggers ("whenever a creature you control dies"), phase triggers ("at the
-   beginning of your upkeep" — 2,049 cards), "you may", and intervening-if
+6. `Triggers.kt` ✅ enters / dies / leaves / attacks / blocks / becomes blocked / deals combat damage;
+   ✅ the step triggers ("at the beginning of your upkeep", each-player's spelling as an `alternate`).
+   Still to come: the other party's triggers ("whenever a creature you control dies"), the spell-cast
+   triggers, "you may", and intervening-if
+
+   **The step triggers measured smaller than their decline rank predicted, and that is the finding.**
+   410 implemented cards decline on "At the beginning of…", but adding the prefixes moved whole-card
+   coverage by only 23. The rest are blocked on their *effect* clause, not their prefix. Trigger
+   prefixes are multiplicative with the step vocabulary rather than additive to it, so the decline
+   table's rank overstates a prefix and understates a verb — the ranking is by the token a line *died
+   on*, and a line dies on its first unknown token, which for a trigger is whatever follows the comma
+   only once the prefix is known. Read the ranked *sentences* (below) before believing a rank.
 
 **Acceptance:** POR, LEA and a modern set (DFT or FDN) each report fineness; the per-set whole-render
 rate is directly comparable to `:mtgish-tooling`'s `gN` figure in the coverage dashboard.

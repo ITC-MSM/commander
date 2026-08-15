@@ -75,6 +75,31 @@ class TriggersTest : StringSpec({
         )
     }
 
+    "the step triggers are the same shape with a different prefix" {
+        listOf(
+            "At the beginning of your upkeep, draw a card.",
+            "At the beginning of your end step, you gain 2 life.",
+            "At the beginning of combat on your turn, target creature gets +1/+1 until end of turn.",
+            "At the beginning of your first main phase, scry 1.",
+            "At the beginning of each upkeep, ~ deals 1 damage to any target.",
+            "At the beginning of each opponent's upkeep, you gain 1 life.",
+        ).forEach { roundTrips(it) }
+
+        ability("At the beginning of your upkeep, draw a card.").trigger shouldBe
+            SdkTriggers.YourUpkeep.event
+    }
+
+    // Wizards templates the all-players steps both ways. One model cannot have two printed forms, so
+    // the more common spelling prints and the other parses — VARIANT, not a decline, and the reading
+    // is provably unchanged because reparsing the printed line gives the identical ability.
+    "the each-player spelling parses to the same model and prints as the canonical one" {
+        ability("At the beginning of each player's upkeep, draw a card.") shouldBe
+            ability("At the beginning of each upkeep, draw a card.")
+
+        Grammar.abilityLine.printLine(fragment("At the beginning of each player's upkeep, draw a card.")) shouldBe
+            "At the beginning of each upkeep, draw a card."
+    }
+
     // Fail-closed, the same rule the step matchers follow: an ability carrying anything the sentence
     // does not spell must refuse to print rather than print a sentence that drops it.
     "an ability with content the prefix does not spell refuses to print" {

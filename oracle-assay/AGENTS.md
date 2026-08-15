@@ -234,6 +234,17 @@ declined line on a card nobody has implemented may be an **SDK** gap, which is `
 a much longer lead time. Ranking those two populations separately turns one long list into two
 backlogs that different people can work in parallel, and it is the fastest route to the 100%.
 
+**Rank sentences, not dead tokens, when you are choosing what to write next.** The report's table is
+keyed on the token a line *died on*, which is the right key for "what is the grammar missing" and the
+wrong one for "what should I write". A line dies on its first unknown token, so a trigger whose prefix
+is already known dies somewhere after the comma and a trigger whose prefix is unknown dies on "At" —
+the same missing verb therefore lands in several buckets, and a missing prefix looks larger than it
+is. `assay-report --implemented --declines` prints every declined line; collapsing numbers and mana
+symbols to a skeleton and counting those gives the shape ranking, and it disagrees with the token
+ranking in ways that change the work. The step triggers are the worked example: 410 cards decline on
+"At the beginning of…", and adding every step-trigger prefix moved whole-card coverage by 23, because
+the other 387 were blocked on their effect clause all along.
+
 The split re-weights the list rather than reordering it wholesale, which is itself the finding: the
 top families are the same in both populations, so the grammar backlog and the SDK backlog are being
 blocked by the same missing sentence shapes rather than by different ones. Where it does diverge is

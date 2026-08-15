@@ -2,6 +2,7 @@ package com.wingedsheep.assay.grammar
 
 import com.wingedsheep.assay.normalize.Normalizer
 import com.wingedsheep.assay.syntax.Phrase
+import com.wingedsheep.assay.syntax.alternate
 import com.wingedsheep.assay.syntax.bind
 import com.wingedsheep.assay.syntax.oneOf
 import com.wingedsheep.assay.syntax.phrase
@@ -94,16 +95,53 @@ object Triggers {
      * happens once to a permanent is templated "When", a repeatable one "Whenever". Baking the word
      * into each rule is what keeps one printed form per model.
      */
+    /**
+     * "At the beginning of your upkeep, …" — the step triggers, which are one family in the SDK
+     * (`StepEvent(step, player)`) and one family here.
+     *
+     * They are the same rule shape as the event triggers with a different prefix, which is the whole
+     * reason [triggerRule] was written as a function: a step trigger's effect clause is the same
+     * English a spell prints, so it slots [Steps.step] and inherits every step rule for free.
+     *
+     * Declared before [rules], which uses it — object initializers run in declaration order, and a
+     * `val` referencing a later one reads a null out of a half-initialized object.
+     */
+    private val phaseRules: List<Phrase<TriggeredAbility>> = listOf(
+        triggerRule("at the beginning of your upkeep", SdkTriggers.YourUpkeep),
+        triggerRule("at the beginning of your draw step", SdkTriggers.YourDrawStep),
+        triggerRule("at the beginning of your end step", SdkTriggers.YourEndStep),
+        triggerRule("at the beginning of your first main phase", SdkTriggers.FirstMainPhase),
+        triggerRule("at the beginning of your second main phase", SdkTriggers.YourPostcombatMain),
+        triggerRule("at the beginning of combat on your turn", SdkTriggers.BeginCombat),
+        triggerRule("at the beginning of each upkeep", SdkTriggers.EachUpkeep),
+        triggerRule("at the beginning of each end step", SdkTriggers.EachEndStep),
+        triggerRule("at the beginning of each combat", SdkTriggers.EachCombat),
+        triggerRule("at the beginning of each opponent's upkeep", SdkTriggers.EachOpponentUpkeep),
+        // Wizards has templated the all-players steps both ways and both are current enough to
+        // appear on cards in print: "each upkeep" (100 lines) beside "each player's upkeep" (83),
+        // "each end step" (98) beside "each player's end step" (23). One model, two real English
+        // spellings, so the more common one prints and the other parses — a VARIANT rather than a
+        // decline, which says the reading was right and only the spelling moved.
+        alternate(triggerRule("at the beginning of each player's upkeep", SdkTriggers.EachUpkeep)),
+        alternate(triggerRule("at the beginning of each player's end step", SdkTriggers.EachEndStep)),
+    )
+
     private val rules: List<Phrase<TriggeredAbility>> = listOf(
         triggerRule("when ${Normalizer.SELF} enters", SdkTriggers.EntersBattlefield),
         triggerRule("when ${Normalizer.SELF} dies", SdkTriggers.Dies),
+        triggerRule("when ${Normalizer.SELF} leaves the battlefield", SdkTriggers.LeavesBattlefield),
         triggerRule("whenever ${Normalizer.SELF} attacks", SdkTriggers.Attacks),
         triggerRule("whenever ${Normalizer.SELF} blocks", SdkTriggers.Blocks),
+        triggerRule("whenever ${Normalizer.SELF} becomes blocked", SdkTriggers.BecomesBlocked),
         triggerRule(
             "whenever ${Normalizer.SELF} deals combat damage to a player",
             SdkTriggers.DealsCombatDamageToPlayer,
         ),
-    )
+        triggerRule(
+            "whenever ${Normalizer.SELF} deals combat damage to a creature",
+            SdkTriggers.DealsCombatDamageToCreature,
+        ),
+    ) + phaseRules
 
     val trigger: Phrase<TriggeredAbility> = oneOf("a triggered ability", rules)
 }
