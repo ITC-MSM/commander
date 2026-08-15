@@ -16282,6 +16282,50 @@
     ]
 }
 
+// The Scarlet Witch
+{
+    "name": "The Scarlet Witch",
+    "manaCost": "{2}{R}",
+    "typeLine": "Legendary Creature — Mutant Warlock Hero",
+    "oracleText": "Instant and sorcery spells you cast with mana value 4 or greater cost {X} less to cast, where X is The Scarlet Witch's power.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ModifySpellCost",
+                "target": {
+                    "type": "YouCast",
+                    "filter": "instant|sorcery mv>=4"
+                },
+                "modification": {
+                    "type": "ReduceGenericBy",
+                    "source": {
+                        "type": "Dynamic",
+                        "amount": {
+                            "type": "EntityProperty",
+                            "entity": "Source",
+                            "numericProperty": "Power"
+                        }
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "151",
+        "rarity": "RARE",
+        "artist": "Magali Villeneuve",
+        "flavorText": "\"Some are bound by the whims of chaos, but I found freedom in its endless possibility.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/0/407e8993-e56d-477d-ab85-d10a2522eab3.jpg?1783902924"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // The Sentry, Golden Guardian
 {
     "name": "The Sentry, Golden Guardian",

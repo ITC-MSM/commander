@@ -37,6 +37,8 @@ import com.wingedsheep.sdk.scripting.EventPattern
 import com.wingedsheep.sdk.scripting.TriggerBinding
 import com.wingedsheep.sdk.scripting.TriggerSpec
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
+import com.wingedsheep.sdk.scripting.values.EntityNumericProperty
+import com.wingedsheep.sdk.scripting.values.EntityReference
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
@@ -474,6 +476,45 @@ class CardSerializationRoundTripTest : DescribeSpec({
             val deserialized = CardLoader.fromJson(serialized)
             deserialized.keywords.contains(Keyword.VIVID) shouldBe true
             deserialized.script.staticAbilities.size shouldBe 1
+        }
+
+        it("should round-trip a source-relative cost reduction") {
+            // The Scarlet Witch shape: the reduction amount is a DynamicAmount read off the
+            // permanent the static lives on, so the whole amount has to survive inside the source.
+            val card = card("Test Source Property Discounter") {
+                manaCost = "{2}{R}"
+                typeLine = "Creature — Wizard"
+                power = 2
+                toughness = 3
+
+                staticAbility {
+                    ability = ModifySpellCost(
+                        target = SpellCostTarget.YouCast(
+                            GameObjectFilter.InstantOrSorcery.manaValueAtLeast(4)
+                        ),
+                        modification = CostModification.ReduceGenericBy(
+                            CostReductionSource.Dynamic(
+                                DynamicAmount.EntityProperty(
+                                    EntityReference.Source,
+                                    EntityNumericProperty.Power
+                                )
+                            )
+                        ),
+                    )
+                }
+            }
+
+            val serialized = CardLoader.toJson(card)
+            serialized shouldContain "\"Dynamic\""
+            serialized shouldContain "\"Source\""
+            serialized shouldContain "\"Power\""
+
+            val deserialized = CardLoader.fromJson(serialized)
+            val ability = deserialized.script.staticAbilities.single() as ModifySpellCost
+            val modification = ability.modification as CostModification.ReduceGenericBy
+            modification.source shouldBe CostReductionSource.Dynamic(
+                DynamicAmount.EntityProperty(EntityReference.Source, EntityNumericProperty.Power)
+            )
         }
 
         it("should round-trip activated ability costs") {

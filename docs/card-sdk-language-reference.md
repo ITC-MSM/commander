@@ -5562,7 +5562,28 @@ staticAbility {
   `ModifySpellCost` printed on an Equipment/Aura. Same `EntityNumericProperty` axis and read rules as
   the two above (projected state for P/T, card definition for mana value). Nothing attached — or a
   `SelfCast` reduction, which has no source permanent — reads 0, which is the correct reading of an
-  unequipped Equipment; negative power floors at 0. … — see `CostStaticAbilities.kt`
+  unequipped Equipment; negative power floors at 0,
+  `Dynamic(amount: DynamicAmount)` — the **general variable-amount** source: "{X} less, where X is
+  `<amount>`", evaluated at cast time with the permanent carrying the `ModifySpellCost` as the
+  amount's `EntityReference.Source`. Deliberately the same vocabulary `ReduceActivatedAbilityCost`
+  takes on the activated-ability rail, so both cost rails read a number out of game state one way.
+  The Scarlet Witch is `YouCast(InstantOrSorcery.manaValueAtLeast(4))` +
+  `ReduceGenericBy(Dynamic(DynamicAmounts.sourcePower()))` — the *self-referential* read the group
+  aggregates above cannot express, because two sources each discount by **their own** value and stack
+  additively, whereas a name-filtered `GreatestPropertyAmongPermanentsYouControl` reads the biggest
+  same-named permanent (wrong as soon as a token copy or clone shares the name). Any `DynamicAmount`
+  works, so "twice this creature's power" (`Multiply`), "your life total" (`LifeTotal`) and
+  "the number of charge counters on this artifact" (`DynamicAmounts.countersOnSelf(...)`) need no new
+  member here. The amount goes through the engine's ordinary `DynamicAmountEvaluator`, so `Power` /
+  `Toughness` come from projected state (counters, Auras, and anthems on the source count),
+  `BasePower` / `BaseToughness` / `ManaValue` from the printed card, and counter counts from the
+  source's counters — a *fuller* read than the two group aggregates above, which resolve their
+  `EntityNumericProperty` through the cost calculator's own smaller switch; the shared thing is the
+  property type, not the evaluation. The evaluated value is floored at 0 per **CR 107.1b**, per
+  source, so a source shrunk below 0 power reduces nothing rather than taxing the spell (and never
+  eats another source's discount). Prefer `Fixed(n)` for a literal amount. Only meaningful with a
+  battlefield-sourced target — under `SelfCast` there is no source permanent (the card *is* the
+  spell), so a source-relative amount contributes 0. … — see `CostStaticAbilities.kt`
   for the full list.
 - `gating: CostGating` — gates whether/how often the modifier fires:
   - `None` (default) — applies to every matching cast.

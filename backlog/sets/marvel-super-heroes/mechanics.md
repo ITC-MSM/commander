@@ -648,14 +648,25 @@ stripped-down `matchesBattlefieldPredicate` (same file, ~line 768) that handles 
 through to `else -> false` for everything else, including `CardPredicate.NameEquals`. It ignores
 `statePredicates` too, so `.sourceItself()` is equally inert. The card would read right and resolve
 wrong. Either fix works:
-1. A `CostReductionSource.SourceProperty(EntityNumericProperty.Power)` evaluated against
-   `context.sourceId` — the exact-fidelity option; or
+1. A source-relative `CostReductionSource` evaluated against `context.sourceId` — the
+   exact-fidelity option; or
 2. extend `CostCalculator.matchesBattlefieldPredicate` to handle `CardPredicate.NameEquals` (the full
    matcher one function over, ~line 994, already does), which makes the recipe work via the legend rule.
 
 No existing `CostReductionSource` gets the semantics right — the subtype-based approximations
 ("greatest power among Warlocks/Heroes/Mutants you control") over-reduce whenever another such
 creature is bigger.
+
+**Done (u34)** via option 1, as `CostReductionSource.Dynamic(amount: DynamicAmount)` — the general
+variable-amount source, evaluated with the modifier's permanent as the amount's
+`EntityReference.Source`. Note the correction to the analysis above: only the *greatest*-property
+path silently reduces by 0 on a `NameEquals` filter; `TotalPropertyAmongPermanentsYouControl` matches
+through `PredicateEvaluator` and handles `NameEquals` correctly. `.sourceItself()` is inert on both.
+
+**Still open engine debt:** option 2 was *not* taken. `matchesBattlefieldPredicate`'s `else -> false`
+over an open `CardPredicate` set means any filter refinement on
+`GreatestPropertyAmongPermanentsYouControl` silently zeroes the reduction instead of failing loudly.
+The next author to reach for a filtered greatest-property reduction will hit the same trap.
 
 ### Condition-gated flash grant — **Captain Mar-Vell, Space-Born** [12]
 "Cosmic Awareness — As long as an opponent has cast a spell this turn, you may cast spells as though
