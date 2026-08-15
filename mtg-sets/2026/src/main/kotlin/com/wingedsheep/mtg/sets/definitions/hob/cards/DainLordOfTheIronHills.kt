@@ -20,8 +20,8 @@ import com.wingedsheep.sdk.scripting.values.DynamicAmount
  * for each of those creatures.
  *
  * A Ghostly Prison that only switches on with the enduring story. The gate rides [AttackTax.condition]
- * rather than a [com.wingedsheep.sdk.scripting.ConditionalStaticAbility] wrapper: `AttackPhaseManager.
- * calculateTotalAttackTax` scans `cardDef.staticAbilities` **raw** and only recognizes a bare
+ * rather than a [com.wingedsheep.sdk.scripting.ConditionalStaticAbility] wrapper: `CombatTaxes.
+ * attackTax` scans `cardDef.staticAbilities` **raw** and only recognizes a bare
  * [AttackTax], so a wrapped one would silently tax nothing. The field exists for exactly this shape
  * (Archangel of Tithes gates on being untapped); it is evaluated with Dáin's controller as "you", which
  * is the player being attacked.

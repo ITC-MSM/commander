@@ -15,6 +15,7 @@ import com.wingedsheep.engine.core.GameAction
 import com.wingedsheep.engine.core.PassPriority
 import com.wingedsheep.engine.legalactions.LegalAction
 import com.wingedsheep.engine.legalactions.MeaningfulActionFilter
+import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.sdk.model.EntityId
@@ -51,6 +52,13 @@ class PlayoutPolicy(
     private val combatAdvisor: CombatAdvisor,
     private val intents: IntentCatalog = IntentCatalog.NONE,
     private val settings: RolloutSettings = RolloutSettings.DEFAULT,
+    /**
+     * Only the seed's attack-tax pricing needs it (see [com.wingedsheep.ai.engine.CombatTaxBudget]).
+     * Null means a playout may imagine an attack its player cannot pay for and then spend the rest
+     * of its action budget re-declaring it — `maxActionsPerPlayout` ends it, but the sample is
+     * wasted, so production wires the registry through.
+     */
+    private val cardRegistry: CardRegistry? = null,
 ) {
     /** Combat inside a playout gets the seed and nothing else — see [DecisionBudget] tiers. */
     private val noSearch =
@@ -78,7 +86,7 @@ class PlayoutPolicy(
         // Combat declaration is never optional — the enumerator offers exactly one of these and the
         // engine will not move on until it is answered.
         legalActions.firstOrNull { it.actionType == "DeclareAttackers" }?.let { action ->
-            val seed = CombatSeed.attackers(state, state.projectedState, action, playerId)
+            val seed = CombatSeed.attackers(state, state.projectedState, action, playerId, cardRegistry)
             return DeclareAttackers(playerId, seed.attackers) to rng
         }
         legalActions.firstOrNull { it.actionType == "DeclareBlockers" }?.let { action ->
