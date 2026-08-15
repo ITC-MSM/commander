@@ -1769,6 +1769,53 @@
     ]
 }
 
+// Coerced to Kill
+{
+    "name": "Coerced to Kill",
+    "manaCost": "{3}{U}{B}",
+    "typeLine": "Enchantment — Aura",
+    "oracleText": "Enchant creature\nYou control enchanted creature.\nEnchanted creature has base power and toughness 1/1, has deathtouch, and is an Assassin in addition to its other types.",
+    "script": {
+        "staticAbilities": [
+            "ControlEnchantedPermanent",
+            {
+                "type": "GrantSubtype",
+                "subtype": "Assassin",
+                "filter": {
+                    "baseFilter": "permanent",
+                    "scope": "AttachedTo"
+                }
+            },
+            {
+                "type": "GrantKeyword",
+                "keyword": "DEATHTOUCH"
+            },
+            {
+                "type": "SetBasePowerToughnessStatic",
+                "power": 1,
+                "toughness": 1
+            }
+        ],
+        "auraTarget": {
+            "type": "TargetObject",
+            "filter": {
+                "baseFilter": "creature"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "192",
+        "rarity": "UNCOMMON",
+        "artist": "Justyna Dura",
+        "flavorText": "\"People are being brainwashed into these attacks. We must find the puppet master.\"\n—Alquist Proft",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/d/2dc9f352-5076-4b5f-9815-cf47abb63d5b.jpg?1783912855"
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "BLACK"
+    ]
+}
+
 // Cold Case Cracker
 {
     "name": "Cold Case Cracker",
@@ -6002,6 +6049,77 @@
     ]
 }
 
+// Karlov Watchdog
+{
+    "name": "Karlov Watchdog",
+    "manaCost": "{3}{W}",
+    "typeLine": "Creature — Dog",
+    "oracleText": "Vigilance\nPermanents your opponents control can't be turned face up during your turn.\nWhenever you attack with three or more creatures, creatures you control get +1/+1 until end of turn.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "keywords": [
+        "VIGILANCE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "YouAttackEvent",
+                    "minAttackers": 3
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        }
+                    },
+                    "body": {
+                        "type": "ModifyStats",
+                        "powerModifier": {
+                            "type": "Fixed",
+                            "amount": 1
+                        },
+                        "toughnessModifier": {
+                            "type": "Fixed",
+                            "amount": 1
+                        },
+                        "target": "Self"
+                    }
+                },
+                "descriptionOverride": "Whenever you attack with three or more creatures, creatures you control get +1/+1 until end of turn."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "CantBeTurnedFaceUp",
+                    "filter": {
+                        "baseFilter": "permanent ctrl:opponent"
+                    }
+                },
+                "condition": "IsYourTurn"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "20",
+        "rarity": "UNCOMMON",
+        "artist": "Craig J Spearing",
+        "flavorText": "Teysa trusts only those for whom money has no meaning.",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/9/79cfb366-ae2a-4b3d-9a80-383a32db1509.jpg?1783912924"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Knife
 {
     "name": "Knife",
@@ -6670,6 +6788,58 @@
     "colorIdentityOverride": [
         "GREEN"
     ]
+}
+
+// Lumbering Laundry
+{
+    "name": "Lumbering Laundry",
+    "manaCost": "{5}",
+    "typeLine": "Artifact Creature — Golem",
+    "oracleText": "{2}: Until end of turn, you may look at face-down creatures you don't control any time.\nDisguise {5} (You may cast this card face down for {3} as a 2/2 creature with ward {2}. Turn it face up any time for its disguise cost.)",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 5
+    },
+    "keywordAbilities": [
+        {
+            "type": "Disguise",
+            "disguiseCost": {
+                "type": "PayAtom",
+                "atom": {
+                    "type": "AtomMana",
+                    "cost": "{5}"
+                }
+            }
+        }
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{2}"
+                    }
+                },
+                "effect": {
+                    "type": "GrantStaticAbility",
+                    "ability": "LookAtFaceDownCreatures",
+                    "target": "Self"
+                },
+                "descriptionOverride": "Until end of turn, you may look at face-down creatures you don't control any time."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "253",
+        "rarity": "UNCOMMON",
+        "artist": "Michal Ivan",
+        "flavorText": "A true crime of fashion.",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/8/080ad039-1669-4735-9864-76f4c61fc59e.jpg?1783912828"
+    },
+    "colorIdentityOverride": []
 }
 
 // Lush Portico
@@ -11881,6 +12051,68 @@
         "artist": "Michal Ivan",
         "flavorText": "Obtaining evidence through the \"proper\" channels can take weeks of paperwork. Sometimes justice just can't wait.",
         "imageUri": "https://cards.scryfall.io/normal/front/3/7/37692f9a-3825-43aa-aacb-1bb92cb5bd07.jpg?1783912890"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Vein Ripper
+{
+    "name": "Vein Ripper",
+    "manaCost": "{3}{B}{B}{B}",
+    "typeLine": "Creature — Vampire Assassin",
+    "oracleText": "Flying\nWard—Sacrifice a creature.\nWhenever a creature dies, target opponent loses 2 life and you gain 2 life.",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 5
+    },
+    "keywords": [
+        "FLYING",
+        "WARD"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Ward",
+            "cost": {
+                "type": "WardCost.Sacrifice",
+                "filter": "creature"
+            }
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "creature",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "DrainLife",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "from": {
+                        "type": "ContextTarget",
+                        "index": 0
+                    }
+                },
+                "targetRequirement": "TargetOpponent",
+                "descriptionOverride": "Whenever a creature dies, target opponent loses 2 life and you gain 2 life."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "110",
+        "rarity": "MYTHIC",
+        "artist": "Bastien L. Deharme",
+        "flavorText": "\"I'm afraid your investigation has reached a dead end.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/7/078933b3-6d82-45f2-94e8-addf54cf1704.jpg?1783912890"
     },
     "colorIdentityOverride": [
         "BLACK"
