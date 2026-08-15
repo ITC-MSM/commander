@@ -69,6 +69,14 @@ review, it is a change to decline.
   facades are the curated surface, and this is the half that would otherwise drift from how cards are
   actually written. `match` necessarily destructures concrete classes; that asymmetry is inherent to
   a bidirectional rule, which is exactly why the `build` half must not compound it.
+- **Where a keyword is *lowered* rather than stored, call the lowering — don't restate it.** Equip is
+  the worked example: a card writes `equipAbility("{1}")` and the DSL produces `equipCost` plus a
+  whole activated ability. `Grammar.equipLine` calls `ActivatedAbility.equip`, the factory that body
+  moved into, so both sides of the differential are one definition. Restating a lowering here would
+  agree with the cards exactly until someone edited one of them, and the gate would then report every
+  card with the mechanic over a change nobody made to a card. Note what this is *not* a licence for:
+  extracting an existing lowering into a factory is fine, and it is the one thing this module may
+  push into `mtg-sdk` on its own; **adding a type or a capability there is still `add-feature` work.**
 - **An SDK gap is reported, never routed around.** If the SDK cannot express a card, the rule
   declines and the report ranks it. Do not model it in Assay, do not approximate it with the nearest
   effect, and do not add a type to `mtg-sdk` from inside this module — that goes through
@@ -180,8 +188,10 @@ instantiation — not another `oneOf` branch, which would be ambiguity by constr
 
 ## Printed-shape information belongs to normalization
 
-Line grouping, the `;` separator, reminder text, and which noun a card uses for itself are properties
-of the *printed line*. The model has nowhere to put them and must not grow somewhere.
+Line grouping, the `;` separator, reminder text, which noun a card uses for itself, and which
+adjective it uses for the permanent it is attached to ("equipped creature" vs "enchanted creature",
+one model and two words chosen by the type line) are properties of the *printed line*. The model has
+nowhere to put them and must not grow somewhere.
 `normalize/Normalizer.kt` owns them, every pass is invertible by construction (it records what it
 removed and `restore` replays the inverses), and `NormalizedFace.restore(lines) == raw` is itself
 gated — a normalization that cannot round-trip its own output would let any grammar look correct.

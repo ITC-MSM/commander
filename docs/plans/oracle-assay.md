@@ -239,8 +239,9 @@ is the next work:
     slot, so it reads as an ordinary filtered target and the whole of `Filters` arrives with it.
     Equip lowers at authoring time into `CardDefinition.equipCost` *and* a synthesized activated
     ability carrying its own timing, effect and target requirement — a lowering to reproduce rather
-    than a sentence to read, and one that reaches past `CardScript` into a slot `CardFragment` does
-    not model. Reading it is a `CardFragment` design change, not a rule.
+    than a sentence to read, and one that reaches past `CardScript` into a slot `CardFragment` did
+    not model. Reading it was a `CardFragment` design change, not a rule. *Done*, as the equipment
+    band below.
 
    **The land band is the first family where whole-card coverage moved with line coverage.** Lands
    are one-to-three-line cards, so 819 mana-ability lines and 319 tapped-entry lines over cards that
@@ -266,6 +267,23 @@ the largest family in the implemented population: 1,025 cards carry a counter li
 not read, and 656 decline on nothing else. A verb is also multiplicative, since `Triggers`, `Activated` and the modal rules all
 slot `Steps.step` whole. Prefix versus verb now has a worked example on each side; read them
 together before picking the next band.
+
+**The equipment band is the third, and the first where the overstatement was measured *before* the
+work rather than after.** `Equip {§}` was the largest sentence shape in the corpus — 563 cards, next
+one 342 — and a 400-card sample of what it blocked said 248 of them declined on nothing but
+equipment-shaped lines, predicting ~350 whole cards. The band delivered **65** (6,335 → 6,400), and
+the gap is one word: the sample counted "Equipped creature gets +2/+2 and has trample **and**
+lifelink" as an equipment shape, where the grammar's joined sentence takes one keyword and not a run.
+So a per-card sample predicts which *cards* a band reaches and still says nothing about which *lines*
+it finishes — the same failure mode as the token rank, one level up. What the band did buy is not in
+the coverage number: `CardDefinition.equipCost` is the first field outside `CardScript` the
+differential compares, and the attachment-noun normalization means every present and future `Statics`
+rule reads Equipment and Auras alike without knowing there are two card classes.
+
+The residue is measured and small, which is the other half worth recording: 385 cards decline on
+nothing but an "Enchanted creature …" sentence, their largest single shape is 10 cards, and
+generalizing the joined form to a keyword *run* is worth 22. There is no fourth large family behind
+this one.
 
 **Acceptance:** POR, LEA and a modern set (DFT or FDN) each report fineness; the per-set whole-render
 rate is directly comparable to `:mtgish-tooling`'s `gN` figure in the coverage dashboard.

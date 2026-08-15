@@ -1,10 +1,15 @@
 package com.wingedsheep.sdk.scripting
 
 import com.wingedsheep.sdk.core.Color
+import com.wingedsheep.sdk.core.ManaCost
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.scripting.costs.CostAtom
 import com.wingedsheep.sdk.scripting.costs.manaCostOrNull
+import com.wingedsheep.sdk.scripting.effects.AttachEquipmentEffect
 import com.wingedsheep.sdk.scripting.effects.Effect
+import com.wingedsheep.sdk.scripting.filters.unified.TargetFilter
+import com.wingedsheep.sdk.scripting.targets.EffectTarget
+import com.wingedsheep.sdk.scripting.targets.TargetCreature
 import com.wingedsheep.sdk.scripting.targets.TargetRequirement
 import com.wingedsheep.sdk.scripting.text.TextReplaceable
 import com.wingedsheep.sdk.scripting.text.TextReplacer
@@ -201,6 +206,58 @@ data class ActivatedAbility(
         }
         return if (newCost !== cost || newEffect !== effect || trChanged)
             copy(cost = newCost, effect = newEffect, targetRequirements = newTargetReqs) else this
+    }
+
+    companion object {
+
+        /**
+         * The ability "Equip [cost]" *is* — CR 702.6a's "attach this Equipment to target creature you
+         * control. Activate only as a sorcery."
+         *
+         * Equip is a keyword ability the SDK **lowers** rather than stores: a card writes
+         * `equipAbility("{1}")` and gets `CardDefinition.equipCost` plus this synthesized ability.
+         * The lowering lives here rather than inside [com.wingedsheep.sdk.dsl.CardBuilder.equipAbility]
+         * because it has a second caller — Argentum Assay reads the printed "Equip {1}" line back into
+         * a model and compares it against the hand-written card — and two implementations of one
+         * lowering is exactly the drift that gate exists to catch. `equipAbility` is still the way a
+         * *card* spells it; this is the shared body underneath, and the reason it is public.
+         *
+         * [quality] is the wording of an "Equip [quality]" variant (CR 702.6c) and [targetFilter] is
+         * its rules half; see `CardBuilder.equipAbility` for why the two are unchecked against each
+         * other and which test holds them honest.
+         *
+         * [id] is a parameter because no printed word determines it: a card mints one from the DSL's
+         * counter, and a parser that reproduced a counter would be reading construction order rather
+         * than a card.
+         */
+        fun equip(
+            cost: ManaCost,
+            quality: String? = null,
+            targetFilter: TargetFilter = TargetFilter.CreatureYouControl,
+            genericCostReduction: DynamicAmount? = null,
+            id: AbilityId = AbilityId.generate(),
+        ): ActivatedAbility {
+            val label = equipTargetLabel(quality)
+            return ActivatedAbility(
+                id = id,
+                cost = AbilityCost.Atom(CostAtom.Mana(cost)),
+                effect = AttachEquipmentEffect(EffectTarget.BoundVariable(label)),
+                targetRequirements = listOf(TargetCreature(filter = targetFilter, id = label)),
+                isManaAbility = false,
+                isEquipAbility = true,
+                equipQuality = quality,
+                timing = TimingRule.SorcerySpeed,
+                genericCostReduction = genericCostReduction,
+            )
+        }
+
+        /**
+         * The label an equip ability's target requirement carries, which doubles as the name of the
+         * bound variable the attach effect reads. One function because both halves must use the same
+         * string or the effect reads a slot nothing declared.
+         */
+        fun equipTargetLabel(quality: String?): String =
+            if (quality == null) "creature you control" else "$quality creature you control"
     }
 }
 

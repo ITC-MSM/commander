@@ -17,6 +17,7 @@ import com.wingedsheep.assay.corpus.OracleFace
  * |---|---|---|
  * | Reminder text | strip ` (…)` spans | re-insert at the recorded offsets (or regenerate — see [Reminders]) |
  * | Self-reference | the face's own name → `~`, longest-match first | put the recorded surface form back |
+ * | Attachment noun | "equipped creature" → "enchanted creature" | put the recorded surface word back |
  * | Ability split | one ability per line | join with `\n` |
  *
  * Two passes named in the design are handled elsewhere on purpose:
@@ -41,14 +42,90 @@ object Normalizer {
     fun normalize(face: OracleFace): NormalizedFace {
         val (stripped, reminders) = stripReminders(face.oracleText)
         val (abstracted, selfRefs) = abstractSelfReference(stripped, selfReferenceForms(face.name))
+        val (canonicalNoun, attachmentNouns) = canonicalizeAttachmentNoun(abstracted)
         return NormalizedFace(
             faceName = face.name,
-            lines = abstracted.split("\n"),
+            lines = canonicalNoun.split("\n"),
             reminders = reminders,
             selfReferences = selfRefs,
+            attachmentNouns = attachmentNouns,
             raw = face.oracleText,
         )
     }
+
+    /**
+     * "**Equipped** creature gets +2/+0." → "**Enchanted** creature gets +2/+0.", the surface word
+     * recorded and put back on the way out.
+     *
+     * An Aura and an Equipment print *different words* for the **same value**. The static's affected
+     * set is `GroupFilter.attachedCreature()` — `Permanent` scoped to `AttachedTo`, which says "the
+     * thing this is attached to" and nothing about auras — so Bonesplitter's golden and Holy
+     * Strength's carry the identical `ModifyStats`, and Behemoth Sledge's carries the identical
+     * `GrantKeyword` Spectral Flight's does. Which of the two words a card prints is a function of
+     * its type line, exactly like the self-reference noun above, and the model has nowhere to keep
+     * it.
+     *
+     * That leaves two possible homes, and [com.wingedsheep.assay.grammar.Statics] argued the point
+     * before this pass existed: a second grammar rule spelling "equipped creature" would give one
+     * value two printed forms and leave `unparse` to choose between them — ambiguity by
+     * construction, and the one thing the module's second invariant forbids. Normalization is the
+     * other home, and it is where every other printed-shape fact already lives. So the aura spelling
+     * is canonical because that is the rule that exists, the equipment spelling abstracts onto it,
+     * and the cards come back byte-exact rather than as variants — the reading was never in doubt,
+     * only the noun.
+     *
+     * **Only the exact phrase, and only these two nouns.** "Fortified land" is a third word for a
+     * third scope and still declines; "equipped creatures" (Ajani Vengeant's emblem) does not match,
+     * because the boundary check refuses a letter after the phrase, and its plural sentence is not
+     * one the grammar reads either way.
+     */
+    private fun canonicalizeAttachmentNoun(text: String): Pair<String, List<String>> {
+        val recorded = mutableListOf<String>()
+        val out = StringBuilder()
+        var i = 0
+        while (i < text.length) {
+            val hit = ATTACHMENT_ADJECTIVES.firstOrNull { (surface, _) -> attachmentPhraseAt(text, i, surface) }
+            if (hit != null) {
+                out.append(hit.second).append(' ').append(ATTACHED_NOUN)
+                recorded.add(hit.first)
+                i += hit.first.length + 1 + ATTACHED_NOUN.length
+            } else {
+                out.append(text[i])
+                i++
+            }
+        }
+        return out.toString() to recorded
+    }
+
+    /**
+     * The adjectives that mean "the permanent this is attached to", each paired with the canonical
+     * one it abstracts onto. The aura spellings map to themselves so that [NormalizedFace.restore]
+     * can walk the canonical occurrences positionally and put every surface word back — including
+     * the ones that never moved.
+     */
+    private val ATTACHMENT_ADJECTIVES = listOf(
+        "Equipped" to "Enchanted",
+        "equipped" to "enchanted",
+        "Enchanted" to "Enchanted",
+        "enchanted" to "enchanted",
+    )
+
+    /** The one noun the pass covers; see [canonicalizeAttachmentNoun] for why it is not a slot. */
+    internal const val ATTACHED_NOUN = "creature"
+
+    /** The canonical adjectives [NormalizedFace.restore] scans for, longest-match irrelevant. */
+    internal val CANONICAL_ATTACHMENT_ADJECTIVES = listOf("Enchanted", "enchanted")
+
+    /**
+     * Does "[adjective] creature" stand at [at] as a whole phrase? Shared by the forward pass and by
+     * [NormalizedFace.restore] so the two can never disagree about which occurrences they count —
+     * a restore that matched one the forward pass skipped would put every later word back one slot
+     * off, and the touchstone would report the mismatch far from its cause.
+     */
+    internal fun attachmentPhraseAt(text: String, at: Int, adjective: String): Boolean =
+        text.startsWith("$adjective $ATTACHED_NOUN", at) &&
+            !isNameChar(text.getOrNull(at - 1)) &&
+            !isNameChar(text.getOrNull(at + adjective.length + 1 + ATTACHED_NOUN.length))
 
     /**
      * The permanent nouns a card uses to refer to *itself* — "When **this creature** enters".
@@ -177,6 +254,11 @@ data class NormalizedFace(
     val lines: List<String>,
     val reminders: List<Removal>,
     val selfReferences: List<String>,
+    /**
+     * The adjective each "enchanted creature" in [lines] was printed with, in order — "Equipped" on
+     * an Equipment, "Enchanted" on an Aura. See [Normalizer.canonicalizeAttachmentNoun].
+     */
+    val attachmentNouns: List<String> = emptyList(),
     /** The face's original Oracle text — the byte string the touchstone compares against. */
     val raw: String,
 ) {
@@ -193,6 +275,10 @@ data class NormalizedFace(
      */
     fun restore(printedLines: List<String>): String {
         var text = printedLines.joinToString("\n")
+        // Before the self-references, and therefore while card names are still `~`: a card called
+        // "Enchanted Evening" would otherwise put its own name back and have this scan read it as an
+        // attachment noun, shifting every later surface word by one.
+        text = restoreAttachmentNouns(text)
         text = restoreSelfReferences(text)
         // Re-insert right to left so earlier offsets stay valid.
         for (removal in reminders.asReversed()) {
@@ -200,6 +286,32 @@ data class NormalizedFace(
             text = text.substring(0, removal.offset) + removal.text + text.substring(removal.offset)
         }
         return text
+    }
+
+    /**
+     * Put each recorded adjective back on the canonical "enchanted creature" it was abstracted from,
+     * positionally — the same treatment [restoreSelfReferences] gives a recorded name.
+     */
+    private fun restoreAttachmentNouns(text: String): String {
+        if (attachmentNouns.isEmpty()) return text
+        val out = StringBuilder()
+        var i = 0
+        var next = 0
+        while (i < text.length) {
+            // The same boundary test the forward pass makes, or the plural it declined to abstract
+            // ("enchanted creatures") would consume a recorded word here and shift every later one.
+            val canonical = Normalizer.CANONICAL_ATTACHMENT_ADJECTIVES.firstOrNull {
+                next < attachmentNouns.size && Normalizer.attachmentPhraseAt(text, i, it)
+            }
+            if (canonical != null) {
+                out.append(attachmentNouns[next++]).append(' ').append(Normalizer.ATTACHED_NOUN)
+                i += canonical.length + 1 + Normalizer.ATTACHED_NOUN.length
+            } else {
+                out.append(text[i])
+                i++
+            }
+        }
+        return out.toString()
     }
 
     private fun restoreSelfReferences(text: String): String {

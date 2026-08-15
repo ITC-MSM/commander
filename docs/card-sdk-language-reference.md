@@ -7476,7 +7476,13 @@ composite abilities).
   form optionally reduces the generic portion of the equip cost by a `DynamicAmount` evaluated at
   activation. Reductions that read the chosen equip target (e.g. `DynamicAmounts.targetColorCount()`
   for "costs {1} less to activate for each color of the creature it targets" — Dragonfire Blade)
-  resolve against the picked target. Backed by `ActivatedAbility.genericCostReduction`: the
+  resolve against the picked target. The lowering itself — CR 702.6a's "attach to target creature you
+  control, sorcery speed" ability — is `ActivatedAbility.equip(cost, quality?, targetFilter?,
+  genericCostReduction?, id?)`, which `equipAbility` calls and which Argentum Assay also calls when it
+  reads a printed "Equip {1}" line back into a model. Cards keep writing `equipAbility`; the factory
+  exists so there is exactly one definition of what that line lowers to, and so the differential gate
+  is comparing a shared lowering rather than two copies that agree today. Backed by
+  `ActivatedAbility.genericCostReduction`: the
   `ActivateAbilityHandler` locks the per-target reduction in before paying; the legal-action
   enumerator gates affordability on the cheapest reachable cost (largest reduction over the
   currently-legal targets) since the target isn't chosen until activation. The synthesized ability

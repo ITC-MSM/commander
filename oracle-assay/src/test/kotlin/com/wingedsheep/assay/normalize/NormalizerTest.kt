@@ -83,6 +83,55 @@ class NormalizerTest : StringSpec({
         n.restore(n.lines) shouldBe f.oracleText
     }
 
+    // An Equipment and an Aura print two words for one value: the static's affected set is
+    // "whatever this is attached to", which says nothing about auras. The word is a function of the
+    // type line, so it is normalization's, and the aura spelling is canonical because that is the
+    // rule the grammar has.
+    "the equipment attachment noun abstracts onto the aura's and comes back" {
+        val f = face("Bonesplitter", "Equipped creature gets +2/+0.\nEquip {1}", "Artifact — Equipment")
+        val n = Normalizer.normalize(f)
+
+        n.lines shouldBe listOf("Enchanted creature gets +2/+0.", "Equip {1}")
+        n.attachmentNouns shouldBe listOf("Equipped")
+        n.restore(n.lines) shouldBe f.oracleText
+    }
+
+    "an aura's own spelling is recorded too, so restore is positional either way" {
+        val f = face("Holy Strength", "Enchant creature\nEnchanted creature gets +1/+2.", "Enchantment — Aura")
+        val n = Normalizer.normalize(f)
+
+        n.lines shouldBe listOf("Enchant creature", "Enchanted creature gets +1/+2.")
+        n.attachmentNouns shouldBe listOf("Enchanted")
+        n.restore(n.lines) shouldBe f.oracleText
+    }
+
+    "mid-sentence occurrences keep their case, and each one is restored on its own" {
+        val f = face(
+            "Grafted Wargear",
+            "Equipped creature gets +3/+2.\nWhenever equipped creature becomes untapped, sacrifice it.",
+            "Artifact — Equipment",
+        )
+        val n = Normalizer.normalize(f)
+
+        n.lines shouldBe listOf(
+            "Enchanted creature gets +3/+2.",
+            "Whenever enchanted creature becomes untapped, sacrifice it.",
+        )
+        n.attachmentNouns shouldBe listOf("Equipped", "equipped")
+        n.restore(n.lines) shouldBe f.oracleText
+    }
+
+    // The boundary check is what keeps the two directions counting the same occurrences: a restore
+    // that matched a plural the forward pass skipped would put every later word back one slot off.
+    "the plural is not an attachment noun, in either direction" {
+        val f = face("Whatever", "Equipped creatures get +1/+1.", "Enchantment")
+        val n = Normalizer.normalize(f)
+
+        n.lines shouldBe listOf("Equipped creatures get +1/+1.")
+        n.attachmentNouns shouldBe emptyList()
+        n.restore(n.lines) shouldBe f.oracleText
+    }
+
     "the self-reference noun follows the printed type line" {
         Reminders.selfNoun("Creature — Angel") shouldBe "this creature"
         Reminders.selfNoun("Artifact") shouldBe "this artifact"

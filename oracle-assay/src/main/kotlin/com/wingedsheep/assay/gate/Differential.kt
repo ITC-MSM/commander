@@ -7,6 +7,7 @@ import com.wingedsheep.assay.corpus.OracleCorpus
 import com.wingedsheep.assay.corpus.OracleFace
 import com.wingedsheep.assay.normalize.Normalizer
 import com.wingedsheep.assay.grammar.CardFragment
+import com.wingedsheep.sdk.core.ManaCost
 import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.CardScript
 import com.wingedsheep.sdk.scripting.KeywordAbility
@@ -156,6 +157,11 @@ class Differential(private val touchstone: Touchstone = Touchstone()) {
         val fromCard = CardFragment(
             keywordAbilities = printedKeywords(definition).toList(),
             script = modelledSlots(definition.script),
+            // The one compared field outside the script and outside the keyword set. "Equip {1}"
+            // lowers into this *and* an activated ability, so comparing only the ability would
+            // confirm an Equipment that can never be equipped: `CardValidator` and `CardLinter` both
+            // read this field, and a card carrying the ability without the cost is a different card.
+            equipCost = definition.equipCost,
         )
 
         // The other half of the modelled-slot guard, now that whole *ability lists* are slots the
@@ -176,8 +182,9 @@ class Differential(private val touchstone: Touchstone = Touchstone()) {
         val textKeywords = Folds.apply(fromText.keywordAbilities.toSet())
         val cardKeywords = Folds.apply(fromCard.keywordAbilities.toSet())
         val scriptsAgree = normalizeSlotNames(fromText.script) == normalizeSlotNames(fromCard.script)
+        val equipCostsAgree = fromText.equipCost == fromCard.equipCost
 
-        return if (textKeywords == cardKeywords && scriptsAgree) {
+        return if (textKeywords == cardKeywords && scriptsAgree && equipCostsAgree) {
             CardComparison(implemented, card, Population.COMPARED, Verdict.CONFIRMED)
         } else {
             CardComparison(
@@ -189,6 +196,9 @@ class Differential(private val touchstone: Touchstone = Touchstone()) {
                 onlyInCard = (cardKeywords - textKeywords).toList(),
                 textScript = fromText.script.takeUnless { scriptsAgree },
                 cardScript = fromCard.script.takeUnless { scriptsAgree },
+                textEquipCost = fromText.equipCost.takeUnless { equipCostsAgree },
+                cardEquipCost = fromCard.equipCost.takeUnless { equipCostsAgree },
+                equipCostsAgree = equipCostsAgree,
             )
         }
     }
@@ -664,6 +674,14 @@ data class CardComparison(
     /** Set only when the scripts disagree: Assay's reading, and the hand-written one. */
     val textScript: CardScript? = null,
     val cardScript: CardScript? = null,
+    /**
+     * The equip costs, when they disagree. Both are nullable *and* the disagreement is a third
+     * field, because "the card has one and the text does not" is the interesting case and it is the
+     * one a pair of nulls cannot tell from agreement.
+     */
+    val textEquipCost: ManaCost? = null,
+    val cardEquipCost: ManaCost? = null,
+    val equipCostsAgree: Boolean = true,
 )
 
 /**
@@ -693,7 +711,7 @@ class DifferentialReport private constructor(
     val clean: Boolean get() = undecodable.isEmpty()
 
     fun render(topDivergences: Int = 40): String = buildString {
-        appendLine("Argentum Assay — differential (${CardFragment.MODELLED_SLOTS_NOTE}, keywords)")
+        appendLine("Argentum Assay — differential (${CardFragment.MODELLED_SLOTS_NOTE}, keywords, equipCost)")
         appendLine("=".repeat(78))
         appendLine()
         appendLine(row("Hand-written cards", cards.toString()))
@@ -733,6 +751,10 @@ class DifferentialReport private constructor(
                 if (d.textScript != null || d.cardScript != null) {
                     appendLine("    script from text:      ${d.textScript?.let(::structural) ?: "(none)"}")
                     appendLine("    script on the card:    ${d.cardScript?.let(::structural) ?: "(none)"}")
+                }
+                if (!d.equipCostsAgree) {
+                    appendLine("    equip cost from text:  ${d.textEquipCost ?: "(none)"}")
+                    appendLine("    equip cost on card:    ${d.cardEquipCost ?: "(none)"}")
                 }
             }
             if (divergent > divergences.size) {

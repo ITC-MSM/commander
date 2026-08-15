@@ -647,21 +647,15 @@ class CardBuilder(private val name: String) {
         targetFilter: TargetFilter = TargetFilter.CreatureYouControl,
     ) {
         equipCost = ManaCost.parse(cost)
-        // The label doubles as the target requirement's id and as the bound-variable name the
-        // attach effect reads, so both halves must use the same string.
-        val targetLabel = if (quality == null) "creature you control" else "$quality creature you control"
+        // The lowering itself is `ActivatedAbility.equip`, not spelled out here, because Argentum
+        // Assay reads the printed "Equip {1}" line back into the same ability and compares it against
+        // the card — two copies of one lowering is precisely the drift that comparison exists to
+        // catch. The label that links the requirement to the bound variable lives there too.
         activatedAbilities.add(
-            ActivatedAbility(
-                id = AbilityId.generate(),
-                cost = AbilityCost.Atom(CostAtom.Mana(ManaCost.parse(cost))),
-                effect = AttachEquipmentEffect(EffectTarget.BoundVariable(targetLabel)),
-                targetRequirements = listOf(
-                    TargetCreature(filter = targetFilter, id = targetLabel)
-                ),
-                isManaAbility = false,
-                isEquipAbility = true,
-                equipQuality = quality,
-                timing = TimingRule.SorcerySpeed,
+            ActivatedAbility.equip(
+                cost = ManaCost.parse(cost),
+                quality = quality,
+                targetFilter = targetFilter,
                 genericCostReduction = genericCostReduction,
             )
         )
