@@ -128,27 +128,24 @@ object Granted {
     private val ID = AbilityId("granted")
 
     /**
-     * Build the granted ability, lowering "may" into the ability's `optional` flag exactly as
-     * [Triggers] does for a card's own trigger — and for the same reason, since the two spellings
-     * are the same sentence written inside and outside a grant.
+     * Build the granted ability. A "may" needs no lowering — `TriggeredAbility.optional` is gone and
+     * the consent gate is the model, so a granted clause is the same value the ungranted one is
+     * (see [Triggers.abilityFor], which lost the same three lines).
      */
     private fun abilityFor(spec: TriggerSpec, script: CardScript): TriggeredAbility? {
         val effect = script.spellEffect ?: return null
         if (script.targetRequirements.size > 1) return null
-        val gated = effect as? GatedEffect
-        val optional = gated != null && gated.gate is Gate.MayDecide && gated == MayEffect(gated.then)
         return TriggeredAbility(
             id = ID,
             trigger = spec.event,
             binding = spec.binding,
-            effect = if (optional) (effect as GatedEffect).then else effect,
+            effect = effect,
             targetRequirement = script.targetRequirements.singleOrNull(),
-            optional = optional,
         )
     }
 
     private fun scriptFor(ability: TriggeredAbility): CardScript = CardScript(
-        spellEffect = if (ability.optional) MayEffect(ability.effect) else ability.effect,
+        spellEffect = ability.effect,
         targetRequirements = listOfNotNull(ability.targetRequirement),
     )
 

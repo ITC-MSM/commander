@@ -6245,50 +6245,53 @@
                 "id": "ability_1",
                 "trigger": "AttackEvent",
                 "effect": {
-                    "type": "Composite",
-                    "effects": [
-                        {
-                            "type": "GatherCards",
-                            "source": {
-                                "type": "FromZone",
-                                "zone": "Library",
-                                "filter": {
-                                    "cardPredicates": [
-                                        "IsBasicLand",
-                                        {
-                                            "type": "DoesNotShareLandTypeWithPermanentYouControl",
-                                            "filter": "land"
-                                        }
-                                    ]
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Library",
+                                    "filter": {
+                                        "cardPredicates": [
+                                            "IsBasicLand",
+                                            {
+                                                "type": "DoesNotShareLandTypeWithPermanentYouControl",
+                                                "filter": "land"
+                                            }
+                                        ]
+                                    }
+                                },
+                                "storeAs": "searchable"
+                            },
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "searchable",
+                                "selection": {
+                                    "type": "ChooseUpTo",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "storeSelected": "found"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "found",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Battlefield"
                                 }
                             },
-                            "storeAs": "searchable"
-                        },
-                        {
-                            "type": "SelectFromCollection",
-                            "from": "searchable",
-                            "selection": {
-                                "type": "ChooseUpTo",
-                                "count": {
-                                    "type": "Fixed",
-                                    "amount": 1
-                                }
-                            },
-                            "storeSelected": "found"
-                        },
-                        {
-                            "type": "MoveCollection",
-                            "from": "found",
-                            "destination": {
-                                "type": "ToZone",
-                                "zone": "Battlefield"
-                            }
-                        },
-                        "ShuffleLibrary",
-                        "EmitLibrarySearchedEvent"
-                    ]
-                },
-                "optional": true
+                            "ShuffleLibrary",
+                            "EmitLibrarySearchedEvent"
+                        ]
+                    }
+                }
             }
         ],
         "activatedAbilities": [
@@ -14902,43 +14905,46 @@
                     "to": "Graveyard"
                 },
                 "effect": {
-                    "type": "Composite",
-                    "effects": [
-                        {
-                            "type": "GatherCards",
-                            "source": {
-                                "type": "FromZone",
-                                "zone": "Library",
-                                "filter": "name:Wretched Throng"
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Library",
+                                    "filter": "name:Wretched Throng"
+                                },
+                                "storeAs": "searchable"
                             },
-                            "storeAs": "searchable"
-                        },
-                        {
-                            "type": "SelectFromCollection",
-                            "from": "searchable",
-                            "selection": {
-                                "type": "ChooseUpTo",
-                                "count": {
-                                    "type": "Fixed",
-                                    "amount": 1
-                                }
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "searchable",
+                                "selection": {
+                                    "type": "ChooseUpTo",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "storeSelected": "found"
                             },
-                            "storeSelected": "found"
-                        },
-                        {
-                            "type": "MoveCollection",
-                            "from": "found",
-                            "destination": {
-                                "type": "ToZone",
-                                "zone": "Hand"
+                            {
+                                "type": "MoveCollection",
+                                "from": "found",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Hand"
+                                },
+                                "revealed": true
                             },
-                            "revealed": true
-                        },
-                        "ShuffleLibrary",
-                        "EmitLibrarySearchedEvent"
-                    ]
-                },
-                "optional": true
+                            "ShuffleLibrary",
+                            "EmitLibrarySearchedEvent"
+                        ]
+                    }
+                }
             }
         ]
     },

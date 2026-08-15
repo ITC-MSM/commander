@@ -139,13 +139,16 @@
                 },
                 "binding": "OTHER",
                 "effect": {
-                    "type": "GainLife",
-                    "amount": {
-                        "type": "Fixed",
-                        "amount": 1
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "GainLife",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 1
+                        }
                     }
-                },
-                "optional": true
+                }
             }
         ]
     },
@@ -178,11 +181,14 @@
                 },
                 "binding": "ANY",
                 "effect": {
-                    "type": "TapUntap",
-                    "target": "Self",
-                    "tap": false
-                },
-                "optional": true
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "TapUntap",
+                        "target": "Self",
+                        "tap": false
+                    }
+                }
             }
         ],
         "activatedAbilities": [
@@ -696,14 +702,17 @@
                     "to": "Battlefield"
                 },
                 "effect": {
-                    "type": "MoveToZone",
-                    "target": {
-                        "type": "BoundVariable",
-                        "name": "target"
-                    },
-                    "destination": "Hand"
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target"
+                        },
+                        "destination": "Hand"
+                    }
                 },
-                "optional": true,
                 "targetRequirement": {
                     "type": "TargetObject",
                     "filter": {
@@ -1063,18 +1072,21 @@
                     "to": "Battlefield"
                 },
                 "effect": {
-                    "type": "ForEach",
-                    "space": "IterationSpace.Targets",
-                    "body": {
-                        "type": "MoveToZone",
-                        "target": {
-                            "type": "ContextTarget",
-                            "index": 0
-                        },
-                        "destination": "Hand"
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "ForEach",
+                        "space": "IterationSpace.Targets",
+                        "body": {
+                            "type": "MoveToZone",
+                            "target": {
+                                "type": "ContextTarget",
+                                "index": 0
+                            },
+                            "destination": "Hand"
+                        }
                     }
                 },
-                "optional": true,
                 "targetRequirement": {
                     "type": "TargetObject",
                     "count": 2,

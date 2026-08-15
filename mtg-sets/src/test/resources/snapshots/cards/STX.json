@@ -94,44 +94,47 @@
                     "to": "Battlefield"
                 },
                 "effect": {
-                    "type": "Composite",
-                    "effects": [
-                        {
-                            "type": "GatherCards",
-                            "source": {
-                                "type": "FromZone",
-                                "zone": "Library",
-                                "filter": "basicland"
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Library",
+                                    "filter": "basicland"
+                                },
+                                "storeAs": "searchable"
                             },
-                            "storeAs": "searchable"
-                        },
-                        {
-                            "type": "SelectFromCollection",
-                            "from": "searchable",
-                            "selection": {
-                                "type": "ChooseUpTo",
-                                "count": {
-                                    "type": "Fixed",
-                                    "amount": 1
-                                }
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "searchable",
+                                "selection": {
+                                    "type": "ChooseUpTo",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "storeSelected": "found"
                             },
-                            "storeSelected": "found"
-                        },
-                        "ShuffleLibrary",
-                        {
-                            "type": "MoveCollection",
-                            "from": "found",
-                            "destination": {
-                                "type": "ToZone",
-                                "zone": "Library",
-                                "placement": "Top"
+                            "ShuffleLibrary",
+                            {
+                                "type": "MoveCollection",
+                                "from": "found",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Library",
+                                    "placement": "Top"
+                                },
+                                "revealed": true
                             },
-                            "revealed": true
-                        },
-                        "EmitLibrarySearchedEvent"
-                    ]
-                },
-                "optional": true
+                            "EmitLibrarySearchedEvent"
+                        ]
+                    }
+                }
             }
         ]
     },

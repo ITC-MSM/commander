@@ -66,7 +66,8 @@ class BladewingTheRisenTest : FunSpec({
         driver.castSpell(activePlayer, bladewing)
         driver.bothPass() // resolve Bladewing
 
-        // ETB trigger fires — engine pauses for target selection (optional = true means can decline)
+        // ETB trigger fires — the "you may" is asked first, then targets
+        driver.submitYesNo(activePlayer, true)
         driver.submitTargetSelection(activePlayer, listOf(dragonInGraveyard))
 
         // Trigger on stack — resolve it
@@ -95,8 +96,8 @@ class BladewingTheRisenTest : FunSpec({
         driver.castSpell(activePlayer, bladewing)
         driver.bothPass()
 
-        // Decline the ETB trigger by submitting empty targets
-        driver.submitTargetSelection(activePlayer, emptyList())
+        // Decline the ETB trigger at its may-question
+        driver.submitYesNo(activePlayer, false)
         driver.bothPass()
 
         // Dragon should remain in graveyard

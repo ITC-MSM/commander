@@ -9,6 +9,7 @@ import com.wingedsheep.sdk.model.CardScript
 import com.wingedsheep.sdk.scripting.AbilityId
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.TriggeredAbility
+import com.wingedsheep.sdk.scripting.effects.MayEffect
 import com.wingedsheep.sdk.dsl.Triggers as SdkTriggers
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
@@ -101,16 +102,16 @@ class TriggersTest : StringSpec({
             "At the beginning of each upkeep, draw a card."
     }
 
-    // "You may …" is not unspellable content: a triggered ability's `optional` flag and a spell's
-    // `MayEffect` are two SDK spellings of one sentence, and `Triggers.abilityFor` lowers between
-    // them so the printed form is the same either way.
-    "the optional flag is the trigger's spelling of \"you may\"" {
+    // "You may …" is one sentence with one model. A triggered ability used to spell it with an
+    // `optional` flag where a spell used a `MayEffect`, and `Triggers.abilityFor` had to lower
+    // between the two; the flag is gone from the SDK and a trigger's consent is the same gate a
+    // spell's is, so this now asserts that nothing special happens at all.
+    "a trigger's \"you may\" is the same consent gate a spell's is" {
         val optional = TriggeredAbility(
             id = AbilityId("trigger"),
             trigger = SdkTriggers.EntersBattlefield.event,
             binding = SdkTriggers.EntersBattlefield.binding,
-            effect = Effects.DrawCards(1),
-            optional = true,
+            effect = MayEffect(Effects.DrawCards(1)),
         )
 
         Grammar.abilityLine.printLine(

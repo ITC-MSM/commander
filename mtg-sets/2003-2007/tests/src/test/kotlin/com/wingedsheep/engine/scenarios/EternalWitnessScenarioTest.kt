@@ -1,6 +1,7 @@
 package com.wingedsheep.engine.scenarios
 
 import com.wingedsheep.engine.core.ChooseTargetsDecision
+import com.wingedsheep.engine.core.YesNoDecision
 import com.wingedsheep.engine.support.GameTestDriver
 import com.wingedsheep.engine.support.TestCards
 import com.wingedsheep.sdk.core.Color
@@ -44,6 +45,10 @@ class EternalWitnessScenarioTest : FunSpec({
         d.giveMana(d.player1, Color.GREEN, 3)
         d.castSpell(d.player1, card).isSuccess shouldBe true
         d.bothPass() // resolve the creature; its enters trigger goes on the stack and wants a target
+        // "you may return target card …" — the consent gate is answered before the target is asked
+        // for, so accept it here and leave the target decision pending for the caller. A trigger
+        // with no legal target never asks (CR 603.3d), which is what the third test relies on.
+        if (d.pendingDecision is YesNoDecision) d.submitYesNo(d.player1, true)
     }
 
     test("the enters trigger returns a card from your own graveyard") {

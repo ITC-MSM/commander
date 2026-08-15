@@ -3893,63 +3893,66 @@
                     "to": "Battlefield"
                 },
                 "effect": {
-                    "type": "Composite",
-                    "effects": [
-                        {
-                            "type": "GatherCards",
-                            "source": {
-                                "type": "FromZone",
-                                "zone": "Library",
-                                "filter": {
-                                    "cardPredicates": [
-                                        {
-                                            "type": "Or",
-                                            "predicates": [
-                                                "IsBasicLand",
-                                                {
-                                                    "type": "And",
-                                                    "predicates": [
-                                                        "IsLand",
-                                                        {
-                                                            "type": "HasSubtype",
-                                                            "subtype": "Cave"
-                                                        }
-                                                    ]
-                                                }
-                                            ]
-                                        }
-                                    ]
-                                }
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Library",
+                                    "filter": {
+                                        "cardPredicates": [
+                                            {
+                                                "type": "Or",
+                                                "predicates": [
+                                                    "IsBasicLand",
+                                                    {
+                                                        "type": "And",
+                                                        "predicates": [
+                                                            "IsLand",
+                                                            {
+                                                                "type": "HasSubtype",
+                                                                "subtype": "Cave"
+                                                            }
+                                                        ]
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                },
+                                "storeAs": "searchable"
                             },
-                            "storeAs": "searchable"
-                        },
-                        {
-                            "type": "SelectFromCollection",
-                            "from": "searchable",
-                            "selection": {
-                                "type": "ChooseUpTo",
-                                "count": {
-                                    "type": "Fixed",
-                                    "amount": 1
-                                }
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "searchable",
+                                "selection": {
+                                    "type": "ChooseUpTo",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "storeSelected": "found"
                             },
-                            "storeSelected": "found"
-                        },
-                        "ShuffleLibrary",
-                        {
-                            "type": "MoveCollection",
-                            "from": "found",
-                            "destination": {
-                                "type": "ToZone",
-                                "zone": "Library",
-                                "placement": "Top"
+                            "ShuffleLibrary",
+                            {
+                                "type": "MoveCollection",
+                                "from": "found",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Library",
+                                    "placement": "Top"
+                                },
+                                "revealed": true
                             },
-                            "revealed": true
-                        },
-                        "EmitLibrarySearchedEvent"
-                    ]
-                },
-                "optional": true
+                            "EmitLibrarySearchedEvent"
+                        ]
+                    }
+                }
             }
         ]
     },
@@ -4730,31 +4733,34 @@
                     "to": "Battlefield"
                 },
                 "effect": {
-                    "type": "Composite",
-                    "effects": [
-                        {
-                            "type": "GatherCards",
-                            "source": {
-                                "type": "TopOfLibrary",
-                                "count": {
-                                    "type": "Fixed",
-                                    "amount": 2
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "TopOfLibrary",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 2
+                                    },
+                                    "isMill": true
                                 },
-                                "isMill": true
+                                "storeAs": "milled"
                             },
-                            "storeAs": "milled"
-                        },
-                        {
-                            "type": "MoveCollection",
-                            "from": "milled",
-                            "destination": {
-                                "type": "ToZone",
-                                "zone": "Graveyard"
+                            {
+                                "type": "MoveCollection",
+                                "from": "milled",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Graveyard"
+                                }
                             }
-                        }
-                    ]
-                },
-                "optional": true
+                        ]
+                    }
+                }
             }
         ]
     },
@@ -11731,31 +11737,34 @@
                     "to": "Battlefield"
                 },
                 "effect": {
-                    "type": "Composite",
-                    "effects": [
-                        {
-                            "type": "GatherCards",
-                            "source": {
-                                "type": "TopOfLibrary",
-                                "count": {
-                                    "type": "Fixed",
-                                    "amount": 2
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "TopOfLibrary",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 2
+                                    },
+                                    "isMill": true
                                 },
-                                "isMill": true
+                                "storeAs": "milled"
                             },
-                            "storeAs": "milled"
-                        },
-                        {
-                            "type": "MoveCollection",
-                            "from": "milled",
-                            "destination": {
-                                "type": "ToZone",
-                                "zone": "Graveyard"
+                            {
+                                "type": "MoveCollection",
+                                "from": "milled",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Graveyard"
+                                }
                             }
-                        }
-                    ]
-                },
-                "optional": true
+                        ]
+                    }
+                }
             }
         ]
     },
@@ -16476,31 +16485,34 @@
                     "to": "Battlefield"
                 },
                 "effect": {
-                    "type": "Composite",
-                    "effects": [
-                        {
-                            "type": "GatherCards",
-                            "source": {
-                                "type": "TopOfLibrary",
-                                "count": {
-                                    "type": "Fixed",
-                                    "amount": 2
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "TopOfLibrary",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 2
+                                    },
+                                    "isMill": true
                                 },
-                                "isMill": true
+                                "storeAs": "milled"
                             },
-                            "storeAs": "milled"
-                        },
-                        {
-                            "type": "MoveCollection",
-                            "from": "milled",
-                            "destination": {
-                                "type": "ToZone",
-                                "zone": "Graveyard"
+                            {
+                                "type": "MoveCollection",
+                                "from": "milled",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Graveyard"
+                                }
                             }
-                        }
-                    ]
-                },
-                "optional": true
+                        ]
+                    }
+                }
             }
         ],
         "staticAbilities": [

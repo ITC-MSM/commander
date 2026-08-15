@@ -5147,14 +5147,17 @@
                 "id": "ability_1",
                 "trigger": "TurnFaceUpEvent",
                 "effect": {
-                    "type": "MoveToZone",
-                    "target": {
-                        "type": "BoundVariable",
-                        "name": "another creature"
-                    },
-                    "destination": "Hand"
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "another creature"
+                        },
+                        "destination": "Hand"
+                    }
                 },
-                "optional": true,
                 "targetRequirement": {
                     "type": "TargetObject",
                     "filter": {
@@ -11685,13 +11688,16 @@
                     "to": "Battlefield"
                 },
                 "effect": {
-                    "type": "ExileUntilLeaves",
-                    "target": {
-                        "type": "BoundVariable",
-                        "name": "creature with toughness 3 or greater"
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "ExileUntilLeaves",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "creature with toughness 3 or greater"
+                        }
                     }
                 },
-                "optional": true,
                 "targetRequirement": {
                     "type": "TargetObject",
                     "filter": {

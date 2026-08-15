@@ -4410,13 +4410,16 @@
                 },
                 "binding": "ANY",
                 "effect": {
-                    "type": "DrawCards",
-                    "count": {
-                        "type": "Fixed",
-                        "amount": 1
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "DrawCards",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 1
+                        }
                     }
-                },
-                "optional": true
+                }
             }
         ]
     },
