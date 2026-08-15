@@ -444,20 +444,38 @@ data class DistributeCountersFromSelfEffect(
 }
 
 /**
- * Proliferate — choose any number of permanents and/or players that have a counter.
- * For each, give it another counter of each kind already there.
+ * Give one additional counter of each kind already there to any number of permanents and/or players.
  *
- * Pure data; the engine resolves at execution time by:
- * 1. Gathering all permanents on the battlefield AND all players that have at least
- *    one counter of any kind.
- * 2. Asking the controller to pick a subset (any number, including zero).
- * 3. For each chosen entity, adding one counter of every kind it already has.
+ * [target] selects *who* receives them, and is the only difference between the two shapes this
+ * effect covers:
+ *
+ * - **`target == null` — proliferate (CR 701.34a).** The recipients are chosen when the effect
+ *   resolves: the engine gathers every permanent and player that has at least one counter, asks the
+ *   controller to pick any subset (including none), and adds one counter of every kind each picked
+ *   entity already has. Nothing is targeted, so hexproof/shroud don't apply and there is no
+ *   announcement-time choice to respond to.
+ * - **`target != null` — the targeted, single-object form.** "For each kind of counter on target
+ *   permanent or player, give that permanent or player another counter of that kind" (Powerful
+ *   Broker). The recipient is a real target: chosen on announcement (CR 601.2c), respondable,
+ *   subject to hexproof/shroud/protection, and re-checked on resolution (CR 608.2b) — so the
+ *   ability is countered outright if its only target has become illegal. There is no
+ *   resolution-time decision. Any [com.wingedsheep.sdk.scripting.targets.EffectTarget] works
+ *   (`ContextTarget`/`BoundVariable` for a declared target, `Self`, a `PlayerRef`, …).
+ *
+ * The counters added are identical in both shapes: one of each kind the recipient currently has,
+ * honoring counter-placement replacement effects, and attributed to the effect's controller so
+ * counter-history predicates see the placement.
  */
 @SerialName("Proliferate")
 @Serializable
-data object ProliferateEffect : Effect {
-    override val description: String =
+data class ProliferateEffect(
+    val target: EffectTarget? = null
+) : Effect {
+    override val description: String = if (target == null) {
         "Proliferate. (Choose any number of permanents and/or players, then give each another counter of each kind already there.)"
+    } else {
+        "For each kind of counter on ${target.description}, give it another counter of that kind."
+    }
 }
 
 /**

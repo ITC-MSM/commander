@@ -3,6 +3,7 @@ package com.wingedsheep.engine.handlers.continuations
 import com.wingedsheep.engine.core.*
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.ReplacementEffectUtils
+import com.wingedsheep.engine.handlers.effects.permanent.counters.ProliferateExecutor
 import com.wingedsheep.engine.handlers.effects.permanent.counters.RemoveAnyNumberOfCountersFlow
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.sdk.model.EntityId
@@ -905,52 +906,10 @@ class MiscContinuationResumer(
             return checkForMore(state, emptyList())
         }
 
-        var newState = state
-        val events = mutableListOf<GameEvent>()
-
-        for (entityId in chosen) {
-            val current = newState.getEntity(entityId)
-                ?.get<com.wingedsheep.engine.state.components.battlefield.CountersComponent>()
-                ?: continue
-            // Snapshot the kinds present at decision time per the entity's current state.
-            val kinds = current.counters.filterValues { it > 0 }.keys.toList()
-            if (kinds.isEmpty()) continue
-
-            val entityName = newState.getEntity(entityId)
-                ?.get<com.wingedsheep.engine.state.components.identity.CardComponent>()?.name ?: ""
-
-            for (counterType in kinds) {
-                val modifiedAmount = ReplacementEffectUtils.applyCounterPlacementModifiers(
-                    newState, entityId, counterType, 1, placerId = continuation.controllerId
-                )
-                if (modifiedAmount <= 0) continue
-
-                val before = newState.getEntity(entityId)
-                    ?.get<com.wingedsheep.engine.state.components.battlefield.CountersComponent>()
-                    ?: com.wingedsheep.engine.state.components.battlefield.CountersComponent()
-                newState = newState.updateEntity(entityId) { container ->
-                    container.with(before.withAdded(counterType, modifiedAmount))
-                }
-                val (afterMark, firstThisTurn) = com.wingedsheep.engine.handlers.effects.DamageUtils
-                    .recordCounterPlacement(
-                        newState,
-                        entityId,
-                        com.wingedsheep.engine.handlers.effects.permanent.counters.counterTypeToString(counterType),
-                        placerId = continuation.controllerId,
-                    )
-                newState = afterMark
-                events.add(
-                    CountersAddedEvent(
-                        entityId,
-                        com.wingedsheep.engine.handlers.effects.permanent.counters.counterTypeToString(counterType),
-                        modifiedAmount,
-                        entityName,
-                        firstThisTurn,
-                        placedBy = continuation.controllerId
-                    )
-                )
-            }
-        }
+        // Same placement rule as the targeted form of the effect (Powerful Broker) — only the
+        // way the recipients were chosen differs.
+        val (newState, events) =
+            ProliferateExecutor.addOneOfEachKind(state, chosen, continuation.controllerId)
 
         return checkForMore(newState, events)
     }

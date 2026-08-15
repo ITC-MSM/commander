@@ -1253,7 +1253,15 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   `TargetObject(unlimited = true, dynamicMaxCount = DynamicAmount.XValue)` — the dynamic cap
   outranks `unlimited` in `TargetValidator`, enforcing CR 601.2d (no more targets than counters).
 - `DistributeCountersAmongFiltered(total, type?, filter, minPerTarget?)` — distribute N **new** counters among permanents matching `filter`, chosen at resolution (not the spell's targets); `minPerTarget = 0` models "among any number of". Unlike `DistributeCountersFromSelf` nothing is removed from a source. Crashing Wave: `DistributeCountersAmongFiltered(3, Counters.STUN, Filters.Creature.tapped().opponentControls())` — "distribute three stun counters among any number of tapped creatures your opponents control."
-- `Proliferate()` — add one counter of each kind already present on chosen permanents/players (CR 701.27).
+- `Proliferate(target?)` — give one more counter of each kind already there. With no argument it is
+  proliferate proper (CR 701.34): the controller chooses any number of permanents and/or players with
+  a counter when the effect *resolves*, nothing is targeted. Pass a `target` for the targeted
+  single-object form — "for each kind of counter on target permanent or player, give that permanent or
+  player another counter of that kind" (Powerful Broker): the recipient is a real target, so it is
+  announced with the spell/ability, respects hexproof/shroud, and the ability is countered if that
+  target is illegal on resolution (CR 608.2b). Pair it with `Targets.PermanentOrPlayer`. Both forms
+  place counters identically: replacement effects honored, placement attributed to the controller,
+  and a recipient that "can't have counters put on it" (Blossombind) skipped.
 - `AddCountersToCollection(name, type, count)` — add counters to cards held in a pipeline collection.
   An overload takes a `DynamicAmount` instead of an `Int` count, evaluated once at resolution — "create
   a token, then put X +1/+1 counters on it, where X is …" over the `CREATED_TOKENS` collection (Emil,
@@ -2932,6 +2940,10 @@ can't statically prevent (cross-trigger flows, `Self`-vs-`ContextTarget` inside 
 - `Targets.Planeswalker` — any planeswalker.
 - `Targets.Permanent` — any permanent.
 - `Targets.PermanentYouControl` / `PermanentOpponentControls` — controller-restricted permanent ("target permanent you control gains protection …" — Razor Barrier).
+- `Targets.PermanentOrPlayer` — "target permanent or player" (Powerful Broker). The general member of
+  the "object or player" family: `TargetPermanentOrPlayer(permanentFilter = …)` narrows the permanent
+  half ("target artifact or player") while each half keeps the legality checks of its single-kind
+  counterpart. The older, narrower `Targets.CreatureOrPlayer` stays as-is for cards already using it.
 - `Targets.NonlandPermanent` — any nonland permanent.
 - `Targets.OtherNonlandPermanent` — "another target nonland permanent"; excludes the source (Braided Net).
 - `Targets.Artifact` — any artifact.

@@ -485,14 +485,6 @@ Per-mode `additionalManaCost` on `ModalEffect` is not an alternative — it is h
 Needed: `RepeatOptionalPaymentEffect(cost, maxTimes, storeCountAs)` whose stored count feeds
 `ModalEffect.dynamicChooseCount` (`chooseUpToDynamic` already accepts any `DynamicAmount`).
 
-### Targeted proliferate — **Powerful Broker** [179]
-`ProliferateEffect` is a bare `data object` with no target and no cap
-(`mtg-sdk/.../scripting/effects/CounterEffects.kt`); the executor picks its own permanents at
-resolution, so it cannot express a *targeted* single-object proliferate (which is respondable and
-respects hexproof). Needed: a `target: EffectTarget? = null` field plus a branch in
-`ProliferateExecutor` that skips the selection continuation when a target is supplied, and a "target
-permanent or player" `TargetRequirement`.
-
 ### "Activate abilities as though they had haste" — **Shang-Chi, Master of Kung Fu** [187]
 No static, keyword, or engine hook for this anywhere. The summoning-sickness gate for `{T}` abilities
 is checked inline against `SummoningSicknessComponent` + `hasHaste` in `ManaSolver` and the ability

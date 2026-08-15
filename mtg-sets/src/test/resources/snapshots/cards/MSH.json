@@ -11272,6 +11272,50 @@
     ]
 }
 
+// Powerful Broker
+{
+    "name": "Powerful Broker",
+    "manaCost": "{2}{G}",
+    "typeLine": "Creature — Human Villain",
+    "oracleText": "{T}: For each kind of counter on target permanent or player, give that permanent or player another counter of that kind. Activate only as a sorcery.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "Proliferate",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target permanent or player"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetPermanentOrPlayer",
+                        "id": "target permanent or player"
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "descriptionOverride": "{T}: For each kind of counter on target permanent or player, give that permanent or player another counter of that kind. Activate only as a sorcery."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "179",
+        "artist": "JB Casacop",
+        "flavorText": "\"Our new product makes disobedience literally unthinkable!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/0/801f0417-b663-4e28-9a61-9570061654d7.jpg?1783902917"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Project Deathlok Soldier
 {
     "name": "Project Deathlok Soldier",

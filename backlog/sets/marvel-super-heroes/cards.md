@@ -3,7 +3,7 @@
 **Set Size:** 276 booster cards (collector numbers 1-276; basic lands 277-296 and showcase
 variants 297+ are excluded)
 **Release Date:** June 26, 2026
-**Implemented:** 256 / 276
+**Implemented:** 257 / 276
 - [x] Agent 13, Sharon Carter
 - [x] Agent Maria Hill
 - [x] Agent of Atlas
@@ -182,7 +182,7 @@ variants 297+ are excluded)
 - [x] Mister Hyde, Monster Within
 - [x] Mole Man, Moloid Master
 - [x] Pet Avengers
-- [ ] Powerful Broker
+- [x] Powerful Broker
 - [x] Punishing Punch
 - [x] Rapid Rescue
 - [x] Reptil, Dinomorpher
