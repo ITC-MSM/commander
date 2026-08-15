@@ -191,9 +191,13 @@ class FlourishingBloomKinScenarioTest : FunSpec({
     }
 
     test("finding only one Forest puts it onto the battlefield, never into your hand") {
-        // A library with exactly one Forest in it: the ruling's case.
-        val driver = createDriver(Deck.of("Plains" to 39, "Forest" to 1))
+        // A library with exactly one Forest in it: the ruling's case. The Forest is planted after
+        // the deal rather than listed as a singleton in the deck — `initMirrorMatch` passes no seed,
+        // so a 1-of would be drawn into the opening hand about one run in five and leave the search
+        // with nothing to find.
+        val driver = createDriver(Deck.of("Plains" to 40))
         val player = driver.activePlayer!!
+        driver.putCardOnTopOfLibrary(player, "Forest")
 
         val bloomKin = castFaceDown(driver, player)
         val landsBefore = driver.getLands(player).size
