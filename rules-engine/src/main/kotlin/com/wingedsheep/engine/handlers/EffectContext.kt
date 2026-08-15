@@ -210,6 +210,12 @@ data class EffectContext(
      * Demon". Null when the trigger wasn't driven by a permanent leaving the battlefield.
      */
     val triggerLastKnownSubtypes: Set<String>? = null,
+    /**
+     * Last-known projected card types from a dies/leaves trigger context (CR 603.10). Read by
+     * `TriggeringEntityHadCardType` as an intervening-if — e.g. Tom, Bert, and William's "if they
+     * were a creature". Null when the trigger wasn't driven by a permanent leaving the battlefield.
+     */
+    val triggerLastKnownCardTypes: Set<String>? = null,
     /** The entity that caused the trigger to fire (e.g., creature that dealt damage for Aurification) */
     val triggeringEntityId: EntityId? = null,
     /** The player associated with the trigger event (e.g., the player who cast a spell for SpellCastEvent) */

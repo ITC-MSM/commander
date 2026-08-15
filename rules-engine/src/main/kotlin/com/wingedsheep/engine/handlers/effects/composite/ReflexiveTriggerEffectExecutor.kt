@@ -460,6 +460,7 @@ class ReflexiveTriggerEffectExecutor(
                     lastKnownToughness = effectContext.triggerLastKnownToughness,
                     diedBatchTotalPower = effectContext.triggerDiedBatchTotalPower,
                     lastKnownSubtypes = effectContext.triggerLastKnownSubtypes,
+                    lastKnownCardTypes = effectContext.triggerLastKnownCardTypes,
                     lastKnownCounters = effectContext.triggerLastKnownCounters,
                     lastKnownDamageDealtByPlayers = effectContext.triggerLastKnownDamageDealtByPlayers,
                     lastKnownBlockingOrBlockedByIds = effectContext.triggerLastKnownBlockingOrBlockedByIds,

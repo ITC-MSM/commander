@@ -1840,6 +1840,7 @@ class TriggerMatcher(
                 // of settling for the +1/+1-only or sum-of-all-kinds scalars above.
                 triggerLastKnownCounters = trigger.triggerContext.lastKnownCounters,
                 triggerLastKnownSubtypes = trigger.triggerContext.lastKnownSubtypes,
+                triggerLastKnownCardTypes = trigger.triggerContext.lastKnownCardTypes,
                 triggerLastKnownPower = trigger.triggerContext.lastKnownPower,
                 triggerLastKnownToughness = trigger.triggerContext.lastKnownToughness,
                 triggerDiedBatchTotalPower = trigger.triggerContext.diedBatchTotalPower,

@@ -61,6 +61,15 @@ data class TriggerContext(
      */
     val lastKnownSubtypes: Set<String>? = null,
     /**
+     * Last-known **projected** card types when the triggering entity left the battlefield
+     * (CR 603.10), so a type set by a continuous effect counts and not just the printed one. Read by
+     * [com.wingedsheep.sdk.scripting.conditions.TriggeringEntityHadCardType] as an intervening-if on
+     * dies/leaves triggers (Tom, Bert, and William's "if they were a creature" self-recursion
+     * guard — the second death is of the artifact they came back as). The card-type sibling of
+     * [lastKnownSubtypes]. Null when the trigger's source never left the battlefield.
+     */
+    val lastKnownCardTypes: Set<String>? = null,
+    /**
      * Last-known counter map (counter-type-string → count) when the triggering source left
      * the battlefield. Used by triggers that move every counter onto another permanent
      * (e.g., Essence Channeler's "put its counters on target creature you control").
@@ -209,6 +218,8 @@ data class TriggerContext(
                     lastKnownPower = event.lastKnown?.power,
                     lastKnownToughness = event.lastKnown?.toughness,
                     lastKnownSubtypes = event.lastKnown?.subtypes?.takeIf { it.isNotEmpty() },
+                    lastKnownCardTypes = event.lastKnown?.typeLine?.cardTypes
+                        ?.mapTo(mutableSetOf()) { it.name }?.takeIf { it.isNotEmpty() },
                     lastKnownCounters = event.lastKnown?.counters?.takeIf { it.isNotEmpty() },
                     lastKnownDamageDealtByPlayers =
                         event.lastKnown?.damageDealtByPlayers?.takeIf { it.isNotEmpty() },
