@@ -147,3 +147,4 @@ It is **predictive and non-authoritative — never a card loader.** Two rules fo
 | [`gym-deckbuild-env.md`](docs/gym-deckbuild-env.md) | Sealed deckbuild gym env + custom win-rate reward |
 | [`gym-self-play-testing.md`](docs/gym-self-play-testing.md) | Driving the gym server over HTTP to surface broken cards |
 | [`agent-loops/`](docs/agent-loops/) | Long-running set-implementation prompts for Claude Code `/loop` and Codex `/goal` |
+| [`oracle-assay.md`](docs/oracle-assay.md) | **Proposal** — first-party Scryfall→SDK Oracle parser; also audits `mtg-sdk` vocabulary |
