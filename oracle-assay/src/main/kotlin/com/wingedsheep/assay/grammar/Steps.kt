@@ -6,6 +6,8 @@ import com.wingedsheep.assay.syntax.oneOf
 import com.wingedsheep.assay.syntax.phrase
 import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.model.CardScript
+import com.wingedsheep.sdk.scripting.GameObjectFilter
+import com.wingedsheep.sdk.scripting.effects.Effect
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
 import com.wingedsheep.sdk.scripting.effects.DrawCardsEffect
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
@@ -71,8 +73,56 @@ object Steps {
             }
         }
 
+    // ---------------------------------------------------------------------------------------
+    // One permanent, one verb
+    // ---------------------------------------------------------------------------------------
+
+    /**
+     * The shape shared by "Destroy target creature.", "Exile target artifact.", "Tap target
+     * creature you control." — a verb, one targeted permanent, and nothing else.
+     *
+     * The `match` half is an **equality test against what `build` would have produced**, not a
+     * structural walk. That is deliberate and it is the discipline the whole file follows: a matcher
+     * that inspected only the fields it cared about would happily print a script carrying extra
+     * content it never looked at, which round-trips and loses meaning — the reversible-but-wrong
+     * class. Reconstructing the whole script and comparing makes the check exhaustive by
+     * construction, so a rule cannot fall behind the effect it prints.
+     */
+    private fun targetedPermanentStep(
+        template: String,
+        name: String,
+        effect: (EffectTarget) -> Effect,
+    ): Phrase<CardScript> {
+        fun scriptFor(filter: GameObjectFilter) = CardScript(
+            spellEffect = effect(Targets.bound()),
+            targetRequirements = listOf(Targets.permanent(filter)),
+        )
+        return phrase(template, name = name) {
+            slot("filter", Filters.filter)
+            build { scriptFor(it.value("filter")) }
+            match { script ->
+                val requirement = script.targetRequirements.singleOrNull() ?: return@match null
+                val filter = Targets.permanentFilter(requirement) ?: return@match null
+                if (script != scriptFor(filter)) return@match null
+                bind("filter" to filter)
+            }
+        }
+    }
+
+    private val permanentSteps: List<Phrase<CardScript>> = listOf(
+        targetedPermanentStep("destroy target {filter}.", "destroy target") { Effects.Destroy(it) },
+        targetedPermanentStep("exile target {filter}.", "exile target") { Effects.Exile(it) },
+        targetedPermanentStep("tap target {filter}.", "tap target") { Effects.Tap(it) },
+        targetedPermanentStep("untap target {filter}.", "untap target") { Effects.Untap(it) },
+        targetedPermanentStep(
+            "return target {filter} to its owner's hand.",
+            "return target to hand",
+        ) { Effects.ReturnToHand(it) },
+    )
+
     /** Every step rule, as one alternation. Grows with the family. */
-    val all: List<Phrase<CardScript>> = listOf(drawOne, drawMany, targetPlayerDrawsOne, targetPlayerDrawsMany)
+    val all: List<Phrase<CardScript>> =
+        listOf(drawOne, drawMany, targetPlayerDrawsOne, targetPlayerDrawsMany) + permanentSteps
 
     val step: Phrase<CardScript> = oneOf("a spell effect", all)
 

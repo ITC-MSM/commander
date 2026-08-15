@@ -56,11 +56,21 @@ Three parts, in this order:
    cardinals → a small filter/target vocabulary → a handful of pipeline steps → the trigger prefix.
    The decline table ranks this for us: `Whenever` (6,450 cards) and `When` (6,054) are the top two
    families by a wide margin, so triggers are neither deferrable nor a guess.
-   *Started.* `Cardinals` (number words), `Targets` (the requirement/reference pair) and `Steps`
-   (the draw family, targeted and not) are in, and the line model widened from `List<KeywordAbility>`
-   to [`CardFragment`] so a line can fill either behavioural slot a card has. Whole-card coverage
-   1,744 → 1,774 and the differential started comparing spell effects. Filters, the remaining steps
-   and the trigger prefix are next.
+   *Half done.* `Cardinals` (number words), `Targets` (the requirement/reference pair), `Filters`
+   (the noun phrase, with its controller clause) and `Steps` (draw, destroy, exile, tap, untap,
+   return to hand — every one-verb spell over a targeted permanent) are in, and the line model
+   widened from `List<KeywordAbility>` to [`CardFragment`] so a line can fill either behavioural slot
+   a card has. Whole-card coverage 1,744 → 1,906; the differential's compared population 449 → 505,
+   and it is now comparing *spells* rather than keyword lists, which is what produced the eight
+   findings above.
+
+   **The trigger prefix is the remaining half**, and it is a bigger step than the rules above: a
+   trigger is a new `CardScript` slot, so it needs the fragment, the modelled-slot guard and the
+   differential's comparison widened together — and it raises three questions the effect rules never
+   had to answer. Where a triggered ability declares its *targets*; whether an authored
+   `descriptionOverride` is content or presentation (cards set it, a parser never would); and what to
+   do with `AbilityId`, which is arbitrary in exactly the way a target slot's name is and will need
+   the same normalization.
 3. **A third number in the fineness report** — beside "round-trips byte-exact" and "declined", a
    *confirmed* row: whole cards whose model matches the hand-written definition.
 
@@ -177,16 +187,28 @@ Turn the implemented corpus into the semantic oracle. This is what catches the r
 class that the touchstone structurally cannot. **Brought forward ahead of Phase 2** per the MVP
 above: the gate has to exist before grammar breadth, or the breadth is unverified.
 
-**Outcome.** `just assay-differential` runs over all 8,874 committed goldens. Of those, 449 clear
-every scoping guard and are compared: **444 confirmed (98.9%), 5 divergences, all classified**. It
-found the predicted class on its first run — multi-quality protection read as one ability where
-CR 702.16g makes it two, reversible and wrong — plus two "one concept, two spellings" findings in the
-SDK. Details in [`oracle-assay/README.md`](../../oracle-assay/README.md).
+**Outcome.** `just assay-differential` runs over all 8,874 committed goldens. Of those, 505 clear
+every scoping guard and are compared: **504 confirmed (99.8%), 1 classified divergence**. It found
+the predicted class on its first run — multi-quality protection read as one ability where CR 702.16g makes it two,
+reversible and wrong — plus two "one concept, two spellings" findings in the SDK. All five opening
+divergences are now fixed: the grammar reads a joined quality list as several abilities (and
+generalized to subtypes, three-way Oxford lists, and hexproof per CR 702.11f), and the dead
+`KeywordAbility.Flanking` object is deleted from `mtg-sdk` — it overrode no `keyword`, so a card
+authored with it would have done nothing. Details in [`oracle-assay/README.md`](../../oracle-assay/README.md).
 
-**Three guards, each found by the gate lying to itself once.** Assay must read every *line*; the
-golden's text must be the *same text* Scryfall serves (compared normalized, since goldens carry
-reminder text inconsistently); and the definition must use only *modelled slots*. Every card failing
-one lands in a named bucket rather than being confirmed.
+The count is a *checkpoint*, not a property, and it behaved like one immediately: the first band of
+spell rules took it from 0 to 8, of which six were the gate's own slot-name normalization colliding
+with a field called `target`, one was the positional-versus-named target idiom (now folded, on the
+SDK's own statement that they are the same link), and one is a standing finding —
+`TargetCreatureOrPlaneswalker` versus the general filtered target, two fully-wired *parallel* engine
+paths, deliberately not folded.
+
+**Four guards, three of them found by the gate lying to itself once.** Assay must read every *line*;
+the golden's text must be the *same text* Scryfall serves (compared normalized, since goldens carry
+reminder text inconsistently); the definition must use only *modelled slots*; and the card's lines
+must *fold into one card* — two lines that both parse as the spell effect mean a sequence the grammar
+cannot spell, which used to throw and now counts. Every card failing one lands in a named bucket
+rather than being confirmed.
 
 1. **`gate/Differential.kt`** — done, over keyword abilities plus `spellEffect` and
    `targetRequirements`. The comparison grows with the grammar, and the three guards above are what
@@ -195,8 +217,12 @@ one lands in a named bucket rather than being confirmed.
    `Keyword` implied by a parameterized `KeywordAbility` of the same keyword, which is a
    `CardDefinition` index entry the SDK populates on purpose rather than a second ability. Reviewed,
    never grown silently.
-3. **Triage every divergence.** Ongoing, and the point. A divergence that turns out to be a bug in a
-   hand-written card is a genuine win and should get its own fix + scenario test.
+3. **Triage every divergence.** Ongoing, and the point. The opening five are closed: three were the
+   protection-join parser bug, two were the flanking spelling — the first a bug in Assay, the second
+   a dead type in the SDK. A divergence that turns out to be a bug in a hand-written card is still
+   the outcome worth most, and none has appeared yet; the MVP's "at least one genuine bug found in a
+   hand-written card" clause is therefore still open, and is an argument for reaching new card
+   classes rather than for polishing this one.
 
 **The oracle is a file read, not a dependency.** `:oracle-assay` still depends on `:mtg-sdk` alone.
 The goldens under `mtg-sets/src/test/resources/snapshots/cards/` are data, decoded by `mtg-sdk`'s own

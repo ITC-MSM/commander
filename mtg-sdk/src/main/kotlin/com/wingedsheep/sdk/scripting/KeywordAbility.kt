@@ -210,16 +210,12 @@ sealed interface KeywordAbility {
         override val description: String = "${keyword.displayName} $label"
     }
 
-    /**
-     * Flanking.
-     * "Flanking" - Whenever this creature becomes blocked by a creature without flanking,
-     * the blocking creature gets -1/-1 until end of turn.
-     */
-    @SerialName("Flanking")
-    @Serializable
-    data object Flanking : KeywordAbility {
-        override val description: String = "Flanking"
-    }
+    // Flanking has no dedicated variant: it is `Simple(Keyword.FLANKING)`, because the engine
+    // derives its trigger from the *keyword* (`Flanking.blockedByNonFlankerTrigger`, synthesized in
+    // `TriggerAbilityResolver` for anything whose projected keyword set contains FLANKING). A
+    // dedicated object overriding no `keyword` never reaches `CardDefinition.keywords`, so a card
+    // authored with it would print "Flanking" and do nothing. One existed until the Assay
+    // differential found the corpus using one spelling and the parser the other.
 
     // =========================================================================
     // Cost Reduction Keywords

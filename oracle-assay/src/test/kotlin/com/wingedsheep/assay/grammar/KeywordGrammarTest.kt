@@ -75,11 +75,39 @@ class KeywordGrammarTest : StringSpec({
         roundTrips("Protection from Goblins")
     }
 
-    "a multi-colour protection is one rule, so there is exactly one reading" {
+    // CR 702.16g: "protection from [A] and from [B]" is shorthand for two protection abilities.
+    // The old reading — one `Protection(Colors([W, U]))` — round-tripped byte-exact while
+    // disagreeing with every card that spells it, which is the class only the differential catches.
+    "a multi-quality protection is two abilities, per CR 702.16g" {
         parse("Protection from white and from blue") shouldContainExactly listOf(
-            KeywordAbility.Protection(ProtectionScope.Colors(setOf(Color.WHITE, Color.BLUE)))
+            KeywordAbility.Protection(ProtectionScope.Color(Color.WHITE)),
+            KeywordAbility.Protection(ProtectionScope.Color(Color.BLUE)),
         )
         roundTrips("Protection from white and from blue")
+    }
+
+    "the join is over qualities, not colours, and covers hexproof too (CR 702.11f)" {
+        parse("Protection from Demons and from Dragons") shouldContainExactly listOf(
+            KeywordAbility.Protection(ProtectionScope.Subtype("Demon")),
+            KeywordAbility.Protection(ProtectionScope.Subtype("Dragon")),
+        )
+        roundTrips("Protection from Demons and from Dragons")
+        roundTrips("Hexproof from white and from black")
+    }
+
+    "three or more qualities take the printed Oxford comma" {
+        parse("Protection from Vampires, from Werewolves, and from Zombies") shouldContainExactly listOf(
+            KeywordAbility.Protection(ProtectionScope.Subtype("Vampire")),
+            KeywordAbility.Protection(ProtectionScope.Subtype("Werewolf")),
+            KeywordAbility.Protection(ProtectionScope.Subtype("Zombie")),
+        )
+        roundTrips("Protection from Vampires, from Werewolves, and from Zombies")
+    }
+
+    // A run is joined maximally on the way out, so the model decides the grouping and not the order
+    // the rules happen to be tried in. Neighbours that are not part of the run keep their commas.
+    "a run joins only its own neighbours" {
+        roundTrips("Flying, protection from black and from red, trample")
     }
 
     "an irregular plural is not de-pluralized into a subtype that does not exist" {

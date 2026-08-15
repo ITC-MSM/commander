@@ -61,9 +61,6 @@ object Reminders {
         is KeywordAbility.AffinityForSubtype ->
             "This spell costs {1} less to cast for each ${ability.forSubtype.value} you control."
 
-        is KeywordAbility.Flanking ->
-            "Whenever a creature without flanking blocks $self, the blocking creature gets -1/-1 until end of turn."
-
         is KeywordAbility.Flashback ->
             "You may cast this card from your graveyard for its flashback cost. Then exile it."
                 .takeIf { ability.additionalCost == null }
@@ -169,6 +166,9 @@ object Reminders {
         Keyword.REACH -> "$self can block creatures with flying."
         Keyword.PROVOKE -> "Whenever $self attacks, you may have target creature defending player controls " +
             "untap and block it if able."
+
+        Keyword.FLANKING -> "Whenever a creature without flanking blocks $self, the blocking creature gets " +
+            "-1/-1 until end of turn."
 
         Keyword.DEFENDER -> "$self can't attack."
         Keyword.INDESTRUCTIBLE -> "Effects that say \"destroy\" don't destroy $self."

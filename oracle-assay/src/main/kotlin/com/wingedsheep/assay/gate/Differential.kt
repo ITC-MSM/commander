@@ -11,7 +11,14 @@ import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.CardScript
 import com.wingedsheep.sdk.scripting.KeywordAbility
 import com.wingedsheep.sdk.serialization.CardSerialization
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import java.util.Locale
+
+/** The keys whose string *values* can be a target-slot reference. See `Differential.renameSlots`. */
+private val SLOT_REFERENCE_KEYS = setOf("id", "name")
 
 /**
  * Gate 2 — the **differential**: Assay's reading of a card against the definition a human wrote
@@ -122,7 +129,12 @@ class Differential(private val touchstone: Touchstone = Touchstone()) {
             return CardComparison(implemented, card, Population.SCRIPT_NOT_MODELLED)
         }
 
-        val fromText = result.lines.mapNotNull { it.model }.fold(CardFragment.EMPTY, CardFragment::merge)
+        // A card whose lines cannot be folded into one model — two effect paragraphs where the
+        // `CardScript` has one `spellEffect` — is counted rather than approximated. See
+        // `CardFragment.merge`.
+        val fromText = result.lines.mapNotNull { it.model }
+            .fold(CardFragment.EMPTY as CardFragment?) { acc, fragment -> acc?.merge(fragment) }
+            ?: return CardComparison(implemented, card, Population.LINES_DO_NOT_FOLD)
         val fromCard = CardFragment(
             keywordAbilities = printedKeywords(definition).toList(),
             script = modelledSlots(definition.script),
@@ -177,20 +189,86 @@ class Differential(private val touchstone: Touchstone = Touchstone()) {
      * The string linking a `TargetRequirement` to the `EffectTarget` reading it is arbitrary — see
      * [com.wingedsheep.assay.grammar.Targets] — so two models differing only in that name are the
      * same model, and a differential that reported them as divergent would be measuring a naming
-     * convention. Done textually over the serialized script, which is how
-     * `CardDefinitionSnapshotTest.normalizeAbilityIds` solves the identical problem for ability ids;
-     * a structural rewrite would have to walk every `Effect` subtype to find the references.
+     * convention. Hand-written cards name the slot after the card ("target creature to destroy",
+     * "creature or enchantment"); the grammar always mints one name; neither is more correct.
+     *
+     * **Rewritten over the JSON tree rather than the JSON text.** A plain string replacement of the
+     * declared id — which is what this did, following `CardDefinitionSnapshotTest.normalizeAbilityIds`
+     * — rewrites *keys* as well as values, and the grammar's slot is called `target`, which is also
+     * the name of a field on every targeted effect. So `"target":{…}` became `"slot_0":{…}` on
+     * Assay's side and stayed `"target":{…}` on a card that had named its slot anything else, and six
+     * cards reported as divergent over a difference that was not in either model. Walking the tree
+     * and rewriting only string *values* under `id` / `name` keeps the original intent — rename the
+     * declared slots, touch nothing else — without the collision.
      */
     internal fun normalizeSlotNames(script: CardScript): String {
-        var json = CardSerialization.json.encodeToString(CardScript.serializer(), script)
-        // Replace the declared ids specifically, rather than every `"id"`/`"name"` key: those keys
-        // occur all over an effect tree, and rewriting one that is not a target slot would make two
-        // genuinely different models compare equal — a fail-open normalization, which is the one
-        // kind of bug a gate must never contain.
-        script.targetRequirements.mapNotNull { it.id }.distinct().forEachIndexed { index, id ->
-            json = json.replace("\"$id\"", "\"slot_$index\"")
+        val slots = script.targetRequirements.mapNotNull { it.id }.distinct()
+            .withIndex().associate { (index, id) -> id to slotName(index) }
+        val json = CardSerialization.json.encodeToString(CardScript.serializer(), script)
+        val renamed = renameSlots(CardSerialization.json.parseToJsonElement(json), slots)
+        return CardSerialization.json.encodeToString(JsonElement.serializer(), stampSlotIds(renamed))
+    }
+
+    private fun slotName(index: Int) = "slot_$index"
+
+    /**
+     * Rename declared slot ids wherever they appear as an `id` or `name` *value*.
+     *
+     * Narrow on purpose, in both directions: only those two keys, and only values that are a slot
+     * this script actually declares. A broader rewrite could make two genuinely different models
+     * compare equal, which is the one kind of bug a gate must never contain.
+     */
+    private fun renameSlots(element: JsonElement, slots: Map<String, String>): JsonElement = when (element) {
+        is JsonObject -> positionalReference(element) ?: JsonObject(
+            element.mapValues { (key, value) ->
+                val renamed = (value as? JsonPrimitive)?.takeIf { it.isString }?.content?.let(slots::get)
+                if (key in SLOT_REFERENCE_KEYS && renamed != null) JsonPrimitive(renamed)
+                else renameSlots(value, slots)
+            }
+        )
+
+        is JsonArray -> JsonArray(element.map { renameSlots(it, slots) })
+        else -> element
+    }
+
+    /**
+     * **Fold: a positional target reference is a named one.**
+     *
+     * `ContextTarget(i)` and `BoundVariable(id-of-requirement-i)` are the SDK's two ways of saying
+     * "the target this spell declared", and the SDK says so itself — `BoundVariable` is documented as
+     * "safer and more self-documenting than `ContextTarget(index)`", the same link written by name
+     * instead of by position. Hand-written cards use both; the grammar always mints a name, because a
+     * rule that spelled the index would have to know how many requirements the *card* ends up with.
+     *
+     * Rewriting the positional form into the named one — paired with [stampSlotIds], which gives
+     * every requirement its positional name whether or not the author wrote an `id` — makes the
+     * comparison about *which requirement an effect reads*, which is the thing that carries meaning.
+     * It stays closed on the case that matters: `ContextTarget(1)` normalizes to `slot_1` and still
+     * diverges from anything reading `slot_0`.
+     */
+    private fun positionalReference(element: JsonObject): JsonElement? {
+        if ((element["type"] as? JsonPrimitive)?.content != "ContextTarget") return null
+        val index = (element["index"] as? JsonPrimitive)?.content?.toIntOrNull() ?: return null
+        return JsonObject(
+            mapOf("type" to JsonPrimitive("BoundVariable"), "name" to JsonPrimitive(slotName(index)))
+        )
+    }
+
+    /**
+     * Give every target requirement the name of its position, replacing whatever it was called.
+     *
+     * The declared `id` is optional in the SDK — a card whose effects refer to their target
+     * positionally never needs one — so renaming is not enough on its own: one side would carry
+     * `"id": "slot_0"` and the other no `id` at all, over a difference that is not in either model.
+     */
+    private fun stampSlotIds(script: JsonElement): JsonElement {
+        val root = script as? JsonObject ?: return script
+        val requirements = root["targetRequirements"] as? JsonArray ?: return script
+        val stamped = requirements.mapIndexed { index, requirement ->
+            val fields = (requirement as? JsonObject) ?: return@mapIndexed requirement
+            JsonObject(fields + ("id" to JsonPrimitive(slotName(index))))
         }
-        return json
+        return JsonObject(root + ("targetRequirements" to JsonArray(stamped)))
     }
 
     /**
@@ -260,6 +338,12 @@ enum class Population {
      * authoring time. Not compared, because confirming it would claim a check nobody performed.
      */
     SCRIPT_NOT_MODELLED,
+
+    /**
+     * Assay reads every line, but the lines do not fold into one card: two of them are spell
+     * effects and a `CardScript` has one. The card prints a sequence the grammar has no rule for.
+     */
+    LINES_DO_NOT_FOLD,
 
     /** No Scryfall Oracle entry joined — a `custom/` card, or a name the index does not carry. */
     NO_ORACLE_TEXT,
@@ -331,6 +415,7 @@ class DifferentialReport private constructor(
         appendLine(row("  compared", pop(Population.COMPARED).toString()))
         appendLine(row("  not yet covered by the grammar", pop(Population.NOT_COVERED).toString()))
         appendLine(row("  script slot not modelled yet", pop(Population.SCRIPT_NOT_MODELLED).toString()))
+        appendLine(row("  lines do not fold into one card", pop(Population.LINES_DO_NOT_FOLD).toString()))
         appendLine(row("  multi-face (out of scope)", pop(Population.MULTI_FACE).toString()))
         appendLine(row("  no Scryfall Oracle entry", pop(Population.NO_ORACLE_TEXT).toString()))
         appendLine(row("  Oracle text differs from golden", pop(Population.ORACLE_TEXT_DIFFERS).toString()))
@@ -379,9 +464,10 @@ class DifferentialReport private constructor(
      * A divergence row shows the **structure**, not `KeywordAbility.description`.
      *
      * The prose is what makes a divergence unreadable exactly where it matters most: where the SDK
-     * spells one concept two ways, both sides describe themselves as "Flanking" and the row looks
-     * like a tool bug. `toString()` on the data class distinguishes `Simple(keyword=FLANKING)` from
-     * the `Flanking` object, which is the whole finding.
+     * spells one concept two ways, both sides describe themselves the same way and the row looks
+     * like a tool bug. That is not hypothetical — it is how the flanking finding presented, with
+     * `Simple(keyword=FLANKING)` on one side and a dedicated `Flanking` object on the other, both
+     * of them saying "Flanking". `toString()` on the data class is what made the difference visible.
      */
     private fun structural(ability: KeywordAbility) = ability.toString()
 

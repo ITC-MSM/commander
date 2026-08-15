@@ -5,6 +5,9 @@ import com.wingedsheep.assay.syntax.parseLine
 import com.wingedsheep.assay.syntax.printLine
 import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.model.CardScript
+import com.wingedsheep.sdk.scripting.GameObjectFilter
+import com.wingedsheep.sdk.scripting.filters.unified.TargetFilter
+import com.wingedsheep.sdk.scripting.targets.TargetPermanent
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
@@ -87,5 +90,62 @@ class StepsTest : StringSpec({
     "a keyword line and a spell line stay distinguishable in the same alternation" {
         fragment("Flying").script shouldBe CardScript.EMPTY
         fragment("Draw a card.").keywordAbilities shouldBe emptyList()
+    }
+
+    // Murder's golden, written by hand, is exactly this model — which is the point of the
+    // differential: the grammar has to land on what a person wrote from the same sentence.
+    "destroying a targeted permanent declares the requirement the card declares" {
+        fragment("Destroy target creature.") shouldBe CardFragment(
+            script = CardScript(
+                spellEffect = Effects.Destroy(Targets.bound()),
+                targetRequirements = listOf(Targets.permanent(GameObjectFilter.Creature)),
+            )
+        )
+        roundTrips("Destroy target creature.")
+    }
+
+    "every verb in the family round-trips over the filter vocabulary" {
+        listOf(
+            "Destroy target artifact.",
+            "Destroy target artifact or enchantment.",
+            "Destroy target creature or planeswalker.",
+            "Destroy target nonland permanent.",
+            "Exile target creature.",
+            "Exile target permanent.",
+            "Tap target creature.",
+            "Untap target artifact.",
+            "Return target creature to its owner's hand.",
+            "Return target permanent to its owner's hand.",
+        ).forEach { roundTrips(it) }
+    }
+
+    "the controller clause is a suffix on the model as well as on the sentence" {
+        fragment("Destroy target creature you control.") shouldBe CardFragment(
+            script = CardScript(
+                spellEffect = Effects.Destroy(Targets.bound()),
+                targetRequirements = listOf(Targets.permanent(GameObjectFilter.Creature.youControl())),
+            )
+        )
+        roundTrips("Destroy target creature you control.")
+        roundTrips("Destroy target creature an opponent controls.")
+        roundTrips("Tap target artifact you control.")
+    }
+
+    // Fail-closed the other way: a requirement carrying a restriction the phrase does not spell
+    // must not print as though it did. `excludeSelf` is "other target creature", a different card.
+    "a target requirement the phrase does not spell refuses to print" {
+        val other = CardFragment(
+            script = CardScript(
+                spellEffect = Effects.Destroy(Targets.bound()),
+                targetRequirements = listOf(
+                    TargetPermanent(
+                        filter = TargetFilter(GameObjectFilter.Creature, excludeSelf = true),
+                        id = Targets.SLOT,
+                    )
+                ),
+            )
+        )
+
+        Grammar.abilityLine.printLine(other) shouldBe null
     }
 })

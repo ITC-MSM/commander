@@ -7,9 +7,15 @@ import com.wingedsheep.assay.corpus.OracleFace
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.ManaCost
 import com.wingedsheep.sdk.core.TypeLine
+import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.model.CardDefinition
+import com.wingedsheep.sdk.model.CardScript
 import com.wingedsheep.sdk.model.CreatureStats
+import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.KeywordAbility
+import com.wingedsheep.sdk.scripting.filters.unified.TargetFilter
+import com.wingedsheep.sdk.scripting.targets.EffectTarget
+import com.wingedsheep.sdk.scripting.targets.TargetPermanent
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
@@ -255,6 +261,43 @@ class DifferentialTest : StringSpec({
 
         result.verdict shouldBe Verdict.DIVERGENT
         result.onlyInCard shouldContain KeywordAbility.Simple(Keyword.WARD)
+    }
+
+    // ---------------------------------------------------------------------------------------
+    // Slot naming — the link is what carries meaning, not what it is called
+    // ---------------------------------------------------------------------------------------
+
+    fun destroyScript(slot: String?, reference: EffectTarget) = CardScript(
+        spellEffect = Effects.Destroy(reference),
+        targetRequirements = listOf(TargetPermanent(filter = TargetFilter(GameObjectFilter.Creature), id = slot)),
+    )
+
+    // Six cards reported as divergent over this: the grammar's slot is called "target", which is
+    // also the name of a *field* on every targeted effect, so a textual rename rewrote the key
+    // `"target":` on one side and left it alone on the other.
+    "a slot named after a field in the effect tree still normalizes to its position" {
+        val mine = destroyScript("target", EffectTarget.BoundVariable("target"))
+        val theirs = destroyScript("target creature to destroy", EffectTarget.BoundVariable("target creature to destroy"))
+
+        differential.normalizeSlotNames(mine) shouldBe differential.normalizeSlotNames(theirs)
+    }
+
+    // The SDK's own words: `BoundVariable` is "safer and more self-documenting than
+    // ContextTarget(index)" — the same link, written by name instead of by position.
+    "a positional target reference and a named one are the same model" {
+        val named = destroyScript("target", EffectTarget.BoundVariable("target"))
+        val positional = destroyScript(null, EffectTarget.ContextTarget(0))
+
+        differential.normalizeSlotNames(named) shouldBe differential.normalizeSlotNames(positional)
+    }
+
+    // …and the half that keeps the fold honest: a reference to a *different* requirement must not
+    // normalize into agreement.
+    "a reference to another requirement stays different" {
+        val first = destroyScript("target", EffectTarget.BoundVariable("target"))
+        val second = destroyScript(null, EffectTarget.ContextTarget(1))
+
+        differential.normalizeSlotNames(first) shouldNotBe differential.normalizeSlotNames(second)
     }
 
     // ---------------------------------------------------------------------------------------

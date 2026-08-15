@@ -25,18 +25,23 @@ data class CardFragment(
 ) {
 
     /**
-     * Fold two lines' contributions together.
+     * Fold two lines' contributions together, or **null** when they cannot be one card.
      *
-     * Only the slots the grammar can currently produce are combined, and a collision throws rather
-     * than picking a winner: two lines that both claim to be *the* spell effect is a grammar bug —
-     * a card has one — and silently keeping the first would hide it behind a plausible model.
+     * Only the slots the grammar can currently produce are combined. Two lines that both claim to be
+     * *the* spell effect is the collision: a `CardScript` has one `spellEffect`, and a card printing
+     * two effect paragraphs means a sequence the grammar has no rule for yet. Neither keeping the
+     * first nor concatenating them is honest — the first drops meaning, the second invents an order
+     * nothing checked — so the fold declines and the caller counts the card.
+     *
+     * It used to throw, on the reading that a collision could only be a grammar bug. It stopped
+     * being one the moment [Steps] could read a second kind of sentence, and a gate that crashes on
+     * a card it does not model is the one behaviour "declining is success" rules out.
+     *
      * Widen this as the grammar reaches new slots; the compiler will not remind you, but
      * [Companion.MODELLED_SLOTS_NOTE] says where to look.
      */
-    fun merge(other: CardFragment): CardFragment {
-        require(script.spellEffect == null || other.script.spellEffect == null) {
-            "two lines both parsed as the spell effect; a card has one"
-        }
+    fun merge(other: CardFragment): CardFragment? {
+        if (script.spellEffect != null && other.script.spellEffect != null) return null
         return CardFragment(
             keywordAbilities = keywordAbilities + other.keywordAbilities,
             script = CardScript(

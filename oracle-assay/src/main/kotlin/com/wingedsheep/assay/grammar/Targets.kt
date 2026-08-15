@@ -1,6 +1,10 @@
 package com.wingedsheep.assay.grammar
 
+import com.wingedsheep.sdk.scripting.GameObjectFilter
+import com.wingedsheep.sdk.scripting.filters.unified.TargetFilter
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
+import com.wingedsheep.sdk.scripting.targets.TargetObject
+import com.wingedsheep.sdk.scripting.targets.TargetPermanent
 import com.wingedsheep.sdk.scripting.targets.TargetPlayer
 import com.wingedsheep.sdk.scripting.targets.TargetRequirement
 
@@ -46,4 +50,28 @@ object Targets {
     /** True when [target] is a reference to the single slot this grammar mints. */
     fun isBound(target: EffectTarget): Boolean =
         target is EffectTarget.BoundVariable && target.name == SLOT
+
+    /**
+     * "target creature" — one permanent on the battlefield matching [filter].
+     *
+     * `TargetPermanent` and `TargetCreature` are both thin factories over the same [TargetObject]
+     * with the same defaults, so the choice between them is a naming one and the model is identical
+     * either way; the filter is what carries the meaning. Cards written by hand reach for whichever
+     * reads better at the call site, and this has to equal both.
+     */
+    fun permanent(filter: GameObjectFilter): TargetRequirement =
+        TargetPermanent(filter = TargetFilter(filter), id = SLOT)
+
+    /**
+     * The inverse: the filter [requirement] restricts to, or null when it is anything else.
+     *
+     * Fail-closed on every field the grammar does not spell — a requirement that also carries
+     * `excludeSelf`, a non-battlefield zone or a cross-zone union says something the printed phrase
+     * "target creature" does not, and confirming it would claim a reading nobody performed. The
+     * final equality check is what makes that exhaustive rather than a list of fields to remember.
+     */
+    fun permanentFilter(requirement: TargetRequirement): GameObjectFilter? {
+        val base = (requirement as? TargetObject)?.filter?.baseFilter ?: return null
+        return base.takeIf { requirement == permanent(it) }
+    }
 }

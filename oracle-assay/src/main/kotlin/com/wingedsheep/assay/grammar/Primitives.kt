@@ -119,24 +119,19 @@ object Primitives {
     )
 
     /**
-     * "white", or "white and from blue" — one rule rather than two, so a single colour has exactly
-     * one reading. Splitting it would hand the same text two distinct models
-     * ([ProtectionScope.Color] versus a one-element [ProtectionScope.Colors]), which is the
-     * ambiguity hard error rather than a choice to make.
+     * "white" — **one** colour.
+     *
+     * Multi-quality protection is not a scope, it is several abilities: CR 702.16g makes
+     * "protection from [A] and from [B]" shorthand for two protection abilities, and CR 702.11f says
+     * the same for hexproof. The join therefore lives one level up, in [scopeRun], and this leaf
+     * stays a single quality. [ProtectionScope.Colors] is consequently a scope the grammar never
+     * produces — an SDK spelling of something the rules define as two abilities, reported rather
+     * than emitted.
      */
-    private val colorScope: Phrase<ProtectionScope> = phrase("{colors}", name = "a colour") {
-        slot("colors", separated("colours", color, " and from "))
-        build {
-            val colors: List<Color> = it.value("colors")
-            if (colors.size == 1) ProtectionScope.Color(colors.single()) else ProtectionScope.Colors(colors.toSet())
-        }
-        match {
-            when (it) {
-                is ProtectionScope.Color -> bind("colors" to listOf(it.color))
-                is ProtectionScope.Colors -> bind("colors" to it.colors.toList())
-                else -> null
-            }
-        }
+    private val colorScope: Phrase<ProtectionScope> = phrase("{color}", name = "a colour") {
+        slot("color", color)
+        build { ProtectionScope.Color(it.value("color")) }
+        match { (it as? ProtectionScope.Color)?.let { c -> bind("color" to c.color) } }
     }
 
     private val subtypeScope: Phrase<ProtectionScope> = phrase("{subtype}", name = "a creature type") {
@@ -173,6 +168,41 @@ object Primitives {
         constant("planeswalkers", ProtectionScope.CardType("Planeswalker")),
         constant("lands", ProtectionScope.CardType("Land")),
     )
+
+    /** "black and from red" — the two-quality join, which is every such card but one. */
+    private val scopePair: Phrase<List<ProtectionScope>> =
+        phrase("{first} and from {second}", name = "two qualities") {
+            slot("first", protectionScope)
+            slot("second", protectionScope)
+            build { listOf(it.value("first"), it.value("second")) }
+            match { scopes ->
+                scopes.takeIf { it.size == 2 }?.let { bind("first" to it[0], "second" to it[1]) }
+            }
+        }
+
+    /**
+     * "Vampires, from Werewolves, and from Zombies" — three or more, with the Oxford comma the
+     * printed cards use. One card in the corpus, and it is written rather than declined because the
+     * shape is the same rule and the alternative is a decline that reads as a missing capability.
+     */
+    private val scopeSeries: Phrase<List<ProtectionScope>> =
+        phrase("{most}, and from {last}", name = "three or more qualities") {
+            slot("most", separated("qualities", protectionScope, ", from ", min = 2))
+            slot("last", protectionScope)
+            build { it.value<List<ProtectionScope>>("most") + it.value<ProtectionScope>("last") }
+            match { scopes ->
+                scopes.takeIf { it.size >= 3 }?.let { bind("most" to it.dropLast(1), "last" to it.last()) }
+            }
+        }
+
+    /**
+     * Two or more qualities, joined the way printed Oracle text joins them.
+     *
+     * The two shapes cannot both match one text — [scopeSeries] needs at least three qualities and
+     * [scopePair] takes exactly two — so the run has one reading in each direction, and printing
+     * picks the shape from the count rather than from a preference.
+     */
+    val scopeRun: Phrase<List<ProtectionScope>> = oneOf("two or more qualities", scopePair, scopeSeries)
 
     /**
      * Singular readings of a printed plural, best first: the ordinary "-s" plural, then an invariant

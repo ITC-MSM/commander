@@ -1515,7 +1515,7 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   3. the engine-wide generic fallback — `TokenArt.IMAGES` by creature type for creature tokens, or the
      canonical `PredefinedTokens.kt` printing for Treasure/Map/….
 
-  Layer 2's bulk half is `mtg-sets-core/src/main/resources/tokens.json`, one entry per token printing of every
+  Layer 2's bulk half is `mtg-sets/core/src/main/resources/tokens.json`, one entry per token printing of every
   set that has a Scryfall token set (`t<code>`), refreshed with **`just token-art-sync`**. You rarely
   touch it: it is machine-owned and regenerated wholesale. The two halves are combined by
   `TokenArtData.forSet(set)` — hand-authored rows plus the synced rows for identities the set doesn't
@@ -6633,6 +6633,11 @@ copy of it (CR 707.10e). The activated-ability analogue of the spell-level `cant
 > by ward and suspend. The trigger's `BecomesBlockedEvent(filter = Creature.withoutKeyword(FLANKING))`
 > fires once per non-flanking blocker with that blocker as the triggering entity, so each blocker
 > independently takes -1/-1; a blocker that also has flanking is excluded (CR 702.25c).
+> There is deliberately **no `KeywordAbility.Flanking` variant**: one existed, overrode no `keyword`,
+> and so never reached `CardDefinition.keywords` — a card authored with it would have printed
+> "Flanking" and done nothing. Spell it `Simple(Keyword.FLANKING)`, which is what `keywords(...)`
+> produces. (Found by the Argentum Assay differential gate: the corpus used one spelling, the parser
+> the other.)
 
 > **Daybound / Nightbound** (CR 702.145, Innistrad: Midnight Hunt / Crimson Vow). The keyword pair on a
 > transforming double-faced werewolf: `card { daybound() }` on the **front** face, `card { nightbound() }`
@@ -6748,7 +6753,12 @@ composite abilities).
   `CostEnumerationUtils.findTapForGenericPermanents(state, playerId, TapForGeneric.WATERBEND)` /
   `canAffordWithTapForGeneric`, so it stays single-sourced with the other waterbend surfaces.
 - `Protection(color)` — protection from a single color.
-- `ProtectionFrom(set)` — protection from a set of colors/types.
+- `ProtectionFrom(set)` — protection from a set of colors/types. **Prefer one ability per quality.**
+  CR 702.16g makes "protection from black and from red" shorthand for *two* protection abilities
+  (CR 702.11f says the same for hexproof), and that is how the corpus spells it — `Colors` is a second
+  spelling of the same thing, engine-supported (`CardEntityFactory`, `PlayerProtectionRules`) but used
+  by exactly one card (Ureni, the Song Unending). Argentum Assay reads the printed text as two
+  abilities and never emits `Colors`.
 - `Protection(ProtectionScope.Supertype("Legendary"))` / `KeywordAbility.protectionFromSupertype("Legendary")` — protection from a supertype, e.g. "protection from legendary creatures" (Tsabo Tavoc). Enforced across targeting, blocking, and combat damage via projected `PROTECTION_FROM_SUPERTYPE_<X>` keywords.
 - `Protection(ProtectionScope.CardType("Instant"))` — protection from a card type, e.g. "protection from
   instants" (Emrakul, the Promised End). Projected as `PROTECTION_FROM_CARDTYPE_<TYPE>` — the same keyword
@@ -10466,7 +10476,7 @@ the linter).
 | Keywords           | `mtg-sdk/src/main/kotlin/.../core/Keyword.kt`                   |
 | Card model         | `mtg-sdk/src/main/kotlin/.../model/CardDefinition.kt`           |
 | Dynamic amounts    | `mtg-sdk/src/main/kotlin/.../scripting/values/DynamicAmount.kt` |
-| Real card examples | `just where BLB` → `mtg-sets-<era>/.../definitions/blb/cards/`   |
+| Real card examples | `just where BLB` → `mtg-sets/<era>/.../definitions/blb/cards/`   |
 
 For step-by-step authoring workflow see [`api-guide.md`](api-guide.md) (and use the `add-card` skill);
 for hard cases see [`managing-complex-and-rare-abilities.md`](managing-complex-and-rare-abilities.md).

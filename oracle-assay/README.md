@@ -9,8 +9,11 @@ Design: [`docs/oracle-assay.md`](../docs/oracle-assay.md) · Build order:
 
 **Phase 1 is implemented: the kernel, invertible normalization, the touchstone gate, and a grammar
 covering vanilla cards and keyword-only abilities. The differential gate is live** over the class the
-grammar reads whole. Nothing here changes `:mtgish-tooling`, which stays authoritative until a
-per-set cutover replaces it (Phase 5). Assay is **not a runtime card loader** and never will be.
+grammar reads whole, and the first band of the pipeline family is in — cardinals, a filter and target
+vocabulary, and the one-verb spell effects (draw, destroy, exile, tap, untap, return to hand), which
+is where the differential started comparing *spells* rather than keyword lists. Nothing here changes
+`:mtgish-tooling`, which stays authoritative until a per-set cutover replaces it (Phase 5). Assay is
+**not a runtime card loader** and never will be.
 
 ## Commands
 
@@ -35,7 +38,7 @@ it as gzipped JSONL, so it streams a card at a time.
 syntax/     Phrase kernel — templates, slots, both directions, memoization, the parse cap
 normalize/  Scryfall text -> canonical ability lines, every pass with its inverse; reminder glosses
 corpus/     the Scryfall Oracle bulk: download, cache, stream
-grammar/    the rules, by topic — Phase 1 is Primitives + Keywords
+grammar/    the rules, by topic — Primitives, Keywords, then Cardinals/Filters/Targets/Steps
 gate/       the touchstone and the fineness report
 cli/        assay parse | explain | gate | report | corpus
 ```
@@ -75,19 +78,20 @@ non-zero on. Declines are not failures.
 Cards assayed                    34882
 Ability lines                    66793  (39746 unique)
 
-Round-trips byte-exact           12646   189.3‰ (18.9%)
+Round-trips byte-exact           13253   198.4‰ (19.8%)
 Alternate spelling normalized    30
-Declined                         54117
+Declined                         53510
 Ambiguous — distinct readings    0
 Print mismatch                   0
 Normalization not invertible     0
 Full inverse not reproduced      0
 
-Vanilla + keyword-only cards     1439 / 1712   840.5‰ (84.1%)   <- Phase 1 target
-Reminder-text glosses            2868 matched · 116 differed · 957 unglossed
+Cards fully covered              1906 / 34882   54.6‰ (5.5%)
+Vanilla + keyword-only cards     1440 / 1712   841.1‰ (84.1%)   <- Phase 1 target
+Reminder-text glosses            2870 matched · 114 differed · 956 unglossed
 ```
 
-Fineness is **parts per thousand**, per the assay the module is named for — 840.5‰ is 84.1%.
+Fineness is **parts per thousand**, per the assay the module is named for — 841.1‰ is 84.1%.
 
 The machinery holds: **zero** ambiguities, print mismatches, or non-invertible normalizations
 across 66,793 ability lines. The 84.1% on Phase 1's own target class is not the round trip
@@ -130,16 +134,21 @@ named population bucket instead and the denominator stays visible.
 
 ```
   Hand-written cards                 8874
-    compared                         449
-    not yet covered by the grammar   7630
-    script slot not modelled yet      33
+    compared                         505
+    not yet covered by the grammar   7566
+    script slot not modelled yet      34
+    lines do not fold into one card    7
     multi-face (out of scope)        301
     Oracle text differs from golden  461
     golden would not decode            0
 
-  Confirmed — models agree           444   988.9‰ (98.9%)
-  DIVERGENT — read every one           5
+  Confirmed — models agree           504   998.0‰ (99.8%)
+  DIVERGENT — read every one           1
 ```
+
+The divergence count is not meant to stay at zero — it rises every time the grammar reaches a new
+class of card, and each rise is the gate earning its keep. The five it opened with and the eight the
+first band of spell rules produced are all fixed or classified below.
 
 Three separate things have to hold before a card is compared, and each has its own bucket:
 
@@ -148,6 +157,7 @@ Three separate things have to hold before a card is compared, and each has its o
 | Assay reads every **line** | A keyword whose line declined would look like agreement. |
 | The text is the **same text** | A golden carries the wording it was authored from; if that is not what Scryfall serves, Assay is reading one card and diffing another. Compared normalized, so inconsistently-included reminder text is not a difference. |
 | The definition uses only **modelled slots** | A keyword the SDK lowers to a triggered ability at authoring time leaves content the grammar cannot produce. Confirming it would claim a check nobody performed. |
+| The lines **fold into one card** | A `CardScript` has one `spellEffect`; a card printing two effect paragraphs means a sequence the grammar has no rule for. Neither keeping the first nor concatenating them is honest, so it is counted. |
 
 A divergence never fails the build — it is a finding to classify as **parser bug**, **card bug**, or
 **fold**. Only an undecodable golden exits non-zero. The fold list lives in `gate/Differential.kt`
@@ -156,22 +166,55 @@ each one has to say why it is not a difference.
 
 ### What the gate has found
 
-- **A parser bug of exactly the class this gate exists for.** Assay read "protection from black and
-  from red" as one `Protection(Colors([BLACK, RED]))`; the cards spell it as two `Protection(Color)`
-  abilities. **The cards are right** — CR 702.16g: *"'Protection from [quality A] and from [quality
-  B]' … behaves as two separate protection abilities."* The reading round-trips perfectly and means
-  the wrong thing, so the touchstone could never have caught it. Affects Paladin en-Vec, Sabertooth
-  Nishoba and Akroma, Angel of Wrath. Fixing it means the protection rule must yield a *list*, which
-  collides with `Primitives.colorScope` being deliberately one rule to avoid an ambiguity error.
-- **A third pair of SDK spellings for one concept.** `KeywordAbility.Flanking` (a `data object`) and
-  `Simple(Keyword.FLANKING)` both exist and are not equal; the cards use the second and the grammar
-  emits the first. Same shape as the `PROTECTION_FROM_EACH_OPPONENT` finding below, and it raises a
-  live question about which spelling the engine reads.
+- **A parser bug of exactly the class this gate exists for — fixed.** Assay read "protection from
+  black and from red" as one `Protection(Colors([BLACK, RED]))`; the cards spell it as two
+  `Protection(Color)` abilities. **The cards were right** — CR 702.16g: *"'Protection from [quality A]
+  and from [quality B]' … behaves as two separate protection abilities."* The reading round-tripped
+  perfectly and meant the wrong thing, so the touchstone could never have caught it. It affected
+  Paladin en-Vec, Sabertooth Nishoba and Akroma, Angel of Wrath. The fix is `Keywords.qualityRun`: a
+  rule that denotes *several* abilities from one phrase, which is why a keyword line now parses as a
+  list of **groups**. It generalized while it was at it — the join is over any quality, not just
+  colours, and CR 702.11f gives hexproof the same shape, so "protection from Demons and from
+  Dragons", the Oxford-comma three-way, and "hexproof from white and from black" all read now.
+  `ProtectionScope.Colors` is consequently a scope the grammar never emits.
+- **A second SDK spelling that could not have worked — deleted.** `KeywordAbility.Flanking` (a
+  `data object`) and `Simple(Keyword.FLANKING)` both existed and were not equal; the cards used the
+  second and the grammar emitted the first. The engine reads flanking off the *projected keyword
+  set* (`TriggerAbilityResolver` synthesizes the trigger for anything with `Keyword.FLANKING`), and
+  the object overrode no `keyword`, so it never reached `CardDefinition.keywords` — a card authored
+  with it would have printed "Flanking" and done nothing. No card used it. It is gone from `mtg-sdk`.
 - **Two implementations of Affinity in the corpus.** Frogmite spells it `KeywordAbility.Affinity`;
   Qumulox, Memory Guardian and the five Darksteel golems hand-roll the same text as a
   `ModifySpellCost` static ability. Both work — this is an inconsistency, not a bug — but it is the
   same "one concept, two spellings" family, and it is why those cards sit in the
   `script slot not modelled yet` bucket rather than being compared.
+- **The gate lying to itself, for the third time.** The slot-name normalization — which exists
+  because the string linking a requirement to the effect reading it is arbitrary — was a textual
+  replacement over the serialized script, and the grammar's slot is called `target`, which is *also*
+  the name of a field on every targeted effect. So `"target":{…}` was rewritten to `"slot_0":{…}` on
+  Assay's side and left alone on any card that had named its slot something else, and six cards
+  reported as divergent over a difference that was in neither model. It now walks the JSON tree and
+  rewrites only `id` / `name` *values*. Every one of the three has been the gate finding a way it
+  could have lied; none was found by reading the code.
+- **A positional target reference and a named one — folded, with the SDK's own words for it.**
+  Murderous Compulsion and Ureni's Rebuff refer to their target as `ContextTarget(0)` against an
+  unnamed requirement; Assay always mints a name. The SDK documents `BoundVariable` as "safer and
+  more self-documenting than `ContextTarget(index)`" — the same link written by name instead of by
+  position — so the comparison now normalizes both to the requirement's *position*, and what it
+  compares is which requirement an effect reads. `ContextTarget(1)` still diverges from anything
+  reading slot 0.
+- **Open, and not folded: `TargetCreatureOrPlaneswalker` versus the general filtered target.** Hero's
+  Downfall spells "target creature or planeswalker" as a dedicated requirement type; 29 other card
+  sites spell it as `TargetObject(CreatureOrPlaneswalker)`, and 219 cards in the corpus print the
+  phrase. Both are fully wired, down *parallel* code paths — `TargetFinder` hand-rolls the
+  hexproof / shroud / can't-be-targeted checks separately for each. That parallel implementation is
+  the reason this is not folded: the two agreeing today is an accident of two code paths, not a
+  stated equivalence, and folding would stop the gate from noticing if they drift. Unifying them is
+  an SDK cleanup with 17 card sites behind it.
+- **Still open: `ProtectionScope.Colors` is one of those spellings.** CR 702.16g defines the joined
+  text as two abilities, which is how all but one card in the corpus writes it — Ureni, the Song
+  Unending uses `Colors`. The scope is engine-supported (`CardEntityFactory`, `PlayerProtectionRules`)
+  so nothing is broken; it is one card and one type away from the corpus having a single spelling.
 
 And the gate paid for itself before its first report: writing it surfaced that "Plains"
 de-pluralized to `Subtype("Plain")` — the "Elves" → `Elve` failure, live on the basic land types,

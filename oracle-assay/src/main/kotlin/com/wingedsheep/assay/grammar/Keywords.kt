@@ -119,6 +119,7 @@ object Keywords {
         simple(Keyword.REACH),
         simple(Keyword.PROVOKE),
         simple(Keyword.BANDING),
+        simple(Keyword.FLANKING),
         simple(Keyword.WITHER),
         simple(Keyword.TRAINING),
         // Defense / speed
@@ -150,9 +151,16 @@ object Keywords {
         simple(Keyword.START_YOUR_ENGINES, surface = "start your engines!"),
     )
 
-    /** Keywords the SDK models as their own object rather than as [KeywordAbility.Simple]. */
+    /**
+     * Keywords the SDK models as their own object rather than as [KeywordAbility.Simple].
+     *
+     * Flanking used to be here and is now an ordinary [simple] rule. The differential found the
+     * hand-written corpus spelling it `Simple(FLANKING)` while this grammar emitted a dedicated
+     * `Flanking` object, and the cards were right: the engine synthesizes flanking's trigger from
+     * the projected *keyword* set, which a variant overriding no `keyword` never reaches. The
+     * object is gone from `mtg-sdk`.
+     */
     private val dedicatedObjects: List<Phrase<KeywordAbility>> = listOf(
-        constant("flanking", KeywordAbility.Flanking),
         constant("conspire", KeywordAbility.conspire()),
         constant("increment", KeywordAbility.Increment),
     )
@@ -172,6 +180,42 @@ object Keywords {
         build { KeywordAbility.Hexproof(it.value("scope")) }
         match { (it as? KeywordAbility.Hexproof)?.let { h -> bind("scope" to h.scope) } }
     }
+
+    /**
+     * "protection from black and from red" — **two** abilities, not one with two colours.
+     *
+     * CR 702.16g: *"'Protection from [quality A] and from [quality B]' is shorthand for 'protection
+     * from [quality A]' and 'protection from [quality B]'; it behaves as two separate protection
+     * abilities."* CR 702.11f says the same for hexproof, which is why one shape serves both.
+     *
+     * This is the rule the differential gate was built to find. The old reading — one
+     * `Protection(Colors([BLACK, RED]))` — round-tripped byte-exact forever while disagreeing with
+     * every hand-written card that spells it, so the touchstone structurally could not catch it and
+     * only a comparison against the corpus could.
+     *
+     * A run yields several abilities from one phrase, which is why [Grammar] parses a keyword line
+     * as a list of *groups* rather than a list of abilities.
+     */
+    private fun qualityRun(
+        surface: String,
+        toModel: (ProtectionScope) -> KeywordAbility,
+        scopeOf: (KeywordAbility) -> ProtectionScope?,
+    ): Phrase<List<KeywordAbility>> =
+        phrase("$surface from {scopes}", name = "$surface from two or more qualities") {
+            slot("scopes", Primitives.scopeRun)
+            build { it.value<List<ProtectionScope>>("scopes").map(toModel) }
+            match { abilities ->
+                if (abilities.size < 2) return@match null
+                val scopes = abilities.map { scopeOf(it) ?: return@match null }
+                bind("scopes" to scopes)
+            }
+        }
+
+    /** The rules that denote more than one keyword ability. See [qualityRun]. */
+    val runs: List<Phrase<List<KeywordAbility>>> = listOf(
+        qualityRun("protection", { KeywordAbility.Protection(it) }) { (it as? KeywordAbility.Protection)?.scope },
+        qualityRun("hexproof", { KeywordAbility.Hexproof(it) }) { (it as? KeywordAbility.Hexproof)?.scope },
+    )
 
     private val wardMana: Phrase<KeywordAbility> = phrase("ward {cost}", name = "ward <cost>") {
         slot("cost", Primitives.manaCost)
