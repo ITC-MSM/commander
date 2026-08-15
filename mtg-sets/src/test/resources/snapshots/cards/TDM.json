@@ -30,6 +30,7 @@
                         ]
                     }
                 },
+                "timing": "ManaAbility",
                 "restrictions": [
                     "OncePerTurn"
                 ],
@@ -3072,10 +3073,7 @@
                         "type": "Fixed",
                         "amount": 2
                     },
-                    "target": {
-                        "type": "PlayerRef",
-                        "player": "You"
-                    }
+                    "target": "Controller"
                 }
             ]
         }
@@ -4535,6 +4533,7 @@
                 "id": "ability_1",
                 "cost": "CostTap",
                 "effect": "AddManaOfChoice",
+                "timing": "ManaAbility",
                 "isManaAbility": true
             }
         ],
@@ -6786,6 +6785,7 @@
                     "type": "AddManaOfChoice",
                     "restriction": "CreatureSpellsOnly"
                 },
+                "timing": "ManaAbility",
                 "isManaAbility": true
             },
             {
@@ -7743,6 +7743,7 @@
                         ]
                     }
                 },
+                "timing": "ManaAbility",
                 "restrictions": [
                     "OncePerTurn"
                 ],
@@ -9643,6 +9644,7 @@
                         ]
                     }
                 },
+                "timing": "ManaAbility",
                 "restrictions": [
                     "OncePerTurn"
                 ],
@@ -10275,6 +10277,7 @@
                 "id": "ability_1",
                 "cost": "CostTap",
                 "effect": "AddManaOfChoice",
+                "timing": "ManaAbility",
                 "restrictions": [
                     {
                         "type": "ActivationOnlyIfCondition",
@@ -11461,6 +11464,7 @@
                         "numericProperty": "Power"
                     }
                 },
+                "timing": "ManaAbility",
                 "isManaAbility": true
             }
         ]
@@ -15759,6 +15763,7 @@
                         ]
                     }
                 },
+                "timing": "ManaAbility",
                 "restrictions": [
                     "OncePerTurn"
                 ],
@@ -16522,6 +16527,7 @@
                         ]
                     }
                 },
+                "timing": "ManaAbility",
                 "restrictions": [
                     "OncePerTurn"
                 ],

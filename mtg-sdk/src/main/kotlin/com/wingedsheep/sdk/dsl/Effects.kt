@@ -1404,6 +1404,18 @@ object Effects {
         MoveToZoneEffect(target, Zone.BATTLEFIELD, if (tapped) ZonePlacement.Tapped else ZonePlacement.Default)
 
     /**
+     * "Return target creature card from your graveyard to the battlefield." — the return that is
+     * *guarded* on the card still being in the graveyard.
+     *
+     * [PutOntoBattlefield]'s sibling, and the difference is `fromZone`: the move is skipped if the
+     * card has left the graveyard by resolution. 92 hand-written cards spell that guard by hand and
+     * 3 omit it; naming it here is what stops the next card having to choose. Argentum Assay builds
+     * this for the sentence, so a card that omits the guard shows up in the differential.
+     */
+    fun PutOntoBattlefieldFromGraveyard(target: EffectTarget): Effect =
+        MoveToZoneEffect(target, Zone.BATTLEFIELD, fromZone = Zone.GRAVEYARD)
+
+    /**
      * Put onto the battlefield under your control (the effect controller's control).
      */
     fun PutOntoBattlefieldUnderYourControl(target: EffectTarget): Effect =
@@ -3696,6 +3708,19 @@ object Effects {
      */
     fun Sacrifice(filter: GameObjectFilter, count: DynamicAmount, target: EffectTarget = EffectTarget.PlayerRef(Player.TargetOpponent)): Effect =
         ForceSacrificeEffect(filter = filter, target = target, dynamicCount = count)
+
+    /**
+     * "Sacrifice a creature." — the *ability's controller* sacrifices, with no player named.
+     *
+     * The bare imperative's model, and a different one from [Sacrifice]: `ForceSacrificeEffect`
+     * names the player who must sacrifice, which is what "target opponent sacrifices a creature"
+     * needs and what this sentence does not say. Writing the bare form as
+     * `Sacrifice(filter, 1, EffectTarget.Controller)` says the same thing the long way round, and it
+     * is what 56 cards did for want of this factory — Argentum Assay's differential is what
+     * reported the split.
+     */
+    fun SacrificeOwn(filter: GameObjectFilter, count: Int = 1): Effect =
+        com.wingedsheep.sdk.scripting.effects.SacrificeEffect(filter = filter, count = count)
 
     /**
      * "Sacrifice any number of [filter]" — the resolving player chooses 0 or more of their own

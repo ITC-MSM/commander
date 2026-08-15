@@ -7638,17 +7638,17 @@
                 },
                 {
                     "effect": {
-                        "type": "Composite",
-                        "effects": [
-                            {
-                                "type": "ForEach",
-                                "space": {
-                                    "type": "IterationSpace.Group",
-                                    "filter": {
-                                        "baseFilter": "creature ctrl:you"
-                                    }
-                                },
-                                "body": {
+                        "type": "ForEach",
+                        "space": {
+                            "type": "IterationSpace.Group",
+                            "filter": {
+                                "baseFilter": "creature ctrl:you"
+                            }
+                        },
+                        "body": {
+                            "type": "Composite",
+                            "effects": [
+                                {
                                     "type": "ModifyStats",
                                     "powerModifier": {
                                         "type": "Fixed",
@@ -7659,23 +7659,14 @@
                                         "amount": 0
                                     },
                                     "target": "Self"
-                                }
-                            },
-                            {
-                                "type": "ForEach",
-                                "space": {
-                                    "type": "IterationSpace.Group",
-                                    "filter": {
-                                        "baseFilter": "creature ctrl:you"
-                                    }
                                 },
-                                "body": {
+                                {
                                     "type": "GrantKeyword",
                                     "keyword": "FIRST_STRIKE",
                                     "target": "Self"
                                 }
-                            }
-                        ]
+                            ]
+                        }
                     },
                     "description": "+ {2} — Creatures you control get +1/+0 and gain first strike until end of turn.",
                     "additionalManaCost": "{2}"
@@ -11678,6 +11669,7 @@
                     "type": "AddManaOfChoice",
                     "colorSet": "ManaColorSet.SourceChosenColor"
                 },
+                "timing": "ManaAbility",
                 "isManaAbility": true
             }
         ],

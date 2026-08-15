@@ -4,6 +4,7 @@
 
 package com.wingedsheep.mtg.sets.definitions.ori.cards
 
+import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
@@ -25,7 +26,7 @@ val EyeblightMassacre = card("Eyeblight Massacre") {
     oracleText = "Non-Elf creatures get -2/-2 until end of turn."
     spell {
         effect = Effects.ForEachInGroup(
-            GroupFilter(GameObjectFilter.Creature),
+            GroupFilter(GameObjectFilter.Creature.notSubtype(Subtype.ELF)),
             Effects.ModifyStats(-2, -2, EffectTarget.Self)
         )
     }

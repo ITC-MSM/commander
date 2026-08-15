@@ -192,6 +192,36 @@ object GroupPatterns {
             effect = GrantKeywordEffect(keyword.name, EffectTarget.Self, duration)
         )
 
+    /**
+     * "Creatures you control get +3/+3 and gain trample until end of turn." — Overrun's shape: one
+     * group, two things said about it.
+     *
+     * **One pass, not [modifyStatsForAll] composed with [grantKeywordToAll].** Twenty cards were
+     * written as that composition and it is subtly wrong: two `ForEachInGroup`s gather the group
+     * twice, so a filter the first pass can change — anything reading power or toughness, e.g.
+     * "creatures with power 2 or less" — matches a different set the second time. The printed
+     * sentence names its group once, and so does this.
+     *
+     * Argentum Assay's grammar builds exactly this shape for the sentence, so a card written the
+     * other way shows up in the differential.
+     */
+    fun pumpAndGrantToAll(
+        power: Int,
+        toughness: Int,
+        keyword: Keyword,
+        filter: GroupFilter,
+        duration: Duration = Duration.EndOfTurn
+    ): ForEachEffect =
+        ForEachInGroupEffect(
+            filter = filter,
+            effect = CompositeEffect(
+                listOf(
+                    ModifyStatsEffect(power, toughness, EffectTarget.Self, duration),
+                    GrantKeywordEffect(keyword.name, EffectTarget.Self, duration)
+                )
+            )
+        )
+
     fun removeKeywordFromAll(
         keyword: Keyword,
         filter: GroupFilter,

@@ -76,16 +76,11 @@ private val SummonEsperMaduin = card("Summon: Esper Maduin") {
             GameObjectFilter.Creature.youControl(),
             excludeSelf = true,
         )
-        effect = Effects.Composite(
-            Patterns.Group.modifyStatsForAll(
-                power = 2,
-                toughness = 2,
-                filter = otherCreaturesYouControl,
-            ),
-            Patterns.Group.grantKeywordToAll(
-                keyword = Keyword.TRAMPLE,
-                filter = otherCreaturesYouControl,
-            ),
+        effect = Patterns.Group.pumpAndGrantToAll(
+            power = 2,
+            toughness = 2,
+            keyword = Keyword.TRAMPLE,
+            filter = otherCreaturesYouControl,
         )
     }
 

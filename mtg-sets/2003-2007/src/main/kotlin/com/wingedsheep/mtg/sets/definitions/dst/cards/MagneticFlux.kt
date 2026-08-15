@@ -26,7 +26,7 @@ val MagneticFlux = card("Magnetic Flux") {
     oracleText = "Artifact creatures you control gain flying until end of turn."
     spell {
         effect = Effects.ForEachInGroup(
-            GroupFilter(GameObjectFilter.CreatureOrArtifact.youControl()),
+            GroupFilter(GameObjectFilter.ArtifactCreature.youControl()),
             Effects.GrantKeyword(Keyword.FLYING, EffectTarget.Self)
         )
     }

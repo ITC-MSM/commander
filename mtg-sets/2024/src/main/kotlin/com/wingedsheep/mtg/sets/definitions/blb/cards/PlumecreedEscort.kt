@@ -30,7 +30,7 @@ val PlumecreedEscort = card("Plumecreed Escort") {
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
         val creature = target("creature you control", Targets.CreatureYouControl)
-        effect = Effects.GrantHexproof(creature)
+        effect = Effects.GrantKeyword(Keyword.HEXPROOF, creature)
     }
 
     metadata {

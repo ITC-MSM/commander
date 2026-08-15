@@ -49,7 +49,7 @@ val Cyclone = card("Cyclone") {
                 GroupFilter.AllCreatures,
                 DealDamageEffect(windCount, EffectTarget.Self)
             ),
-            Effects.DealDamage(windCount, EffectTarget.PlayerRef(Player.Each))
+            Effects.ForEachPlayer(Player.Each, listOf(Effects.DealDamage(windCount, EffectTarget.Controller)))
         )
 
         effect = Effects.Composite(

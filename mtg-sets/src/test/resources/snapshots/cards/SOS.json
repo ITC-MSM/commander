@@ -8796,17 +8796,17 @@
                 },
                 {
                     "effect": {
-                        "type": "Composite",
-                        "effects": [
-                            {
-                                "type": "ForEach",
-                                "space": {
-                                    "type": "IterationSpace.Group",
-                                    "filter": {
-                                        "baseFilter": "creature ctrl:you"
-                                    }
-                                },
-                                "body": {
+                        "type": "ForEach",
+                        "space": {
+                            "type": "IterationSpace.Group",
+                            "filter": {
+                                "baseFilter": "creature ctrl:you"
+                            }
+                        },
+                        "body": {
+                            "type": "Composite",
+                            "effects": [
+                                {
                                     "type": "ModifyStats",
                                     "powerModifier": {
                                         "type": "Fixed",
@@ -8817,23 +8817,14 @@
                                         "amount": 1
                                     },
                                     "target": "Self"
-                                }
-                            },
-                            {
-                                "type": "ForEach",
-                                "space": {
-                                    "type": "IterationSpace.Group",
-                                    "filter": {
-                                        "baseFilter": "creature ctrl:you"
-                                    }
                                 },
-                                "body": {
+                                {
                                     "type": "GrantKeyword",
                                     "keyword": "TRAMPLE",
                                     "target": "Self"
                                 }
-                            }
-                        ]
+                            ]
+                        }
                     },
                     "description": "Creatures you control get +1/+1 and gain trample until end of turn"
                 }

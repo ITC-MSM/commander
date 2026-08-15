@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.AbilityId
 import com.wingedsheep.sdk.scripting.ActivatedAbility
+import com.wingedsheep.sdk.scripting.TimingRule
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.GrantActivatedAbility
 import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
@@ -28,7 +29,7 @@ val CryptolithRite = card("Cryptolith Rite") {
     oracleText = "Creatures you control have \"{T}: Add one mana of any color.\""
     staticAbility {
         ability = GrantActivatedAbility(
-            ability = ActivatedAbility(id = AbilityId.generate(), cost = Costs.Tap, effect = Effects.AddManaOfChoice()),
+            ability = ActivatedAbility(id = AbilityId.generate(), cost = Costs.Tap, effect = Effects.AddManaOfChoice(), isManaAbility = true, timing = TimingRule.ManaAbility),
             filter = GroupFilter(GameObjectFilter.Creature.youControl())
         )
     }

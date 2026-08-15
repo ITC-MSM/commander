@@ -120,11 +120,12 @@ class TriggersTest : StringSpec({
             CardFragment(script = CardScript(triggeredAbilities = listOf(optional)))
     }
 
-    // Fail-closed, the same rule the step matchers follow: an ability carrying anything the sentence
-    // does not spell must refuse to print rather than print a sentence that drops it. An
-    // intervening-if condition (CR 603.4) is the example — no trigger rule spells one.
-    "an ability with content the prefix does not spell refuses to print" {
-        val gated = TriggeredAbility(
+    // An intervening-if (CR 603.4) *is* spellable: it is the clause between the event and the
+    // effect, and `triggerCondition` is the SDK's slot for it. `Triggers.abilityFor` lifts the
+    // clause's own gate into that slot rather than leaving a copy in the effect, which is what 478
+    // hand-written cards do and what keeps one printed form for one model.
+    "an intervening-if is the trigger's own condition, not a second gate in the effect" {
+        val conditioned = TriggeredAbility(
             id = AbilityId("trigger"),
             trigger = SdkTriggers.EntersBattlefield.event,
             binding = SdkTriggers.EntersBattlefield.binding,
@@ -132,8 +133,27 @@ class TriggersTest : StringSpec({
             triggerCondition = Conditions.OpponentControlsMoreLands,
         )
 
+        fragment("When ~ enters, if an opponent controls more lands than you, draw a card.") shouldBe
+            CardFragment(script = CardScript(triggeredAbilities = listOf(conditioned)))
         Grammar.abilityLine.printLine(
-            CardFragment(script = CardScript(triggeredAbilities = listOf(gated)))
+            CardFragment(script = CardScript(triggeredAbilities = listOf(conditioned)))
+        ) shouldBe "When ~ enters, if an opponent controls more lands than you, draw a card."
+    }
+
+    // Fail-closed, the same rule the step matchers follow: an ability carrying anything the sentence
+    // does not spell must refuse to print rather than print a sentence that drops it. A
+    // once-per-turn cap is the example — no trigger rule spells one.
+    "an ability with content the prefix does not spell refuses to print" {
+        val capped = TriggeredAbility(
+            id = AbilityId("trigger"),
+            trigger = SdkTriggers.EntersBattlefield.event,
+            binding = SdkTriggers.EntersBattlefield.binding,
+            effect = Effects.DrawCards(1),
+            oncePerTurn = true,
+        )
+
+        Grammar.abilityLine.printLine(
+            CardFragment(script = CardScript(triggeredAbilities = listOf(capped)))
         ) shouldBe null
     }
 

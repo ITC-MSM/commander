@@ -10734,6 +10734,7 @@
                     ]
                 },
                 "effect": "AddManaOfChoice",
+                "timing": "ManaAbility",
                 "isManaAbility": true,
                 "descriptionOverride": "{T}, Exile a card from your graveyard: Add one mana of any color."
             }
@@ -16248,6 +16249,7 @@
                 "id": "ability_1",
                 "cost": "CostTap",
                 "effect": "AddManaOfChoice",
+                "timing": "ManaAbility",
                 "isManaAbility": true,
                 "descriptionOverride": "{T}: Add one mana of any color."
             },

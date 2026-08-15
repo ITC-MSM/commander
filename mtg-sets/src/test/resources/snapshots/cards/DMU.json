@@ -463,6 +463,7 @@
                 "id": "ability_1",
                 "cost": "CostTap",
                 "effect": "AddManaOfChoice",
+                "timing": "ManaAbility",
                 "isManaAbility": true,
                 "descriptionOverride": "{T}: Add one mana of any color"
             },

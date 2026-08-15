@@ -6246,18 +6246,18 @@
                 {
                     "chapter": 3,
                     "effect": {
-                        "type": "Composite",
-                        "effects": [
-                            {
-                                "type": "ForEach",
-                                "space": {
-                                    "type": "IterationSpace.Group",
-                                    "filter": {
-                                        "baseFilter": "creature ctrl:you",
-                                        "excludeSelf": true
-                                    }
-                                },
-                                "body": {
+                        "type": "ForEach",
+                        "space": {
+                            "type": "IterationSpace.Group",
+                            "filter": {
+                                "baseFilter": "creature ctrl:you",
+                                "excludeSelf": true
+                            }
+                        },
+                        "body": {
+                            "type": "Composite",
+                            "effects": [
+                                {
                                     "type": "ModifyStats",
                                     "powerModifier": {
                                         "type": "Fixed",
@@ -6268,24 +6268,14 @@
                                         "amount": 2
                                     },
                                     "target": "Self"
-                                }
-                            },
-                            {
-                                "type": "ForEach",
-                                "space": {
-                                    "type": "IterationSpace.Group",
-                                    "filter": {
-                                        "baseFilter": "creature ctrl:you",
-                                        "excludeSelf": true
-                                    }
                                 },
-                                "body": {
+                                {
                                     "type": "GrantKeyword",
                                     "keyword": "TRAMPLE",
                                     "target": "Self"
                                 }
-                            }
-                        ]
+                            ]
+                        }
                     }
                 }
             ]
@@ -6340,6 +6330,7 @@
                         "CopyNextSpellCast"
                     ]
                 },
+                "timing": "ManaAbility",
                 "isManaAbility": true,
                 "descriptionOverride": "{T}, Exile this artifact: Add {U}. When you next cast an instant or sorcery spell this turn, copy that spell. You may choose new targets for the copy."
             }
@@ -6918,6 +6909,7 @@
                         "subtype": "Equipment"
                     }
                 },
+                "timing": "ManaAbility",
                 "isManaAbility": true,
                 "descriptionOverride": "{T}: Add {R}. Spend this mana only to cast an Equipment spell or activate an equip ability."
             }
@@ -23372,6 +23364,7 @@
                 "id": "ability_2",
                 "cost": "CostTap",
                 "effect": "AddManaOfChoice",
+                "timing": "ManaAbility",
                 "isManaAbility": true
             }
         ]

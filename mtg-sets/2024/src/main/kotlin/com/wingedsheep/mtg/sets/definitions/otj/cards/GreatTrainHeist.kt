@@ -68,8 +68,9 @@ val GreatTrainHeist = card("Great Train Heist") {
                     additionalManaCost = "{2}{R}"
                 ),
                 Mode(
-                    effect = Patterns.Group.modifyStatsForAll(1, 0, Filters.Group.creaturesYouControl)
-                        .then(Patterns.Group.grantKeywordToAll(Keyword.FIRST_STRIKE, Filters.Group.creaturesYouControl)),
+                    effect = Patterns.Group.pumpAndGrantToAll(
+                        1, 0, Keyword.FIRST_STRIKE, Filters.Group.creaturesYouControl
+                    ),
                     description = "+ {2} — Creatures you control get +1/+0 and gain first strike until end of turn.",
                     additionalManaCost = "{2}"
                 ),

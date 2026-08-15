@@ -941,7 +941,7 @@
                             "source": {
                                 "type": "FromZone",
                                 "zone": "Library",
-                                "filter": "Goblin"
+                                "filter": "permanent Goblin"
                             },
                             "storeAs": "searchable"
                         },
@@ -1771,7 +1771,7 @@
                             "source": {
                                 "type": "FromZone",
                                 "zone": "Library",
-                                "filter": "Merfolk"
+                                "filter": "permanent Merfolk"
                             },
                             "storeAs": "searchable"
                         },
@@ -2193,7 +2193,7 @@
                             "source": {
                                 "type": "FromZone",
                                 "zone": "Library",
-                                "filter": "Elf"
+                                "filter": "permanent Elf"
                             },
                             "storeAs": "searchable"
                         },

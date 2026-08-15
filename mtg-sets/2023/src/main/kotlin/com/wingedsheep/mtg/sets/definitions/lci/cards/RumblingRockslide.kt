@@ -24,9 +24,8 @@ val RumblingRockslide = card("Rumbling Rockslide") {
     spell {
         val t = target("target creature", TargetCreature(filter = TargetFilter.Creature))
         effect = Effects.DealDamage(
-            amount = DynamicAmount.Count(
+            amount = DynamicAmount.AggregateBattlefield(
                 player = Player.You,
-                zone = Zone.BATTLEFIELD,
                 filter = GameObjectFilter.Land,
             ),
             target = t,

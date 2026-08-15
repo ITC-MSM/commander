@@ -39,11 +39,9 @@ val GoreclawTerrorOfQalSisma = card("Goreclaw, Terror of Qal Sisma") {
 
     triggeredAbility {
         trigger = Triggers.Attacks
-        effect = Patterns.Group.modifyStatsForAll(
+        effect = Patterns.Group.pumpAndGrantToAll(
             power = 1,
             toughness = 1,
-            filter = GroupFilter.AllCreaturesYouControl.powerAtLeast(4),
-        ) then Patterns.Group.grantKeywordToAll(
             keyword = Keyword.TRAMPLE,
             filter = GroupFilter.AllCreaturesYouControl.powerAtLeast(4),
         )

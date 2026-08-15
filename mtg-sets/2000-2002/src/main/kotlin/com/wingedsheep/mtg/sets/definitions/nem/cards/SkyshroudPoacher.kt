@@ -29,7 +29,7 @@ val SkyshroudPoacher = card("Skyshroud Poacher") {
     activatedAbility {
         cost = Costs.Composite(Costs.Mana("{3}"), Costs.Tap)
         effect = Patterns.Library.searchLibrary(
-            filter = GameObjectFilter.Any.withSubtype("Elf"),
+            filter = GameObjectFilter.Permanent.withSubtype("Elf"),
             destination = SearchDestination.BATTLEFIELD
         )
     }

@@ -34,7 +34,7 @@ val GhenArcanumWeaver = card("Ghen, Arcanum Weaver") {
             "target",
             TargetObject(filter = TargetFilter(GameObjectFilter.Enchantment.ownedByYou(), zone = Zone.GRAVEYARD))
         )
-        effect = Effects.Move(t, Zone.BATTLEFIELD)
+        effect = Effects.PutOntoBattlefieldFromGraveyard(t)
     }
     metadata {
         rarity = Rarity.RARE

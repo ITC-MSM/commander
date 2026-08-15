@@ -1316,6 +1316,7 @@
                     "type": "AddMana",
                     "color": "GREEN"
                 },
+                "timing": "ManaAbility",
                 "isManaAbility": true
             }
         ]
@@ -1366,6 +1367,7 @@
                             "amount": 2
                         }
                     },
+                    "timing": "ManaAbility",
                     "isManaAbility": true
                 }
             ]

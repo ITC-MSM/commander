@@ -59,16 +59,11 @@ val ProvisionsMerchant = card("Provisions Merchant") {
                 count = 1,
                 target = EffectTarget.Controller
             ).then(
-                Effects.Composite(
-                    Patterns.Group.modifyStatsForAll(
-                        power = 1,
-                        toughness = 1,
-                        filter = Filters.Group.attackingCreatures
-                    ),
-                    Patterns.Group.grantKeywordToAll(
-                        Keyword.TRAMPLE,
-                        Filters.Group.attackingCreatures
-                    )
+                Patterns.Group.pumpAndGrantToAll(
+                    power = 1,
+                    toughness = 1,
+                    keyword = Keyword.TRAMPLE,
+                    filter = Filters.Group.attackingCreatures
                 )
             ),
             // The Merchant attacks every turn; without a Food the question has no answer, so don't

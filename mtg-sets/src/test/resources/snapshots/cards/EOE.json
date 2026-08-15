@@ -13,6 +13,7 @@
                     "type": "AddMana",
                     "color": "WHITE"
                 },
+                "timing": "ManaAbility",
                 "isManaAbility": true
             },
             {
@@ -2023,18 +2024,12 @@
             {
                 "type": "ConditionalStaticAbility",
                 "ability": {
-                    "type": "GrantDynamicStats",
+                    "type": "ModifyStats",
+                    "powerBonus": 1,
+                    "toughnessBonus": 0,
                     "filter": {
                         "baseFilter": "permanent",
                         "scope": "Self"
-                    },
-                    "powerBonus": {
-                        "type": "Fixed",
-                        "amount": 1
-                    },
-                    "toughnessBonus": {
-                        "type": "Fixed",
-                        "amount": 0
                     }
                 },
                 "condition": {
@@ -4787,6 +4782,7 @@
                     "type": "AddMana",
                     "color": "GREEN"
                 },
+                "timing": "ManaAbility",
                 "isManaAbility": true
             },
             {
@@ -4831,6 +4827,7 @@
                         "filter": "creature"
                     }
                 },
+                "timing": "ManaAbility",
                 "restrictions": [
                     {
                         "type": "ActivationOnlyIfCondition",
@@ -6151,6 +6148,7 @@
                     ]
                 },
                 "effect": "AddManaOfChoice",
+                "timing": "ManaAbility",
                 "isManaAbility": true
             }
         ]
@@ -6454,18 +6452,12 @@
             {
                 "type": "ConditionalStaticAbility",
                 "ability": {
-                    "type": "GrantDynamicStats",
+                    "type": "ModifyStats",
+                    "powerBonus": 1,
+                    "toughnessBonus": 0,
                     "filter": {
                         "baseFilter": "permanent",
                         "scope": "Self"
-                    },
-                    "powerBonus": {
-                        "type": "Fixed",
-                        "amount": 1
-                    },
-                    "toughnessBonus": {
-                        "type": "Fixed",
-                        "amount": 0
                     }
                 },
                 "condition": {
@@ -8254,6 +8246,7 @@
                     "type": "AddMana",
                     "color": "RED"
                 },
+                "timing": "ManaAbility",
                 "isManaAbility": true
             },
             {
@@ -13348,6 +13341,7 @@
                         "amount": 1
                     }
                 },
+                "timing": "ManaAbility",
                 "isManaAbility": true
             },
             {
@@ -15615,6 +15609,7 @@
                     "type": "AddMana",
                     "color": "BLACK"
                 },
+                "timing": "ManaAbility",
                 "isManaAbility": true
             },
             {
@@ -16393,18 +16388,18 @@
                     "to": "Battlefield"
                 },
                 "effect": {
-                    "type": "Composite",
-                    "effects": [
-                        {
-                            "type": "ForEach",
-                            "space": {
-                                "type": "IterationSpace.Group",
-                                "filter": {
-                                    "baseFilter": "creature ctrl:you",
-                                    "excludeSelf": true
-                                }
-                            },
-                            "body": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you",
+                            "excludeSelf": true
+                        }
+                    },
+                    "body": {
+                        "type": "Composite",
+                        "effects": [
+                            {
                                 "type": "ModifyStats",
                                 "powerModifier": {
                                     "type": "Fixed",
@@ -16415,24 +16410,14 @@
                                     "amount": 0
                                 },
                                 "target": "Self"
-                            }
-                        },
-                        {
-                            "type": "ForEach",
-                            "space": {
-                                "type": "IterationSpace.Group",
-                                "filter": {
-                                    "baseFilter": "creature ctrl:you",
-                                    "excludeSelf": true
-                                }
                             },
-                            "body": {
+                            {
                                 "type": "GrantKeyword",
                                 "keyword": "DEATHTOUCH",
                                 "target": "Self"
                             }
-                        }
-                    ]
+                        ]
+                    }
                 },
                 "descriptionOverride": "other creatures you control get +1/+0 and gain deathtouch until end of turn"
             },
@@ -16440,18 +16425,18 @@
                 "id": "ability_2",
                 "trigger": "AttackEvent",
                 "effect": {
-                    "type": "Composite",
-                    "effects": [
-                        {
-                            "type": "ForEach",
-                            "space": {
-                                "type": "IterationSpace.Group",
-                                "filter": {
-                                    "baseFilter": "creature ctrl:you",
-                                    "excludeSelf": true
-                                }
-                            },
-                            "body": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you",
+                            "excludeSelf": true
+                        }
+                    },
+                    "body": {
+                        "type": "Composite",
+                        "effects": [
+                            {
                                 "type": "ModifyStats",
                                 "powerModifier": {
                                     "type": "Fixed",
@@ -16462,24 +16447,14 @@
                                     "amount": 0
                                 },
                                 "target": "Self"
-                            }
-                        },
-                        {
-                            "type": "ForEach",
-                            "space": {
-                                "type": "IterationSpace.Group",
-                                "filter": {
-                                    "baseFilter": "creature ctrl:you",
-                                    "excludeSelf": true
-                                }
                             },
-                            "body": {
+                            {
                                 "type": "GrantKeyword",
                                 "keyword": "DEATHTOUCH",
                                 "target": "Self"
                             }
-                        }
-                    ]
+                        ]
+                    }
                 },
                 "descriptionOverride": "other creatures you control get +1/+0 and gain deathtouch until end of turn"
             }
@@ -17748,6 +17723,7 @@
                         "amount": 3
                     }
                 },
+                "timing": "ManaAbility",
                 "isManaAbility": true
             },
             {
@@ -17785,6 +17761,7 @@
                         }
                     }
                 },
+                "timing": "ManaAbility",
                 "restrictions": [
                     {
                         "type": "ActivationOnlyIfCondition",
@@ -18553,6 +18530,7 @@
                     "type": "AddMana",
                     "color": "BLUE"
                 },
+                "timing": "ManaAbility",
                 "isManaAbility": true
             },
             {
@@ -18597,6 +18575,7 @@
                         "filter": "artifact"
                     }
                 },
+                "timing": "ManaAbility",
                 "restrictions": [
                     {
                         "type": "ActivationOnlyIfCondition",
@@ -19819,6 +19798,7 @@
                     "type": "AddMana",
                     "color": "RED"
                 },
+                "timing": "ManaAbility",
                 "isManaAbility": true
             },
             {

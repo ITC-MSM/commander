@@ -26,11 +26,7 @@ val VirtuesRuin = card("Virtue's Ruin") {
     typeLine = "Sorcery"
     oracleText = "Destroy all white creatures."
     spell {
-        effect = Effects.ForEachInGroup(
-            GroupFilter(GameObjectFilter.Creature.withColor(Color.WHITE)),
-            Effects.Move(EffectTarget.Self, Zone.GRAVEYARD, byDestruction = true),
-            noRegenerate = false
-        )
+        effect = Effects.DestroyAll(GameObjectFilter.Creature.withColor(Color.WHITE))
     }
     metadata {
         rarity = Rarity.UNCOMMON

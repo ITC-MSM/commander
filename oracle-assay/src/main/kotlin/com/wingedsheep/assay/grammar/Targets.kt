@@ -7,6 +7,7 @@ import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.targets.AnyTarget
 import com.wingedsheep.sdk.scripting.filters.unified.TargetFilter
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
+import com.wingedsheep.sdk.scripting.targets.TargetCreatureOrPlaneswalker
 import com.wingedsheep.sdk.scripting.targets.TargetObject
 import com.wingedsheep.sdk.scripting.targets.TargetOpponent
 import com.wingedsheep.sdk.scripting.targets.TargetOpponentOrPlaneswalker
@@ -105,7 +106,26 @@ object Targets {
      * reads better at the call site, and this has to equal both.
      */
     fun permanent(filter: GameObjectFilter): TargetRequirement =
-        TargetPermanent(filter = TargetFilter(filter), id = SLOT)
+        if (filter == GameObjectFilter.CreatureOrPlaneswalker) TargetCreatureOrPlaneswalker(id = SLOT)
+        else TargetPermanent(filter = TargetFilter(filter), id = SLOT)
+
+    /**
+     * **"Target creature or planeswalker" has a requirement type of its own, and it is the one the
+     * corpus writes.**
+     *
+     * Every other noun phrase in [Filters] becomes a filter inside a `TargetObject`, and this one
+     * could too — `GameObjectFilter.CreatureOrPlaneswalker` is a perfectly good `Or` of two
+     * predicates. But the SDK also ships [TargetCreatureOrPlaneswalker], a requirement carrying no
+     * filter at all, and 34 hand-written cards use it against none that spell the `Or`. So the two
+     * spellings are real and the corpus has already chosen; a rule that printed the other would be
+     * inventing a house style, exactly as the each-player damage rule in [Steps] was. Broadside
+     * Barrage, Sear, Hero's Downfall and Defibrillating Current are what the differential reported.
+     *
+     * Only the *bare* phrase maps: "target creature or planeswalker you control" carries a
+     * controller predicate that this filterless requirement cannot hold, so it stays a
+     * `TargetObject` and [permanentFilter]'s reconstruct-and-compare is what keeps that honest.
+     */
+    private val creatureOrPlaneswalker = GameObjectFilter.CreatureOrPlaneswalker
 
     /**
      * The inverse: the filter [requirement] restricts to, or null when it is anything else.
@@ -116,6 +136,9 @@ object Targets {
      * final equality check is what makes that exhaustive rather than a list of fields to remember.
      */
     fun permanentFilter(requirement: TargetRequirement): GameObjectFilter? {
+        if (requirement is TargetCreatureOrPlaneswalker) {
+            return creatureOrPlaneswalker.takeIf { requirement == permanent(it) }
+        }
         val base = (requirement as? TargetObject)?.filter?.baseFilter ?: return null
         return base.takeIf { requirement == permanent(it) }
     }

@@ -389,7 +389,13 @@
                 "binding": "ANY",
                 "effect": {
                     "type": "PayOrSuffer",
-                    "cost": "OwnManaCost",
+                    "cost": {
+                        "type": "PayAtom",
+                        "atom": {
+                            "type": "AtomMana",
+                            "cost": "{G}{G}"
+                        }
+                    },
                     "suffer": "SacrificeSelf"
                 }
             }
@@ -835,7 +841,13 @@
                 "binding": "ANY",
                 "effect": {
                     "type": "PayOrSuffer",
-                    "cost": "OwnManaCost",
+                    "cost": {
+                        "type": "PayAtom",
+                        "atom": {
+                            "type": "AtomMana",
+                            "cost": "{2}{B}{B}"
+                        }
+                    },
                     "suffer": "SacrificeSelf"
                 }
             }
@@ -1626,7 +1638,13 @@
                 "binding": "ANY",
                 "effect": {
                     "type": "PayOrSuffer",
-                    "cost": "OwnManaCost",
+                    "cost": {
+                        "type": "PayAtom",
+                        "atom": {
+                            "type": "AtomMana",
+                            "cost": "{B}"
+                        }
+                    },
                     "suffer": "SacrificeSelf"
                 }
             }

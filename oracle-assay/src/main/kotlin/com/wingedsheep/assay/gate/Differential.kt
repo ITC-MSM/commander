@@ -279,8 +279,43 @@ class Differential(private val touchstone: Touchstone = Touchstone()) {
         val tree = CardSerialization.json.parseToJsonElement(json)
         return CardSerialization.json.encodeToString(
             JsonElement.serializer(),
-            Folds.flattenComposites(canonicalizeGrantedAbilities(canonicalizeAbilities(normalizeSlots(tree)))),
+            sortKeys(
+                Folds.dropPresentation(
+                    Folds.liftTriggerConsent(
+                        Folds.flattenComposites(
+                            canonicalizeGrantedAbilities(canonicalizeAbilities(normalizeSlots(tree))),
+                        ),
+                    ),
+                ),
+            ),
         )
+    }
+
+    /**
+     * Compare objects as objects, not as the byte order their fields happened to serialize in.
+     *
+     * A JSON object is unordered, and both sides here come out of the same serializer, so sorting is
+     * information-free — but *not* sorting is not. Two passes above add a key rather than rewrite
+     * one: [normalizeOwner] stamps a requirement's `id` and [canonicalizeAbilities] stamps an
+     * ability's, and `Map + Pair` appends when the key is absent and rewrites in place when it is
+     * present. So a model whose id the serializer emitted and an identical model whose id it did not
+     * produced the same fields in two orders, and the string comparison called that a divergence.
+     *
+     * Whether the serializer emits an `AbilityId` at all is **not stable across calls**, which is
+     * what made this present as a phantom: `encodeDefaults` is false and `AbilityId.generate()` is a
+     * global counter, so kotlinx re-evaluates the default to decide whether to skip the field and a
+     * golden holding `ability_2` is omitted exactly when the counter next returns `ability_2`. Two
+     * encodes of the *same* card therefore differ, and Blasting Station — whose models are equal
+     * field for field — reported as divergent on some runs and confirmed on others.
+     *
+     * Sorting is the fix rather than "always stamp in position", because it closes the whole class:
+     * any later pass that adds a key, and any field the serializer omits on one side, is now
+     * compared on what it says instead of on where it sits.
+     */
+    private fun sortKeys(element: JsonElement): JsonElement = when (element) {
+        is JsonObject -> JsonObject(element.entries.sortedBy { it.key }.associate { it.key to sortKeys(it.value) })
+        is JsonArray -> JsonArray(element.map(::sortKeys))
+        else -> element
     }
 
     private fun slotName(index: Int) = "slot_$index"
@@ -352,25 +387,19 @@ class Differential(private val touchstone: Touchstone = Touchstone()) {
     }
 
     /**
-     * Drop the two things about an ability that no printed text determines: its id, and an authored
-     * `descriptionOverride`.
+     * Give an ability the id its position implies — the one thing about an ability that no printed
+     * text determines. (An authored `descriptionOverride` is the other, and it now belongs to
+     * [Folds.dropPresentation], which drops the same class of field wherever it is nested.)
      *
      * An `AbilityId` is arbitrary in exactly the way a target slot's name is, and more obviously so:
      * the DSL generates them from a counter, which is why Kavu Climber's golden says `"ability_1"`.
      * Comparing it would measure the order the cards happened to be constructed in.
      * `CardDefinitionSnapshotTest.normalizeAbilityIds` does the same for the goldens themselves.
      *
-     * `descriptionOverride` is the SDK's own words "optional human-readable description that
-     * overrides the auto-generated one" — presentation, never executed. An author writes one when
-     * the generated sentence reads badly; a parser never would, since the sentence it was parsing is
-     * right there. Comparing it would report every such card as divergent over its UI string.
-     *
-     * Both lists get the same treatment, and activated abilities need it at least as badly: the
-     * override on an `ActivatedAbility` is what renders its menu label, so authors reach for it far
-     * more often — Mishra's Workshop, Creeping Peeper and Ashnod's Altar all carry one that is
-     * simply the card's own printed line. Scoping it to triggered abilities only, which is where
-     * Phase 1 established the rule, would have reported each of those as a divergence over a UI
-     * string the moment the grammar could read them.
+     * Both lists get the same treatment, because a card's activated abilities are generated from the
+     * same counter its triggered ones are — Blasting Station's golden numbers its trigger `ability_1`
+     * and its activated ability `ability_2` purely because that is the order they were constructed
+     * in, and the grammar mints a fixed constant for each.
      */
     private fun canonicalizeAbilities(script: JsonElement): JsonElement {
         val root = script as? JsonObject ?: return script
@@ -378,7 +407,7 @@ class Differential(private val touchstone: Touchstone = Touchstone()) {
             val abilities = root[key] as? JsonArray ?: return@mapNotNull null
             key to JsonArray(abilities.mapIndexed { index, ability ->
                 val fields = (ability as? JsonObject) ?: return@mapIndexed ability
-                JsonObject(fields - "descriptionOverride" + ("id" to JsonPrimitive("${key}_$index")))
+                JsonObject(fields + ("id" to JsonPrimitive("${key}_$index")))
             })
         })
     }
@@ -395,11 +424,17 @@ class Differential(private val touchstone: Touchstone = Touchstone()) {
      *
      * One fixed token rather than a position, because a static holds exactly one granted ability —
      * there is no list to index into.
+     *
+     * Stamped whether or not the ability *has* an `id` in the JSON, for the reason [sortKeys]
+     * records: the serializer's decision to emit an `AbilityId` is not stable across calls, so
+     * keying this on the field's presence would canonicalize one side of a pair and not the other.
+     * A `GrantStaticAbility` carries an ability with no id at all and picks up a stamp it does not
+     * need — harmless, because both sides get the same one and no printed word ever determined it.
      */
     private fun canonicalizeGrantedAbilities(element: JsonElement): JsonElement = when (element) {
         is JsonObject -> JsonObject(
             element.mapValues { (key, value) ->
-                if (key == "ability" && value is JsonObject && "id" in value) {
+                if (key == "ability" && value is JsonObject) {
                     JsonObject(
                         (canonicalizeGrantedAbilities(value) as JsonObject) +
                             ("id" to JsonPrimitive("granted")),
@@ -464,6 +499,86 @@ class Differential(private val touchstone: Touchstone = Touchstone()) {
 internal object Folds {
 
     fun apply(abilities: Set<KeywordAbility>): Set<KeywordAbility> = dropImpliedSimpleMarkers(abilities)
+
+    /**
+     * **Fields no printed line determines: art, and the strings a client shows a human.**
+     *
+     * The rule for this list is the one `Differential.canonicalizeAbilities` already applies to
+     * `descriptionOverride` — "presentation, never executed" — read one level out, because the same
+     * class of field turns up nested inside effects and not only on an ability:
+     *
+     * - **`imageUri`** is the token's *artwork*. The SDK calls it "Optional image URI for the token
+     *   artwork" and, on `AnimateEffect`, "display-only". No Oracle text names a URL, so a parser can
+     *   never produce one and a card that inlines one would diverge for ever. Twelve token-making
+     *   cards reported here, all of them agreeing about the token and disagreeing about its picture.
+     * - **`message`** is `LoseGameEffect`/`WinGameEffect`'s "message describing why they lost (shown
+     *   in game-over screen)". Phage the Untouchable carries two, each a sentence *about* its own
+     *   printed line rather than a reading of it.
+     * - **`prompt`** is the label a decision shows its controller. Flow of Knowledge says
+     *   "Choose two cards to discard" where the grammar builds "Choose 2 cards to discard": the same
+     *   decision, spelled for a human two ways.
+     *
+     * The bar the fold list sets is "both spellings already agreed to mean the same thing somewhere
+     * outside this file", and here that agreement is the SDK's own KDoc on each field. The narrowness
+     * is that this drops *these three names* and nothing else — a field that changes what the effect
+     * does keeps diverging, including every sibling of these inside the same object.
+     */
+    fun dropPresentation(element: JsonElement): JsonElement = when (element) {
+        is JsonObject -> JsonObject(
+            element.filterKeys { it !in PRESENTATION_KEYS }.mapValues { dropPresentation(it.value) },
+        )
+
+        is JsonArray -> JsonArray(element.map(::dropPresentation))
+        else -> element
+    }
+
+    private val PRESENTATION_KEYS = setOf("imageUri", "message", "prompt", "descriptionOverride")
+
+    /**
+     * **A trigger's `optional` flag is a `Gate.MayDecide` around its effect — the engine says so.**
+     *
+     * "Whenever this creature deals combat damage to a player, **you may** draw a card." has two
+     * spellings in `mtg-sdk`: `TriggeredAbility.optional = true` (106 cards) and a `MayEffect`
+     * wrapped round the effect (214 cards). Neither is a house style anyone chose — and the reason
+     * they are the same value is not an argument made here but code in the engine:
+     * `TriggerProcessor.putOnStack` reads the flag and *builds the other spelling*, wrapping the
+     * effect in `GatedEffect(Gate.MayDecide, then = effect, otherwise = elseEffect)` before the
+     * ability ever reaches the stack — and skips the wrap when the effect `ownsConsentGate()`
+     * already, precisely so the two spellings don't double-prompt. One lowers into the other on
+     * every game, which is what this fold list's bar asks for.
+     *
+     * Normalized toward the flag, because that is the form Assay's [Triggers] lowering produces:
+     * the gate is unwrapped, `optional` is stamped, and a gate's `otherwise` becomes the ability's
+     * `elseEffect` — the same three moves the engine makes, run backwards.
+     *
+     * **Only a bare `Gate.MayDecide` folds.** A gate carrying a `feasibility` (Provisions Merchant)
+     * or a `prompt` says something the flag form cannot, and the engine *derives* feasibility from
+     * the effect rather than copying it — so folding those would be claiming an equivalence the
+     * lowering does not establish. They stay divergent, which is correct: they are a third thing.
+     */
+    fun liftTriggerConsent(element: JsonElement): JsonElement = when (element) {
+        is JsonObject -> {
+            val walked = JsonObject(element.mapValues { liftTriggerConsent(it.value) })
+            if ("trigger" in walked) unwrapMayEffect(walked) else walked
+        }
+
+        is JsonArray -> JsonArray(element.map(::liftTriggerConsent))
+        else -> element
+    }
+
+    private fun unwrapMayEffect(ability: JsonObject): JsonObject {
+        if (ability["optional"] != null || "elseEffect" in ability) return ability
+        val effect = ability["effect"] as? JsonObject ?: return ability
+        if ((effect["type"] as? JsonPrimitive)?.content != "Gated") return ability
+        // A bare `Gate.MayDecide` is `{"type": "Gate.MayDecide"}` and nothing else; a gate with a
+        // `feasibility` or a `prompt` carries fields the flag form has nowhere to put.
+        val gate = effect["gate"] as? JsonObject ?: return ability
+        if ((gate["type"] as? JsonPrimitive)?.content != "Gate.MayDecide" || gate.size != 1) return ability
+        if (effect.keys.any { it !in setOf("type", "gate", "then", "otherwise") }) return ability
+        val lifted = ability + ("effect" to effect.getValue("then")) +
+            ("optional" to JsonPrimitive(true))
+        return JsonObject(effect["otherwise"]?.let { lifted + ("elseEffect" to it) } ?: lifted)
+    }
 
     /**
      * **A parameterless marker implied by a parameterized ability of the same keyword.**

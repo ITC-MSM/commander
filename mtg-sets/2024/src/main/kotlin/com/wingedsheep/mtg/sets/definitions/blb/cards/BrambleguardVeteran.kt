@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.scripting.effects.ModifyStatsEffect
 import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.dsl.Effects
+import com.wingedsheep.sdk.dsl.Patterns
 
 /**
  * Brambleguard Veteran
@@ -31,18 +32,7 @@ val BrambleguardVeteran = card("Brambleguard Veteran") {
 
     triggeredAbility {
         trigger = Triggers.Expend(4)
-        effect = Effects.Composite(
-            listOf(
-                Effects.ForEachInGroup(
-                    raccoonsYouControl,
-                    ModifyStatsEffect(1, 1, EffectTarget.Self)
-                ),
-                Effects.ForEachInGroup(
-                    raccoonsYouControl,
-                    GrantKeywordEffect(Keyword.VIGILANCE, EffectTarget.Self)
-                )
-            )
-        )
+        effect = Patterns.Group.pumpAndGrantToAll(1, 1, Keyword.VIGILANCE, raccoonsYouControl)
     }
 
     metadata {

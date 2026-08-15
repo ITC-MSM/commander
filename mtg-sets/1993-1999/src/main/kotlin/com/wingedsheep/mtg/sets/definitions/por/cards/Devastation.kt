@@ -25,11 +25,7 @@ val Devastation = card("Devastation") {
     typeLine = "Sorcery"
     oracleText = "Destroy all creatures and lands."
     spell {
-        effect = Effects.ForEachInGroup(
-            GroupFilter(GameObjectFilter.CreatureOrLand),
-            Effects.Move(EffectTarget.Self, Zone.GRAVEYARD, byDestruction = true),
-            noRegenerate = false
-        )
+        effect = Effects.DestroyAll(GameObjectFilter.CreatureOrLand)
     }
     metadata {
         rarity = Rarity.RARE

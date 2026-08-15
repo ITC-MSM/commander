@@ -91,5 +91,4 @@ val DownInTheValley = card("Down in the Valley") {
 
 /** The one chapter ability shared by III and IV. */
 private fun valleyRally() =
-    Patterns.Group.modifyStatsForAll(1, 0, elvesYouControl) then
-        Patterns.Group.grantKeywordToAll(Keyword.VIGILANCE, elvesYouControl)
+    Patterns.Group.pumpAndGrantToAll(1, 0, Keyword.VIGILANCE, elvesYouControl)

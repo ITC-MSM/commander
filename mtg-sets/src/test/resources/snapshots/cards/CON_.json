@@ -258,7 +258,13 @@
                 },
                 "effect": {
                     "type": "PayOrSuffer",
-                    "cost": "OwnManaCost",
+                    "cost": {
+                        "type": "PayAtom",
+                        "atom": {
+                            "type": "AtomMana",
+                            "cost": "{1}"
+                        }
+                    },
                     "suffer": "SacrificeSelf"
                 }
             }

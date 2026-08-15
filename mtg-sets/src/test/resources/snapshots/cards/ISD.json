@@ -164,7 +164,7 @@
                 "targetRequirement": {
                     "type": "TargetObject",
                     "filter": {
-                        "baseFilter": "Spirit own:you",
+                        "baseFilter": "creature Spirit own:you",
                         "zone": "Graveyard"
                     },
                     "id": "target"

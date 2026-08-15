@@ -29,7 +29,7 @@ val VisaraTheDreadful = card("Visara the Dreadful") {
     activatedAbility {
         cost = AbilityCost.Tap
         val t = target("target", TargetCreature())
-        effect = Effects.Move(t, Zone.GRAVEYARD, byDestruction = true)
+        effect = Effects.Destroy(t, noRegenerate = true)
     }
 
     metadata {

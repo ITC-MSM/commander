@@ -25,11 +25,7 @@ val Tranquility = card("Tranquility") {
     typeLine = "Sorcery"
     oracleText = "Destroy all enchantments."
     spell {
-        effect = Effects.ForEachInGroup(
-            GroupFilter(GameObjectFilter.Enchantment),
-            Effects.Move(EffectTarget.Self, Zone.GRAVEYARD, byDestruction = true),
-            noRegenerate = false
-        )
+        effect = Effects.DestroyAll(GameObjectFilter.Enchantment)
     }
     metadata {
         rarity = Rarity.COMMON

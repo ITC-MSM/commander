@@ -36,18 +36,12 @@ val SorinSolemnVisitor = card("Sorin, Solemn Visitor") {
 
     // +1: Until your next turn, creatures you control get +1/+0 and gain lifelink.
     loyaltyAbility(+1) {
-        effect = Effects.Composite(
-            Patterns.Group.modifyStatsForAll(
-                power = 1,
-                toughness = 0,
-                filter = GroupFilter.AllCreaturesYouControl,
-                duration = Duration.UntilYourNextTurn
-            ),
-            Patterns.Group.grantKeywordToAll(
-                keyword = Keyword.LIFELINK,
-                filter = GroupFilter.AllCreaturesYouControl,
-                duration = Duration.UntilYourNextTurn
-            )
+        effect = Patterns.Group.pumpAndGrantToAll(
+            power = 1,
+            toughness = 0,
+            keyword = Keyword.LIFELINK,
+            filter = GroupFilter.AllCreaturesYouControl,
+            duration = Duration.UntilYourNextTurn
         )
     }
 

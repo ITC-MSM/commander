@@ -38,12 +38,7 @@ val MoonstoneHarbinger = card("Moonstone Harbinger") {
         triggerCondition = Conditions.IsYourTurn
         oncePerTurn = true
         val batsYouControl = GroupFilter.allCreaturesWithSubtype("Bat").youControl()
-        effect = Effects.Composite(
-            listOf(
-                Patterns.Group.modifyStatsForAll(1, 0, batsYouControl),
-                Patterns.Group.grantKeywordToAll(Keyword.DEATHTOUCH, batsYouControl)
-            )
-        )
+        effect = Patterns.Group.pumpAndGrantToAll(1, 0, Keyword.DEATHTOUCH, batsYouControl)
     }
 
     metadata {

@@ -31,7 +31,7 @@ val PitRaptor = card("Pit Raptor") {
     keywords(Keyword.FLYING, Keyword.FIRST_STRIKE)
     triggeredAbility {
         trigger = Triggers.YourUpkeep
-        effect = PayOrSufferEffect(cost = Costs.pay.OwnManaCost, suffer = SacrificeSelfEffect)
+        effect = PayOrSufferEffect(cost = Costs.pay.Mana("{2}{B}{B}"), suffer = SacrificeSelfEffect)
     }
     metadata {
         rarity = Rarity.UNCOMMON

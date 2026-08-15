@@ -23,7 +23,7 @@ val Earthquake = card("Earthquake") {
 
     spell {
         effect = Effects.ForEachInGroup(GroupFilter.AllCreatures.withoutKeyword(Keyword.FLYING), DealDamageEffect(DynamicAmount.XValue, EffectTarget.Self)) then
-            Effects.DealDamage(DynamicAmount.XValue, EffectTarget.PlayerRef(Player.Each))
+            Effects.ForEachPlayer(Player.Each, listOf(Effects.DealDamage(DynamicAmount.XValue, EffectTarget.Controller)))
     }
 
     metadata {

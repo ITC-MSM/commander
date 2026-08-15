@@ -28,7 +28,7 @@ val JoustThrough = card("Joust Through") {
         val t = target("target", TargetCreature(filter = TargetFilter.AttackingOrBlockingCreature))
         effect = Effects.Composite(
             DealDamageEffect(3, t),
-            GainLifeEffect(3)
+            GainLifeEffect(1)
         )
     }
     metadata {

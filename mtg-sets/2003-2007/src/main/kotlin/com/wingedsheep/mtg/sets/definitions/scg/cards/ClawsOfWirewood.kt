@@ -25,7 +25,7 @@ val ClawsOfWirewood = card("Claws of Wirewood") {
 
     spell {
         effect = Patterns.Group.dealDamageToAll(3, Filters.Group.creatures { withKeyword(Keyword.FLYING) }) then
-            Effects.DealDamage(3, EffectTarget.PlayerRef(Player.Each))
+            Effects.ForEachPlayer(Player.Each, listOf(Effects.DealDamage(3, EffectTarget.Controller)))
     }
 
     keywordAbility(KeywordAbility.cycling("{2}"))

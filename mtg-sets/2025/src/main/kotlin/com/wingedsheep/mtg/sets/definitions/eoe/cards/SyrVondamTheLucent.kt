@@ -28,11 +28,8 @@ val SyrVondamTheLucent = card("Syr Vondam, the Lucent") {
     keywords(Keyword.DEATHTOUCH, Keyword.LIFELINK)
 
     // Whenever Syr Vondam enters the battlefield or attacks, other creatures you control get +1/+0 and gain deathtouch until end of turn
-    val pumpOtherCreatures = Effects.Composite(
-        listOf(
-            Patterns.Group.modifyStatsForAll(1, 0, GroupFilter.OtherCreaturesYouControl),
-            Patterns.Group.grantKeywordToAll(Keyword.DEATHTOUCH, GroupFilter.OtherCreaturesYouControl)
-        )
+    val pumpOtherCreatures = Patterns.Group.pumpAndGrantToAll(
+        1, 0, Keyword.DEATHTOUCH, GroupFilter.OtherCreaturesYouControl
     )
     val pumpDescription = "other creatures you control get +1/+0 and gain deathtouch until end of turn"
 

@@ -32,8 +32,9 @@ val EaglesOfTheNorth = card("Eagles of the North") {
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        effect = Patterns.Group.modifyStatsForAll(1, 0, GroupFilter.AllCreaturesYouControl) then
-            Patterns.Group.grantKeywordToAll(Keyword.FIRST_STRIKE, GroupFilter.AllCreaturesYouControl)
+        effect = Patterns.Group.pumpAndGrantToAll(
+            1, 0, Keyword.FIRST_STRIKE, GroupFilter.AllCreaturesYouControl
+        )
     }
 
     keywordAbility(KeywordAbility.typecycling("Plains", ManaCost.parse("{1}")))

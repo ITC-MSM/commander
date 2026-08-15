@@ -33,7 +33,7 @@ val EncroachingWastes = card("Encroaching Wastes") {
     }
     activatedAbility {
         cost = Costs.Composite(Costs.Mana("{4}"), Costs.Tap, Costs.SacrificeSelf)
-        val t = target("target", TargetPermanent(filter = TargetFilter.Land))
+        val t = target("target", TargetPermanent(filter = TargetFilter.NonbasicLand))
         effect = Effects.Move(t, Zone.GRAVEYARD, byDestruction = true)
     }
     metadata {

@@ -25,7 +25,7 @@ val CruelTruths = card("Cruel Truths") {
     spell {
         effect = Patterns.Library.surveil(2)
             .then(Effects.DrawCards(2))
-            .then(Effects.LoseLife(2, EffectTarget.PlayerRef(Player.You)))
+            .then(Effects.LoseLife(2, EffectTarget.Controller))
     }
 
     metadata {

@@ -28,7 +28,7 @@ val WhisperBloodLiturgist = card("Whisper, Blood Liturgist") {
             Costs.SacrificeMultiple(2, GameObjectFilter.Creature)
         )
         val creature = target("creature card in your graveyard", Targets.CreatureCardInYourGraveyard)
-        effect = Effects.PutOntoBattlefield(creature)
+        effect = Effects.PutOntoBattlefieldFromGraveyard(creature)
     }
 
     metadata {

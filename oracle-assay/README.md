@@ -275,9 +275,58 @@ named population bucket instead and the denominator stays visible.
     Oracle text differs from golden  203
     golden would not decode            0
 
-  Confirmed — models agree           2265   948.9‰ (94.9%)
-  DIVERGENT — read every one          122
+  Confirmed — models agree           2383   998.3‰ (99.8%)
+  DIVERGENT — read every one            4
 ```
+
+That 122 → 4 is the **sweep**: every divergence the gate had accumulated was read, classified as
+parser bug / card bug / fold, and acted on. What it found, by kind:
+
+- **A bug in the gate itself, and a flaky one.** `AbilityId.generate()` is a global counter and
+  `encodeDefaults` is false, so kotlinx re-evaluates the default to decide whether to emit an `id` —
+  meaning a golden holding `ability_2` is omitted from the JSON exactly when the counter next returns
+  `ability_2`. Two encodes of the same card differed, and the comparison was over the serialized
+  *string*, so Blasting Station reported as divergent on some runs and confirmed on others.
+  `Differential.sortKeys` compares objects as objects and closes the whole class.
+- **22 hand-written cards that were wrong**, all but three of them unreviewed mtgish drafts, and all
+  of them wrong in the way this gate is built to see — a clause dropped inside a filter. Fiery
+  Cannonade hit every creature rather than every non-Pirate; Eyeblight Massacre every creature rather
+  than every non-Elf; Magnetic Flux pumped artifacts *or* creatures rather than artifact creatures;
+  Kangee's block trigger pumped every flier rather than every *blocking* flier; Joust Through gained
+  3 life where the card says 1; Visara never stopped regeneration at all. Seven more read "sacrifice
+  it unless you pay {G}{G}" as `PayCost.OwnManaCost` — the card's *printed* cost, which for the two
+  lands among them is `{0}`, i.e. a sacrifice that never happens.
+- **Four parser bugs**, each of the reversible-but-wrong class the touchstone cannot see: an
+  intervening-if left duplicated in the effect as well as lifted into `triggerCondition`; Chromatic
+  Sphere read as an instant-speed ability because the mana effect sat under a composite (CR 605.1a
+  says "could add mana", not "does nothing else"); a two-pass reading of "creatures you control get
+  +3/+3 **and** gain trample"; and two sentences printed in a spelling the corpus never uses.
+- **One SDK finding acted on, one filed.** Acted on: `manaAbility = true` now derives
+  `timing = TimingRule.ManaAbility` in `CardBuilder`, so the two spellings of one fact can no longer
+  drift (24 cards carried only one, and the AI's `ExpiringGrantWindow` branches on `timing`).
+- **Filed: the engine never performs CR 603.4's second intervening-if check.**
+  `triggerCondition` is filtered at trigger *detection* and read nowhere else, so Beastbond
+  Outcaster draws its card even when the 4-power creature was killed in response — against the
+  ruling quoted in its own card file. Eight cards (Lavaborn Muse, Farsight Mask, Bloodhall Priest,
+  Asylum Visitor, Heir of the Wilds, Convalescent Care, Oversold Cemetery) have noticed and
+  hand-written a redundant resolution-time gate to compensate.
+
+  A uniform recheck was implemented and **reverted**, because the field turns out to be overloaded
+  three ways: 340 abilities use `triggerCondition` for an intervening-"if" (two checks), 47 for a
+  "**while**" clause — "Whenever this creature attacks *while* you control a Dinosaur" is
+  trigger-time only, and Burning Sun Cavalry and Seasoned Warrenguard have scenario tests asserting
+  exactly that — and ~100 for other trigger-time restrictions. Rechecking all of them fails those
+  two tests. The engine fix needs "if" and "while" separated in the SDK first, which is its own
+  change with a corpus migration behind it.
+
+The four that remain are classified, not unexplained:
+
+| Card | Classification |
+|---|---|
+| Zombie Master | The bare-tribal-noun approximation, **measured**: "Zombies" means every Zombie *permanent*, and reading it that way costs 80 other cards (45 → 127 divergences). The one card in the corpus where the distinction is observable, because its granted ability says "Regenerate this permanent". |
+| Lavaborn Muse | Carries the redundant resolution-time gate above. Correct under today's engine and divergent from the grammar; both stop being true when the "if"/"while" split lands. |
+| Tattered Ratter | Parser bug. "it" inside a *filtered* trigger means the triggering creature, not the source — the third anaphor position. Fixing it needs a clause vocabulary reachable only from `filteredTriggerRule`, since `Primitives.self` and `SelfSteps.anaphoric` both build `EffectTarget.Self` today. |
+| Kalastria Highborn | Parser bug. "You may pay {B}. If you do, A **and** B." — the outer clause-sequence rule takes the " and " join before the gate can, so B lands outside the gate. Fixing it by alternation order is what the design says never to do; the gate's scope has to run to the end of the sentence. |
 
 The divergence count is not meant to stay at zero — it rises every time the grammar reaches a new
 class of card, and each rise is the gate earning its keep. The five it opened with, the eight the

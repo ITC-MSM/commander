@@ -20,7 +20,7 @@ val Zombify = card("Zombify") {
 
     spell {
         val creature = target("target creature card from your graveyard", Targets.CreatureCardInYourGraveyard)
-        effect = Effects.PutOntoBattlefield(creature)
+        effect = Effects.PutOntoBattlefieldFromGraveyard(creature)
     }
 
     metadata {

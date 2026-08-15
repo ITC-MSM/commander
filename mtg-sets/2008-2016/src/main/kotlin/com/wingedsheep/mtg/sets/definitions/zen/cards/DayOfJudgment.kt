@@ -25,11 +25,7 @@ val DayOfJudgment = card("Day of Judgment") {
     typeLine = "Sorcery"
     oracleText = "Destroy all creatures."
     spell {
-        effect = Effects.ForEachInGroup(
-            GroupFilter(GameObjectFilter.Creature),
-            Effects.Move(EffectTarget.Self, Zone.GRAVEYARD, byDestruction = true),
-            noRegenerate = false
-        )
+        effect = Effects.DestroyAll(GameObjectFilter.Creature)
     }
     metadata {
         rarity = Rarity.RARE

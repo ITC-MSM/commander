@@ -29,7 +29,7 @@ val Moggcatcher = card("Moggcatcher") {
     activatedAbility {
         cost = Costs.Composite(Costs.Mana("{3}"), Costs.Tap)
         effect = Patterns.Library.searchLibrary(
-            filter = GameObjectFilter.Any.withSubtype("Goblin"),
+            filter = GameObjectFilter.Permanent.withSubtype("Goblin"),
             destination = SearchDestination.BATTLEFIELD
         )
     }

@@ -34,7 +34,7 @@ val ChildOfGaea = card("Child of Gaea") {
     keywords(Keyword.TRAMPLE)
     triggeredAbility {
         trigger = Triggers.YourUpkeep
-        effect = PayOrSufferEffect(cost = Costs.pay.OwnManaCost, suffer = SacrificeSelfEffect)
+        effect = PayOrSufferEffect(cost = Costs.pay.Mana("{G}{G}"), suffer = SacrificeSelfEffect)
     }
     activatedAbility {
         cost = Costs.Mana("{1}{G}")

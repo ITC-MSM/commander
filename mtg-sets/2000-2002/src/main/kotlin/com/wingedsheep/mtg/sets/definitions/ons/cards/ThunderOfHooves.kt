@@ -28,7 +28,7 @@ val ThunderOfHooves = card("Thunder of Hooves") {
 
     spell {
         effect = Effects.ForEachInGroup(GroupFilter.AllCreatures.withoutKeyword(Keyword.FLYING), DealDamageEffect(beastCount, EffectTarget.Self)) then
-            Effects.DealDamage(beastCount, EffectTarget.PlayerRef(Player.Each))
+            Effects.ForEachPlayer(Player.Each, listOf(Effects.DealDamage(beastCount, EffectTarget.Controller)))
     }
 
     metadata {

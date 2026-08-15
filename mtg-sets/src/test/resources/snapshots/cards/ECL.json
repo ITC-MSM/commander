@@ -1585,6 +1585,7 @@
                     "type": "AddOneManaOfEachColorAmong",
                     "filter": "permanent ctrl:you"
                 },
+                "timing": "ManaAbility",
                 "isManaAbility": true,
                 "descriptionOverride": "Vivid — {T}: For each color among permanents you control, add one mana of that color."
             }
@@ -2656,6 +2657,7 @@
                             }
                         }
                     },
+                    "timing": "ManaAbility",
                     "isManaAbility": true,
                     "descriptionOverride": "{T}: Add X {G}, where X is the number of other creatures you control."
                 },
@@ -2678,6 +2680,7 @@
                             }
                         }
                     },
+                    "timing": "ManaAbility",
                     "isManaAbility": true,
                     "descriptionOverride": "{T}: Add X {W}, where X is the number of other creatures you control."
                 }
@@ -3049,17 +3052,17 @@
                     "to": "Battlefield"
                 },
                 "effect": {
-                    "type": "Composite",
-                    "effects": [
-                        {
-                            "type": "ForEach",
-                            "space": {
-                                "type": "IterationSpace.Group",
-                                "filter": {
-                                    "baseFilter": "creature ctrl:you"
-                                }
-                            },
-                            "body": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        }
+                    },
+                    "body": {
+                        "type": "Composite",
+                        "effects": [
+                            {
                                 "type": "ModifyStats",
                                 "powerModifier": {
                                     "type": "Fixed",
@@ -3070,23 +3073,14 @@
                                     "amount": 1
                                 },
                                 "target": "Self"
-                            }
-                        },
-                        {
-                            "type": "ForEach",
-                            "space": {
-                                "type": "IterationSpace.Group",
-                                "filter": {
-                                    "baseFilter": "creature ctrl:you"
-                                }
                             },
-                            "body": {
+                            {
                                 "type": "GrantKeyword",
                                 "keyword": "HASTE",
                                 "target": "Self"
                             }
-                        }
-                    ]
+                        ]
+                    }
                 },
                 "triggerCondition": {
                     "type": "ManaSpentToCastIncludes",
@@ -7031,6 +7025,7 @@
                 "id": "ability_1",
                 "cost": "CostTap",
                 "effect": "AddManaOfChoice",
+                "timing": "ManaAbility",
                 "isManaAbility": true
             },
             {
@@ -7165,6 +7160,7 @@
                         "subtype": "Elemental"
                     }
                 },
+                "timing": "ManaAbility",
                 "isManaAbility": true,
                 "descriptionOverride": "{T}: Add two mana in any combination of colors. Spend this mana only to cast Elemental spells or activate abilities of Elemental sources."
             }
@@ -7542,6 +7538,7 @@
                         "BecomeChosenManaColor"
                     ]
                 },
+                "timing": "ManaAbility",
                 "restrictions": [
                     "OncePerTurn"
                 ],
@@ -9162,6 +9159,7 @@
                 "id": "ability_1",
                 "cost": "CostTap",
                 "effect": "AddManaOfChoice",
+                "timing": "ManaAbility",
                 "isManaAbility": true
             }
         ]
@@ -9288,28 +9286,28 @@
                 },
                 {
                     "effect": {
-                        "type": "Composite",
-                        "effects": [
-                            {
-                                "type": "ForEach",
-                                "space": {
-                                    "type": "IterationSpace.Group",
-                                    "filter": {
-                                        "baseFilter": {
-                                            "cardPredicates": [
-                                                "IsCreature"
-                                            ],
-                                            "controllerPredicate": {
-                                                "type": "ControlledByReferencedPlayer",
-                                                "target": {
-                                                    "type": "BoundVariable",
-                                                    "name": "target player"
-                                                }
-                                            }
+                        "type": "ForEach",
+                        "space": {
+                            "type": "IterationSpace.Group",
+                            "filter": {
+                                "baseFilter": {
+                                    "cardPredicates": [
+                                        "IsCreature"
+                                    ],
+                                    "controllerPredicate": {
+                                        "type": "ControlledByReferencedPlayer",
+                                        "target": {
+                                            "type": "BoundVariable",
+                                            "name": "target player"
                                         }
                                     }
-                                },
-                                "body": {
+                                }
+                            }
+                        },
+                        "body": {
+                            "type": "Composite",
+                            "effects": [
+                                {
                                     "type": "ModifyStats",
                                     "powerModifier": {
                                         "type": "Fixed",
@@ -9320,34 +9318,14 @@
                                         "amount": 1
                                     },
                                     "target": "Self"
-                                }
-                            },
-                            {
-                                "type": "ForEach",
-                                "space": {
-                                    "type": "IterationSpace.Group",
-                                    "filter": {
-                                        "baseFilter": {
-                                            "cardPredicates": [
-                                                "IsCreature"
-                                            ],
-                                            "controllerPredicate": {
-                                                "type": "ControlledByReferencedPlayer",
-                                                "target": {
-                                                    "type": "BoundVariable",
-                                                    "name": "target player"
-                                                }
-                                            }
-                                        }
-                                    }
                                 },
-                                "body": {
+                                {
                                     "type": "GrantKeyword",
                                     "keyword": "HASTE",
                                     "target": "Self"
                                 }
-                            }
-                        ]
+                            ]
+                        }
                     },
                     "targetRequirements": [
                         {

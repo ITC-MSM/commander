@@ -38,7 +38,7 @@ val NightdrinkerMoroii = card("Nightdrinker Moroii") {
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        effect = Effects.LoseLife(3, EffectTarget.PlayerRef(Player.You))
+        effect = Effects.LoseLife(3, EffectTarget.Controller)
     }
 
     metadata {

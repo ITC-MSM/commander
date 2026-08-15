@@ -1179,7 +1179,7 @@
                             "source": {
                                 "type": "FromZone",
                                 "zone": "Library",
-                                "filter": "Zombie"
+                                "filter": "creature Zombie"
                             },
                             "storeAs": "searchable"
                         },
@@ -1213,7 +1213,7 @@
                                     "source": {
                                         "type": "FromZone",
                                         "zone": "Library",
-                                        "filter": "Swamp"
+                                        "filter": "land Swamp"
                                     },
                                     "storeAs": "searchable"
                                 },
@@ -2618,7 +2618,7 @@
                 },
                 "targetRequirements": [
                     {
-                        "type": "TargetPlayer",
+                        "type": "TargetPlayerOrPlaneswalker",
                         "id": "target player or planeswalker"
                     }
                 ]
@@ -2710,17 +2710,17 @@
                 "id": "ability_1",
                 "trigger": "CycleEvent",
                 "effect": {
-                    "type": "Composite",
-                    "effects": [
-                        {
-                            "type": "ForEach",
-                            "space": {
-                                "type": "IterationSpace.Group",
-                                "filter": {
-                                    "baseFilter": "creature Soldier"
-                                }
-                            },
-                            "body": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": "creature Soldier"
+                        }
+                    },
+                    "body": {
+                        "type": "Composite",
+                        "effects": [
+                            {
                                 "type": "ModifyStats",
                                 "powerModifier": {
                                     "type": "Fixed",
@@ -2731,23 +2731,14 @@
                                     "amount": 1
                                 },
                                 "target": "Self"
-                            }
-                        },
-                        {
-                            "type": "ForEach",
-                            "space": {
-                                "type": "IterationSpace.Group",
-                                "filter": {
-                                    "baseFilter": "creature Soldier"
-                                }
                             },
-                            "body": {
+                            {
                                 "type": "GrantKeyword",
                                 "keyword": "FIRST_STRIKE",
                                 "target": "Self"
                             }
-                        }
-                    ]
+                        ]
+                    }
                 }
             }
         ]
@@ -3367,9 +3358,8 @@
                     "from": "Battlefield"
                 },
                 "effect": {
-                    "type": "ForceSacrifice",
-                    "filter": "land",
-                    "target": "Controller"
+                    "type": "Sacrifice",
+                    "filter": "land"
                 },
                 "descriptionOverride": "When Goblin Firebug leaves the battlefield, sacrifice a land."
             }

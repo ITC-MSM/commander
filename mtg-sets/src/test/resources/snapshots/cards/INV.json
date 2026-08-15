@@ -1938,6 +1938,7 @@
                     "type": "AddMana",
                     "color": "BLACK"
                 },
+                "timing": "ManaAbility",
                 "isManaAbility": true
             }
         ]
@@ -3887,9 +3888,8 @@
                 },
                 "binding": "ANY",
                 "effect": {
-                    "type": "ForceSacrifice",
-                    "filter": "creature",
-                    "target": "Controller"
+                    "type": "Sacrifice",
+                    "filter": "creature"
                 }
             }
         ],
@@ -6865,8 +6865,7 @@
                     "target": {
                         "type": "BoundVariable",
                         "name": "any target"
-                    },
-                    "damageSource": "Self"
+                    }
                 },
                 "targetRequirements": [
                     {
@@ -8258,6 +8257,7 @@
                     }
                 },
                 "effect": "AddManaOfChoice",
+                "timing": "ManaAbility",
                 "isManaAbility": true
             }
         ]
@@ -8762,6 +8762,7 @@
                     }
                 },
                 "effect": "AddManaOfChoice",
+                "timing": "ManaAbility",
                 "isManaAbility": true
             }
         ]
@@ -8968,6 +8969,7 @@
                     ]
                 },
                 "effect": "AddManaOfChoice",
+                "timing": "ManaAbility",
                 "isManaAbility": true
             }
         ]
@@ -9155,14 +9157,18 @@
                             }
                         },
                         {
-                            "type": "DealDamage",
-                            "amount": {
-                                "type": "Fixed",
-                                "amount": 1
+                            "type": "ForEach",
+                            "space": {
+                                "type": "IterationSpace.Players",
+                                "players": "Each"
                             },
-                            "target": {
-                                "type": "PlayerRef",
-                                "player": "Each"
+                            "body": {
+                                "type": "DealDamage",
+                                "amount": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                },
+                                "target": "Controller"
                             }
                         }
                     ]
@@ -9196,14 +9202,18 @@
                             }
                         },
                         {
-                            "type": "DealDamage",
-                            "amount": {
-                                "type": "Fixed",
-                                "amount": 1
+                            "type": "ForEach",
+                            "space": {
+                                "type": "IterationSpace.Players",
+                                "players": "Each"
                             },
-                            "target": {
-                                "type": "PlayerRef",
-                                "player": "Each"
+                            "body": {
+                                "type": "DealDamage",
+                                "amount": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                },
+                                "target": "Controller"
                             }
                         }
                     ]
@@ -10095,6 +10105,7 @@
                     "type": "AddMana",
                     "color": "GREEN"
                 },
+                "timing": "ManaAbility",
                 "isManaAbility": true
             },
             {
@@ -10104,6 +10115,7 @@
                     "type": "AddManaOfChoice",
                     "colorSet": "ManaColorSet.SourceChosenColor"
                 },
+                "timing": "ManaAbility",
                 "isManaAbility": true
             }
         ],
@@ -16604,6 +16616,7 @@
                 "id": "ability_1",
                 "cost": "CostTap",
                 "effect": "AddManaOfChoice",
+                "timing": "ManaAbility",
                 "isManaAbility": true
             }
         ]

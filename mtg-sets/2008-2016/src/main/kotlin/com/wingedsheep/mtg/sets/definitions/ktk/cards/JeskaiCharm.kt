@@ -35,15 +35,11 @@ val JeskaiCharm = card("Jeskai Charm") {
                 effect = Effects.DealDamage(4, t)
             }
             mode("Creatures you control get +1/+1 and gain lifelink until end of turn") {
-                effect = Patterns.Group.modifyStatsForAll(
+                effect = Patterns.Group.pumpAndGrantToAll(
                     power = 1,
                     toughness = 1,
+                    keyword = Keyword.LIFELINK,
                     filter = GroupFilter.AllCreaturesYouControl
-                ).then(
-                    Patterns.Group.grantKeywordToAll(
-                        keyword = Keyword.LIFELINK,
-                        filter = GroupFilter.AllCreaturesYouControl
-                    )
                 )
             }
         }

@@ -265,7 +265,15 @@
             "space": {
                 "type": "IterationSpace.Group",
                 "filter": {
-                    "baseFilter": "creature"
+                    "baseFilter": {
+                        "cardPredicates": [
+                            "IsCreature",
+                            {
+                                "type": "NotSubtype",
+                                "subtype": "Pirate"
+                            }
+                        ]
+                    }
                 }
             },
             "body": {

@@ -35,7 +35,7 @@ val KeldonNecropolis = card("Keldon Necropolis") {
             Costs.Sacrifice(GameObjectFilter.Creature),
         )
         val anyTarget = target("any target", Targets.Any)
-        effect = Effects.DealDamage(2, anyTarget, damageSource = EffectTarget.Self)
+        effect = Effects.DealDamage(2, anyTarget)
         description = "{4}{R}, {T}, Sacrifice a creature: Keldon Necropolis deals 2 damage to any target."
     }
 

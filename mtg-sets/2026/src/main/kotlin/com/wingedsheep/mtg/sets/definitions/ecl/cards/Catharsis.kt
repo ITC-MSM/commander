@@ -4,6 +4,7 @@ import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.dsl.Conditions
 import com.wingedsheep.sdk.dsl.Effects
+import com.wingedsheep.sdk.dsl.Patterns
 import com.wingedsheep.sdk.dsl.Triggers
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
@@ -41,18 +42,7 @@ val Catharsis = card("Catharsis") {
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
         triggerCondition = Conditions.ManaSpentToCastIncludes(requiredRed = 2)
-        effect = Effects.Composite(
-            listOf(
-                Effects.ForEachInGroup(
-                    GroupFilter.AllCreaturesYouControl,
-                    ModifyStatsEffect(1, 1, EffectTarget.Self)
-                ),
-                Effects.ForEachInGroup(
-                    GroupFilter.AllCreaturesYouControl,
-                    GrantKeywordEffect(Keyword.HASTE, EffectTarget.Self)
-                )
-            )
-        )
+        effect = Patterns.Group.pumpAndGrantToAll(1, 1, Keyword.HASTE, GroupFilter.AllCreaturesYouControl)
     }
 
     triggeredAbility {

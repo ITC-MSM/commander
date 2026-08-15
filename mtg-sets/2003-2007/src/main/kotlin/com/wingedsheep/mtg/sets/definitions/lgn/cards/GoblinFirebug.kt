@@ -24,7 +24,7 @@ val GoblinFirebug = card("Goblin Firebug") {
 
     triggeredAbility {
         trigger = Triggers.LeavesBattlefield
-        effect = Effects.Sacrifice(GameObjectFilter.Land, count = 1, target = EffectTarget.Controller)
+        effect = Effects.SacrificeOwn(GameObjectFilter.Land)
         description = "When Goblin Firebug leaves the battlefield, sacrifice a land."
     }
 

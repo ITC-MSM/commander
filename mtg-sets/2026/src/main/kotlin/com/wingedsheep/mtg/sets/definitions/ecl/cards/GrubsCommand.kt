@@ -53,11 +53,9 @@ val GrubsCommand = card("Grub's Command") {
             }
             mode("Creatures target player controls get +1/+1 and gain haste until end of turn") {
                 val player = target("target player", TargetPlayer())
-                effect = Patterns.Group.modifyStatsForAll(
+                effect = Patterns.Group.pumpAndGrantToAll(
                     power = 1,
                     toughness = 1,
-                    filter = GroupFilter(GameObjectFilter.Creature.targetPlayerControls(player))
-                ) then Patterns.Group.grantKeywordToAll(
                     keyword = Keyword.HASTE,
                     filter = GroupFilter(GameObjectFilter.Creature.targetPlayerControls(player))
                 )

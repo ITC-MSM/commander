@@ -11741,6 +11741,7 @@
                     }
                 },
                 "effect": "AddManaOfChoice",
+                "timing": "ManaAbility",
                 "isManaAbility": true
             }
         ]
@@ -12441,6 +12442,7 @@
                     "type": "AddMana",
                     "color": "BLACK"
                 },
+                "timing": "ManaAbility",
                 "isManaAbility": true
             },
             {

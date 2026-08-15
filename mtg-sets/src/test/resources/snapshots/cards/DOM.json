@@ -7486,6 +7486,7 @@
                     }
                 },
                 "effect": "AddManaOfChoice",
+                "timing": "ManaAbility",
                 "isManaAbility": true
             }
         ]
@@ -7687,6 +7688,7 @@
                         "numericProperty": "Power"
                     }
                 },
+                "timing": "ManaAbility",
                 "isManaAbility": true
             }
         ]
@@ -14422,7 +14424,8 @@
                         "type": "BoundVariable",
                         "name": "creature card in your graveyard"
                     },
-                    "destination": "Battlefield"
+                    "destination": "Battlefield",
+                    "fromZone": "Graveyard"
                 },
                 "targetRequirements": [
                     {

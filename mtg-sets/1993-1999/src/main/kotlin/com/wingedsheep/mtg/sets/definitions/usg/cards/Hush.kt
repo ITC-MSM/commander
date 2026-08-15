@@ -27,11 +27,7 @@ val Hush = card("Hush") {
     typeLine = "Sorcery"
     oracleText = "Destroy all enchantments.\nCycling {2} ({2}, Discard this card: Draw a card.)"
     spell {
-        effect = Effects.ForEachInGroup(
-            GroupFilter(GameObjectFilter.Enchantment),
-            Effects.Move(EffectTarget.Self, Zone.GRAVEYARD, byDestruction = true),
-            noRegenerate = false
-        )
+        effect = Effects.DestroyAll(GameObjectFilter.Enchantment)
     }
     keywordAbility(KeywordAbility.cycling("{2}"))
     metadata {

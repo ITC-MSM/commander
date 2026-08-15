@@ -50,8 +50,9 @@ val LoreholdCharm = card("Lorehold Charm") {
                 effect = Effects.PutOntoBattlefield(t)
             }
             mode("Creatures you control get +1/+1 and gain trample until end of turn") {
-                effect = Patterns.Group.modifyStatsForAll(1, 1, Filters.Group.creaturesYouControl) then
-                    Patterns.Group.grantKeywordToAll(Keyword.TRAMPLE, Filters.Group.creaturesYouControl)
+                effect = Patterns.Group.pumpAndGrantToAll(
+                    1, 1, Keyword.TRAMPLE, Filters.Group.creaturesYouControl
+                )
             }
         }
     }

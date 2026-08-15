@@ -17,7 +17,9 @@ import com.wingedsheep.sdk.dsl.Targets as SdkTargets
 import com.wingedsheep.sdk.model.CardScript
 import com.wingedsheep.sdk.scripting.conditions.Condition
 import com.wingedsheep.sdk.scripting.GameObjectFilter
+import com.wingedsheep.sdk.scripting.effects.CardSource
 import com.wingedsheep.sdk.scripting.effects.CompositeEffect
+import com.wingedsheep.sdk.scripting.effects.GatherCardsEffect
 import com.wingedsheep.sdk.scripting.effects.CreateDelayedTriggerEffect
 import com.wingedsheep.sdk.scripting.effects.FlipCoinEffect
 import com.wingedsheep.sdk.scripting.effects.ForEachPlayerEffect
@@ -998,23 +1000,27 @@ object Steps {
      * "Soldier creatures get +1/+1 and gain first strike until end of turn." — Gempalm Avenger.
      *
      * [pumpAndGrantTarget]'s group-side twin, and one rule for the same reason: the second clause
-     * has no subject of its own, and the model is two iterations over the *same* group rather than a
-     * compound effect. That the group is written twice is the SDK's shape, not a redundancy this
-     * rule invents, so the reconstruction compares both.
+     * has no subject of its own.
+     *
+     * **One iteration carrying both effects, not two iterations over the same group.** The sentence
+     * names its group once and says two things about *those* permanents, and the SDK spells that as
+     * a `CompositeEffect` inside a single `ForEachInGroup` — which is what all eight hand-written
+     * cards of this shape do (Overrun, Flame-Kin Zealot, Make a Stand, Dance of Shadows, Vampiric
+     * Fury, Angel of the Dawn, Stagecoach Security, Preposterous Proportions). The rule used to
+     * build two passes and assert that the doubled group "is the SDK's shape"; the differential
+     * reported every one of the eight, which is what a claim like that looks like when it is wrong.
+     * Two passes also gather twice, and nothing in the printed line says to.
      */
     private fun groupPumpAndGrant(prefix: String, name: String, canonicalForm: Boolean): Phrase<CardScript> {
         fun scriptFor(modifiers: Pair<Int, Int>, keyword: Keyword, filter: GameObjectFilter) = CardScript(
-            spellEffect = Effects.Composite(
-                listOf(
-                    Effects.ForEachInGroup(
-                        GroupFilter(filter),
+            spellEffect = Effects.ForEachInGroup(
+                GroupFilter(filter),
+                Effects.Composite(
+                    listOf(
                         Effects.ModifyStats(modifiers.first, modifiers.second, EffectTarget.Self),
-                    ),
-                    Effects.ForEachInGroup(
-                        GroupFilter(filter),
                         Effects.GrantKeyword(keyword, EffectTarget.Self),
-                    ),
-                )
+                    )
+                ),
             )
         )
         val rule = phrase<CardScript>("$prefix{filter} get {mod} and gain {kw} until end of turn", name = name) {
@@ -1023,10 +1029,10 @@ object Steps {
             slot("kw", Keywords.keyword)
             build { scriptFor(it.value("mod"), it.value("kw"), it.value("filter")) }
             match { script ->
-                val effects = (script.spellEffect as? CompositeEffect)?.effects ?: return@match null
-                val filter = iteratedGroup(effects.firstOrNull()) ?: return@match null
-                val modifiers = fixedModifiers(iteratedBody(effects.firstOrNull())) ?: return@match null
-                val keyword = grantedKeyword(iteratedBody(effects.getOrNull(1))) ?: return@match null
+                val filter = iteratedGroup(script.spellEffect) ?: return@match null
+                val body = (iteratedBody(script.spellEffect) as? CompositeEffect)?.effects ?: return@match null
+                val modifiers = fixedModifiers(body.firstOrNull()) ?: return@match null
+                val keyword = grantedKeyword(body.getOrNull(1)) ?: return@match null
                 if (script != scriptFor(modifiers, keyword, filter)) return@match null
                 bind("filter" to filter, "mod" to modifiers, "kw" to keyword)
             }
@@ -1072,19 +1078,38 @@ object Steps {
      * which is what makes the plain "Destroy all creatures." rule above safe — a sweep that forbids
      * regeneration refuses to print as one that does not.
      */
+    /**
+     * "Destroy all creatures." — the sweep, through [Effects.DestroyAll] rather than an iteration.
+     *
+     * Not `ForEachInGroup(filter, Destroy(Self))`, which is the same sentence's other SDK spelling
+     * and the one this rule used to build. `DestroyAll` lowers to the gather-then-move pipeline, and
+     * the difference is not cosmetic: the gather reads the battlefield through *projected* state, so
+     * a filter that names a characteristic a continuous effect can change ("nonland permanents with
+     * mana value 1 or less" — Pest Control) is evaluated against what the permanents actually are.
+     * That is this repo's standing rule for battlefield filters, and it is why the facade exists.
+     */
+    private val destroyAll: Phrase<CardScript> = run {
+        fun scriptFor(filter: GameObjectFilter) = CardScript(spellEffect = Effects.DestroyAll(filter))
+        phrase("destroy all {filter}", name = "destroy all") {
+            slot("filter", Filters.plural)
+            build { scriptFor(it.value("filter")) }
+            match { script ->
+                val filter = destroyedGroup(script.spellEffect) ?: return@match null
+                if (script != scriptFor(filter)) return@match null
+                bind("filter" to filter)
+            }
+        }
+    }
+
     private val destroyAllNoRegenerate: Phrase<CardScript> = run {
         fun scriptFor(filter: GameObjectFilter) = CardScript(
-            spellEffect = Effects.ForEachInGroup(
-                GroupFilter(filter),
-                Effects.Destroy(EffectTarget.Self),
-                noRegenerate = true,
-            ),
+            spellEffect = Effects.DestroyAll(filter, noRegenerate = true),
         )
         phrase("destroy all {filter}. they can't be regenerated", name = "destroy all without regeneration") {
             slot("filter", Filters.plural)
             build { scriptFor(it.value("filter")) }
             match { script ->
-                val filter = iteratedGroup(script.spellEffect) ?: return@match null
+                val filter = destroyedGroup(script.spellEffect) ?: return@match null
                 if (script != scriptFor(filter)) return@match null
                 bind("filter" to filter)
             }
@@ -1092,7 +1117,7 @@ object Steps {
     }
 
     private val groupSteps: List<Phrase<CardScript>> = listOf(
-        groupStep("destroy all {filter}", "destroy all", plural = true) { Effects.Destroy(it) },
+        destroyAll,
         groupStep("exile all {filter}", "exile all", plural = true) { Effects.Exile(it) },
         groupStep("tap all {filter}", "tap all", plural = true) { Effects.Tap(it) },
         groupStep("untap all {filter}", "untap all", plural = true) { Effects.Untap(it) },
@@ -1223,10 +1248,12 @@ object Steps {
      * denotes the identical model and comes back as a variant.
      *
      * **The player half has two SDK spellings and this emits one.** `DealDamage(n, PlayerRef(Each))`
-     * and `ForEachPlayerEffect(Each, [DealDamage(n, Controller)])` are equivalent for a fixed amount;
-     * the first is what the grammar prints, because per-player controller rebinding is machinery this
-     * sentence does not need. Cards written the other way decline and are a reported inconsistency,
-     * not an approximation.
+     * and `ForEachPlayer(Each, [DealDamage(n, Controller)])` are equivalent for a fixed amount, and
+     * the second is what the grammar prints — not because per-player controller rebinding is needed
+     * here, but because it is the spelling the corpus actually uses: 21 hand-written cards of this
+     * shape write it and none writes the other, so printing the other would be the grammar inventing
+     * a house style. The differential reported ten of the 21 the moment it could read them, which is
+     * the whole argument: a rule may pick either of two spellings, but not the one nobody writes.
      */
     private fun damageToEachAndEachPlayer(
         template: String,
@@ -1238,7 +1265,10 @@ object Steps {
             spellEffect = Effects.Composite(
                 listOf(
                     Effects.ForEachInGroup(GroupFilter(filter), Effects.DealDamage(value, EffectTarget.Self)),
-                    Effects.DealDamage(value, EffectTarget.PlayerRef(Player.Each)),
+                    Effects.ForEachPlayer(
+                        Player.Each,
+                        listOf(Effects.DealDamage(value, EffectTarget.Controller)),
+                    ),
                 )
             )
         )
@@ -1253,7 +1283,8 @@ object Steps {
             match { script ->
                 val effects = (script.spellEffect as? CompositeEffect)?.effects ?: return@match null
                 val filter = iteratedGroup(effects.firstOrNull()) ?: return@match null
-                val value = (effects.getOrNull(1) as? DealDamageEffect)?.amount ?: return@match null
+                val perPlayer = iteratedPlayers(effects.getOrNull(1)) ?: return@match null
+                val value = (perPlayer as? DealDamageEffect)?.amount ?: return@match null
                 if (fixed != null && value != fixed) return@match null
                 val number = if (fixed != null) null else value.fixed() ?: return@match null
                 if (script != scriptFor(value, filter)) return@match null
@@ -1759,8 +1790,34 @@ object Steps {
         return space.filter.baseFilter
     }
 
+    /**
+     * The filter a [Effects.DestroyAll] pipeline sweeps, or null when [effect] is not one.
+     *
+     * The pipeline is a two-step composite rather than a single node, so the destructuring reads
+     * both halves and the caller's reconstruct-and-compare does the rest.
+     */
+    private fun destroyedGroup(effect: Effect?): GameObjectFilter? {
+        val steps = (effect as? CompositeEffect)?.effects ?: return null
+        val gather = steps.firstOrNull() as? GatherCardsEffect ?: return null
+        val source = gather.source as? CardSource.BattlefieldMatching ?: return null
+        return source.filter
+    }
+
     private fun iteratedBody(effect: Effect?): Effect? =
         (effect as? com.wingedsheep.sdk.scripting.effects.ForEachEffect)?.body
+
+    /**
+     * The body of an iteration over **players**, or null when [effect] is not one.
+     *
+     * The [iteratedGroup] of the player space: `ForEachPlayerEffect` is a factory that lowers to a
+     * `ForEachEffect` over `IterationSpace.Players`, so there is no class to test with `as?` and the
+     * space has to be destructured the same way a group's is.
+     */
+    private fun iteratedPlayers(effect: Effect?, players: Player = Player.Each): Effect? {
+        val forEach = effect as? com.wingedsheep.sdk.scripting.effects.ForEachEffect ?: return null
+        val space = forEach.space as? com.wingedsheep.sdk.scripting.effects.IterationSpace.Players ?: return null
+        return if (space.players == players) forEach.body else null
+    }
 
     internal fun DynamicAmount.fixed(): Int? = (this as? DynamicAmount.Fixed)?.amount
 

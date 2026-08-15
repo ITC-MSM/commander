@@ -26,11 +26,7 @@ val Boil = card("Boil") {
     typeLine = "Instant"
     oracleText = "Destroy all Islands."
     spell {
-        effect = Effects.ForEachInGroup(
-            GroupFilter(GameObjectFilter.Land.withSubtype(Subtype.ISLAND)),
-            Effects.Move(EffectTarget.Self, Zone.GRAVEYARD, byDestruction = true),
-            noRegenerate = false
-        )
+        effect = Effects.DestroyAll(GameObjectFilter.Land.withSubtype(Subtype.ISLAND))
     }
     metadata {
         rarity = Rarity.UNCOMMON

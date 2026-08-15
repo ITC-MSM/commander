@@ -30,7 +30,7 @@ val RuptureSpire = card("Rupture Spire") {
     replacementEffect(EntersTapped())
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        effect = PayOrSufferEffect(cost = Costs.pay.OwnManaCost, suffer = SacrificeSelfEffect)
+        effect = PayOrSufferEffect(cost = Costs.pay.Mana("{1}"), suffer = SacrificeSelfEffect)
     }
     activatedAbility {
         cost = Costs.Tap

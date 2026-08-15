@@ -4,6 +4,7 @@
 
 package com.wingedsheep.mtg.sets.definitions.mir.cards
 
+import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.card
@@ -25,11 +26,7 @@ val TranquilDomain = card("Tranquil Domain") {
     typeLine = "Instant"
     oracleText = "Destroy all non-Aura enchantments."
     spell {
-        effect = Effects.ForEachInGroup(
-            GroupFilter(GameObjectFilter.Enchantment),
-            Effects.Move(EffectTarget.Self, Zone.GRAVEYARD, byDestruction = true),
-            noRegenerate = false
-        )
+        effect = Effects.DestroyAll(GameObjectFilter.Enchantment.notSubtype(Subtype.AURA))
     }
     metadata {
         rarity = Rarity.COMMON

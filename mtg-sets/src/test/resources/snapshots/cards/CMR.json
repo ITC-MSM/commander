@@ -186,7 +186,8 @@
                         "type": "BoundVariable",
                         "name": "target"
                     },
-                    "destination": "Battlefield"
+                    "destination": "Battlefield",
+                    "fromZone": "Graveyard"
                 },
                 "targetRequirements": [
                     {
@@ -260,7 +261,7 @@
                     {
                         "type": "TargetObject",
                         "filter": {
-                            "baseFilter": "artifact"
+                            "baseFilter": "artifact ctrl:you"
                         },
                         "id": "target"
                     }
@@ -326,7 +327,7 @@
                     "space": {
                         "type": "IterationSpace.Group",
                         "filter": {
-                            "baseFilter": "creature kw:flying"
+                            "baseFilter": "creature kw:flying blocking"
                         }
                     },
                     "body": {

@@ -5175,17 +5175,17 @@
                     "modes": [
                         {
                             "effect": {
-                                "type": "Composite",
-                                "effects": [
-                                    {
-                                        "type": "ForEach",
-                                        "space": {
-                                            "type": "IterationSpace.Group",
-                                            "filter": {
-                                                "baseFilter": "creature ctrl:you"
-                                            }
-                                        },
-                                        "body": {
+                                "type": "ForEach",
+                                "space": {
+                                    "type": "IterationSpace.Group",
+                                    "filter": {
+                                        "baseFilter": "creature ctrl:you"
+                                    }
+                                },
+                                "body": {
+                                    "type": "Composite",
+                                    "effects": [
+                                        {
                                             "type": "ModifyStats",
                                             "powerModifier": {
                                                 "type": "Fixed",
@@ -5196,23 +5196,14 @@
                                                 "amount": 1
                                             },
                                             "target": "Self"
-                                        }
-                                    },
-                                    {
-                                        "type": "ForEach",
-                                        "space": {
-                                            "type": "IterationSpace.Group",
-                                            "filter": {
-                                                "baseFilter": "creature ctrl:you"
-                                            }
                                         },
-                                        "body": {
+                                        {
                                             "type": "GrantKeyword",
                                             "keyword": "TRAMPLE",
                                             "target": "Self"
                                         }
-                                    }
-                                ]
+                                    ]
+                                }
                             },
                             "description": "Creatures you control get +1/+1 and gain trample until end of turn"
                         },
@@ -14182,6 +14173,7 @@
                 "id": "ability_1",
                 "cost": "CostTap",
                 "effect": "AddManaOfChoice",
+                "timing": "ManaAbility",
                 "isManaAbility": true,
                 "descriptionOverride": "Add one mana of any color."
             }
@@ -14211,6 +14203,7 @@
                             "amount": 2
                         }
                     },
+                    "timing": "ManaAbility",
                     "isManaAbility": true,
                     "descriptionOverride": "Add two mana of any one color."
                 }

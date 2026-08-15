@@ -11,6 +11,7 @@ import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.AbilityId
 import com.wingedsheep.sdk.scripting.ActivatedAbility
+import com.wingedsheep.sdk.scripting.TimingRule
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.GrantActivatedAbility
 import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
@@ -35,7 +36,9 @@ val CitanulHierophants = card("Citanul Hierophants") {
             ability = ActivatedAbility(
                 id = AbilityId.generate(),
                 cost = Costs.Tap,
-                effect = Effects.AddMana(Color.GREEN)
+                effect = Effects.AddMana(Color.GREEN),
+                isManaAbility = true,
+                timing = TimingRule.ManaAbility
             ),
             filter = GroupFilter(GameObjectFilter.Creature.youControl())
         )

@@ -6,9 +6,8 @@ import com.wingedsheep.sdk.dsl.Conditions
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.ConditionalStaticAbility
-import com.wingedsheep.sdk.scripting.GrantDynamicStatsEffect
+import com.wingedsheep.sdk.scripting.ModifyStats
 import com.wingedsheep.sdk.scripting.GrantKeyword
-import com.wingedsheep.sdk.scripting.values.DynamicAmount
 
 /**
  * Gravblade Heavy
@@ -26,10 +25,10 @@ val GravbladeHeavy = card("Gravblade Heavy") {
 
     staticAbility {
         ability = ConditionalStaticAbility(
-            ability = GrantDynamicStatsEffect(
-                filter = GroupFilter.source(),
-                powerBonus = DynamicAmount.Fixed(1),
-                toughnessBonus = DynamicAmount.Fixed(0)
+            ability = ModifyStats(
+                powerBonus = 1,
+                toughnessBonus = 0,
+                filter = GroupFilter.source()
             ),
             condition = Conditions.ControlArtifact
         )

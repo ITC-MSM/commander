@@ -30,7 +30,7 @@ val IngenuityEngine = card("Ingenuity Engine") {
     keywords(Keyword.CASCADE)
     activatedAbility {
         cost = Costs.Composite(Costs.Mana("{1}"), Costs.Tap, Costs.Sacrifice(GameObjectFilter.Artifact))
-        val t = target("target", TargetPermanent(filter = TargetFilter.Artifact))
+        val t = target("target", TargetPermanent(filter = TargetFilter.Artifact.youControl()))
         effect = Effects.Move(t, Zone.HAND)
     }
     metadata {

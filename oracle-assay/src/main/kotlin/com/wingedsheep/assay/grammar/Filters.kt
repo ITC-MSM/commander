@@ -231,6 +231,18 @@ object Filters {
      * the word alone has to imply the card type. "Sliver" implying `Creature` is a guess, and a
      * guess about a word the SDK does not name would be the reversible-but-wrong class:
      * "target Scion" would read as a creature type nothing in Magic has.
+     *
+     * **`Creature` rather than `Permanent`, and that is an approximation with a measured price.**
+     * A bare creature-type noun means every *permanent* with the subtype, which is why Zombie
+     * Master's second line says "Other **Zombies** have …" where its first says "Other Zombie
+     * **creatures** have …" — the wording is deliberate and its granted ability says "Regenerate
+     * this permanent". Building `Permanent.withSubtype` is therefore the reading the rules give.
+     * It was tried: the differential went from 45 divergences to 127, because 80-odd hand-written
+     * cards spell the bare noun as `Creature.withSubtype` and for all of them — every one a
+     * power/toughness or keyword grant, where only creatures can be affected anyway — the two
+     * filters do the same thing. So the majority reading stays, the price is that a card where the
+     * distinction *is* observable diverges, and Zombie Master is the one card in the corpus that
+     * does. It is recorded here rather than silenced, which is what a classified divergence means.
      */
     private fun bareSubtype(plural: Boolean, name: String): Phrase<GameObjectFilter> =
         alternate(

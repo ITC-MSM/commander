@@ -6,6 +6,7 @@ package com.wingedsheep.mtg.sets.definitions.xln.cards
 
 import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.card
+import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.effects.DealDamageEffect
@@ -25,7 +26,10 @@ val FieryCannonade = card("Fiery Cannonade") {
     typeLine = "Instant"
     oracleText = "Fiery Cannonade deals 2 damage to each non-Pirate creature."
     spell {
-        effect = Effects.ForEachInGroup(GroupFilter(GameObjectFilter.Creature), DealDamageEffect(2, EffectTarget.Self))
+        effect = Effects.ForEachInGroup(
+            GroupFilter(GameObjectFilter.Creature.notSubtype(Subtype.PIRATE)),
+            DealDamageEffect(2, EffectTarget.Self)
+        )
     }
     metadata {
         rarity = Rarity.UNCOMMON

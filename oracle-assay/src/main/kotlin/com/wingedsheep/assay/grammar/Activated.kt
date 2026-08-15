@@ -14,6 +14,7 @@ import com.wingedsheep.sdk.scripting.effects.AddColorlessManaEffect
 import com.wingedsheep.sdk.scripting.effects.AddDynamicManaEffect
 import com.wingedsheep.sdk.scripting.effects.AddManaOfChoiceEffect
 import com.wingedsheep.sdk.scripting.effects.AddManaEffect
+import com.wingedsheep.sdk.scripting.effects.CompositeEffect
 import com.wingedsheep.sdk.scripting.effects.Effect
 
 /**
@@ -39,12 +40,12 @@ import com.wingedsheep.sdk.scripting.effects.Effect
  * therefore computes both flags from the effect and the target list rather than spelling them, and
  * an ability that disagrees with the derivation refuses to print.
  *
- * That the SDK needs two fields for one fact is itself a finding: 620 hand-written mana abilities
- * set both, and 24 set `isManaAbility` while leaving `timing` at its `InstantSpeed` default. The
- * engine reads `isManaAbility` and only ever compares `timing` against `SorcerySpeed`, so nothing
- * is broken — but they are not interchangeable in general (the AI's `ExpiringGrantWindow` tests
- * `timing == InstantSpeed` exactly), so the grammar emits the majority form and lets the
- * differential report the rest rather than folding them together.
+ * That the SDK needs two fields for one fact was itself a finding, and it has since been acted on:
+ * 620 hand-written mana abilities set both and 24 set `isManaAbility` while leaving `timing` at its
+ * `InstantSpeed` default, which mattered because the AI's `ExpiringGrantWindow` tests
+ * `timing == InstantSpeed` exactly. The differential reported every card in the second group, and
+ * `CardBuilder`'s `manaAbility` flag now derives the timing, so the two spellings can no longer
+ * drift apart. Deriving both here is what made that reportable in the first place.
  *
  * ### One line can be several abilities
  *
@@ -106,12 +107,23 @@ object Activated {
      * reading only the two symbol effects made Blood Celebrant, Goblin Clearcutter and Wirewood
      * Channeler come out as instant-speed abilities that go on the stack. The differential found all
      * three the first time the grammar could read them.
+     *
+     * **A rider does not stop it being one.** The rule says "could add mana … when it resolves", not
+     * "does nothing else", so "{1}, {T}, Sacrifice this artifact: Add one mana of any color. Draw a
+     * card." is a mana ability with a draw attached — Chromatic Sphere, whose own printed ruling
+     * spells that out ("This is a mana ability, which means it can be activated as part of the
+     * process of casting a spell … but you don't get to look at the drawn card until you have
+     * finished"). Reading only the outermost effect made the whole clause an instant-speed ability
+     * that goes on the stack, which is a different card. The walk therefore descends through the one
+     * shape a multi-clause line builds — a `CompositeEffect` — and no further: a mana effect buried
+     * under a gate or a `ForEach` is one that *might not* happen, and CR 605.1a's "could" is about
+     * the ability, not about a branch the grammar has not proved reachable.
      */
-    private fun producesMana(effect: Effect): Boolean =
-        effect is AddManaEffect ||
-            effect is AddColorlessManaEffect ||
-            effect is AddManaOfChoiceEffect ||
-            effect is AddDynamicManaEffect
+    private fun producesMana(effect: Effect): Boolean = when (effect) {
+        is AddManaEffect, is AddColorlessManaEffect, is AddManaOfChoiceEffect, is AddDynamicManaEffect -> true
+        is CompositeEffect -> effect.effects.any(::producesMana)
+        else -> false
+    }
 
     /** "{cost}: {effect}" — one ability, whatever [Steps] can read after the colon. */
     private val single: Phrase<List<ActivatedAbility>> =

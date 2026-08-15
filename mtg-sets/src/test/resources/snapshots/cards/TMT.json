@@ -7441,6 +7441,7 @@
                         "amount": 1
                     }
                 },
+                "timing": "ManaAbility",
                 "isManaAbility": true
             },
             {
@@ -8599,6 +8600,7 @@
                         ]
                     }
                 },
+                "timing": "ManaAbility",
                 "isManaAbility": true,
                 "descriptionOverride": "{T}: Add {R}. Spend this mana only to cast an artifact spell or to activate an ability."
             }
@@ -12457,6 +12459,7 @@
                         "amount": 1
                     }
                 },
+                "timing": "ManaAbility",
                 "isManaAbility": true
             },
             {
@@ -12472,6 +12475,7 @@
                         ]
                     }
                 },
+                "timing": "ManaAbility",
                 "isManaAbility": true
             },
             {

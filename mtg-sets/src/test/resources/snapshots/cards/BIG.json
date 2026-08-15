@@ -37,6 +37,7 @@
                 "id": "ability_2",
                 "cost": "CostTap",
                 "effect": "AddManaOfChoice",
+                "timing": "ManaAbility",
                 "isManaAbility": true
             }
         ]
@@ -2040,6 +2041,7 @@
                     "type": "AddManaOfChoice",
                     "colorSet": "ManaColorSet.SourceChosenColor"
                 },
+                "timing": "ManaAbility",
                 "isManaAbility": true
             },
             {
@@ -2067,6 +2069,7 @@
                         "controllerPredicate": "ControlledByYou"
                     }
                 },
+                "timing": "ManaAbility",
                 "isManaAbility": true
             }
         ],

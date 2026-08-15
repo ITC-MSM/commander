@@ -29,13 +29,13 @@ val PlagueSpitter = card("Plague Spitter") {
     triggeredAbility {
         trigger = Triggers.YourUpkeep
         effect = Effects.ForEachInGroup(GroupFilter.AllCreatures, DealDamageEffect(1, EffectTarget.Self)) then
-            Effects.DealDamage(1, EffectTarget.PlayerRef(Player.Each))
+            Effects.ForEachPlayer(Player.Each, listOf(Effects.DealDamage(1, EffectTarget.Controller)))
     }
 
     triggeredAbility {
         trigger = Triggers.Dies
         effect = Effects.ForEachInGroup(GroupFilter.AllCreatures, DealDamageEffect(1, EffectTarget.Self)) then
-            Effects.DealDamage(1, EffectTarget.PlayerRef(Player.Each))
+            Effects.ForEachPlayer(Player.Each, listOf(Effects.DealDamage(1, EffectTarget.Controller)))
     }
 
     metadata {

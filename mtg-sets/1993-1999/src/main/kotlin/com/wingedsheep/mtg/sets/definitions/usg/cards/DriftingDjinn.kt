@@ -33,7 +33,7 @@ val DriftingDjinn = card("Drifting Djinn") {
     keywords(Keyword.FLYING)
     triggeredAbility {
         trigger = Triggers.YourUpkeep
-        effect = PayOrSufferEffect(cost = Costs.pay.OwnManaCost, suffer = SacrificeSelfEffect)
+        effect = PayOrSufferEffect(cost = Costs.pay.Mana("{1}{U}"), suffer = SacrificeSelfEffect)
     }
     keywordAbility(KeywordAbility.cycling("{2}"))
     metadata {

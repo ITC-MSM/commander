@@ -98,16 +98,11 @@ val TheSuperHeroCivilWar = card("The Super Hero Civil War") {
 
     // II — Creatures you control get +1/+1 and gain vigilance until end of turn.
     sagaChapter(2) {
-        effect = Effects.Composite(
-            Patterns.Group.modifyStatsForAll(
-                power = 1,
-                toughness = 1,
-                filter = Filters.Group.creaturesYouControl,
-            ),
-            Patterns.Group.grantKeywordToAll(
-                Keyword.VIGILANCE,
-                Filters.Group.creaturesYouControl,
-            ),
+        effect = Patterns.Group.pumpAndGrantToAll(
+            power = 1,
+            toughness = 1,
+            keyword = Keyword.VIGILANCE,
+            filter = Filters.Group.creaturesYouControl,
         )
     }
 

@@ -71,16 +71,11 @@ val ThreeBlindMice = card("Three Blind Mice") {
     }
 
     sagaChapter(4) {
-        effect = Effects.Composite(
-            Patterns.Group.modifyStatsForAll(
-                power = 1,
-                toughness = 1,
-                filter = Filters.Group.creaturesYouControl,
-            ),
-            Patterns.Group.grantKeywordToAll(
-                Keyword.VIGILANCE,
-                Filters.Group.creaturesYouControl,
-            ),
+        effect = Patterns.Group.pumpAndGrantToAll(
+            power = 1,
+            toughness = 1,
+            keyword = Keyword.VIGILANCE,
+            filter = Filters.Group.creaturesYouControl,
         )
     }
 

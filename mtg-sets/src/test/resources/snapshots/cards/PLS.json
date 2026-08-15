@@ -901,7 +901,7 @@
                     {
                         "type": "TargetObject",
                         "filter": {
-                            "baseFilter": {},
+                            "baseFilter": "creature Zombie own:you",
                             "zone": "Graveyard"
                         },
                         "id": "target"

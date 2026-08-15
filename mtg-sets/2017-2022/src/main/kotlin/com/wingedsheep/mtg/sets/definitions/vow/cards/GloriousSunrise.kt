@@ -5,6 +5,7 @@ import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.ManaCost
 import com.wingedsheep.sdk.dsl.Conditions
 import com.wingedsheep.sdk.dsl.Effects
+import com.wingedsheep.sdk.dsl.Patterns
 import com.wingedsheep.sdk.dsl.Triggers
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
@@ -61,15 +62,11 @@ val GloriousSunrise = card("Glorious Sunrise") {
         trigger = Triggers.BeginCombat
         effect = ModalEffect.chooseOne(
             Mode.noTarget(
-                Effects.Composite(
-                    Effects.ForEachInGroup(
-                        filter = GroupFilter(GameObjectFilter.Creature.youControl()),
-                        effect = ModifyStatsEffect(1, 1, EffectTarget.Self)
-                    ),
-                    Effects.ForEachInGroup(
-                        filter = GroupFilter(GameObjectFilter.Creature.youControl()),
-                        effect = GrantKeywordEffect(Keyword.TRAMPLE, EffectTarget.Self)
-                    )
+                Patterns.Group.pumpAndGrantToAll(
+                    power = 1,
+                    toughness = 1,
+                    keyword = Keyword.TRAMPLE,
+                    filter = GroupFilter(GameObjectFilter.Creature.youControl())
                 ),
                 "Creatures you control get +1/+1 and gain trample until end of turn"
             ),

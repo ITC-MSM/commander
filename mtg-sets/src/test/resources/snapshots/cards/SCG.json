@@ -1368,14 +1368,18 @@
                     }
                 },
                 {
-                    "type": "DealDamage",
-                    "amount": {
-                        "type": "Fixed",
-                        "amount": 3
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Players",
+                        "players": "Each"
                     },
-                    "target": {
-                        "type": "PlayerRef",
-                        "player": "Each"
+                    "body": {
+                        "type": "DealDamage",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 3
+                        },
+                        "target": "Controller"
                     }
                 }
             ]
@@ -3148,6 +3152,7 @@
                         "amount": 3
                     }
                 },
+                "timing": "ManaAbility",
                 "isManaAbility": true
             }
         ]

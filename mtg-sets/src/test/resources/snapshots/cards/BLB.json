@@ -1663,17 +1663,17 @@
                 },
                 "binding": "ANY",
                 "effect": {
-                    "type": "Composite",
-                    "effects": [
-                        {
-                            "type": "ForEach",
-                            "space": {
-                                "type": "IterationSpace.Group",
-                                "filter": {
-                                    "baseFilter": "creature Raccoon ctrl:you"
-                                }
-                            },
-                            "body": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": "creature Raccoon ctrl:you"
+                        }
+                    },
+                    "body": {
+                        "type": "Composite",
+                        "effects": [
+                            {
                                 "type": "ModifyStats",
                                 "powerModifier": {
                                     "type": "Fixed",
@@ -1684,23 +1684,14 @@
                                     "amount": 1
                                 },
                                 "target": "Self"
-                            }
-                        },
-                        {
-                            "type": "ForEach",
-                            "space": {
-                                "type": "IterationSpace.Group",
-                                "filter": {
-                                    "baseFilter": "creature Raccoon ctrl:you"
-                                }
                             },
-                            "body": {
+                            {
                                 "type": "GrantKeyword",
                                 "keyword": "VIGILANCE",
                                 "target": "Self"
                             }
-                        }
-                    ]
+                        ]
+                    }
                 }
             }
         ]
@@ -4859,10 +4850,7 @@
                         "type": "Fixed",
                         "amount": 2
                     },
-                    "target": {
-                        "type": "PlayerRef",
-                        "player": "You"
-                    }
+                    "target": "Controller"
                 }
             ]
         }
@@ -12164,17 +12152,17 @@
                 "trigger": "LifeGainOrLossEvent",
                 "binding": "ANY",
                 "effect": {
-                    "type": "Composite",
-                    "effects": [
-                        {
-                            "type": "ForEach",
-                            "space": {
-                                "type": "IterationSpace.Group",
-                                "filter": {
-                                    "baseFilter": "creature Bat ctrl:you"
-                                }
-                            },
-                            "body": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": "creature Bat ctrl:you"
+                        }
+                    },
+                    "body": {
+                        "type": "Composite",
+                        "effects": [
+                            {
                                 "type": "ModifyStats",
                                 "powerModifier": {
                                     "type": "Fixed",
@@ -12185,23 +12173,14 @@
                                     "amount": 0
                                 },
                                 "target": "Self"
-                            }
-                        },
-                        {
-                            "type": "ForEach",
-                            "space": {
-                                "type": "IterationSpace.Group",
-                                "filter": {
-                                    "baseFilter": "creature Bat ctrl:you"
-                                }
                             },
-                            "body": {
+                            {
                                 "type": "GrantKeyword",
                                 "keyword": "DEATHTOUCH",
                                 "target": "Self"
                             }
-                        }
-                    ]
+                        ]
+                    }
                 },
                 "triggerCondition": "IsYourTurn",
                 "oncePerTurn": true
@@ -13743,7 +13722,7 @@
                     "to": "Battlefield"
                 },
                 "effect": {
-                    "type": "GrantEvasionKeyword",
+                    "type": "GrantKeyword",
                     "keyword": "HEXPROOF",
                     "target": {
                         "type": "BoundVariable",
@@ -19156,6 +19135,7 @@
                 "id": "ability_2",
                 "cost": "CostTap",
                 "effect": "AddManaOfChoice",
+                "timing": "ManaAbility",
                 "isManaAbility": true,
                 "descriptionOverride": "{T}: Add one mana of any color"
             },
@@ -19532,6 +19512,7 @@
                     "type": "AddMana",
                     "color": "GREEN"
                 },
+                "timing": "ManaAbility",
                 "isManaAbility": true
             },
             {
@@ -19557,6 +19538,7 @@
                         "GREEN"
                     ]
                 },
+                "timing": "ManaAbility",
                 "isManaAbility": true
             },
             {

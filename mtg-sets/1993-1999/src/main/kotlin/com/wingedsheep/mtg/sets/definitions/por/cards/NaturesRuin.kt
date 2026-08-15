@@ -26,11 +26,7 @@ val NaturesRuin = card("Nature's Ruin") {
     typeLine = "Sorcery"
     oracleText = "Destroy all green creatures."
     spell {
-        effect = Effects.ForEachInGroup(
-            GroupFilter(GameObjectFilter.Creature.withColor(Color.GREEN)),
-            Effects.Move(EffectTarget.Self, Zone.GRAVEYARD, byDestruction = true),
-            noRegenerate = false
-        )
+        effect = Effects.DestroyAll(GameObjectFilter.Creature.withColor(Color.GREEN))
     }
     metadata {
         rarity = Rarity.UNCOMMON

@@ -508,6 +508,7 @@
                         "amount": 2
                     }
                 },
+                "timing": "ManaAbility",
                 "isManaAbility": true,
                 "descriptionOverride": "Sacrifice a creature: Add {C}{C}."
             }

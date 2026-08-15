@@ -12285,17 +12285,17 @@
                                 "target": "Controller"
                             },
                             {
-                                "type": "Composite",
-                                "effects": [
-                                    {
-                                        "type": "ForEach",
-                                        "space": {
-                                            "type": "IterationSpace.Group",
-                                            "filter": {
-                                                "baseFilter": "creature attacking"
-                                            }
-                                        },
-                                        "body": {
+                                "type": "ForEach",
+                                "space": {
+                                    "type": "IterationSpace.Group",
+                                    "filter": {
+                                        "baseFilter": "creature attacking"
+                                    }
+                                },
+                                "body": {
+                                    "type": "Composite",
+                                    "effects": [
+                                        {
                                             "type": "ModifyStats",
                                             "powerModifier": {
                                                 "type": "Fixed",
@@ -12306,23 +12306,14 @@
                                                 "amount": 1
                                             },
                                             "target": "Self"
-                                        }
-                                    },
-                                    {
-                                        "type": "ForEach",
-                                        "space": {
-                                            "type": "IterationSpace.Group",
-                                            "filter": {
-                                                "baseFilter": "creature attacking"
-                                            }
                                         },
-                                        "body": {
+                                        {
                                             "type": "GrantKeyword",
                                             "keyword": "TRAMPLE",
                                             "target": "Self"
                                         }
-                                    }
-                                ]
+                                    ]
+                                }
                             }
                         ]
                     }
@@ -18567,17 +18558,17 @@
             {
                 "chapter": 4,
                 "effect": {
-                    "type": "Composite",
-                    "effects": [
-                        {
-                            "type": "ForEach",
-                            "space": {
-                                "type": "IterationSpace.Group",
-                                "filter": {
-                                    "baseFilter": "creature ctrl:you"
-                                }
-                            },
-                            "body": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        }
+                    },
+                    "body": {
+                        "type": "Composite",
+                        "effects": [
+                            {
                                 "type": "ModifyStats",
                                 "powerModifier": {
                                     "type": "Fixed",
@@ -18588,23 +18579,14 @@
                                     "amount": 1
                                 },
                                 "target": "Self"
-                            }
-                        },
-                        {
-                            "type": "ForEach",
-                            "space": {
-                                "type": "IterationSpace.Group",
-                                "filter": {
-                                    "baseFilter": "creature ctrl:you"
-                                }
                             },
-                            "body": {
+                            {
                                 "type": "GrantKeyword",
                                 "keyword": "VIGILANCE",
                                 "target": "Self"
                             }
-                        }
-                    ]
+                        ]
+                    }
                 }
             }
         ]

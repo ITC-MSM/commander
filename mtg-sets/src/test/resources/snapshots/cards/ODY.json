@@ -5878,7 +5878,8 @@
                 "type": "BoundVariable",
                 "name": "target creature card from your graveyard"
             },
-            "destination": "Battlefield"
+            "destination": "Battlefield",
+            "fromZone": "Graveyard"
         },
         "targetRequirements": [
             {

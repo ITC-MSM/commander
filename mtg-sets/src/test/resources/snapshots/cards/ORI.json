@@ -375,7 +375,15 @@
             "space": {
                 "type": "IterationSpace.Group",
                 "filter": {
-                    "baseFilter": "creature"
+                    "baseFilter": {
+                        "cardPredicates": [
+                            "IsCreature",
+                            {
+                                "type": "NotSubtype",
+                                "subtype": "Elf"
+                            }
+                        ]
+                    }
                 }
             },
             "body": {
@@ -598,6 +606,7 @@
                         }
                     ]
                 },
+                "timing": "ManaAbility",
                 "isManaAbility": true
             }
         ]

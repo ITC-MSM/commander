@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.AbilityId
 import com.wingedsheep.sdk.scripting.ActivatedAbility
+import com.wingedsheep.sdk.scripting.TimingRule
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.GrantActivatedAbility
 import com.wingedsheep.sdk.scripting.ModifyStats
@@ -45,7 +46,9 @@ val SachiDaughterOfSeshiro = card("Sachi, Daughter of Seshiro") {
             ability = ActivatedAbility(
                 id = AbilityId.generate(),
                 cost = Costs.Tap,
-                effect = Effects.AddMana(Color.GREEN, 2)
+                effect = Effects.AddMana(Color.GREEN, 2),
+                isManaAbility = true,
+                timing = TimingRule.ManaAbility
             ),
             filter = GroupFilter(GameObjectFilter.Creature.withSubtype(Subtype.SHAMAN).youControl())
         )

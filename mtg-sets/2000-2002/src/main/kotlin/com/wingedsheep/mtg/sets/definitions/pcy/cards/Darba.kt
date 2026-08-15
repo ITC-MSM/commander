@@ -28,7 +28,7 @@ val Darba = card("Darba") {
     toughness = 4
     triggeredAbility {
         trigger = Triggers.YourUpkeep
-        effect = PayOrSufferEffect(cost = Costs.pay.OwnManaCost, suffer = SacrificeSelfEffect)
+        effect = PayOrSufferEffect(cost = Costs.pay.Mana("{G}{G}"), suffer = SacrificeSelfEffect)
     }
     metadata {
         rarity = Rarity.UNCOMMON

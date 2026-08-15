@@ -29,7 +29,7 @@ val Seahunter = card("Seahunter") {
     activatedAbility {
         cost = Costs.Composite(Costs.Mana("{3}"), Costs.Tap)
         effect = Patterns.Library.searchLibrary(
-            filter = GameObjectFilter.Any.withSubtype("Merfolk"),
+            filter = GameObjectFilter.Permanent.withSubtype("Merfolk"),
             destination = SearchDestination.BATTLEFIELD
         )
     }

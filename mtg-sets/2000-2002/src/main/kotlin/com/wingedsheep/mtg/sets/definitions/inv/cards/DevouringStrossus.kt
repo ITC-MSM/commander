@@ -33,11 +33,7 @@ val DevouringStrossus = card("Devouring Strossus") {
 
     triggeredAbility {
         trigger = Triggers.YourUpkeep
-        effect = Effects.Sacrifice(
-            GameObjectFilter.Creature,
-            count = 1,
-            target = EffectTarget.Controller
-        )
+        effect = Effects.SacrificeOwn(GameObjectFilter.Creature)
     }
 
     activatedAbility {

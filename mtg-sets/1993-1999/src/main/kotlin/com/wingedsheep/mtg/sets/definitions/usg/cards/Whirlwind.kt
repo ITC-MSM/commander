@@ -26,11 +26,7 @@ val Whirlwind = card("Whirlwind") {
     typeLine = "Sorcery"
     oracleText = "Destroy all creatures with flying."
     spell {
-        effect = Effects.ForEachInGroup(
-            GroupFilter(GameObjectFilter.Creature.withKeyword(Keyword.FLYING)),
-            Effects.Move(EffectTarget.Self, Zone.GRAVEYARD, byDestruction = true),
-            noRegenerate = false
-        )
+        effect = Effects.DestroyAll(GameObjectFilter.Creature.withKeyword(Keyword.FLYING))
     }
     metadata {
         rarity = Rarity.RARE

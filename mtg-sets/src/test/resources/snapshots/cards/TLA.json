@@ -3174,6 +3174,7 @@
                     }
                 },
                 "effect": "AddManaOfChoice",
+                "timing": "ManaAbility",
                 "restrictions": [
                     "OncePerTurn"
                 ],
@@ -3417,6 +3418,7 @@
                 "id": "ability_1",
                 "cost": "CostTap",
                 "effect": "AddManaOfChoice",
+                "timing": "ManaAbility",
                 "isManaAbility": true
             }
         ],
@@ -19272,6 +19274,7 @@
                             "property": "POWER"
                         }
                     },
+                    "timing": "ManaAbility",
                     "isManaAbility": true
                 }
             ],

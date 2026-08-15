@@ -131,7 +131,7 @@ object Graveyard {
     private val returnUpToSeveralFromGraveyard: Phrase<CardScript> = run {
         fun scriptFor(count: Int, filter: GameObjectFilter) = CardScript(
             spellEffect = ForEachTargetEffect(
-                listOf(Effects.Move(EffectTarget.ContextTarget(0), Zone.BATTLEFIELD, fromZone = Zone.GRAVEYARD))
+                listOf(Effects.PutOntoBattlefieldFromGraveyard(EffectTarget.ContextTarget(0)))
             ),
             targetRequirements = listOf(
                 TargetObject(
@@ -288,7 +288,11 @@ object Graveyard {
         graveyardStep(
             "return target {filter} card from your graveyard to the battlefield",
             "return a card from your graveyard to the battlefield",
-        ) { Effects.Move(it, Zone.BATTLEFIELD, fromZone = Zone.GRAVEYARD) },
+            // The guarded return: `fromZone = GRAVEYARD` skips the move if the card has left the
+            // graveyard by resolution. Dropping it was tried, on the reading that the target
+            // requirement's own `zone = GRAVEYARD` already decides legality — the differential
+            // answered immediately, fixing three cards and breaking six. The corpus keeps the guard.
+        ) { Effects.PutOntoBattlefieldFromGraveyard(it) },
         returnAnyCardToHand,
     )
 }

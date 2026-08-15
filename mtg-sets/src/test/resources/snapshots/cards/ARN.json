@@ -827,21 +827,25 @@
                                         }
                                     },
                                     {
-                                        "type": "DealDamage",
-                                        "amount": {
-                                            "type": "EntityProperty",
-                                            "entity": "Source",
-                                            "numericProperty": {
-                                                "type": "CounterCount",
-                                                "counterType": {
-                                                    "type": "Named",
-                                                    "name": "wind"
-                                                }
-                                            }
+                                        "type": "ForEach",
+                                        "space": {
+                                            "type": "IterationSpace.Players",
+                                            "players": "Each"
                                         },
-                                        "target": {
-                                            "type": "PlayerRef",
-                                            "player": "Each"
+                                        "body": {
+                                            "type": "DealDamage",
+                                            "amount": {
+                                                "type": "EntityProperty",
+                                                "entity": "Source",
+                                                "numericProperty": {
+                                                    "type": "CounterCount",
+                                                    "counterType": {
+                                                        "type": "Named",
+                                                        "name": "wind"
+                                                    }
+                                                }
+                                            },
+                                            "target": "Controller"
                                         }
                                     }
                                 ]

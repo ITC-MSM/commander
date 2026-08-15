@@ -903,7 +903,13 @@
                 "binding": "ANY",
                 "effect": {
                     "type": "PayOrSuffer",
-                    "cost": "OwnManaCost",
+                    "cost": {
+                        "type": "PayAtom",
+                        "atom": {
+                            "type": "AtomMana",
+                            "cost": "{G}{G}"
+                        }
+                    },
                     "suffer": "SacrificeSelf"
                 }
             }
@@ -956,7 +962,9 @@
                     "effect": {
                         "type": "AddMana",
                         "color": "GREEN"
-                    }
+                    },
+                    "timing": "ManaAbility",
+                    "isManaAbility": true
                 },
                 "filter": {
                     "baseFilter": "creature ctrl:you"
@@ -1523,7 +1531,13 @@
                 "binding": "ANY",
                 "effect": {
                     "type": "PayOrSuffer",
-                    "cost": "OwnManaCost",
+                    "cost": {
+                        "type": "PayAtom",
+                        "atom": {
+                            "type": "AtomMana",
+                            "cost": "{1}{U}"
+                        }
+                    },
                     "suffer": "SacrificeSelf"
                 }
             }
@@ -2749,19 +2763,26 @@
     ],
     "script": {
         "spellEffect": {
-            "type": "ForEach",
-            "space": {
-                "type": "IterationSpace.Group",
-                "filter": {
-                    "baseFilter": "enchantment"
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherCards",
+                    "source": {
+                        "type": "BattlefieldMatching",
+                        "filter": "enchantment"
+                    },
+                    "storeAs": "destroyAll_gathered"
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "destroyAll_gathered",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Graveyard"
+                    },
+                    "moveType": "Destroy"
                 }
-            },
-            "body": {
-                "type": "MoveToZone",
-                "target": "Self",
-                "destination": "Graveyard",
-                "byDestruction": true
-            }
+            ]
         }
     },
     "metadata": {
@@ -5066,19 +5087,26 @@
     "oracleText": "Destroy all creatures with flying.",
     "script": {
         "spellEffect": {
-            "type": "ForEach",
-            "space": {
-                "type": "IterationSpace.Group",
-                "filter": {
-                    "baseFilter": "creature kw:flying"
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherCards",
+                    "source": {
+                        "type": "BattlefieldMatching",
+                        "filter": "creature kw:flying"
+                    },
+                    "storeAs": "destroyAll_gathered"
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "destroyAll_gathered",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Graveyard"
+                    },
+                    "moveType": "Destroy"
                 }
-            },
-            "body": {
-                "type": "MoveToZone",
-                "target": "Self",
-                "destination": "Graveyard",
-                "byDestruction": true
-            }
+            ]
         }
     },
     "metadata": {

@@ -13,6 +13,7 @@ import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.scripting.EventPattern
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.TriggerBinding
+import com.wingedsheep.sdk.scripting.effects.ConditionalEffect
 import com.wingedsheep.sdk.scripting.effects.Gate
 import com.wingedsheep.sdk.scripting.effects.GatedEffect
 import com.wingedsheep.sdk.scripting.effects.MayEffect
@@ -104,13 +105,26 @@ object Triggers {
             id = ID,
             trigger = spec.event,
             binding = spec.binding,
-            effect = if (optional) (effect as GatedEffect).then else effect,
-            // CR 603.4's intervening-if: a condition printed *between* the event and the effect is
-            // checked twice — once when the ability would trigger and again as it resolves. The SDK
-            // spells the first check as `triggerCondition` and the second as the `ConditionalEffect`
-            // the clause already produced, so a trigger whose effect clause opens with "if …" sets
-            // both. Reading only the effect would be a weaker ability than the card: it would
-            // trigger where the printed one does not. Lavaborn Muse is the shape this reproduces.
+            // CR 603.4's intervening-if is **lifted, not duplicated**. A condition printed between
+            // the event and the effect belongs in `triggerCondition`, which is the SDK's dedicated
+            // slot for it, and the clause's own `Gate.WhenCondition` is then the same fact written a
+            // second time — the thing this module's rule "a value the SDK carries twice is derived,
+            // not spelled" exists to stop. So the gate is stripped from the effect exactly when it
+            // is lifted, which is also what every hand-written card does: 478 of them set
+            // `triggerCondition` and none pairs it with a gate. The differential reported Beastbond
+            // Outcaster, Donatello and Phage the Untouchable while the gate was kept.
+            //
+            // That the engine checks `triggerCondition` only at detection time and not again on
+            // resolution is a **rules gap in the engine**, not something a parser may paper over by
+            // emitting a second condition — a card written that way would carry a condition its
+            // 508 siblings don't, and the fix belongs where the rule is enforced. It is not a
+            // one-liner there either: the field is overloaded. 340 cards use it for an
+            // intervening-"if" (two checks), 47 for a "while" clause — "Whenever this creature
+            // attacks **while** you control a Dinosaur" is trigger-time only, and Burning Sun
+            // Cavalry and Seasoned Warrenguard have scenario tests asserting exactly that — and
+            // ~100 for other trigger-time restrictions. Rechecking all of them uniformly fails
+            // those two tests, so the engine fix needs "if" and "while" separated first.
+            effect = liftInterveningIf(if (optional) (effect as GatedEffect).then else effect),
             triggerCondition = interveningIf(effect),
             // A `TriggeredAbility` keeps its first requirement in a field of its own and the rest in
             // a list beside it, which is the shape a clause declaring two targets lands in —
@@ -133,11 +147,28 @@ object Triggers {
         return (gated.gate as? Gate.WhenCondition)?.condition
     }
 
-    /** The inverse of the lowering: the clause script an ability's effect and targets denote. */
-    private fun scriptFor(ability: TriggeredAbility): CardScript = CardScript(
-        spellEffect = if (ability.optional) MayEffect(ability.effect) else ability.effect,
-        targetRequirements = listOfNotNull(ability.targetRequirement) + ability.additionalTargetRequirements,
-    )
+    /** The effect that is left once [interveningIf] has taken the condition out of it. */
+    private fun liftInterveningIf(
+        effect: com.wingedsheep.sdk.scripting.effects.Effect,
+    ): com.wingedsheep.sdk.scripting.effects.Effect =
+        if (interveningIf(effect) != null) (effect as GatedEffect).then else effect
+
+    /**
+     * The inverse of the lowering: the clause script an ability's effect and targets denote.
+     *
+     * The two wrappers go back on in the order [abilityFor] took them off — the intervening-if
+     * inside, "you may" outside — so the round trip is over the same value in both halves.
+     */
+    private fun scriptFor(ability: TriggeredAbility): CardScript {
+        val conditioned = ability.triggerCondition
+            ?.let { ConditionalEffect(condition = it, effect = ability.effect) }
+            ?: ability.effect
+        return CardScript(
+            spellEffect = if (ability.optional) MayEffect(conditioned) else conditioned,
+            targetRequirements = listOfNotNull(ability.targetRequirement) +
+                ability.additionalTargetRequirements,
+        )
+    }
 
     /**
      * The trigger events with an unambiguous one-clause surface form.

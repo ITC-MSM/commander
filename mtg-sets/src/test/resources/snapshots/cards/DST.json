@@ -692,7 +692,7 @@
             "space": {
                 "type": "IterationSpace.Group",
                 "filter": {
-                    "baseFilter": "creature|artifact ctrl:you"
+                    "baseFilter": "artifact creature ctrl:you"
                 }
             },
             "body": {

@@ -33,8 +33,7 @@ val BookOfMazarbul = card("Book of Mazarbul") {
         effect = Effects.Amass(2, "Orc")
     }
     sagaChapter(3) {
-        effect = Patterns.Group.modifyStatsForAll(1, 0, GroupFilter.AllCreaturesYouControl)
-            .then(Patterns.Group.grantKeywordToAll(Keyword.MENACE, GroupFilter.AllCreaturesYouControl))
+        effect = Patterns.Group.pumpAndGrantToAll(1, 0, Keyword.MENACE, GroupFilter.AllCreaturesYouControl)
     }
 
     metadata {

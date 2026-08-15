@@ -7836,10 +7836,7 @@
                         "type": "Fixed",
                         "amount": 3
                     },
-                    "target": {
-                        "type": "PlayerRef",
-                        "player": "You"
-                    }
+                    "target": "Controller"
                 }
             }
         ]
@@ -10366,6 +10363,7 @@
                         "amount": 1
                     }
                 },
+                "timing": "ManaAbility",
                 "isManaAbility": true
             },
             {
@@ -10384,6 +10382,7 @@
                     ]
                 },
                 "effect": "AddManaOfChoice",
+                "timing": "ManaAbility",
                 "isManaAbility": true
             },
             {

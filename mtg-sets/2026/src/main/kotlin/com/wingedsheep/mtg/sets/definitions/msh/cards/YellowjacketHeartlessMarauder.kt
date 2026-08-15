@@ -19,8 +19,9 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  * Whenever another Villain you control enters, Yellowjacket gets +1/+0 and gains lifelink until
  * end of turn.
  *
- * The trigger watches any Villain *permanent* (Villain shows up on artifact creatures such as the
- * Doombot token too), with [TriggerBinding.OTHER] so Yellowjacket's own arrival doesn't fire it.
+ * The trigger watches any Villain *creature* — which covers the artifact creatures the type shows
+ * up on, such as the Doombot token — with [TriggerBinding.OTHER] so Yellowjacket's own arrival
+ * doesn't fire it.
  */
 val YellowjacketHeartlessMarauder = card("Yellowjacket, Heartless Marauder") {
     manaCost = "{1}{B}"
@@ -34,7 +35,7 @@ val YellowjacketHeartlessMarauder = card("Yellowjacket, Heartless Marauder") {
 
     triggeredAbility {
         trigger = Triggers.entersBattlefield(
-            filter = GameObjectFilter.Permanent.withSubtype(Subtype.VILLAIN).youControl(),
+            filter = GameObjectFilter.Creature.withSubtype(Subtype.VILLAIN).youControl(),
             binding = TriggerBinding.OTHER
         )
         effect = Effects.Composite(

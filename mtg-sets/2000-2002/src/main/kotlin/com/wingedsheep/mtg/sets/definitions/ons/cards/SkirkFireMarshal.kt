@@ -33,7 +33,7 @@ val SkirkFireMarshal = card("Skirk Fire Marshal") {
 
     activatedAbility {
         cost = Costs.TapPermanents(5, GameObjectFilter.Creature.withSubtype("Goblin"))
-        effect = Effects.ForEachInGroup(GroupFilter.AllCreatures, DealDamageEffect(10, EffectTarget.Self)) then Effects.DealDamage(10, EffectTarget.PlayerRef(Player.Each))
+        effect = Effects.ForEachInGroup(GroupFilter.AllCreatures, DealDamageEffect(10, EffectTarget.Self)) then Effects.ForEachPlayer(Player.Each, listOf(Effects.DealDamage(10, EffectTarget.Controller)))
     }
 
     metadata {

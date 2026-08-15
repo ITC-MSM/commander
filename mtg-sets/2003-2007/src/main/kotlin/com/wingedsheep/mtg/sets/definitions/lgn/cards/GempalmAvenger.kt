@@ -29,11 +29,8 @@ val GempalmAvenger = card("Gempalm Avenger") {
 
     triggeredAbility {
         trigger = Triggers.YouCycleThis
-        effect = Effects.Composite(
-            listOf(
-                Patterns.Group.modifyStatsForAll(1, 1, GroupFilter.allCreaturesWithSubtype("Soldier")),
-                Patterns.Group.grantKeywordToAll(Keyword.FIRST_STRIKE, GroupFilter.allCreaturesWithSubtype("Soldier"))
-            )
+        effect = Patterns.Group.pumpAndGrantToAll(
+            1, 1, Keyword.FIRST_STRIKE, GroupFilter.allCreaturesWithSubtype("Soldier")
         )
     }
 

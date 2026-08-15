@@ -2665,6 +2665,7 @@
                     ]
                 },
                 "effect": "AddManaOfChoice",
+                "timing": "ManaAbility",
                 "isManaAbility": true
             },
             {
@@ -7407,18 +7408,12 @@
             {
                 "type": "ConditionalStaticAbility",
                 "ability": {
-                    "type": "GrantDynamicStats",
+                    "type": "ModifyStats",
+                    "powerBonus": 1,
+                    "toughnessBonus": 0,
                     "filter": {
                         "baseFilter": "permanent",
                         "scope": "Self"
-                    },
-                    "powerBonus": {
-                        "type": "Fixed",
-                        "amount": 1
-                    },
-                    "toughnessBonus": {
-                        "type": "Fixed",
-                        "amount": 0
                     }
                 },
                 "condition": {
@@ -9159,6 +9154,7 @@
                 "id": "ability_1",
                 "cost": "CostTap",
                 "effect": "AddManaOfChoice",
+                "timing": "ManaAbility",
                 "isManaAbility": true
             },
             {
@@ -15340,9 +15336,8 @@
         "spellEffect": {
             "type": "DealDamage",
             "amount": {
-                "type": "Count",
+                "type": "AggregateBattlefield",
                 "player": "You",
-                "zone": "Battlefield",
                 "filter": "land"
             },
             "target": {

@@ -1591,6 +1591,19 @@ class ActivatedAbilityBuilder {
     var cost: AbilityCost = AbilityCost.Tap
     var effect: Effect? = null
     var target: TargetRequirement? = null
+    /**
+     * When true, this is a mana ability (CR 605.1a) — it doesn't use the stack and may be activated
+     * during the payment of a cost.
+     *
+     * Setting this also settles [timing], which is the same fact written twice: `TimingRule` calls
+     * its `ManaAbility` case "special timing that does NOT use the stack", so an ability that is one
+     * and whose timing says "instant speed" contradicts itself. [build] derives the timing rather
+     * than leaving it to the author, because half the corpus set both (`land { }` and the engine's
+     * intrinsic abilities always did) and half set only this flag — and the AI's
+     * `ExpiringGrantWindow` branches on `timing == InstantSpeed`, so which half a card fell in
+     * changed behaviour. Found by Argentum Assay's differential, which derives both from the printed
+     * line and reported every card that carried only one.
+     */
     var manaAbility: Boolean = false
     /**
      * When true, this is an equip ability (CR 702.6): it attaches an Equipment to a creature and
@@ -1674,7 +1687,8 @@ class ActivatedAbilityBuilder {
             targetRequirements = targetRequirements,
             isManaAbility = manaAbility,
             isEquipAbility = isEquipAbility,
-            timing = timing,
+            // A mana ability's timing is not a separate authoring choice — see [manaAbility].
+            timing = if (manaAbility) TimingRule.ManaAbility else timing,
             restrictions = effectiveRestrictions,
             activateFromZone = activateFromZone,
             descriptionOverride = description,

@@ -28,7 +28,7 @@ val WhipstitchedZombie = card("Whipstitched Zombie") {
     toughness = 2
     triggeredAbility {
         trigger = Triggers.YourUpkeep
-        effect = PayOrSufferEffect(cost = Costs.pay.OwnManaCost, suffer = SacrificeSelfEffect)
+        effect = PayOrSufferEffect(cost = Costs.pay.Mana("{B}"), suffer = SacrificeSelfEffect)
     }
     metadata {
         rarity = Rarity.COMMON
