@@ -5,6 +5,7 @@ import com.wingedsheep.engine.legalactions.support.setupP1
 import com.wingedsheep.mtg.sets.definitions.blc.cards.BrightcapBadger
 import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.card
+import com.wingedsheep.sdk.scripting.values.DynamicAmount
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
@@ -79,6 +80,51 @@ class AdventureFaceEnumerationTest : FunSpec({
             typeLine = "Sorcery — Adventure"
             spell { effect = Effects.DrawCards(1) }
         }
+    }
+
+    // An {X} in the *Adventure face's* own mana cost. The face's cast action has to carry the X
+    // fields, or the client never opens the X picker and the face casts at X = 0.
+    val xCostAdventure = card("Test Thane") {
+        manaCost = "{2}{W}{W}"
+        typeLine = "Enchantment"
+        adventure("Test Muster") {
+            manaCost = "{X}{2}{W}"
+            typeLine = "Sorcery — Adventure"
+            spell {
+                effect = Effects.CreateToken(
+                    count = DynamicAmount.XValue, power = 2, toughness = 2, creatureTypes = setOf("Dwarf")
+                )
+            }
+        }
+    }
+
+    test("an {X} in the Adventure face's cost is offered as an X cost, with a board-derived ceiling") {
+        val driver = setupP1(
+            hand = listOf("Test Thane"),
+            battlefield = List(6) { "Plains" },
+            extraSetCards = listOf(xCostAdventure),
+        )
+
+        val adventure = driver.enumerateFor(driver.player1).castActionsFor("Test Thane")
+            .single { (it.action as CastSpell).faceIndex == 0 }
+
+        adventure.hasXCost shouldBe true
+        // Six lands, {X}{2}{W}: three mana is spoken for by the fixed part.
+        adventure.maxAffordableX shouldBe 3
+    }
+
+    test("the primary face of the same card keeps its own (X-free) cost") {
+        val driver = setupP1(
+            hand = listOf("Test Thane"),
+            battlefield = List(6) { "Plains" },
+            extraSetCards = listOf(xCostAdventure),
+        )
+
+        val primary = driver.enumerateFor(driver.player1).castActionsFor("Test Thane")
+            .single { (it.action as CastSpell).faceIndex == null }
+
+        primary.hasXCost shouldBe false
+        primary.maxAffordableX shouldBe null
     }
 
     test("only the creature face affordable: Adventure face surfaces as a grayed-out placeholder") {

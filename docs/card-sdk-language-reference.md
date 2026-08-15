@@ -244,7 +244,10 @@ carries the other side for the hover preview's flip toggle.
   the primary face from exile — *cast* the creature, or *play* the land for a **land // spell** Adventure
   (`Land — Town // Sorcery — Adventure`, e.g. Ishgard, the Holy See // Faith & Grief). The generic may-play
   permission covers both; from hand a land-primary Adventure offers *play the land* (PlayLandEnumerator) **and**
-  *cast the Adventure spell* (`CastSpell.faceIndex = 0`).
+  *cast the Adventure spell* (`CastSpell.faceIndex = 0`). An `{X}` in the *face's* own mana cost is supported —
+  the face's cast action carries `hasXCost`/`maxAffordableX`, so the client opens its X picker and
+  `DynamicAmount.XValue` in the face's `spell { }` reads the declared X (An Unexpected Party // At the Door,
+  `{X}{2}{W}` "Create X 2/2 red Dwarf creature tokens").
 - `OMEN` — primary face is a permanent (creature), `cardFaces[0]` is an instant/sorcery Omen (Tarkir: Dragonstorm).
   Casts exactly like an Adventure (creature face, or Omen via `CastSpell.faceIndex = 0`), but resolving the Omen
   **shuffles the card into its owner's library** instead of exiling it — no cast-from-exile linkage. DSL:
