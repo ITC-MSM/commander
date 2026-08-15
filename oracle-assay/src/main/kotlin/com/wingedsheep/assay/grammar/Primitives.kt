@@ -54,23 +54,68 @@ object Primitives {
     )
 
     /**
+     * Plurals whose singular the general rules would get wrong *in either direction*.
+     *
+     * The "-ves" family needs to be listed rather than derived, because the inverse is not a rule:
+     * `Werewolf` pluralizes to "Werewolves" but `Lhurgoyf` pluralizes to "Lhurgoyfs", and nothing in
+     * the spelling says which. [singularCandidates] carries a general "-ves" reading as a *fallback*
+     * for reading unlisted types; printing only ever uses this map.
+     */
+    private val IRREGULAR_PLURALS = mapOf(
+        "Elves" to "Elf",
+        "Dwarves" to "Dwarf",
+        "Wolves" to "Wolf",
+        "Werewolves" to "Werewolf",
+        "Thieves" to "Thief",
+        "Scarecrows" to "Scarecrow",
+    )
+
+    private val SUBTYPE_PLURAL = Regex("""[A-Z][A-Za-z-]*s""")
+
+    /**
+     * The types the SDK names — creature types per the Comprehensive Rules' creature-type list, plus
+     * the basic land types, which appear in the same slot ("Affinity for **Plains**").
+     *
+     * Used to **rank** candidate readings, not to gate them: a candidate that names a real type wins
+     * over one that does not, and where no candidate is known the ordinary "-s" reading still
+     * applies. That distinction is deliberate, because this set is not the whole truth — the SDK
+     * exposes a list for creature and basic land types only, so artifact, enchantment and
+     * nonbasic-land types ("Affinity for Equipment", "for Food", "for Gates") are real subtypes that
+     * are simply absent from it. Gating on the set would decline them, trading one wrong answer for
+     * a worse one.
+     *
+     * Declining unknown types outright is the better end state and is what "declining is success"
+     * argues for; it needs the SDK to publish the remaining subtype lists first.
+     * `Subtype.fromName` is not that publication — it title-cases anything for
+     * forward-compatibility, so it answers "yes" to everything and cannot rank.
+     *
+     * Declared above [pluralSubtype] on purpose: object initializers run in declaration order, and
+     * the rule below reads [SUBTYPE_PLURAL] while *it* is initializing.
+     */
+    private val KNOWN_SUBTYPES: Set<String> =
+        (Subtype.ALL_CREATURE_TYPES + Subtype.ALL_BASIC_LAND_TYPES).toSet()
+
+    /**
      * A creature type written in its plural surface form — "protection from **Goblins**".
      *
      * The plural lives in the leaf rather than in a template literal because a `{subtype}` slot
      * followed by a literal `"s"` would let the slot swallow the "s" and strand the literal.
      *
-     * Irregular plurals are listed explicitly: "Elves" naively de-pluralizes to `Elve`, which
-     * *round-trips perfectly* while meaning nothing. That is the reversible-but-wrong class the
-     * touchstone structurally cannot catch — the differential gate (Phase 3) is the general
-     * answer, and five map entries are the cheap one here.
+     * **De-pluralizing is checked against the SDK's own type list, never guessed.** Stripping the
+     * "s" is only a *candidate*; the reading is accepted when the result is a subtype the SDK
+     * actually names, and declines otherwise. That is the fix for the reversible-but-wrong class:
+     * "Elves" naively yields `Elve` and "Plains" yields `Plain`, and both round-trip perfectly while
+     * meaning nothing. The differential gate caught the second one on its first run — `Plain` is not
+     * a type, `Subtype.PLAINS` is `Plains`, and only the SDK's list knows that.
+     *
+     * Candidates are tried in [singularCandidates]' order, so an English-plural reading beats an
+     * invariant one where both name a real type.
      */
     val pluralSubtype: Phrase<Subtype> = token(
         name = "a creature type",
-        pattern = Regex("""[A-Z][A-Za-z-]*s"""),
-        read = { plural -> IRREGULAR_PLURALS[plural]?.let(::Subtype) ?: Subtype(plural.dropLast(1)) },
-        write = { subtype ->
-            IRREGULAR_PLURALS.entries.firstOrNull { it.value == subtype.value }?.key ?: "${subtype.value}s"
-        },
+        pattern = SUBTYPE_PLURAL,
+        read = ::readPluralSubtype,
+        write = ::writePluralSubtype,
     )
 
     /**
@@ -129,11 +174,57 @@ object Primitives {
         constant("lands", ProtectionScope.CardType("Land")),
     )
 
-    private val IRREGULAR_PLURALS = mapOf(
-        "Elves" to "Elf",
-        "Dwarves" to "Dwarf",
-        "Wolves" to "Wolf",
-        "Thieves" to "Thief",
-        "Scarecrows" to "Scarecrow",
+    /**
+     * Singular readings of a printed plural, best first: the ordinary "-s" plural, then an invariant
+     * one ("Plains"), then "-ies" ("Allies" → `Ally`) and "-ves" ("Werewolves" → `Werewolf`).
+     * Ordinary-first is what keeps "Zombies" reading as `Zombie` rather than as `Zomby`.
+     *
+     * The list is ranked in [readPluralSubtype] rather than taken in order — the first candidate
+     * that names a type the SDK knows wins, and only if none does is the ordinary reading used.
+     */
+    private fun singularCandidates(plural: String): List<String> = listOfNotNull(
+        IRREGULAR_PLURALS[plural],
+        plural.dropLast(1),
+        plural,
+        (plural.dropLast(3) + "y").takeIf { plural.endsWith("ies") },
+        (plural.dropLast(3) + "f").takeIf { plural.endsWith("ves") },
     )
+
+    /**
+     * The inverse, same discipline: candidate spellings, and the caller keeps the first that reads
+     * back to the value it started from. Deriving the printed form from [readPluralSubtype] rather
+     * than restating the rules is what stops the two halves drifting — the failure mode the kernel's
+     * [com.wingedsheep.assay.syntax.token] check exists to catch, avoided here by construction.
+     */
+    private fun pluralCandidates(singular: String): List<String> = listOfNotNull(
+        IRREGULAR_PLURALS.entries.firstOrNull { it.value == singular }?.key,
+        // An invariant plural is its own plural, and must be offered before "…s" would win.
+        singular.takeIf { it.endsWith("s") },
+        // Consonant + y pluralizes as "-ies" ("Ally" → "Allies"); vowel + y does not ("Monkeys").
+        (singular.dropLast(1) + "ies").takeIf { singular.endsWithConsonantY() },
+        "${singular}s",
+    )
+
+    private fun String.endsWithConsonantY(): Boolean =
+        length >= 2 && endsWith("y") && !isVowel(this[length - 2])
+
+    private fun isVowel(c: Char) = c.lowercaseChar() in "aeiou"
+
+    /**
+     * A known type beats an unknown one; failing that, the ordinary "-s" reading stands.
+     *
+     * The ranking is the whole fix for the reversible-but-wrong class the differential surfaced:
+     * "Plains" offers `Plain` (nothing) and `Plains` (a real basic land type), and without the
+     * ranking the first one wins and round-trips forever.
+     */
+    private fun readPluralSubtype(plural: String): Subtype? {
+        val candidates = singularCandidates(plural)
+        val known = candidates.firstOrNull { it in KNOWN_SUBTYPES }
+        return (known ?: candidates.firstOrNull()?.takeIf { it.isNotEmpty() })?.let(::Subtype)
+    }
+
+    private fun writePluralSubtype(subtype: Subtype): String? =
+        pluralCandidates(subtype.value).firstOrNull { candidate ->
+            SUBTYPE_PLURAL.matchEntire(candidate) != null && readPluralSubtype(candidate) == subtype
+        }
 }

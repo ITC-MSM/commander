@@ -11,7 +11,7 @@ import com.wingedsheep.assay.syntax.Phrase
 import com.wingedsheep.assay.syntax.deadToken
 import com.wingedsheep.assay.syntax.parseLine
 import com.wingedsheep.assay.syntax.printLine
-import com.wingedsheep.sdk.scripting.KeywordAbility
+import com.wingedsheep.assay.grammar.CardFragment
 
 /**
  * Gate 1 — the textual round trip, over every unique Oracle text in the Scryfall bulk.
@@ -36,7 +36,7 @@ import com.wingedsheep.sdk.scripting.KeywordAbility
  *   printed line whose model does **not** survive reparsing is a [LineVerdict.MISMATCH], and that
  *   number must be zero.
  */
-class Touchstone(private val grammar: Phrase<List<KeywordAbility>> = Grammar.abilityLine) {
+class Touchstone(private val grammar: Phrase<CardFragment> = Grammar.abilityLine) {
 
     fun assay(card: OracleCard): CardResult {
         val faces = card.faces.map { assayFace(card, it) }
@@ -75,7 +75,7 @@ class Touchstone(private val grammar: Phrase<List<KeywordAbility>> = Grammar.abi
 
         fun result(
             verdict: LineVerdict,
-            model: List<KeywordAbility>? = null,
+            model: CardFragment? = null,
             printed: String? = null,
             decline: ParseOutcome.Declined? = null,
         ) = LineResult(card.name, face.name, index, line, verdict, model, printed, decline, redundant)
@@ -114,7 +114,8 @@ class Touchstone(private val grammar: Phrase<List<KeywordAbility>> = Grammar.abi
             val m = GLOSSED_LINE.matchEntire(raw.trim()) ?: return@mapNotNull null
             val head = m.groupValues[1].trim()
             val printedGloss = m.groupValues[2]
-            val ability = (grammar.parseLine(head) as? ParseOutcome.Accepted)?.value?.singleOrNull()
+            val ability = (grammar.parseLine(head) as? ParseOutcome.Accepted)
+                ?.value?.keywordAbilities?.singleOrNull()
                 ?: return@mapNotNull null
             val expected = Reminders.gloss(ability, self)
             GlossResult(
@@ -206,7 +207,7 @@ data class LineResult(
     val index: Int,
     val line: String,
     val verdict: LineVerdict,
-    val model: List<KeywordAbility>?,
+    val model: CardFragment?,
     val printed: String?,
     val decline: ParseOutcome.Declined?,
     /** Extra readings that produced the *same* model — grammar redundancy, reported not gated. */

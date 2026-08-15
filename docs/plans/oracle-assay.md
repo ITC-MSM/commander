@@ -37,6 +37,43 @@ the grammar itself. The grammar is the long pole and always will be.
 
 ---
 
+## The MVP
+
+Decided 2026-08-15, after Phase 1 shipped. The phases below are ordered by *layer*; the MVP is the
+vertical slice through them that is worth shipping on its own:
+
+> **Assay reads a whole card and proves the reading against the card we already wrote.**
+
+Not: emit Kotlin, beat `:mtgish-tooling` on a set, retire the bridge. Those are Phases 4–6, and none
+of them is where the risk is. Phase 1 proved the machinery is *reversible*; it did not prove it is
+*right*, and every rule added before there is a semantic gate is grammar built on unverified
+semantics. A renderer on that footing only generates wrong Kotlin faster.
+
+Three parts, in this order:
+
+1. **The differential gate** — done for the class the grammar reads whole; see Phase 3 below.
+2. **One vertical grammar band** — the narrowest rule set that makes simple *whole* cards parse:
+   cardinals → a small filter/target vocabulary → a handful of pipeline steps → the trigger prefix.
+   The decline table ranks this for us: `Whenever` (6,450 cards) and `When` (6,054) are the top two
+   families by a wide margin, so triggers are neither deferrable nor a guess.
+   *Started.* `Cardinals` (number words), `Targets` (the requirement/reference pair) and `Steps`
+   (the draw family, targeted and not) are in, and the line model widened from `List<KeywordAbility>`
+   to [`CardFragment`] so a line can fill either behavioural slot a card has. Whole-card coverage
+   1,744 → 1,774 and the differential started comparing spell effects. Filters, the remaining steps
+   and the trigger prefix are next.
+3. **A third number in the fineness report** — beside "round-trips byte-exact" and "declined", a
+   *confirmed* row: whole cards whose model matches the hand-written definition.
+
+**Done when:** several hundred implemented cards parse whole *and* differentially confirm; every
+divergence is classified with none unexplained; at least one genuine bug has been found in a
+hand-written card; `MISMATCH` and `AMBIGUOUS` are still 0.
+
+Explicitly out: the renderer, per-set cutover, and closing the ~40 missing `Keyword` constants —
+that last one is ranked content work with no risk attached, and it inflates Phase 1's number without
+teaching anything.
+
+---
+
 ## Phase 0 — Decide to start (no code)
 
 Read the design doc, confirm the premise, and pick a first-milestone fineness target to be judged
@@ -134,21 +171,39 @@ rate is directly comparable to `:mtgish-tooling`'s `gN` figure in the coverage d
 
 ---
 
-## Phase 3 — Differential gate against the 8,728
+## Phase 3 — Differential gate against the hand-written corpus ✅ HARNESS SHIPPED
 
 Turn the implemented corpus into the semantic oracle. This is what catches the reversible-but-wrong
-class that the touchstone structurally cannot.
+class that the touchstone structurally cannot. **Brought forward ahead of Phase 2** per the MVP
+above: the gate has to exist before grammar breadth, or the breadth is unverified.
 
-1. **`gate/Differential.kt`** — for each implemented card, parse its Scryfall oracle text and
-   structurally diff the model against the hand-written `CardDefinition`'s script.
-2. **An explicit fold list** — known-equivalent representations (a `Patterns.*` composition versus
-   its expansion; commutative ordering). Reviewed, never grown silently, mirroring the existing
-   `fidelity --gate` allowlist discipline.
-3. **Triage every divergence.** Expect bugs on both sides; a divergence that turns out to be a bug
-   in a hand-written card is a genuine win and should get its own fix + scenario test.
+**Outcome.** `just assay-differential` runs over all 8,874 committed goldens. Of those, 449 clear
+every scoping guard and are compared: **444 confirmed (98.9%), 5 divergences, all classified**. It
+found the predicted class on its first run — multi-quality protection read as one ability where
+CR 702.16g makes it two, reversible and wrong — plus two "one concept, two spellings" findings in the
+SDK. Details in [`oracle-assay/README.md`](../../oracle-assay/README.md).
+
+**Three guards, each found by the gate lying to itself once.** Assay must read every *line*; the
+golden's text must be the *same text* Scryfall serves (compared normalized, since goldens carry
+reminder text inconsistently); and the definition must use only *modelled slots*. Every card failing
+one lands in a named bucket rather than being confirmed.
+
+1. **`gate/Differential.kt`** — done, over keyword abilities plus `spellEffect` and
+   `targetRequirements`. The comparison grows with the grammar, and the three guards above are what
+   keep each addition honest. Triggered and static abilities follow as Phase 2 reaches them.
+2. **An explicit fold list** — done, as `Folds` in the same file, currently one entry: a bare
+   `Keyword` implied by a parameterized `KeywordAbility` of the same keyword, which is a
+   `CardDefinition` index entry the SDK populates on purpose rather than a second ability. Reviewed,
+   never grown silently.
+3. **Triage every divergence.** Ongoing, and the point. A divergence that turns out to be a bug in a
+   hand-written card is a genuine win and should get its own fix + scenario test.
+
+**The oracle is a file read, not a dependency.** `:oracle-assay` still depends on `:mtg-sdk` alone.
+The goldens under `mtg-sets/src/test/resources/snapshots/cards/` are data, decoded by `mtg-sdk`'s own
+`CardLoader` — which is why this phase cost far less than the plan assumed.
 
 **Acceptance:** divergences enumerated and each one classified as parser bug / card bug / fold. The
-count matters less than the fact that none are unexplained.
+count matters less than the fact that none are unexplained. — **Met for the keyword class.**
 
 ---
 

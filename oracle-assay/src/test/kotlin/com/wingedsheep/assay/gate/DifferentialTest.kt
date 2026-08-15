@@ -1,0 +1,297 @@
+package com.wingedsheep.assay.gate
+
+import com.wingedsheep.assay.corpus.ImplementedCard
+import com.wingedsheep.assay.corpus.ImplementedCorpus
+import com.wingedsheep.assay.corpus.OracleCard
+import com.wingedsheep.assay.corpus.OracleFace
+import com.wingedsheep.sdk.core.Keyword
+import com.wingedsheep.sdk.core.ManaCost
+import com.wingedsheep.sdk.core.TypeLine
+import com.wingedsheep.sdk.model.CardDefinition
+import com.wingedsheep.sdk.model.CreatureStats
+import com.wingedsheep.sdk.scripting.KeywordAbility
+import io.kotest.core.spec.style.StringSpec
+import io.kotest.matchers.collections.shouldContain
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
+import java.util.Locale
+
+/**
+ * The differential's own behaviour, on hand-built pairs. The corpus run lives in
+ * `just assay-differential`, which is a reporting tool rather than a unit test — the same split the
+ * touchstone uses.
+ *
+ * The one exception is the golden-reader test at the bottom, which deliberately reads the committed
+ * files: the file format is an assumption about another module's test output, and an assumption is
+ * exactly the thing worth pinning down.
+ */
+class DifferentialTest : StringSpec({
+
+    val differential = Differential()
+
+    fun oracleCard(name: String, text: String, faces: Int = 1) = OracleCard(
+        name = name,
+        oracleId = "oracle-${name.lowercase(Locale.ROOT)}",
+        layout = if (faces > 1) "transform" else "normal",
+        setCode = "TST",
+        scryfallKeywords = emptyList(),
+        faces = List(faces) { i ->
+            OracleFace(name = if (i == 0) name else "$name Back", oracleText = text, typeLine = "Creature — Angel")
+        },
+    )
+
+    fun index(vararg cards: OracleCard): Map<String, OracleCard> = buildMap {
+        cards.forEach { card ->
+            card.oracleId?.let { put("id:$it", card) }
+            put("name:${card.name.lowercase(Locale.ROOT)}", card)
+        }
+    }
+
+    // The golden's own `oracleText` is load-bearing: the gate refuses to compare a card whose text
+    // does not match the Scryfall entry it joined, so a fixture that omits it lands in
+    // ORACLE_TEXT_DIFFERS rather than testing what it means to test.
+    fun definition(
+        name: String,
+        text: String = "",
+        keywords: Set<Keyword> = emptySet(),
+        keywordAbilities: List<KeywordAbility> = emptyList(),
+    ) = CardDefinition(
+        name = name,
+        manaCost = ManaCost.parse("{3}{W}"),
+        typeLine = TypeLine.parse("Creature — Angel"),
+        oracleText = text,
+        creatureStats = CreatureStats.of(power = 4, toughness = 4),
+        keywords = keywords,
+        keywordAbilities = keywordAbilities,
+        oracleId = "oracle-${name.lowercase(Locale.ROOT)}",
+    )
+
+    fun implemented(definition: CardDefinition?) =
+        ImplementedCard(name = definition?.name ?: "Unknown", setCode = "TST", definition = definition)
+
+    "a card whose keywords match the text confirms" {
+        val card = oracleCard("Serra Angel", "Flying\nVigilance")
+        val result = differential.compare(
+            implemented(definition("Serra Angel", "Flying\nVigilance", keywords = setOf(Keyword.FLYING, Keyword.VIGILANCE))),
+            index(card),
+        )
+
+        result.population shouldBe Population.COMPARED
+        result.verdict shouldBe Verdict.CONFIRMED
+    }
+
+    "a keyword the text has and the card lacks is a divergence, and names which side" {
+        val card = oracleCard("Serra Angel", "Flying\nVigilance")
+        val result = differential.compare(
+            implemented(definition("Serra Angel", "Flying\nVigilance", keywords = setOf(Keyword.FLYING))),
+            index(card),
+        )
+
+        result.verdict shouldBe Verdict.DIVERGENT
+        result.onlyInText shouldContain KeywordAbility.Simple(Keyword.VIGILANCE)
+        result.onlyInCard shouldBe emptyList()
+    }
+
+    "a keyword the card carries but the text does not print is a divergence too" {
+        val card = oracleCard("Serra Angel", "Flying")
+        val result = differential.compare(
+            implemented(definition("Serra Angel", "Flying", keywords = setOf(Keyword.FLYING, Keyword.TRAMPLE))),
+            index(card),
+        )
+
+        result.verdict shouldBe Verdict.DIVERGENT
+        result.onlyInCard shouldContain KeywordAbility.Simple(Keyword.TRAMPLE)
+        result.onlyInText shouldBe emptyList()
+    }
+
+    // The scoping rule the whole gate rests on. A card Assay only partly reads must never be
+    // compared: the keywords it did not see would look like agreement, and the gate would be
+    // reporting confidence it has not earned.
+    "a card the grammar cannot read whole is excluded, not silently confirmed" {
+        val card = oracleCard("Doom Blade", "Destroy target nonblack creature.")
+        val result = differential.compare(implemented(definition("Doom Blade", "Destroy target nonblack creature.")), index(card))
+
+        result.population shouldBe Population.NOT_COVERED
+        result.verdict shouldBe null
+    }
+
+    "a card whose text is partly readable is still excluded" {
+        val card = oracleCard("Wall of Omens", "Flying\nWhen this creature enters, draw a card.")
+        val result = differential.compare(
+            implemented(definition("Wall of Omens", "Flying\nWhen this creature enters, draw a card.", keywords = setOf(Keyword.FLYING))),
+            index(card),
+        )
+
+        // The keyword line alone would have "confirmed" here; the whole-card rule is what stops it.
+        result.population shouldBe Population.NOT_COVERED
+    }
+
+    "multi-face cards are counted out of scope rather than compared against the front face" {
+        val card = oracleCard("Delver of Secrets", "Flying", faces = 2)
+        val result = differential.compare(
+            implemented(definition("Delver of Secrets", "Flying", keywords = setOf(Keyword.FLYING))),
+            index(card),
+        )
+
+        result.population shouldBe Population.MULTI_FACE
+    }
+
+    // Found by the gate itself: three goldens joined by name to an entry with no text at all, which
+    // Assay covers trivially, and then "diverged" against a fully-implemented script. Assay was
+    // reading one card and diffing another.
+    "a golden whose text is not the joined card's text is never compared" {
+        val card = oracleCard("Inferno", "")
+        val result = differential.compare(
+            implemented(definition("Inferno", "~ deals 6 damage to each creature and each player.")),
+            index(card),
+        )
+
+        result.population shouldBe Population.ORACLE_TEXT_DIFFERS
+        result.verdict shouldBe null
+    }
+
+    // Goldens carry printed reminder text inconsistently, which is authoring noise rather than a
+    // difference in what the card says. Comparing normalized lines is what keeps 300-odd cards in
+    // the population instead of excluding them for a parenthetical.
+    "reminder text alone does not count as the texts differing" {
+        val card = oracleCard("Dancing Scimitar", "Flying (This creature can't be blocked except by creatures with flying or reach.)")
+        val result = differential.compare(
+            implemented(definition("Dancing Scimitar", "Flying", keywords = setOf(Keyword.FLYING))),
+            index(card),
+        )
+
+        result.population shouldBe Population.COMPARED
+        result.verdict shouldBe Verdict.CONFIRMED
+    }
+
+    // A keyword the SDK lowers to a triggered ability at authoring time leaves content in a slot the
+    // grammar cannot produce. Confirming such a card would claim a check nobody performed.
+    "a card with script content outside the modelled slots is not compared" {
+        val card = oracleCard("Teeka's Dragon", "Flying")
+        val withLowering = definition("Teeka's Dragon", "Flying", keywords = setOf(Keyword.FLYING))
+            .let { it.copy(script = it.script.copy(cantBeCountered = true)) }
+        val result = differential.compare(implemented(withLowering), index(card))
+
+        result.population shouldBe Population.SCRIPT_NOT_MODELLED
+        result.verdict shouldBe null
+    }
+
+    "a card with no Scryfall entry is counted, never crashed on" {
+        val result = differential.compare(implemented(definition("Some Custom Card")), emptyMap())
+
+        result.population shouldBe Population.NO_ORACLE_TEXT
+    }
+
+    "a golden that would not decode is a gate failure rather than a divergence" {
+        val report = DifferentialReport.builder()
+            .add(differential.compare(implemented(null), emptyMap()))
+            .build()
+
+        report.clean shouldBe false
+        report.divergent shouldBe 0
+    }
+
+    // Parameterized keywords live in `keywordAbilities` while parameterless ones live in `keywords`,
+    // so the unification in `printedKeywords` is load-bearing: without it every Ward card diverges.
+    "the two SDK spellings of a card's keywords are unified before comparing" {
+        val definition = definition(
+            "Warded Angel",
+            keywords = setOf(Keyword.FLYING),
+            keywordAbilities = listOf(KeywordAbility.Simple(Keyword.VIGILANCE)),
+        )
+
+        differential.printedKeywords(definition) shouldBe setOf(
+            KeywordAbility.Simple(Keyword.FLYING),
+            KeywordAbility.Simple(Keyword.VIGILANCE),
+        )
+    }
+
+    "divergences are reported but never fail the gate — they are findings to classify" {
+        val card = oracleCard("Serra Angel", "Flying\nVigilance")
+        val report = DifferentialReport.builder()
+            .add(
+                differential.compare(
+                    implemented(definition("Serra Angel", "Flying\nVigilance", keywords = setOf(Keyword.FLYING))),
+                    index(card),
+                )
+            )
+            .build()
+
+        report.divergent shouldBe 1
+        report.clean shouldBe true
+    }
+
+    // ---------------------------------------------------------------------------------------
+    // The fold list
+    // ---------------------------------------------------------------------------------------
+
+    // Punk Frogs' shape: `keywords: [WARD]` alongside `keywordAbilities: [Ward({3})]`. The bare
+    // constant is an index entry the SDK populates on purpose, not a second ability.
+    "a bare marker implied by a parameterized ability of the same keyword folds away" {
+        val card = oracleCard("Punk Frogs", "Ward {3}")
+        val result = differential.compare(
+            implemented(
+                definition(
+                    "Punk Frogs",
+                    "Ward {3}",
+                    keywords = setOf(Keyword.WARD),
+                    keywordAbilities = listOf(KeywordAbility.ward("{3}")),
+                )
+            ),
+            index(card),
+        )
+
+        result.verdict shouldBe Verdict.CONFIRMED
+    }
+
+    // The narrow half of the same rule: with no parameterized ability to imply it, a bare marker the
+    // text does not print is exactly the bug the gate is for, and must survive the fold.
+    "a bare marker with no parameterized ability behind it still diverges" {
+        val card = oracleCard("Sire of Seven Deaths", "Flying")
+        val result = differential.compare(
+            implemented(definition("Sire of Seven Deaths", "Flying", keywords = setOf(Keyword.FLYING, Keyword.WARD))),
+            index(card),
+        )
+
+        result.verdict shouldBe Verdict.DIVERGENT
+        result.onlyInCard shouldContain KeywordAbility.Simple(Keyword.WARD)
+    }
+
+    // ---------------------------------------------------------------------------------------
+    // The golden reader, against the real committed files
+    // ---------------------------------------------------------------------------------------
+
+    "the golden format splits on a column-0 header, not on any // in the text" {
+        val text = """
+            // Wax // Wane
+            {
+                "name": "Wax // Wane",
+                "manaCost": "{G}",
+                "typeLine": "Instant"
+            }
+
+            // Grizzly Bears
+            {
+                "name": "Grizzly Bears",
+                "manaCost": "{1}{G}",
+                "typeLine": "Creature — Bear"
+            }
+        """.trimIndent()
+
+        val entries = ImplementedCorpus.splitEntries(text)
+
+        entries.map { it.first } shouldBe listOf("Wax // Wane", "Grizzly Bears")
+        entries.first().second.contains("\"name\": \"Wax // Wane\"") shouldBe true
+    }
+
+    "the committed goldens decode into real card definitions" {
+        // Guarded rather than skipped-by-default: the goldens are committed, so their absence is a
+        // broken checkout worth failing on, not an environment difference to tolerate.
+        ImplementedCorpus.isAvailable() shouldBe true
+
+        val sample = ImplementedCorpus.cards().take(200).toList()
+        sample.size shouldBe 200
+        sample.count { it.definition == null } shouldBe 0
+        sample.first().definition?.name shouldNotBe null
+    }
+})

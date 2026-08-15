@@ -4,12 +4,14 @@ A proposed first-party Oracle-text parser: Scryfall JSON in, `mtg-sdk` models ou
 where every rule is written in both directions so it proves itself against the whole corpus without
 a human reading the output.
 
-**Status: Phase 1 shipped** — the `Phrase` kernel, invertible normalization, the touchstone gate,
-and a grammar covering vanilla cards and keyword-only abilities all live in
-[`:oracle-assay`](../oracle-assay/README.md). Phases 2–6 remain proposals. The realization plan and
-the numbers Phase 1 landed on are in [`docs/plans/oracle-assay.md`](plans/oracle-assay.md). Nothing
-here changes the existing `:mtgish-tooling` pipeline, which stays authoritative until a set-by-set
-cutover replaces it.
+**Status: Phase 1 shipped, and the differential gate is live.** The `Phrase` kernel, invertible
+normalization, the touchstone, a grammar covering vanilla cards and keyword-only abilities, and
+`assay differential` against the hand-written corpus all live in
+[`:oracle-assay`](../oracle-assay/README.md). The MVP the work is aimed at — *Assay reads a whole
+card and proves the reading against the card we already wrote* — and the numbers each phase landed
+on are in [`docs/plans/oracle-assay.md`](plans/oracle-assay.md). Phases 2 and 4–6 remain proposals.
+Nothing here changes the existing `:mtgish-tooling` pipeline, which stays authoritative until a
+set-by-set cutover replaces it.
 
 ## The name
 
@@ -235,17 +237,29 @@ This repository has an answer mtgish never could: **8,728 canonical hand-written
 gate possible:
 
 ```
-assay gate --differential
+just assay-differential
 
-  parsed                  8,728  implemented cards
-  structurally identical      —
-  equivalent                  —  (known folds: Patterns.*, ordering)
-  DIVERGENT                   —  <- read every one of these
-  declined                    —
+  Hand-written cards                 8874
+    compared                          449
+    not yet covered by the grammar   7630
+    script slot not modelled yet       33
+    multi-face (out of scope)         301
+    Oracle text differs from golden   461
+
+  Confirmed — models agree            444   988.9‰ (98.9%)
+  DIVERGENT — read every one            5   <- read every one of these
 ```
 
 A divergence is either a parser bug or a bug in a hand-written card. Both are worth finding, and
-nothing in the mtgish pipeline can produce that list.
+nothing in the mtgish pipeline can produce that list. **It found the predicted class immediately**: a
+reading of multi-quality protection as one ability where CR 702.16g makes it two — reversible, and
+wrong. It also caught, during construction, "Plains" de-pluralizing to `Subtype("Plain")`: the
+`Wasnt` failure mode above, live, on the basic land types.
+
+The buckets beside the comparison are the point as much as the number is. Each one is a way the gate
+could have claimed a check it had not performed — a card only partly read, a golden joined to the
+wrong Scryfall entry, a definition using a slot the grammar cannot produce — and naming them keeps
+the denominator visible instead of flattering the numerator.
 
 ## Three gates
 

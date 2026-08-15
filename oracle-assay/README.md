@@ -8,9 +8,9 @@ Design: [`docs/oracle-assay.md`](../docs/oracle-assay.md) · Build order:
 [`docs/plans/oracle-assay.md`](../docs/plans/oracle-assay.md)
 
 **Phase 1 is implemented: the kernel, invertible normalization, the touchstone gate, and a grammar
-covering vanilla cards and keyword-only abilities.** Nothing here changes `:mtgish-tooling`, which
-stays authoritative until a per-set cutover replaces it (Phase 5). Assay is **not a runtime card
-loader** and never will be.
+covering vanilla cards and keyword-only abilities. The differential gate is live** over the class the
+grammar reads whole. Nothing here changes `:mtgish-tooling`, which stays authoritative until a
+per-set cutover replaces it (Phase 5). Assay is **not a runtime card loader** and never will be.
 
 ## Commands
 
@@ -20,6 +20,7 @@ just assay explain "Wall of Omens"  # the same, with a caret on the token a decl
 just assay-gate                     # the touchstone over the whole corpus; exit 1 on a bug
 just assay-report --top 40          # the same numbers, always exit 0
 just assay-report --scope           # restricted to Phase 1's own target class
+just assay-differential             # Assay's readings vs. the hand-written cards
 just assay corpus --refresh         # re-download the Scryfall Oracle bulk (~24 MB, cached 7 days)
 ```
 
@@ -115,6 +116,69 @@ The report is two documents at once, and the second one is about `mtg-sdk`:
   Mentor, Afterlife, Enlist, Champion, Eternalize, Skulk, Melee, Battle cry, Reinforce, Devoid,
   Dethrone, Phasing, Cumulative upkeep, … — ranked by cards blocked in the report's bottom table.
 
+## The differential gate
+
+`just assay-differential` diffs Assay's reading of a card against the `CardDefinition` a human wrote
+from the same text. The touchstone proves a parse is *reversible*; this is the gate that asks whether
+it is *right*, and it runs on an asset the incumbent pipeline structurally could not have — the
+committed card goldens under `mtg-sets/src/test/resources/snapshots/cards/`, decoded through
+`mtg-sdk`'s own `CardLoader`. Reading them is a file read, so the SDK-only dependency rule holds.
+
+**Scoping is fail-closed.** A card is compared only where Assay reads *every* line of it. Comparing a
+partially-read card would count a keyword Assay never saw as agreement, so everything else lands in a
+named population bucket instead and the denominator stays visible.
+
+```
+  Hand-written cards                 8874
+    compared                         449
+    not yet covered by the grammar   7630
+    script slot not modelled yet      33
+    multi-face (out of scope)        301
+    Oracle text differs from golden  461
+    golden would not decode            0
+
+  Confirmed — models agree           444   988.9‰ (98.9%)
+  DIVERGENT — read every one           5
+```
+
+Three separate things have to hold before a card is compared, and each has its own bucket:
+
+| Guard | Why |
+|---|---|
+| Assay reads every **line** | A keyword whose line declined would look like agreement. |
+| The text is the **same text** | A golden carries the wording it was authored from; if that is not what Scryfall serves, Assay is reading one card and diffing another. Compared normalized, so inconsistently-included reminder text is not a difference. |
+| The definition uses only **modelled slots** | A keyword the SDK lowers to a triggered ability at authoring time leaves content the grammar cannot produce. Confirming it would claim a check nobody performed. |
+
+A divergence never fails the build — it is a finding to classify as **parser bug**, **card bug**, or
+**fold**. Only an undecodable golden exits non-zero. The fold list lives in `gate/Differential.kt`
+and is reviewed rather than grown silently: every entry is a divergence the gate stops reporting, so
+each one has to say why it is not a difference.
+
+### What the gate has found
+
+- **A parser bug of exactly the class this gate exists for.** Assay read "protection from black and
+  from red" as one `Protection(Colors([BLACK, RED]))`; the cards spell it as two `Protection(Color)`
+  abilities. **The cards are right** — CR 702.16g: *"'Protection from [quality A] and from [quality
+  B]' … behaves as two separate protection abilities."* The reading round-trips perfectly and means
+  the wrong thing, so the touchstone could never have caught it. Affects Paladin en-Vec, Sabertooth
+  Nishoba and Akroma, Angel of Wrath. Fixing it means the protection rule must yield a *list*, which
+  collides with `Primitives.colorScope` being deliberately one rule to avoid an ambiguity error.
+- **A third pair of SDK spellings for one concept.** `KeywordAbility.Flanking` (a `data object`) and
+  `Simple(Keyword.FLANKING)` both exist and are not equal; the cards use the second and the grammar
+  emits the first. Same shape as the `PROTECTION_FROM_EACH_OPPONENT` finding below, and it raises a
+  live question about which spelling the engine reads.
+- **Two implementations of Affinity in the corpus.** Frogmite spells it `KeywordAbility.Affinity`;
+  Qumulox, Memory Guardian and the five Darksteel golems hand-roll the same text as a
+  `ModifySpellCost` static ability. Both work — this is an inconsistency, not a bug — but it is the
+  same "one concept, two spellings" family, and it is why those cards sit in the
+  `script slot not modelled yet` bucket rather than being compared.
+
+And the gate paid for itself before its first report: writing it surfaced that "Plains"
+de-pluralized to `Subtype("Plain")` — the "Elves" → `Elve` failure, live on the basic land types,
+round-tripping perfectly the whole time. `Primitives.pluralSubtype` now ranks candidate readings
+against the SDK's own type lists instead of guessing. Running it then surfaced the join and
+slot-completeness holes above, each of which was the gate finding a way it could have lied.
+
 ## Adding a rule
 
 1. Write it in `grammar/`, bidirectionally, through an SDK companion factory.
@@ -128,5 +192,5 @@ Two traps the kernel cannot catch for you:
   the corpus as a print mismatch far from its cause. The `every keyword rule can print what it
   parses` test exists for this.
 - **Reversible but wrong.** "Elves" de-pluralizes to `Elve` and round-trips perfectly while meaning
-  nothing. The touchstone structurally cannot catch that class; the differential gate against the
-  hand-written corpus (Phase 3) is the general answer.
+  nothing. The touchstone structurally cannot catch that class — run `just assay-differential`, which
+  is the general answer and has already caught two of these.

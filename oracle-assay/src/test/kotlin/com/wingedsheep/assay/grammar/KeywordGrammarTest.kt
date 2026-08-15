@@ -4,7 +4,9 @@ import com.wingedsheep.assay.syntax.ParseOutcome
 import com.wingedsheep.assay.syntax.parseLine
 import com.wingedsheep.assay.syntax.printLine
 import com.wingedsheep.sdk.core.Color
+import com.wingedsheep.sdk.model.CardScript
 import com.wingedsheep.sdk.core.Keyword
+import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.scripting.KeywordAbility
 import com.wingedsheep.sdk.scripting.ProtectionScope
 import io.kotest.core.spec.style.StringSpec
@@ -15,10 +17,17 @@ import io.kotest.matchers.types.shouldBeInstanceOf
 class KeywordGrammarTest : StringSpec({
 
     fun parse(line: String): List<KeywordAbility> =
-        Grammar.abilityLine.parseLine(line).shouldBeInstanceOf<ParseOutcome.Accepted<List<KeywordAbility>>>().value
+        Grammar.abilityLine.parseLine(line)
+            .shouldBeInstanceOf<ParseOutcome.Accepted<CardFragment>>().value.keywordAbilities
+
+    fun script(line: String): CardScript =
+        Grammar.abilityLine.parseLine(line)
+            .shouldBeInstanceOf<ParseOutcome.Accepted<CardFragment>>().value.script
 
     fun roundTrips(line: String) {
-        Grammar.abilityLine.printLine(parse(line)) shouldBe line
+        val fragment = Grammar.abilityLine.parseLine(line)
+            .shouldBeInstanceOf<ParseOutcome.Accepted<CardFragment>>().value
+        Grammar.abilityLine.printLine(fragment) shouldBe line
     }
 
     "a simple keyword line round-trips" {
@@ -79,6 +88,42 @@ class KeywordGrammarTest : StringSpec({
         roundTrips("Protection from Elves")
     }
 
+    // The differential gate found this on its first run: "Plains" naively de-pluralizes to `Plain`,
+    // which round-trips perfectly ("Plain" + "s") while naming a type the SDK does not have —
+    // `Subtype.PLAINS` is `Plains`. Only checking against the SDK's own type list catches it.
+    "an invariant plural keeps its own spelling rather than losing its s" {
+        parse("Affinity for Plains") shouldContainExactly
+            listOf(KeywordAbility.AffinityForSubtype(Subtype("Plains")))
+        roundTrips("Affinity for Plains")
+    }
+
+    "the ordinary plural still wins where both readings would name a real type" {
+        parse("Protection from Zombies") shouldContainExactly
+            listOf(KeywordAbility.Protection(ProtectionScope.Subtype("Zombie")))
+        roundTrips("Protection from Zombies")
+    }
+
+    "a consonant-y type pluralizes as -ies, and a vowel-y one does not" {
+        roundTrips("Protection from Allies")
+        roundTrips("Protection from Monkeys")
+    }
+
+    "a -ves plural resolves to its -f singular in both directions" {
+        parse("Protection from Werewolves") shouldContainExactly
+            listOf(KeywordAbility.Protection(ProtectionScope.Subtype("Werewolf")))
+        roundTrips("Protection from Werewolves")
+    }
+
+    // The SDK publishes a list for creature and basic land types only, so artifact / enchantment /
+    // nonbasic-land types are real subtypes it cannot confirm. Ranking rather than gating on the
+    // list is what keeps them working: no candidate is known, so the ordinary reading stands.
+    "a subtype the SDK's lists do not cover still reads by the ordinary rule" {
+        parse("Affinity for Gates") shouldContainExactly
+            listOf(KeywordAbility.AffinityForSubtype(Subtype("Gate")))
+        roundTrips("Affinity for Gates")
+        roundTrips("Affinity for Foods")
+    }
+
     "a long real keyword line round-trips whole" {
         roundTrips("Flying, first strike, vigilance, trample, haste, protection from black and from red")
     }
@@ -86,7 +131,9 @@ class KeywordGrammarTest : StringSpec({
     "the semicolon separator parses and normalizes to the canonical comma" {
         parse("Flying; banding") shouldContainExactly
             listOf(KeywordAbility.of(Keyword.FLYING), KeywordAbility.of(Keyword.BANDING))
-        Grammar.abilityLine.printLine(parse("Flying; banding")) shouldBe "Flying, banding"
+        val fragment = Grammar.abilityLine.parseLine("Flying; banding")
+            .shouldBeInstanceOf<ParseOutcome.Accepted<CardFragment>>().value
+        Grammar.abilityLine.printLine(fragment) shouldBe "Flying, banding"
     }
 
     "text outside the grammar declines, and says where" {
