@@ -973,6 +973,14 @@ class Strategist(
         val maxX = action.maxAffordableX
         val info = action.additionalCostInfo
         val payableCost = info == null || info.costType == "DiscardCard"
+        // The Momir avatar is expanded before the generic affordability guard below, because for it
+        // "not worth activating" must mean *dropped*, not "fall through to the bare action". The
+        // bare action carries `xValue = 0`, and with no mana available (`maxX == 0`) that is exactly
+        // what the guard would let through — spending the once-each-turn activation and a card to
+        // look for a mana-value-0 creature, a bucket that holds no castable card at all.
+        if (isMomirAvatarActivation(state, action)) {
+            return@flatMap momirActivations(state, action, playerId)
+        }
         if (!action.hasXCost || maxX == null || maxX < 1 || !payableCost) {
             return@flatMap listOf(action)
         }
@@ -984,11 +992,8 @@ class Strategist(
                     return@flatMap emptyList()
                 }
                 // A no-target ability has nothing to narrow, so the X values are all there is.
-                val xCandidates = if (isMomirAvatarActivation(state, action)) {
-                    momirXCandidates(state, maxX, playerId)
-                } else {
+                val xCandidates =
                     XCostSelection.candidateXValues(state, action).take(XCostSelection.MAX_X_CANDIDATES)
-                }
                 xCandidates.map { x ->
                     action.copy(action = base.copy(xValue = x, costPayment = discard ?: base.costPayment))
                 }
@@ -1014,14 +1019,58 @@ class Strategist(
         !(action.action is ActivateAbility && action.requiresTargets)
 
     /**
-     * Momir Basic strategy is mostly resource management: skip the smallest early activations so
-     * the hand lasts long enough to make high-mana creatures, then stop spending extra mana beyond
-     * the strong 8-drop band. This follows common Momir guidance: the starting player skips two
-     * early drops, the drawing player skips one, then both aim to make 8s every turn.
+     * Every activation of the Momir avatar worth simulating this turn — possibly none.
+     *
+     * Returning an empty list is the point: unlike the generic X expansion, "the strategy doesn't
+     * want to activate" must not fall back to the enumerator's bare action, whose `xValue` is 0.
+     * X=0 is never a candidate here, so the AI can't spend its once-each-turn activation and a card
+     * on a mana value with nothing castable in it.
+     */
+    private fun momirActivations(
+        state: GameState,
+        action: LegalAction,
+        playerId: EntityId,
+    ): List<LegalAction> {
+        val base = action.action as? ActivateAbility ?: return listOf(action)
+        val info = action.additionalCostInfo
+        // Shapes this strategy doesn't model (no {X}, or an additional cost we can't pay) fall back
+        // to the untouched action rather than being silently dropped.
+        if (!action.hasXCost || !(info == null || info.costType == "DiscardCard")) {
+            return listOf(action)
+        }
+        val discard = chooseActivationDiscard(state, action, playerId)
+        // No card to discard ⇒ the cost can't be paid at any X.
+        if (info?.costType == "DiscardCard" && info.discardCount > 0 && discard == null) {
+            return emptyList()
+        }
+        return momirXCandidates(state, action.maxAffordableX ?: 0, playerId).map { x ->
+            action.copy(action = base.copy(xValue = x, costPayment = discard ?: base.costPayment))
+        }
+    }
+
+    /**
+     * Momir Basic is a resource-management format: the hand is nothing but lands, every activation
+     * eats one, and the deck draws one card a turn — so the cheap early flips are the ones to skip
+     * in order to still hold a card when the mana is there for a real threat.
+     *
+     * The published guidance agrees on both halves of that:
+     *
+     * - **Skip the first drops.** Start activating at four mana on the play, three on the draw
+     *   (MTG Arena Zone's Momir guide; the Star City Games primer says the same in turn counts —
+     *   the player on the play skips turns 1–3, the player on the draw skips turns 1–2).
+     * - **Then top out around eight.** Mana values six through nine are the strong band, with seven
+     *   and eight the recommended stopping points; nine gets swingy and ten-plus is only worth the
+     *   extra turns of ramp if card draw showed up. So once eight is affordable, make an eight
+     *   rather than pouring the surplus into a bigger, noisier flip.
+     *
+     * Below the target the whole available pool is used, which is just curving out.
+     *
+     * Sources: <https://mtgazone.com/momir-basic-midweek-magic-event-guide/>,
+     * <https://articles.starcitygames.com/articles/the-momir-basic-primer/>.
      */
     private fun momirXCandidates(state: GameState, maxX: Int, playerId: EntityId): List<Int> {
         val wentFirst = state.turnOrder.firstOrNull() == playerId
-        val firstStrategicX = if (wentFirst) 3 else 2
+        val firstStrategicX = if (wentFirst) MOMIR_FIRST_X_ON_THE_PLAY else MOMIR_FIRST_X_ON_THE_DRAW
         if (maxX < firstStrategicX) return emptyList()
         if (maxX >= MOMIR_TARGET_X) return listOf(MOMIR_TARGET_X)
         return listOf(maxX)
@@ -1077,7 +1126,14 @@ class Strategist(
          */
         const val RESCUE_TARGET_CANDIDATES = 8
 
+        /** Where the avatar tops out — the recommended stopping point. See [momirXCandidates]. */
         const val MOMIR_TARGET_X = 8
+
+        /** First activation on the play: turns 1–3 are skipped, so the first flip is a four. */
+        const val MOMIR_FIRST_X_ON_THE_PLAY = 4
+
+        /** First activation on the draw — one turn earlier, since the extra card pays for it. */
+        const val MOMIR_FIRST_X_ON_THE_DRAW = 3
 
         const val MOMIR_AVATAR_NAME = "Momir Vig, Simic Visionary"
     }

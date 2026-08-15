@@ -2,6 +2,7 @@ package com.wingedsheep.gameserver.lobby
 
 import com.wingedsheep.mtg.sets.MtgSetCatalog
 import io.kotest.core.spec.style.FunSpec
+import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.collections.shouldBeSortedWith
 import io.kotest.matchers.ints.shouldBeGreaterThan
@@ -35,13 +36,31 @@ class MomirBasicSetupTest : FunSpec({
         pool.all { it in creatureNames } shouldBe true
     }
 
+    test("creature pool excludes creatures printed with no mana cost") {
+        // Meld results (CR 701.42) have no mana cost at all, so their mana value is 0 and X=0 would
+        // otherwise flip them — but they are never cards a player could cast (CR 118.6).
+        val emn = MtgSetCatalog.byCode("EMN") ?: error("EMN missing from the catalog")
+
+        val noManaCostCreatures = emn.cards
+            .filter { it.isCreature && it.hasNoManaCost }
+            .map { it.name }
+            .toSet()
+        // Guards the test itself: EMN is the set that actually has meld results.
+        noManaCostCreatures shouldContain "Hanweir, the Writhing Township"
+
+        MomirBasicSetup.creaturePool(listOf("EMN")).none { it in noManaCostCreatures } shouldBe true
+        MomirBasicSetup.allCreaturePool().none { it in noManaCostCreatures } shouldBe true
+        // A printed "{0}" is a payable cost, so those creatures are still eligible.
+        MomirBasicSetup.allCreaturePool() shouldContain "Ornithopter"
+    }
+
     test("creature pool unions multiple sets and skips unknown codes") {
         val twoSets = MtgSetCatalog.all.filter { set -> set.cards.any { it.isCreature } }.take(2)
         val codes = twoSets.map { it.code }
 
         val expected = twoSets
             .flatMap { it.cards }
-            .filter { it.isCreature }
+            .filter { it.isCreature && !it.hasNoManaCost }
             .map { it.name }
             .distinct()
             .sorted()

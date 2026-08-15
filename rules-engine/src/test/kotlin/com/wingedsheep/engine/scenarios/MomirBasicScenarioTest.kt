@@ -290,6 +290,61 @@ class MomirBasicScenarioTest : ScenarioTestBase() {
             game.findPermanents("Phantom Warrior") shouldHaveSize 0
         }
 
+        test("X=0 never flips a creature with no mana cost, only a printed {0}") {
+            // Hanweir, the Writhing Township is a meld result (CR 701.42): no mana cost at all, so
+            // its mana value is 0 (CR 202.1b) even though it can never be cast (CR 118.6). It must
+            // not be reachable at X=0; Ornithopter's printed "{0}" is a payable cost and must be.
+            val game = scenario()
+                .withPlayers()
+                .withFormat(
+                    Format.MomirBasic(
+                        eligibleCreatureNames = listOf(
+                            "Hanweir, the Writhing Township",
+                            "Ornithopter",
+                        )
+                    )
+                )
+                .withCardInCommandZone(1, avatar)
+                .withLandsOnBattlefield(1, "Forest", 3)
+                .withCardsInHand(1, "Mountain", 2)
+                .build()
+
+            game.execute(game.momirAction(xValue = 0)).error shouldBe null
+            game.resolveStack()
+
+            game.findPermanents("Hanweir, the Writhing Township") shouldHaveSize 0
+            game.findPermanents("Ornithopter") shouldHaveSize 1
+        }
+
+        test("a pool of only no-mana-cost creatures makes nothing at X=0") {
+            // With the meld results excluded there is no candidate left, so the ability resolves
+            // doing nothing (CR 608.2g) — the discard is still paid.
+            val game = scenario()
+                .withPlayers()
+                .withFormat(
+                    Format.MomirBasic(
+                        eligibleCreatureNames = listOf(
+                            "Hanweir, the Writhing Township",
+                            "Chittering Host",
+                            "Brisela, Voice of Nightmares",
+                        )
+                    )
+                )
+                .withCardInCommandZone(1, avatar)
+                .withLandsOnBattlefield(1, "Forest", 3)
+                .withCardsInHand(1, "Mountain", 2)
+                .build()
+
+            val handBefore = game.state.getZone(game.player1Id, Zone.HAND).size
+            game.execute(game.momirAction(xValue = 0)).error shouldBe null
+            game.resolveStack()
+
+            game.state.getBattlefield()
+                .mapNotNull { game.state.getEntity(it) }
+                .filter { it.has<TokenComponent>() } shouldHaveSize 0
+            game.state.getZone(game.player1Id, Zone.HAND).size shouldBe handBefore - 1
+        }
+
         test("no creature of the chosen mana value: no token, but the cost is still paid") {
             val game = scenario()
                 .withPlayers()

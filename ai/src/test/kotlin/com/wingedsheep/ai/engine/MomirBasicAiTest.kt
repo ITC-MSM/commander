@@ -67,13 +67,36 @@ class MomirBasicAiTest : ScenarioTestBase() {
         }
 
         test("AI skips weak early Momir activations on the play") {
+            // On the play the first three turns are skipped, so three mana is still too early.
             val game = scenario()
                 .withPlayers()
                 .withFormat(Format.MomirBasic(eligibleCreatureNames = listOf("Savannah Lions")))
                 .withCardInCommandZone(1, avatar)
-                .withLandsOnBattlefield(1, "Forest", 2)
+                .withLandsOnBattlefield(1, "Forest", 3)
                 .withCardsInHand(1, "Mountain", 6)
                 .withTurnNumber(3)
+                .withActivePlayer(1)
+                .build()
+            game.state = game.state.updateEntity(game.player1Id) { container ->
+                container.with(LandDropsComponent(remaining = 0, maxPerTurn = 1))
+            }
+
+            val ai = AIPlayer.create(aiRegistry, game.player1Id)
+            ai.chooseAction(game.state).shouldBeInstanceOf<PassPriority>()
+        }
+
+        test("AI never activates the Momir avatar for X=0 with no mana available") {
+            // X=0 is affordable — {X} with X=0 costs nothing — and before the fix the un-expanded
+            // action went to simulation carrying the default xValue of 0. Mana value 0 holds no
+            // castable creature, so the activation could only ever burn the turn's one activation
+            // and a card. Savannah Lions is in the pool purely to prove the avatar is otherwise
+            // live: the AI must still decline, because it has no mana for any worthwhile X.
+            val game = scenario()
+                .withPlayers()
+                .withFormat(Format.MomirBasic(eligibleCreatureNames = listOf("Savannah Lions")))
+                .withCardInCommandZone(1, avatar)
+                .withCardsInHand(1, "Mountain", 6)
+                .withTurnNumber(5)
                 .withActivePlayer(1)
                 .build()
             game.state = game.state.updateEntity(game.player1Id) { container ->
