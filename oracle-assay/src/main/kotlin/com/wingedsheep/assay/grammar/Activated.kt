@@ -8,6 +8,7 @@ import com.wingedsheep.sdk.model.CardScript
 import com.wingedsheep.sdk.scripting.AbilityCost
 import com.wingedsheep.sdk.scripting.AbilityId
 import com.wingedsheep.sdk.scripting.ActivatedAbility
+import com.wingedsheep.sdk.scripting.ActivationRestriction
 import com.wingedsheep.sdk.scripting.TimingRule
 import com.wingedsheep.sdk.scripting.effects.AddColorlessManaEffect
 import com.wingedsheep.sdk.scripting.effects.AddManaEffect
@@ -70,7 +71,11 @@ object Activated {
      * rather than printing a sentence that quietly drops it. Only the id is exempt, because the id
      * is not in the text.
      */
-    private fun abilityFor(cost: AbilityCost, script: CardScript): ActivatedAbility? {
+    private fun abilityFor(
+        cost: AbilityCost,
+        script: CardScript,
+        restrictions: List<ActivationRestriction> = emptyList(),
+    ): ActivatedAbility? {
         val effect = script.spellEffect ?: return null
         val targets = script.targetRequirements
         if (script != CardScript(spellEffect = effect, targetRequirements = targets)) return null
@@ -82,6 +87,7 @@ object Activated {
             targetRequirements = targets,
             timing = if (manaAbility) TimingRule.ManaAbility else TimingRule.InstantSpeed,
             isManaAbility = manaAbility,
+            restrictions = restrictions,
         )
     }
 
@@ -139,5 +145,38 @@ object Activated {
             }
         }
 
-    val abilities: Phrase<List<ActivatedAbility>> = oneOf("an activated ability", single, choice)
+    /**
+     * "{cost}: {effect} Activate only during your turn, before attackers are declared." — the same
+     * ability with the sentence that says when it may be activated.
+     *
+     * A second rule rather than an optional slot, because an optional literal would leave printing
+     * underdetermined between the two forms for an ability whose restriction list is empty. The two
+     * take disjoint models — this one refuses an empty list — so the model decides which prints, the
+     * property every alternation in this grammar is written to have.
+     */
+    private val restricted: Phrase<List<ActivatedAbility>> =
+        phrase("{cost}: {effect} {restrictions}", name = "an activated ability with a restriction") {
+            slot("cost", Costs.cost)
+            slot("effect", Steps.step)
+            slot("restrictions", Restrictions.activationSentence)
+            build { bindings ->
+                val restrictions = bindings.value<List<ActivationRestriction>>("restrictions")
+                if (restrictions.isEmpty()) return@build null
+                abilityFor(bindings.value("cost"), bindings.value("effect"), restrictions)?.let { listOf(it) }
+            }
+            match { abilities ->
+                val ability = abilities.singleOrNull() ?: return@match null
+                if (ability.restrictions.isEmpty()) return@match null
+                val script = CardScript(
+                    spellEffect = ability.effect,
+                    targetRequirements = ability.targetRequirements,
+                )
+                if (abilityFor(ability.cost, script, ability.restrictions)?.copy(id = ability.id) != ability) {
+                    return@match null
+                }
+                bind("cost" to ability.cost, "effect" to script, "restrictions" to ability.restrictions)
+            }
+        }
+
+    val abilities: Phrase<List<ActivatedAbility>> = oneOf("an activated ability", single, restricted, choice)
 }

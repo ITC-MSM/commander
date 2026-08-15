@@ -48,9 +48,13 @@ object Replacements {
      * The same type with one field set, which is why it is a row beside the plain rule rather than
      * a family of its own. The digit is [Primitives.cardinal] because Oracle spells a quantity of
      * life as a numeral, the convention [Steps] takes both leaves for.
+     *
+     * The template spells its second sentence mid-sentence ("if you don't") for the reason every
+     * template here is written mid-sentence: a full stop is a sentence start, and
+     * [com.wingedsheep.assay.syntax.SentenceCase] owns the capital at every one of them.
      */
     private val shockLand: Phrase<ReplacementEffect> = phrase(
-        "as ${Normalizer.SELF} enters, you may pay {n} life. If you don't, it enters tapped.",
+        "as ${Normalizer.SELF} enters, you may pay {n} life. if you don't, it enters tapped.",
         name = "enters tapped unless you pay life",
     ) {
         slot("n", Primitives.cardinal)

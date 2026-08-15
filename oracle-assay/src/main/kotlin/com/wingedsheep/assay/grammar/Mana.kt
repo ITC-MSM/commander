@@ -60,8 +60,14 @@ object Mana {
         write = ::writeProduction,
     )
 
-    /** "Add {G}." — the whole sentence, which is a spell effect in its own right (Dark Ritual). */
-    val added: Phrase<CardScript> = phrase("add {mana}.", name = "add mana") {
+    /**
+     * "add {G}" — the clause, which is a spell effect in its own right (Dark Ritual).
+     *
+     * Periodless like every other clause in [Steps]: the full stop belongs to the sentence, not to
+     * the verb phrase, which is what lets the same rule be a whole spell and the clause after an
+     * activated ability's colon.
+     */
+    val addClause: Phrase<CardScript> = phrase("add {mana}", name = "add mana") {
         slot("mana", production)
         build { CardScript(spellEffect = it.value("mana")) }
         match { script ->

@@ -109,6 +109,14 @@ more. Never write a set-scoped rule. If a new set forces a new *file*, that is t
 which existing family the mechanic is a member of — the expected cost of a set is rows in existing
 lists, and the exceptions should be nameable.
 
+A set is, however, a good *target*: reading all of one proves the grammar has no systematic hole in
+that era rather than no hole in one family, which is a stronger statement than any percentage. The
+Portal band is the worked example — 200 of 200 cards, and the work was four pieces of machinery
+(clause sequences, the layered noun-phrase cascade in two numbers, the two anaphors, the three
+restriction vocabularies) plus rows. Nine cards in it needed a rule that unlocks only them; each says
+in its KDoc why the alternative was not a smaller rule but a wrong one, which is the bar the "a rule
+that unlocks one card needs a stated reason" line sets.
+
 ## Fail-closed matching — the rule that catches the dangerous bug class
 
 **A `match` half reconstructs what `build` would have produced and compares the whole model.** Not a
@@ -126,6 +134,13 @@ The same discipline covers values the text does not determine — target slot na
 Mint one fixed constant (`Targets.SLOT`, `Triggers.ID`); the differential normalizes both sides by
 position. A rule that tried to reproduce a generated id would be reading a counter, not a card.
 
+**Two anaphors, two vocabularies.** Oracle's "it" means the source in a first clause ("Whenever this
+creature attacks, **it** gets +2/+0") and the target in a later one ("Untap target creature. **It**
+gets +2/+4"); "that creature" always means the target. `SelfSteps.anaphoric` and `Continuations` are
+reachable from disjoint positions for exactly that reason — registering either surface form in both
+places is two readings of one text. The differential found this by *running*: the wrong reading
+round-tripped byte-perfectly and meant a different creature.
+
 ## Printed-shape information belongs to normalization
 
 Line grouping, the `;` separator, reminder text, and which noun a card uses for itself are properties
@@ -141,10 +156,13 @@ about where the information lives.
 **Case is the same kind of information, and lives one step further out.** `syntax/SentenceCase.kt`
 sits at the text boundary rather than in a normalization pass, because it moves nothing — it only
 lowercases a letter Oracle templating guarantees is uppercase. It does that at *every* sentence start
-in a line: the first word, and the clause after each ability cost's `": "`. Templates are therefore
-written mid-sentence throughout, and that is what lets `Activated` slot `Steps.step` unchanged rather
-than restating every verb capitalized. If you find yourself wanting a capital inside a template, the
-answer is almost certainly another sentence start this file should know about.
+in a line: the first word, the clause after each ability cost's `": "`, and the clause after each
+full stop. Templates are therefore written mid-sentence throughout, and that is what lets `Activated`
+slot `Steps.step` unchanged, and what lets one line hold several clauses, rather than either needing
+a capitalized second copy of the effect vocabulary. If you find yourself wanting a capital inside a
+template, the answer is almost certainly another sentence start this file should know about — the
+full stop was added exactly that way, and the shock lands' `"If you don't, …"` had to be rewritten
+mid-sentence in the same change.
 
 ## Ambiguity is a factoring signal
 

@@ -1,6 +1,8 @@
 package com.wingedsheep.assay.grammar
 
+import com.wingedsheep.assay.normalize.Normalizer
 import com.wingedsheep.assay.syntax.Phrase
+import com.wingedsheep.assay.syntax.alternate
 import com.wingedsheep.assay.syntax.bind
 import com.wingedsheep.assay.syntax.constant
 import com.wingedsheep.assay.syntax.oneOf
@@ -85,6 +87,28 @@ object Primitives {
     val color: Phrase<Color> = oneOf(
         "a color",
         Color.entries.map { constant(it.displayName.lowercase(), it) },
+    )
+
+    /**
+     * The subject of a sentence when that subject is the card itself — "**~** deals 2 damage…",
+     * "**it** deals 2 damage…".
+     *
+     * Oracle uses the pronoun once a clause earlier in the same ability has already named the
+     * source: Fire Imp prints "When this creature enters, **it** deals 2 damage to target creature."
+     * Both spellings denote the same thing and the model has no room for which one was printed, so
+     * the name is canonical and the pronoun is an [com.wingedsheep.assay.syntax.alternate]. That is
+     * the same treatment [com.wingedsheep.assay.normalize.Normalizer] gives "this creature" versus
+     * the card's own name, one level further in: normalization abstracts both to `~`, and this rule
+     * abstracts the pronoun that stands for `~`.
+     *
+     * The value is [Unit] because a subject that is always the source carries no information; what
+     * the rule buys is that every sentence in the grammar spelling `~` reads the pronoun too,
+     * without a second copy of the rule.
+     */
+    val self: Phrase<Unit> = oneOf(
+        "this permanent",
+        constant(Normalizer.SELF, Unit),
+        alternate(constant("it", Unit)),
     )
 
     /**

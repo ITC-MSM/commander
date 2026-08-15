@@ -707,7 +707,7 @@
                 "targetRequirement": {
                     "type": "TargetObject",
                     "filter": {
-                        "baseFilter": {},
+                        "baseFilter": "own:you",
                         "zone": "Graveyard"
                     },
                     "id": "target"

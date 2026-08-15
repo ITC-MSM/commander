@@ -8,6 +8,9 @@ import com.wingedsheep.assay.syntax.oneOf
 import com.wingedsheep.assay.syntax.phrase
 import com.wingedsheep.sdk.model.CardScript
 import com.wingedsheep.sdk.scripting.AbilityId
+import com.wingedsheep.sdk.scripting.effects.Gate
+import com.wingedsheep.sdk.scripting.effects.GatedEffect
+import com.wingedsheep.sdk.scripting.effects.MayEffect
 import com.wingedsheep.sdk.scripting.TriggerSpec
 import com.wingedsheep.sdk.scripting.TriggeredAbility
 import com.wingedsheep.sdk.dsl.Triggers as SdkTriggers
@@ -62,31 +65,51 @@ object Triggers {
      * is not in the text.
      */
     private fun triggerRule(surface: String, spec: TriggerSpec): Phrase<TriggeredAbility> {
-        fun abilityFor(script: CardScript): TriggeredAbility? {
-            val effect = script.spellEffect ?: return null
-            if (script.targetRequirements.size > 1) return null
-            return TriggeredAbility(
-                id = ID,
-                trigger = spec.event,
-                binding = spec.binding,
-                effect = effect,
-                targetRequirement = script.targetRequirements.singleOrNull(),
-            )
-        }
-
         return phrase("$surface, {effect}", name = surface) {
             slot("effect", Steps.step)
-            build { abilityFor(it.value("effect")) }
+            build { abilityFor(spec, it.value("effect")) }
             match { ability ->
-                val script = CardScript(
-                    spellEffect = ability.effect,
-                    targetRequirements = listOfNotNull(ability.targetRequirement),
-                )
-                if (abilityFor(script)?.copy(id = ability.id) != ability) return@match null
+                val script = scriptFor(ability)
+                if (abilityFor(spec, script)?.copy(id = ability.id) != ability) return@match null
                 bind("effect" to script)
             }
         }
     }
+
+    /**
+     * Build the ability a trigger's effect clause denotes — **including the lowering of "you may".**
+     *
+     * A triggered ability spells the controller's choice with its own `optional` flag, which is what
+     * every hand-written card sets; a spell spells the identical English as a `MayEffect` around the
+     * effect, because a spell has no such flag. Both are real SDK spellings of one sentence, so
+     * reading "you may …" here has to *lower* one into the other rather than register a second rule:
+     * a rule per spelling would be two readings of one text, which is the ambiguity the design says
+     * never to resolve by picking one.
+     *
+     * The lowering runs in both directions — [scriptFor] wraps `optional` back into a `MayEffect`
+     * before the comparison — so the round trip is over the same value in both halves.
+     */
+    private fun abilityFor(spec: TriggerSpec, script: CardScript): TriggeredAbility? {
+        val effect = script.spellEffect ?: return null
+        if (script.targetRequirements.size > 1) return null
+        val gated = effect as? GatedEffect
+        val optional = gated != null && gated.gate is Gate.MayDecide &&
+            gated == MayEffect(gated.then)
+        return TriggeredAbility(
+            id = ID,
+            trigger = spec.event,
+            binding = spec.binding,
+            effect = if (optional) (effect as GatedEffect).then else effect,
+            targetRequirement = script.targetRequirements.singleOrNull(),
+            optional = optional,
+        )
+    }
+
+    /** The inverse of the lowering: the clause script an ability's effect and target denote. */
+    private fun scriptFor(ability: TriggeredAbility): CardScript = CardScript(
+        spellEffect = if (ability.optional) MayEffect(ability.effect) else ability.effect,
+        targetRequirements = listOfNotNull(ability.targetRequirement),
+    )
 
     /**
      * The trigger events with an unambiguous one-clause surface form.
