@@ -48,6 +48,45 @@ object SelfSteps {
      * the pronoun come back as a [com.wingedsheep.assay.gate.LineVerdict.VARIANT], which says the
      * reading was right and only the spelling moved.
      */
+    /**
+     * "Put a +1/+1 counter on ~.", "Put two +1/+1 counters on it." — the counter verb aimed at the
+     * source, and the single commonest effect shape in the whole hand-written corpus: 363 of the
+     * 951 `AddCounters` a golden carries are exactly this one.
+     *
+     * The subject is [Primitives.self], so both spellings read and the name is what prints, the same
+     * treatment [selfGets] gets. Being in [anaphoric] is what makes the pronoun safe: [Steps] drops
+     * this whole list from every position after the first in a sequence, so once a clause has
+     * introduced a target, "on it" is [Continuations]' to read and means that target. Registering the
+     * pronoun in both places would be two readings of one text — the bug the differential caught on
+     * "Untap target creature. It gets +2/+4", in a sentence where it would be just as invisible.
+     *
+     * Singular and plural are two rules over disjoint quantities for [Steps]' reason; everything
+     * about why is written there, on the targeted twin of this pair.
+     */
+    private val putCountersOnSelf: List<Phrase<CardScript>> = run {
+        fun scriptFor(kind: String, count: Int) =
+            CardScript(spellEffect = Effects.AddCounters(kind, count, EffectTarget.Self))
+        fun rule(template: String, name: String, quantity: Phrase<*>?) =
+            phrase(template, name = name) {
+                slot("kind", if (quantity == null) Primitives.singularCounterKind else Primitives.counterKind)
+                if (quantity != null) slot("n", quantity)
+                slot("self", Primitives.self)
+                build { scriptFor(it.value("kind"), if (quantity == null) 1 else it.int("n")) }
+                match { script ->
+                    val (kind, count) =
+                        Steps.countersAdded(script.spellEffect, EffectTarget.Self) ?: return@match null
+                    if (quantity == null && count != 1) return@match null
+                    if (quantity != null && !(count >= 2 && Cardinals.spellable(count))) return@match null
+                    if (script != scriptFor(kind, count)) return@match null
+                    bind("kind" to kind, "n" to count, "self" to Unit)
+                }
+            }
+        listOf(
+            rule("put {kind} counter on {self}", "put a counter on the source", null),
+            rule("put {n} {kind} counters on {self}", "put counters on the source", Cardinals.word),
+        )
+    }
+
     private val selfGets: Phrase<CardScript> = run {
         fun scriptFor(modifiers: Pair<Int, Int>) = CardScript(
             spellEffect = Effects.ModifyStats(modifiers.first, modifiers.second, EffectTarget.Self)
@@ -329,7 +368,7 @@ object SelfSteps {
             "sacrifice it unless you sacrifice {filter}",
             "sacrifice the source unless you sacrifice",
         ) { Costs.pay.Sacrifice(it) },
-    )
+    ) + putCountersOnSelf
 
     /** Everything in this file that does not turn on the pronoun. Empty for now; the family is "it". */
     val clauses: List<Phrase<CardScript>> = emptyList()

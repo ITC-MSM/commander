@@ -109,6 +109,38 @@ object Continuations {
         }
     }
 
+    /**
+     * "…and put a stun counter on it." — the counter verb over the target an earlier clause chose.
+     *
+     * [SelfSteps.putCountersOnSelf] is the identical English about the *source*, and this is the
+     * second sentence to need both readings after "it gets +2/+4". The split costs a rule and buys
+     * the guarantee: "When ~ enters, tap target creature an opponent controls and put a stun counter
+     * on it" stuns the creature it tapped, not the permanent that tapped it, and both readings
+     * round-trip byte-perfectly so nothing else in the module could tell them apart.
+     */
+    private val putCountersOnThatPermanent: List<Phrase<CardScript>> = run {
+        fun scriptFor(kind: String, count: Int) =
+            CardScript(spellEffect = Effects.AddCounters(kind, count, Targets.bound()))
+        fun rule(template: String, name: String, quantity: Phrase<*>?) =
+            phrase(template, name = name) {
+                slot("kind", if (quantity == null) Primitives.singularCounterKind else Primitives.counterKind)
+                if (quantity != null) slot("n", quantity)
+                build { scriptFor(it.value("kind"), if (quantity == null) 1 else it.int("n")) }
+                match { script ->
+                    val (kind, count) =
+                        Steps.countersAdded(script.spellEffect, Targets.bound()) ?: return@match null
+                    if (quantity == null && count != 1) return@match null
+                    if (quantity != null && !(count >= 2 && Cardinals.spellable(count))) return@match null
+                    if (script != scriptFor(kind, count)) return@match null
+                    bind("kind" to kind, "n" to count)
+                }
+            }
+        listOf(
+            rule("put {kind} counter on it", "put a counter on the target", null),
+            rule("put {n} {kind} counters on it", "put counters on the target", Cardinals.word),
+        )
+    }
+
     /** "Its owner gains 4 life." — Path of Peace, referring to the creature the first clause destroyed. */
     private val ownerGainsLife: Phrase<CardScript> = run {
         fun scriptFor(amount: Int) = CardScript(spellEffect = OwnerGainsLifeEffect(amount))
@@ -197,7 +229,7 @@ object Continuations {
         itGets,
         ownerGainsLife,
         drawForEachInHand,
-    )
+    ) + putCountersOnThatPermanent
 
     val clause: Phrase<CardScript> = oneOf("a clause referring to the target", all)
 }

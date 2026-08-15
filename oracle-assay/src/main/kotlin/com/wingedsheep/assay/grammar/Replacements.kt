@@ -9,7 +9,9 @@ import com.wingedsheep.assay.syntax.phrase
 import com.wingedsheep.sdk.scripting.ChoiceType
 import com.wingedsheep.sdk.scripting.EntersTapped
 import com.wingedsheep.sdk.scripting.EntersWithChoice
+import com.wingedsheep.sdk.scripting.EntersWithCounters
 import com.wingedsheep.sdk.scripting.ReplacementEffect
+import com.wingedsheep.sdk.scripting.events.CounterTypeFilter
 
 /**
  * "This land enters tapped." — the self-replacements a permanent applies to its own entry.
@@ -80,11 +82,62 @@ object Replacements {
     private fun entersWithChoice(noun: String, choice: ChoiceType): Phrase<ReplacementEffect> =
         constant("as ${Normalizer.SELF} enters, choose $noun.", EntersWithChoice(choice))
 
+    /**
+     * "~ enters with a +1/+1 counter on it.", "~ enters with three -1/-1 counters on it."
+     *
+     * ### Why `selfOnly` is spelled by the rule and not by a slot
+     *
+     * `EntersWithCounters` models both "this permanent enters with counters" and Hardened Scales'
+     * "creatures you control enter with an extra counter" — the second is what its `appliesTo`
+     * default describes, so the *self* reading is the one the flag has to state. The sentence says
+     * "~ enters", naming the source and nothing else, so `selfOnly = true` is what this English
+     * means; a value with `otherOnly`, a `condition` or a non-default `appliesTo` is a different
+     * sentence and the reconstruct-and-compare refuses to print it. That last one matters here:
+     * the kicker cards ("If ~ was kicked, it enters with two +1/+1 counters on it") carry a
+     * `condition` and decline rather than losing the clause that makes them worth playing.
+     *
+     * ### The counter kind is a [CounterTypeFilter] here and a `String` on every effect
+     *
+     * Two SDK types for one concept, and `CounterTypeFilter.Named` can hold the same string the
+     * dedicated cases do — so the grammar emits exactly one of the two spellings and reports the
+     * other. [Primitives.counterFilter] and its inverse own that choice; the note is there.
+     */
+    private val entersWithCounters: List<Phrase<ReplacementEffect>> = run {
+        fun effectFor(kind: String, count: Int): ReplacementEffect = EntersWithCounters(
+            counterType = Primitives.counterFilter(kind),
+            count = count,
+            selfOnly = true,
+        )
+        fun rule(template: String, name: String, quantity: Phrase<*>?) =
+            phrase(template, name = name) {
+                slot("self", Primitives.self)
+                slot("kind", if (quantity == null) Primitives.singularCounterKind else Primitives.counterKind)
+                if (quantity != null) slot("n", quantity)
+                build { effectFor(it.value("kind"), if (quantity == null) 1 else it.int("n")) }
+                match { effect ->
+                    val enters = effect as? EntersWithCounters ?: return@match null
+                    val kind = Primitives.counterKindOf(enters.counterType) ?: return@match null
+                    if (quantity == null && enters.count != 1) return@match null
+                    if (quantity != null && !(enters.count >= 2 && Cardinals.spellable(enters.count))) {
+                        return@match null
+                    }
+                    if (enters != effectFor(kind, enters.count)) return@match null
+                    bind("self" to Unit, "kind" to kind, "n" to enters.count)
+                }
+            }
+        listOf(
+            rule("{self} enters with {kind} counter on it.", "enters with a counter", null),
+            rule("{self} enters with {n} {kind} counters on it.", "enters with counters", Cardinals.word),
+        )
+    }
+
     val replacement: Phrase<ReplacementEffect> = oneOf(
         "a replacement effect",
-        entersTapped,
-        shockLand,
-        entersWithChoice("a color", ChoiceType.COLOR),
-        entersWithChoice("a creature type", ChoiceType.CREATURE_TYPE),
+        listOf(
+            entersTapped,
+            shockLand,
+            entersWithChoice("a color", ChoiceType.COLOR),
+            entersWithChoice("a creature type", ChoiceType.CREATURE_TYPE),
+        ) + entersWithCounters,
     )
 }

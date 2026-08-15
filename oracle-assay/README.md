@@ -20,8 +20,12 @@ and those are the two sentences on it. The **aura band** followed: `Enchant <fil
 attached-permanent statics, which opened `staticAbilities` — the largest `CardScript` slot the
 differential could not see into, and the one every later static family lands in.
 
-The most recent is the **Legions band**, and it is the second set read end to end and the first
-*hard* one: `just assay-gate --set LGN` reads **145 of Legions' 145 cards**. Legions is every-card-a-
+The most recent work is the **counters band**, and it is the first one picked by *ranking the
+backlog* rather than by picking a set: `just assay-report --implemented` says 656 cards with a
+hand-written golden decline on nothing but a counter sentence, which is the largest sole-blocked
+family in that population. See [the counters band](#the-counters-band) below.
+
+Before that came the **Legions band**, the second set read end to end and the first *hard* one: `just assay-gate --set LGN` reads **145 of Legions' 145 cards**. Legions is every-card-a-
 creature, so it is a set made almost entirely of the things Portal had none of — morph payoffs,
 tribal lords, granted abilities, amplify, counted variables — and reading all of it took nine new
 families rather than nine new rules. See [the Legions band](#the-legions-band) below.
@@ -127,15 +131,16 @@ non-zero on. Declines are not failures.
 Cards assayed                    34882
 Ability lines                    66793  (38943 unique)
 
-Round-trips byte-exact           22464   336.3‰ (33.6%)
-Alternate spelling normalized    1018
-Declined                         43311
+Round-trips byte-exact           22940   343.4‰ (34.3%)
+Alternate spelling normalized    1114
+Declined                         42739
 Ambiguous — distinct readings    0
 Print mismatch                   0
 Normalization not invertible     0
 Full inverse not reproduced      0
+Redundant readings (same model)  0
 
-Cards fully covered              6157 / 34882   176.5‰ (17.7%)
+Cards fully covered              6335 / 34882   181.6‰ (18.2%)
 Vanilla + keyword-only cards     1444 / 1712   843.5‰ (84.3%)   <- Phase 1 target
 Portal (set POR)                 200 / 200     1000.0‰ (100%)   <- the Portal band's target
 Legions (set LGN)                145 / 145     1000.0‰ (100%)   <- the Legions band's target
@@ -223,6 +228,82 @@ Whole-corpus coverage went from 4,287 cards to 6,157 in the same change, and the
 compared population from 1,636 to 2,387 — which is again the argument for picking a set as the target
 rather than picking the number.
 
+## The counters band
+
+Four sentences — "Put a +1/+1 counter on target creature.", the same clause aimed at the source
+("…on ~.") and at the target an earlier clause chose ("…on it."), and the entry replacement
+"~ enters with two +1/+1 counters on it." Whole-corpus coverage went 6,157 → **6,335 cards**, the
+differential's compared population 2,387 → **2,431**, and its confirmed count 2,383 → **2,425**.
+
+**It is the first band chosen by ranking the backlog rather than by picking a set, and the ranking is
+the part worth reading.** The token table's top row was `you` at 595 implemented cards — a trigger
+*subject*, which the step triggers already proved over-promises: 410 cards declined on "At the
+beginning of…" and adding every prefix moved whole-card coverage by 23, because a line dies on its
+first unknown token and a trigger's real blocker is usually after the comma. So the ranking that
+decides work is **cards whose line dies at the verb**, where everything before it already read, and
+by that measure counters are the largest family in the corpus: **1,025 implemented cards carry a
+counter line the grammar could not read, and 656 of them decline on nothing else**. The verb also multiplies rather than adds —
+`Triggers`, `Activated` and the modal rules all slot `Steps.step` whole, so one clause vocabulary
+arrives in every context already wired. That is the opposite trade from a prefix, and the two
+worked examples now sit either side of it.
+
+**Two leaves, and both of them own a spelling no rule above them can see.** `Primitives.counterKind`
+reads the noun and is gated on `CounterType.fromName` — the SDK's own answer to "is this a counter",
+the same function `StatePredicate.HasCounter` parses with — because the model field is a bare
+`String` and an ungated leaf would read *any* word as a kind and round-trip a counter Magic does not
+have. That is `creatureSubtype`'s argument, and the "Elves" → `Elve` failure it exists to prevent.
+
+The second leaf is the **indefinite article**, and it is inside the leaf for `statModifiers`' reason:
+English picks "a" or "an" from the sound of the next word, so two rules — one per article — would
+leave printing undetermined by the model, which is invariant 2 rather than a preference. It can be
+one leaf because the corpus states the rule without an exception: across all 34,882 Oracle texts
+**no counter kind is ever spelled both ways** — 223 kinds take "a", 38 take "an", disjoint. The
+letter rule predicts all but three ("an hour", "an hourglass", "a unity"), only `hourglass` is a kind
+the SDK names, and `token` re-reads what it writes on every call, so a wrong article could not
+survive a corpus run.
+
+**A two-word kind needed a lookahead, and the reason is a kernel property rather than a grammar
+one.** "first strike" and "double strike" are counter kinds, and a leaf reads exactly *one* regex
+match — `token` does not retry a shorter one when the gate rejects — so a greedy second word swallows
+the template's own "counter" and declines every single-word kind. The noun's pattern therefore spells
+out what it cannot be. Worth knowing before writing any leaf that can span a space.
+
+**The band's real risk was the anaphor, and the machinery for it already existed.** "Put a +1/+1
+counter on it" means the source in "Whenever ~ attacks, put a +1/+1 counter on it" and the *target*
+in "Tap target creature an opponent controls and put a stun counter on it" — both readings round-trip
+byte-perfectly, so nothing but the split could tell them apart. `SelfSteps.putCountersOnSelf` and
+`Continuations.putCountersOnThatPermanent` are reachable from disjoint positions, exactly as
+`SelfSteps.anaphoric` and `Continuations` have been since the differential caught "Untap target
+creature. It gets +2/+4" meaning the wrong creature. This is the second sentence to need both, which
+is the evidence that split generalized rather than patched one card.
+
+**What the gate found: 44 newly-compared cards, 42 of them confirmed, and 2 divergences that are one
+finding.** Landing on top of the divergence sweep is what makes that legible — against a baseline of
+4 the band's own contribution is readable directly, where against 122 it would have been noise.
+
+- **A card says "another" where its text says "an" — 8 cards.** Donatello, Way with Machines and
+  Mm'menon, Uthros Exile both print "Whenever **an** artifact you control enters" and are authored
+  with `binding = OTHER`, which excludes the source. The corpus maps the two spellings correctly
+  almost everywhere — 33 cards print "an" and bind `ANY`, 40 print "another" and bind `OTHER` — so
+  these are the exceptions rather than a convention, and a grep finds six more: Rimefire Torque,
+  Airbender Ascension, Path of Discovery, Gossip's Talent, Death Match and Mana Echoes.
+  **It is unobservable on all eight today**, and saying so is the honest half: every one of them is
+  an enchantment or artifact triggering on a creature entering, so the source can never *be* the
+  entering permanent and the binding never gets to matter. It is latent rather than harmless — an
+  effect that makes Donatello an artifact as it enters is all it takes — and it is **not folded**,
+  because folding would stop the gate noticing the first card where the binding is observable.
+
+That is the whole of it: both new divergences are that one finding, and nothing else the band
+brought into the population disagreed. A third — Invigorating Boon, the "you may on a triggered
+ability" spelling — was divergent when the band was written against the pre-sweep baseline and is
+not any more, because the sweep fixed that family while this was in flight.
+
+**No new bug in a hand-written card**, and that is worth recording beside the aura band's same
+result. Every bug this gate has found — Meteor Golem, Voltaic Construct, Dwarven Miner, Recollect
+and Eternal Witness, and the 22 the sweep turned up — was a clause lost *inside a filter on a longer
+sentence*. A counter sentence is short and has one filter, which is the same reason the auras added
+none: there is very little in it to drop.
+
 ## What Phase 1 already found
 
 The report is two documents at once, and the second one is about `mtg-sdk`:
@@ -267,20 +348,22 @@ named population bucket instead and the denominator stays visible.
 
 ```
   Hand-written cards                 9123
-    compared                         2387
-    not yet covered by the grammar   6104
-    script slot not modelled yet      79
-    lines do not fold into one card   49
+    compared                         2431
+    not yet covered by the grammar   6056
+    script slot not modelled yet      82
+    lines do not fold into one card   50
     multi-face (out of scope)        301
     Oracle text differs from golden  203
     golden would not decode            0
 
-  Confirmed — models agree           2383   998.3‰ (99.8%)
-  DIVERGENT — read every one            4
+  Confirmed — models agree           2425   997.5‰ (99.8%)
+  DIVERGENT — read every one            6
 ```
 
-That 122 → 4 is the **sweep**: every divergence the gate had accumulated was read, classified as
-parser bug / card bug / fold, and acted on. What it found, by kind:
+Four of those six are what the **sweep** left standing, and the other two are the counters band's,
+classified in its own section above. The sweep took the count from 122 to 4: every divergence the
+gate had accumulated was read, classified as parser bug / card bug / fold, and acted on. What it
+found, by kind:
 
 - **A bug in the gate itself, and a flaky one.** `AbilityId.generate()` is a global counter and
   `encodeDefaults` is false, so kotlinx re-evaluates the default to decide whether to emit an `id` —

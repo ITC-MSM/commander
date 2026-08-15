@@ -190,9 +190,10 @@ is the next work:
 4. `Targets.kt` ✅ "target creature" over a filter. Still to come: "any target", "up to two target…"
 5. `Steps.kt` ✅ draw / destroy / exile / tap / untap / return to hand, one verb over one target;
    ✅ the counted verbs — life gain and loss, scry, surveil, damage (to any target, to a player, to a
-   filtered permanent) and the pump spell with its `until end of turn`.
-   Still to come: sacrifice, mill, discard, counter, counters, tokens, and the *sequence* —
-   two effect sentences in one card, which the differential currently buckets as "lines do not fold"
+   filtered permanent) and the pump spell with its `until end of turn`; ✅ the *sequence*; ✅ **the
+   counter sentences** — "Put a +1/+1 counter on target creature." and the same clause aimed at the
+   source and at the target an earlier clause chose, in both grammatical numbers.
+   Still to come: sacrifice, mill, discard, counter (the verb), removing and moving counters, tokens
 6. `Triggers.kt` ✅ enters / dies / leaves / attacks / blocks / becomes blocked / deals combat damage;
    ✅ the step triggers ("at the beginning of your upkeep", each-player's spelling as an `alternate`).
    Still to come: the other party's triggers ("whenever a creature you control dies"), the spell-cast
@@ -213,8 +214,9 @@ is the next work:
    cost, with the clause after the colon slotting `Steps.step` whole. Still to come: the rest of the
    cost vocabulary (sacrifice, pay life, discard, remove counters), `ActivationRestriction`, and
    "Activate only as a sorcery".
-9. `Replacements.kt` ✅ "~ enters tapped." and the shock-land form. Still to come: the check-land
-   `unlessCondition`, which is the condition family's first customer.
+9. `Replacements.kt` ✅ "~ enters tapped.", the shock-land form, and ✅ "~ enters with two +1/+1
+   counters on it." Still to come: the check-land `unlessCondition` and the kicker entries, which
+   are the same missing piece — a `condition` the rule refuses to drop rather than print without.
 10. `Statics.kt` ✅ the aura band — `Enchant <filter>` (in `Targets`, since the SDK models it as a
     `TargetRequirement` and not as a keyword), "Enchanted creature gets +N/+N.", "Enchanted creature
     has <keyword>.", and the joined "gets +N/+N **and has** <keyword>." which denotes two abilities
@@ -254,6 +256,16 @@ is the next work:
    capitalized, which is exactly the re-spelling that stops `Steps` being slottable. The rule is
    Wizards': of 14,042 `": "` occurrences in the corpus, 32 are followed by a lowercase letter, and
    all 32 are prose enumerations on the "hero's journey" cards rather than ability costs.
+
+**The counters band is the first one chosen by ranking the backlog rather than by picking a set, and
+it settles how to read the ranking.** The token table's top row is a trigger *subject*; the step
+triggers already proved that over-promises, because a line dies on its first unknown token and a
+trigger's real blocker is usually after the comma. The measure that decides work is therefore **cards
+whose line dies at the verb** — everything before it already read — and by that measure counters were
+the largest family in the implemented population: 1,025 cards carry a counter line the grammar could
+not read, and 656 decline on nothing else. A verb is also multiplicative, since `Triggers`, `Activated` and the modal rules all
+slot `Steps.step` whole. Prefix versus verb now has a worked example on each side; read them
+together before picking the next band.
 
 **Acceptance:** POR, LEA and a modern set (DFT or FDN) each report fineness; the per-set whole-render
 rate is directly comparable to `:mtgish-tooling`'s `gN` figure in the coverage dashboard.

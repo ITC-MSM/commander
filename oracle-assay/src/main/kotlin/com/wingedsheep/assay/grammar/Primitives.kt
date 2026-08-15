@@ -10,9 +10,12 @@ import com.wingedsheep.assay.syntax.phrase
 import com.wingedsheep.assay.syntax.separated
 import com.wingedsheep.assay.syntax.token
 import com.wingedsheep.sdk.core.Color
+import com.wingedsheep.sdk.core.CounterType
+import com.wingedsheep.sdk.core.Counters
 import com.wingedsheep.sdk.core.ManaCost
 import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.scripting.ProtectionScope
+import com.wingedsheep.sdk.scripting.events.CounterTypeFilter
 
 /**
  * The leaf rules every other rule is built from. Slots are themselves phrases, recursively, so
@@ -71,6 +74,104 @@ object Primitives {
         sibling < 0 -> "-0"
         else -> "+0"
     }
+
+    /**
+     * A **kind** of counter, as the noun before the word "counter" — "+1/+1", "stun", "first strike".
+     *
+     * ### Gated on the SDK's own list, for [creatureSubtype]'s reason
+     *
+     * The model field is a bare `String`, so an ungated leaf would read *any* lowercase word as a
+     * counter kind and round-trip it perfectly — "put a growing counter on it" naming a counter Magic
+     * does not have, byte-exact in both directions. [CounterType.fromName] is the SDK's own answer to
+     * "is this a counter", the same function `StatePredicate.HasCounter` parses with, so a word it
+     * rejects makes this leaf decline rather than invent a kind. That is the difference between
+     * recovering information and inventing it, and it is why "Elves" → `Elve` could happen here too.
+     *
+     * ### The second word, and why it needs a lookahead
+     *
+     * "first strike" and "double strike" are two-word kinds, and a leaf reads exactly one regex match
+     * — [com.wingedsheep.assay.syntax.token] does not retry a shorter one when the gate rejects. So a
+     * greedy second word would swallow the template's own "counter" on every single-word kind and
+     * decline the lot. The lookahead spells out what the noun cannot be, which costs one clause and
+     * keeps both quantities of every kind readable.
+     */
+    val counterKind: Phrase<String> = token(
+        name = "a counter kind",
+        pattern = Regex("""[+-][0-9]+/[+-][0-9]+|[a-z]+(?: (?!counters?\b)[a-z]+)?"""),
+        read = { it.takeIf(::isCounterKind) },
+        write = { it.takeIf(::isCounterKind) },
+    )
+
+    private fun isCounterKind(name: String) = CounterType.fromName(name) != null
+
+    /**
+     * One counter of a kind, **article included** — "a +1/+1", "an aim", "an hourglass".
+     *
+     * ### Why the article is inside the leaf rather than a literal in the template
+     *
+     * English picks "a" or "an" from the sound of the following word, which no separate slot can see.
+     * Two rules — one spelling "a", one spelling "an" — would leave printing undetermined by the
+     * model, and that is invariant 2 rather than a style preference: `oneOf` would pick the first
+     * that could express the value and the other would be unreachable. One leaf can see both halves,
+     * which is exactly [statModifiers]' argument about the sign of a zero.
+     *
+     * ### The rule is Wizards', and the corpus states it without an exception
+     *
+     * Across all 34,882 Oracle texts **no counter kind is ever spelled both ways**: 223 kinds take
+     * "a", 38 take "an", and the two sets are disjoint. So the article is a total function of the
+     * kind and this leaf can be its inverse. The letter rule predicts all but three of them —
+     * "an hour", "an hourglass" (silent h) and "a unity" (the /juː/ onset) — and only `hourglass` is
+     * a kind the SDK names, so [SILENT_H] is one entry rather than a list that will grow. A kind
+     * whose article this got wrong could not round-trip: `token` re-reads what it writes on every
+     * call, and [read] rejects an article that disagrees with [article].
+     */
+    val singularCounterKind: Phrase<String> = token(
+        name = "a counter kind",
+        pattern = Regex("""an? (?:[+-][0-9]+/[+-][0-9]+|[a-z]+(?: (?!counters?\b)[a-z]+)?)"""),
+        read = { text ->
+            val kind = text.substringAfter(' ')
+            kind.takeIf { isCounterKind(it) && text.substringBefore(' ') == article(it) }
+        },
+        write = { kind -> kind.takeIf(::isCounterKind)?.let { "${article(it)} $it" } },
+    )
+
+    /** Silent-h kinds, which take "an" against the letter rule. Only `hourglass` is an SDK counter. */
+    private val SILENT_H = setOf("hour", "hourglass")
+
+    private fun article(kind: String): String =
+        if (kind in SILENT_H || kind.first() in "aeiou") "an" else "a"
+
+    /**
+     * The same kind as [CounterTypeFilter], which is how `EntersWithCounters` spells it.
+     *
+     * ### One concept, two SDK types — and a `Named` spelling the grammar must never emit
+     *
+     * An effect says which counter it means with a `String`; a replacement effect says it with a
+     * [CounterTypeFilter], whose `Named` case takes that same string. So `PlusOnePlusOne` and
+     * `Named("+1/+1")` are two spellings of one value, and registering both would be genuine
+     * ambiguity with nothing for the printer to choose between. This maps to the dedicated case
+     * wherever the SDK has published one and to `Named` only where it has not — and [counterKindOf],
+     * its inverse, **refuses** a `Named` carrying a name that has a dedicated case, so a card written
+     * the minority way reports as a divergence rather than quietly agreeing.
+     */
+    fun counterFilter(kind: String): CounterTypeFilter =
+        DEDICATED_COUNTER_FILTERS[kind] ?: CounterTypeFilter.Named(kind)
+
+    /** [counterFilter]'s inverse; null where the value is a spelling this grammar does not emit. */
+    fun counterKindOf(filter: CounterTypeFilter): String? = when (filter) {
+        is CounterTypeFilter.Named -> filter.name.takeIf { it !in DEDICATED_COUNTER_FILTERS }
+        else -> DEDICATED_COUNTER_FILTERS.entries.firstOrNull { it.value == filter }?.key
+    }
+
+    private val DEDICATED_COUNTER_FILTERS: Map<String, CounterTypeFilter> = mapOf(
+        Counters.PLUS_ONE_PLUS_ONE to CounterTypeFilter.PlusOnePlusOne,
+        Counters.MINUS_ONE_MINUS_ONE to CounterTypeFilter.MinusOneMinusOne,
+        Counters.PLUS_ONE_PLUS_ZERO to CounterTypeFilter.PlusOnePlusZero,
+        Counters.PLUS_ZERO_PLUS_ONE to CounterTypeFilter.PlusZeroPlusOne,
+        Counters.MINUS_ONE_MINUS_ZERO to CounterTypeFilter.MinusOneMinusZero,
+        Counters.MINUS_ZERO_MINUS_ONE to CounterTypeFilter.MinusZeroMinusOne,
+        Counters.LOYALTY to CounterTypeFilter.Loyalty,
+    )
 
     /**
      * A run of mana symbols — `{2}{U}`, `{W/P}`, `{X}`. Symbols are lexed as tokens and never as
