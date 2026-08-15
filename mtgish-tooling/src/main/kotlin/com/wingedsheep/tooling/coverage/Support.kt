@@ -36,7 +36,7 @@ val SDK_EFFECTS: File get() = File(REPO_ROOT, "mtg-sdk/src/main/kotlin/com/winge
 val SDK_ROOT: File get() = File(REPO_ROOT, "mtg-sdk/src/main/kotlin")
 val KEYWORD_KT: File get() = File(REPO_ROOT, "mtg-sdk/src/main/kotlin/com/wingedsheep/sdk/core/Keyword.kt")
 val SUBTYPE_KT: File get() = File(REPO_ROOT, "mtg-sdk/src/main/kotlin/com/wingedsheep/sdk/core/Subtype.kt")
-// Card definitions are split across `:mtg-sets-core` (setless cards) and one `:mtg-sets-<era>`
+// Card definitions are split across `:mtg-sets:core` (setless cards) and one `:mtg-sets:<era>`
 // module per fixed release-year range, so no single Kotlin compilation holds the whole corpus.
 // There is no single definitions root any more — use these instead of composing a path by hand,
 // and a newly added era module is picked up with no change here.
@@ -44,13 +44,13 @@ private const val DEFINITIONS_SUFFIX = "src/main/kotlin/com/wingedsheep/mtg/sets
 
 /** Every card module's `definitions/` directory, core first then era modules oldest to newest. */
 val DEFINITIONS_ROOTS: List<File>
-    get() = REPO_ROOT.listFiles { f: File -> f.isDirectory && f.name.startsWith("mtg-sets") }
+    get() = File(REPO_ROOT, "mtg-sets").listFiles { f: File -> f.isDirectory }
         .orEmpty()
         .map { File(it, DEFINITIONS_SUFFIX) }
         .filter { it.isDirectory }
-        // "mtg-sets-core" sorts after "mtg-sets-2026" alphabetically, but it holds the cards that
-        // belong to no release and every era can see, so it comes first.
-        .sortedWith(compareBy({ if (it.parentFile.name.endsWith("-core")) 0 else 1 }, { it.path }))
+        // "core" sorts after "2026" alphabetically, but it holds the cards that belong to no
+        // release and every era can see, so it comes first.
+        .sortedWith(compareBy({ if (it.parentFile.name == "core") 0 else 1 }, { it.path }))
 
 /** The `definitions/` directory that owns `setDir`, or the newest era module for an unknown set. */
 fun definitionsRootFor(setDir: String): File =

@@ -70,9 +70,9 @@ Peak heap was the sum of six live sessions rather than the largest one. Default 
 
 `:mtg-sets` was one 12,000-file Kotlin compilation. It is now:
 
-- **`:mtg-sets-core`** — `CardDiscovery`, `TokenArtData` + `tokens.json`, and the setless
+- **`:mtg-sets:core`** — `CardDiscovery`, `TokenArtData` + `tokens.json`, and the setless
   `definitions/custom/` cards. The only things card definitions import from outside the SDK.
-- **`:mtg-sets-<era>`** × 9 — the definitions, in fixed release-year ranges (`1993-1999`,
+- **`:mtg-sets:<era>`** × 9 — the definitions, in fixed release-year ranges (`1993-1999`,
   `2000-2002`, `2003-2007`, `2008-2016`, `2017-2022`, `2023`, `2024`, `2025`, `2026`), chained
   oldest→newest with `api`.
 - **`:mtg-sets`** — the aggregator: `MtgSetCatalog` (a classpath scan, so no compile dependency on
@@ -90,7 +90,9 @@ Boundaries are **fixed**: a new release year appends a module; no set ever moves
 
 ### The scenario suite, split to mirror it
 
-`scenario-tests/<era>` mirrors the card modules one for one. A test is attributed to a set by the
+`mtg-sets/<era>/tests` (`:mtg-sets:<era>:tests`) mirrors the card modules one for one, as a child
+module of the era it tests, so a set's cards and its tests are one directory apart. A test is
+attributed to a set by the
 card definitions it imports (compile-time truth, 43 %) or by its file name matching a card definition
 (the one-file-per-card convention, 47 %); the remaining 10 % — 330 files, 70,579 lines — turned out
 to be engine tests rather than card tests, and went back into `:rules-engine`'s own suite where they
@@ -101,17 +103,23 @@ sees the whole catalog exactly as before: `ScenarioTestBase` builds its registry
 `MtgSetCatalog`, and constraining that would have been a silent behavioural change. The era decides
 only *where a file lives*.
 
-(Colocating the tests inside the `:mtg-sets-<era>` modules themselves does not work: `ScenarioTestBase`
+(The tests are a *separate* module per era, not the era module's own test source set: `ScenarioTestBase`
 and `TestCards` live in `:rules-engine`'s test fixtures and import `MtgSetCatalog`, so a test inside
-`:mtg-sets-2024` would need `testFixtures(:rules-engine)` → `:mtg-sets` → `:mtg-sets-2024`. That is a
-dependency cycle. Parallel test modules are the same idea without it.)
+`:mtg-sets:2024` itself would need `testFixtures(:rules-engine)` → `:mtg-sets` → `:mtg-sets:2024`. That
+is a dependency cycle. A sibling `tests` module is the same colocation without it — Gradle parent/child
+is naming, not a dependency, so `:mtg-sets:2024:tests` can depend on the aggregator above it.)
+
+There is no project that owns all nine test modules, so **`:mtg-sets:scenarioTest`** fans out to every
+`:mtg-sets:<era>:tests:test` — that is the one task path for the whole card suite, used by
+`just test-rules` and CI. It is deliberately not wired into `check`: `:mtg-sets:check` is the
+whole-corpus gate (snapshots, lint, facade boundary) and has to stay runnable without the card suite.
 
 ### Resulting compile units
 
 | Unit | Before | After (largest) |
 |---|---:|---:|
-| Card definitions | 567,584 | 103,668 (`:mtg-sets-2025`) |
-| Scenario tests | 424,335 | 72,928 (`scenario-tests/2024`) |
+| Card definitions | 567,584 | 103,668 (`:mtg-sets:2025`) |
+| Scenario tests | 424,335 | 72,928 (`mtg-sets/2024/tests`) |
 | `rules-engine` tests | 446,018 | 92,262 (its own tests + the 330 returned engine tests) |
 
 ### Disk and daemon hygiene
@@ -141,7 +149,7 @@ module should be visible before it OOMs again.
 Nobody should have to remember which year a set shipped:
 
 ```bash
-just where MRD                              # -> :mtg-sets-2003-2007 and scenario-tests/2003-2007
+just where MRD                              # -> :mtg-sets:2003-2007 and mtg-sets/2003-2007/tests
 just where "Myr Incubator"                  # -> the card file, its module, and its test path
 just test-class MyrIncubatorScenarioTest    # finds the file, runs only its module's test task
 just test-scenarios 2024                    # one era's scenarios

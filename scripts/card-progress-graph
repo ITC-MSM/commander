@@ -7,7 +7,7 @@ calendar day from the project's first commit to its most recent — and refreshe
 the data arrays embedded in the HTML graph at the repo root.
 
 How it works:
-  - A single `git log --reverse -p` pass over `mtg-sets/.../definitions/`
+  - A single `git log --reverse -p` pass over `mtg-sets/*/.../definitions/`
     records the first commit date each `val X = card("Name") { }` definition
     was introduced. Keying on the card *name* means reprints (`Printing(...)`
     rows) never double-count, and a card counts from the day its canonical
@@ -39,7 +39,15 @@ from collections import Counter
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
-DEFS = "mtg-sets/src/main/kotlin/com/wingedsheep/mtg/sets/definitions"
+DEFS_SUFFIX = "src/main/kotlin/com/wingedsheep/mtg/sets/definitions"
+# Definitions have moved twice — one `mtg-sets` module, then top-level `mtg-sets-<era>` modules,
+# then those same era modules nested under `mtg-sets/`. This pass walks history back through all
+# three, so every historical location has to be in the pathspec or the early years go missing.
+DEFS_PATHSPECS = [
+    f"mtg-sets/{DEFS_SUFFIX}",
+    f":(glob)mtg-sets-*/{DEFS_SUFFIX}/**",
+    f":(glob)mtg-sets/*/{DEFS_SUFFIX}/**",
+]
 HTML = REPO / "card-implementation-progress.html"
 SVG = REPO / "assets" / "card-implementation-progress.svg"
 # Server-readable copy of the same per-day series, so the Set Completion view can render
@@ -60,7 +68,7 @@ def git(*args: str) -> str:
 
 def first_introduction_dates() -> dict[str, str]:
     """Map each card name -> the YYYY-MM-DD it was first added to definitions/."""
-    out = git("log", "--reverse", "--date-order", "--format=@C@%aI", "-p", "--", DEFS)
+    out = git("log", "--reverse", "--date-order", "--format=@C@%aI", "-p", "--", *DEFS_PATHSPECS)
     first: dict[str, str] = {}
     cur: str | None = None
     for line in out.splitlines():
@@ -76,7 +84,7 @@ def first_introduction_dates() -> dict[str, str]:
 def current_card_names() -> set[str]:
     """Distinct card names with a canonical `card(...)` in the current tree."""
     names: set[str] = set()
-    for path in (REPO / DEFS).rglob("*.kt"):
+    for path in REPO.glob(f"mtg-sets/*/{DEFS_SUFFIX}/**/*.kt"):
         for m in TREE_RE.finditer(path.read_text(encoding="utf-8", errors="replace")):
             names.add(m.group(1))
     return names

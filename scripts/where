@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Locate a set or a card in the split module layout.
 
-Card definitions live in `mtg-sets-<era>` modules (fixed release-year ranges) and their scenario
-tests in the mirroring `scenario-tests/<era>`, so that no single Kotlin compilation has to hold the
+Card definitions live in `mtg-sets/<era>` modules (fixed release-year ranges) and their scenario
+tests in that module's own `tests/` child, so that no single Kotlin compilation has to hold the
 whole corpus. Nobody should have to remember which year a set came out in — ask instead:
 
     scripts/where MRD                  # a set code
@@ -23,13 +23,14 @@ CARD_DSL_RE = re.compile(r'\bcard\(\s*"([^"]+)"')
 
 
 def module_of(path: Path) -> str:
-    return path.relative_to(REPO_ROOT).parts[0]
+    """The Gradle project path of the module owning `path`, e.g. `mtg-sets:2024`."""
+    parts = path.relative_to(REPO_ROOT).parts
+    return ":".join(parts[: parts.index("src")])
 
 
 def scenario_module(era_module: str) -> Path | None:
-    """`mtg-sets-2024` -> `scenario-tests/2024`, if that module exists."""
-    era = era_module.removeprefix("mtg-sets-")
-    candidate = REPO_ROOT / "scenario-tests" / era
+    """`mtg-sets:2024` -> `mtg-sets/2024/tests`, if that module exists."""
+    candidate = REPO_ROOT / Path(*era_module.split(":")) / "tests"
     return candidate if candidate.is_dir() else None
 
 
@@ -43,7 +44,7 @@ def report_set(dir_name: str, code: str) -> None:
     print(f"  module  :{module}")
     scen = scenario_module(module)
     if scen:
-        print(f"  tests   {scen.relative_to(REPO_ROOT)}  (:scenario-tests:{scen.name})")
+        print(f"  tests   {scen.relative_to(REPO_ROOT)}  (:{module}:tests)")
     else:
         print("  tests   (no scenario module for this era yet — it is created with the first test)")
 

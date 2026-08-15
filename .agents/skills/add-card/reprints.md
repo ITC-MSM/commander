@@ -17,7 +17,7 @@ the *reprinting* set's package, never inside the canonical card's file.
 
 ## Workflow
 
-1. **Confirm the canonical exists.** `grep -rn 'name = "<Card Name>"' mtg-sets-*/src/main/kotlin/` should
+1. **Confirm the canonical exists.** `grep -rn 'name = "<Card Name>"' mtg-sets/*/src/main/kotlin/` should
    find a `CardDefinition` in another set's package. If it doesn't, this is a new card — go back to
    SKILL.md Step 1.
 

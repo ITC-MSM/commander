@@ -30,13 +30,13 @@ jobs:
             tasks: ":rules-engine:test"
           - name: scenarios-old     # card scenarios, sets released up to 2022
             tasks: >-
-              :scenario-tests:1993-1999:test :scenario-tests:2000-2002:test
-              :scenario-tests:2003-2007:test :scenario-tests:2008-2016:test
-              :scenario-tests:2017-2022:test
+              :mtg-sets:1993-1999:tests:test :mtg-sets:2000-2002:tests:test
+              :mtg-sets:2003-2007:tests:test :mtg-sets:2008-2016:tests:test
+              :mtg-sets:2017-2022:tests:test
           - name: scenarios-2023-24 # card scenarios, the two biggest recent eras
-            tasks: ":scenario-tests:2023:test :scenario-tests:2024:test"
+            tasks: ":mtg-sets:2023:tests:test :mtg-sets:2024:tests:test"
           - name: scenarios-2025-26
-            tasks: ":scenario-tests:2025:test :scenario-tests:2026:test"
+            tasks: ":mtg-sets:2025:tests:test :mtg-sets:2026:tests:test"
           - name: server            # Spring Boot integration tests; compiles the full module graph
             tasks: ":game-server:test"
           - name: content           # SDK + card definitions + AI advisors

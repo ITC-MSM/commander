@@ -12,7 +12,7 @@ import java.nio.file.Paths
  * Offline sync against a Scryfall bulk-data dump (the "All Cards" or "Default Cards" JSON).
  * Streams every printing, builds a `name -> color_identity` map, then walks every card
  * definition file under every card module's `definitions/.../cards/` — the corpus is split across
- * `:mtg-sets-core` and the `:mtg-sets-<era>` modules — and rewrites each in place to add or update
+ * `:mtg-sets:core` and the `:mtg-sets:<era>` modules — and rewrites each in place to add or update
  * an explicit `colorIdentity = "..."` line in the `card(...) { ... }` builder block.
  *
  * Run: `./gradlew :mtg-sets:syncColorIdentityFromDump --args="/path/to/all-cards-YYYYMMDDhhmmss.json"`.
@@ -34,17 +34,17 @@ fun main(args: Array<String>) {
     val dumpPath = Paths.get(dumpArg)
     require(Files.exists(dumpPath)) { "Dump not found: $dumpPath" }
 
-    // Card definitions live in every `mtg-sets*` module that has a definitions/ tree, so a new era
-    // module is picked up without touching this task. Run from the repo root (the Gradle task sets
-    // workingDir accordingly).
-    val cardsRoots = Files.list(Paths.get("")).use { stream ->
+    // Card definitions live in every `mtg-sets/` submodule that has a definitions/ tree, so a new
+    // era module is picked up without touching this task. Run from the repo root (the Gradle task
+    // sets workingDir accordingly).
+    val setsRoot = Paths.get("mtg-sets")
+    val cardsRoots = Files.list(setsRoot).use { stream ->
         stream
-            .filter { it.fileName.toString().startsWith("mtg-sets") }
             .map { it.resolve("src/main/kotlin/com/wingedsheep/mtg/sets/definitions") }
             .filter { Files.isDirectory(it) }
             .toList()
     }
-    require(cardsRoots.isNotEmpty()) { "No card definition modules found under ${Paths.get("").toAbsolutePath()}" }
+    require(cardsRoots.isNotEmpty()) { "No card definition modules found under ${setsRoot.toAbsolutePath()}" }
 
     println("Scanning $dumpPath for color identities…")
     val parser = Json { ignoreUnknownKeys = true; isLenient = false }

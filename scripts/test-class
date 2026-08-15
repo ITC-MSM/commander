@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Run one test class without knowing which module owns it.
 
-The card scenario suite lives in fixed alphabetical shard modules under `scenario-tests/`, so
+The card scenario suite lives in a `tests` module per era under `mtg-sets/`, so
 `:rules-engine:test --tests Foo` no longer finds most tests. This finds the file, maps it back to
 its Gradle project, and runs only that project's test task — which is also the fast path, because
 only that one module's (bounded) test compilation has to be up to date.

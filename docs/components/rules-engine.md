@@ -143,7 +143,7 @@ The rules engine is typically used by the `mtg-api` module, which orchestrates t
     *   **Implement Executor/Handler:** Create the corresponding logic in `rules-engine/src/main/kotlin/.../handlers/` (e.g., `MyNewEffectExecutor.kt`).
     *   **Register Executor/Handler:** Add the new executor/handler to the appropriate registry (`EffectExecutorRegistry`, `ActionHandlerRegistry`).
     *   **Define Card:** Implement the card in `mtg-sets` using the new SDK types.
-    *   **Test:** Write scenario tests in `scenario-tests/<era>/src/test/kotlin/.../scenarios/` — the era module mirroring the card's own (`just where <SET>`). Engine-level tests stay in `rules-engine/src/test/kotlin/.../scenarios/`.
+    *   **Test:** Write scenario tests in `mtg-sets/<era>/tests/src/test/kotlin/.../scenarios/` — the era module mirroring the card's own (`just where <SET>`). Engine-level tests stay in `rules-engine/src/test/kotlin/.../scenarios/`.
 
 ### Modifying Core Rules:
 

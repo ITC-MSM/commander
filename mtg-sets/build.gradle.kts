@@ -2,13 +2,17 @@
 //
 // This module used to hold all 12,000 card-definition files in one Kotlin compilation — the single
 // biggest compile unit in the build and a main cause of the compile daemon running out of heap
-// (docs/build-performance-plan.md). The definitions now live in `:mtg-sets-core` plus a chain of
-// chronological `:mtg-sets-<era>` modules, and this module re-exports all of them with `api`, so
+// (docs/build-performance-plan.md). The definitions now live in `:mtg-sets:core` plus a chain of
+// chronological `:mtg-sets:<era>` modules, and this module re-exports all of them with `api`, so
 // every existing `project(":mtg-sets")` dependency keeps resolving the whole corpus unchanged.
 //
 // What stays here is the code that needs to see *every* set at once: MtgSetCatalog (a classpath
 // scan, so it has no compile dependency on any era), the Scryfall sync tools, the predefined-token
 // registry, and the whole-corpus tests (snapshots, lint, facade boundary).
+//
+// Each era additionally owns its card scenario tests as a `tests` child (`:mtg-sets:2024:tests`),
+// so a set's cards and the tests that exercise them live in one directory. `scenarioTest` below is
+// the one task path that runs all of them.
 plugins {
     id("buildsrc.convention.kotlin-jvm")
     alias(libs.plugins.kotlinPluginSerialization)
@@ -21,19 +25,33 @@ dependencies {
 
     // Re-export the whole corpus. `api`, not `implementation`: consumers import card definitions
     // directly (scenario tests, TestCards), so the era modules have to reach their compile classpath.
-    api(project(":mtg-sets-core"))
-    api(project(":mtg-sets-1993-1999"))
-    api(project(":mtg-sets-2000-2002"))
-    api(project(":mtg-sets-2003-2007"))
-    api(project(":mtg-sets-2008-2016"))
-    api(project(":mtg-sets-2017-2022"))
-    api(project(":mtg-sets-2023"))
-    api(project(":mtg-sets-2024"))
-    api(project(":mtg-sets-2025"))
-    api(project(":mtg-sets-2026"))
+    api(project(":mtg-sets:core"))
+    api(project(":mtg-sets:1993-1999"))
+    api(project(":mtg-sets:2000-2002"))
+    api(project(":mtg-sets:2003-2007"))
+    api(project(":mtg-sets:2008-2016"))
+    api(project(":mtg-sets:2017-2022"))
+    api(project(":mtg-sets:2023"))
+    api(project(":mtg-sets:2024"))
+    api(project(":mtg-sets:2025"))
+    api(project(":mtg-sets:2026"))
 
     testImplementation(libs.kotestRunner)
     testImplementation(libs.kotestAssertions)
+}
+
+// One task path for the whole card scenario suite. The tests are spread over a `tests` module per
+// era, so no single project owns them; this fans out to every one, which is what `just test-rules`
+// and CI use. A single era is still `:mtg-sets:2024:tests:test`.
+//
+// NOTE this is deliberately *not* wired into `check`: `:mtg-sets:check` is the whole-corpus gate
+// (snapshots, lint, facade boundary) and must stay runnable without the multi-minute card suite.
+val scenarioShards = subprojects.filter { it.name == "tests" }.map { "${it.path}:test" }
+
+tasks.register("scenarioTest") {
+    group = "verification"
+    description = "Run every era's card scenario tests."
+    dependsOn(scenarioShards)
 }
 
 tasks.withType<Test> {

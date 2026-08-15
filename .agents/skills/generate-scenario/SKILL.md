@@ -22,7 +22,7 @@ The scenario API only accepts cards registered in the card registry. To find ava
 
 1. **List all card definition files** to see what's available:
    ```
-   ls mtg-sets-*/src/main/kotlin/com/wingedsheep/mtg/sets/definitions/*/cards/
+   ls mtg-sets/*/src/main/kotlin/com/wingedsheep/mtg/sets/definitions/*/cards/
    ```
 
 2. **Search for specific card types** if needed (e.g., creatures with flying, red instants):

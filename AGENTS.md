@@ -46,17 +46,17 @@ docs it points at; load those when the work needs them.
 | Module | Purpose | Deps |
 |--------|---------|------|
 | `mtg-sdk` | DSLs, data models, primitives — pure data, no logic | — |
-| `mtg-sets` | Aggregator — re-exports the whole card corpus; catalog, Scryfall sync, corpus-wide tests | sdk, sets-* |
-| `mtg-sets-core` | `CardDiscovery`, token art, the setless `custom/` cards | sdk |
-| `mtg-sets-<era>` | Card definitions, one module per fixed release-year range, chained oldest→newest | sdk, sets-core |
-| `scenario-tests/<era>` | Card scenario tests, mirroring the card eras | engine, sets |
+| `mtg-sets` | Aggregator — re-exports the whole card corpus; catalog, Scryfall sync, corpus-wide tests | sdk, sets/* |
+| `mtg-sets/core` | `CardDiscovery`, token art, the setless `custom/` cards | sdk |
+| `mtg-sets/<era>` | Card definitions, one module per fixed release-year range, chained oldest→newest | sdk, sets/core |
+| `mtg-sets/<era>/tests` | Card scenario tests for that era's sets | engine, sets |
 | `rules-engine` | Core MTG rules (zero server deps) | sdk |
 | `ai` | Built-in AI player + draft/deckbuild advisors | engine, sdk |
 | `mtg-search` | Scryfall-style search query language over a `SearchCard` projection | — |
 | `gym` / `gym-server` / `gym-trainer` | RL/MCTS env + HTTP transport + self-play SPI | engine, sdk |
 | `game-server` | Spring Boot orchestration, WebSocket, state masking | engine, sdk |
 | `mtgish-tooling` | Predictive coverage / auto-gen analyzer | — (scans source as text) |
-| [`oracle-assay`](oracle-assay/README.md) | Argentum Assay — bidirectional Oracle-text parser + touchstone gate (`just assay-gate`) | sdk |
+| [`oracle-assay`](oracle-assay/README.md) | Argentum Assay — bidirectional Oracle-text parser; touchstone gate (`just assay-gate`) + differential gate against the hand-written cards (`just assay-differential`) | sdk |
 | `web-client` | React UI (dumb terminal — no game logic) | — |
 
 **Key principle:** the engine is pure (no card-specific code), content is data-driven (no execution
@@ -64,11 +64,19 @@ logic), and the API is an anti-corruption layer between engine and clients.
 
 **Finding a set's module.** The card corpus and its scenario tests are split by release year so that
 no single Kotlin compilation holds all of it — that split is why the build stopped running the
-compile daemon out of heap. You never need to memorise the mapping:
+compile daemon out of heap. Every era lives under `mtg-sets/`, cards and tests in one directory:
+
+```
+mtg-sets/2003-2007/          :mtg-sets:2003-2007         cards
+mtg-sets/2003-2007/tests/    :mtg-sets:2003-2007:tests   scenario tests
+```
+
+You never need to memorise which era a set is in:
 
 ```bash
-just where MRD              # -> mtg-sets-2003-2007/... and scenario-tests/2003-2007
+just where MRD              # -> mtg-sets/2003-2007/... and its tests/ child
 just test-class MyrIncubatorScenarioTest   # finds the file, runs only its module
+just test-scenarios 2003-2007              # one era; bare `just test-scenarios` runs all of them
 ```
 
 Depend on `project(":mtg-sets")` as before — it re-exports every era, so nothing downstream changed.
@@ -148,4 +156,4 @@ It is **predictive and non-authoritative — never a card loader.** Two rules fo
 | [`gym-deckbuild-env.md`](docs/gym-deckbuild-env.md) | Sealed deckbuild gym env + custom win-rate reward |
 | [`gym-self-play-testing.md`](docs/gym-self-play-testing.md) | Driving the gym server over HTTP to surface broken cards |
 | [`agent-loops/`](docs/agent-loops/) | Long-running set-implementation prompts for Claude Code `/loop` and Codex `/goal` |
-| [`oracle-assay.md`](docs/oracle-assay.md) | Argentum Assay design — first-party Scryfall→SDK Oracle parser; also audits `mtg-sdk` vocabulary. **Phase 1 shipped** ([`:oracle-assay`](oracle-assay/README.md)); phases 2–6 are still proposals |
+| [`oracle-assay.md`](docs/oracle-assay.md) | Argentum Assay design — first-party Scryfall→SDK Oracle parser; also audits `mtg-sdk` vocabulary. **Phase 1 + the differential gate shipped** ([`:oracle-assay`](oracle-assay/README.md)); the MVP and remaining phases are in [`docs/plans/oracle-assay.md`](docs/plans/oracle-assay.md) |

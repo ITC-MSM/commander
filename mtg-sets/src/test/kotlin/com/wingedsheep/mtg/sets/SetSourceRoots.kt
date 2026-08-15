@@ -11,30 +11,32 @@ import kotlin.io.path.name
  * than loaded classes (facade boundary, Patterns index, catalog discovery).
  *
  * The definitions used to be one directory inside this module. They are now spread across
- * `:mtg-sets-core` (setless cards) and one `:mtg-sets-<era>` module per fixed release-year range,
- * so that no single Kotlin compilation has to hold the whole corpus. These tests still run from
- * `:mtg-sets` — the aggregator, the only module that sees every set — so they reach the sources by
- * walking up to the repo root and globbing the card modules. Adding an era module is picked up
- * automatically; nothing here needs to know the era names.
+ * `:mtg-sets:core` (setless cards) and one `:mtg-sets:<era>` module per fixed release-year range,
+ * so that no single Kotlin compilation has to hold the whole corpus. Those modules are children of
+ * this one on disk, and these tests run from `:mtg-sets` — the aggregator, the only module that
+ * sees every set — so they reach the sources by scanning this module's own subdirectories. Adding
+ * an era module is picked up automatically; nothing here needs to know the era names.
  */
 object SetSourceRoots {
 
     private const val DEFINITIONS_SUFFIX = "src/main/kotlin/com/wingedsheep/mtg/sets/definitions"
 
-    /** The repository root — tests run with `:mtg-sets` as their working directory. */
-    val repoRoot: Path = Paths.get("").toAbsolutePath().parent
+    /** This module's directory — tests run with `:mtg-sets` as their working directory. */
+    private val moduleRoot: Path = Paths.get("").toAbsolutePath()
+
+    /** The repository root, for readable relative paths in failure messages. */
+    val repoRoot: Path = moduleRoot.parent
 
     /** Every card module's `definitions/` directory. */
     val definitionsDirs: List<Path> by lazy {
-        Files.list(repoRoot).use { stream ->
+        Files.list(moduleRoot).use { stream ->
             stream
-                .filter { it.name.startsWith("mtg-sets") }
                 .map { it.resolve(DEFINITIONS_SUFFIX) }
                 .filter { it.isDirectory() }
                 .toList()
                 .sortedBy { it.toString() }
         }.also {
-            check(it.isNotEmpty()) { "No card definition modules found under $repoRoot" }
+            check(it.isNotEmpty()) { "No card definition modules found under $moduleRoot" }
         }
     }
 

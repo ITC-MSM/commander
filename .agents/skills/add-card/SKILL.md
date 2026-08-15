@@ -106,7 +106,7 @@ generated card is worse than none.
    card's **earliest real-expansion printing** per Scryfall, skipping `promo` / `token` / `art_series` /
    `memorabilia`. Many cards in newer sets are reprints.
 
-   - **Already implemented elsewhere?** `grep -rn 'name = "<Card Name>"' mtg-sets-*/src/main/kotlin/` — if a
+   - **Already implemented elsewhere?** `grep -rn 'name = "<Card Name>"' mtg-sets/*/src/main/kotlin/` — if a
      `CardDefinition` exists in another set, go to [`reprints.md`](reprints.md). Don't duplicate the script.
    - **Otherwise list all printings** via `prints_search_uri` (or
      `https://api.scryfall.com/cards/search?q=%21%22<Card+Name>%22&unique=prints&order=released&dir=asc`)
@@ -136,7 +136,7 @@ generated card is worse than none.
    `DynamicAmount.*`, `Patterns.*`, keywords, static abilities, and replacement effects.
 2. [`docs/architecture-principles.md`](../../../docs/architecture-principles.md) — how effects, executors,
    and continuations fit together.
-3. `grep -r "<keyword-or-effect>" mtg-sets-*/src/main/kotlin/` — a card with a similar mechanic is the best
+3. `grep -r "<keyword-or-effect>" mtg-sets/*/src/main/kotlin/` — a card with a similar mechanic is the best
    template you'll find.
 
 ## Step 3: Model the card
@@ -182,7 +182,7 @@ cards. It becomes its own PR — with tests for the primitive, not just for the 
 **Only if Step 4 added new vocabulary.** A card built purely from existing primitives is covered by the
 snapshot and lint nets.
 
-**File:** `scenario-tests/<era>/src/test/kotlin/com/wingedsheep/engine/scenarios/{CardName}ScenarioTest.kt`,
+**File:** `mtg-sets/<era>/tests/src/test/kotlin/com/wingedsheep/engine/scenarios/{CardName}ScenarioTest.kt`,
 in the era module mirroring the card's own — **`just where {SET}`** prints both. (Tests that exercise the
 engine rather than a specific card stay in `rules-engine/src/test/.../scenarios/`.)
 

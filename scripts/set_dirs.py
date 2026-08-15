@@ -5,11 +5,11 @@ always: `con` is a reserved filename on Windows (DOS device name), so Conflux li
 `definitions/conflux/`. The authoritative code is the `override val code = "..."` declaration
 in each directory's `*Set.kt` — scripts must read that instead of trusting the directory name.
 
-Card definitions are spread across several Gradle modules (`mtg-sets-core` for the setless
-`custom/` cards, then one `mtg-sets-<era>` module per fixed release-year range) so that no single
-Kotlin compilation has to hold the whole corpus. There is therefore no *one* definitions root any
-more — use [definitions_roots], [iter_set_dirs] or [iter_card_files] instead of building a path by
-hand, and they keep working when a new era module is appended.
+Card definitions are spread across several Gradle modules under `mtg-sets/` (`mtg-sets/core` for
+the setless `custom/` cards, then one `mtg-sets/<era>` module per fixed release-year range) so that
+no single Kotlin compilation has to hold the whole corpus. There is therefore no *one* definitions
+root any more — use [definitions_roots], [iter_set_dirs] or [iter_card_files] instead of building a
+path by hand, and they keep working when a new era module is appended.
 """
 
 from __future__ import annotations
@@ -26,22 +26,19 @@ SET_CODE_RE = re.compile(r'override\s+val\s+code\s*=\s*"([^"]+)"')
 
 
 def _module_order(module: Path) -> tuple[int, str]:
-    """`mtg-sets-core` first (setless cards), then the era modules oldest to newest.
+    """`mtg-sets/core` first (setless cards), then the era modules oldest to newest.
 
-    Plain alphabetical sorting would put `mtg-sets-core` after `mtg-sets-2026`, which matters
-    because [root_for_set] treats the last entry as "where a brand new set goes".
+    Plain alphabetical sorting would put `core` after `2026`, which matters because [root_for_set]
+    treats the last entry as "where a brand new set goes".
     """
-    name = module.name
-    if name == "mtg-sets-core":
-        return (0, "")
-    return (1, name.removeprefix("mtg-sets-"))
+    return (0, "") if module.name == "core" else (1, module.name)
 
 
 def definitions_roots() -> list[Path]:
     """Every module-level `definitions/` directory: core first, then era modules oldest to newest."""
     return [
         module / _DEFINITIONS_SUFFIX
-        for module in sorted(REPO_ROOT.glob("mtg-sets*"), key=_module_order)
+        for module in sorted((REPO_ROOT / "mtg-sets").iterdir(), key=_module_order)
         if (module / _DEFINITIONS_SUFFIX).is_dir()
     ]
 

@@ -475,7 +475,7 @@ fun MyNew(param1: Int, target: EffectTarget = EffectTarget.ContextTarget(0)): Ef
 ## Scenario Test Template
 
 Scenario tests live in the era module mirroring the card's own —
-`scenario-tests/<era>/src/test/kotlin/com/wingedsheep/engine/scenarios/` (`just where <SET>`).
+`mtg-sets/<era>/tests/src/test/kotlin/com/wingedsheep/engine/scenarios/` (`just where <SET>`).
 The engine is the source of truth, so a card's behavior is proven there — **not** in `game-server`
 (which only tests frontend ↔ engine concerns: masking, DTO shape, protocol).
 

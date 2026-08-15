@@ -15,17 +15,17 @@ build:
 test:
     scripts/gradle-locked test
 
-# Card scenarios now live in the per-era `:scenario-tests:*` modules, so both are run here —
-# same coverage as before the split.
+# Card scenarios now live in the per-era `:mtg-sets:<era>:tests` modules, which `:mtg-sets:scenarioTest`
+# fans out to, so both are run here — same coverage as before the split.
 # Run the engine's own tests plus every card scenario
 [group: 'build']
 test-rules:
-    scripts/gradle-locked :rules-engine:test :scenario-tests:test
+    scripts/gradle-locked :rules-engine:test :mtg-sets:scenarioTest
 
 # Run only the card scenario suite, or one era of it (e.g. just test-scenarios 2024)
 [group: 'build']
 test-scenarios ERA="":
-    scripts/gradle-locked :scenario-tests{{ if ERA == "" { "" } else { ":" + ERA } }}:test
+    scripts/gradle-locked {{ if ERA == "" { ":mtg-sets:scenarioTest" } else { ":mtg-sets:" + ERA + ":tests:test" } }}
 
 # Run tests for game-server only
 [group: 'build']
@@ -361,6 +361,18 @@ assay-gate *ARGS: _assay-tool
 [group: 'build']
 assay-report *ARGS: _assay-tool
     @oracle-assay/build/install/oracle-assay/bin/oracle-assay report {{ARGS}}
+
+# DIFFERENTIAL GATE — Assay's reading of a card against the definition a human wrote from the same
+# text, using the committed card goldens as the semantic oracle. This is the gate the touchstone
+# structurally cannot be: it catches readings that are reversible but mean the wrong thing.
+# Fails (exit 1) only on a golden that will not decode. A DIVERGENT row is a finding to classify as
+# parser bug / card bug / known fold — read every one.
+#   just assay-differential              whole hand-written corpus
+#   just assay-differential --set POR    one set's goldens
+#   just assay-differential --top 200    show more divergences
+[group: 'build']
+assay-differential *ARGS: _assay-tool
+    @oracle-assay/build/install/oracle-assay/bin/oracle-assay differential {{ARGS}}
 
 # Verify backlog/sets/*/cards.md headers match actual [x] / [x]+[ ] counts
 [group: 'build']
