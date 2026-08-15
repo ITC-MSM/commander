@@ -23,7 +23,7 @@ val GoblinTurncoat = card("Goblin Turncoat") {
     oracleText = "Sacrifice a Goblin: Regenerate Goblin Turncoat."
 
     activatedAbility {
-        cost = Costs.Sacrifice(GameObjectFilter.Creature.withSubtype("Goblin"))
+        cost = Costs.Sacrifice(GameObjectFilter.Permanent.withSubtype("Goblin"))
         effect = RegenerateEffect(EffectTarget.Self)
     }
 

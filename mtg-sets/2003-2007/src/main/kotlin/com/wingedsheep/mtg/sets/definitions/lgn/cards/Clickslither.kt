@@ -28,7 +28,7 @@ val Clickslither = card("Clickslither") {
     keywords(Keyword.HASTE)
 
     activatedAbility {
-        cost = Costs.Sacrifice(GameObjectFilter.Creature.withSubtype("Goblin"))
+        cost = Costs.Sacrifice(GameObjectFilter.Permanent.withSubtype("Goblin"))
         effect = Effects.ModifyStats(2, 2, EffectTarget.Self)
             .then(Effects.GrantKeyword(Keyword.TRAMPLE, EffectTarget.Self))
     }

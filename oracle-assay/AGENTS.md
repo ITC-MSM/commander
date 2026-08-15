@@ -160,12 +160,23 @@ The same discipline covers values the text does not determine — target slot na
 Mint one fixed constant (`Targets.SLOT`, `Triggers.ID`); the differential normalizes both sides by
 position. A rule that tried to reproduce a generated id would be reading a counter, not a card.
 
-**Two anaphors, two vocabularies.** Oracle's "it" means the source in a first clause ("Whenever this
-creature attacks, **it** gets +2/+0") and the target in a later one ("Untap target creature. **It**
-gets +2/+4"); "that creature" always means the target. `SelfSteps.anaphoric` and `Continuations` are
-reachable from disjoint positions for exactly that reason — registering either surface form in both
-places is two readings of one text. The differential found this by *running*: the wrong reading
-round-tripped byte-perfectly and meant a different creature.
+**Three anaphors, three positions.** Oracle's "it" means the source in a first clause ("Whenever this
+creature attacks, **it** gets +2/+0"), the target in a later one ("Untap target creature. **It**
+gets +2/+4"), and — inside a trigger whose event names a **filter** — the object that matched
+("Whenever a Rat you control becomes blocked, **it** gets +2/+0" pumps the *Rat*); "that creature"
+always means the target. `SelfSteps.anaphoric`, `Continuations` and `SelfSteps.triggering` are
+reachable from disjoint positions for exactly that reason — registering any surface form in two of
+them is two readings of one text. The differential found the second and third by *running*: both
+wrong readings round-tripped byte-perfectly and meant a different creature.
+
+The third one is also the worked example of **how** to add an anaphor position. The distinction
+exists only at parse time — after parsing, "~ gets +1/+1" and "it gets +1/+1" are the same model, so
+no remap on the built ability can recover it. The vocabulary is therefore written once
+(`SelfSteps.retargetable`, a function of the target and the subject's spelling) and instantiated per
+position, and `Steps.Cascade` makes the clause cascade above it a shape with two instances rather
+than a second copy of `Steps.step`. Every leaf and every atom stays shared; only the dozen
+combinators that join clauses are built twice. If a fourth position appears, it is another
+instantiation — not another `oneOf` branch, which would be ambiguity by construction.
 
 ## Printed-shape information belongs to normalization
 

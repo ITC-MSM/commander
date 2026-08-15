@@ -53,7 +53,7 @@ val LakeTown = card("Lake-town") {
         cost = Costs.Composite(Costs.Mana("{2}{W}{U}"), Costs.Tap, Costs.SacrificeSelf)
         val human = target(
             "target Human you control",
-            TargetCreature(filter = TargetFilter.CreatureYouControl.withSubtype(Subtype.HUMAN))
+            TargetCreature(filter = TargetFilter.PermanentYouControl.withSubtype(Subtype.HUMAN))
         )
         effect = Effects.AddCounters(Counters.PLUS_ONE_PLUS_ONE, 2, human)
         timing = TimingRule.SorcerySpeed

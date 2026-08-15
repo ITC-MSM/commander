@@ -27,7 +27,7 @@ val GoblinLookout = card("Goblin Lookout") {
     activatedAbility {
         cost = Costs.Composite(
             Costs.Tap,
-            Costs.Sacrifice(GameObjectFilter.Creature.withSubtype("Goblin"))
+            Costs.Sacrifice(GameObjectFilter.Permanent.withSubtype("Goblin"))
         )
         effect = Effects.ForEachInGroup(
             filter = GroupFilter.allCreaturesWithSubtype("Goblin"),

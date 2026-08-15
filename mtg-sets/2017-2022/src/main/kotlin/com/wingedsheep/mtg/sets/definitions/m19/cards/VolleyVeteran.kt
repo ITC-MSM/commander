@@ -33,7 +33,7 @@ val VolleyVeteran = card("Volley Veteran") {
         trigger = Triggers.EntersBattlefield
         val t = target("target", TargetCreature(filter = TargetFilter.Creature.opponentControls()))
         effect = DealDamageEffect(
-            DynamicAmount.AggregateBattlefield(Player.You, GameObjectFilter.Creature.withSubtype("Goblin")),
+            DynamicAmount.AggregateBattlefield(Player.You, GameObjectFilter.Permanent.withSubtype("Goblin")),
             t
         )
     }

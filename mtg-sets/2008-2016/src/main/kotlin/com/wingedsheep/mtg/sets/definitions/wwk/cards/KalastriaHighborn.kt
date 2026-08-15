@@ -40,7 +40,7 @@ val KalastriaHighborn = card("Kalastria Highborn") {
 
     triggeredAbility {
         trigger = Triggers.leavesBattlefield(
-            filter = GameObjectFilter.Creature.withSubtype("Vampire").youControl(),
+            filter = GameObjectFilter.Permanent.withSubtype("Vampire").youControl(),
             to = Zone.GRAVEYARD,
             binding = TriggerBinding.ANY,
         )

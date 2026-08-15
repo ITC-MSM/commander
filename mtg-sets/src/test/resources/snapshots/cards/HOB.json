@@ -136,8 +136,7 @@
                     ],
                     "creatureTypes": [
                         "Dwarf"
-                    ],
-                    "imageUri": "https://cards.scryfall.io/normal/front/9/f/9fcb3a3f-c0d4-43d4-8549-826a38bfa27d.jpg?1786258756"
+                    ]
                 }
             }
         }
@@ -2362,7 +2361,6 @@
                     "creatureTypes": [
                         "Wolf"
                     ],
-                    "imageUri": "https://cards.scryfall.io/normal/front/d/5/d5f1e139-3054-4273-8a4d-faaaa9c383a8.jpg?1783924694",
                     "controller": "Controller"
                 },
                 "descriptionOverride": "At the beginning of your upkeep, create a 2/2 green Wolf creature token."
@@ -2631,7 +2629,6 @@
                     "creatureTypes": [
                         "Bear"
                     ],
-                    "imageUri": "https://cards.scryfall.io/normal/front/3/1/31661af9-a40a-418c-82e3-b74aa14cc7c4.jpg?1785497718",
                     "controller": "Controller"
                 },
                 "descriptionOverride": "Landfall — Whenever a land you control enters, create a 2/2 green Bear creature token."
@@ -2969,8 +2966,7 @@
                             ],
                             "creatureTypes": [
                                 "Elf"
-                            ],
-                            "imageUri": "https://cards.scryfall.io/normal/front/7/6/761c7c31-c6c5-44e2-a845-f590542b6eda.jpg?1785497812"
+                            ]
                         },
                         "descriptionOverride": "Landfall — Whenever a land you control enters, create a 1/1 green Elf creature token."
                     },
@@ -3577,8 +3573,7 @@
                             ],
                             "creatureTypes": [
                                 "Dwarf"
-                            ],
-                            "imageUri": "https://cards.scryfall.io/normal/front/9/f/9fcb3a3f-c0d4-43d4-8549-826a38bfa27d.jpg?1785497537"
+                            ]
                         },
                         {
                             "type": "AttachEquipment",
@@ -4309,7 +4304,7 @@
                     {
                         "type": "TargetObject",
                         "filter": {
-                            "baseFilter": "creature Elf ctrl:you"
+                            "baseFilter": "permanent Elf ctrl:you"
                         },
                         "id": "target Elf you control"
                     }
@@ -4707,8 +4702,7 @@
                     ],
                     "creatureTypes": [
                         "Dwarf"
-                    ],
-                    "imageUri": "https://cards.scryfall.io/normal/front/9/f/9fcb3a3f-c0d4-43d4-8549-826a38bfa27d.jpg?1785497537"
+                    ]
                 }
             }
         ],
@@ -6554,8 +6548,7 @@
                     ],
                     "creatureTypes": [
                         "Wolf"
-                    ],
-                    "imageUri": "https://cards.scryfall.io/normal/front/e/0/e07312b9-f3c1-4e36-88fc-b29cde581eb6.jpg?1785497932"
+                    ]
                 },
                 "appliesTo": {
                     "type": "ZoneChangeEvent",
@@ -6788,7 +6781,7 @@
                     {
                         "type": "TargetObject",
                         "filter": {
-                            "baseFilter": "creature Dwarf ctrl:you"
+                            "baseFilter": "permanent Dwarf ctrl:you"
                         },
                         "id": "target Dwarf you control"
                     }
@@ -7135,7 +7128,7 @@
                     {
                         "type": "TargetObject",
                         "filter": {
-                            "baseFilter": "creature Human ctrl:you"
+                            "baseFilter": "permanent Human ctrl:you"
                         },
                         "id": "target Human you control"
                     }
@@ -11267,7 +11260,6 @@
                         "DEFENDER"
                     ],
                     "name": "Stone Boulder",
-                    "imageUri": "https://cards.scryfall.io/normal/front/3/4/3440e247-a733-4609-9d80-d4a5fc58ae46.jpg?1785502811",
                     "artifactToken": true
                 },
                 "descriptionOverride": "Whenever this creature enters, create a 3/1 colorless Wall artifact creature token with defender named Stone Boulder."
@@ -11287,7 +11279,6 @@
                         "DEFENDER"
                     ],
                     "name": "Stone Boulder",
-                    "imageUri": "https://cards.scryfall.io/normal/front/3/4/3440e247-a733-4609-9d80-d4a5fc58ae46.jpg?1785502811",
                     "artifactToken": true
                 },
                 "descriptionOverride": "Whenever this creature attacks, create a 3/1 colorless Wall artifact creature token with defender named Stone Boulder."
@@ -11841,8 +11832,7 @@
                         ],
                         "keywords": [
                             "FLYING"
-                        ],
-                        "imageUri": "https://cards.scryfall.io/normal/front/9/e/9ed2d2f3-e1b0-41e0-a29d-31624e5e9004.jpg?1785524352"
+                        ]
                     }
                 }
             ]
@@ -12022,8 +12012,7 @@
                     ],
                     "creatureTypes": [
                         "Dwarf"
-                    ],
-                    "imageUri": "https://cards.scryfall.io/normal/front/9/f/9fcb3a3f-c0d4-43d4-8549-826a38bfa27d.jpg?1785497537"
+                    ]
                 },
                 "timing": "SorcerySpeed",
                 "descriptionOverride": "Create a 2/2 red Dwarf creature token.",
@@ -12250,7 +12239,6 @@
                                     "keywords": [
                                         "FLYING"
                                     ],
-                                    "imageUri": "https://cards.scryfall.io/normal/front/1/e/1e4408fa-8037-42f1-989e-2da84867f76c.jpg?1785497692",
                                     "controller": "Controller"
                                 }
                             }
@@ -12308,7 +12296,6 @@
                                     "keywords": [
                                         "FLYING"
                                     ],
-                                    "imageUri": "https://cards.scryfall.io/normal/front/1/e/1e4408fa-8037-42f1-989e-2da84867f76c.jpg?1785497692",
                                     "controller": "Controller"
                                 }
                             }
@@ -12366,7 +12353,6 @@
                                     "keywords": [
                                         "FLYING"
                                     ],
-                                    "imageUri": "https://cards.scryfall.io/normal/front/1/e/1e4408fa-8037-42f1-989e-2da84867f76c.jpg?1785497692",
                                     "controller": "Controller"
                                 }
                             }
@@ -12424,7 +12410,6 @@
                                     "keywords": [
                                         "FLYING"
                                     ],
-                                    "imageUri": "https://cards.scryfall.io/normal/front/1/e/1e4408fa-8037-42f1-989e-2da84867f76c.jpg?1785497692",
                                     "controller": "Controller"
                                 }
                             }
@@ -13257,8 +13242,7 @@
                     ],
                     "creatureTypes": [
                         "Elf"
-                    ],
-                    "imageUri": "https://cards.scryfall.io/normal/front/7/6/761c7c31-c6c5-44e2-a845-f590542b6eda.jpg?1785497812"
+                    ]
                 },
                 "descriptionOverride": "Landfall — Whenever a land you control enters, create a 1/1 green Elf creature token."
             }

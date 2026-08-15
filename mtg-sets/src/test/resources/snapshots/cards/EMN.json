@@ -3406,7 +3406,7 @@
                 "id": "ability_1",
                 "trigger": {
                     "type": "ZoneChangeEvent",
-                    "filter": "creature Spirit ctrl:you",
+                    "filter": "permanent Spirit ctrl:you",
                     "to": "Battlefield"
                 },
                 "binding": "ANY",

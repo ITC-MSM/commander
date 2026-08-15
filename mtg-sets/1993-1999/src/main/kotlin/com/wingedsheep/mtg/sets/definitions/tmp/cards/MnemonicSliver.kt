@@ -26,7 +26,7 @@ val MnemonicSliver = card("Mnemonic Sliver") {
     toughness = 2
     oracleText = "All Slivers have \"{2}, Sacrifice this permanent: Draw a card.\""
 
-    val sliverFilter = GroupFilter(GameObjectFilter.Creature.withSubtype("Sliver"))
+    val sliverFilter = GroupFilter(GameObjectFilter.Permanent.withSubtype("Sliver"))
 
     staticAbility {
         ability = GrantActivatedAbility(

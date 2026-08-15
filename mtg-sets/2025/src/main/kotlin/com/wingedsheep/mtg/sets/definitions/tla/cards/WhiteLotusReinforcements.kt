@@ -33,7 +33,7 @@ val WhiteLotusReinforcements = card("White Lotus Reinforcements") {
         ability = ModifyStats(
             powerBonus = 1,
             toughnessBonus = 1,
-            filter = GroupFilter(GameObjectFilter.Creature.withSubtype(Subtype.ALLY).youControl(), excludeSelf = true)
+            filter = GroupFilter(GameObjectFilter.Permanent.withSubtype(Subtype.ALLY).youControl(), excludeSelf = true)
         )
     }
     metadata {

@@ -98,9 +98,8 @@ object Triggers {
      */
     private fun abilityFor(spec: TriggerSpec, script: CardScript): TriggeredAbility? {
         val effect = script.spellEffect ?: return null
-        val gated = effect as? GatedEffect
-        val optional = gated != null && gated.gate is Gate.MayDecide &&
-            gated == MayEffect(gated.then)
+        val may = (effect as? GatedEffect)
+            ?.takeIf { it.gate is Gate.MayDecide && it == MayEffect(it.then) }
         return TriggeredAbility(
             id = ID,
             trigger = spec.event,
@@ -120,14 +119,14 @@ object Triggers {
             // Leaving it null here is what makes [scriptFor] refuse to print an ability that
             // carries one: the reconstruction below compares the whole model, so a "while" card
             // declines rather than printing an "if" sentence that means something else.
-            effect = liftInterveningIf(if (optional) (effect as GatedEffect).then else effect),
+            effect = liftInterveningIf(may?.then ?: effect),
             interveningIf = interveningIf(effect),
             // A `TriggeredAbility` keeps its first requirement in a field of its own and the rest in
             // a list beside it, which is the shape a clause declaring two targets lands in —
             // Chromeshell Crab's exchange. The split is the SDK's; nothing in the text says it.
             targetRequirement = script.targetRequirements.firstOrNull(),
             additionalTargetRequirements = script.targetRequirements.drop(1),
-            optional = optional,
+            optional = may != null,
         )
     }
 
@@ -262,7 +261,11 @@ object Triggers {
     ): Phrase<TriggeredAbility> =
         phrase("$surface, {effect}", name = name) {
             slot("filter", if (article) Filters.indefinite else Filters.filter)
-            slot("effect", Steps.step)
+            // [Steps.triggeredStep], not [Steps.step]: this trigger's event mentions an object of its
+            // own, so "it" in the effect clause is that object rather than the source. See the
+            // third-anaphor section on [SelfSteps]; the differential caught Tattered Ratter reading
+            // "Whenever a Rat you control becomes blocked, it gets +2/+0" as pumping the *Ratter*.
+            slot("effect", Steps.triggeredStep)
             build { abilityFor(spec(it.value("filter")), it.value("effect")) }
             match { ability ->
                 val filter = triggeredFilter(ability) ?: return@match null

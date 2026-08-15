@@ -32,7 +32,7 @@ val ThoughtweftLieutenant = card("Thoughtweft Lieutenant") {
     triggeredAbility {
         trigger = TriggerSpec(
             event = ZoneChangeEvent(
-                filter = GameObjectFilter.Creature.youControl().withSubtype("Kithkin"),
+                filter = GameObjectFilter.Permanent.youControl().withSubtype("Kithkin"),
                 to = Zone.BATTLEFIELD
             ),
             binding = TriggerBinding.ANY

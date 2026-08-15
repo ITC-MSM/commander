@@ -212,6 +212,15 @@ data class TargetFilter(
         /** Target creature card in your graveyard */
         val CreatureInYourGraveyard = TargetFilter(GameObjectFilter.Companion.Creature.ownedByYou(), zone = Zone.GRAVEYARD)
 
+        /**
+         * Target permanent card in your graveyard — what a **bare** tribal noun names.
+         *
+         * "Return target **Zombie card** from your graveyard" names any permanent card with the
+         * subtype, not only a creature card with it; [CreatureInYourGraveyard] is the counterpart
+         * for the adjectival "target Zombie creature card".
+         */
+        val PermanentInYourGraveyard = TargetFilter(GameObjectFilter.Companion.Permanent.ownedByYou(), zone = Zone.GRAVEYARD)
+
         /** Target instant or sorcery card in a graveyard */
         val InstantOrSorceryInGraveyard = TargetFilter(GameObjectFilter.Companion.InstantOrSorcery, zone = Zone.GRAVEYARD)
 

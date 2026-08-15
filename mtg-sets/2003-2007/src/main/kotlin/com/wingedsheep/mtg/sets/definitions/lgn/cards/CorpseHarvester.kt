@@ -31,7 +31,7 @@ val CorpseHarvester = card("Corpse Harvester") {
             Costs.Sacrifice(GameObjectFilter.Creature)
         )
         effect = Patterns.Library.searchLibrary(
-            filter = GameObjectFilter.Creature.withSubtype(Subtype("Zombie")),
+            filter = GameObjectFilter.Permanent.withSubtype(Subtype("Zombie")),
             reveal = true,
             shuffleAfter = false
         ) then Patterns.Library.searchLibrary(

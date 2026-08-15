@@ -47,7 +47,7 @@ object FoundationsSet : MtgSet {
         // tfdn #1 — Arahbo, the First Fang's 1/1 white Cat (art by Leonardo Santanna).
         TokenPrinting(
             name = "Cat",
-            imageUri = "https://cards.scryfall.io/art_crop/front/2/8/2885d54c-9fb2-4f01-8937-54f8ac1ce5bc.jpg?1783908593",
+            imageUri = "https://cards.scryfall.io/normal/front/2/8/2885d54c-9fb2-4f01-8937-54f8ac1ce5bc.jpg?1783908593",
         ),
         // Release the Dogs is reprinted here, and the joke only lands if the four Dogs look like
         // four different dogs — so the FDN printing borrows Jumpstart's four Dog arts rather than

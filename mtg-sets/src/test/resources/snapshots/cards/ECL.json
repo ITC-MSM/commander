@@ -2002,7 +2002,7 @@
                 "type": "GrantKeyword",
                 "keyword": "DOUBLE_STRIKE",
                 "filter": {
-                    "baseFilter": "creature Giant ctrl:you",
+                    "baseFilter": "permanent Giant ctrl:you",
                     "excludeSelf": true
                 }
             }
@@ -14946,7 +14946,7 @@
                     {
                         "type": "TargetObject",
                         "filter": {
-                            "baseFilter": "creature Elf ctrl:you"
+                            "baseFilter": "permanent Elf ctrl:you"
                         },
                         "id": "target Elf you control"
                     }
@@ -18273,7 +18273,7 @@
                 "id": "ability_1",
                 "trigger": {
                     "type": "ZoneChangeEvent",
-                    "filter": "creature Kithkin ctrl:you",
+                    "filter": "permanent Kithkin ctrl:you",
                     "to": "Battlefield"
                 },
                 "binding": "ANY",

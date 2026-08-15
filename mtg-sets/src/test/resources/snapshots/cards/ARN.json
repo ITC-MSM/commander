@@ -293,7 +293,7 @@
                     {
                         "type": "TargetObject",
                         "filter": {
-                            "baseFilter": "creature Wall"
+                            "baseFilter": "permanent Wall"
                         },
                         "id": "target Wall"
                     }
@@ -1350,7 +1350,7 @@
                     {
                         "type": "TargetObject",
                         "filter": {
-                            "baseFilter": "creature Elephant"
+                            "baseFilter": "permanent Elephant"
                         },
                         "id": "target Elephant"
                     }

@@ -27,7 +27,7 @@ val PrideOfThePerfect = card("Pride of the Perfect") {
         ability = ModifyStats(
             powerBonus = 2,
             toughnessBonus = 0,
-            filter = GroupFilter(GameObjectFilter.Creature.withSubtype(Subtype.ELF).youControl())
+            filter = GroupFilter(GameObjectFilter.Permanent.withSubtype(Subtype.ELF).youControl())
         )
     }
     metadata {

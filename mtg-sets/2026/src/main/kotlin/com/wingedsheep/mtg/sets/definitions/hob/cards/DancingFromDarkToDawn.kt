@@ -60,7 +60,6 @@ val DancingFromDarkToDawn = card("Dancing from Dark to Dawn") {
             colors = setOf(Color.GREEN),
             creatureTypes = setOf("Bear"),
             controller = EffectTarget.Controller,
-            imageUri = "https://cards.scryfall.io/normal/front/3/1/31661af9-a40a-418c-82e3-b74aa14cc7c4.jpg?1785497718",
         )
         description = "Landfall — Whenever a land you control enters, create a 2/2 green Bear " +
             "creature token."

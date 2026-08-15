@@ -616,7 +616,7 @@
                 "type": "GrantKeyword",
                 "keyword": "MENACE",
                 "filter": {
-                    "baseFilter": "creature Rhino ctrl:you"
+                    "baseFilter": "permanent Rhino ctrl:you"
                 }
             }
         ]
@@ -2518,7 +2518,7 @@
                     "filter": "artifact ctrl:you",
                     "to": "Battlefield"
                 },
-                "binding": "OTHER",
+                "binding": "ANY",
                 "effect": {
                     "type": "AddCounters",
                     "counterType": "+1/+1",
@@ -10958,7 +10958,7 @@
                 "powerBonus": 1,
                 "toughnessBonus": 1,
                 "filter": {
-                    "baseFilter": "creature Ninja ctrl:you",
+                    "baseFilter": "permanent Ninja ctrl:you",
                     "excludeSelf": true
                 }
             }
@@ -12549,7 +12549,7 @@
                 "powerBonus": 2,
                 "toughnessBonus": 2,
                 "filter": {
-                    "baseFilter": "creature Turtle ctrl:you"
+                    "baseFilter": "permanent Turtle ctrl:you"
                 }
             }
         ]

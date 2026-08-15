@@ -31,7 +31,7 @@ val ChampionOfTheParish = card("Champion of the Parish") {
     toughness = 1
     triggeredAbility {
         trigger = Triggers.entersBattlefield(
-            filter = GameObjectFilter.Creature.withSubtype(Subtype.HUMAN).youControl(),
+            filter = GameObjectFilter.Permanent.withSubtype(Subtype.HUMAN).youControl(),
             binding = TriggerBinding.OTHER
         )
         effect = AddCountersEffect(counterType = Counters.PLUS_ONE_PLUS_ONE, count = 1, target = EffectTarget.Self)

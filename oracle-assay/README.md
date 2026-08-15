@@ -361,12 +361,11 @@ named population bucket instead and the denominator stays visible.
     Oracle text differs from golden  203
     golden would not decode            0
 
-  Confirmed — models agree           2425   997.5‰ (99.8%)
-  DIVERGENT — read every one            6
+  Confirmed — models agree           2430   999.6‰ (100.0%)
+  DIVERGENT — read every one            1
 ```
 
-Four of those six are what the **sweep** left standing, and the other two are the counters band's,
-classified in its own section above. The sweep took the count from 122 to 4: every divergence the
+The one that remains is what the **sweep** left standing. The sweep took the count from 122 to 1: every divergence the
 gate had accumulated was read, classified as parser bug / card bug / fold, and acted on. What it
 found, by kind:
 
@@ -385,39 +384,119 @@ found, by kind:
   it unless you pay {G}{G}" as `PayCost.OwnManaCost` — the card's *printed* cost, which for the two
   lands among them is `{0}`, i.e. a sacrifice that never happens.
 - **Four parser bugs**, each of the reversible-but-wrong class the touchstone cannot see: an
-  intervening-if left duplicated in the effect as well as lifted into `triggerCondition`; Chromatic
+  intervening-if left duplicated in the effect as well as lifted into `interveningIf`; Chromatic
   Sphere read as an instant-speed ability because the mana effect sat under a composite (CR 605.1a
   says "could add mana", not "does nothing else"); a two-pass reading of "creatures you control get
   +3/+3 **and** gain trample"; and two sentences printed in a spelling the corpus never uses.
 - **One SDK finding acted on, one filed.** Acted on: `manaAbility = true` now derives
   `timing = TimingRule.ManaAbility` in `CardBuilder`, so the two spellings of one fact can no longer
   drift (24 cards carried only one, and the AI's `ExpiringGrantWindow` branches on `timing`).
-- **Fixed: the engine never performed CR 603.4's second intervening-if check.** The old shared
-  `triggerCondition` was filtered at trigger *detection* and read nowhere else, so Beastbond
-  Outcaster drew its card even when the 4-power creature was killed in response — against the ruling
-  quoted in its own card file. Nine cards (Lavaborn Muse, Farsight Mask, Bloodhall Priest ×2, Asylum
-  Visitor, Heir of the Wilds, Convalescent Care, Oversold Cemetery, Edgar Markov) had noticed and
-  hand-written a redundant resolution-time gate to compensate; Lavaborn Muse's is what made it a
-  *divergence* here rather than only a rules bug, since the gate is a second condition the printed
-  line does not spell.
+- **One engine bug, and the only finding so far whose fix was in neither a card nor a rule: the
+  engine never performed CR 603.4's second intervening-if check.** Beastbond Outcaster drew its card
+  even when the 4-power creature was killed in response, and nine cards had hand-written a redundant
+  resolution-time gate to compensate — a second condition the printed line does not spell, which is
+  what made Lavaborn Muse a *divergence* here. See
+  [Lavaborn Muse, and the CR 603.4 split](#lavaborn-muse-and-the-cr-6034-split).
 
-  A uniform recheck was implemented and reverted once, because the field was overloaded three ways.
-  The fix split it: `interveningIf` (CR 603.4, checked again on resolution) and `triggerRestriction`
-  (CR 603.2, checked only when the trigger fires — "Whenever this creature attacks *while* you
-  control a Dinosaur", which Burning Sun Cavalry and Seasoned Warrenguard have scenario tests
-  asserting). Re-read from the printed text, the corpus's 510 sites are **377 intervening-"if" / 44
-  "while" / 89 other trigger-time restriction**. All nine gates are gone, and `Triggers.abilityFor`
-  writes `interveningIf` — never `triggerRestriction`, which no rule here spells, so a "while" card
-  declines rather than printing an "if" sentence that means something else.
+The sweep's last pass closed three more, one per kind — a card bug, a scope bug and the third
+anaphor — and each is worth reading for its shape rather than its card:
 
-Those that remain are classified, not unexplained:
+- **Two card bugs, `TriggerBinding.OTHER` for text that says "an artifact you control"** (Donatello,
+  Way with Machines and Mm'menon, Uthros Exile). `OTHER` claims a self-exclusion the text does not
+  make, and neither card is an artifact, so nothing observable changes *today* — which is exactly the
+  reason it survived review, and exactly what "they happen to agree today is not a reason" rules out
+  as a fold. The reading only becomes observable if the creature is ever made an artifact.
+- **Kalastria Highborn — the gate's scope stopped at the first clause.** "You may pay {B}. If you do,
+  target player loses 2 life **and** you gain 2 life." read as `Composite[Gated{LoseLife}, GainLife]`,
+  i.e. you gained the life even when you declined to pay. The outer clause-sequence rule took the
+  " and " join before the gate could. The fix is structural rather than an alternation reorder: the
+  pay-gates are **no longer members of `simpleClause`/`laterClause`**, so nothing can be joined after
+  one, and their consequence slots a clause *run* that owns the rest of the sentence. That is one
+  reading, not a preferred one — and it is what Oracle templating means, as Extort's own reminder
+  text shows ("you may pay {W/B}. If you do, each opponent loses 1 life **and** you gain that much
+  life"). The run shape is now `Steps.clauseRun`, shared by the line and the consequence.
+- **Tattered Ratter — the third anaphor, and the reversible-but-wrong class again.** "Whenever a Rat
+  you control becomes blocked, **it** gets +2/+0" pumped the *Ratter*: `Primitives.self` and
+  `SelfSteps.anaphoric` both built `EffectTarget.Self`, and the wrong reading round-tripped
+  byte-perfectly. A blanket remap inside `filteredTriggerRule` would have broken "Whenever a creature
+  dies, **~** gets +1/+1", because after parsing the two spellings are the same model — the
+  distinction only exists at parse time. So the vocabulary is written once as
+  `SelfSteps.retargetable` and *instantiated per position*: the source cascade reads both spellings as
+  the source, and the filtered-trigger cascade reads the **name** as the source and the **pronoun** as
+  `EffectTarget.TriggeringEntity`. Disjoint surfaces, disjoint models, nothing for the printer to
+  choose. `Steps.Cascade` is the shape both instances share, so `Steps.step` is not duplicated — only
+  the dozen combinators above the atoms are built twice, and every leaf is shared. 545 filtered-trigger
+  lines in the corpus spell "it" in that position; the gate's round-trips rose by 4 and its
+  alternate-spelling count fell by the same 4, which is the pronoun becoming canonical for its own
+  model.
 
-| Card | Classification |
+### Zombie Master, and the 103 cards behind it
+
+The last card bug the sweep closed was the longest-standing one, and it is the clearest example of
+what this gate is *for*. `Filters.bareSubtype` read a bare tribal noun ("Zombies") as a **creature**
+filter. A bare creature-type noun actually names every *permanent* with the subtype — the adjectival
+"Zombie creatures" is what narrows it — and Zombie Master proves the distinction is deliberate rather
+than stylistic by printing both spellings on one card, with the ability its bare-noun line grants
+spelled "Regenerate this **permanent**".
+
+Flipping the one `build` took the differential from 2 divergences to **104**, which is why it had
+been reverted twice before: 103 hand-written cards spelled the bare noun as a creature filter, and
+for almost all of them the two select the same permanents. That is precisely why it survived review —
+an error that is unobservable on the cards that carry it is invisible to everything except a
+differential.
+
+It landed as a card migration *first*, then the grammar line, with the differential as the check at
+every step: 104 → 26 → 4 → 1. The residue at each stage was the interesting part, because the cards
+that did not fall to the mechanical edit were the ones spelling the filter some other way — and
+three of those turned out to be **gaps in the SDK's own vocabulary**, with no way to write the
+bare-noun reading at all:
+
+| Added | For the printed form |
 |---|---|
-| Zombie Master | The bare-tribal-noun approximation, **measured**: "Zombies" means every Zombie *permanent*, and reading it that way costs 80 other cards (45 → 127 divergences). The one card in the corpus where the distinction is observable, because its granted ability says "Regenerate this permanent". |
-| ~~Lavaborn Muse~~ | **Resolved by the CR 603.4 split.** It carried the redundant resolution-time gate above — correct under the old engine and divergent from the grammar, because the gate is a second condition the printed line does not spell. With `interveningIf` doing both checks the gate is deleted and the two models agree. |
-| Tattered Ratter | Parser bug. "it" inside a *filtered* trigger means the triggering creature, not the source — the third anaphor position. Fixing it needs a clause vocabulary reachable only from `filteredTriggerRule`, since `Primitives.self` and `SelfSteps.anaphoric` both build `EffectTarget.Self` today. |
-| Kalastria Highborn | Parser bug. "You may pay {B}. If you do, A **and** B." — the outer clause-sequence rule takes the " and " join before the gate can, so B lands outside the gate. Fixing it by alternation order is what the design says never to do; the gate's scope has to run to the end of the sentence. |
+| `DynamicAmounts.permanentsWithSubtype` | "the number of **Slivers** on the battlefield" |
+| `Conditions.ControlPermanentOfType` | "if you control a **Rabbit**" |
+| `TargetFilter.PermanentInYourGraveyard` | "target **Zombie card** from your graveyard" |
+
+Each sits beside its creature-scoped twin, and the reference doc now carries the table that says
+which to reach for. A reading the SDK could not express is the finding this module exists to
+produce; that it took a card migration to surface three of them is the argument for running the
+migration rather than filing the divergence.
+
+Twelve cards needed per-occurrence care rather than a blanket edit, and Kavu Monarch is the one to
+know: "Kavu **creatures** have trample" and "whenever another **Kavu** enters" are two filters in one
+card, and only the second moves. A replace-all would have round-tripped byte-perfectly and been
+wrong — the same class the gate exists to catch, reintroduced by the fix for it.
+
+### Lavaborn Muse, and the CR 603.4 split
+
+The last one to fall was the one the gate had been *waiting* on, and it is the only divergence so far
+whose fix was in the engine rather than in a card or in a rule. Lavaborn Muse carried its
+intervening-if twice — once as the trigger's condition and once as a `ConditionalEffect` around the
+effect — because the engine checked the condition only at trigger detection, so a card that wanted CR
+603.4's second check had to hand-write it. That second copy is a condition the printed line does not
+spell, which is what made it a divergence rather than only a rules bug, and the grammar was right
+both times: Phage the Untouchable, which carried *only* the condition, was reported for the mirror
+reason.
+
+The engine fix split the overloaded field into `interveningIf` (CR 603.4 — checked when the trigger
+would fire and again on resolution) and `triggerRestriction` (CR 603.2 — checked only when it fires,
+which is what "Whenever this creature attacks *while* you control a Dinosaur" means, and what Burning
+Sun Cavalry and Seasoned Warrenguard have scenario tests asserting). Re-read against the printed text
+rather than against the field, the corpus's 510 sites are **377 intervening-"if" / 44 "while" / 89
+other trigger-time restriction**, and the Comprehensive Rules overruled the first reading five times
+— Offspring, Soulbond, Suspend, Impending and Gift all print an "if" that looked like a mechanic gate
+(CR 702.175a, 702.95a, 702.62a, 702.176a, 702.174b), while max speed is "*as long as*" (702.178a) and
+is therefore the opposite.
+
+With the second check in the engine, all nine compensating gates are deleted — Lavaborn Muse,
+Farsight Mask, Bloodhall Priest ×2, Asylum Visitor, Heir of the Wilds, Convalescent Care, Oversold
+Cemetery and Edgar Markov — and the two models agree. `Triggers.abilityFor` writes `interveningIf`
+and never `triggerRestriction`, so a "while" card declines rather than printing an "if" sentence that
+means something else.
+
+**The differential is at zero.** That is a checkpoint, not a destination: it means every card the
+grammar currently reads whole agrees with its golden, and the next band of rules is expected to move
+it off zero again.
 
 The divergence count is not meant to stay at zero — it rises every time the grammar reaches a new
 class of card, and each rise is the gate earning its keep. The five it opened with, the eight the

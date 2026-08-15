@@ -2457,7 +2457,7 @@
                 "targetRequirement": {
                     "type": "TargetObject",
                     "filter": {
-                        "baseFilter": "creature Spider ctrl:you"
+                        "baseFilter": "permanent Spider ctrl:you"
                     },
                     "id": "target Spider you control"
                 }

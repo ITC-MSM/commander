@@ -34,7 +34,7 @@ val GempalmIncinerator = card("Gempalm Incinerator") {
         val t = target("target", Targets.Creature)
         effect = MayEffect(
             DealDamageEffect(
-                DynamicAmounts.creaturesWithSubtype(Subtype("Goblin")),
+                DynamicAmounts.permanentsWithSubtype(Subtype("Goblin")),
                 t
             )
         )

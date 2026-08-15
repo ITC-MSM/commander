@@ -2194,9 +2194,17 @@
                     }
                 },
                 "condition": {
-                    "type": "SourceReceivedCounterThisTurn",
-                    "counterType": "+1/+1",
-                    "placedByYou": true
+                    "type": "EntityMatches",
+                    "entity": "Self",
+                    "filter": {
+                        "statePredicates": [
+                            {
+                                "type": "ReceivedCounterThisTurn",
+                                "counterType": "+1/+1",
+                                "placedByController": true
+                            }
+                        ]
+                    }
                 }
             }
         ]
@@ -2778,6 +2786,203 @@
         "GREEN"
     ],
     "layout": "MODAL_DFC"
+}
+
+// Bullseye, Death Dealer
+{
+    "name": "Bullseye, Death Dealer",
+    "manaCost": "{2}{B/R}",
+    "typeLine": "Legendary Creature — Human Assassin Villain",
+    "oracleText": "When Bullseye enters, you may sacrifice an artifact or discard a nonland card. When you do, Bullseye deals 2 damage to any target.\n{3}, {T}, Sacrifice an artifact or discard a nonland card: Bullseye deals 2 damage to any target.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "ReflexiveTrigger",
+                    "action": {
+                        "type": "ChooseAction",
+                        "choices": [
+                            {
+                                "label": "Sacrifice an artifact",
+                                "effect": {
+                                    "type": "Sacrifice",
+                                    "filter": "artifact"
+                                },
+                                "feasibilityCheck": {
+                                    "type": "ControlsPermanentMatching",
+                                    "filter": "artifact"
+                                }
+                            },
+                            {
+                                "label": "Discard a nonland card",
+                                "effect": {
+                                    "type": "Composite",
+                                    "effects": [
+                                        {
+                                            "type": "GatherCards",
+                                            "source": {
+                                                "type": "FromZone",
+                                                "zone": "Hand",
+                                                "filter": "nonland"
+                                            },
+                                            "storeAs": "hand"
+                                        },
+                                        {
+                                            "type": "SelectFromCollection",
+                                            "from": "hand",
+                                            "selection": {
+                                                "type": "ChooseExactly",
+                                                "count": {
+                                                    "type": "Fixed",
+                                                    "amount": 1
+                                                }
+                                            },
+                                            "storeSelected": "discarded",
+                                            "prompt": "Choose 1 card to discard"
+                                        },
+                                        {
+                                            "type": "MoveCollection",
+                                            "from": "discarded",
+                                            "destination": {
+                                                "type": "ToZone",
+                                                "zone": "Graveyard"
+                                            },
+                                            "moveType": "Discard"
+                                        }
+                                    ]
+                                },
+                                "feasibilityCheck": {
+                                    "type": "HasCardsInZone",
+                                    "zone": "Hand",
+                                    "filter": "nonland"
+                                }
+                            }
+                        ]
+                    },
+                    "reflexiveEffect": {
+                        "type": "DealDamage",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 2
+                        },
+                        "target": {
+                            "type": "ContextTarget",
+                            "index": 0
+                        }
+                    },
+                    "reflexiveTargetRequirements": [
+                        "AnyTarget"
+                    ],
+                    "descriptionOverride": "You may sacrifice an artifact or discard a nonland card. When you do, Bullseye deals 2 damage to any target."
+                },
+                "descriptionOverride": "When Bullseye enters, you may sacrifice an artifact or discard a nonland card. When you do, Bullseye deals 2 damage to any target."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{3}"
+                            }
+                        },
+                        "CostTap",
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomSacrifice",
+                                "filter": "artifact"
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "any target"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "AnyTarget",
+                        "id": "any target"
+                    }
+                ],
+                "descriptionOverride": "{3}, {T}, Sacrifice an artifact: Bullseye deals 2 damage to any target."
+            },
+            {
+                "id": "ability_3",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{3}"
+                            }
+                        },
+                        "CostTap",
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomDiscard",
+                                "filter": "nonland"
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "any target"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "AnyTarget",
+                        "id": "any target"
+                    }
+                ],
+                "descriptionOverride": "{3}, {T}, Discard a nonland card: Bullseye deals 2 damage to any target."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "209",
+        "rarity": "UNCOMMON",
+        "artist": "Bartek Fedyczak",
+        "flavorText": "\"I don't miss.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/d/fd1f0b5f-5e0e-4da1-ab54-a62db5af3591.jpg?1783902903"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "RED"
+    ]
 }
 
 // Call Damage Control
@@ -8342,6 +8547,68 @@
     ]
 }
 
+// Kid Loki
+{
+    "name": "Kid Loki",
+    "manaCost": "{U}",
+    "typeLine": "Legendary Creature — God Hero Villain",
+    "oracleText": "Each creature you control that you've put one or more +1/+1 counters on this turn has hexproof.\nWhenever you draw your second card each turn, put a +1/+1 counter on Kid Loki.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "NthCardDrawnEvent",
+                    "nthCard": 2
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": "Self"
+                },
+                "descriptionOverride": "Whenever you draw your second card each turn, put a +1/+1 counter on Kid Loki."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "GrantKeyword",
+                "keyword": "HEXPROOF",
+                "filter": {
+                    "baseFilter": {
+                        "cardPredicates": [
+                            "IsCreature"
+                        ],
+                        "statePredicates": [
+                            {
+                                "type": "ReceivedCounterThisTurn",
+                                "counterType": "+1/+1",
+                                "placedByController": true
+                            }
+                        ],
+                        "controllerPredicate": "ControlledByYou"
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "63",
+        "rarity": "UNCOMMON",
+        "artist": "Mintautas Šukys",
+        "flavorText": "\"A lie is nothing but a story. We can choose to tell a different one.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/c/5c9ff69e-6489-49f3-b401-64856f0b7c11.jpg?1783902956"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Killmonger, Scourge of Wakanda
 {
     "name": "Killmonger, Scourge of Wakanda",
@@ -8855,6 +9122,90 @@
         "artist": "Slawomir Maniak",
         "flavorText": "\"The Supreme Intelligence claims this planet.\"",
         "imageUri": "https://cards.scryfall.io/normal/front/b/a/ba5e441d-d036-4080-9571-6cf76df7b452.jpg?1783902928"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Loki Laufeyson
+{
+    "name": "Loki Laufeyson",
+    "manaCost": "{1}{R}",
+    "typeLine": "Legendary Creature — God Sorcerer Villain",
+    "oracleText": "{1}, {T}: When you next cast an instant or sorcery spell with mana value less than or equal to Loki's power this turn, copy that spell. You may choose new targets for the copy.\nPower-up — {4}{R}: Put two +1/+1 counters on Loki. (Activate each power-up ability only once. Reduce the cost by his mana cost if he entered this turn.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "CopyNextSpellCast",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            {
+                                "type": "Or",
+                                "predicates": [
+                                    "IsInstant",
+                                    "IsSorcery"
+                                ]
+                            },
+                            {
+                                "type": "ManaValueAtMostDynamic",
+                                "amount": {
+                                    "type": "EntityProperty",
+                                    "entity": "Source",
+                                    "numericProperty": "Power"
+                                }
+                            }
+                        ]
+                    }
+                },
+                "descriptionOverride": "When you next cast an instant or sorcery spell with mana value less than or equal to Loki's power this turn, copy that spell. You may choose new targets for the copy."
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{4}{R}"
+                    }
+                },
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 2,
+                    "target": "Self"
+                },
+                "restrictions": [
+                    "Once"
+                ],
+                "isPowerUp": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "143",
+        "rarity": "UNCOMMON",
+        "artist": "Julia Vasilyeva",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/3/53b795a7-11f8-423a-b021-f811007fc82f.jpg?1783902928"
     },
     "colorIdentityOverride": [
         "RED"
@@ -16002,6 +16353,50 @@
     ]
 }
 
+// The Scarlet Witch
+{
+    "name": "The Scarlet Witch",
+    "manaCost": "{2}{R}",
+    "typeLine": "Legendary Creature — Mutant Warlock Hero",
+    "oracleText": "Instant and sorcery spells you cast with mana value 4 or greater cost {X} less to cast, where X is The Scarlet Witch's power.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ModifySpellCost",
+                "target": {
+                    "type": "YouCast",
+                    "filter": "instant|sorcery mv>=4"
+                },
+                "modification": {
+                    "type": "ReduceGenericBy",
+                    "source": {
+                        "type": "Dynamic",
+                        "amount": {
+                            "type": "EntityProperty",
+                            "entity": "Source",
+                            "numericProperty": "Power"
+                        }
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "151",
+        "rarity": "RARE",
+        "artist": "Magali Villeneuve",
+        "flavorText": "\"Some are bound by the whims of chaos, but I found freedom in its endless possibility.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/0/407e8993-e56d-477d-ab85-d10a2522eab3.jpg?1783902924"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // The Sentry, Golden Guardian
 {
     "name": "The Sentry, Golden Guardian",
@@ -19329,7 +19724,7 @@
                 "id": "ability_1",
                 "trigger": {
                     "type": "ZoneChangeEvent",
-                    "filter": "creature Villain ctrl:you",
+                    "filter": "permanent Villain ctrl:you",
                     "to": "Battlefield"
                 },
                 "binding": "OTHER",

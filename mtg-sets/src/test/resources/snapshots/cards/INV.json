@@ -6649,7 +6649,7 @@
                 "id": "ability_1",
                 "trigger": {
                     "type": "ZoneChangeEvent",
-                    "filter": "creature Kavu",
+                    "filter": "permanent Kavu",
                     "to": "Battlefield"
                 },
                 "binding": "OTHER",

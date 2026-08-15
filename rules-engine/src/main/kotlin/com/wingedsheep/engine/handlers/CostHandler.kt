@@ -505,7 +505,9 @@ class CostHandler {
                     c.with(counters.withAdded(CounterType.MINUS_ONE_MINUS_ONE, cost.amount))
                 }
                 val newState = DamageUtils
-                    .markCounterPlacedOnCreature(withCounters, controllerId, targetId)
+                    .markCounterPlacedOnCreature(
+                        withCounters, controllerId, targetId, Counters.MINUS_ONE_MINUS_ONE
+                    )
                 val targetName = targetContainer.get<CardComponent>()?.name ?: "Creature"
                 val events = listOf<GameEvent>(
                     CountersAddedEvent(
@@ -747,7 +749,12 @@ class CostHandler {
                 val firstThisTurn = DamageUtils.isFirstCounterThisTurn(state, sourceId)
                 val newState = state.updateEntity(sourceId) { c ->
                     c.with(current.withAdded(counterType, modifiedCount))
-                }.let { DamageUtils.markCounterPlacedOnCreature(it, controllerId, sourceId) }
+                }.let {
+                    DamageUtils.markCounterPlacedOnCreature(
+                        it, controllerId, sourceId,
+                        com.wingedsheep.engine.handlers.effects.permanent.counters.counterTypeToString(counterType)
+                    )
+                }
                 val entityName = state.getEntity(sourceId)?.get<CardComponent>()?.name ?: ""
                 CostPaymentResult.success(
                     newState,

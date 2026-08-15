@@ -26,7 +26,7 @@ val BerserkMurlodont = card("Berserk Murlodont") {
 
     triggeredAbility {
         trigger = Triggers.becomesBlocked(
-            filter = GameObjectFilter.Creature.withSubtype("Beast"),
+            filter = GameObjectFilter.Permanent.withSubtype("Beast"),
             binding = TriggerBinding.ANY,
         )
         effect = Effects.ModifyStats(

@@ -31,7 +31,7 @@ val EzekielSimsSpiderTotem = card("Ezekiel Sims, Spider-Totem") {
         trigger = Triggers.BeginCombat
         val t = target(
             "target Spider you control",
-            TargetCreature(filter = TargetFilter(GameObjectFilter.Creature.withSubtype(Subtype.SPIDER).youControl()))
+            TargetCreature(filter = TargetFilter(GameObjectFilter.Permanent.withSubtype(Subtype.SPIDER).youControl()))
         )
         effect = Effects.ModifyStats(2, 2, t)
     }

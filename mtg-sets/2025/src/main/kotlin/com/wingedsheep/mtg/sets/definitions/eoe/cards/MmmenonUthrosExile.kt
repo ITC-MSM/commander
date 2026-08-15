@@ -38,7 +38,7 @@ val MmmenonUthrosExile = card("Mm'menon, Uthros Exile") {
                     .youControl(),
                 to = Zone.BATTLEFIELD
             ),
-            binding = TriggerBinding.OTHER
+            binding = TriggerBinding.ANY
         )
 
         val targetCreature = target("target creature", Targets.Creature)

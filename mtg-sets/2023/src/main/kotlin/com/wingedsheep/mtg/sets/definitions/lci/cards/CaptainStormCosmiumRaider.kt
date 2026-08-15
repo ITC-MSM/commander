@@ -38,7 +38,7 @@ val CaptainStormCosmiumRaider = card("Captain Storm, Cosmium Raider") {
         )
         val t = target(
             "target Pirate you control",
-            TargetCreature(filter = TargetFilter.CreatureYouControl.withSubtype(Subtype.PIRATE)),
+            TargetCreature(filter = TargetFilter.PermanentYouControl.withSubtype(Subtype.PIRATE)),
         )
         effect = Effects.AddCounters(Counters.PLUS_ONE_PLUS_ONE, 1, t)
     }

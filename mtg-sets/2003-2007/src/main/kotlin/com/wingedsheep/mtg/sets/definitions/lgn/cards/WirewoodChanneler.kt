@@ -26,7 +26,7 @@ val WirewoodChanneler = card("Wirewood Channeler") {
     activatedAbility {
         cost = AbilityCost.Tap
         effect = Effects.AddAnyColorMana(
-            DynamicAmounts.creaturesWithSubtype(Subtype.ELF)
+            DynamicAmounts.permanentsWithSubtype(Subtype.ELF)
         )
         manaAbility = true
         timing = TimingRule.ManaAbility

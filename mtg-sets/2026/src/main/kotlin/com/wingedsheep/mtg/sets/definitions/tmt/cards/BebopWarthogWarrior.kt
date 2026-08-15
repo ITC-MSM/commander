@@ -32,7 +32,7 @@ val BebopWarthogWarrior = card("Bebop, Warthog Warrior") {
         ability = GrantKeyword(
             keyword = Keyword.MENACE,
             filter = GroupFilter(
-                GameObjectFilter.Creature.withSubtype("Rhino").youControl()
+                GameObjectFilter.Permanent.withSubtype("Rhino").youControl()
             )
         )
     }

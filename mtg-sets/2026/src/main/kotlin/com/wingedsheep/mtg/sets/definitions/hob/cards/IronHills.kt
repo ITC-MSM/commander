@@ -57,7 +57,7 @@ val IronHills = card("Iron Hills") {
         cost = Costs.Composite(Costs.Mana("{2}{R}{W}"), Costs.Tap, Costs.SacrificeSelf)
         val dwarf = target(
             "target Dwarf you control",
-            TargetCreature(filter = TargetFilter.CreatureYouControl.withSubtype(Subtype.DWARF))
+            TargetCreature(filter = TargetFilter.PermanentYouControl.withSubtype(Subtype.DWARF))
         )
         effect = Effects.AddCounters(Counters.PLUS_ONE_PLUS_ONE, 2, dwarf)
         timing = TimingRule.SorcerySpeed

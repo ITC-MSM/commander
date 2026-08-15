@@ -29,7 +29,7 @@ val KeeperOfTheNineGales = card("Keeper of the Nine Gales") {
     activatedAbility {
         cost = Costs.Composite(
             Costs.Tap,
-            Costs.TapPermanents(2, GameObjectFilter.Creature.withSubtype("Bird"))
+            Costs.TapPermanents(2, GameObjectFilter.Permanent.withSubtype("Bird"))
         )
         val permanent = target("permanent", Targets.Permanent)
         effect = Effects.ReturnToHand(permanent)

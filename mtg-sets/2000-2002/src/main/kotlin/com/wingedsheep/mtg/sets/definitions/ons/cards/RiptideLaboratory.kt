@@ -33,7 +33,7 @@ val RiptideLaboratory = card("Riptide Laboratory") {
     activatedAbility {
         cost = Costs.Composite(Costs.Mana("{1}{U}"), Costs.Tap)
         val t = target("target", TargetPermanent(
-            filter = TargetFilter(GameObjectFilter.Creature.withSubtype("Wizard").youControl())
+            filter = TargetFilter(GameObjectFilter.Permanent.withSubtype("Wizard").youControl())
         ))
         effect = Effects.Move(t, Zone.HAND)
     }

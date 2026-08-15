@@ -248,6 +248,24 @@ object Primitives {
     )
 
     /**
+     * [self]'s two halves, for the one context that has to tell them apart.
+     *
+     * Inside a *filtered* trigger the two spellings stop denoting the same thing: "Whenever a Rat you
+     * control becomes blocked, **it** gets +2/+0" pumps the Rat, while "Whenever a Rat you control
+     * becomes blocked, **~** gets +2/+0" pumps the source. English resolves the anaphor to the most
+     * recently mentioned object, and in a filtered trigger that is the filter's match rather than the
+     * card — which is why this is a *third* anaphor position beside [self] and [Continuations], and
+     * why the two surfaces have to be separable rather than one rule with an alternate.
+     *
+     * Everywhere else they still denote one thing and [self] is what rules take. See
+     * [SelfSteps.retargetable] for the vocabulary these two index, and [Steps.triggeredStep] for the
+     * only place the split is reachable from.
+     */
+    val selfNamed: Phrase<Unit> = constant(Normalizer.SELF, Unit)
+
+    val itPronoun: Phrase<Unit> = constant("it", Unit)
+
+    /**
      * Plurals whose singular the general rules would get wrong *in either direction*.
      *
      * The "-ves" family needs to be listed rather than derived, because the inverse is not a rule:

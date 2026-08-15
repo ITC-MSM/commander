@@ -37,7 +37,7 @@ val DonatelloWayWithMachines = card("Donatello, Way with Machines") {
                 filter = GameObjectFilter.Artifact.youControl(),
                 to = Zone.BATTLEFIELD
             ),
-            binding = TriggerBinding.OTHER
+            binding = TriggerBinding.ANY
         )
         effect = Effects.AddCounters(Counters.PLUS_ONE_PLUS_ONE, 1, EffectTarget.Self)
         description = "Whenever an artifact you control enters, put a +1/+1 counter on Donatello."

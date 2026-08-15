@@ -26,12 +26,12 @@ val SkirkOutrider = card("Skirk Outrider") {
 
     staticAbility {
         ability = ModifyStats(2, 2, GroupFilter.source())
-        condition = Conditions.ControlCreatureOfType(Subtype("Beast"))
+        condition = Conditions.ControlPermanentOfType(Subtype("Beast"))
     }
 
     staticAbility {
         ability = GrantKeyword(Keyword.TRAMPLE, GroupFilter.source())
-        condition = Conditions.ControlCreatureOfType(Subtype("Beast"))
+        condition = Conditions.ControlPermanentOfType(Subtype("Beast"))
     }
 
     metadata {

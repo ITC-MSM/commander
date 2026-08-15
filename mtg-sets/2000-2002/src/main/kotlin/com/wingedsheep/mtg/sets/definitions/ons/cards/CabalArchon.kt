@@ -27,7 +27,7 @@ val CabalArchon = card("Cabal Archon") {
     activatedAbility {
         cost = Costs.Composite(
             Costs.Mana("{B}"),
-            Costs.Sacrifice(GameObjectFilter.Creature.withSubtype("Cleric"))
+            Costs.Sacrifice(GameObjectFilter.Permanent.withSubtype("Cleric"))
         )
         val t = target("target", TargetPlayer())
         effect = LoseLifeEffect(2, t) then

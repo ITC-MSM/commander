@@ -35,7 +35,7 @@ val SplinterHamatoYoshi = card("Splinter, Hamato Yoshi") {
         ability = ModifyStats(
             powerBonus = 1,
             toughnessBonus = 1,
-            filter = GroupFilter(GameObjectFilter.Creature.withSubtype("Ninja").youControl(), excludeSelf = true)
+            filter = GroupFilter(GameObjectFilter.Permanent.withSubtype("Ninja").youControl(), excludeSelf = true)
         )
     }
 

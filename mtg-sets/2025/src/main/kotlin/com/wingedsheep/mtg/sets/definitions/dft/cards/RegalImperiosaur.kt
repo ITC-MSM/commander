@@ -31,7 +31,7 @@ val RegalImperiosaur = card("Regal Imperiosaur") {
             powerBonus = 1,
             toughnessBonus = 1,
             filter = GroupFilter(
-                GameObjectFilter.Creature.withSubtype(Subtype.DINOSAUR).youControl(),
+                GameObjectFilter.Permanent.withSubtype(Subtype.DINOSAUR).youControl(),
                 excludeSelf = true
             )
         )

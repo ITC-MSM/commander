@@ -27,7 +27,7 @@ val ToxinSliver = card("Toxin Sliver") {
     toughness = 3
     oracleText = "Whenever a Sliver deals combat damage to a creature, destroy that creature. It can't be regenerated."
 
-    val sliverFilter = GroupFilter(GameObjectFilter.Creature.withSubtype("Sliver"))
+    val sliverFilter = GroupFilter(GameObjectFilter.Permanent.withSubtype("Sliver"))
 
     staticAbility {
         ability = GrantTriggeredAbility(

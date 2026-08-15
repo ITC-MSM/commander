@@ -35,7 +35,7 @@ val NebelgastHerald = card("Nebelgast Herald") {
     keywords(Keyword.FLASH, Keyword.FLYING)
     triggeredAbility {
         trigger = Triggers.entersBattlefield(
-            filter = GameObjectFilter.Creature.withSubtype(Subtype.SPIRIT).youControl(),
+            filter = GameObjectFilter.Permanent.withSubtype(Subtype.SPIRIT).youControl(),
             binding = TriggerBinding.ANY
         )
         val t = target("target", TargetCreature(filter = TargetFilter.Creature.opponentControls()))

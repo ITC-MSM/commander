@@ -26,7 +26,7 @@ val Earthblighter = card("Earthblighter") {
         cost = Costs.Composite(
             Costs.Mana("{2}{B}"),
             Costs.Tap,
-            Costs.Sacrifice(GameObjectFilter.Creature.withSubtype("Goblin"))
+            Costs.Sacrifice(GameObjectFilter.Permanent.withSubtype("Goblin"))
         )
         val t = target("target", Targets.Land)
         effect = Effects.Move(t, Zone.GRAVEYARD, byDestruction = true)

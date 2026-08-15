@@ -37,8 +37,10 @@ import com.wingedsheep.sdk.scripting.SpellCostTarget
 import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
 import com.wingedsheep.sdk.scripting.filters.unified.Scope
 import com.wingedsheep.engine.handlers.ConditionEvaluator
+import com.wingedsheep.engine.handlers.DynamicAmountEvaluator
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.PredicateEvaluator
+import com.wingedsheep.sdk.scripting.values.DynamicAmount
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
 import com.wingedsheep.engine.handlers.PredicateContext
 import com.wingedsheep.sdk.scripting.predicates.CardPredicate
@@ -58,7 +60,8 @@ import com.wingedsheep.sdk.scripting.predicates.CardPredicate
 class CostCalculator(
     private val cardRegistry: CardRegistry,
     private val predicateEvaluator: PredicateEvaluator = PredicateEvaluator(),
-    private val conditionEvaluator: ConditionEvaluator = ConditionEvaluator()
+    private val conditionEvaluator: ConditionEvaluator = ConditionEvaluator(),
+    private val dynamicAmountEvaluator: DynamicAmountEvaluator = DynamicAmountEvaluator()
 ) {
 
     /**
@@ -89,7 +92,9 @@ class CostCalculator(
             if (ability.target != SpellCostTarget.SelfCast) continue
             if (!gatingApplies(state, casterId, cardDef, ability, declaredCostSlot)) continue
             applyToSpellCast(
-                state, cardDef, casterId, ability.modification, chosenTargets,
+                // A self-cast modifier has no source *permanent*: the card is the spell being cast,
+                // so source-relative reduction sources read nothing.
+                state, cardDef, casterId, ability.modification, chosenTargets, sourceId = null,
                 addGenericReduction = { totalReduction += it },
                 addGenericIncrease = { totalIncrease += it },
                 addColoredReduction = { coloredReductionSymbols += it },
@@ -132,7 +137,7 @@ class CostCalculator(
             if (!targetMatchesSpell(ability.target, cardDef, casterId, sourceId, state, chosenTargets, fromZone)) continue
             if (!gatingApplies(state, casterId, cardDef, ability, declaredCostSlot)) continue
             applyToSpellCast(
-                state, cardDef, casterId, ability.modification, chosenTargets,
+                state, cardDef, casterId, ability.modification, chosenTargets, sourceId = sourceId,
                 addGenericReduction = { totalReduction += it },
                 addGenericIncrease = { totalIncrease += it },
                 addColoredReduction = { coloredReductionSymbols += it },
@@ -342,6 +347,10 @@ class CostCalculator(
 
     /**
      * Apply a single cost modification to the running totals for a spell cast.
+     *
+     * [sourceId] is the battlefield permanent whose [ModifySpellCost] this is, or null for a
+     * self-cast modifier printed on the spell itself. Source-relative reduction sources
+     * ([CostReductionSource.Dynamic]) read it; every other source ignores it.
      */
     private fun applyToSpellCast(
         state: GameState,
@@ -349,6 +358,7 @@ class CostCalculator(
         casterId: EntityId,
         modification: CostModification,
         chosenTargets: List<EntityId>,
+        sourceId: EntityId?,
         addGenericReduction: (Int) -> Unit,
         addGenericIncrease: (Int) -> Unit,
         addColoredReduction: (ManaSymbol) -> Unit,
@@ -412,8 +422,11 @@ class CostCalculator(
      *
      * [abilitySourceId] is the battlefield permanent the reducing [ModifySpellCost] is printed on,
      * or null when the reduction comes from the spell's own script (a `SelfCast` reduction, where
-     * there is no permanent to read). Only the attachment-reading sources need it; everything else
-     * aggregates over what [playerId] controls.
+     * there is no permanent to read). Only the source-reading sources need it — the
+     * attachment-reading [CostReductionSource.AttachedPermanentProperty] and the general
+     * [CostReductionSource.Dynamic], which reads the source permanent's own characteristics rather
+     * than those of whatever it is attached to. Everything else aggregates over what [playerId]
+     * controls.
      */
     private fun evaluateReduction(
         state: GameState,
@@ -462,6 +475,9 @@ class CostCalculator(
             }
             is CostReductionSource.AttachedPermanentProperty -> {
                 attachedPermanentProperty(state, abilitySourceId, source.property)
+            }
+            is CostReductionSource.Dynamic -> {
+                dynamicReductionValue(state, abilitySourceId, playerId, source.amount)
             }
             is CostReductionSource.FixedIfCreatureDiedThisTurn -> {
                 if (anyCreatureDiedThisTurn(state)) source.amount else 0
@@ -655,6 +671,49 @@ class CostCalculator(
         val cardDef = cardRegistry.getCard(card.cardDefinitionId) ?: return 0
         return numericProperty(state.projectedState, attachedTo, card, cardDef, property)
             .coerceAtLeast(0)
+    }
+
+    /**
+     * The value of a [CostReductionSource.Dynamic] amount, evaluated against the permanent that
+     * carries the cost modifier (The Scarlet Witch's "where X is The Scarlet Witch's power").
+     *
+     * Delegates to [DynamicAmountEvaluator] rather than re-deriving the reads here, so
+     * `EntityReference.Source` and the rest of the [DynamicAmount] vocabulary behave exactly as they
+     * do everywhere else — power/toughness come from projected state (CR 613: counters, Auras, and
+     * anthems on the source count), base P/T and mana value come from the printed card, and counter
+     * counts read the source's [CountersComponent].
+     *
+     * "You" for the amount is the **source's** controller, not the caster: the amount is a property
+     * of the permanent the static lives on, and under [SpellCostTarget.AnyCaster] those are
+     * different players. Same choice `CastPermissionUtils` makes for `ReduceActivatedAbilityCost`,
+     * except that the controller is read from projected state here so a control-change effect is
+     * respected. [casterId] is only a fallback for the unreachable case of a source with no
+     * projected controller.
+     *
+     * The result is floored at 0 per CR 107.1b — "if a calculation that would determine the result
+     * of an effect yields a negative number, zero is used instead" — so a source shrunk below 0
+     * power reduces nothing rather than taxing the spell. Flooring happens *per source*, which is
+     * what CR 107.1b describes: each modifier is its own calculation, so one shrunk source can never
+     * eat another source's discount.
+     *
+     * [sourceId] is null only for a self-cast modifier, where there is no source permanent at all
+     * (the card is the spell being cast) — that contributes 0.
+     */
+    private fun dynamicReductionValue(
+        state: GameState,
+        sourceId: EntityId?,
+        casterId: EntityId,
+        amount: DynamicAmount
+    ): Int {
+        if (sourceId == null) return 0
+        return dynamicAmountEvaluator.evaluate(
+            state,
+            amount,
+            EffectContext(
+                sourceId = sourceId,
+                controllerId = state.projectedState.getController(sourceId) ?: casterId,
+            ),
+        ).coerceAtLeast(0)
     }
 
     /**

@@ -971,7 +971,7 @@
                     {
                         "type": "TargetObject",
                         "filter": {
-                            "baseFilter": "creature Wall"
+                            "baseFilter": "permanent Wall"
                         },
                         "id": "target"
                     }
@@ -4245,7 +4245,7 @@
             {
                 "type": "TargetObject",
                 "filter": {
-                    "baseFilter": "creature Wall"
+                    "baseFilter": "permanent Wall"
                 },
                 "id": "target"
             }

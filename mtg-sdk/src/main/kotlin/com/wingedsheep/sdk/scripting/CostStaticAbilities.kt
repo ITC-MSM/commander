@@ -626,6 +626,54 @@ sealed interface CostReductionSource {
     }
 
     /**
+     * Reduces cost by an arbitrary [DynamicAmount], evaluated at cast time with the permanent that
+     * carries the [ModifySpellCost] as the amount's *source* — "{X} less to cast, where X is
+     * `<amount>`".
+     *
+     * The general variable-amount shape, and deliberately the same vocabulary
+     * [ReduceActivatedAbilityCost.amount] already takes on the activated-ability rail, so both cost
+     * rails read a number out of game state exactly one way:
+     *  - `Dynamic(DynamicAmount.EntityProperty(EntityReference.Source, EntityNumericProperty.Power))`
+     *    — The Scarlet Witch ("Instant and sorcery spells you cast with mana value 4 or greater cost
+     *    {X} less to cast, where X is The Scarlet Witch's power"). This *self-referential* read is
+     *    what the group aggregates above cannot express: two sources each discount by **their own**
+     *    value and stack additively, whereas a name-filtered
+     *    [GreatestPropertyAmongPermanentsYouControl] reads the biggest same-named permanent — wrong
+     *    the moment a token copy, a clone, or a second (non-legendary) copy shares the name.
+     *  - `Dynamic(DynamicAmount.Multiply(<source power>, 2))` — "twice this creature's power";
+     *    `Dynamic(DynamicAmount.LifeTotal(Player.You))` — "your life total". Under a property-only
+     *    shape each of those would need its own member here.
+     *
+     * `EntityReference.Source` resolves to the permanent the static lives on. The amount goes
+     * through the engine's ordinary `DynamicAmountEvaluator`, so the whole vocabulary behaves as it
+     * does everywhere else: `Power` / `Toughness` from projected state (CR 613 — counters, Auras,
+     * and anthems on the source count), `BasePower` / `BaseToughness` / `ManaValue` from the printed
+     * card, and `CounterCount(...)` for a "where X is the number of charge counters on this
+     * artifact" reduction. Note this is a *fuller* read than the two group aggregates above, which
+     * resolve their [EntityNumericProperty] through the cost calculator's own smaller switch; the
+     * shared thing is the property type, not the evaluation.
+     *
+     * The evaluated amount is floored at 0 per CR 107.1b (a calculation that would yield a negative
+     * number uses zero instead), so a source shrunk below 0 power reduces nothing rather than taxing
+     * the spell. Prefer [Fixed] for a literal amount — `Dynamic(DynamicAmount.Fixed(n))` is the same
+     * reduction spelled the long way.
+     *
+     * Only meaningful for a battlefield-sourced target ([SpellCostTarget.YouCast],
+     * [SpellCostTarget.AnyCaster], the from-zone variants). Under [SpellCostTarget.SelfCast] there
+     * is no source permanent — the card is the spell being cast — so a source-relative amount
+     * contributes 0.
+     *
+     * @property amount The reduction, evaluated at cast time against the source permanent
+     */
+    @SerialName("Dynamic")
+    @Serializable
+    data class Dynamic(
+        val amount: DynamicAmount
+    ) : CostReductionSource {
+        override val description: String = amount.description
+    }
+
+    /**
      * Reduces cost by a fixed amount if a creature is currently attacking the caster.
      * Used for cards like Swat Away ("This spell costs {2} less to cast if a creature
      * is attacking you").

@@ -34,7 +34,7 @@ val GempalmPolluter = card("Gempalm Polluter") {
         val player = target("target player", Targets.Player)
         effect = MayEffect(
             LoseLifeEffect(
-                DynamicAmounts.creaturesWithSubtype(Subtype("Zombie")),
+                DynamicAmounts.permanentsWithSubtype(Subtype("Zombie")),
                 player
             )
         )

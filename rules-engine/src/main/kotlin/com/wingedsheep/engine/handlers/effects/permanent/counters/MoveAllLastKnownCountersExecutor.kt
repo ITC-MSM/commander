@@ -70,11 +70,13 @@ class MoveAllLastKnownCountersExecutor : EffectExecutor<MoveAllLastKnownCounters
                 container.with(current.withAdded(counterType, modifiedCount))
             }
             events.add(CountersAddedEvent(targetId, counterTypeString, modifiedCount, targetName, firstThisTurn, placedBy = context.controllerId))
+            // Per kind, inside the loop — see DoubleCountersExecutor: the marker records which
+            // kinds landed, so a kind-less mark would not satisfy a type-scoped counter-history
+            // filter.
+            newState = DamageUtils.markCounterPlacedOnCreature(
+                newState, context.controllerId, targetId, counterTypeString
+            )
             firstThisTurn = false
-        }
-
-        if (events.isNotEmpty()) {
-            newState = DamageUtils.markCounterPlacedOnCreature(newState, context.controllerId, targetId)
         }
 
         return EffectResult.success(newState, events)

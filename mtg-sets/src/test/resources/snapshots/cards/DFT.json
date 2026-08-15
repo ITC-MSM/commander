@@ -13406,7 +13406,7 @@
                 "powerBonus": 1,
                 "toughnessBonus": 1,
                 "filter": {
-                    "baseFilter": "creature Dinosaur ctrl:you",
+                    "baseFilter": "permanent Dinosaur ctrl:you",
                     "excludeSelf": true
                 }
             }

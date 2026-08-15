@@ -606,7 +606,7 @@
                     }
                 },
                 "filter": {
-                    "baseFilter": "creature Sliver"
+                    "baseFilter": "permanent Sliver"
                 }
             }
         ]
@@ -1689,7 +1689,7 @@
                     }
                 },
                 "filter": {
-                    "baseFilter": "creature Sliver"
+                    "baseFilter": "permanent Sliver"
                 }
             }
         ]

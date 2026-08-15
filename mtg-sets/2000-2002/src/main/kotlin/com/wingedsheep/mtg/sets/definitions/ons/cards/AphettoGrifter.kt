@@ -23,7 +23,7 @@ val AphettoGrifter = card("Aphetto Grifter") {
     oracleText = "Tap two untapped Wizards you control: Tap target permanent."
 
     activatedAbility {
-        cost = Costs.TapPermanents(2, GameObjectFilter.Creature.withSubtype("Wizard"))
+        cost = Costs.TapPermanents(2, GameObjectFilter.Permanent.withSubtype("Wizard"))
         val t = target("target", Targets.Permanent)
         effect = TapUntapEffect(
             target = t,

@@ -1210,7 +1210,7 @@
                     {
                         "type": "TargetObject",
                         "filter": {
-                            "baseFilter": "creature Zombie"
+                            "baseFilter": "permanent Zombie"
                         },
                         "id": "target"
                     }
@@ -3405,7 +3405,7 @@
                     {
                         "type": "TargetObject",
                         "filter": {
-                            "baseFilter": "creature Spirit ctrl:you"
+                            "baseFilter": "permanent Spirit ctrl:you"
                         }
                     }
                 ]
