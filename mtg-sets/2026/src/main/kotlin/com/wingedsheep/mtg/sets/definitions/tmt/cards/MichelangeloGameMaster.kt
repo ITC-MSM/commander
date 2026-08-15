@@ -27,7 +27,7 @@ val MichelangeloGameMaster = card("Michelangelo, Game Master") {
 
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = Conditions.YouHadPermanentLeaveBattlefieldThisTurn
+        interveningIf = Conditions.YouHadPermanentLeaveBattlefieldThisTurn
         effect = Effects.AddCounters(Counters.PLUS_ONE_PLUS_ONE, 1, EffectTarget.Self)
         description = "Disappear — At the beginning of your end step, if a permanent left the battlefield under your control this turn, put a +1/+1 counter on Michelangelo."
     }

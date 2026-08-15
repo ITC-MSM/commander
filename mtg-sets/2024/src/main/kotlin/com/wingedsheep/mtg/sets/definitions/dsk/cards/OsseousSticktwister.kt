@@ -56,7 +56,7 @@ val OsseousSticktwister = card("Osseous Sticktwister") {
     triggeredAbility {
         trigger = Triggers.YourEndStep
         // Delirium intervening-if (CR 603.4): four or more card types in your graveyard.
-        triggerCondition = Conditions.Delirium()
+        interveningIf = Conditions.Delirium()
         effect = ForEachPlayerEffect(
             players = Player.EachOpponent,
             effects = listOf(

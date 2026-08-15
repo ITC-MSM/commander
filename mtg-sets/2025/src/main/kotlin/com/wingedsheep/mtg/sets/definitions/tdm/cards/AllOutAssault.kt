@@ -51,7 +51,7 @@ val AllOutAssault = card("All-Out Assault") {
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = Conditions.IsYourMainPhase
+        interveningIf = Conditions.IsYourMainPhase
         effect = Effects.Composite(
             listOf(
                 // "there is an additional combat phase after this phase followed by an

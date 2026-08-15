@@ -24,7 +24,7 @@ private val HanweirWatchkeepFront = card("Hanweir Watchkeep") {
     keywords(Keyword.DEFENDER)
     triggeredAbility {
         trigger = Triggers.EachUpkeep
-        triggerCondition = Conditions.CompareAmounts(
+        interveningIf = Conditions.CompareAmounts(
             DynamicAmounts.spellsCastLastTurn(), ComparisonOperator.EQ, DynamicAmount.Fixed(0)
         )
         effect = TransformEffect(EffectTarget.Self)
@@ -51,7 +51,7 @@ private val BaneOfHanweir = card("Bane of Hanweir") {
     staticAbility { ability = MustAttack() }
     triggeredAbility {
         trigger = Triggers.EachUpkeep
-        triggerCondition = Conditions.CompareAmounts(
+        interveningIf = Conditions.CompareAmounts(
             DynamicAmounts.spellsCastLastTurn(), ComparisonOperator.GTE, DynamicAmount.Fixed(2)
         )
         effect = TransformEffect(EffectTarget.Self)

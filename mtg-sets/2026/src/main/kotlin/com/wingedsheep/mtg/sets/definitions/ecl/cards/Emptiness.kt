@@ -35,7 +35,7 @@ val Emptiness = card("Emptiness") {
     // White gate first (goes on stack first, resolves second)
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = Conditions.ManaSpentToCastIncludes(requiredWhite = 2)
+        interveningIf = Conditions.ManaSpentToCastIncludes(requiredWhite = 2)
         val graveyardCreature = target("graveyard creature", TargetObject(
             filter = TargetFilter.CreatureInYourGraveyard.manaValueAtMost(3)
         ))
@@ -46,7 +46,7 @@ val Emptiness = card("Emptiness") {
     // so -1/-1 counters resolve before the reanimated creature enters
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = Conditions.ManaSpentToCastIncludes(requiredBlack = 2)
+        interveningIf = Conditions.ManaSpentToCastIncludes(requiredBlack = 2)
         val creature = target("creature to put three -1/-1 counters on", TargetCreature(count = 1, optional = true))
         effect = Effects.AddCounters(Counters.MINUS_ONE_MINUS_ONE, 3, creature)
     }

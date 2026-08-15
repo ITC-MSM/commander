@@ -31,7 +31,7 @@ val KonaRescueBeastie = card("Kona, Rescue Beastie") {
     // Survival — second main phase, if tapped: you may put a permanent card from hand onto battlefield.
     triggeredAbility {
         trigger = Triggers.YourPostcombatMain
-        triggerCondition = Conditions.SourceIsTapped
+        interveningIf = Conditions.SourceIsTapped
         effect = Patterns.Hand.putFromHand(filter = GameObjectFilter.Permanent)
     }
 

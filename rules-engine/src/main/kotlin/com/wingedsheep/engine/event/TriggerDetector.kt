@@ -277,7 +277,7 @@ class TriggerDetector(
         // Detect "whenever one or more cards leave your graveyard" batching triggers
         // (e.g., Attuned Hunter, Kishla Skimmer). Groups from-graveyard zone changes by the
         // owner of that graveyard and fires the trigger at most once per controller. The
-        // "during your turn" restriction is a triggerCondition (Conditions.IsYourTurn) on the card.
+        // "during your turn" restriction is a triggerRestriction (Conditions.IsYourTurn) on the card.
         detectCardsLeftGraveyardBatchTriggers(state, events, triggers, index)
 
         // Detect "whenever one or more cards are put into exile from graveyards and/or the
@@ -2010,7 +2010,7 @@ class TriggerDetector(
      * Groups all from-graveyard zone changes by the owner of that graveyard ("your graveyard")
      * and fires the trigger at most once per controller, regardless of how many matching cards
      * left or where they went (cast/exiled/reanimated/returned to hand). The "during your turn"
-     * restriction is expressed on the card as `triggerCondition = Conditions.IsYourTurn`, and
+     * restriction is expressed on the card as `triggerRestriction = Conditions.IsYourTurn`, and
      * "only once each turn" via `oncePerTurn = true`, both applied later in detectTriggers.
      */
     private fun detectCardsLeftGraveyardBatchTriggers(
@@ -2067,7 +2067,7 @@ class TriggerDetector(
      * of the watched zones they came from.
      *
      * The "during your turn" restriction is expressed on the card as
-     * `triggerCondition = Conditions.IsYourTurn` and applied later in detectTriggers.
+     * `triggerRestriction = Conditions.IsYourTurn` and applied later in detectTriggers.
      */
     private fun detectCardsPutIntoExileBatchTriggers(
         state: GameState,
@@ -2445,7 +2445,7 @@ class TriggerDetector(
      * `PipelineState.TRIGGER_CAPTURED_COLLECTION`) so a "put that many counters" payoff reads the
      * count via `DynamicAmount.DistinctEntitiesInCollections(TRIGGER_CAPTURED_COLLECTION)`.
      *
-     * The "during your untap step" restriction is enforced here rather than as a `triggerCondition`:
+     * The "during your untap step" restriction is enforced here rather than as a `triggerRestriction`:
      * the untap step advances straight to upkeep (no priority), so by the time these events reach
      * detection `state.step` is already `UPKEEP` and an `IsInStep(UNTAP)` intervening-if would read
      * false. The reliable "these untaps are the untap step's turn-based action" signal is instead the

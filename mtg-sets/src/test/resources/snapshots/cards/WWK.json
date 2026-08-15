@@ -90,7 +90,7 @@
                         "FLYING"
                     ]
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "AggregateBattlefield",

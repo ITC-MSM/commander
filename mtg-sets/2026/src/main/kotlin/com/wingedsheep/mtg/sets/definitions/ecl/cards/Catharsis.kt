@@ -41,13 +41,13 @@ val Catharsis = card("Catharsis") {
     // also receive the +1/+1 and haste buff.
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = Conditions.ManaSpentToCastIncludes(requiredRed = 2)
+        interveningIf = Conditions.ManaSpentToCastIncludes(requiredRed = 2)
         effect = Patterns.Group.pumpAndGrantToAll(1, 1, Keyword.HASTE, GroupFilter.AllCreaturesYouControl)
     }
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = Conditions.ManaSpentToCastIncludes(requiredWhite = 2)
+        interveningIf = Conditions.ManaSpentToCastIncludes(requiredWhite = 2)
         effect = Effects.CreateToken(
             power = 1,
             toughness = 1,

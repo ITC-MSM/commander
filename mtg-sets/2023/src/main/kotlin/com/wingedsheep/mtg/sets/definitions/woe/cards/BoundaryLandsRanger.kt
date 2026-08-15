@@ -31,7 +31,7 @@ val BoundaryLandsRanger = card("Boundary Lands Ranger") {
     toughness = 2
     triggeredAbility {
         trigger = Triggers.BeginCombat
-        triggerCondition = Conditions.YouControl(GameObjectFilter.Creature.powerAtLeast(4))
+        interveningIf = Conditions.YouControl(GameObjectFilter.Creature.powerAtLeast(4))
         effect = MayEffect(effect = IfYouDoEffect(action = Patterns.Hand.discardCards(1), ifYouDo = DrawCardsEffect(1)))
     }
     metadata {

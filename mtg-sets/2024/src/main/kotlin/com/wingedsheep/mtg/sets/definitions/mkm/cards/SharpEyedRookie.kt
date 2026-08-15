@@ -34,7 +34,7 @@ import com.wingedsheep.sdk.scripting.values.EntityReference
  * power is never greater than its own.
  *
  * The "if …" clause is an intervening-if (CR 603.4): it gates whether the ability triggers at all
- * *and* is checked again on resolution, which `triggerCondition` provides. Both re-checks are
+ * *and* is checked again on resolution, which `interveningIf` provides. Both re-checks are
  * load-bearing per the printed rulings — two 3/3s entering against a 2/2 Rookie trigger twice, but
  * the second ability finds a 3/3 Rookie and does nothing. Either axis alone is enough, and the
  * axis may even swap between trigger and resolution (a 1/3 that gets +2/-2 in response still
@@ -66,7 +66,7 @@ val SharpEyedRookie = card("Sharp-Eyed Rookie") {
             filter = GameObjectFilter.Creature.youControl(),
             binding = TriggerBinding.ANY
         )
-        triggerCondition = Conditions.Any(
+        interveningIf = Conditions.Any(
             Compare(
                 DynamicAmount.EntityProperty(EntityReference.Triggering, EntityNumericProperty.Power),
                 ComparisonOperator.GT,

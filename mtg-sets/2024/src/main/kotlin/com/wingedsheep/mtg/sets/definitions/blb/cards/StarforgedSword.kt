@@ -42,7 +42,7 @@ val StarforgedSword = card("Starforged Sword") {
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = Conditions.GiftWasPromised
+        interveningIf = Conditions.GiftWasPromised
         target = Targets.CreatureYouControl
         effect = Effects.AttachEquipment(EffectTarget.ContextTarget(0))
     }

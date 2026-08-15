@@ -50,7 +50,7 @@ val ZimoneAllQuestioning = card("Zimone, All-Questioning") {
 
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = Conditions.All(
+        interveningIf = Conditions.All(
             // "a land entered the battlefield under your control this turn"
             Conditions.CompareAmounts(
                 DynamicAmounts.landsEnteredUnderControlThisTurn(Player.You),

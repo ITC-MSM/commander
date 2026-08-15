@@ -432,7 +432,7 @@
                         "player": "DefendingPlayer"
                     }
                 },
-                "triggerCondition": "Void",
+                "interveningIf": "Void",
                 "descriptionOverride": "Void — Whenever Alpharael attacks, if a nonland permanent left the battlefield this turn or a spell was warped this turn, defending player loses half their life, rounded up."
             }
         ]
@@ -1826,7 +1826,7 @@
                 },
                 "binding": "ANY",
                 "effect": "SacrificeSelf",
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "Not",
                     "condition": "Void"
                 },
@@ -3004,7 +3004,7 @@
                         "target": "Self"
                     }
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "AggregateBattlefield",
@@ -4267,7 +4267,7 @@
                     "imageUri": "https://cards.scryfall.io/normal/front/c/4/c46f9a07-005c-44b7-8057-b2f00b274dd6.jpg?1756281130",
                     "artifactToken": true
                 },
-                "triggerCondition": "Void",
+                "interveningIf": "Void",
                 "descriptionOverride": "At the beginning of your end step, if a nonland permanent left the battlefield this turn or a spell was warped this turn, create a 2/2 colorless Robot artifact creature token."
             }
         ]
@@ -4471,7 +4471,7 @@
                         "player": "TriggeringPlayer"
                     }
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "Compare",
                     "left": {
                         "type": "EntityProperty",
@@ -5588,7 +5588,7 @@
                         "amount": 2
                     }
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "AggregateBattlefield",
@@ -5779,7 +5779,7 @@
                     "count": 1,
                     "target": "Self"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "AggregateBattlefield",
@@ -6754,7 +6754,7 @@
                         "amount": 1
                     }
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "Compare",
                     "left": {
                         "type": "TurnTracking",
@@ -7171,7 +7171,7 @@
                     },
                     "id": "target creature you control"
                 },
-                "triggerCondition": "Void"
+                "interveningIf": "Void"
             }
         ],
         "activatedAbilities": [
@@ -7817,7 +7817,7 @@
                     "count": 1,
                     "target": "Self"
                 },
-                "triggerCondition": "Void"
+                "interveningIf": "Void"
             }
         ]
     },
@@ -7884,7 +7884,7 @@
                     "count": 1,
                     "target": "Self"
                 },
-                "triggerCondition": "Void",
+                "interveningIf": "Void",
                 "descriptionOverride": "At the beginning of your end step, if a nonland permanent left the battlefield this turn or a spell was warped this turn, put a +1/+1 counter on this creature."
             }
         ]
@@ -8147,7 +8147,7 @@
                     "count": 1,
                     "target": "Self"
                 },
-                "triggerCondition": "Void",
+                "interveningIf": "Void",
                 "descriptionOverride": "At the beginning of your end step, if a nonland permanent left the battlefield this turn or a spell was warped this turn, put a +1/+1 counter on this creature."
             }
         ]
@@ -11940,7 +11940,7 @@
                     "target": "Self",
                     "tap": false
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "TurnTracking",
@@ -12657,7 +12657,7 @@
                     },
                     "id": "instant or sorcery card with mana value 2 or less from your graveyard"
                 },
-                "triggerCondition": "Void",
+                "interveningIf": "Void",
                 "descriptionOverride": "Void — When this creature enters, if a nonland permanent left the battlefield this turn or a spell was warped this turn, exile up to one target instant or sorcery card with mana value 2 or less from your graveyard. Copy it. You may cast the copy without paying its mana cost."
             }
         ]
@@ -12878,7 +12878,7 @@
                     "tapped": true,
                     "artifactToken": true
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "AggregateBattlefield",
@@ -14324,7 +14324,7 @@
                         }
                     ]
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Any",
                     "conditions": [
                         {
@@ -15281,7 +15281,7 @@
                     },
                     "id": "target creature you control"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "AggregateBattlefield",
@@ -16030,7 +16030,7 @@
                     },
                     "id": "up to one other target artifact you control"
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "Compare",
                     "left": {
                         "type": "EntityProperty",
@@ -16287,7 +16287,7 @@
                     },
                     "id": "up to one target nonland permanent"
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "Compare",
                     "left": {
                         "type": "EntityProperty",
@@ -16326,7 +16326,7 @@
                     },
                     "id": "up to one target nonland permanent"
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "Compare",
                     "left": {
                         "type": "EntityProperty",
@@ -18677,7 +18677,7 @@
                         }
                     }
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "AggregateBattlefield",
@@ -18871,7 +18871,7 @@
                         }
                     ]
                 },
-                "triggerCondition": "Void",
+                "interveningIf": "Void",
                 "descriptionOverride": "At the beginning of your end step, if a nonland permanent left the battlefield this turn or a spell was warped this turn, you draw a card and lose 1 life."
             }
         ]
@@ -19406,7 +19406,7 @@
                         }
                     ]
                 },
-                "triggerCondition": "WasCast"
+                "interveningIf": "WasCast"
             }
         ],
         "staticAbilities": [

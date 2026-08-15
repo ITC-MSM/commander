@@ -30,7 +30,7 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  *    crosses the threshold.
  *  - "When the **seventh** plan counter is put on this enchantment" composes from existing
  *    vocabulary: a SELF-bound [Triggers.countersPlacedOn] on [Counters.PLAN] gated by
- *    `triggerCondition = `[Conditions.SourceCounterCountAtLeast]`(PLAN, 7)`. The at-least gate is
+ *    `triggerRestriction = `[Conditions.SourceCounterCountAtLeast]`(PLAN, 7)`. The at-least gate is
  *    behaviourally exact here because the payoff **sacrifices its own source**, so the enchantment
  *    is gone before an eighth counter could ever land — the threshold can never fire twice. No
  *    dedicated "Nth counter" trigger event is needed.
@@ -72,7 +72,7 @@ val ConstructACosmicCube = card("Construct a Cosmic Cube") {
             firstTimeEachTurn = false,
             binding = TriggerBinding.SELF,
         )
-        triggerCondition = Conditions.SourceCounterCountAtLeast(Counters.PLAN, 7)
+        triggerRestriction = Conditions.SourceCounterCountAtLeast(Counters.PLAN, 7)
         effect = ReflexiveTriggerEffect(
             action = Effects.SacrificeTarget(EffectTarget.Self),
             optional = false,

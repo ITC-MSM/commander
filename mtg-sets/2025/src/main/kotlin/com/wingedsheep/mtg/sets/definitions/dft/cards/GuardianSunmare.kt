@@ -19,7 +19,7 @@ import com.wingedsheep.sdk.scripting.effects.SearchDestination
  * Saddle 4
  *
  * "Attacks while saddled" is [Triggers.Attacks] plus [Conditions.SourceIsSaddled] as the
- * `triggerCondition` — the saddled state is read when the trigger would fire, i.e. as attackers are
+ * `triggerRestriction` — the saddled state is read when the trigger would fire, i.e. as attackers are
  * declared, which is exactly the ruling ("will trigger only if that creature was saddled when it was
  * declared as an attacker"). Saddled lasts until end of turn and nothing removes it mid-turn, so the
  * CR 603.4 re-check on resolution can't diverge from the fire-time read.
@@ -43,7 +43,7 @@ val GuardianSunmare = card("Guardian Sunmare") {
 
     triggeredAbility {
         trigger = Triggers.Attacks
-        triggerCondition = Conditions.SourceIsSaddled
+        triggerRestriction = Conditions.SourceIsSaddled
         effect = Patterns.Library.searchLibrary(
             filter = GameObjectFilter.NonlandPermanent.manaValueAtMost(3),
             destination = SearchDestination.BATTLEFIELD

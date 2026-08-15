@@ -63,7 +63,7 @@ val AvengersAssemble = card("Avengers Assemble!") {
 
     triggeredAbility {
         trigger = Triggers.EachEndStep
-        triggerCondition = Conditions.Any(
+        interveningIf = Conditions.Any(
             Conditions.YouAttackedWithCreaturesThisTurn(
                 filter = GameObjectFilter.Creature.withSubtype(Subtype.HERO),
                 atLeast = 1,

@@ -22,7 +22,7 @@ import com.wingedsheep.sdk.scripting.values.DynamicAmount
  * engine models damage as one `DamageDealtEvent` per source/recipient pair, so being blocked by
  * two 2/2s deals two separate 2-damage instances and this never fires, exactly as the printed
  * card behaves. [Triggers.TakesDamage] is the SELF "whenever this is dealt damage" event and the
- * threshold rides on it as a `triggerCondition` comparing that event's damage
+ * threshold rides on it as a `triggerRestriction` comparing that event's damage
  * ([ContextPropertyKey.TRIGGER_DAMAGE_AMOUNT]) against 3 with [ComparisonOperator.GTE] — the same
  * idiom Spinneret and Spiderling uses on the outgoing side.
  *
@@ -42,7 +42,7 @@ val InnocentBystander = card("Innocent Bystander") {
 
     triggeredAbility {
         trigger = Triggers.TakesDamage
-        triggerCondition = Conditions.CompareAmounts(
+        triggerRestriction = Conditions.CompareAmounts(
             DynamicAmount.ContextProperty(ContextPropertyKey.TRIGGER_DAMAGE_AMOUNT),
             ComparisonOperator.GTE,
             DynamicAmount.Fixed(3),

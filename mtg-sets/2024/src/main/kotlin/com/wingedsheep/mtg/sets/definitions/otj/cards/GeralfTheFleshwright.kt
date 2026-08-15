@@ -52,7 +52,7 @@ val GeralfTheFleshwright = card("Geralf, the Fleshwright") {
 
     triggeredAbility {
         trigger = Triggers.YouCastSpell
-        triggerCondition = Conditions.All(
+        triggerRestriction = Conditions.All(
             Conditions.IsYourTurn,
             Conditions.YouCastSpellsThisTurn(atLeast = 2),
         )

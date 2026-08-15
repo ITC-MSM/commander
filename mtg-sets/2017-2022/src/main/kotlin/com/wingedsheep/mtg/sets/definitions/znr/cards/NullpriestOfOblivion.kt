@@ -51,7 +51,7 @@ val NullpriestOfOblivion = card("Nullpriest of Oblivion") {
     // to the battlefield.
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = Conditions.WasKicked
+        interveningIf = Conditions.WasKicked
         val t = target(
             "target creature card from your graveyard",
             TargetObject(

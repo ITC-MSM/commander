@@ -40,7 +40,7 @@ val VeteranSurvivor = card("Veteran Survivor") {
     // exile up to one target card from a graveyard (linked to this creature).
     triggeredAbility {
         trigger = Triggers.YourPostcombatMain
-        triggerCondition = Conditions.SourceIsTapped
+        interveningIf = Conditions.SourceIsTapped
         optional = true
         val card = target("card in a graveyard", Targets.CardInGraveyard)
         effect = Effects.Move(

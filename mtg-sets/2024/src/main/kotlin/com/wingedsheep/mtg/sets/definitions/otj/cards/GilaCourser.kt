@@ -37,7 +37,7 @@ val GilaCourser = card("Gila Courser") {
 
     triggeredAbility {
         trigger = Triggers.Attacks
-        triggerCondition = Conditions.SourceIsSaddled
+        triggerRestriction = Conditions.SourceIsSaddled
         effect = Effects.Composite(
             listOf(
                 GatherCardsEffect(

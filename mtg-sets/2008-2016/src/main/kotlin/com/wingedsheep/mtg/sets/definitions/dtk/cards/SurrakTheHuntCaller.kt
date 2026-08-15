@@ -40,7 +40,7 @@ val SurrakTheHuntCaller = card("Surrak, the Hunt Caller") {
 
     triggeredAbility {
         trigger = Triggers.BeginCombat
-        triggerCondition = Conditions.CompareAmounts(
+        interveningIf = Conditions.CompareAmounts(
             DynamicAmounts.battlefield(Player.You, GameObjectFilter.Creature).sumPower(),
             ComparisonOperator.GTE,
             DynamicAmount.Fixed(8)

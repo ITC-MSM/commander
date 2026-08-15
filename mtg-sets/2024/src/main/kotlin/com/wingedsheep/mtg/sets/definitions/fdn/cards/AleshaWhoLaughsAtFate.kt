@@ -58,7 +58,7 @@ val AleshaWhoLaughsAtFate = card("Alesha, Who Laughs at Fate") {
 
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = Conditions.YouAttackedThisTurn
+        interveningIf = Conditions.YouAttackedThisTurn
         val t = target(
             "target creature card with mana value less than or equal to Alesha's power in your graveyard",
             TargetObject(

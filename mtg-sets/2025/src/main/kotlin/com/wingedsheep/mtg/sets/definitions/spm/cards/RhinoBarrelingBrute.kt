@@ -20,7 +20,7 @@ val RhinoBarrelingBrute = card("Rhino, Barreling Brute") {
 
     triggeredAbility {
         trigger = Triggers.Attacks
-        triggerCondition = Conditions.YouCastSpellsThisTurn(atLeast = 1, filter = Filters.Unified.manaValueAtLeast(4))
+        interveningIf = Conditions.YouCastSpellsThisTurn(atLeast = 1, filter = Filters.Unified.manaValueAtLeast(4))
         effect = Effects.DrawCards(1)
     }
 

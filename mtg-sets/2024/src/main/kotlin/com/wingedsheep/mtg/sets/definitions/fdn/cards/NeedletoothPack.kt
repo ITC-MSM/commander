@@ -30,7 +30,7 @@ val NeedletoothPack = card("Needletooth Pack") {
     toughness = 5
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = Conditions.CreatureDiedThisTurn
+        interveningIf = Conditions.CreatureDiedThisTurn
         val t = target("target", TargetCreature(filter = TargetFilter.Creature.youControl()))
         effect = AddCountersEffect(counterType = Counters.PLUS_ONE_PLUS_ONE, count = 2, target = t)
     }

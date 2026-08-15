@@ -34,9 +34,10 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  * The same clause is also an intervening-"if" (CR 603.4), so it is checked *twice* — when the
  * trigger fires and again as the ability resolves. The official ruling is explicit: "If it's on the
  * battlefield or in the command zone when you cast another Vampire spell but leaves that zone before
- * the ability resolves, the ability won't do anything as it resolves." `triggerZones` covers the
- * fire-time half; the [ConditionalEffect] on [Conditions.SourceInZone] covers the resolution-time
- * half, so killing Edgar in response to the Vampire spell produces no token.
+ * the ability resolves, the ability won't do anything as it resolves." That is [interveningIf], which
+ * the engine checks in both places, so killing Edgar in response to the Vampire spell produces no
+ * token. `triggerZones` is the separate CR 113.6b question of which zones the ability functions in;
+ * the two agree here because the printed clause names the same two zones.
  *
  * **"another"** needs no filter of its own. For the triggering spell to *be* Edgar, Edgar's card has
  * to be on the stack — and a card on the stack is in neither of the two zones this ability functions
@@ -62,14 +63,12 @@ val EdgarMarkov = card("Edgar Markov") {
     triggeredAbility {
         trigger = Triggers.YouCastSubtype(Subtype.VAMPIRE)
         triggerZones = setOf(Zone.BATTLEFIELD, Zone.COMMAND)
-        effect = ConditionalEffect(
-            condition = Conditions.SourceInZone(Zone.BATTLEFIELD, Zone.COMMAND),
-            effect = Effects.CreateToken(
-                power = 1,
-                toughness = 1,
-                colors = setOf(Color.BLACK),
-                creatureTypes = setOf("Vampire"),
-            ),
+        interveningIf = Conditions.SourceInZone(Zone.BATTLEFIELD, Zone.COMMAND)
+        effect = Effects.CreateToken(
+            power = 1,
+            toughness = 1,
+            colors = setOf(Color.BLACK),
+            creatureTypes = setOf("Vampire"),
         )
         description = "Eminence — Whenever you cast another Vampire spell, if Edgar is in the " +
             "command zone or on the battlefield, create a 1/1 black Vampire creature token."

@@ -24,9 +24,8 @@ import com.wingedsheep.sdk.scripting.effects.MayEffect
  *
  * "If this artifact is untapped" is an intervening-"if" (CR 603.4), which is checked twice — once
  * when the ability would trigger and again as it resolves ("Farsight Mask must be untapped both
- * when the damage is dealt and when you would draw the card"). The engine's `triggerCondition`
- * covers the first check only, so the resolution-time re-check is the explicit
- * [ConditionalEffect] around the draw; tapping the Mask in response correctly stops the draw.
+ * when the damage is dealt and when you would draw the card"). `interveningIf` is both checks, so
+ * tapping the Mask in response correctly stops the draw with nothing further on the card.
  */
 val FarsightMask = card("Farsight Mask") {
     manaCost = "{5}"
@@ -37,11 +36,8 @@ val FarsightMask = card("Farsight Mask") {
 
     triggeredAbility {
         trigger = Triggers.damageDealtToYou(GameObjectFilter.Any.opponentControls())
-        triggerCondition = Conditions.SourceIsUntapped
-        effect = ConditionalEffect(
-            condition = Conditions.SourceIsUntapped,
-            effect = MayEffect(Effects.DrawCards(1)),
-        )
+        interveningIf = Conditions.SourceIsUntapped
+        effect = MayEffect(Effects.DrawCards(1))
     }
 
     metadata {

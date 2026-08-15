@@ -25,7 +25,7 @@ import com.wingedsheep.sdk.scripting.effects.SearchDestination
  * more lands than you, repeat this process once. If you search your library this way, shuffle.
  *
  * The enters ability is a [Triggers.EntersBattlefield] triggered ability with an intervening-if
- * ([CardBuilder] `triggerCondition`) of [Conditions.OpponentControlsMoreLands] — checked both as
+ * ([CardBuilder] `interveningIf`) of [Conditions.OpponentControlsMoreLands] — checked both as
  * the trigger goes on the stack and again as it resolves (CR 603.4). Each "process" is an optional
  * ([MayEffect]) `searchLibrary` for a Plains card straight onto the battlefield tapped, which
  * shuffles only when a search actually happens (declining the may means no search and no shuffle).
@@ -59,7 +59,7 @@ val ClaimJumper = card("Claim Jumper") {
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = Conditions.OpponentControlsMoreLands
+        interveningIf = Conditions.OpponentControlsMoreLands
         effect = Effects.Composite(
             listOf(
                 searchForPlains,

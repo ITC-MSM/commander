@@ -33,7 +33,7 @@ val GhituJourneymage = card("Ghitu Journeymage") {
         // require at least one. Counting all Wizards (including self) >= 2 would be wrong whenever
         // Ghitu Journeymage is not a Wizard when the intervening-if is checked (CR 603.4) — e.g. a
         // type-changing effect strips its subtypes, or it entered as a non-Wizard.
-        triggerCondition = Compare(
+        interveningIf = Compare(
             DynamicAmount.AggregateBattlefield(
                 Player.You,
                 GameObjectFilter.Creature.withSubtype("Wizard"),

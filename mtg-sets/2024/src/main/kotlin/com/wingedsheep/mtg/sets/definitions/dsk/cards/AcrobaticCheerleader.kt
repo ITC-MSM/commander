@@ -30,7 +30,7 @@ val AcrobaticCheerleader = card("Acrobatic Cheerleader") {
     // permanent's lifetime (a flying counter grants flying via the keyword-counter projection).
     triggeredAbility {
         trigger = Triggers.YourPostcombatMain
-        triggerCondition = Conditions.SourceIsTapped
+        interveningIf = Conditions.SourceIsTapped
         triggersOnce = true
         effect = Effects.AddCounters(Counters.FLYING, 1, EffectTarget.Self)
     }

@@ -437,7 +437,7 @@
                     },
                     "id": "target creature card from your graveyard"
                 },
-                "triggerCondition": "WasKicked",
+                "interveningIf": "WasKicked",
                 "descriptionOverride": "When this creature enters, if it was kicked, return target creature card from your graveyard to the battlefield."
             }
         ]

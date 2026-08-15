@@ -45,7 +45,7 @@ val SlumberingWalker = card("Slumbering Walker") {
 
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = Conditions.SourceHasCounter(CounterTypeFilter.MinusOneMinusOne)
+        triggerRestriction = Conditions.SourceHasCounter(CounterTypeFilter.MinusOneMinusOne)
         effect = ReflexiveTriggerEffect(
             action = Effects.RemoveCounters(Counters.MINUS_ONE_MINUS_ONE, 1, EffectTarget.Self),
             optional = true,

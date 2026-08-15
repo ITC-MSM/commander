@@ -48,7 +48,7 @@ private val PanickedBystanderFront = card("Panicked Bystander") {
 
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = Conditions.YouGainedLifeThisTurnAtLeast(3)
+        interveningIf = Conditions.YouGainedLifeThisTurnAtLeast(3)
         effect = TransformEffect(EffectTarget.Self)
         description = "At the beginning of your end step, if you gained 3 or more life this turn, " +
             "transform this creature."

@@ -46,7 +46,7 @@ val GutlessPlunderer = card("Gutless Plunderer") {
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = Conditions.YouAttackedThisTurn
+        interveningIf = Conditions.YouAttackedThisTurn
         effect = Effects.Composite(
             GatherCardsEffect(
                 source = CardSource.TopOfLibrary(DynamicAmount.Fixed(3)),

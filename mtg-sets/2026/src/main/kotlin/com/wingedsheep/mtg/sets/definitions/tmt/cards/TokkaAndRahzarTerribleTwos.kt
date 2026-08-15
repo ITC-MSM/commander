@@ -39,7 +39,7 @@ val TokkaAndRahzarTerribleTwos = card("Tokka & Rahzar, Terrible Twos") {
         trigger = Triggers.AnyPlayerCastsSpell
         // "if the amount of mana spent to cast it was less than its mana value" — compares the
         // triggering spell's actual mana spent against its printed mana value.
-        triggerCondition = Conditions.CompareAmounts(
+        interveningIf = Conditions.CompareAmounts(
             DynamicAmount.EntityProperty(EntityReference.Triggering, EntityNumericProperty.ManaSpent),
             ComparisonOperator.LT,
             DynamicAmount.EntityProperty(EntityReference.Triggering, EntityNumericProperty.ManaValue)

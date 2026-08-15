@@ -1492,11 +1492,23 @@ class TriggeredAbilityBuilder {
         set(value) { triggerZones = setOf(value) }
 
     /**
-     * Intervening-if condition (Rule 603.4): checked when the trigger would fire. Note the engine
-     * does not yet re-check it at resolution — an ability that needs the second half of CR 603.4
-     * has to gate its own effect on the same condition (`ConditionalEffect`).
+     * The intervening-"if" of CR 603.4 — an `if` printed immediately after the trigger event:
+     * "When/Whenever/At [event], **if** [condition], [effect]." Checked when the trigger would
+     * fire *and* again as the ability resolves, where a false condition removes it from the stack.
+     *
+     * See [com.wingedsheep.sdk.scripting.TriggeredAbility.interveningIf]; for a "while" clause or
+     * any other trigger-time-only gate use [triggerRestriction].
      */
-    var triggerCondition: Condition? = null
+    var interveningIf: Condition? = null
+
+    /**
+     * A CR 603.2 restriction on the trigger event, checked when the trigger would fire and never
+     * again — a "while" clause, a "during your turn" narrowing, or a mechanic's own gate.
+     *
+     * See [com.wingedsheep.sdk.scripting.TriggeredAbility.triggerRestriction]; for an "if" clause
+     * printed straight after the trigger event use [interveningIf].
+     */
+    var triggerRestriction: Condition? = null
     /** When true, the triggered ability is controlled by the triggering entity's controller. */
     var controlledByTriggeringEntityController: Boolean = false
     /** When true, this triggered ability triggers at most once each turn ("This ability triggers
@@ -1547,7 +1559,8 @@ class TriggeredAbilityBuilder {
             additionalTargetRequirements = additionalTargets,
             elseEffect = elseEffect,
             activeZones = triggerZones,
-            triggerCondition = triggerCondition,
+            interveningIf = interveningIf,
+            triggerRestriction = triggerRestriction,
             controlledByTriggeringEntityController = controlledByTriggeringEntityController,
             oncePerTurn = oncePerTurn,
             effectOncePerTurn = effectOncePerTurn,

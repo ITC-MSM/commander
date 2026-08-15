@@ -50,7 +50,7 @@ val TheSibsigCeremony = card("The Sibsig Ceremony") {
             filter = GameObjectFilter.Creature.youControl(),
             binding = TriggerBinding.ANY
         )
-        triggerCondition = Conditions.TriggeringEntityWasCast
+        interveningIf = Conditions.TriggeringEntityWasCast
         effect = Effects.Destroy(EffectTarget.TriggeringEntity)
             .then(
                 Effects.CreateToken(

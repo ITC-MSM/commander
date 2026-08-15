@@ -32,7 +32,7 @@ val GatekeeperOfMalakir = card("Gatekeeper of Malakir") {
     // When this creature enters, if it was kicked, target player sacrifices a creature of their choice.
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = WasKicked
+        interveningIf = WasKicked
         val player = target("target player", Targets.Player)
         effect = ForceSacrificeEffect(GameObjectFilter.Creature, 1, player)
     }

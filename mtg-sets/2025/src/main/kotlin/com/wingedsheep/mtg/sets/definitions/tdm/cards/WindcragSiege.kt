@@ -77,7 +77,7 @@ val WindcragSiege = card("Windcrag Siege") {
     // It gains lifelink and haste until end of turn.
     triggeredAbility {
         trigger = Triggers.YourUpkeep
-        triggerCondition = SourceChosenModeIs("jeskai")
+        triggerRestriction = SourceChosenModeIs("jeskai")
         effect = Effects.Composite(
             listOf(
                 Effects.CreateToken(

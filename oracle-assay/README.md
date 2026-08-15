@@ -392,27 +392,30 @@ found, by kind:
 - **One SDK finding acted on, one filed.** Acted on: `manaAbility = true` now derives
   `timing = TimingRule.ManaAbility` in `CardBuilder`, so the two spellings of one fact can no longer
   drift (24 cards carried only one, and the AI's `ExpiringGrantWindow` branches on `timing`).
-- **Filed: the engine never performs CR 603.4's second intervening-if check.**
-  `triggerCondition` is filtered at trigger *detection* and read nowhere else, so Beastbond
-  Outcaster draws its card even when the 4-power creature was killed in response — against the
-  ruling quoted in its own card file. Eight cards (Lavaborn Muse, Farsight Mask, Bloodhall Priest,
-  Asylum Visitor, Heir of the Wilds, Convalescent Care, Oversold Cemetery) have noticed and
-  hand-written a redundant resolution-time gate to compensate.
+- **Fixed: the engine never performed CR 603.4's second intervening-if check.** The old shared
+  `triggerCondition` was filtered at trigger *detection* and read nowhere else, so Beastbond
+  Outcaster drew its card even when the 4-power creature was killed in response — against the ruling
+  quoted in its own card file. Nine cards (Lavaborn Muse, Farsight Mask, Bloodhall Priest ×2, Asylum
+  Visitor, Heir of the Wilds, Convalescent Care, Oversold Cemetery, Edgar Markov) had noticed and
+  hand-written a redundant resolution-time gate to compensate; Lavaborn Muse's is what made it a
+  *divergence* here rather than only a rules bug, since the gate is a second condition the printed
+  line does not spell.
 
-  A uniform recheck was implemented and **reverted**, because the field turns out to be overloaded
-  three ways: 340 abilities use `triggerCondition` for an intervening-"if" (two checks), 47 for a
-  "**while**" clause — "Whenever this creature attacks *while* you control a Dinosaur" is
-  trigger-time only, and Burning Sun Cavalry and Seasoned Warrenguard have scenario tests asserting
-  exactly that — and ~100 for other trigger-time restrictions. Rechecking all of them fails those
-  two tests. The engine fix needs "if" and "while" separated in the SDK first, which is its own
-  change with a corpus migration behind it.
+  A uniform recheck was implemented and reverted once, because the field was overloaded three ways.
+  The fix split it: `interveningIf` (CR 603.4, checked again on resolution) and `triggerRestriction`
+  (CR 603.2, checked only when the trigger fires — "Whenever this creature attacks *while* you
+  control a Dinosaur", which Burning Sun Cavalry and Seasoned Warrenguard have scenario tests
+  asserting). Re-read from the printed text, the corpus's 510 sites are **377 intervening-"if" / 44
+  "while" / 89 other trigger-time restriction**. All nine gates are gone, and `Triggers.abilityFor`
+  writes `interveningIf` — never `triggerRestriction`, which no rule here spells, so a "while" card
+  declines rather than printing an "if" sentence that means something else.
 
-The four that remain are classified, not unexplained:
+Those that remain are classified, not unexplained:
 
 | Card | Classification |
 |---|---|
 | Zombie Master | The bare-tribal-noun approximation, **measured**: "Zombies" means every Zombie *permanent*, and reading it that way costs 80 other cards (45 → 127 divergences). The one card in the corpus where the distinction is observable, because its granted ability says "Regenerate this permanent". |
-| Lavaborn Muse | Carries the redundant resolution-time gate above. Correct under today's engine and divergent from the grammar; both stop being true when the "if"/"while" split lands. |
+| ~~Lavaborn Muse~~ | **Resolved by the CR 603.4 split.** It carried the redundant resolution-time gate above — correct under the old engine and divergent from the grammar, because the gate is a second condition the printed line does not spell. With `interveningIf` doing both checks the gate is deleted and the two models agree. |
 | Tattered Ratter | Parser bug. "it" inside a *filtered* trigger means the triggering creature, not the source — the third anaphor position. Fixing it needs a clause vocabulary reachable only from `filteredTriggerRule`, since `Primitives.self` and `SelfSteps.anaphoric` both build `EffectTarget.Self` today. |
 | Kalastria Highborn | Parser bug. "You may pay {B}. If you do, A **and** B." — the outer clause-sequence rule takes the " and " join before the gate can, so B lands outside the gate. Fixing it by alternation order is what the design says never to do; the gate's scope has to run to the end of the sentence. |
 
@@ -497,10 +500,11 @@ Found the way all five were, by running it on a card class it had never reached.
     one concept with two spellings and neither is broken; the grammar emits the one whose model says
     what the sentence says.
   - **Phage the Untouchable, on its own.** The band taught `Triggers` to read an intervening-if the
-    way CR 603.4 defines it — a condition printed between the event and the effect is checked twice,
-    so the ability carries both a `triggerCondition` and the `ConditionalEffect`. Lavaborn Muse is
-    written exactly that way and now confirms; Phage carries only the `triggerCondition`, so its
-    ability does not re-check on resolution. That is a card-side omission, not a spelling.
+    way CR 603.4 defines it — a condition printed between the event and the effect is checked twice.
+    At the time the engine checked it only once, so a card that wanted both checks had to carry the
+    condition *and* a `ConditionalEffect`, and Phage carried only the condition. The CR 603.4 split
+    settled it in the grammar's favour: `interveningIf` is now both checks, the compensating gates
+    are deleted, and Phage was never wrong — the engine was.
 - **Two more bugs of the Meteor Golem class, from the Portal band.** **Recollect** prints "Return
   target card from **your** graveyard to your hand" and filters on `TargetFilter.CardInGraveyard`,
   which is *any* graveyard — so it can be pointed at an opponent's. **Eternal Witness** is the same

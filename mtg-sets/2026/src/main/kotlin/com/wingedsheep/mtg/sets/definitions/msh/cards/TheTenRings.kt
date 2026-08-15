@@ -23,7 +23,7 @@ import com.wingedsheep.sdk.scripting.values.DynamicAmount
  *   Guide's primitive) scoped to [Player.You] with a fixed amount. It *sets* the maximum rather
  *   than adding to it, so it also caps you at ten if something else raised it.
  * - The end-step ability has an intervening "if" (CR 603.4): [Conditions.CardsInHandAtMost] with
- *   `9` is the literal reading of "fewer than ten cards in hand", and as a `triggerCondition` the
+ *   `9` is the literal reading of "fewer than ten cards in hand", and as a `interveningIf` the
  *   engine checks it both when the ability would trigger and again on resolution — so drawing
  *   back up to ten in response correctly makes it do nothing.
  * - "Cards equal to the difference" is recomputed on resolution, not fixed at trigger time:
@@ -51,7 +51,7 @@ val TheTenRings = card("The Ten Rings") {
     // draw cards equal to the difference.
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = Conditions.CardsInHandAtMost(9)
+        interveningIf = Conditions.CardsInHandAtMost(9)
         effect = Effects.DrawCards(
             DynamicAmount.Subtract(
                 DynamicAmount.Fixed(10),

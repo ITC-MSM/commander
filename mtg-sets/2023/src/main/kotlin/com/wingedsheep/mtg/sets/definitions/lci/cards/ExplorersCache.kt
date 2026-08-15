@@ -34,7 +34,7 @@ import com.wingedsheep.sdk.scripting.values.DynamicAmount
  *   (ANY binding, to = GRAVEYARD). The engine evaluates `withCounter` against last-known-information
  *   for zone-change triggers (TriggerMatcher.matchesStatePredicateForZoneChangeTrigger, CR 603.10),
  *   so the +1/+1 counter check correctly reads the dying creature's captured counters rather than
- *   its already-gone live state. No triggerCondition is needed — the filter alone guards the trigger.
+ *   its already-gone live state. No triggerRestriction is needed — the filter alone guards the trigger.
  *
  * Ability 3 — [Costs.Tap] + [TargetCreature] (any creature) + [Effects.MoveCounters] with a
  *   fixed amount of 1, source = Self (the artifact), destination = ContextTarget(0) (the chosen

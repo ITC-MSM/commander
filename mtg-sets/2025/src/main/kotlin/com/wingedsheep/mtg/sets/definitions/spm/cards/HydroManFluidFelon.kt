@@ -39,7 +39,7 @@ val HydroManFluidFelon = card("Hydro-Man, Fluid Felon") {
     // Whenever you cast a blue spell, if Hydro-Man is a creature, he gets +1/+1 until end of turn.
     triggeredAbility {
         trigger = Triggers.youCastSpell(spellFilter = GameObjectFilter.Any.withColor(Color.BLUE))
-        triggerCondition = Conditions.SourceMatches(GameObjectFilter.Creature)
+        interveningIf = Conditions.SourceMatches(GameObjectFilter.Creature)
         effect = Effects.ModifyStats(1, 1, EffectTarget.Self)
     }
 

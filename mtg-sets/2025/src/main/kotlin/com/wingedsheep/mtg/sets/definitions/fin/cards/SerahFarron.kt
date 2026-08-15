@@ -95,7 +95,7 @@ private val SerahFarronFront = card("Serah Farron") {
     // creatures, you may transform Serah Farron.
     triggeredAbility {
         trigger = Triggers.BeginCombat
-        triggerCondition = Compare(
+        interveningIf = Compare(
             DynamicAmount.AggregateBattlefield(
                 player = Player.You,
                 filter = GameObjectFilter.Creature.legendary(),

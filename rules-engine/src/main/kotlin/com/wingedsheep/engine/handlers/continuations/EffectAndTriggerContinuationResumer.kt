@@ -118,6 +118,8 @@ class EffectAndTriggerContinuationResumer(
                 triggerCounterCount = continuation.triggerCounterCount,
                 triggerTotalCounterCount = continuation.triggerTotalCounterCount,
                 triggerLastKnownCounters = continuation.triggerLastKnownCounters,
+                triggerLastKnownSubtypes = continuation.triggerLastKnownSubtypes,
+                triggerLastKnownCardTypes = continuation.triggerLastKnownCardTypes,
                 triggerLastKnownDamageDealtByPlayers = continuation.triggerLastKnownDamageDealtByPlayers,
                 triggerLastKnownBlockingOrBlockedByIds = continuation.triggerLastKnownBlockingOrBlockedByIds,
                 lastKnownPower = continuation.lastKnownPower,
@@ -133,7 +135,8 @@ class EffectAndTriggerContinuationResumer(
                 triggerManaValueOfTriggeringSpell = continuation.triggerManaValueOfTriggeringSpell,
                 triggerXValueOfTriggeringSpell = continuation.triggerXValueOfTriggeringSpell,
                 xValue = continuation.xValue,
-                carriedPipeline = continuation.carriedPipeline
+                carriedPipeline = continuation.carriedPipeline,
+                interveningIf = continuation.interveningIf
             )
             val stackResult = services.stackResolver.putTriggeredAbility(state, elseComponent, emptyList())
             if (!stackResult.isSuccess) return stackResult
@@ -173,6 +176,8 @@ class EffectAndTriggerContinuationResumer(
             triggerCounterCount = continuation.triggerCounterCount,
             triggerTotalCounterCount = continuation.triggerTotalCounterCount,
             triggerLastKnownCounters = continuation.triggerLastKnownCounters,
+            triggerLastKnownSubtypes = continuation.triggerLastKnownSubtypes,
+            triggerLastKnownCardTypes = continuation.triggerLastKnownCardTypes,
             triggerLastKnownDamageDealtByPlayers = continuation.triggerLastKnownDamageDealtByPlayers,
             triggerLastKnownBlockingOrBlockedByIds = continuation.triggerLastKnownBlockingOrBlockedByIds,
             lastKnownPower = continuation.lastKnownPower,
@@ -190,7 +195,8 @@ class EffectAndTriggerContinuationResumer(
             triggerManaValueOfTriggeringSpell = continuation.triggerManaValueOfTriggeringSpell,
             triggerXValueOfTriggeringSpell = continuation.triggerXValueOfTriggeringSpell,
             xValue = continuation.xValue,
-            carriedPipeline = continuation.carriedPipeline
+            carriedPipeline = continuation.carriedPipeline,
+            interveningIf = continuation.interveningIf
         )
 
         val stackResult = services.stackResolver.putTriggeredAbility(
@@ -256,11 +262,14 @@ class EffectAndTriggerContinuationResumer(
             triggerCounterCount = continuation.triggerCounterCount,
             triggerTotalCounterCount = continuation.triggerTotalCounterCount,
             triggerLastKnownCounters = continuation.triggerLastKnownCounters,
+            triggerLastKnownSubtypes = continuation.triggerLastKnownSubtypes,
+            triggerLastKnownCardTypes = continuation.triggerLastKnownCardTypes,
             triggerLastKnownDamageDealtByPlayers = continuation.triggerLastKnownDamageDealtByPlayers,
             triggerLastKnownBlockingOrBlockedByIds = continuation.triggerLastKnownBlockingOrBlockedByIds,
             selectedTargets = selectedTargets,
             targetRequirements = continuation.targetRequirements,
-            totalDamage = totalDamage
+            totalDamage = totalDamage,
+            interveningIf = continuation.interveningIf
         )
 
         val newState = state
@@ -306,11 +315,14 @@ class EffectAndTriggerContinuationResumer(
             triggerCounterCount = continuation.triggerCounterCount,
             triggerTotalCounterCount = continuation.triggerTotalCounterCount,
             triggerLastKnownCounters = continuation.triggerLastKnownCounters,
+            triggerLastKnownSubtypes = continuation.triggerLastKnownSubtypes,
+            triggerLastKnownCardTypes = continuation.triggerLastKnownCardTypes,
             triggerLastKnownDamageDealtByPlayers = continuation.triggerLastKnownDamageDealtByPlayers,
             triggerLastKnownBlockingOrBlockedByIds = continuation.triggerLastKnownBlockingOrBlockedByIds,
             lastKnownPower = continuation.lastKnownPower,
             lastKnownToughness = continuation.lastKnownToughness,
-            damageDistribution = response.distribution
+            damageDistribution = response.distribution,
+            interveningIf = continuation.interveningIf
         )
 
         val stackResult = services.stackResolver.putTriggeredAbility(

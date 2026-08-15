@@ -30,7 +30,7 @@ val PhageTheUntouchable = card("Phage the Untouchable") {
     // ETB: if you didn't cast it from your hand, you lose the game
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = Conditions.Not(Conditions.WasCastFromHand)
+        interveningIf = Conditions.Not(Conditions.WasCastFromHand)
         effect = Effects.LoseGame(
             target = EffectTarget.Controller,
             message = "Phage the Untouchable was not cast from hand"

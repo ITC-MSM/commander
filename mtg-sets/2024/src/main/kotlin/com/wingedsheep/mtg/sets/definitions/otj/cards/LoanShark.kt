@@ -34,7 +34,7 @@ val LoanShark = card("Loan Shark") {
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = Conditions.YouCastSpellsThisTurn(atLeast = 2)
+        interveningIf = Conditions.YouCastSpellsThisTurn(atLeast = 2)
         effect = Effects.DrawCards(1)
         description = "When this creature enters, if you've cast two or more spells this turn, draw a card."
     }

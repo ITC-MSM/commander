@@ -45,7 +45,7 @@ val ShadowUrchin = card("Shadow Urchin") {
 
     triggeredAbility {
         trigger = Triggers.YourCreatureDies
-        triggerCondition = Compare(
+        triggerRestriction = Compare(
             DynamicAmount.ContextProperty(ContextPropertyKey.LAST_KNOWN_TOTAL_COUNTER_COUNT),
             ComparisonOperator.GTE,
             DynamicAmount.Fixed(1)

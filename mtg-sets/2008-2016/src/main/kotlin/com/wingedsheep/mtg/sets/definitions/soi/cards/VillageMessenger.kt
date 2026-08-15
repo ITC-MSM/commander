@@ -23,7 +23,7 @@ private val VillageMessengerFront = card("Village Messenger") {
     keywords(Keyword.HASTE)
     triggeredAbility {
         trigger = Triggers.EachUpkeep
-        triggerCondition = Conditions.CompareAmounts(
+        interveningIf = Conditions.CompareAmounts(
             DynamicAmounts.spellsCastLastTurn(), ComparisonOperator.EQ, DynamicAmount.Fixed(0)
         )
         effect = TransformEffect(EffectTarget.Self)
@@ -50,7 +50,7 @@ private val MoonriseIntruder = card("Moonrise Intruder") {
     keywords(Keyword.MENACE)
     triggeredAbility {
         trigger = Triggers.EachUpkeep
-        triggerCondition = Conditions.CompareAmounts(
+        interveningIf = Conditions.CompareAmounts(
             DynamicAmounts.spellsCastLastTurn(), ComparisonOperator.GTE, DynamicAmount.Fixed(2)
         )
         effect = TransformEffect(EffectTarget.Self)

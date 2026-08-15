@@ -327,7 +327,7 @@
                         ]
                     }
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "TurnTracking",
@@ -2525,7 +2525,7 @@
                     },
                     "id": "target Vampire you control"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "TurnTracking",
@@ -2800,7 +2800,7 @@
                     "optional": true,
                     "id": "up to one target creature or planeswalker"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "TurnTracking",

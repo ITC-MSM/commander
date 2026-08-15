@@ -50,7 +50,7 @@ val AnnieFlashTheVeteran = card("Annie Flash, the Veteran") {
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = Conditions.WasCast
+        interveningIf = Conditions.WasCast
         val card = target(
             "permanent card with mana value 3 or less from your graveyard",
             TargetObject(

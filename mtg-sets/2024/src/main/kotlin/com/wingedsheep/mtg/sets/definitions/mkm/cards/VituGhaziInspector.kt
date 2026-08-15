@@ -50,7 +50,7 @@ val VituGhaziInspector = card("Vitu-Ghazi Inspector") {
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = Conditions.WasEvidenceCollected
+        interveningIf = Conditions.WasEvidenceCollected
         val creature = target("target creature", TargetCreature())
         effect = Effects.Composite(
             Effects.AddCounters(Counters.PLUS_ONE_PLUS_ONE, 1, creature),

@@ -79,7 +79,7 @@ val TomBertAndWilliam = card("Tom, Bert, and William") {
 
     triggeredAbility {
         trigger = Triggers.Dies
-        triggerCondition = Conditions.TriggeringEntityHadCardType(CardType.CREATURE.name)
+        interveningIf = Conditions.TriggeringEntityHadCardType(CardType.CREATURE.name)
         effect = Effects.Composite(
             Effects.Move(
                 target = EffectTarget.Self,

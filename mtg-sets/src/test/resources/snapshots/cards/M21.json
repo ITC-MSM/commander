@@ -39,7 +39,7 @@
                         "amount": 1
                     }
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Exists",
                     "player": "You",
                     "zone": "Battlefield",

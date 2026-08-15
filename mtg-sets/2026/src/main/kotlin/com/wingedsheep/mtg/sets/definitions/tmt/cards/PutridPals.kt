@@ -35,7 +35,7 @@ val PutridPals = card("Putrid Pals") {
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = Conditions.YouHadPermanentLeaveBattlefieldThisTurn
+        triggerRestriction = Conditions.YouHadPermanentLeaveBattlefieldThisTurn
         effect = Effects.AddCounters(Counters.PLUS_ONE_PLUS_ONE, 2, EffectTarget.Self)
         description = "Disappear — This creature enters with two +1/+1 counters on it if a permanent left the battlefield under your control this turn."
     }

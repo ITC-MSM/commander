@@ -49,7 +49,7 @@ val ElegyAcolyte = card("Elegy Acolyte") {
 
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = Conditions.Void
+        interveningIf = Conditions.Void
         effect = CreateTokenEffect(
             power = 2,
             toughness = 2,

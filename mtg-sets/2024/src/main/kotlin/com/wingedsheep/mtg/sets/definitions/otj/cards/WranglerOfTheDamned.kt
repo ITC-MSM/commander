@@ -32,7 +32,7 @@ val WranglerOfTheDamned = card("Wrangler of the Damned") {
     keywords(Keyword.FLASH)
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = Conditions.Not(Conditions.YouCastSpellsThisTurn(1, fromZone = Zone.HAND))
+        interveningIf = Conditions.Not(Conditions.YouCastSpellsThisTurn(1, fromZone = Zone.HAND))
         effect = Effects.CreateToken(
             power = 2,
             toughness = 2,

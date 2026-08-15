@@ -29,7 +29,7 @@ import com.wingedsheep.sdk.scripting.values.EntityReference
  * — it has no PREPARED keyword. The upkeep trigger surveils 1 and *then*, as a single resolution,
  * makes the creature become prepared ([Effects.BecomePrepared]) when three or more creature cards
  * are in your graveyard. The "then if" rider is a [ConditionalEffect] sequenced after the surveil,
- * not a [triggerCondition] — surveil happens unconditionally, the graveyard is checked afterward.
+ * not a [interveningIf] — surveil happens unconditionally, the graveyard is checked afterward.
  *
  * Reanimate (back face): a {B} sorcery prepare spell that puts a creature card from any graveyard
  * onto the battlefield under your control ([Effects.Move] to [Zone.BATTLEFIELD] defaults the

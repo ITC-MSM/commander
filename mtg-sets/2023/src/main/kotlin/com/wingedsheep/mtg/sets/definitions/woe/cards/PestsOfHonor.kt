@@ -33,7 +33,7 @@ val PestsOfHonor = card("Pests of Honor") {
 
     triggeredAbility {
         trigger = Triggers.BeginCombat
-        triggerCondition = Conditions.Celebration
+        interveningIf = Conditions.Celebration
         effect = Effects.AddCounters(Counters.PLUS_ONE_PLUS_ONE, 1, EffectTarget.Self)
         description = "At the beginning of combat on your turn, if two or more nonland " +
             "permanents entered the battlefield under your control this turn, put a +1/+1 " +

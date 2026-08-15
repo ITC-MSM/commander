@@ -1235,7 +1235,7 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   `Counters.PLAN` (MSH's Plan enchantment cycle — each Plan's own "whenever …" trigger adds one, and a
   second `Triggers.countersPlacedOn(filter = GameObjectFilter.Any, counterType = Counters.PLAN,
   firstTimeEachTurn = false, binding = TriggerBinding.SELF)` ability gated on
-  `triggerCondition = Conditions.SourceCounterCountAtLeast(Counters.PLAN, N)` models "when the Nth plan
+  `triggerRestriction = Conditions.SourceCounterCountAtLeast(Counters.PLAN, N)` models "when the Nth plan
   counter is put on this enchantment"; exact because every payoff sacrifices its own source, so the
   at-least gate can never fire a second time — no dedicated "Nth counter" trigger event is needed),
   `Counters.INVASION` (Alien Invasion — a tally its begin-combat trigger reads via
@@ -3847,7 +3847,28 @@ work for abilities-on-stack (which carry no `CardComponent`).
 
 ## 8. Triggered abilities (`Triggers.*`)
 
-`triggeredAbility { trigger; effect; target?; triggerZone?/triggerZones?; triggerCondition?; optional?; elseEffect?; checkOnNextState?; dealsDamageBeforeResolve?; controlledByTriggeringEntityController?; oncePerTurn?; effectOncePerTurn?; triggersOnce? }`.
+`triggeredAbility { trigger; effect; target?; triggerZone?/triggerZones?; interveningIf?; triggerRestriction?; optional?; elseEffect?; checkOnNextState?; dealsDamageBeforeResolve?; controlledByTriggeringEntityController?; oncePerTurn?; effectOncePerTurn?; triggersOnce? }`.
+
+**`interveningIf` vs `triggerRestriction` — a trigger's condition, and which of the two checks it
+gets.** Both are checked when the trigger event occurs, and only one of them is checked again as the
+ability resolves. Pick by reading the printed line; there is no safe default, which is why there is
+no shared field to fall back on.
+
+| Field | Rule | Printed shape | Checked |
+|---|---|---|---|
+| `interveningIf` | CR 603.4 | an `if` **immediately after the trigger event**: "When/Whenever/At [event], **if** [condition], [effect]" | when the trigger would fire **and again on resolution** — a false condition removes the ability from the stack with an `AbilityFizzledEvent` and it does nothing |
+| `triggerRestriction` | CR 603.2 | a **"while"** clause ("…attacks **while** you control a Dinosaur", "…**while saddled**"), a **"during"** narrowing ("…**during your turn**"), or a mechanic's own gate with no printed word (an Offspring cost paid, a chosen mode, a Station threshold, a max-speed grant) | when the trigger would fire, and **never again** |
+
+CR 603.4's own parenthetical draws the line: the rule *"only applies to an 'if' that immediately
+follows a trigger condition"*. So an `if` printed **after** the effect — "Whenever this creature
+attacks, create a token **if** you control a creature with power 4 or greater" — is neither field.
+That ability triggers unconditionally and checks only as it resolves, which is a `ConditionalEffect`
+(§ 5). Likewise an "**unless**" rider, which CR 603.5 settles on resolution.
+
+Getting the choice wrong is silent in both directions — an "if" filed as a restriction resolves
+abilities that should do nothing, a "while" filed as an "if" fizzles abilities that should resolve —
+so `InterveningIfClassificationTest` re-derives the reading from each card's own Oracle text and
+fails the build on a mismatch, over the population where the pairing is unambiguous.
 
 **`triggerZones` — which zones the trigger condition functions in (CR 113.6b).** Defaults to
 `setOf(Zone.BATTLEFIELD)`, which CR 113.6 makes the rule for a permanent card's abilities. It is a
@@ -3870,11 +3891,11 @@ dedicated detector, and a general pass would fire them twice.
 **Eminence** (CR 207.2c — an ability word, no rules meaning of its own) is just
 `triggerZones = setOf(Zone.BATTLEFIELD, Zone.COMMAND)`; there is no eminence keyword or engine type.
 The printed "if [this] is in the command zone or on the battlefield" clause is *also* an
-intervening-"if" (CR 603.4), so it is checked again at resolution — and the engine does **not**
-re-check `triggerCondition` at resolution time. Supply that half by gating the effect on the same
-test, `ConditionalEffect(Conditions.SourceInZone(Zone.BATTLEFIELD, Zone.COMMAND), effect)`, which is
-what makes killing Edgar in response to the Vampire spell produce no token. See
-`c17/cards/EdgarMarkov.kt`.
+intervening-"if" (CR 603.4), so it is checked again at resolution — which is
+`interveningIf = Conditions.SourceInZone(Zone.BATTLEFIELD, Zone.COMMAND)` beside the `triggerZones`,
+and what makes killing Edgar in response to the Vampire spell produce no token. The two answer
+different questions (which zones the ability functions in vs. what the printed "if" tests) and only
+happen to name the same zones here. See `c17/cards/EdgarMarkov.kt`.
 
 **`oncePerTurn` vs `triggersOnce` — two firing caps.** `oncePerTurn = true` caps the ability to one
 fire per turn ("This ability triggers only once each turn", e.g. Scavenger's Talent), tracked by a
@@ -4181,13 +4202,13 @@ Named sugar for the common cases; reach for the factories for any other combinat
 
 **Factories** (axes: `damageType` × `recipient` × `sourceFilter` × `binding` for outgoing; `source` × `binding` for incoming):
 
-- `dealsDamage(damageType?, recipient?, sourceFilter?, binding?, requireExcess?, batch?, requires?)` — outgoing-damage trigger. Pick `DamageType.{Any,Combat,NonCombat}`, `RecipientFilter.{Any,AnyPlayer,AnyPlayerOrPlaneswalker,AnyCreature,…}`, an optional source `GameObjectFilter`, and `TriggerBinding.{SELF,ANY,ATTACHED}`. Covers "deals combat damage to a player or planeswalker", "creature you control deals combat damage to a player" (`binding = ANY` + `sourceFilter = Creature.youControl()`), "nontoken creature you control deals…" (`.nontoken()`), and "enchanted creature deals damage" (`binding = ATTACHED`). The conjunctive `requires` set adds damage-event facts: `DamagePredicate.SourceSoleTargetIsRecipient` requires the source to have exactly one chosen target and that target to be this damage recipient, so "a spell that targets only a single creature deals damage to that creature" does not fire for the same spell's collateral damage (Imodane, the Pyrohammer). Pass `requireExcess = true` to fire only when the recipient was dealt damage past lethal (CR 120.4a) — Fall of Cair Andros' "is dealt excess noncombat damage". Pass `batch = true` for recipient-side **"one or more" batch wording** (CR 603.2c) — "whenever one or more creatures your opponents control are dealt excess noncombat damage" (Magmatic Galleon): simultaneous damage to several matching recipients (a sweeper, combat damage to multiple blockers) fires the trigger once per event batch instead of once per damaged recipient. Batch is only honored on the `binding = ANY` observer path; SELF/ATTACHED damage triggers are inherently per-source-event. Read the excess via `DynamicAmount.ContextProperty(ContextPropertyKey.TRIGGER_EXCESS_DAMAGE_AMOUNT)`. For a creature recipient, read its toughness *as it last existed at damage time* (CR 603.10 LKI — survives a lethal hit) via `DynamicAmount.ContextProperty(ContextPropertyKey.TRIGGER_RECIPIENT_TOUGHNESS)`; pair it with a `triggerCondition` such as `Conditions.CompareAmounts(ContextProperty(TRIGGER_DAMAGE_AMOUNT), ComparisonOperator.EQ, ContextProperty(TRIGGER_RECIPIENT_TOUGHNESS))` for "deals noncombat damage to a creature equal to that creature's toughness" (Taii Wakeen, Perfect Shot). On the observer path (`binding = ANY` + `sourceFilter`), `EntityReference.Triggering` is the damage SOURCE, but the recipient toughness is still carried in this context key. **Combat caveat:** combat-damage state-based actions run *before* trigger detection, so a non-indestructible recipient that dies to the same combat-damage event has already left the battlefield when a `RecipientFilter.CreatureOpponentControls`-style filter reads its `ControllerComponent` — the filter silently fails (no last-known-info path yet). A `requireExcess = true` + `DamageType.Combat` trigger therefore only fires reliably on recipients that survive (indestructible / high toughness). Fall of Cair Andros is unaffected because it gates on `DamageType.NonCombat`, where the trigger is detected from the damage event before the kill SBA.
+- `dealsDamage(damageType?, recipient?, sourceFilter?, binding?, requireExcess?, batch?, requires?)` — outgoing-damage trigger. Pick `DamageType.{Any,Combat,NonCombat}`, `RecipientFilter.{Any,AnyPlayer,AnyPlayerOrPlaneswalker,AnyCreature,…}`, an optional source `GameObjectFilter`, and `TriggerBinding.{SELF,ANY,ATTACHED}`. Covers "deals combat damage to a player or planeswalker", "creature you control deals combat damage to a player" (`binding = ANY` + `sourceFilter = Creature.youControl()`), "nontoken creature you control deals…" (`.nontoken()`), and "enchanted creature deals damage" (`binding = ATTACHED`). The conjunctive `requires` set adds damage-event facts: `DamagePredicate.SourceSoleTargetIsRecipient` requires the source to have exactly one chosen target and that target to be this damage recipient, so "a spell that targets only a single creature deals damage to that creature" does not fire for the same spell's collateral damage (Imodane, the Pyrohammer). Pass `requireExcess = true` to fire only when the recipient was dealt damage past lethal (CR 120.4a) — Fall of Cair Andros' "is dealt excess noncombat damage". Pass `batch = true` for recipient-side **"one or more" batch wording** (CR 603.2c) — "whenever one or more creatures your opponents control are dealt excess noncombat damage" (Magmatic Galleon): simultaneous damage to several matching recipients (a sweeper, combat damage to multiple blockers) fires the trigger once per event batch instead of once per damaged recipient. Batch is only honored on the `binding = ANY` observer path; SELF/ATTACHED damage triggers are inherently per-source-event. Read the excess via `DynamicAmount.ContextProperty(ContextPropertyKey.TRIGGER_EXCESS_DAMAGE_AMOUNT)`. For a creature recipient, read its toughness *as it last existed at damage time* (CR 603.10 LKI — survives a lethal hit) via `DynamicAmount.ContextProperty(ContextPropertyKey.TRIGGER_RECIPIENT_TOUGHNESS)`; pair it with a `triggerRestriction` such as `Conditions.CompareAmounts(ContextProperty(TRIGGER_DAMAGE_AMOUNT), ComparisonOperator.EQ, ContextProperty(TRIGGER_RECIPIENT_TOUGHNESS))` for "deals noncombat damage to a creature equal to that creature's toughness" (Taii Wakeen, Perfect Shot). On the observer path (`binding = ANY` + `sourceFilter`), `EntityReference.Triggering` is the damage SOURCE, but the recipient toughness is still carried in this context key. **Combat caveat:** combat-damage state-based actions run *before* trigger detection, so a non-indestructible recipient that dies to the same combat-damage event has already left the battlefield when a `RecipientFilter.CreatureOpponentControls`-style filter reads its `ControllerComponent` — the filter silently fails (no last-known-info path yet). A `requireExcess = true` + `DamageType.Combat` trigger therefore only fires reliably on recipients that survive (indestructible / high toughness). Fall of Cair Andros is unaffected because it gates on `DamageType.NonCombat`, where the trigger is detected from the damage event before the kill SBA.
 - `takesDamage(source?, binding?)` — incoming-damage trigger. Pick `SourceFilter.{Any,Creature,Spell,Combat,NonCombat,HasColor(c),…}` and `TriggerBinding.{SELF,ATTACHED}`. Covers "damaged by a creature/spell" and "enchanted creature is dealt damage" (`binding = ATTACHED`, Frozen Solid shape). For "*you* are dealt damage" use `YouAreDealtDamage` / `damageDealtToYou` above — the recipient is a player, not this permanent.
 - `becomesTapped(binding?, filter?, reason?)` — "becomes tapped" trigger. `BecomesTapped` is the SELF constant; pass `binding = TriggerBinding.ANY` with an optional `filter: GameObjectFilter` for "whenever a [filter] becomes tapped" (e.g. `GameObjectFilter.CreatureOrLand` — Temporal Distortion). The filter is matched against the tapped permanent via projected state. Fires once **per** tapped permanent. `reason: TapReason?` restricts *why* it became tapped — see `BecomesTappedForTeamwork` below; the default `null` is cause-agnostic and matches every tap. Use `null` for "any cause", **never `TapReason.UNSPECIFIED`** — that would match only the taps the engine has not classified, a predicate whose meaning shrinks the day a new cause is named, and it renders as no clause at all.
 - `BecomesTappedForTeamwork` — SELF constant for "Whenever this becomes tapped **to pay a teamwork cost**" (CR 702.194a — Agent Maria Hill). The cause travels on the tap event as `TapReason` (`com.wingedsheep.sdk.scripting.TapReason`), matched by `EventPattern.TapEvent.reason`. **This is a separate axis from `tapper`**: a teamwork tap, an attack tap and a crew tap are all performed by the permanent's own controller, so `tappedById` is identical across them and only the cause separates them. `TapReason` has exactly two members today — `UNSPECIFIED` (every tap site the engine has not been taught to name: attacking, crew, saddle, convoke, mana abilities, a `{T}` activation cost, any "tap target permanent" effect) and `TEAMWORK`, stamped by `CastSpellHandler` on the creatures tapped to pay an optional additional cost declared under `ChoiceSlot.TEAMWORK` (`TapReason.forChoiceSlot`). **Deliberately under-claimed:** an unclassified tap reports `UNSPECIFIED` rather than being guessed at, because a wrong cause makes a reading card fire wrongly while a missing one only makes it stay silent. To name a further cause, add the enum constant, pass it at that cause's tap site (`AttackPhaseManager` for attack taps, `CrewVehicleHandler` for crew, …), and test both directions. Most taps run through the `tap()` atom, which takes the reason as a parameter, but two mana-payment sites build a `TappedEvent` by hand and never call it (`ManaPaymentWindow.tapOrSacrifice` and `ManaPaymentContinuationResumer`, for a `{T}, Sacrifice this` source) — a mana-flavoured cause has to be stamped in all three.
 - `OneOrMoreBecomeTapped(filter, reason?)` — the **batch** sibling of `becomesTapped` (`TapEvent(batch = true)`, ANY binding). Fires at most **once** per simultaneous tap batch (CR 603.2c) regardless of how many matching permanents were tapped together — "Whenever one or more [filter] become tapped" (Deeproot Pilgrimage: `OneOrMoreBecomeTapped(GameObjectFilter.Creature.withSubtype("Merfolk").youControl().nontoken())`). Tapping several matching permanents at once (attacking, convoke, crew) makes a single payoff, not one per permanent. Handled by `TriggerDetector.detectTapBatchTriggers`; the per-event path skips batch taps. The first matching tapped permanent is bound as the triggering entity. `reason: TapReason?` narrows the batch by tap cause exactly as on `becomesTapped` — a batch that also holds taps from an unnamed cause is *narrowed* to the matching ones rather than discarded, the same way `YouTap`'s batch narrows by tapper, so the trigger still fires once on the matching subset.
 - `YouTap(filter, batch = false)` — "Whenever **you tap** an untapped [filter]" (`TapEvent(tapper = Player.You)`, ANY binding) — the Wilds of Eldraine cluster: Hylda of the Icy Crown, Icewrought Sentry, Solitary Sanctuary with `GameObjectFilter.Creature.opponentControls()`, and Sharae of Numbing Depths with `batch = true` for the "one or more" wording. Two things separate it from `becomesTapped`: (1) **attribution** — the tap must have been *caused by* the trigger's controller. `TappedEvent.tappedById` carries the causing player: the `tap()` atom defaults it to the tapped permanent's own controller (right for every cost payment, mana ability, crew/saddle, and the turn-based attack tap), and the tap *effect* executors override it with the effect's `controllerId`. Because a per-player loop rebinds `controllerId`, a spell you control that instructs an **opponent** to tap their own creature is *their* tap and does not fire a `You` pattern (Tangle Wire; per the printed rulings). (2) **"untapped" is intrinsic** — tapping is a transition (CR 701.26a, "only untapped permanents can be tapped"), so an already-tapped permanent emits no tap event and needs no condition. `batch = true` routes to `TriggerDetector.detectTapBatchTriggers`, which narrows the batch to the taps this controller caused before applying the filter; pair it with `oncePerTurn` for "This ability triggers only once each turn".
-- `OneOrMoreBecomeUntapped(filter)` — the **untap** analogue of `OneOrMoreBecomeTapped` (`UntapEvent(batch = true)`, ANY binding). Fires at most **once** per untap step (CR 603.2c) — "Whenever you untap one or more [filter] **during your untap step** …" — even though the untap step untaps all your permanents at once (The Millennium Calendar: `OneOrMoreBecomeUntapped(GameObjectFilter.Permanent.youControl())`). Handled by `TriggerDetector.detectUntapBatchTriggers`; the per-event `UntapEvent` path (`BecomesUntapped`) skips batch untaps. **Unlike the tap batch, it exposes the untapped permanents as the trigger's captured collection** (`IterationSpace.TRIGGER_CAPTURED_COLLECTION`), so a "put **that many** counters" payoff reads the count with `Effects.AddDynamicCounters(type, DynamicAmount.DistinctEntitiesInCollections(listOf(TRIGGER_CAPTURED_COLLECTION)), EffectTarget.Self)`. The **"during your untap step" scoping is intrinsic** — the detector fires it only for the active player's untap-step untaps (not instant-speed untaps, nor an opponent-turn Seedborn Muse untap of your permanents), so no `triggerCondition` is needed. (An untap-step untap advances straight to upkeep before any player gets priority, so an `IsInStep(UNTAP)` intervening-if would read false at detection time — hence the restriction lives in the detector.)
+- `OneOrMoreBecomeUntapped(filter)` — the **untap** analogue of `OneOrMoreBecomeTapped` (`UntapEvent(batch = true)`, ANY binding). Fires at most **once** per untap step (CR 603.2c) — "Whenever you untap one or more [filter] **during your untap step** …" — even though the untap step untaps all your permanents at once (The Millennium Calendar: `OneOrMoreBecomeUntapped(GameObjectFilter.Permanent.youControl())`). Handled by `TriggerDetector.detectUntapBatchTriggers`; the per-event `UntapEvent` path (`BecomesUntapped`) skips batch untaps. **Unlike the tap batch, it exposes the untapped permanents as the trigger's captured collection** (`IterationSpace.TRIGGER_CAPTURED_COLLECTION`), so a "put **that many** counters" payoff reads the count with `Effects.AddDynamicCounters(type, DynamicAmount.DistinctEntitiesInCollections(listOf(TRIGGER_CAPTURED_COLLECTION)), EffectTarget.Self)`. The **"during your untap step" scoping is intrinsic** — the detector fires it only for the active player's untap-step untaps (not instant-speed untaps, nor an opponent-turn Seedborn Muse untap of your permanents), so no `triggerRestriction` is needed. (An untap-step untap advances straight to upkeep before any player gets priority, so an `IsInStep(UNTAP)` intervening-if would read false at detection time — hence the restriction lives in the detector.)
 
 ### Phase & turn
 
@@ -4209,7 +4230,7 @@ for anything else (the ATTACHED-binding aura shapes, custom step/player combinat
 - `BeginCombat` — start of combat on your turn.
 - `EachCombat` — beginning of each combat (any player's turn).
 - `EachEndOfCombat` — at end of combat (CR 511.1), on any player's turn. `YourEndOfCombat` for your
-  turn only. Pair with `triggerCondition = Conditions.SourceAttackedOrBlockedThisCombat` for "at end of
+  turn only. Pair with `triggerRestriction = Conditions.SourceAttackedOrBlockedThisCombat` for "at end of
   combat, if this creature attacked or blocked this combat, …" (Clockwork Avian).
 - `FirstMainPhase` — start of pre-combat main.
 - `YourPostcombatMain` — start of post-combat main.
@@ -4276,7 +4297,7 @@ in the repo today):
 - `CardsLeaveYourGraveyard(filter?)` — batching trigger; fires once per event batch when one
   or more matching cards **leave** your graveyard (cast/exiled/reanimated/returned to hand,
   etc.), regardless of how many or where they went. For the common "leave your graveyard
-  **during your turn**" wording, add `triggerCondition = Conditions.IsYourTurn`; for "this
+  **during your turn**" wording, add `triggerRestriction = Conditions.IsYourTurn`; for "this
   ability triggers only once each turn", add `oncePerTurn = true`. (Attuned Hunter, Kishla
   Skimmer, Kheru Goldkeeper.)
 - `CardsPutIntoExile(fromZones?, filter?)` — batching trigger; fires once per event batch when one
@@ -4284,7 +4305,7 @@ in the repo today):
   battlefield). Unlike the graveyard batches above it is **not** scoped to one player's zones —
   "graveyards and/or the battlefield" means any graveyard and anyone's permanents, so every
   controller of the trigger sees the same batch. Tokens never satisfy it (CR 111.6). Add
-  `triggerCondition = Conditions.IsYourTurn` for the "during your turn" wording.
+  `triggerRestriction = Conditions.IsYourTurn` for the "during your turn" wording.
   (Ketramose, the New Dawn.)
 
 ### Discard
@@ -4616,7 +4637,7 @@ Triggers.youCastSpell(
 - `or(first, second, vararg others)` — composes two or more trigger atoms with the same binding into a
   single disjunctive trigger. Nested disjunctions are flattened. Example: the Aetherdrift Pilot wording
   uses `Triggers.or(Triggers.Saddles, Triggers.Crews)` plus
-  `triggerCondition = Conditions.IsYourMainPhase`.
+  `triggerRestriction = Conditions.IsYourMainPhase`.
 - `becomesAttached(attachmentFilter = Any, attachmentController = Any, attachedToFilter = Any, binding = SELF)`
   — "whenever an Aura/Equipment becomes attached to a permanent" (CR 603.2e). Fires from
   `PermanentAttachedEvent`, emitted at every attach site (aura ETB onto its enchant target, equip
@@ -4655,9 +4676,9 @@ Triggers.youCastSpell(
 - `AnyPlayerGainsLife` — anyone gains life.
 - `YouLoseLife` — you lose any life.
 - `AnyPlayerLosesLife` — anyone loses life.
-- `AnOpponentLosesLife` — an opponent loses life (fires per opponent life-loss event; read the amount via `ContextPropertyKey.TRIGGER_LIFE_LOST`). Bloodthirsty Conqueror; Kefka, Ruler of Ruin (pair with `triggerCondition = Conditions.IsYourTurn` for "during your turn").
+- `AnOpponentLosesLife` — an opponent loses life (fires per opponent life-loss event; read the amount via `ContextPropertyKey.TRIGGER_LIFE_LOST`). Bloodthirsty Conqueror; Kefka, Ruler of Ruin (pair with `triggerRestriction = Conditions.IsYourTurn` for "during your turn").
 - `YouGainOrLoseLife` — combined life-change.
-- `AnyPlayerLosesGame` — a player loses the game (CR 104.3; backed by `EventPattern.PlayerLostGameEvent`, matched against the engine's `PlayerLostEvent`). Fires for every player's loss; `Player.TriggeringPlayer` inside the effect is the loser. Narrow to one player with a `triggerCondition` — Shinryu, Transcendent Rival's "When the chosen player loses the game, you win the game" uses `triggerCondition = Conditions.TriggeringPlayerIs(Player.ChosenOpponent)` + `Effects.WinGame()`.
+- `AnyPlayerLosesGame` — a player loses the game (CR 104.3; backed by `EventPattern.PlayerLostGameEvent`, matched against the engine's `PlayerLostEvent`). Fires for every player's loss; `Player.TriggeringPlayer` inside the effect is the loser. Narrow to one player with a `triggerRestriction` — Shinryu, Transcendent Rival's "When the chosen player loses the game, you win the game" uses `triggerRestriction = Conditions.TriggeringPlayerIs(Player.ChosenOpponent)` + `Effects.WinGame()`.
 
 ### The Ring
 
@@ -4896,9 +4917,9 @@ Dominant back faces that "stay" instead self-exile on their final chapter, dodgi
   `SpellCast`/`NthSpellCast` trigger that observes *other* spells: this one travels with the spell
   onto the stack and is detected only by `TriggerDetector`'s self-cast path (it is deliberately
   **not** indexed against battlefield permanents, so it never fires after the spell resolves).
-  Pair with a `triggerCondition` for an intervening "if" (CR 603.4). Sage of the Skies — "When you
+  Pair with a `interveningIf` for an intervening "if" (CR 603.4). Sage of the Skies — "When you
   cast this spell, if you've cast another spell this turn, copy this spell" — uses
-  `triggerCondition = Conditions.YouCastSpellsThisTurn(atLeast = 2)` (the spell itself is already
+  `interveningIf = Conditions.YouCastSpellsThisTurn(atLeast = 2)` (the spell itself is already
   counted, so "two or more" = "another spell") and `Effects.CopyTargetSpell(TriggeringEntity)` to
   copy itself; copying a permanent spell yields a token (CR 707.10f), and the copy isn't cast so it
   doesn't re-trigger (CR 707.10).
@@ -6458,7 +6479,7 @@ copy of it (CR 707.10e). The activated-ability analogue of the spell-level `cant
 > Bargain derives no payoff — the card supplies it, in one of four shapes:
 > - **Spell rider** — `ConditionalEffect(Conditions.WasBargained, extra)` inside the spell's own effect
 >   (Archon's Glory, Torch the Tower). Reads the declaration off the spell on the stack; no permanent needed.
-> - **Permanent** — an enters-the-battlefield trigger with `triggerCondition = Conditions.WasBargained`
+> - **Permanent** — an enters-the-battlefield trigger with `interveningIf = Conditions.WasBargained`
 >   (Agatha's Champion, High Fae Negotiator). CR 603.4 keeps it off the stack entirely when unbargained.
 > - **Cheaper when bargained** — `ModifySpellCost(SelfCast, CostModification.ReduceGeneric(2),
 >   gating = CostGating.OnlyIf(Conditions.WasBargained))` (Hamlet Glutton, Ice Out, Johann's Stopgap).
@@ -6502,7 +6523,7 @@ copy of it (CR 707.10e). The activated-ability analogue of the spell-level `cant
 > (Axebane Ferox — see § Keywords → Ward for the prompt shape and the fail-closed behaviour).
 >
 > The payoff shapes the printed cards use:
-> - **Enters trigger** — `triggerCondition = Conditions.WasEvidenceCollected` (Vitu-Ghazi Inspector).
+> - **Enters trigger** — `interveningIf = Conditions.WasEvidenceCollected` (Vitu-Ghazi Inspector).
 >   CR 603.4 keeps it off the stack, and unasked for a target, when no evidence was collected.
 > - **Rider inside an unconditional trigger** — `ConditionalEffect(Conditions.WasEvidenceCollected, …)`
 >   (Crimestopper Sprite: the tap always happens, only the stun counter is gated). Use this, not the
@@ -6573,7 +6594,7 @@ copy of it (CR 707.10e). The activated-ability analogue of the spell-level `cant
 >   variant is dropped unless that many modes are actually available: "choose both" can't be
 >   satisfied when one mode has no legal target (CR 700.2a).
 > - **Permanent** — an enters-the-battlefield trigger with
->   `triggerCondition = Conditions.TeamworkWasPaid`; CR 603.4 keeps it off the stack entirely otherwise.
+>   `interveningIf = Conditions.TeamworkWasPaid`; CR 603.4 keeps it off the stack entirely otherwise.
 > - **Teamwork-only clause with its own target** — declare it with `kickerTarget(...)` / `kickerEffect`
 >   in the `spell { }` block (the optional-cost branch of the shared rail), which is exactly what
 >   CR 702.194c asks for: the plain cast is announced as though the clause weren't there, and only
@@ -6906,7 +6927,7 @@ composite abilities).
   power ≥ N; on resolution this permanent **becomes saddled** until end of turn. Reuses the same
   "tap creatures with total power N" selection as Crew (surfaced as a `SaddleMount` legal action),
   but resolves to a marker rather than animating the permanent. Read the saddled state with
-  `Conditions.SourceIsSaddled` / the `saddled()` filter (e.g. `triggerCondition =
+  `Conditions.SourceIsSaddled` / the `saddled()` filter (e.g. `triggerRestriction =
   Conditions.SourceIsSaddled` for "whenever this attacks while saddled"). The marker (engine
   `SaddledComponent`) is cleared at end of turn or when the permanent leaves the battlefield, and
   is not a copiable value (CR 702.171b). Mounts that gate on the saddled state use this.
@@ -7039,7 +7060,7 @@ composite abilities).
     creature" comes out right. `useTargetingUI` puts the choice on the battlefield rather than in an overlay.
   - **"Whenever another creature you control enters, … you may pair that creature with this creature"** —
     `Triggers.OtherCreatureEnters` (which already carries the "another creature **you control**" clause) with
-    `optional = true` for a plain yes/no, `triggerCondition = Conditions.SourceIsUnpaired` for the rest of the
+    `optional = true` for a plain yes/no, `triggerRestriction = Conditions.SourceIsUnpaired` for the rest of the
     intervening-if (a creature that just entered can never already be paired), and a
     `Pipeline { gather(CardSource.TriggeringEntity); pairWithSource(…) }` body.
   The **payoff** clause is an ordinary static ability whose `GroupFilter` is `GroupFilter.soulbondPair()`
@@ -7562,7 +7583,7 @@ answer it and would silently return `false`.
   triggering entity had `subtype` among its **projected** subtypes the moment it left the battlefield
   (CR 603.10), so continuous-effect-granted types count and not just printed ones. Resolution-only.
   Wrap in `Conditions.Not(...)` for the "if it wasn't a X" wording — Infernal Vessel's
-  `triggerCondition = Conditions.Not(Conditions.TriggeringEntityHadSubtype(Subtype.DEMON.value))`,
+  `interveningIf = Conditions.Not(Conditions.TriggeringEntityHadSubtype(Subtype.DEMON.value))`,
   where the Demon type the card grants itself on return (`Effects.AddCreatureType(..., Duration.Permanent)`)
   is what stops the second death from returning it again. Reads `TriggerContext.lastKnownSubtypes`,
   populated from the `ZoneChangeEvent`'s `EntitySnapshot.subtypes`.
@@ -7570,7 +7591,7 @@ answer it and would silently return `false`.
   intervening-if for dies/leaves triggers, true when the triggering entity had `cardType` among its
   **projected** card types the moment it left the battlefield (CR 603.10), so a type set by a
   continuous effect counts and not just the printed line. Resolution-only; pass `CardType.X.name`
-  (matched case-insensitively). Tom, Bert, and William's `triggerCondition =
+  (matched case-insensitively). Tom, Bert, and William's `interveningIf =
   Conditions.TriggeringEntityHadCardType(CardType.CREATURE.name)` is the self-recursion guard for
   "if they were a creature, return them … They're an artifact" — the second death is of the artifact
   they came back as, so the guard fails and the loop stops. Reads
@@ -7589,7 +7610,7 @@ answer it and would silently return `false`.
   `Player` reference. Narrows a broad "whenever a player …" trigger to one player without a bespoke
   event filter; both sides resolve through the shared player resolver. Shinryu, Transcendent Rival
   gates "When the chosen player loses the game, you win the game" with
-  `triggerCondition = TriggeringPlayerIs(Player.ChosenOpponent)` on `Triggers.AnyPlayerLosesGame`.
+  `triggerRestriction = TriggeringPlayerIs(Player.ChosenOpponent)` on `Triggers.AnyPlayerLosesGame`.
 - `TargetIsCreatureCard(targetIndex = 0)` — the context target is a creature *card*, tested by the
   underlying card's printed types rather than projected state. Unlike `TargetMatchesFilter(Creature)`
   (which reads projection, where a face-down permanent always projects as a typeless 2/2 Creature),
@@ -7756,12 +7777,12 @@ answer it and would silently return `false`.
   markers the engine now stamps alongside their graveyard siblings: `CastFromExileComponent` (a spell
   that resolved with `castFromZone == EXILE` — impulse draws, plot/foretell, an adventurer's permanent
   half, linked-exile grants) and `EnteredFromExileComponent` (a direct exile → battlefield entry, e.g. a
-  blink). **Usable as a real intervening-"if" (`triggerCondition`), not just a resolution gate** — batch
+  blink). **Usable as a real intervening-"if" (`interveningIf`), not just a resolution gate** — batch
   captures are now seeded into the condition context at trigger-detection time as well as at resolution.
   That distinction is load-bearing whenever the ability also carries `oncePerTurn`: CR 603.4 says an
   ability whose intervening-"if" is false never triggers, so it must not consume the turn's single
   firing. **Extraordinary Journey**: `Triggers.OneOrMorePermanentsEnter(Creature.nontoken().anyController())`
-  + `triggerCondition = Conditions.AnyEnteredOrWasCastFromExile` + `oncePerTurn = true`. The same
+  + `interveningIf = Conditions.AnyEnteredOrWasCastFromExile` + `oncePerTurn = true`. The same
   provenance marker also backs `WasCastFromZone(Zone.EXILE)` for a permanent already on the battlefield.
 - `TriggeringSpellCastWithoutPayingMana` — triggering-entity counterpart of `NoManaSpentToCast`: "if no
   mana was spent to cast it" about the *triggering* spell (reads its `CastRecordComponent`). Used as a
@@ -7870,7 +7891,7 @@ that works in both resolution and static-ability (projection) contexts.
   Board-derived (reads `state.phase == COMBAT` + the active player's "in an inserted combat phase"
   marker), so it evaluates identically at resolution and under projection. The intervening-if / loop
   guard for "after this phase, there is an additional combat phase" riders: use it as
-  `triggerCondition` so the spawned combat phase doesn't spawn another (Balthier and Fran; also the
+  `triggerRestriction` so the spawned combat phase doesn't spawn another (Balthier and Fran; also the
   faithful replacement for the `oncePerTurn = true` approximation on Genji Glove / Raph & Leo).
 - `ControllerTurnsTakenAtMost(n)` — the controller has taken at most N turns so far
   (1-indexed once they're partway through their first turn). Reads
@@ -7992,7 +8013,7 @@ default to "you" so card authors don't need to pass it explicitly.
   pure past-event check: the permanents need not still be on the battlefield or still be yours
   (WOE release notes). Tokens count; lands — including land creatures — never do. It's a
   threshold, not a count: a third entry adds nothing. Dual-mode, which is what the mechanic
-  needs — the printed cards use it both as an intervening-'if' `triggerCondition` (CR 603.4;
+  needs — the printed cards use it both as an intervening-'if' `interveningIf` (CR 603.4;
   Pests of Honor, Lady of Laughter, Ash, Party Crasher) and as a `ConditionalStaticAbility` gate
   (Armory Mice, Grand Ball Guest, Gallant Pie-Wielder). Use
   `DynamicAmounts.nonlandPermanentsEnteredUnderControlThisTurn(player)` for the raw count.
@@ -8435,7 +8456,7 @@ Numbers computed at resolution time.
     amount (`DrawCards(lastKnownSourceCounters(Named(Counters.VERSE)))`) and the seven-or-more gate
     (`Compare(lastKnownSourceCounters(Named(Counters.VERSE)), GTE, Fixed(7))`) read this node.
   - the **leaves-the-battlefield** snapshot carried on a dies/leaves trigger (`TriggerContext.lastKnownCounters`),
-    available both to the intervening-`if` (`triggerCondition`) and to the resolving effect. Nine-Lives Familiar:
+    available both to the intervening-`if` (`interveningIf`) and to the resolving effect. Nine-Lives Familiar:
     "When this creature dies, if it had a revival counter on it, return it to the battlefield with one fewer revival
     counter on it at the beginning of the next end step."
 
@@ -10209,7 +10230,7 @@ Card authors rarely reference these directly; they are created/updated by the ma
   - `maxSpeed { }` adds display-only `Keyword.MAX_SPEED` and gates each ability it declares on
     `Conditions.YouHaveMaxSpeed` using that ability kind's existing vocabulary — statics via
     `ConditionalStaticAbility`, activated via `ActivationRestriction.OnlyIfCondition`, triggered via
-    `triggerCondition` (CR 603.4). No new ability type; activated/triggered labels get the printed
+    `interveningIf` (CR 603.4). No new ability type; activated/triggered labels get the printed
     "Max speed — " prefix. Several abilities may share one block (Tsagan, Raider Warlord).
     Two static kinds are exceptions to the wrapper, both for the same reason — their read site scans
     the *raw* static list with `filterIsInstance` and never unwraps a conditional, so a

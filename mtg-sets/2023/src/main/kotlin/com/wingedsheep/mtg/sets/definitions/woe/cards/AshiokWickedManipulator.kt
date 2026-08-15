@@ -98,7 +98,7 @@ val AshiokWickedManipulator = card("Ashiok, Wicked Manipulator") {
                 TriggeredAbility.create(
                     trigger = Triggers.BeginCombat.event,
                     binding = Triggers.BeginCombat.binding,
-                    triggerCondition = Conditions.CardsPutIntoExileThisTurn(),
+                    interveningIf = Conditions.CardsPutIntoExileThisTurn(),
                     effect = Effects.AddCounters(Counters.PLUS_ONE_PLUS_ONE, 1, EffectTarget.Self),
                     descriptionOverride = "At the beginning of combat on your turn, if a card was " +
                         "put into exile this turn, put a +1/+1 counter on this token.",

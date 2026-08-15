@@ -32,7 +32,7 @@ val ExcavationElephant = card("Excavation Elephant") {
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = WasKicked
+        interveningIf = WasKicked
         val t = target("target", TargetObject(
             filter = TargetFilter(
                 GameObjectFilter.Artifact.ownedByYou(),

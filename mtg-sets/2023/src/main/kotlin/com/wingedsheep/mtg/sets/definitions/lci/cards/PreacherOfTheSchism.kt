@@ -39,7 +39,7 @@ val PreacherOfTheSchism = card("Preacher of the Schism") {
     // (not a planeswalker); the intervening-if then checks that attacked player has the most life.
     triggeredAbility {
         trigger = Triggers.attacks(requires = setOf(AttackPredicate.DefenderIsPlayer))
-        triggerCondition = Conditions.PlayerHasMostLife(Player.DefendingPlayer)
+        triggerRestriction = Conditions.PlayerHasMostLife(Player.DefendingPlayer)
         effect = Effects.CreateToken(
             power = 1,
             toughness = 1,
@@ -52,7 +52,7 @@ val PreacherOfTheSchism = card("Preacher of the Schism") {
 
     triggeredAbility {
         trigger = Triggers.Attacks
-        triggerCondition = Conditions.PlayerHasMostLife(Player.You)
+        triggerRestriction = Conditions.PlayerHasMostLife(Player.You)
         effect = Effects.DrawCards(1) then Effects.LoseLife(1, EffectTarget.Controller)
     }
 

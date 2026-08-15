@@ -40,7 +40,7 @@ import com.wingedsheep.sdk.scripting.values.DynamicAmount
  *   creatures" a closed, well-defined set rather than a fresh board-wide target search.
  *
  * - **"if this creature is suspected"** is an intervening-if (CR 603.4), so it is a
- *   `triggerCondition` ([Conditions.SourceIsSuspected]) rather than a gate inside the effect: the
+ *   `interveningIf` ([Conditions.SourceIsSuspected]) rather than a gate inside the effect: the
  *   ability doesn't go on the stack at all while the Goat is unsuspected, and it is re-checked on
  *   resolution. Once the suspicion has been handed off, later creatures entering stop triggering
  *   it entirely — which is the card's actual rate limit.
@@ -84,7 +84,7 @@ val FranticScapegoat = card("Frantic Scapegoat") {
 
     triggeredAbility {
         trigger = Triggers.OneOrMorePermanentsEnter(GameObjectFilter.Creature, excludeSource = true)
-        triggerCondition = Conditions.SourceIsSuspected
+        interveningIf = Conditions.SourceIsSuspected
         effect = Effects.Composite(
             SelectFromCollectionEffect(
                 from = IterationSpace.TRIGGER_CAPTURED_COLLECTION,

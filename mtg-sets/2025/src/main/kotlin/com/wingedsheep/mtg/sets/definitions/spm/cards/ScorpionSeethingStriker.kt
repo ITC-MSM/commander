@@ -20,7 +20,7 @@ val ScorpionSeethingStriker = card("Scorpion, Seething Striker") {
 
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = Conditions.CreatureDiedThisTurn
+        interveningIf = Conditions.CreatureDiedThisTurn
         val creature = target("target creature you control", Targets.CreatureYouControl)
         effect = Effects.Connive(target = creature)
     }

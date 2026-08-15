@@ -78,7 +78,7 @@
                     "to": "Battlefield"
                 },
                 "effect": "GrantPlayerProtection",
-                "triggerCondition": "WasCast"
+                "interveningIf": "WasCast"
             },
             {
                 "id": "ability_2",
@@ -423,7 +423,7 @@
                         }
                     ]
                 },
-                "triggerCondition": "YouChoseOtherCreatureAsRingBearer",
+                "interveningIf": "YouChoseOtherCreatureAsRingBearer",
                 "descriptionOverride": "Whenever the Ring tempts you, if you chose a creature other than Aragorn as your Ring-bearer, put your choice of a counter from among first strike, vigilance, deathtouch, and lifelink on Aragorn."
             },
             {
@@ -1905,7 +1905,7 @@
                     "type": "Counter",
                     "targetSource": "CounterTargetSource.TriggeringEntity"
                 },
-                "triggerCondition": "TriggeringSpellCastWithoutPayingMana"
+                "interveningIf": "TriggeringSpellCastWithoutPayingMana"
             }
         ],
         "activatedAbilities": [
@@ -2069,7 +2069,7 @@
                     "type": "CreatePredefinedToken",
                     "tokenType": "Food"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Not",
                     "condition": {
                         "type": "Exists",
@@ -2569,7 +2569,7 @@
                 "activeZones": [
                     "Graveyard"
                 ],
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Exists",
                     "player": "You",
                     "zone": "Battlefield",
@@ -2847,7 +2847,7 @@
                     ],
                     "imageUri": "https://cards.scryfall.io/normal/front/a/6/a6181330-7521-4ec6-be6c-b35487c2d2d4.jpg?1699974464"
                 },
-                "triggerCondition": "ControlledCreatureDiedThisTurn"
+                "interveningIf": "ControlledCreatureDiedThisTurn"
             }
         ],
         "activatedAbilities": [
@@ -3267,7 +3267,7 @@
                 },
                 "binding": "OTHER",
                 "effect": "TheRingTemptsYou",
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Exists",
                     "player": "You",
                     "zone": "Battlefield",
@@ -3676,7 +3676,7 @@
                         ]
                     }
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "TurnTracking",
@@ -4940,7 +4940,7 @@
                         "amount": 1
                     }
                 },
-                "triggerCondition": "ControlledCreatureDiedThisTurn"
+                "interveningIf": "ControlledCreatureDiedThisTurn"
             },
             {
                 "id": "ability_2",
@@ -4959,7 +4959,7 @@
                     ],
                     "imageUri": "https://cards.scryfall.io/normal/front/a/6/a6181330-7521-4ec6-be6c-b35487c2d2d4.jpg?1699974464"
                 },
-                "triggerCondition": "YouChoseOtherCreatureAsRingBearer"
+                "interveningIf": "YouChoseOtherCreatureAsRingBearer"
             }
         ]
     },
@@ -6205,7 +6205,7 @@
                     "type": "Scry",
                     "count": 3
                 },
-                "triggerCondition": "YouChoseOtherCreatureAsRingBearer"
+                "interveningIf": "YouChoseOtherCreatureAsRingBearer"
             },
             {
                 "id": "ability_2",
@@ -6636,7 +6636,7 @@
                         "amount": 1
                     }
                 },
-                "triggerCondition": "YouChoseOtherCreatureAsRingBearer"
+                "interveningIf": "YouChoseOtherCreatureAsRingBearer"
             }
         ],
         "staticAbilities": [
@@ -9635,7 +9635,7 @@
                         "tap": false
                     }
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "EntityMatches",
                     "entity": "Self",
                     "filter": "tapped"
@@ -10696,7 +10696,7 @@
                         "amount": 1
                     }
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "Exists",
                     "player": "You",
                     "zone": "Battlefield",
@@ -13841,7 +13841,7 @@
                         }
                     ]
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "EntityMatches",
                     "entity": "Self",
                     "filter": {
@@ -16233,7 +16233,7 @@
                     },
                     "id": "creature you control"
                 },
-                "triggerCondition": "PermanentLeftBattlefieldThisTurn"
+                "interveningIf": "PermanentLeftBattlefieldThisTurn"
             }
         ]
     },
@@ -16443,7 +16443,7 @@
                 },
                 "binding": "ANY",
                 "effect": "TheRingTemptsYou",
-                "triggerCondition": "ControlledCreatureDiedThisTurn"
+                "interveningIf": "ControlledCreatureDiedThisTurn"
             },
             {
                 "id": "ability_2",
@@ -17924,7 +17924,7 @@
                     "to": "Battlefield"
                 },
                 "effect": "GrantPlayerProtection",
-                "triggerCondition": "WasCast"
+                "interveningIf": "WasCast"
             },
             {
                 "id": "ability_2",
@@ -18261,7 +18261,7 @@
                     ],
                     "imageUri": "https://cards.scryfall.io/normal/front/e/e/eea4e628-4ae2-4e33-a3b6-176ed87c1840.jpg?1686336819"
                 },
-                "triggerCondition": "IsNotYourTurn"
+                "triggerRestriction": "IsNotYourTurn"
             },
             {
                 "id": "ability_2",
@@ -19664,7 +19664,7 @@
                     ],
                     "imageUri": "https://cards.scryfall.io/normal/front/a/6/a6181330-7521-4ec6-be6c-b35487c2d2d4.jpg?1699974464"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "All",
                     "conditions": [
                         {

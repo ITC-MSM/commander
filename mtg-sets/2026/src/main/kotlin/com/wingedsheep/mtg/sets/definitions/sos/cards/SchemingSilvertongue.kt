@@ -41,7 +41,7 @@ val SchemingSilvertongue = card("Scheming Silvertongue") {
 
     triggeredAbility {
         trigger = Triggers.YourPostcombatMain
-        triggerCondition = Conditions.YouGainedLifeThisTurnAtLeast(2)
+        interveningIf = Conditions.YouGainedLifeThisTurnAtLeast(2)
         effect = Effects.BecomePrepared(EffectTarget.Self)
     }
 

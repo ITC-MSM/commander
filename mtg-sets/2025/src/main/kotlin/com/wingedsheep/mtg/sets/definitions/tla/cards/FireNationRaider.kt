@@ -30,7 +30,7 @@ val FireNationRaider = card("Fire Nation Raider") {
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = Conditions.YouAttackedThisTurn
+        interveningIf = Conditions.YouAttackedThisTurn
         effect = Effects.CreateClue()
         description = "Raid — When this creature enters, if you attacked this turn, create a Clue token."
     }

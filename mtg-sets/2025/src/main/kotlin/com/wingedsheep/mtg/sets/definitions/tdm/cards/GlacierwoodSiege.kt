@@ -56,7 +56,7 @@ val GlacierwoodSiege = card("Glacierwood Siege") {
     // Temur — Whenever you cast an instant or sorcery spell, target player mills four cards.
     triggeredAbility {
         trigger = Triggers.YouCastInstantOrSorcery
-        triggerCondition = SourceChosenModeIs("temur")
+        triggerRestriction = SourceChosenModeIs("temur")
         val t = target("target", Targets.Player)
         effect = Patterns.Library.mill(4, t)
     }

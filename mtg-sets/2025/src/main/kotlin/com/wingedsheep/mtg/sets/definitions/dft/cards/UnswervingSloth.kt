@@ -33,7 +33,7 @@ val UnswervingSloth = card("Unswerving Sloth") {
     toughness = 5
     triggeredAbility {
         trigger = Triggers.Attacks
-        triggerCondition = Conditions.SourceIsSaddled
+        triggerRestriction = Conditions.SourceIsSaddled
         effect = Effects.Composite(
             Effects.GrantKeyword(Keyword.INDESTRUCTIBLE, EffectTarget.Self),
             Effects.ForEachInGroup(

@@ -33,7 +33,7 @@ val VoldarenAmbusher = card("Voldaren Ambusher") {
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = Conditions.OpponentLostLifeThisTurn
+        interveningIf = Conditions.OpponentLostLifeThisTurn
         val t = target(
             "up to one target creature or planeswalker",
             TargetCreatureOrPlaneswalker(optional = true)

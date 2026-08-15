@@ -21,7 +21,7 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  * - "while you control two or more artifacts" is a trigger-time condition, NOT an intervening-if
  *   clause (CR 603.4 applies only to an "if" immediately after the trigger event). It is checked
  *   as `Conditions.YouControlAtLeast(2, GameObjectFilter.Artifact)` only when the creature attacks;
- *   the engine's `triggerCondition` is evaluated at trigger detection, not re-checked on resolution
+ *   the engine's `triggerRestriction` is evaluated at trigger detection, not re-checked on resolution
  *   — which matches the "while" semantics.
  * - `Effects.ModifyStats(+2, +1, EffectTarget.Self)` applies the bonus; the default duration
  *   is EndOfTurn, so it expires in the cleanup step.
@@ -36,7 +36,7 @@ val BrazenBlademaster = card("Brazen Blademaster") {
 
     triggeredAbility {
         trigger = Triggers.Attacks
-        triggerCondition = Conditions.YouControlAtLeast(2, GameObjectFilter.Artifact)
+        triggerRestriction = Conditions.YouControlAtLeast(2, GameObjectFilter.Artifact)
         effect = Effects.ModifyStats(power = 2, toughness = 1, target = EffectTarget.Self)
     }
 

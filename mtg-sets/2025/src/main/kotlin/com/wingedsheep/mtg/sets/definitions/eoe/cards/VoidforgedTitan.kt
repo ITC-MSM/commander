@@ -25,7 +25,7 @@ val VoidforgedTitan = card("Voidforged Titan") {
 
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = Conditions.Void
+        interveningIf = Conditions.Void
         effect = Effects.DrawCards(1) then Effects.LoseLife(1, EffectTarget.Controller)
         description = "At the beginning of your end step, if a nonland permanent left the battlefield this turn or a spell was warped this turn, you draw a card and lose 1 life."
     }

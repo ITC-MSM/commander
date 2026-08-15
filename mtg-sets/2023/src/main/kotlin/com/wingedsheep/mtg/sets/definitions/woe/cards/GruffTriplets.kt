@@ -25,7 +25,7 @@ import com.wingedsheep.sdk.scripting.values.EntityReference
  * When this creature dies, put a number of +1/+1 counters equal to its power on each creature
  * you control named Gruff Triplets.
  *
- * The "if it isn't a token" clause is a genuine intervening-if (CR 603.4) — `triggerCondition`,
+ * The "if it isn't a token" clause is a genuine intervening-if (CR 603.4) — `interveningIf`,
  * so it's checked both when the trigger would fire and again on resolution — and it's what stops
  * the card from being an infinite token engine: the two copies enter as tokens, so their own
  * copy trigger never fires.
@@ -53,7 +53,7 @@ val GruffTriplets = card("Gruff Triplets") {
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = Conditions.SourceMatches(GameObjectFilter.Any.nontoken())
+        interveningIf = Conditions.SourceMatches(GameObjectFilter.Any.nontoken())
         effect = Effects.CreateTokenCopyOfSelf(count = 2)
         description = "When this creature enters, if it isn't a token, create two tokens that " +
             "are copies of it."

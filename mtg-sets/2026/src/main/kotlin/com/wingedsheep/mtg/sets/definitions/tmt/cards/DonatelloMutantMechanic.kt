@@ -62,7 +62,7 @@ val DonatelloMutantMechanic = card("Donatello, Mutant Mechanic") {
 
     triggeredAbility {
         trigger = Triggers.leavesBattlefield(filter = GameObjectFilter.Artifact.youControl(), to = Zone.GRAVEYARD)
-        triggerCondition = Conditions.TriggeringEntityHadCounters
+        interveningIf = Conditions.TriggeringEntityHadCounters
         val dest = target(
             "up to one target artifact or creature you control",
             TargetPermanent(optional = true, filter = TargetFilter(GameObjectFilter.CreatureOrArtifact.youControl()))

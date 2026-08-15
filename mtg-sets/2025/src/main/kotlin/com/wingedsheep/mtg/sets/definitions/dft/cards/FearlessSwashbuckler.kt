@@ -49,7 +49,7 @@ val FearlessSwashbuckler = card("Fearless Swashbuckler") {
 
     triggeredAbility {
         trigger = Triggers.YouAttack
-        triggerCondition = Conditions.All(
+        interveningIf = Conditions.All(
             Conditions.YouControlAtLeast(
                 1,
                 GameObjectFilter.Creature.withSubtype("Pirate").attackedThisCombat()

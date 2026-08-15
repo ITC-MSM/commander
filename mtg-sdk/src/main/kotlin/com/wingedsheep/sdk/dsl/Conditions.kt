@@ -806,7 +806,7 @@ object Conditions {
      * "If one or more of them entered from exile or was cast from exile" — the batch-enters,
      * any-of exile counterpart of [TriggeringEntityEnteredOrWasCastFromGraveyard]. Evaluated over
      * the permanents a `Triggers.OneOrMorePermanentsEnter` batch captured; works as a real
-     * intervening-"if" (`triggerCondition`) as well as a resolution-time gate. Extraordinary
+     * intervening-"if" (`interveningIf`) as well as a resolution-time gate. Extraordinary
      * Journey.
      */
     val AnyEnteredOrWasCastFromExile: ConditionInterface =
@@ -1518,7 +1518,7 @@ object Conditions {
      * Crossing the threshold is all that matters — a third entry changes nothing.
      *
      * Works in both shapes the mechanic ships in:
-     *  - `triggerCondition = Conditions.Celebration` for the intervening-'if' triggers (CR 603.4 —
+     *  - `interveningIf = Conditions.Celebration` for the intervening-'if' triggers (CR 603.4 —
      *    checked at trigger time *and* on resolution): Pests of Honor, Lady of Laughter, Ash,
      *    Party Crasher, …
      *  - a `ConditionalStaticAbility` gate for the "as long as …" statics (re-evaluated every

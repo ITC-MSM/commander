@@ -35,7 +35,7 @@ val ElanorGardner = card("Elanor Gardner") {
 
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = Conditions.SacrificedFoodThisTurn
+        interveningIf = Conditions.SacrificedFoodThisTurn
         effect = MayEffect(
             Patterns.Library.searchLibrary(
                 filter = GameObjectFilter.BasicLand,

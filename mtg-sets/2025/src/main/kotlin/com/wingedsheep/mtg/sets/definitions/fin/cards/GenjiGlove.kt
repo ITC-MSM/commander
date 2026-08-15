@@ -30,7 +30,7 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  * edge case (another source of additional combat exists *and* the equipped creature first attacks
  * in combat #2 — the intervening-if would fail, `oncePerTurn = true` would still let it fire once).
  * When a `Conditions.IsFirstCombatPhase` primitive lands, swap `oncePerTurn = true` for a faithful
- * `triggerCondition`.
+ * `triggerRestriction`.
  */
 val GenjiGlove = card("Genji Glove") {
     manaCost = "{5}"

@@ -15,11 +15,11 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  * Whenever this creature attacks, if it's not suspected, you may suspect it.
  *
  * "if it's not suspected" is an **intervening-if** (CR 603.4), modelled as
- * `triggerCondition = Conditions.Not(Conditions.SourceIsSuspected)` — which reads the projected
+ * `interveningIf = Conditions.Not(Conditions.SourceIsSuspected)` — which reads the projected
  * suspected designation rather than probing for menace. An already-suspected Braggart never puts
  * the trigger on the stack at all, so the player isn't asked a question that couldn't do anything.
  *
- * The engine checks `triggerCondition` at trigger time but not again at resolution, which CR 603.4
+ * The engine checks `interveningIf` at trigger time but not again at resolution, which CR 603.4
  * also requires. That gap is inert here: suspect is idempotent by CR 701.60d ("a suspected
  * permanent can't become suspected again"), and `SetSuspectedExecutor` enforces exactly that, so a
  * Braggart that somehow became suspected between trigger and resolution just resolves to a no-op.
@@ -39,7 +39,7 @@ val RubblebeltBraggart = card("Rubblebelt Braggart") {
 
     triggeredAbility {
         trigger = Triggers.Attacks
-        triggerCondition = Conditions.Not(Conditions.SourceIsSuspected)
+        interveningIf = Conditions.Not(Conditions.SourceIsSuspected)
         // `Effects.Suspect`'s own description is the sentence "this creature becomes suspected",
         // which reads as gibberish under the gate's "You may …" prefix. Spell the question out so
         // the yes/no prompt names the trade the player is actually making.

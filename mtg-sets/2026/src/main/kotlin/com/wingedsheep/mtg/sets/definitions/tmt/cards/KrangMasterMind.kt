@@ -38,7 +38,7 @@ val KrangMasterMind = card("Krang, Master Mind") {
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = Compare(
+        interveningIf = Compare(
             DynamicAmount.Count(Player.You, Zone.HAND, GameObjectFilter.Any),
             ComparisonOperator.LT,
             DynamicAmount.Fixed(4),

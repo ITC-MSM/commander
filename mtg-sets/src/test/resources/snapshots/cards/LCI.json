@@ -683,7 +683,7 @@
                         }
                     ]
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "PermanentTypeEnteredBattlefieldThisTurn",
                     "cardType": "ARTIFACT"
                 }
@@ -2242,7 +2242,7 @@
                         }
                     ]
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "TurnTracking",
@@ -2351,7 +2351,7 @@
                     },
                     "target": "Self"
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "Compare",
                     "left": {
                         "type": "AggregateBattlefield",
@@ -2552,7 +2552,7 @@
                         }
                     ]
                 },
-                "triggerCondition": "WasCast"
+                "interveningIf": "WasCast"
             }
         ]
     },
@@ -2607,7 +2607,7 @@
                         "CantBlock"
                     ]
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "TurnTracking",
@@ -2729,7 +2729,7 @@
                     },
                     "target": "Self"
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "Exists",
                     "player": "You",
                     "zone": "Battlefield",
@@ -2751,7 +2751,7 @@
                     },
                     "target": "Self"
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "Exists",
                     "player": "You",
                     "zone": "Battlefield",
@@ -2848,7 +2848,7 @@
                     },
                     "id": "target creature you control"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "TurnTracking",
@@ -3423,7 +3423,7 @@
                     "count": 1,
                     "target": "Self"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "TurnTracking",
@@ -3763,7 +3763,7 @@
                     },
                     "id": "target permanent card from your graveyard"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "Count",
@@ -4226,7 +4226,7 @@
                         "destination": "Hand"
                     }
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "TurnTracking",
@@ -4511,7 +4511,7 @@
                     },
                     "id": "up to one target nonland permanent other than this creature"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "Count",
@@ -4892,7 +4892,7 @@
                     "count": 1,
                     "target": "Self"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "TurnTracking",
@@ -6379,7 +6379,7 @@
                     "type": "CreatePredefinedToken",
                     "tokenType": "Treasure"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "TurnTracking",
@@ -7019,7 +7019,7 @@
                         "amount": 3
                     }
                 },
-                "triggerCondition": "WasCast"
+                "interveningIf": "WasCast"
             }
         ]
     },
@@ -10794,7 +10794,7 @@
                     },
                     "id": "target creature"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "Count",
@@ -13200,7 +13200,7 @@
                         }
                     ]
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Exists",
                     "player": "You",
                     "zone": "Battlefield",
@@ -13785,7 +13785,7 @@
                     ],
                     "imageUri": "https://cards.scryfall.io/normal/front/0/4/0484390e-1167-4407-84de-7ddc726e8926.jpg?1783913608"
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "PlayerHasMostLife",
                     "player": "DefendingPlayer"
                 }
@@ -13813,7 +13813,7 @@
                         }
                     ]
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "PlayerHasMostLife",
                     "player": "You"
                 }
@@ -13977,7 +13977,7 @@
                     "count": 1,
                     "target": "Self"
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "Exists",
                     "player": "You",
                     "zone": "Battlefield",
@@ -15284,7 +15284,7 @@
                     "type": "Scry",
                     "count": 1
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "TurnTracking",
@@ -15971,7 +15971,7 @@
                         "player": "TriggeringPlayer"
                     }
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Not",
                     "condition": {
                         "type": "IsPlayersTurn",
@@ -17158,7 +17158,7 @@
                     "count": 1,
                     "target": "Self"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "TurnTracking",
@@ -17329,7 +17329,7 @@
                     "type": "TargetOpponent",
                     "id": "target opponent"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "Count",
@@ -17479,7 +17479,7 @@
                         }
                     ]
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "Count",
@@ -18832,7 +18832,7 @@
                 },
                 "binding": "ANY",
                 "effect": "Transform",
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "Count",
@@ -20251,7 +20251,7 @@
                 },
                 "binding": "OTHER",
                 "effect": "Transform",
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "AggregateBattlefield",
@@ -20564,7 +20564,7 @@
                         ]
                     }
                 },
-                "triggerCondition": "WasCast"
+                "interveningIf": "WasCast"
             }
         ],
         "activatedAbilities": [
@@ -20625,7 +20625,7 @@
                             }
                         }
                     },
-                    "triggerCondition": "IsNotYourTurn"
+                    "triggerRestriction": "IsNotYourTurn"
                 }
             ],
             "staticAbilities": [
@@ -21868,7 +21868,7 @@
                     },
                     "id": "target"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Exists",
                     "player": "You",
                     "zone": "Battlefield",
@@ -22053,7 +22053,7 @@
                         ]
                     }
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "TurnTracking",

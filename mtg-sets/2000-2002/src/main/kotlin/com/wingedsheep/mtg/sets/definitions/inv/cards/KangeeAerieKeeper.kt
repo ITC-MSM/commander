@@ -47,7 +47,7 @@ val KangeeAerieKeeper = card("Kangee, Aerie Keeper") {
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = WasKicked
+        interveningIf = WasKicked
         effect = Effects.AddDynamicCounters(Counters.FEATHER, DynamicAmount.XValue, EffectTarget.Self)
     }
 

@@ -32,7 +32,7 @@ val WardensOfTheCycle = card("Wardens of the Cycle") {
 
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = Conditions.CreatureDiedThisTurn
+        interveningIf = Conditions.CreatureDiedThisTurn
         effect = ModalEffect.chooseOne(
             Mode(
                 effect = Effects.GainLife(2),

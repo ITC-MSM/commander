@@ -36,7 +36,7 @@ val MarkovPurifier = card("Markov Purifier") {
 
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = Conditions.YouGainedLifeThisTurn
+        interveningIf = Conditions.YouGainedLifeThisTurn
         effect = MayPayManaEffect(
             cost = ManaCost.parse("{2}"),
             effect = Effects.DrawCards(1)

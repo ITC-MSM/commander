@@ -69,7 +69,7 @@ private val DuskwatchRecruiterFront = card("Duskwatch Recruiter") {
 
     triggeredAbility {
         trigger = Triggers.EachUpkeep
-        triggerCondition = Conditions.CompareAmounts(
+        interveningIf = Conditions.CompareAmounts(
             DynamicAmounts.spellsCastLastTurn(), ComparisonOperator.EQ, DynamicAmount.Fixed(0)
         )
         effect = TransformEffect(EffectTarget.Self)
@@ -103,7 +103,7 @@ private val KrallenhordeHowler = card("Krallenhorde Howler") {
 
     triggeredAbility {
         trigger = Triggers.EachUpkeep
-        triggerCondition = Conditions.CompareAmounts(
+        interveningIf = Conditions.CompareAmounts(
             DynamicAmounts.spellsCastLastTurn(), ComparisonOperator.GTE, DynamicAmount.Fixed(2)
         )
         effect = TransformEffect(EffectTarget.Self)

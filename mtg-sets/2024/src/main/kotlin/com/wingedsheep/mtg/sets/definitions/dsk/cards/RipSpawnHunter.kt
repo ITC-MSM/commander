@@ -49,7 +49,7 @@ val RipSpawnHunter = card("Rip, Spawn Hunter") {
 
     triggeredAbility {
         trigger = Triggers.YourPostcombatMain
-        triggerCondition = Conditions.SourceIsTapped
+        interveningIf = Conditions.SourceIsTapped
         effect = Effects.Pipeline {
             val revealed = gather(
                 source = CardSource.TopOfLibrary(DynamicAmounts.sourcePower()),

@@ -40,7 +40,7 @@ val RuinLurkerBat = card("Ruin-Lurker Bat") {
 
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = Conditions.YouDescendedThisTurn()
+        interveningIf = Conditions.YouDescendedThisTurn()
         effect = Patterns.Library.scry(1)
     }
 

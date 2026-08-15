@@ -29,7 +29,7 @@ val DundoolinWeaver = card("Dundoolin Weaver") {
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = Conditions.ControlCreaturesAtLeast(3)
+        interveningIf = Conditions.ControlCreaturesAtLeast(3)
         val permanentCard = target(
             "permanent card from your graveyard",
             TargetObject(filter = TargetFilter(GameObjectFilter.Permanent.ownedByYou(), zone = Zone.GRAVEYARD))

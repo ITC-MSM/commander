@@ -29,13 +29,13 @@ val WaxWaneWitness = card("Wax-Wane Witness") {
 
     triggeredAbility {
         trigger = Triggers.YouGainLife
-        triggerCondition = Conditions.IsYourTurn
+        triggerRestriction = Conditions.IsYourTurn
         effect = Effects.ModifyStats(1, 0, EffectTarget.Self)
     }
 
     triggeredAbility {
         trigger = Triggers.YouLoseLife
-        triggerCondition = Conditions.IsYourTurn
+        triggerRestriction = Conditions.IsYourTurn
         effect = Effects.ModifyStats(1, 0, EffectTarget.Self)
     }
 

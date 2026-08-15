@@ -57,7 +57,7 @@ val LagorinSoulOfAlacria = card("Lagorin, Soul of Alacria") {
 
     triggeredAbility {
         trigger = Triggers.Attacks
-        triggerCondition = Conditions.SourceIsSaddled
+        triggerRestriction = Conditions.SourceIsSaddled
         target = TargetPermanent(
             count = 2,
             optional = true,

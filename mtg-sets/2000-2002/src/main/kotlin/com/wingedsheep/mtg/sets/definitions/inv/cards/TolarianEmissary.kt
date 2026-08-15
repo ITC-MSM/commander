@@ -33,7 +33,7 @@ val TolarianEmissary = card("Tolarian Emissary") {
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = WasKicked
+        interveningIf = WasKicked
         val t = target("enchantment", Targets.Enchantment)
         effect = Effects.Destroy(t)
     }

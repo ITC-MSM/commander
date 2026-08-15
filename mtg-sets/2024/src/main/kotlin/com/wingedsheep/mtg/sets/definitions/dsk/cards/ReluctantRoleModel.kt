@@ -49,7 +49,7 @@ val ReluctantRoleModel = card("Reluctant Role Model") {
     // put a flying, lifelink, or +1/+1 counter on it.
     triggeredAbility {
         trigger = Triggers.YourPostcombatMain
-        triggerCondition = Conditions.SourceIsTapped
+        interveningIf = Conditions.SourceIsTapped
         effect = Effects.ChooseAction(
             listOf(
                 EffectChoice(
@@ -74,7 +74,7 @@ val ReluctantRoleModel = card("Reluctant Role Model") {
     // put those counters on up to one target creature.
     triggeredAbility {
         trigger = Triggers.YourCreatureDies
-        triggerCondition = Conditions.TriggeringEntityHadCounters
+        interveningIf = Conditions.TriggeringEntityHadCounters
         target = TargetCreature(optional = true)
         effect = Effects.MoveAllLastKnownCounters(EffectTarget.ContextTarget(0))
         description = "Whenever this creature or another creature you control dies, if it had " +

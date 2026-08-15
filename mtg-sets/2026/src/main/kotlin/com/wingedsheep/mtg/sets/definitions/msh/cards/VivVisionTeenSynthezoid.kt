@@ -26,7 +26,7 @@ import com.wingedsheep.sdk.scripting.values.DynamicAmount
  * The power check is **not** an intervening-if: the printed wording is "draw a card *if* her
  * power is 4 or greater", with the condition trailing the effect rather than sitting between the
  * trigger and it. So the trigger always goes on the stack when she attacks, and the condition is
- * read once at resolution — a [ConditionalEffect], not a `triggerCondition`. The distinction is
+ * read once at resolution — a [ConditionalEffect], not a `interveningIf`. The distinction is
  * live on this card: pump her in response to the trigger and you still draw.
  *
  * Her power is read through [DynamicAmounts.sourcePower], which sees projected power, so counters

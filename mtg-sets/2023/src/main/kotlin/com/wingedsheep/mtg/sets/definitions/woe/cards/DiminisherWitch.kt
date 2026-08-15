@@ -44,7 +44,7 @@ val DiminisherWitch = card("Diminisher Witch") {
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = Conditions.WasBargained
+        interveningIf = Conditions.WasBargained
         val cursed = target("target creature an opponent controls", Targets.CreatureOpponentControls)
         effect = Effects.CreateRoleToken("Cursed Role", cursed)
         description = "When this creature enters, if it was bargained, create a Cursed Role token " +

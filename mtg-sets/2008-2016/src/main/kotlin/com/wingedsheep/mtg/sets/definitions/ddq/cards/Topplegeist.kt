@@ -47,7 +47,7 @@ val Topplegeist = card("Topplegeist") {
 
     triggeredAbility {
         trigger = Triggers.EachOpponentUpkeep
-        triggerCondition = Conditions.Delirium(4)
+        interveningIf = Conditions.Delirium(4)
         val t = target(
             "target creature that player controls",
             TargetCreature(

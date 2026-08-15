@@ -27,7 +27,7 @@ val CaligoSkinWitch = card("Caligo Skin-Witch") {
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = WasKicked
+        interveningIf = WasKicked
         effect = Effects.EachOpponentDiscards(2)
     }
 

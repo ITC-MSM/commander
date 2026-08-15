@@ -57,7 +57,7 @@ val RagingBattleMouse = card("Raging Battle Mouse") {
 
     triggeredAbility {
         trigger = Triggers.BeginCombat
-        triggerCondition = Conditions.Celebration
+        interveningIf = Conditions.Celebration
         val creature = target("target creature you control", Targets.CreatureYouControl)
         effect = Effects.ModifyStats(power = 1, toughness = 1, target = creature)
         description = "At the beginning of combat on your turn, if two or more nonland permanents " +

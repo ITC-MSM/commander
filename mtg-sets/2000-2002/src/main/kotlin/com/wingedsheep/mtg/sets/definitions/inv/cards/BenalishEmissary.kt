@@ -29,7 +29,7 @@ val BenalishEmissary = card("Benalish Emissary") {
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = WasKicked
+        interveningIf = WasKicked
         val t = target("land", Targets.Land)
         effect = Effects.Destroy(t)
     }

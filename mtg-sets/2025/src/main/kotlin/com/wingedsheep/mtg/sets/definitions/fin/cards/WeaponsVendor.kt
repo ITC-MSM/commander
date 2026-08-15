@@ -45,7 +45,7 @@ val WeaponsVendor = card("Weapons Vendor") {
 
     triggeredAbility {
         trigger = Triggers.BeginCombat
-        triggerCondition = Conditions.YouControl(
+        interveningIf = Conditions.YouControl(
             GameObjectFilter.Artifact.withSubtype(Subtype.EQUIPMENT)
         )
         val equipment = target(

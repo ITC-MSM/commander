@@ -30,7 +30,7 @@ val TerritorialAllosaurus = card("Territorial Allosaurus") {
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = WasKicked
+        interveningIf = WasKicked
         val t = target("another target creature", TargetCreature(filter = TargetFilter.OtherCreature))
         effect = Effects.Fight(EffectTarget.Self, t)
     }

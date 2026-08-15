@@ -32,7 +32,7 @@ val AlaniaDivergentStorm = card("Alania, Divergent Storm") {
 
     triggeredAbility {
         trigger = Triggers.YouCastSpell
-        triggerCondition = Conditions.Any(
+        interveningIf = Conditions.Any(
             Conditions.YouCastFirstSpellOfTypeThisTurn(GameObjectFilter.Instant),
             Conditions.YouCastFirstSpellOfTypeThisTurn(GameObjectFilter.Sorcery),
             // "the first Otter spell OTHER THAN ALANIA you've cast this turn" — Alania herself

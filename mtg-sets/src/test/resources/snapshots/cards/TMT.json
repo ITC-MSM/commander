@@ -2371,7 +2371,7 @@
                     },
                     "id": "up to one target artifact or creature you control"
                 },
-                "triggerCondition": "TriggeringEntityHadCounters",
+                "interveningIf": "TriggeringEntityHadCounters",
                 "descriptionOverride": "Whenever an artifact you control is put into a graveyard from the battlefield, if it had counters on it, put those counters on up to one target artifact or creature you control."
             }
         ],
@@ -2476,7 +2476,7 @@
                         "amount": 1
                     }
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Exists",
                     "player": "You",
                     "zone": "Battlefield",
@@ -3086,7 +3086,7 @@
                     ],
                     "imageUri": "https://cards.scryfall.io/normal/front/a/7/a7b76498-d696-40d1-b7c7-91657525b44f.jpg?1771590477"
                 },
-                "triggerCondition": "PermanentLeftBattlefieldThisTurn",
+                "interveningIf": "PermanentLeftBattlefieldThisTurn",
                 "descriptionOverride": "Disappear — When this creature enters, if a permanent left the battlefield under your control this turn, create a 1/1 black Ninja creature token."
             }
         ]
@@ -4152,7 +4152,7 @@
                     "type": "Scry",
                     "count": 1
                 },
-                "triggerCondition": "PermanentLeftBattlefieldThisTurn",
+                "interveningIf": "PermanentLeftBattlefieldThisTurn",
                 "descriptionOverride": "Disappear — At the beginning of your end step, if a permanent left the battlefield under your control this turn, scry 1."
             }
         ]
@@ -4851,7 +4851,7 @@
                         ]
                     }
                 },
-                "triggerCondition": "PermanentLeftBattlefieldThisTurn",
+                "interveningIf": "PermanentLeftBattlefieldThisTurn",
                 "descriptionOverride": "Disappear — At the beginning of your end step, if a permanent left the battlefield under your control this turn, you may cast a card exiled with Krang & Shredder without paying its mana cost."
             }
         ]
@@ -4910,7 +4910,7 @@
                         }
                     }
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "Count",
@@ -5073,7 +5073,7 @@
                                 "amount": 2
                             }
                         },
-                        "triggerCondition": "TriggeringEntityHadCounters"
+                        "interveningIf": "TriggeringEntityHadCounters"
                     }
                 ]
             },
@@ -5388,7 +5388,7 @@
                         "target": "Self"
                     }
                 },
-                "triggerCondition": "SneakCostWasPaid"
+                "interveningIf": "SneakCostWasPaid"
             }
         ],
         "activatedAbilities": [
@@ -5650,7 +5650,7 @@
                         "FLYING"
                     ]
                 },
-                "triggerCondition": "PermanentLeftBattlefieldThisTurn",
+                "interveningIf": "PermanentLeftBattlefieldThisTurn",
                 "descriptionOverride": "Disappear — At the beginning of your end step, if a permanent left the battlefield under your control this turn, create a 1/1 black Insect Warrior creature token with flying."
             }
         ],
@@ -6104,7 +6104,7 @@
                     "count": 1,
                     "target": "Self"
                 },
-                "triggerCondition": "PermanentLeftBattlefieldThisTurn",
+                "interveningIf": "PermanentLeftBattlefieldThisTurn",
                 "descriptionOverride": "Disappear — At the beginning of your end step, if a permanent left the battlefield under your control this turn, put a +1/+1 counter on Michelangelo."
             }
         ]
@@ -7405,7 +7405,7 @@
                         }
                     ]
                 },
-                "triggerCondition": "WasCast",
+                "interveningIf": "WasCast",
                 "descriptionOverride": "When this creature enters, if you cast it, you may put a card you own from outside the game into your hand."
             }
         ]
@@ -8374,7 +8374,7 @@
                         "excludeSelf": true
                     }
                 },
-                "triggerCondition": "PermanentLeftBattlefieldThisTurn",
+                "interveningIf": "PermanentLeftBattlefieldThisTurn",
                 "descriptionOverride": "Disappear — At the beginning of your end step, if a permanent left the battlefield under your control this turn, put three +1/+1 counters on up to one other target artifact or creature. If it isn't a creature, it becomes a 0/0 Mutant creature in addition to its other types."
             }
         ],
@@ -8644,7 +8644,7 @@
                     "count": 2,
                     "target": "Self"
                 },
-                "triggerCondition": "PermanentLeftBattlefieldThisTurn",
+                "triggerRestriction": "PermanentLeftBattlefieldThisTurn",
                 "descriptionOverride": "Disappear — This creature enters with two +1/+1 counters on it if a permanent left the battlefield under your control this turn."
             }
         ]
@@ -9285,7 +9285,7 @@
                         }
                     ]
                 },
-                "triggerCondition": "PermanentLeftBattlefieldThisTurn",
+                "interveningIf": "PermanentLeftBattlefieldThisTurn",
                 "descriptionOverride": "Disappear — At the beginning of your end step, if a permanent left the battlefield under your control this turn, create a 1/1 black Rat creature token and put a +1/+1 counter on Rat King."
             }
         ],
@@ -12090,7 +12090,7 @@
                         "player": "TriggeringPlayer"
                     }
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "EntityProperty",
@@ -13263,7 +13263,7 @@
                         "amount": 1
                     }
                 },
-                "triggerCondition": "PermanentLeftBattlefieldThisTurn",
+                "interveningIf": "PermanentLeftBattlefieldThisTurn",
                 "descriptionOverride": "Disappear — At the beginning of your end step, if a permanent left the battlefield under your control this turn, draw a card."
             }
         ]

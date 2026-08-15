@@ -18,8 +18,8 @@ import com.wingedsheep.sdk.model.Rarity
  * that card this turn.
  *
  * The upkeep ability is declared inside a [maxSpeed] block, which folds "your speed is 4" into the
- * ability's `triggerCondition` (CR 603.4) — so it is checked both when the trigger would fire and
- * again on resolution, and losing max speed in between correctly stops it. The effect is the
+ * ability's `triggerRestriction` — a functioning condition (CR 702.178a) read when the trigger
+ * would fire and never again, not an intervening "if". The effect is the
  * ordinary impulse-draw pattern ([Patterns.Exile.impulse]): exile the top card, then grant
  * permission to play it until end of turn. Per the Scryfall ruling the card is played normally,
  * paying its costs and following timing rules, which is exactly what `impulse` grants.

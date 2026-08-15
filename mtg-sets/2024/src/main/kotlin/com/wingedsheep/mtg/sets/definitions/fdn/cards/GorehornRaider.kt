@@ -31,7 +31,7 @@ val GorehornRaider = card("Gorehorn Raider") {
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = Conditions.YouAttackedThisTurn
+        interveningIf = Conditions.YouAttackedThisTurn
         val t = target("any target", Targets.Any)
         effect = Effects.DealDamage(2, t)
     }

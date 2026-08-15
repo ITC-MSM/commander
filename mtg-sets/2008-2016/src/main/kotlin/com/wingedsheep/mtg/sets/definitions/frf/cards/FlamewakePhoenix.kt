@@ -49,7 +49,7 @@ val FlamewakePhoenix = card("Flamewake Phoenix") {
     triggeredAbility {
         trigger = Triggers.BeginCombat
         triggerZone = Zone.GRAVEYARD
-        triggerCondition = Conditions.YouControl(GameObjectFilter.Creature.powerAtLeast(4))
+        interveningIf = Conditions.YouControl(GameObjectFilter.Creature.powerAtLeast(4))
         effect = MayPayManaEffect(
             cost = ManaCost.parse("{R}"),
             effect = Effects.Move(EffectTarget.Self, Zone.BATTLEFIELD)

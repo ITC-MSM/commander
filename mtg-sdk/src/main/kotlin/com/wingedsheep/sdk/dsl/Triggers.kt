@@ -825,7 +825,7 @@ object Triggers {
      * Batching trigger — fires at most once per event batch regardless of how many cards left,
      * and regardless of where they went (cast/exiled/reanimated/returned to hand, etc.).
      *
-     * Pair with `triggerCondition = Conditions.IsYourTurn` for the common
+     * Pair with `triggerRestriction = Conditions.IsYourTurn` for the common
      * "leave your graveyard during your turn" wording, and `oncePerTurn = true`
      * for "this ability triggers only once each turn" (e.g. Kishla Skimmer).
      */
@@ -844,7 +844,7 @@ object Triggers {
      * exiled or which of the watched zones each came from, and it is *not* scoped to one player's
      * zones ("graveyards", plural, and anyone's battlefield permanents).
      *
-     * Pair with `triggerCondition = Conditions.IsYourTurn` for the common "during your turn"
+     * Pair with `triggerRestriction = Conditions.IsYourTurn` for the common "during your turn"
      * wording (Ketramose, the New Dawn).
      */
     fun CardsPutIntoExile(
@@ -1647,7 +1647,7 @@ object Triggers {
      * `youControl()` for "you untap". The "during your untap step" restriction is intrinsic —
      * `TriggerDetector.detectUntapBatchTriggers` fires it only for the active player's untap-step
      * untaps (not instant-speed untaps, nor an opponent-turn Seedborn Muse untap of your
-     * permanents) — so no `triggerCondition` is needed. (An untap-step untap advances straight to
+     * permanents) — so no `triggerRestriction` is needed. (An untap-step untap advances straight to
      * upkeep before any player gets priority, so an `IsInStep(UNTAP)` intervening-if would read
      * false at detection time; the restriction lives in the detector instead.)
      */
@@ -1996,7 +1996,7 @@ object Triggers {
 
     /**
      * Whenever a player loses the game (CR 104.3). Fires for every player's loss; pair with a
-     * `triggerCondition` to narrow to a specific player (e.g. Shinryu, Transcendent Rival's
+     * `triggerRestriction` to narrow to a specific player (e.g. Shinryu, Transcendent Rival's
      * "When the chosen player loses the game, you win the game" gates on
      * [com.wingedsheep.sdk.dsl.Conditions.TriggeringPlayerIs]`(Player.ChosenOpponent)`).
      * `Player.TriggeringPlayer` inside the effect resolves to the player who lost.
@@ -2011,7 +2011,7 @@ object Triggers {
      * (CR "whenever" per-event templating). The lost amount is exposed via
      * [com.wingedsheep.sdk.scripting.values.ContextPropertyKey.TRIGGER_LIFE_LOST].
      * Used by cards like Bloodthirsty Conqueror and Kefka, Ruler of Ruin (pair with a
-     * `triggerCondition = Conditions.IsYourTurn` gate for "during your turn" riders).
+     * `triggerRestriction = Conditions.IsYourTurn` gate for "during your turn" riders).
      */
     val AnOpponentLosesLife: TriggerSpec = TriggerSpec(
         event = LifeLossEvent(Player.EachOpponent),
@@ -2278,10 +2278,10 @@ object Triggers {
     /**
      * When you cast this spell — a "cast trigger" that fires on the spell's own cast while it is
      * still on the stack, distinct from [SpellCast] (which observes *other* spells from the
-     * battlefield). Pair with `triggerCondition` for an intervening "if" (CR 603.4).
+     * battlefield). Pair with `interveningIf` for an intervening "if" (CR 603.4).
      *
      * Example: Sage of the Skies — "When you cast this spell, if you've cast another spell this
-     * turn, copy this spell." (`triggerCondition = Conditions.YouCastSpellsThisTurn(atLeast = 2)`,
+     * turn, copy this spell." (`interveningIf = Conditions.YouCastSpellsThisTurn(atLeast = 2)`,
      * since the spell itself is already counted when its cast trigger is checked.)
      */
     fun WhenYouCastThisSpell(): TriggerSpec = TriggerSpec(

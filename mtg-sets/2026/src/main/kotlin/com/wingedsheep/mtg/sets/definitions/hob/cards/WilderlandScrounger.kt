@@ -32,7 +32,7 @@ val WilderlandScrounger = card("Wilderland Scrounger") {
     toughness = 6
     triggeredAbility {
         trigger = Triggers.Attacks
-        triggerCondition = Conditions.YouControl(GameObjectFilter.Creature.powerAtLeast(4))
+        triggerRestriction = Conditions.YouControl(GameObjectFilter.Creature.powerAtLeast(4))
         effect = Effects.ForEachInGroup(
             GroupFilter(GameObjectFilter.Creature.youControl()),
             AddCountersEffect(Counters.PLUS_ONE_PLUS_ONE, 1, EffectTarget.Self)

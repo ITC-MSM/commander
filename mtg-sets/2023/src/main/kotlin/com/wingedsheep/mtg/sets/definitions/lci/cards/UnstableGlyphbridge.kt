@@ -89,7 +89,7 @@ private val UnstableGlyphbridgeFront = card("Unstable Glyphbridge") {
     // 2 or less that player controls. Then destroy all creatures except creatures chosen this way.
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = Conditions.WasCast
+        interveningIf = Conditions.WasCast
         effect = ForEachPlayerEffect(
             players = Player.ActivePlayerFirst,
             effects = listOf(
@@ -155,7 +155,7 @@ private val SandswirlWanderglyph = card("Sandswirl Wanderglyph") {
     // restriction, exact for two-player games.)
     triggeredAbility {
         trigger = Triggers.OpponentCastsSpell
-        triggerCondition = Conditions.IsNotYourTurn
+        triggerRestriction = Conditions.IsNotYourTurn
         effect = Effects.CantAttackGroup(
             GroupFilter(GameObjectFilter.Creature.controlledByActivePlayer())
         )

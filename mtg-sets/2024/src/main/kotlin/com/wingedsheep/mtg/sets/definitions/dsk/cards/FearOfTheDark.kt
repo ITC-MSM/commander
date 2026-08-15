@@ -36,7 +36,7 @@ val FearOfTheDark = card("Fear of the Dark") {
 
     triggeredAbility {
         trigger = Triggers.Attacks
-        triggerCondition = Conditions.CompareAmounts(
+        interveningIf = Conditions.CompareAmounts(
             DynamicAmount.AggregateBattlefield(
                 Player.DefendingPlayer,
                 GameObjectFilter.Creature.withSubtype("Glimmer")

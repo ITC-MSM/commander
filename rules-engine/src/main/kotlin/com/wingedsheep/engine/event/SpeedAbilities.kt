@@ -60,12 +60,13 @@ object SpeedAbilities {
         trigger = EventPattern.LifeLossEvent(Player.EachOpponent),
         binding = TriggerBinding.ANY,
         effect = Effects.IncreaseSpeed(target = EffectTarget.Controller),
-        triggerCondition = AllConditions(
-            listOf(
-                Conditions.IsYourTurn,
-                Conditions.SpeedBelowMax()
-            )
-        ),
+        // CR 702.179d prints both halves in one sentence, and they are checked differently:
+        // "during your turn" narrows the trigger event (CR 603.2), while ", if your speed is less
+        // than 4," is an intervening "if" that CR 603.4 checks again on resolution — so two
+        // opponents' life loss on the same turn can put this on the stack once and have it do
+        // nothing if something else raised the speed to 4 first.
+        triggerRestriction = Conditions.IsYourTurn,
+        interveningIf = Conditions.SpeedBelowMax(),
         oncePerTurn = true,
         descriptionOverride = "Whenever one or more opponents lose life during your turn, if your " +
             "speed is less than ${Speed.MAX}, your speed increases by 1. This ability triggers " +

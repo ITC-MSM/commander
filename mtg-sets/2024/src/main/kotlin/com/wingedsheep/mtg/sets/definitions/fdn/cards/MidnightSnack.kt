@@ -35,7 +35,7 @@ val MidnightSnack = card("Midnight Snack") {
 
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = Conditions.YouAttackedThisTurn
+        interveningIf = Conditions.YouAttackedThisTurn
         effect = Effects.CreateFood()
         description = "At the beginning of your end step, if you attacked this turn, create a Food token."
     }

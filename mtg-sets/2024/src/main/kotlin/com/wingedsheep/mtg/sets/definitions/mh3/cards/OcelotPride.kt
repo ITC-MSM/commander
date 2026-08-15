@@ -32,7 +32,7 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  * enters-the-battlefield trigger instead would sample the count once, on the turn a one-mana 1/1 is
  * least likely to see ten permanents, and never look again.
  *
- * The end-step ability is a genuine intervening-if (CR 603.4, [triggerCondition]): it doesn't
+ * The end-step ability is a genuine intervening-if (CR 603.4, [interveningIf]): it doesn't
  * trigger at all unless you gained life *before* the end step began, and it re-checks the same
  * condition at resolution — modeled the same way as Resplendent Angel's near-identical ability.
  * The "Then if…" clause is a separate, resolution-time-only conditional chained after the token
@@ -64,7 +64,7 @@ val OcelotPride = card("Ocelot Pride") {
 
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = Conditions.YouGainedLifeThisTurn
+        interveningIf = Conditions.YouGainedLifeThisTurn
         effect = Effects.CreateToken(
             power = 1,
             toughness = 1,

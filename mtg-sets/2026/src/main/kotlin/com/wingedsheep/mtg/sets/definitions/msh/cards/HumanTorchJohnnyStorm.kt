@@ -24,7 +24,7 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  * only once. Reduce the cost by his mana cost if he entered this turn.)
  *
  * The "if you control another Hero" clause is an **intervening-if** (CR 603.4), so it is
- * `triggerCondition` rather than a condition inside the effect: it is checked both when the
+ * `interveningIf` rather than a condition inside the effect: it is checked both when the
  * trigger would fire and again on resolution, and the ability doesn't go on the stack at all when
  * it's false. Wiring it into the effect instead would put a do-nothing trigger on the stack for
  * every card drawn, which is both wrong and noisy.
@@ -50,7 +50,7 @@ val HumanTorchJohnnyStorm = card("Human Torch, Johnny Storm") {
 
     triggeredAbility {
         trigger = Triggers.YouDraw
-        triggerCondition = Conditions.YouControl(
+        interveningIf = Conditions.YouControl(
             GameObjectFilter.Any.withSubtype(Subtype.HERO.value),
             excludeSelf = true
         )

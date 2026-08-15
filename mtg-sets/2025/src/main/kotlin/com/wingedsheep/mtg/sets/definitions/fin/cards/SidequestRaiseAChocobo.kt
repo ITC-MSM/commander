@@ -110,7 +110,7 @@ private val SidequestRaiseAChocoboFront = card("Sidequest: Raise a Chocobo") {
     // transform this enchantment.
     triggeredAbility {
         trigger = Triggers.FirstMainPhase
-        triggerCondition = Conditions.YouControlAtLeast(4, GameObjectFilter.Creature.withSubtype("Bird"))
+        interveningIf = Conditions.YouControlAtLeast(4, GameObjectFilter.Creature.withSubtype("Bird"))
         effect = TransformEffect(EffectTarget.Self)
     }
 

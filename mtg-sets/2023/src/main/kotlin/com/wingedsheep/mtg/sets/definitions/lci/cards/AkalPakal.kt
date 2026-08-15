@@ -29,7 +29,7 @@ val AkalPakal = card("Akal Pakal, First Among Equals") {
 
     triggeredAbility {
         trigger = Triggers.EachEndStep
-        triggerCondition = Conditions.ArtifactEnteredBattlefieldThisTurn
+        interveningIf = Conditions.ArtifactEnteredBattlefieldThisTurn
         effect = Patterns.Library.lookAtTopAndKeep(count = 2, keepCount = 1)
     }
 

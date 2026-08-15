@@ -1816,9 +1816,15 @@ class TriggerMatcher(
     }
 
     /**
-     * Filter out triggers whose intervening-if condition (Rule 603.4) is not met.
-     * If a triggered ability has a triggerCondition, it is only allowed to fire
-     * when that condition is true at the time of trigger detection.
+     * The **first** of the two checks a triggered ability's condition can get: drop every trigger
+     * whose condition is false at the moment the trigger event occurs, so the ability never goes on
+     * the stack (CR 603.2 for a restriction, CR 603.4's first half for an intervening-"if").
+     *
+     * Both kinds are filtered here, which is what
+     * [com.wingedsheep.sdk.scripting.TriggeredAbility.triggerCondition] derives. They part company
+     * afterwards: only the intervening-"if" travels onto the stack object and gets CR 603.4's
+     * second check in
+     * [com.wingedsheep.engine.mechanics.stack.StackResolver]; a `triggerRestriction` is spent here.
      */
     fun filterByTriggerCondition(
         state: GameState,

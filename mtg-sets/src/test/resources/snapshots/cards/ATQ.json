@@ -974,7 +974,7 @@
                     "count": 1,
                     "target": "Self"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Any",
                     "conditions": [
                         {

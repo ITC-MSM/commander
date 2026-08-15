@@ -49,7 +49,7 @@ val PersistentMarshstalker = card("Persistent Marshstalker") {
     triggeredAbility {
         trigger = Triggers.YouAttackWithFilter(GameObjectFilter.Creature.withSubtype("Rat"))
         triggerZone = Zone.GRAVEYARD
-        triggerCondition = Conditions.CardsInGraveyardAtLeast(7)
+        interveningIf = Conditions.CardsInGraveyardAtLeast(7)
         effect = MayPayManaEffect(
             cost = ManaCost.parse("{2}{B}"),
             effect = Effects.Move(

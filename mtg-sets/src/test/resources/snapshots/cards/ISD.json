@@ -2970,7 +2970,7 @@
                 },
                 "binding": "ANY",
                 "effect": "Transform",
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": "SpellsCastLastTurn",
                     "operator": "EQ",
@@ -3002,7 +3002,7 @@
                     },
                     "binding": "ANY",
                     "effect": "Transform",
-                    "triggerCondition": {
+                    "interveningIf": {
                         "type": "Compare",
                         "left": "SpellsCastLastTurn",
                         "operator": "GTE",
@@ -3371,7 +3371,7 @@
                 },
                 "binding": "ANY",
                 "effect": "Transform",
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": "SpellsCastLastTurn",
                     "operator": "EQ",
@@ -3406,7 +3406,7 @@
                     },
                     "binding": "ANY",
                     "effect": "Transform",
-                    "triggerCondition": {
+                    "interveningIf": {
                         "type": "Compare",
                         "left": "SpellsCastLastTurn",
                         "operator": "GTE",
@@ -4099,7 +4099,7 @@
                 },
                 "binding": "ANY",
                 "effect": "Transform",
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": "SpellsCastLastTurn",
                     "operator": "EQ",
@@ -4162,7 +4162,7 @@
                     },
                     "binding": "ANY",
                     "effect": "Transform",
-                    "triggerCondition": {
+                    "interveningIf": {
                         "type": "Compare",
                         "left": "SpellsCastLastTurn",
                         "operator": "GTE",
@@ -4483,7 +4483,7 @@
                     },
                     "id": "target"
                 },
-                "triggerCondition": "CreatureDiedThisTurn"
+                "interveningIf": "CreatureDiedThisTurn"
             }
         ]
     },
@@ -6658,7 +6658,7 @@
                 },
                 "binding": "ANY",
                 "effect": "Transform",
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": "SpellsCastLastTurn",
                     "operator": "EQ",
@@ -6690,7 +6690,7 @@
                     },
                     "binding": "ANY",
                     "effect": "Transform",
-                    "triggerCondition": {
+                    "interveningIf": {
                         "type": "Compare",
                         "left": "SpellsCastLastTurn",
                         "operator": "GTE",

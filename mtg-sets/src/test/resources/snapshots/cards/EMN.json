@@ -281,33 +281,21 @@
                     "to": "Battlefield"
                 },
                 "effect": {
-                    "type": "Gated",
-                    "gate": {
-                        "type": "Gate.WhenCondition",
-                        "condition": {
-                            "type": "Exists",
-                            "player": "You",
-                            "zone": "Hand",
-                            "negate": true
-                        }
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 2
                     },
-                    "then": {
-                        "type": "DealDamage",
-                        "amount": {
-                            "type": "Fixed",
-                            "amount": 2
-                        },
-                        "target": {
-                            "type": "BoundVariable",
-                            "name": "any target"
-                        }
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "any target"
                     }
                 },
                 "targetRequirement": {
                     "type": "AnyTarget",
                     "id": "any target"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Exists",
                     "player": "You",
                     "zone": "Hand",
@@ -318,33 +306,21 @@
                 "id": "ability_2",
                 "trigger": "AttackEvent",
                 "effect": {
-                    "type": "Gated",
-                    "gate": {
-                        "type": "Gate.WhenCondition",
-                        "condition": {
-                            "type": "Exists",
-                            "player": "You",
-                            "zone": "Hand",
-                            "negate": true
-                        }
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 2
                     },
-                    "then": {
-                        "type": "DealDamage",
-                        "amount": {
-                            "type": "Fixed",
-                            "amount": 2
-                        },
-                        "target": {
-                            "type": "BoundVariable",
-                            "name": "any target"
-                        }
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "any target"
                     }
                 },
                 "targetRequirement": {
                     "type": "AnyTarget",
                     "id": "any target"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Exists",
                     "player": "You",
                     "zone": "Hand",
@@ -1189,7 +1165,7 @@
                 },
                 "binding": "ANY",
                 "effect": "Transform",
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "EachPlayerLifeAtMost",
                     "threshold": 10
                 }

@@ -29,7 +29,7 @@ val CourierBat = card("Courier Bat") {
     keywords(Keyword.FLYING)
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = Conditions.YouGainedLifeThisTurn
+        interveningIf = Conditions.YouGainedLifeThisTurn
         val t = target("target", TargetObject(optional = true, filter = TargetFilter.CreatureInYourGraveyard))
         effect = Effects.Move(t, Zone.HAND)
     }

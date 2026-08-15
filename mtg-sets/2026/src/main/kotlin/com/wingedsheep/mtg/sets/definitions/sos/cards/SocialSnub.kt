@@ -19,7 +19,7 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  * 1 life.
  *
  * The intervening-if cast trigger (CR 603.4) fires from the stack via
- * [Triggers.WhenYouCastThisSpell] with `triggerCondition = Conditions.ControlCreature`; its
+ * [Triggers.WhenYouCastThisSpell] with `triggerRestriction = Conditions.ControlCreature`; its
  * [MayEffect] optionally copies the spell with [Effects.CopyTargetSpell] of the triggering entity
  * (a copy isn't cast, CR 707.10, so it doesn't re-trigger). Resolution is an edict —
  * [Effects.Sacrifice] of a creature for each player (`Player.Each`, each chooses their own) — then
@@ -35,7 +35,7 @@ val SocialSnub = card("Social Snub") {
 
     triggeredAbility {
         trigger = Triggers.WhenYouCastThisSpell()
-        triggerCondition = Conditions.ControlCreature
+        triggerRestriction = Conditions.ControlCreature
         effect = MayEffect(Effects.CopyTargetSpell(target = EffectTarget.TriggeringEntity))
         description = "When you cast this spell while you control a creature, you may copy this spell."
     }

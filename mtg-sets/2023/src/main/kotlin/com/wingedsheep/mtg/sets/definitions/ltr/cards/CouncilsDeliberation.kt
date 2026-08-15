@@ -36,7 +36,7 @@ val CouncilsDeliberation = card("Council's Deliberation") {
     triggeredAbility {
         trigger = Triggers.WheneverYouScry
         triggerZone = Zone.GRAVEYARD
-        triggerCondition = Conditions.YouControl(GameObjectFilter.Land.withSubtype(Subtype.ISLAND))
+        interveningIf = Conditions.YouControl(GameObjectFilter.Land.withSubtype(Subtype.ISLAND))
         effect = MayEffect(
             IfYouDoEffect(
                 action = Effects.Move(EffectTarget.Self, Zone.EXILE),

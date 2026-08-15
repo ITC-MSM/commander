@@ -52,7 +52,7 @@ class CrewSaddleContributorsScenarioTest : FunSpec({
         keywordAbility(KeywordAbility.saddle(2))
         triggeredAbility {
             trigger = Triggers.Attacks
-            triggerCondition = Conditions.SourceIsSaddled
+            triggerRestriction = Conditions.SourceIsSaddled
             val saddler = target(
                 "target creature that saddled it this turn",
                 TargetCreature(filter = TargetFilter(GameObjectFilter.Creature.crewedOrSaddledSourceThisTurn()))

@@ -288,7 +288,7 @@
                     },
                     "id": "target creature card"
                 },
-                "triggerCondition": "WasCast"
+                "interveningIf": "WasCast"
             }
         ],
         "replacementEffects": [
@@ -1951,7 +1951,7 @@
                         }
                     }
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "Count",
@@ -3505,7 +3505,7 @@
                     },
                     "target": "Self"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "EntityMatches",
                     "entity": "Self",
                     "filter": "creature"
@@ -3965,7 +3965,7 @@
                         }
                     ]
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "Compare",
                     "left": {
                         "type": "EntityProperty",
@@ -7459,7 +7459,7 @@
                         "amount": 1
                     }
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "PlayerCastSpellsThisTurn",
                     "filter": "mv>=4",
                     "atLeast": 1
@@ -7622,7 +7622,7 @@
                     },
                     "id": "target creature you control"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "WasCastFromZone",
                     "zone": "Graveyard"
                 },
@@ -8389,7 +8389,7 @@
                     },
                     "id": "target creature you control"
                 },
-                "triggerCondition": "CreatureDiedThisTurn"
+                "interveningIf": "CreatureDiedThisTurn"
             }
         ]
     },
@@ -9917,7 +9917,7 @@
                     "type": "AnyTarget",
                     "id": "any target"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Any",
                     "conditions": [
                         {
@@ -10741,7 +10741,7 @@
                         }
                     ]
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "TurnTracking",
@@ -10919,7 +10919,7 @@
                         }
                     ]
                 },
-                "triggerCondition": "WebSlungCostWasPaid",
+                "interveningIf": "WebSlungCostWasPaid",
                 "descriptionOverride": "When Spiders-Man enters, if they were cast using web-slinging, you gain 3 life and create two 2/1 green Spider creature tokens with reach."
             }
         ]
@@ -11006,7 +11006,7 @@
                         }
                     ]
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "Compare",
                     "left": {
                         "type": "ContextProperty",
@@ -12419,7 +12419,7 @@
                     },
                     "id": "target creature card in your graveyard"
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "EntityMatches",
                     "entity": "Self",
                     "filter": {

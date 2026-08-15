@@ -51,7 +51,7 @@ val BespokeBattlegarb = card("Bespoke Battlegarb") {
 
     triggeredAbility {
         trigger = Triggers.BeginCombat
-        triggerCondition = Conditions.Celebration
+        interveningIf = Conditions.Celebration
         val creature = target(
             "up to one target creature you control",
             TargetCreature(optional = true, filter = TargetFilter.CreatureYouControl),

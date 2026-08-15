@@ -53,7 +53,7 @@ val SukiCourageousRescuer = card("Suki, Courageous Rescuer") {
             filter = GameObjectFilter.Permanent.youControl(),
             binding = TriggerBinding.OTHER,
         )
-        triggerCondition = Conditions.IsYourTurn
+        triggerRestriction = Conditions.IsYourTurn
         oncePerTurn = true
         effect = Effects.CreateToken(
             power = 1,

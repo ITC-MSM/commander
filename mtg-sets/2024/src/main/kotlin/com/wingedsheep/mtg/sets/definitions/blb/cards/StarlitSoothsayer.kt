@@ -27,7 +27,7 @@ val StarlitSoothsayer = card("Starlit Soothsayer") {
 
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = Conditions.YouGainedOrLostLifeThisTurn
+        interveningIf = Conditions.YouGainedOrLostLifeThisTurn
         effect = Patterns.Library.surveil(1)
     }
 

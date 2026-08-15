@@ -26,7 +26,7 @@ val MarduHeartPiercer = card("Mardu Heart-Piercer") {
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = Conditions.YouAttackedThisTurn
+        interveningIf = Conditions.YouAttackedThisTurn
         val t = target("any target", Targets.Any)
         effect = DealDamageEffect(2, t)
     }

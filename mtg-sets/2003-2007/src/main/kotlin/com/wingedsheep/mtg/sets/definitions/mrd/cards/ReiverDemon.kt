@@ -40,7 +40,7 @@ val ReiverDemon = card("Reiver Demon") {
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = Conditions.WasCastFromHand
+        interveningIf = Conditions.WasCastFromHand
         effect = Effects.DestroyAll(
             filter = GameObjectFilter.Creature.nonartifact().notColor(Color.BLACK),
             noRegenerate = true

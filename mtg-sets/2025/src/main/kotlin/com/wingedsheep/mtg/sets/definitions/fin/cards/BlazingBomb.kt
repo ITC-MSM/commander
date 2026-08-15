@@ -48,7 +48,7 @@ val BlazingBomb = card("Blazing Bomb") {
     // put a +1/+1 counter on this creature.
     triggeredAbility {
         trigger = Triggers.YouCastNoncreature
-        triggerCondition = Conditions.CompareAmounts(
+        interveningIf = Conditions.CompareAmounts(
             DynamicAmount.ContextProperty(ContextPropertyKey.MANA_SPENT_ON_TRIGGERING_SPELL),
             ComparisonOperator.GTE,
             DynamicAmount.Fixed(4),

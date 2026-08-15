@@ -414,7 +414,7 @@
                     "count": 1,
                     "target": "Self"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Any",
                     "conditions": [
                         {
@@ -481,7 +481,7 @@
                         }
                     ]
                 },
-                "triggerCondition": "TriggeringEntityHadCounters",
+                "interveningIf": "TriggeringEntityHadCounters",
                 "descriptionOverride": "When this creature dies, if it had one or more counters on it, create a 0/0 green and blue Fractal creature token, then put this creature's counters on that token."
             }
         ]
@@ -1273,7 +1273,7 @@
                     "count": 1,
                     "target": "Self"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Any",
                     "conditions": [
                         {
@@ -2828,7 +2828,7 @@
                     "count": 1,
                     "target": "Self"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Any",
                     "conditions": [
                         {
@@ -4016,7 +4016,7 @@
                 "id": "ability_1",
                 "trigger": "AttackEvent",
                 "effect": "BecomePrepared",
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "AggregateBattlefield",
@@ -4406,7 +4406,7 @@
                 },
                 "binding": "ANY",
                 "effect": "BecomePrepared",
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "TurnTracking",
@@ -4763,7 +4763,7 @@
                     "count": 1,
                     "target": "Self"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "TurnTracking",
@@ -5014,7 +5014,7 @@
                         "amount": 1
                     }
                 },
-                "triggerCondition": "ControlledCreatureDiedThisTurn",
+                "interveningIf": "ControlledCreatureDiedThisTurn",
                 "descriptionOverride": "At the beginning of your end step, if a creature died under your control this turn, draw a card."
             }
         ]
@@ -6017,7 +6017,7 @@
                     "count": 1,
                     "target": "Self"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Any",
                     "conditions": [
                         {
@@ -6087,7 +6087,7 @@
                         }
                     ]
                 },
-                "triggerCondition": "SourceReceivedCounterThisTurn",
+                "interveningIf": "SourceReceivedCounterThisTurn",
                 "descriptionOverride": "At the beginning of each end step, if you put a counter on this creature this turn, create a 0/0 green and blue Fractal creature token and put three +1/+1 counters on it."
             }
         ]
@@ -7446,7 +7446,7 @@
                     "count": 1,
                     "target": "Self"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Any",
                     "conditions": [
                         {
@@ -8157,7 +8157,7 @@
                 },
                 "binding": "ANY",
                 "effect": "BecomePrepared",
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "Count",
@@ -8616,7 +8616,7 @@
                     },
                     "id": "attacking creature"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "TurnTracking",
@@ -8980,7 +8980,7 @@
                     "type": "CopyTargetSpell",
                     "target": "TriggeringEntity"
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "Compare",
                     "left": {
                         "type": "TurnTracking",
@@ -10099,7 +10099,7 @@
                     },
                     "id": "up to one target creature card with mana value X or less from your graveyard"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "TurnTracking",
@@ -10466,7 +10466,7 @@
                     "count": 2,
                     "target": "Self"
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "Compare",
                     "left": {
                         "type": "TurnTracking",
@@ -10966,7 +10966,7 @@
                     "count": 1,
                     "target": "Self"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Any",
                     "conditions": [
                         {
@@ -11359,7 +11359,7 @@
                     },
                     "id": "target"
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "Compare",
                     "left": {
                         "type": "TurnTracking",
@@ -11865,7 +11865,7 @@
                         "amount": 1
                     }
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "TurnTracking",
@@ -13882,7 +13882,7 @@
                 },
                 "binding": "ANY",
                 "effect": "BecomePrepared",
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "TurnTracking",
@@ -14016,7 +14016,7 @@
                         "baseFilter": "creature"
                     }
                 },
-                "triggerCondition": "TriggeringEntityHadCounters",
+                "interveningIf": "TriggeringEntityHadCounters",
                 "descriptionOverride": "When this creature dies, if it had counters on it, put those counters on up to one target creature."
             }
         ]
@@ -14858,7 +14858,7 @@
                         "target": "TriggeringEntity"
                     }
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "Exists",
                     "player": "You",
                     "zone": "Battlefield",
@@ -16747,7 +16747,7 @@
                     "count": 1,
                     "target": "Self"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Any",
                     "conditions": [
                         {
@@ -16861,7 +16861,7 @@
                     "count": 1,
                     "target": "Self"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Any",
                     "conditions": [
                         {
@@ -17350,7 +17350,7 @@
                     "count": 1,
                     "target": "Self"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Any",
                     "conditions": [
                         {
@@ -17449,7 +17449,7 @@
                     "type": "Sacrifice",
                     "filter": "permanent"
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "Not",
                     "condition": {
                         "type": "Compare",

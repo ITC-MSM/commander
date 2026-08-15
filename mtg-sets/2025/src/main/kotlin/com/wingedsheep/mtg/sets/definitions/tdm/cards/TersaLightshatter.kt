@@ -54,7 +54,7 @@ val TersaLightshatter = card("Tersa Lightshatter") {
     // resolution, exile a random card from your graveyard and grant permission to play it this turn.
     triggeredAbility {
         trigger = Triggers.Attacks
-        triggerCondition = Conditions.CardsInGraveyardAtLeast(7)
+        interveningIf = Conditions.CardsInGraveyardAtLeast(7)
         effect = Effects.Composite(
             listOf(
                 GatherCardsEffect(

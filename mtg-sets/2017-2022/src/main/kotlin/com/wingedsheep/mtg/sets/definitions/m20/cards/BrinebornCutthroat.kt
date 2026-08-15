@@ -39,7 +39,7 @@ val BrinebornCutthroat = card("Brineborn Cutthroat") {
 
     triggeredAbility {
         trigger = Triggers.YouCastSpell
-        triggerCondition = Conditions.IsNotYourTurn
+        triggerRestriction = Conditions.IsNotYourTurn
         effect = Effects.AddCounters(Counters.PLUS_ONE_PLUS_ONE, 1, EffectTarget.Self)
         description = "Whenever you cast a spell during an opponent's turn, put a +1/+1 counter on this creature."
     }

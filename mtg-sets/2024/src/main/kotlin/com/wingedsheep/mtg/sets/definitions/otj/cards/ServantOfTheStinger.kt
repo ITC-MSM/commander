@@ -24,7 +24,7 @@ import com.wingedsheep.sdk.scripting.effects.SearchDestination
  *
  * The "if you've committed a crime this turn" clause is an intervening-if (CR 603.4): it's
  * checked both when the ability would trigger and again as it resolves. Modeled via
- * [triggerCondition]. The "you may sacrifice this creature. If you do, search..." pay-then-payoff
+ * [interveningIf]. The "you may sacrifice this creature. If you do, search..." pay-then-payoff
  * is a [GatedEffect] with a [Gate.MayPay] sacrificing this creature.
  */
 val ServantOfTheStinger = card("Servant of the Stinger") {
@@ -41,7 +41,7 @@ val ServantOfTheStinger = card("Servant of the Stinger") {
 
     triggeredAbility {
         trigger = Triggers.DealsCombatDamageToPlayer
-        triggerCondition = Conditions.YouCommittedCrimeThisTurn
+        interveningIf = Conditions.YouCommittedCrimeThisTurn
         effect = GatedEffect(
             gate = Gate.MayPay(SacrificeSelfEffect),
             then = Patterns.Library.searchLibrary(

@@ -30,7 +30,7 @@ val PacksongPup = card("Packsong Pup") {
     toughness = 1
     triggeredAbility {
         trigger = Triggers.BeginCombat
-        triggerCondition = Conditions.YouControl(
+        interveningIf = Conditions.YouControl(
             filter = GameObjectFilter.Creature.withAnyOfSubtypes(listOf(Subtype.WOLF, Subtype.WEREWOLF)),
             excludeSelf = true
         )

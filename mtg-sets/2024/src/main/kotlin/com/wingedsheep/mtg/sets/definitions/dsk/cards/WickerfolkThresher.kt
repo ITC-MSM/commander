@@ -47,7 +47,7 @@ val WickerfolkThresher = card("Wickerfolk Thresher") {
 
     triggeredAbility {
         trigger = Triggers.Attacks
-        triggerCondition = Conditions.Delirium()
+        interveningIf = Conditions.Delirium()
         effect = Effects.Composite(
             listOf(
                 // Look at the top card of your library.

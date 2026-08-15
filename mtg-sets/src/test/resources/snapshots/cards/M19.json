@@ -520,7 +520,7 @@
                         }
                     ]
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "AggregateBattlefield",
@@ -717,7 +717,7 @@
                     ],
                     "imageUri": "https://cards.scryfall.io/normal/front/d/c/dc31e017-81e6-43bf-bf8e-ea0faca5d9b7.jpg?1782747632"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "TurnTracking",

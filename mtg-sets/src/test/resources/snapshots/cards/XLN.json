@@ -497,7 +497,7 @@
                 },
                 "binding": "ANY",
                 "effect": "Transform",
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "AggregateBattlefield",
@@ -1247,7 +1247,7 @@
                         "amount": 1
                     }
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "TurnTracking",

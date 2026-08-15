@@ -30,10 +30,11 @@ import com.wingedsheep.sdk.scripting.targets.TargetObject
  * uses for "the first instant spell, the first sorcery spell". Casting an instant and then a sorcery
  * in the same turn pumps once here, twice on Alania.
  *
- * `triggerCondition` (not a plain filtered trigger) because CR 603.4 makes this an intervening "if":
- * it is checked both when the ability would trigger and again on resolution. That's the behaviour we
- * want — if the triggering spell somehow stops being the first matching spell before resolution, the
- * ability does nothing.
+ * `triggerRestriction` (not a plain filtered trigger) because "your **first** instant or sorcery
+ * spell each turn" narrows the trigger *event*: nothing but the first matching cast puts the
+ * ability on the stack. It is deliberately not an `interveningIf` — CR 603.4's second check is for
+ * an "if" printed immediately after the trigger event, and this card prints no "if" at all, so once
+ * the ability has triggered it resolves.
  *
  * The pump resolves before the spell that triggered it (the ability goes on the stack above it), so
  * the +2/+0 is live for anything the spell itself does — the usual "cast a burn spell, then block
@@ -57,7 +58,7 @@ val AquaticAlchemist = card("Aquatic Alchemist") {
 
     triggeredAbility {
         trigger = Triggers.YouCastSpell
-        triggerCondition = Conditions.YouCastFirstSpellOfTypeThisTurn(GameObjectFilter.InstantOrSorcery)
+        triggerRestriction = Conditions.YouCastFirstSpellOfTypeThisTurn(GameObjectFilter.InstantOrSorcery)
         effect = Effects.ModifyStats(2, 0, EffectTarget.Self)
         description = "Whenever you cast your first instant or sorcery spell each turn, this " +
             "creature gets +2/+0 until end of turn."

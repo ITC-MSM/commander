@@ -40,7 +40,7 @@ val HostOfTheHereafter = card("Host of the Hereafter") {
 
     triggeredAbility {
         trigger = Triggers.YourCreatureDies
-        triggerCondition = Conditions.TriggeringEntityHadCounters
+        interveningIf = Conditions.TriggeringEntityHadCounters
         target = TargetCreature(
             optional = true,
             filter = TargetFilter(GameObjectFilter.Creature.youControl())

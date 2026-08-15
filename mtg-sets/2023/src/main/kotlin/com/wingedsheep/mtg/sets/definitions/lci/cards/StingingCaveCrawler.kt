@@ -43,7 +43,7 @@ val StingingCaveCrawler = card("Stinging Cave Crawler") {
 
     triggeredAbility {
         trigger = Triggers.Attacks
-        triggerCondition = Conditions.CardsInGraveyardMatchingAtLeast(4, GameObjectFilter.Permanent)
+        interveningIf = Conditions.CardsInGraveyardMatchingAtLeast(4, GameObjectFilter.Permanent)
         effect = Effects.DrawCards(1) then Effects.LoseLife(1, EffectTarget.Controller)
     }
 

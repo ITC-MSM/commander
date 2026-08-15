@@ -104,7 +104,7 @@ class CollectEvidenceScenarioTest : ScenarioTestBase() {
         collectEvidence(6)
         triggeredAbility {
             trigger = Triggers.EntersBattlefield
-            triggerCondition = Conditions.WasEvidenceCollected
+            interveningIf = Conditions.WasEvidenceCollected
             effect = Effects.AddCounters(Counters.PLUS_ONE_PLUS_ONE, 2, EffectTarget.Self)
         }
     }
@@ -203,7 +203,7 @@ class CollectEvidenceScenarioTest : ScenarioTestBase() {
         keywordAbility(KeywordAbility.OptionalAdditionalCost(ManaCost.parse("{1}")))
         triggeredAbility {
             trigger = Triggers.EntersBattlefield
-            triggerCondition = Conditions.WasEvidenceCollected
+            interveningIf = Conditions.WasEvidenceCollected
             effect = Effects.AddCounters(Counters.PLUS_ONE_PLUS_ONE, 2, EffectTarget.Self)
         }
     }
@@ -216,7 +216,7 @@ class CollectEvidenceScenarioTest : ScenarioTestBase() {
         collectEvidence(6)
         triggeredAbility {
             trigger = Triggers.EntersBattlefield
-            triggerCondition = WasKicked
+            interveningIf = WasKicked
             effect = Effects.AddCounters(Counters.PLUS_ONE_PLUS_ONE, 2, EffectTarget.Self)
         }
     }

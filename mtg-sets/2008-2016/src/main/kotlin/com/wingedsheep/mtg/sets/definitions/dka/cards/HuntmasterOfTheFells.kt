@@ -50,7 +50,7 @@ private val HuntmasterOfTheFellsFront = card("Huntmaster of the Fells") {
     }
     triggeredAbility {
         trigger = Triggers.EachUpkeep
-        triggerCondition = Conditions.CompareAmounts(
+        interveningIf = Conditions.CompareAmounts(
             DynamicAmounts.spellsCastLastTurn(),
             ComparisonOperator.EQ,
             DynamicAmount.Fixed(0),
@@ -97,7 +97,7 @@ private val RavagerOfTheFells = card("Ravager of the Fells") {
     }
     triggeredAbility {
         trigger = Triggers.EachUpkeep
-        triggerCondition = Conditions.CompareAmounts(
+        interveningIf = Conditions.CompareAmounts(
             DynamicAmounts.spellsCastLastTurn(),
             ComparisonOperator.GTE,
             DynamicAmount.Fixed(2),

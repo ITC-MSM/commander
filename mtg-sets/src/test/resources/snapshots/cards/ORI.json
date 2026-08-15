@@ -236,7 +236,7 @@
                         "Warrior"
                     ]
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Exists",
                     "player": "You",
                     "zone": "Battlefield",

@@ -82,7 +82,7 @@ private val SidequestPlayBlitzballFront = card("Sidequest: Play Blitzball") {
     // transform this enchantment, then attach it to a creature you control.
     triggeredAbility {
         trigger = Triggers.YourEndOfCombat
-        triggerCondition = Conditions.aPlayerWasDealtCombatDamageThisTurnAtLeast(6)
+        interveningIf = Conditions.aPlayerWasDealtCombatDamageThisTurnAtLeast(6)
         effect = Effects.Pipeline {
             // Transform this enchantment (it becomes World Champion, Celestial Weapon)...
             run(TransformEffect(EffectTarget.Self))

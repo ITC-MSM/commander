@@ -20,7 +20,7 @@ import com.wingedsheep.sdk.scripting.targets.TargetCreature
  * controls gets -1/-1 until end of turn.
  *
  * "During an opponent's turn" is checked when the ability would trigger, so it rides on
- * `triggerCondition` ([Conditions.IsNotYourTurn]) rather than gating the resolved effect —
+ * `triggerRestriction` ([Conditions.IsNotYourTurn]) rather than gating the resolved effect —
  * only players take turns, so "not your turn" is exactly "an opponent's turn".
  * "Up to one target" is an optional target, so the ability still resolves (doing nothing)
  * when no creature is chosen or the chosen one has left.
@@ -39,7 +39,7 @@ val DreamSpoilers = card("Dream Spoilers") {
 
     triggeredAbility {
         trigger = Triggers.YouCastSpell
-        triggerCondition = Conditions.IsNotYourTurn
+        triggerRestriction = Conditions.IsNotYourTurn
         val t = target(
             "target",
             TargetCreature(optional = true, filter = TargetFilter.Creature.opponentControls())

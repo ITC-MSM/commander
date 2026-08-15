@@ -31,7 +31,7 @@ val JemLightfooteSkyExplorer = card("Jem Lightfoote, Sky Explorer") {
     keywords(Keyword.FLYING, Keyword.VIGILANCE)
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = Conditions.Not(Conditions.YouCastSpellsThisTurn(1, fromZone = Zone.HAND))
+        interveningIf = Conditions.Not(Conditions.YouCastSpellsThisTurn(1, fromZone = Zone.HAND))
         effect = DrawCardsEffect(1)
     }
     metadata {

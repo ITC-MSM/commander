@@ -61,7 +61,7 @@ object Suspend {
         binding = TriggerBinding.SELF,
         activeZones = setOf(Zone.EXILE),
         // Only count down while counters remain; this also makes a leftover marker inert.
-        triggerCondition = hasTimeCounter,
+        interveningIf = hasTimeCounter,
         effect = CompositeEffect(
             listOf(
                 RemoveCountersEffect(Counters.TIME, 1, EffectTarget.Self),

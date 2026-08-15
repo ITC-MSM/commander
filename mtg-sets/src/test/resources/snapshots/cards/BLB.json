@@ -232,7 +232,7 @@
                     "type": "TargetOpponent",
                     "id": "opponent"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Any",
                     "conditions": [
                         {
@@ -732,7 +732,7 @@
                                 "player": "TriggeringPlayer"
                             }
                         },
-                        "triggerCondition": {
+                        "interveningIf": {
                             "type": "Compare",
                             "left": {
                                 "type": "Count",
@@ -2217,7 +2217,7 @@
                     "overridePower": 1,
                     "overrideToughness": 1
                 },
-                "triggerCondition": "WasKicked"
+                "interveningIf": "WasKicked"
             },
             {
                 "id": "ability_2",
@@ -3803,7 +3803,7 @@
                     "overridePower": 1,
                     "overrideToughness": 1
                 },
-                "triggerCondition": "WasKicked"
+                "interveningIf": "WasKicked"
             },
             {
                 "id": "ability_2",
@@ -4414,7 +4414,7 @@
                     "overridePower": 1,
                     "overrideToughness": 1
                 },
-                "triggerCondition": "WasKicked"
+                "interveningIf": "WasKicked"
             },
             {
                 "id": "ability_2",
@@ -6430,7 +6430,7 @@
                     "overridePower": 1,
                     "overrideToughness": 1
                 },
-                "triggerCondition": "WasKicked"
+                "interveningIf": "WasKicked"
             },
             {
                 "id": "ability_2",
@@ -6641,7 +6641,7 @@
                         }
                     ]
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "TurnTracking",
@@ -6737,7 +6737,7 @@
                         }
                     ]
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "TurnTracking",
@@ -6833,7 +6833,7 @@
                     "overridePower": 1,
                     "overrideToughness": 1
                 },
-                "triggerCondition": "WasKicked"
+                "interveningIf": "WasKicked"
             },
             {
                 "id": "ability_2",
@@ -9071,7 +9071,7 @@
                                 "amount": 1
                             }
                         },
-                        "triggerCondition": {
+                        "interveningIf": {
                             "type": "Exists",
                             "player": "You",
                             "zone": "Battlefield",
@@ -9381,7 +9381,7 @@
                     "overridePower": 1,
                     "overrideToughness": 1
                 },
-                "triggerCondition": "WasKicked"
+                "interveningIf": "WasKicked"
             },
             {
                 "id": "ability_2",
@@ -9459,7 +9459,7 @@
                     "overridePower": 1,
                     "overrideToughness": 1
                 },
-                "triggerCondition": "WasKicked"
+                "interveningIf": "WasKicked"
             },
             {
                 "id": "ability_2",
@@ -10048,7 +10048,7 @@
                         "GiftGiven"
                     ]
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "CastChoiceMade",
                     "slot": "GIFT_PROMISED"
                 },
@@ -11090,7 +11090,7 @@
                         "player": "EachOpponent"
                     }
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "TurnTracking",
@@ -11126,7 +11126,7 @@
                     ],
                     "imageUri": "https://cards.scryfall.io/normal/front/1/0/100c0127-49dd-4a78-9c88-1881e7923674.jpg?1721425184"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "All",
                     "conditions": [
                         {
@@ -11534,7 +11534,7 @@
                     "overridePower": 1,
                     "overrideToughness": 1
                 },
-                "triggerCondition": "WasKicked"
+                "interveningIf": "WasKicked"
             },
             {
                 "id": "ability_2",
@@ -12182,7 +12182,7 @@
                         ]
                     }
                 },
-                "triggerCondition": "IsYourTurn",
+                "triggerRestriction": "IsYourTurn",
                 "oncePerTurn": true
             }
         ]
@@ -13311,7 +13311,7 @@
                     "overridePower": 1,
                     "overrideToughness": 1
                 },
-                "triggerCondition": "WasKicked"
+                "interveningIf": "WasKicked"
             },
             {
                 "id": "ability_2",
@@ -13538,7 +13538,7 @@
                 "activeZones": [
                     "Graveyard"
                 ],
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "Count",
@@ -15252,7 +15252,7 @@
                     "overridePower": 1,
                     "overrideToughness": 1
                 },
-                "triggerCondition": "WasKicked"
+                "interveningIf": "WasKicked"
             }
         ],
         "staticAbilities": [
@@ -15921,7 +15921,7 @@
                         "GiftGiven"
                     ]
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "CastChoiceMade",
                     "slot": "GIFT_PROMISED"
                 },
@@ -15948,7 +15948,7 @@
                         "baseFilter": "artifact|enchantment ctrl:opponent"
                     }
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "CastChoiceMade",
                     "slot": "GIFT_PROMISED"
                 }
@@ -16504,7 +16504,7 @@
                     },
                     "target": "Self"
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "Exists",
                     "player": "You",
                     "zone": "Battlefield",
@@ -17256,7 +17256,7 @@
                     "overridePower": 1,
                     "overrideToughness": 1
                 },
-                "triggerCondition": "WasKicked"
+                "interveningIf": "WasKicked"
             },
             {
                 "id": "ability_2",
@@ -17464,7 +17464,7 @@
                         }
                     ]
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Any",
                     "conditions": [
                         {
@@ -17683,7 +17683,7 @@
                         "GiftGiven"
                     ]
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "CastChoiceMade",
                     "slot": "GIFT_PROMISED"
                 },
@@ -17702,7 +17702,7 @@
                         "baseFilter": "creature ctrl:you"
                     }
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "CastChoiceMade",
                     "slot": "GIFT_PROMISED"
                 }
@@ -17866,7 +17866,7 @@
                     "type": "Surveil",
                     "count": 1
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Any",
                     "conditions": [
                         {
@@ -17943,7 +17943,7 @@
                     "overridePower": 1,
                     "overrideToughness": 1
                 },
-                "triggerCondition": "WasKicked"
+                "interveningIf": "WasKicked"
             },
             {
                 "id": "ability_2",
@@ -18038,7 +18038,7 @@
                     "type": "TargetOpponent",
                     "id": "opponent"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Any",
                     "conditions": [
                         {
@@ -18124,7 +18124,7 @@
                     "overridePower": 1,
                     "overrideToughness": 1
                 },
-                "triggerCondition": "WasKicked"
+                "interveningIf": "WasKicked"
             },
             {
                 "id": "ability_2",
@@ -19127,7 +19127,7 @@
                     "overridePower": 1,
                     "overrideToughness": 1
                 },
-                "triggerCondition": "WasKicked"
+                "interveningIf": "WasKicked"
             }
         ],
         "activatedAbilities": [
@@ -19379,7 +19379,7 @@
                     "overridePower": 1,
                     "overrideToughness": 1
                 },
-                "triggerCondition": "WasKicked"
+                "interveningIf": "WasKicked"
             },
             {
                 "id": "ability_2",
@@ -20070,7 +20070,7 @@
                     "overridePower": 1,
                     "overrideToughness": 1
                 },
-                "triggerCondition": "WasKicked"
+                "interveningIf": "WasKicked"
             },
             {
                 "id": "ability_2",
@@ -20179,7 +20179,7 @@
                     },
                     "id": "up to one target nonland permanent"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "Count",
@@ -21400,7 +21400,7 @@
                     "overridePower": 1,
                     "overrideToughness": 1
                 },
-                "triggerCondition": "WasKicked"
+                "interveningIf": "WasKicked"
             },
             {
                 "id": "ability_2",
@@ -21496,7 +21496,7 @@
                     "keyword": "FLYING",
                     "target": "Self"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Exists",
                     "player": "You",
                     "zone": "Battlefield",
@@ -21557,7 +21557,7 @@
                     },
                     "target": "Self"
                 },
-                "triggerCondition": "IsYourTurn"
+                "triggerRestriction": "IsYourTurn"
             },
             {
                 "id": "ability_2",
@@ -21575,7 +21575,7 @@
                     },
                     "target": "Self"
                 },
-                "triggerCondition": "IsYourTurn"
+                "triggerRestriction": "IsYourTurn"
             }
         ]
     },

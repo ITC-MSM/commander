@@ -50,7 +50,7 @@ val Sunderflock = card("Sunderflock") {
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = Conditions.WasCast
+        interveningIf = Conditions.WasCast
         effect = Patterns.Group.returnAllToHand(
             GroupFilter(GameObjectFilter.Creature.notSubtype(Subtype("Elemental")))
         )

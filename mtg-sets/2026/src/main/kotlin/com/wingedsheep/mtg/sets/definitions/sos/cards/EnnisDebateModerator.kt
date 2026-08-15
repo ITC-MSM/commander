@@ -62,7 +62,7 @@ val EnnisDebateModerator = card("Ennis, Debate Moderator") {
     // put a +1/+1 counter on Ennis.
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = Conditions.CardsPutIntoExileThisTurn()
+        interveningIf = Conditions.CardsPutIntoExileThisTurn()
         effect = Effects.AddCounters(Counters.PLUS_ONE_PLUS_ONE, 1, EffectTarget.Self)
     }
 

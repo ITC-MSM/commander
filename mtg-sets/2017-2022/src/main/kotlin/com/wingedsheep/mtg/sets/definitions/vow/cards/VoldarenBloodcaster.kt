@@ -48,7 +48,7 @@ private val VoldarenBloodcasterFront = card("Voldaren Bloodcaster") {
             filter = bloodFilter.youControl().token(),
             binding = TriggerBinding.ANY,
         )
-        triggerCondition = Conditions.YouControlAtLeast(5, bloodFilter)
+        interveningIf = Conditions.YouControlAtLeast(5, bloodFilter)
         effect = TransformEffect(EffectTarget.Self)
     }
 

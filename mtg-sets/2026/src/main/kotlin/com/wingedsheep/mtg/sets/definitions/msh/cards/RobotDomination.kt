@@ -25,7 +25,7 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  *    per event batch no matter how many creature cards land, and regardless of the source zone.
  *  - "When the **third** plan counter is put on this enchantment" composes from existing
  *    vocabulary: a SELF-bound [Triggers.countersPlacedOn] on [Counters.PLAN] gated by
- *    `triggerCondition = `[Conditions.SourceCounterCountAtLeast]`(PLAN, 3)`. The at-least gate is
+ *    `triggerRestriction = `[Conditions.SourceCounterCountAtLeast]`(PLAN, 3)`. The at-least gate is
  *    behaviourally exact here because the payoff **sacrifices its own source**, so the enchantment
  *    is gone before a fourth counter could ever land — the threshold can never fire twice. No
  *    dedicated "Nth counter" trigger event is needed.
@@ -59,7 +59,7 @@ val RobotDomination = card("Robot Domination") {
             firstTimeEachTurn = false,
             binding = TriggerBinding.SELF,
         )
-        triggerCondition = Conditions.SourceCounterCountAtLeast(Counters.PLAN, 3)
+        triggerRestriction = Conditions.SourceCounterCountAtLeast(Counters.PLAN, 3)
         effect = Effects.Composite(
             Effects.SacrificeTarget(EffectTarget.Self),
             Effects.CreateToken(

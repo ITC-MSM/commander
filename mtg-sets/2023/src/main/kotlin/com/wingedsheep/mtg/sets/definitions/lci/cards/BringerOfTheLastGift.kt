@@ -48,7 +48,7 @@ val BringerOfTheLastGift = card("Bringer of the Last Gift") {
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = Conditions.WasCast
+        interveningIf = Conditions.WasCast
         effect = Effects.Composite(
             listOf(
                 // Snapshot every creature card already in a graveyard, before the sacrifice.

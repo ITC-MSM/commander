@@ -33,7 +33,7 @@ val SpinerockTyrant = card("Spinerock Tyrant") {
     //  If you do, those spells gain wither. You may choose new targets for the copy."
     triggeredAbility {
         trigger = Triggers.YouCastInstantOrSorcery
-        triggerCondition = Conditions.TriggeringSpellHasSingleTarget
+        triggerRestriction = Conditions.TriggeringSpellHasSingleTarget
         effect = MayEffect(
             effect = Effects.CopyTargetSpell(
                 target = EffectTarget.TriggeringEntity,

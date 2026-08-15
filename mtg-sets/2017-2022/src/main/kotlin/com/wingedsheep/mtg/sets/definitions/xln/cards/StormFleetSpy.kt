@@ -29,7 +29,7 @@ val StormFleetSpy = card("Storm Fleet Spy") {
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = Conditions.YouAttackedThisTurn
+        interveningIf = Conditions.YouAttackedThisTurn
         effect = Effects.DrawCards(1)
     }
 

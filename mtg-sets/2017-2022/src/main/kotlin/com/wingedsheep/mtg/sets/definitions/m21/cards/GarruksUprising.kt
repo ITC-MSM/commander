@@ -35,7 +35,7 @@ val GarruksUprising = card("Garruk's Uprising") {
     // ETB intervening-if: draw a card if you already control a power-4+ creature
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = Exists(Player.You, Zone.BATTLEFIELD, GameObjectFilter.Creature.powerAtLeast(4))
+        interveningIf = Exists(Player.You, Zone.BATTLEFIELD, GameObjectFilter.Creature.powerAtLeast(4))
         effect = Effects.DrawCards(1)
     }
 

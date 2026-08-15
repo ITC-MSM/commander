@@ -24,7 +24,7 @@ val DonatelloTurtleTechie = card("Donatello, Turtle Techie") {
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = Conditions.ControlArtifact
+        interveningIf = Conditions.ControlArtifact
         effect = Effects.DrawCards(1)
     }
 

@@ -62,7 +62,7 @@ val HaphazardBombardment = card("Haphazard Bombardment") {
     // End step: If 2+ opponent permanents have aim counters, destroy one at random
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = Compare(
+        interveningIf = Compare(
             left = DynamicAmount.AggregateBattlefield(
                 player = Player.EachOpponent,
                 filter = GameObjectFilter.Any.withCounter(Counters.AIM),

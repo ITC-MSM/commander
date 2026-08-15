@@ -36,7 +36,7 @@ val TollsOfWar = card("Tolls of War") {
     // creature token. This ability triggers only once each turn.
     triggeredAbility {
         trigger = Triggers.YouSacrificeOneOrMore()
-        triggerCondition = Conditions.IsYourTurn
+        triggerRestriction = Conditions.IsYourTurn
         oncePerTurn = true
         effect = Effects.CreateToken(
             power = 1,

@@ -22,7 +22,7 @@ import com.wingedsheep.sdk.scripting.references.Player
  *
  * Modeling notes:
  *  - The "if they're not a token" clause is an intervening-if (CR 603.4), so it is a
- *    `triggerCondition` rather than a guard inside the effect — the ability never goes on the stack
+ *    `interveningIf` rather than a guard inside the effect — the ability never goes on the stack
  *    at all for the copies. That gate is what stops the copies from recursing: each token copy
  *    carries the same ETB trigger, and without it two tokens would make four, and so on.
  *  - `removeLegendary = true` is what "except the tokens aren't legendary" means, and it is also what
@@ -42,7 +42,7 @@ val TheNotaryHobbits = card("The Notary Hobbits") {
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = Conditions.SourceMatches(GameObjectFilter.Any.nontoken())
+        interveningIf = Conditions.SourceMatches(GameObjectFilter.Any.nontoken())
         effect = Effects.CreateTokenCopyOfSelf(count = 2, removeLegendary = true)
         description = "When The Notary Hobbits enter, if they're not a token, create two tokens " +
             "that are copies of them, except the tokens aren't legendary."

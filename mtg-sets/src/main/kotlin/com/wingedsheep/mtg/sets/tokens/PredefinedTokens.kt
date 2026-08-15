@@ -458,7 +458,7 @@ object PredefinedTokens {
         // enchanted creature attack; the intervening-if re-checks the toughness at resolution (CR 603.4).
         triggeredAbility {
             trigger = Triggers.attacks(binding = TriggerBinding.ATTACHED)
-            triggerCondition = Conditions.EntityMatches(
+            interveningIf = Conditions.EntityMatches(
                 EffectTarget.EnchantedCreature,
                 GameObjectFilter.Creature.toughnessAtMost(3)
             )

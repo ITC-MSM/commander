@@ -203,7 +203,7 @@
                     },
                     "id": "up to one target creature you don't control"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "CastChoiceMade",
                     "slot": "BARGAINED"
                 },
@@ -369,7 +369,7 @@
                     },
                     "target": "Self"
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "All",
                     "conditions": [
                         {
@@ -745,7 +745,7 @@
                     "count": 1,
                     "target": "Self"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "TurnTracking",
@@ -933,7 +933,7 @@
                                 "count": 1,
                                 "target": "Self"
                             },
-                            "triggerCondition": {
+                            "interveningIf": {
                                 "type": "Compare",
                                 "left": {
                                     "type": "TurnTracking",
@@ -1436,7 +1436,7 @@
                     },
                     "id": "target creature you control"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "TurnTracking",
@@ -1895,7 +1895,7 @@
                     },
                     "id": "up to one target creature you control"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "TurnTracking",
@@ -2353,7 +2353,7 @@
                         }
                     }
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Exists",
                     "player": "You",
                     "zone": "Battlefield",
@@ -4092,7 +4092,7 @@
                     },
                     "id": "target creature an opponent controls"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "CastChoiceMade",
                     "slot": "BARGAINED"
                 },
@@ -4147,7 +4147,7 @@
                     "type": "CreatePredefinedToken",
                     "tokenType": "Treasure"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "AggregateBattlefield",
@@ -4273,7 +4273,7 @@
                     },
                     "id": "target"
                 },
-                "triggerCondition": "IsNotYourTurn"
+                "triggerRestriction": "IsNotYourTurn"
             }
         ]
     },
@@ -5297,7 +5297,7 @@
                         "amount": 1
                     }
                 },
-                "triggerCondition": "AnyEnteredOrWasCastFromExile",
+                "interveningIf": "AnyEnteredOrWasCastFromExile",
                 "oncePerTurn": true,
                 "descriptionOverride": "Whenever one or more nontoken creatures enter, if one or more of them entered from exile or was cast from exile, you draw a card. This ability triggers only once each turn."
             }
@@ -7553,7 +7553,7 @@
                     "type": "CreateTokenCopyOfSource",
                     "count": 2
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "EntityMatches",
                     "entity": "Self",
                     "filter": "nontoken"
@@ -8060,7 +8060,7 @@
                         }
                     ]
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "CastChoiceMade",
                     "slot": "BARGAINED"
                 },
@@ -9031,7 +9031,7 @@
                         ]
                     }
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "EntityMatches",
                     "entity": "Self",
                     "filter": {
@@ -9756,7 +9756,7 @@
                         "amount": 1
                     }
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "TurnTracking",
@@ -10224,7 +10224,7 @@
                         }
                     ]
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "AggregateBattlefield",
@@ -11750,7 +11750,7 @@
                     "type": "CreatePredefinedToken",
                     "tokenType": "Food"
                 },
-                "triggerCondition": "CreatureDiedThisTurn",
+                "interveningIf": "CreatureDiedThisTurn",
                 "descriptionOverride": "At the beginning of each end step, if a creature died this turn, create a Food token."
             }
         ],
@@ -11843,7 +11843,7 @@
                     "count": 1,
                     "target": "Self"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "TurnTracking",
@@ -11978,7 +11978,7 @@
                     "keyword": "DOUBLE_STRIKE",
                     "target": "Self"
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "Exists",
                     "player": "You",
                     "zone": "Battlefield",
@@ -12527,7 +12527,7 @@
                     },
                     "id": "target creature you control"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "TurnTracking",
@@ -12880,7 +12880,7 @@
                         "GREEN"
                     ]
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "CastChoiceMade",
                     "slot": "BARGAINED"
                 },
@@ -14477,7 +14477,7 @@
                     },
                     "target": "Self"
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "Exists",
                     "player": "You",
                     "zone": "Battlefield",
@@ -17503,7 +17503,7 @@
                     },
                     "id": "target instant or sorcery card from your graveyard"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "CastChoiceMade",
                     "slot": "BARGAINED"
                 },
@@ -17577,7 +17577,7 @@
                         "CanAttackDespiteDefenderThisTurn"
                     ]
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Exists",
                     "player": "You",
                     "zone": "Battlefield",
@@ -19250,7 +19250,7 @@
                     },
                     "id": "target artifact or enchantment an opponent controls"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "CastChoiceMade",
                     "slot": "BARGAINED"
                 },

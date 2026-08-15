@@ -75,7 +75,7 @@ private val BrasssTunnelGrinderFront = card("Brass's Tunnel-Grinder") {
 
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = Conditions.YouDescendedThisTurn()
+        interveningIf = Conditions.YouDescendedThisTurn()
         effect = Effects.Composite(
             Effects.AddCounters(Counters.BORE, 1, EffectTarget.Self),
             ConditionalEffect(

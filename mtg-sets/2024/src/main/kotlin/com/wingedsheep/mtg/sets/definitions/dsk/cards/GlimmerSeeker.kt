@@ -32,7 +32,7 @@ val GlimmerSeeker = card("Glimmer Seeker") {
     // Survival — intervening-if "this creature is tapped" at the postcombat main beginning.
     triggeredAbility {
         trigger = Triggers.YourPostcombatMain
-        triggerCondition = Conditions.SourceIsTapped
+        interveningIf = Conditions.SourceIsTapped
         effect = ConditionalEffect(
             condition = Conditions.YouControl(GameObjectFilter.Creature.withSubtype("Glimmer")),
             effect = Effects.DrawCards(1),

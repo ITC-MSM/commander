@@ -42,7 +42,7 @@ val CanyonCrab = card("Canyon Crab") {
 
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = Conditions.Not(Conditions.YouCastSpellsThisTurn(1, fromZone = Zone.HAND))
+        interveningIf = Conditions.Not(Conditions.YouCastSpellsThisTurn(1, fromZone = Zone.HAND))
         effect = Patterns.Hand.loot(draw = 1, discard = 1)
         description = "At the beginning of your end step, if you haven't cast a spell from your hand " +
             "this turn, draw a card, then discard a card."

@@ -27,7 +27,7 @@ private val KruinOutlawFront = card("Kruin Outlaw") {
     keywords(Keyword.FIRST_STRIKE)
     triggeredAbility {
         trigger = Triggers.EachUpkeep
-        triggerCondition = Conditions.CompareAmounts(
+        interveningIf = Conditions.CompareAmounts(
             DynamicAmounts.spellsCastLastTurn(), ComparisonOperator.EQ, DynamicAmount.Fixed(0)
         )
         effect = TransformEffect(EffectTarget.Self)
@@ -65,7 +65,7 @@ private val TerrorOfKruinPass = card("Terror of Kruin Pass") {
     }
     triggeredAbility {
         trigger = Triggers.EachUpkeep
-        triggerCondition = Conditions.CompareAmounts(
+        interveningIf = Conditions.CompareAmounts(
             DynamicAmounts.spellsCastLastTurn(), ComparisonOperator.GTE, DynamicAmount.Fixed(2)
         )
         effect = TransformEffect(EffectTarget.Self)

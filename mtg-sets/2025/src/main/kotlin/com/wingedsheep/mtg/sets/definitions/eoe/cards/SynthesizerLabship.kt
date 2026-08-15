@@ -48,7 +48,7 @@ val SynthesizerLabship = card("Synthesizer Labship") {
     // becomes an artifact creature with base P/T 2/2 and gains flying until end of turn.
     triggeredAbility {
         trigger = Triggers.BeginCombat
-        triggerCondition = charge2
+        triggerRestriction = charge2
         val targetArtifact = target(
             "up to one other target artifact you control",
             TargetObject(

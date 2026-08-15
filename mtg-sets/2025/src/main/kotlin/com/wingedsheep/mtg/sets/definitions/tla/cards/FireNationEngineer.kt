@@ -36,7 +36,7 @@ val FireNationEngineer = card("Fire Nation Engineer") {
 
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = Conditions.YouAttackedThisTurn
+        interveningIf = Conditions.YouAttackedThisTurn
         val target = target(
             "another target creature or Vehicle you control",
             TargetPermanent(

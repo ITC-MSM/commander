@@ -4608,7 +4608,7 @@
                         }
                     ]
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "EntityMatches",
                     "entity": "Self",
                     "filter": {
@@ -5979,7 +5979,7 @@
                     "type": "CreatePredefinedToken",
                     "tokenType": "Clue"
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "Compare",
                     "left": {
                         "type": "ContextProperty",
@@ -9853,7 +9853,7 @@
                     },
                     "descriptionOverride": "Suspect Rubblebelt Braggart? (It gains menace but can't block.)"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Not",
                     "condition": {
                         "type": "EntityMatches",
@@ -10604,7 +10604,7 @@
                         }
                     ]
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Any",
                     "conditions": [
                         {
@@ -12010,7 +12010,7 @@
                     "count": 1,
                     "target": "Self"
                 },
-                "triggerCondition": "PermanentEnteredFaceDownThisTurn",
+                "interveningIf": "PermanentEnteredFaceDownThisTurn",
                 "descriptionOverride": "At the beginning of your end step, if a face-down creature entered the battlefield under your control this turn, put a +1/+1 counter on this creature."
             }
         ],
@@ -12649,7 +12649,7 @@
                     },
                     "id": "target creature"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "CastChoiceMade",
                     "slot": "EVIDENCE_COLLECTED"
                 },

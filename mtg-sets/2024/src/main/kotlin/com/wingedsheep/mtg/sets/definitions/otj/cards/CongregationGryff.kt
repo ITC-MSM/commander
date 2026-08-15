@@ -36,7 +36,7 @@ val CongregationGryff = card("Congregation Gryff") {
     keywords(Keyword.FLYING, Keyword.LIFELINK)
     triggeredAbility {
         trigger = Triggers.Attacks
-        triggerCondition = Conditions.SourceIsSaddled
+        triggerRestriction = Conditions.SourceIsSaddled
         effect = Effects.ModifyStats(
             DynamicAmount.AggregateBattlefield(Player.You, GameObjectFilter.Creature.withSubtype("Mount")),
             DynamicAmount.AggregateBattlefield(Player.You, GameObjectFilter.Creature.withSubtype("Mount")),

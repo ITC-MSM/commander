@@ -36,7 +36,7 @@ val InventiveWingsmith = card("Inventive Wingsmith") {
 
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = Conditions.All(
+        interveningIf = Conditions.All(
             Conditions.Not(Conditions.YouCastSpellsThisTurn(1, fromZone = Zone.HAND)),
             Conditions.Not(Conditions.SourceHasCounter(CounterTypeFilter.Named(Counters.FLYING))),
         )

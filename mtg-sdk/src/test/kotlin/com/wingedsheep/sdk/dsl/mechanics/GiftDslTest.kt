@@ -103,7 +103,7 @@ class GiftDslTest : DescribeSpec({
         }
 
         it("gates the enters ability on the promise as an intervening if (CR 603.4)") {
-            val condition = equipment.script.triggeredAbilities.single().triggerCondition
+            val condition = equipment.script.triggeredAbilities.single().interveningIf
                 .shouldBeInstanceOf<CastChoiceMade>()
             condition.slot shouldBe ChoiceSlot.GIFT_PROMISED
         }

@@ -21,7 +21,7 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  * Max speed — Whenever you draw a card, each opponent mills two cards.
  *
  * The max-speed clause is an ordinary "whenever you draw a card" triggered ability declared inside
- * the [maxSpeed] block, which folds `Conditions.YouHaveMaxSpeed` into its `triggerCondition` — so
+ * the [maxSpeed] block, which folds `Conditions.YouHaveMaxSpeed` into its `triggerRestriction` — so
  * the ability exists only while your speed is 4 (CR 702.180a) rather than firing and checking
  * later. `Triggers.YouDraw` fires once per card drawn (CR 121.2), so a multi-card draw mills two
  * per card, matching the printed wording.

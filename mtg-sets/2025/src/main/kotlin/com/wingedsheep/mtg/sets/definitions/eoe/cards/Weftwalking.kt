@@ -38,7 +38,7 @@ val Weftwalking = card("Weftwalking") {
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = Conditions.WasCast
+        interveningIf = Conditions.WasCast
         effect = Effects.Composite(
             // Gather hand + graveyard in a single pass (one combined "shuffle ... into your library"
             // event per oracle text) and shuffle the result into the controller's library.

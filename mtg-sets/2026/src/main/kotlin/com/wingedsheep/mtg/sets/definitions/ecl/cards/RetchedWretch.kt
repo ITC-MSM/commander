@@ -30,7 +30,7 @@ val RetchedWretch = card("Retched Wretch") {
 
     triggeredAbility {
         trigger = Triggers.Dies
-        triggerCondition = Conditions.TriggeringEntityHadMinusOneMinusOneCounter
+        interveningIf = Conditions.TriggeringEntityHadMinusOneMinusOneCounter
         effect = Effects.Move(
             target = EffectTarget.Self,
             destination = Zone.BATTLEFIELD

@@ -425,7 +425,7 @@
                     },
                     "id": "target creature that player controls"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "AggregateZone",
@@ -511,7 +511,7 @@
                     },
                     "id": "target creature that player controls"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "AggregateZone",

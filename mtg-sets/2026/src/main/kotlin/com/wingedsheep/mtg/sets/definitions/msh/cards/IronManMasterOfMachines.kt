@@ -28,7 +28,7 @@ import com.wingedsheep.sdk.scripting.values.DynamicAmount
  *    Keeping it a Layer 7c continuous effect (rather than a one-shot) lets the projector re-evaluate
  *    it as artifacts come and go mid-combat.
  *  - "Whenever Iron Man attacks, if …" is an intervening-if clause (CR 603.4): checked both when the
- *    trigger would go on the stack and again on resolution, which is exactly what `triggerCondition`
+ *    trigger would go on the stack and again on resolution, which is exactly what `interveningIf`
  *    models — *not* a `ConditionalEffect` inside the body.
  *  - The condition reads the ETB-by-type *event* tracker
  *    ([Conditions.ArtifactEnteredBattlefieldThisTurn], Mechan Shieldmate's precedent), not the
@@ -65,7 +65,7 @@ val IronManMasterOfMachines = card("Iron Man, Master of Machines") {
     // turn, draw a card.
     triggeredAbility {
         trigger = Triggers.Attacks
-        triggerCondition = Conditions.ArtifactEnteredBattlefieldThisTurn
+        interveningIf = Conditions.ArtifactEnteredBattlefieldThisTurn
         effect = Effects.DrawCards(1)
         description = "Whenever Iron Man attacks, if an artifact entered the battlefield under " +
             "your control this turn, draw a card."

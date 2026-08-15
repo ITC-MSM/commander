@@ -47,7 +47,7 @@ val BetorKinToAll = card("Betor, Kin to All") {
         trigger = Triggers.YourEndStep
         // Intervening "if" (CR 603.4): the 10-toughness gate is checked both as the trigger
         // would go on the stack and again on resolution.
-        triggerCondition = totalToughnessAtLeast(10)
+        interveningIf = totalToughnessAtLeast(10)
         effect = Effects.DrawCards(1)
             // "Then if ... 20 or greater, untap each creature you control."
             .then(

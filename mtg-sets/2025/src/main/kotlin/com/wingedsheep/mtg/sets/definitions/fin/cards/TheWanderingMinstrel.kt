@@ -25,7 +25,7 @@ import com.wingedsheep.sdk.scripting.values.DynamicAmount
  *   overrides a land's own "enters tapped" replacement (controller chooses untapped) and a land
  *   merely put onto the battlefield tapped (no replacement) enters untapped.
  * - "The Minstrel's Ballad" — a begin-combat-on-your-turn trigger with an intervening-if
- *   ([triggerCondition], Rule 603.4): it both fails to trigger and fails to resolve unless you
+ *   ([interveningIf], Rule 603.4): it both fails to trigger and fails to resolve unless you
  *   control five or more Towns at that moment.
  * - The activated pump locks X (number of Towns you control) once as it resolves, since
  *   [Effects.ModifyStats] with a [DynamicAmount] evaluates to a fixed +X/+X floating effect.
@@ -59,7 +59,7 @@ val TheWanderingMinstrel = card("The Wandering Minstrel") {
     // more Towns, create a 2/2 Elemental creature token that's all colors.
     triggeredAbility {
         trigger = Triggers.BeginCombat
-        triggerCondition = Conditions.YouControlAtLeast(5, townFilter)
+        interveningIf = Conditions.YouControlAtLeast(5, townFilter)
         effect = Effects.CreateToken(
             power = 2,
             toughness = 2,

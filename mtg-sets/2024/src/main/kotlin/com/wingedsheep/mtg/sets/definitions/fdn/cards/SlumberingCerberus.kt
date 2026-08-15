@@ -32,7 +32,7 @@ val SlumberingCerberus = card("Slumbering Cerberus") {
     // The intervening-if (Rule 603.4) is checked when the trigger would fire AND again on resolution.
     triggeredAbility {
         trigger = Triggers.EachEndStep
-        triggerCondition = Conditions.CreatureDiedThisTurn
+        interveningIf = Conditions.CreatureDiedThisTurn
         effect = Effects.Untap(EffectTarget.Self)
     }
 

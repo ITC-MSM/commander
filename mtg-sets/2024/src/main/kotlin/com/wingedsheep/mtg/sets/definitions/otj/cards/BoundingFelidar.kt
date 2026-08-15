@@ -40,7 +40,7 @@ val BoundingFelidar = card("Bounding Felidar") {
 
     triggeredAbility {
         trigger = Triggers.Attacks
-        triggerCondition = Conditions.SourceIsSaddled
+        triggerRestriction = Conditions.SourceIsSaddled
         effect = Effects.Composite(
             listOf(
                 Effects.ForEachInGroup(

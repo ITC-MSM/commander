@@ -29,7 +29,7 @@ val RufusShinra = card("Rufus Shinra") {
 
     triggeredAbility {
         trigger = Triggers.Attacks
-        triggerCondition = Conditions.YouControl(
+        interveningIf = Conditions.YouControl(
             GameObjectFilter.Creature.named("Darkstar"),
             negate = true
         )

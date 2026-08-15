@@ -36,7 +36,7 @@ val Vibrance = card("Vibrance") {
     // Red gate: deals 3 damage to any target
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = Conditions.ManaSpentToCastIncludes(requiredRed = 2)
+        interveningIf = Conditions.ManaSpentToCastIncludes(requiredRed = 2)
         val damageTarget = target("any target", AnyTarget())
         effect = Effects.DealDamage(3, damageTarget)
     }
@@ -44,7 +44,7 @@ val Vibrance = card("Vibrance") {
     // Green gate: search library for a land, reveal, to hand, shuffle, gain 2 life
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = Conditions.ManaSpentToCastIncludes(requiredGreen = 2)
+        interveningIf = Conditions.ManaSpentToCastIncludes(requiredGreen = 2)
         effect = Patterns.Library.searchLibrary(
             filter = GameObjectFilter.Land,
             count = 1,

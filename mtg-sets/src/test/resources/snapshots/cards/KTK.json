@@ -4597,30 +4597,18 @@
                 "id": "ability_1",
                 "trigger": "AttackEvent",
                 "effect": {
-                    "type": "Gated",
-                    "gate": {
-                        "type": "Gate.WhenCondition",
-                        "condition": {
-                            "type": "Exists",
-                            "player": "You",
-                            "zone": "Battlefield",
-                            "filter": "creature pow>=4"
-                        }
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
                     },
-                    "then": {
-                        "type": "ModifyStats",
-                        "powerModifier": {
-                            "type": "Fixed",
-                            "amount": 1
-                        },
-                        "toughnessModifier": {
-                            "type": "Fixed",
-                            "amount": 1
-                        },
-                        "target": "Self"
-                    }
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": "Self"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Exists",
                     "player": "You",
                     "zone": "Battlefield",
@@ -5361,7 +5349,7 @@
                     },
                     "id": "another creature"
                 },
-                "triggerCondition": "IsYourTurn"
+                "interveningIf": "IsYourTurn"
             }
         ]
     },
@@ -7072,7 +7060,7 @@
                     "type": "AnyTarget",
                     "id": "any target"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "TurnTracking",
@@ -7130,7 +7118,7 @@
                     ],
                     "imageUri": "https://cards.scryfall.io/normal/front/a/f/af4c9101-85bf-4a4f-a496-ff6db7b531b7.jpg?1562639979"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "TurnTracking",
@@ -7269,7 +7257,7 @@
                     "type": "TargetOpponent",
                     "id": "target opponent"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "TurnTracking",
@@ -7333,7 +7321,7 @@
                         }
                     ]
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "TurnTracking",
@@ -12485,7 +12473,7 @@
                     },
                     "id": "target"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "TurnTracking",
@@ -13647,7 +13635,7 @@
                     ],
                     "imageUri": "https://cards.scryfall.io/normal/front/a/a/aa788dea-2968-45e8-9e08-c89e3e227d88.jpg?1562639973"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "TurnTracking",

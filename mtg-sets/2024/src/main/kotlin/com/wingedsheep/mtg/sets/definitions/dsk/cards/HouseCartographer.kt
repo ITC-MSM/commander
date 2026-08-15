@@ -41,7 +41,7 @@ val HouseCartographer = card("House Cartographer") {
 
     triggeredAbility {
         trigger = Triggers.YourPostcombatMain
-        triggerCondition = Conditions.SourceIsTapped
+        interveningIf = Conditions.SourceIsTapped
         effect = Effects.Composite(
             listOf(
                 GatherUntilMatchEffect(

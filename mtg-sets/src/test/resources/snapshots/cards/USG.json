@@ -3643,7 +3643,7 @@
                 },
                 "binding": "ANY",
                 "effect": "SacrificeSelf",
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Exists",
                     "player": "You",
                     "zone": "Battlefield",

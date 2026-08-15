@@ -39,7 +39,7 @@ val PugnaciousHammerskull = card("Pugnacious Hammerskull") {
 
     triggeredAbility {
         trigger = Triggers.Attacks
-        triggerCondition = Conditions.YouControl(
+        triggerRestriction = Conditions.YouControl(
             GameObjectFilter.Creature.withSubtype(Subtype.DINOSAUR),
             negate = true,
             excludeSelf = true

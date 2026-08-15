@@ -55,7 +55,7 @@ val BanditsTalent = card("Bandit's Talent") {
     classLevel(2, "{B}") {
         triggeredAbility {
             trigger = Triggers.EachOpponentUpkeep
-            triggerCondition = Compare(
+            interveningIf = Compare(
                 left = DynamicAmount.Count(Player.TriggeringPlayer, Zone.HAND),
                 operator = ComparisonOperator.LTE,
                 right = DynamicAmount.Fixed(1)

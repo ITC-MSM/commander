@@ -50,7 +50,7 @@ val HaliyaGuidedByLight = card("Haliya, Guided by Light") {
     // At the beginning of your end step, draw a card if you've gained 3 or more life this turn.
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = Compare(
+        triggerRestriction = Compare(
             DynamicAmounts.lifeGainedThisTurn(),
             ComparisonOperator.GTE,
             DynamicAmount.Fixed(3)

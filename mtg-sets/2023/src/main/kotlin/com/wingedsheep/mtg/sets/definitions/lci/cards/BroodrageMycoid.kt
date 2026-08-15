@@ -39,7 +39,7 @@ val BroodrageMycoid = card("Broodrage Mycoid") {
 
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = Conditions.YouDescendedThisTurn()
+        interveningIf = Conditions.YouDescendedThisTurn()
         effect = Effects.CreateToken(
             power = 1,
             toughness = 1,

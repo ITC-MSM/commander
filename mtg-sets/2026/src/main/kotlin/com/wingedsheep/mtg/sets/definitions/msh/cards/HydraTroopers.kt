@@ -23,7 +23,7 @@ import com.wingedsheep.sdk.scripting.effects.ConditionalEffect
  * Implementation notes:
  * - The "if … otherwise …" clause is *not* an intervening-if — it's a branch evaluated as the
  *   trigger resolves, so it is a [ConditionalEffect] over
- *   [Conditions.CreatureCardsInGraveyardAtLeast], not `triggerCondition`. The trigger always
+ *   [Conditions.CreatureCardsInGraveyardAtLeast], not `interveningIf`. The trigger always
  *   goes on the stack and always does one of the two things.
  */
 val HydraTroopers = card("HYDRA Troopers") {

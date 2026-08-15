@@ -33,7 +33,7 @@ val KeldonOverseer = card("Keldon Overseer") {
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = WasKicked
+        interveningIf = WasKicked
         val t = target("target creature", Targets.Creature)
         effect = Effects.Composite(
             Effects.GainControl(t, Duration.EndOfTurn),

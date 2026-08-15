@@ -52,7 +52,7 @@ val AgathasChampion = card("Agatha's Champion") {
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = Conditions.WasBargained
+        interveningIf = Conditions.WasBargained
         val foe = target(
             "up to one target creature you don't control",
             TargetCreature(optional = true, filter = TargetFilter.CreatureOpponentControls),

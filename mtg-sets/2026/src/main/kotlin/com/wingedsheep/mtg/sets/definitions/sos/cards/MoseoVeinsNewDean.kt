@@ -75,7 +75,7 @@ val MoseoVeinsNewDean = card("Moseo, Vein's New Dean") {
 
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = Conditions.YouGainedLifeThisTurn
+        interveningIf = Conditions.YouGainedLifeThisTurn
         val t = target(
             "up to one target creature card with mana value X or less from your graveyard",
             TargetObject(

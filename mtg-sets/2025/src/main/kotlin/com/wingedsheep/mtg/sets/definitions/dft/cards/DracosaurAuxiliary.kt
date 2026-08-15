@@ -33,7 +33,7 @@ val DracosaurAuxiliary = card("Dracosaur Auxiliary") {
     keywords(Keyword.FLYING, Keyword.HASTE)
     triggeredAbility {
         trigger = Triggers.Attacks
-        triggerCondition = Conditions.SourceIsSaddled
+        triggerRestriction = Conditions.SourceIsSaddled
         val t = target("target", AnyTarget())
         effect = DealDamageEffect(2, t)
     }

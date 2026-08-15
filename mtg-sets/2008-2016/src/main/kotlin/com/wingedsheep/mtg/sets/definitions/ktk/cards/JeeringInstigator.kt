@@ -32,7 +32,7 @@ val JeeringInstigator = card("Jeering Instigator") {
 
     triggeredAbility {
         trigger = Triggers.TurnedFaceUp
-        triggerCondition = Conditions.IsYourTurn
+        interveningIf = Conditions.IsYourTurn
         val t = target("another creature", TargetCreature(filter = TargetFilter.OtherCreature))
         effect = Effects.Composite(
             Effects.GainControl(t, Duration.EndOfTurn),

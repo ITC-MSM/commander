@@ -24,7 +24,7 @@ import com.wingedsheep.sdk.scripting.effects.SacrificeSelfEffect
  *
  * The upkeep-of-the-drawback half is [Triggers.EachEndStep] — *each* end step, not just yours, so
  * an opponent's turn kills it just as fast — with the "if you control no artifacts" clause as an
- * intervening-if [triggerCondition]. That matters twice (CR 603.4): the ability doesn't even
+ * intervening-if [interveningIf]. That matters twice (CR 603.4): the ability doesn't even
  * trigger while you control an artifact, and if the last artifact leaves in response to the
  * trigger, the sacrifice still happens; conversely, deploying an artifact in response to the
  * trigger saves the land.
@@ -40,7 +40,7 @@ val Glimmervoid = card("Glimmervoid") {
 
     triggeredAbility {
         trigger = Triggers.EachEndStep
-        triggerCondition = Conditions.YouControl(GameObjectFilter.Artifact, negate = true)
+        interveningIf = Conditions.YouControl(GameObjectFilter.Artifact, negate = true)
         effect = SacrificeSelfEffect
     }
 

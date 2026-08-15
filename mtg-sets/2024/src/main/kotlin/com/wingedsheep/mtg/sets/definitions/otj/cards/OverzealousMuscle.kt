@@ -34,7 +34,7 @@ val OverzealousMuscle = card("Overzealous Muscle") {
 
     triggeredAbility {
         trigger = Triggers.YouCommitCrime
-        triggerCondition = Conditions.IsYourTurn
+        triggerRestriction = Conditions.IsYourTurn
         effect = Effects.GrantKeyword(Keyword.INDESTRUCTIBLE, EffectTarget.Self, Duration.EndOfTurn)
         description = "Whenever you commit a crime during your turn, this creature gains indestructible until end of turn."
     }

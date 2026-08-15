@@ -28,7 +28,7 @@ import com.wingedsheep.sdk.scripting.values.EntityReference
  *
  * The "if it has greater power or toughness" clause is an intervening-if (CR 603.4): it is
  * checked both when the trigger would go on the stack and again on resolution, which is exactly
- * what `triggerCondition` provides. It compares the *triggering* creature against the **source**
+ * what `interveningIf` provides. It compares the *triggering* creature against the **source**
  * — Jackal, Genius Geneticist's Triggering-vs-Source shape — with an OR over the two axes, since
  * either a greater power or a greater toughness is enough. Both sides read projected values, so
  * lords and counters on either creature count, and the resolution-time re-check means a
@@ -48,7 +48,7 @@ val HulklingBurgeoningBruiser = card("Hulkling, Burgeoning Bruiser") {
 
     triggeredAbility {
         trigger = Triggers.OtherCreatureEnters
-        triggerCondition = Conditions.Any(
+        interveningIf = Conditions.Any(
             Compare(
                 DynamicAmount.EntityProperty(EntityReference.Triggering, EntityNumericProperty.Power),
                 ComparisonOperator.GT,

@@ -68,7 +68,7 @@ private val SidequestCardCollectionFront = card("Sidequest: Card Collection") {
     // transform this enchantment.
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = Conditions.CardsInGraveyardAtLeast(8)
+        interveningIf = Conditions.CardsInGraveyardAtLeast(8)
         effect = TransformEffect(EffectTarget.Self)
     }
 

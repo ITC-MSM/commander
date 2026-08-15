@@ -2284,7 +2284,7 @@
                         }
                     ]
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "TurnTracking",
@@ -2741,7 +2741,7 @@
                     "count": 1,
                     "target": "Self"
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "EntityMatches",
                     "entity": "Self",
                     "filter": {
@@ -3082,7 +3082,7 @@
                         ]
                     }
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "ManaSpentToCastIncludes",
                     "requiredRed": 2
                 }
@@ -3110,7 +3110,7 @@
                     ],
                     "imageUri": "https://cards.scryfall.io/normal/front/2/e/2ed11e1b-2289-48d2-8d96-ee7e590ecfd4.jpg?1767955680"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "ManaSpentToCastIncludes",
                     "requiredWhite": 2
                 }
@@ -4310,7 +4310,7 @@
                     "count": 1,
                     "target": "Self"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "All",
                     "conditions": [
                         {
@@ -4898,7 +4898,7 @@
                     },
                     "id": "other nonland permanent"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "ManaSpentToCastIncludes",
                     "requiredBlue": 2
                 }
@@ -4966,7 +4966,7 @@
                     "type": "TargetOpponent",
                     "id": "target opponent"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "ManaSpentToCastIncludes",
                     "requiredBlack": 2
                 }
@@ -5677,7 +5677,7 @@
                     },
                     "id": "permanent card from your graveyard"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "AggregateBattlefield",
@@ -6376,7 +6376,7 @@
                     },
                     "id": "graveyard creature"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "ManaSpentToCastIncludes",
                     "requiredWhite": 2
                 }
@@ -6404,7 +6404,7 @@
                     },
                     "id": "creature to put three -1/-1 counters on"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "ManaSpentToCastIncludes",
                     "requiredBlack": 2
                 }
@@ -6444,7 +6444,7 @@
                     "count": 1,
                     "target": "Self"
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "EntityMatches",
                     "entity": "Self",
                     "filter": {
@@ -10991,7 +10991,7 @@
                         "player": "EachOpponent"
                     }
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "TurnTracking",
@@ -12441,7 +12441,7 @@
                     "count": 1,
                     "target": "Self"
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "EntityMatches",
                     "entity": "Self",
                     "filter": {
@@ -12957,7 +12957,7 @@
                     },
                     "id": "creature to put a -1/-1 counter on"
                 },
-                "triggerCondition": "IsNotYourTurn"
+                "triggerRestriction": "IsNotYourTurn"
             }
         ]
     },
@@ -14321,7 +14321,7 @@
                     "count": 1,
                     "target": "Self"
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "EntityMatches",
                     "entity": "Self",
                     "filter": {
@@ -14452,7 +14452,7 @@
                         }
                     ]
                 },
-                "triggerCondition": "TriggeringEntityHadMinusOneMinusOneCounter"
+                "interveningIf": "TriggeringEntityHadMinusOneMinusOneCounter"
             }
         ]
     },
@@ -15623,7 +15623,7 @@
                         }
                     ]
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "Compare",
                     "left": {
                         "type": "ContextProperty",
@@ -16097,7 +16097,7 @@
                         }
                     ]
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "EntityMatches",
                     "entity": "Self",
                     "filter": {
@@ -16455,7 +16455,7 @@
                     },
                     "descriptionOverride": "You may copy it. If you do, those spells gain wither. You may choose new targets for the copy."
                 },
-                "triggerCondition": "TriggeringSpellHasSingleTarget"
+                "triggerRestriction": "TriggeringSpellHasSingleTarget"
             }
         ]
     },
@@ -17131,7 +17131,7 @@
                         }
                     ]
                 },
-                "triggerCondition": "WasCast"
+                "interveningIf": "WasCast"
             }
         ],
         "staticAbilities": [
@@ -19030,7 +19030,7 @@
                     "type": "CreateTokenCopyOfTarget",
                     "target": "TriggeringEntity"
                 },
-                "triggerCondition": "TriggeringEntityEnteredOrWasCastFromGraveyard",
+                "interveningIf": "TriggeringEntityEnteredOrWasCastFromGraveyard",
                 "oncePerTurn": true
             }
         ]
@@ -19365,7 +19365,7 @@
                     "type": "Surveil",
                     "count": 2
                 },
-                "triggerCondition": "IsNotYourTurn"
+                "triggerRestriction": "IsNotYourTurn"
             }
         ]
     },
@@ -19422,7 +19422,7 @@
                     "type": "AnyTarget",
                     "id": "any target"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "ManaSpentToCastIncludes",
                     "requiredRed": 2
                 }
@@ -19477,7 +19477,7 @@
                         }
                     ]
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "ManaSpentToCastIncludes",
                     "requiredGreen": 2
                 }
@@ -19639,7 +19639,7 @@
                         }
                     }
                 },
-                "triggerCondition": "IsNotYourTurn"
+                "triggerRestriction": "IsNotYourTurn"
             }
         ]
     },
@@ -19997,7 +19997,7 @@
                     "type": "Surveil",
                     "count": 1
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Exists",
                     "player": "You",
                     "zone": "Battlefield",
@@ -20233,7 +20233,7 @@
                     },
                     "id": "artifact or enchantment an opponent controls"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "ManaSpentToCastIncludes",
                     "requiredGreen": 2
                 }
@@ -20291,7 +20291,7 @@
                         }
                     ]
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "ManaSpentToCastIncludes",
                     "requiredBlue": 2
                 }

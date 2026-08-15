@@ -28,7 +28,7 @@ val ReverberatingSummons = card("Reverberating Summons") {
 
     triggeredAbility {
         trigger = Triggers.EachCombat
-        triggerCondition = Conditions.YouCastSpellsThisTurn(atLeast = 2)
+        interveningIf = Conditions.YouCastSpellsThisTurn(atLeast = 2)
         // Additive: no removeTypes, so the permanent stays an Enchantment while also becoming a creature.
         effect = Effects.BecomeCreature(
             power = 3,

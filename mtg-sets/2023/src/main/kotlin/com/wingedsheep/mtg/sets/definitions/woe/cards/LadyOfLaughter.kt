@@ -37,7 +37,7 @@ val LadyOfLaughter = card("Lady of Laughter") {
 
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = Conditions.Celebration
+        interveningIf = Conditions.Celebration
         effect = Effects.DrawCards(1)
         description = "At the beginning of your end step, if two or more nonland permanents " +
             "entered the battlefield under your control this turn, draw a card."

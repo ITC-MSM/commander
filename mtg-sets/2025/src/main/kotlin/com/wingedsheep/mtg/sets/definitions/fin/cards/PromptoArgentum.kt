@@ -36,7 +36,7 @@ val PromptoArgentum = card("Prompto Argentum") {
 
     triggeredAbility {
         trigger = Triggers.YouCastNoncreature
-        triggerCondition = Conditions.TriggeringSpellManaSpentAtLeast(4)
+        interveningIf = Conditions.TriggeringSpellManaSpentAtLeast(4)
         effect = Effects.CreateTreasure()
         description = "Selfie Shot — Whenever you cast a noncreature spell, if at least four mana " +
             "was spent to cast it, create a Treasure token."

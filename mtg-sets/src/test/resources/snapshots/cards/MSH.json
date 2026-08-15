@@ -1495,7 +1495,7 @@
                         "amount": 1
                     }
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Any",
                     "conditions": [
                         {
@@ -3330,7 +3330,7 @@
                     ],
                     "descriptionOverride": "Sacrifice this enchantment. When you do, put an indestructible counter on target creature you control."
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "Compare",
                     "left": {
                         "type": "EntityProperty",
@@ -3487,7 +3487,7 @@
                     ],
                     "descriptionOverride": "Sacrifice this enchantment. When you do, you control target opponent during their next turn."
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "Compare",
                     "left": {
                         "type": "EntityProperty",
@@ -4221,7 +4221,7 @@
                     ],
                     "descriptionOverride": "Sacrifice this enchantment. When you do, it deals 7 damage divided as you choose among one or two targets."
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "Compare",
                     "left": {
                         "type": "EntityProperty",
@@ -7195,7 +7195,7 @@
                     "count": 1,
                     "target": "Self"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Any",
                     "conditions": [
                         {
@@ -7275,7 +7275,7 @@
                     }
                 },
                 "targetRequirement": "TargetOpponent",
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Exists",
                     "player": "You",
                     "zone": "Battlefield",
@@ -7729,7 +7729,7 @@
                         "amount": 1
                     }
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "PermanentTypeEnteredBattlefieldThisTurn",
                     "cardType": "ARTIFACT"
                 },
@@ -10842,7 +10842,7 @@
                         }
                     ]
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "Compare",
                     "left": {
                         "type": "EntityProperty",
@@ -11921,7 +11921,7 @@
                     ],
                     "descriptionOverride": "Sacrifice this enchantment. When you do, return up to two target instant and/or sorcery cards from your graveyard to your hand."
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "Compare",
                     "left": {
                         "type": "EntityProperty",
@@ -12121,7 +12121,7 @@
                         }
                     ]
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "Compare",
                     "left": {
                         "type": "EntityProperty",
@@ -15799,7 +15799,7 @@
                     },
                     "id": "up to one other target nonland permanent you control"
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "EntityMatches",
                     "entity": "Self",
                     "filter": {
@@ -16277,7 +16277,7 @@
                         }
                     }
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "Count",
@@ -18720,7 +18720,7 @@
                         }
                     ]
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "EntityMatches",
                     "entity": "Self",
                     "filter": {

@@ -27,7 +27,7 @@ val ButterburBreeInnkeeper = card("Butterbur, Bree Innkeeper") {
 
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = Conditions.Not(
+        interveningIf = Conditions.Not(
             Exists(Player.You, Zone.BATTLEFIELD, GameObjectFilter.Any.withSubtype("Food"))
         )
         effect = Effects.CreateFood()

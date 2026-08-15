@@ -55,7 +55,7 @@ val TaiiWakeenPerfectShot = card("Taii Wakeen, Perfect Shot") {
             binding = TriggerBinding.ANY,
         )
         // Intervening-if: the damage dealt equals the recipient creature's toughness (LKI).
-        triggerCondition = Conditions.CompareAmounts(
+        triggerRestriction = Conditions.CompareAmounts(
             DynamicAmount.ContextProperty(ContextPropertyKey.TRIGGER_DAMAGE_AMOUNT),
             ComparisonOperator.EQ,
             DynamicAmount.ContextProperty(ContextPropertyKey.TRIGGER_RECIPIENT_TOUGHNESS),

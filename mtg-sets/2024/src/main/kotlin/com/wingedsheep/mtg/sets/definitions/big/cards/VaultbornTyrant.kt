@@ -56,7 +56,7 @@ val VaultbornTyrant = card("Vaultborn Tyrant") {
     // When this dies, if it's not a token, create an artifact copy of it.
     triggeredAbility {
         trigger = Triggers.Dies
-        triggerCondition = Conditions.SourceMatches(
+        interveningIf = Conditions.SourceMatches(
             GameObjectFilter(cardPredicates = listOf(CardPredicate.IsNontoken))
         )
         effect = CreateTokenCopyOfSourceEffect(

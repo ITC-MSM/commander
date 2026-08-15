@@ -59,7 +59,7 @@ val PalanisHatcher = card("Palani's Hatcher") {
 
     triggeredAbility {
         trigger = Triggers.BeginCombat
-        triggerCondition = Conditions.YouControl(GameObjectFilter.Creature.withSubtype("Egg"))
+        interveningIf = Conditions.YouControl(GameObjectFilter.Creature.withSubtype("Egg"))
         effect = Effects.Composite(listOf(
             ForceSacrificeEffect(
                 filter = GameObjectFilter.Creature.withSubtype("Egg"),

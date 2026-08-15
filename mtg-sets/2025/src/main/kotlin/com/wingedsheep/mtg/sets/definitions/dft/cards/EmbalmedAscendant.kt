@@ -18,9 +18,9 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  * When this creature enters, create a 2/2 black Zombie creature token.
  * Max speed — Whenever a creature you control dies, each opponent loses 1 life and you gain 1 life.
  *
- * The max-speed half is gated as a `triggerCondition` (CR 603.4), so it is checked both when a
- * creature dies and again on resolution — dropping below max speed in between correctly stops the
- * drain. [Triggers.YourCreatureDies] is an ANY binding over creatures you control, which includes
+ * The max-speed half is gated as a `triggerRestriction`: "Max speed — [ability]" is a functioning
+ * condition (CR 702.178a), so it is read when a creature dies and never again, not as an
+ * intervening "if". [Triggers.YourCreatureDies] is an ANY binding over creatures you control, which includes
  * this creature itself: when it dies alongside another creature, both deaths see the ability.
  *
  * "Each opponent loses 1 life and you gain 1 life" is a two-part drain rather than life *lost* being

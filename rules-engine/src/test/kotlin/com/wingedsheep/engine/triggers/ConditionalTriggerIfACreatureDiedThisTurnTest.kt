@@ -37,7 +37,7 @@ class ConditionalTriggerIfACreatureDiedThisTurnTest : FunSpec({
         val ability = TriggeredAbility.create(
             trigger = EventPattern.StepEvent(Step.END, Player.You),
             effect = GainLifeEffect(1),
-            triggerCondition = CreatureDiedThisTurnCondition
+            interveningIf = CreatureDiedThisTurnCondition
         )
         val global = GlobalGrantedTriggeredAbility(
             ability = ability,

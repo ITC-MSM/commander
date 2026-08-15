@@ -32,7 +32,7 @@ val Skizzik = card("Skizzik") {
 
     triggeredAbility {
         trigger = Triggers.EachEndStep
-        triggerCondition = Conditions.Not(Conditions.WasKicked)
+        interveningIf = Conditions.Not(Conditions.WasKicked)
         effect = SacrificeSelfEffect
     }
 

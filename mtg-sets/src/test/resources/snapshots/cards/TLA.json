@@ -4427,7 +4427,7 @@
                     "type": "MoveAllLastKnownCounters",
                     "target": "Self"
                 },
-                "triggerCondition": "TriggeringEntityHadCounters",
+                "interveningIf": "TriggeringEntityHadCounters",
                 "descriptionOverride": "Whenever another creature you control dies, if it had counters on it, put its counters on this creature."
             }
         ]
@@ -6023,7 +6023,7 @@
                         "amount": 1
                     }
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Exists",
                     "player": "You",
                     "zone": "Graveyard",
@@ -7873,7 +7873,7 @@
                     "type": "CopyTargetSpell",
                     "target": "TriggeringEntity"
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "EntityMatches",
                     "entity": "Self",
                     "filter": "attacking"
@@ -8187,7 +8187,7 @@
                     },
                     "id": "another target creature or Vehicle you control"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "TurnTracking",
@@ -8335,7 +8335,7 @@
                     "type": "CreatePredefinedToken",
                     "tokenType": "Clue"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "TurnTracking",
@@ -11811,7 +11811,7 @@
                     "count": 1,
                     "target": "Self"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "EntityMatches",
                     "entity": "Self",
                     "filter": "tapped"
@@ -14651,7 +14651,7 @@
                 },
                 "binding": "ANY",
                 "effect": "CreateTokenCopyOfSource",
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "TurnTracking",
@@ -15304,7 +15304,7 @@
                     "type": "CreateTokenCopyOfSource",
                     "removeLegendary": true
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "All",
                     "conditions": [
                         "WasCast",
@@ -17951,7 +17951,7 @@
                         "Ally"
                     ]
                 },
-                "triggerCondition": "IsYourTurn",
+                "triggerRestriction": "IsYourTurn",
                 "oncePerTurn": true
             }
         ],
@@ -20386,7 +20386,7 @@
                         "Ally"
                     ]
                 },
-                "triggerCondition": "IsYourTurn",
+                "triggerRestriction": "IsYourTurn",
                 "oncePerTurn": true
             }
         ]
@@ -21838,7 +21838,7 @@
                         "amount": 2
                     }
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Exists",
                     "player": "You",
                     "zone": "Graveyard",

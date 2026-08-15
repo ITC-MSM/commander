@@ -20,7 +20,7 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  * "while you control a Dinosaur" is a trigger-time condition, NOT an intervening-if clause
  * (CR 603.4 applies only to an "if" immediately following the trigger event). Whether you control
  * a Dinosaur is checked only as this creature attacks or blocks; once the ability has triggered it
- * still resolves even if the Dinosaur later leaves. The engine's `triggerCondition` is evaluated at
+ * still resolves even if the Dinosaur later leaves. The engine's `triggerRestriction` is evaluated at
  * trigger detection and not re-checked on resolution, which matches this "while" semantics.
  */
 val BurningSunCavalry = card("Burning Sun Cavalry") {
@@ -32,12 +32,12 @@ val BurningSunCavalry = card("Burning Sun Cavalry") {
     toughness = 2
     triggeredAbility {
         trigger = Triggers.Attacks
-        triggerCondition = Conditions.YouControl(GameObjectFilter.Creature.withSubtype(Subtype.DINOSAUR))
+        triggerRestriction = Conditions.YouControl(GameObjectFilter.Creature.withSubtype(Subtype.DINOSAUR))
         effect = Effects.ModifyStats(1, 1, EffectTarget.Self)
     }
     triggeredAbility {
         trigger = Triggers.Blocks
-        triggerCondition = Conditions.YouControl(GameObjectFilter.Creature.withSubtype(Subtype.DINOSAUR))
+        triggerRestriction = Conditions.YouControl(GameObjectFilter.Creature.withSubtype(Subtype.DINOSAUR))
         effect = Effects.ModifyStats(1, 1, EffectTarget.Self)
     }
     metadata {

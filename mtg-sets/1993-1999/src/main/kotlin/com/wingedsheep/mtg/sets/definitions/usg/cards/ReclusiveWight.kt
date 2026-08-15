@@ -28,7 +28,7 @@ val ReclusiveWight = card("Reclusive Wight") {
     toughness = 4
     triggeredAbility {
         trigger = Triggers.YourUpkeep
-        triggerCondition = Conditions.YouControl(GameObjectFilter.Land)
+        interveningIf = Conditions.YouControl(GameObjectFilter.Land)
         effect = SacrificeSelfEffect
     }
     metadata {

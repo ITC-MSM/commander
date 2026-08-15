@@ -1035,7 +1035,7 @@
                     "count": 1,
                     "target": "Self"
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "Any",
                     "conditions": [
                         {
@@ -1106,7 +1106,7 @@
                     "count": 1,
                     "target": "Self"
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "Any",
                     "conditions": [
                         {
@@ -1177,7 +1177,7 @@
                     "count": 1,
                     "target": "Self"
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "Any",
                     "conditions": [
                         {
@@ -1268,7 +1268,7 @@
                     "count": 1,
                     "target": "Self"
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "Any",
                     "conditions": [
                         {
@@ -2533,27 +2533,16 @@
                 "binding": "ANY",
                 "effect": {
                     "type": "Gated",
-                    "gate": {
-                        "type": "Gate.WhenCondition",
-                        "condition": {
-                            "type": "EntityMatches",
-                            "entity": "Self",
-                            "filter": "untapped"
-                        }
-                    },
+                    "gate": "Gate.MayDecide",
                     "then": {
-                        "type": "Gated",
-                        "gate": "Gate.MayDecide",
-                        "then": {
-                            "type": "DrawCards",
-                            "count": {
-                                "type": "Fixed",
-                                "amount": 1
-                            }
+                        "type": "DrawCards",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 1
                         }
                     }
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "EntityMatches",
                     "entity": "Self",
                     "filter": "untapped"
@@ -2924,7 +2913,7 @@
                 },
                 "binding": "ANY",
                 "effect": "SacrificeSelf",
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Exists",
                     "player": "You",
                     "zone": "Battlefield",
@@ -7205,7 +7194,7 @@
                         }
                     ]
                 },
-                "triggerCondition": "WasCastFromHand",
+                "interveningIf": "WasCastFromHand",
                 "descriptionOverride": "When this creature enters, if you cast it from your hand, destroy all nonartifact, nonblack creatures. They can't be regenerated."
             }
         ]

@@ -41,7 +41,7 @@ val StarCharter = card("Star Charter") {
 
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = Conditions.YouGainedOrLostLifeThisTurn
+        interveningIf = Conditions.YouGainedOrLostLifeThisTurn
         effect = Effects.Composite(
             listOf(
                 GatherCardsEffect(

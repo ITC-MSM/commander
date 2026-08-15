@@ -38,7 +38,7 @@ val SpidersManHeroicHorde = card("Spiders-Man, Heroic Horde") {
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = Conditions.WebSlungCostWasPaid
+        interveningIf = Conditions.WebSlungCostWasPaid
         effect = Effects.GainLife(3) then Effects.CreateToken(
             power = 2,
             toughness = 1,

@@ -24,7 +24,7 @@ val CautiousSurvivor = card("Cautious Survivor") {
     // Survival — At the beginning of your second main phase, if this creature is tapped, you gain 2 life.
     triggeredAbility {
         trigger = Triggers.YourPostcombatMain
-        triggerCondition = Conditions.SourceIsTapped
+        interveningIf = Conditions.SourceIsTapped
         effect = Effects.GainLife(2)
     }
 

@@ -31,7 +31,7 @@ val Wargling = card("Wargling") {
     toughness = 2
     triggeredAbility {
         trigger = Triggers.Attacks
-        triggerCondition = Conditions.YouControl(GameObjectFilter.Creature.powerAtLeast(4))
+        triggerRestriction = Conditions.YouControl(GameObjectFilter.Creature.powerAtLeast(4))
         effect = Effects.Composite(
             Effects.ModifyStats(1, 0, EffectTarget.Self),
             Effects.ForEachInGroup(

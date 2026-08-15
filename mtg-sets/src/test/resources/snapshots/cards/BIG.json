@@ -2120,7 +2120,7 @@
                     },
                     "id": "target artifact or land"
                 },
-                "triggerCondition": "WasCast"
+                "interveningIf": "WasCast"
             }
         ],
         "staticAbilities": [
@@ -2305,7 +2305,7 @@
                         "ARTIFACT"
                     ]
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "EntityMatches",
                     "entity": "Self",
                     "filter": "nontoken"

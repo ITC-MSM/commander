@@ -80,7 +80,7 @@ private val TwistsAndTurnsFront = card("Twists and Turns") {
     // When a land you control enters, if you control seven or more lands, transform.
     triggeredAbility {
         trigger = Triggers.LandYouControlEnters
-        triggerCondition = Conditions.YouControlAtLeast(7, GameObjectFilter.Land)
+        interveningIf = Conditions.YouControlAtLeast(7, GameObjectFilter.Land)
         effect = TransformEffect(EffectTarget.Self)
         description = "When a land you control enters, if you control seven or more lands, " +
             "transform Twists and Turns."

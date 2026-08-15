@@ -65,7 +65,7 @@ val FearOfBurningAlive = card("Fear of Burning Alive") {
             sourceFilter = GameObjectFilter.Any.youControl(),
             binding = TriggerBinding.ANY,
         )
-        triggerCondition = Conditions.Delirium()
+        interveningIf = Conditions.Delirium()
         val t = target(
             "target",
             TargetCreature(

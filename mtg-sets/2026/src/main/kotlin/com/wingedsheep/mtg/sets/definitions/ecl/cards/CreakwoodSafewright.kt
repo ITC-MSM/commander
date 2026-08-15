@@ -39,7 +39,7 @@ val CreakwoodSafewright = card("Creakwood Safewright") {
 
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = Conditions.All(
+        interveningIf = Conditions.All(
             Conditions.GraveyardContainsSubtype(Subtype.ELF),
             Conditions.SourceHasCounter(CounterTypeFilter.MinusOneMinusOne)
         )

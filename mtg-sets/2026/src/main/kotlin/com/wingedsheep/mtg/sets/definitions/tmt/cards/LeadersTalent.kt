@@ -48,7 +48,7 @@ val LeadersTalent = card("Leader's Talent") {
                 filter = GameObjectFilter.Creature.youControl(),
                 binding = TriggerBinding.ANY
             )
-            triggerCondition = Conditions.TriggeringEntityHadCounters
+            interveningIf = Conditions.TriggeringEntityHadCounters
             effect = Effects.GainLife(2)
         }
     }

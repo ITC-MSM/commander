@@ -51,7 +51,7 @@ val ChoraleOfTheVoid = card("Chorale of the Void") {
 
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = Conditions.Not(Conditions.Void)
+        triggerRestriction = Conditions.Not(Conditions.Void)
         effect = SacrificeSelfEffect
         description = "Sacrifice this Aura unless a nonland permanent left the battlefield this turn or a spell was warped this turn."
     }

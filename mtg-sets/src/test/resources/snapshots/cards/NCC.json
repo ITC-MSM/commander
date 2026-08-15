@@ -76,7 +76,7 @@
                 },
                 "binding": "ANY",
                 "effect": "Cascade",
-                "triggerCondition": "IsFirstSpellPaidWithTreasureManaCastThisTurn"
+                "triggerRestriction": "IsFirstSpellPaidWithTreasureManaCastThisTurn"
             }
         ]
     },

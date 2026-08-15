@@ -29,33 +29,27 @@
                 },
                 "binding": "ANY",
                 "effect": {
-                    "type": "Gated",
-                    "gate": {
-                        "type": "Gate.WhenCondition",
-                        "condition": {
-                            "type": "SourceInZone",
-                            "zones": [
-                                "Battlefield",
-                                "Command"
-                            ]
-                        }
-                    },
-                    "then": {
-                        "type": "CreateToken",
-                        "power": 1,
-                        "toughness": 1,
-                        "colors": [
-                            "BLACK"
-                        ],
-                        "creatureTypes": [
-                            "Vampire"
-                        ]
-                    }
+                    "type": "CreateToken",
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [
+                        "BLACK"
+                    ],
+                    "creatureTypes": [
+                        "Vampire"
+                    ]
                 },
                 "activeZones": [
                     "Battlefield",
                     "Command"
                 ],
+                "interveningIf": {
+                    "type": "SourceInZone",
+                    "zones": [
+                        "Battlefield",
+                        "Command"
+                    ]
+                },
                 "descriptionOverride": "Eminence — Whenever you cast another Vampire spell, if Edgar is in the command zone or on the battlefield, create a 1/1 black Vampire creature token."
             },
             {

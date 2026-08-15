@@ -56,7 +56,7 @@ val DiscerningFinancier = card("Discerning Financier") {
 
     triggeredAbility {
         trigger = Triggers.YourUpkeep
-        triggerCondition = Conditions.OpponentControlsMoreLands
+        interveningIf = Conditions.OpponentControlsMoreLands
         effect = Effects.CreateTreasure(1)
         description = "At the beginning of your upkeep, if an opponent controls more lands than " +
             "you, create a Treasure token."

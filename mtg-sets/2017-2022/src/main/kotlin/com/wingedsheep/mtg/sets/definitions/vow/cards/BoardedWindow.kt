@@ -42,7 +42,7 @@ val BoardedWindow = card("Boarded Window") {
 
     triggeredAbility {
         trigger = Triggers.EachEndStep
-        triggerCondition = Compare(
+        interveningIf = Compare(
             DynamicAmount.TurnTracking(Player.You, TurnTracker.DAMAGE_RECEIVED),
             ComparisonOperator.GTE,
             DynamicAmount.Fixed(4)

@@ -67,7 +67,7 @@ private val TheEverflowingWellFront = card("The Everflowing Well") {
 
     triggeredAbility {
         trigger = Triggers.YourUpkeep
-        triggerCondition = Conditions.CardsInGraveyardMatchingAtLeast(8, GameObjectFilter.Permanent)
+        interveningIf = Conditions.CardsInGraveyardMatchingAtLeast(8, GameObjectFilter.Permanent)
         effect = TransformEffect(EffectTarget.Self)
         description = "Descend 8 — At the beginning of your upkeep, if there are eight or more " +
             "permanent cards in your graveyard, transform The Everflowing Well."

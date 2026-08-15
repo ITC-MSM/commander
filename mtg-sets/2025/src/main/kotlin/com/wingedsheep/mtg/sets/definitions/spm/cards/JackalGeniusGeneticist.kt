@@ -25,7 +25,7 @@ val JackalGeniusGeneticist = card("Jackal, Genius Geneticist") {
 
     triggeredAbility {
         trigger = Triggers.YouCastCreature
-        triggerCondition = Compare(
+        triggerRestriction = Compare(
             DynamicAmount.EntityProperty(EntityReference.Triggering, EntityNumericProperty.ManaValue),
             ComparisonOperator.EQ,
             DynamicAmount.EntityProperty(EntityReference.Source, EntityNumericProperty.Power)

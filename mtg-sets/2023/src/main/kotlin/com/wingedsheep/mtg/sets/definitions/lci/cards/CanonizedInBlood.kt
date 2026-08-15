@@ -37,7 +37,7 @@ val CanonizedInBlood = card("Canonized in Blood") {
 
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = Conditions.YouDescendedThisTurn()
+        interveningIf = Conditions.YouDescendedThisTurn()
         val t = target("target creature you control", TargetCreature(filter = TargetFilter.Creature.youControl()))
         effect = Effects.AddCounters(Counters.PLUS_ONE_PLUS_ONE, 1, t)
     }

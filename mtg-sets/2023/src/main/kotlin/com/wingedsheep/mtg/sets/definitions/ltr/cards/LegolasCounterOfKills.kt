@@ -39,7 +39,7 @@ val LegolasCounterOfKills = card("Legolas, Counter of Kills") {
 
     triggeredAbility {
         trigger = Triggers.WheneverYouScry
-        triggerCondition = Conditions.SourceIsTapped
+        interveningIf = Conditions.SourceIsTapped
         // "Do this only once each turn" is CR 603.2h — keyed to the untap, not to the trigger.
         // The official ruling is the clearest statement of the difference there is: "'Do this only
         // once each turn' lets you choose whether or not to untap Legolas as the triggered ability

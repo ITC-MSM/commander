@@ -55,7 +55,7 @@ val DoctorOctopusMasterPlanner = card("Doctor Octopus, Master Planner") {
     // draw cards equal to the difference.
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = Conditions.CardsInHandAtMost(7)
+        interveningIf = Conditions.CardsInHandAtMost(7)
         effect = Effects.DrawCards(
             DynamicAmount.Subtract(
                 DynamicAmount.Fixed(8),

@@ -37,7 +37,7 @@ val CoatiScavenger = card("Coati Scavenger") {
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = Conditions.CardsInGraveyardMatchingAtLeast(4, GameObjectFilter.Permanent)
+        interveningIf = Conditions.CardsInGraveyardMatchingAtLeast(4, GameObjectFilter.Permanent)
         val card = target(
             "target permanent card from your graveyard",
             TargetObject(

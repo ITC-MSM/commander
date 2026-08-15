@@ -4315,36 +4315,17 @@
                 },
                 "binding": "ANY",
                 "effect": {
-                    "type": "Gated",
-                    "gate": {
-                        "type": "Gate.WhenCondition",
-                        "condition": {
-                            "type": "Compare",
-                            "left": {
-                                "type": "Count",
-                                "player": "TriggeringPlayer",
-                                "zone": "Hand"
-                            },
-                            "operator": "LTE",
-                            "right": {
-                                "type": "Fixed",
-                                "amount": 2
-                            }
-                        }
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 3
                     },
-                    "then": {
-                        "type": "DealDamage",
-                        "amount": {
-                            "type": "Fixed",
-                            "amount": 3
-                        },
-                        "target": {
-                            "type": "PlayerRef",
-                            "player": "TriggeringPlayer"
-                        }
+                    "target": {
+                        "type": "PlayerRef",
+                        "player": "TriggeringPlayer"
                     }
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "Count",
@@ -5100,7 +5081,7 @@
                     "type": "LoseGame",
                     "message": "Phage the Untouchable was not cast from hand"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Not",
                     "condition": "WasCastFromHand"
                 }

@@ -24,7 +24,7 @@ import com.wingedsheep.sdk.scripting.targets.TargetCreature
  *
  * "Attacks **while** you control …" is a trigger condition, not an intervening-if: it's checked
  * only as attackers are declared, so per the ruling below the double strike still lands even if the
- * big creature dies in response. `triggerCondition` is exactly that gate — evaluated at detection,
+ * big creature dies in response. `triggerRestriction` is exactly that gate — evaluated at detection,
  * not again at resolution.
  *
  * Stolen Goodies is the divide-as-you-choose shape (CR 601.2d): the split is locked in as the spell
@@ -52,7 +52,7 @@ val PicnicRuiner = card("Picnic Ruiner") {
 
     triggeredAbility {
         trigger = Triggers.Attacks
-        triggerCondition = Conditions.YouControl(GameObjectFilter.Creature.powerAtLeast(4))
+        triggerRestriction = Conditions.YouControl(GameObjectFilter.Creature.powerAtLeast(4))
         effect = Effects.GrantKeyword(Keyword.DOUBLE_STRIKE, EffectTarget.Self)
     }
 

@@ -49,7 +49,7 @@ val AragornCompanyLeader = card("Aragorn, Company Leader") {
 
     triggeredAbility {
         trigger = Triggers.RingTemptsYou
-        triggerCondition = Conditions.YouChoseOtherCreatureAsRingBearer
+        interveningIf = Conditions.YouChoseOtherCreatureAsRingBearer
         effect = Effects.ChooseAction(
             listOf(
                 EffectChoice(

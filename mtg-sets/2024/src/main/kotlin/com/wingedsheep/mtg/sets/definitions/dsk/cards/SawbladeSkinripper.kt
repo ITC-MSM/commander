@@ -48,7 +48,7 @@ val SawbladeSkinripper = card("Sawblade Skinripper") {
     // is the same controller-scoped count, dealt by Sawblade itself to any target.
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = Conditions.YouSacrificedPermanentsThisTurn()
+        interveningIf = Conditions.YouSacrificedPermanentsThisTurn()
         val any = target("any target", Targets.Any)
         effect = Effects.DealDamage(
             DynamicAmounts.permanentsSacrificedThisTurn(),

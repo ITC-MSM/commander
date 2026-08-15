@@ -30,7 +30,7 @@ val CallToTheGrave = card("Call to the Grave") {
 
     triggeredAbility {
         trigger = Triggers.EachEndStep
-        triggerCondition = Compare(
+        interveningIf = Compare(
             DynamicAmount.AggregateBattlefield(Player.Each, GameObjectFilter.Creature),
             ComparisonOperator.EQ,
             DynamicAmount.Fixed(0)

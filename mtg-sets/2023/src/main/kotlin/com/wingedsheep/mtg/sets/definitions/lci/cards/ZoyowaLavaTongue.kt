@@ -57,7 +57,7 @@ val ZoyowaLavaTongue = card("Zoyowa Lava-Tongue") {
 
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = Conditions.YouDescendedThisTurn()
+        interveningIf = Conditions.YouDescendedThisTurn()
         effect = ForEachPlayerEffect(
             players = Player.EachOpponent,
             effects = listOf(

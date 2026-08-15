@@ -137,7 +137,7 @@ class TeamworkMechanicScenarioTest : ScenarioTestBase() {
         teamwork(2)
         triggeredAbility {
             trigger = Triggers.EntersBattlefield
-            triggerCondition = Conditions.TeamworkWasPaid
+            interveningIf = Conditions.TeamworkWasPaid
             effect = Effects.AddCounters("+1/+1", 2, EffectTarget.Self)
         }
     }
@@ -224,7 +224,7 @@ class TeamworkMechanicScenarioTest : ScenarioTestBase() {
         keywordAbility(KeywordAbility.OptionalAdditionalCost(ManaCost.parse("{1}")))
         triggeredAbility {
             trigger = Triggers.EntersBattlefield
-            triggerCondition = WasKicked
+            interveningIf = WasKicked
             effect = Effects.AddCounters("+1/+1", 2, EffectTarget.Self)
         }
     }

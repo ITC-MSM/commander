@@ -46,7 +46,7 @@ val PizzaFaceGastromancer = card("Pizza Face, Gastromancer") {
     // types (same conditional-BecomeCreature idiom as Brilliance Unleashed).
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = Conditions.YouHadPermanentLeaveBattlefieldThisTurn
+        interveningIf = Conditions.YouHadPermanentLeaveBattlefieldThisTurn
         target = TargetObject(
             count = 1,
             optional = true,

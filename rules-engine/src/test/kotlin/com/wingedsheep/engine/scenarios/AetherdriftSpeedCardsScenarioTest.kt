@@ -25,7 +25,7 @@ import io.kotest.matchers.shouldBe
  * | Burnout Bashtronaut | static keyword grant | `ConditionalStaticAbility` |
  * | Walking Sarcophagus | static P/T buff | `ConditionalStaticAbility` |
  * | Endrider Catalyzer | activated mana ability | `ActivationRestriction.OnlyIfCondition` |
- * | Risen Necroregent | end-step trigger | `triggerCondition` |
+ * | Risen Necroregent | end-step trigger | `triggerRestriction` |
  * | Racers' Scoreboard | spell cost reduction | `CostGating.OnlyIf` |
  *
  * Each also carries "Start your engines!", so every test doubles as a check that the CR 704.5z

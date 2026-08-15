@@ -46,7 +46,7 @@ val GaladrielOfLothlorien = card("Galadriel of Lothlórien") {
 
     triggeredAbility {
         trigger = Triggers.RingTemptsYou
-        triggerCondition = Conditions.YouChoseOtherCreatureAsRingBearer
+        interveningIf = Conditions.YouChoseOtherCreatureAsRingBearer
         effect = Patterns.Library.scry(3)
     }
 

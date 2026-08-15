@@ -38,7 +38,7 @@ private val MayorOfAvabruckFront = card("Mayor of Avabruck") {
     }
     triggeredAbility {
         trigger = Triggers.EachUpkeep
-        triggerCondition = Conditions.CompareAmounts(
+        interveningIf = Conditions.CompareAmounts(
             DynamicAmounts.spellsCastLastTurn(),
             ComparisonOperator.EQ,
             DynamicAmount.Fixed(0),
@@ -90,7 +90,7 @@ private val HowlpackAlpha = card("Howlpack Alpha") {
     }
     triggeredAbility {
         trigger = Triggers.EachUpkeep
-        triggerCondition = Conditions.CompareAmounts(
+        interveningIf = Conditions.CompareAmounts(
             DynamicAmounts.spellsCastLastTurn(),
             ComparisonOperator.GTE,
             DynamicAmount.Fixed(2),

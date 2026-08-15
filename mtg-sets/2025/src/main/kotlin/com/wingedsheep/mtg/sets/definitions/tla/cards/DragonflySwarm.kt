@@ -48,7 +48,7 @@ val DragonflySwarm = card("Dragonfly Swarm") {
 
     triggeredAbility {
         trigger = Triggers.Dies
-        triggerCondition = Conditions.GraveyardContainsSubtype(Subtype.LESSON)
+        interveningIf = Conditions.GraveyardContainsSubtype(Subtype.LESSON)
         effect = Effects.DrawCards(1)
         description = "When this creature dies, if there's a Lesson card in your graveyard, draw a card."
     }

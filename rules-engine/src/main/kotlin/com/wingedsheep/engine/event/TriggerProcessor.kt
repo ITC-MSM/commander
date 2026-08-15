@@ -738,6 +738,8 @@ class TriggerProcessor(
                 triggerCounterCount = trigger.triggerContext.counterCount,
                 triggerTotalCounterCount = trigger.triggerContext.totalCounterCount,
                 triggerLastKnownCounters = trigger.triggerContext.lastKnownCounters,
+            triggerLastKnownSubtypes = trigger.triggerContext.lastKnownSubtypes,
+            triggerLastKnownCardTypes = trigger.triggerContext.lastKnownCardTypes,
                 triggerLastKnownDamageDealtByPlayers =
                     trigger.triggerContext.lastKnownDamageDealtByPlayers,
                 triggerLastKnownBlockingOrBlockedByIds =
@@ -793,6 +795,8 @@ class TriggerProcessor(
             triggerCounterCount = trigger.triggerContext.counterCount,
             triggerTotalCounterCount = trigger.triggerContext.totalCounterCount,
             triggerLastKnownCounters = trigger.triggerContext.lastKnownCounters,
+            triggerLastKnownSubtypes = trigger.triggerContext.lastKnownSubtypes,
+            triggerLastKnownCardTypes = trigger.triggerContext.lastKnownCardTypes,
             triggerLastKnownDamageDealtByPlayers =
                 trigger.triggerContext.lastKnownDamageDealtByPlayers,
             triggerLastKnownBlockingOrBlockedByIds =
@@ -812,7 +816,8 @@ class TriggerProcessor(
             triggerManaValueOfTriggeringSpell = trigger.triggerContext.manaValueOfTriggeringSpell,
             triggerXValueOfTriggeringSpell = trigger.triggerContext.xValueOfTriggeringSpell,
             xValue = trigger.triggerContext.xValue,
-            carriedPipeline = trigger.carriedPipeline
+            carriedPipeline = trigger.carriedPipeline,
+            interveningIf = ability.interveningIf
         )
 
         // Push the continuation onto the stack
@@ -856,6 +861,8 @@ class TriggerProcessor(
             triggerCounterCount = trigger.triggerContext.counterCount,
             triggerTotalCounterCount = trigger.triggerContext.totalCounterCount,
             triggerLastKnownCounters = trigger.triggerContext.lastKnownCounters,
+            triggerLastKnownSubtypes = trigger.triggerContext.lastKnownSubtypes,
+            triggerLastKnownCardTypes = trigger.triggerContext.lastKnownCardTypes,
             triggerLastKnownDamageDealtByPlayers =
                 trigger.triggerContext.lastKnownDamageDealtByPlayers,
             triggerLastKnownBlockingOrBlockedByIds =
@@ -878,7 +885,10 @@ class TriggerProcessor(
             triggerXValueOfTriggeringSpell = trigger.triggerContext.xValueOfTriggeringSpell,
             capturedEntityIds = trigger.triggerContext.capturedEntityIds ?: emptyList(),
             sagaChapterInfo = trigger.sagaChapterInfo,
-            carriedPipeline = trigger.carriedPipeline
+            carriedPipeline = trigger.carriedPipeline,
+            // CR 603.4 — the intervening-"if" travels with the object so the resolver can check it
+            // the second time. A `triggerRestriction` deliberately does not.
+            interveningIf = ability.interveningIf
         )
 
         val causedByAttack = isAttackCausedTrigger(trigger)
@@ -1415,6 +1425,8 @@ class TriggerProcessor(
                         triggerCounterCount = trigger.triggerContext.counterCount,
                         triggerTotalCounterCount = trigger.triggerContext.totalCounterCount,
                         triggerLastKnownCounters = trigger.triggerContext.lastKnownCounters,
+            triggerLastKnownSubtypes = trigger.triggerContext.lastKnownSubtypes,
+            triggerLastKnownCardTypes = trigger.triggerContext.lastKnownCardTypes,
                         triggerLastKnownDamageDealtByPlayers = trigger.triggerContext.lastKnownDamageDealtByPlayers,
                         triggerLastKnownBlockingOrBlockedByIds = trigger.triggerContext.lastKnownBlockingOrBlockedByIds,
                         triggerLastKnownPower = trigger.triggerContext.lastKnownPower,
@@ -1479,6 +1491,8 @@ class TriggerProcessor(
                 triggerCounterCount = trigger.triggerContext.counterCount,
                 triggerTotalCounterCount = trigger.triggerContext.totalCounterCount,
                 triggerLastKnownCounters = trigger.triggerContext.lastKnownCounters,
+            triggerLastKnownSubtypes = trigger.triggerContext.lastKnownSubtypes,
+            triggerLastKnownCardTypes = trigger.triggerContext.lastKnownCardTypes,
                 triggerLastKnownDamageDealtByPlayers = trigger.triggerContext.lastKnownDamageDealtByPlayers,
                 triggerLastKnownBlockingOrBlockedByIds = trigger.triggerContext.lastKnownBlockingOrBlockedByIds,
                 triggerLastKnownPower = trigger.triggerContext.lastKnownPower,

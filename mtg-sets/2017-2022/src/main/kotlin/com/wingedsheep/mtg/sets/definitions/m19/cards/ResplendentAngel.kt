@@ -40,7 +40,7 @@ val ResplendentAngel = card("Resplendent Angel") {
 
     triggeredAbility {
         trigger = Triggers.EachEndStep
-        triggerCondition = Conditions.YouGainedLifeThisTurnAtLeast(5)
+        interveningIf = Conditions.YouGainedLifeThisTurnAtLeast(5)
         effect = Effects.CreateToken(
             power = 4,
             toughness = 4,
