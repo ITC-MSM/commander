@@ -95,18 +95,26 @@ class CombatAdvisorTest : FunSpec({
 
     // ── Helper: set up a game, place creatures, and get combat advisor ──
 
+    /**
+     * `TestCards.all` is the *whole* card corpus (`MtgSetCatalog.all` + the test-only cards), so it
+     * is registered **first** and the test's own [allCards] second: `CardRegistry.register` is
+     * last-write-wins by name, and a test that hand-builds a creature to get exact P/T must win over
+     * a real card that happens to share its name. Registering the corpus last silently swapped this
+     * suite's 4/4 "Pillarfield Ox" and 2/3 "Nessian Courser" for the printed 2/4 and 3/3 the moment
+     * those cards were implemented, which broke the gang-block arithmetic the tests assert on.
+     */
     fun setup(allCards: List<CardDefinition>): Triple<GameTestDriver, CardRegistry, CombatAdvisor> {
         val driver = GameTestDriver()
-        driver.registerCards(allCards)
         driver.registerCards(TestCards.all)
+        driver.registerCards(allCards)
         driver.initMirrorMatch(
             deck = Deck.of("Plains" to 20, "Forest" to 20),
             startingLife = 20
         )
 
         val registry = CardRegistry()
-        registry.register(allCards)
         registry.register(TestCards.all)
+        registry.register(allCards)
         val simulator = GameSimulator(registry)
         val evaluator = AIPlayer.defaultEvaluator()
         val advisor = CombatAdvisor(simulator, evaluator)
