@@ -71,7 +71,6 @@ val ThranduilSindarinLiege = card("Thranduil, Sindarin Liege") {
             toughness = 1,
             colors = setOf(Color.GREEN),
             creatureTypes = setOf("Elf"),
-            imageUri = "https://cards.scryfall.io/normal/front/7/6/761c7c31-c6c5-44e2-a845-f590542b6eda.jpg?1785497812",
         )
         description = "Landfall — Whenever a land you control enters, create a 1/1 green Elf " +
             "creature token."

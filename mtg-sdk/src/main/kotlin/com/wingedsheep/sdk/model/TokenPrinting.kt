@@ -27,13 +27,16 @@ import com.wingedsheep.sdk.core.Color
  * Dogs show all four printed illustrations instead of one repeated four times.
  *
  * ## Image form
- * Use the Scryfall **`art_crop`** URL, not `normal`. The client renders a token as a generated
- * frame (name bar / art box / type bar) and drops this image into the art box, so a full-card
- * `normal` image arrives pre-framed and gets cropped to its middle band.
+ * Use the Scryfall **`normal`** URL — the whole token card, which is what the bulk sync writes and
+ * what the client renders as-is, printed frame and reminder text included. An `art_crop` URL still
+ * works but takes the *legacy* path: the client recognises `/art_crop/` and draws the art inside a
+ * generated frame of its own (name bar / art box / type bar), which is how a token that has a real
+ * printed card ends up looking like a placeholder. A set old enough to predate token cards has no
+ * `t<code>` set to draw from and falls back to self-hosted art under `/images/tokens/`.
  *
  * @property name Token name as printed — the creature type for a vanilla token ("Cat"), or the
  *   full name for a named one ("Marit Lage", "Zombie Druid").
- * @property imageUri Scryfall `art_crop` URL for this set's printing of the token.
+ * @property imageUri Scryfall `normal` URL for this set's printing of the token.
  * @property power Printed power, when needed to disambiguate. Null matches any.
  * @property toughness Printed toughness, when needed to disambiguate. Null matches any.
  * @property colors Printed colors, when needed to disambiguate. Null matches any; an empty set

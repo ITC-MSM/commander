@@ -60,7 +60,6 @@ val AnUnexpectedParty = card("An Unexpected Party") {
                 toughness = 2,
                 colors = setOf(Color.RED),
                 creatureTypes = setOf("Dwarf"),
-                imageUri = "https://cards.scryfall.io/normal/front/9/f/9fcb3a3f-c0d4-43d4-8549-826a38bfa27d.jpg?1786258756",
             )
         }
     }

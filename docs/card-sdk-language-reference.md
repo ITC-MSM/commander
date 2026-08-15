@@ -1533,15 +1533,16 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   object FoundationsSet : MtgSet {
       override val tokenArt = listOf(
           // tfdn #1 — Arahbo, the First Fang's 1/1 white Cat.
-          TokenPrinting(name = "Cat", imageUri = "https://cards.scryfall.io/art_crop/front/2/8/2885d54c-….jpg"),
+          TokenPrinting(name = "Cat", imageUri = "https://cards.scryfall.io/normal/front/2/8/2885d54c-….jpg"),
       )
   }
   ```
 
   `TokenPrinting` matches on `name`, plus `power` / `toughness` / `colors` when you pin them — only needed
-  when one set prints two tokens sharing a name. Use the Scryfall **`art_crop`** URL: the client renders a
-  token as a generated frame and drops this image into its art box, so a full-card `normal` image arrives
-  pre-framed and gets cropped to its middle band.
+  when one set prints two tokens sharing a name. Use the Scryfall **`normal`** URL — the whole token card,
+  the same form `just token-art-sync` writes, rendered by the client as-is. An `art_crop` URL still works
+  but takes the legacy path: the client recognises `/art_crop/` and draws the bare art inside a frame it
+  generates itself, so a token that has a real printed card comes out looking like a placeholder.
 
   **Several arts for one token:** a set that printed the same token with different illustrations declares
   **one row per art** — nothing on the row changes, the plurality lives in the list. A batch of tokens
