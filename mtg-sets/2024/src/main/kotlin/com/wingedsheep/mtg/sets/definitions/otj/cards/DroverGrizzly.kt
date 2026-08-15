@@ -37,7 +37,7 @@ val DroverGrizzly = card("Drover Grizzly") {
 
     triggeredAbility {
         trigger = Triggers.Attacks
-        triggerCondition = Conditions.SourceIsSaddled
+        triggerRestriction = Conditions.SourceIsSaddled
         effect = Patterns.Group.grantKeywordToAll(Keyword.TRAMPLE, Filters.Group.creaturesYouControl)
         description = "creatures you control gain trample until end of turn."
     }

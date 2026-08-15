@@ -26,16 +26,13 @@ val OversoldCemetery = card("Oversold Cemetery") {
     triggeredAbility {
         trigger = Triggers.YourUpkeep
         optional = true
-        triggerCondition = Conditions.CreatureCardsInGraveyardAtLeast(4)
+        interveningIf = Conditions.CreatureCardsInGraveyardAtLeast(4)
         val t = target("target", TargetObject(
             filter = TargetFilter.CreatureInYourGraveyard
         ))
-        effect = ConditionalEffect(
-            condition = Conditions.CreatureCardsInGraveyardAtLeast(4),
-            effect = Effects.Move(
-                target = t,
-                destination = Zone.HAND
-            )
+        effect = Effects.Move(
+            target = t,
+            destination = Zone.HAND
         )
     }
 

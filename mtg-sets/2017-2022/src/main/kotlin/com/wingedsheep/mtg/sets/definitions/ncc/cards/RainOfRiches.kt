@@ -42,7 +42,7 @@ val RainOfRiches = card("Rain of Riches") {
         trigger = Triggers.youCastSpell(
             requires = setOf(SpellCastPredicate.PaidWithManaFromSubtype(Subtype.TREASURE)),
         )
-        triggerCondition = Conditions.IsFirstSpellPaidWithTreasureManaCastThisTurn
+        triggerRestriction = Conditions.IsFirstSpellPaidWithTreasureManaCastThisTurn
         effect = Effects.Cascade
     }
 

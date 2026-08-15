@@ -68,7 +68,7 @@ val RagostDeftGastronaut = card("Ragost, Deft Gastronaut") {
     // At the beginning of each end step, if you gained life this turn, untap Ragost.
     triggeredAbility {
         trigger = Triggers.EachEndStep
-        triggerCondition = Conditions.YouGainedLifeThisTurn
+        interveningIf = Conditions.YouGainedLifeThisTurn
         effect = Effects.Untap(EffectTarget.Self)
     }
 

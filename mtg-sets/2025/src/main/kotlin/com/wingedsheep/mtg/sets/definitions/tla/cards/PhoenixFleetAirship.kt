@@ -42,7 +42,7 @@ val PhoenixFleetAirship = card("Phoenix Fleet Airship") {
     // Intervening-if on the per-player "permanents sacrificed this turn" counter.
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = Conditions.YouSacrificedPermanentsThisTurn()
+        interveningIf = Conditions.YouSacrificedPermanentsThisTurn()
         effect = Effects.CreateTokenCopyOfSelf()
     }
 

@@ -59,7 +59,7 @@ val DarigaazReincarnated = card("Darigaaz Reincarnated") {
     triggeredAbility {
         trigger = Triggers.YourUpkeep
         triggerZone = Zone.EXILE
-        triggerCondition = Compare(
+        interveningIf = Compare(
             DynamicAmounts.countersOnSelf(CounterTypeFilter.Named(Counters.EGG)),
             ComparisonOperator.GTE,
             DynamicAmount.Fixed(1)

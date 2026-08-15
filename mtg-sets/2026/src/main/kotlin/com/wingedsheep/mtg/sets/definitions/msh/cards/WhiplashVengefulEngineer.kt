@@ -22,7 +22,7 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  * Composed from existing primitives:
  *  - "enters tapped" is the standard self-replacement [EntersTapped].
  *  - The attack trigger's "if he's equipped" is an intervening-"if" (CR 603.4), so it goes on
- *    `triggerCondition` — checked both as the trigger would go on the stack and again on
+ *    `interveningIf` — checked both as the trigger would go on the stack and again on
  *    resolution. [Conditions.SourceMatches] with `GameObjectFilter.Any.equipped()` (the
  *    `StatePredicate.IsEquipped` state predicate) is the "he's equipped" test.
  *  - X is [DynamicAmounts.equipmentAttachedToSelf] — the Equipment-only attachment count on the
@@ -45,7 +45,7 @@ val WhiplashVengefulEngineer = card("Whiplash, Vengeful Engineer") {
 
     triggeredAbility {
         trigger = Triggers.Attacks
-        triggerCondition = Conditions.SourceMatches(GameObjectFilter.Any.equipped())
+        interveningIf = Conditions.SourceMatches(GameObjectFilter.Any.equipped())
         effect = Effects.Composite(
             Effects.LoseLife(
                 DynamicAmounts.equipmentAttachedToSelf(),

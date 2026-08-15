@@ -30,7 +30,7 @@ val NastyLittleRabbit = card("Nasty Little Rabbit") {
     toughness = 2
     triggeredAbility {
         trigger = Triggers.BeginCombat
-        triggerCondition = Conditions.YouControl(GameObjectFilter.Creature.powerAtLeast(4))
+        interveningIf = Conditions.YouControl(GameObjectFilter.Creature.powerAtLeast(4))
         effect = AddCountersEffect(counterType = Counters.PLUS_ONE_PLUS_ONE, count = 1, target = EffectTarget.Self)
     }
     metadata {

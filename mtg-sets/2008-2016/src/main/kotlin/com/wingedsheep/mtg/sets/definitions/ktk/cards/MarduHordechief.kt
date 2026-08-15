@@ -26,7 +26,7 @@ val MarduHordechief = card("Mardu Hordechief") {
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = Conditions.YouAttackedThisTurn
+        interveningIf = Conditions.YouAttackedThisTurn
         effect = CreateTokenEffect(
             count = 1,
             power = 1,

@@ -25,7 +25,7 @@ val MarduWarshrieker = card("Mardu Warshrieker") {
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = Conditions.YouAttackedThisTurn
+        interveningIf = Conditions.YouAttackedThisTurn
         effect = Effects.Composite(
             Effects.AddMana(Color.RED),
             Effects.AddMana(Color.WHITE),

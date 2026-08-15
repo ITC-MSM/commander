@@ -58,7 +58,7 @@ import com.wingedsheep.sdk.scripting.values.DynamicAmount
  *    permanent of *their* choice (edict — the sacrificing player chooses). Transform targets Self,
  *    so a dead Kefka simply doesn't transform.
  *  - Back "an opponent loses life during your turn" = [Triggers.AnOpponentLosesLife] gated by
- *    `triggerCondition = Conditions.IsYourTurn` (fire-time only), drawing life-lost-many cards.
+ *    `triggerRestriction = Conditions.IsYourTurn` (fire-time only), drawing life-lost-many cards.
  */
 private val KefkaRulerOfRuin = card("Kefka, Ruler of Ruin") {
     manaCost = ""
@@ -74,7 +74,7 @@ private val KefkaRulerOfRuin = card("Kefka, Ruler of Ruin") {
     // Whenever an opponent loses life during your turn, you draw that many cards.
     triggeredAbility {
         trigger = Triggers.AnOpponentLosesLife
-        triggerCondition = Conditions.IsYourTurn
+        triggerRestriction = Conditions.IsYourTurn
         effect = Effects.DrawCards(
             DynamicAmount.ContextProperty(ContextPropertyKey.TRIGGER_LIFE_LOST)
         )

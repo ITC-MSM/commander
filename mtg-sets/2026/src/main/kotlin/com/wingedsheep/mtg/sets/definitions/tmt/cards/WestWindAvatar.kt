@@ -58,7 +58,7 @@ val WestWindAvatar = card("West Wind Avatar") {
 
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = Conditions.YouHadPermanentLeaveBattlefieldThisTurn
+        interveningIf = Conditions.YouHadPermanentLeaveBattlefieldThisTurn
         effect = Effects.DrawCards(1)
         description = "Disappear — At the beginning of your end step, if a permanent left the battlefield under your control this turn, draw a card."
     }

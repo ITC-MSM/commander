@@ -59,7 +59,7 @@ val VerdelothTheAncient = card("Verdeloth the Ancient") {
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = WasKicked
+        interveningIf = WasKicked
         effect = Effects.CreateToken(
             count = DynamicAmount.XValue,
             power = 1,

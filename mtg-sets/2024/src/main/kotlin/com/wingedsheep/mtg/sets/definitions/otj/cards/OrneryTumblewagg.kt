@@ -45,7 +45,7 @@ val OrneryTumblewagg = card("Ornery Tumblewagg") {
 
     triggeredAbility {
         trigger = Triggers.Attacks
-        triggerCondition = Conditions.SourceIsSaddled
+        triggerRestriction = Conditions.SourceIsSaddled
         val creature = target("target creature", TargetCreature())
         effect = Effects.DoubleCounters("+1/+1", creature)
     }

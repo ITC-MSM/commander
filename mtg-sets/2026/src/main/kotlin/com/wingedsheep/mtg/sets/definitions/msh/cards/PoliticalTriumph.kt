@@ -25,7 +25,7 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  *    (the enchantment itself is not a creature, so no OTHER binding is needed).
  *  - "When the **fourth** plan counter is put on this enchantment" composes from existing
  *    vocabulary: a SELF-bound [Triggers.countersPlacedOn] on [Counters.PLAN] gated by
- *    `triggerCondition = `[Conditions.SourceCounterCountAtLeast]`(PLAN, 4)`. The at-least gate is
+ *    `triggerRestriction = `[Conditions.SourceCounterCountAtLeast]`(PLAN, 4)`. The at-least gate is
  *    behaviourally exact for this cycle because the payoff **sacrifices its own source**, so the
  *    enchantment is gone before a fifth counter could ever land — the threshold can never fire
  *    twice. No dedicated "Nth counter" trigger event is needed.
@@ -62,7 +62,7 @@ val PoliticalTriumph = card("Political Triumph") {
             firstTimeEachTurn = false,
             binding = TriggerBinding.SELF,
         )
-        triggerCondition = Conditions.SourceCounterCountAtLeast(Counters.PLAN, 4)
+        triggerRestriction = Conditions.SourceCounterCountAtLeast(Counters.PLAN, 4)
         effect = Effects.Composite(
             Effects.SacrificeTarget(EffectTarget.Self),
             Effects.DrawCards(1),

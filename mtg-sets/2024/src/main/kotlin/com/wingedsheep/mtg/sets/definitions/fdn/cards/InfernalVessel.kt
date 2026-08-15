@@ -43,7 +43,7 @@ val InfernalVessel = card("Infernal Vessel") {
 
     triggeredAbility {
         trigger = Triggers.Dies
-        triggerCondition = Conditions.Not(Conditions.TriggeringEntityHadSubtype(Subtype.DEMON.value))
+        interveningIf = Conditions.Not(Conditions.TriggeringEntityHadSubtype(Subtype.DEMON.value))
         effect = Effects.Composite(
             Effects.Move(
                 target = EffectTarget.Self,

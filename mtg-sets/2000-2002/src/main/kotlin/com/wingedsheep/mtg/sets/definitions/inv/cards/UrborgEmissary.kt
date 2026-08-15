@@ -29,7 +29,7 @@ val UrborgEmissary = card("Urborg Emissary") {
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = WasKicked
+        interveningIf = WasKicked
         val t = target("permanent", Targets.Permanent)
         effect = Effects.ReturnToHand(t)
     }

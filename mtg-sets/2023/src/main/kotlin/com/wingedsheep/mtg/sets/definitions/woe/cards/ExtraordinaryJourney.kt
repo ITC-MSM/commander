@@ -82,7 +82,7 @@ val ExtraordinaryJourney = card("Extraordinary Journey") {
         trigger = Triggers.OneOrMorePermanentsEnter(
             GameObjectFilter.Creature.nontoken().anyController()
         )
-        triggerCondition = Conditions.AnyEnteredOrWasCastFromExile
+        interveningIf = Conditions.AnyEnteredOrWasCastFromExile
         oncePerTurn = true
         effect = Effects.DrawCards(1)
         description = "Whenever one or more nontoken creatures enter, if one or more of them " +

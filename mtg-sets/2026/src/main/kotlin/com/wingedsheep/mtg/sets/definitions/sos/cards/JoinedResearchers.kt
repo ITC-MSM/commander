@@ -43,7 +43,7 @@ val JoinedResearchers = card("Joined Researchers") {
     // End-step trigger: if an opponent has more cards in hand than you, become prepared.
     triggeredAbility {
         trigger = Triggers.EachEndStep
-        triggerCondition = Conditions.OpponentHasMoreCardsInHand
+        interveningIf = Conditions.OpponentHasMoreCardsInHand
         effect = Effects.BecomePrepared()
         description = "At the beginning of each end step, if an opponent has more cards in hand " +
             "than you, this creature becomes prepared."

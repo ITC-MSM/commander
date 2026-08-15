@@ -41,7 +41,7 @@ val TerritorialWitchstalker = card("Territorial Witchstalker") {
 
     triggeredAbility {
         trigger = Triggers.BeginCombat
-        triggerCondition = Conditions.YouControl(GameObjectFilter.Creature.powerAtLeast(4))
+        interveningIf = Conditions.YouControl(GameObjectFilter.Creature.powerAtLeast(4))
         effect = Effects.ModifyStats(1, 0, EffectTarget.Self) then
             Effects.CanAttackDespiteDefenderThisTurn(EffectTarget.Self)
     }

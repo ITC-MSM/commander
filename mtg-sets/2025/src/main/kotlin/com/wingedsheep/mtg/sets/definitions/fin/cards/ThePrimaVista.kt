@@ -45,7 +45,7 @@ val ThePrimaVista = card("The Prima Vista") {
     // The Prima Vista becomes an artifact creature until end of turn.
     triggeredAbility {
         trigger = Triggers.YouCastNoncreature
-        triggerCondition = Conditions.TriggeringSpellManaSpentAtLeast(4)
+        interveningIf = Conditions.TriggeringSpellManaSpentAtLeast(4)
         effect = Effects.BecomeCreature(
             target = EffectTarget.Self,
             power = 5,

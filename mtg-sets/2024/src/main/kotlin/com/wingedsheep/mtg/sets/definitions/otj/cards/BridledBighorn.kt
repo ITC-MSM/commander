@@ -34,7 +34,7 @@ val BridledBighorn = card("Bridled Bighorn") {
 
     triggeredAbility {
         trigger = Triggers.Attacks
-        triggerCondition = Conditions.SourceIsSaddled
+        triggerRestriction = Conditions.SourceIsSaddled
         effect = Effects.CreateToken(
             power = 1,
             toughness = 1,

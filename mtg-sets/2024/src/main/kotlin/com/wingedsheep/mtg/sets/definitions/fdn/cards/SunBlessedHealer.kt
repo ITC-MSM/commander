@@ -37,7 +37,7 @@ val SunBlessedHealer = card("Sun-Blessed Healer") {
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = WasKicked
+        interveningIf = WasKicked
         val t = target(
             "target",
             TargetObject(

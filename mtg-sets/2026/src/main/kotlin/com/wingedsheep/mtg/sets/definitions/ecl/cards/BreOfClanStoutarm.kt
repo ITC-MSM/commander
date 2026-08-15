@@ -60,7 +60,7 @@ val BreOfClanStoutarm = card("Bre of Clan Stoutarm") {
     // Otherwise, put it into your hand.
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = Conditions.YouGainedLifeThisTurn
+        interveningIf = Conditions.YouGainedLifeThisTurn
         effect = Effects.Composite(listOf(
             // Exile from top until nonland — same pipeline as The Infamous Cruelclaw.
             GatherUntilMatchEffect(

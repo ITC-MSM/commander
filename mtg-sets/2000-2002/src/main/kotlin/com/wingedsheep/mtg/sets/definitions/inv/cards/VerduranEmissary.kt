@@ -30,7 +30,7 @@ val VerduranEmissary = card("Verduran Emissary") {
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = WasKicked
+        interveningIf = WasKicked
         val t = target("artifact", Targets.Artifact)
         effect = CantBeRegeneratedEffect(t) then Effects.Destroy(t)
     }

@@ -33,7 +33,7 @@ val StromkirkBloodthief = card("Stromkirk Bloodthief") {
 
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = Conditions.OpponentLostLifeThisTurn
+        interveningIf = Conditions.OpponentLostLifeThisTurn
         val vampire = target(
             "target Vampire you control",
             TargetCreature(filter = TargetFilter.CreatureYouControl.withSubtype(Subtype.VAMPIRE))

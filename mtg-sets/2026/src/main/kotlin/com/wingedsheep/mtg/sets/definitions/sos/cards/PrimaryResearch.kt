@@ -49,7 +49,7 @@ val PrimaryResearch = card("Primary Research") {
 
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = Conditions.CardsLeftGraveyardThisTurn(1)
+        interveningIf = Conditions.CardsLeftGraveyardThisTurn(1)
         effect = Effects.DrawCards(1)
     }
 

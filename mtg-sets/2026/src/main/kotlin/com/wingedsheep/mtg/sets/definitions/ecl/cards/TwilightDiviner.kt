@@ -39,7 +39,7 @@ val TwilightDiviner = card("Twilight Diviner") {
 
     triggeredAbility {
         trigger = Triggers.OtherCreatureEnters
-        triggerCondition = Conditions.TriggeringEntityEnteredOrWasCastFromGraveyard
+        interveningIf = Conditions.TriggeringEntityEnteredOrWasCastFromGraveyard
         oncePerTurn = true
         effect = CreateTokenCopyOfTargetEffect(EffectTarget.TriggeringEntity)
     }

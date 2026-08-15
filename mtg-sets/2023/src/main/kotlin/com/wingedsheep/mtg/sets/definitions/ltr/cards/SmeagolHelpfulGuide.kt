@@ -45,7 +45,7 @@ val SmeagolHelpfulGuide = card("Sméagol, Helpful Guide") {
 
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = Conditions.ControlledCreatureDiedThisTurn
+        interveningIf = Conditions.ControlledCreatureDiedThisTurn
         effect = Effects.TheRingTemptsYou()
     }
 

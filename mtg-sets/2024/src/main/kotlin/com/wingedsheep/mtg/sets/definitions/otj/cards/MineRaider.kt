@@ -39,7 +39,7 @@ val MineRaider = card("Mine Raider") {
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = Conditions.YouControlAtLeast(
+        interveningIf = Conditions.YouControlAtLeast(
             2,
             GameObjectFilter.Creature.withAnyOfSubtypes(Subtype.OUTLAW_TYPES),
         )

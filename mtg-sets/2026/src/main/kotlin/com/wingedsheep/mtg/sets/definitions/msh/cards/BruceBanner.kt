@@ -50,7 +50,7 @@ import com.wingedsheep.sdk.scripting.values.DynamicAmount
  *
  *  - **"If he's attacking, untap him and there is an additional combat phase after this phase"** is
  *    checked when the trigger *resolves*, not when it fires — so it is a [ConditionalEffect] over
- *    [Conditions.SourceIsAttacking], not an intervening-if `triggerCondition`. The body is the
+ *    [Conditions.SourceIsAttacking], not an intervening-if `interveningIf`. The body is the
  *    Combat Celebrant / Genji Glove pair: [Effects.Untap] on the source so he can attack again,
  *    then [Effects.AddCombatPhase], which inserts one extra combat phase (no trailing main phase)
  *    after the current one. Unlike Éomer and Genji Glove there is deliberately **no** `oncePerTurn`

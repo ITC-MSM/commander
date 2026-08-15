@@ -22,9 +22,12 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  *  - "Whenever you attack" is the once-per-combat group trigger ([Triggers.YouAttack]) — it fires
  *    once no matter how many creatures attack, and it does not require The Chief Warg itself to be
  *    among the attackers.
- *  - The "while you control a creature with power 4 or greater" clause is an intervening-if style
- *    condition checked when the trigger would fire (and again on resolution), which is what
- *    `triggerCondition` models. The Chief Warg is 3/3, so it never satisfies this on its own.
+ *  - The "**while** you control a creature with power 4 or greater" clause qualifies the trigger
+ *    event, not the resolution, so it is a `triggerRestriction`: read as the attack is declared and
+ *    never again, which is why killing the big creature in response still leaves the draw. It is
+ *    deliberately *not* an `interveningIf` — CR 603.4's second check applies only to an "if"
+ *    immediately following the trigger event. The Chief Warg is 3/3, so it never satisfies this on
+ *    its own.
  */
 val TheChiefWarg = card("The Chief Warg") {
     manaCost = "{2}{B}{G}"
@@ -40,7 +43,7 @@ val TheChiefWarg = card("The Chief Warg") {
 
     triggeredAbility {
         trigger = Triggers.YouAttack
-        triggerCondition = Conditions.YouControl(GameObjectFilter.Creature.powerAtLeast(4))
+        triggerRestriction = Conditions.YouControl(GameObjectFilter.Creature.powerAtLeast(4))
         effect = Effects.Composite(
             Effects.DrawCards(1),
             Effects.LoseLife(1, EffectTarget.Controller)

@@ -42,7 +42,7 @@ val KataraBendingProdigy = card("Katara, Bending Prodigy") {
     // At the beginning of your end step, if Katara is tapped, put a +1/+1 counter on her.
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = Conditions.SourceIsTapped
+        interveningIf = Conditions.SourceIsTapped
         effect = Effects.AddCounters(Counters.PLUS_ONE_PLUS_ONE, 1, EffectTarget.Self)
     }
 

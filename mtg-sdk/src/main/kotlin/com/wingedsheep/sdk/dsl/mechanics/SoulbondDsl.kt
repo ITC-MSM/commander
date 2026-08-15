@@ -34,7 +34,7 @@ import com.wingedsheep.sdk.scripting.references.Player
  * - **Another creature you control enters.** [Triggers.OtherCreatureEnters] already carries the
  *   "another creature **you control**" half of the intervening-if, and a creature that just entered
  *   can never already be paired, so the only clause left to check is that *this* creature is
- *   unpaired — [Conditions.SourceIsUnpaired] as the `triggerCondition`. A [MayEffect] supplies
+ *   unpaired — [Conditions.SourceIsUnpaired] as the `interveningIf`. A [MayEffect] supplies
  *   the "you may" as a plain yes/no, which reads better than a one-candidate selection.
  *
  * The "for as long as both remain creatures on the battlefield under your control" duration is not
@@ -70,7 +70,7 @@ fun CardBuilder.soulbond() {
                 )
                 pairWithSource(partner)
             },
-            triggerCondition = Conditions.SourceIsUnpaired,
+            interveningIf = Conditions.SourceIsUnpaired,
             descriptionOverride = "Soulbond (You may pair this creature with another unpaired " +
                 "creature when either enters. They remain paired for as long as you control both of them.)"
         )
@@ -87,7 +87,7 @@ fun CardBuilder.soulbond() {
                     pairWithSource(partner)
                 }
             ),
-            triggerCondition = Conditions.SourceIsUnpaired,
+            interveningIf = Conditions.SourceIsUnpaired,
             descriptionOverride = "You may pair that creature with this creature"
         )
     )

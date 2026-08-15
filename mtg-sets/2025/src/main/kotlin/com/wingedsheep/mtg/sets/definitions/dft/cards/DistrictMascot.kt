@@ -45,7 +45,7 @@ val DistrictMascot = card("District Mascot") {
     }
     triggeredAbility {
         trigger = Triggers.Attacks
-        triggerCondition = Conditions.SourceIsSaddled
+        triggerRestriction = Conditions.SourceIsSaddled
         effect = AddCountersEffect(counterType = Counters.PLUS_ONE_PLUS_ONE, count = 1, target = EffectTarget.Self)
     }
     keywordAbility(KeywordAbility.saddle(1))

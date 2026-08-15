@@ -30,7 +30,7 @@ private val ScornedVillagerFront = card("Scorned Villager") {
     }
     triggeredAbility {
         trigger = Triggers.EachUpkeep
-        triggerCondition = Conditions.CompareAmounts(
+        interveningIf = Conditions.CompareAmounts(
             DynamicAmounts.spellsCastLastTurn(), ComparisonOperator.EQ, DynamicAmount.Fixed(0)
         )
         effect = TransformEffect(EffectTarget.Self)
@@ -62,7 +62,7 @@ private val MoonscarredWerewolf = card("Moonscarred Werewolf") {
     }
     triggeredAbility {
         trigger = Triggers.EachUpkeep
-        triggerCondition = Conditions.CompareAmounts(
+        interveningIf = Conditions.CompareAmounts(
             DynamicAmounts.spellsCastLastTurn(), ComparisonOperator.GTE, DynamicAmount.Fixed(2)
         )
         effect = TransformEffect(EffectTarget.Self)

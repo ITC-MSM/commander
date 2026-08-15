@@ -25,7 +25,7 @@ val LastingTarfire = card("Lasting Tarfire") {
 
     triggeredAbility {
         trigger = Triggers.EachEndStep
-        triggerCondition = Conditions.PutCounterOnCreatureThisTurn
+        interveningIf = Conditions.PutCounterOnCreatureThisTurn
         effect = Effects.DealDamage(2, EffectTarget.PlayerRef(Player.EachOpponent))
     }
 

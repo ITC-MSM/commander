@@ -24,7 +24,7 @@ val ResistanceSquad = card("Resistance Squad") {
     toughness = 2
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = Conditions.YouControl(
+        interveningIf = Conditions.YouControl(
             filter = GameObjectFilter.Creature.withSubtype(Subtype.HUMAN),
             excludeSelf = true
         )

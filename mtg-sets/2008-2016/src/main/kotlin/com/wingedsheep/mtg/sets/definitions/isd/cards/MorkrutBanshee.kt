@@ -29,7 +29,7 @@ val MorkrutBanshee = card("Morkrut Banshee") {
     toughness = 4
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = Conditions.CreatureDiedThisTurn
+        interveningIf = Conditions.CreatureDiedThisTurn
         val t = target("target", TargetCreature(filter = TargetFilter.Creature))
         effect = Effects.ModifyStats(-4, -4, t)
     }

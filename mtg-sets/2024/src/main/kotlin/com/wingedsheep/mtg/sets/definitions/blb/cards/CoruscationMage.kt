@@ -36,7 +36,7 @@ val CoruscationMage = card("Coruscation Mage") {
     // Offspring ETB: create token copy when kicked
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = WasKicked
+        interveningIf = WasKicked
         effect = Effects.CreateTokenCopyOfSelf(overridePower = 1, overrideToughness = 1)
     }
 

@@ -61,6 +61,10 @@ data class TriggeredAbilityContinuation(
     val triggerCounterCount: Int? = null,
     val triggerTotalCounterCount: Int? = null,
     val triggerLastKnownCounters: Map<String, Int>? = null,
+    /** Projected subtypes / card types the triggering permanent had as it left the battlefield
+     *  (CR 603.10), preserved across target selection for the intervening-"if"'s second check. */
+    val triggerLastKnownSubtypes: Set<String>? = null,
+    val triggerLastKnownCardTypes: Set<String>? = null,
     val triggerLastKnownDamageDealtByPlayers: Map<EntityId, Int>? = null,
     /** Creatures blocking/blocked by the trigger's source on leave-battlefield (CR 509 LKI, Abu Ja'far). */
     val triggerLastKnownBlockingOrBlockedByIds: List<EntityId>? = null,
@@ -103,7 +107,11 @@ data class TriggeredAbilityContinuation(
     val xValue: Int? = null,
     /** Pipeline state carried from a `ReflexiveTriggerEffect`'s action half, preserved across target
      *  selection so the stack object built on resume carries it (CR 603.12). Null otherwise. */
-    val carriedPipeline: com.wingedsheep.engine.handlers.PipelineState? = null
+    val carriedPipeline: com.wingedsheep.engine.handlers.PipelineState? = null,
+    /** The ability's intervening-"if" (CR 603.4), preserved across target selection so the stack
+     *  object built on resume can re-check it as it resolves. See
+     *  [com.wingedsheep.engine.state.components.stack.TriggeredAbilityOnStackComponent.interveningIf]. */
+    val interveningIf: com.wingedsheep.sdk.scripting.conditions.Condition? = null
 ) : ContinuationFrame
 
 /**
@@ -141,6 +149,10 @@ data class TriggerDamageDistributionContinuation(
     val triggerCounterCount: Int? = null,
     val triggerTotalCounterCount: Int? = null,
     val triggerLastKnownCounters: Map<String, Int>? = null,
+    /** Projected subtypes / card types the triggering permanent had as it left the battlefield
+     *  (CR 603.10), preserved across target selection for the intervening-"if"'s second check. */
+    val triggerLastKnownSubtypes: Set<String>? = null,
+    val triggerLastKnownCardTypes: Set<String>? = null,
     val triggerLastKnownDamageDealtByPlayers: Map<EntityId, Int>? = null,
     /** Creatures blocking/blocked by the trigger's source on leave-battlefield (CR 509 LKI, Abu Ja'far). */
     val triggerLastKnownBlockingOrBlockedByIds: List<EntityId>? = null,
@@ -148,7 +160,10 @@ data class TriggerDamageDistributionContinuation(
     val targetRequirements: List<TargetRequirement>,
     val totalDamage: Int,
     val lastKnownPower: Int? = null,
-    val lastKnownToughness: Int? = null
+    val lastKnownToughness: Int? = null,
+    /** The ability's intervening-"if" (CR 603.4), preserved across the distribution decision so the
+     *  stack object built on resume can re-check it as it resolves. */
+    val interveningIf: com.wingedsheep.sdk.scripting.conditions.Condition? = null
 ) : ContinuationFrame
 
 /**

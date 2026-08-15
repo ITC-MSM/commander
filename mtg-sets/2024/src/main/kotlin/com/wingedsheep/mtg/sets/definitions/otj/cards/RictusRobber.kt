@@ -34,7 +34,7 @@ val RictusRobber = card("Rictus Robber") {
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
         // Intervening "if": checked both on trigger and on resolution.
-        triggerCondition = Conditions.CreatureDiedThisTurn
+        interveningIf = Conditions.CreatureDiedThisTurn
         effect = Effects.CreateToken(
             count = 1,
             power = 2,

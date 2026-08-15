@@ -35,7 +35,7 @@ val EshkiDragonclaw = card("Eshki Dragonclaw") {
 
     triggeredAbility {
         trigger = Triggers.BeginCombat
-        triggerCondition = Conditions.All(
+        interveningIf = Conditions.All(
             Conditions.YouCastSpellsThisTurn(atLeast = 1, filter = GameObjectFilter.Creature),
             Conditions.YouCastSpellsThisTurn(atLeast = 1, filter = GameObjectFilter.Noncreature)
         )

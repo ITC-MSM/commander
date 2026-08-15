@@ -47,7 +47,7 @@ val ThickestInTheThicket = card("Thickest in the Thicket") {
     // The `ControlCreature` conjunct excludes the 0-vs-0 case when no creatures exist.
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = Conditions.All(
+        triggerRestriction = Conditions.All(
             Conditions.ControlCreature,
             Compare(
                 DynamicAmounts.battlefield(Player.You, GameObjectFilter.Creature).maxPower(),

@@ -42,7 +42,7 @@ val ShortcutToMushrooms = card("Shortcut to Mushrooms") {
 
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = Conditions.YouHadPermanentLeaveBattlefieldThisTurn
+        interveningIf = Conditions.YouHadPermanentLeaveBattlefieldThisTurn
         val creature = target("creature you control", Targets.CreatureYouControl)
         effect = Effects.AddCounters(Counters.PLUS_ONE_PLUS_ONE, 1, creature)
     }

@@ -35,7 +35,7 @@ val BeastbondOutcaster = card("Beastbond Outcaster") {
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = Conditions.YouControl(GameObjectFilter.Creature.powerAtLeast(4))
+        interveningIf = Conditions.YouControl(GameObjectFilter.Creature.powerAtLeast(4))
         effect = Effects.DrawCards(1)
         description = "When this creature enters, if you control a creature with power 4 or greater, draw a card."
     }

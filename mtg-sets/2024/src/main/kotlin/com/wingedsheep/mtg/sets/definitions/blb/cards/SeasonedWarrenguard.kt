@@ -33,7 +33,7 @@ val SeasonedWarrenguard = card("Seasoned Warrenguard") {
         // "attacks WHILE you control a token" — checked only when the trigger fires
         // (attack declaration). Per the printed ruling, losing the token before the
         // ability resolves must not stop the pump, so there is no resolution-time check.
-        triggerCondition = Exists(Player.You, Zone.BATTLEFIELD, GameObjectFilter.Token)
+        triggerRestriction = Exists(Player.You, Zone.BATTLEFIELD, GameObjectFilter.Token)
         effect = Effects.ModifyStats(2, 0, EffectTarget.Self)
     }
 

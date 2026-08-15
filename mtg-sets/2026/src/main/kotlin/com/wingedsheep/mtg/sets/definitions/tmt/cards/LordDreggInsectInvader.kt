@@ -35,7 +35,7 @@ val LordDreggInsectInvader = card("Lord Dregg, Insect Invader") {
 
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = Conditions.YouHadPermanentLeaveBattlefieldThisTurn
+        interveningIf = Conditions.YouHadPermanentLeaveBattlefieldThisTurn
         effect = CreateTokenEffect(
             power = 1,
             toughness = 1,

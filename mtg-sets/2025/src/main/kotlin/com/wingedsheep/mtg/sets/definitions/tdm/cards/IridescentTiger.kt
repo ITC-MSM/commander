@@ -28,7 +28,7 @@ val IridescentTiger = card("Iridescent Tiger") {
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = Conditions.WasCast
+        interveningIf = Conditions.WasCast
         effect = Effects.Composite(
             Effects.AddMana(Color.WHITE),
             Effects.AddMana(Color.BLUE),

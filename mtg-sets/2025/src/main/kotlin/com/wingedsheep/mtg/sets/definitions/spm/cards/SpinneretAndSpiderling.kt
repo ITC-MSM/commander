@@ -35,7 +35,8 @@ import com.wingedsheep.sdk.scripting.values.DynamicAmount
  *   attacking creatures are Spiders, regardless of whether Spinneret and Spiderling (itself a
  *   Spider) is among them. Same shape as Landroval, Horizon Witness / Horn of the Mark.
  * - Damage trigger: [Triggers.DealsDamage] is the SELF "whenever this deals damage" event; the
- *   "4 or more" gate is a `triggerCondition` (CR 603.4 intervening-if) comparing the damage dealt
+ *   "4 or more" gate is a `triggerRestriction` — a restriction on the trigger event itself
+ *   (CR 603.2), not an intervening "if" — comparing the damage dealt
  *   in that event ([ContextPropertyKey.TRIGGER_DAMAGE_AMOUNT]) against 4 with
  *   [ComparisonOperator.GTE]. This mirrors the shipped Taii Wakeen / Quilled Greatwurm idiom of
  *   reading the per-event damage amount off the trigger payload; the engine models combat damage as
@@ -68,7 +69,7 @@ val SpinneretAndSpiderling = card("Spinneret and Spiderling") {
 
     triggeredAbility {
         trigger = Triggers.DealsDamage
-        triggerCondition = Conditions.CompareAmounts(
+        triggerRestriction = Conditions.CompareAmounts(
             DynamicAmount.ContextProperty(ContextPropertyKey.TRIGGER_DAMAGE_AMOUNT),
             ComparisonOperator.GTE,
             DynamicAmount.Fixed(4),

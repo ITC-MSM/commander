@@ -71,7 +71,7 @@ val FrostcliffSiege = card("Frostcliff Siege") {
             ),
             TriggerBinding.ANY
         )
-        triggerCondition = SourceChosenModeIs("jeskai")
+        triggerRestriction = SourceChosenModeIs("jeskai")
         effect = Effects.DrawCards(1)
     }
 

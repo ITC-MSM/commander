@@ -63,7 +63,7 @@ val NineLivesFamiliar = card("Nine-Lives Familiar") {
 
     triggeredAbility {
         trigger = Triggers.Dies
-        triggerCondition = Compare(
+        interveningIf = Compare(
             DynamicAmounts.lastKnownSourceCounters(revivalCounters),
             ComparisonOperator.GTE,
             DynamicAmount.Fixed(1)

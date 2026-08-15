@@ -45,7 +45,7 @@ val CynicalLoner = card("Cynical Loner") {
 
     triggeredAbility {
         trigger = Triggers.YourPostcombatMain
-        triggerCondition = Conditions.SourceIsTapped
+        interveningIf = Conditions.SourceIsTapped
         effect = MayEffect(
             Patterns.Library.searchLibrary(
                 filter = GameObjectFilter.Any,

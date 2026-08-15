@@ -24,7 +24,7 @@ val AdrenalineJockey = card("Adrenaline Jockey") {
 
     triggeredAbility {
         trigger = Triggers.AnyPlayerCastsSpell
-        triggerCondition = Conditions.Not(Conditions.IsPlayersTurn(Player.TriggeringPlayer))
+        interveningIf = Conditions.Not(Conditions.IsPlayersTurn(Player.TriggeringPlayer))
         effect = Effects.DealDamage(4, EffectTarget.PlayerRef(Player.TriggeringPlayer))
     }
 

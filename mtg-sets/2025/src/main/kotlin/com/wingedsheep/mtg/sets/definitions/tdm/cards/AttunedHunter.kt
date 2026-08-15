@@ -18,7 +18,7 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  * on this creature.
  *
  * "During your turn" is the trigger's timing restriction, expressed as
- * triggerCondition = Conditions.IsYourTurn. The batching leave-graveyard trigger fires once
+ * triggerRestriction = Conditions.IsYourTurn. The batching leave-graveyard trigger fires once
  * per event batch, so it can grow this creature multiple times in a turn (one per batch).
  */
 val AttunedHunter = card("Attuned Hunter") {
@@ -34,7 +34,7 @@ val AttunedHunter = card("Attuned Hunter") {
 
     triggeredAbility {
         trigger = Triggers.CardsLeaveYourGraveyard()
-        triggerCondition = Conditions.IsYourTurn
+        triggerRestriction = Conditions.IsYourTurn
         effect = Effects.AddCounters(Counters.PLUS_ONE_PLUS_ONE, 1, EffectTarget.Self)
     }
 

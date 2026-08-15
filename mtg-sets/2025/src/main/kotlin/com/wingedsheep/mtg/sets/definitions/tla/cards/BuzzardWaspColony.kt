@@ -62,7 +62,7 @@ val BuzzardWaspColony = card("Buzzard-Wasp Colony") {
             to = Zone.GRAVEYARD,
             binding = TriggerBinding.OTHER
         )
-        triggerCondition = Conditions.TriggeringEntityHadCounters
+        interveningIf = Conditions.TriggeringEntityHadCounters
         effect = Effects.MoveAllLastKnownCounters(EffectTarget.Self)
         description = "Whenever another creature you control dies, if it had counters on it, " +
             "put its counters on this creature."

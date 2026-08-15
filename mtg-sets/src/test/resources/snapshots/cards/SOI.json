@@ -312,7 +312,7 @@
                         "amount": 3
                     }
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Exists",
                     "player": "You",
                     "zone": "Battlefield",
@@ -773,44 +773,25 @@
                 },
                 "binding": "ANY",
                 "effect": {
-                    "type": "Gated",
-                    "gate": {
-                        "type": "Gate.WhenCondition",
-                        "condition": {
-                            "type": "Compare",
-                            "left": {
-                                "type": "Count",
-                                "player": "TriggeringPlayer",
-                                "zone": "Hand"
-                            },
-                            "operator": "EQ",
-                            "right": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DrawCards",
+                            "count": {
                                 "type": "Fixed",
-                                "amount": 0
+                                "amount": 1
+                            }
+                        },
+                        {
+                            "type": "LoseLife",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 1
                             }
                         }
-                    },
-                    "then": {
-                        "type": "Composite",
-                        "effects": [
-                            {
-                                "type": "DrawCards",
-                                "count": {
-                                    "type": "Fixed",
-                                    "amount": 1
-                                }
-                            },
-                            {
-                                "type": "LoseLife",
-                                "amount": {
-                                    "type": "Fixed",
-                                    "amount": 1
-                                }
-                            }
-                        ]
-                    }
+                    ]
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "Count",
@@ -1271,7 +1252,7 @@
                 },
                 "binding": "ANY",
                 "effect": "Transform",
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": "SpellsCastLastTurn",
                     "operator": "EQ",
@@ -1367,7 +1348,7 @@
                     },
                     "binding": "ANY",
                     "effect": "Transform",
-                    "triggerCondition": {
+                    "interveningIf": {
                         "type": "Compare",
                         "left": "SpellsCastLastTurn",
                         "operator": "GTE",
@@ -1683,7 +1664,7 @@
                 },
                 "binding": "ANY",
                 "effect": "Transform",
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": "SpellsCastLastTurn",
                     "operator": "EQ",
@@ -1733,7 +1714,7 @@
                     },
                     "binding": "ANY",
                     "effect": "Transform",
-                    "triggerCondition": {
+                    "interveningIf": {
                         "type": "Compare",
                         "left": "SpellsCastLastTurn",
                         "operator": "GTE",
@@ -2003,7 +1984,7 @@
                 },
                 "binding": "ANY",
                 "effect": "Transform",
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": "SpellsCastLastTurn",
                     "operator": "EQ",
@@ -2038,7 +2019,7 @@
                     },
                     "binding": "ANY",
                     "effect": "Transform",
-                    "triggerCondition": {
+                    "interveningIf": {
                         "type": "Compare",
                         "left": "SpellsCastLastTurn",
                         "operator": "GTE",
@@ -4689,7 +4670,7 @@
                 },
                 "binding": "ANY",
                 "effect": "Transform",
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": "SpellsCastLastTurn",
                     "operator": "EQ",
@@ -4724,7 +4705,7 @@
                     },
                     "binding": "ANY",
                     "effect": "Transform",
-                    "triggerCondition": {
+                    "interveningIf": {
                         "type": "Compare",
                         "left": "SpellsCastLastTurn",
                         "operator": "GTE",

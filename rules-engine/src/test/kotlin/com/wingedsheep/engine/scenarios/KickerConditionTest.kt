@@ -37,7 +37,7 @@ class KickerConditionTest : FunSpec({
 
         triggeredAbility {
             trigger = Triggers.EachEndStep
-            triggerCondition = NotCondition(WasKicked)
+            interveningIf = NotCondition(WasKicked)
             effect = SacrificeSelfEffect
         }
     }

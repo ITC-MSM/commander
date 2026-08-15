@@ -33,7 +33,7 @@ import com.wingedsheep.sdk.scripting.targets.TargetCreature
  *
  * The dies payoff mirrors Rakdos Joins Up: a [Triggers.leavesBattlefield] (… to GRAVEYARD)
  * over Mutant creatures you control, gated to "during your turn" via
- * triggerCondition = [Conditions.IsYourTurn]. The draw amount is [DynamicAmounts.triggeringPower],
+ * triggerRestriction = [Conditions.IsYourTurn]. The draw amount is [DynamicAmounts.triggeringPower],
  * which resolves via last-known information for the just-died creature.
  */
 val JenovaAncientCalamity = card("Jenova, Ancient Calamity") {
@@ -67,7 +67,7 @@ val JenovaAncientCalamity = card("Jenova, Ancient Calamity") {
             to = Zone.GRAVEYARD,
             binding = TriggerBinding.ANY
         )
-        triggerCondition = Conditions.IsYourTurn
+        triggerRestriction = Conditions.IsYourTurn
         effect = Effects.DrawCards(DynamicAmounts.triggeringPower())
     }
 

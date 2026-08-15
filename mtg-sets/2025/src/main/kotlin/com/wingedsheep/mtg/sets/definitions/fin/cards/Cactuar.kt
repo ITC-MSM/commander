@@ -36,7 +36,7 @@ val Cactuar = card("Cactuar") {
 
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = Conditions.Not(Conditions.SourceEnteredThisTurn)
+        interveningIf = Conditions.Not(Conditions.SourceEnteredThisTurn)
         effect = Effects.ReturnToHand(EffectTarget.Self)
         description = "At the beginning of your end step, if this creature didn't enter the " +
             "battlefield this turn, return it to its owner's hand."

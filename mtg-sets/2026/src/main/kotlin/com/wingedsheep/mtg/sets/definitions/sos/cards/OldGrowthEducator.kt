@@ -32,7 +32,7 @@ val OldGrowthEducator = card("Old-Growth Educator") {
     keywords(Keyword.VIGILANCE, Keyword.REACH)
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = Conditions.YouGainedLifeThisTurn
+        triggerRestriction = Conditions.YouGainedLifeThisTurn
         effect = AddCountersEffect(counterType = Counters.PLUS_ONE_PLUS_ONE, count = 2, target = EffectTarget.Self)
     }
     metadata {

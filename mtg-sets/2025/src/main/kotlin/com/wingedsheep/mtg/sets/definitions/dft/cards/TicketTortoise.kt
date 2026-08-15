@@ -18,7 +18,7 @@ import com.wingedsheep.sdk.model.Rarity
  * token.
  *
  * The enters ability carries an intervening-if clause (CR 603.4), modelled as
- * `triggerCondition = `[Conditions.OpponentControlsMoreLands] — the land comparison is checked both
+ * `interveningIf = `[Conditions.OpponentControlsMoreLands] — the land comparison is checked both
  * as the trigger would go on the stack and again as it resolves, so a land drop in between (or an
  * opponent losing lands) can still make it do nothing.
  */
@@ -36,7 +36,7 @@ val TicketTortoise = card("Ticket Tortoise") {
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = Conditions.OpponentControlsMoreLands
+        interveningIf = Conditions.OpponentControlsMoreLands
         effect = Effects.CreateTreasure(1)
         description = "When this creature enters, if an opponent controls more lands than you, you " +
             "create a Treasure token."

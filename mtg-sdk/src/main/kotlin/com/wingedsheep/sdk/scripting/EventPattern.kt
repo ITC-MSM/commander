@@ -423,7 +423,7 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
      *
      * Use [player] to filter which player's loss is relevant (default [Player.Each] — any player).
      * For "when the chosen player loses the game" (Shinryu, Transcendent Rival) pair
-     * [Player.Each] with a `triggerCondition` comparing the triggering player to the source's
+     * [Player.Each] with a `triggerRestriction` comparing the triggering player to the source's
      * chosen opponent, so `Player.TriggeringPlayer` inside the effect resolves to the loser.
      */
     @SerialName("PlayerLostGameEvent")
@@ -1220,7 +1220,7 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
      *
      * The controller is always the caster, so there is no player parameter. For an intervening
      * "if" (CR 603.4) such as Sage of the Skies' "if you've cast another spell this turn",
-     * attach a `triggerCondition` to the triggered ability rather than encoding it here.
+     * attach a `triggerRestriction` to the triggered ability rather than encoding it here.
      */
     @SerialName("CastThisSpellEvent")
     @Serializable
@@ -2153,12 +2153,12 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
      * trigger at most once per qualifying controller.
      *
      * The common "during your turn" timing restriction is expressed on the card via
-     * `triggerCondition = Conditions.IsYourTurn` rather than baked into the event, and the
+     * `triggerRestriction = Conditions.IsYourTurn` rather than baked into the event, and the
      * "this ability triggers only once each turn" restriction via `oncePerTurn = true`.
      *
      * Examples:
      * - "Whenever one or more cards leave your graveyard during your turn, …"
-     *   → CardsLeftYourGraveyardEvent() + triggerCondition = Conditions.IsYourTurn
+     *   → CardsLeftYourGraveyardEvent() + triggerRestriction = Conditions.IsYourTurn
      *   (Attuned Hunter, Kishla Skimmer, Kheru Goldkeeper)
      */
     @SerialName("CardsLeftYourGraveyardEvent")
@@ -2198,11 +2198,11 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
      * never satisfies it even though it briefly occupies the exile zone before CR 111.7 sweeps it.
      *
      * The common "during your turn" timing restriction is expressed on the card via
-     * `triggerCondition = Conditions.IsYourTurn` rather than baked into the event.
+     * `triggerRestriction = Conditions.IsYourTurn` rather than baked into the event.
      *
      * Examples:
      * - "Whenever one or more cards are put into exile from graveyards and/or the battlefield
-     *   during your turn, …" → `CardsPutIntoExileEvent()` + `triggerCondition = Conditions.IsYourTurn`
+     *   during your turn, …" → `CardsPutIntoExileEvent()` + `triggerRestriction = Conditions.IsYourTurn`
      *   (Ketramose, the New Dawn)
      */
     @SerialName("CardsPutIntoExileEvent")

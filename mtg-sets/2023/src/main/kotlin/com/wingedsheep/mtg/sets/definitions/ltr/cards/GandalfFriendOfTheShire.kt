@@ -47,7 +47,7 @@ val GandalfFriendOfTheShire = card("Gandalf, Friend of the Shire") {
 
     triggeredAbility {
         trigger = Triggers.RingTemptsYou
-        triggerCondition = Conditions.YouChoseOtherCreatureAsRingBearer
+        interveningIf = Conditions.YouChoseOtherCreatureAsRingBearer
         effect = Effects.DrawCards(1)
     }
 

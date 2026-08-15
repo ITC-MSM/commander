@@ -71,7 +71,7 @@ val TheSoulStone = card("The Soul Stone") {
     // graveyard to the battlefield.
     triggeredAbility {
         trigger = Triggers.YourUpkeep
-        triggerCondition = Conditions.SourceHasCounter(CounterTypeFilter.Named(Counters.HARNESS))
+        triggerRestriction = Conditions.SourceHasCounter(CounterTypeFilter.Named(Counters.HARNESS))
         val graveyardCreature = target("target creature card in your graveyard", Targets.CreatureCardInYourGraveyard)
         effect = Effects.PutOntoBattlefield(graveyardCreature)
         description = "∞ — At the beginning of your upkeep, return target creature card from your " +

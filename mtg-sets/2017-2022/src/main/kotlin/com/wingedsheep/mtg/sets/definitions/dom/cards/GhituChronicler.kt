@@ -30,7 +30,7 @@ val GhituChronicler = card("Ghitu Chronicler") {
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = WasKicked
+        interveningIf = WasKicked
         val t = target(
             "instant or sorcery card in your graveyard",
             TargetObject(filter = TargetFilter.InstantOrSorceryInYourGraveyard)

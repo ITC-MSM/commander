@@ -39,7 +39,7 @@ val AutarchMammoth = card("Autarch Mammoth") {
     }
     triggeredAbility {
         trigger = Triggers.Attacks
-        triggerCondition = Conditions.SourceIsSaddled
+        triggerRestriction = Conditions.SourceIsSaddled
         effect = Effects.CreateToken(
             power = 3,
             toughness = 3,

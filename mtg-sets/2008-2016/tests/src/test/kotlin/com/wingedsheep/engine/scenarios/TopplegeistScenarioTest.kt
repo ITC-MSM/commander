@@ -11,7 +11,7 @@ import io.kotest.matchers.shouldNotBe
 
 /**
  * Topplegeist (DDQ #21) — ETB tap, plus a Delirium-gated tap at the beginning of each opponent's
- * upkeep. The delirium clause is an intervening-if `triggerCondition`, so it is checked when the
+ * upkeep. The delirium clause is an intervening-if `interveningIf`, so it is checked when the
  * trigger would go on the stack.
  */
 class TopplegeistScenarioTest : ScenarioTestBase() {

@@ -31,7 +31,7 @@ val VoraciousTomeSkimmer = card("Voracious Tome-Skimmer") {
 
     triggeredAbility {
         trigger = Triggers.YouCastSpell
-        triggerCondition = Conditions.IsNotYourTurn
+        triggerRestriction = Conditions.IsNotYourTurn
         effect = OptionalCostEffect(PayLifeEffect(1), Effects.DrawCards(1))
     }
 

@@ -38,7 +38,7 @@ val MarinaVendrellsGrimoire = card("Marina Vendrell's Grimoire") {
     // When ~ enters, if you cast it, draw five cards.
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = Conditions.WasCast
+        interveningIf = Conditions.WasCast
         effect = Effects.DrawCards(5)
     }
 

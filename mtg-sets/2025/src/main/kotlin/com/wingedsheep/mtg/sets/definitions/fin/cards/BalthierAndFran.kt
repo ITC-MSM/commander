@@ -84,7 +84,7 @@ val BalthierAndFran = card("Balthier and Fran") {
                 .crewedOrSaddledBySourceThisTurn(),
             binding = TriggerBinding.ANY
         )
-        triggerCondition = Conditions.IsFirstCombatPhaseOfTurn
+        interveningIf = Conditions.IsFirstCombatPhaseOfTurn
         effect = MayPayManaEffect(
             cost = ManaCost.parse("{1}{R}{G}"),
             effect = Effects.AddCombatPhase

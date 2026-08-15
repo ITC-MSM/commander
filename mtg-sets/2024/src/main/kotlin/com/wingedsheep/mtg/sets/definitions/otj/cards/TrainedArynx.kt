@@ -32,7 +32,7 @@ val TrainedArynx = card("Trained Arynx") {
     toughness = 1
     triggeredAbility {
         trigger = Triggers.Attacks
-        triggerCondition = Conditions.SourceIsSaddled
+        triggerRestriction = Conditions.SourceIsSaddled
         effect = Effects.Composite(
             Effects.GrantKeyword(Keyword.FIRST_STRIKE, EffectTarget.Self),
             Patterns.Library.scry(1)

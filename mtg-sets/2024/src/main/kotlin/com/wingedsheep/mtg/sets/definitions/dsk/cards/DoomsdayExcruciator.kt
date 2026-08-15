@@ -62,7 +62,7 @@ val DoomsdayExcruciator = card("Doomsday Excruciator") {
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = Conditions.WasCast
+        interveningIf = Conditions.WasCast
         effect = ForEachPlayerEffect(
             players = Player.Each,
             effects = listOf(

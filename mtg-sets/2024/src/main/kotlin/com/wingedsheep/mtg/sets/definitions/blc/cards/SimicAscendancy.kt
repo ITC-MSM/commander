@@ -54,7 +54,7 @@ val SimicAscendancy = card("Simic Ascendancy") {
 
     triggeredAbility {
         trigger = Triggers.YourUpkeep
-        triggerCondition = Compare(
+        interveningIf = Compare(
             DynamicAmount.EntityProperty(
                 EntityReference.Source,
                 EntityNumericProperty.CounterCount(CounterTypeFilter.Named(Counters.GROWTH))

@@ -24,7 +24,7 @@ import com.wingedsheep.sdk.scripting.values.DynamicAmount
  *
  * A targeted ETB trigger with a **resolution-time** intervening condition (the "if" is checked as
  * the ability resolves, not as it triggers, so a [ConditionalEffect] rather than a
- * `triggerCondition`). "That opponent controls no other creatures" is expressed as: the target's
+ * `interveningIf`). "That opponent controls no other creatures" is expressed as: the target's
  * controller controls exactly one creature — the target itself — via
  * `AggregateBattlefield(Player.ControllerOf("target creature"), Creature) == 1`. If they control any
  * other creature the count is ≥ 2 and the -2/-2 does not apply, matching "gets -2/-2 … if that

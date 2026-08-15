@@ -40,7 +40,7 @@ val RovingActuator = card("Roving Actuator") {
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = Conditions.Void
+        interveningIf = Conditions.Void
         description = "Void — When this creature enters, if a nonland permanent left the " +
             "battlefield this turn or a spell was warped this turn, exile up to one target " +
             "instant or sorcery card with mana value 2 or less from your graveyard. Copy it. " +

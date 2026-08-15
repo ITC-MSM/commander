@@ -57,7 +57,7 @@ val KetramoseTheNewDawn = card("Ketramose, the New Dawn") {
 
     triggeredAbility {
         trigger = Triggers.CardsPutIntoExile()
-        triggerCondition = Conditions.IsYourTurn
+        triggerRestriction = Conditions.IsYourTurn
         effect = Effects.Composite(
             Effects.DrawCards(1),
             Effects.LoseLife(1, EffectTarget.Controller)

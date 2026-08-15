@@ -37,7 +37,7 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  * "Enters or attacks" is two distinct trigger conditions, so the loot is modelled as two
  * triggered abilities (`EntersBattlefield` + self `Attacks`), each running the standard
  * draw-then-discard [Patterns.Hand.loot]. The upkeep transform is an intervening-"if" trigger
- * ([triggerCondition]) — per the ruling, the fourteen-card graveyard check is evaluated both when
+ * ([interveningIf]) — per the ruling, the fourteen-card graveyard check is evaluated both when
  * the ability would trigger and again as it resolves — wrapped in [MayEffect] for the optional
  * "you may transform" and flipping the permanent in place with [TransformEffect].
  *
@@ -133,7 +133,7 @@ private val EmetSelchUnsunderedFront = card("Emet-Selch, Unsundered") {
     // resolution.
     triggeredAbility {
         trigger = Triggers.YourUpkeep
-        triggerCondition = Conditions.CardsInGraveyardAtLeast(14)
+        interveningIf = Conditions.CardsInGraveyardAtLeast(14)
         effect = MayEffect(TransformEffect(EffectTarget.Self))
     }
 

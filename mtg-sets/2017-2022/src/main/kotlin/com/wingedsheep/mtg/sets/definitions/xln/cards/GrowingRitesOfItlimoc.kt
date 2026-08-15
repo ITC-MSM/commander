@@ -68,7 +68,7 @@ private val GrowingRitesOfItlimocFront = card("Growing Rites of Itlimoc") {
     // At the beginning of your end step, if you control four or more creatures, transform.
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = Conditions.YouControlAtLeast(4, GameObjectFilter.Creature)
+        interveningIf = Conditions.YouControlAtLeast(4, GameObjectFilter.Creature)
         effect = TransformEffect(EffectTarget.Self)
         description = "At the beginning of your end step, if you control four or more " +
             "creatures, transform Growing Rites of Itlimoc."

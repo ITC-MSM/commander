@@ -38,7 +38,7 @@ val LeonardoLeaderInBlue = card("Leonardo, Leader in Blue") {
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = Conditions.SneakCostWasPaid
+        interveningIf = Conditions.SneakCostWasPaid
         effect = Patterns.Group.modifyStatsForAll(2, 0, Filters.Group.creaturesYouControl)
     }
 

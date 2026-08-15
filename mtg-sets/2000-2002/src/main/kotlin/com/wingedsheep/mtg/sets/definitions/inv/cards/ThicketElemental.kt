@@ -40,7 +40,7 @@ val ThicketElemental = card("Thicket Elemental") {
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = WasKicked
+        interveningIf = WasKicked
         effect = MayEffect(
             Effects.Composite(
                 listOf(

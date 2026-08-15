@@ -27,7 +27,7 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  * base 3/3, adds the Spirit subtype, and grants flying. No duration (CR ruling 2024-04-12: "the
  * ability doesn't have a duration … it remains a creature indefinitely").
  *
- * Intervening-if (CR 603.4): the [triggerCondition] is checked both when the ability would
+ * Intervening-if (CR 603.4): the [interveningIf] is checked both when the ability would
  * trigger and again as it resolves. Both clauses are ANDed — "haven't cast a spell from your
  * hand this turn" (via the spells-from-hand tally) and "this enchantment isn't a creature" (the
  * source is currently noncreature, read from projected state so it self-disables once animated).
@@ -45,7 +45,7 @@ val EmergentHaunting = card("Emergent Haunting") {
 
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = Conditions.All(
+        interveningIf = Conditions.All(
             Conditions.Not(Conditions.YouCastSpellsThisTurn(1, fromZone = Zone.HAND)),
             Conditions.SourceMatches(GameObjectFilter.Noncreature)
         )

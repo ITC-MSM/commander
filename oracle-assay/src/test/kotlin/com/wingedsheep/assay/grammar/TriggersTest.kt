@@ -122,8 +122,8 @@ class TriggersTest : StringSpec({
     }
 
     // An intervening-if (CR 603.4) *is* spellable: it is the clause between the event and the
-    // effect, and `triggerCondition` is the SDK's slot for it. `Triggers.abilityFor` lifts the
-    // clause's own gate into that slot rather than leaving a copy in the effect, which is what 478
+    // effect, and `interveningIf` is the SDK's slot for it. `Triggers.abilityFor` lifts the
+    // clause's own gate into that slot rather than leaving a copy in the effect, which is what the
     // hand-written cards do and what keeps one printed form for one model.
     "an intervening-if is the trigger's own condition, not a second gate in the effect" {
         val conditioned = TriggeredAbility(
@@ -131,7 +131,7 @@ class TriggersTest : StringSpec({
             trigger = SdkTriggers.EntersBattlefield.event,
             binding = SdkTriggers.EntersBattlefield.binding,
             effect = Effects.DrawCards(1),
-            triggerCondition = Conditions.OpponentControlsMoreLands,
+            interveningIf = Conditions.OpponentControlsMoreLands,
         )
 
         fragment("When ~ enters, if an opponent controls more lands than you, draw a card.") shouldBe
@@ -139,6 +139,24 @@ class TriggersTest : StringSpec({
         Grammar.abilityLine.printLine(
             CardFragment(script = CardScript(triggeredAbilities = listOf(conditioned)))
         ) shouldBe "When ~ enters, if an opponent controls more lands than you, draw a card."
+    }
+
+    // The other half of the split (CR 603.2 vs CR 603.4). A `triggerRestriction` is a different
+    // printed shape — "Whenever this creature attacks *while* you control a Dinosaur" — that the
+    // engine reads only when the trigger fires. No trigger rule spells it, so an ability carrying
+    // one must decline rather than print the "if" sentence, whose model differs.
+    "a trigger restriction is not printable as an intervening-if" {
+        val restricted = TriggeredAbility(
+            id = AbilityId("trigger"),
+            trigger = SdkTriggers.EntersBattlefield.event,
+            binding = SdkTriggers.EntersBattlefield.binding,
+            effect = Effects.DrawCards(1),
+            triggerRestriction = Conditions.OpponentControlsMoreLands,
+        )
+
+        Grammar.abilityLine.printLine(
+            CardFragment(script = CardScript(triggeredAbilities = listOf(restricted)))
+        ) shouldBe null
     }
 
     // Fail-closed, the same rule the step matchers follow: an ability carrying anything the sentence

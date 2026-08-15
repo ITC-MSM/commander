@@ -41,7 +41,7 @@ val UltrosObnoxiousOctopus = card("Ultros, Obnoxious Octopus") {
 
     triggeredAbility {
         trigger = Triggers.YouCastNoncreature
-        triggerCondition = Conditions.TriggeringSpellManaSpentAtLeast(4)
+        interveningIf = Conditions.TriggeringSpellManaSpentAtLeast(4)
         val t = target("target", Targets.CreatureOpponentControls)
         effect = Effects.Composite(
             Effects.Tap(t),
@@ -51,7 +51,7 @@ val UltrosObnoxiousOctopus = card("Ultros, Obnoxious Octopus") {
 
     triggeredAbility {
         trigger = Triggers.YouCastNoncreature
-        triggerCondition = Conditions.TriggeringSpellManaSpentAtLeast(8)
+        interveningIf = Conditions.TriggeringSpellManaSpentAtLeast(8)
         effect = Effects.AddCounters(Counters.PLUS_ONE_PLUS_ONE, 8, EffectTarget.Self)
     }
 

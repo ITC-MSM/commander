@@ -18,7 +18,7 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  * Threshold — Whenever this creature attacks, if there are seven or more cards in your
  * graveyard, this creature gets +2/+0 until end of turn.
  *
- * The threshold clause is an intervening-"if" on the attack trigger ([triggerCondition] is
+ * The threshold clause is an intervening-"if" on the attack trigger ([interveningIf] is
  * checked both when the trigger would go on the stack and again on resolution), pumping the
  * source via [Effects.ModifyStats] targeting [EffectTarget.Self].
  */
@@ -36,7 +36,7 @@ val CryptFeaster = card("Crypt Feaster") {
 
     triggeredAbility {
         trigger = Triggers.Attacks
-        triggerCondition = Conditions.CardsInGraveyardAtLeast(7)
+        interveningIf = Conditions.CardsInGraveyardAtLeast(7)
         effect = Effects.ModifyStats(power = 2, toughness = 0, target = EffectTarget.Self)
     }
 

@@ -50,7 +50,7 @@ val EntropicBattlecruiser = card("Entropic Battlecruiser") {
 
     triggeredAbility {
         trigger = Triggers.AnyOpponentDiscards
-        triggerCondition = atLeast1Charge
+        triggerRestriction = atLeast1Charge
         effect = LoseLifeEffect(3, EffectTarget.PlayerRef(Player.TriggeringPlayer))
     }
 

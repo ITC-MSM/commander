@@ -67,7 +67,7 @@ val BarrensteppeSiege = card("Barrensteppe Siege") {
     // Abzan — At the beginning of your end step, put a +1/+1 counter on each creature you control.
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = SourceChosenModeIs("abzan")
+        triggerRestriction = SourceChosenModeIs("abzan")
         effect = Effects.ForEachInGroup(
             filter = GroupFilter.AllCreaturesYouControl,
             effect = AddCountersEffect(
@@ -82,7 +82,7 @@ val BarrensteppeSiege = card("Barrensteppe Siege") {
     // each opponent sacrifices a creature of their choice.
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = SourceChosenModeIs("mardu")
+        interveningIf = SourceChosenModeIs("mardu")
         effect = ConditionalEffect(
             condition = Conditions.ControlledCreatureDiedThisTurn,
             effect = Effects.Sacrifice(

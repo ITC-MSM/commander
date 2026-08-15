@@ -32,7 +32,7 @@ val FrontlineWarRager = card("Frontline War-Rager") {
 
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = Compare(
+        interveningIf = Compare(
             DynamicAmount.AggregateBattlefield(Player.You, GameObjectFilter.Creature.tapped()),
             ComparisonOperator.GTE,
             DynamicAmount.Fixed(2)

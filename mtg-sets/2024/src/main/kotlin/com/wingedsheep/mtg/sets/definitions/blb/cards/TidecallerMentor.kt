@@ -30,7 +30,7 @@ val TidecallerMentor = card("Tidecaller Mentor") {
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = Conditions.CardsInGraveyardAtLeast(7)
+        interveningIf = Conditions.CardsInGraveyardAtLeast(7)
         val permanent = target(
             "up to one target nonland permanent",
             TargetPermanent(optional = true, filter = TargetFilter.NonlandPermanent)

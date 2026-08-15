@@ -29,7 +29,7 @@ val GildedGhoda = card("Gilded Ghoda") {
     toughness = 2
     triggeredAbility {
         trigger = Triggers.Attacks
-        triggerCondition = Conditions.SourceIsSaddled
+        triggerRestriction = Conditions.SourceIsSaddled
         effect = Effects.CreateTreasure()
     }
     keywordAbility(KeywordAbility.saddle(1))

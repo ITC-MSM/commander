@@ -30,7 +30,7 @@ val LeoninVanguard = card("Leonin Vanguard") {
     toughness = 1
     triggeredAbility {
         trigger = Triggers.BeginCombat
-        triggerCondition = Conditions.YouControlAtLeast(3, GameObjectFilter.Creature)
+        interveningIf = Conditions.YouControlAtLeast(3, GameObjectFilter.Creature)
         effect = Effects.Composite(
             Effects.ModifyStats(1, 1, EffectTarget.Self),
             GainLifeEffect(1)

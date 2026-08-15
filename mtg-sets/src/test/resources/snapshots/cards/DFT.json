@@ -121,7 +121,7 @@
                         "player": "TriggeringPlayer"
                     }
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Not",
                     "condition": {
                         "type": "IsPlayersTurn",
@@ -214,7 +214,7 @@
                         }
                     ]
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "Compare",
                     "left": "Speed",
                     "operator": "EQ",
@@ -670,7 +670,7 @@
                     },
                     "target": "Self"
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "EntityMatches",
                     "entity": "Self",
                     "filter": {
@@ -989,7 +989,7 @@
                         "Elephant"
                     ]
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "EntityMatches",
                     "entity": "Self",
                     "filter": {
@@ -1848,7 +1848,7 @@
                         }
                     ]
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "EntityMatches",
                     "entity": "Self",
                     "filter": {
@@ -1911,7 +1911,7 @@
                         }
                     ]
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "EntityMatches",
                     "entity": "Self",
                     "filter": {
@@ -2267,7 +2267,7 @@
                     },
                     "id": "target"
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "EntityMatches",
                     "entity": "Self",
                     "filter": {
@@ -2579,7 +2579,7 @@
                     "keyword": "FLYING",
                     "target": "TriggeringEntity"
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "IsInPhase",
                     "phases": [
                         "PRECOMBAT_MAIN",
@@ -4490,7 +4490,7 @@
                     "count": 1,
                     "target": "Self"
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "EntityMatches",
                     "entity": "Self",
                     "filter": {
@@ -4764,7 +4764,7 @@
                     "type": "AnyTarget",
                     "id": "target"
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "EntityMatches",
                     "entity": "Self",
                     "filter": {
@@ -5216,7 +5216,7 @@
                         }
                     ]
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "Compare",
                     "left": "Speed",
                     "operator": "EQ",
@@ -5365,7 +5365,7 @@
                         }
                     ]
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "Compare",
                     "left": "Speed",
                     "operator": "EQ",
@@ -5813,7 +5813,7 @@
                         }
                     ]
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "All",
                     "conditions": [
                         {
@@ -6720,7 +6720,7 @@
                     "type": "CreatePredefinedToken",
                     "tokenType": "Treasure"
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "EntityMatches",
                     "entity": "Self",
                     "filter": {
@@ -6873,7 +6873,7 @@
                         "EmitLibrarySearchedEvent"
                     ]
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "EntityMatches",
                     "entity": "Self",
                     "filter": {
@@ -7438,7 +7438,7 @@
                         "EmitLibrarySearchedEvent"
                     ]
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "EntityMatches",
                     "entity": "Self",
                     "filter": {
@@ -8530,7 +8530,7 @@
                     "target": "Self",
                     "tap": false
                 },
-                "triggerCondition": "IsYourTurn",
+                "triggerRestriction": "IsYourTurn",
                 "oncePerTurn": true
             }
         ],
@@ -8811,7 +8811,7 @@
                         }
                     ]
                 },
-                "triggerCondition": "IsYourTurn",
+                "triggerRestriction": "IsYourTurn",
                 "descriptionOverride": "Whenever one or more cards are put into exile from graveyards and/or the battlefield during your turn, you draw a card and lose 1 life."
             }
         ],
@@ -9142,7 +9142,7 @@
                     },
                     "id": "two target Mounts and/or Vehicles"
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "EntityMatches",
                     "entity": "Self",
                     "filter": {
@@ -10015,7 +10015,7 @@
                         "Elephant"
                     ]
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Not",
                     "condition": {
                         "type": "IsPlayersTurn",
@@ -10394,7 +10394,7 @@
                         "target": "TriggeringEntity"
                     }
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "Compare",
                     "left": "Speed",
                     "operator": "EQ",
@@ -12491,7 +12491,7 @@
                     },
                     "id": "creature or Vehicle you control"
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "Compare",
                     "left": "Speed",
                     "operator": "EQ",
@@ -13188,7 +13188,7 @@
                         }
                     ]
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "IsInPhase",
                     "phases": [
                         "PRECOMBAT_MAIN",
@@ -13856,7 +13856,7 @@
                         "Zombie"
                     ]
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "Compare",
                     "left": "Speed",
                     "operator": "EQ",
@@ -16710,7 +16710,7 @@
                     },
                     "target": "Self"
                 },
-                "triggerCondition": "IsYourTurn",
+                "triggerRestriction": "IsYourTurn",
                 "descriptionOverride": "Whenever equipped creature deals combat damage during your turn, put that many loyalty counters on The Aetherspark."
             }
         ],
@@ -17208,7 +17208,7 @@
                     "type": "CreatePredefinedToken",
                     "tokenType": "Treasure"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "AggregateBattlefield",
@@ -17583,7 +17583,7 @@
                         }
                     ]
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "EntityMatches",
                     "entity": "Self",
                     "filter": {
@@ -17766,7 +17766,7 @@
                     },
                     "target": "Self"
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "EntityMatches",
                     "entity": "Self",
                     "filter": {
@@ -18870,7 +18870,7 @@
                     "imageUri": "https://cards.scryfall.io/normal/front/b/8/b82be730-c63b-4c2b-99f4-476befdb95cb.jpg?1783907681",
                     "tapped": true
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "Compare",
                     "left": "Speed",
                     "operator": "EQ",

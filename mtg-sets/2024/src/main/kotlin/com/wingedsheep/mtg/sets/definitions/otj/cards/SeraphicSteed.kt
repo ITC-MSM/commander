@@ -33,7 +33,7 @@ val SeraphicSteed = card("Seraphic Steed") {
     keywords(Keyword.FIRST_STRIKE, Keyword.LIFELINK)
     triggeredAbility {
         trigger = Triggers.Attacks
-        triggerCondition = Conditions.SourceIsSaddled
+        triggerRestriction = Conditions.SourceIsSaddled
         effect = Effects.CreateToken(
             power = 3,
             toughness = 3,

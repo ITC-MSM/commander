@@ -201,7 +201,7 @@ class ZenosYaeGalvusScenarioTest : FunSpec({
             toughness = 1
             triggeredAbility {
                 trigger = Triggers.AnyPlayerLosesGame
-                triggerCondition = Conditions.TriggeringPlayerIs(Player.ChosenOpponent)
+                triggerRestriction = Conditions.TriggeringPlayerIs(Player.ChosenOpponent)
                 effect = Effects.WinGame()
             }
         }

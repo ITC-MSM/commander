@@ -30,7 +30,7 @@ val FootMystic = card("Foot Mystic") {
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = Conditions.YouHadPermanentLeaveBattlefieldThisTurn
+        interveningIf = Conditions.YouHadPermanentLeaveBattlefieldThisTurn
         effect = CreateTokenEffect(
             power = 1,
             toughness = 1,

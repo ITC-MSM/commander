@@ -170,7 +170,7 @@
                     "count": 1,
                     "target": "Self"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "EntityMatches",
                     "entity": "Self",
                     "filter": "tapped"
@@ -1763,7 +1763,7 @@
                         "amount": 2
                     }
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "EntityMatches",
                     "entity": "Self",
                     "filter": "tapped"
@@ -3164,7 +3164,7 @@
                         ]
                     }
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "EntityMatches",
                     "entity": "Self",
                     "filter": "tapped"
@@ -3444,7 +3444,7 @@
                         "EmitManifestedDreadEvent"
                     ]
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "EntityMatches",
                     "entity": "Self",
                     "filter": "tapped"
@@ -4275,7 +4275,7 @@
                         ]
                     }
                 },
-                "triggerCondition": "WasCast",
+                "interveningIf": "WasCast",
                 "descriptionOverride": "When this creature enters, if it was cast, each player exiles all but the bottom six cards of their library face down."
             },
             {
@@ -5444,7 +5444,7 @@
                     },
                     "id": "target"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "AggregateZone",
@@ -6065,7 +6065,7 @@
                     },
                     "id": "creature"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "AggregateZone",
@@ -6160,7 +6160,7 @@
                         }
                     ]
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "AggregateBattlefield",
@@ -7339,7 +7339,7 @@
                         "enchantmentToken": true
                     }
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "EntityMatches",
                     "entity": "Self",
                     "filter": "tapped"
@@ -8096,7 +8096,7 @@
                         }
                     ]
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "Compare",
                     "left": {
                         "type": "AggregateZone",
@@ -8659,7 +8659,7 @@
                         }
                     ]
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "EntityMatches",
                     "entity": "Self",
                     "filter": "tapped"
@@ -9995,7 +9995,7 @@
                         }
                     ]
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "EntityMatches",
                     "entity": "Self",
                     "filter": "tapped"
@@ -10333,7 +10333,7 @@
                     "type": "CopyTargetSpell",
                     "target": "TriggeringEntity"
                 },
-                "triggerCondition": "TriggeringSpellHasSingleTarget"
+                "triggerRestriction": "TriggeringSpellHasSingleTarget"
             }
         ],
         "mayStartOnBattlefield": true
@@ -10879,7 +10879,7 @@
                         "amount": 5
                     }
                 },
-                "triggerCondition": "WasCast"
+                "interveningIf": "WasCast"
             },
             {
                 "id": "ability_2",
@@ -12432,7 +12432,7 @@
                         "baseFilter": "creature"
                     }
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "AggregateZone",
@@ -12495,7 +12495,7 @@
                         "baseFilter": "creature"
                     }
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "AggregateZone",
@@ -12768,7 +12768,7 @@
                         ]
                     }
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "AggregateZone",
@@ -12881,7 +12881,7 @@
                     "count": 1,
                     "target": "Self"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "All",
                     "conditions": [
                         "SourceCastForImpending",
@@ -13155,7 +13155,7 @@
                     "count": 1,
                     "target": "Self"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "All",
                     "conditions": [
                         "SourceCastForImpending",
@@ -13300,7 +13300,7 @@
                     "count": 1,
                     "target": "Self"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "All",
                     "conditions": [
                         "SourceCastForImpending",
@@ -13512,7 +13512,7 @@
                     "count": 1,
                     "target": "Self"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "All",
                     "conditions": [
                         "SourceCastForImpending",
@@ -13644,7 +13644,7 @@
                     "count": 1,
                     "target": "Self"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "All",
                     "conditions": [
                         "SourceCastForImpending",
@@ -14760,7 +14760,7 @@
                         }
                     ]
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "EntityMatches",
                     "entity": "Self",
                     "filter": "tapped"
@@ -14784,7 +14784,7 @@
                         "baseFilter": "creature"
                     }
                 },
-                "triggerCondition": "TriggeringEntityHadCounters",
+                "interveningIf": "TriggeringEntityHadCounters",
                 "descriptionOverride": "Whenever this creature or another creature you control dies, if it had counters on it, put those counters on up to one target creature."
             }
         ]
@@ -15041,7 +15041,7 @@
                         }
                     ]
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "EntityMatches",
                     "entity": "Self",
                     "filter": "tapped"
@@ -15337,7 +15337,7 @@
                     },
                     "id": "target land you control"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "EntityMatches",
                     "entity": "Self",
                     "filter": "tapped"
@@ -15392,7 +15392,7 @@
                     },
                     "id": "target creature card with mana value 3 or less from your graveyard"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "EntityMatches",
                     "entity": "Self",
                     "filter": "tapped"
@@ -15541,7 +15541,7 @@
                     "type": "AnyTarget",
                     "id": "any target"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "TurnTracking",
@@ -16191,7 +16191,7 @@
                     },
                     "id": "target creature"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "EntityMatches",
                     "entity": "Self",
                     "filter": "tapped"
@@ -20500,7 +20500,7 @@
                     },
                     "id": "card in a graveyard"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "EntityMatches",
                     "entity": "Self",
                     "filter": "tapped"
@@ -21354,7 +21354,7 @@
                         }
                     ]
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "AggregateZone",
@@ -21711,7 +21711,7 @@
                         }
                     ]
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "All",
                     "conditions": [
                         {

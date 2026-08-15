@@ -43,7 +43,7 @@ val LivingHistory = card("Living History") {
 
     triggeredAbility {
         trigger = Triggers.YouAttack
-        triggerCondition = Conditions.CardsLeftGraveyardThisTurn(1)
+        interveningIf = Conditions.CardsLeftGraveyardThisTurn(1)
         val attacker = target("attacking creature", Targets.AttackingCreature)
         effect = Effects.ModifyStats(2, 0, attacker)
     }

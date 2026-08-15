@@ -36,7 +36,7 @@ val FireglassMentor = card("Fireglass Mentor") {
 
     triggeredAbility {
         trigger = Triggers.YourPostcombatMain
-        triggerCondition = Conditions.OpponentLostLifeThisTurn
+        interveningIf = Conditions.OpponentLostLifeThisTurn
         effect = Effects.Composite(
             listOf(
                 GatherCardsEffect(

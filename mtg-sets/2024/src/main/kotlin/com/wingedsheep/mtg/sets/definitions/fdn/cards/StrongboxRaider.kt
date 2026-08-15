@@ -40,7 +40,7 @@ val StrongboxRaider = card("Strongbox Raider") {
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = Conditions.YouAttackedThisTurn
+        interveningIf = Conditions.YouAttackedThisTurn
         effect = Effects.Composite(
             listOf(
                 GatherCardsEffect(

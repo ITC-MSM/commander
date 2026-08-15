@@ -1768,7 +1768,7 @@
                         ]
                     }
                 },
-                "triggerCondition": "WasKicked"
+                "interveningIf": "WasKicked"
             }
         ]
     },
@@ -2285,7 +2285,7 @@
                         "amount": 2
                     }
                 },
-                "triggerCondition": "TriggeringEntityWasHistoric"
+                "interveningIf": "TriggeringEntityWasHistoric"
             }
         ],
         "staticAbilities": [
@@ -2510,7 +2510,7 @@
                 "activeZones": [
                     "Exile"
                 ],
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "EntityProperty",
@@ -3467,7 +3467,7 @@
                     },
                     "id": "target"
                 },
-                "triggerCondition": "WasKicked"
+                "interveningIf": "WasKicked"
             }
         ]
     },
@@ -4446,7 +4446,7 @@
                     },
                     "id": "instant or sorcery card in your graveyard"
                 },
-                "triggerCondition": "WasKicked"
+                "interveningIf": "WasKicked"
             }
         ]
     },
@@ -4490,7 +4490,7 @@
                         "player": "EachOpponent"
                     }
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "AggregateBattlefield",
@@ -5387,7 +5387,7 @@
                         }
                     ]
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "AggregateBattlefield",
@@ -6968,7 +6968,7 @@
                     },
                     "id": "target creature"
                 },
-                "triggerCondition": "WasKicked"
+                "interveningIf": "WasKicked"
             }
         ]
     },
@@ -7273,7 +7273,7 @@
                         "amount": 10
                     }
                 },
-                "triggerCondition": "WasKicked"
+                "interveningIf": "WasKicked"
             }
         ]
     },
@@ -11849,7 +11849,7 @@
                     },
                     "id": "another target creature"
                 },
-                "triggerCondition": "WasKicked"
+                "interveningIf": "WasKicked"
             }
         ]
     },

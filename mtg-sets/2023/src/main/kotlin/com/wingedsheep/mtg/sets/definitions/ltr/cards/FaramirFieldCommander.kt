@@ -28,13 +28,13 @@ val FaramirFieldCommander = card("Faramir, Field Commander") {
 
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = Conditions.ControlledCreatureDiedThisTurn
+        interveningIf = Conditions.ControlledCreatureDiedThisTurn
         effect = Effects.DrawCards(1)
     }
 
     triggeredAbility {
         trigger = Triggers.RingTemptsYou
-        triggerCondition = Conditions.YouChoseOtherCreatureAsRingBearer
+        interveningIf = Conditions.YouChoseOtherCreatureAsRingBearer
         effect = Effects.CreateToken(
             power = 1,
             toughness = 1,

@@ -42,7 +42,7 @@ val TroublemakerOuphe = card("Troublemaker Ouphe") {
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = Conditions.WasBargained
+        interveningIf = Conditions.WasBargained
         val permanent = target(
             "target artifact or enchantment an opponent controls",
             TargetPermanent(filter = TargetFilter.ArtifactOrEnchantment.opponentControls()),

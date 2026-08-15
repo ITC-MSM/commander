@@ -33,7 +33,7 @@ val ShivanEmissary = card("Shivan Emissary") {
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = WasKicked
+        interveningIf = WasKicked
         val creature = target(
             "target nonblack creature",
             TargetCreature(filter = TargetFilter.Creature.notColor(Color.BLACK))

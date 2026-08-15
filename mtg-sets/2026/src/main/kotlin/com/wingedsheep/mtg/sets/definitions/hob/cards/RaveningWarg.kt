@@ -31,7 +31,7 @@ val RaveningWarg = card("Ravening Warg") {
     keywords(Keyword.DEATHTOUCH)
     triggeredAbility {
         trigger = Triggers.Attacks
-        triggerCondition = Conditions.YouControl(GameObjectFilter.Creature.powerAtLeast(4))
+        triggerRestriction = Conditions.YouControl(GameObjectFilter.Creature.powerAtLeast(4))
         effect = GainLifeEffect(2)
     }
     metadata {

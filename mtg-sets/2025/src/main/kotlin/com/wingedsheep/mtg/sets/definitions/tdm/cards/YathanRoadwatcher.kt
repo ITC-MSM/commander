@@ -34,7 +34,7 @@ val YathanRoadwatcher = card("Yathan Roadwatcher") {
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = Conditions.WasCast
+        interveningIf = Conditions.WasCast
         effect = ReflexiveTriggerEffect(
             action = Patterns.Library.mill(4),
             optional = false,

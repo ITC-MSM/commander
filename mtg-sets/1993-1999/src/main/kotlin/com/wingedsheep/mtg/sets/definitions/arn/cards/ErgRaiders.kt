@@ -37,7 +37,7 @@ val ErgRaiders = card("Erg Raiders") {
 
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = Conditions.All(
+        interveningIf = Conditions.All(
             Conditions.Not(Conditions.SourceAttackedThisTurn),
             Conditions.Not(Conditions.SourceEnteredThisTurn),
         )

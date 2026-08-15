@@ -51,7 +51,7 @@ val EmeritusOfWoe = card("Emeritus of Woe") {
     // At the beginning of your end step, if two or more creatures died this turn, it becomes prepared.
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = Conditions.CompareAmounts(
+        interveningIf = Conditions.CompareAmounts(
             DynamicAmount.TurnTracking(Player.Each, TurnTracker.CREATURES_DIED),
             ComparisonOperator.GTE,
             DynamicAmount.Fixed(2),

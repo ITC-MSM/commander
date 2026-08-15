@@ -57,7 +57,7 @@ val ClockworkVorrac = card("Clockwork Vorrac") {
 
     triggeredAbility {
         trigger = Triggers.EachEndOfCombat
-        triggerCondition = Conditions.SourceAttackedOrBlockedThisCombat
+        triggerRestriction = Conditions.SourceAttackedOrBlockedThisCombat
         effect = Effects.RemoveCounters(Counters.PLUS_ONE_PLUS_ONE, 1, EffectTarget.Self)
         description = "Whenever this creature attacks or blocks, remove a +1/+1 counter from it at end of combat."
     }

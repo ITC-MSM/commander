@@ -59,7 +59,7 @@
                 "activeZones": [
                     "Graveyard"
                 ],
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Exists",
                     "player": "You",
                     "zone": "Battlefield",
@@ -222,7 +222,7 @@
                         }
                     ]
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "SourceChosenModeIs",
                     "modeId": "khans"
                 }
@@ -250,7 +250,7 @@
                     "type": "AnyTarget",
                     "id": "target"
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "SourceChosenModeIs",
                     "modeId": "dragons"
                 }

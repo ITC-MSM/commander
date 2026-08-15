@@ -43,7 +43,7 @@ val AshPartyCrasher = card("Ash, Party Crasher") {
 
     triggeredAbility {
         trigger = Triggers.Attacks
-        triggerCondition = Conditions.Celebration
+        interveningIf = Conditions.Celebration
         effect = Effects.AddCounters(Counters.PLUS_ONE_PLUS_ONE, 1, EffectTarget.Self)
         description = "Whenever Ash attacks, if two or more nonland permanents entered the " +
             "battlefield under your control this turn, put a +1/+1 counter on Ash."

@@ -36,7 +36,7 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
 /** "At the beginning of your end step, if you gained life this turn, create a Blood token." */
 private fun bloodOnEndStep(builder: com.wingedsheep.sdk.dsl.TriggeredAbilityBuilder) {
     builder.trigger = Triggers.YourEndStep
-    builder.triggerCondition = Conditions.YouGainedLifeThisTurn
+    builder.interveningIf = Conditions.YouGainedLifeThisTurn
     builder.effect = Effects.CreateBlood()
     builder.description = "At the beginning of your end step, if you gained life this turn, create a " +
         "Blood token."

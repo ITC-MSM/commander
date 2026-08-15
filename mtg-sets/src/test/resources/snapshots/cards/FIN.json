@@ -1458,7 +1458,7 @@
                     },
                     "then": "AddCombatPhase"
                 },
-                "triggerCondition": "IsFirstCombatPhaseOfTurn",
+                "interveningIf": "IsFirstCombatPhaseOfTurn",
                 "descriptionOverride": "Whenever a Vehicle crewed by Balthier and Fran this turn attacks, if it's the first combat phase of the turn, you may pay {1}{R}{G}. If you do, after this phase, there is an additional combat phase."
             }
         ],
@@ -2167,7 +2167,7 @@
                     "count": 1,
                     "target": "Self"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "ContextProperty",
@@ -2496,7 +2496,7 @@
                     "target": "Self",
                     "destination": "Hand"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Not",
                     "condition": {
                         "type": "EntityMatches",
@@ -6036,7 +6036,7 @@
                     "gate": "Gate.MayDecide",
                     "then": "Transform"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "Count",
@@ -6528,7 +6528,7 @@
                 },
                 "binding": "ANY",
                 "effect": "Transform",
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "Count",
@@ -8323,7 +8323,7 @@
                     },
                     "id": "target creature card from your graveyard"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "AggregateBattlefield",
@@ -9712,7 +9712,7 @@
                         "numericProperty": "Power"
                     }
                 },
-                "triggerCondition": "IsYourTurn"
+                "triggerRestriction": "IsYourTurn"
             }
         ]
     },
@@ -10654,7 +10654,7 @@
                             "key": "TRIGGER_LIFE_LOST"
                         }
                     },
-                    "triggerCondition": "IsYourTurn",
+                    "triggerRestriction": "IsYourTurn",
                     "descriptionOverride": "Whenever an opponent loses life during your turn, you draw that many cards."
                 }
             ]
@@ -13843,7 +13843,7 @@
                     "type": "CreatePredefinedToken",
                     "tokenType": "Treasure"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "TriggeringSpellManaSpentAtLeast",
                     "amount": 4
                 },
@@ -15731,7 +15731,7 @@
                     "imageUri": "https://cards.scryfall.io/normal/front/1/9/19faca08-0eef-4da4-ab6f-c3aed63ac77b.jpg?1748704096",
                     "legendary": true
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Exists",
                     "player": "You",
                     "zone": "Battlefield",
@@ -16195,7 +16195,7 @@
                         }
                     ]
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "TriggeringSpellManaSpentAtLeast",
                     "amount": 4
                 }
@@ -17158,7 +17158,7 @@
                     "gate": "Gate.MayDecide",
                     "then": "Transform"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "AggregateBattlefield",
@@ -17665,7 +17665,7 @@
                 },
                 "binding": "ANY",
                 "effect": "Transform",
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "Count",
@@ -17958,7 +17958,7 @@
                         }
                     ]
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "TurnTracking",
@@ -18125,7 +18125,7 @@
                         }
                     ]
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "AnyPlayerDealtCombatDamageThisTurnAtLeast",
                     "amount": 6
                 }
@@ -18262,7 +18262,7 @@
                 },
                 "binding": "ANY",
                 "effect": "Transform",
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "AggregateBattlefield",
@@ -22435,7 +22435,7 @@
                         "amount": 3
                     }
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "TriggeringSpellManaSpentAtLeast",
                     "amount": 4
                 }
@@ -22570,7 +22570,7 @@
                     ],
                     "imageUri": "https://cards.scryfall.io/normal/front/f/e/fe592a5c-5e6e-40ed-8818-f4651bcf2fe8.jpg?1748704098"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "AggregateBattlefield",
@@ -24237,7 +24237,7 @@
                     },
                     "id": "target"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "TriggeringSpellManaSpentAtLeast",
                     "amount": 4
                 }
@@ -24259,7 +24259,7 @@
                     "count": 8,
                     "target": "Self"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "TriggeringSpellManaSpentAtLeast",
                     "amount": 8
                 }
@@ -25528,7 +25528,7 @@
                         "id": "target creature you control"
                     }
                 ],
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Exists",
                     "player": "You",
                     "zone": "Battlefield",
@@ -26637,7 +26637,7 @@
                         "type": "WinGame",
                         "message": "Shinryu, Transcendent Rival — the chosen player lost the game"
                     },
-                    "triggerCondition": {
+                    "triggerRestriction": {
                         "type": "TriggeringPlayerIs",
                         "player": "ChosenOpponent"
                     },

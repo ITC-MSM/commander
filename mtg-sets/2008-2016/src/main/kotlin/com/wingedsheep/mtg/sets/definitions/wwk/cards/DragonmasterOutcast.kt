@@ -30,7 +30,7 @@ val DragonmasterOutcast = card("Dragonmaster Outcast") {
     toughness = 1
     triggeredAbility {
         trigger = Triggers.YourUpkeep
-        triggerCondition = Conditions.YouControlAtLeast(6, GameObjectFilter.Land)
+        interveningIf = Conditions.YouControlAtLeast(6, GameObjectFilter.Land)
         effect = Effects.CreateToken(
             power = 5,
             toughness = 5,

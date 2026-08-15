@@ -31,7 +31,7 @@ val SearslicerGoblin = card("Searslicer Goblin") {
 
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = Conditions.YouAttackedThisTurn
+        interveningIf = Conditions.YouAttackedThisTurn
         effect = CreateTokenEffect(
             power = 1,
             toughness = 1,

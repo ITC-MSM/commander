@@ -42,7 +42,7 @@ val FearOfMissingOut = card("Fear of Missing Out") {
 
     triggeredAbility {
         trigger = Triggers.AttacksFirstTimeEachTurn
-        triggerCondition = Conditions.Delirium(4)
+        interveningIf = Conditions.Delirium(4)
         val t = target("creature", TargetCreature())
         effect = Effects.Composite(
             Effects.Untap(t),

@@ -24,7 +24,7 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  *
  * The end-step ability is an intervening-if (CR 603.4): "if you haven't cast a spell from your hand
  * this turn" is checked both when the ability would trigger and again as it resolves, modeled with
- * [triggerCondition] = `not(YouCastSpellsThisTurn(1, fromZone = HAND))` — the canonical idiom for
+ * [interveningIf] = `not(YouCastSpellsThisTurn(1, fromZone = HAND))` — the canonical idiom for
  * "you haven't cast a spell from your hand this turn".
  *
  * The {4}{W} activated ability installs a temporary, controller-scoped counter-placement modifier
@@ -50,7 +50,7 @@ val PrairieDog = card("Prairie Dog") {
 
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = Conditions.Not(Conditions.YouCastSpellsThisTurn(1, fromZone = Zone.HAND))
+        interveningIf = Conditions.Not(Conditions.YouCastSpellsThisTurn(1, fromZone = Zone.HAND))
         effect = Effects.AddCounters(Counters.PLUS_ONE_PLUS_ONE, 1, EffectTarget.Self)
         description = "At the beginning of your end step, if you haven't cast a spell from your hand this turn, " +
             "put a +1/+1 counter on this creature."

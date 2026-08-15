@@ -30,7 +30,7 @@ val TimelyHordemate = card("Timely Hordemate") {
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = Conditions.YouAttackedThisTurn
+        interveningIf = Conditions.YouAttackedThisTurn
         val t = target(
             "target", TargetObject(
                 filter = TargetFilter(

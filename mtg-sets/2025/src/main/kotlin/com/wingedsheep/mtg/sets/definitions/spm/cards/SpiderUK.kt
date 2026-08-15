@@ -33,7 +33,7 @@ val SpiderUK = card("Spider-UK") {
 
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = Conditions.CreaturesEnteredThisTurn(atLeast = 2)
+        interveningIf = Conditions.CreaturesEnteredThisTurn(atLeast = 2)
         effect = Effects.DrawCards(1) then Effects.GainLife(2)
         description = "At the beginning of your end step, if two or more creatures entered the " +
             "battlefield under your control this turn, you draw a card and gain 2 life."

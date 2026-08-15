@@ -189,6 +189,16 @@ data class TriggeredAbilityOnStackComponent(
     val triggerTotalCounterCount: Int? = null,
     /** Last-known counter map (counter-type-string → count) of the trigger's source on leave-battlefield. */
     val triggerLastKnownCounters: Map<String, Int>? = null,
+    /**
+     * Projected subtypes and card types the triggering permanent had the moment it left the
+     * battlefield (CR 603.10). Trigger detection has always had these; they are on the stack object
+     * too because CR 603.4's second check reads the *same* condition at resolution, and a
+     * last-known-info condition that answered at trigger time and not at resolution would fizzle
+     * every such ability — Tom, Bert, and William's "if they were a creature" is the worked example,
+     * and it is a loop guard, so answering wrong makes the pair recur or never return at all.
+     */
+    val triggerLastKnownSubtypes: Set<String>? = null,
+    val triggerLastKnownCardTypes: Set<String>? = null,
     /** Per-player damage dealt to the trigger's source this turn, captured at LTB time (Grothama). */
     val triggerLastKnownDamageDealtByPlayers: Map<EntityId, Int>? = null,
     /** Creatures blocking/blocked by the trigger's source on leave-battlefield (CR 509 LKI, Abu Ja'far). */
@@ -267,7 +277,19 @@ data class TriggeredAbilityOnStackComponent(
      * merged into the built `EffectContext.pipeline` since the reflexive ability builds a fresh
      * context across the stack round-trip (CR 603.12). Null for ordinary triggered abilities.
      */
-    val carriedPipeline: com.wingedsheep.engine.handlers.PipelineState? = null
+    val carriedPipeline: com.wingedsheep.engine.handlers.PipelineState? = null,
+    /**
+     * The ability's intervening-"if" clause (CR 603.4), carried onto the stack object because the
+     * ability itself is no longer reachable by the time this resolves — the trigger has been
+     * detected, the source may have left the battlefield, and the granting static may be gone.
+     *
+     * [com.wingedsheep.engine.mechanics.stack.StackResolver] evaluates it as the last thing before
+     * the effect runs; false removes the object from the stack with an `AbilityFizzledEvent`.
+     * Null for every ability with no intervening-"if", and for a
+     * [com.wingedsheep.sdk.scripting.TriggeredAbility.triggerRestriction], which CR 603.2 checks
+     * only when the trigger would fire.
+     */
+    val interveningIf: com.wingedsheep.sdk.scripting.conditions.Condition? = null
 ) : Component {
     val hasTargets: Boolean = false  // Will be updated based on effect
 }

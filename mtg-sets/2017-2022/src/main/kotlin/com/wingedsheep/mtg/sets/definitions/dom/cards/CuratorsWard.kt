@@ -33,7 +33,7 @@ val CuratorsWard = card("Curator's Ward") {
 
     triggeredAbility {
         trigger = Triggers.leavesBattlefield(binding = TriggerBinding.ATTACHED)
-        triggerCondition = Conditions.TriggeringEntityWasHistoric
+        interveningIf = Conditions.TriggeringEntityWasHistoric
         effect = Effects.DrawCards(2)
     }
 

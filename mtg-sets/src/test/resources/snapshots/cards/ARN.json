@@ -1395,7 +1395,7 @@
                     "target": "Controller",
                     "damageSource": "Self"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "All",
                     "conditions": [
                         {

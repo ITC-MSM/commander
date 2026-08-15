@@ -43,7 +43,7 @@ val TheAetherspark = card("The Aetherspark") {
             recipient = RecipientFilter.Any,
             binding = TriggerBinding.ATTACHED,
         )
-        triggerCondition = Conditions.IsYourTurn
+        triggerRestriction = Conditions.IsYourTurn
         effect = Effects.AddDynamicCounters(
             Counters.LOYALTY,
             DynamicAmount.ContextProperty(ContextPropertyKey.TRIGGER_DAMAGE_AMOUNT),

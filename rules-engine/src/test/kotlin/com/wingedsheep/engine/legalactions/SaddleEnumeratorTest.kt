@@ -32,7 +32,7 @@ class SaddleEnumeratorTest : FunSpec({
         keywordAbility(KeywordAbility.saddle(2))
         triggeredAbility {
             trigger = Triggers.Attacks
-            triggerCondition = Conditions.SourceIsSaddled
+            triggerRestriction = Conditions.SourceIsSaddled
             effect = Effects.DrawCards(1)
         }
     }

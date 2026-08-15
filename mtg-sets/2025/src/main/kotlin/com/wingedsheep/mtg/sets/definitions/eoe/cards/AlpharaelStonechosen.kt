@@ -32,7 +32,7 @@ val AlpharaelStonechosen = card("Alpharael, Stonechosen") {
 
     triggeredAbility {
         trigger = Triggers.Attacks
-        triggerCondition = Conditions.Void
+        interveningIf = Conditions.Void
         effect = Effects.LoseHalfLife(
             roundUp = true,
             target = EffectTarget.PlayerRef(Player.DefendingPlayer),

@@ -31,7 +31,7 @@ val QuilledCharger = card("Quilled Charger") {
     toughness = 3
     triggeredAbility {
         trigger = Triggers.Attacks
-        triggerCondition = Conditions.SourceIsSaddled
+        triggerRestriction = Conditions.SourceIsSaddled
         effect = Effects.Composite(
             Effects.ModifyStats(1, 2, EffectTarget.Self),
             Effects.GrantKeyword(Keyword.MENACE, EffectTarget.Self)

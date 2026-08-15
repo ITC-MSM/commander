@@ -32,7 +32,7 @@ val WaylayingPirates = card("Waylaying Pirates") {
     toughness = 3
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = Conditions.YouControl(GameObjectFilter.Artifact)
+        interveningIf = Conditions.YouControl(GameObjectFilter.Artifact)
         val t = target(
             "target",
             TargetPermanent(filter = TargetFilter(GameObjectFilter.CreatureOrArtifact.opponentControls()))

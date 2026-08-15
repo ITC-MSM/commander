@@ -41,7 +41,7 @@ val KheruGoldkeeper = card("Kheru Goldkeeper") {
 
     triggeredAbility {
         trigger = Triggers.CardsLeaveYourGraveyard()
-        triggerCondition = Conditions.IsYourTurn
+        triggerRestriction = Conditions.IsYourTurn
         effect = Effects.CreateTreasure(1)
     }
 

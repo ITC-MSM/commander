@@ -22,7 +22,7 @@ val EnterprisingScallywag = card("Enterprising Scallywag") {
 
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = Conditions.YouDescendedThisTurn()
+        interveningIf = Conditions.YouDescendedThisTurn()
         effect = Effects.CreateTreasure()
     }
 

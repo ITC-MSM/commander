@@ -30,7 +30,7 @@ val MarduSkullhunter = card("Mardu Skullhunter") {
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = Conditions.YouAttackedThisTurn
+        interveningIf = Conditions.YouAttackedThisTurn
         val t = target("target opponent", TargetOpponent())
         effect = Patterns.Hand.discardCards(1, t)
     }

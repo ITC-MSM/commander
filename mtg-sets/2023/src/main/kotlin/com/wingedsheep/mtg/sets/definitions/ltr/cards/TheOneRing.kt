@@ -48,7 +48,7 @@ val TheOneRing = card("The One Ring") {
     // When The One Ring enters, if you cast it, you gain protection from everything until your next turn.
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = Conditions.WasCast
+        interveningIf = Conditions.WasCast
         effect = Effects.GrantPlayerProtection()
     }
 

@@ -109,6 +109,9 @@ class StackResolver(
      */
     private val spliceTargetValidator = TargetValidator()
 
+    /** Evaluates a triggered ability's intervening-"if" as it resolves (CR 603.4). */
+    private val conditionEvaluator = com.wingedsheep.engine.handlers.ConditionEvaluator()
+
     /**
      * The spliced text of [spellComponent]'s spell as a drain queue (CR 702.47b) — one entry per
      * spliced card, in the caster's chosen order, each carrying its own target slice and requirements.
@@ -2677,6 +2680,32 @@ class StackResolver(
             targets = resolvedTargets2,
             targetRequirements = targetReqs
         )
+
+        // CR 603.4's second check. "If the ability triggers, it checks the stated condition again
+        // as it resolves. If the condition isn't true at that time, the ability is removed from the
+        // stack and does nothing. Note that this mirrors the check for legal targets." So it sits
+        // right after the target check above, reads the same resolution-time context the effect is
+        // about to run in — trigger payload, last-known info, captured batch and all — and fizzles
+        // through the same event rather than silently doing nothing.
+        //
+        // Only [TriggeredAbilityOnStackComponent.interveningIf] reaches here. A
+        // `triggerRestriction` ("...attacks *while* you control a Dinosaur") is a CR 603.2
+        // restriction on the trigger event and was already spent when the ability triggered;
+        // re-checking it would fizzle abilities that must resolve.
+        abilityComponent.interveningIf?.let { condition ->
+            if (!conditionEvaluator.evaluate(state, condition, context)) {
+                return ExecutionResult.success(
+                    state.removeEntity(abilityId),
+                    listOf(
+                        AbilityFizzledEvent(
+                            abilityComponent.sourceId,
+                            abilityComponent.description,
+                            "Intervening-if condition is no longer true"
+                        )
+                    )
+                )
+            }
+        }
 
         val effectResult = effectHandler.execute(state, abilityComponent.effect, context)
 

@@ -33,7 +33,7 @@ val LumaretsFavor = card("Lumaret's Favor") {
 
     triggeredAbility {
         trigger = Triggers.WhenYouCastThisSpell()
-        triggerCondition = Conditions.YouGainedLifeThisTurn
+        triggerRestriction = Conditions.YouGainedLifeThisTurn
         effect = Effects.CopyTargetSpell(target = EffectTarget.TriggeringEntity)
         description = "Infusion — When you cast this spell, copy it if you gained life this turn. " +
             "You may choose new targets for the copy."

@@ -45,7 +45,7 @@ val SpiderMan2099 = card("Spider-Man 2099") {
 
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = Conditions.Any(
+        interveningIf = Conditions.Any(
             Conditions.YouPlayedLandFromNonHandThisTurn,
             Conditions.YouCastSpellsThisTurn(atLeast = 1, fromZoneOtherThan = Zone.HAND)
         )

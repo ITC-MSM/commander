@@ -35,7 +35,7 @@ import com.wingedsheep.sdk.scripting.values.DynamicAmount
  * eight-or-more permanent cards sit in the graveyard puts a drain on the stack.
  *
  * Descend 8 (draw drain) — a "whenever you draw a card" ([Triggers.YouDraw], fires once per card
- * drawn) triggered ability gated by an intervening-if ([TriggeredAbilityBuilder.triggerCondition]
+ * drawn) triggered ability gated by an intervening-if ([TriggeredAbilityBuilder.interveningIf]
  * = [Conditions.CardsInGraveyardMatchingAtLeast] (8, [GameObjectFilter.Permanent])). Per CR 603.4
  * the condition is checked both when the ability would trigger and again on resolution, so it does
  * nothing if the graveyard drops below eight permanent cards in between. "target opponent loses 1
@@ -72,7 +72,7 @@ val StarvingRevenant = card("Starving Revenant") {
     // target opponent loses 1 life and you gain 1 life.
     triggeredAbility {
         trigger = Triggers.YouDraw
-        triggerCondition = Conditions.CardsInGraveyardMatchingAtLeast(8, GameObjectFilter.Permanent)
+        interveningIf = Conditions.CardsInGraveyardMatchingAtLeast(8, GameObjectFilter.Permanent)
         val opponent = target("target opponent", Targets.Opponent)
         effect = Effects.Composite(
             listOf(

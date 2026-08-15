@@ -29,7 +29,7 @@ val WaterspoutWarden = card("Waterspout Warden") {
 
     triggeredAbility {
         trigger = Triggers.Attacks
-        triggerCondition = Exists(
+        interveningIf = Exists(
             player = Player.You,
             zone = Zone.BATTLEFIELD,
             filter = GameObjectFilter.Creature

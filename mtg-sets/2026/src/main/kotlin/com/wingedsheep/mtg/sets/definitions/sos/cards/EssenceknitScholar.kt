@@ -56,7 +56,7 @@ val EssenceknitScholar = card("Essenceknit Scholar") {
 
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = Conditions.ControlledCreatureDiedThisTurn
+        interveningIf = Conditions.ControlledCreatureDiedThisTurn
         effect = Effects.DrawCards(1)
         description = "At the beginning of your end step, if a creature died under your control " +
             "this turn, draw a card."

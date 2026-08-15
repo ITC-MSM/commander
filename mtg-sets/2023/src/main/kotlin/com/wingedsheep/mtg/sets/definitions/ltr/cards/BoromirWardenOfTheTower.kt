@@ -38,7 +38,7 @@ val BoromirWardenOfTheTower = card("Boromir, Warden of the Tower") {
 
     triggeredAbility {
         trigger = Triggers.OpponentCastsSpell
-        triggerCondition = Conditions.TriggeringSpellCastWithoutPayingMana
+        interveningIf = Conditions.TriggeringSpellCastWithoutPayingMana
         effect = Effects.CounterTriggeringSpell()
     }
 

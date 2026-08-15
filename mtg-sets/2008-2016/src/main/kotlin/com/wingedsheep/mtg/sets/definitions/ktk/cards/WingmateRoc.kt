@@ -33,7 +33,7 @@ val WingmateRoc = card("Wingmate Roc") {
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = Conditions.YouAttackedThisTurn
+        interveningIf = Conditions.YouAttackedThisTurn
         effect = CreateTokenEffect(
             count = 1,
             power = 3,

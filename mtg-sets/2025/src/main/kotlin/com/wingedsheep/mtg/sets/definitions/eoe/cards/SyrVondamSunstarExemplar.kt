@@ -88,7 +88,7 @@ val SyrVondamSunstarExemplar = card("Syr Vondam, Sunstar Exemplar") {
     // When Syr Vondam dies while its power is 4 or greater, destroy up to one target nonland permanent.
     triggeredAbility {
         trigger = Triggers.Dies
-        triggerCondition = powerAtLeast4
+        triggerRestriction = powerAtLeast4
         val permanent = target(
             "up to one target nonland permanent",
             TargetPermanent(optional = true, filter = TargetFilter.NonlandPermanent)
@@ -103,7 +103,7 @@ val SyrVondamSunstarExemplar = card("Syr Vondam, Sunstar Exemplar") {
             event = ZoneChangeEvent(from = Zone.BATTLEFIELD, to = Zone.EXILE),
             binding = TriggerBinding.SELF
         )
-        triggerCondition = powerAtLeast4
+        triggerRestriction = powerAtLeast4
         val permanent = target(
             "up to one target nonland permanent",
             TargetPermanent(optional = true, filter = TargetFilter.NonlandPermanent)

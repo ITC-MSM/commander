@@ -38,7 +38,7 @@ val BelligerentOfTheBall = card("Belligerent of the Ball") {
 
     triggeredAbility {
         trigger = Triggers.BeginCombat
-        triggerCondition = Conditions.Celebration
+        interveningIf = Conditions.Celebration
         val creature = target(
             "target creature you control",
             TargetCreature(filter = TargetFilter.CreatureYouControl),

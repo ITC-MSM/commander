@@ -48,7 +48,7 @@ val PerforatingArtist = card("Perforating Artist") {
 
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = Conditions.YouAttackedThisTurn
+        interveningIf = Conditions.YouAttackedThisTurn
         effect = Effects.ForEachPlayer(
             Player.EachOpponent,
             listOf(

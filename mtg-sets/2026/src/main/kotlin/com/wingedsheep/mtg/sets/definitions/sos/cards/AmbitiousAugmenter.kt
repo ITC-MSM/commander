@@ -44,7 +44,7 @@ val AmbitiousAugmenter = card("Ambitious Augmenter") {
 
     triggeredAbility {
         trigger = Triggers.Dies
-        triggerCondition = Conditions.TriggeringEntityHadCounters
+        interveningIf = Conditions.TriggeringEntityHadCounters
         effect = Effects.CreateToken(
             power = 0,
             toughness = 0,

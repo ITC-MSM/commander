@@ -51,7 +51,7 @@ import com.wingedsheep.sdk.scripting.targets.TargetPermanent
  *    with `fireOnce` (the end-of-turn cleanup only removes EndOfTurn triggers). `EffectTarget.Self`
  *    resolves to the delayed trigger's source — Zenos — when it fires.
  *  - The back's win condition is a broad [Triggers.AnyPlayerLosesGame] gated to the chosen player
- *    via `triggerCondition = TriggeringPlayerIs(Player.ChosenOpponent)`; [Effects.ChooseOpponent]
+ *    via `triggerRestriction = TriggeringPlayerIs(Player.ChosenOpponent)`; [Effects.ChooseOpponent]
  *    (on [Triggers.TransformsToBack]) stores that opponent, and only an actual transform sets it.
  */
 
@@ -77,7 +77,7 @@ private val ShinryuTranscendentRival = card("Shinryu, Transcendent Rival") {
     // Burning Chains — When the chosen player loses the game, you win the game.
     triggeredAbility {
         trigger = Triggers.AnyPlayerLosesGame
-        triggerCondition = Conditions.TriggeringPlayerIs(Player.ChosenOpponent)
+        triggerRestriction = Conditions.TriggeringPlayerIs(Player.ChosenOpponent)
         effect = Effects.WinGame(
             message = "Shinryu, Transcendent Rival — the chosen player lost the game"
         )

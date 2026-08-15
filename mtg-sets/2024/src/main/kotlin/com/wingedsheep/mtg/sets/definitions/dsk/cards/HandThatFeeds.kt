@@ -35,7 +35,7 @@ val HandThatFeeds = card("Hand That Feeds") {
 
     triggeredAbility {
         trigger = Triggers.Attacks
-        triggerCondition = Conditions.Delirium()
+        triggerRestriction = Conditions.Delirium()
         effect = Effects.ModifyStats(2, 0, EffectTarget.Self)
             .then(Effects.GrantKeyword(Keyword.MENACE, EffectTarget.Self))
     }

@@ -56,7 +56,7 @@ fun CardBuilder.impending(time: Int, cost: String) {
             trigger = Triggers.YourEndStep.event,
             binding = Triggers.YourEndStep.binding,
             effect = Effects.RemoveCounters(Counters.TIME, 1, EffectTarget.Self),
-            triggerCondition = impendingActive,
+            interveningIf = impendingActive,
             descriptionOverride = "At the beginning of your end step, remove a time counter from this permanent."
         )
     )

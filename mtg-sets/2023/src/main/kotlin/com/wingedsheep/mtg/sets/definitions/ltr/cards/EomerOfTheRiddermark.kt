@@ -37,7 +37,7 @@ val EomerOfTheRiddermark = card("Éomer of the Riddermark") {
         trigger = Triggers.Attacks
         // "if you control a creature with the greatest power among creatures on the battlefield"
         // ≡ you control a creature AND your max creature-power >= the global max creature-power.
-        triggerCondition = Conditions.All(
+        interveningIf = Conditions.All(
             Conditions.ControlCreature,
             Compare(
                 DynamicAmounts.battlefield(Player.You, GameObjectFilter.Creature).maxPower(),

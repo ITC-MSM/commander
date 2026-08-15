@@ -43,7 +43,7 @@ val Moonshadow = card("Moonshadow") {
 
     triggeredAbility {
         trigger = Triggers.PermanentCardsPutIntoYourGraveyard
-        triggerCondition = Conditions.SourceHasCounter(CounterTypeFilter.MinusOneMinusOne)
+        triggerRestriction = Conditions.SourceHasCounter(CounterTypeFilter.MinusOneMinusOne)
         effect = Effects.RemoveCounters(Counters.MINUS_ONE_MINUS_ONE, 1, EffectTarget.Self)
     }
 

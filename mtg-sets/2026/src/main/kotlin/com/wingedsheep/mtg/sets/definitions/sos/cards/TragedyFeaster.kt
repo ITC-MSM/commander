@@ -41,7 +41,7 @@ val TragedyFeaster = card("Tragedy Feaster") {
 
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = Conditions.Not(Conditions.YouGainedLifeThisTurn)
+        triggerRestriction = Conditions.Not(Conditions.YouGainedLifeThisTurn)
         effect = SacrificeEffect(GameObjectFilter.Permanent)
         description = "Infusion — At the beginning of your end step, sacrifice a permanent unless " +
             "you gained life this turn."

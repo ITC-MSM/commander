@@ -23,22 +23,16 @@ val BloodhallPriest = card("Bloodhall Priest") {
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = Conditions.EmptyHand
+        interveningIf = Conditions.EmptyHand
         val damageTarget = target("any target", Targets.Any)
-        effect = ConditionalEffect(
-            condition = Conditions.EmptyHand,
-            effect = Effects.DealDamage(2, damageTarget),
-        )
+        effect = Effects.DealDamage(2, damageTarget)
     }
 
     triggeredAbility {
         trigger = Triggers.Attacks
-        triggerCondition = Conditions.EmptyHand
+        interveningIf = Conditions.EmptyHand
         val damageTarget = target("any target", Targets.Any)
-        effect = ConditionalEffect(
-            condition = Conditions.EmptyHand,
-            effect = Effects.DealDamage(2, damageTarget),
-        )
+        effect = Effects.DealDamage(2, damageTarget)
     }
 
     madness("{1}{B}{R}")

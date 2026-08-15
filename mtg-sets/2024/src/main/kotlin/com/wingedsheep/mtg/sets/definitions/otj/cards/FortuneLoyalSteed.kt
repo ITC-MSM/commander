@@ -62,7 +62,7 @@ val FortuneLoyalSteed = card("Fortune, Loyal Steed") {
 
     triggeredAbility {
         trigger = Triggers.Attacks
-        triggerCondition = Conditions.SourceIsSaddled
+        triggerRestriction = Conditions.SourceIsSaddled
         effect = CreateDelayedTriggerEffect(
             step = Step.END_COMBAT,
             effect = Effects.Pipeline {

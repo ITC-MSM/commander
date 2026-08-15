@@ -17,7 +17,7 @@ import com.wingedsheep.sdk.model.Rarity
  *
  * The leave-graveyard trigger already batches (fires once per event batch); oncePerTurn = true
  * additionally caps it to a single fire across the whole turn, matching the "only once each
- * turn" wording. "During your turn" is triggerCondition = Conditions.IsYourTurn.
+ * turn" wording. "During your turn" is triggerRestriction = Conditions.IsYourTurn.
  */
 val KishlaSkimmer = card("Kishla Skimmer") {
     manaCost = "{G}{U}"
@@ -33,7 +33,7 @@ val KishlaSkimmer = card("Kishla Skimmer") {
 
     triggeredAbility {
         trigger = Triggers.CardsLeaveYourGraveyard()
-        triggerCondition = Conditions.IsYourTurn
+        triggerRestriction = Conditions.IsYourTurn
         oncePerTurn = true
         effect = Effects.DrawCards(1)
     }

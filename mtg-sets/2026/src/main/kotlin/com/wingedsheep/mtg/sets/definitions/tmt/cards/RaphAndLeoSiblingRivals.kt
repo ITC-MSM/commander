@@ -34,7 +34,7 @@ import com.wingedsheep.sdk.scripting.targets.TargetCreature
  * #2 — the intervening-if would fail, `oncePerTurn = true` would
  * still let it fire once). When a `Conditions.IsFirstCombatPhase`
  * primitive lands, swap `oncePerTurn = true` for a faithful
- * `triggerCondition`.
+ * `triggerRestriction`.
  */
 val RaphAndLeoSiblingRivals = card("Raph & Leo, Sibling Rivals") {
     manaCost = "{1}{R/W}{R/W}"

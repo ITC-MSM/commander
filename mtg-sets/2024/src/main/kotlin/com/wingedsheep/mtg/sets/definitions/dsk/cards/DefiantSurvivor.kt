@@ -34,7 +34,7 @@ val DefiantSurvivor = card("Defiant Survivor") {
     // Survival — At the beginning of your second main phase, if this creature is tapped, manifest dread.
     triggeredAbility {
         trigger = Triggers.YourPostcombatMain
-        triggerCondition = Conditions.SourceIsTapped
+        interveningIf = Conditions.SourceIsTapped
         effect = Patterns.Library.manifestDread()
     }
 

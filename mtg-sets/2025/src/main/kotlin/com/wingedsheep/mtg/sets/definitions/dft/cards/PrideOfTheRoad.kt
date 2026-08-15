@@ -21,9 +21,11 @@ import com.wingedsheep.sdk.scripting.targets.TargetPermanent
  * double strike until end of turn.
  *
  * "Max speed — [ability]" is "as long as you have max speed, this object has [ability]"
- * (CR 702.178a), so the [maxSpeed] block gates the triggered ability with a `triggerCondition`
- * (CR 603.4): checked when the trigger would fire *and* again on resolution. Dropping below speed 4
- * between the two — which can't normally happen, speed only rises — would correctly do nothing.
+ * (CR 702.178a) — a *functioning* condition on the ability, not an intervening "if" on its trigger.
+ * The [maxSpeed] block therefore gates it with a `triggerRestriction`, read when the trigger would
+ * fire and never again: once the ability has triggered it resolves even if speed somehow dropped,
+ * because the trigger on the stack is independent of its source. Speed only rises (CR 702.179), so
+ * the case is unreachable in practice either way.
  *
  * The target is a plain creature-or-Vehicle-you-control permanent target, so an un-crewed Vehicle is
  * legal (Vehicles are targetable whether or not they're currently creatures) and keeps the double

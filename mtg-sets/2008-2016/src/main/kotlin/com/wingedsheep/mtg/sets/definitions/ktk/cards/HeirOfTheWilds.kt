@@ -33,11 +33,8 @@ val HeirOfTheWilds = card("Heir of the Wilds") {
 
     triggeredAbility {
         trigger = Triggers.Attacks
-        triggerCondition = Exists(Player.You, Zone.BATTLEFIELD, GameObjectFilter.Creature.powerAtLeast(4))
-        effect = ConditionalEffect(
-            condition = Exists(Player.You, Zone.BATTLEFIELD, GameObjectFilter.Creature.powerAtLeast(4)),
-            effect = Effects.ModifyStats(1, 1, EffectTarget.Self)
-        )
+        interveningIf = Exists(Player.You, Zone.BATTLEFIELD, GameObjectFilter.Creature.powerAtLeast(4))
+        effect = Effects.ModifyStats(1, 1, EffectTarget.Self)
     }
 
     metadata {

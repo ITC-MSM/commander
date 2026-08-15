@@ -38,7 +38,7 @@ val SageOfTheSkies = card("Sage of the Skies") {
 
     triggeredAbility {
         trigger = Triggers.WhenYouCastThisSpell()
-        triggerCondition = Conditions.YouCastSpellsThisTurn(atLeast = 2)
+        interveningIf = Conditions.YouCastSpellsThisTurn(atLeast = 2)
         effect = Effects.CopyTargetSpell(target = EffectTarget.TriggeringEntity)
         description = "When you cast this spell, if you've cast another spell this turn, copy this spell."
     }

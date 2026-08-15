@@ -32,7 +32,7 @@ val BrightfieldMustang = card("Brightfield Mustang") {
     toughness = 3
     triggeredAbility {
         trigger = Triggers.Attacks
-        triggerCondition = Conditions.SourceIsSaddled
+        triggerRestriction = Conditions.SourceIsSaddled
         effect = Effects.Composite(
             Effects.Untap(EffectTarget.Self),
             AddCountersEffect(counterType = Counters.PLUS_ONE_PLUS_ONE, count = 1, target = EffectTarget.Self)

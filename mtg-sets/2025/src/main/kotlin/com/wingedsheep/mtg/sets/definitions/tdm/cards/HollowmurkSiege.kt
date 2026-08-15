@@ -65,7 +65,7 @@ val HollowmurkSiege = card("Hollowmurk Siege") {
             counterType = Counters.ANY,
             firstTimeEachTurn = false,
         )
-        triggerCondition = SourceChosenModeIs("sultai")
+        triggerRestriction = SourceChosenModeIs("sultai")
         oncePerTurn = true
         effect = Effects.DrawCards(1)
     }
@@ -74,7 +74,7 @@ val HollowmurkSiege = card("Hollowmurk Siege") {
     // It gains menace until end of turn.
     triggeredAbility {
         trigger = Triggers.YouAttack
-        triggerCondition = SourceChosenModeIs("abzan")
+        triggerRestriction = SourceChosenModeIs("abzan")
         val attacker = target("target attacking creature", Targets.AttackingCreature)
         effect = Effects.AddCounters(Counters.PLUS_ONE_PLUS_ONE, 1, attacker)
             .then(Effects.GrantKeyword(Keyword.MENACE, attacker))

@@ -27,7 +27,7 @@ val WaryFarmer = card("Wary Farmer") {
 
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = Exists(
+        interveningIf = Exists(
             player = Player.You,
             zone = Zone.BATTLEFIELD,
             filter = GameObjectFilter.Creature

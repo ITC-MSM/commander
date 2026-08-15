@@ -799,7 +799,7 @@
                         }
                     ]
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "IsInPhase",
                     "phases": [
                         "PRECOMBAT_MAIN",
@@ -1167,7 +1167,7 @@
                     "count": 1,
                     "target": "Self"
                 },
-                "triggerCondition": "IsYourTurn"
+                "triggerRestriction": "IsYourTurn"
             }
         ]
     },
@@ -1444,7 +1444,7 @@
                         "target": "Self"
                     }
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "SourceChosenModeIs",
                     "modeId": "abzan"
                 }
@@ -1471,7 +1471,7 @@
                         }
                     }
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "SourceChosenModeIs",
                     "modeId": "mardu"
                 }
@@ -1702,7 +1702,7 @@
                         }
                     ]
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "AggregateBattlefield",
@@ -3375,7 +3375,7 @@
                         "player": "EachOpponent"
                     }
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Exists",
                     "player": "You",
                     "zone": "Battlefield",
@@ -5187,7 +5187,7 @@
                         }
                     ]
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "All",
                     "conditions": [
                         {
@@ -6064,7 +6064,7 @@
                         "amount": 1
                     }
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "SourceChosenModeIs",
                     "modeId": "jeskai"
                 }
@@ -6390,7 +6390,7 @@
                     "type": "TargetPlayer",
                     "id": "target"
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "SourceChosenModeIs",
                     "modeId": "temur"
                 }
@@ -7012,7 +7012,7 @@
                         "amount": 1
                     }
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "SourceChosenModeIs",
                     "modeId": "sultai"
                 },
@@ -7051,7 +7051,7 @@
                     },
                     "id": "target attacking creature"
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "SourceChosenModeIs",
                     "modeId": "abzan"
                 }
@@ -7129,7 +7129,7 @@
                         "baseFilter": "creature ctrl:you"
                     }
                 },
-                "triggerCondition": "TriggeringEntityHadCounters",
+                "interveningIf": "TriggeringEntityHadCounters",
                 "descriptionOverride": "Whenever this creature or another creature you control dies, if it had counters on it, put its counters on up to one target creature you control."
             }
         ],
@@ -7551,7 +7551,7 @@
                         }
                     ]
                 },
-                "triggerCondition": "WasCast"
+                "interveningIf": "WasCast"
             }
         ]
     },
@@ -8102,7 +8102,7 @@
                     "type": "CreatePredefinedToken",
                     "tokenType": "Treasure"
                 },
-                "triggerCondition": "IsYourTurn"
+                "triggerRestriction": "IsYourTurn"
             }
         ],
         "activatedAbilities": [
@@ -8322,7 +8322,7 @@
                         "amount": 1
                     }
                 },
-                "triggerCondition": "IsYourTurn",
+                "triggerRestriction": "IsYourTurn",
                 "oncePerTurn": true
             }
         ]
@@ -12165,7 +12165,7 @@
                         "Monk"
                     ]
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "PlayerCastSpellsThisTurn",
                     "atLeast": 2
                 }
@@ -13230,7 +13230,7 @@
                     "type": "CopyTargetSpell",
                     "target": "TriggeringEntity"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "PlayerCastSpellsThisTurn",
                     "atLeast": 2
                 },
@@ -16848,7 +16848,7 @@
                         }
                     ]
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "Count",
@@ -16969,7 +16969,7 @@
                         }
                     ]
                 },
-                "triggerCondition": "TriggeringEntityWasCast",
+                "interveningIf": "TriggeringEntityWasCast",
                 "descriptionOverride": "Whenever a creature you control enters, if you cast it, destroy that creature, then create a 2/2 black Zombie Druid creature token."
             }
         ],
@@ -18903,7 +18903,7 @@
                         }
                     ]
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "SourceChosenModeIs",
                     "modeId": "jeskai"
                 }
@@ -19260,7 +19260,7 @@
                         }
                     ]
                 },
-                "triggerCondition": "WasCast"
+                "interveningIf": "WasCast"
             }
         ]
     },

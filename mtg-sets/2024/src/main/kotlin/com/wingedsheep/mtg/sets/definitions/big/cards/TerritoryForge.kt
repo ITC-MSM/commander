@@ -38,7 +38,7 @@ val TerritoryForge = card("Territory Forge") {
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = Conditions.WasCast
+        interveningIf = Conditions.WasCast
         val exiled = target("target artifact or land", Targets.ArtifactOrLand)
         effect = Effects.ExileLinkedToSource(exiled)
     }

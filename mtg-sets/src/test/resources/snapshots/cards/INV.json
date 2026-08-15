@@ -1430,7 +1430,7 @@
                     },
                     "id": "land"
                 },
-                "triggerCondition": "WasKicked"
+                "interveningIf": "WasKicked"
             }
         ]
     },
@@ -6432,7 +6432,7 @@
                     "amount": "XValue",
                     "target": "Self"
                 },
-                "triggerCondition": "WasKicked"
+                "interveningIf": "WasKicked"
             }
         ],
         "staticAbilities": [
@@ -12327,7 +12327,7 @@
                     },
                     "id": "target nonblack creature"
                 },
-                "triggerCondition": "WasKicked"
+                "interveningIf": "WasKicked"
             }
         ]
     },
@@ -12597,7 +12597,7 @@
                 },
                 "binding": "ANY",
                 "effect": "SacrificeSelf",
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Not",
                     "condition": "WasKicked"
                 }
@@ -14774,7 +14774,7 @@
                         ]
                     }
                 },
-                "triggerCondition": "WasKicked"
+                "interveningIf": "WasKicked"
             }
         ]
     },
@@ -15375,7 +15375,7 @@
                     },
                     "id": "enchantment"
                 },
-                "triggerCondition": "WasKicked"
+                "interveningIf": "WasKicked"
             }
         ]
     },
@@ -16315,7 +16315,7 @@
                     },
                     "id": "permanent"
                 },
-                "triggerCondition": "WasKicked"
+                "interveningIf": "WasKicked"
             }
         ]
     },
@@ -16671,7 +16671,7 @@
                         "Saproling"
                     ]
                 },
-                "triggerCondition": "WasKicked"
+                "interveningIf": "WasKicked"
             }
         ],
         "staticAbilities": [
@@ -16757,7 +16757,7 @@
                     },
                     "id": "artifact"
                 },
-                "triggerCondition": "WasKicked"
+                "interveningIf": "WasKicked"
             }
         ]
     },

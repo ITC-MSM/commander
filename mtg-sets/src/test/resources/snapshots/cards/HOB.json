@@ -2683,7 +2683,7 @@
                         "AddCombatPhase"
                     ]
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "Compare",
                     "left": {
                         "type": "AggregateBattlefield",
@@ -6027,7 +6027,7 @@
                     "excludePreviouslyChosenModes": true,
                     "countsAsModalSpell": false
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "SourceChosenModeIs",
                     "modeId": "odd"
                 },
@@ -6096,7 +6096,7 @@
                     "excludePreviouslyChosenModes": true,
                     "countsAsModalSpell": false
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "SourceChosenModeIs",
                     "modeId": "even"
                 },
@@ -7390,7 +7390,7 @@
                     },
                     "id": "another target creature you control"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "PlayerDrewCardsThisTurn",
                     "atLeast": 2
                 }
@@ -8584,7 +8584,7 @@
                     "count": 1,
                     "target": "Self"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Exists",
                     "player": "You",
                     "zone": "Battlefield",
@@ -8635,7 +8635,7 @@
                     },
                     "target": "Self"
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "Exists",
                     "player": "You",
                     "zone": "Battlefield",
@@ -9764,7 +9764,7 @@
                         "amount": 2
                     }
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "Exists",
                     "player": "You",
                     "zone": "Battlefield",
@@ -11757,7 +11757,7 @@
                         }
                     ]
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "Exists",
                     "player": "You",
                     "zone": "Battlefield",
@@ -12576,7 +12576,7 @@
                     "count": 2,
                     "removeLegendary": true
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "EntityMatches",
                     "entity": "Self",
                     "filter": "nontoken"
@@ -13715,7 +13715,7 @@
                         }
                     ]
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "TriggeringEntityHadCardType",
                     "cardType": "CREATURE"
                 },
@@ -14414,7 +14414,7 @@
                         }
                     ]
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "Exists",
                     "player": "You",
                     "zone": "Battlefield",
@@ -14535,7 +14535,7 @@
                         "target": "Self"
                     }
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "Exists",
                     "player": "You",
                     "zone": "Battlefield",

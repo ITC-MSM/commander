@@ -35,7 +35,7 @@ val GloryheathLynx = card("Gloryheath Lynx") {
     keywords(Keyword.LIFELINK)
     triggeredAbility {
         trigger = Triggers.Attacks
-        triggerCondition = Conditions.SourceIsSaddled
+        triggerRestriction = Conditions.SourceIsSaddled
         effect = Patterns.Library.searchLibrary(
             filter = GameObjectFilter.Land.withSubtype(Subtype.PLAINS),
             destination = SearchDestination.HAND,

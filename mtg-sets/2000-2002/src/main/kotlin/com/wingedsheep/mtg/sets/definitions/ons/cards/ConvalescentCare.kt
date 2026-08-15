@@ -21,11 +21,8 @@ val ConvalescentCare = card("Convalescent Care") {
 
     triggeredAbility {
         trigger = Triggers.YourUpkeep
-        triggerCondition = Conditions.LifeAtMost(5)
-        effect = ConditionalEffect(
-            condition = Conditions.LifeAtMost(5),
-            effect = Effects.GainLife(3) then Effects.DrawCards(1)
-        )
+        interveningIf = Conditions.LifeAtMost(5)
+        effect = Effects.GainLife(3) then Effects.DrawCards(1)
     }
 
     metadata {

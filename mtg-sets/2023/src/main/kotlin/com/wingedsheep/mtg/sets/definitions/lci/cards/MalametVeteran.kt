@@ -24,7 +24,7 @@ import com.wingedsheep.sdk.scripting.targets.TargetCreature
  * an attack trigger with an intervening-if [Conditions.CardsInGraveyardMatchingAtLeast]: the
  * ability goes on the stack only when the condition holds at trigger time. Known engine gap: CR
  * 603.4 also requires the condition to be rechecked as the ability resolves, but the engine
- * evaluates `triggerCondition` only at detection time (`TriggerMatcher.filterByTriggerCondition`),
+ * evaluates `interveningIf` only at detection time (`TriggerMatcher.filterByTriggerCondition`),
  * so a graveyard emptied in response still resolves the trigger.
  *
  * Targeting is mandatory (no "may"): the controller must choose any creature (theirs or an
@@ -45,7 +45,7 @@ val MalametVeteran = card("Malamet Veteran") {
 
     triggeredAbility {
         trigger = Triggers.Attacks
-        triggerCondition = Conditions.CardsInGraveyardMatchingAtLeast(4, GameObjectFilter.Permanent)
+        interveningIf = Conditions.CardsInGraveyardMatchingAtLeast(4, GameObjectFilter.Permanent)
         val t = target("target creature", TargetCreature())
         effect = Effects.AddCounters(Counters.PLUS_ONE_PLUS_ONE, 1, t)
     }

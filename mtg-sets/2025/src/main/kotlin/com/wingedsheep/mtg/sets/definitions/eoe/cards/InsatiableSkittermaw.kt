@@ -30,7 +30,7 @@ val InsatiableSkittermaw = card("Insatiable Skittermaw") {
 
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = Conditions.Void
+        interveningIf = Conditions.Void
         effect = AddCountersEffect(Counters.PLUS_ONE_PLUS_ONE, 1, EffectTarget.Self)
     }
 

@@ -62,7 +62,7 @@ val LordSkittersBlessing = card("Lord Skitter's Blessing") {
 
     triggeredAbility {
         trigger = Triggers.YourDrawStep
-        triggerCondition = Conditions.YouControlAtLeast(
+        interveningIf = Conditions.YouControlAtLeast(
             1,
             GameObjectFilter.Creature.youControl().enchanted(),
         )

@@ -243,7 +243,7 @@ doubt, leave it out — the planner will conservatively schedule a rule-plan.
 ## Triggered abilities
 
 - When this enters the battlefield (basic ETB shape, no extra conditions)
-- ETB with a condition (`triggerCondition` slot, e.g. `Conditions.Void`, "if you cast it")
+- ETB with a condition (`interveningIf` slot, e.g. `Conditions.Void`, "if you cast it")
 - ETB on any permanent / another creature / another permanent you control
 - ETB on a land you control (Landfall)
 - ETB on an enchantment you control (Eerie)

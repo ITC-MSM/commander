@@ -63,7 +63,7 @@ val KodamaOfTheEastTree = card("Kodama of the East Tree") {
         // Anti-loop: the trigger ignores permanents that Kodama itself put onto the
         // battlefield. Set as an intervening-if (Rule 603.4) so the trigger never goes
         // on the stack for chained entries.
-        triggerCondition = Conditions.TriggeringEntityWasNotPutByThisSource
+        interveningIf = Conditions.TriggeringEntityWasNotPutByThisSource
         // The "you may" is modeled by `ChooseUpTo(1)` — the player can pick zero cards
         // to decline. No separate yes/no decision is required.
         effect = Effects.Composite(

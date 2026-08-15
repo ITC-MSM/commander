@@ -70,7 +70,7 @@ val OutpostSiege = card("Outpost Siege") {
     // Khans — At the beginning of your upkeep, impulse-draw the top card.
     triggeredAbility {
         trigger = Triggers.YourUpkeep
-        triggerCondition = SourceChosenModeIs("khans")
+        triggerRestriction = SourceChosenModeIs("khans")
         effect = Effects.Composite(listOf(
             GatherCardsEffect(
                 source = CardSource.TopOfLibrary(DynamicAmount.Fixed(1)),
@@ -90,7 +90,7 @@ val OutpostSiege = card("Outpost Siege") {
             filter = GameObjectFilter.Creature.youControl(),
             binding = TriggerBinding.ANY,
         )
-        triggerCondition = SourceChosenModeIs("dragons")
+        triggerRestriction = SourceChosenModeIs("dragons")
         val any = target("target", Targets.Any)
         effect = DealDamageEffect(1, any)
     }

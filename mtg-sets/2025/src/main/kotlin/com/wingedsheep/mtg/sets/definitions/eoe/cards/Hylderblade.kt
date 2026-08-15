@@ -32,7 +32,7 @@ val Hylderblade = card("Hylderblade") {
 
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = Conditions.Void
+        interveningIf = Conditions.Void
         val creature = target("target creature you control", Targets.CreatureYouControl)
         effect = AttachEquipmentEffect(target = creature)
     }

@@ -24,7 +24,7 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  *   in your graveyard, create a token that's a copy of Ran and Shaw, except it's not legendary.
  * {3}{R}: Dragons you control get +2/+0 until end of turn.
  *
- * The ETB is an intervening-if (CR 603.4): `triggerCondition` gates on both "if you cast them"
+ * The ETB is an intervening-if (CR 603.4): `interveningIf` gates on both "if you cast them"
  * ([Conditions.WasCast]) and the graveyard count, checked when the ability would trigger and again
  * on resolution. The copy uses the new `removeLegendary` clause on [Effects.CreateTokenCopyOfSelf]
  * ("except it's not legendary"). "Dragon and/or Lesson cards" is a single subtype-OR filter, so a
@@ -46,7 +46,7 @@ val RanAndShaw = card("Ran and Shaw") {
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = Conditions.All(
+        interveningIf = Conditions.All(
             Conditions.WasCast,
             Conditions.CardsInGraveyardMatchingAtLeast(3, GameObjectFilter.Any.withAnySubtype("Dragon", "Lesson")),
         )

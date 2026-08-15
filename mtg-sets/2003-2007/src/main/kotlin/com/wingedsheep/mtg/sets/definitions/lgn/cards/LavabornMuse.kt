@@ -33,11 +33,8 @@ val LavabornMuse = card("Lavaborn Muse") {
     triggeredAbility {
         trigger = Triggers.EachOpponentUpkeep
         // "That player" is the player whose upkeep it is — bound by the step trigger.
-        triggerCondition = upkeepPlayerHandAtMost(2)
-        effect = ConditionalEffect(
-            condition = upkeepPlayerHandAtMost(2),
-            effect = Effects.DealDamage(3, EffectTarget.PlayerRef(Player.TriggeringPlayer))
-        )
+        interveningIf = upkeepPlayerHandAtMost(2)
+        effect = Effects.DealDamage(3, EffectTarget.PlayerRef(Player.TriggeringPlayer))
     }
 
     metadata {

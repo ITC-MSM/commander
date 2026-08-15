@@ -27,7 +27,7 @@ val KrosanDruid = card("Krosan Druid") {
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = WasKicked
+        interveningIf = WasKicked
         effect = Effects.GainLife(10)
     }
 

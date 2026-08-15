@@ -37,7 +37,7 @@ val RatKingVerminister = card("Rat King, Verminister") {
 
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = Conditions.YouHadPermanentLeaveBattlefieldThisTurn
+        interveningIf = Conditions.YouHadPermanentLeaveBattlefieldThisTurn
         effect = Effects.CreateToken(
             power = 1,
             toughness = 1,

@@ -355,7 +355,7 @@
                     },
                     "id": "permanent card with mana value 3 or less from your graveyard"
                 },
-                "triggerCondition": "WasCast",
+                "interveningIf": "WasCast",
                 "descriptionOverride": "When Annie Flash enters, if you cast it, return target permanent card with mana value 3 or less from your graveyard to the battlefield tapped."
             },
             {
@@ -1429,7 +1429,7 @@
                         "amount": 1
                     }
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Exists",
                     "player": "You",
                     "zone": "Battlefield",
@@ -2174,7 +2174,7 @@
                         }
                     ]
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "EntityMatches",
                     "entity": "Self",
                     "filter": {
@@ -2398,7 +2398,7 @@
                     ],
                     "imageUri": "https://cards.scryfall.io/normal/front/d/c/dccb30d0-b491-43be-8aa0-2ee7da86343e.jpg?1712469939"
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "EntityMatches",
                     "entity": "Self",
                     "filter": {
@@ -3279,7 +3279,7 @@
                         }
                     ]
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "EntityMatches",
                     "entity": "Self",
                     "filter": {
@@ -3368,7 +3368,7 @@
                         }
                     ]
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Not",
                     "condition": {
                         "type": "PlayerCastSpellsThisTurn",
@@ -3759,7 +3759,7 @@
                         }
                     ]
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "AggregateBattlefield",
@@ -3990,7 +3990,7 @@
                     },
                     "target": "Self"
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "EntityMatches",
                     "entity": "Self",
                     "filter": {
@@ -5009,7 +5009,7 @@
                         "target": "Self"
                     }
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "EntityMatches",
                     "entity": "Self",
                     "filter": {
@@ -5234,7 +5234,7 @@
                     ],
                     "duration": "Permanent"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "All",
                     "conditions": [
                         {
@@ -6442,7 +6442,7 @@
                         ]
                     }
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "EntityMatches",
                     "entity": "Self",
                     "filter": {
@@ -6816,7 +6816,7 @@
                     ],
                     "imageUri": "https://cards.scryfall.io/normal/front/7/4/74c7a0bd-6011-495a-b56c-8fa707dd7f12.jpg?1712316777"
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "All",
                     "conditions": [
                         "IsYourTurn",
@@ -7168,7 +7168,7 @@
                     },
                     "id": "target creature that saddled it this turn"
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "EntityMatches",
                     "entity": "Self",
                     "filter": {
@@ -7248,7 +7248,7 @@
                         }
                     ]
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "EntityMatches",
                     "entity": "Self",
                     "filter": {
@@ -8856,7 +8856,7 @@
                     "count": 1,
                     "target": "Self"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "All",
                     "conditions": [
                         {
@@ -9415,7 +9415,7 @@
                         "amount": 1
                     }
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Not",
                     "condition": {
                         "type": "PlayerCastSpellsThisTurn",
@@ -10720,7 +10720,7 @@
                         "amount": 1
                     }
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "PlayerCastSpellsThisTurn",
                     "atLeast": 2
                 },
@@ -11610,7 +11610,7 @@
                     "type": "CreatePredefinedToken",
                     "tokenType": "Treasure"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "AggregateBattlefield",
@@ -12822,7 +12822,7 @@
                     },
                     "id": "target creature"
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "EntityMatches",
                     "entity": "Self",
                     "filter": {
@@ -13275,7 +13275,7 @@
                     "keyword": "INDESTRUCTIBLE",
                     "target": "Self"
                 },
-                "triggerCondition": "IsYourTurn",
+                "triggerRestriction": "IsYourTurn",
                 "descriptionOverride": "Whenever you commit a crime during your turn, this creature gains indestructible until end of turn."
             }
         ]
@@ -13756,7 +13756,7 @@
                     "count": 1,
                     "target": "Self"
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Not",
                     "condition": {
                         "type": "PlayerCastSpellsThisTurn",
@@ -14136,7 +14136,7 @@
                         }
                     ]
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "EntityMatches",
                     "entity": "Self",
                     "filter": {
@@ -14637,7 +14637,7 @@
                         }
                     ]
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "EntityMatches",
                     "entity": "Self",
                     "filter": {
@@ -15371,7 +15371,7 @@
                     ],
                     "imageUri": "https://cards.scryfall.io/normal/front/7/4/74c7a0bd-6011-495a-b56c-8fa707dd7f12.jpg?1712316777"
                 },
-                "triggerCondition": "CreatureDiedThisTurn"
+                "interveningIf": "CreatureDiedThisTurn"
             }
         ]
     },
@@ -16246,7 +16246,7 @@
                     ],
                     "imageUri": "https://cards.scryfall.io/normal/front/c/7/c75c01ea-427d-4401-b5b0-166e87c4585e.jpg?1712316260"
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "Exists",
                     "player": "You",
                     "zone": "Battlefield",
@@ -16515,7 +16515,7 @@
                         "FLYING"
                     ]
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "EntityMatches",
                     "entity": "Self",
                     "filter": {
@@ -16603,7 +16603,7 @@
                         ]
                     }
                 },
-                "triggerCondition": "PlayerCommittedCrimeThisTurn"
+                "interveningIf": "PlayerCommittedCrimeThisTurn"
             }
         ]
     },
@@ -18435,7 +18435,7 @@
                         "amount": 1
                     }
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "Compare",
                     "left": {
                         "type": "ContextProperty",
@@ -19699,7 +19699,7 @@
                         }
                     ]
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "EntityMatches",
                     "entity": "Self",
                     "filter": {
@@ -20879,7 +20879,7 @@
                         "FLYING"
                     ]
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Not",
                     "condition": {
                         "type": "PlayerCastSpellsThisTurn",

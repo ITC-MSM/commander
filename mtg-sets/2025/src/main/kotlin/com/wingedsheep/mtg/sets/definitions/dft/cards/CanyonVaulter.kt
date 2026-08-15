@@ -20,7 +20,7 @@ val CanyonVaulter = card("Canyon Vaulter") {
 
     triggeredAbility {
         trigger = Triggers.or(Triggers.Saddles, Triggers.Crews)
-        triggerCondition = Conditions.IsYourMainPhase
+        triggerRestriction = Conditions.IsYourMainPhase
         effect = Effects.GrantKeyword(
             Keyword.FLYING,
             target = EffectTarget.TriggeringEntity

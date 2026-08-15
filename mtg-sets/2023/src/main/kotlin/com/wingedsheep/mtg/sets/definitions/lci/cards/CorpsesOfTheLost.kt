@@ -79,7 +79,7 @@ val CorpsesOfTheLost = card("Corpses of the Lost") {
     // End-step descend trigger: you may pay 1 life; if you do, return this to hand.
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = Conditions.YouDescendedThisTurn()
+        interveningIf = Conditions.YouDescendedThisTurn()
         effect = OptionalCostEffect(
             cost = PayLifeEffect(1),
             ifPaid = Effects.ReturnToHand(EffectTarget.Self)

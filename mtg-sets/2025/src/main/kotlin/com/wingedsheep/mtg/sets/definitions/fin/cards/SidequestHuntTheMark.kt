@@ -95,7 +95,7 @@ private val SidequestHuntTheMarkFront = card("Sidequest: Hunt the Mark") {
     // this enchantment.
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = Conditions.CompareAmounts(
+        interveningIf = Conditions.CompareAmounts(
             DynamicAmount.TurnTracking(Player.EachOpponent, TurnTracker.CREATURES_DIED),
             ComparisonOperator.GTE,
             DynamicAmount.Fixed(1),

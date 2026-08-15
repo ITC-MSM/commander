@@ -33,7 +33,7 @@ val KioraTheRisingTide = card("Kiora, the Rising Tide") {
 
     triggeredAbility {
         trigger = Triggers.Attacks
-        triggerCondition = Conditions.CardsInGraveyardAtLeast(7)
+        interveningIf = Conditions.CardsInGraveyardAtLeast(7)
         optional = true
         effect = Effects.CreateToken(
             power = 8,

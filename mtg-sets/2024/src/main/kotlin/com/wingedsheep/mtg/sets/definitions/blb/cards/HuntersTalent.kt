@@ -67,7 +67,7 @@ val HuntersTalent = card("Hunter's Talent") {
     classLevel(3, "{3}{G}") {
         triggeredAbility {
             trigger = Triggers.YourEndStep
-            triggerCondition = Exists(Player.You, Zone.BATTLEFIELD, GameObjectFilter.Creature.powerAtLeast(4))
+            interveningIf = Exists(Player.You, Zone.BATTLEFIELD, GameObjectFilter.Creature.powerAtLeast(4))
             effect = Effects.DrawCards(1)
         }
     }

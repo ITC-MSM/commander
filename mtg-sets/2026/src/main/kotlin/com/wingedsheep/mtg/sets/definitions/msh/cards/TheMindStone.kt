@@ -69,7 +69,7 @@ val TheMindStone = card("The Mind Stone") {
     // nonland permanent you control, then return that card to the battlefield.
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = Conditions.SourceHasCounter(CounterTypeFilter.Named(Counters.HARNESS))
+        triggerRestriction = Conditions.SourceHasCounter(CounterTypeFilter.Named(Counters.HARNESS))
         val permanent = target(
             "up to one other target nonland permanent you control",
             TargetPermanent(

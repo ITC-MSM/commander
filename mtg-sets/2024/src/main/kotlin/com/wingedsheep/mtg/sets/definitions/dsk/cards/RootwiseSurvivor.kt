@@ -46,7 +46,7 @@ val RootwiseSurvivor = card("Rootwise Survivor") {
 
     triggeredAbility {
         trigger = Triggers.YourPostcombatMain
-        triggerCondition = Conditions.SourceIsTapped
+        interveningIf = Conditions.SourceIsTapped
         val land = target("target land you control", TargetObject(filter = TargetFilter.Land.youControl(), optional = true))
         effect = Effects.Composite(
             Effects.AddCounters(Counters.PLUS_ONE_PLUS_ONE, 3, land),

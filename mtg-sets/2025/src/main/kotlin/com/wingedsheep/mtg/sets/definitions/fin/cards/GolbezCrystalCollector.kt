@@ -26,9 +26,9 @@ import com.wingedsheep.sdk.scripting.targets.TargetObject
  *
  * First ability: an ANY-bound enters trigger filtered to "artifact you control" → [Effects.Surveil].
  *
- * The end-step ability is gated by an intervening-if (`triggerCondition`, checked both on trigger
+ * The end-step ability is gated by an intervening-if (`interveningIf`, checked both on trigger
  * and on resolution — CR 603.4) requiring four or more artifacts. It returns a captured target
- * creature card to hand (Ruin-Lurker Bat's `triggerCondition` shape + Rakdos Joins Up's captured
+ * creature card to hand (Ruin-Lurker Bat's `interveningIf` shape + Rakdos Joins Up's captured
  * target handle), then a [ConditionalEffect] runs only when you control eight or more artifacts:
  * each opponent loses life equal to the returned card's power, read via
  * [DynamicAmounts.targetPower] off the same bound target.
@@ -55,7 +55,7 @@ val GolbezCrystalCollector = card("Golbez, Crystal Collector") {
 
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = Conditions.YouControlAtLeast(4, GameObjectFilter.Artifact.youControl())
+        interveningIf = Conditions.YouControlAtLeast(4, GameObjectFilter.Artifact.youControl())
         val creatureCard = target(
             "target creature card from your graveyard",
             TargetObject(filter = TargetFilter.CreatureInYourGraveyard),

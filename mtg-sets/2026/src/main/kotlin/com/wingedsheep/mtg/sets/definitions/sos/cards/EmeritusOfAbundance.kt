@@ -46,7 +46,7 @@ val EmeritusOfAbundance = card("Emeritus of Abundance") {
     // Whenever this creature attacks, if you control eight or more lands, it becomes prepared.
     triggeredAbility {
         trigger = Triggers.Attacks
-        triggerCondition = Conditions.ControlLandsAtLeast(8)
+        interveningIf = Conditions.ControlLandsAtLeast(8)
         effect = Effects.BecomePrepared(EffectTarget.Self)
     }
 

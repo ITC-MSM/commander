@@ -74,7 +74,7 @@ private val ExdeathVoidWarlockFrontFace = card("Exdeath, Void Warlock") {
     // graveyard, transform Exdeath.
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = Conditions.CompareAmounts(
+        interveningIf = Conditions.CompareAmounts(
             DynamicAmount.Count(Player.You, Zone.GRAVEYARD, GameObjectFilter.Permanent),
             ComparisonOperator.GTE,
             DynamicAmount.Fixed(6),

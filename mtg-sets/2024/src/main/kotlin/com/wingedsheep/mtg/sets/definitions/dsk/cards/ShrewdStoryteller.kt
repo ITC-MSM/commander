@@ -29,7 +29,7 @@ val ShrewdStoryteller = card("Shrewd Storyteller") {
     // +1/+1 counter on target creature.
     triggeredAbility {
         trigger = Triggers.YourPostcombatMain
-        triggerCondition = Conditions.SourceIsTapped
+        interveningIf = Conditions.SourceIsTapped
         val creature = target("target creature", Targets.Creature)
         effect = Effects.AddCounters(Counters.PLUS_ONE_PLUS_ONE, 1, creature)
     }

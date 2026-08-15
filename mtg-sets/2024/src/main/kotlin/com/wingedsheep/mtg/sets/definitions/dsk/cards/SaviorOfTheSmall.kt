@@ -35,7 +35,7 @@ val SaviorOfTheSmall = card("Savior of the Small") {
 
     triggeredAbility {
         trigger = Triggers.YourPostcombatMain
-        triggerCondition = Conditions.SourceIsTapped
+        interveningIf = Conditions.SourceIsTapped
         val card = target(
             "target creature card with mana value 3 or less from your graveyard",
             TargetObject(

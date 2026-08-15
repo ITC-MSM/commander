@@ -57,7 +57,7 @@ val CalamityGallopingInferno = card("Calamity, Galloping Inferno") {
 
     triggeredAbility {
         trigger = Triggers.Attacks
-        triggerCondition = Conditions.SourceIsSaddled
+        triggerRestriction = Conditions.SourceIsSaddled
         effect = Effects.Pipeline {
             // First iteration.
             val saddlersA = gather(CardSource.CreaturesThatSaddledSource)

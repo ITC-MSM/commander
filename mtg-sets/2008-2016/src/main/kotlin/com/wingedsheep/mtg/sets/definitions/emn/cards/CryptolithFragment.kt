@@ -35,7 +35,7 @@ private val CryptolithFragmentFront = card("Cryptolith Fragment") {
 
     triggeredAbility {
         trigger = Triggers.YourUpkeep
-        triggerCondition = Conditions.EachPlayerLifeAtMost(10)
+        interveningIf = Conditions.EachPlayerLifeAtMost(10)
         effect = TransformEffect(EffectTarget.Self)
     }
 

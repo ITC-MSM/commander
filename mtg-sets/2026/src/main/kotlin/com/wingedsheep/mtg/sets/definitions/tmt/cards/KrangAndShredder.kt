@@ -78,7 +78,7 @@ val KrangAndShredder = card("Krang & Shredder") {
     // actually enters the battlefield under the Disappear controller.
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = Conditions.YouHadPermanentLeaveBattlefieldThisTurn
+        interveningIf = Conditions.YouHadPermanentLeaveBattlefieldThisTurn
         effect = MayEffect(
             Effects.Composite(
                 listOf(

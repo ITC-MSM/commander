@@ -71,7 +71,7 @@ val SotheraTheSupervoid = card("Sothera, the Supervoid") {
 
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = AnyCondition(
+        interveningIf = AnyCondition(
             listOf(
                 Exists(Player.You, Zone.BATTLEFIELD, GameObjectFilter.Creature, negate = true),
                 Exists(Player.EachOpponent, Zone.BATTLEFIELD, GameObjectFilter.Creature, negate = true)

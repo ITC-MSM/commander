@@ -44,7 +44,7 @@ val ToothCollector = card("Tooth Collector") {
 
     triggeredAbility {
         trigger = Triggers.EachOpponentUpkeep
-        triggerCondition = Conditions.Delirium(4)
+        interveningIf = Conditions.Delirium(4)
         val t = target(
             "target creature that player controls",
             TargetCreature(

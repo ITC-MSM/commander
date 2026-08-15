@@ -27,7 +27,7 @@ val FlamecacheGecko = card("Flamecache Gecko") {
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = Conditions.OpponentLostLifeThisTurn
+        interveningIf = Conditions.OpponentLostLifeThisTurn
         effect = Effects.AddMana(Color.BLACK)
             .then(Effects.AddMana(Color.RED))
     }

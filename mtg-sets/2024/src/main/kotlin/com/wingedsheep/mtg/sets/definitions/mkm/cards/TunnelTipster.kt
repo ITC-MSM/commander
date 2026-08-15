@@ -20,7 +20,7 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  * control this turn, put a +1/+1 counter on this creature.
  * {T}: Add {G}.
  *
- * The end-step clause is an **intervening-if** (CR 603.4), so it is a `triggerCondition` rather
+ * The end-step clause is an **intervening-if** (CR 603.4), so it is a `interveningIf` rather
  * than a gate inside the effect: with no face-down creature having entered this turn the ability
  * never goes on the stack at all.
  *
@@ -47,7 +47,7 @@ val TunnelTipster = card("Tunnel Tipster") {
 
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = Conditions.PermanentEnteredFaceDownThisTurn
+        interveningIf = Conditions.PermanentEnteredFaceDownThisTurn
         effect = Effects.AddCounters(Counters.PLUS_ONE_PLUS_ONE, 1, EffectTarget.Self)
         description = "At the beginning of your end step, if a face-down creature entered the " +
             "battlefield under your control this turn, put a +1/+1 counter on this creature."

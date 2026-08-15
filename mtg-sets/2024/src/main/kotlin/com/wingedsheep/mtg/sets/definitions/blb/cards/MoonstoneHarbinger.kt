@@ -35,7 +35,7 @@ val MoonstoneHarbinger = card("Moonstone Harbinger") {
     // and gain deathtouch until end of turn. This ability triggers only once each turn.
     triggeredAbility {
         trigger = Triggers.YouGainOrLoseLife
-        triggerCondition = Conditions.IsYourTurn
+        triggerRestriction = Conditions.IsYourTurn
         oncePerTurn = true
         val batsYouControl = GroupFilter.allCreaturesWithSubtype("Bat").youControl()
         effect = Patterns.Group.pumpAndGrantToAll(1, 0, Keyword.DEATHTOUCH, batsYouControl)

@@ -63,7 +63,7 @@ fun CardBuilder.startYourEngines() {
  * | `staticAbility { }` | [ConditionalStaticAbility] — re-evaluated every projection, so the ability appears and disappears with your speed |
  * | `staticAbility { ability = ModifySpellCost(…) }` | [CostGating.OnlyIf] folded into the modifier itself — cost calculation never reads the layer system, so a wrapper would hide it (Racers' Scoreboard's "Max speed — Spells you cast cost {1} less to cast") |
  * | `activatedAbility { }` | [ActivationRestriction.OnlyIfCondition] — the ability isn't a legal action below max speed |
- * | `triggeredAbility { }` | `triggerCondition` (CR 603.4) — checked when the trigger would fire and again on resolution |
+ * | `triggeredAbility { }` | `triggerRestriction` (CR 603.2) — read when the trigger would fire, and not again; the ability's own `interveningIf`, if it prints one, keeps its separate CR 603.4 second check |
  * | `keywords(…)` | sugar for a gated [GrantKeyword] on the source, covering the common "Max speed — This creature has double strike" shape |
  *
  * One block may hold several abilities — Tsagan, Raider Warlord's "Max speed — Tsagan has
@@ -251,9 +251,14 @@ class MaxSpeedBuilder {
     }
 
     internal fun gatedTriggeredAbilities(): List<TriggeredAbility> = triggered.map { ability ->
-        val gated = ability.triggerCondition?.let { it and MAX_SPEED_GATE } ?: MAX_SPEED_GATE
+        // The gate lands on `triggerRestriction`, never on `interveningIf`. "Max speed — [Ability]"
+        // is "as long as your speed is 4, this object has '[Ability]'" (CR 702.178a) — a condition
+        // on whether the ability exists to trigger, checked once when it would. An ability declared
+        // inside the block may *also* print its own intervening "if"; that keeps its own slot and
+        // its own second check, which folding both into one condition would have thrown away.
+        val gated = ability.triggerRestriction?.let { it and MAX_SPEED_GATE } ?: MAX_SPEED_GATE
         ability.copy(
-            triggerCondition = gated,
+            triggerRestriction = gated,
             descriptionOverride = MAX_SPEED_PREFIX + (ability.descriptionOverride ?: ability.description)
         )
     }

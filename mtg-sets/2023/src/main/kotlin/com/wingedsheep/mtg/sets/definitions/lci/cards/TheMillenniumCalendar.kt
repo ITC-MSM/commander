@@ -30,7 +30,7 @@ import com.wingedsheep.sdk.scripting.values.DynamicAmount
  *    untapped permanents exposed as the trigger's captured collection so "that many" is read with
  *    `DynamicAmount.DistinctEntitiesInCollections(TRIGGER_CAPTURED_COLLECTION)`. The "during your
  *    untap step" scoping is intrinsic to the batch untap trigger (`TriggerDetector` fires it only
- *    for the active player's untap-step untaps), so no `triggerCondition` is needed.
+ *    for the active player's untap-step untaps), so no `triggerRestriction` is needed.
  *  - The doubler is [Effects.DoubleCounters] (reads the current count and adds that many; doubling
  *    zero stays zero).
  *  - The 1,000-counter payoff is a CR 603.8 **state-triggered** ability — it watches the counter

@@ -1768,7 +1768,7 @@
                         }
                     ]
                 },
-                "triggerCondition": "TriggeringEntityWasNotPutByThisSource"
+                "interveningIf": "TriggeringEntityWasNotPutByThisSource"
             }
         ]
     },
@@ -1854,7 +1854,7 @@
                     "overridePower": 1,
                     "overrideToughness": 1
                 },
-                "triggerCondition": "WasKicked"
+                "interveningIf": "WasKicked"
             },
             {
                 "id": "ability_2",
@@ -2115,7 +2115,7 @@
                     "type": "WinGame",
                     "message": "Simic Ascendancy reached 20 growth counters."
                 },
-                "triggerCondition": {
+                "interveningIf": {
                     "type": "Compare",
                     "left": {
                         "type": "EntityProperty",
@@ -2309,7 +2309,7 @@
                         "amount": 2
                     }
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "All",
                     "conditions": [
                         {

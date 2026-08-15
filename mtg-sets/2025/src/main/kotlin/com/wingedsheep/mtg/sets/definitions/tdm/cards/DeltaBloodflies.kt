@@ -18,7 +18,7 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  * Whenever this creature attacks, if you control a creature with a counter on it, each opponent
  * loses 1 life.
  *
- * The attack trigger carries an intervening-if condition (Rule 603.4) via `triggerCondition`:
+ * The attack trigger carries an intervening-if condition (Rule 603.4) via `interveningIf`:
  * [Conditions.YouControl] over `GameObjectFilter.Creature.withAnyCounter()` ("a creature with a
  * counter on it"). The condition is checked both when the ability would trigger and again on
  * resolution, so removing the last counter before resolution fizzles the life loss. The payoff is
@@ -38,7 +38,7 @@ val DeltaBloodflies = card("Delta Bloodflies") {
 
     triggeredAbility {
         trigger = Triggers.Attacks
-        triggerCondition = Conditions.YouControl(GameObjectFilter.Creature.withAnyCounter())
+        interveningIf = Conditions.YouControl(GameObjectFilter.Creature.withAnyCounter())
         effect = Effects.LoseLife(1, EffectTarget.PlayerRef(Player.EachOpponent))
         description = "Whenever this creature attacks, if you control a creature with a counter on it, " +
             "each opponent loses 1 life."

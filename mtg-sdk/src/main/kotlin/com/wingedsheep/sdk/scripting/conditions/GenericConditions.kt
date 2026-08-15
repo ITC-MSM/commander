@@ -19,7 +19,7 @@ import kotlinx.serialization.Serializable
  * lost the game, gained life, cast the spell) against another resolved player reference. Used to
  * narrow a broad "whenever a player does X" trigger to a specific player without a bespoke event
  * filter: Shinryu, Transcendent Rival gates "When the chosen player loses the game, you win the
- * game" as `triggerCondition = TriggeringPlayerIs(Player.ChosenOpponent)`. Both sides resolve via
+ * game" as `triggerRestriction = TriggeringPlayerIs(Player.ChosenOpponent)`. Both sides resolve via
  * the engine's shared player resolver, so any [Player] reference works on the right-hand side.
  */
 @SerialName("TriggeringPlayerIs")
@@ -195,7 +195,7 @@ data class Compare(
  * (`Player.You`), the attacked player (`Player.DefendingPlayer`), the triggering player, etc.
  *
  * Preacher of the Schism: "Whenever this creature attacks the player with the most life or tied for
- * most life, …" (`triggerCondition = PlayerHasMostLife(Player.DefendingPlayer)`) and "Whenever this
+ * most life, …" (`triggerRestriction = PlayerHasMostLife(Player.DefendingPlayer)`) and "Whenever this
  * creature attacks while you have the most life or are tied for most life, …"
  * (`PlayerHasMostLife(Player.You)`).
  */

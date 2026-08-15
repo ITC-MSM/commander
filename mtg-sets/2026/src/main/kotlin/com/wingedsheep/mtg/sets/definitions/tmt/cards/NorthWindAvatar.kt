@@ -38,7 +38,7 @@ val NorthWindAvatar = card("North Wind Avatar") {
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = Conditions.WasCast
+        interveningIf = Conditions.WasCast
         effect = Patterns.Sideboard.wish(GameObjectFilter.Any, revealed = false)
         description = "When this creature enters, if you cast it, you may put a card you own from outside the game into your hand."
     }

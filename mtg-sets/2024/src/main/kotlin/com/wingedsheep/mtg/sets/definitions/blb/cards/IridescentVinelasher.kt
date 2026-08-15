@@ -35,7 +35,7 @@ val IridescentVinelasher = card("Iridescent Vinelasher") {
     // Offspring ETB: when this enters, if offspring was paid, create a 1/1 token copy
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        triggerCondition = Conditions.WasKicked
+        interveningIf = Conditions.WasKicked
         effect = Effects.CreateTokenCopyOfSelf(overridePower = 1, overrideToughness = 1)
     }
 

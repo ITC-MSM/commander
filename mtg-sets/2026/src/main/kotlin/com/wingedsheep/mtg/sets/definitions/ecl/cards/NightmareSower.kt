@@ -32,7 +32,7 @@ val NightmareSower = card("Nightmare Sower") {
 
     triggeredAbility {
         trigger = Triggers.YouCastSpell
-        triggerCondition = Conditions.IsNotYourTurn
+        triggerRestriction = Conditions.IsNotYourTurn
         val creature = target(
             "creature to put a -1/-1 counter on",
             TargetCreature(count = 1, optional = true)

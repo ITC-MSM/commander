@@ -42,7 +42,7 @@ val LeylineOfResonance = card("Leyline of Resonance") {
             spellFilter = GameObjectFilter.InstantOrSorcery,
             requires = setOf(SpellCastPredicate.TargetsMatching(GameObjectFilter.Creature.youControl()))
         )
-        triggerCondition = Conditions.TriggeringSpellHasSingleTarget
+        triggerRestriction = Conditions.TriggeringSpellHasSingleTarget
         effect = Effects.CopyTargetSpell(target = EffectTarget.TriggeringEntity)
     }
 

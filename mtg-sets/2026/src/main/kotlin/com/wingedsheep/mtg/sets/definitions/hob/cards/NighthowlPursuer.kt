@@ -32,7 +32,7 @@ val NighthowlPursuer = card("Nighthowl Pursuer") {
     keywords(Keyword.MENACE)
     triggeredAbility {
         trigger = Triggers.Attacks
-        triggerCondition = Conditions.YouControl(GameObjectFilter.Creature.powerAtLeast(4))
+        triggerRestriction = Conditions.YouControl(GameObjectFilter.Creature.powerAtLeast(4))
         effect = Effects.ModifyStats(2, 2, EffectTarget.Self)
     }
     metadata {
