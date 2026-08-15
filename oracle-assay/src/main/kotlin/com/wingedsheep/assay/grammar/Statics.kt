@@ -3,23 +3,42 @@ package com.wingedsheep.assay.grammar
 import com.wingedsheep.assay.normalize.Normalizer
 import com.wingedsheep.assay.syntax.Bindings
 import com.wingedsheep.assay.syntax.Phrase
+import com.wingedsheep.assay.syntax.alternate
 import com.wingedsheep.assay.syntax.bind
+import com.wingedsheep.assay.syntax.constant
 import com.wingedsheep.assay.syntax.oneOf
 import com.wingedsheep.assay.syntax.phrase
 import com.wingedsheep.sdk.core.Keyword
-import com.wingedsheep.sdk.dsl.Conditions
+import com.wingedsheep.sdk.core.ManaCost
+import com.wingedsheep.sdk.dsl.Conditions as SdkConditions
+import com.wingedsheep.sdk.scripting.AttackTax
 import com.wingedsheep.sdk.scripting.CanOnlyBlockCreaturesWith
 import com.wingedsheep.sdk.scripting.CantAttackUnless
 import com.wingedsheep.sdk.scripting.CantBeBlockedBy
 import com.wingedsheep.sdk.scripting.CantBeBlockedByMoreThan
+import com.wingedsheep.sdk.scripting.CantBeBlockedExceptBy
 import com.wingedsheep.sdk.scripting.CantBlock
+import com.wingedsheep.sdk.scripting.CantBlockUnless
+import com.wingedsheep.sdk.scripting.ConditionalStaticAbility
+import com.wingedsheep.sdk.scripting.CostModification
 import com.wingedsheep.sdk.scripting.GameObjectFilter
+import com.wingedsheep.sdk.scripting.GrantActivatedAbility
+import com.wingedsheep.sdk.scripting.GrantCantBeCountered
+import com.wingedsheep.sdk.scripting.GrantDynamicStatsEffect
+import com.wingedsheep.sdk.scripting.GrantFlashToSpellType
 import com.wingedsheep.sdk.scripting.GrantKeyword
+import com.wingedsheep.sdk.scripting.GrantProtectionFromChosenColorToGroup
+import com.wingedsheep.sdk.scripting.ModifySpellCost
 import com.wingedsheep.sdk.scripting.ModifyStats
+import com.wingedsheep.sdk.scripting.SpellCostTarget
 import com.wingedsheep.sdk.scripting.StaticAbility
+import com.wingedsheep.sdk.scripting.UntapDuringOtherUntapSteps
 import com.wingedsheep.sdk.scripting.conditions.Condition
 import com.wingedsheep.sdk.scripting.conditions.Exists
+import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
 import com.wingedsheep.sdk.scripting.predicates.CardPredicate
+import com.wingedsheep.sdk.scripting.references.Player
+import com.wingedsheep.sdk.scripting.values.DynamicAmount
 
 /**
  * Continuous abilities a permanent has just by being on the battlefield — `staticAbilities`, the
@@ -164,7 +183,7 @@ object Statics {
      * "~ can't attack unless defending player controls an Island." — Deep-Sea Serpent, and the
      * island-walk-in-reverse family the older sets are full of.
      *
-     * The condition is `Conditions.DefendingPlayerControlsLandType`, which is the SDK's own name for
+     * The condition is `SdkConditions.DefendingPlayerControlsLandType`, which is the SDK's own name for
      * exactly this sentence; the grammar reads the land type out of the `Exists` it lowers to rather
      * than modelling the condition itself, so the rule stays a sentence and not a second condition
      * vocabulary. The noun goes through [Filters.indefinite], which owns the article — English
@@ -178,12 +197,12 @@ object Statics {
             slot("land", Filters.indefinite)
             build { bindings ->
                 landTypeOf(bindings.value("land"))
-                    ?.let { CantAttackUnless(Conditions.DefendingPlayerControlsLandType(it)) }
+                    ?.let { CantAttackUnless(SdkConditions.DefendingPlayerControlsLandType(it)) }
             }
             match { value ->
                 val restriction = value as? CantAttackUnless ?: return@match null
                 val type = defendingPlayerLandType(restriction.condition) ?: return@match null
-                if (value != CantAttackUnless(Conditions.DefendingPlayerControlsLandType(type))) return@match null
+                if (value != CantAttackUnless(SdkConditions.DefendingPlayerControlsLandType(type))) return@match null
                 bind("land" to GameObjectFilter.Land.withSubtype(type))
             }
         }
@@ -196,7 +215,7 @@ object Statics {
     private fun defendingPlayerLandType(condition: Condition): String? {
         val exists = condition as? Exists ?: return null
         val subtype = landTypeOf(exists.filter) ?: return null
-        return subtype.takeIf { condition == Conditions.DefendingPlayerControlsLandType(it) }
+        return subtype.takeIf { condition == SdkConditions.DefendingPlayerControlsLandType(it) }
     }
 
     /**
@@ -219,10 +238,366 @@ object Statics {
             }
         }
 
+    // ---------------------------------------------------------------------------------------
+    // Lords — a whole group of permanents, named by a filter
+    // ---------------------------------------------------------------------------------------
+
+    /**
+     * "Sliver creatures get +1/+0.", "Cleric creatures have vigilance.", "All Slivers have
+     * "{T}: Regenerate target Sliver."" — the lord shape, and the family every tribal set is made of.
+     *
+     * One shape, three members, because the three differ only in *what* the group is given: a
+     * stat modifier, a keyword, or a whole activated ability. The affected set is
+     * [Filters.plural] wrapped in a bare `GroupFilter`, so every noun phrase the grammar can spell
+     * arrives here — "Sliver creatures", "creatures you control", "black creatures with flying" are
+     * rows in a filter list rather than rules of their own.
+     *
+     * ### "All" is a spelling, not a meaning
+     *
+     * Oracle prints both "Cleric creatures have vigilance." and "All Sliver creatures get +1/+0."
+     * for the same value: `GroupFilter(f)` says *every permanent matching f on the battlefield*, and
+     * has no room for the word. The bare form is canonical because it is what the modern lord
+     * templating uses and what the corpus overwhelmingly prints; the "All" form is an [alternate],
+     * so those cards come back as a [com.wingedsheep.assay.gate.LineVerdict.VARIANT] — the reading
+     * was right, only the spelling moved.
+     *
+     * Note what the shape deliberately cannot reach: `GroupFilter.source()` and
+     * `GroupFilter.attachedCreature()` are *scoped* filters, not battlefield ones, so a lord rule
+     * can never print an aura's line or a self-buff — the reconstruct-and-compare refuses them, and
+     * [attachedPump] and the conditional rules below keep their own sentences.
+     */
+    private fun <V> lordStatic(
+        verb: String,
+        name: String,
+        parameter: Phrase<V>,
+        ability: (V, GroupFilter) -> StaticAbility,
+        read: (StaticAbility) -> Pair<V, GroupFilter>?,
+        // A quoted granted ability already ends in its own full stop, inside the quotation marks;
+        // every other thing a lord gives out does not. The terminator is therefore the parameter's
+        // business rather than the shape's, and this is the one place it shows.
+        terminator: String = ".",
+    ): List<Phrase<StaticAbility>> {
+        fun rule(prefix: String, canonicalForm: Boolean, excludeSelf: Boolean): Phrase<StaticAbility> {
+            val inner = phrase<StaticAbility>("$prefix{filter} $verb {v}$terminator", name = name) {
+                slot("filter", Filters.plural)
+                slot("v", parameter)
+                build {
+                    ability(it.value("v"), GroupFilter(it.value("filter"), excludeSelf = excludeSelf))
+                }
+                match { value ->
+                    val (parsed, group) = read(value) ?: return@match null
+                    if (group.excludeSelf != excludeSelf) return@match null
+                    if (value != ability(parsed, group)) return@match null
+                    bind("filter" to group.baseFilter, "v" to parsed)
+                }
+                canonical = canonicalForm
+            }
+            return if (canonicalForm) inner else alternate(inner)
+        }
+        return listOf(
+            rule("", canonicalForm = true, excludeSelf = false),
+            rule("all ", canonicalForm = false, excludeSelf = false),
+            // "Other creatures you control get +0/+1." — Veteran Armorer, and every lord that leaves
+            // itself out. "Other" is `GroupFilter.excludeSelf`, a field on the *iteration* rather
+            // than on the noun, which is why it is a prefix here and not a [Filters] layer — the
+            // same argument [Steps.otherGroupStep] makes on the effect side.
+            rule("other ", canonicalForm = true, excludeSelf = true),
+        )
+    }
+
+    /**
+     * "All Slivers have protection from the chosen color." — Ward Sliver.
+     *
+     * A lord line with **no parameter at all**: the quality is the colour chosen as the source
+     * entered, which `GrantProtectionFromChosenColorToGroup` names and no word in the sentence
+     * varies. So it is a rule rather than a row of [lordStatic], whose whole shape is the slot the
+     * verb takes.
+     */
+    private fun chosenColourProtection(prefix: String, canonicalForm: Boolean): Phrase<StaticAbility> {
+        val inner = phrase<StaticAbility>(
+            "$prefix{filter} have protection from the chosen color.",
+            name = "a group has protection from the chosen colour",
+        ) {
+            slot("filter", Filters.plural)
+            build { GrantProtectionFromChosenColorToGroup(GroupFilter(it.value("filter"))) }
+            match { value ->
+                val grant = value as? GrantProtectionFromChosenColorToGroup ?: return@match null
+                if (value != GrantProtectionFromChosenColorToGroup(grant.filter)) return@match null
+                bind("filter" to grant.filter.baseFilter)
+            }
+            canonical = canonicalForm
+        }
+        return if (canonicalForm) inner else alternate(inner)
+    }
+
+    /**
+     * "Beasts can't block." — Frenetic Raptor, and [cantBlock]'s group-scoped sibling.
+     *
+     * Two rules rather than one with an optional filter, because the two take disjoint models: the
+     * source form is `GroupFilter.source()`, a `Scope.Self` filter [Filters] can never produce, and
+     * this one is always a battlefield scan. The model therefore decides which prints.
+     */
+    private val groupCantBlock: Phrase<StaticAbility> =
+        phrase("{filter} can't block.", name = "a group can't block") {
+            slot("filter", Filters.plural)
+            build { CantBlock(GroupFilter(it.value("filter"))) }
+            match { value ->
+                val restriction = value as? CantBlock ?: return@match null
+                if (value != CantBlock(restriction.filter)) return@match null
+                bind("filter" to restriction.filter.baseFilter)
+            }
+        }
+
+    /** "Slivers can't be blocked except by Slivers." — Shifting Sliver. Two nouns, two fields. */
+    private val groupCantBeBlockedExceptBy: Phrase<StaticAbility> =
+        phrase("{filter} can't be blocked except by {blockers}.", name = "a group can't be blocked except by") {
+            slot("filter", Filters.plural)
+            slot("blockers", Filters.plural)
+            build {
+                CantBeBlockedExceptBy(
+                    blockerFilter = it.value("blockers"),
+                    filter = GroupFilter(it.value("filter")),
+                )
+            }
+            match { value ->
+                val restriction = value as? CantBeBlockedExceptBy ?: return@match null
+                if (value != CantBeBlockedExceptBy(restriction.blockerFilter, restriction.filter)) {
+                    return@match null
+                }
+                bind("filter" to restriction.filter.baseFilter, "blockers" to restriction.blockerFilter)
+            }
+        }
+
+    // ---------------------------------------------------------------------------------------
+    // Spell-affecting statics — the ones whose subject is a spell rather than a permanent
+    // ---------------------------------------------------------------------------------------
+
+    /** "Sliver spells can't be countered." — Root Sliver. */
+    private val spellsCantBeCountered: Phrase<StaticAbility> =
+        phrase("{filter} spells can't be countered.", name = "a spell type can't be countered") {
+            slot("filter", Filters.subtypeOnly)
+            build { GrantCantBeCountered(it.value("filter")) }
+            match { value ->
+                val grant = value as? GrantCantBeCountered ?: return@match null
+                if (value != GrantCantBeCountered(grant.filter)) return@match null
+                bind("filter" to grant.filter)
+            }
+        }
+
+    /** "Any player may cast Sliver spells as though they had flash." — Quick Sliver. */
+    private val spellsHaveFlash: Phrase<StaticAbility> =
+        phrase(
+            "any player may cast {filter} spells as though they had flash.",
+            name = "a spell type may be cast as though it had flash",
+        ) {
+            slot("filter", Filters.subtypeOnly)
+            build { GrantFlashToSpellType(it.value("filter")) }
+            match { value ->
+                val grant = value as? GrantFlashToSpellType ?: return@match null
+                if (value != GrantFlashToSpellType(grant.filter)) return@match null
+                bind("filter" to grant.filter)
+            }
+        }
+
+    /**
+     * "Noncreature spells cost {1} more to cast." — Glowrider, and the tax half of the Sphere of
+     * Resistance family.
+     *
+     * `SpellCostTarget.AnyCaster` is the "everyone's spells" subject; `YouCast` is the other one and
+     * a different printed sentence ("Creature spells you cast cost {1} less"), so it is a future row
+     * rather than a slot. The modification is `IncreaseGeneric` and the amount is read off the
+     * printed mana symbol, which is why the slot is a whole [Primitives.manaCost] rather than a
+     * digit: the text spells the tax as `{1}`, a symbol, and generic mana is the only shape the
+     * model can hold.
+     */
+    private val spellsCostMore: Phrase<StaticAbility> =
+        phrase("{filter} spells cost {cost} more to cast.", name = "spells cost more to cast") {
+            slot("filter", Filters.plural)
+            slot("cost", Primitives.manaCost)
+            build { bindings ->
+                val generic = genericOnly(bindings.value("cost")) ?: return@build null
+                ModifySpellCost(
+                    target = SpellCostTarget.AnyCaster(bindings.value("filter")),
+                    modification = CostModification.IncreaseGeneric(generic),
+                )
+            }
+            match { value ->
+                val modify = value as? ModifySpellCost ?: return@match null
+                val target = modify.target as? SpellCostTarget.AnyCaster ?: return@match null
+                val increase = modify.modification as? CostModification.IncreaseGeneric ?: return@match null
+                val cost = ManaCost.parse("{${increase.amount}}")
+                if (value != ModifySpellCost(target, CostModification.IncreaseGeneric(increase.amount))) {
+                    return@match null
+                }
+                bind("filter" to target.filter, "cost" to cost)
+            }
+        }
+
+    /** The generic amount a mana cost is, or null when it says anything a tax cannot hold. */
+    private fun genericOnly(cost: ManaCost): Int? =
+        cost.takeIf { it == ManaCost.parse("{${it.genericAmount}}") }?.genericAmount
+
+    // ---------------------------------------------------------------------------------------
+    // Conditional statics — "as long as …"
+    // ---------------------------------------------------------------------------------------
+
+    /**
+     * "This creature gets +3/+3 as long as no opponent controls a creature." — Vexing Beetle, and
+     * "As long as you control a Beast, this creature gets +2/+2 and has trample." — Skirk Outrider.
+     *
+     * The SDK wraps the whole static in a `ConditionalStaticAbility`, so the condition is a slot
+     * around an ability rather than a field on one — which is why this is a wrapper family and not a
+     * parameter on the rules above, exactly as [Steps.conditionalClause] is a wrapper rather than a
+     * field.
+     *
+     * **Both printed orders exist and mean the same thing.** Oracle puts the clause after the effect
+     * on some cards and in front on others, and the model has no room for which; the trailing form
+     * is canonical because it is the commoner one, and the leading form is an [alternate].
+     *
+     * The affected set is the source in every card here, so it is a literal `GroupFilter.source()`
+     * rather than a slot — a *conditional lord* is a different sentence with a noun phrase in it,
+     * and it declines rather than being printed as one about this creature.
+     */
+    private fun conditionalSelfStatic(
+        leading: Boolean,
+        pairForm: Boolean,
+    ): Phrase<List<StaticAbility>> {
+        fun abilitiesFor(
+            modifiers: Pair<Int, Int>,
+            keyword: Keyword?,
+            condition: Condition,
+        ): List<StaticAbility> = listOfNotNull(
+            ConditionalStaticAbility(ModifyStats(modifiers.first, modifiers.second, GroupFilter.source()), condition),
+            keyword?.let { ConditionalStaticAbility(GrantKeyword(it, GroupFilter.source()), condition) },
+        )
+
+        val effect = "${Normalizer.SELF} gets {mod}" + if (pairForm) " and has {kw}" else ""
+        val template =
+            if (leading) "as long as {cond}, $effect." else "$effect as long as {cond}."
+        val name = "the source gets" + (if (pairForm) " and has" else "") + " under a condition"
+
+        val inner = phrase<List<StaticAbility>>(template, name = name) {
+            slot("cond", Conditions.condition)
+            slot("mod", Primitives.statModifiers)
+            if (pairForm) slot("kw", Keywords.keyword)
+            build { bindings ->
+                abilitiesFor(
+                    bindings.value("mod"),
+                    if (pairForm) bindings.value<Keyword>("kw") else null,
+                    bindings.value("cond"),
+                )
+            }
+            match { abilities ->
+                if (abilities.size != (if (pairForm) 2 else 1)) return@match null
+                val first = abilities.first() as? ConditionalStaticAbility ?: return@match null
+                val stats = first.ability as? ModifyStats ?: return@match null
+                val keyword = if (pairForm) {
+                    val second = abilities[1] as? ConditionalStaticAbility ?: return@match null
+                    val grant = second.ability as? GrantKeyword ?: return@match null
+                    Keyword.entries.firstOrNull { it.name == grant.keyword } ?: return@match null
+                } else {
+                    null
+                }
+                val modifiers = stats.powerBonus to stats.toughnessBonus
+                if (abilities != abilitiesFor(modifiers, keyword, first.condition)) return@match null
+                bind("cond" to first.condition, "mod" to modifiers, "kw" to keyword)
+            }
+            canonical = !leading
+        }
+        return if (leading) alternate(inner) else inner
+    }
+
+    /**
+     * "Creatures can't attack you unless their controller pays {2} for each creature they control
+     * that's attacking you." — Windborn Muse, and the whole Propaganda family.
+     *
+     * One printed sentence, one SDK type, one variable: the tax per attacker. Everything else in the
+     * sentence restates what `AttackTax` already means, which is why the rest is literal.
+     */
+    private val attackTax: Phrase<StaticAbility> = phrase(
+        "creatures can't attack you unless their controller pays {cost} for each creature they " +
+            "control that's attacking you.",
+        name = "attack tax",
+    ) {
+        slot("cost", Primitives.manaCost)
+        build { bindings ->
+            genericOnly(bindings.value("cost"))?.let { AttackTax(DynamicAmount.Fixed(it)) }
+        }
+        match { value ->
+            val tax = value as? AttackTax ?: return@match null
+            val amount = (tax.amountPerAttacker as? DynamicAmount.Fixed)?.amount ?: return@match null
+            if (value != AttackTax(DynamicAmount.Fixed(amount))) return@match null
+            bind("cost" to ManaCost.parse("{$amount}"))
+        }
+    }
+
+    /**
+     * "This creature gets +2/+2 for each face-down creature on the battlefield." — Primal Whisperer.
+     *
+     * The dynamic sibling of [attachedPump]: the bonus is a multiple of a battlefield count rather
+     * than a number, which the SDK spells as a different static type. The multiplier and the count
+     * are both in the text — "+2/+2" is `Multiply(count, 2)` — and the rule refuses a pair whose two
+     * components disagree, since `GrantDynamicStatsEffect` carries them separately and the printed
+     * pair can only spell one multiplier.
+     */
+    private val selfPumpPerCount: Phrase<StaticAbility> = run {
+        fun abilityFor(multiplier: Int, counted: GameObjectFilter): StaticAbility {
+            val amount = DynamicAmount.Multiply(DynamicAmount.AggregateBattlefield(Player.Each, counted), multiplier)
+            return GrantDynamicStatsEffect(GroupFilter.source(), amount, amount)
+        }
+        phrase(
+            "${Normalizer.SELF} gets {mod} for each {counted} on the battlefield.",
+            name = "the source gets a multiple of a battlefield count",
+        ) {
+            slot("mod", Primitives.statModifiers)
+            slot("counted", Filters.filter)
+            build { bindings ->
+                val (power, toughness) = bindings.value<Pair<Int, Int>>("mod")
+                if (power != toughness) return@build null
+                abilityFor(power, bindings.value("counted"))
+            }
+            match { value ->
+                val stats = value as? GrantDynamicStatsEffect ?: return@match null
+                val product = stats.powerBonus as? DynamicAmount.Multiply ?: return@match null
+                val aggregate = product.amount as? DynamicAmount.AggregateBattlefield ?: return@match null
+                if (aggregate.player != Player.Each) return@match null
+                if (value != abilityFor(product.multiplier, aggregate.filter)) return@match null
+                bind("mod" to (product.multiplier to product.multiplier), "counted" to aggregate.filter)
+            }
+        }
+    }
+
     val all: List<Phrase<StaticAbility>> = listOf(
         attachedPump,
         attachedKeyword,
         cantBlock,
+        groupCantBlock,
+        groupCantBeBlockedExceptBy,
+        spellsCantBeCountered,
+        spellsHaveFlash,
+        spellsCostMore,
+        attackTax,
+        selfPumpPerCount,
+        chosenColourProtection("", canonicalForm = true),
+        chosenColourProtection("all ", canonicalForm = false),
+        // "Untap all permanents you control during each other player's untap step." — Seedborn Muse.
+        // A `data object`, so the whole sentence is one value and the rule is a constant.
+        constant<StaticAbility>("untap all permanents you control during each other player's untap step.", UntapDuringOtherUntapSteps),
+        // Goblin Goon's two lines. `Conditions.ControlMoreCreatures` compares your creature count
+        // against your opponents' and says nothing about combat, so the printed noun — "defending
+        // player" on the attack half, "attacking player" on the block half — is a fact about *which
+        // sentence* the condition is in rather than about the condition. Registering it in
+        // [Conditions] would give one value two printed forms and leave the printer to choose;
+        // spelling it into each sentence keeps one form per model, and is the same argument
+        // [Filters] makes about "enchanted creature" versus "equipped creature".
+        constant<StaticAbility>(
+            "${Normalizer.SELF} can't attack unless you control more creatures than defending player.",
+            CantAttackUnless(SdkConditions.ControlMoreCreatures),
+        ),
+        constant<StaticAbility>(
+            "${Normalizer.SELF} can't block unless you control more creatures than attacking player.",
+            CantBlockUnless(SdkConditions.ControlMoreCreatures),
+        ),
         cantAttackUnlessLandType,
         cantBeBlockedByMoreThan(
             "${Normalizer.SELF} can't be blocked by more than one creature.",
@@ -242,7 +617,30 @@ object Statics {
             "${Normalizer.SELF} can block only {blockers}.",
             "can block only",
         ) { CanOnlyBlockCreaturesWith(blockerFilter = it) },
-    )
+    ) + lordStatic(
+        "get", "a group gets",
+        parameter = Primitives.statModifiers,
+        ability = { (power, toughness), group -> ModifyStats(power, toughness, group) },
+        read = { (it as? ModifyStats)?.let { s -> (s.powerBonus to s.toughnessBonus) to s.filter } },
+    ) + lordStatic(
+        "have", "a group has a keyword",
+        parameter = Keywords.keyword,
+        ability = { keyword, group -> GrantKeyword(keyword, group) },
+        read = { ability ->
+            val grant = ability as? GrantKeyword ?: return@lordStatic null
+            Keyword.entries.firstOrNull { it.name == grant.keyword }?.let { it to grant.filter }
+        },
+    ) + lordStatic(
+        // "All Slivers have "{T}: Regenerate target Sliver."" — a *whole activated ability* as the
+        // thing granted, which is why [Activated.ability] is a slot here: the quoted text is the
+        // same English an ability line prints, so the entire activated-ability grammar arrives with
+        // one row and no verb is restated.
+        "have", "a group has an activated ability",
+        parameter = Activated.quoted,
+        ability = { granted, group -> GrantActivatedAbility(granted, group) },
+        read = { (it as? GrantActivatedAbility)?.let { g -> g.ability to g.filter } },
+        terminator = "",
+    ) + Granted.statics
 
     val static: Phrase<StaticAbility> = oneOf("a static ability", all)
 
@@ -293,5 +691,13 @@ object Statics {
      * The two alternatives take disjoint list sizes, so printing is decided by the model rather than
      * by the alternation's order — the property every `oneOf` in this grammar is written to have.
      */
-    val line: Phrase<List<StaticAbility>> = oneOf("static abilities", pumpAndKeyword, single)
+    val line: Phrase<List<StaticAbility>> = oneOf(
+        "static abilities",
+        pumpAndKeyword,
+        conditionalSelfStatic(leading = false, pairForm = false),
+        conditionalSelfStatic(leading = true, pairForm = false),
+        conditionalSelfStatic(leading = false, pairForm = true),
+        conditionalSelfStatic(leading = true, pairForm = true),
+        single,
+    )
 }

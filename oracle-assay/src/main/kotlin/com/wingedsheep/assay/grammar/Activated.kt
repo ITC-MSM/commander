@@ -11,6 +11,8 @@ import com.wingedsheep.sdk.scripting.ActivatedAbility
 import com.wingedsheep.sdk.scripting.ActivationRestriction
 import com.wingedsheep.sdk.scripting.TimingRule
 import com.wingedsheep.sdk.scripting.effects.AddColorlessManaEffect
+import com.wingedsheep.sdk.scripting.effects.AddDynamicManaEffect
+import com.wingedsheep.sdk.scripting.effects.AddManaOfChoiceEffect
 import com.wingedsheep.sdk.scripting.effects.AddManaEffect
 import com.wingedsheep.sdk.scripting.effects.Effect
 
@@ -75,6 +77,7 @@ object Activated {
         cost: AbilityCost,
         script: CardScript,
         restrictions: List<ActivationRestriction> = emptyList(),
+        sorcerySpeed: Boolean = false,
     ): ActivatedAbility? {
         val effect = script.spellEffect ?: return null
         val targets = script.targetRequirements
@@ -85,15 +88,30 @@ object Activated {
             cost = cost,
             effect = effect,
             targetRequirements = targets,
-            timing = if (manaAbility) TimingRule.ManaAbility else TimingRule.InstantSpeed,
+            timing = when {
+                sorcerySpeed -> TimingRule.SorcerySpeed
+                manaAbility -> TimingRule.ManaAbility
+                else -> TimingRule.InstantSpeed
+            },
             isManaAbility = manaAbility,
             restrictions = restrictions,
         )
     }
 
-    /** CR 605.1a's "could add mana to a player's mana pool when it resolves", as far as [Mana] reads. */
+    /**
+     * CR 605.1a's "could add mana to a player's mana pool when it resolves".
+     *
+     * Every effect that adds mana counts, not only the symbol form: "Add one mana of any color" and
+     * "Add three mana in any combination of {R} and/or {G}" are mana abilities by the same rule, and
+     * reading only the two symbol effects made Blood Celebrant, Goblin Clearcutter and Wirewood
+     * Channeler come out as instant-speed abilities that go on the stack. The differential found all
+     * three the first time the grammar could read them.
+     */
     private fun producesMana(effect: Effect): Boolean =
-        effect is AddManaEffect || effect is AddColorlessManaEffect
+        effect is AddManaEffect ||
+            effect is AddColorlessManaEffect ||
+            effect is AddManaOfChoiceEffect ||
+            effect is AddDynamicManaEffect
 
     /** "{cost}: {effect}" — one ability, whatever [Steps] can read after the colon. */
     private val single: Phrase<List<ActivatedAbility>> =
@@ -178,5 +196,62 @@ object Activated {
             }
         }
 
-    val abilities: Phrase<List<ActivatedAbility>> = oneOf("an activated ability", single, restricted, choice)
+    /**
+     * "{2}{B}, {T}, Sacrifice a Zombie: Destroy target non-Zombie creature. It can't be regenerated.
+     * Activate only as a sorcery." — Deathmark Prelate.
+     *
+     * The same trailing sentence [restricted] reads, and yet **not** an `ActivationRestriction`: the
+     * SDK spells sorcery-speed as `TimingRule.SorcerySpeed`, a field the ability already has, so the
+     * sentence sets a timing rather than adding to a list. That is why it is a rule of its own and
+     * not a row in [Restrictions] — a row there would produce a restriction no hand-written card
+     * carries, and it would round-trip while disagreeing with every card that prints the sentence.
+     */
+    private val sorcerySpeed: Phrase<List<ActivatedAbility>> =
+        phrase("{cost}: {effect} activate only as a sorcery.", name = "an activated ability at sorcery speed") {
+            slot("cost", Costs.cost)
+            slot("effect", Steps.step)
+            build { bindings ->
+                abilityFor(bindings.value("cost"), bindings.value("effect"), sorcerySpeed = true)
+                    ?.let { listOf(it) }
+            }
+            match { abilities ->
+                val ability = abilities.singleOrNull() ?: return@match null
+                if (ability.timing != TimingRule.SorcerySpeed) return@match null
+                val script = CardScript(
+                    spellEffect = ability.effect,
+                    targetRequirements = ability.targetRequirements,
+                )
+                if (abilityFor(ability.cost, script, sorcerySpeed = true)?.copy(id = ability.id) != ability) {
+                    return@match null
+                }
+                bind("cost" to ability.cost, "effect" to script)
+            }
+        }
+
+    val abilities: Phrase<List<ActivatedAbility>> =
+        oneOf("an activated ability", single, restricted, sorcerySpeed, choice)
+
+    /**
+     * `"{T}: Regenerate target Sliver."` — one activated ability inside the quotation marks a
+     * *granted* ability is printed in.
+     *
+     * The quotes are the whole rule. Everything inside them is [abilities] unchanged, which is the
+     * point: a granted ability is the same English an ability line prints, so `Statics`' lord rules
+     * slot this and inherit the entire activated-ability grammar rather than restating a verb.
+     *
+     * Exactly one ability, because `GrantActivatedAbility` holds one. The list form the line rule
+     * needs — "{T}: Add {B} or {G}." as two abilities sharing a cost — has nowhere to go in a grant,
+     * so it declines here rather than being silently truncated to its first member.
+     *
+     * Note what the quoted text does **not** mean: `~` inside a granted ability is the creature that
+     * gained it, not the card whose line this is. Normalization abstracts both to the same token and
+     * records that as a known limitation; nothing here reads `~` as the source, and the effect
+     * vocabulary spells it [com.wingedsheep.sdk.scripting.targets.EffectTarget.Self] either way,
+     * which is the reading that stays true in both positions.
+     */
+    val quoted: Phrase<ActivatedAbility> = phrase("\"{ability}\"", name = "a quoted activated ability") {
+        slot("ability", abilities)
+        build { it.value<List<ActivatedAbility>>("ability").singleOrNull() }
+        match { bind("ability" to listOf(it)) }
+    }
 }

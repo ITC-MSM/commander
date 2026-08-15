@@ -83,9 +83,11 @@ class StaticsTest : StringSpec({
     }
 
     // The fail-closed half, and the reason the `match` rules reconstruct rather than walk fields.
-    // "Creatures you control get +1/+1." is the *same SDK type* with a real GroupFilter; a rule that
-    // read only the two bonuses would print it as an aura's line and lose the whole lord clause.
-    "a lord's pump refuses to print as an aura's line" {
+    // "Creatures you control get +1/+1." is the *same SDK type* with a real `GroupFilter`, and the
+    // lord rules read it as its own sentence. The aura rule must not be the one that prints it — a
+    // rule that looked only at the two bonuses would spell a lord's line as an aura's and lose the
+    // whole clause, which is what this asserts.
+    "a lord's pump prints as a lord's line and not as an aura's" {
         val lord = CardFragment(
             script = CardScript(
                 staticAbilities = listOf(
@@ -93,11 +95,11 @@ class StaticsTest : StringSpec({
                 )
             )
         )
-        Grammar.abilityLine.printLine(lord) shouldBe null
+        Grammar.abilityLine.printLine(lord) shouldBe "Creatures you control get +1/+1."
     }
 
     // …and the same for the grant, whose default filter is the same one.
-    "a keyword granted to a group refuses to print as an aura's line" {
+    "a keyword granted to a group prints as a lord's line" {
         val anthem = CardFragment(
             script = CardScript(
                 staticAbilities = listOf(
@@ -105,7 +107,14 @@ class StaticsTest : StringSpec({
                 )
             )
         )
-        Grammar.abilityLine.printLine(anthem) shouldBe null
+        Grammar.abilityLine.printLine(anthem) shouldBe "Creatures you control have flying."
+    }
+
+    // The aura's line is the *scoped* value, which no noun phrase can produce, so the two families
+    // stay disjoint by their filter rather than by an ordering in the alternation.
+    "an aura's pump still prints as an aura's line" {
+        val aura = CardFragment(script = CardScript(staticAbilities = listOf(ModifyStats(1, 2))))
+        Grammar.abilityLine.printLine(aura) shouldBe "Enchanted creature gets +1/+2."
     }
 
     // The noun is in the text and not in the model: `attachedCreature()` says "the thing this is

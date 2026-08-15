@@ -3,6 +3,8 @@ package com.wingedsheep.assay.grammar
 import com.wingedsheep.assay.syntax.Phrase
 import com.wingedsheep.assay.syntax.bind
 import com.wingedsheep.assay.syntax.phrase
+import com.wingedsheep.sdk.core.ManaCost
+import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.model.CardScript
@@ -10,6 +12,7 @@ import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.effects.DividedDamageEffect
 import com.wingedsheep.sdk.scripting.effects.Effect
 import com.wingedsheep.sdk.scripting.effects.ForEachTargetEffect
+import com.wingedsheep.sdk.scripting.effects.GrantAttackBlockTaxPerCreatureTypeEffect
 import com.wingedsheep.sdk.scripting.effects.GrantCantBeBlockedExceptByColorEffect
 import com.wingedsheep.sdk.scripting.effects.MustBeBlockedEffect
 import com.wingedsheep.sdk.scripting.effects.ReflectCombatDamageEffect
@@ -218,6 +221,58 @@ object Combat {
             }
         }
     }
+
+    /**
+     * "Until end of turn, target creature gains "This creature can't attack or block unless its
+     * controller pays {1} for each Cleric on the battlefield."" — Whipgrass Entangler.
+     *
+     * A whole *ability* granted for a turn, and the SDK names the granted ability as one effect
+     * type rather than as a `GrantActivatedAbility` over a constructed static — because the thing
+     * granted is a combat *restriction* with a per-creature-type tax, which has no printed form
+     * outside this sentence. So the quoted text is spelled here rather than slotted through
+     * [Activated.quoted]: what is inside the quotes is not an ability the grammar can otherwise
+     * read, and the two variables in it — the type and the tax — are the effect's two fields.
+     *
+     * "Until end of turn" is at the *front* of this sentence and at the back of every other
+     * durational one, which is Oracle's own inconsistency and why the duration is a literal here.
+     */
+    private val grantAttackBlockTax: Phrase<CardScript> = run {
+        fun scriptFor(subtype: Subtype, tax: ManaCost) = CardScript(
+            spellEffect = Effects.GrantAttackBlockTaxPerCreatureType(
+                target = Targets.bound(),
+                creatureType = subtype.value,
+                manaCostPer = tax.toString(),
+            ),
+            targetRequirements = listOf(Targets.permanent(GameObjectFilter.Creature)),
+        )
+        phrase(
+            "until end of turn, target creature gains \"{self} can't attack or block unless its " +
+                "controller pays {tax} for each {subtype} on the battlefield.\"",
+            name = "grant an attack and block tax",
+        ) {
+            slot("self", Primitives.self)
+            slot("tax", Primitives.manaCost)
+            slot("subtype", Primitives.subtype)
+            build { scriptFor(it.value("subtype"), it.value("tax")) }
+            match { script ->
+                val effect = script.spellEffect as? GrantAttackBlockTaxPerCreatureTypeEffect
+                    ?: return@match null
+                val tax = runCatching { ManaCost.parse(effect.manaCostPer) }.getOrNull() ?: return@match null
+                val subtype = Subtype(effect.creatureType)
+                if (script != scriptFor(subtype, tax)) return@match null
+                bind("self" to Unit, "tax" to tax, "subtype" to subtype)
+            }
+        }
+    }
+
+    /**
+     * The clauses that carry their own full stop, because it falls **inside** a quotation.
+     *
+     * "…gains "This creature can't attack or block …"" ends on a quote mark, not on a stop, so
+     * [Steps.sentence] — which spells the stop itself — cannot end a line with one. They are
+     * therefore offered beside a sentence rather than inside it; see [Steps.step].
+     */
+    val selfTerminatingClauses: List<Phrase<CardScript>> = listOf(grantAttackBlockTax)
 
     val clauses: List<Phrase<CardScript>> = listOf(
         taunt,

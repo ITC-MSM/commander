@@ -11,6 +11,7 @@ import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.effects.CardDestination
 import com.wingedsheep.sdk.scripting.effects.CardOrder
 import com.wingedsheep.sdk.scripting.effects.CardSource
+import com.wingedsheep.sdk.scripting.effects.Effect
 import com.wingedsheep.sdk.scripting.effects.CompositeEffect
 import com.wingedsheep.sdk.scripting.effects.GatherCardsEffect
 import com.wingedsheep.sdk.scripting.effects.MayEffect
@@ -20,6 +21,7 @@ import com.wingedsheep.sdk.scripting.effects.SelectFromCollectionEffect
 import com.wingedsheep.sdk.scripting.effects.SelectionMode
 import com.wingedsheep.sdk.scripting.effects.ShuffleLibraryEffect
 import com.wingedsheep.sdk.scripting.effects.ZonePlacement
+import com.wingedsheep.sdk.scripting.predicates.CardPredicate
 import com.wingedsheep.sdk.scripting.references.Player
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
 
@@ -300,7 +302,142 @@ object Library {
         return (mode.count as? DynamicAmount.Fixed)?.amount
     }
 
+    /**
+     * "Search your library for a Zombie card and a Swamp card, reveal them, put them into your
+     * hand, then shuffle." — Corpse Harvester.
+     *
+     * Two searches in one sentence, and the model is two whole recipes in a row: only the *second*
+     * shuffles, because the sentence's "then shuffle" is one shuffle at the end. That asymmetry is
+     * the reason this is a rule rather than a [Steps.sequence] of two searches — neither half is the
+     * sentence the singular rule spells.
+     */
+    private val searchForTwoCardsToHand: Phrase<CardScript> = run {
+        fun scriptFor(first: GameObjectFilter, second: GameObjectFilter) = CardScript(
+            spellEffect = Patterns.Library.searchLibrary(
+                filter = first,
+                reveal = true,
+                shuffleAfter = false,
+            ) then Patterns.Library.searchLibrary(
+                filter = second,
+                reveal = true,
+                shuffleAfter = true,
+            )
+        )
+        phrase(
+            "search your library for {first} card and {second} card, reveal them, put them into " +
+                "your hand, then shuffle",
+            name = "search your library for two cards",
+        ) {
+            slot("first", Filters.indefinite)
+            slot("second", Filters.indefinite)
+            build { scriptFor(it.value("first"), it.value("second")) }
+            match { script ->
+                // `then` splices the *left* recipe's steps and appends the right one whole, so the
+                // model is one flat run ending in the second recipe rather than a pair of them.
+                // Reading it back that way is what keeps the reconstruction below a comparison.
+                val parts = (script.spellEffect as? CompositeEffect)?.effects ?: return@match null
+                if (parts.size < 2) return@match null
+                val first = searchedFilterIn(CompositeEffect(parts.dropLast(1))) ?: return@match null
+                val second = searchedFilterIn(parts.last()) ?: return@match null
+                if (script != scriptFor(first, second)) return@match null
+                bind("first" to first, "second" to second)
+            }
+        }
+    }
+
+    /**
+     * "Search your graveyard, hand, and/or library for a card named Scion of Darkness and put it
+     * onto the battlefield. If you search your library this way, shuffle." — Dark Supplicant.
+     *
+     * The zone list is a literal because `searchMultipleZones` takes an ordered list and Oracle
+     * spells exactly one order for it; the second sentence restates what the recipe already does
+     * when a library is among the zones, so it is a literal too. What varies is the *name*, which is
+     * why [Primitives.cardName] exists.
+     */
+    private val searchZonesForNamedCard: Phrase<CardScript> = run {
+        fun scriptFor(name: String) = CardScript(
+            spellEffect = Patterns.Library.searchMultipleZones(
+                zones = listOf(Zone.GRAVEYARD, Zone.HAND, Zone.LIBRARY),
+                filter = GameObjectFilter.Any.named(name),
+                count = 1,
+                destination = SearchDestination.BATTLEFIELD,
+            )
+        )
+        phrase(
+            "search your graveyard, hand, and/or library for a card named {name} and put it onto " +
+                "the battlefield. if you search your library this way, shuffle",
+            name = "search several zones for a named card",
+        ) {
+            slot("name", Primitives.cardName)
+            build { scriptFor(it.text("name")) }
+            match { script ->
+                val gather = (script.spellEffect as? CompositeEffect)?.effects?.firstOrNull()
+                    as? GatherCardsEffect ?: return@match null
+                val filter = (gather.source as? CardSource.FromMultipleZones)?.filter ?: return@match null
+                val named = filter.cardPredicates.filterIsInstance<CardPredicate.NameEquals>()
+                    .singleOrNull()?.name ?: return@match null
+                if (script != scriptFor(named)) return@match null
+                bind("name" to named)
+            }
+        }
+    }
+
+    /** The filter one `searchLibrary` recipe looks for, given the recipe itself. */
+    private fun searchedFilterIn(effect: Effect): GameObjectFilter? {
+        val gather = (effect as? CompositeEffect)?.effects?.firstOrNull() as? GatherCardsEffect ?: return null
+        return (gather.source as? CardSource.FromZone)?.filter
+    }
+
+    /**
+     * "Reveal the top card of your library. If it's a Goblin permanent card, put it onto the
+     * battlefield. Otherwise, put it into your graveyard." — Skirk Drill Sergeant.
+     *
+     * Three printed sentences and one recipe. The model is a gather with `revealed`, one selection
+     * that splits the revealed card into a matching and a remaining slot, and a move per slot — so
+     * "otherwise" is the *remainder* of a filter rather than a branch, and every sentence after the
+     * first reads a slot the gather created. Splitting the text would produce halves that name
+     * nothing.
+     */
+    private val revealTopAndSplit: Phrase<CardScript> = run {
+        fun scriptFor(filter: GameObjectFilter) = CardScript(
+            spellEffect = CompositeEffect(
+                listOf(
+                    GatherCardsEffect(
+                        source = CardSource.TopOfLibrary(DynamicAmount.Fixed(1)),
+                        storeAs = "revealed",
+                        revealed = true,
+                    ),
+                    SelectFromCollectionEffect(
+                        from = "revealed",
+                        selection = SelectionMode.All,
+                        filter = filter,
+                        storeSelected = "goblin",
+                        storeRemainder = "nonGoblin",
+                    ),
+                    MoveCollectionEffect(from = "goblin", destination = CardDestination.ToZone(Zone.BATTLEFIELD)),
+                    MoveCollectionEffect(from = "nonGoblin", destination = CardDestination.ToZone(Zone.GRAVEYARD)),
+                )
+            )
+        )
+        phrase(
+            "reveal the top card of your library. if it's {filter} card, put it onto the " +
+                "battlefield. otherwise, put it into your graveyard",
+            name = "reveal the top card and sort it",
+        ) {
+            slot("filter", Filters.indefinite)
+            build { scriptFor(it.value("filter")) }
+            match { script ->
+                val steps = (script.spellEffect as? CompositeEffect)?.effects ?: return@match null
+                val select = steps.getOrNull(1) as? SelectFromCollectionEffect ?: return@match null
+                val filter = select.filter ?: return@match null
+                if (script != scriptFor(filter)) return@match null
+                bind("filter" to filter)
+            }
+        }
+    }
+
     val clauses: List<Phrase<CardScript>> = listOf(
+        revealTopAndSplit,
         lookAtTopAndReorder,
         lookAtTopAndKeep,
         searchForACardToTop,
@@ -329,5 +466,13 @@ object Library {
             "search your library for a card to your hand",
             destination = SearchDestination.HAND,
         ),
+        search(
+            "search your library for {filter} card, reveal it, put it into your hand, then shuffle",
+            "search your library for a card, revealed, to your hand",
+            destination = SearchDestination.HAND,
+            reveal = true,
+        ),
+        searchForTwoCardsToHand,
+        searchZonesForNamedCard,
     )
 }

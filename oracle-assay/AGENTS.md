@@ -111,11 +111,21 @@ lists, and the exceptions should be nameable.
 
 A set is, however, a good *target*: reading all of one proves the grammar has no systematic hole in
 that era rather than no hole in one family, which is a stronger statement than any percentage. The
-Portal band is the worked example — 200 of 200 cards, and the work was four pieces of machinery
+Portal band is the first worked example — 200 of 200 cards, and the work was four pieces of machinery
 (clause sequences, the layered noun-phrase cascade in two numbers, the two anaphors, the three
 restriction vocabularies) plus rows. Nine cards in it needed a rule that unlocks only them; each says
 in its KDoc why the alternative was not a smaller rule but a wrong one, which is the bar the "a rule
 that unlocks one card needs a stated reason" line sets.
+
+The **Legions band** is the second, and it is worth reading for the shape of a *hard* set: 145 of 145
+cards, every one a creature, and nine families rather than nine rules — the subtype layer, the cost
+atom run, the lord statics, grants in both their printed shapes, the counted-variable vocabulary, the
+morph payoffs, amplify, the multi-ability trigger line, and the sequence fix that lets a target be
+introduced by a clause other than the first. Two of those changed something outside `grammar/`, and
+both are worth knowing before touching a leaf: a subtype is a *proper noun* standing where
+`SentenceCase` has already lowercased it, and the fix belongs to the leaf and is gated on the SDK's
+own type list — an ungated one reads "**Other** creatures you control get +0/+1." as a tribe called
+*Other*, byte-perfect and wrong, which the differential caught and the README records.
 
 ## Fail-closed matching — the rule that catches the dangerous bug class
 

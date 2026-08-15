@@ -1,6 +1,7 @@
 package com.wingedsheep.assay.grammar
 
 import com.wingedsheep.assay.syntax.Phrase
+import com.wingedsheep.assay.syntax.alternate
 import com.wingedsheep.assay.syntax.bind
 import com.wingedsheep.assay.syntax.constant
 import com.wingedsheep.assay.syntax.oneOf
@@ -92,6 +93,10 @@ object Filters {
         TypeNoun("instant", "instants", GameObjectFilter.Instant),
         TypeNoun("sorcery", "sorceries", GameObjectFilter.Sorcery),
         TypeNoun("nonbasic land", "nonbasic lands", GameObjectFilter.NonbasicLand),
+        // A bare quality with no noun of its own: "Noncreature spells cost {1} more to cast." puts
+        // it in front of a word ("spells") that is not a permanent type, so the filter is the
+        // adjective alone and does not inflect.
+        TypeNoun("noncreature", "noncreature", GameObjectFilter.Noncreature),
         TypeNoun("artifact creature", "artifact creatures", GameObjectFilter.ArtifactCreature),
         TypeNoun("creature or planeswalker", null, GameObjectFilter.CreatureOrPlaneswalker),
         TypeNoun("creature or enchantment", null, GameObjectFilter.CreatureOrEnchantment),
@@ -101,6 +106,14 @@ object Filters {
         TypeNoun("artifact or enchantment", null, GameObjectFilter.ArtifactOrEnchantment),
         TypeNoun("artifact or land", null, GameObjectFilter.ArtifactOrLand),
         TypeNoun("attacking creature", "attacking creatures", GameObjectFilter.Creature.attacking()),
+        // A `StatePredicate.Or` of the two, which is one printed phrase and one value — the same
+        // shape as the "artifact or enchantment" row above, and enumerated for the same reason.
+        TypeNoun(
+            "attacking or blocking creature",
+            "attacking or blocking creatures",
+            GameObjectFilter.Creature.attackingOrBlocking(),
+        ),
+        TypeNoun("face-down creature", "face-down creatures", GameObjectFilter.Creature.faceDown()),
         TypeNoun("blocking creature", "blocking creatures", GameObjectFilter.Creature.blocking()),
         TypeNoun("tapped creature", "tapped creatures", GameObjectFilter.Creature.tapped()),
         TypeNoun("untapped creature", "untapped creatures", GameObjectFilter.Creature.untapped()),
@@ -131,6 +144,102 @@ object Filters {
             (if (plural) noun.plural else noun.singular)?.let { constant(it, noun.filter) }
         },
     )
+
+    // ---------------------------------------------------------------------------------------
+    // Subtypes — the tribal adjective, and the bare noun that stands for it
+    // ---------------------------------------------------------------------------------------
+
+    /**
+     * "Sliver creature", "Goblin permanents" — a subtype in front of a type noun.
+     *
+     * The layer sits *inside* [colour] and the rest rather than outside them, because that is the
+     * order both English and the predicate stack use: "black Sliver creature" builds the subtype
+     * first and the colour on top, so the colour layer owns the top of the stack and this one owns
+     * what is under it. Putting it further out would print "Sliver black creature".
+     *
+     * The subtype leaf is **ungated**: the card type comes from the noun this modifies, so nothing
+     * is being guessed and there is no candidate to rank — unlike the bare form below, where the
+     * word alone has to imply "creature". [Primitives.pluralSubtype]'s ranking exists for the
+     * de-pluralization, which this layer never performs.
+     *
+     * The adjective stays **singular in both numbers** — "Sliver creature" and "Sliver creatures" —
+     * because only the head noun inflects in English. This layer therefore takes no number
+     * parameter, which is why it sits inside the cascade rather than being instantiated twice.
+     */
+    private fun subtyped(inner: Phrase<GameObjectFilter>, name: String): Phrase<GameObjectFilter> =
+        phrase("{subtype} {type}", name = name) {
+            slot("subtype", Primitives.subtype)
+            slot("type", inner)
+            build { it.value<GameObjectFilter>("type").withSubtype(it.value<Subtype>("subtype")) }
+            match { filter ->
+                filter.stripTop<CardPredicate.HasSubtype>()
+                    ?.let { (predicate, rest) -> bind("subtype" to predicate.subtype, "type" to rest) }
+            }
+        }
+
+    /**
+     * "Bird and/or Cleric permanent" — two subtypes, either of which qualifies.
+     *
+     * One `Or` predicate rather than two, exactly as [anyColour] reads the colour disjunction, and
+     * "and/or" is the only join spelled for the same reason: "Bird or Cleric permanent" would be a
+     * second printed form for one value with nothing for the printer to choose.
+     */
+    private fun anySubtype(inner: Phrase<GameObjectFilter>, name: String): Phrase<GameObjectFilter> =
+        phrase("{first} and/or {second} {type}", name = name) {
+            slot("first", Primitives.subtype)
+            slot("second", Primitives.subtype)
+            slot("type", inner)
+            build {
+                it.value<GameObjectFilter>("type")
+                    .withAnySubtype(it.value<Subtype>("first").value, it.value<Subtype>("second").value)
+            }
+            match { filter ->
+                val (predicate, rest) = filter.stripTop<CardPredicate.Or>() ?: return@match null
+                val subtypes = predicate.predicates.map {
+                    (it as? CardPredicate.HasSubtype)?.subtype ?: return@match null
+                }
+                if (subtypes.size != 2) return@match null
+                bind("first" to subtypes[0], "second" to subtypes[1], "type" to rest)
+            }
+        }
+
+    /**
+     * "non-Zombie creature" — the subtype layer's negation, which Oracle hyphenates where it writes
+     * the colour negation as one word ("nonblack creature"). Two printed conventions for two
+     * predicates, so they are two rules rather than one shape over a prefix.
+     */
+    private fun notSubtyped(inner: Phrase<GameObjectFilter>, name: String): Phrase<GameObjectFilter> =
+        phrase("non-{subtype} {type}", name = name) {
+            slot("subtype", Primitives.subtype)
+            slot("type", inner)
+            build { it.value<GameObjectFilter>("type").notSubtype(it.value<Subtype>("subtype")) }
+            match { filter ->
+                filter.stripTop<CardPredicate.NotSubtype>()
+                    ?.let { (predicate, rest) -> bind("subtype" to predicate.subtype, "type" to rest) }
+            }
+        }
+
+    /**
+     * "Slivers", "a Goblin", "target Sliver" — the subtype standing alone, with "creature" implied.
+     *
+     * It denotes exactly what "Sliver creature" denotes, so registering it as a canonical rule would
+     * leave printing underdetermined between two real English spellings of one value. It is
+     * therefore an [alternate]: cards printing the bare noun read correctly and print back as the
+     * adjective form, which is a `VARIANT` — the reading was right and only the spelling moved.
+     *
+     * Unlike [subtyped] this leaf **is** ranked against the SDK's creature-type list, because here
+     * the word alone has to imply the card type. "Sliver" implying `Creature` is a guess, and a
+     * guess about a word the SDK does not name would be the reversible-but-wrong class:
+     * "target Scion" would read as a creature type nothing in Magic has.
+     */
+    private fun bareSubtype(plural: Boolean, name: String): Phrase<GameObjectFilter> =
+        alternate(
+            phrase<GameObjectFilter>("{subtype}", name = name) {
+                slot("subtype", if (plural) Primitives.pluralCreatureSubtype else Primitives.creatureSubtype)
+                build { GameObjectFilter.Creature.withSubtype(it.value<Subtype>("subtype")) }
+                canonical = false
+            }
+        )
 
     // ---------------------------------------------------------------------------------------
     // The layers
@@ -245,6 +354,35 @@ object Filters {
         }
 
     /**
+     * "nontoken Elf" — the token/nontoken layer.
+     *
+     * A prefix rather than a suffix, and a [CardPredicate] like the colour and keyword layers, so it
+     * owns the top of the stack the same way they do. Oracle writes it as one word, which is why it
+     * is a layer of its own and not a row in the type list: the noun it qualifies is still whatever
+     * follows, subtype and all.
+     */
+    private fun nontoken(inner: Phrase<GameObjectFilter>, name: String): Phrase<GameObjectFilter> =
+        phrase("nontoken {type}", name = name) {
+            slot("type", inner)
+            build { it.value<GameObjectFilter>("type").nontoken() }
+            match { filter ->
+                filter.stripTop<CardPredicate.IsNontoken>()?.let { (_, rest) -> bind("type" to rest) }
+            }
+        }
+
+    /** "creature with mana value 3 or less" — Sunstrike Legionnaire's tap target. */
+    private fun withManaValueAtMost(inner: Phrase<GameObjectFilter>, name: String): Phrase<GameObjectFilter> =
+        phrase("{type} with mana value {n} or less", name = name) {
+            slot("type", inner)
+            slot("n", Primitives.cardinal)
+            build { it.value<GameObjectFilter>("type").manaValueAtMost(it.int("n")) }
+            match { filter ->
+                filter.stripTop<CardPredicate.ManaValueAtMost>()
+                    ?.let { (predicate, rest) -> bind("type" to rest, "n" to predicate.max) }
+            }
+        }
+
+    /**
      * The controller clause, which is a suffix in English and a single field in the model — so it is
      * one rule per printed form, each stripping [GameObjectFilter.controllerPredicate] and handing
      * the rest back inwards.
@@ -277,13 +415,26 @@ object Filters {
      */
     private fun nounPhrase(plural: Boolean): Phrase<GameObjectFilter> {
         val suffix = if (plural) " (plural)" else ""
-        val types = typeNoun(plural)
+        val named = typeNoun(plural)
+        val types = oneOf(
+            "a permanent type or subtype$suffix",
+            named,
+            subtyped(named, "a permanent of a subtype$suffix"),
+            notSubtyped(named, "a permanent of another subtype$suffix"),
+            anySubtype(named, "a permanent of either subtype$suffix"),
+            bareSubtype(plural, "a creature of a subtype$suffix"),
+        )
+        val counted = oneOf(
+            "a permanent or token$suffix",
+            types,
+            nontoken(types, "a nontoken permanent$suffix"),
+        )
         val coloured = oneOf(
             "a coloured permanent$suffix",
-            types,
-            colour(types, "a coloured permanent$suffix"),
-            notColour(types, "a permanent of another colour$suffix"),
-            anyColour(types, "a permanent of either colour$suffix"),
+            counted,
+            colour(counted, "a coloured permanent$suffix"),
+            notColour(counted, "a permanent of another colour$suffix"),
+            anyColour(counted, "a permanent of either colour$suffix"),
         )
         val qualified = oneOf(
             "a qualified permanent$suffix",
@@ -292,6 +443,7 @@ object Filters {
             withoutKeyword(coloured, "a permanent without a keyword$suffix"),
             withPowerAtLeast(coloured, "a permanent with power at least$suffix"),
             withPowerAtMost(coloured, "a permanent with power at most$suffix"),
+            withManaValueAtMost(coloured, "a permanent with mana value at most$suffix"),
         )
         return oneOf(
             "a permanent$suffix",
@@ -328,6 +480,25 @@ object Filters {
         article("a"),
         article("an"),
     )
+
+    /**
+     * "Sliver" as a bare quality of a *card* — the noun in "Sliver spells can't be countered."
+     *
+     * Not a member of the cascade, and not [bareSubtype] either: this one carries **no card type at
+     * all**, because a spell on the stack is not a permanent and the sentence names the subtype
+     * alone. `GameObjectFilter.Any.withSubtype(…)` is what the hand-written cards use for it, which
+     * is the difference from the battlefield nouns above that all imply "creature".
+     */
+    val subtypeOnly: Phrase<GameObjectFilter> = phrase("{subtype}", name = "a subtype") {
+        slot("subtype", Primitives.subtype)
+        build { GameObjectFilter.Any.withSubtype(it.value<Subtype>("subtype")) }
+        match { filter ->
+            val subtype = (filter.cardPredicates.singleOrNull() as? CardPredicate.HasSubtype)?.subtype
+                ?: return@match null
+            if (filter != GameObjectFilter.Any.withSubtype(subtype)) return@match null
+            bind("subtype" to subtype)
+        }
+    }
 
     private fun article(article: String): Phrase<GameObjectFilter> =
         phrase("$article {type}", name = "\"$article\" plus a permanent") {

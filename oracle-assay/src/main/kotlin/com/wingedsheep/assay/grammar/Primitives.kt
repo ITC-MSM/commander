@@ -84,9 +84,44 @@ object Primitives {
         write = { it.toString() },
     )
 
+    /**
+     * A card's **name**, as a card that searches for one by name prints it — "a card named Scion of
+     * Darkness".
+     *
+     * The pattern is what makes this readable at all: a name has spaces in it, so a naive run of
+     * word characters would swallow the rest of the sentence. Magic's names are capitalized words
+     * joined by a small closed set of lowercase particles, and only a *capitalized* word may start
+     * or continue the run — so "Scion of Darkness and put it onto the battlefield" stops after
+     * "Darkness", because "and" is not one of the particles and "put" is not capitalized.
+     *
+     * A name whose spelling falls outside that shape declines, which is the honest answer: the
+     * alternative is a leaf that guesses where a name ends, and a wrong guess would round-trip while
+     * naming a different card.
+     */
+    val cardName: Phrase<String> = token(
+        name = "a card name",
+        pattern = Regex("""[A-Z][A-Za-z'\-]*(?: (?:of|the|to|and(?= [A-Z])|[A-Z][A-Za-z'\-]*))*"""),
+        read = { it },
+        write = { it },
+    )
+
     val color: Phrase<Color> = oneOf(
         "a color",
         Color.entries.map { constant(it.displayName.lowercase(), it) },
+    )
+
+    /**
+     * The same colour written as its **mana symbol** — "{R}", "{G}" — which is how a mana-producing
+     * clause names it ("in any combination of {R} and/or {G}").
+     *
+     * A separate rule rather than a spelling of [color], because the two are never
+     * interchangeable: a filter says "red creature" and never "{R} creature", and a mana clause says
+     * "{R}" and never "red". Registering them as alternates of one rule would let each print in the
+     * other's sentence.
+     */
+    val manaSymbolColor: Phrase<Color> = oneOf(
+        "a mana symbol",
+        Color.entries.map { constant("{${it.symbol}}", it) },
     )
 
     /**
@@ -130,6 +165,18 @@ object Primitives {
 
     private val SUBTYPE_PLURAL = Regex("""[A-Z][A-Za-z-]*s""")
 
+    /** The same run with a lowercased initial allowed — see [subtype] for why that is a reading. */
+    private val SUBTYPE_PLURAL_ANY_CASE = Regex("""[A-Za-z][A-Za-z-]*s""")
+
+    /** A printed word as a subtype: exact when capitalized, gated to known types when it is not. */
+    private fun readSubtype(text: String): Subtype? {
+        if (text.isEmpty()) return null
+        if (text.first().isUpperCase()) return Subtype(text)
+        return Subtype(titleCase(text)).takeIf { it.value in KNOWN_SUBTYPES }
+    }
+
+    private fun titleCase(text: String): String = text.replaceFirstChar { it.uppercaseChar() }
+
     /**
      * The types the SDK names — creature types per the Comprehensive Rules' creature-type list, plus
      * the basic land types, which appear in the same slot ("Affinity for **Plains**").
@@ -154,6 +201,17 @@ object Primitives {
         (Subtype.ALL_CREATURE_TYPES + Subtype.ALL_BASIC_LAND_TYPES).toSet()
 
     /**
+     * The creature types alone — the ranking set for a bare noun that has to *imply* "creature".
+     *
+     * Deliberately narrower than [KNOWN_SUBTYPES]: "a Forest" is a land, and [Filters] already
+     * spells it as one through the basic-land type nouns. A bare-noun rule that also read it as a
+     * creature type would give that phrase two readings with two different models — a hard
+     * ambiguity, and one caused entirely by ranking against a list that answers a different
+     * question.
+     */
+    private val CREATURE_SUBTYPES: Set<String> = Subtype.ALL_CREATURE_TYPES.toSet()
+
+    /**
      * A creature type written in its plural surface form — "protection from **Goblins**".
      *
      * The plural lives in the leaf rather than in a template literal because a `{subtype}` slot
@@ -174,6 +232,66 @@ object Primitives {
         pattern = SUBTYPE_PLURAL,
         read = ::readPluralSubtype,
         write = ::writePluralSubtype,
+    )
+
+    /**
+     * A subtype written in the singular — "Sliver creature", "non-Zombie creature".
+     *
+     * **Ungated for the printed spelling**, unlike [creatureSubtype] below: this leaf is only ever
+     * read in front of a type noun, so the card type comes from the noun and nothing is a guess.
+     * There is no de-pluralization either, which is the other thing [pluralSubtype]'s ranking exists
+     * for — the word is the type, and the two halves are inverses by construction.
+     *
+     * ### The lowercased spelling, and why it is gated where the printed one is not
+     *
+     * A subtype can stand at a **sentence start** — "Sliver creatures get +1/+0." is a whole line,
+     * and "{T}, Sacrifice a Goblin: Goblin creatures get +2/+0 …" starts one after the colon — and
+     * [com.wingedsheep.assay.syntax.SentenceCase] lowercases every sentence start before the grammar
+     * sees it. Undoing that at the text boundary would mean guessing which of a line's sentence
+     * starts were proper nouns; doing it here needs no guess at all, because the *word* says.
+     *
+     * A capital is Oracle telling us this is a type, so it is read as one whatever it is — which is
+     * what keeps "Equipment", "Gate" and every other subtype the SDK publishes no list for readable.
+     * A lowercase initial carries no such statement: it might be a common noun the sentence-case
+     * pass never touched. So that reading is allowed only for a word the SDK *names* as a type,
+     * which is the difference between recovering information and inventing it. "artifact creature"
+     * consequently has exactly one reading — `ArtifactCreature`, the type noun — rather than two.
+     *
+     * Printing always writes the capital, so the round trip is unchanged: the leaf's own
+     * write-then-read check in [com.wingedsheep.assay.syntax.token] confirms it on every call.
+     *
+     * The hyphen is in the pattern for the compound creature types the corpus prints; it costs
+     * nothing and a type nobody spells simply never appears.
+     */
+    val subtype: Phrase<Subtype> = token(
+        name = "a subtype",
+        pattern = Regex("""[A-Za-z][A-Za-z-]*"""),
+        read = ::readSubtype,
+        write = { it.value },
+    )
+
+    /**
+     * The same word where it stands **alone** and has to imply "creature" — "target Sliver",
+     * "Sacrifice a Goblin", "Slivers can't be blocked".
+     *
+     * This one *is* ranked against the SDK's creature-type list, and the asymmetry with [subtype] is
+     * the point: there the noun supplies the card type, here the word has to. A word the SDK does
+     * not name is not a creature type we can claim, and reading one would be the
+     * reversible-but-wrong class — "target Scion" round-tripping as a tribe Magic has never had.
+     */
+    val creatureSubtype: Phrase<Subtype> = token(
+        name = "a creature type",
+        pattern = Regex("""[A-Za-z][A-Za-z-]*"""),
+        read = { readSubtype(it)?.takeIf { s -> s.value in CREATURE_SUBTYPES } },
+        write = { it.value.takeIf { v -> v in CREATURE_SUBTYPES } },
+    )
+
+    /** …and its plural, which is [pluralSubtype] with the same list applied as a gate. */
+    val pluralCreatureSubtype: Phrase<Subtype> = token(
+        name = "a creature type",
+        pattern = SUBTYPE_PLURAL_ANY_CASE,
+        read = { readPluralSubtype(titleCase(it))?.takeIf { s -> s.value in CREATURE_SUBTYPES } },
+        write = { subtype -> subtype.takeIf { it.value in CREATURE_SUBTYPES }?.let(::writePluralSubtype) },
     )
 
     /**

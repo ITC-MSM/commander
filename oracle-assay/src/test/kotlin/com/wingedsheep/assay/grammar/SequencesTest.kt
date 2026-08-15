@@ -69,7 +69,13 @@ class SequencesTest : StringSpec({
                 targetRequirements = listOf(Targets.permanent(GameObjectFilter.Creature)),
             )
         )
-        roundTrips("It gets +2/+0 until end of turn.")
+        // The source form has two printed spellings — the card's own noun and the pronoun — and the
+        // noun is canonical, so the pronoun comes back normalized. The *target* form has only the
+        // pronoun, and round-trips.
+        // `printLine` prints the abstracted token; restoring the card's own noun is
+        // `NormalizedFace.restore`'s job, one layer out.
+        Grammar.abilityLine.printLine(fragment("It gets +2/+0 until end of turn.")) shouldBe
+            "~ gets +2/+0 until end of turn."
         roundTrips("Untap target creature. It gets +2/+4 until end of turn.")
     }
 

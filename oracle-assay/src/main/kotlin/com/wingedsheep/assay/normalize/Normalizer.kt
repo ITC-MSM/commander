@@ -65,14 +65,16 @@ object Normalizer {
      * having to know it. The alternative, a rule per noun with one canonical spelling, would report
      * thousands of cards as VARIANT for information normalization can simply keep.
      *
-     * Only nouns naming a *permanent* are listed. "This spell" and "this card" are self-references
-     * too, in the stack and the graveyard, but no rule reaches them yet and abstracting text nothing
-     * reads buys nothing.
+     * "This **card**" is here beside the permanent nouns because a card refers to itself that way
+     * from a zone where it is not a permanent — "When you cycle **this card**, …" is printed on a
+     * creature and read from the graveyard — and a rule now reaches it. "This **spell**" is
+     * deliberately still absent: [com.wingedsheep.assay.grammar.Restrictions] spells it as a literal
+     * inside "Cast this spell only …", so abstracting it would break the rules that read it.
      */
     private val SELF_NOUNS = listOf(
         "creature", "artifact", "enchantment", "land", "permanent", "planeswalker",
         "Aura", "Equipment", "Vehicle", "token", "Saga", "Class", "Siege", "Contraption",
-        "Spacecraft", "battle",
+        "Spacecraft", "battle", "card",
     ).flatMap { listOf("this $it", "This $it") }
 
     /**
@@ -90,11 +92,27 @@ object Normalizer {
      */
     internal fun selfReferenceForms(faceName: String): List<String> {
         val forms = linkedSetOf(faceName)
-        val comma = faceName.indexOf(", ")
-        if (comma > 0) forms.add(faceName.substring(0, comma))
+        SHORT_NAME_SEPARATORS.forEach { separator ->
+            val at = faceName.indexOf(separator)
+            if (at > 0) forms.add(faceName.substring(0, at))
+        }
         forms.addAll(SELF_NOUNS)
         return forms.filter { it.isNotBlank() }.sortedByDescending { it.length }
     }
+
+    /**
+     * Where a legendary card's **short name** ends — CR 201.3b's "shortened version of the name".
+     *
+     * Two conventions, and Oracle uses both: "Akroma, Angel of Wrath" refers to itself as "Akroma"
+     * and "Phage the Untouchable" as "Phage". Deriving the second matters because Scryfall's current
+     * Oracle text prints the short form — Phage's three abilities all say "Phage", and without this
+     * the card's own name is never abstracted and every one of its lines declines.
+     *
+     * The full name is always offered first ([selfReferenceForms] sorts by length), so a card that
+     * spells itself out in full is unaffected; and the surface form is recorded and restored
+     * verbatim, so a false positive would still round-trip.
+     */
+    private val SHORT_NAME_SEPARATORS = listOf(", ", " the ")
 
     private fun stripReminders(text: String): Pair<String, List<Removal>> {
         val removals = mutableListOf<Removal>()
@@ -132,7 +150,16 @@ object Normalizer {
         return out.toString() to replaced
     }
 
-    private fun isNameChar(c: Char?): Boolean = c != null && (c.isLetterOrDigit() || c == '\'')
+    /**
+     * Whether [c] continues a name, and therefore blocks a self-reference from matching next to it.
+     *
+     * An apostrophe **ends** one, which is what lets "this creature's base power" abstract to "~'s
+     * base power" — Riptide Mangler's whole line, and every possessive self-reference after it. The
+     * cost is that a card whose own name is a prefix of a possessive in its text would abstract
+     * there too; no card in the corpus is, and the round trip is unaffected either way because the
+     * surface form is recorded and restored verbatim.
+     */
+    private fun isNameChar(c: Char?): Boolean = c != null && c.isLetterOrDigit()
 
     /** The self-reference placeholder. Oracle text never contains a literal tilde. */
     const val SELF = "~"

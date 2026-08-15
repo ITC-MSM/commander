@@ -3,7 +3,17 @@ package com.wingedsheep.assay.grammar
 import com.wingedsheep.assay.syntax.Phrase
 import com.wingedsheep.assay.syntax.bind
 import com.wingedsheep.assay.syntax.phrase
+import com.wingedsheep.sdk.core.Zone
+import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.Patterns
+import com.wingedsheep.sdk.scripting.GameObjectFilter
+import com.wingedsheep.sdk.scripting.effects.CardDestination
+import com.wingedsheep.sdk.scripting.effects.CardSource
+import com.wingedsheep.sdk.scripting.effects.Chooser
+import com.wingedsheep.sdk.scripting.effects.ConditionalOnCollectionEffect
+import com.wingedsheep.sdk.scripting.effects.GatherCardsEffect
+import com.wingedsheep.sdk.scripting.effects.MoveCollectionEffect
+import com.wingedsheep.sdk.scripting.effects.MoveType
 import com.wingedsheep.sdk.model.CardScript
 import com.wingedsheep.sdk.scripting.effects.CompositeEffect
 import com.wingedsheep.sdk.scripting.effects.DrawUpToEffect
@@ -182,7 +192,89 @@ object Hand {
         }
     }
 
+    /**
+     * "You may put a creature card with a morph ability from your hand onto the battlefield face up.
+     * If you do, return ~ to its owner's hand." — Dermoplasm.
+     *
+     * Two printed sentences and one recipe, for [Library.lookAtOpponentTopAndBury]'s reason: "if you
+     * do" reads the pipeline slot the first sentence stored, so the second sentence has no meaning
+     * without it and neither half is a clause on its own. `ConditionalOnCollectionEffect` is the SDK
+     * spelling of that read — a branch on whether anything was put, not a condition on the game.
+     *
+     * "Face up" is a literal: `putFromHand`'s default placement is exactly that, and the phrase
+     * exists to distinguish it from morph's face-down alternative rather than to name a field.
+     */
+    private val putFromHandThenBounce: Phrase<CardScript> = run {
+        val script = CardScript(
+            spellEffect = Patterns.Hand.putFromHand(filter = GameObjectFilter.Creature.withMorph()).then(
+                ConditionalOnCollectionEffect(
+                    collection = "putting",
+                    ifNotEmpty = Effects.Move(EffectTarget.Self, Zone.HAND),
+                )
+            )
+        )
+        phrase(
+            "you may put a creature card with a morph ability from your hand onto the battlefield " +
+                "face up. if you do, return {self} to its owner's hand",
+            name = "put a morph card from hand and bounce the source",
+        ) {
+            slot("self", Primitives.self)
+            build { script }
+            match { if (it == script) bind("self" to Unit) else null }
+        }
+    }
+
+    /**
+     * "That player reveals X cards from their hand and you choose one of them. That player discards
+     * that card." — Hollow Specter, after its "you may pay {X}".
+     *
+     * Two printed sentences and one four-step pipeline whose steps do not line up with the sentence
+     * boundary at all: the reveal is a gather plus a choice *by the revealing player*, and the
+     * discard is a second choice by the controller followed by a move. The chooser is the field that
+     * makes the two sentences one recipe, and it is the reason splitting the text would leave halves
+     * that denote nothing.
+     */
+    private val revealAndChooseDiscard: Phrase<CardScript> = run {
+        val script = CardScript(
+            spellEffect = Effects.Composite(
+                listOf(
+                    GatherCardsEffect(
+                        source = CardSource.FromZone(Zone.HAND, Player.TriggeringPlayer),
+                        storeAs = "hand",
+                    ),
+                    SelectFromCollectionEffect(
+                        from = "hand",
+                        selection = SelectionMode.ChooseExactly(DynamicAmount.XValue),
+                        chooser = Chooser.TriggeringPlayer,
+                        storeSelected = "revealed",
+                    ),
+                    SelectFromCollectionEffect(
+                        from = "revealed",
+                        selection = SelectionMode.ChooseExactly(DynamicAmount.Fixed(1)),
+                        chooser = Chooser.Controller,
+                        storeSelected = "toDiscard",
+                    ),
+                    MoveCollectionEffect(
+                        from = "toDiscard",
+                        destination = CardDestination.ToZone(Zone.GRAVEYARD, Player.TriggeringPlayer),
+                        moveType = MoveType.Discard,
+                    ),
+                )
+            )
+        )
+        phrase(
+            "that player reveals X cards from their hand and you choose one of them. that player " +
+                "discards that card",
+            name = "the triggering player reveals X cards and discards one you choose",
+        ) {
+            build { script }
+            match { if (it == script) bind() else null }
+        }
+    }
+
     val clauses: List<Phrase<CardScript>> = listOf(
+        putFromHandThenBounce,
+        revealAndChooseDiscard,
         lookAtOpponentHand,
         opponentRevealsHand,
         lookAtPlayerHand,

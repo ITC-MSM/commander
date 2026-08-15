@@ -279,7 +279,7 @@ class Differential(private val touchstone: Touchstone = Touchstone()) {
         val tree = CardSerialization.json.parseToJsonElement(json)
         return CardSerialization.json.encodeToString(
             JsonElement.serializer(),
-            Folds.flattenComposites(canonicalizeAbilities(normalizeSlots(tree))),
+            Folds.flattenComposites(canonicalizeGrantedAbilities(canonicalizeAbilities(normalizeSlots(tree)))),
         )
     }
 
@@ -381,6 +381,37 @@ class Differential(private val touchstone: Touchstone = Touchstone()) {
                 JsonObject(fields - "descriptionOverride" + ("id" to JsonPrimitive("${key}_$index")))
             })
         })
+    }
+
+    /**
+     * …and the ability a **static hands out**, which is nested one level further in.
+     *
+     * `GrantTriggeredAbility` and `GrantActivatedAbility` carry a whole ability inside the static,
+     * and its id is generated exactly as a top-level one is — `AbilityId.generate()` on the card, a
+     * fixed constant in the grammar. Leaving it out of [canonicalizeAbilities] made the gate report
+     * six Sliver lords as divergent over a counter: a difference in neither model, and the same
+     * class of self-deception as the slot-name and per-owner numbering bugs before it. Found the way
+     * all of those were, by running the gate on a card class it had never reached.
+     *
+     * One fixed token rather than a position, because a static holds exactly one granted ability —
+     * there is no list to index into.
+     */
+    private fun canonicalizeGrantedAbilities(element: JsonElement): JsonElement = when (element) {
+        is JsonObject -> JsonObject(
+            element.mapValues { (key, value) ->
+                if (key == "ability" && value is JsonObject && "id" in value) {
+                    JsonObject(
+                        (canonicalizeGrantedAbilities(value) as JsonObject) +
+                            ("id" to JsonPrimitive("granted")),
+                    )
+                } else {
+                    canonicalizeGrantedAbilities(value)
+                }
+            }
+        )
+
+        is JsonArray -> JsonArray(element.map(::canonicalizeGrantedAbilities))
+        else -> element
     }
 
     /**

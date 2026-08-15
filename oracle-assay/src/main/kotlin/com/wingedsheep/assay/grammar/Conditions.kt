@@ -1,10 +1,20 @@
 package com.wingedsheep.assay.grammar
 
 import com.wingedsheep.assay.syntax.Phrase
+import com.wingedsheep.assay.syntax.bind
 import com.wingedsheep.assay.syntax.constant
 import com.wingedsheep.assay.syntax.oneOf
+import com.wingedsheep.assay.syntax.phrase
+import com.wingedsheep.sdk.core.Zone
+import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.conditions.Condition
+import com.wingedsheep.sdk.scripting.conditions.Compare
+import com.wingedsheep.sdk.scripting.conditions.ComparisonOperator
+import com.wingedsheep.sdk.scripting.conditions.Exists
+import com.wingedsheep.sdk.scripting.conditions.NotCondition
 import com.wingedsheep.sdk.scripting.conditions.YouWereAttackedThisStep
+import com.wingedsheep.sdk.scripting.references.Player
+import com.wingedsheep.sdk.scripting.values.DynamicAmount
 import com.wingedsheep.sdk.dsl.Conditions as SdkConditions
 
 /**
@@ -24,12 +34,85 @@ import com.wingedsheep.sdk.dsl.Conditions as SdkConditions
  */
 object Conditions {
 
+    /**
+     * The battlefield-existence conditions — "you control a Beast", "no opponent controls a
+     * creature".
+     *
+     * One shape with a noun-phrase slot rather than a constant per tribe, which is what
+     * `Conditions.YouControl` / `Conditions.OpponentControls` being *general* facades buys: the
+     * whole of [Filters] arrives, so "you control a Beast" and "you control an artifact" are the
+     * same rule. The article comes from [Filters.indefinite], which owns it in both directions.
+     *
+     * The negation is `Conditions.Not` around the positive rather than the `negate` flag the same
+     * facades take, because those are two different values and the hand-written cards use the
+     * wrapper — Vexing Beetle's `Not(OpponentControlsCreature)`. Emitting the flag would round-trip
+     * and disagree with every card that spells it.
+     */
+    private fun existence(
+        template: String,
+        name: String,
+        condition: (GameObjectFilter) -> Condition,
+    ): Phrase<Condition> = phrase(template, name = name) {
+        slot("filter", Filters.indefinite)
+        build { condition(it.value("filter")) }
+        match { value ->
+            val filter = existenceFilter(value) ?: return@match null
+            if (value != condition(filter)) return@match null
+            bind("filter" to filter)
+        }
+    }
+
+    /**
+     * The filter an existence condition scans for, looking through the negation wrapper.
+     *
+     * A candidate only: the reconstruction in [existence] decides whether the whole condition is
+     * this sentence, so nothing here has to check the player or the zone.
+     */
+    private fun existenceFilter(condition: Condition): GameObjectFilter? = when (condition) {
+        is Exists -> condition.filter
+        is NotCondition -> existenceFilter(condition.condition)
+        else -> null
+    }
+
     val all: List<Phrase<Condition>> = listOf(
         constant("an opponent controls more lands than you", SdkConditions.OpponentControlsMoreLands),
         // `YouWereAttackedThisStep` has no facade entry — it is a `data object` cards reference
         // directly, the same situation `Replacements` and the combat statics are in. Reported as the
         // small SDK finding it is rather than routed around.
         constant("you've been attacked this step", YouWereAttackedThisStep),
+        // "When ~ enters, if you didn't cast it from your hand, …" — Phage the Untouchable. The
+        // pronoun is the source and the whole clause is one named SDK condition, so there is nothing
+        // to slot.
+        constant("you didn't cast it from your hand", SdkConditions.Not(SdkConditions.WasCastFromHand)),
+        existence("you control {filter}", "you control a permanent") { SdkConditions.YouControl(it) },
+        existence("no opponent controls {filter}", "no opponent controls a permanent") {
+            SdkConditions.Not(SdkConditions.OpponentControls(it))
+        },
+        // Lavaborn Muse's intervening-if. "That player" is the one whose step triggered, which the
+        // SDK names as `Player.TriggeringPlayer`, so the condition is a hand-size comparison against
+        // that player and the only variable is the number. It is written as a `Compare` rather than
+        // through a facade because `Conditions` publishes no hand-size entry — the same situation
+        // [Replacements] and the combat statics are in, and reported as the small SDK finding it is.
+        phrase<Condition>(
+            "that player has {n} or fewer cards in hand",
+            name = "the triggering player's hand size",
+        ) {
+            slot("n", Cardinals.word)
+            build { handSizeAtMost(it.int("n")) }
+            match { value ->
+                val compare = value as? Compare ?: return@match null
+                val limit = (compare.right as? DynamicAmount.Fixed)?.amount ?: return@match null
+                if (!Cardinals.spellable(limit) || value != handSizeAtMost(limit)) return@match null
+                bind("n" to limit)
+            }
+        },
+    )
+
+    /** "That player has N or fewer cards in hand" — the comparison Lavaborn Muse checks twice. */
+    private fun handSizeAtMost(limit: Int): Condition = Compare(
+        DynamicAmount.Count(Player.TriggeringPlayer, Zone.HAND),
+        ComparisonOperator.LTE,
+        DynamicAmount.Fixed(limit),
     )
 
     val condition: Phrase<Condition> = oneOf("a condition", all)

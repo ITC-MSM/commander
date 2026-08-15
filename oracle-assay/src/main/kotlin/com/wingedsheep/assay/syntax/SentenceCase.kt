@@ -80,7 +80,35 @@ object SentenceCase {
     private val SENTENCE_BREAK = Regex("""(?:: |\. )""")
 }
 
-/** Parse a whole sentence-cased ability line. */
+/**
+ * Parse a whole sentence-cased ability line.
+ *
+ * ## A sentence start can be a proper noun, and the leaf is what knows
+ *
+ * Every sentence start is decapitalized, including one whose word is a creature type — "Sliver
+ * creatures get +1/+0." and "{T}, Sacrifice a Goblin: Goblin creatures get +2/+0 until end of
+ * turn." both put a proper noun where this pass lowercases. Undoing that here would mean guessing
+ * which sentence starts were proper nouns, over an arbitrary number of them per line.
+ *
+ * It belongs to the leaf instead: [com.wingedsheep.assay.grammar.Primitives.subtype] reads a
+ * lowercased subtype as well as a printed one, and only for a word the SDK names as a type, so
+ * nothing is guessed and no common noun acquires a second reading. Printing is unaffected — the
+ * leaf always writes the capital, and [printLine] leaves an already-capital sentence start alone.
+ *
+ * ## The residue, and why it is a decline rather than a retry
+ *
+ * That gate is a real one: the SDK publishes the creature and basic-land type lists and no others,
+ * so "Equipment you control get +1/+1." names a subtype the leaf is not entitled to recognise from a
+ * lowercase word, and the line declines.
+ *
+ * Retrying the line **as printed** was tried and removed, and the reason is worth keeping. It reads
+ * position 0 with its capital intact, which makes every sentence-initial common word a candidate
+ * proper noun: the differential caught it reading "**Other** creatures you control get +0/+1." as
+ * creatures of a type called *Other*, byte-perfect in both directions and about a tribe Magic does
+ * not have. That is the reversible-but-wrong class exactly, traded for a few dozen cards whose first
+ * word is a subtype nobody published a list for. Declining is the better half of that trade, and it
+ * stays the better half until the SDK publishes the remaining subtype lists.
+ */
 fun <T> Phrase<T>.parseLine(line: String, parseCap: Int = ParseContext.DEFAULT_PARSE_CAP): ParseOutcome<T> {
     val body = SentenceCase.decapitalize(line)
         ?: return ParseOutcome.Declined(0, listOf("a capitalized first word"), DeclineReason.NO_PARSE)

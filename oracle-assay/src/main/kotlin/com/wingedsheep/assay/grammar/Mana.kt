@@ -10,7 +10,9 @@ import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.model.CardScript
 import com.wingedsheep.sdk.scripting.effects.AddColorlessManaEffect
+import com.wingedsheep.sdk.scripting.effects.AddDynamicManaEffect
 import com.wingedsheep.sdk.scripting.effects.AddManaEffect
+import com.wingedsheep.sdk.scripting.effects.AddManaOfChoiceEffect
 import com.wingedsheep.sdk.scripting.effects.Effect
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
 
@@ -77,6 +79,74 @@ object Mana {
             bind("mana" to effect)
         }
     }
+
+    /**
+     * "Add one mana of any color." — Blood Celebrant, and the whole any-colour family.
+     *
+     * The count is written as a *word* ("one mana", "two mana"), which is Oracle's convention for a
+     * quantity of mana in prose as opposed to in symbols — so this takes [Cardinals.word] and the
+     * singular is a rule of its own, the same split every counting rule in the grammar makes. There
+     * is no plural of "mana", which is why only the noun before it changes.
+     */
+    private fun addAnyColour(template: String, name: String, fixed: Int?): Phrase<CardScript> {
+        fun scriptFor(count: Int) = CardScript(spellEffect = Effects.AddAnyColorMana(count))
+        return phrase(template, name = name) {
+            if (fixed == null) slot("n", Cardinals.word)
+            build { scriptFor(fixed ?: it.int("n")) }
+            match { script ->
+                val amount = (script.spellEffect as? AddManaOfChoiceEffect)?.amount
+                    ?.let { it as? DynamicAmount.Fixed }?.amount ?: return@match null
+                if (fixed != null && amount != fixed) return@match null
+                if (fixed == null && !Cardinals.spellable(amount)) return@match null
+                if (script != scriptFor(amount)) return@match null
+                bind("n" to amount)
+            }
+        }
+    }
+
+    /**
+     * "Add three mana in any combination of {R} and/or {G}." — Goblin Clearcutter.
+     *
+     * A different effect from [addAnyColour] and not a restriction on it: the colours are an
+     * enumerated *set* the player draws from freely, so the model carries both the amount and the
+     * set. Two colours is what every printed card in this shape names, and the join is the same
+     * "and/or" [Filters.anyColour] reads — so a third colour is a row rather than a rule, whenever
+     * one appears.
+     */
+    private val addCombination: Phrase<CardScript> = run {
+        fun scriptFor(count: Int, first: Color, second: Color) = CardScript(
+            spellEffect = Effects.AddDynamicMana(DynamicAmount.Fixed(count), setOf(first, second))
+        )
+        phrase(
+            "add {n} mana in any combination of {first} and/or {second}",
+            name = "add mana in any combination",
+        ) {
+            slot("n", Cardinals.word)
+            slot("first", Primitives.manaSymbolColor)
+            slot("second", Primitives.manaSymbolColor)
+            build { scriptFor(it.int("n"), it.value("first"), it.value("second")) }
+            match { script ->
+                val effect = script.spellEffect as? AddDynamicManaEffect ?: return@match null
+                val amount = (effect.amountSource as? DynamicAmount.Fixed)?.amount ?: return@match null
+                val colours = effect.allowedColors.toList()
+                if (colours.size != 2 || !Cardinals.spellable(amount)) return@match null
+                if (script != scriptFor(amount, colours[0], colours[1])) return@match null
+                bind("n" to amount, "first" to colours[0], "second" to colours[1])
+            }
+        }
+    }
+
+    /**
+     * Every "add …" clause a spell or an ability can print, other than the symbol form above.
+     *
+     * Declared after the rules it lists — object initializers run in declaration order, and a `val`
+     * reaching a later one reads a null out of a half-initialized object.
+     */
+    val addClauses: List<Phrase<CardScript>> = listOf(
+        addAnyColour("add one mana of any color", "add one mana of any colour", fixed = 1),
+        addAnyColour("add {n} mana of any color", "add several mana of any colour", fixed = null),
+        addCombination,
+    )
 
     /** "{B} or {G}" — exactly two, which is every dual land. */
     private val pair: Phrase<List<Effect>> = phrase("{first} or {second}", name = "two kinds of mana") {

@@ -20,9 +20,14 @@ and those are the two sentences on it. The **aura band** followed: `Enchant <fil
 attached-permanent statics, which opened `staticAbilities` — the largest `CardScript` slot the
 differential could not see into, and the one every later static family lands in.
 
-The most recent is the **Portal band**, and it is the first one measured against a whole *set* rather
-than against a rule family: `just assay-gate --set POR` now reads **200 of Portal's 200 cards** end
-to end. Getting there was not two hundred rules — it was the machinery a set needs before any of its
+The most recent is the **Legions band**, and it is the second set read end to end and the first
+*hard* one: `just assay-gate --set LGN` reads **145 of Legions' 145 cards**. Legions is every-card-a-
+creature, so it is a set made almost entirely of the things Portal had none of — morph payoffs,
+tribal lords, granted abilities, amplify, counted variables — and reading all of it took nine new
+families rather than nine new rules. See [the Legions band](#the-legions-band) below.
+
+Before it came the **Portal band**, the first one measured against a whole *set* rather than against
+a rule family: `just assay-gate --set POR` reads **200 of Portal's 200 cards** end to end. Getting there was not two hundred rules — it was the machinery a set needs before any of its
 cards can be read whole. **A line is a sequence of clauses**, so a card printing two sentences reuses
 the effect vocabulary twice instead of restating it capitalized; **a noun phrase is a layered cascade
 in two grammatical numbers**, so "black creatures you control" and "creatures with power 2 or
@@ -120,20 +125,21 @@ non-zero on. Declines are not failures.
 
 ```
 Cards assayed                    34882
-Ability lines                    66793  (39059 unique)
+Ability lines                    66793  (38943 unique)
 
-Round-trips byte-exact           19746   295.6‰ (29.6%)
-Alternate spelling normalized    318
-Declined                         46729
+Round-trips byte-exact           22464   336.3‰ (33.6%)
+Alternate spelling normalized    1018
+Declined                         43311
 Ambiguous — distinct readings    0
 Print mismatch                   0
 Normalization not invertible     0
 Full inverse not reproduced      0
 
-Cards fully covered              4287 / 34882   122.9‰ (12.3%)
-Vanilla + keyword-only cards     1440 / 1712   841.1‰ (84.1%)   <- Phase 1 target
+Cards fully covered              6157 / 34882   176.5‰ (17.7%)
+Vanilla + keyword-only cards     1444 / 1712   843.5‰ (84.3%)   <- Phase 1 target
 Portal (set POR)                 200 / 200     1000.0‰ (100%)   <- the Portal band's target
-Reminder-text glosses            2870 matched · 114 differed · 956 unglossed
+Legions (set LGN)                145 / 145     1000.0‰ (100%)   <- the Legions band's target
+Reminder-text glosses            2870 matched · 114 differed · 965 unglossed
 ```
 
 Fineness is **parts per thousand**, per the assay the module is named for — 841.1‰ is 84.1%.
@@ -149,6 +155,73 @@ reading all of one means the grammar has no systematic hole in that era rather t
 family. Portal is a deliberately simple set, which is what makes it the right first one — and the
 318 alternate spellings above are mostly its doing, because a card printing "A and B" or "A, then B"
 now reads correctly and prints back as the full-stop form.
+
+## The Legions band
+
+Legions is 145 cards and every one of them is a creature, which makes it the opposite of Portal in
+exactly the way that is useful: Portal proved the grammar could read a set of *spells* with simple
+sentences, and Legions proves it can read a set whose sentences are all about permanents that grant,
+count, transform and tax. Reading all of it needed nine pieces of machinery and, after those, rows.
+
+**Subtypes, and the case problem they exposed.** A tribal set is built out of one noun phrase —
+"Sliver creature", "non-Zombie creature", "Bird and/or Cleric permanent" — so `Filters` grew a
+subtype layer, its negation and its disjunction. That immediately hit something the grammar had
+never met: a subtype is a **proper noun**, and `SentenceCase` lowercases every sentence start
+before the grammar sees it. "Sliver creatures get +1/+0." is a whole line and
+"{T}, Sacrifice a Goblin: Goblin creatures get +2/+0 …" starts a second sentence after the colon, so
+undoing the lowercasing at the text boundary would mean guessing which of a line's sentence starts
+were proper nouns. It belongs to the leaf instead: `Primitives.subtype` reads the lowercased
+spelling, and **only for a word the SDK names as a type**, so nothing is guessed and no common noun
+acquires a second reading.
+
+That gate is the whole rule, and the differential proved why. An earlier attempt retried the line
+*as printed* when the ordinary reading declined — which reads position 0 with its capital intact, and
+therefore reads "**Other** creatures you control get +0/+1." as creatures of a type called *Other*.
+Byte-perfect in both directions, and about a tribe Magic does not have. It bought a few dozen cards
+whose first word is a subtype nobody published a list for; declining those is the better half of that
+trade, and "Other" is now a real prefix on the lord rules instead.
+
+**Costs are an atom vocabulary.** `{2}{B}, {T}, Sacrifice a Goblin` is three costs, so `Costs`
+became a list of atoms plus one comma-joined run — and `{1}, {T}`, which used to be a rule, stopped
+being one. A cost is also the single clause Oracle capitalizes that is **not** a sentence start:
+"Sacrifice a Goblin: …" is lowercased by the case pass at a line start and left alone after a comma,
+so each verb atom is instantiated twice from one template and only the capitalized instance prints.
+
+**Lords, and grants in both of their printed shapes.** "Sliver creatures get +1/+0." is one shape
+with three members — a stat modifier, a keyword, or a whole quoted activated ability — over a group
+`Filters` names. The quoted grant slots `Activated` unchanged, which is what makes
+"All Slivers have "{T}: Regenerate target Sliver."" a row rather than a rule. The *unquoted* grant is
+its twin: "Whenever a Sliver deals combat damage to a player, its controller may draw a card." is a
+`GrantTriggeredAbility` whose noun lands on the grant and never on the event, and whose subject is
+"its controller" because the sentence is written from the granting card's point of view rather than
+the gaining permanent's. Those third-person clauses are reachable **only** from a grant, and that is
+deliberate: outside one, "its controller" means the controller of whatever the sentence was just
+talking about, so a global spelling would misread "Whenever a creature dies, its controller loses
+1 life" as a sentence about you.
+
+**Counted variables.** "…gets +X/+X until end of turn, where X is the number of Elves on the
+battlefield" defines its number in a trailing clause, "…equal to the number of +1/+1 counters on it"
+in a prepositional one, and "…for each +1/+1 counter on it" in a third. All three put a
+`DynamicAmount` where a numeral would go, so `Amounts` is one file with a count vocabulary and the
+verbs that slot it.
+
+**Morph.** The keyword was already a `Keywords` row; the band added the trigger it pays off
+("When ~ is turned face up, …", 27 of the set's cards) and the effects that turn other permanents
+over. Amplify came with it, and it is the one line in the grammar whose two halves land in **two
+different card slots**: the SDK spells it as a bare `Keyword.AMPLIFY` plus an
+`EntersWithRevealCounters` carrying the printed number, so the line denotes a keyword *and* a
+replacement effect and there is no `Numeric(AMPLIFY, n)` anywhere in the corpus.
+
+**Two smaller pieces with wide reach.** A trigger line can denote **several** abilities, because
+"Whenever ~ attacks or blocks" is two events with one payoff. And a sequence's target is declared at
+its first mention, which is not always the *first* clause — Fleshformer prints "~ gets +2/+2 and
+gains fear until end of turn. Target creature gets -2/-2 until end of turn.", where the introducing
+clause is second. `Steps` now finds the owning clause by printability rather than assuming index 0,
+and at most one position can satisfy it, so the split stays deterministic.
+
+Whole-corpus coverage went from 4,287 cards to 6,157 in the same change, and the differential's
+compared population from 1,636 to 2,387 — which is again the argument for picking a set as the target
+rather than picking the number.
 
 ## What Phase 1 already found
 
@@ -193,17 +266,17 @@ partially-read card would count a keyword Assay never saw as agreement, so every
 named population bucket instead and the denominator stays visible.
 
 ```
-  Hand-written cards                 9114
-    compared                         1636
-    not yet covered by the grammar   6830
-    script slot not modelled yet      65
-    lines do not fold into one card   40
+  Hand-written cards                 9123
+    compared                         2387
+    not yet covered by the grammar   6104
+    script slot not modelled yet      79
+    lines do not fold into one card   49
     multi-face (out of scope)        301
-    Oracle text differs from golden  242
+    Oracle text differs from golden  203
     golden would not decode            0
 
-  Confirmed — models agree           1606   981.7‰ (98.2%)
-  DIVERGENT — read every one           30
+  Confirmed — models agree           2265   948.9‰ (94.9%)
+  DIVERGENT — read every one          122
 ```
 
 The divergence count is not meant to stay at zero — it rises every time the grammar reaches a new
@@ -237,8 +310,60 @@ A divergence never fails the build — it is a finding to classify as **parser b
 and is reviewed rather than grown silently: every entry is a divergence the gate stops reporting, so
 each one has to say why it is not a difference.
 
+The **Legions band** took the compared population from 1,636 cards to 2,387 and the divergence count
+from 30 to 122 — about nineteen new cards read for every one that disagrees, which is the ratio the
+gate is supposed to have. All 122 fall into eleven families, and every family is classified below;
+seven of them are the already-open "two SDK spellings of one thing" findings recurring in new
+sentence shapes, three are new inconsistencies of the same kind, and one is a bug in a hand-written
+card.
+
+The band also found the gate lying to itself for the **fifth** time, and the first time in the
+*other* direction: it reported six Sliver lords as divergent over an `AbilityId`. Ability ids are
+canonicalized by position, but only in a card's top-level ability lists — and a `GrantTriggeredAbility`
+carries a whole ability *inside* a static, one level further in. The gate was comparing a counter.
+Found the way all five were, by running it on a card class it had never reached.
+
 ### What the gate has found
 
+- **A card bug of the Meteor Golem class, from the Legions band.** **Flamewave Invoker** prints
+  "{7}{R}: Flamewave Invoker deals 5 damage to **target player or planeswalker**" and declares a
+  plain `TargetPlayer`, so the ability cannot be pointed at a planeswalker at all. Its own
+  `oracleText` carries the clause it does not implement, which is the same signature every card bug
+  this gate has found has had. Not fixed here — a card fix wants its own change and the scenario test
+  that asserts the negative — but it is the highest-value thing in the band's output.
+- **Legions' remaining 121 divergences, by family.** Each is a spelling difference the SDK permits in
+  two ways, and the grammar emits one of them per the module's rule:
+  - **A created token's art (19 cards).** `CreateTokenEffect` carries an `imageUri` no printed word
+    determines; a rule that invented one would be inventing a URL. The text round-trips perfectly and
+    the field is simply not in it.
+  - **Mana-ability-ness (17).** The already-open finding, recurring: cards that set `isManaAbility`
+    and leave `timing` at its `InstantSpeed` default. The band widened the *derivation* to match CR
+    605.1a — "Add one mana of any color" and "Add three mana in any combination of {R} and/or {G}"
+    are mana abilities as much as "Add {G}" is, and reading only the two symbol effects had made
+    Blood Celebrant, Goblin Clearcutter and Wirewood Channeler instant-speed abilities that use the
+    stack. Chromatic Sphere remains, because its mana step is inside a composite.
+  - **"You may" on a triggered ability (~10).** `optional = true` versus a `MayEffect` wrapping the
+    effect. `Triggers` lowers the English into the flag, which is what most cards carry; the rest
+    are the minority spelling.
+  - **A mass effect written as a pipeline (~19).** `ForEachInGroup` versus a `Patterns.Group` recipe
+    for the same sweep, and the already-documented `DealDamage(n, PlayerRef(Each))` versus
+    `ForEachPlayer` split for "each creature and each player".
+  - **A tribal noun's card type (~11).** "a Zombie card" is `Any.withSubtype(Zombie)` on Corpse
+    Harvester and `Creature.withSubtype(Zombie)` in the grammar, which reads the bare noun as a
+    creature — right in "target Sliver" and stricter than the text in "a Zombie card". The same split
+    shows on the group sweeps whose filter omits `IsCreature`.
+  - **`TargetCreatureOrPlaneswalker` versus the general filtered target (3).** The standing finding
+    below, recurring in three new sentence shapes, still not folded and for the same reason.
+  - **A `Gate.MayPay` cost's atom (6), a `GrantDynamicStatsEffect` holding a fixed bonus (3), a
+    `descriptionOverride` (several), an explicit `fromZone` on a move that does not need one (2), and
+    `ForceSacrificeEffect` versus `SacrificeEffect` for a bare "sacrifice a permanent" (1).** Each is
+    one concept with two spellings and neither is broken; the grammar emits the one whose model says
+    what the sentence says.
+  - **Phage the Untouchable, on its own.** The band taught `Triggers` to read an intervening-if the
+    way CR 603.4 defines it — a condition printed between the event and the effect is checked twice,
+    so the ability carries both a `triggerCondition` and the `ConditionalEffect`. Lavaborn Muse is
+    written exactly that way and now confirms; Phage carries only the `triggerCondition`, so its
+    ability does not re-check on resolution. That is a card-side omission, not a spelling.
 - **Two more bugs of the Meteor Golem class, from the Portal band.** **Recollect** prints "Return
   target card from **your** graveyard to your hand" and filters on `TargetFilter.CardInGraveyard`,
   which is *any* graveyard — so it can be pointed at an opponent's. **Eternal Witness** is the same

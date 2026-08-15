@@ -7,20 +7,35 @@ import com.wingedsheep.assay.syntax.bind
 import com.wingedsheep.assay.syntax.oneOf
 import com.wingedsheep.assay.syntax.phrase
 import com.wingedsheep.assay.syntax.separated
+import com.wingedsheep.sdk.core.AbilityFlag
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.scripting.references.Player
+import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.dsl.DynamicAmounts
 import com.wingedsheep.sdk.dsl.Effects
+import com.wingedsheep.sdk.dsl.Targets as SdkTargets
 import com.wingedsheep.sdk.model.CardScript
 import com.wingedsheep.sdk.scripting.conditions.Condition
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.effects.CompositeEffect
+import com.wingedsheep.sdk.scripting.effects.CreateDelayedTriggerEffect
+import com.wingedsheep.sdk.scripting.effects.FlipCoinEffect
+import com.wingedsheep.sdk.scripting.effects.ForEachPlayerEffect
+import com.wingedsheep.sdk.scripting.effects.ForceSacrificeEffect
+import com.wingedsheep.sdk.scripting.effects.MayPayManaEffect
+import com.wingedsheep.sdk.scripting.effects.PayManaCostEffect
+import com.wingedsheep.sdk.scripting.effects.MayPayXForEffect
+import com.wingedsheep.sdk.scripting.effects.RedirectNextDamageEffect
 import com.wingedsheep.sdk.scripting.effects.ConditionalEffect
 import com.wingedsheep.sdk.scripting.effects.DealDamageEffect
 import com.wingedsheep.sdk.scripting.effects.DrawCardsEffect
 import com.wingedsheep.sdk.scripting.effects.Effect
 import com.wingedsheep.sdk.scripting.effects.ForEachTargetEffect
 import com.wingedsheep.sdk.scripting.effects.GainLifeEffect
+import com.wingedsheep.sdk.scripting.effects.GrantKeywordEffect
+import com.wingedsheep.sdk.scripting.effects.PreventDamageEffect
+import com.wingedsheep.sdk.scripting.effects.RegenerateEffect
+import com.wingedsheep.sdk.scripting.effects.SacrificeEffect
 import com.wingedsheep.sdk.scripting.effects.Gate
 import com.wingedsheep.sdk.scripting.effects.GatedEffect
 import com.wingedsheep.sdk.scripting.effects.LoseLifeEffect
@@ -34,6 +49,7 @@ import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
 import com.wingedsheep.sdk.scripting.filters.unified.TargetFilter
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.scripting.targets.TargetCreature
+import com.wingedsheep.sdk.core.ManaCost
 import com.wingedsheep.sdk.scripting.targets.TargetObject
 import com.wingedsheep.sdk.scripting.targets.TargetRequirement
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
@@ -199,9 +215,43 @@ object Steps {
         match { if (it == script(amount)) bind("self" to Unit) else null }
     }
 
+    /**
+     * The same shape with "may" inserted after the clause's own subject — "You **may** gain 3 life."
+     *
+     * [mayClause] cannot reach these. It spells "you may {inner}" over a clause that states no
+     * subject of its own ("draw a card"), and a clause that states "you" would come back as "you may
+     * you gain 3 life": English contracts the wrapper's subject with the clause's, and the model is
+     * the same `MayEffect` either way. So the contraction is a printed-shape fact, and it is written
+     * as a *variant of the same shape* rather than as a rule of its own — one call site per clause,
+     * with both spellings generated from one template, which is what stops the two drifting.
+     */
+    private fun mayCountedStep(
+        template: String,
+        name: String,
+        script: (Int) -> CardScript,
+        count: (Effect) -> Int?,
+    ): Phrase<CardScript> = countedStep(
+        template,
+        name,
+        script = { amount -> wrap(script(amount)) { MayEffect(it) } ?: script(amount) },
+        count = { effect ->
+            val gated = effect as? GatedEffect
+            if (gated == null || gated.gate !is Gate.MayDecide || gated != MayEffect(gated.then)) {
+                null
+            } else {
+                count(gated.then)
+            }
+        },
+    )
+
     private val countedSteps: List<Phrase<CardScript>> = listOf(
         countedStep(
             "you gain {n} life", "you gain life",
+            script = { CardScript(spellEffect = Effects.GainLife(it)) },
+            count = ::lifeGained,
+        ),
+        mayCountedStep(
+            "you may gain {n} life", "you may gain life",
             script = { CardScript(spellEffect = Effects.GainLife(it)) },
             count = ::lifeGained,
         ),
@@ -250,6 +300,17 @@ object Steps {
             },
             count = ::damageDealt,
         ),
+        // Lavaborn Muse. "That player" is the one whose step triggered, which the model names
+        // directly — so unlike "target player" this clause declares no requirement at all.
+        countedStep(
+            "{self} deals {n} damage to that player", "deals damage to the triggering player",
+            script = {
+                CardScript(
+                    spellEffect = Effects.DealDamage(it, EffectTarget.PlayerRef(Player.TriggeringPlayer))
+                )
+            },
+            count = ::damageDealt,
+        ),
         countedStep(
             "{self} deals {n} damage to target player", "deals damage to target player",
             script = {
@@ -286,6 +347,168 @@ object Steps {
             count = ::damageDealt,
         ),
     )
+
+    /**
+     * The clauses whose whole sentence is one published effect and whose only variable, if any, is a
+     * noun phrase the ordinary vocabularies already spell.
+     *
+     * Each unlocks a single card, which the module's rule says needs a stated reason, and the reason
+     * is the same for every one: the *model* is a single effect type or a single published
+     * `Patterns` recipe, so the sentence is the unit and there is no smaller rule to write. A shape
+     * parameterized over them would be a factory with one member each.
+     */
+    private val sentenceClauses: List<Phrase<CardScript>> = listOf(
+        // Unstable Hulk's drawback, and the only turn-skipping sentence in the set.
+        constantClause("you skip your next turn", "you skip your next turn", Effects.SkipNextTurn()),
+        // Willbender. `Targets.SpellOrAbilityWithSingleTarget` is a whole requirement rather than a
+        // filter — a spell *or* an ability is not an object the noun-phrase cascade can name — so
+        // the requirement is slotted verbatim and the effect reads nothing from it.
+        run {
+            val script = CardScript(
+                spellEffect = Effects.ChangeTarget(),
+                targetRequirements = listOf(SdkTargets.SpellOrAbilityWithSingleTarget),
+            )
+            phrase<CardScript>(
+                "change the target of target spell or ability with a single target",
+                name = "change a spell's target",
+            ) {
+                build { script }
+                match { if (it == script) bind() else null }
+            }
+        },
+        // Planar Guide. Two printed sentences and one recipe: the exile *links* the cards it removed
+        // and the delayed trigger returns that link, so the second sentence's "those cards" is the
+        // first sentence's slot and neither half denotes anything alone.
+        run {
+            val script = CardScript(
+                spellEffect = Effects.ExileGroupAndLink(GroupFilter.AllCreatures).then(
+                    CreateDelayedTriggerEffect(
+                        step = Step.END,
+                        effect = Effects.ReturnLinkedExileUnderOwnersControl(),
+                    )
+                )
+            )
+            phrase<CardScript>(
+                "exile all creatures. at the beginning of the next end step, return those cards to " +
+                    "the battlefield under their owners' control",
+                name = "exile all creatures and return them",
+            ) {
+                build { script }
+                match { if (it == script) bind() else null }
+            }
+        },
+        // Goblin Assassin. "A creature of their choice" is what an edict aimed at every player means,
+        // and `ForEachPlayerEffect` rebinding the controller per player is what makes "their" work —
+        // which is why the inner sacrifice names `Controller` rather than a player reference.
+        run {
+            val script = CardScript(
+                spellEffect = ForEachPlayerEffect(
+                    players = Player.Each,
+                    effects = listOf(
+                        FlipCoinEffect(
+                            lostEffect = ForceSacrificeEffect(
+                                filter = GameObjectFilter.Creature,
+                                count = 1,
+                                target = EffectTarget.Controller,
+                            )
+                        )
+                    ),
+                )
+            )
+            phrase<CardScript>(
+                "each player flips a coin. each player whose coin comes up tails sacrifices a " +
+                    "creature of their choice",
+                name = "each player flips a coin and may sacrifice",
+            ) {
+                build { script }
+                match { if (it == script) bind() else null }
+            }
+        },
+        // Beacon of Destiny. One effect with two references and no variable: the damage you would
+        // take is redirected to the source.
+        run {
+            val script = CardScript(
+                spellEffect = RedirectNextDamageEffect(
+                    protectedTargets = listOf(EffectTarget.Controller),
+                    redirectTo = EffectTarget.Self,
+                )
+            )
+            phrase<CardScript>(
+                "the next time a source of your choice would deal damage to you this turn, that " +
+                    "damage is dealt to {self} instead",
+                name = "redirect the next damage to the source",
+            ) {
+                slot("self", Primitives.self)
+                build { script }
+                match { if (it == script) bind("self" to Unit) else null }
+            }
+        },
+        // Riptide Mangler. The target is *read* rather than acted on — the effect sets the source's
+        // base power to the chosen creature's — so the requirement is declared and the reference in
+        // the effect is a `targetPower`, not a bound variable.
+        run {
+            fun scriptFor(filter: GameObjectFilter) = CardScript(
+                spellEffect = Effects.SetBasePower(
+                    target = EffectTarget.Self,
+                    power = DynamicAmounts.targetPower(0),
+                ),
+                targetRequirements = listOf(Targets.permanent(filter)),
+            )
+            phrase<CardScript>(
+                "change {self}'s base power to target {filter}'s power",
+                name = "set the source's base power to a target's",
+            ) {
+                slot("self", Primitives.self)
+                slot("filter", Filters.filter)
+                build { scriptFor(it.value("filter")) }
+                match { script ->
+                    val requirement = script.targetRequirements.singleOrNull() ?: return@match null
+                    val filter = Targets.permanentFilter(requirement) ?: return@match null
+                    if (script != scriptFor(filter)) return@match null
+                    bind("self" to Unit, "filter" to filter)
+                }
+            }
+        },
+    )
+
+    /** A whole sentence that denotes one fixed effect and nothing else. */
+    private fun constantClause(template: String, name: String, effect: Effect): Phrase<CardScript> {
+        val script = CardScript(spellEffect = effect)
+        return phrase(template, name = name) {
+            build { script }
+            match { if (it == script) bind() else null }
+        }
+    }
+
+    /**
+     * "You may exchange control of target creature you control and target creature an opponent
+     * controls." — Chromeshell Crab, and the first rule in the grammar that declares **two** targets.
+     *
+     * The two requirements are named by [Targets.slot], which is what [merge]'s KDoc says the
+     * missing piece was: a single fixed slot name is enough only while every rule takes at most one
+     * target, and a rule that took two would otherwise produce a script with two requirements both
+     * called `target`. Numbering them is the whole fix, and the differential compares slots by
+     * position so nothing downstream sees the names.
+     */
+    private val exchangeControl: Phrase<CardScript> = run {
+        fun scriptFor(mine: GameObjectFilter, theirs: GameObjectFilter) = CardScript(
+            spellEffect = MayEffect(Effects.ExchangeControl(Targets.bound(0), Targets.bound(1))),
+            targetRequirements = listOf(Targets.permanent(mine, 0), Targets.permanent(theirs, 1)),
+        )
+        phrase("you may exchange control of target {mine} and target {theirs}", name = "exchange control") {
+            slot("mine", Filters.filter)
+            slot("theirs", Filters.filter)
+            build { scriptFor(it.value("mine"), it.value("theirs")) }
+            match { script ->
+                if (script.targetRequirements.size != 2) return@match null
+                val mine = Targets.permanentFilter(script.targetRequirements[0]) ?: return@match null
+                val theirs = (script.targetRequirements[1] as? TargetObject)?.filter?.baseFilter
+                    ?: return@match null
+                if (script != scriptFor(mine, theirs)) return@match null
+                bind("mine" to mine, "theirs" to theirs)
+            }
+        }
+    }
 
     /**
      * The one-off clauses: a whole printed sentence that denotes one published effect, with at most
@@ -516,8 +739,168 @@ object Steps {
         }
     }
 
+    /**
+     * "Destroy target nonblack creature. It can't be regenerated." — Skinthinner, Deathmark Prelate.
+     *
+     * Two printed sentences and one rule, for [destroyAllNoRegenerate]'s reason: `noRegenerate` is a
+     * *marker effect placed before the destroy* rather than a second sentence's worth of behaviour,
+     * so there is nothing for [sequenceClause] to split and the order in the model is the reverse of
+     * the order in the text. `Effects.Destroy(target, noRegenerate = true)` composes exactly that
+     * pair, which is why this goes through the facade rather than assembling it.
+     */
+    private val destroyTargetNoRegenerate: Phrase<CardScript> = run {
+        fun scriptFor(filter: GameObjectFilter) = CardScript(
+            spellEffect = Effects.Destroy(Targets.bound(), noRegenerate = true),
+            targetRequirements = listOf(Targets.permanent(filter)),
+        )
+        phrase("destroy target {filter}. it can't be regenerated", name = "destroy target without regeneration") {
+            slot("filter", Filters.filter)
+            build { scriptFor(it.value("filter")) }
+            match { script ->
+                val requirement = script.targetRequirements.singleOrNull() ?: return@match null
+                val filter = Targets.permanentFilter(requirement) ?: return@match null
+                if (script != scriptFor(filter)) return@match null
+                bind("filter" to filter)
+            }
+        }
+    }
+
+    /**
+     * "Destroy that creature. It can't be regenerated." — Dripping Dead, Phage, Toxin Sliver.
+     *
+     * "That creature" here is the creature the *trigger* named, not a target the spell chose, which
+     * is a third anaphor beside [SelfSteps]' "it" and [Continuations]' "that creature": the sentence
+     * follows "Whenever ~ deals combat damage to a creature", and the model says
+     * `EffectTarget.TriggeringEntity`. It is reachable as an ordinary first clause because it
+     * introduces nothing — the trigger already did — and it cannot collide with [Continuations],
+     * which is only reachable from a *later* clause position.
+     */
+    private val destroyTriggeringNoRegenerate: Phrase<CardScript> = run {
+        val script = CardScript(
+            spellEffect = Effects.Destroy(EffectTarget.TriggeringEntity, noRegenerate = true)
+        )
+        phrase(
+            "destroy that creature. it can't be regenerated",
+            name = "destroy the triggering creature without regeneration",
+        ) {
+            build { script }
+            match { if (it == script) bind() else null }
+        }
+    }
+
+    /**
+     * "Sacrifice a permanent.", "Sacrifice a land." — the controller sacrifices, with no target.
+     *
+     * `SacrificeEffect` carries no player at all: the ability's controller is the one who
+     * sacrifices, which is what the bare imperative means. `Effects.Sacrifice(filter, 1, target)` is
+     * a *different* type (`ForceSacrificeEffect`) naming a player, and the two are a "one concept,
+     * two spellings" pair the corpus is split over — Drinker of Sorrow writes the first and Goblin
+     * Firebug the second. The grammar emits the one whose model says what the sentence says and lets
+     * the differential report the rest, per the module's rule for two SDK spellings.
+     */
+    private val sacrificeFiltered: Phrase<CardScript> = run {
+        fun scriptFor(filter: GameObjectFilter) = CardScript(spellEffect = SacrificeEffect(filter))
+        phrase("sacrifice {filter}", name = "sacrifice a permanent") {
+            slot("filter", Filters.indefinite)
+            build { scriptFor(it.value("filter")) }
+            match { script ->
+                val effect = script.spellEffect as? SacrificeEffect ?: return@match null
+                if (script != scriptFor(effect.filter)) return@match null
+                bind("filter" to effect.filter)
+            }
+        }
+    }
+
+    /**
+     * "Target creature can't be blocked this turn." — Cephalid Pathmage.
+     *
+     * The SDK grants the *flag* rather than a keyword here, which is the same two-places-for-one-
+     * thing finding [Grammar.flagLine] records: `AbilityFlag.CANT_BE_BLOCKED` is a card-level flag
+     * for the permanent form and a `GrantKeywordEffect` over the flag's own name for the durational
+     * one. The rule spells the flag's name because that is what the cards carry.
+     */
+    private val targetCantBeBlocked: Phrase<CardScript> = run {
+        fun scriptFor(filter: GameObjectFilter) = CardScript(
+            spellEffect = GrantKeywordEffect(AbilityFlag.CANT_BE_BLOCKED.name, Targets.bound()),
+            targetRequirements = listOf(Targets.permanent(filter)),
+        )
+        phrase("target {filter} can't be blocked this turn", name = "target can't be blocked") {
+            slot("filter", Filters.filter)
+            build { scriptFor(it.value("filter")) }
+            match { script ->
+                val requirement = script.targetRequirements.singleOrNull() ?: return@match null
+                val filter = Targets.permanentFilter(requirement) ?: return@match null
+                if (script != scriptFor(filter)) return@match null
+                bind("filter" to filter)
+            }
+        }
+    }
+
+    /**
+     * "Prevent the next 2 damage that would be dealt to any target this turn." — Aven Redeemer —
+     * and "Prevent all combat damage that would be dealt to and dealt by ~ this turn." — Deftblade
+     * Elite.
+     *
+     * One SDK type with two very different sentences: a counted prevention aimed at a target, and an
+     * uncounted one scoped to combat and to both directions. They share nothing but the verb, so
+     * they are two rules rather than a shape with a slot.
+     */
+    private val preventNextDamage: Phrase<CardScript> = run {
+        fun scriptFor(amount: Int) = CardScript(
+            spellEffect = Effects.PreventNextDamage(amount, Targets.bound()),
+            targetRequirements = listOf(Targets.any()),
+        )
+        phrase(
+            "prevent the next {n} damage that would be dealt to any target this turn",
+            name = "prevent the next damage to any target",
+        ) {
+            slot("n", Primitives.cardinal)
+            build { scriptFor(it.int("n")) }
+            match { script ->
+                val prevented = (script.spellEffect as? PreventDamageEffect)?.amount
+                    ?.let { it as? DynamicAmount.Fixed }?.amount ?: return@match null
+                if (script != scriptFor(prevented)) return@match null
+                bind("n" to prevented)
+            }
+        }
+    }
+
+    private val preventCombatDamageToAndBySelf: Phrase<CardScript> = run {
+        val script = CardScript(spellEffect = Effects.PreventCombatDamageToAndBy(EffectTarget.Self))
+        phrase(
+            "prevent all combat damage that would be dealt to and dealt by {self} this turn",
+            name = "prevent combat damage to and by the source",
+        ) {
+            slot("self", Primitives.self)
+            build { script }
+            match { if (it == script) bind("self" to Unit) else null }
+        }
+    }
+
+    /** "You lose the game." / "That player loses the game." — Phage the Untouchable, both halves. */
+    private fun losesTheGame(template: String, name: String, player: EffectTarget): Phrase<CardScript> {
+        val script = CardScript(spellEffect = Effects.LoseGame(player))
+        return phrase(template, name = name) {
+            build { script }
+            match { if (it == script) bind() else null }
+        }
+    }
+
     private val permanentSteps: List<Phrase<CardScript>> = listOf(
         targetedPermanentStep("destroy target {filter}", "destroy target") { Effects.Destroy(it) },
+        targetedPermanentStep("regenerate target {filter}", "regenerate target") { RegenerateEffect(it) },
+        destroyTargetNoRegenerate,
+        destroyTriggeringNoRegenerate,
+        sacrificeFiltered,
+        targetCantBeBlocked,
+        preventNextDamage,
+        preventCombatDamageToAndBySelf,
+        losesTheGame("you lose the game", "you lose the game", EffectTarget.Controller),
+        losesTheGame(
+            "that player loses the game",
+            "the triggering player loses the game",
+            EffectTarget.PlayerRef(Player.TriggeringPlayer),
+        ),
         targetedPermanentStep("exile target {filter}", "exile target") { Effects.Exile(it) },
         targetedPermanentStep("tap target {filter}", "tap target") { Effects.Tap(it) },
         targetedPermanentStep("untap target {filter}", "untap target") { Effects.Untap(it) },
@@ -590,11 +973,12 @@ object Steps {
         plural: Boolean,
         member: (V, EffectTarget) -> Effect,
         read: (Effect) -> V?,
+        canonicalForm: Boolean = true,
     ): Phrase<CardScript> {
         fun scriptFor(value: V, filter: GameObjectFilter) = CardScript(
             spellEffect = Effects.ForEachInGroup(GroupFilter(filter), member(value, EffectTarget.Self)),
         )
-        return phrase(template, name = name) {
+        val rule = phrase<CardScript>(template, name = name) {
             if (template.contains("{self}")) slot("self", Primitives.self)
             slot("filter", if (plural) Filters.plural else Filters.filter)
             slot("v", parameter)
@@ -605,7 +989,50 @@ object Steps {
                 if (script != scriptFor(value, filter)) return@match null
                 bind("self" to Unit, "filter" to filter, "v" to value)
             }
+            canonical = canonicalForm
         }
+        return if (canonicalForm) rule else alternate(rule)
+    }
+
+    /**
+     * "Soldier creatures get +1/+1 and gain first strike until end of turn." — Gempalm Avenger.
+     *
+     * [pumpAndGrantTarget]'s group-side twin, and one rule for the same reason: the second clause
+     * has no subject of its own, and the model is two iterations over the *same* group rather than a
+     * compound effect. That the group is written twice is the SDK's shape, not a redundancy this
+     * rule invents, so the reconstruction compares both.
+     */
+    private fun groupPumpAndGrant(prefix: String, name: String, canonicalForm: Boolean): Phrase<CardScript> {
+        fun scriptFor(modifiers: Pair<Int, Int>, keyword: Keyword, filter: GameObjectFilter) = CardScript(
+            spellEffect = Effects.Composite(
+                listOf(
+                    Effects.ForEachInGroup(
+                        GroupFilter(filter),
+                        Effects.ModifyStats(modifiers.first, modifiers.second, EffectTarget.Self),
+                    ),
+                    Effects.ForEachInGroup(
+                        GroupFilter(filter),
+                        Effects.GrantKeyword(keyword, EffectTarget.Self),
+                    ),
+                )
+            )
+        )
+        val rule = phrase<CardScript>("$prefix{filter} get {mod} and gain {kw} until end of turn", name = name) {
+            slot("filter", Filters.plural)
+            slot("mod", Primitives.statModifiers)
+            slot("kw", Keywords.keyword)
+            build { scriptFor(it.value("mod"), it.value("kw"), it.value("filter")) }
+            match { script ->
+                val effects = (script.spellEffect as? CompositeEffect)?.effects ?: return@match null
+                val filter = iteratedGroup(effects.firstOrNull()) ?: return@match null
+                val modifiers = fixedModifiers(iteratedBody(effects.firstOrNull())) ?: return@match null
+                val keyword = grantedKeyword(iteratedBody(effects.getOrNull(1))) ?: return@match null
+                if (script != scriptFor(modifiers, keyword, filter)) return@match null
+                bind("filter" to filter, "mod" to modifiers, "kw" to keyword)
+            }
+            canonical = canonicalForm
+        }
+        return if (canonicalForm) rule else alternate(rule)
     }
 
     /**
@@ -690,6 +1117,26 @@ object Steps {
             member = { amount, target -> Effects.DealDamage(amount, target) },
             read = ::damageDealt,
         ),
+        // "All creatures get -5/-5 until end of turn." — the same value with the word "all" in
+        // front, which `GroupFilter` has no room for. The bare form is canonical because it is what
+        // the modern lord and mass-pump templating prints; this parses and never prints, so those
+        // cards come back as a variant. Same treatment [Statics.lordStatic] gives the static side.
+        parameterizedGroupStep(
+            "all {filter} get {v} until end of turn", "all of a group gets",
+            parameter = Primitives.statModifiers, plural = true,
+            member = { (power, toughness), target -> Effects.ModifyStats(power, toughness, target) },
+            read = ::fixedModifiers,
+            canonicalForm = false,
+        ),
+        parameterizedGroupStep(
+            "all {filter} gain {v} until end of turn", "all of a group gains a keyword",
+            parameter = Keywords.keyword, plural = true,
+            member = { keyword, target -> Effects.GrantKeyword(keyword, target) },
+            read = ::grantedKeyword,
+            canonicalForm = false,
+        ),
+        groupPumpAndGrant("", "a group gets and gains", canonicalForm = true),
+        groupPumpAndGrant("all ", "all of a group gets and gains", canonicalForm = false),
     )
 
     // ---------------------------------------------------------------------------------------
@@ -969,12 +1416,19 @@ object Steps {
             gainLifeForEach("on the battlefield", Player.Each, emptyList()) +
             gainLifeForEach("target opponent controls", Player.TargetOpponent, listOf(Targets.opponent())) +
             turnSteps +
+            sentenceClauses +
+            exchangeControl +
             Stack.clauses +
             Mana.addClause +
+            Mana.addClauses +
             Library.clauses +
             Hand.clauses +
             Combat.clauses +
             Graveyard.clauses +
+            Amounts.clauses +
+            Morph.clauses +
+            CreatureTypes.clauses +
+            Tokens.clauses +
             SelfSteps.clauses +
             SelfSteps.anaphoric
 
@@ -1018,6 +1472,55 @@ object Steps {
     }
 
     /**
+     * "You may pay {B}{B}{B}. If you do, return it to your hand." — Ghastly Remains, Skirk Drill
+     * Sergeant, and Hollow Specter's `{X}` sibling.
+     *
+     * Two printed sentences and one wrapper, because the second is the *consequence* of the first:
+     * `Gate.MayPay` holds both the cost and what follows, so there is nothing for [sequenceClause] to
+     * split. A wrapper for the same reason [mayClause] is one — every clause the grammar can read
+     * becomes payable-for at no cost.
+     *
+     * The `{X}` form is a separate rule rather than a mana cost that happens to be `{X}`: the model
+     * is a different gate, because the player chooses the number rather than paying a printed one.
+     * The printed symbol is the same either way, so the mana rule **refuses `{X}` outright** —
+     * without that, Decree of Justice's cycling trigger has two readings with two different models,
+     * which is the hard ambiguity the design says never to resolve by ordering an alternation.
+     */
+    private val payX: ManaCost = ManaCost.parse("{X}")
+
+    private val mayPayClauses: List<Phrase<CardScript>> = listOf(
+        phrase("you may pay {cost}. if you do, {inner}", name = "you may pay a cost") {
+            slot("cost", Primitives.manaCost)
+            slot("inner", atom)
+            build { bindings ->
+                val cost = bindings.value<ManaCost>("cost")
+                if (cost == payX) return@build null
+                wrap(bindings.value("inner")) { MayPayManaEffect(cost, it) }
+            }
+            match { script ->
+                val gated = script.spellEffect as? GatedEffect ?: return@match null
+                val gate = gated.gate as? Gate.MayPay ?: return@match null
+                val cost = (gate.cost as? PayManaCostEffect)?.cost ?: return@match null
+                if (cost == payX) return@match null
+                val inner = CardScript(spellEffect = gated.then, targetRequirements = script.targetRequirements)
+                if (wrap(inner) { MayPayManaEffect(cost, it) } != script) return@match null
+                bind("cost" to cost, "inner" to inner)
+            }
+        },
+        phrase("you may pay {X}. if you do, {inner}", name = "you may pay X") {
+            slot("inner", atom)
+            build { bindings -> wrap(bindings.value("inner")) { MayPayXForEffect(it) } }
+            match { script ->
+                val gated = script.spellEffect as? GatedEffect ?: return@match null
+                if (gated.gate !is Gate.MayPayX) return@match null
+                val inner = CardScript(spellEffect = gated.then, targetRequirements = script.targetRequirements)
+                if (wrap(inner) { MayPayXForEffect(it) } != script) return@match null
+                bind("inner" to inner)
+            }
+        },
+    )
+
+    /**
      * "If an opponent controls more lands than you, search your library for …" — Gift of Estates.
      *
      * The SDK lowers a spell's `condition` into a `ConditionalEffect` wrapping the whole effect, so
@@ -1051,7 +1554,7 @@ object Steps {
 
     /** One self-contained clause: an atom, or an atom under a wrapper. */
     private val simpleClause: Phrase<CardScript> =
-        oneOf("a spell effect", atomicClauses + mayClause + conditionalClause)
+        oneOf("a spell effect", atomicClauses + mayClause + conditionalClause + mayPayClauses)
 
     /**
      * A clause that can only be a *later* one: it refers back to something an earlier clause
@@ -1061,7 +1564,8 @@ object Steps {
         "a spell effect",
         // Everything except the source-anaphora: once a clause has introduced a target, "it" means
         // that target, and [Continuations] owns the pronoun from here on. See [SelfSteps.anaphoric].
-        (atomicClauses - SelfSteps.anaphoric.toSet()) + mayClause + conditionalClause + Continuations.all,
+        (atomicClauses - SelfSteps.anaphoric.toSet()) + mayClause + conditionalClause + mayPayClauses +
+            Continuations.all,
     )
 
     /**
@@ -1100,12 +1604,18 @@ object Steps {
      * "Target creature gets +1/+3 until end of turn. Untap that creature." — two or more clauses on
      * one printed line, which the SDK models as one `CompositeEffect`.
      *
-     * **A target is declared at its first mention.** English introduces a referent before it refers
-     * back to one, so the whole line's `targetRequirements` belong to the first clause and every
-     * later one is either self-contained or a [Continuations] clause reading the slot the first
-     * declared. That makes the split deterministic rather than a search, and a model whose target
-     * belongs anywhere else simply fails to print — the fail-closed answer, since the alternative
-     * would be a rule guessing which clause a requirement was for.
+     * **A target is declared at its first mention, which is not always the first clause.** English
+     * introduces a referent before it refers back to one, so the requirement belongs to the clause
+     * that names it and every later one is either self-contained or a [Continuations] clause reading
+     * the slot that clause declared. Fleshformer is what a line looks like when the introducing
+     * clause is *second*: "~ gets +2/+2 and gains fear until end of turn. Target creature gets -2/-2
+     * until end of turn."
+     *
+     * `match` therefore looks for the owning clause rather than assuming index 0 — but it decides by
+     * *printability*, not by preference: a clause that needs the requirement cannot print without
+     * it, and one that does not cannot print with it, because every rule here reconstructs the whole
+     * script and compares. At most one position can satisfy both, so the split stays deterministic
+     * and a model no position can print declines rather than being guessed at.
      *
      * The run's separator is the empty string because each tail carries its own; see [tail].
      */
@@ -1117,16 +1627,30 @@ object Steps {
             val composite = script.spellEffect as? CompositeEffect ?: return@match null
             if (composite.effects.size < 2) return@match null
             if (composite != CompositeEffect(composite.effects)) return@match null
-            val parts = composite.effects.mapIndexed { index, effect ->
-                CardScript(
-                    spellEffect = effect,
-                    targetRequirements = if (index == 0) script.targetRequirements else emptyList(),
-                )
-            }
-            if (merge(parts) != script) return@match null
+            val owner = composite.effects.indices.firstOrNull { index ->
+                val candidate = clauseParts(composite.effects, script.targetRequirements, index)
+                merge(candidate) == script && printable(candidate)
+            } ?: return@match null
+            val parts = clauseParts(composite.effects, script.targetRequirements, owner)
             bind("first" to parts.first(), "rest" to parts.drop(1))
         }
     }
+
+    /** The line's clauses, with the whole line's requirements attached to clause [owner]. */
+    private fun clauseParts(
+        effects: List<Effect>,
+        requirements: List<TargetRequirement>,
+        owner: Int,
+    ): List<CardScript> = effects.mapIndexed { index, effect ->
+        CardScript(
+            spellEffect = effect,
+            targetRequirements = if (index == owner) requirements else emptyList(),
+        )
+    }
+
+    /** True when every clause of a split can be printed from the position it sits in. */
+    private fun printable(parts: List<CardScript>): Boolean =
+        simpleClause.unparse(parts.first()) != null && parts.drop(1).all { laterClause.unparse(it) != null }
 
     /** Everything one clause position can hold. */
     private val clause: Phrase<CardScript> = oneOf("a spell effect", simpleClause, sequenceClause)
@@ -1167,8 +1691,15 @@ object Steps {
         )
     }
 
-    /** What a spell's whole effect text denotes: one sentence, or several. */
-    val step: Phrase<CardScript> = sentence
+    /**
+     * What a spell's whole effect text denotes: one sentence, or a clause that ends itself.
+     *
+     * [sentence] spells the full stop, which is right for every clause whose text ends on one. A
+     * clause ending *inside a quotation* does not — "…gains "This creature can't attack …."" closes
+     * on a quote mark — so those are offered beside it rather than inside it, and the two are
+     * disjoint by their last character.
+     */
+    val step: Phrase<CardScript> = oneOf("a spell effect line", listOf(sentence) + Combat.selfTerminatingClauses)
 
     // ---------------------------------------------------------------------------------------
     // Model helpers — the `match` side, kept out of the rules so like rules read alike

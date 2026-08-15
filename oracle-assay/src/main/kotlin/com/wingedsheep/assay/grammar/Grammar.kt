@@ -9,7 +9,9 @@ import com.wingedsheep.assay.syntax.oneOf
 import com.wingedsheep.assay.syntax.phrase
 import com.wingedsheep.assay.syntax.separated
 import com.wingedsheep.sdk.core.AbilityFlag
+import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.model.CardScript
+import com.wingedsheep.sdk.scripting.EntersWithRevealCounters
 import com.wingedsheep.sdk.scripting.KeywordAbility
 
 /**
@@ -156,13 +158,13 @@ object Grammar {
      * about abilities and know nothing about which of a card's slots they land in.
      */
     private val triggerLine: Phrase<CardFragment> = phrase("{trigger}", name = "a triggered ability line") {
-        slot("trigger", Triggers.trigger)
-        build { CardFragment.of(CardScript(triggeredAbilities = listOf(it.value("trigger")))) }
+        slot("trigger", Triggers.line)
+        build { CardFragment.of(CardScript(triggeredAbilities = it.value("trigger"))) }
         match { fragment ->
-            val ability = fragment.script.triggeredAbilities.singleOrNull() ?: return@match null
+            val abilities = fragment.script.triggeredAbilities.takeIf { it.isNotEmpty() } ?: return@match null
             if (fragment.keywordAbilities.isNotEmpty()) return@match null
-            if (fragment.script != CardScript(triggeredAbilities = listOf(ability))) return@match null
-            bind("trigger" to ability)
+            if (fragment.script != CardScript(triggeredAbilities = abilities)) return@match null
+            bind("trigger" to abilities)
         }
     }
 
@@ -214,6 +216,37 @@ object Grammar {
             if (abilities.isEmpty() || fragment.keywordAbilities.isNotEmpty()) return@match null
             if (fragment.script != CardScript(staticAbilities = abilities)) return@match null
             bind("statics" to abilities)
+        }
+    }
+
+    /**
+     * "Amplify 1" — the one line whose two halves land in **two different card slots**.
+     *
+     * The SDK spells amplify as a bare `Keyword.AMPLIFY` on the card *plus* an
+     * `EntersWithRevealCounters` replacement carrying the count, which is where all nine
+     * hand-written amplify cards put it. So the printed number is not a parameter of the keyword at
+     * all — there is no `Numeric(AMPLIFY, n)` in the corpus — and a rule that minted one would
+     * round-trip perfectly while disagreeing with every card that has the mechanic.
+     *
+     * That is why this is a line rule in [Grammar] rather than a row in [Keywords] or
+     * [Replacements]: neither of those files can produce a fragment that fills both slots, and the
+     * fragment is the only place a line's two contributions can meet. It is the same reason
+     * [flagLine] lives here.
+     */
+    private val amplifyLine: Phrase<CardFragment> = run {
+        fun fragmentFor(count: Int) = CardFragment(
+            keywordAbilities = listOf(KeywordAbility.of(Keyword.AMPLIFY)),
+            script = CardScript(replacementEffects = listOf(EntersWithRevealCounters(countersPerReveal = count))),
+        )
+        phrase("amplify {n}", name = "amplify") {
+            slot("n", Primitives.cardinal)
+            build { fragmentFor(it.int("n")) }
+            match { fragment ->
+                val replacement = fragment.script.replacementEffects.singleOrNull()
+                    as? EntersWithRevealCounters ?: return@match null
+                if (fragment != fragmentFor(replacement.countersPerReveal)) return@match null
+                bind("n" to replacement.countersPerReveal)
+            }
         }
     }
 
@@ -279,20 +312,62 @@ object Grammar {
      * places to say one kind of thing is a finding the differential can now see, which is the reason
      * [CardFragment] grew a slot for it rather than the grammar picking whichever it preferred.
      */
-    private val flagLine: Phrase<CardFragment> =
-        phrase("${Normalizer.SELF} can't be blocked.", name = "a flag line") {
-            build { CardFragment(flags = setOf(AbilityFlag.CANT_BE_BLOCKED)) }
-            match { if (it == CardFragment(flags = setOf(AbilityFlag.CANT_BE_BLOCKED))) Bindings.EMPTY else null }
+    private fun flagLine(template: String, flag: AbilityFlag): Phrase<CardFragment> {
+        val fragment = CardFragment(flags = setOf(flag))
+        return phrase(template, name = "a flag line") {
+            build { fragment }
+            match { if (it == fragment) Bindings.EMPTY else null }
         }
+    }
+
+    /**
+     * "This spell can't be countered." — Root Sliver, Vexing Beetle.
+     *
+     * The one line whose whole content is a `CardScript` **boolean**, which is why it is a line here
+     * rather than a [Statics] rule: `cantBeCountered` is a property of the card, and the static
+     * `GrantCantBeCountered` next to it on Root Sliver is a different thing — that one is about
+     * *other* spells. A card printing both prints two lines, and the fold keeps both.
+     *
+     * "This spell" is deliberately not abstracted by
+     * [com.wingedsheep.assay.normalize.Normalizer]: [Restrictions] spells the same words as a
+     * literal inside "Cast this spell only …", so the phrase stays text and this rule reads it.
+     */
+    private val cantBeCounteredLine: Phrase<CardFragment> = run {
+        val fragment = CardFragment.of(CardScript(cantBeCountered = true))
+        phrase("this spell can't be countered.", name = "an uncounterable spell line") {
+            build { fragment }
+            match { if (it == fragment) Bindings.EMPTY else null }
+        }
+    }
+
+    /**
+     * "~ is every creature type." — Mistform Ultimus.
+     *
+     * Changeling by another name, and the cards say so: Mistform Ultimus carries
+     * `Keyword.CHANGELING`, the same value the word "changeling" denotes. One model, two printed
+     * forms, so this is an [alternate] and the card comes back as a variant — the reading is right
+     * and only the spelling moved. It is a line rather than a [Keywords] row because it is a
+     * *sentence*: it ends in a full stop, which a keyword line never does.
+     */
+    private val everyCreatureTypeLine: Phrase<CardFragment> = alternate(
+        phrase("${Normalizer.SELF} is every creature type.", name = "an every-creature-type line") {
+            build { CardFragment.of(listOf(KeywordAbility.of(Keyword.CHANGELING))) }
+            canonical = false
+        }
+    )
 
     val abilityLine: Phrase<CardFragment> = oneOf(
         "an ability line",
         emptyLine,
         castRestrictionLine,
         additionalCostLine,
-        flagLine,
+        flagLine("${Normalizer.SELF} can't be blocked.", AbilityFlag.CANT_BE_BLOCKED),
+        flagLine("${Normalizer.SELF} doesn't untap during your untap step.", AbilityFlag.DOESNT_UNTAP),
+        cantBeCounteredLine,
+        everyCreatureTypeLine,
         keywordLine,
         semicolonKeywordLine,
+        amplifyLine,
         spellLine,
         triggerLine,
         activatedLine,

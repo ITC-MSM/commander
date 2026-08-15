@@ -1,8 +1,11 @@
 package com.wingedsheep.assay.grammar
 
 import com.wingedsheep.assay.syntax.Phrase
+import com.wingedsheep.assay.syntax.alternate
 import com.wingedsheep.assay.syntax.bind
 import com.wingedsheep.assay.syntax.phrase
+import com.wingedsheep.sdk.core.Keyword
+import com.wingedsheep.sdk.core.ManaCost
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.dsl.Costs
 import com.wingedsheep.sdk.dsl.Effects
@@ -12,7 +15,10 @@ import com.wingedsheep.sdk.scripting.costs.CostAtom
 import com.wingedsheep.sdk.scripting.costs.PayCost
 import com.wingedsheep.sdk.scripting.effects.ZonePlacement
 import com.wingedsheep.sdk.scripting.effects.Effect
+import com.wingedsheep.sdk.scripting.effects.CompositeEffect
 import com.wingedsheep.sdk.scripting.effects.PayOrSufferEffect
+import com.wingedsheep.sdk.scripting.effects.RegenerateEffect
+import com.wingedsheep.sdk.scripting.effects.RemoveKeywordEffect
 import com.wingedsheep.sdk.scripting.effects.SacrificeSelfEffect
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 
@@ -31,18 +37,127 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  */
 object SelfSteps {
 
-    /** "It gets +2/+0 until end of turn." — Charging Bandits' attack trigger. */
-    private val itGets: Phrase<CardScript> = run {
+    /**
+     * "This creature gets +1/+1 until end of turn." — firebreathing's effect clause, and Charging
+     * Bandits' attack trigger spelled with the pronoun.
+     *
+     * The subject is [Primitives.self], so both of Oracle's spellings read and the noun is what
+     * prints. That ordering is the corpus's: a card *naming* itself is how nearly every activated
+     * pump is templated ("{R}: This creature gets +1/+0 until end of turn."), while the pronoun only
+     * appears where an earlier clause in the same ability already named the source. Cards printing
+     * the pronoun come back as a [com.wingedsheep.assay.gate.LineVerdict.VARIANT], which says the
+     * reading was right and only the spelling moved.
+     */
+    private val selfGets: Phrase<CardScript> = run {
         fun scriptFor(modifiers: Pair<Int, Int>) = CardScript(
             spellEffect = Effects.ModifyStats(modifiers.first, modifiers.second, EffectTarget.Self)
         )
-        phrase("it gets {mod} until end of turn", name = "the source gets") {
+        phrase("{self} gets {mod} until end of turn", name = "the source gets") {
+            slot("self", Primitives.self)
             slot("mod", Primitives.statModifiers)
             build { scriptFor(it.value("mod")) }
             match { script ->
                 val modifiers = Steps.fixedModifiers(script.spellEffect) ?: return@match null
                 if (script != scriptFor(modifiers)) return@match null
-                bind("mod" to modifiers)
+                bind("self" to Unit, "mod" to modifiers)
+            }
+        }
+    }
+
+    /**
+     * "This creature gets +2/+2 and gains trample until end of turn." — Clickslither, Glintwing
+     * Invoker, Unstable Hulk.
+     *
+     * [Steps.pumpAndGrantTarget]'s source-side twin, and one rule for the same reason: the second
+     * clause has no subject of its own in the text, and the model is a two-element composite over
+     * one object. A [Steps.sequence] would need the second clause to name what it acts on.
+     */
+    private val selfGetsAndGains: Phrase<CardScript> = run {
+        fun scriptFor(modifiers: Pair<Int, Int>, keyword: Keyword) = CardScript(
+            spellEffect = Effects.Composite(
+                listOf(
+                    Effects.ModifyStats(modifiers.first, modifiers.second, EffectTarget.Self),
+                    Effects.GrantKeyword(keyword, EffectTarget.Self),
+                )
+            )
+        )
+        phrase("{self} gets {mod} and gains {kw} until end of turn", name = "the source gets and gains") {
+            slot("self", Primitives.self)
+            slot("mod", Primitives.statModifiers)
+            slot("kw", Keywords.keyword)
+            build { scriptFor(it.value("mod"), it.value("kw")) }
+            match { script ->
+                val effects = (script.spellEffect as? CompositeEffect)?.effects ?: return@match null
+                val modifiers = Steps.fixedModifiers(effects.firstOrNull()) ?: return@match null
+                val keyword = Steps.grantedKeyword(effects.getOrNull(1)) ?: return@match null
+                if (script != scriptFor(modifiers, keyword)) return@match null
+                bind("self" to Unit, "mod" to modifiers, "kw" to keyword)
+            }
+        }
+    }
+
+    /** "~ gains flying and shroud until end of turn." — Warped Researcher. Two grants, one sentence. */
+    private val selfGainsTwoKeywords: Phrase<CardScript> = run {
+        fun scriptFor(first: Keyword, second: Keyword) = CardScript(
+            spellEffect = Effects.Composite(
+                listOf(
+                    Effects.GrantKeyword(first, EffectTarget.Self),
+                    Effects.GrantKeyword(second, EffectTarget.Self),
+                )
+            )
+        )
+        phrase("{self} gains {kw} and {kw2} until end of turn", name = "the source gains two keywords") {
+            slot("self", Primitives.self)
+            slot("kw", Keywords.keyword)
+            slot("kw2", Keywords.keyword)
+            build { scriptFor(it.value("kw"), it.value("kw2")) }
+            match { script ->
+                val effects = (script.spellEffect as? CompositeEffect)?.effects ?: return@match null
+                val first = Steps.grantedKeyword(effects.firstOrNull()) ?: return@match null
+                val second = Steps.grantedKeyword(effects.getOrNull(1)) ?: return@match null
+                if (script != scriptFor(first, second)) return@match null
+                bind("self" to Unit, "kw" to first, "kw2" to second)
+            }
+        }
+    }
+
+    /** "~ loses flying until end of turn." — Swooping Talon, the grant rules' negation. */
+    private val selfLosesKeyword: Phrase<CardScript> = run {
+        fun scriptFor(keyword: Keyword) =
+            CardScript(spellEffect = Effects.RemoveKeyword(keyword, EffectTarget.Self))
+        phrase("{self} loses {kw} until end of turn", name = "the source loses a keyword") {
+            slot("self", Primitives.self)
+            slot("kw", Keywords.keyword)
+            build { scriptFor(it.value("kw")) }
+            match { script ->
+                val removal = script.spellEffect as? RemoveKeywordEffect ?: return@match null
+                val keyword = Keyword.entries.firstOrNull { it.name == removal.keyword } ?: return@match null
+                if (script != scriptFor(keyword)) return@match null
+                bind("self" to Unit, "kw" to keyword)
+            }
+        }
+    }
+
+    /**
+     * "Sacrifice ~ unless you pay {G}{G}." — Krosan Cloudscraper's upkeep tax.
+     *
+     * A row of the [sacrificeUnless] shape over a *mana* cost rather than a permanent one, which is
+     * why it is written out: the cost has no noun phrase and therefore no article, so
+     * [Filters.indefinite] has nothing to do and the slot is a bare mana symbol run.
+     */
+    private val sacrificeUnlessPay: Phrase<CardScript> = run {
+        fun scriptFor(cost: ManaCost) = CardScript(
+            spellEffect = PayOrSufferEffect(cost = Costs.pay.Mana(cost), suffer = SacrificeSelfEffect)
+        )
+        phrase("sacrifice {self} unless you pay {cost}", name = "sacrifice the source unless you pay") {
+            slot("self", Primitives.self)
+            slot("cost", Primitives.manaCost)
+            build { scriptFor(it.value("cost")) }
+            match { script ->
+                val effect = script.spellEffect as? PayOrSufferEffect ?: return@match null
+                val cost = ((effect.cost as? PayCost.Atom)?.atom as? CostAtom.Mana)?.cost ?: return@match null
+                if (script != scriptFor(cost)) return@match null
+                bind("self" to Unit, "cost" to cost)
             }
         }
     }
@@ -96,12 +211,20 @@ object SelfSteps {
         }
     }
 
-    /** The moves whose object is the source and whose destination the template names. */
+    /**
+     * The verbs whose object is the source and which carry nothing else — a move to a named zone,
+     * an untap, a regeneration.
+     *
+     * The subject slot is optional in the template because the older members spell the pronoun as a
+     * literal ("return **it** to its owner's hand"), while the ones a card names itself in take
+     * [Primitives.self]. Both are the same rule shape; only the printed subject differs.
+     */
     private fun moveSelf(template: String, name: String, effect: Effect): Phrase<CardScript> {
         val script = CardScript(spellEffect = effect)
         return phrase(template, name = name) {
+            if (template.contains("{self}")) slot("self", Primitives.self)
             build { script }
-            match { if (it == script) bind() else null }
+            match { if (it == script) bind("self" to Unit) else null }
         }
     }
 
@@ -164,8 +287,17 @@ object SelfSteps {
      * would be two readings of one text, which is ambiguity rather than a choice.
      */
     val anaphoric: List<Phrase<CardScript>> = listOf(
-        itGets,
+        selfGets,
+        selfGetsAndGains,
+        selfGainsTwoKeywords,
+        selfLosesKeyword,
+        sacrificeUnlessPay,
         putOnTop,
+        // The two bare verbs whose object is the source. "Untap it." after a morph trigger and
+        // "Regenerate ~." as an activated ability's whole effect are the same shape as the moves
+        // below, differing only in that the effect takes no destination.
+        moveSelf("untap {self}", "untap the source", Effects.Untap(EffectTarget.Self)),
+        moveSelf("regenerate {self}", "regenerate the source", RegenerateEffect(EffectTarget.Self)),
         sacrificeUnlessCounted,
         sacrificeUnlessRandomDiscard,
         moveSelf(
@@ -173,10 +305,21 @@ object SelfSteps {
             "shuffle the source into its library",
             Effects.Move(EffectTarget.Self, Zone.LIBRARY, ZonePlacement.Shuffled),
         ),
+        moveSelf("exile it", "exile the source", Effects.Move(EffectTarget.Self, Zone.EXILE)),
         moveSelf(
             "return it to its owner's hand",
             "return the source to its owner's hand",
             Effects.Move(EffectTarget.Self, Zone.HAND),
+        ),
+        // "…return it to your hand." — Ghastly Remains. The same move: a card returning itself goes
+        // to its owner's hand, and the owner of a card you are returning from your own graveyard is
+        // you. Two printed forms, one model, so this one parses and never prints.
+        alternate(
+            moveSelf(
+                "return it to your hand",
+                "return the source to your hand",
+                Effects.Move(EffectTarget.Self, Zone.HAND),
+            )
         ),
         sacrificeUnless(
             "sacrifice it unless you discard {filter} card",

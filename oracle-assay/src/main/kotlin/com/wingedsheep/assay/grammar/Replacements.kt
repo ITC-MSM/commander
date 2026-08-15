@@ -6,7 +6,9 @@ import com.wingedsheep.assay.syntax.bind
 import com.wingedsheep.assay.syntax.constant
 import com.wingedsheep.assay.syntax.oneOf
 import com.wingedsheep.assay.syntax.phrase
+import com.wingedsheep.sdk.scripting.ChoiceType
 import com.wingedsheep.sdk.scripting.EntersTapped
+import com.wingedsheep.sdk.scripting.EntersWithChoice
 import com.wingedsheep.sdk.scripting.ReplacementEffect
 
 /**
@@ -66,5 +68,23 @@ object Replacements {
         }
     }
 
-    val replacement: Phrase<ReplacementEffect> = oneOf("a replacement effect", entersTapped, shockLand)
+    /**
+     * "As ~ enters, choose a color." — Ward Sliver, and the whole choose-as-it-enters family.
+     *
+     * A replacement rather than a triggered ability because "as … enters" happens *during* the
+     * entry, not after it, which is what `EntersWithChoice` models. The kind of choice is a rule
+     * parameter rather than a slot: each is a different English noun phrase ("a color", "a creature
+     * type") rather than a different word in one, the same argument [Library.search] makes about its
+     * destinations.
+     */
+    private fun entersWithChoice(noun: String, choice: ChoiceType): Phrase<ReplacementEffect> =
+        constant("as ${Normalizer.SELF} enters, choose $noun.", EntersWithChoice(choice))
+
+    val replacement: Phrase<ReplacementEffect> = oneOf(
+        "a replacement effect",
+        entersTapped,
+        shockLand,
+        entersWithChoice("a color", ChoiceType.COLOR),
+        entersWithChoice("a creature type", ChoiceType.CREATURE_TYPE),
+    )
 }

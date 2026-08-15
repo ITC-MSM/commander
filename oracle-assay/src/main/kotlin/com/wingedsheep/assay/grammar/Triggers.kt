@@ -6,12 +6,18 @@ import com.wingedsheep.assay.syntax.alternate
 import com.wingedsheep.assay.syntax.bind
 import com.wingedsheep.assay.syntax.oneOf
 import com.wingedsheep.assay.syntax.phrase
+import com.wingedsheep.sdk.scripting.events.DamageType
 import com.wingedsheep.sdk.model.CardScript
 import com.wingedsheep.sdk.scripting.AbilityId
+import com.wingedsheep.sdk.core.Zone
+import com.wingedsheep.sdk.scripting.EventPattern
+import com.wingedsheep.sdk.scripting.GameObjectFilter
+import com.wingedsheep.sdk.scripting.TriggerBinding
 import com.wingedsheep.sdk.scripting.effects.Gate
 import com.wingedsheep.sdk.scripting.effects.GatedEffect
 import com.wingedsheep.sdk.scripting.effects.MayEffect
 import com.wingedsheep.sdk.scripting.TriggerSpec
+import com.wingedsheep.sdk.scripting.conditions.Condition
 import com.wingedsheep.sdk.scripting.TriggeredAbility
 import com.wingedsheep.sdk.dsl.Triggers as SdkTriggers
 
@@ -91,7 +97,6 @@ object Triggers {
      */
     private fun abilityFor(spec: TriggerSpec, script: CardScript): TriggeredAbility? {
         val effect = script.spellEffect ?: return null
-        if (script.targetRequirements.size > 1) return null
         val gated = effect as? GatedEffect
         val optional = gated != null && gated.gate is Gate.MayDecide &&
             gated == MayEffect(gated.then)
@@ -100,15 +105,38 @@ object Triggers {
             trigger = spec.event,
             binding = spec.binding,
             effect = if (optional) (effect as GatedEffect).then else effect,
-            targetRequirement = script.targetRequirements.singleOrNull(),
+            // CR 603.4's intervening-if: a condition printed *between* the event and the effect is
+            // checked twice — once when the ability would trigger and again as it resolves. The SDK
+            // spells the first check as `triggerCondition` and the second as the `ConditionalEffect`
+            // the clause already produced, so a trigger whose effect clause opens with "if …" sets
+            // both. Reading only the effect would be a weaker ability than the card: it would
+            // trigger where the printed one does not. Lavaborn Muse is the shape this reproduces.
+            triggerCondition = interveningIf(effect),
+            // A `TriggeredAbility` keeps its first requirement in a field of its own and the rest in
+            // a list beside it, which is the shape a clause declaring two targets lands in —
+            // Chromeshell Crab's exchange. The split is the SDK's; nothing in the text says it.
+            targetRequirement = script.targetRequirements.firstOrNull(),
+            additionalTargetRequirements = script.targetRequirements.drop(1),
             optional = optional,
         )
     }
 
-    /** The inverse of the lowering: the clause script an ability's effect and target denote. */
+    /**
+     * The condition an intervening-if states, or null when the effect does not open with one.
+     *
+     * Only a *top-level* `Gate.WhenCondition` counts, and only where the gate is the whole of the
+     * effect: "When ~ enters, if X, do Y." is an intervening-if, while a condition buried inside a
+     * later clause of a sequence is an ordinary conditional that resolves once.
+     */
+    private fun interveningIf(effect: com.wingedsheep.sdk.scripting.effects.Effect): Condition? {
+        val gated = effect as? GatedEffect ?: return null
+        return (gated.gate as? Gate.WhenCondition)?.condition
+    }
+
+    /** The inverse of the lowering: the clause script an ability's effect and targets denote. */
     private fun scriptFor(ability: TriggeredAbility): CardScript = CardScript(
         spellEffect = if (ability.optional) MayEffect(ability.effect) else ability.effect,
-        targetRequirements = listOfNotNull(ability.targetRequirement),
+        targetRequirements = listOfNotNull(ability.targetRequirement) + ability.additionalTargetRequirements,
     )
 
     /**
@@ -129,7 +157,34 @@ object Triggers {
      * Declared before [rules], which uses it — object initializers run in declaration order, and a
      * `val` referencing a later one reads a null out of a half-initialized object.
      */
+    /**
+     * "At the beginning of your upkeep, if ~ is in your graveyard, …" — Ghastly Remains.
+     *
+     * The clause is not a condition at all: it says *where the ability works from*, which the model
+     * carries as `activeZones` on the ability rather than as an intervening-if. Reading it as a
+     * condition would round-trip and mean a different card — an upkeep trigger that fires from the
+     * battlefield and then checks something. So it is a prefix variant rather than a
+     * [Conditions] row, and the zone it names is the rule's parameter.
+     */
+    private fun zonedTriggerRule(surface: String, spec: TriggerSpec, zone: Zone): Phrase<TriggeredAbility> =
+        phrase("$surface, {effect}", name = surface) {
+            slot("effect", Steps.step)
+            build { abilityFor(spec, it.value("effect"))?.copy(activeZones = setOf(zone)) }
+            match { ability ->
+                if (ability.activeZones != setOf(zone)) return@match null
+                val script = scriptFor(ability)
+                val rebuilt = abilityFor(spec, script)?.copy(id = ability.id, activeZones = setOf(zone))
+                if (rebuilt != ability) return@match null
+                bind("effect" to script)
+            }
+        }
+
     private val phaseRules: List<Phrase<TriggeredAbility>> = listOf(
+        zonedTriggerRule(
+            "at the beginning of your upkeep, if ${Normalizer.SELF} is in your graveyard",
+            SdkTriggers.YourUpkeep,
+            Zone.GRAVEYARD,
+        ),
         triggerRule("at the beginning of your upkeep", SdkTriggers.YourUpkeep),
         triggerRule("at the beginning of your draw step", SdkTriggers.YourDrawStep),
         triggerRule("at the beginning of your end step", SdkTriggers.YourEndStep),
@@ -149,6 +204,57 @@ object Triggers {
         alternate(triggerRule("at the beginning of each player's end step", SdkTriggers.EachEndStep)),
     )
 
+    /**
+     * The same shape over a trigger whose event names a **filter** — "Whenever a Beast enters, …",
+     * "Whenever another creature enters, …".
+     *
+     * Written as a function of the spec *builder* rather than of a fixed spec, which is the whole
+     * difference from [triggerRule]: the noun phrase is a slot, so the event has to be reconstructed
+     * from whatever the filter turns out to be before the fail-closed comparison can run. Everything
+     * else — the lift of [Steps.step], the "you may" lowering, the id exemption — is identical, and
+     * a filtered rule therefore inherits every effect rule exactly as an unfiltered one does.
+     *
+     * The binding is part of the *surface*: "a Beast" is `ANY` and "another Beast" is `OTHER`, and
+     * the word "another" is the only thing in the text that says so. Two rows, not an optional
+     * literal, so the model decides which prints.
+     *
+     * [article] says which noun phrase the surface takes, and it is a property of the surface rather
+     * than of the filter: "a Beast" carries its indefinite article and "another Beast" does not,
+     * because "another" is already a determiner. [Filters.indefinite] owns the article in both
+     * directions, so a rule that took the wrong one would print "another a Beast".
+     */
+    private fun filteredTriggerRule(
+        surface: String,
+        name: String,
+        article: Boolean,
+        spec: (GameObjectFilter) -> TriggerSpec,
+    ): Phrase<TriggeredAbility> =
+        phrase("$surface, {effect}", name = name) {
+            slot("filter", if (article) Filters.indefinite else Filters.filter)
+            slot("effect", Steps.step)
+            build { abilityFor(spec(it.value("filter")), it.value("effect")) }
+            match { ability ->
+                val filter = triggeredFilter(ability) ?: return@match null
+                val script = scriptFor(ability)
+                if (abilityFor(spec(filter), script)?.copy(id = ability.id) != ability) return@match null
+                bind("filter" to filter, "effect" to script)
+            }
+        }
+
+    /**
+     * The filter an event names, read back off the two event shapes the filtered rules produce.
+     *
+     * Only a *candidate*: the reconstruction in [filteredTriggerRule]'s `match` is what decides
+     * whether the whole ability is this sentence, so nothing here has to check the event's other
+     * fields.
+     */
+    private fun triggeredFilter(ability: TriggeredAbility): GameObjectFilter? =
+        when (val event = ability.trigger) {
+            is EventPattern.ZoneChangeEvent -> event.filter
+            is EventPattern.BecomesBlockedEvent -> event.filter
+            else -> null
+        }
+
     private val rules: List<Phrase<TriggeredAbility>> = listOf(
         triggerRule("when ${Normalizer.SELF} enters", SdkTriggers.EntersBattlefield),
         triggerRule("when ${Normalizer.SELF} dies", SdkTriggers.Dies),
@@ -164,7 +270,118 @@ object Triggers {
             "whenever ${Normalizer.SELF} deals combat damage to a creature",
             SdkTriggers.DealsCombatDamageToCreature,
         ),
+        // "Whenever this creature deals combat damage, …" — no recipient clause at all, which is a
+        // third event rather than a shorter spelling of either of the two above: Drinker of Sorrow
+        // triggers on damage to anything.
+        triggerRule(
+            "whenever ${Normalizer.SELF} deals combat damage",
+            SdkTriggers.dealsDamage(damageType = DamageType.Combat),
+        ),
+        triggerRule("whenever ${Normalizer.SELF} is dealt damage", SdkTriggers.TakesDamage),
+        // Morph's payoff. "Is turned face up" is a `When` rather than a `Whenever` because it can
+        // happen once to a permanent, which is the property that decides the word (see [rules]).
+        triggerRule("when ${Normalizer.SELF} is turned face up", SdkTriggers.TurnedFaceUp),
+        // Cycling's two triggers. `YouCycleThis` is the card's own cycling ("When you cycle this
+        // card, …") and `AnyPlayerCycles` watches the table, so they are separate specs rather than
+        // one with a player field — which is what the SDK says too.
+        triggerRule("when you cycle ${Normalizer.SELF}", SdkTriggers.YouCycleThis),
+        triggerRule("whenever a player cycles a card", SdkTriggers.AnyPlayerCycles),
+        filteredTriggerRule(
+            "whenever {filter} enters", "whenever a permanent enters", article = true,
+        ) { SdkTriggers.entersBattlefield(it, TriggerBinding.ANY) },
+        filteredTriggerRule(
+            "whenever another {filter} enters", "whenever another permanent enters", article = false,
+        ) { SdkTriggers.entersBattlefield(it, TriggerBinding.OTHER) },
+        // "Whenever this creature or another Zombie enters" — Noxious Ghoul, Goblin Assassin. The
+        // source is *in* the watched class, so the model is the plain `ANY` binding and the printed
+        // "~ or another" is how Oracle spells that when the source matches the filter. It is a row
+        // rather than a case inside the rule above because the two surfaces denote the same value
+        // and only one of them may print: this one carries the noun the card prints.
+        filteredTriggerRule(
+            "whenever ${Normalizer.SELF} or another {filter} enters",
+            "whenever the source or another permanent enters",
+            article = false,
+        ) { SdkTriggers.entersBattlefield(it, TriggerBinding.ANY) },
+        filteredTriggerRule(
+            "whenever {filter} becomes blocked", "whenever a creature becomes blocked", article = true,
+        ) { SdkTriggers.becomesBlocked(it, TriggerBinding.ANY) },
+        // "Whenever ~ or another creature dies, …" — Blood Artist, Skirk Drill Sergeant. One
+        // ability with an `ANY` binding covers both halves, because the source is itself a member of
+        // the watched class; the printed "~ or another" is how Oracle spells that, exactly as it is
+        // in the enters rule above. Five hand-written cards write it as one ability and one writes
+        // it as two, so the grammar emits the majority and the differential reports the rest.
+        filteredTriggerRule(
+            "whenever ${Normalizer.SELF} or another {filter} dies",
+            "whenever the source or another permanent dies",
+            article = false,
+        ) { SdkTriggers.leavesBattlefield(filter = it, to = Zone.GRAVEYARD, binding = TriggerBinding.ANY) },
     ) + phaseRules
 
     val trigger: Phrase<TriggeredAbility> = oneOf("a triggered ability", rules)
+
+    /** One trigger, lifted into the one-element list a line usually denotes. */
+    private val single: Phrase<List<TriggeredAbility>> = phrase("{one}", name = "a triggered ability") {
+        slot("one", trigger)
+        build { listOf(it.value<TriggeredAbility>("one")) }
+        match { it.singleOrNull()?.let { ability -> bind("one" to ability) } }
+    }
+
+    /**
+     * "Whenever ~ attacks or blocks, …" — **two** triggered abilities from one printed sentence.
+     *
+     * A `TriggeredAbility` watches one event, and Oracle's "or" here joins two: attacking and
+     * blocking are different events with the same payoff, so the card carries two abilities and
+     * Embalmed Brawler's golden says so in a comment. That makes this the trigger side of
+     * [Keywords.qualityRun] — a rule that denotes several models from one phrase — and the reason a
+     * trigger *line* is a list rather than one ability.
+     *
+     * The two specs are a parameter rather than a slot because the joined phrase is one printed
+     * form: "attacks or blocks" is not "attacks" plus a word, and no other pair is spelled this way.
+     */
+    private fun pairedTriggerRule(
+        surface: String,
+        name: String,
+        specs: (GameObjectFilter?) -> List<TriggerSpec>,
+        filtered: Boolean,
+    ): Phrase<List<TriggeredAbility>> =
+        phrase("$surface, {effect}", name = name) {
+            if (filtered) slot("filter", Filters.filter)
+            slot("effect", Steps.step)
+            build { bindings ->
+                val script = bindings.value<CardScript>("effect")
+                val built = specs(if (filtered) bindings.value("filter") else null)
+                    .map { abilityFor(it, script) }
+                if (built.any { it == null }) null else built.filterNotNull()
+            }
+            match { abilities ->
+                if (abilities.size != 2) return@match null
+                val script = scriptFor(abilities.first())
+                val filter = if (filtered) triggeredFilter(abilities[1]) ?: return@match null else null
+                val rebuilt = specs(filter).map { abilityFor(it, script) }
+                if (rebuilt.size != abilities.size) return@match null
+                val matches = rebuilt.zip(abilities).all { (built, ability) ->
+                    built?.copy(id = ability.id) == ability
+                }
+                if (!matches) return@match null
+                bind("filter" to filter, "effect" to script)
+            }
+        }
+
+    /**
+     * Every trigger line, as the list of abilities it denotes.
+     *
+     * The alternatives take disjoint list sizes — [single] is exactly one and the paired rules are
+     * exactly two — so printing is decided by the model rather than by the alternation's order, the
+     * property every `oneOf` in this grammar is written to have.
+     */
+    val line: Phrase<List<TriggeredAbility>> = oneOf(
+        "a triggered ability line",
+        pairedTriggerRule(
+            "whenever ${Normalizer.SELF} attacks or blocks",
+            "whenever the source attacks or blocks",
+            specs = { listOf(SdkTriggers.Attacks, SdkTriggers.Blocks) },
+            filtered = false,
+        ),
+        single,
+    )
 }

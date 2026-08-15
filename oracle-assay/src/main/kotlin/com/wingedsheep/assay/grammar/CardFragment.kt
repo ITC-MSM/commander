@@ -78,6 +78,9 @@ data class CardFragment(
                 staticAbilities = script.staticAbilities + other.script.staticAbilities,
                 replacementEffects = script.replacementEffects + other.script.replacementEffects,
                 auraTarget = script.auraTarget ?: other.script.auraTarget,
+                // "This spell can't be countered." is a line of its own on Root Sliver and Vexing
+                // Beetle, so it accumulates like the ability lists rather than colliding.
+                cantBeCountered = script.cantBeCountered || other.script.cantBeCountered,
             ),
         )
     }
@@ -99,6 +102,7 @@ data class CardFragment(
          */
         const val MODELLED_SLOTS_NOTE =
             "spellEffect, targetRequirements, triggeredAbilities, activatedAbilities, " +
-                "staticAbilities, replacementEffects, auraTarget, castRestrictions, additionalCosts"
+                "staticAbilities, replacementEffects, auraTarget, castRestrictions, additionalCosts, " +
+                "cantBeCountered"
     }
 }

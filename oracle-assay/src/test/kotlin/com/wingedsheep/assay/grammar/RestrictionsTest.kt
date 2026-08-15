@@ -79,9 +79,11 @@ class RestrictionsTest : StringSpec({
     }
 
     // A condition the SDK cannot name declines rather than being approximated by the nearest one.
+    // The fixture used to be "only if you control a Forest", which [Conditions] now reads through
+    // the general `YouControl` facade; a condition with no facade entry at all takes its place.
     "a restriction the vocabulary does not name declines" {
         Grammar.abilityLine
-            .parseLine("Cast this spell only if you control a Forest.")
+            .parseLine("Cast this spell only if you've drawn a card this turn.")
             .shouldBeInstanceOf<ParseOutcome.Declined>()
     }
 })

@@ -129,10 +129,10 @@ class DifferentialTest : StringSpec({
     }
 
     "a card whose text is partly readable is still excluded" {
-        val text = "Flying\n{T}: Add one mana of any color."
-        val card = oracleCard("Birds of Paradise", text)
+        val text = "Flying\nCumulative upkeep—Add {R}."
+        val card = oracleCard("Braid of Fire", text)
         val result = differential.compare(
-            implemented(definition("Birds of Paradise", text, keywords = setOf(Keyword.FLYING))),
+            implemented(definition("Braid of Fire", text, keywords = setOf(Keyword.FLYING))),
             index(card),
         )
 
