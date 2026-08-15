@@ -87,9 +87,13 @@ These are the ones that have actually caused bugs here.
 
 - **Immutability** — never mutate components in place; return new state.
 - **Projected state for battlefield filters** — filtering battlefield permanents by
-  type/subtype/color/keywords/P/T MUST use `predicateEvaluator.matchesWithProjection(state, projected, …)`,
-  not `.matches(…)`; `cardComponent.typeLine.isCreature` → `projected.isCreature(entityId)`. Non-battlefield
-  zones (hand, library, graveyard, stack) can read base state.
+  type/subtype/color/keywords/P/T MUST read *projected* state, because base state can't see continuous
+  effects. `predicateEvaluator.matches(state, projected, entityId, filter, context)` takes `projected` as
+  a **required** parameter — pass `state.projectedState` (mid-projection callers such as
+  `EffectApplicator` pass their intermediate one instead). Passing it is always correct: entities outside
+  the battlefield have no projection entry, so the matchers fall back to base `CardComponent` data on
+  their own. The real hazard is reading characteristics off the card directly — always
+  `projected.isCreature(entityId)`, never `cardComponent.typeLine.isCreature`.
 - **Layer dependencies (Rule 613.8)** — sort same-layer effects by trial application before falling back
   to timestamp. Never `toMutableSet()` a `ContinuousEffect` list; it dedupes equal lord effects.
 - **Events, not silent mutations** — every state change emits a `GameEvent` so triggers and animations

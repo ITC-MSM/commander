@@ -84,9 +84,10 @@ Hard rules while writing it — these are the engine's recurring bug classes:
 
 - **Immutability** — never mutate components or state in place; return new instances.
 - **Projected state for battlefield reads** — type/subtype/color/keywords/P/T/controller on battlefield
-  permanents go through `predicateEvaluator.matchesWithProjection(…)` / `projected.isCreature(…)` /
-  `state.projectedState.getController(…)`, never base `ControllerComponent` or
-  `cardComponent.typeLine.isCreature`. Non-battlefield zones may read base state.
+  permanents go through `predicateEvaluator.matches(state, projected, …)` (pass `state.projectedState`;
+  it's a required parameter) / `projected.isCreature(…)` / `state.projectedState.getController(…)`, never
+  base `ControllerComponent` or `cardComponent.typeLine.isCreature`. Passing the projection is safe in
+  every zone — non-battlefield entities have no projection entry and fall back to base data.
 - **Events, not silent mutations** — every state change emits a `GameEvent`.
 - **One condition, both contexts** — conditions must evaluate identically at resolution and during
   projection. No separate `*ProjectionCondition` types; use `ConditionEvaluationContext`.

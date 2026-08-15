@@ -111,8 +111,10 @@ These come up often enough to be worth calling out:
   instead. New effect types are sometimes the right answer, but the bar is
   high.
 - **Bypassing the projection layer.** Battlefield filtering by type,
-  subtype, color, keyword, or P/T must go through projected state
-  (`matchesWithProjection`, `projected.isCreature(...)`). The base state
+  subtype, color, keyword, or P/T must go through projected state —
+  `predicateEvaluator.matches(state, projected, ...)` with
+  `state.projectedState`, and `projected.isCreature(...)` instead of
+  reading the card's own type line. The base state
   doesn't see continuous effects. This is in
   [`AGENTS.md`](AGENTS.md) and the architecture doc — it's the single most
   common correctness bug.

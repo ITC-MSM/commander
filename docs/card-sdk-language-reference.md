@@ -3855,9 +3855,11 @@ work for abilities-on-stack (which carry no `CardComponent`).
 - `OtherCreaturesWithSubtype` — lord scope (other creatures of subtype).
 - `CreaturesWithCounter` — creatures with at least one counter (Aurification).
 
-> **Load-bearing rule:** filtering battlefield permanents by type/subtype/color/keyword/P-T MUST use
-`predicateEvaluator.matchesWithProjection(state, projected, ...)`. Use `projected.isCreature(entityId)` rather than
-`cardComponent.typeLine.isCreature`. Non-battlefield zones may read base state.
+> **Load-bearing rule:** filtering battlefield permanents by type/subtype/color/keyword/P-T MUST read
+projected state — base state can't see continuous effects.
+`predicateEvaluator.matches(state, projected, entityId, filter, context)` requires `projected`; pass
+`state.projectedState`, which is safe for every zone (non-battlefield entities have no projection entry and
+fall back to base data). Use `projected.isCreature(entityId)` rather than `cardComponent.typeLine.isCreature`.
 
 ---
 
