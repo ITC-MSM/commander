@@ -1,3 +1,138 @@
+// Basilica Skullbomb
+{
+    "name": "Basilica Skullbomb",
+    "manaCost": "{1}",
+    "typeLine": "Artifact",
+    "oracleText": "{1}, Sacrifice this artifact: Draw a card.\n{2}{W}, Sacrifice this artifact: Target creature you control gets +2/+2 and gains flying until end of turn. Draw a card. Activate only as a sorcery.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}"
+                            }
+                        },
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                }
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}{W}"
+                            }
+                        },
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "ModifyStats",
+                            "powerModifier": {
+                                "type": "Fixed",
+                                "amount": 2
+                            },
+                            "toughnessModifier": {
+                                "type": "Fixed",
+                                "amount": 2
+                            },
+                            "target": {
+                                "type": "ContextTarget",
+                                "index": 0
+                            }
+                        },
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "FLYING",
+                            "target": {
+                                "type": "ContextTarget",
+                                "index": 0
+                            }
+                        },
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        }
+                    }
+                ],
+                "timing": "SorcerySpeed"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "224",
+        "artist": "Gaboleps",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/e/8e2f0ae2-db68-4338-93f9-9d9268cec41e.jpg?1783917994"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Bilious Skulldweller
+{
+    "name": "Bilious Skulldweller",
+    "manaCost": "{B}",
+    "typeLine": "Creature — Phyrexian Insect",
+    "oracleText": "Deathtouch\nToxic 1 (Players dealt combat damage by this creature also get a poison counter.)",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "DEATHTOUCH",
+        "TOXIC"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "TOXIC",
+            "n": 1
+        }
+    ],
+    "metadata": {
+        "collectorNumber": "83",
+        "rarity": "UNCOMMON",
+        "artist": "Svetlin Velinov",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/f/dfb81cb1-ac56-4803-a962-359854a447df.jpg?1783918051"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Blazing Crescendo
 {
     "name": "Blazing Crescendo",
@@ -153,6 +288,662 @@
     ]
 }
 
+// Branchblight Stalker
+{
+    "name": "Branchblight Stalker",
+    "manaCost": "{1}{G}",
+    "typeLine": "Creature — Phyrexian Elf Scout",
+    "oracleText": "Toxic 2 (Players dealt combat damage by this creature also get two poison counters.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 1
+    },
+    "keywords": [
+        "TOXIC"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "TOXIC",
+            "n": 2
+        }
+    ],
+    "metadata": {
+        "collectorNumber": "160",
+        "artist": "Krharts",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/5/e5290a4c-1f98-4e97-a407-f951e386b8b0.jpg?1783918019"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Cephalopod Sentry
+{
+    "name": "Cephalopod Sentry",
+    "manaCost": "{2}{W}{U}",
+    "typeLine": "Artifact Creature — Phyrexian Squid",
+    "oracleText": "Flying\nCephalopod Sentry's power is equal to the number of artifacts you control.",
+    "creatureStats": {
+        "power": {
+            "type": "Dynamic",
+            "source": {
+                "type": "AggregateBattlefield",
+                "player": "You",
+                "filter": "artifact"
+            }
+        },
+        "toughness": 5
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "metadata": {
+        "collectorNumber": "198",
+        "rarity": "UNCOMMON",
+        "artist": "Mathias Kollros",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/0/30c22eb9-5056-4c0b-a5d8-41e09161eb40.jpg?1783918004"
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLUE"
+    ]
+}
+
+// Chrome Prowler
+{
+    "name": "Chrome Prowler",
+    "manaCost": "{2}{U}",
+    "typeLine": "Artifact Creature — Phyrexian Cat",
+    "oracleText": "Flash\nWhen this creature enters, tap target creature an opponent controls.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "keywords": [
+        "FLASH"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "TapUntap",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature an opponent controls"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature ctrl:opponent"
+                    },
+                    "id": "target creature an opponent controls"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "45",
+        "artist": "Maxime Minard",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/9/a94378a2-cbde-4adf-b889-43e90fc6ba28.jpg?1783918069"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Dross Skullbomb
+{
+    "name": "Dross Skullbomb",
+    "manaCost": "{1}",
+    "typeLine": "Artifact",
+    "oracleText": "{1}, Sacrifice this artifact: Draw a card.\n{2}{B}, Sacrifice this artifact: Return target creature card from your graveyard to your hand. Draw a card. Activate only as a sorcery.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}"
+                            }
+                        },
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                }
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}{B}"
+                            }
+                        },
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "MoveToZone",
+                            "target": {
+                                "type": "ContextTarget",
+                                "index": 0
+                            },
+                            "destination": "Hand"
+                        },
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature own:you",
+                            "zone": "Graveyard"
+                        }
+                    }
+                ],
+                "timing": "SorcerySpeed"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "225",
+        "artist": "Gaboleps",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/6/66270dd2-9139-4329-9621-852962836688.jpg?1783917994"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Dune Mover
+{
+    "name": "Dune Mover",
+    "manaCost": "{2}",
+    "typeLine": "Artifact Creature — Phyrexian Golem",
+    "oracleText": "Toxic 1 (Players dealt combat damage by this creature also get a poison counter.)\nWhen this creature enters, you may search your library for a basic land card, reveal it, then shuffle and put that card on top.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "keywords": [
+        "TOXIC"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "TOXIC",
+            "n": 1
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Library",
+                                    "filter": "basicland"
+                                },
+                                "storeAs": "searchable"
+                            },
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "searchable",
+                                "selection": {
+                                    "type": "ChooseUpTo",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "storeSelected": "found"
+                            },
+                            "ShuffleLibrary",
+                            {
+                                "type": "MoveCollection",
+                                "from": "found",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Library",
+                                    "placement": "Top"
+                                },
+                                "revealed": true
+                            },
+                            "EmitLibrarySearchedEvent"
+                        ]
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "226",
+        "artist": "Kev Walker",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/9/29d2c689-af37-433a-a012-e8d384702811.jpg?1783917993"
+    }
+}
+
+// Ichorspit Basilisk
+{
+    "name": "Ichorspit Basilisk",
+    "manaCost": "{2}{G}",
+    "typeLine": "Creature — Phyrexian Basilisk",
+    "oracleText": "Deathtouch\nToxic 1 (Players dealt combat damage by this creature also get a poison counter.)",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 3
+    },
+    "keywords": [
+        "DEATHTOUCH",
+        "TOXIC"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "TOXIC",
+            "n": 1
+        }
+    ],
+    "metadata": {
+        "collectorNumber": "170",
+        "artist": "Joe Slucher",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/9/0955b64f-6721-4fa6-b161-cae404cb5b9f.jpg?1783918014"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Jawbone Duelist
+{
+    "name": "Jawbone Duelist",
+    "manaCost": "{1}{W}",
+    "typeLine": "Creature — Phyrexian Soldier",
+    "oracleText": "Double strike\nToxic 1 (Players dealt combat damage by this creature also get a poison counter.)",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "DOUBLE_STRIKE",
+        "TOXIC"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "TOXIC",
+            "n": 1
+        }
+    ],
+    "metadata": {
+        "collectorNumber": "18",
+        "rarity": "UNCOMMON",
+        "artist": "Nino Vecia",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/0/b00ea7bb-705b-4669-bb2a-560bed04b14a.jpg?1783918078"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Malcator's Watcher
+{
+    "name": "Malcator's Watcher",
+    "manaCost": "{1}{U}",
+    "typeLine": "Artifact Creature — Phyrexian Drone",
+    "oracleText": "Flying, vigilance\nWhen this creature dies, draw a card.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "FLYING",
+        "VIGILANCE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "58",
+        "artist": "Jason A. Engle",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/5/95a7e5ff-ba81-4b45-933e-0ac747525ab8.jpg?1783918062"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Mandible Justiciar
+{
+    "name": "Mandible Justiciar",
+    "manaCost": "{1}{W}",
+    "typeLine": "Artifact Creature — Phyrexian Cleric",
+    "oracleText": "Lifelink\nWhenever another artifact you control enters, this creature gets +1/+1 until end of turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "keywords": [
+        "LIFELINK"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "artifact ctrl:you",
+                    "to": "Battlefield"
+                },
+                "binding": "OTHER",
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": "Self"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "21",
+        "artist": "Mike Franchina",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/4/544a707d-4090-4a74-91aa-60fbd8a4ae96.jpg?1783918079"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Maze Skullbomb
+{
+    "name": "Maze Skullbomb",
+    "manaCost": "{1}",
+    "typeLine": "Artifact",
+    "oracleText": "{1}, Sacrifice this artifact: Draw a card.\n{2}{G}, Sacrifice this artifact: Target creature you control gets +3/+3 and gains trample until end of turn. Draw a card. Activate only as a sorcery.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}"
+                            }
+                        },
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                }
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}{G}"
+                            }
+                        },
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "ModifyStats",
+                            "powerModifier": {
+                                "type": "Fixed",
+                                "amount": 3
+                            },
+                            "toughnessModifier": {
+                                "type": "Fixed",
+                                "amount": 3
+                            },
+                            "target": {
+                                "type": "ContextTarget",
+                                "index": 0
+                            }
+                        },
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "TRAMPLE",
+                            "target": {
+                                "type": "ContextTarget",
+                                "index": 0
+                            }
+                        },
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        }
+                    }
+                ],
+                "timing": "SorcerySpeed"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "231",
+        "artist": "Matt Forsyth",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/0/1073aee2-aea6-473d-97c6-248778d79d80.jpg?1783917990"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Myr Convert
+{
+    "name": "Myr Convert",
+    "manaCost": "{2}",
+    "typeLine": "Artifact Creature — Phyrexian Myr",
+    "oracleText": "Toxic 1 (Players dealt combat damage by this creature also get a poison counter.)\n{T}, Pay 2 life: Add one mana of any color.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "keywords": [
+        "TOXIC"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "TOXIC",
+            "n": 1
+        }
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        "CostTap",
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomPayLife",
+                                "amount": 2
+                            }
+                        }
+                    ]
+                },
+                "effect": "AddManaOfChoice",
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "234",
+        "rarity": "UNCOMMON",
+        "artist": "José Parodi",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/d/9df0adcf-7ad0-4d70-8dcd-28f69471495b.jpg?1783917989"
+    }
+}
+
+// Myr Kinsmith
+{
+    "name": "Myr Kinsmith",
+    "manaCost": "{4}",
+    "typeLine": "Artifact Creature — Myr",
+    "oracleText": "When this creature enters, you may search your library for a Myr card, reveal it, put it into your hand, then shuffle.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Library",
+                                    "filter": "permanent Myr"
+                                },
+                                "storeAs": "searchable"
+                            },
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "searchable",
+                                "selection": {
+                                    "type": "ChooseUpTo",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "storeSelected": "found"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "found",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Hand"
+                                },
+                                "revealed": true
+                            },
+                            "ShuffleLibrary",
+                            "EmitLibrarySearchedEvent"
+                        ]
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "236",
+        "artist": "Cristi Balanescu",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/0/6046e50a-f4c9-4029-a589-62a19371b734.jpg?1783917989"
+    }
+}
+
 // Offer Immortality
 {
     "name": "Offer Immortality",
@@ -199,6 +990,58 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Orthodoxy Enforcer
+{
+    "name": "Orthodoxy Enforcer",
+    "manaCost": "{3}{W}",
+    "typeLine": "Creature — Phyrexian Cleric",
+    "oracleText": "Vigilance\nThis creature gets +2/+0 as long as you control two or more artifacts.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 4
+    },
+    "keywords": [
+        "VIGILANCE"
+    ],
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "ModifyStats",
+                    "powerBonus": 2,
+                    "toughnessBonus": 0,
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "Self"
+                    }
+                },
+                "condition": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "AggregateBattlefield",
+                        "player": "You",
+                        "filter": "artifact"
+                    },
+                    "operator": "GTE",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 2
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "25",
+        "artist": "Xavier Ribeiro",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/c/8c938a0f-531c-4293-a89c-c7440d5acc5d.jpg?1783918076"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 
@@ -300,6 +1143,322 @@
     "colorIdentityOverride": [
         "BLUE",
         "RED"
+    ]
+}
+
+// Paladin of Predation
+{
+    "name": "Paladin of Predation",
+    "manaCost": "{5}{G}{G}",
+    "typeLine": "Creature — Phyrexian Knight",
+    "oracleText": "Toxic 6 (Players dealt combat damage by this creature also get six poison counters.)\nThis creature can't be blocked by creatures with power 2 or less.",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 7
+    },
+    "keywords": [
+        "TOXIC"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "TOXIC",
+            "n": 6
+        }
+    ],
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "CantBeBlockedBy",
+                "blockerFilter": {
+                    "cardPredicates": [
+                        "IsCreature",
+                        {
+                            "type": "PowerAtMost",
+                            "max": 2
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "178",
+        "rarity": "UNCOMMON",
+        "artist": "Lorenzo Mastroianni",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/5/758dbe61-6dc7-4b08-bdd6-7262257955fc.jpg?1783918012"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Pestilent Syphoner
+{
+    "name": "Pestilent Syphoner",
+    "manaCost": "{1}{B}",
+    "typeLine": "Creature — Phyrexian Insect",
+    "oracleText": "Flying\nToxic 1 (Players dealt combat damage by this creature also get a poison counter.)",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "FLYING",
+        "TOXIC"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "TOXIC",
+            "n": 1
+        }
+    ],
+    "metadata": {
+        "collectorNumber": "103",
+        "artist": "Brian Valeza",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/4/947a1e44-3485-4e24-a34d-6c318584743c.jpg?1783918043"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Plated Onslaught
+{
+    "name": "Plated Onslaught",
+    "manaCost": "{3}{W}{W}",
+    "typeLine": "Instant",
+    "oracleText": "Affinity for artifacts (This spell costs {1} less to cast for each artifact you control.)\nCreatures you control get +2/+1 until end of turn.",
+    "keywords": [
+        "AFFINITY"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Affinity",
+            "forType": "ARTIFACT"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "ForEach",
+            "space": {
+                "type": "IterationSpace.Group",
+                "filter": {
+                    "baseFilter": "creature ctrl:you"
+                }
+            },
+            "body": {
+                "type": "ModifyStats",
+                "powerModifier": {
+                    "type": "Fixed",
+                    "amount": 2
+                },
+                "toughnessModifier": {
+                    "type": "Fixed",
+                    "amount": 1
+                },
+                "target": "Self"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "29",
+        "rarity": "UNCOMMON",
+        "artist": "David Auden Nash",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/7/472a635a-a581-4c00-89d6-464f30887944.jpg?1783918075"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Quicksilver Fisher
+{
+    "name": "Quicksilver Fisher",
+    "manaCost": "{3}{U}{U}",
+    "typeLine": "Creature — Phyrexian Drake",
+    "oracleText": "Flying\nWhen this creature enters, draw a card, then discard a card.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 3
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        },
+                        {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "GatherCards",
+                                    "source": {
+                                        "type": "FromZone",
+                                        "zone": "Hand"
+                                    },
+                                    "storeAs": "hand"
+                                },
+                                {
+                                    "type": "SelectFromCollection",
+                                    "from": "hand",
+                                    "selection": {
+                                        "type": "ChooseExactly",
+                                        "count": {
+                                            "type": "Fixed",
+                                            "amount": 1
+                                        }
+                                    },
+                                    "storeSelected": "discarded",
+                                    "prompt": "Choose 1 card to discard"
+                                },
+                                {
+                                    "type": "MoveCollection",
+                                    "from": "discarded",
+                                    "destination": {
+                                        "type": "ToZone",
+                                        "zone": "Graveyard"
+                                    },
+                                    "moveType": "Discard"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "66",
+        "artist": "Filip Burburan",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/a/bad0e96a-b4cc-4439-aab9-731a1036145d.jpg?1783918058"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Resistance Skywarden
+{
+    "name": "Resistance Skywarden",
+    "manaCost": "{3}{R}{R}",
+    "typeLine": "Creature — Ogre Rebel",
+    "oracleText": "Reach (This creature can block creatures with flying.)\nMenace (This creature can't be blocked except by two or more creatures.)",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 5
+    },
+    "keywords": [
+        "REACH",
+        "MENACE"
+    ],
+    "metadata": {
+        "collectorNumber": "146",
+        "rarity": "UNCOMMON",
+        "artist": "Jarel Threat",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/2/6249aabe-8f21-4257-9e04-ceffd44d42a5.jpg?1783918024"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Ribskiff
+{
+    "name": "Ribskiff",
+    "manaCost": "{4}",
+    "typeLine": "Artifact — Vehicle",
+    "oracleText": "Toxic 2 (Players dealt combat damage by this creature also get two poison counters.)\nWhen this Vehicle enters, draw a card.\nCrew 3 (Tap any number of creatures you control with total power 3 or more: This Vehicle becomes an artifact creature until end of turn.)",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "TOXIC",
+        "CREW"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "TOXIC",
+            "n": 2
+        },
+        {
+            "type": "Numeric",
+            "keyword": "CREW",
+            "n": 3
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "240",
+        "rarity": "UNCOMMON",
+        "artist": "José Parodi",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/e/1ec8f984-5ed4-4b34-8b2a-a113cbba001d.jpg?1783917986"
+    }
+}
+
+// Sheoldred's Headcleaver
+{
+    "name": "Sheoldred's Headcleaver",
+    "manaCost": "{3}{B}",
+    "typeLine": "Creature — Phyrexian Warrior",
+    "oracleText": "Menace\nToxic 2 (Players dealt combat damage by this creature also get two poison counters.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 4
+    },
+    "keywords": [
+        "MENACE",
+        "TOXIC"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "TOXIC",
+            "n": 2
+        }
+    ],
+    "metadata": {
+        "collectorNumber": "109",
+        "artist": "Andrey Kuzinskiy",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/c/8c6b818f-6912-4ea1-a35a-c8cd7ee9aead.jpg?1783918040"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 
@@ -447,6 +1606,709 @@
         "rarity": "RARE",
         "artist": "Brian Valeza",
         "imageUri": "https://cards.scryfall.io/normal/front/6/0/60b565da-a49b-479c-b0c4-8ff3dd20cc0b.jpg?1675956933"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Skyscythe Engulfer
+{
+    "name": "Skyscythe Engulfer",
+    "manaCost": "{5}{G}",
+    "typeLine": "Creature — Phyrexian Beast",
+    "oracleText": "Reach, trample\nThis creature can't be blocked by creatures with flying.",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 5
+    },
+    "keywords": [
+        "REACH",
+        "TRAMPLE"
+    ],
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "CantBeBlockedBy",
+                "blockerFilter": {
+                    "cardPredicates": [
+                        "IsCreature",
+                        {
+                            "type": "HasKeyword",
+                            "keyword": "FLYING"
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "183",
+        "artist": "Helge C. Balzer",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/7/d7898399-3c52-402c-9cd7-baad2cb7f00e.jpg?1783918010"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Surgical Skullbomb
+{
+    "name": "Surgical Skullbomb",
+    "manaCost": "{1}",
+    "typeLine": "Artifact",
+    "oracleText": "{1}, Sacrifice this artifact: Draw a card.\n{2}{U}, Sacrifice this artifact: Return target creature to its owner's hand. Draw a card. Activate only as a sorcery.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}"
+                            }
+                        },
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                }
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}{U}"
+                            }
+                        },
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "MoveToZone",
+                            "target": {
+                                "type": "ContextTarget",
+                                "index": 0
+                            },
+                            "destination": "Hand"
+                        },
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature"
+                        }
+                    }
+                ],
+                "timing": "SorcerySpeed"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "243",
+        "artist": "Gaboleps",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/8/98c2b2af-739f-413c-8c36-da6f78df0acb.jpg?1783917986"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Swooping Lookout
+{
+    "name": "Swooping Lookout",
+    "manaCost": "{W}",
+    "typeLine": "Artifact Creature — Phyrexian Construct",
+    "oracleText": "Flying, vigilance",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 2
+    },
+    "keywords": [
+        "FLYING",
+        "VIGILANCE"
+    ],
+    "metadata": {
+        "collectorNumber": "35",
+        "rarity": "UNCOMMON",
+        "artist": "Mike Franchina",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/6/b62c740d-260d-4dfa-b6b3-9a1527538f89.jpg?1783918072"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Testament Bearer
+{
+    "name": "Testament Bearer",
+    "manaCost": "{3}{B}",
+    "typeLine": "Creature — Phyrexian Warrior",
+    "oracleText": "When this creature dies, look at the top three cards of your library. Put one of them into your hand and the rest into your graveyard.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 3
+                                }
+                            },
+                            "storeAs": "looked"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "looked",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "kept",
+                            "storeRemainder": "rest",
+                            "selectedLabel": "Put in hand",
+                            "remainderLabel": "Put in graveyard"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "kept",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Hand"
+                            }
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "rest",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            }
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "111",
+        "artist": "Raluca Marinescu",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/5/a5424859-628a-4c19-acd0-0c63c21c8338.jpg?1783918039"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// The Autonomous Furnace
+{
+    "name": "The Autonomous Furnace",
+    "manaCost": "",
+    "typeLine": "Land — Sphere",
+    "oracleText": "This land enters tapped.\n{T}: Add {R}.\n{1}{R}, {T}, Sacrifice this land: Draw a card.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "RED"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}{R}"
+                            }
+                        },
+                        "CostTap",
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                }
+            }
+        ],
+        "replacementEffects": [
+            "EntersTapped"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "247",
+        "artist": "Muhammad Firdaus",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/1/c16f96f5-a2a6-4ac4-bdae-326cee92bf2e.jpg?1783917984"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// The Dross Pits
+{
+    "name": "The Dross Pits",
+    "manaCost": "",
+    "typeLine": "Land — Sphere",
+    "oracleText": "This land enters tapped.\n{T}: Add {B}.\n{1}{B}, {T}, Sacrifice this land: Draw a card.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "BLACK"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}{B}"
+                            }
+                        },
+                        "CostTap",
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                }
+            }
+        ],
+        "replacementEffects": [
+            "EntersTapped"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "251",
+        "artist": "Martin de Diego Sádaba",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/9/19d469f1-2219-4466-9f8a-769ee43e28db.jpg?1783917981"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// The Fair Basilica
+{
+    "name": "The Fair Basilica",
+    "manaCost": "",
+    "typeLine": "Land — Sphere",
+    "oracleText": "This land enters tapped.\n{T}: Add {W}.\n{1}{W}, {T}, Sacrifice this land: Draw a card.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "WHITE"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}{W}"
+                            }
+                        },
+                        "CostTap",
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                }
+            }
+        ],
+        "replacementEffects": [
+            "EntersTapped"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "252",
+        "artist": "Marc Simonetti",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/1/01d6ba55-7bc0-41c6-84be-8cd528e46a05.jpg?1783917982"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// The Hunter Maze
+{
+    "name": "The Hunter Maze",
+    "manaCost": "",
+    "typeLine": "Land — Sphere",
+    "oracleText": "This land enters tapped.\n{T}: Add {G}.\n{1}{G}, {T}, Sacrifice this land: Draw a card.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "GREEN"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}{G}"
+                            }
+                        },
+                        "CostTap",
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                }
+            }
+        ],
+        "replacementEffects": [
+            "EntersTapped"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "253",
+        "artist": "Alayna Danner",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/3/6389c242-2139-4f12-af30-2b080a1c5e83.jpg?1783917981"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// The Surgical Bay
+{
+    "name": "The Surgical Bay",
+    "manaCost": "",
+    "typeLine": "Land — Sphere",
+    "oracleText": "This land enters tapped.\n{T}: Add {U}.\n{1}{U}, {T}, Sacrifice this land: Draw a card.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "BLUE"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}{U}"
+                            }
+                        },
+                        "CostTap",
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                }
+            }
+        ],
+        "replacementEffects": [
+            "EntersTapped"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "260",
+        "artist": "Sarah Finnigan",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/b/1b49ec35-2c4f-4144-85fe-226f7cb67266.jpg?1783917979"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Tyrranax Atrocity
+{
+    "name": "Tyrranax Atrocity",
+    "manaCost": "{3}{G}{G}",
+    "typeLine": "Creature — Phyrexian Dinosaur",
+    "oracleText": "Haste\nToxic 3 (Players dealt combat damage by this creature also get three poison counters.)",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "HASTE",
+        "TOXIC"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "TOXIC",
+            "n": 3
+        }
+    ],
+    "metadata": {
+        "collectorNumber": "188",
+        "artist": "Xavier Ribeiro",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/5/157cf43c-f7f2-4362-bfc8-11682e94b747.jpg?1783918007"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Tyrranax Rex
+{
+    "name": "Tyrranax Rex",
+    "manaCost": "{4}{G}{G}{G}",
+    "typeLine": "Creature — Phyrexian Dinosaur",
+    "oracleText": "This spell can't be countered.\nTrample, ward {4}, haste\nToxic 4 (Players dealt combat damage by this creature also get four poison counters.)",
+    "creatureStats": {
+        "power": 8,
+        "toughness": 8
+    },
+    "keywords": [
+        "TRAMPLE",
+        "HASTE",
+        "WARD",
+        "TOXIC"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Ward",
+            "cost": {
+                "type": "WardCost.Mana",
+                "manaCost": "{4}"
+            }
+        },
+        {
+            "type": "Numeric",
+            "keyword": "TOXIC",
+            "n": 4
+        }
+    ],
+    "script": {
+        "cantBeCountered": true
+    },
+    "metadata": {
+        "collectorNumber": "189",
+        "rarity": "MYTHIC",
+        "artist": "Tuan Duong Chu",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/f/0fb52b44-da5f-4f7a-a6c2-7924b855e051.jpg?1783918007"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Vanish into Eternity
+{
+    "name": "Vanish into Eternity",
+    "manaCost": "{2}{W}",
+    "typeLine": "Instant",
+    "oracleText": "This spell costs {3} more to cast if it targets a creature.\nExile target nonland permanent.",
+    "script": {
+        "spellEffect": {
+            "type": "MoveToZone",
+            "target": {
+                "type": "BoundVariable",
+                "name": "target nonland permanent"
+            },
+            "destination": "Exile"
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "nonland permanent"
+                },
+                "id": "target nonland permanent"
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifySpellCost",
+                "target": "SelfCast",
+                "modification": {
+                    "type": "IncreaseGenericIfAnyTargetMatches",
+                    "amount": 3,
+                    "filter": "creature"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "36",
+        "artist": "Magali Villeneuve",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/f/8f0b3308-9c0b-4461-9094-38deec20e1bc.jpg?1783918072"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Veil of Assimilation
+{
+    "name": "Veil of Assimilation",
+    "manaCost": "{1}{W}",
+    "typeLine": "Artifact",
+    "oracleText": "Whenever this artifact or another artifact you control enters, target creature you control gets +1/+1 and gains vigilance until end of turn.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "artifact ctrl:you",
+                    "to": "Battlefield"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "ModifyStats",
+                            "powerModifier": {
+                                "type": "Fixed",
+                                "amount": 1
+                            },
+                            "toughnessModifier": {
+                                "type": "Fixed",
+                                "amount": 1
+                            },
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature you control"
+                            }
+                        },
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "VIGILANCE",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature you control"
+                            }
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature ctrl:you"
+                    },
+                    "id": "target creature you control"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "37",
+        "rarity": "UNCOMMON",
+        "artist": "Wayne Wu",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/f/1f9d8d87-e32f-4ad9-8d72-d1b88cd14510.jpg?1783918072"
     },
     "colorIdentityOverride": [
         "WHITE"
