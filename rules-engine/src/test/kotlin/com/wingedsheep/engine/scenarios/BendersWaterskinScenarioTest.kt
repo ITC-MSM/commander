@@ -2,6 +2,7 @@ package com.wingedsheep.engine.scenarios
 
 import com.wingedsheep.engine.core.ActivateAbility
 import com.wingedsheep.engine.core.ChooseColorDecision
+import com.wingedsheep.engine.core.ChooseManaColor
 import com.wingedsheep.engine.core.ColorChosenResponse
 import com.wingedsheep.engine.state.components.player.ManaPoolComponent
 import com.wingedsheep.engine.support.GameTestDriver
@@ -54,6 +55,20 @@ class BendersWaterskinScenarioTest : FunSpec({
         pool.getAmount(Color.BLUE) shouldBe 1
         // Exactly one mana of the single chosen color — nothing else produced.
         pool.getAmount(Color.RED) shouldBe 0
+    }
+
+    test("a forged standalone mana-color action cannot add mana") {
+        val d = driver()
+        val you = d.activePlayer!!
+        d.passPriorityUntil(Step.PRECOMBAT_MAIN)
+        val before = d.state
+
+        val rejected = d.submit(ChooseManaColor(you, Color.RED))
+
+        rejected.isSuccess shouldBe false
+        rejected.error shouldBe "ChooseManaColor is not a standalone action; submit the pending color decision"
+        rejected.newState shouldBe before
+        rejected.events shouldBe emptyList()
     }
 
     test("untaps during another player's untap step, while a plain artifact stays tapped") {

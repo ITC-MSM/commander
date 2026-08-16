@@ -17,8 +17,12 @@ class ChooseManaColorHandler : ActionHandler<ChooseManaColor> {
     override val actionType: KClass<ChooseManaColor> = ChooseManaColor::class
 
     override fun validate(state: GameState, action: ChooseManaColor): String? {
-        // TODO: Validate mana color choice - ensure there's a pending color choice
-        return null
+        // Mana-colour choices are decision responses.  Every live `AddManaOfChoice` path
+        // creates a `ChooseColorDecision` and resumes through `SubmitDecision` so the engine
+        // can bind the colour to its source, allowed colour set, and continuation.  This legacy
+        // serialized action has no such context and would otherwise let a client add arbitrary
+        // mana at any time.
+        return "ChooseManaColor is not a standalone action; submit the pending color decision"
     }
 
     override fun execute(state: GameState, action: ChooseManaColor): ExecutionResult {
