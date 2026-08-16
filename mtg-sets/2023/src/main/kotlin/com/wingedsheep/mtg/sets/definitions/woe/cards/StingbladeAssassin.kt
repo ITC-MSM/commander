@@ -35,7 +35,7 @@ val StingbladeAssassin = card("Stingblade Assassin") {
         trigger = Triggers.EntersBattlefield
         val t = target(
             "target",
-            TargetCreature(filter = TargetFilter.Creature.dealtDamageThisTurn().opponentControls())
+            TargetCreature(filter = TargetFilter.Creature.wasDealtDamageThisTurn().opponentControls())
         )
         effect = Effects.Move(t, Zone.GRAVEYARD, byDestruction = true)
     }

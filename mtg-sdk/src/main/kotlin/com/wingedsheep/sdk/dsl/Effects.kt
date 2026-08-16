@@ -1953,10 +1953,15 @@ object Effects {
 
     /**
      * Proliferate — choose any number of permanents and/or players with counters,
-     * then give each another counter of each kind already there.
+     * then give each another counter of each kind already there (CR 701.34).
+     *
+     * Pass [target] for the targeted, single-object form — "for each kind of counter on target
+     * permanent or player, give that permanent or player another counter of that kind"
+     * (Powerful Broker). The recipient is then a real target chosen on announcement rather than
+     * a resolution-time choice; pair it with `Targets.PermanentOrPlayer`.
      */
-    fun Proliferate(): Effect =
-        com.wingedsheep.sdk.scripting.effects.ProliferateEffect
+    fun Proliferate(target: EffectTarget? = null): Effect =
+        com.wingedsheep.sdk.scripting.effects.ProliferateEffect(target)
 
     /**
      * Add a card type to a target permanent.

@@ -3,7 +3,7 @@
 **Set Size:** 276 booster cards (collector numbers 1-276; basic lands 277-296 and showcase
 variants 297+ are excluded)
 **Release Date:** June 26, 2026
-**Implemented:** 254 / 276
+**Implemented:** 258 / 276
 - [x] Agent 13, Sharon Carter
 - [x] Agent Maria Hill
 - [x] Agent of Atlas
@@ -37,7 +37,7 @@ variants 297+ are excluded)
 - [x] Political Triumph
 - [x] Quake, Agent of S.H.I.E.L.D.
 - [x] Raft Security Officer
-- [ ] Red Guardian, Super-Soldier
+- [x] Red Guardian, Super-Soldier
 - [x] The Sentry, Golden Guardian
 - [x] S.H.I.E.L.D. Spy Kit
 - [x] Super Villain Lockup
@@ -115,7 +115,7 @@ variants 297+ are excluded)
 - [x] Project Deathlok Soldier
 - [x] Red Room Recruit
 - [x] Robot Domination
-- [ ] Ronin, Shadow Stalker
+- [x] Ronin, Shadow Stalker
 - [x] Roxxon Brutes
 - [x] Stolen Stark Tech
 - [x] Super-Skrull
@@ -182,7 +182,7 @@ variants 297+ are excluded)
 - [x] Mister Hyde, Monster Within
 - [x] Mole Man, Moloid Master
 - [x] Pet Avengers
-- [ ] Powerful Broker
+- [x] Powerful Broker
 - [x] Punishing Punch
 - [x] Rapid Rescue
 - [x] Reptil, Dinomorpher
@@ -213,7 +213,7 @@ variants 297+ are excluded)
 - [x] Black Panther, Vanguard
 - [x] Black Widow, Double Agent
 - [x] Bullseye, Death Dealer
-- [ ] Captain America, Living Legend
+- [x] Captain America, Living Legend
 - [ ] Cloak and Dagger, Entwined
 - [x] The Coming of Galactus
 - [x] Daredevil, Man Without Fear

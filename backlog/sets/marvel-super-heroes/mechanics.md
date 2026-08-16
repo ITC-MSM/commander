@@ -461,14 +461,6 @@ The same missing `maxCasts` on `CastAnyNumberFromCollectionWithoutPayingCostEffe
 spells from among the exiled cards"). Everything else on the card — including the plan-counter
 threshold — composes today.
 
-### Mana restricted to equip abilities — **Ronin, Shadow Stalker** [112]
-"Spend this mana only to cast Equipment spells **or activate equip abilities**". `ManaRestriction` has
-`SubtypeSpellsOnly(setOf("Equipment"))` for the spell half and `AbilityActivationOnly` for *any*
-activated ability; `AnyOf(...)` of the two would wrongly pay for every activated ability in play.
-Needed: `ManaRestriction.EquipActivationOnly` plus an `isEquipActivation` flag threaded onto
-`SpellPaymentContext` (the `ActivatedAbility.isEquipAbility` marker it would read already exists).
-Everything else on the card is available.
-
 ### "Until the end of your next turn" continuous duration — **Evil's Thrall** [128]
 `Duration` has `EndOfTurn`, `UntilYourNextTurn` (which ends at the *beginning* of your next turn — a
 full turn short), `UntilNextEndStep` and `UntilYourNextUpkeep`, but no "until the end of your next
@@ -484,14 +476,6 @@ Per-mode `additionalManaCost` on `ModalEffect` is not an alternative — it is h
 `CastSpellEnumerator` / `CastSpellHandler` at cast time, never during a triggered ability's resolution.
 Needed: `RepeatOptionalPaymentEffect(cost, maxTimes, storeCountAs)` whose stored count feeds
 `ModalEffect.dynamicChooseCount` (`chooseUpToDynamic` already accepts any `DynamicAmount`).
-
-### Targeted proliferate — **Powerful Broker** [179]
-`ProliferateEffect` is a bare `data object` with no target and no cap
-(`mtg-sdk/.../scripting/effects/CounterEffects.kt`); the executor picks its own permanents at
-resolution, so it cannot express a *targeted* single-object proliferate (which is respondable and
-respects hexproof). Needed: a `target: EffectTarget? = null` field plus a branch in
-`ProliferateExecutor` that skips the selection continuation when a target is supplied, and a "target
-permanent or player" `TargetRequirement`.
 
 ### "Activate abilities as though they had haste" — **Shang-Chi, Master of Kung Fu** [187]
 No static, keyword, or engine hook for this anywhere. The summoning-sickness gate for `{T}` abilities
@@ -521,7 +505,8 @@ expressible today via `ReflexiveTriggerEffect` over `Effects.ChooseAction` with 
 `EventPattern.TapEvent` carries only `filter`, `batch`, `tapper`, and no per-entity tap history exists.
 The `firstTimeEachTurn` gate exists on `LifeGainEvent`, `BecameSaddledEvent`, `CountersPlacedEvent` and
 `BecomesTargetEvent`, each backed by an event-specific `firstThisTurn` flag computed in
-`TriggerMatcher`. Needed: a `BecameTappedThisTurnComponent` (cleared in `CleanupPhaseManager`), a
+`TriggerMatcher`. Needed: a `HasBecomeTappedComponent` (a turn stamp, so nothing to clear in
+`CleanupPhaseManager` — this is what shipped), a
 `firstThisTurn` field on `TappedEvent`, a `firstTimeEachTurn` field on `TapEvent`, and the matching
 `TriggerMatcher` branch. The "during your turn" half is already `Conditions.IsYourTurn`.
 
@@ -549,7 +534,7 @@ and nothing returns each card to the zone it came from. Needed: a `ReturnLinkedE
    plus its branch in the attack-legality check. (The "or block creatures you control" half is already
    `CantBeBlockedBy`.)
 
-### Per-turn "dealt damage this turn" predicate — **Red Guardian, Super-Soldier** [34]
+### Per-turn "dealt damage this turn" predicate — **Red Guardian, Super-Soldier** [34] — SHIPPED ✅
 "Destroy target creature an opponent controls **that dealt damage this turn**" — a per-turn record of
 damage *inflicted*. Three near-misses, none usable:
 `StatePredicate.WasDealtDamageThisTurn` is the **passive** direction (damage received);
@@ -561,10 +546,17 @@ battlefield lifetime, never cleared at end of turn
 dealt damage in any earlier turn; and the remaining damage-history predicates
 (`HasDealtCombatDamageToPlayer`, `DealtCombatDamageToSourceControllerThisTurn`,
 `ControllerDealtCombatDamageBySourceThisTurn`) are combat- and recipient-specific, missing noncombat
-damage and damage to creatures. Needed: `StatePredicate.DealtDamageThisTurn` plus a per-turn
-`DealtDamageThisTurnComponent` stamped in `DamageUtils` / `CombatDamageManager` alongside
-`HasDealtDamageComponent`, cleared in `CleanupPhaseManager`, and wired into `PredicateEvaluator`,
-`AffectsFilterResolver`, `TriggerMatcher`, `BeginningPhaseManager` and `Serialization`.
+damage and damage to creatures.
+
+Shipped **without** the parallel `DealtDamageThisTurnComponent` this note proposed. Instead
+`StatePredicate.HasDealtDamage` grew a `thisTurnOnly` window parameter, and `HasDealtDamageComponent`
+grew a `lastDealtDamageTurn` stamp: presence answers the lifetime window, the stamp against
+`state.turnNumber` answers the per-turn one. One marker means no damage path can record one window
+without recording the other, and no `CleanupPhaseManager` wiring is needed — the stamp expires by
+itself. Filter surface: `.hasDealtDamageThisTurn()` (active) alongside the renamed
+`.wasDealtDamageThisTurn()` (passive), which used to own the misleading shorter name
+`.dealtDamageThisTurn()` — retired rather than reused, so a stale caller fails to compile instead of
+silently flipping voice.
 
 ### "Do this only once each turn" (CR 603.2h) — not the trigger cap — SHIPPED ✅ (2 cards unblocked)
 > Whenever a creature you control is dealt damage, you may have The Sensational She-Hulk deal that

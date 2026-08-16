@@ -134,6 +134,17 @@ class ReselectTargetRandomlyExecutor : EffectExecutor<ReselectTargetRandomlyEffe
                 creatures + players
             }
 
+            requirement is TargetPermanentOrPlayer -> {
+                val predContext = PredicateContext(controllerId = controllerId)
+                val permanents = state.getBattlefield().filter { entityId ->
+                    predicateEvaluator.matches(
+                        state, projected, entityId, requirement.permanentFilter.baseFilter, predContext
+                    )
+                }
+                val players = state.turnOrder.filter { state.hasEntity(it) }
+                permanents + players
+            }
+
             requirement is TargetOpponentOrPlaneswalker -> {
                 val opponents = state.turnOrder.filter { it != controllerId && state.hasEntity(it) }
                 val planeswalkers = state.getBattlefield().filter { entityId ->

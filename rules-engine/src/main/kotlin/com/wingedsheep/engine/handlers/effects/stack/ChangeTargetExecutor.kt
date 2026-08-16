@@ -135,6 +135,18 @@ class ChangeTargetExecutor : EffectExecutor<ChangeTargetEffect> {
                 (creatures + players).filter { it != currentTargetId }
             }
 
+            // TargetPermanentOrPlayer: permanents matching the filter + players
+            requirement is TargetPermanentOrPlayer -> {
+                val predContext = PredicateContext(controllerId = controllerId)
+                val permanents = state.getBattlefield().filter { entityId ->
+                    predicateEvaluator.matches(
+                        state, projected, entityId, requirement.permanentFilter.baseFilter, predContext
+                    )
+                }
+                val players = state.turnOrder.filter { state.hasEntity(it) }
+                (permanents + players).filter { it != currentTargetId }
+            }
+
             // TargetOpponentOrPlaneswalker: opponents + planeswalkers on battlefield
             requirement is TargetOpponentOrPlaneswalker -> {
                 val opponents = state.turnOrder.filter { it != controllerId && state.hasEntity(it) }

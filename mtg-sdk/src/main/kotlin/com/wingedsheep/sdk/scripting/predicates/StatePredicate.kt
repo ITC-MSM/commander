@@ -203,6 +203,37 @@ sealed interface StatePredicate {
     }
 
     // =============================================================================
+    // Tap History (History)
+    // =============================================================================
+
+    /**
+     * This permanent has **become tapped exactly once so far this turn** — the live, state-side
+     * reading of "if it's the first time that creature has become tapped this turn" (Captain
+     * America, Living Legend).
+     *
+     * Reads the per-permanent tap counter the `tap()` atom maintains
+     * (`HasBecomeTappedComponent`), so it answers *now* rather than repeating what was true when
+     * some earlier event happened. That is the whole point of it: the clause it models is a printed
+     * intervening "if" (CR 603.4), which is checked when the trigger event occurs **and again as the
+     * ability resolves. Only a live read can make the second check mean anything** — a creature
+     * untapped and tapped again in response has become tapped twice by resolution, so this predicate
+     * turns false and the ability fizzles. The trigger-time half is carried separately by
+     * `EventPattern.TapEvent.firstTimeEachTurn`, which reads the tap *event*; use them together, one
+     * per check, and see `Conditions.TriggeringPermanentBecameTappedOnlyOnceThisTurn`.
+     *
+     * "Became tapped" is a transition (CR 701.26a — only untapped permanents can be tapped), so a
+     * permanent that entered the battlefield tapped has become tapped zero times and does **not**
+     * match; nor does one that has not been tapped at all this turn. Only a count of exactly one
+     * matches. The count resets on a zone change (CR 400.7 — a new object) and expires on its own at
+     * the turn boundary, with no end-of-turn cleanup to forget.
+     */
+    @SerialName("BecameTappedOnlyOnceThisTurn")
+    @Serializable
+    data object BecameTappedOnlyOnceThisTurn : History {
+        override val description: String = "became tapped for the first time this turn"
+    }
+
+    // =============================================================================
     // Counter History (History)
     // =============================================================================
 
@@ -263,11 +294,36 @@ sealed interface StatePredicate {
         override val description: String = "was dealt damage this turn"
     }
 
-    /** Has dealt damage (ever, since entering the battlefield) */
+    /**
+     * This permanent has *dealt* damage — the active voice, mirroring [WasDealtDamageThisTurn]'s
+     * passive one. [thisTurnOnly] picks the window:
+     *
+     *  - `false` (default, the widest reading): ever, since it entered the battlefield — "as long as
+     *    this creature hasn't dealt damage" (Karakyk Guardian), via `Conditions.SourceHasDealtDamage`.
+     *  - `true`: during the current turn only — "target creature an opponent controls that dealt
+     *    damage this turn" (Red Guardian, Super-Soldier).
+     *
+     * One fact, two windows, so both read the same per-permanent marker rather than a parallel
+     * tracker: the engine's `HasDealtDamageComponent` records the turn number of the permanent's most
+     * recent damage, which every damage-dealing path stamps. Presence answers the lifetime window;
+     * comparing the stamp against the current turn answers the per-turn one. Nothing has to be
+     * cleared at end of turn — a stale stamp simply stops matching once the turn number moves on —
+     * and no damage path can record one window without recording the other.
+     *
+     * Both windows reset when the permanent changes zones (CR 400.7 — it comes back a new object with
+     * no memory), which is what "that dealt damage this turn" asks for: the object in front of you
+     * must be the one that dealt it.
+     *
+     * Damage *type* is not an axis here — combat and noncombat damage both count, matching the
+     * printed wording. "Dealt combat damage" specifically has its own predicates
+     * ([HasDealtCombatDamageToPlayer], [DealtCombatDamageToSourceControllerThisTurn]) because those
+     * also scope by recipient.
+     */
     @SerialName("HasDealtDamage")
     @Serializable
-    data object HasDealtDamage : History {
-        override val description: String = "has dealt damage"
+    data class HasDealtDamage(val thisTurnOnly: Boolean = false) : History {
+        override val description: String =
+            if (thisTurnOnly) "dealt damage this turn" else "has dealt damage"
     }
 
     /** Has dealt combat damage to a player (ever, since entering the battlefield) */

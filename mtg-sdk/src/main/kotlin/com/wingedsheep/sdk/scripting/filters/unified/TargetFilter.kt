@@ -436,8 +436,11 @@ data class TargetFilter(
      */
     fun notCastFromZone(zone: Zone) = copy(baseFilter = baseFilter.notCastFromZone(zone))
 
-    /** Must have been dealt damage this turn ("...that was dealt damage this turn"). */
-    fun dealtDamageThisTurn() = copy(baseFilter = baseFilter.dealtDamageThisTurn())
+    /** Must have been dealt damage this turn — passive ("...that was dealt damage this turn"). */
+    fun wasDealtDamageThisTurn() = copy(baseFilter = baseFilter.wasDealtDamageThisTurn())
+
+    /** Must have dealt damage this turn — active ("...that dealt damage this turn"). */
+    fun hasDealtDamageThisTurn() = copy(baseFilter = baseFilter.hasDealtDamageThisTurn())
 
     /** Must be controlled by you */
     fun youControl() = copy(baseFilter = baseFilter.youControl())

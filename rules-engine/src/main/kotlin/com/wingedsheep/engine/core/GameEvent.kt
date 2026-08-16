@@ -1033,6 +1033,16 @@ data class PriorityChangedEvent(
  *   engine has been taught to classify name a cause, and an unclassified tap must never masquerade
  *   as a classified one. The default also lets an event serialized before the field existed decode
  *   unchanged.
+ * @property firstThisTurn true when this is the **first time this permanent became tapped this
+ *   turn** — the per-permanent rider
+ *   ([com.wingedsheep.sdk.scripting.EventPattern.TapEvent.firstTimeEachTurn], Captain America,
+ *   Living Legend). Computed against the permanent's
+ *   [com.wingedsheep.engine.state.components.battlefield.HasBecomeTappedComponent] stamp
+ *   *before* [com.wingedsheep.engine.core.tap] records this tap, so the tap that sets the stamp is
+ *   itself reported as the first one. A permanent that entered the battlefield tapped never became
+ *   tapped (CR 701.26a), so it carries no stamp and its first real tap that turn reports true.
+ *   Defaults to true, matching [BecameSaddledEvent.firstThisTurn]: a hand-constructed or
+ *   previously-serialized event names no earlier tap.
  */
 @Serializable
 @SerialName("TappedEvent")
@@ -1040,7 +1050,8 @@ data class TappedEvent(
     val entityId: EntityId,
     val entityName: String,
     val tappedById: EntityId? = null,
-    val reason: TapReason = TapReason.UNSPECIFIED
+    val reason: TapReason = TapReason.UNSPECIFIED,
+    val firstThisTurn: Boolean = true
 ) : GameEvent
 
 /**

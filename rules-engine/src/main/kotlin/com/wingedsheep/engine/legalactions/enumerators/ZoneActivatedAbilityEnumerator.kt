@@ -87,7 +87,7 @@ class ZoneActivatedAbilityEnumerator(private val zone: Zone) : ActionEnumerator 
                 var blightCreatures: List<EntityId> = emptyList()
 
                 val abilityContext = com.wingedsheep.engine.mechanics.mana.buildAbilityPaymentContext(
-                    cardComponent, context.projected, entityId
+                    cardComponent, context.projected, entityId, ability
                 )
 
                 when (effectiveCost) {

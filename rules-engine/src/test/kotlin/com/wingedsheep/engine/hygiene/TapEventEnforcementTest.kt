@@ -21,11 +21,23 @@ import java.io.File
  * `untapOrConsumeStun(state, id)` (emits [UntappedEvent] / consumes a stun counter), and fold the
  * returned event(s) into the result.
  *
- * Exceptions — files that legitimately set/clear [com.wingedsheep.engine.state.components.battlefield.TappedComponent]
- * *without* a tap transition — are listed in [ALLOWED_FILES] with a justification. These are
- * permanents entering the battlefield tapped (taplands, tokens, sneak), phasing in tapped,
- * regeneration's tap, and the leave-the-battlefield untap cleanup — none of which is a
- * "becomes tapped/untapped" event (CR 603.2f / 603.6e), so none emits one.
+ * Exceptions — files that set/clear [com.wingedsheep.engine.state.components.battlefield.TappedComponent]
+ * outside the atoms — are listed in [ALLOWED_FILES] with a justification. Every one is a
+ * non-transition: permanents entering the battlefield tapped (taplands, tokens, sneak), phasing in
+ * tapped, and the leave-the-battlefield untap cleanup, none of which is a "becomes tapped/untapped"
+ * event (CR 603.2f / 603.6e), so none emits one.
+ *
+ * Regeneration used to be the one real tap on this list. It no longer is: CR 701.19a defines
+ * "Regenerate [permanent]" as "…remove all damage marked on it and its controller taps it", and
+ * `ZoneMovementUtils.applyRegenerationReplacement` now routes that through
+ * [com.wingedsheep.engine.core.tap], so it emits a [TappedEvent] and stamps the first-time window
+ * like any other tap. The file stays allowlisted only for its *untap* cleanup write.
+ *
+ * **Two known holes in the scan**, both currently benign: [RAW_TAP_PATTERN] matches
+ * `.with(TappedComponent)` / `.without<TappedComponent>()` but not `components.add(TappedComponent)`
+ * (used by the token executors), and [sourceRoot] covers only `rules-engine/src/main/kotlin`, so
+ * `game-server`'s scenario builder is out of range. Every current hit of both kinds is a legitimate
+ * enters-tapped site — but arguments that lean on this guard being exhaustive should say so.
  */
 class TapEventEnforcementTest : FunSpec({
 
@@ -45,10 +57,10 @@ class TapEventEnforcementTest : FunSpec({
             Regex("""\.with\(\s*(?:[\w.]+\.)?TappedComponent\s*\)|\.without<\s*(?:[\w.]+\.)?TappedComponent\s*>\s*\(\s*\)""")
 
         /**
-         * Files permitted to touch [TappedComponent] directly. Each is a *non-transition* write:
-         * a permanent enters/phases-in tapped, regenerates, or is untapped as leave-the-battlefield
-         * cleanup — none of which fires a "becomes tapped/untapped" event, so the atoms (which always
-         * emit) would be wrong here.
+         * Files permitted to touch [TappedComponent] directly. Each is a *non-transition* write —
+         * a permanent enters/phases-in tapped, or is untapped as leave-the-battlefield cleanup —
+         * which fires no "becomes tapped/untapped" event, so the atoms (which always emit) would be
+         * wrong here. No entry grandfathers a real tap transition; see the class KDoc.
          */
         private val ALLOWED_FILES = setOf(
             // The atoms themselves.
@@ -64,8 +76,9 @@ class TapEventEnforcementTest : FunSpec({
             "com/wingedsheep/engine/handlers/effects/permanent/phasing/PhaseInLinkedToSourceExecutor.kt",
             // Battlefield entry with `tapped`/`tappedAndAttacking` options — enters tapped.
             "com/wingedsheep/engine/handlers/effects/ZoneTransitionService.kt",
-            // Regeneration taps as part of the shield, and a permanent leaving the battlefield is
-            // untapped as cleanup (CR 603.6e) — neither is a tap/untap transition that emits.
+            // A permanent leaving the battlefield is untapped as cleanup (CR 603.6e) — not a
+            // transition. Regeneration's tap lives in this file too but is no longer a raw write:
+            // it goes through `tap()` (CR 701.19a), so only the untap cleanup needs the exemption.
             "com/wingedsheep/engine/handlers/effects/ZoneMovementUtils.kt",
             // addToZone strips TappedComponent when a card leaves the battlefield — cleanup, no event.
             "com/wingedsheep/engine/state/GameState.kt",

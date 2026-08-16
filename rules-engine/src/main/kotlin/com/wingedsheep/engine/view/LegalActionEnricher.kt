@@ -68,7 +68,14 @@ class LegalActionEnricher(
                 )
             }
             is ActivateAbility -> state.getEntity(gameAction.sourceId)?.get<CardComponent>()?.let { card ->
-                buildAbilityPaymentContext(card, state.projectedState, gameAction.sourceId)
+                // Best-effort ability lookup: this is a presentation-only hint about which
+                // restricted mana the client may show as spendable. An ability granted at runtime
+                // isn't on the printed script, so the lookup can miss and the equip fact reads
+                // false — the client then under-reports spendable mana rather than over-reporting
+                // it, and the server's own payment check (which always has the ability) decides.
+                val ability = cardRegistry.getCard(card.cardDefinitionId)
+                    ?.script?.activatedAbilities?.find { it.id == gameAction.abilityId }
+                buildAbilityPaymentContext(card, state.projectedState, gameAction.sourceId, ability)
             }
             else -> null
         } ?: return null

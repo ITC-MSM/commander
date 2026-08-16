@@ -980,7 +980,7 @@ internal class CombatDamageManager(
             newState = newState.updateEntity(sourceId) { container ->
                 val priorRecipients = container.get<DealtCombatDamageToPlayersThisTurnComponent>()
                     ?.playerIds ?: emptySet()
-                container.with(HasDealtDamageComponent)
+                container.with(HasDealtDamageComponent(newState.turnNumber))
                     .with(HasDealtCombatDamageToPlayerComponent)
                     .with(DealtCombatDamageToPlayersThisTurnComponent(priorRecipients + targetId))
             }
@@ -1089,7 +1089,7 @@ internal class CombatDamageManager(
 
         if (sourceId in newState.getBattlefield()) {
             newState = newState.updateEntity(sourceId) { container ->
-                container.with(HasDealtDamageComponent)
+                container.with(HasDealtDamageComponent(newState.turnNumber))
             }
         }
 
@@ -1191,7 +1191,7 @@ internal class CombatDamageManager(
                 newState = newState.updateEntity(sourceId) { container ->
                     val priorRecipients = container.get<DealtCombatDamageToPlayersThisTurnComponent>()
                         ?.playerIds ?: emptySet()
-                    container.with(HasDealtDamageComponent)
+                    container.with(HasDealtDamageComponent(newState.turnNumber))
                         .with(HasDealtCombatDamageToPlayerComponent)
                         .with(DealtCombatDamageToPlayersThisTurnComponent(priorRecipients + targetId))
                 }
@@ -1299,7 +1299,7 @@ internal class CombatDamageManager(
             // Track that source dealt damage
             if (sourceId in newState.getBattlefield()) {
                 newState = newState.updateEntity(sourceId) { container ->
-                    container.with(HasDealtDamageComponent)
+                    container.with(HasDealtDamageComponent(newState.turnNumber))
                 }
             }
             newState = DamageUtils.trackDamageDealtToCreature(newState, sourceId, targetId)
@@ -1368,6 +1368,19 @@ internal class CombatDamageManager(
         val newLife = attackerControllerLife - originalAmount
         var newState = state.withLifeTotal(attackerController, newLife)
         newState = DamageUtils.trackDamageReceivedByPlayer(newState, attackerController, originalAmount, sourceId)
+        // Reflection makes the attacking creature the source of damage dealt to its own controller
+        // (CR 120.1 — the object that deals the damage is its source), so this emits a second
+        // `DamageDealtEvent` for the same creature and stamps it alongside, keeping the invariant
+        // "every damage-dealing path records its source" true function-locally rather than by
+        // inheritance from the caller. Today it is belt-and-braces: the only caller is
+        // `applyDamageToPlayer`, which stamps the same creature under the same battlefield guard
+        // before it gets here, so removing this line changes no current behaviour. It earns its keep
+        // if reflection is ever reached from a path that doesn't stamp first.
+        if (sourceId in newState.getBattlefield()) {
+            newState = newState.updateEntity(sourceId) { container ->
+                container.with(HasDealtDamageComponent(newState.turnNumber))
+            }
+        }
         val sourceName = state.getEntity(sourceId)?.get<CardComponent>()?.name ?: "Creature"
         events.add(DamageDealtEvent(sourceId, attackerController, originalAmount, true,
             sourceName = sourceName, targetName = "Player", targetIsPlayer = true))

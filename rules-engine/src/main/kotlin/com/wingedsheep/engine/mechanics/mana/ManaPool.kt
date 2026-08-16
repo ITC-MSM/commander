@@ -68,7 +68,24 @@ data class SpellPaymentContext(
      * so [faceDownCast] is the whole context for such a cast — see its factory below.
      */
     val isFaceDownCast: Boolean = false,
+    /**
+     * True when the payment is for an **equip** ability (CR 702.6) — the activation whose
+     * `ActivatedAbility.isEquipAbility` flag is set. Always implies [isAbilityActivation]; it is a
+     * strictly narrower fact about the same activation, which is why
+     * [ManaRestriction.EquipAbilityActivationOnly] can't be expressed by the source's card type
+     * (an Equipment's equip ability and its other activated abilities share one card type).
+     *
+     * Built only by [buildAbilityPaymentContext], which every ability-activation path funnels
+     * through, so a new activation site can't forget it.
+     */
+    val isEquipAbilityActivation: Boolean = false,
 ) {
+    init {
+        require(!isEquipAbilityActivation || isAbilityActivation) {
+            "isEquipAbilityActivation implies isAbilityActivation"
+        }
+    }
+
     companion object {
         /**
          * The payment context for a face-down cast (morph / disguise). CR 708.2: the spell has no
@@ -119,6 +136,7 @@ fun ManaRestriction.isSatisfiedBy(context: SpellPaymentContext): Boolean = when 
     is ManaRestriction.FaceDownSpellsOnly -> !context.isAbilityActivation && context.isFaceDownCast
     is ManaRestriction.UnlockDoorOnly -> context.isUnlockDoorAction
     is ManaRestriction.AbilityActivationOnly -> context.isAbilityActivation
+    is ManaRestriction.EquipAbilityActivationOnly -> context.isEquipAbilityActivation
     is ManaRestriction.AnyOf -> restrictions.any { it.isSatisfiedBy(context) }
     is ManaRestriction.SubtypeSpellsOnly ->
         !context.isAbilityActivation &&

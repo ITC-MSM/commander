@@ -289,6 +289,8 @@ class TargetValidator {
             is TargetOpponent -> validateOpponentTarget(state, target, requirement, casterId, sourceId)
             is AnyTarget -> validateAnyTarget(state, target, casterId)
             is TargetCreatureOrPlayer -> validateCreatureOrPlayerTarget(state, target, casterId)
+            is TargetPermanentOrPlayer ->
+                validatePermanentOrPlayerTarget(state, target, requirement, casterId, sourceId, xValue, chosenPlayerTarget)
             is TargetOpponentOrPlaneswalker -> validateOpponentOrPlaneswalkerTarget(state, target, casterId)
             is TargetPlayerOrPlaneswalker -> validatePlayerOrPlaneswalkerTarget(state, target, casterId)
             is TargetCreatureOrPlaneswalker -> validateCreatureOrPlaneswalkerTarget(state, target)
@@ -733,6 +735,35 @@ class TargetValidator {
                 null
             }
             else -> "Target must be a creature or player"
+        }
+    }
+
+    /**
+     * "Target permanent or player": a player target is validated exactly like [TargetPlayer], a
+     * permanent target exactly like a [TargetObject] over the requirement's `permanentFilter`, so
+     * neither half can drift from its single-kind counterpart.
+     */
+    private fun validatePermanentOrPlayerTarget(
+        state: GameState,
+        target: ChosenTarget,
+        requirement: TargetPermanentOrPlayer,
+        casterId: EntityId,
+        sourceId: EntityId?,
+        xValue: Int?,
+        chosenPlayerTarget: EntityId?
+    ): String? {
+        return when (target) {
+            is ChosenTarget.Player -> {
+                if (!state.hasEntity(target.playerId)) "Target player not found"
+                else if (playerHasShroud(state, target.playerId)) "Target player has shroud"
+                else if (playerHasHexproofAgainst(state, target.playerId, casterId)) "Target player has hexproof"
+                else null
+            }
+            is ChosenTarget.Permanent ->
+                validateObjectTarget(
+                    state, target, requirement.permanentFilter, casterId, sourceId, xValue, chosenPlayerTarget
+                )
+            else -> "Target must be a ${requirement.permanentFilter.description} or player"
         }
     }
 

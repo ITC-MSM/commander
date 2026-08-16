@@ -105,6 +105,7 @@ class TargetFinder(
             is TargetOpponent -> findOpponentTargets(state, requirement, controllerId, sourceId)
             is AnyTarget -> findAnyTargets(state, controllerId, sourceId, targetingSourceType)
             is TargetCreatureOrPlayer -> findCreatureOrPlayerTargets(state, controllerId, sourceId, targetingSourceType, pipelineContext)
+            is TargetPermanentOrPlayer -> findPermanentOrPlayerTargets(state, requirement, controllerId, sourceId, targetingSourceType, pipelineContext)
             is TargetOpponentOrPlaneswalker -> findOpponentOrPlaneswalkerTargets(state, controllerId, sourceId, targetingSourceType)
             is TargetPlayerOrPlaneswalker -> findPlayerOrPlaneswalkerTargets(state, controllerId, sourceId, targetingSourceType)
             is TargetCreatureOrPlaneswalker -> findCreatureOrPlaneswalkerTargets(state, controllerId, sourceId, targetingSourceType)
@@ -377,6 +378,40 @@ class TargetFinder(
 
         // Add all creatures
         targets.addAll(findPermanentTargets(state, TargetCreature(), controllerId, sourceId, targetingSourceType = targetingSourceType, pipelineContext = pipelineContext))
+
+        return targets
+    }
+
+    /**
+     * "Target permanent or player" — every player that can be targeted, plus every battlefield
+     * permanent matching the requirement's `permanentFilter` (default: any permanent). Both halves
+     * reuse the same legality checks as their single-kind counterparts.
+     */
+    private fun findPermanentOrPlayerTargets(
+        state: GameState,
+        requirement: TargetPermanentOrPlayer,
+        controllerId: EntityId,
+        sourceId: EntityId?,
+        targetingSourceType: TargetingSourceType = TargetingSourceType.ANY,
+        pipelineContext: PredicateContext? = null
+    ): List<EntityId> {
+        val targets = mutableListOf<EntityId>()
+
+        // Add all players (excluding those with shroud or hexproof from opponents)
+        targets.addAll(state.turnOrder.filter { state.hasEntity(it) && !playerHasShroud(state, it) &&
+            !playerHasHexproofAgainst(state, it, controllerId) })
+
+        // Add all permanents matching the filter
+        targets.addAll(
+            findPermanentTargets(
+                state,
+                TargetObject(filter = requirement.permanentFilter),
+                controllerId,
+                sourceId,
+                targetingSourceType = targetingSourceType,
+                pipelineContext = pipelineContext
+            )
+        )
 
         return targets
     }

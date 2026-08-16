@@ -16,6 +16,7 @@ import com.wingedsheep.sdk.scripting.targets.TargetCreatureOrPlayer
 import com.wingedsheep.sdk.scripting.targets.TargetOpponent
 import com.wingedsheep.sdk.scripting.targets.TargetOpponentOrPlaneswalker
 import com.wingedsheep.sdk.scripting.targets.TargetPermanent
+import com.wingedsheep.sdk.scripting.targets.TargetPermanentOrPlayer
 import com.wingedsheep.sdk.scripting.targets.TargetPlayer
 import com.wingedsheep.sdk.scripting.targets.TargetPlayerOrPlaneswalker
 import com.wingedsheep.sdk.scripting.targets.TargetRequirement
@@ -234,6 +235,13 @@ object Targets {
      * Target creature or player.
      */
     val CreatureOrPlayer: TargetRequirement = TargetCreatureOrPlayer()
+
+    /**
+     * Target permanent or player — any permanent on the battlefield, or any player
+     * (Powerful Broker). For a narrower permanent half ("target artifact or player"),
+     * construct [TargetPermanentOrPlayer] with a `permanentFilter`.
+     */
+    val PermanentOrPlayer: TargetRequirement = TargetPermanentOrPlayer()
 
     /**
      * Target creature or planeswalker.

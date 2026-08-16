@@ -1424,7 +1424,13 @@ class ManaPaymentContinuationResumer(
                 // (some triggers care about "becomes tapped"), then sacrifice. The
                 // permanent is about to leave the battlefield so we skip setting
                 // TappedComponent on it.
-                events.add(TappedEvent(sourceId, source.name))
+                events.add(
+                    TappedEvent(
+                        sourceId,
+                        source.name,
+                        firstThisTurn = isFirstTapThisTurn(currentState, sourceId)
+                    )
+                )
                 val preState = ZoneTransitionService
                     .trackPermanentSacrifice(currentState, listOf(sourceId), sourceController)
                 val transition = ZoneTransitionService.moveToZone(

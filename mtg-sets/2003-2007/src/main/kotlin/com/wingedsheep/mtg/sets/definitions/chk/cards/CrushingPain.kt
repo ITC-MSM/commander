@@ -23,7 +23,7 @@ val CrushingPain = card("Crushing Pain") {
     typeLine = "Instant — Arcane"
     oracleText = "Crushing Pain deals 6 damage to target creature that was dealt damage this turn."
     spell {
-        val t = target("target", TargetCreature(filter = TargetFilter.Creature.dealtDamageThisTurn()))
+        val t = target("target", TargetCreature(filter = TargetFilter.Creature.wasDealtDamageThisTurn()))
         effect = DealDamageEffect(6, t)
     }
     metadata {

@@ -3175,6 +3175,60 @@
     "colorIdentityOverride": []
 }
 
+// Captain America, Living Legend
+{
+    "name": "Captain America, Living Legend",
+    "manaCost": "{1}{W}{U}",
+    "typeLine": "Legendary Creature — Human Soldier Hero",
+    "oracleText": "Vigilance\nWhenever a creature you control becomes tapped during your turn, if it's the first time that creature has become tapped this turn, untap it.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 4
+    },
+    "keywords": [
+        "VIGILANCE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "TapEvent",
+                    "filter": "creature ctrl:you",
+                    "firstTimeEachTurn": true
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "TapUntap",
+                    "target": "TriggeringEntity",
+                    "tap": false
+                },
+                "interveningIf": {
+                    "type": "EntityMatches",
+                    "entity": "TriggeringEntity",
+                    "filter": {
+                        "statePredicates": [
+                            "BecameTappedOnlyOnceThisTurn"
+                        ]
+                    }
+                },
+                "triggerRestriction": "IsYourTurn"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "210",
+        "rarity": "UNCOMMON",
+        "artist": "Smirtouille",
+        "flavorText": "\"They say the world moved on without me, but as long as injustice exists, I'm still needed here.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/5/6516f292-469d-4092-b099-97c698f373cd.jpg?1783902903"
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLUE"
+    ]
+}
+
 // Captain America, Super-Soldier
 {
     "name": "Captain America, Super-Soldier",
@@ -11227,6 +11281,50 @@
     ]
 }
 
+// Powerful Broker
+{
+    "name": "Powerful Broker",
+    "manaCost": "{2}{G}",
+    "typeLine": "Creature — Human Villain",
+    "oracleText": "{T}: For each kind of counter on target permanent or player, give that permanent or player another counter of that kind. Activate only as a sorcery.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "Proliferate",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target permanent or player"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetPermanentOrPlayer",
+                        "id": "target permanent or player"
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "descriptionOverride": "{T}: For each kind of counter on target permanent or player, give that permanent or player another counter of that kind. Activate only as a sorcery."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "179",
+        "artist": "JB Casacop",
+        "flavorText": "\"Our new product makes disobedience literally unthinkable!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/0/801f0417-b663-4e28-9a61-9570061654d7.jpg?1783902917"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Project Deathlok Soldier
 {
     "name": "Project Deathlok Soldier",
@@ -11732,6 +11830,69 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Red Guardian, Super-Soldier
+{
+    "name": "Red Guardian, Super-Soldier",
+    "manaCost": "{2}{W}",
+    "typeLine": "Legendary Creature — Human Soldier Villain",
+    "oracleText": "Flash\nWhen Red Guardian enters, destroy target creature an opponent controls that dealt damage this turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "FLASH"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    },
+                    "destination": "Graveyard",
+                    "byDestruction": true
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": {
+                            "cardPredicates": [
+                                "IsCreature"
+                            ],
+                            "statePredicates": [
+                                {
+                                    "type": "HasDealtDamage",
+                                    "thisTurnOnly": true
+                                }
+                            ],
+                            "controllerPredicate": "ControlledByOpponent"
+                        }
+                    },
+                    "id": "target"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "34",
+        "rarity": "UNCOMMON",
+        "artist": "Lee Woo-chul",
+        "flavorText": "\"You fight for your nation, Captain America. I fight for mine.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/0/c08f8163-319a-4a31-b15a-93974cacd5b7.jpg?1783902967"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 
@@ -12500,6 +12661,119 @@
         "rarity": "UNCOMMON",
         "artist": "Borja Pindado",
         "imageUri": "https://cards.scryfall.io/normal/front/b/2/b26bb968-6612-43fe-9147-a3d4786cbc20.jpg?1783902938"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Ronin, Shadow Stalker
+{
+    "name": "Ronin, Shadow Stalker",
+    "manaCost": "{2}{B}",
+    "typeLine": "Legendary Creature — Human Rogue Hero",
+    "oracleText": "Pay 2 life: Add two mana of any one color. Spend this mana only to cast Equipment spells or activate equip abilities. Activate only once each turn.\n{T}, Sacrifice an Equipment attached to Ronin: Target creature gets -4/-4 until end of turn. Activate only as a sorcery.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomPayLife",
+                        "amount": 2
+                    }
+                },
+                "effect": {
+                    "type": "AddManaOfChoice",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "restriction": {
+                        "type": "AnyOf",
+                        "restrictions": [
+                            {
+                                "type": "SubtypeSpellsOnly",
+                                "subtypes": [
+                                    "Equipment"
+                                ]
+                            },
+                            "EquipAbilityActivationOnly"
+                        ]
+                    }
+                },
+                "timing": "ManaAbility",
+                "restrictions": [
+                    "OncePerTurn"
+                ],
+                "isManaAbility": true,
+                "descriptionOverride": "Pay 2 life: Add two mana of any one color. Spend this mana only to cast Equipment spells or activate equip abilities. Activate only once each turn."
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        "CostTap",
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomSacrifice",
+                                "filter": {
+                                    "cardPredicates": [
+                                        "IsArtifact",
+                                        {
+                                            "type": "HasSubtype",
+                                            "subtype": "Equipment"
+                                        }
+                                    ],
+                                    "statePredicates": [
+                                        "IsAttachedToSource"
+                                    ]
+                                }
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": -4
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": -4
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature"
+                        },
+                        "id": "target creature"
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "descriptionOverride": "{T}, Sacrifice an Equipment attached to Ronin: Target creature gets -4/-4 until end of turn. Activate only as a sorcery."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "112",
+        "rarity": "UNCOMMON",
+        "artist": "Lie Setiawan",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/7/f74b9794-946e-4ddc-93b2-5a321fc51fd0.jpg?1783902939"
     },
     "colorIdentityOverride": [
         "BLACK"

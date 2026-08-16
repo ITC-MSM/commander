@@ -7374,7 +7374,7 @@ val Opportunist = card("Opportunist") {
     toughness = 2
     activatedAbility {
         cost = Costs.Tap
-        val t = target("target", TargetCreature(filter = TargetFilter.Creature.dealtDamageThisTurn()))
+        val t = target("target", TargetCreature(filter = TargetFilter.Creature.wasDealtDamageThisTurn()))
         effect = DealDamageEffect(1, t)
     }
     metadata {

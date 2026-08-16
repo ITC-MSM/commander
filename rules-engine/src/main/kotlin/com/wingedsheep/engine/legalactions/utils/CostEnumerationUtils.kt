@@ -66,13 +66,30 @@ class CostEnumerationUtils(
         }
     }
 
+    /**
+     * Battlefield permanents [playerId] controls that match a sacrifice cost's [filter].
+     *
+     * [sourceId] is the permanent whose ability carries the cost. It goes into the
+     * [PredicateContext] so a **source-relative** cost filter resolves against the ability's own
+     * source instead of being source-blind — "Sacrifice an Equipment attached to Ronin" /
+     * "Sacrifice an Aura attached to this creature" is `…attachedToSource()`, i.e.
+     * `StatePredicate.IsAttachedToSource`, which is unconditionally false without a source.
+     *
+     * That direction is not universal: a *negated* source-relative predicate
+     * (`notAttachedToSource()`, `CardPredicate.NotOfSourceChosenType`) matches everything when no
+     * source is present, so supplying one makes the candidate pool *smaller*, not larger. Either
+     * way the enumerated pool must match what payment will accept, so pass it from every
+     * activated-ability enumeration site; null is only correct where the cost genuinely has no
+     * source permanent.
+     */
     fun findAbilitySacrificeTargets(
         state: GameState,
         playerId: EntityId,
         filter: GameObjectFilter,
-        excludeEntityId: EntityId? = null
+        excludeEntityId: EntityId? = null,
+        sourceId: EntityId? = null
     ): List<EntityId> {
-        val predicateContext = PredicateContext(controllerId = playerId)
+        val predicateContext = PredicateContext(controllerId = playerId, sourceId = sourceId)
         val projected = state.projectedState
         return projected.getBattlefieldControlledBy(playerId).filter { entityId ->
             if (entityId == excludeEntityId) return@filter false

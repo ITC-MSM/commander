@@ -3,6 +3,7 @@ package com.wingedsheep.ai.engine
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.battlefield.AbilityActivatedEverComponent
 import com.wingedsheep.engine.state.components.battlefield.AbilityActivatedThisTurnComponent
+import com.wingedsheep.engine.state.components.battlefield.HasBecomeTappedComponent
 import com.wingedsheep.engine.state.components.battlefield.TargetedByControllerThisTurnComponent
 import com.wingedsheep.engine.state.components.battlefield.TimestampComponent
 import com.wingedsheep.sdk.core.Zone
@@ -145,12 +146,18 @@ object StateProgress {
      * "It happened" memories, as opposed to game position.
      *
      * Each of these records *that* an action was taken — the once-per-turn and `MaxPerTurn`
-     * activation counts, Valiant's "has this been targeted by its controller yet this turn", and the
-     * timestamp bumped when a continuous effect is re-applied. An activation changes them even when
-     * it changed nothing else, so reading them would make every inert action look like progress —
-     * exactly the reading this object exists to avoid. Nothing is lost by the omission: whatever
-     * these memories gate (a Valiant trigger, a second activation being legal at all) shows up in
-     * the position the moment it actually does something.
+     * activation counts, Valiant's "has this been targeted by its controller yet this turn", the
+     * per-permanent "has it already become tapped this turn" window Captain America, Living Legend
+     * reads, and the timestamp bumped when a continuous effect is re-applied. An activation changes
+     * them even when it changed nothing else, so reading them would make every inert action look
+     * like progress — exactly the reading this object exists to avoid. Nothing is lost by the
+     * omission: whatever these memories gate (a Valiant trigger, a first-time-tapped trigger, a
+     * second activation being legal at all) shows up in the position the moment it actually does
+     * something.
+     *
+     * [HasBecomeTappedComponent] is the reason Aphetto Alchemist's `{T}: Untap target` aimed at
+     * itself has to be listed: the `{T}` cost stamps the marker and the untap does not clear it, so
+     * without this entry the pay-its-own-cost-back no-op would read as a fresh position every time.
      *
      * The list is a floor, not a ceiling: a memory component not named here makes an inert action
      * read as progress, so the AI takes it once more than it should. Which is why it fails in that
@@ -161,6 +168,7 @@ object StateProgress {
         AbilityActivatedThisTurnComponent::class.java,
         AbilityActivatedEverComponent::class.java,
         TargetedByControllerThisTurnComponent::class.java,
+        HasBecomeTappedComponent::class.java,
         TimestampComponent::class.java,
     )
 

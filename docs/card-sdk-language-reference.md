@@ -890,7 +890,11 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   the single-target analogue of `DestroyAll(noRegenerate = …)`, for Terror / Smother / Tunnel.
 - `RegenerateEffect(target)` (raw — no facade) — drop a regeneration shield on `target`, lasting until end
   of turn. The next time `target` would be destroyed this turn, instead tap it, remove all damage marked on
-  it, and remove it from combat. Consumed by the first destruction it intercepts.
+  it, and remove it from combat. Consumed by the first destruction it intercepts. The tap is a **real tap
+  transition** (CR 701.19a, "its controller taps it"): it goes through the `tap()` atom, so it fires
+  "becomes tapped" triggers (Deeproot Pilgrimage, Captain America, Living Legend) and stamps the
+  per-permanent first-time-tapped window. Regenerating an already-tapped creature taps nothing and emits
+  no event (CR 701.26a), while the damage and combat removal still apply.
 - `RemoveDamageShieldEffect(target)` (raw — no facade) — Pyramids' second mode. Same shape as regeneration:
   a one-shot destruction shield lasting until end of turn that replaces "destroyed" with "remove all damage
   marked on it". Differs from regeneration in *not* tapping the target and *not* removing it from combat —
@@ -1249,7 +1253,15 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   `TargetObject(unlimited = true, dynamicMaxCount = DynamicAmount.XValue)` — the dynamic cap
   outranks `unlimited` in `TargetValidator`, enforcing CR 601.2d (no more targets than counters).
 - `DistributeCountersAmongFiltered(total, type?, filter, minPerTarget?)` — distribute N **new** counters among permanents matching `filter`, chosen at resolution (not the spell's targets); `minPerTarget = 0` models "among any number of". Unlike `DistributeCountersFromSelf` nothing is removed from a source. Crashing Wave: `DistributeCountersAmongFiltered(3, Counters.STUN, Filters.Creature.tapped().opponentControls())` — "distribute three stun counters among any number of tapped creatures your opponents control."
-- `Proliferate()` — add one counter of each kind already present on chosen permanents/players (CR 701.27).
+- `Proliferate(target?)` — give one more counter of each kind already there. With no argument it is
+  proliferate proper (CR 701.34): the controller chooses any number of permanents and/or players with
+  a counter when the effect *resolves*, nothing is targeted. Pass a `target` for the targeted
+  single-object form — "for each kind of counter on target permanent or player, give that permanent or
+  player another counter of that kind" (Powerful Broker): the recipient is a real target, so it is
+  announced with the spell/ability, respects hexproof/shroud, and the ability is countered if that
+  target is illegal on resolution (CR 608.2b). Pair it with `Targets.PermanentOrPlayer`. Both forms
+  place counters identically: replacement effects honored, placement attributed to the controller,
+  and a recipient that "can't have counters put on it" (Blossombind) skipped.
 - `AddCountersToCollection(name, type, count)` — add counters to cards held in a pipeline collection.
   An overload takes a `DynamicAmount` instead of an `Int` count, evaluated once at resolution — "create
   a token, then put X +1/+1 counters on it, where X is …" over the `CREATED_TOKENS` collection (Emil,
@@ -2928,6 +2940,10 @@ can't statically prevent (cross-trigger flows, `Self`-vs-`ContextTarget` inside 
 - `Targets.Planeswalker` — any planeswalker.
 - `Targets.Permanent` — any permanent.
 - `Targets.PermanentYouControl` / `PermanentOpponentControls` — controller-restricted permanent ("target permanent you control gains protection …" — Razor Barrier).
+- `Targets.PermanentOrPlayer` — "target permanent or player" (Powerful Broker). The general member of
+  the "object or player" family: `TargetPermanentOrPlayer(permanentFilter = …)` narrows the permanent
+  half ("target artifact or player") while each half keeps the legality checks of its single-kind
+  counterpart. The older, narrower `Targets.CreatureOrPlayer` stays as-is for cards already using it.
 - `Targets.NonlandPermanent` — any nonland permanent.
 - `Targets.OtherNonlandPermanent` — "another target nonland permanent"; excludes the source (Braided Net).
 - `Targets.Artifact` — any artifact.
@@ -3470,7 +3486,7 @@ This is the player-arm prerequisite for the planned composable mixed `TargetUnio
   (`TargetFilter.Creature.withoutCounters()`).
 - `.receivedCounterThisTurn(counterType = null, placedByController = false)` — one or more counters were
   **put on** the permanent this turn; backed by `StatePredicate.ReceivedCounterThisTurn`. The
-  counter-history counterpart of `.dealtDamageThisTurn()`: the facts are recorded at *placement* time on
+  counter-history counterpart of `.wasDealtDamageThisTurn()`: the facts are recorded at *placement* time on
   the per-permanent `ReceivedCountersThisTurnComponent`, so the predicate keeps matching after the
   counters have been removed again — "what you put on it this turn", not "what is on it now" (use
   `.withCounter(type)` for the latter). Cleared at end-of-turn cleanup. Both parameters default to the
@@ -3484,10 +3500,35 @@ This is the player-arm prerequisite for the planned composable mixed `TargetUnio
   Counters.PLUS_ONE_PLUS_ONE, placedByController = true) }` for "each creature you control that you've put
   one or more +1/+1 counters on this turn has hexproof". The source-scoped view of the same predicate is
   `Conditions.SourceReceivedCounterThisTurn(...)`, which is just `SourceMatches` over it.
-- `.dealtDamageThisTurn()` — was dealt damage this turn (marked-damage *history*, not current marked
-  damage); backed by `StatePredicate.WasDealtDamageThisTurn`. Survives damage removal / leaving combat;
-  cleared at end-of-turn cleanup. For "...that was dealt damage this turn" (Rooftop Assassin, Unsparing
-  Boltcaster). Also available on `TargetFilter` (`TargetFilter.Creature.dealtDamageThisTurn()`).
+- `.wasDealtDamageThisTurn()` — **passive**: was dealt damage this turn (marked-damage *history*, not
+  current marked damage); backed by `StatePredicate.WasDealtDamageThisTurn`. Survives damage removal /
+  leaving combat; cleared at end-of-turn cleanup. For "...that **was** dealt damage this turn" (Rooftop
+  Assassin, Unsparing Boltcaster). Also on `TargetFilter`
+  (`TargetFilter.Creature.wasDealtDamageThisTurn()`). *Do not confuse with
+  `.hasDealtDamageThisTurn()` below — the two mean opposite things.* The bare `.dealtDamageThisTurn()`
+  that used to name this predicate is **retired**, so a stale caller fails to compile rather than
+  silently flipping voice.
+- `.hasDealtDamageThisTurn()` / `.hasDealtDamage()` — **active**: the permanent *dealt* damage, in the
+  current turn or at any point since it entered the battlefield. Both are
+  `StatePredicate.HasDealtDamage(thisTurnOnly)`, one predicate with a window parameter rather than two
+  types: it reads the per-permanent `HasDealtDamageComponent`, whose presence answers the lifetime
+  window and whose recorded turn number answers the per-turn one. Nothing is cleared at end of turn —
+  the stamp just stops matching — and every damage-dealing path records both windows in one write, so
+  neither can silently drift from the other. Combat and noncombat damage both count, to any recipient
+  (player, creature, planeswalker, battle); "dealt **combat** damage" specifically has its own
+  recipient-scoped predicates below. Both windows reset when the permanent changes zones (CR 400.7).
+  `.hasDealtDamageThisTurn()` is also on `TargetFilter` — "destroy target creature an opponent controls
+  that dealt damage this turn" (Red Guardian, Super-Soldier) is
+  `TargetFilter.Creature.hasDealtDamageThisTurn().opponentControls()`. The source-scoped view of the
+  lifetime window is `Conditions.SourceHasDealtDamage` (Karakyk Guardian).
+- `.becameTappedOnlyOnceThisTurn()` — the permanent has **become tapped exactly once so far this turn**;
+  backed by `StatePredicate.BecameTappedOnlyOnceThisTurn`, reading the per-permanent tap counter the `tap()`
+  atom maintains (`HasBecomeTappedComponent`). Live, so it is the half of Captain America, Living Legend's
+  printed intervening-`if` that CR 603.4 re-checks at resolution; the trigger-time half rides on the tap event
+  as `Triggers.becomesTapped(firstTimeEachTurn = true)`. Aimed at the triggering permanent it is
+  `Conditions.TriggeringPermanentBecameTappedOnlyOnceThisTurn`. "Became tapped" is a transition (CR 701.26a),
+  so a permanent that entered the battlefield tapped counts zero and does not match; the count resets on a zone
+  change (CR 400.7) and expires at the turn boundary with no cleanup entry.
 - `.dealtCombatDamageToSourceControllerThisTurn()` — source-relative: creature dealt combat damage
   *this turn* to the player who controls the effect's source; backed by
   `StatePredicate.DealtCombatDamageToSourceControllerThisTurn`. Resolves `context.sourceId`'s
@@ -3730,6 +3771,10 @@ work for abilities-on-stack (which carry no `CardComponent`).
   attachments — Cloud, Midgar Mercenary's "an Equipment attached to it" via
   `GameObjectFilter.Artifact.withSubtype("Equipment").attachedToSource()`. Source-relative; inert with no
   source context. Negated builder `notAttachedToSource()` — excludes all of the source's own attachments.
+  Also legal inside an **activated-ability cost filter** — "{T}, Sacrifice an Equipment attached to Ronin"
+  (Ronin, Shadow Stalker), "{1}, Sacrifice an Aura attached to this creature" (Faunsbane Troll) — because
+  the sacrifice enumeration (`CostEnumerationUtils.findAbilitySacrificeTargets`) and payment
+  (`CostHandler.paySacrificeList`) both put the ability's source into the `PredicateContext`.
 - `IsGrantingPermanent` (negated builder `notGrantingPermanent()`) — matches the *granting permanent* of the
   resolving ability: the Equipment/Aura/permanent whose `GrantActivatedAbility`/`GrantTriggeredAbility` static
   granted the ability, read from the evaluation context's `granterId`. For a granted triggered ability the
@@ -4240,7 +4285,8 @@ Named sugar for the common cases; reach for the factories for any other combinat
 
 - `dealsDamage(damageType?, recipient?, sourceFilter?, binding?, requireExcess?, batch?, requires?)` — outgoing-damage trigger. Pick `DamageType.{Any,Combat,NonCombat}`, `RecipientFilter.{Any,AnyPlayer,AnyPlayerOrPlaneswalker,AnyCreature,…}`, an optional source `GameObjectFilter`, and `TriggerBinding.{SELF,ANY,ATTACHED}`. Covers "deals combat damage to a player or planeswalker", "creature you control deals combat damage to a player" (`binding = ANY` + `sourceFilter = Creature.youControl()`), "nontoken creature you control deals…" (`.nontoken()`), and "enchanted creature deals damage" (`binding = ATTACHED`). The conjunctive `requires` set adds damage-event facts: `DamagePredicate.SourceSoleTargetIsRecipient` requires the source to have exactly one chosen target and that target to be this damage recipient, so "a spell that targets only a single creature deals damage to that creature" does not fire for the same spell's collateral damage (Imodane, the Pyrohammer). Pass `requireExcess = true` to fire only when the recipient was dealt damage past lethal (CR 120.4a) — Fall of Cair Andros' "is dealt excess noncombat damage". Pass `batch = true` for recipient-side **"one or more" batch wording** (CR 603.2c) — "whenever one or more creatures your opponents control are dealt excess noncombat damage" (Magmatic Galleon): simultaneous damage to several matching recipients (a sweeper, combat damage to multiple blockers) fires the trigger once per event batch instead of once per damaged recipient. Batch is only honored on the `binding = ANY` observer path; SELF/ATTACHED damage triggers are inherently per-source-event. Read the excess via `DynamicAmount.ContextProperty(ContextPropertyKey.TRIGGER_EXCESS_DAMAGE_AMOUNT)`. For a creature recipient, read its toughness *as it last existed at damage time* (CR 603.10 LKI — survives a lethal hit) via `DynamicAmount.ContextProperty(ContextPropertyKey.TRIGGER_RECIPIENT_TOUGHNESS)`; pair it with a `triggerRestriction` such as `Conditions.CompareAmounts(ContextProperty(TRIGGER_DAMAGE_AMOUNT), ComparisonOperator.EQ, ContextProperty(TRIGGER_RECIPIENT_TOUGHNESS))` for "deals noncombat damage to a creature equal to that creature's toughness" (Taii Wakeen, Perfect Shot). On the observer path (`binding = ANY` + `sourceFilter`), `EntityReference.Triggering` is the damage SOURCE, but the recipient toughness is still carried in this context key. **Combat caveat:** combat-damage state-based actions run *before* trigger detection, so a non-indestructible recipient that dies to the same combat-damage event has already left the battlefield when a `RecipientFilter.CreatureOpponentControls`-style filter reads its `ControllerComponent` — the filter silently fails (no last-known-info path yet). A `requireExcess = true` + `DamageType.Combat` trigger therefore only fires reliably on recipients that survive (indestructible / high toughness). Fall of Cair Andros is unaffected because it gates on `DamageType.NonCombat`, where the trigger is detected from the damage event before the kill SBA.
 - `takesDamage(source?, binding?)` — incoming-damage trigger. Pick `SourceFilter.{Any,Creature,Spell,Combat,NonCombat,HasColor(c),…}` and `TriggerBinding.{SELF,ATTACHED}`. Covers "damaged by a creature/spell" and "enchanted creature is dealt damage" (`binding = ATTACHED`, Frozen Solid shape). For "*you* are dealt damage" use `YouAreDealtDamage` / `damageDealtToYou` above — the recipient is a player, not this permanent.
-- `becomesTapped(binding?, filter?, reason?)` — "becomes tapped" trigger. `BecomesTapped` is the SELF constant; pass `binding = TriggerBinding.ANY` with an optional `filter: GameObjectFilter` for "whenever a [filter] becomes tapped" (e.g. `GameObjectFilter.CreatureOrLand` — Temporal Distortion). The filter is matched against the tapped permanent via projected state. Fires once **per** tapped permanent. `reason: TapReason?` restricts *why* it became tapped — see `BecomesTappedForTeamwork` below; the default `null` is cause-agnostic and matches every tap. Use `null` for "any cause", **never `TapReason.UNSPECIFIED`** — that would match only the taps the engine has not classified, a predicate whose meaning shrinks the day a new cause is named, and it renders as no clause at all.
+- `becomesTapped(binding?, filter?, reason?, firstTimeEachTurn?)` — "becomes tapped" trigger. `BecomesTapped` is the SELF constant; pass `binding = TriggerBinding.ANY` with an optional `filter: GameObjectFilter` for "whenever a [filter] becomes tapped" (e.g. `GameObjectFilter.CreatureOrLand` — Temporal Distortion). The filter is matched against the tapped permanent via projected state. Fires once **per** tapped permanent. `reason: TapReason?` restricts *why* it became tapped — see `BecomesTappedForTeamwork` below; the default `null` is cause-agnostic and matches every tap. Use `null` for "any cause", **never `TapReason.UNSPECIFIED`** — that would match only the taps the engine has not classified, a predicate whose meaning shrinks the day a new cause is named, and it renders as no clause at all.
+- `firstTimeEachTurn = true` on `becomesTapped` / `OneOrMoreBecomeTapped` — the **per-permanent** "if it's the first time that creature has become tapped this turn" rider (Captain America, Living Legend: `becomesTapped(binding = ANY, filter = Creature.youControl(), firstTimeEachTurn = true)` + `triggerRestriction = Conditions.IsYourTurn` + `Effects.Untap(EffectTarget.TriggeringEntity)`; "during your turn" narrows the trigger event, so it is a `triggerRestriction` rather than an `interveningIf`, while the "first time" clause — the actual CR 603.4 intervening-`if` — rides on the event pattern and is therefore checked only when the tap happens). **Not the same as `oncePerTurn`**, which caps the *ability* at one firing per turn: with several creatures tapping in one turn, `firstTimeEachTurn` fires once for *each* of them while `oncePerTurn` answers only the first. Reach for this one whenever the printed "first time" clause names the object rather than the ability; the two are composable and can be used together. The window is a *becomes tapped* window, not a *was tapped* one — a permanent that **entered the battlefield tapped** never became tapped (CR 701.26a), so it is never stamped and tapping it later that turn is still its first time. Backed by `TappedEvent.firstThisTurn`, computed in the `tap()` atom — the chokepoint every tap transition goes through, regeneration's tap included (CR 701.19a: "its controller taps it"), with `TapEventEnforcementTest` banning new bypasses — against the permanent's `HasBecomeTappedComponent(lastBecameTappedTurn)` turn stamp, read *before* the stamp is updated. The stamp is a turn number rather than a cleanup-cleared marker — the window closes on its own when `turnNumber` moves — and is stripped on a zone change (CR 400.7: what comes back is a new object). **It is only half of the clause.** "if it's the first time…" is a printed intervening-`if` (CR 603.4), which is checked when the trigger event occurs *and again as the ability resolves*; this rider carries the first check only. Pair it with `interveningIf = Conditions.TriggeringPermanentBecameTappedOnlyOnceThisTurn` (backed by `StatePredicate.BecameTappedOnlyOnceThisTurn`, which reads the same tap counter *live*) for the second — untap the creature and tap it again in response and it has become tapped twice by resolution, so the ability is removed from the stack, which a frozen copy of the event flag could never produce. **Cannot be combined with the batch wording:** `TapEvent` rejects `batch = true` alongside it, because no printed card pairs them and the two readings of that pairing are not distinguishable without one — the first real card decides, rather than inheriting a guess.
 - `BecomesTappedForTeamwork` — SELF constant for "Whenever this becomes tapped **to pay a teamwork cost**" (CR 702.194a — Agent Maria Hill). The cause travels on the tap event as `TapReason` (`com.wingedsheep.sdk.scripting.TapReason`), matched by `EventPattern.TapEvent.reason`. **This is a separate axis from `tapper`**: a teamwork tap, an attack tap and a crew tap are all performed by the permanent's own controller, so `tappedById` is identical across them and only the cause separates them. `TapReason` has exactly two members today — `UNSPECIFIED` (every tap site the engine has not been taught to name: attacking, crew, saddle, convoke, mana abilities, a `{T}` activation cost, any "tap target permanent" effect) and `TEAMWORK`, stamped by `CastSpellHandler` on the creatures tapped to pay an optional additional cost declared under `ChoiceSlot.TEAMWORK` (`TapReason.forChoiceSlot`). **Deliberately under-claimed:** an unclassified tap reports `UNSPECIFIED` rather than being guessed at, because a wrong cause makes a reading card fire wrongly while a missing one only makes it stay silent. To name a further cause, add the enum constant, pass it at that cause's tap site (`AttackPhaseManager` for attack taps, `CrewVehicleHandler` for crew, …), and test both directions. Most taps run through the `tap()` atom, which takes the reason as a parameter, but two mana-payment sites build a `TappedEvent` by hand and never call it (`ManaPaymentWindow.tapOrSacrifice` and `ManaPaymentContinuationResumer`, for a `{T}, Sacrifice this` source) — a mana-flavoured cause has to be stamped in all three.
 - `OneOrMoreBecomeTapped(filter, reason?)` — the **batch** sibling of `becomesTapped` (`TapEvent(batch = true)`, ANY binding). Fires at most **once** per simultaneous tap batch (CR 603.2c) regardless of how many matching permanents were tapped together — "Whenever one or more [filter] become tapped" (Deeproot Pilgrimage: `OneOrMoreBecomeTapped(GameObjectFilter.Creature.withSubtype("Merfolk").youControl().nontoken())`). Tapping several matching permanents at once (attacking, convoke, crew) makes a single payoff, not one per permanent. Handled by `TriggerDetector.detectTapBatchTriggers`; the per-event path skips batch taps. The first matching tapped permanent is bound as the triggering entity. `reason: TapReason?` narrows the batch by tap cause exactly as on `becomesTapped` — a batch that also holds taps from an unnamed cause is *narrowed* to the matching ones rather than discarded, the same way `YouTap`'s batch narrows by tapper, so the trigger still fires once on the matching subset.
 - `YouTap(filter, batch = false)` — "Whenever **you tap** an untapped [filter]" (`TapEvent(tapper = Player.You)`, ANY binding) — the Wilds of Eldraine cluster: Hylda of the Icy Crown, Icewrought Sentry, Solitary Sanctuary with `GameObjectFilter.Creature.opponentControls()`, and Sharae of Numbing Depths with `batch = true` for the "one or more" wording. Two things separate it from `becomesTapped`: (1) **attribution** — the tap must have been *caused by* the trigger's controller. `TappedEvent.tappedById` carries the causing player: the `tap()` atom defaults it to the tapped permanent's own controller (right for every cost payment, mana ability, crew/saddle, and the turn-based attack tap), and the tap *effect* executors override it with the effect's `controllerId`. Because a per-player loop rebinds `controllerId`, a spell you control that instructs an **opponent** to tap their own creature is *their* tap and does not fire a `You` pattern (Tangle Wire; per the printed rulings). (2) **"untapped" is intrinsic** — tapping is a transition (CR 701.26a, "only untapped permanents can be tapped"), so an already-tapped permanent emits no tap event and needs no condition. `batch = true` routes to `TriggerDetector.detectTapBatchTriggers`, which narrows the batch to the taps this controller caused before applying the filter; pair it with `oncePerTurn` for "This ability triggers only once each turn".
@@ -7900,6 +7946,9 @@ that works in both resolution and static-ability (projection) contexts.
 - `SourceAttackedOrBlockedThisCombat` — `Any(SourceAttackedThisCombat, SourceBlockedThisCombat)`.
   Used as the intervening-if on Clockwork Avian's `EachEndOfCombat` counter-shed trigger.
 - `SourceHasDealtDamage` — source has dealt damage since entering the battlefield.
+  `SourceMatches(GameObjectFilter.Any.hasDealtDamage())`, i.e. the source-scoped view of
+  `StatePredicate.HasDealtDamage()`. For the per-turn window of the same predicate, put
+  `.hasDealtDamageThisTurn()` on the filter directly.
 - `SourceHasDealtCombatDamageToPlayer` — saboteur-style payoff gate.
 - `SourceIsModified` — has counters, attached Equipment, or controller-owned Aura
   attached (CR 700.4). Kept as a dedicated condition because the controller-of-Aura
@@ -8917,6 +8966,20 @@ restriction matches the spell context.
   `AnyOf` for "... or to activate an ability" clauses — Purple Dragon Punks:
   `AnyOf(CardTypeSpellsOrAbilitiesOnly(ARTIFACT, allowSpells = true, allowAbilities = false), AbilityActivationOnly)`
   ("spend only to cast an artifact spell or to activate an ability").
+- `ManaRestriction.EquipAbilityActivationOnly` — only **equip** ability activations (CR 702.6): the
+  strict narrowing of `AbilityActivationOnly` to abilities the engine flags
+  `ActivatedAbility.isEquipAbility`, which covers "Equip [quality]" (CR 702.6c), "Equip planeswalker"
+  (CR 702.6e) and non-mana "Equip—[cost]" variants. Satisfied by
+  `SpellPaymentContext.isEquipAbilityActivation`, set by `buildAbilityPaymentContext` — the one
+  builder every ability-activation path funnels through. Do **not** reach for
+  `SubtypeSpellsOrAbilitiesOnly("Equipment")` for this wording: that admits *every* activated ability
+  of an Equipment source, so it also pays Iron Man Armor's "{2}: … it becomes a 0/0 Construct Hero
+  artifact creature" (or Batterskull's "{3}: Return this Equipment to its owner's hand"). A card type
+  can't separate them either — the equip ability and the other ability share one source. Ronin,
+  Shadow Stalker's "Spend this mana only to cast Equipment spells or activate equip abilities" is
+  `AnyOf(SubtypeSpellsOnly(setOf("Equipment")), EquipAbilityActivationOnly)`, and Freya Crescent's
+  identically-meant "…an Equipment spell or activate an equip ability" is the same expression — it
+  shipped on the over-broad spelling before this atom existed and was converged onto it.
 - `ManaRestriction.TurnPermanentsFaceUpOnly` — only the turn-face-up special action (disguise/
   morph face-up). Satisfied by `SpellPaymentContext.isTurnFaceUpAction`; the turn-face-up handler/
   enumerator pass that context so restricted mana in the pool is consumed. Overgrown Zealot,

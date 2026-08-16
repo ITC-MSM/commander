@@ -239,6 +239,64 @@ data class TargetCreatureOrPlayer(
 }
 
 /**
+ * "Target permanent or player" — any permanent on the battlefield, or any player.
+ *
+ * The general member of the "object or player" family: [permanentFilter] decides which permanents
+ * qualify, so the same type covers "target permanent or player" (Powerful Broker, the default),
+ * "target artifact or player", and so on. The narrower [TargetCreatureOrPlayer] predates it and is
+ * kept as-is because it is the serialized form of already-shipped cards; new "… or player" wordings
+ * that aren't exactly "creature or player" should use this requirement.
+ *
+ * [TargetCreatureOrPlayer] is a strict special case (`permanentFilter = TargetFilter.Creature`) and
+ * the engine currently validates it through a parallel implementation, which can drift. The
+ * intended cleanup is to keep its `@SerialName` and type but have its validator delegate here —
+ * anti-drift at zero serialization cost — once its face-down special case (CR 708.2) is confirmed
+ * to survive the general path. Not done in this change.
+ *
+ * **Before adding a sixth "… or player" type, read `backlog/target-union-with-arms.md`.**
+ * That scoping doc proposes collapsing this whole family — [AnyTarget], [TargetCreatureOrPlayer],
+ * [TargetPlayerOrPlaneswalker], [TargetOpponentOrPlaneswalker] and this type — into one
+ * `TargetUnion(arms)` where each arm carries its own criteria. This requirement is the closest
+ * existing type to that shape (it is the only member of the family with a criteria slot, and the
+ * proposal's central complaint about the others is that they have none), so it is the intended
+ * migration target: a new "X or player" wording should be `TargetPermanentOrPlayer(permanentFilter
+ * = …)` rather than another bespoke type, and if it genuinely cannot be, that is the signal to build
+ * `TargetUnion` instead of extending the family again.
+ *
+ * Legality is the union of the two halves — a permanent target is checked for
+ * hexproof/shroud/protection like any permanent, a player target like any player — and, being a
+ * target, it is chosen on announcement (CR 601.2c) and re-checked on resolution (CR 608.2b).
+ */
+@SerialName("TargetPermanentOrPlayer")
+@Serializable
+data class TargetPermanentOrPlayer(
+    override val count: Int = 1,
+    override val optional: Boolean = false,
+    override val id: String? = null,
+    val permanentFilter: TargetFilter = TargetFilter.Permanent,
+    private val descriptionOverride: String? = null
+) : TargetRequirement {
+    override val description: String = descriptionOverride
+        ?: run {
+            val noun = permanentFilter.description
+            when {
+                count == 1 -> "target $noun or player"
+                // Suffixing "s" only reads correctly for a bare noun; a longer filter
+                // description ("artifact creature you control") would come out as
+                // "... you controls". Leave those singular and let a card pass a
+                // descriptionOverride if it needs better.
+                !noun.contains(' ') -> "$count targets (${noun}s or players)"
+                else -> "$count targets ($noun or player)"
+            }
+        }
+
+    override fun applyTextReplacement(replacer: TextReplacer): TargetRequirement {
+        val newFilter = permanentFilter.applyTextReplacement(replacer)
+        return if (newFilter !== permanentFilter) copy(permanentFilter = newFilter) else this
+    }
+}
+
+/**
  * "Target opponent or planeswalker" - can target an opponent or any planeswalker.
  */
 @SerialName("TargetOpponentOrPlaneswalker")
@@ -529,6 +587,7 @@ fun TargetRequirement.withCount(newCount: Int): TargetRequirement {
         is TargetOpponent -> copy(count = newCount)
         is AnyTarget -> copy(count = newCount, minCount = clampedMin)
         is TargetCreatureOrPlayer -> copy(count = newCount)
+        is TargetPermanentOrPlayer -> copy(count = newCount)
         is TargetOpponentOrPlaneswalker -> copy(count = newCount)
         is TargetPlayerOrPlaneswalker -> copy(count = newCount)
         is TargetCreatureOrPlaneswalker -> copy(count = newCount)
@@ -547,6 +606,7 @@ fun TargetRequirement.withId(name: String): TargetRequirement = when (this) {
     is TargetOpponent -> copy(id = name)
     is AnyTarget -> copy(id = name)
     is TargetCreatureOrPlayer -> copy(id = name)
+    is TargetPermanentOrPlayer -> copy(id = name)
     is TargetOpponentOrPlaneswalker -> copy(id = name)
     is TargetPlayerOrPlaneswalker -> copy(id = name)
     is TargetCreatureOrPlaneswalker -> copy(id = name)

@@ -1089,10 +1089,7 @@ object Conditions {
 
     /** If this creature has dealt damage at least once since entering the battlefield. */
     val SourceHasDealtDamage: ConditionInterface =
-        SourceMatches(
-            com.wingedsheep.sdk.scripting.GameObjectFilter.Any
-                .copy(statePredicates = listOf(StatePredicate.HasDealtDamage))
-        )
+        SourceMatches(com.wingedsheep.sdk.scripting.GameObjectFilter.Any.hasDealtDamage())
 
     /** If this creature has dealt combat damage to a player (Saboteur-style payoffs). */
     val SourceHasDealtCombatDamageToPlayer: ConditionInterface =
@@ -1984,6 +1981,25 @@ object Conditions {
      */
     fun TriggeringEntityHadCardType(cardType: String): ConditionInterface =
         com.wingedsheep.sdk.scripting.conditions.TriggeringEntityHadCardType(cardType)
+
+    /**
+     * "…**if it's the first time that creature has become tapped this turn**" — the triggering
+     * permanent has become tapped exactly once so far this turn (Captain America, Living Legend).
+     * `EntityMatches(TriggeringEntity, Any.becameTappedOnlyOnceThisTurn())`.
+     *
+     * This is the **intervening-`if` half** of that clause, and it belongs in
+     * `TriggeredAbility.interveningIf`, not in `triggerRestriction`: CR 603.4 checks a printed "if"
+     * both when the trigger event occurs and again as the ability resolves, and this condition reads
+     * live state so the second check can actually change the answer — untap the creature and tap it
+     * again in response and it has become tapped twice by then, so the ability is removed from the
+     * stack. Pair it with `Triggers.becomesTapped(firstTimeEachTurn = true)`, which carries the same
+     * clause on the tap *event* for the first check.
+     */
+    val TriggeringPermanentBecameTappedOnlyOnceThisTurn: ConditionInterface =
+        EntityMatches(
+            EffectTarget.TriggeringEntity,
+            GameObjectFilter.Any.becameTappedOnlyOnceThisTurn()
+        )
 
     /**
      * If the triggering entity was NOT put onto the battlefield by this source's ability.

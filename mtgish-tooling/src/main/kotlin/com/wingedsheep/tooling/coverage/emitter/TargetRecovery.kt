@@ -177,11 +177,23 @@ internal fun EmitCtx.creatureFilterExpr(filterNode: JsonElement?): Dsl? {
         if ("ControlledByAPlayer" in blob) return null
         return Call("TargetFilter", listOf(arg(Lit("GameObjectFilter.Creature").dot("crewedOrSaddledSourceThisTurn"))))
     }
-    // "...that was dealt damage this turn" (Rooftop Assassin) renders via `.dealtDamageThisTurn()` on the
-    // plain-creature path below (composed alongside the controller suffix). The special-shape branches
-    // (attacking/blocking/subtype/face-down/non-cardtype) can't compose it, so if such a predicate is also
-    // present, decline rather than silently drop the dealt-damage restriction (which would widen the kill).
-    if ("WasDealtDamageThisTurn" in blob) {
+    // Both damage-history voices render on the plain-creature path below (composed alongside the
+    // controller suffix): the passive "...that was dealt damage this turn" (Rooftop Assassin) via
+    // `.wasDealtDamageThisTurn()`, and the active "...that dealt damage this turn" (Red Guardian,
+    // Super-Soldier) via `.hasDealtDamageThisTurn()`. The special-shape branches (attacking/blocking/
+    // subtype/face-down/non-cardtype) can't compose either, so if such a predicate is also present,
+    // decline rather than silently drop the restriction (which would widen the kill). The active IR
+    // tag is a substring of the passive one, so the single check covers both.
+    //
+    // NOTE — the active tag's exact spelling is UNVERIFIED. The local corpus
+    // (`mtgish-tooling/data/mtgish.lines.json`) is a truncated 1 MiB sample predating MSH and carries
+    // only passive spellings (`WasDealtDamageThisTurn`, `WasDealtDamageByPermanentThisTurn`,
+    // `WasDealtDamageBySpellThisTurn`, `WasDealtDamageByAnyPermanentThisTurn`), so a bare
+    // `DealtDamageThisTurn` is our best guess at what mtgish emits for the active voice. The guess is
+    // fail-safe in both directions: if it never arrives, the render branch below simply never fires,
+    // and this decline check keeps behaving exactly as the passive-only check did. Confirm against the
+    // full corpus before relying on the active render.
+    if ("DealtDamageThisTurn" in blob) {
         val unrenderableAlongside = listOf(
             "IsAttacking", "IsBlocking", "IsFaceDown", "IsCreatureType", "IsNonCreatureType",
             "IsNonCardtype", "Other", "HasACounterOfType",
@@ -226,7 +238,7 @@ internal fun EmitCtx.creatureFilterExpr(filterNode: JsonElement?): Dsl? {
         val otherPredicates = listOf(
             "IsTapped", "IsUntapped", "IsAttacking", "IsBlocking", "PowerIs", "ToughnessIs", "ManaValueIs",
             "IsColor", "IsNonColor", "HasAbility", "DoesntHaveAbility", "IsNonToken", "IsCreatureType",
-            "IsNonCreatureType", "IsNonCardtype", "Other", "HasACounterOfType", "WasDealtDamageThisTurn",
+            "IsNonCreatureType", "IsNonCardtype", "Other", "HasACounterOfType", "DealtDamageThisTurn",
         )
         if (otherPredicates.any { it in blob }) return null
         var g: Dsl = Lit("GameObjectFilter.Creature").dot("notAnyOfSubtypes", arg("Subtype.OUTLAW_TYPES"))
@@ -272,7 +284,7 @@ internal fun EmitCtx.creatureFilterExpr(filterNode: JsonElement?): Dsl? {
             val otherPredicates = listOf(
                 "IsTapped", "IsUntapped", "IsAttacking", "IsBlocking", "PowerIs", "ToughnessIs", "ManaValueIs",
                 "IsColor", "IsNonColor", "HasAbility", "DoesntHaveAbility", "IsNonToken", "IsCreatureType",
-                "IsNonCreatureType", "IsNonCardtype", "Other", "WasDealtDamageThisTurn",
+                "IsNonCreatureType", "IsNonCardtype", "Other", "DealtDamageThisTurn",
             )
             if (otherPredicates.none { it in blob }) {
                 val counter = counterTypeDsl(counterNodes.first()["args"]) ?: return null
@@ -300,7 +312,7 @@ internal fun EmitCtx.creatureFilterExpr(filterNode: JsonElement?): Dsl? {
             "IsCreatureType", "IsNonCreatureType", "IsArtifactType", "IsLandType", "IsEnchantmentType",
             "IsNonCardtype", "IsColor", "IsNonColor", "PowerIs", "ToughnessIs", "ManaValueIs", "HasAbility",
             "DoesntHaveAbility", "IsTapped", "IsUntapped", "IsAttacking", "IsBlocking", "IsFaceDown",
-            "IsNonToken", "HasACounterOfType", "WasDealtDamageThisTurn",
+            "IsNonToken", "HasACounterOfType", "DealtDamageThisTurn",
         )
         if (jsonContains(filterNode, "_Permanents", "Other") &&
             "Creature" in filterNode.argWordsTagged("IsCardtype") &&
@@ -321,7 +333,7 @@ internal fun EmitCtx.creatureFilterExpr(filterNode: JsonElement?): Dsl? {
             "IsCreatureType", "IsNonCreatureType", "IsArtifactType", "IsLandType", "IsEnchantmentType",
             "IsNonCardtype", "IsColor", "IsNonColor", "PowerIs", "ToughnessIs", "ManaValueIs", "HasAbility",
             "DoesntHaveAbility", "IsTapped", "IsUntapped", "IsAttacking", "IsBlocking", "IsFaceDown",
-            "IsNonToken", "HasACounterOfType", "WasDealtDamageThisTurn", "ControlledByAPlayer", "ControlledByPlayer",
+            "IsNonToken", "HasACounterOfType", "DealtDamageThisTurn", "ControlledByAPlayer", "ControlledByPlayer",
         )
         if (jsonContains(filterNode, "_Permanents", "Other") &&
             "Creature" in filterNode.argWordsTagged("IsCardtype") &&
@@ -377,7 +389,7 @@ internal fun EmitCtx.creatureFilterExpr(filterNode: JsonElement?): Dsl? {
         val statePredicates = listOf(
             "IsAttacking", "IsBlocking", "IsTapped", "IsUntapped", "PowerIs", "ToughnessIs", "ManaValueIs",
             "IsColor", "IsNonColor", "HasAbility", "DoesntHaveAbility", "IsNonToken", "IsToken",
-            "HasACounterOfType", "WasDealtDamageThisTurn",
+            "HasACounterOfType", "DealtDamageThisTurn",
         )
         if (statePredicates.any { it in blob }) return null
         return Call("TargetFilter", listOf(arg(Infix("or", subs.map { Lit("GameObjectFilter.Creature").dot("withSubtype", arg(subtypeArg(it))) }))))
@@ -415,9 +427,17 @@ internal fun EmitCtx.creatureFilterExpr(filterNode: JsonElement?): Dsl? {
     }
     FilterPredicates.manaValueAtMost(filterNode)?.let { node = node.dot(it) }
     FilterPredicates.manaValueAtLeast(filterNode)?.let { node = node.dot(it) }
-    // "...that was dealt damage this turn" (Rooftop Assassin) — composes onto the plain-creature filter
-    // via .dealtDamageThisTurn(). Special shapes that carry this predicate already declined above.
-    if ("WasDealtDamageThisTurn" in blob) node = node.dot("dealtDamageThisTurn")
+    // Damage history, both voices — composes onto the plain-creature filter. Special shapes that carry
+    // either predicate already declined above. `WasDealtDamageThisTurn` (passive, Rooftop Assassin) is
+    // the SDK's `.wasDealtDamageThisTurn()`; the bare `DealtDamageThisTurn` (active, Red Guardian,
+    // Super-Soldier) is `.hasDealtDamageThisTurn()`. The active tag is a substring of the passive one,
+    // so the active test runs against a blob with the passive spellings removed. The active spelling is
+    // an unconfirmed guess — see the note on the decline check above; an unrecognised tag just means
+    // this branch never fires.
+    if ("WasDealtDamageThisTurn" in blob) node = node.dot("wasDealtDamageThisTurn")
+    if ("DealtDamageThisTurn" in blob.replace("WasDealtDamageThisTurn", "")) {
+        node = node.dot("hasDealtDamageThisTurn")
+    }
     // Keyword-ability restrictions ("attacking creature with shadow", Maze of Shadows): a
     // HasAbility / DoesntHaveAbility clause carrying a `_CheckHasable` keyword -> .withKeyword /
     // .withoutKeyword. Flying is already composed above (string match), so skip it here. If any

@@ -258,9 +258,9 @@ class TargetRecoveryTest : StringSpec({
         ctx.creatureFilterDsl(withUnknownCounter).shouldBeNull()
     }
 
-    "creatureFilterDsl renders a 'dealt damage this turn' restriction (Rooftop Assassin)" {
-        // "target creature an opponent controls that was dealt damage this turn" -> the
-        // .dealtDamageThisTurn() state-predicate suffix composed with the controller suffix.
+    "creatureFilterDsl renders a 'was dealt damage this turn' restriction (Rooftop Assassin)" {
+        // "target creature an opponent controls that was dealt damage this turn" -> the passive
+        // .wasDealtDamageThisTurn() state-predicate suffix composed with the controller suffix.
         val dealtDamage = obj(
             """{"_Permanents":"And","args":[""" +
                 """{"_Permanents":"IsCardtype","args":"Creature"},""" +
@@ -268,11 +268,30 @@ class TargetRecoveryTest : StringSpec({
                 """{"_Permanents":"WasDealtDamageThisTurn"}]}""",
         )
         ctx.creatureFilterDsl(dealtDamage) shouldBe
-            "TargetFilter.Creature.dealtDamageThisTurn().opponentControls()"
+            "TargetFilter.Creature.wasDealtDamageThisTurn().opponentControls()"
+    }
+
+    "creatureFilterDsl renders an active 'dealt damage this turn' restriction (Red Guardian)" {
+        // "target creature an opponent controls that dealt damage this turn" -> the active
+        // .hasDealtDamageThisTurn() suffix. The active IR tag is a substring of the passive one, so this
+        // also pins that the passive suffix is NOT emitted alongside it.
+        //
+        // The node is fabricated, not lifted from the corpus: the local sample is truncated and
+        // pre-MSH, so the bare `DealtDamageThisTurn` spelling is an unconfirmed guess at mtgish's
+        // active tag. This test therefore pins the *rendering* of that shape, not that mtgish ever
+        // produces it.
+        val dealtDamage = obj(
+            """{"_Permanents":"And","args":[""" +
+                """{"_Permanents":"IsCardtype","args":"Creature"},""" +
+                """{"_Permanents":"ControlledByAPlayer","args":{"_Players":"Opponent"}},""" +
+                """{"_Permanents":"DealtDamageThisTurn"}]}""",
+        )
+        ctx.creatureFilterDsl(dealtDamage) shouldBe
+            "TargetFilter.Creature.hasDealtDamageThisTurn().opponentControls()"
     }
 
     "creatureFilterDsl declines 'dealt damage this turn' combined with an unrenderable shape" {
-        // The .dealtDamageThisTurn() suffix only composes on the plain-creature path; combined with a
+        // The damage-history suffixes only compose on the plain-creature path; combined with a
         // creature-subtype clause (a branch that returns before the suffix) it would be silently dropped,
         // so the recovery declines (-> SCAFFOLD) rather than widen the kill.
         val dealtDamageGoblin = obj(

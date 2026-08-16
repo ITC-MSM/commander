@@ -1,0 +1,92 @@
+{
+  "player1Name": "Alice",
+  "player2Name": "Bob",
+  "player1": {
+    "lifeTotal": 20,
+    "hand": [
+      "Super Suit",
+      "Grizzly Bears",
+      "Lightning Bolt"
+    ],
+    "battlefield": [
+      {
+        "name": "Ronin, Shadow Stalker"
+      },
+      {
+        "name": "Iron Man Armor"
+      },
+      {
+        "name": "Bonesplitter",
+        "attachedTo": "Ronin, Shadow Stalker"
+      },
+      {
+        "name": "Grizzly Bears"
+      },
+      {
+        "name": "Swamp"
+      },
+      {
+        "name": "Swamp"
+      },
+      {
+        "name": "Island"
+      }
+    ],
+    "graveyard": [],
+    "library": [
+      "Swamp",
+      "Swamp",
+      "Island",
+      "Island",
+      "Swamp"
+    ]
+  },
+  "player2": {
+    "lifeTotal": 20,
+    "hand": [
+      "Murder"
+    ],
+    "battlefield": [
+      {
+        "name": "Centaur Courser"
+      },
+      {
+        "name": "Savannah Lions"
+      },
+      {
+        "name": "Mountain"
+      },
+      {
+        "name": "Mountain"
+      },
+      {
+        "name": "Swamp"
+      }
+    ],
+    "graveyard": [],
+    "library": [
+      "Mountain",
+      "Mountain",
+      "Swamp",
+      "Swamp"
+    ]
+  },
+  "phase": "PRECOMBAT_MAIN",
+  "activePlayer": 1,
+  "priorityPlayer": 1,
+  "player1StopAtSteps": [
+    "PRECOMBAT_MAIN",
+    "POSTCOMBAT_MAIN"
+  ],
+  "player2StopAtSteps": [
+    "PRECOMBAT_MAIN"
+  ],
+  "player1OpponentStopAtSteps": [
+    "PRECOMBAT_MAIN"
+  ],
+  "player2OpponentStopAtSteps": [
+    "PRECOMBAT_MAIN",
+    "POSTCOMBAT_MAIN"
+  ],
+  "mode": "SELF"
+}

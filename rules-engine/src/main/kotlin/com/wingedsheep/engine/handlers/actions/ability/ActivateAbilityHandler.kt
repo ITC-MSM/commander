@@ -381,7 +381,7 @@ class ActivateAbilityHandler(
             } else effectiveCost
         } else effectiveCost
 
-        val abilityPaymentContext = buildAbilityPaymentContext(cardComponent, state.projectedState, action.sourceId)
+        val abilityPaymentContext = buildAbilityPaymentContext(cardComponent, state.projectedState, action.sourceId, ability)
 
         // The granter of a statically-granted ability, so AbilityCost.TapGrantingPermanent can be
         // checked against the *Equipment's* tap state rather than the host creature's.
@@ -899,7 +899,12 @@ class ActivateAbilityHandler(
         val alreadySacrificing = (action.costPayment?.sacrificedPermanents?.isNotEmpty() == true)
         if (sacrificeCost != null && !alreadySacrificing) {
             val sacrificeCandidates = costHandler
-                .findMatchingCardsUnified(state, state.getBattlefield(action.playerId), sacrificeCost.filter, action.playerId)
+                .findMatchingCardsUnified(
+                    state, state.getBattlefield(action.playerId), sacrificeCost.filter, action.playerId,
+                    // Source-relative filters ("an Equipment attached to this creature") need the
+                    // ability's own source to resolve; without it they match nothing.
+                    sourceId = action.sourceId,
+                )
                 .let { if (sacrificeCost.excludeSelf) it.filter { id -> id != action.sourceId } else it }
             // Normally we only pause when there's a real choice (candidates > count); the forced
             // case auto-picks. But "with different names" is always a real choice — the player must
@@ -955,7 +960,12 @@ class ActivateAbilityHandler(
         if (variablePermanentsCost != null && chosenForCost.isEmpty()) {
             val verb = com.wingedsheep.engine.mechanics.cost.VariablePermanentsCost.verb(variablePermanentsCost.action)
             val candidates = costHandler
-                .findMatchingCardsUnified(state, state.getBattlefield(action.playerId), variablePermanentsCost.filter, action.playerId)
+                .findMatchingCardsUnified(
+                    state, state.getBattlefield(action.playerId), variablePermanentsCost.filter, action.playerId,
+                    // Same source-relative resolution as the sacrifice pause above, so the choices
+                    // offered here are exactly the ones payment will accept.
+                    sourceId = action.sourceId,
+                )
                 .let { if (variablePermanentsCost.excludeSelf) it.filter { id -> id != action.sourceId } else it }
             val minCount = variablePermanentsCost.minCount
             if (candidates.size < minCount) {
@@ -1064,7 +1074,7 @@ class ActivateAbilityHandler(
             }
         }
 
-        val executeAbilityContext = buildAbilityPaymentContext(cardComponent, state.projectedState, action.sourceId)
+        val executeAbilityContext = buildAbilityPaymentContext(cardComponent, state.projectedState, action.sourceId, ability)
 
         var currentState = state
         val events = mutableListOf<GameEvent>()

@@ -98,7 +98,7 @@ class CostHandler {
                 val chosenType = state.getEntity(sourceId)?.chosenCreatureType()
                     ?: return false
                 val filter = GameObjectFilter.Creature.withSubtype(chosenType)
-                findMatchingPermanentsUnified(state, controllerId, filter).isNotEmpty()
+                findMatchingPermanentsUnified(state, controllerId, filter, sourceId).isNotEmpty()
             }
             is AbilityCost.DiscardHand -> {
                 // You can always discard your hand, even if it's empty
@@ -574,7 +574,7 @@ class CostHandler {
             life >= atom.amount
         }
         is CostAtom.Sacrifice -> {
-            val candidates = findMatchingPermanentsUnified(state, controllerId, atom.filter)
+            val candidates = findMatchingPermanentsUnified(state, controllerId, atom.filter, sourceId)
             val eligible = if (atom.excludeSelf) candidates.filter { it != sourceId } else candidates
             if (atom.distinctNames) {
                 // "Sacrifice N ... with different names" — need at least N distinctly-named candidates.
@@ -584,7 +584,7 @@ class CostHandler {
             }
         }
         is CostAtom.VariablePermanents -> {
-            val candidates = findMatchingPermanentsUnified(state, controllerId, atom.filter)
+            val candidates = findMatchingPermanentsUnified(state, controllerId, atom.filter, sourceId)
             val eligible = if (atom.excludeSelf) candidates.filter { it != sourceId } else candidates
             eligible.size >= atom.minCount
         }
@@ -842,8 +842,9 @@ class CostHandler {
         // the forced case (e.g. exactly one artifact) resolve without a decision while breaking the
         // AI's infinite "Not enough sacrifice targets chosen" loop.
         val toSacrificeList = if (sacrificeChoices.isEmpty()) {
-            val candidates = findMatchingCardsUnified(state, state.getBattlefield(controllerId), filter, controllerId)
-                .let { if (excludeSelf) it.filter { id -> id != sourceId } else it }
+            val candidates = findMatchingCardsUnified(
+                state, state.getBattlefield(controllerId), filter, controllerId, sourceId
+            ).let { if (excludeSelf) it.filter { id -> id != sourceId } else it }
             if (candidates.size < requiredCount) {
                 return CostPaymentResult.failure("Not enough sacrifice targets chosen (need $requiredCount, got ${candidates.size})")
             }
@@ -867,7 +868,9 @@ class CostHandler {
                 return CostPaymentResult.failure("Sacrificed permanents must all have different names")
             }
         }
-        val context = PredicateContext(controllerId = controllerId)
+        // sourceId so a source-relative sacrifice filter (`…attachedToSource()`) validates against
+        // the ability's own source, exactly as it was enumerated.
+        val context = PredicateContext(controllerId = controllerId, sourceId = sourceId)
         val projected = state.projectedState
         var newState = state
         val events = mutableListOf<GameEvent>()
@@ -942,8 +945,9 @@ class CostHandler {
         // eligible). A real choice (more eligible than minCount) is paused for by
         // ActivateAbilityHandler; never silently guess which permanents to pay with.
         val toPay: List<EntityId> = if (choices.isEmpty()) {
-            val candidates = findMatchingCardsUnified(state, state.getBattlefield(controllerId), filter, controllerId)
-                .let { if (excludeSelf) it.filter { id -> id != sourceId } else it }
+            val candidates = findMatchingCardsUnified(
+                state, state.getBattlefield(controllerId), filter, controllerId, sourceId
+            ).let { if (excludeSelf) it.filter { id -> id != sourceId } else it }
                 .let { if (atom.action == PermanentCostAction.TAP) it.filter { id -> state.getEntity(id)?.has<TappedComponent>() != true } else it }
             if (candidates.size < minCount) {
                 return CostPaymentResult.failure("Not enough permanents to $verb (need $minCount, got ${candidates.size})")
@@ -989,7 +993,8 @@ class CostHandler {
         // no declared cast-choice slot. Teamwork is a spell's additional cost (CR 702.194a) and is
         // stamped on the cast path in `CastSpellHandler`; naming any cause here would be a guess.
         if (atom.action == PermanentCostAction.TAP) {
-            val context = PredicateContext(controllerId = controllerId)
+            // sourceId, so a source-relative filter re-validates exactly as it was enumerated.
+            val context = PredicateContext(controllerId = controllerId, sourceId = sourceId)
             val projected = state.projectedState
             for (id in toPay) {
                 val container = state.getEntity(id)
@@ -1018,7 +1023,8 @@ class CostHandler {
                 sourceId = sourceId, controllerId = controllerId, manaPool = manaPool,
             )
         }
-        val context = PredicateContext(controllerId = controllerId)
+        // EXILE re-validation — same source-relative resolution as the TAP branch above.
+        val context = PredicateContext(controllerId = controllerId, sourceId = sourceId)
         val projected = state.projectedState
         var newState = state
         val events = mutableListOf<GameEvent>()
@@ -1473,12 +1479,25 @@ class CostHandler {
 
     // Helper functions
 
+    /**
+     * Battlefield permanents [controllerId] controls that match [filter].
+     *
+     * [sourceId] is the permanent the cost belongs to. Passing it lets a **source-relative** filter
+     * resolve against that source instead of being source-blind — `…attachedToSource()`
+     * ("Sacrifice an Equipment attached to Ronin", "Sacrifice an Aura attached to this creature")
+     * is `StatePredicate.IsAttachedToSource`, which is unconditionally false without a source in
+     * the [PredicateContext]. Note the opposite direction for *negated* source-relative predicates
+     * (`notAttachedToSource()`, `CardPredicate.NotOfSourceChosenType`): those match everything
+     * without a source, so supplying one narrows the pool. Null keeps the old source-blind
+     * behaviour for callers that genuinely have no source permanent.
+     */
     private fun findMatchingPermanentsUnified(
         state: GameState,
         controllerId: EntityId,
-        filter: GameObjectFilter
+        filter: GameObjectFilter,
+        sourceId: EntityId? = null
     ): List<EntityId> {
-        val context = PredicateContext(controllerId = controllerId)
+        val context = PredicateContext(controllerId = controllerId, sourceId = sourceId)
         val projected = state.projectedState
         return state.entities.filter { (entityId, container) ->
             container.get<ControllerComponent>()?.playerId == controllerId &&
@@ -1511,9 +1530,12 @@ class CostHandler {
         state: GameState,
         cardIds: List<EntityId>,
         filter: GameObjectFilter,
-        controllerId: EntityId
+        controllerId: EntityId,
+        /** Source permanent of the cost, so source-relative filters resolve. See
+         *  [findMatchingPermanentsUnified]. */
+        sourceId: EntityId? = null
     ): List<EntityId> {
-        val context = PredicateContext(controllerId = controllerId)
+        val context = PredicateContext(controllerId = controllerId, sourceId = sourceId)
         val projected = state.projectedState
         return cardIds.filter { cardId ->
             predicateEvaluator.matches(state, projected, cardId, filter, context)
