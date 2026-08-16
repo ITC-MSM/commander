@@ -20,7 +20,24 @@ and those are the two sentences on it. The **aura band** followed: `Enchant <fil
 attached-permanent statics, which opened `staticAbilities` — the largest `CardScript` slot the
 differential could not see into, and the one every later static family lands in.
 
-The most recent work is the **top-of-library band** — how many cards you see, what you keep, and
+The most recent work is the **prevention band** — "Prevent all combat damage that would be dealt this
+turn." and everything the same SDK type can say (**+75 whole cards**). It is the top-of-library
+band's lesson on an `Effect` rather than on a `Patterns` recipe: `PreventDamageEffect` calls itself
+"a single parametrized type that can express any combination" of six fields, and the grammar was
+holding two whole-sentence rules whose own KDoc said they "share nothing but the verb". They share
+every word except the ones the fields name, so the family is their product — a quantifier, a kind of
+damage, three clause frames, a recipient vocabulary, and a source *layer* that owns one field and
+strips exactly it. See [the prevention band](#the-prevention-band); it also found the whole-line
+probe overstating by a third for a new reason, and its own redundancy report found the rule it had
+just generalized.
+
+Before it came the **conditional-tapped-entry band** — the lands that enter tapped *unless*
+something is true (**+57 whole cards**), which is the same lesson again with a twist worth
+remembering: the rule had been written off in `Replacements`' own KDoc for want of a condition
+vocabulary, and the spell-cost band had built one without anyone re-reading the write-off. See
+[the conditional-tapped-entry band](#the-conditional-tapped-entry-band).
+
+Before it came the **top-of-library band** — how many cards you see, what you keep, and
 where the rest go (**+87 whole cards**). It is the cost band's lesson applied a third time, and the
 first one where the grammar got *smaller*: `Patterns.Library` had published these sentences as
 recipes whose parameters are exactly the words that vary, and the grammar was calling them with every
@@ -198,16 +215,16 @@ non-zero on. Declines are not failures.
 Cards assayed                    34882
 Ability lines                    64753  (37998 unique)
 
-Round-trips byte-exact           25869   399.5‰ (40.0%)
-Alternate spelling normalized    1326
-Declined                         37520
+Round-trips byte-exact           26134   403.6‰ (40.4%)
+Alternate spelling normalized    1407
+Declined                         37212
 Ambiguous — distinct readings    0
 Print mismatch                   0
 Normalization not invertible     0
 Full inverse not reproduced      0
 Redundant readings (same model)  0
 
-Cards fully covered              7823 / 34882   224.3‰ (22.4%)
+Cards fully covered              8042 / 34882   230.5‰ (23.1%)
 Vanilla + keyword-only cards     1444 / 1712   843.5‰ (84.3%)   <- Phase 1 target
 Portal (set POR)                 200 / 200     1000.0‰ (100%)   <- the Portal band's target
 Legions (set LGN)                145 / 145     1000.0‰ (100%)   <- the Legions band's target
@@ -1250,6 +1267,115 @@ The report is two documents at once, and the second one is about `mtg-sdk`:
   Soulshift, Bloodthirst, Scavenge, Backup, Megamorph, Unleash, Extort, Evolve, Myriad, Unearth,
   Mentor, Afterlife, Enlist, Champion, Eternalize, Skulk, Melee, Battle cry, Reinforce, Devoid,
   Dethrone, Phasing, Cumulative upkeep, … — ranked by cards blocked in the report's bottom table.
+
+## The prevention band
+
+Damage prevention, as one SDK type and the product of its fields. Whole-corpus coverage 7,967 →
+**8,042 cards** (+75); the baked verdict ledger 7,758 → **7,829 whole**, with 71 cards gained and
+**none lost**. No new SDK type and no new SDK field; one new grammar file, and two whole-sentence
+rules deleted from the files they had accreted in.
+
+**It was the second-best family on the probe and the best one available.** The tail ranking's top
+rows were probed in one run: `Prevent all damage …` measured **55** whole cards and
+`Prevent all combat …` **46**, against `Spend this mana only …` at 56, `life equal to …` at 52 and
+`unless its controller pays …` at 40. The two prevention rows are one construct and disjoint
+families, so the band was worth what they add up to and nothing else in the top forty came close.
+
+**101 predicted, 75 delivered — and the reason is a new one.** The rule of thumb from the spell-cost
+band was that the probe is exact when the family *owns the line*, and this family does: the
+substitution replaced whole prevention sentences and every other line on those cards had to parse
+too. It still overstated by a quarter, because a family that is one SDK type's **product** has
+members the type cannot reach. Roughly forty of the corpus's prevention lines carry no duration at
+all ("Prevent all damage that would be dealt to ~.") and are not this type — a permanent's standing
+prevention is `ReplacementEffect.PreventDamage` over an `EventPattern`, a vocabulary the grammar
+does not have yet — and the rest name things the fields cannot hold: noncombat damage, players as a
+recipient group, damage divided among any number of targets. **Read a whole-line probe as exact only
+when the construct behind the line is uniform.**
+
+### The shape: four axes, and where each one lives
+
+`PreventDamageEffect(target, recipientGroup, amount, scope, direction, sourceFilter, …)`. The printed
+sentence has a variable part for each, and
+[`Prevention`](src/main/kotlin/com/wingedsheep/assay/grammar/Prevention.kt) is their product rather
+than a rule per combination:
+
+- **`scope`** is one word, so it is a slot — "damage" or "combat damage" — in every sentence.
+- **`amount`** changes the quantifier ("all" versus "the next 2" versus "the next X") and `null` is
+  one of its values, which a slot cannot carry: a `build` returning null means the surface denotes
+  nothing, so `Phrase<DynamicAmount?>` would make "all" unparseable. Three instantiations of the
+  shape instead, over disjoint halves of `DynamicAmount` so printing stays determined by the model.
+- **`direction`** changes the clause frame, so it is three frames rather than a word.
+- **`target`** is a recipient vocabulary — the noun phrase, the `EffectTarget` behind it, and the
+  requirement the script declares for it, moving together. Written once and instantiated per anaphor
+  position, exactly as `SelfSteps.retargetable` is: `Continuations` takes the "that creature" member
+  and nothing else, which is what stops a line whose whole content is a dangling reference.
+- **`sourceFilter`** is a **layer**, never a member of a frame. One optional suffix ("… by attacking
+  creatures", "… by a source of your choice", "… by creatures") owns that field and strips precisely
+  it before delegating, and it refuses any inner clause that is not `ToTarget` — otherwise a
+  group-sourced shield would have two printed forms, one from the layer and one from the silencing
+  frame.
+
+The fourteen prevention facades in `Effects` are the finding, not the build path. Each freezes a
+different subset of the same six fields — `PreventAllCombatDamage()`, `PreventCombatDamageToAndBy`,
+`PreventAllDamageDealtBy`, `PreventNextDamage` — so they are points on the product this file spans,
+and picking one per combination would be a `when` over the model reproducing a mapping nobody wrote
+down. The type is the curated surface here, exactly as `Replacements` argues for the
+replacement-effect constructors.
+
+### The redundancy report found the rule this band generalized
+
+`Combat` carried `"prevent all damage that would be dealt to you this turn by attacking creatures"`
+as a whole sentence. The new layer reads the same text into the same model, and two rules producing
+one model for one text is grammar **redundancy** — reported, not gated, and the leading indicator of
+a hard ambiguity. It went from 0 to 2 in the same run that added +75 cards, which is what surfaced
+it; deleting the old rule put it back to 0. **After generalizing a family, read the redundancy
+number, not just the coverage number** — it is the only signal that says the sentence you just made
+composable was already spelled somewhere else.
+
+### Two collisions the SDK cannot see, and one it can
+
+- **The Fog has two English sentences and one model.** `PreventDamageEffect(scope = CombatOnly)`
+  leaves `target` at its `EffectTarget.Controller` default, and `PreventDamageExecutor` reads exactly
+  that configuration as *global* prevention rather than as a shield over the controller. So "prevent
+  all combat damage that would be dealt to you this turn" (Inkshield, Take the Bait) denotes the same
+  value as "prevent all combat damage that would be dealt this turn" and cannot be told apart from
+  it. The Fog rule owns the value, every recipient frame refuses it, and the two cards that mean the
+  narrower thing decline and are counted.
+- **"By attacking creatures" is spellable twice** — as `PreventionSourceFilter.AttackingCreatures`
+  and as a `FromGroup` over the same three words. The dedicated case is what the hand-written cards
+  carry (Deep Wood), so the group layer refuses that filter outright and the `FromGroup` spelling of
+  it has no printed form. Same class as `PROTECTION_FROM_EACH_OPPONENT`: two SDK spellings of one
+  thing get one rule and a note.
+- **The silencing frame's canonical word order flips with the scope.** Oracle writes `FromTarget`
+  as "prevent all combat damage that would be dealt **by** target attacking creature this turn" and
+  as "prevent all damage target creature **would deal** this turn", and the majority flips with the
+  kind of damage — the passive leads 11 lines to 3 for combat damage, and the active is the only
+  spelling the corpus uses for damage in general. Each rule takes the half it wins and refuses the
+  other, and the minority spelling for each half is an `alternate`. That is the top-of-library band's
+  duration finding one field over: the canonical order *is* decided by the model, just not by the
+  field you would guess.
+
+### What the gate found, and what the residue is
+
+The band brought **60 more cards** into the compared population (3,085 → 3,145) and every one of them
+agreed — the differential stayed at its 13 standing divergences and 99.6%. That is the less common
+outcome and it is worth stating plainly: `PreventDamageEffect` was already under comparison through
+the two rules this band replaced, so the fields were being checked before the sentences generalized.
+
+Three cards moved from `LINE_DECLINED` to `LINES_DO_NOT_FOLD` — Restrain, Azorius Ploy, Festival of
+the Guildpact. That is not a regression but a **second** gap surfacing behind the first: each prints
+two effect paragraphs on two lines ("Prevent all combat damage … this turn." / "Draw a card."), and
+`CardFragment.merge` refuses two lines that both claim to be *the* spell effect, because a
+`CardScript` has one `spellEffect` and concatenating them would invent an order nothing checked. The
+57 cards in the differential's `lines do not fold into one card` bucket are that same shape, and it
+is a band of its own.
+
+The rest of the residue is named above: the duration-less statics waiting on an `EventPattern`
+vocabulary, `PreventionScope`'s missing noncombat case, a recipient set of *players* that a
+`GroupFilter` cannot hold, and the divided-damage sentence. One more is a `Filters` gap rather than a
+prevention one — "creatures your opponents control" (Thwart the Enemy, and 86 cards corpus-wide) has
+no controller layer yet, which is the same shape as the `legendary` layer the tapped-entry band
+measured at 416 lines.
 
 ## The differential gate
 
