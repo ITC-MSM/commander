@@ -5320,8 +5320,11 @@ staticAbility {
   or `{T}, Sacrifice: Add {C}{C}` without collapsing their costs. It also admits the direct targetless,
   fixed-amount, unrestricted `AddManaOfChoiceEffect(ManaColorSet.AnyColor, Fixed(N))` shape (Gilded
   Lotus); the accepted intent records its one chosen colour, preserving surplus in that colour.
-  Secondary-tap, pain, activation-mana, restricted, dynamic, granted, rider-bearing, and other
-  side-effecting sources remain unsupported there. The pre-existing
+  It additionally admits the exact Springleaf Drum form `{T}, tap one untapped creature you
+  control: add one mana of any color`; its response includes the server-offered creature to tap,
+  which is revalidated when the atomic candidate is applied. Other secondary-tap shapes, pain,
+  activation-mana, restricted, dynamic, granted, rider-bearing, and other side-effecting sources
+  remain unsupported there. The pre-existing
   per-creature-type block tax (Whipgrass Entangler) uses `AttackBlockTaxPerCreatureType` floating
   effects instead.
 - `CantBeAttackedWithout(keyword, attackerFilter = null)` — Form of the Dragon-style "Creatures

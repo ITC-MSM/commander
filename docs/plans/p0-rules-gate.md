@@ -55,9 +55,13 @@ narrow printed `{1}, {T}: Add {U}{R}` branch represented by Izzet Signet: the so
 must first supply its own pre-existing `{1}`, then explicitly records whether `{U}` or `{R}` pays
 that controller's `{1}` block-tax share. The other colour remains in that controller's pool; no
 teammate can fund either the activation or the tax. A selected blocker that sacrifices itself pays the locked tax and leaves its
-attacker blocked, but does not receive blocking status. Any decline, forged branch, duplicate
+attacker blocked, but does not receive blocking status. The same atomic vocabulary now also covers
+the exact Springleaf Drum form `{T}, tap one untapped creature you control: add one mana of any
+colour`: the selected creature is carried in the intent, must be an offered untapped creature
+controlled by the payer, and may still become a blocker after being tapped. Any decline, forged branch, duplicate
 source, direct mana activation, or failed payment leaves mana, blockers, and declaration markers
-unchanged. The slice still excludes other activation-mana shapes, secondary tap, pain,
+unchanged. The slice still excludes other activation-mana shapes, other secondary-tap shapes,
+pain,
 restricted-mana, dynamic/restricted-output, granted abilities, and other side-effecting branches;
 those remain explicit implementation gaps, separate from the FFA Commander simulation evidence
 above.
