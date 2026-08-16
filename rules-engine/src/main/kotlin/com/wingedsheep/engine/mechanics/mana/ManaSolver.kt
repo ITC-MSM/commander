@@ -25,6 +25,7 @@ import com.wingedsheep.sdk.core.ManaSymbol
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.AbilityCost
+import com.wingedsheep.engine.mechanics.SummoningSicknessRules
 import com.wingedsheep.engine.mechanics.cost.CostPaymentService
 import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.scripting.costs.CostAtom
@@ -979,9 +980,14 @@ class ManaSolver(
 
             // Creature and attack capability detection
             val isCreature = projected.isCreature(entityId)
+            // Attack legality reads plain haste (CR 302.6 / 702.10b): an "activate as though hasty"
+            // grant must NOT make this creature look like an attacker to the auto-tap heuristic.
             val hasSummoningSickness = container.has<SummoningSicknessComponent>()
             val hasHaste = projected.hasKeyword(entityId, Keyword.HASTE)
             val canAttack = isCreature && (!hasSummoningSickness || hasHaste)
+            // The {T}/{Q} half of CR 302.6, which "as though those creatures had haste" does lift.
+            val tapBlockedBySickness =
+                SummoningSicknessRules.blocksTapOrUntapCost(entityId, container, projected)
 
             // Basic land detection
             val isBasicLand = card.typeLine.isBasicLand
@@ -1198,10 +1204,8 @@ class ManaSolver(
                 }
 
                 // Check summoning sickness for creatures (non-lands)
-                if (!card.typeLine.isLand && isCreature) {
-                    if (hasSummoningSickness && !hasHaste) {
-                        continue // Can't use this ability due to summoning sickness
-                    }
+                if (!card.typeLine.isLand && isCreature && tapBlockedBySickness) {
+                    continue // Can't use this ability due to summoning sickness
                 }
 
                 // Pain modeled as a self-damage side effect in the ability's effect chain
@@ -2417,9 +2421,7 @@ class ManaSolver(
         val projected = state.projectedState
         // Summoning sickness only bites non-land creatures (CR 302.6).
         if (!card.typeLine.isLand && projected.isCreature(entityId)) {
-            if (container.has<SummoningSicknessComponent>() &&
-                !projected.hasKeyword(entityId, Keyword.HASTE)
-            ) return false
+            if (SummoningSicknessRules.blocksTapOrUntapCost(entityId, container, projected)) return false
         }
         return true
     }
@@ -2473,13 +2475,12 @@ class ManaSolver(
             // Own abilities stripped by Humility / similar — skip the printed mana ability.
             if (projected.hasLostAllAbilities(entityId)) continue
 
-            // Summoning sickness applies to non-land creatures (Rule 302.1) — they can't tap unless they have haste.
+            // Summoning sickness applies to non-land creatures (CR 302.6) — they can't tap unless
+            // they have haste or an "activate as though hasty" grant.
             val isCreature = projected.isCreature(entityId)
-            if (!card.typeLine.isLand && isCreature) {
-                val hasSummoningSickness = container.has<SummoningSicknessComponent>()
-                val hasHaste = projected.hasKeyword(entityId, Keyword.HASTE)
-                if (hasSummoningSickness && !hasHaste) continue
-            }
+            if (!card.typeLine.isLand && isCreature &&
+                SummoningSicknessRules.blocksTapOrUntapCost(entityId, container, projected)
+            ) continue
 
             for (ability in cardDef.script.activatedAbilities) {
                 if (!ability.isManaAbility) continue
@@ -2594,11 +2595,9 @@ class ManaSolver(
             if (projected.hasLostAllAbilities(entityId)) continue
 
             val isCreature = projected.isCreature(entityId)
-            if (!card.typeLine.isLand && isCreature) {
-                val hasSummoningSickness = container.has<SummoningSicknessComponent>()
-                val hasHaste = projected.hasKeyword(entityId, Keyword.HASTE)
-                if (hasSummoningSickness && !hasHaste) continue
-            }
+            if (!card.typeLine.isLand && isCreature &&
+                SummoningSicknessRules.blocksTapOrUntapCost(entityId, container, projected)
+            ) continue
 
             for (ability in cardDef.script.activatedAbilities) {
                 if (!ability.isManaAbility) continue

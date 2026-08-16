@@ -354,6 +354,7 @@ export enum AbilityFlag {
   CANT_RECEIVE_COUNTERS = 'CANT_RECEIVE_COUNTERS',
   CANT_TRANSFORM = 'CANT_TRANSFORM',
   ASSIGNS_COMBAT_DAMAGE_AS_TOUGHNESS = 'ASSIGNS_COMBAT_DAMAGE_AS_TOUGHNESS',
+  MAY_ACTIVATE_ABILITIES_AS_THOUGH_HASTY = 'MAY_ACTIVATE_ABILITIES_AS_THOUGH_HASTY',
 }
 
 export const AbilityFlagDisplayNames: Record<AbilityFlag, string> = {
@@ -365,6 +366,10 @@ export const AbilityFlagDisplayNames: Record<AbilityFlag, string> = {
   [AbilityFlag.CANT_RECEIVE_COUNTERS]: "Can't have counters put on it",
   [AbilityFlag.CANT_TRANSFORM]: "Can't transform",
   [AbilityFlag.ASSIGNS_COMBAT_DAMAGE_AS_TOUGHNESS]: 'Assigns combat damage equal to its toughness rather than its power',
+  // Granted by Shang-Chi / Thousand-Year Elixir to a whole board of creatures at once, so it must be
+  // named here or every creature you control shows the raw enum identifier in its preview panel.
+  // Deliberately not in `displayableKeywords` — a battlefield icon on every creature is noise.
+  [AbilityFlag.MAY_ACTIVATE_ABILITIES_AS_THOUGH_HASTY]: 'You may activate its abilities as though it had haste',
 }
 
 /**

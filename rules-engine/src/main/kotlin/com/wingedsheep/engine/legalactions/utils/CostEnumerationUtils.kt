@@ -4,6 +4,7 @@ import com.wingedsheep.engine.handlers.PredicateContext
 import com.wingedsheep.engine.handlers.PredicateEvaluator
 import com.wingedsheep.engine.handlers.effects.permanent.counters.counterTypeToString
 import com.wingedsheep.engine.legalactions.*
+import com.wingedsheep.engine.mechanics.SummoningSicknessRules
 import com.wingedsheep.engine.mechanics.mana.CostCalculator
 import com.wingedsheep.engine.mechanics.mana.ManaSolver
 import com.wingedsheep.engine.mechanics.mana.ManaSource
@@ -14,11 +15,9 @@ import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.battlefield.AttachedToComponent
 import com.wingedsheep.engine.state.components.battlefield.CountersComponent
-import com.wingedsheep.engine.state.components.battlefield.SummoningSicknessComponent
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.sdk.core.Color
-import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.ManaCost
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
@@ -501,11 +500,9 @@ class CostEnumerationUtils(
         // Read creature-ness / haste from projected state so a Vehicle or animated permanent
         // that is currently a creature is gated. Lands keep the carve-out (basic-land mana
         // abilities are not restricted by summoning sickness).
-        if (!cardComponent.typeLine.isLand && state.projectedState.isCreature(entityId)) {
-            val hasSummoningSickness = container.has<SummoningSicknessComponent>()
-            val hasHaste = state.projectedState.hasKeyword(entityId, Keyword.HASTE)
-            if (hasSummoningSickness && !hasHaste) return false
-        }
+        if (!cardComponent.typeLine.isLand && state.projectedState.isCreature(entityId) &&
+            SummoningSicknessRules.blocksTapOrUntapCost(entityId, container, state.projectedState)
+        ) return false
         return true
     }
 
@@ -520,11 +517,9 @@ class CostEnumerationUtils(
         if (attachedEntity.has<TappedComponent>()) return false
         // Read creature-ness / haste from projected state so a Vehicle or animated permanent
         // currently being a creature is gated.
-        if (state.projectedState.isCreature(attachedId)) {
-            val hasSummoningSickness = attachedEntity.has<SummoningSicknessComponent>()
-            val hasHaste = state.projectedState.hasKeyword(attachedId, Keyword.HASTE)
-            if (hasSummoningSickness && !hasHaste) return false
-        }
+        if (state.projectedState.isCreature(attachedId) &&
+            SummoningSicknessRules.blocksTapOrUntapCost(attachedId, attachedEntity, state.projectedState)
+        ) return false
         return true
     }
 

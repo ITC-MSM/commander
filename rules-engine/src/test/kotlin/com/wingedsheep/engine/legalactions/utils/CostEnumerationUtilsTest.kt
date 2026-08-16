@@ -8,13 +8,17 @@ import com.wingedsheep.engine.state.components.battlefield.CountersComponent
 import com.wingedsheep.engine.state.components.battlefield.SummoningSicknessComponent
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
+import com.wingedsheep.sdk.core.AbilityFlag
 import com.wingedsheep.sdk.core.CounterType
 import com.wingedsheep.sdk.core.ManaCost
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.dsl.Costs
+import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.AbilityCost
 import com.wingedsheep.sdk.scripting.GameObjectFilter
+import com.wingedsheep.sdk.scripting.GrantKeyword
+import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
@@ -48,6 +52,20 @@ class CostEnumerationUtilsTest : FunSpec({
             predicateEvaluator = predicateEvaluator,
             cardRegistry = registry
         )
+    }
+
+    /** Grants the as-though-hasty permission to P1's creatures, for the `canPayTapCost` cases. */
+    val hasteElixir = card("Cost Utils Haste Elixir") {
+        manaCost = "{2}"
+        typeLine = "Artifact"
+        oracleText = "You may activate abilities of creatures you control as though those " +
+            "creatures had haste."
+        staticAbility {
+            ability = GrantKeyword(
+                AbilityFlag.MAY_ACTIVATE_ABILITIES_AS_THOUGH_HASTY.name,
+                GroupFilter.AllCreaturesYouControl,
+            )
+        }
     }
 
     /** Battlefield entity id for the P1 permanent matching [name]. */
@@ -272,6 +290,26 @@ class CostEnumerationUtilsTest : FunSpec({
         test("returns true for an untapped creature with no summoning sickness") {
             val driver = setupP1(battlefield = listOf("Grizzly Bears"))
             val bearsId = entityOnBattlefield(driver, "Grizzly Bears")
+
+            utils(driver).canPayTapCost(driver.game.state, bearsId) shouldBe true
+        }
+
+        test("returns true when an as-though-hasty permission covers the sick creature") {
+            // The `MAY_ACTIVATE_ABILITIES_AS_THOUGH_HASTY` flag (Shang-Chi / Thousand-Year Elixir)
+            // lifts CR 302.6's ability half only. Pinned here, at the helper, as well as end-to-end:
+            // this is the exact pair of the "summoning sickness and no haste" case above.
+            val driver = setupP1(
+                battlefield = listOf("Grizzly Bears"),
+                extraSetCards = listOf(hasteElixir)
+            )
+            // The Elixir must go down through `putPermanentOnBattlefield`, not `setupP1`'s
+            // `battlefield =`: that helper moves cards zone-to-zone with raw state surgery, which
+            // bypasses `StaticAbilityHandler` — the permanent lands with no continuous-effect
+            // component and grants nothing.
+            driver.game.putPermanentOnBattlefield(driver.player1, "Cost Utils Haste Elixir")
+            val bearsId = entityOnBattlefield(driver, "Grizzly Bears")
+            val sick = driver.game.state.getEntity(bearsId)!!.with(SummoningSicknessComponent)
+            driver.game.replaceState(driver.game.state.withEntity(bearsId, sick))
 
             utils(driver).canPayTapCost(driver.game.state, bearsId) shouldBe true
         }

@@ -3,6 +3,7 @@ package com.wingedsheep.engine.legalactions.enumerators
 import com.wingedsheep.engine.core.ActivateAbility
 import com.wingedsheep.engine.handlers.effects.composite.asConditional
 import com.wingedsheep.engine.handlers.effects.permanent.counters.resolveCounterType
+import com.wingedsheep.engine.mechanics.SummoningSicknessRules
 import com.wingedsheep.engine.mechanics.mana.TapForGeneric
 import com.wingedsheep.engine.legalactions.*
 import com.wingedsheep.engine.state.ZoneKey
@@ -15,7 +16,6 @@ import com.wingedsheep.engine.state.components.identity.EmblemActivatedAbilityCo
 import com.wingedsheep.engine.handlers.PredicateContext
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
 import com.wingedsheep.sdk.core.CounterType
-import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.*
@@ -211,22 +211,27 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                 when (effectiveCost) {
                     is AbilityCost.Tap -> {
                         if (container.has<TappedComponent>()) continue
-                        if (!cardComponent.typeLine.isLand && projected.isCreature(entityId)) {
-                            val hasSummoningSickness = container.has<SummoningSicknessComponent>()
-                            val hasHaste = projected.hasKeyword(entityId, Keyword.HASTE)
-                            if (hasSummoningSickness && !hasHaste) continue
-                        }
+                        if (!cardComponent.typeLine.isLand && projected.isCreature(entityId) &&
+                            SummoningSicknessRules.blocksTapOrUntapCost(entityId, container, projected)
+                        ) continue
+                    }
+                    // The untap symbol, CR 302.6's other half. Mirrors the `{T}` branch with the
+                    // tapped-check inverted — `{Q}` needs a *tapped* permanent to untap — so the
+                    // enumerator and `ActivateAbilityHandler`'s authoritative re-check agree.
+                    is AbilityCost.Untap -> {
+                        if (!container.has<TappedComponent>()) continue
+                        if (!cardComponent.typeLine.isLand && projected.isCreature(entityId) &&
+                            SummoningSicknessRules.blocksTapOrUntapCost(entityId, container, projected)
+                        ) continue
                     }
                     is AbilityCost.TapAttachedCreature -> {
                         val attachedId = container.get<com.wingedsheep.engine.state.components.battlefield.AttachedToComponent>()?.targetId
                         if (attachedId == null) continue
                         val attachedEntity = state.getEntity(attachedId) ?: continue
                         if (attachedEntity.has<TappedComponent>()) continue
-                        if (projected.isCreature(attachedId)) {
-                            val hasSummoningSickness = attachedEntity.has<SummoningSicknessComponent>()
-                            val hasHaste = projected.hasKeyword(attachedId, Keyword.HASTE)
-                            if (hasSummoningSickness && !hasHaste) continue
-                        }
+                        if (projected.isCreature(attachedId) &&
+                            SummoningSicknessRules.blocksTapOrUntapCost(attachedId, attachedEntity, projected)
+                        ) continue
                     }
                     // "Tap <the granting Equipment>" — an already-tapped (or departed) granter makes
                     // the whole granted ability unactivatable (Fishing Pole).
@@ -378,13 +383,11 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                                         costCanBePaid = false
                                         break
                                     }
-                                    if (!cardComponent.typeLine.isLand && projected.isCreature(entityId)) {
-                                        val hasSummoningSickness = container.has<SummoningSicknessComponent>()
-                                        val hasHaste = projected.hasKeyword(entityId, Keyword.HASTE)
-                                        if (hasSummoningSickness && !hasHaste) {
-                                            costCanBePaid = false
-                                            break
-                                        }
+                                    if (!cardComponent.typeLine.isLand && projected.isCreature(entityId) &&
+                                        SummoningSicknessRules.blocksTapOrUntapCost(entityId, container, projected)
+                                    ) {
+                                        costCanBePaid = false
+                                        break
                                     }
                                 }
                                 is AbilityCost.Atom -> when (val atom = subCost.atom) {
@@ -552,13 +555,11 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                                         costCanBePaid = false
                                         break
                                     }
-                                    if (projected.isCreature(attachedId)) {
-                                        val hasSummoningSickness = attachedEntity.has<SummoningSicknessComponent>()
-                                        val hasHaste = projected.hasKeyword(attachedId, Keyword.HASTE)
-                                        if (hasSummoningSickness && !hasHaste) {
-                                            costCanBePaid = false
-                                            break
-                                        }
+                                    if (projected.isCreature(attachedId) &&
+                                        SummoningSicknessRules.blocksTapOrUntapCost(attachedId, attachedEntity, projected)
+                                    ) {
+                                        costCanBePaid = false
+                                        break
                                     }
                                 }
                                 // "Tap <the granting Equipment>" as one sub-cost of a composite —

@@ -6,18 +6,17 @@ import com.wingedsheep.engine.legalactions.ActionEnumerator
 import com.wingedsheep.engine.legalactions.AdditionalCostData
 import com.wingedsheep.engine.legalactions.EnumerationContext
 import com.wingedsheep.engine.legalactions.LegalAction
+import com.wingedsheep.engine.mechanics.SummoningSicknessRules
 import com.wingedsheep.engine.mechanics.mana.IntrinsicManaAbilities
 import com.wingedsheep.engine.mechanics.mana.LandManaColorInspector
 import com.wingedsheep.engine.mechanics.mana.ManaColorSetResolver
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
-import com.wingedsheep.engine.state.components.battlefield.SummoningSicknessComponent
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.engine.state.components.identity.FaceDownComponent
 import com.wingedsheep.engine.state.components.identity.TextReplacementComponent
-import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
@@ -194,12 +193,10 @@ class ManaAbilityEnumerator : ActionEnumerator {
                                     if (container.has<TappedComponent>()) {
                                         affordable = false; break
                                     }
-                                    if (!cardComponent.typeLine.isLand && projected.isCreature(entityId)) {
-                                        val hasSummoningSickness = container.has<SummoningSicknessComponent>()
-                                        val hasHaste = projected.hasKeyword(entityId, Keyword.HASTE)
-                                        if (hasSummoningSickness && !hasHaste) {
-                                            affordable = false; break
-                                        }
+                                    if (!cardComponent.typeLine.isLand && projected.isCreature(entityId) &&
+                                        SummoningSicknessRules.blocksTapOrUntapCost(entityId, container, projected)
+                                    ) {
+                                        affordable = false; break
                                     }
                                 }
                                 is AbilityCost.Atom -> when (val atom = subCost.atom) {

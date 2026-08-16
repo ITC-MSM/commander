@@ -5529,6 +5529,17 @@ staticAbility {
   toughness rather than its power"), grant the `AbilityFlag.ASSIGNS_COMBAT_DAMAGE_AS_TOUGHNESS` flag via
   `Effects.GrantKeyword(AbilityFlag.ASSIGNS_COMBAT_DAMAGE_AS_TOUGHNESS, target, duration)`; the same combat
   util reads it from projected keywords (unconditional — no toughness > power gate).
+- `GrantKeyword(AbilityFlag.MAY_ACTIVATE_ABILITIES_AS_THOUGH_HASTY.name, filter)` — "you may activate
+  abilities of [filter] as though those creatures had haste" (Thousand-Year Elixir, Shang-Chi, Master of
+  Kung Fu). CR 302.6 gates a creature's `{T}`/`{Q}` activated abilities *and* its ability to attack on the
+  same condition; haste (CR 702.10b/c) lifts both, and this flag lifts **only the ability half** — so it is
+  deliberately not `Keyword.HASTE`, and an affected creature still can't attack the turn it arrives. Use
+  `GroupFilter.AllCreaturesYouControl` for the printed "creatures you control" wording. Read by exactly one
+  place, `SummoningSicknessRules.blocksTapOrUntapCost` (`rules-engine/mechanics/`), which every `{T}`/`{Q}`
+  activation gate routes through — the mana solver, both ability enumerators, the cost helpers and
+  `ActivateAbilityHandler`'s authoritative re-check. Combat's `AttackRestrictionRules` keeps its own plain
+  haste check and never consults it; `SummoningSicknessGateEnforcementTest` fails the build if a new
+  open-coded `has<SummoningSicknessComponent>()` gate appears outside the allowlisted files.
 - **Untap restriction flags** — granted via `GrantKeyword(AbilityFlag.X.name)` and read off projected keywords,
   so they vanish when the granting source leaves play. The two "can't untap" flags differ in *scope*:
   - `AbilityFlag.CANT_BECOME_UNTAPPED` — "can't become untapped" (Blossombind). The **stronger**

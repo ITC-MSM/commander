@@ -7,6 +7,7 @@ import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.handlers.effects.library.MillAmountModifier
 import com.wingedsheep.engine.handlers.effects.life.LifePaymentService
 import com.wingedsheep.engine.handlers.effects.permanent.counters.resolveCounterType
+import com.wingedsheep.engine.mechanics.SummoningSicknessRules
 import com.wingedsheep.engine.mechanics.cost.CostPaymentService
 import com.wingedsheep.engine.mechanics.cost.VariablePermanentsCost
 import com.wingedsheep.engine.mechanics.mana.ManaPool
@@ -168,11 +169,9 @@ class CostHandler {
                 // Check summoning sickness on the attached creature. Read creature-ness and
                 // haste from projected state so a Vehicle / animated permanent currently
                 // being a creature is gated correctly.
-                if (state.projectedState.isCreature(attachedId)) {
-                    val hasSummoningSickness = attachedEntity.has<SummoningSicknessComponent>()
-                    val hasHaste = state.projectedState.hasKeyword(attachedId, com.wingedsheep.sdk.core.Keyword.HASTE)
-                    if (hasSummoningSickness && !hasHaste) return false
-                }
+                if (state.projectedState.isCreature(attachedId) &&
+                    SummoningSicknessRules.blocksTapOrUntapCost(attachedId, attachedEntity, state.projectedState)
+                ) return false
                 true
             }
             is AbilityCost.Forage ->

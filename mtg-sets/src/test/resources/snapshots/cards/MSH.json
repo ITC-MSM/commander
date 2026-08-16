@@ -13818,6 +13818,60 @@
     ]
 }
 
+// Shang-Chi, Master of Kung Fu
+{
+    "name": "Shang-Chi, Master of Kung Fu",
+    "manaCost": "{1}{G}",
+    "typeLine": "Legendary Creature — Human Warrior Hero",
+    "oracleText": "You may activate abilities of creatures you control as though those creatures had haste.\n{T}: Add two mana of any one color. Spend this mana only to activate abilities of creature sources.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddManaOfChoice",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "restriction": {
+                        "type": "CardTypeSpellsOrAbilitiesOnly",
+                        "cardType": "CREATURE",
+                        "allowSpells": false,
+                        "allowAbilities": true
+                    }
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "GrantKeyword",
+                "keyword": "MAY_ACTIVATE_ABILITIES_AS_THOUGH_HASTY",
+                "filter": {
+                    "baseFilter": "creature ctrl:you"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "187",
+        "rarity": "MYTHIC",
+        "artist": "Lee Woo-chul",
+        "flavorText": "\"Many underestimate me because I carry no weapon. But I am the weapon.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/e/2edbb62f-ad45-4422-850b-68dcc18b4c73.jpg?1783902911"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // She-Hulk, Jade Defender
 {
     "name": "She-Hulk, Jade Defender",
