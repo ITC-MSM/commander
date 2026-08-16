@@ -42,17 +42,18 @@ green card-definition count or a successful UI build does not satisfy it.
 The Two-Headed Giant/shared-turn combined defending-team declaration is atomic: one defender
 submits a map containing blockers controlled by either teammate, the entire map is validated
 together, and each controller with a tax share receives their own block-tax prompt. Payment responses are
-collected as zero-mutation intents; only after every payer accepts are all fixed-output tap-only mana
-payments applied to a candidate state and the block committed once. This includes deterministic
-fixed-output tap-only sources such as Elvish Aberration and the ordinary `{T}: Add {C}` branch of
-Crystal Vein; applicable mana-production multipliers are preserved, and any surplus remains in
-that controller's individual mana pool. A branch that sacrifices or otherwise has side effects is
-never inferred from a source-only selection. Any decline, forged source,
-duplicate source, or failed payment leaves mana, blockers, and declaration markers unchanged.
-This first payment slice deliberately excludes sacrifice branches (including Crystal Vein's
-`{T}, Sacrifice: Add {C}{C}` branch until selections identify an ability branch), secondary tap, pain,
-activation-mana, restricted-mana, or multi-mana side effects. Those source shapes remain an
-explicit implementation gap, separate from the FFA Commander simulation evidence above.
+collected as zero-mutation intents; only after every payer accepts are all selected fixed-output
+branches applied to a candidate state and the block committed once. The atomic decision names a
+source plus its printed mana-ability index, so it distinguishes Crystal Vein's `{T}: Add {C}`
+branch from its `{T}, Sacrifice: Add {C}{C}` branch. It supports deterministic, targetless,
+fixed-output `{T}` and `{T}, Sacrifice this` branches (including Elvish Aberration and Crystal
+Vein), preserves applicable mana-production multipliers, and retains surplus in that controller's
+individual mana pool. A selected blocker that sacrifices itself pays the locked tax and leaves its
+attacker blocked, but does not receive blocking status. Any decline, forged branch, duplicate
+source, direct mana activation, or failed payment leaves mana, blockers, and declaration markers
+unchanged. The slice still excludes secondary tap, pain, activation-mana, restricted-mana,
+choice/dynamic-output, and other side-effecting branches; those remain explicit implementation
+gaps, separate from the FFA Commander simulation evidence above.
 
 ## Next implementation order
 
