@@ -2659,7 +2659,48 @@ class StackResolver(
         val abilityComponent = container.get<TriggeredAbilityOnStackComponent>()!!
         val targetsComponent = container.get<TargetsComponent>()
 
-        // Validate targets (including protection check - Rule 702.16)
+        // The resolution-time context the two checks below and the effect itself all read: trigger
+        // payload, last-known info, captured batch and all. Built up front because CR 608.2a's
+        // intervening-"if" is evaluated against it *before* CR 608.2b touches the targets. The
+        // targets it carries are the stored ones — legality is 608.2b's business, not the context's.
+        val resolvedTargets2 = targetsComponent?.targets ?: emptyList()
+        val targetReqs = targetsComponent?.targetRequirements ?: emptyList()
+        val context = EffectContext.forTriggeredAbility(
+            abilityComponent,
+            targets = resolvedTargets2,
+            targetRequirements = targetReqs
+        )
+
+        // CR 608.2a, then CR 608.2b — in that lettered order. 608.2a: "If a triggered ability has
+        // an intervening 'if' clause, it checks whether the clause's condition is true. If it
+        // isn't, the ability is removed from the stack and does nothing. Otherwise, it continues to
+        // resolve." Only a *continuing* resolution reaches 608.2b's target-legality check, so when
+        // both have gone false the intervening-"if" is what ends the resolution and what the fizzle
+        // reports.
+
+        // CR 608.2a / CR 603.4's second check. Fizzles through the same event as an illegal-target
+        // fizzle rather than silently doing nothing.
+        //
+        // Only [TriggeredAbilityOnStackComponent.interveningIf] reaches here. A
+        // `triggerRestriction` ("...attacks *while* you control a Dinosaur") is a CR 603.2
+        // restriction on the trigger event and was already spent when the ability triggered;
+        // re-checking it would fizzle abilities that must resolve.
+        abilityComponent.interveningIf?.let { condition ->
+            if (!conditionEvaluator.evaluate(state, condition, context)) {
+                return ExecutionResult.success(
+                    state.removeEntity(abilityId),
+                    listOf(
+                        AbilityFizzledEvent(
+                            abilityComponent.sourceId,
+                            abilityComponent.description,
+                            "Intervening-if condition is no longer true"
+                        )
+                    )
+                )
+            }
+        }
+
+        // CR 608.2b — validate targets (including protection check, CR 702.16)
         val sourceCard = state.getEntity(abilityComponent.sourceId)?.get<CardComponent>()
         val sourceColors = sourceCard?.colors ?: emptySet()
         val sourceSubtypes = sourceCard?.typeLine?.subtypes?.map { it.value }?.toSet() ?: emptySet()
@@ -2692,40 +2733,6 @@ class StackResolver(
         }
 
         // Execute the effect
-        val resolvedTargets2 = targetsComponent?.targets ?: emptyList()
-        val targetReqs = targetsComponent?.targetRequirements ?: emptyList()
-        val context = EffectContext.forTriggeredAbility(
-            abilityComponent,
-            targets = resolvedTargets2,
-            targetRequirements = targetReqs
-        )
-
-        // CR 603.4's second check. "If the ability triggers, it checks the stated condition again
-        // as it resolves. If the condition isn't true at that time, the ability is removed from the
-        // stack and does nothing. Note that this mirrors the check for legal targets." So it sits
-        // right after the target check above, reads the same resolution-time context the effect is
-        // about to run in — trigger payload, last-known info, captured batch and all — and fizzles
-        // through the same event rather than silently doing nothing.
-        //
-        // Only [TriggeredAbilityOnStackComponent.interveningIf] reaches here. A
-        // `triggerRestriction` ("...attacks *while* you control a Dinosaur") is a CR 603.2
-        // restriction on the trigger event and was already spent when the ability triggered;
-        // re-checking it would fizzle abilities that must resolve.
-        abilityComponent.interveningIf?.let { condition ->
-            if (!conditionEvaluator.evaluate(state, condition, context)) {
-                return ExecutionResult.success(
-                    state.removeEntity(abilityId),
-                    listOf(
-                        AbilityFizzledEvent(
-                            abilityComponent.sourceId,
-                            abilityComponent.description,
-                            "Intervening-if condition is no longer true"
-                        )
-                    )
-                )
-            }
-        }
-
         val effectResult = effectHandler.execute(state, abilityComponent.effect, context)
 
         // If effect is paused awaiting a decision, return paused state
