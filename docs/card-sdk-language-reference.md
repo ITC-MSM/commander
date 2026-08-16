@@ -708,12 +708,24 @@ preview — in the turn-face-up handler.)
 - `Costs.pay.Discard(filter = Any, count = 1, random = false)` — discard cards matching `filter`.
   Random variant prompts a yes/no and the engine picks the discards (Pillaging Horde).
 - `Costs.pay.Sacrifice(filter = Any, count = 1)` — sacrifice permanents you control matching
-  `filter`. Source is auto-excluded. "...unless you sacrifice three Forests" (Primeval Force).
+  `filter`. **The source is included when it matches** — "sacrifice it unless you sacrifice an
+  artifact" on an artifact creature may name that creature. "...unless you sacrifice three Forests"
+  (Primeval Force).
+- `Costs.pay.SacrificeAnother(filter = Any, count = 1)` — the printed-"another" variant; same cost
+  with the source excluded.
 - `Costs.pay.Exile(filter = Any, zone = HAND, count = 1)` — exile cards from `zone` matching
   `filter`. "...unless you exile a blue card from your hand."
 - `Costs.pay.Tap(filter = Any, count = 1)` — tap untapped permanents you control matching `filter`.
-  Source is auto-excluded. Tapping each emits a `TappedEvent` so "becomes tapped" triggers fire.
+  **The source is included when it matches and is untapped** — Public Thoroughfare's and Command
+  Bridge's rulings both allow tapping the land itself when something untapped it in response.
+  Tapping each emits a `TappedEvent` so "becomes tapped" triggers fire.
   "...unless you tap an untapped permanent you control" (Command Bridge).
+- `Costs.pay.TapAnother(filter = Any, count = 1)` — the printed-"another" variant; same cost with
+  the source excluded.
+
+The word **"another"** is the only thing that decides self-exclusion, and it lives on the cost atom
+(`excludeSelf`). Both `PayOrSufferExecutor` and `CostPaymentService` read that flag; neither applies
+a blanket exclusion.
 - `Costs.pay.Choice(options)` — present several `PayCost`s; player picks one (or the suffer effect).
   Unaffordable options are hidden. "...unless they sacrifice a nonland permanent or discard a card."
 - `Costs.pay.ReturnToHand(filter, count = 1)` — return permanents you control to their owner's hand.
