@@ -1023,6 +1023,11 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
 - `Effects.Cascade` — CR 702.85a (`CascadeEffect`). Exile from the top of the controller's library
   until a nonland card with mana value **strictly less than** the triggering spell's is exiled,
   offer to cast it for free, bottom-randomize every exiled card that isn't cast.
+  **`Keyword.CASCADE` alone does nothing** — the engine never reads it. Cascade *is* a "when you cast
+  this spell" triggered ability, so a card with cascade carries the keyword (for the printed line)
+  **plus** `triggeredAbility { trigger = Triggers.WhenYouCastThisSpell(); effect = Effects.Cascade }`.
+  Quandrix, the Proof; Meteoric Mace; Annoyed Altisaur. The card type is irrelevant — it fires on an
+  Equipment spell exactly as on a creature spell.
 - `Effects.Discover(amount, storeDiscoveredAs?, thenEffect?)` — Discover N, CR 701.57 (`DiscoverEffect`).
   Exile from the top of the controller's library until a nonland card with mana value **≤ N** is exiled
   (the "discovered card"), then present a two-option prompt: **cast it for free** or **put it into your
@@ -7164,7 +7169,12 @@ composite abilities).
 - `Affinity(filter)` — cost reduction per matching permanent.
 - `Amplify(n)` — ETB reveal-creatures-for-counters.
 - `Devour(multiplier, sacrificeFilter, variant)` — "As this enters, you may sacrifice any number of [sacrificeFilter]. It enters with [multiplier] × that many +1/+1 counters." Plain Devour uses `sacrificeFilter = Creature` and `variant = ""`; the Edge of Eternities variant "Devour land N" uses `KeywordAbility.devourLand(n)` (`sacrificeFilter = Land`, `variant = "land"`). The keyword surfaces the rules text; pair with [`EntersWithDevour`](#15-replacement-effects) for the mechanical behavior.
-- `Annihilator(n)` — attacker forces sacrifices.
+- `Annihilator(n)` — attacker forces sacrifices. Display-only; nothing in the engine reads
+  `Keyword.ANNIHILATOR`. Lower it alongside the keyword ability as the trigger it abbreviates —
+  `triggeredAbility { trigger = Triggers.Attacks; effect = Effects.Sacrifice(GameObjectFilter.Permanent,
+  n, EffectTarget.PlayerRef(Player.DefendingPlayer)) }` (Nulldrifter). `Permanent`, not `Creature`:
+  annihilator eats any permanent, and the *defending player* chooses, which is why it's the edict
+  facade rather than a targeted sacrifice.
 - `Absorb(n)` — prevent N damage each time it would be dealt to this.
 - `Bushido(n)` — +N/+N when blocking or blocked.
 - `Rampage(n)` — +N/+N for each blocker past the first. Display-only; wire the behavior with the
@@ -7288,7 +7298,15 @@ composite abilities).
   and crews Vehicles as though its power were 2 greater” uses `modifier = 2`; “using its toughness
   rather than its power” uses `characteristic = CrewSaddleCharacteristic.TOUGHNESS`. Printed and
   token-granted instances use the same handler path.
-- `Modular(n)` — ETB with +1/+1 counters, transfer on death.
+- `Modular(n)` — ETB with +1/+1 counters, transfer on death. Display-only; nothing in the engine
+  reads `Keyword.MODULAR`. Lower it alongside the keyword ability as its two printed halves
+  (Arcbound Condor): `replacementEffect(EntersWithCounters(CounterTypeFilter.PlusOnePlusOne, n,
+  selfOnly = true))`, plus an **optional** `Triggers.Dies` trigger targeting an artifact creature
+  whose effect is `Effects.AddDynamicCounters(Counters.PLUS_ONE_PLUS_ONE,
+  DynamicAmount.ContextProperty(ContextPropertyKey.LAST_KNOWN_PLUS_ONE_COUNTER_COUNT), …)`. Read the
+  last-known **+1/+1** count specifically rather than reaching for `Effects.MoveAllLastKnownCounters`
+  (Servant of the Scale): that moves every counter kind, so a modular creature killed by -1/-1
+  counters would hand its leftover -1/-1 counters to the target too.
 - `Fading(n)` — ETB with N fade counters; removes one each upkeep, sacrifice if can't.
 - `Vanishing(n)` — same idea with time counters.
 - `Renown(n)` — first combat damage to a player grants renown counters.
