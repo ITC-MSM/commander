@@ -262,6 +262,52 @@ object Filters {
             }
         )
 
+    /**
+     * The two rules that exist only in **spell position** — the adjective in front of the word
+     * "spells", where the sentence supplies the head noun.
+     *
+     * That position is genuinely a different one, not a spelling of the permanent noun phrase, and
+     * both differences follow from one fact: **a spell on the stack is not a permanent.**
+     *
+     * - A bare subtype means `Any.withSubtype`, not [bareSubtype]'s `Permanent.withSubtype`. On the
+     *   battlefield "Zombies" names Zombie *permanents* — the reading the differential took 104
+     *   cards to settle; on the stack "Zombie spells" names cards, and a `IsPermanent` predicate
+     *   there would be a narrower filter than the card says. So this is **canonical** where
+     *   [bareSubtype] is an `alternate`: it is the only spelling of its value in this position,
+     *   rather than the second spelling of a value the adjective form already prints.
+     * - A bare colour has no noun to attach to. [colour] is a layer *around* a type phrase, and
+     *   "Red spells you cast cost {1} less to cast." has no type phrase in it at all.
+     *
+     * Instantiating the cascade for the position is the same move [SelfSteps.retargetable] makes for
+     * the anaphors, and for the same reason: the distinction exists in the sentence and nowhere in
+     * the model, so no remap on the finished filter could recover it. Registering either rule in the
+     * shared cascade instead would give one value two printed forms in permanent position.
+     */
+    private fun spellSubtype(suffix: String): Phrase<GameObjectFilter> =
+        phrase("{subtype}", name = "a spell's subtype$suffix") {
+            slot("subtype", Primitives.subtype)
+            build { GameObjectFilter.Any.withSubtype(it.value<Subtype>("subtype")) }
+            match { filter ->
+                val subtype = (filter.cardPredicates.singleOrNull() as? CardPredicate.HasSubtype)?.subtype
+                    ?: return@match null
+                if (filter != GameObjectFilter.Any.withSubtype(subtype)) return@match null
+                bind("subtype" to subtype)
+            }
+        }
+
+    /** "Red spells you cast …" — see [spellSubtype]; a colour with no noun under it. */
+    private fun spellColour(suffix: String): Phrase<GameObjectFilter> =
+        phrase("{colour}", name = "a spell's colour$suffix") {
+            slot("colour", Primitives.color)
+            build { GameObjectFilter.Any.withColor(it.value<Color>("colour")) }
+            match { filter ->
+                val colour = (filter.cardPredicates.singleOrNull() as? CardPredicate.HasColor)?.color
+                    ?: return@match null
+                if (filter != GameObjectFilter.Any.withColor(colour)) return@match null
+                bind("colour" to colour)
+            }
+        }
+
     // ---------------------------------------------------------------------------------------
     // The layers
     // ---------------------------------------------------------------------------------------
@@ -434,16 +480,22 @@ object Filters {
      * determined by the model rather than by alternation order, because every rule's `match` tests
      * the exact field it owns and the type nouns are exact values.
      */
-    private fun nounPhrase(plural: Boolean): Phrase<GameObjectFilter> {
-        val suffix = if (plural) " (plural)" else ""
+    private fun nounPhrase(plural: Boolean, spellPosition: Boolean = false): Phrase<GameObjectFilter> {
+        val suffix = if (plural) " (plural)" else if (spellPosition) " (of a spell)" else ""
         val named = typeNoun(plural)
         val types = oneOf(
             "a permanent type or subtype$suffix",
-            named,
-            subtyped(named, "a permanent of a subtype$suffix"),
-            notSubtyped(named, "a permanent of another subtype$suffix"),
-            anySubtype(named, "a permanent of either subtype$suffix"),
-            bareSubtype(plural, "a subtype standing alone$suffix"),
+            listOf(
+                named,
+                subtyped(named, "a permanent of a subtype$suffix"),
+                notSubtyped(named, "a permanent of another subtype$suffix"),
+                anySubtype(named, "a permanent of either subtype$suffix"),
+                if (spellPosition) {
+                    spellSubtype(suffix)
+                } else {
+                    bareSubtype(plural, "a subtype standing alone$suffix")
+                },
+            ) + if (spellPosition) listOf(spellColour(suffix)) else emptyList(),
         )
         val counted = oneOf(
             "a permanent or token$suffix",
@@ -484,6 +536,13 @@ object Filters {
 
     /** …and in the plural — "creatures you control", "creatures with power 2 or greater". */
     val plural: Phrase<GameObjectFilter> = nounPhrase(plural = true)
+
+    /**
+     * …and in **spell position** — the adjective in "Zombie spells you cast", "Red spells",
+     * "Noncreature spells". See [spellSubtype] for why this is an instantiation of the cascade
+     * rather than a rule inside it.
+     */
+    val spellQuality: Phrase<GameObjectFilter> = nounPhrase(plural = false, spellPosition = true)
 
     /**
      * "a Forest", "an Island", "a creature" — a singular noun phrase with its indefinite article.
