@@ -1,3 +1,49 @@
+// Bone Splinters
+{
+    "name": "Bone Splinters",
+    "manaCost": "{B}",
+    "typeLine": "Sorcery",
+    "oracleText": "As an additional cost to cast this spell, sacrifice a creature.\nDestroy target creature.",
+    "script": {
+        "spellEffect": {
+            "type": "MoveToZone",
+            "target": {
+                "type": "BoundVariable",
+                "name": "target"
+            },
+            "destination": "Graveyard",
+            "byDestruction": true
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target"
+            }
+        ],
+        "additionalCosts": [
+            {
+                "type": "AdditionalAtom",
+                "atom": {
+                    "type": "AtomSacrifice",
+                    "filter": "creature"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "67",
+        "artist": "Cole Eastburn",
+        "flavorText": "Witches of the Split-Eye Coven speak of a future when Grixis will overflow with life energy. For now, they must harvest vis from the living to fuel their dark magics.",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/4/d4a4b3a3-b7ae-4210-8037-098fdf5808d0.jpg?1783942568"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Cylian Elf
 {
     "name": "Cylian Elf",
