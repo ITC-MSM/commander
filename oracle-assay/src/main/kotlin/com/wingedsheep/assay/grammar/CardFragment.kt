@@ -1,6 +1,7 @@
 package com.wingedsheep.assay.grammar
 
 import com.wingedsheep.sdk.core.AbilityFlag
+import com.wingedsheep.sdk.core.ManaCost
 import com.wingedsheep.sdk.model.CardScript
 import com.wingedsheep.sdk.scripting.KeywordAbility
 
@@ -34,6 +35,22 @@ data class CardFragment(
      * paper over, and holding both is what lets the differential see it.
      */
     val flags: Set<AbilityFlag> = emptySet(),
+    /**
+     * `CardDefinition.equipCost` — the fourth behavioural slot, and the second one outside the
+     * script.
+     *
+     * "Equip {1}" is a keyword ability the SDK **lowers** at authoring time rather than storing: the
+     * card gets this field *and* the activated ability `ActivatedAbility.equip` builds, so one
+     * printed line fills two slots in two different objects. That is the same shape
+     * [Grammar.amplifyLine] has — a keyword plus a replacement effect — and the same reason this type
+     * grew a field for it: the fragment is the only place a line's two contributions can meet.
+     *
+     * The field is not redundant with the ability beside it. `CardValidator` requires an Equipment
+     * type line wherever it is set and `CardLinter` reads it to decide whether a permanent can ever
+     * attach, so a card carrying the ability without the cost is a different — and worse — card than
+     * one carrying both. Holding it here is what lets the differential see that.
+     */
+    val equipCost: ManaCost? = null,
 ) {
 
     /**
@@ -58,9 +75,14 @@ data class CardFragment(
         // same collision as two spell effects: a card the grammar has misread, or a card shape it
         // has no model for. Neither line may be dropped silently.
         if (script.auraTarget != null && other.script.auraTarget != null) return null
+        // …and a card declares one equip cost, for the same reason. Two "Equip" lines on one card is
+        // a shape the SDK cannot hold — `CardDefinition.equipCost` is one field — so the fold
+        // declines and the card is counted rather than losing the second one silently.
+        if (equipCost != null && other.equipCost != null) return null
         return CardFragment(
             keywordAbilities = keywordAbilities + other.keywordAbilities,
             flags = flags + other.flags,
+            equipCost = equipCost ?: other.equipCost,
             script = CardScript(
                 spellEffect = script.spellEffect ?: other.script.spellEffect,
                 targetRequirements = script.targetRequirements + other.script.targetRequirements,
@@ -85,7 +107,8 @@ data class CardFragment(
         )
     }
 
-    val isEmpty: Boolean get() = keywordAbilities.isEmpty() && flags.isEmpty() && script == CardScript.EMPTY
+    val isEmpty: Boolean
+        get() = keywordAbilities.isEmpty() && flags.isEmpty() && equipCost == null && script == CardScript.EMPTY
 
     companion object {
         val EMPTY = CardFragment()

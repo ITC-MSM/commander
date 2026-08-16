@@ -134,18 +134,18 @@ non-zero on. Declines are not failures.
 
 ```
 Cards assayed                    34882
-Ability lines                    66793  (38943 unique)
+Ability lines                    66793  (38865 unique)
 
-Round-trips byte-exact           22940   343.4‰ (34.3%)
-Alternate spelling normalized    1114
-Declined                         42739
+Round-trips byte-exact           23861   357.2‰ (35.7%)
+Alternate spelling normalized    1110
+Declined                         41822
 Ambiguous — distinct readings    0
 Print mismatch                   0
 Normalization not invertible     0
 Full inverse not reproduced      0
 Redundant readings (same model)  0
 
-Cards fully covered              6335 / 34882   181.6‰ (18.2%)
+Cards fully covered              6400 / 34882   183.5‰ (18.3%)
 Vanilla + keyword-only cards     1444 / 1712   843.5‰ (84.3%)   <- Phase 1 target
 Portal (set POR)                 200 / 200     1000.0‰ (100%)   <- the Portal band's target
 Legions (set LGN)                145 / 145     1000.0‰ (100%)   <- the Legions band's target
@@ -309,6 +309,59 @@ and Eternal Witness, and the 22 the sweep turned up — was a clause lost *insid
 sentence*. A counter sentence is short and has one filter, which is the same reason the auras added
 none: there is very little in it to drop.
 
+## The equipment band
+
+`Equip {§}` was the **largest single sentence shape in the corpus** — 563 cards, against 342 for the
+next one — and the last of Phase 1's two headline findings still declining. It is now read, together
+with the two attached-permanent sentences an Equipment shares with an Aura. Whole-corpus coverage
+went 6,335 → **6,400 cards**, byte-exact lines 22,944 → **23,861**, and the differential's compared
+population 2,431 → **2,449**, every one of the 18 new cards confirmed.
+
+**The band is two changes in two different files, and which half went where is the whole point.**
+
+**The noun is normalization's.** An Equipment prints "Equipped creature gets +2/+0." for a model that
+is *byte-identical* to an Aura's: the static's affected set is `GroupFilter.attachedCreature()` —
+`Permanent` scoped to `AttachedTo` — which says "the thing this is attached to" and nothing about
+auras, so Bonesplitter's golden and Holy Strength's carry the same `ModifyStats`. Which word a card
+prints is a function of its type line, exactly like the self-reference noun, and the model has
+nowhere to keep it. A second grammar rule would therefore have given one value two printed forms and
+left `unparse` to choose — ambiguity by construction, which is invariant 2 rather than a preference.
+So `Normalizer.canonicalizeAttachmentNoun` abstracts "equipped creature" onto "enchanted creature"
+and restores the printed word positionally, and *every* static rule in `Statics` reads both card
+classes without knowing there are two. `Statics`' KDoc predicted this pass before it existed; the
+band carried the prediction out rather than revising it.
+
+**The keyword is a line rule, because equip is lowered rather than stored.** "Equip {1}" is
+`CardDefinition.equipCost` *plus* a synthesized activated ability carrying CR 702.6a's attach effect,
+sorcery timing and target requirement. That is one printed line filling two slots in two different
+objects, which is `Grammar.amplifyLine`'s shape and the reason `CardFragment` grew an `equipCost`
+field — a fragment is the only place a line's two contributions can meet.
+
+**The rule does not reproduce the lowering; it calls it.** `CardBuilder.equipAbility`'s body moved to
+`ActivatedAbility.equip` in the same change, and both callers use it. A second copy in `grammar/`
+would have agreed with the cards exactly until someone edited one of them, and the differential would
+then have reported every Equipment in the corpus over a change nobody made to a card. It is the one
+place the module's "build through an SDK facade" rule needed the facade to be *created* first, since
+equip's curated surface was a DSL method a parser cannot call.
+
+**`equipCost` is the first compared field outside `CardScript`.** Comparing only the ability would
+confirm an Equipment that can never be equipped: `CardValidator` requires an Equipment type line
+wherever the field is set and `CardLinter` reads it to decide whether a permanent can ever attach, so
+a card carrying the ability without the cost is a different — and worse — card. The differential's
+header now names it beside the script slots.
+
+**The band is also the third worked example of a decline rank overstating its work**, and this time
+the overstatement was measured in advance rather than after. Of a 400-card sample blocked by
+`Equip {§}`, 248 declined on *nothing but* equipment-shaped lines — which predicted ~350 whole cards.
+The actual figure is 65, and the gap is one word: the sample counted "Equipped creature gets +2/+2
+and has trample **and** lifelink" as an equipment shape, and the grammar's joined sentence takes one
+keyword rather than a run. So the prediction was right about which cards the band reaches and wrong
+about which *lines* it finishes. The residue is now visible and small: 385 cards decline on nothing
+but an "Enchanted creature …" sentence, and their tail is genuinely long — the largest single one is
+10 cards ("doesn't untap during its controller's untap step"), and a keyword-run generalization of
+the joined form is worth 22. There is no fourth large family hiding behind this one, which is the
+useful half of the finding.
+
 ## What Phase 1 already found
 
 The report is two documents at once, and the second one is about `mtg-sdk`:
@@ -323,8 +376,9 @@ The report is two documents at once, and the second one is about `mtg-sdk`:
   not rules. Equip is not the same shape at all: it lowers at authoring time into `equipCost` *and*
   a synthesized activated ability with its own timing, effect and target requirement, so reading it
   means reproducing a lowering rather than a sentence, and it reaches past `CardScript` into a slot
-  `CardFragment` does not model. That is why it is still declined, and why the pair stopped being
-  one finding.
+  `CardFragment` did not model. That is why the pair stopped being one finding — and the equipment
+  band below is what closing the second half cost: a new `CardFragment` field, a shared factory in
+  the SDK, and a normalization pass, against the aura band's one rule.
 - **`PROTECTION_FROM_EACH_OPPONENT` and `ProtectionScope.EachOpponent` are two spellings of one
   thing.** Registering both would be genuine ambiguity, so the grammar deliberately spells it only
   one way (see `Primitives.protectionScope`).
@@ -352,22 +406,24 @@ partially-read card would count a keyword Assay never saw as agreement, so every
 named population bucket instead and the denominator stays visible.
 
 ```
-  Hand-written cards                 9123
-    compared                         2431
-    not yet covered by the grammar   6056
+  Hand-written cards                 9127
+    compared                         2449
+    not yet covered by the grammar   6042
     script slot not modelled yet      82
     lines do not fold into one card   50
     multi-face (out of scope)        301
     Oracle text differs from golden  203
     golden would not decode            0
 
-  Confirmed — models agree           2430   999.6‰ (100.0%)
-  DIVERGENT — read every one            1
+  Confirmed — models agree           2449   1000.0‰ (100.0%)
+  DIVERGENT — read every one            0
 ```
 
-The one that remains is what the **sweep** left standing. The sweep took the count from 122 to 1: every divergence the
-gate had accumulated was read, classified as parser bug / card bug / fold, and acted on. What it
-found, by kind:
+**Zero is where the sweep and the two findings after it landed**, and it is a checkpoint rather than
+a property — the number has gone up on the day the grammar reached every new card class but one, and
+it should be expected to again. The sweep took the count from 122 to 1: every divergence the gate had
+accumulated was read, classified as parser bug / card bug / fold, and acted on. The one it left
+standing was Lavaborn Muse, closed by the CR 603.4 split below. What the sweep found, by kind:
 
 - **A bug in the gate itself, and a flaky one.** `AbilityId.generate()` is a global counter and
   `encodeDefaults` is false, so kotlinx re-evaluates the default to decide whether to emit an `id` —

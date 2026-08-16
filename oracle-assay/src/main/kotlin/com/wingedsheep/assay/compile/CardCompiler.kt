@@ -219,6 +219,10 @@ object CardCompiler {
         flags = fragment.flags,
         keywordAbilities = fragment.keywordAbilities,
         script = withDistinctAbilityIds(fragment.script),
+        // Derivation 3 (`CardBuilder.equipAbility`): "Equip {1}" is one line filling two slots, and
+        // the field half is not decoration — `CardValidator` requires an Equipment type line
+        // wherever it is set, and the engine's equip permissions read it.
+        equipCost = fragment.equipCost,
         oracleId = card.oracleId,
         setCode = card.setCode,
         metadata = ScryfallMetadata(imageUri = face.imageUri),

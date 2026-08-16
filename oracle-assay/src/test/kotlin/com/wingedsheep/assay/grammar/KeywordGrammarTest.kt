@@ -164,12 +164,17 @@ class KeywordGrammarTest : StringSpec({
         Grammar.abilityLine.printLine(fragment) shouldBe "Flying, banding"
     }
 
-    // "Enchant creature" used to be this example and is now read by `Targets.enchant`. Equip is the
-    // other half of the same Phase 1 finding and is still the honest one: it lowers at authoring
-    // time into `CardDefinition.equipCost` *plus* a synthesized activated ability, so there is
-    // nothing for a keyword rule to parse it into and the decline names a real gap.
+    // Both of this test's earlier examples have since been read, and the pair is the module's own
+    // record of how a decline gets closed. "Enchant creature" turned out to be a plain
+    // `TargetRequirement` and went to `Targets.enchant`; "Equip {2}" was the harder half of the same
+    // Phase 1 finding — a keyword the SDK *lowers* at authoring time rather than storing — and is
+    // now `Grammar.equipLine`, which reproduces the lowering through the SDK's own factory instead
+    // of parsing it into a keyword.
+    //
+    // Exalted is the honest example left, and it is a different kind of gap: the decline is not the
+    // grammar missing a sentence but `Keyword` missing a constant, which no rule here can fix.
     "text outside the grammar declines, and says where" {
-        val declined = Grammar.abilityLine.parseLine("Equip {2}")
+        val declined = Grammar.abilityLine.parseLine("Exalted")
             .shouldBeInstanceOf<ParseOutcome.Declined>()
         declined.reason shouldBe com.wingedsheep.assay.syntax.DeclineReason.NO_PARSE
     }

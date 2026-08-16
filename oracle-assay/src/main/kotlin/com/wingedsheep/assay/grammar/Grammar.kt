@@ -10,7 +10,10 @@ import com.wingedsheep.assay.syntax.phrase
 import com.wingedsheep.assay.syntax.separated
 import com.wingedsheep.sdk.core.AbilityFlag
 import com.wingedsheep.sdk.core.Keyword
+import com.wingedsheep.sdk.core.ManaCost
 import com.wingedsheep.sdk.model.CardScript
+import com.wingedsheep.sdk.scripting.AbilityId
+import com.wingedsheep.sdk.scripting.ActivatedAbility
 import com.wingedsheep.sdk.scripting.EntersWithRevealCounters
 import com.wingedsheep.sdk.scripting.KeywordAbility
 
@@ -250,6 +253,49 @@ object Grammar {
         }
     }
 
+    /**
+     * "Equip {1}" — the second line whose two halves land in **two different card slots**, and the
+     * largest single sentence shape in the corpus: 563 cards print it.
+     *
+     * Like [amplifyLine], and for the same reason it is here rather than in [Keywords]: the SDK
+     * lowers equip at authoring time into `CardDefinition.equipCost` *plus* a synthesized activated
+     * ability, and no single family can produce a fragment filling both. Unlike amplify, the second
+     * half is a whole ability with a cost, a timing, an effect and a target requirement — CR 702.6a's
+     * "attach this Equipment to target creature you control; activate only as a sorcery" — which is a
+     * *lowering to reproduce* rather than a sentence to read.
+     *
+     * So the rule does not reproduce it. `ActivatedAbility.equip` is the lowering, factored out of
+     * `CardBuilder.equipAbility` in the same change and called by both, because a second copy here
+     * would be a rule that agrees with the cards until the day someone edits one of them — and the
+     * differential would then report every Equipment in the corpus over a change nobody made to a
+     * card. The build half is the SDK facade, exactly as the module's rule asks; what makes it
+     * unusual is that the facade had to be *created*, since equip's curated surface was a DSL method
+     * a parser cannot call.
+     *
+     * The printed line carries no full stop — it is a keyword ability, not a sentence — and no
+     * quality: "Equip Human {1}" (CR 702.6c) pairs a printed word with a target filter that nothing
+     * checks against it, so reading one would be inventing the rules half from the wording. Those
+     * decline.
+     */
+    private val equipLine: Phrase<CardFragment> = run {
+        // The id this rule mints, for the reason `Activated`'s and `Triggers`' constants exist: no
+        // printed word determines it, and the differential renames both sides by position.
+        val equipId = AbilityId("equip")
+        fun fragmentFor(cost: ManaCost) = CardFragment(
+            equipCost = cost,
+            script = CardScript(activatedAbilities = listOf(ActivatedAbility.equip(cost, id = equipId))),
+        )
+        phrase("equip {cost}", name = "equip") {
+            slot("cost", Primitives.manaCost)
+            build { fragmentFor(it.value("cost")) }
+            match { fragment ->
+                val cost = fragment.equipCost ?: return@match null
+                if (fragment != fragmentFor(cost)) return@match null
+                bind("cost" to cost)
+            }
+        }
+    }
+
     /** A line that is one replacement effect — "~ enters tapped." */
     private val replacementLine: Phrase<CardFragment> = phrase("{replacement}", name = "a replacement effect line") {
         slot("replacement", Replacements.replacement)
@@ -368,6 +414,7 @@ object Grammar {
         keywordLine,
         semicolonKeywordLine,
         amplifyLine,
+        equipLine,
         spellLine,
         triggerLine,
         activatedLine,

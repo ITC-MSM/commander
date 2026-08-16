@@ -61,14 +61,17 @@ import com.wingedsheep.sdk.scripting.values.DynamicAmount
  * fail-closed reading: a decline names the gap, a re-spelling would quietly change what the card
  * says.
  *
- * ### Why there is no "Equipped creature …" rule
+ * ### Why there is still no "Equipped creature …" rule, now that Equipment is read
  *
- * Same reason, one step further out. An Equipment prints "Equipped creature gets +1/+1." for a value
- * that is *byte-identical* to the Aura's, because which word a card uses is a function of its type
- * line — the same class of printed-shape information as the self-reference noun ("this creature" vs
- * "this Equipment"), which [com.wingedsheep.assay.normalize.Normalizer] owns and abstracts away. If
- * the equipment forms are ever read, they belong in that pass as a recorded-and-restored surface
- * form, not as a second rule here; a second rule would leave printing underdetermined between them.
+ * Same reason, one step further out — and the prediction this file made has since been carried out
+ * rather than revised. An Equipment prints "Equipped creature gets +1/+1." for a value that is
+ * *byte-identical* to the Aura's, because which word a card uses is a function of its type line: the
+ * same class of printed-shape information as the self-reference noun ("this creature" vs "this
+ * Equipment"). So it belongs to [com.wingedsheep.assay.normalize.Normalizer], and that is where it
+ * went — `canonicalizeAttachmentNoun` abstracts "equipped creature" onto "enchanted creature" and
+ * restores the printed word positionally, so every rule below reads both card classes and prints
+ * each one back byte-exact. A second rule here would have left printing underdetermined between two
+ * spellings of one model, which is the thing the module's second invariant forbids.
  *
  * ### No facade to build through
  *
