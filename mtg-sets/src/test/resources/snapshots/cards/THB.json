@@ -1,3 +1,339 @@
+// Archon of Sun's Grace
+{
+    "name": "Archon of Sun's Grace",
+    "manaCost": "{2}{W}{W}",
+    "typeLine": "Creature — Archon",
+    "oracleText": "Flying\nLifelink (Damage dealt by this creature also causes you to gain that much life.)\nPegasus creatures you control have lifelink.\nConstellation — Whenever an enchantment you control enters, create a 2/2 white Pegasus creature token with flying.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 4
+    },
+    "keywords": [
+        "FLYING",
+        "LIFELINK"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "enchantment ctrl:you",
+                    "to": "Battlefield"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 2,
+                    "toughness": 2,
+                    "colors": [
+                        "WHITE"
+                    ],
+                    "creatureTypes": [
+                        "Pegasus"
+                    ],
+                    "keywords": [
+                        "FLYING"
+                    ]
+                },
+                "descriptionOverride": "Constellation — Whenever an enchantment you control enters, create a 2/2 white Pegasus creature token with flying."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "GrantKeyword",
+                "keyword": "LIFELINK",
+                "filter": {
+                    "baseFilter": "creature Pegasus ctrl:you"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "3",
+        "rarity": "RARE",
+        "artist": "Matt Stewart",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/3/235e5999-e8e5-4093-adff-9d47aec70d10.jpg?1783931603",
+        "rulings": [
+            {
+                "date": "2020-01-24",
+                "text": "Multiple instances of lifelink on the same creature are redundant."
+            },
+            {
+                "date": "2020-01-24",
+                "text": "A constellation ability triggers whenever an enchantment enters the battlefield under your control for any reason. Enchantments with other card types, such as enchantment creatures, will also cause constellation abilities to trigger."
+            },
+            {
+                "date": "2020-01-24",
+                "text": "An Aura spell that has an illegal target when it tries to resolve doesn't resolve and is instead put into its owner's graveyard. It doesn't enter the battlefield, so constellation abilities don't trigger."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Captivating Unicorn
+{
+    "name": "Captivating Unicorn",
+    "manaCost": "{4}{W}",
+    "typeLine": "Creature — Unicorn",
+    "oracleText": "Constellation — Whenever an enchantment you control enters, tap target creature an opponent controls.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "enchantment ctrl:you",
+                    "to": "Battlefield"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "TapUntap",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "creature"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature ctrl:opponent"
+                    },
+                    "id": "creature"
+                },
+                "descriptionOverride": "Constellation — Whenever an enchantment you control enters, tap target creature an opponent controls."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "6",
+        "artist": "Emrah Elmasli",
+        "flavorText": "\"Gazing at the unicorn, I felt closer to the majesty of Nyx than I ever had before.\" —Oineus, traveling merchant",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/3/13893599-0b87-4fc0-863d-f3e0ae51cc31.jpg?1783931602",
+        "rulings": [
+            {
+                "date": "2020-01-24",
+                "text": "A constellation ability triggers whenever an enchantment enters the battlefield under your control for any reason. Enchantments with other card types, such as enchantment creatures, will also cause constellation abilities to trigger."
+            },
+            {
+                "date": "2020-01-24",
+                "text": "An Aura spell that has an illegal target when it tries to resolve doesn't resolve and is instead put into its owner's graveyard. It doesn't enter the battlefield, so constellation abilities don't trigger."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Elite Instructor
+{
+    "name": "Elite Instructor",
+    "manaCost": "{2}{U}",
+    "typeLine": "Creature — Human Wizard",
+    "oracleText": "When this creature enters, draw a card, then discard a card.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        },
+                        {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "GatherCards",
+                                    "source": {
+                                        "type": "FromZone",
+                                        "zone": "Hand"
+                                    },
+                                    "storeAs": "hand"
+                                },
+                                {
+                                    "type": "SelectFromCollection",
+                                    "from": "hand",
+                                    "selection": {
+                                        "type": "ChooseExactly",
+                                        "count": {
+                                            "type": "Fixed",
+                                            "amount": 1
+                                        }
+                                    },
+                                    "storeSelected": "discarded",
+                                    "prompt": "Choose 1 card to discard"
+                                },
+                                {
+                                    "type": "MoveCollection",
+                                    "from": "discarded",
+                                    "destination": {
+                                        "type": "ToZone",
+                                        "zone": "Graveyard"
+                                    },
+                                    "moveType": "Discard"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "descriptionOverride": "When this creature enters, draw a card, then discard a card."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "49",
+        "artist": "Mike Sass",
+        "flavorText": "The greatest minds in Meletis study under the masters at the Dekatia, a renowned school of magic and philosophy.",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/2/821cd2dd-aa03-4c55-b9e4-98e0284889d3.jpg?1783931585"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Favored of Iroas
+{
+    "name": "Favored of Iroas",
+    "manaCost": "{2}{W}",
+    "typeLine": "Creature — Human Soldier",
+    "oracleText": "Constellation — Whenever an enchantment you control enters, this creature gains double strike until end of turn. (It deals both first-strike and regular combat damage.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "enchantment ctrl:you",
+                    "to": "Battlefield"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "GrantKeyword",
+                    "keyword": "DOUBLE_STRIKE",
+                    "target": "Self"
+                },
+                "descriptionOverride": "Constellation — Whenever an enchantment you control enters, this creature gains double strike until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "15",
+        "rarity": "UNCOMMON",
+        "artist": "John Severin Brassell",
+        "flavorText": "\"The promise of victory fills my heart. There is no room for fear.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/0/f09e7aff-d873-4420-b0d5-1c63d686dd73.jpg?1783931598",
+        "rulings": [
+            {
+                "date": "2020-01-24",
+                "text": "Multiple instances of double strike on the same creature are redundant."
+            },
+            {
+                "date": "2020-01-24",
+                "text": "A constellation ability triggers whenever an enchantment enters the battlefield under your control for any reason. Enchantments with other card types, such as enchantment creatures, will also cause constellation abilities to trigger."
+            },
+            {
+                "date": "2020-01-24",
+                "text": "An Aura spell that has an illegal target when it tries to resolve doesn't resolve and is instead put into its owner's graveyard. It doesn't enter the battlefield, so constellation abilities don't trigger."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Irreverent Revelers
+{
+    "name": "Irreverent Revelers",
+    "manaCost": "{2}{R}",
+    "typeLine": "Creature — Satyr",
+    "oracleText": "When this creature enters, choose one —\n• Destroy target artifact.\n• This creature gains haste until end of turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Modal",
+                    "modes": [
+                        {
+                            "effect": {
+                                "type": "MoveToZone",
+                                "target": {
+                                    "type": "ContextTarget",
+                                    "index": 0
+                                },
+                                "destination": "Graveyard",
+                                "byDestruction": true
+                            },
+                            "targetRequirements": [
+                                {
+                                    "type": "TargetObject",
+                                    "filter": {
+                                        "baseFilter": "artifact"
+                                    }
+                                }
+                            ],
+                            "description": "Destroy target artifact."
+                        },
+                        {
+                            "effect": {
+                                "type": "GrantKeyword",
+                                "keyword": "HASTE",
+                                "target": "Self"
+                            },
+                            "description": "This creature gains haste until end of turn."
+                        }
+                    ]
+                },
+                "descriptionOverride": "When this creature enters, choose one — Destroy target artifact. • This creature gains haste until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "143",
+        "artist": "Milivoj Ćeran",
+        "flavorText": "To some satyrs, only blasphemy is sacred.",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/5/55405dca-3555-45ff-be1c-e276fe1a0c2e.jpg?1783931550"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Nessian Hornbeetle
 {
     "name": "Nessian Hornbeetle",
@@ -144,6 +480,77 @@
     ]
 }
 
+// Pious Wayfarer
+{
+    "name": "Pious Wayfarer",
+    "manaCost": "{W}",
+    "typeLine": "Creature — Human Scout",
+    "oracleText": "Constellation — Whenever an enchantment you control enters, target creature gets +1/+1 until end of turn.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "enchantment ctrl:you",
+                    "to": "Battlefield"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature"
+                    },
+                    "id": "target"
+                },
+                "descriptionOverride": "Constellation — Whenever an enchantment you control enters, target creature gets +1/+1 until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "32",
+        "artist": "Mark Zug",
+        "flavorText": "Every footstep is a prayer, every road a temple.",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/0/10b1a2b5-5be2-43a2-bc35-95df6eb0984f.jpg?1783931591",
+        "rulings": [
+            {
+                "date": "2020-01-24",
+                "text": "If an enchantment creature enters the battlefield under your control, Pious Wayfarer's ability can target it."
+            },
+            {
+                "date": "2020-01-24",
+                "text": "A constellation ability triggers whenever an enchantment enters the battlefield under your control for any reason. Enchantments with other card types, such as enchantment creatures, will also cause constellation abilities to trigger."
+            },
+            {
+                "date": "2020-01-24",
+                "text": "An Aura spell that has an illegal target when it tries to resolve doesn't resolve and is instead put into its owner's graveyard. It doesn't enter the battlefield, so constellation abilities don't trigger."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Soul-Guide Lantern
 {
     "name": "Soul-Guide Lantern",
@@ -271,4 +678,41 @@
     "colorIdentityOverride": [
         "RED"
     ]
+}
+
+// Thaumaturge's Familiar
+{
+    "name": "Thaumaturge's Familiar",
+    "manaCost": "{3}",
+    "typeLine": "Artifact Creature — Bird",
+    "oracleText": "Flying\nWhen this creature enters, scry 1.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 3
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Scry",
+                    "count": 1
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "238",
+        "artist": "Andrea Radeck",
+        "flavorText": "Meletian mages can't claim the title of thaumaturge until they have received a gift or omen from the gods. Ephara likes to give tangible tokens of her favor.",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/b/7b497153-69a8-480e-b02f-88afec9d5053.jpg?1783931515"
+    },
+    "colorIdentityOverride": []
 }

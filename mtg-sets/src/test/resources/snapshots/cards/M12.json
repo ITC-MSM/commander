@@ -173,6 +173,113 @@
     ]
 }
 
+// Devouring Swarm
+{
+    "name": "Devouring Swarm",
+    "manaCost": "{1}{B}{B}",
+    "typeLine": "Creature — Insect",
+    "oracleText": "Flying\nSacrifice a creature: This creature gets +1/+1 until end of turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomSacrifice",
+                        "filter": "creature"
+                    }
+                },
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": "Self"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "91",
+        "artist": "Wayne England",
+        "flavorText": "Their arrival is heralded by the deafening hum of ten thousand wings. Their departure is marked by the silence of the dead.",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/3/735c2c79-9b4f-4f86-9dec-0749237fe9ce.jpg?1783941082"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Gideon's Lawkeeper
+{
+    "name": "Gideon's Lawkeeper",
+    "manaCost": "{W}",
+    "typeLine": "Creature — Human Soldier",
+    "oracleText": "{W}, {T}: Tap target creature.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{W}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "TapUntap",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "creature"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature"
+                        },
+                        "id": "creature"
+                    }
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "18",
+        "artist": "Steve Prescott",
+        "flavorText": "\"The essence of a lawful society is swift deterrence.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/c/1c71eb81-a077-4c85-a4ce-4ad664486bee.jpg?1783941103"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Grand Abolisher
 {
     "name": "Grand Abolisher",

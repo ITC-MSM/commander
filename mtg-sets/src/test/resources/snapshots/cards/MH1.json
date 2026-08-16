@@ -1,3 +1,43 @@
+// Faerie Seer
+{
+    "name": "Faerie Seer",
+    "manaCost": "{U}",
+    "typeLine": "Creature — Faerie Wizard",
+    "oracleText": "Flying\nWhen this creature enters, scry 2. (Look at the top two cards of your library, then put any number of them on the bottom and the rest on top in any order.)",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Scry",
+                    "count": 2
+                },
+                "descriptionOverride": "When this creature enters, scry 2."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "51",
+        "artist": "Colin Boyer",
+        "flavorText": "\"The patterns of crossing ripples reveal the future to those who know how to read them.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/1/d1fcfeb4-1818-4e08-be4c-27b8a9dc12e6.jpg?1783933144"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Goblin Oriflamme
 {
     "name": "Goblin Oriflamme",
@@ -70,6 +110,47 @@
     ]
 }
 
+// King of the Pride
+{
+    "name": "King of the Pride",
+    "manaCost": "{2}{W}",
+    "typeLine": "Creature — Cat",
+    "oracleText": "Other Cats you control get +2/+1.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 2,
+                "toughnessBonus": 1,
+                "filter": {
+                    "baseFilter": "permanent Cat ctrl:you",
+                    "excludeSelf": true
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "16",
+        "rarity": "UNCOMMON",
+        "artist": "Jonathan Kuo",
+        "flavorText": "\"Glorious, to walk again across the savannah with my beloved.\" —\"Love Song of Night and Day\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/4/c4e83abd-6f15-491e-9253-90af9f6f1025.jpg?1783933160",
+        "rulings": [
+            {
+                "date": "2024-11-08",
+                "text": "Because damage remains marked on a creature until the damage is removed as the turn ends, nonlethal damage dealt to a Cat you control may become lethal if King of the Pride leaves the battlefield during that turn."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Ravenous Giant
 {
     "name": "Ravenous Giant",
@@ -113,4 +194,124 @@
     "colorIdentityOverride": [
         "RED"
     ]
+}
+
+// Sling-Gang Lieutenant
+{
+    "name": "Sling-Gang Lieutenant",
+    "manaCost": "{3}{B}",
+    "typeLine": "Creature — Goblin",
+    "oracleText": "When this creature enters, create two 1/1 red Goblin creature tokens.\nSacrifice a Goblin: Target player loses 1 life and you gain 1 life.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [
+                        "RED"
+                    ],
+                    "creatureTypes": [
+                        "Goblin"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/7/0/70f8a1de-cd4c-4afa-bf03-0245d375d42e.jpg?1782727474"
+                },
+                "descriptionOverride": "When this creature enters, create two 1/1 red Goblin creature tokens."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomSacrifice",
+                        "filter": "permanent Goblin"
+                    }
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "LoseLife",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 1
+                            },
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target player"
+                            }
+                        },
+                        {
+                            "type": "GainLife",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetPlayer",
+                        "id": "target player"
+                    }
+                ],
+                "descriptionOverride": "Sacrifice a Goblin: Target player loses 1 life and you gain 1 life."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "108",
+        "rarity": "UNCOMMON",
+        "artist": "Craig J Spearing",
+        "flavorText": "Freshly promoted to \"first rock,\" Zaz was eager to make an impact.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/8/f82aec21-441b-4fcd-b666-61723bd79531.jpg?1783933120",
+        "rulings": [
+            {
+                "date": "2019-06-14",
+                "text": "You can sacrifice any Goblin you control to activate Sling-Gang Lieutenant's activated ability, not just the ones its triggered ability creates. You can even sacrifice Sling-Gang Lieutenant itself."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Universal Automaton
+{
+    "name": "Universal Automaton",
+    "manaCost": "{1}",
+    "typeLine": "Artifact Creature — Shapeshifter",
+    "oracleText": "Changeling (This card is every creature type.)",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "CHANGELING"
+    ],
+    "metadata": {
+        "collectorNumber": "235",
+        "artist": "Ben Maier",
+        "flavorText": "\"Within minutes, the strange device was indistinguishable from the other upon my workbench.\" —Tocasia, journal entry",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/3/53c682e2-c90f-4f4b-9010-00b099e85518.jpg?1783933069"
+    },
+    "colorIdentityOverride": []
 }

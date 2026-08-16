@@ -430,6 +430,47 @@
     ]
 }
 
+// Brazen Wolves
+{
+    "name": "Brazen Wolves",
+    "manaCost": "{2}{R}",
+    "typeLine": "Creature — Wolf",
+    "oracleText": "Whenever this creature attacks, it gets +2/+0 until end of turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 0
+                    },
+                    "target": "Self"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "122",
+        "artist": "Nils Hamm",
+        "flavorText": "With fewer patrols about, Kessig's roads have become prime hunting grounds.",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/b/ab8e2ece-3c66-4f34-9042-fc02639c6a79.jpg?1783937466"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Brisela, Voice of Nightmares
 {
     "name": "Brisela, Voice of Nightmares",
@@ -2286,6 +2327,71 @@
     ]
 }
 
+// Graf Harvest
+{
+    "name": "Graf Harvest",
+    "manaCost": "{B}",
+    "typeLine": "Enchantment",
+    "oracleText": "Zombies you control have menace. (They can't be blocked except by two or more creatures.)\n{3}{B}, Exile a creature card from your graveyard: Create a 2/2 black Zombie creature token.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{3}{B}"
+                            }
+                        },
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomExileFrom",
+                                "zone": "Graveyard",
+                                "filter": "creature"
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 2,
+                    "toughness": 2,
+                    "colors": [
+                        "BLACK"
+                    ],
+                    "creatureTypes": [
+                        "Zombie"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/b/5/b5bd6905-79be-4d2c-a343-f6e6a181b3e6.jpg?1783936411"
+                }
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "GrantKeyword",
+                "keyword": "MENACE",
+                "filter": {
+                    "baseFilter": "permanent Zombie ctrl:you"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "90",
+        "rarity": "UNCOMMON",
+        "artist": "Lake Hurwitz",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/b/fbc17697-9db9-41d4-aacf-b2f2e6ff80cf.jpg?1783937482"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Graf Rats
 {
     "name": "Graf Rats",
@@ -3663,6 +3769,59 @@
     ]
 }
 
+// Selfless Spirit
+{
+    "name": "Selfless Spirit",
+    "manaCost": "{1}{W}",
+    "typeLine": "Creature — Spirit Cleric",
+    "oracleText": "Flying\nSacrifice this creature: Creatures you control gain indestructible until end of turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostSacrificeSelf",
+                "effect": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        }
+                    },
+                    "body": {
+                        "type": "GrantKeyword",
+                        "keyword": "INDESTRUCTIBLE",
+                        "target": "Self"
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "40",
+        "rarity": "RARE",
+        "artist": "Seb McKinnon",
+        "flavorText": "\"There is always more to give.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/4/a4624976-3773-4a1e-b725-5f6efce147a5.jpg?1783937510",
+        "rulings": [
+            {
+                "date": "2016-07-13",
+                "text": "The set of creatures affected by Selfless Spirit's last ability is determined as the ability resolves. Creatures you begin to control later in the turn won't gain indestructible."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Shrill Howler
 {
     "name": "Shrill Howler",
@@ -4765,6 +4924,68 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Wolfkin Bond
+{
+    "name": "Wolfkin Bond",
+    "manaCost": "{4}{G}",
+    "typeLine": "Enchantment — Aura",
+    "oracleText": "Enchant creature\nWhen this Aura enters, create a 2/2 green Wolf creature token.\nEnchanted creature gets +2/+2.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 2,
+                    "toughness": 2,
+                    "colors": [
+                        "GREEN"
+                    ],
+                    "creatureTypes": [
+                        "Wolf"
+                    ]
+                },
+                "descriptionOverride": "Create a 2/2 green Wolf creature token."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 2,
+                "toughnessBonus": 2
+            }
+        ],
+        "auraTarget": {
+            "type": "TargetObject",
+            "filter": {
+                "baseFilter": "creature"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "178",
+        "artist": "Lindsey Look",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/4/748f263e-efef-4033-8950-c58fd024a87f.jpg?1783937435",
+        "rulings": [
+            {
+                "date": "2019-07-12",
+                "text": "You need a creature for Wolfkin Bond to target as you cast it. It can't enter the battlefield attached to the Wolf token it will create."
+            },
+            {
+                "date": "2019-07-12",
+                "text": "If the target creature is an illegal target by the time Wolfkin Bond tries to resolve, the spell doesn't resolve. It won't enter the battlefield, so its ability won't trigger."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 

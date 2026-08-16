@@ -1,3 +1,48 @@
+// Improvised Weaponry
+{
+    "name": "Improvised Weaponry",
+    "manaCost": "{2}{R}",
+    "typeLine": "Sorcery",
+    "oracleText": "Improvised Weaponry deals 2 damage to any target. Create a Treasure token. (It's an artifact with \"{T}, Sacrifice this token: Add one mana of any color.\")",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "any target"
+                    }
+                },
+                {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Treasure"
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "AnyTarget",
+                "id": "any target"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "150",
+        "artist": "Alix Branwyn",
+        "flavorText": "Anything can be a weapon if you swing it hard enough.",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/9/29d5fd00-c616-4079-a91e-4da0bcaf9120.jpg?1783926476"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Vampire Spawn
 {
     "name": "Vampire Spawn",

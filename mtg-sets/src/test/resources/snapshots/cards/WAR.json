@@ -43,6 +43,58 @@
     ]
 }
 
+// Divine Arrow
+{
+    "name": "Divine Arrow",
+    "manaCost": "{1}{W}",
+    "typeLine": "Instant",
+    "oracleText": "Divine Arrow deals 4 damage to target attacking or blocking creature.",
+    "script": {
+        "spellEffect": {
+            "type": "DealDamage",
+            "amount": {
+                "type": "Fixed",
+                "amount": 4
+            },
+            "target": {
+                "type": "BoundVariable",
+                "name": "target attacking or blocking creature"
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": {
+                        "cardPredicates": [
+                            "IsCreature"
+                        ],
+                        "statePredicates": [
+                            {
+                                "type": "StateOr",
+                                "predicates": [
+                                    "IsAttacking",
+                                    "IsBlocking"
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "id": "target attacking or blocking creature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "10",
+        "artist": "Kieran Yanner",
+        "flavorText": "Ravnica's defenders watched in horror as Oketra's shot pierced the body of the pegasus. Gideon tumbled through the air, Blackblade in hand.",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/3/73cbb58a-1b00-4883-9b45-da7ded7317e3.jpg?1783933485"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Domri, Anarch of Bolas
 {
     "name": "Domri, Anarch of Bolas",
@@ -287,6 +339,62 @@
     ]
 }
 
+// Iron Bully
+{
+    "name": "Iron Bully",
+    "manaCost": "{3}",
+    "typeLine": "Artifact Creature — Golem",
+    "oracleText": "Menace (This creature can't be blocked except by two or more creatures.)\nWhen this creature enters, put a +1/+1 counter on target creature.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "MENACE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature"
+                    },
+                    "id": "target creature"
+                },
+                "descriptionOverride": "When this creature enters, put a +1/+1 counter on target creature."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "240",
+        "artist": "Aaron Miller",
+        "flavorText": "\"Why would someone have built ... wait, never mind. Send it to the front lines!\" —Commander Grozdan",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/e/ded2c66e-402c-4d5c-b987-402679aa914b.jpg?1783933373",
+        "rulings": [
+            {
+                "date": "2020-08-07",
+                "text": "Iron Bully can be the target of its own ability."
+            }
+        ]
+    },
+    "colorIdentityOverride": []
+}
+
 // Ironclad Krovod
 {
     "name": "Ironclad Krovod",
@@ -522,6 +630,73 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Spark Reaper
+{
+    "name": "Spark Reaper",
+    "manaCost": "{2}{B}",
+    "typeLine": "Creature — Zombie",
+    "oracleText": "{3}, Sacrifice a creature or planeswalker: You gain 1 life and draw a card.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{3}"
+                            }
+                        },
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomSacrifice",
+                                "filter": "creature|planeswalker"
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GainLife",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        },
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "{3}, Sacrifice a creature or planeswalker: You gain 1 life and draw a card."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "106",
+        "artist": "Zoltan Boros",
+        "flavorText": "\"I know they're unstoppable fighters created to harvest souls—it's just they're so rude about it.\" —Kaya",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/2/922537f0-4caf-481c-b431-826f0c44e5c5.jpg?1783933437"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 

@@ -216,6 +216,31 @@
     ]
 }
 
+// Havenwood Wurm
+{
+    "name": "Havenwood Wurm",
+    "manaCost": "{6}{G}",
+    "typeLine": "Creature — Wurm",
+    "oracleText": "Flash (You may cast this spell any time you could cast an instant.)\nTrample",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 6
+    },
+    "keywords": [
+        "FLASH",
+        "TRAMPLE"
+    ],
+    "metadata": {
+        "collectorNumber": "199",
+        "artist": "Stuart Griffin",
+        "flavorText": "Time rifts bring tunneling beasts of old into the hard, dry earth of the present. Most die there, trapped, but the mightiest burst through the surface.",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/6/561a4bb5-285a-4d52-b372-d165e442cff3.jpg?1783943212"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Lightning Axe
 {
     "name": "Lightning Axe",
@@ -516,6 +541,71 @@
         "artist": "Jim Nelson",
         "flavorText": "\"Great books are meant to be read, then read again backwards or upside down!\"\n—Ettovard, Tolarian archivist",
         "imageUri": "https://cards.scryfall.io/normal/front/3/5/352d99db-de6d-4405-90ec-b144abbaa5a4.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Tolarian Sentinel
+{
+    "name": "Tolarian Sentinel",
+    "manaCost": "{3}{U}",
+    "typeLine": "Creature — Human Spellshaper",
+    "oracleText": "Flying\n{U}, {T}, Discard a card: Return target permanent you control to its owner's hand.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 3
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{U}"
+                            }
+                        },
+                        "CostTap",
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": "AtomDiscard"
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target permanent you control"
+                    },
+                    "destination": "Hand"
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "permanent ctrl:you"
+                        },
+                        "id": "target permanent you control"
+                    }
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "87",
+        "artist": "Thomas M. Baxa",
+        "flavorText": "\"It is not just our people I try to rescue. It is our culture, and our hope that we can return to greatness.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/e/2e97ec8b-6163-41ff-9e6f-af091a7c529e.jpg?1783943238"
     },
     "colorIdentityOverride": [
         "BLUE"

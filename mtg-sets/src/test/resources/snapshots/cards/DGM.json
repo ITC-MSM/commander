@@ -39,6 +39,53 @@
     ]
 }
 
+// Kraul Warrior
+{
+    "name": "Kraul Warrior",
+    "manaCost": "{1}{G}",
+    "typeLine": "Creature — Insect Warrior",
+    "oracleText": "{5}{G}: This creature gets +3/+3 until end of turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{5}{G}"
+                    }
+                },
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 3
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 3
+                    },
+                    "target": "Self"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "42",
+        "artist": "David Rapoza",
+        "flavorText": "The insectile kraul lurk in the tunnels below street level. Many are loyal to the Golgari Swarm, but others follow their own esoteric caste system.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/7/f71da8cc-8773-4dcb-aca8-50a000142218.jpg?1783940036"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Maze's End
 {
     "name": "Maze's End",

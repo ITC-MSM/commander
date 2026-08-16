@@ -351,6 +351,75 @@
     ]
 }
 
+// Mistwalker
+{
+    "name": "Mistwalker",
+    "manaCost": "{2}{U}",
+    "typeLine": "Creature — Shapeshifter",
+    "oracleText": "Changeling (This card is every creature type.)\nFlying\n{1}{U}: This creature gets +1/-1 until end of turn.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 4
+    },
+    "keywords": [
+        "CHANGELING",
+        "FLYING"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{1}{U}"
+                    }
+                },
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": -1
+                    },
+                    "target": "Self"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "68",
+        "artist": "Steve Prescott",
+        "flavorText": "\"To escape Littjara, follow a bird.\" —Tuskeri folklore",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/2/92f64b49-327c-473b-a492-f020a322aed7.jpg?1783928259",
+        "rulings": [
+            {
+                "date": "2021-02-05",
+                "text": "Changeling is a characteristic-defining ability. It functions in all zones, not only while a card that has it is on the battlefield."
+            },
+            {
+                "date": "2021-02-05",
+                "text": "The subtype Shapeshifter that appears on the type line is mostly there to reinforce the flavor. A creature card with changeling is just as much an Elf, a Dwarf, a Sliver, a Goat, a Coward, and a Zombie as it is a Shapeshifter."
+            },
+            {
+                "date": "2021-02-05",
+                "text": "If an effect causes a creature with changeling to become a new creature type, it will be only that new creature type. It will still have changeling; the effect making it all creature types will simply be overwritten."
+            },
+            {
+                "date": "2021-02-05",
+                "text": "If an effect causes a creature with changeling to lose all abilities, it will remain all creature types, even though it will no longer have changeling. This is because changeling applies before the effect that removes it."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Seize the Spoils
 {
     "name": "Seize the Spoils",
@@ -439,6 +508,145 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Starnheim Aspirant
+{
+    "name": "Starnheim Aspirant",
+    "manaCost": "{2}{W}",
+    "typeLine": "Creature — Human Cleric",
+    "oracleText": "Angel spells you cast cost {2} less to cast.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ModifySpellCost",
+                "target": {
+                    "type": "YouCast",
+                    "filter": "Angel"
+                },
+                "modification": {
+                    "type": "ReduceGeneric",
+                    "amount": 2
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "380",
+        "rarity": "UNCOMMON",
+        "artist": "Kieran Yanner",
+        "flavorText": "\"I do not fear death. I know my soul will rise to Starnheim, where I will feast forever among valkyries and heroes. Can you say the same?\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/a/ea007a18-b31a-4881-92c4-86120dc5729b.jpg?1783928123",
+        "rulings": [
+            {
+                "date": "2021-02-05",
+                "text": "To determine the total cost of a spell, start with the mana cost or alternative cost you're paying, add any cost increases, then apply any cost reductions (such as that of Starnheim Aspirant). The mana value of the spell is determined only by its mana cost, no matter what the total cost to cast the spell was."
+            },
+            {
+                "date": "2021-02-05",
+                "text": "The cost reduction applies only to generic mana in the costs of Angel spells you cast. It can't reduce requirements of specific colors of mana."
+            },
+            {
+                "date": "2021-02-05",
+                "text": "An Angel spell is a creature spell with the creature type Angel. Instant, sorcery, and enchantment cards that may create Angel tokens are not Angel spells."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Undersea Invader
+{
+    "name": "Undersea Invader",
+    "manaCost": "{4}{U}{U}",
+    "typeLine": "Creature — Giant Rogue",
+    "oracleText": "Flash (You may cast this spell any time you could cast an instant.)\nThis creature enters tapped.",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 6
+    },
+    "keywords": [
+        "FLASH"
+    ],
+    "script": {
+        "replacementEffects": [
+            "EntersTapped"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "78",
+        "artist": "Lorenzo Mastroianni",
+        "flavorText": "\"The currents are strange today, and the fish are fearful. Something's stirring in the depths.\" —Rathstaf, Kannah fisherman",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/5/550c745b-64e8-4d20-9cf0-024248ddbd57.jpg?1783928254"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Vault Robber
+{
+    "name": "Vault Robber",
+    "manaCost": "{1}{R}",
+    "typeLine": "Creature — Dwarf Rogue",
+    "oracleText": "{1}, {T}, Exile a creature card from your graveyard: Create a Treasure token. (It's an artifact with \"{T}, Sacrifice this token: Add one mana of any color.\")",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 3
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}"
+                            }
+                        },
+                        "CostTap",
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomExileFrom",
+                                "zone": "Graveyard",
+                                "filter": "creature"
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Treasure"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "158",
+        "artist": "Slawomir Maniak",
+        "flavorText": "The dwarves believe works of art should be passed down the generations, not buried with the dead.",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/4/74f68014-489d-4f51-a959-0f335541cb4e.jpg?1783928220",
+        "rulings": [
+            {
+                "date": "2021-02-05",
+                "text": "Once you announce that you’re activating the activated ability, no player may take actions until the ability has been paid for. Notably, opponents can’t try to remove one of your creature cards to stop you from exiling it."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 

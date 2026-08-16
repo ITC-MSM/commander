@@ -1376,6 +1376,42 @@
     ]
 }
 
+// Manakin
+{
+    "name": "Manakin",
+    "manaCost": "{2}",
+    "typeLine": "Artifact Creature — Construct",
+    "oracleText": "{T}: Add {C}.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddColorlessMana",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "296",
+        "artist": "Scott Kirschner",
+        "flavorText": "Hanna regarded Squee sternly. \"Because it's *not* a toy, no matter how much it may look like one,\" she said, taking the manakin from him.",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/d/3d33ce7f-f318-4161-843a-f5bb6d6e3d29.jpg?1783946602"
+    },
+    "colorIdentityOverride": []
+}
+
 // Manta Riders
 {
     "name": "Manta Riders",

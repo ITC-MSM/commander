@@ -359,6 +359,31 @@
     ]
 }
 
+// Bounding Wolf
+{
+    "name": "Bounding Wolf",
+    "manaCost": "{2}{G}",
+    "typeLine": "Creature — Wolf",
+    "oracleText": "Flash\nReach",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "keywords": [
+        "FLASH",
+        "REACH"
+    ],
+    "metadata": {
+        "collectorNumber": "170",
+        "artist": "Andrea Radeck",
+        "flavorText": "With their usual prey scared off by werewolves, the wolves of the Ulvenwald adopted inventive new hunting techniques.",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/4/74e22ed6-9d39-4feb-8c64-64cdd8313816.jpg?1783925585"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Bramble Armor
 {
     "name": "Bramble Armor",
@@ -1216,6 +1241,52 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Electric Revelation
+{
+    "name": "Electric Revelation",
+    "manaCost": "{2}{R}",
+    "typeLine": "Instant",
+    "oracleText": "As an additional cost to cast this spell, discard a card.\nDraw two cards.\nFlashback {3}{R} (You may cast this card from your graveyard for its flashback cost and any additional costs. Then exile it.)",
+    "keywords": [
+        "FLASHBACK"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Flashback",
+            "cost": "{3}{R}"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "DrawCards",
+            "count": {
+                "type": "Fixed",
+                "amount": 2
+            }
+        },
+        "additionalCosts": [
+            {
+                "type": "AdditionalAtom",
+                "atom": "AtomDiscard"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "135",
+        "artist": "Liiga Smilshkalne",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/0/20ff3289-00fb-4e91-b34f-6255e9de8e9e.jpg?1783925602",
+        "rulings": [
+            {
+                "date": "2021-09-24",
+                "text": "If you cast Electric Revelation using flashback, you must still pay its additional cost of discarding a card."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
@@ -2131,6 +2202,118 @@
     "colorIdentityOverride": [
         "WHITE",
         "GREEN"
+    ]
+}
+
+// Pestilent Wolf
+{
+    "name": "Pestilent Wolf",
+    "manaCost": "{1}{G}",
+    "typeLine": "Creature — Wolf",
+    "oracleText": "{2}{G}: This creature gains deathtouch until end of turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{2}{G}"
+                    }
+                },
+                "effect": {
+                    "type": "GrantKeyword",
+                    "keyword": "DEATHTOUCH",
+                    "target": "Self"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "192",
+        "artist": "Oriana Menendez",
+        "flavorText": "Wolves that feast on zombie flesh and survive carry the foul diseases of the dead wherever they roam.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/2/e2686431-8d9c-4b9c-998f-38b5ae113d4a.jpg?1783925575"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Raze the Effigy
+{
+    "name": "Raze the Effigy",
+    "manaCost": "{R}",
+    "typeLine": "Instant",
+    "oracleText": "Choose one —\n• Destroy target artifact.\n• Target attacking creature gets +2/+2 until end of turn.",
+    "script": {
+        "spellEffect": {
+            "type": "Modal",
+            "modes": [
+                {
+                    "effect": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target"
+                        },
+                        "destination": "Graveyard",
+                        "byDestruction": true
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "artifact"
+                            },
+                            "id": "target"
+                        }
+                    ],
+                    "description": "Destroy target artifact"
+                },
+                {
+                    "effect": {
+                        "type": "ModifyStats",
+                        "powerModifier": {
+                            "type": "Fixed",
+                            "amount": 2
+                        },
+                        "toughnessModifier": {
+                            "type": "Fixed",
+                            "amount": 2
+                        },
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target"
+                        }
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "creature attacking"
+                            },
+                            "id": "target"
+                        }
+                    ],
+                    "description": "Target attacking creature gets +2/+2 until end of turn"
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "156",
+        "artist": "Cristi Balanescu",
+        "flavorText": "The folk of Kessig build up their courage by burning effigies of the things they fear.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/0/e0dd378c-5050-48c9-9a16-6d91afa62d21.jpg?1783925591"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 

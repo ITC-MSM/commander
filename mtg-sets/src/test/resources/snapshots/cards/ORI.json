@@ -1,3 +1,49 @@
+// Anchor to the Aether
+{
+    "name": "Anchor to the Aether",
+    "manaCost": "{2}{U}",
+    "typeLine": "Sorcery",
+    "oracleText": "Put target creature on top of its owner's library. Scry 1. (Look at the top card of your library. You may put that card on the bottom.)",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    },
+                    "destination": "Library",
+                    "placement": "Top"
+                },
+                {
+                    "type": "Scry",
+                    "count": 1
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target creature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "44",
+        "rarity": "UNCOMMON",
+        "artist": "Zoltan Boros",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/5/15058f91-d266-4804-96af-fc050b6c8436.jpg?1783938355"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Archangel of Tithes
 {
     "name": "Archangel of Tithes",
@@ -47,6 +93,118 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Blessed Spirits
+{
+    "name": "Blessed Spirits",
+    "manaCost": "{2}{W}",
+    "typeLine": "Creature — Spirit",
+    "oracleText": "Flying\nWhenever you cast an enchantment spell, put a +1/+1 counter on this creature.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            "IsEnchantment"
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": "Self"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "7",
+        "rarity": "UNCOMMON",
+        "artist": "Anna Steinbauer",
+        "flavorText": "Not all heroes die in armor.",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/5/150dd602-5f61-4f1e-a422-e64c079de141.jpg?1783938364",
+        "rulings": [
+            {
+                "date": "2015-06-22",
+                "text": "Blessed Spirits's ability will resolve before the enchantment spell that caused it to trigger."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Caustic Caterpillar
+{
+    "name": "Caustic Caterpillar",
+    "manaCost": "{G}",
+    "typeLine": "Creature — Insect",
+    "oracleText": "{1}{G}, Sacrifice this creature: Destroy target artifact or enchantment.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}{G}"
+                            }
+                        },
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target artifact or enchantment"
+                    },
+                    "destination": "Graveyard",
+                    "byDestruction": true
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "artifact|enchantment"
+                        },
+                        "id": "target artifact or enchantment"
+                    }
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "170",
+        "artist": "Jack Wang",
+        "flavorText": "\"The rare and beautiful butterflies inspire the design of our thopters. The larvae, however, are a different story entirely.\" —Kiran Nalaar, Ghirapur inventor",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/0/f03d4e0d-bddd-4835-91b8-11c2f15e54c3.jpg?1783938324"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 
@@ -412,6 +570,48 @@
     ]
 }
 
+// Fetid Imp
+{
+    "name": "Fetid Imp",
+    "manaCost": "{1}{B}",
+    "typeLine": "Creature — Imp",
+    "oracleText": "Flying\n{B}: This creature gains deathtouch until end of turn. (Any amount of damage it deals to a creature is enough to destroy it.)",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 2
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{B}"
+                    }
+                },
+                "effect": {
+                    "type": "GrantKeyword",
+                    "keyword": "DEATHTOUCH",
+                    "target": "Self"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "97",
+        "artist": "Nils Hamm",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/9/891718e9-bef3-470a-80c5-514f7f43abe8.jpg?1783938342"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Gilt-Leaf Winnower
 {
     "name": "Gilt-Leaf Winnower",
@@ -577,6 +777,72 @@
     ]
 }
 
+// Priest of the Blood Rite
+{
+    "name": "Priest of the Blood Rite",
+    "manaCost": "{3}{B}{B}",
+    "typeLine": "Creature — Human Cleric",
+    "oracleText": "When this creature enters, create a 5/5 black Demon creature token with flying.\nAt the beginning of your upkeep, you lose 2 life.At the beginning of your upkeep, you lose 2 life.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 5,
+                    "toughness": 5,
+                    "colors": [
+                        "BLACK"
+                    ],
+                    "creatureTypes": [
+                        "Demon"
+                    ],
+                    "keywords": [
+                        "FLYING"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/7/7/771ae1f8-70b3-40da-8352-421a36c7abb5.jpg?1783940883"
+                },
+                "descriptionOverride": "When this creature enters, create a 5/5 black Demon creature token with flying."
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "LoseLife",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "target": "Controller"
+                },
+                "descriptionOverride": "At the beginning of your upkeep, you lose 2 life."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "112",
+        "rarity": "RARE",
+        "artist": "David Palumbo",
+        "flavorText": "Some will sacrifice everything for but a taste of power.",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/1/118ba6f2-a2f0-4554-ad87-a932c951cdd4.jpg?1783938338"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Pyromancer's Goggles
 {
     "name": "Pyromancer's Goggles",
@@ -671,6 +937,69 @@
     ]
 }
 
+// Reave Soul
+{
+    "name": "Reave Soul",
+    "manaCost": "{1}{B}",
+    "typeLine": "Sorcery",
+    "oracleText": "Destroy target creature with power 3 or less.",
+    "script": {
+        "spellEffect": {
+            "type": "MoveToZone",
+            "target": {
+                "type": "BoundVariable",
+                "name": "target creature with power 3 or less"
+            },
+            "destination": "Graveyard",
+            "byDestruction": true
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature pow<=3"
+                },
+                "id": "target creature with power 3 or less"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "115",
+        "artist": "David Palumbo",
+        "flavorText": "\"I was not convinced you had a soul until I saw it for myself.\" —Liliana Vess",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/b/db3d5e9d-07e8-43e1-aaf0-1f9e4ed2834a.jpg?1783938337"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Shambling Ghoul
+{
+    "name": "Shambling Ghoul",
+    "manaCost": "{1}{B}",
+    "typeLine": "Creature — Zombie",
+    "oracleText": "This creature enters tapped.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "script": {
+        "replacementEffects": [
+            "EntersTapped"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "119",
+        "artist": "Joseph Meehan",
+        "flavorText": "Once he gets up and going, he will forever shamble on.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/d/fd8061d2-84ce-4e4a-9911-ffc9833749da.jpg?1783938337"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Skyraker Giant
 {
     "name": "Skyraker Giant",
@@ -693,5 +1022,154 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Subterranean Scout
+{
+    "name": "Subterranean Scout",
+    "manaCost": "{1}{R}",
+    "typeLine": "Creature — Goblin Scout",
+    "oracleText": "When this creature enters, target creature with power 2 or less can't be blocked this turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "GrantKeyword",
+                    "keyword": "CANT_BE_BLOCKED",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature with power 2 or less"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature pow<=2"
+                    },
+                    "id": "target creature with power 2 or less"
+                },
+                "descriptionOverride": "When this creature enters, target creature with power 2 or less can't be blocked this turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "164",
+        "artist": "Lucas Graciano",
+        "flavorText": "When things get ugly above ground, goblins resort to alternate routes of passage.",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/c/3c9289dd-f1a3-4be5-8ed1-4b4dd4e97743.jpg?1783938325"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Valor in Akros
+{
+    "name": "Valor in Akros",
+    "manaCost": "{3}{W}",
+    "typeLine": "Enchantment",
+    "oracleText": "Whenever a creature you control enters, creatures you control get +1/+1 until end of turn.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "creature ctrl:you",
+                    "to": "Battlefield"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        }
+                    },
+                    "body": {
+                        "type": "ModifyStats",
+                        "powerModifier": {
+                            "type": "Fixed",
+                            "amount": 1
+                        },
+                        "toughnessModifier": {
+                            "type": "Fixed",
+                            "amount": 1
+                        },
+                        "target": "Self"
+                    }
+                },
+                "descriptionOverride": "Creatures you control get +1/+1 until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "39",
+        "rarity": "UNCOMMON",
+        "artist": "Igor Kieryluk",
+        "flavorText": "They became a single entity, a phalanx in the Temple of Triumph standing against a host of enemies.",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/2/22fa0acd-84c3-492e-adf7-e7438db47e0a.jpg?1783938356",
+        "rulings": [
+            {
+                "date": "2020-08-07",
+                "text": "Valor in Akros's ability affects only creatures you control at the time the ability resolves, including the creature that caused it to trigger. Creatures you begin to control later in the turn won't get +1/+1."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Zendikar's Roil
+{
+    "name": "Zendikar's Roil",
+    "manaCost": "{3}{G}{G}",
+    "typeLine": "Enchantment",
+    "oracleText": "Landfall — Whenever a land you control enters, create a 2/2 green Elemental creature token.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "land ctrl:you",
+                    "to": "Battlefield"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 2,
+                    "toughness": 2,
+                    "colors": [
+                        "GREEN"
+                    ],
+                    "creatureTypes": [
+                        "Elemental"
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "209",
+        "rarity": "UNCOMMON",
+        "artist": "Sam Burley",
+        "flavorText": "\"I was wrong. Zendikar isn't after me. It isn't after any of us. It's not evil or vengeful. It's magnificent . . . but it's in pain.\" —Nissa Revane",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/7/f75c0783-936d-4fa2-bdcb-01dae7a67fdb.jpg?1783938315"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }

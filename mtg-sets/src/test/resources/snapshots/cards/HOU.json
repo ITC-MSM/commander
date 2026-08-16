@@ -132,6 +132,51 @@
     ]
 }
 
+// Desert of the Mindful
+{
+    "name": "Desert of the Mindful",
+    "manaCost": "",
+    "typeLine": "Land — Desert",
+    "oracleText": "This land enters tapped.\n{T}: Add {U}.\nCycling {1}{U} ({1}{U}, Discard this card: Draw a card.)",
+    "keywordAbilities": [
+        {
+            "type": "Cycling",
+            "cost": "{1}{U}"
+        }
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "BLUE"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            }
+        ],
+        "replacementEffects": [
+            "EntersTapped"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "173",
+        "artist": "Christine Choi",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/1/91b92d87-776c-490f-9ff1-234e47145df8.jpg?1783935997",
+        "rulings": [
+            {
+                "date": "2017-04-18",
+                "text": "Desert is a land subtype with no special meaning. It doesn't grant the land an intrinsic mana ability. Other cards may care about which lands are Deserts."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Dutiful Servants
 {
     "name": "Dutiful Servants",
@@ -214,6 +259,124 @@
         "artist": "Filip Burburan",
         "flavorText": "She trusts that the potent poisons of her darts will reach the enemy before the enemy reaches her.",
         "imageUri": "https://cards.scryfall.io/normal/front/b/c/bcdc68c9-f5f3-4c5b-80df-85508cf15f84.jpg?1783936019"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Overcome
+{
+    "name": "Overcome",
+    "manaCost": "{3}{G}{G}",
+    "typeLine": "Sorcery",
+    "oracleText": "Creatures you control get +2/+2 and gain trample until end of turn. (Each of those creatures can deal excess combat damage to the player or planeswalker it's attacking.)",
+    "script": {
+        "spellEffect": {
+            "type": "ForEach",
+            "space": {
+                "type": "IterationSpace.Group",
+                "filter": {
+                    "baseFilter": "creature ctrl:you"
+                }
+            },
+            "body": {
+                "type": "Composite",
+                "effects": [
+                    {
+                        "type": "ModifyStats",
+                        "powerModifier": {
+                            "type": "Fixed",
+                            "amount": 2
+                        },
+                        "toughnessModifier": {
+                            "type": "Fixed",
+                            "amount": 2
+                        },
+                        "target": "Self"
+                    },
+                    {
+                        "type": "GrantKeyword",
+                        "keyword": "TRAMPLE",
+                        "target": "Self"
+                    }
+                ]
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "125",
+        "rarity": "UNCOMMON",
+        "artist": "Craig J Spearing",
+        "flavorText": "\"Forward! Until the horizon is ours!\" —Khemses, charioteer",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/1/d1dc2427-685a-4739-8b92-e60f134d4adb.jpg?1783936018",
+        "rulings": [
+            {
+                "date": "2019-07-12",
+                "text": "Overcome affects only creatures you control at the time it resolves. Creatures you begin to control later in the turn won't get +2/+2 or gain trample."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Quarry Beetle
+{
+    "name": "Quarry Beetle",
+    "manaCost": "{4}{G}",
+    "typeLine": "Creature — Insect",
+    "oracleText": "When this creature enters, you may return target land card from your graveyard to the battlefield.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 5
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target"
+                        },
+                        "destination": "Battlefield",
+                        "fromZone": "Graveyard"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "land own:you",
+                        "zone": "Graveyard"
+                    },
+                    "id": "target"
+                },
+                "descriptionOverride": "When this creature enters, you may return target land card from your graveyard to the battlefield."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "127",
+        "rarity": "UNCOMMON",
+        "artist": "Mike Burns",
+        "flavorText": "\"The ruin of the past is the topsoil of the future.\" —Sokar, former Nef-crop initiate",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/9/69e11478-bfc7-4bcc-b65c-dc2d4449e99f.jpg?1783936016",
+        "rulings": [
+            {
+                "date": "2017-07-14",
+                "text": "Quarry Beetle's ability doesn't count as playing a land. It can return a land card to the battlefield even if you've already played as many lands as able this turn."
+            }
+        ]
     },
     "colorIdentityOverride": [
         "GREEN"

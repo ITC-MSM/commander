@@ -1,3 +1,72 @@
+// Aethershield Artificer
+{
+    "name": "Aethershield Artificer",
+    "manaCost": "{3}{W}",
+    "typeLine": "Creature — Dwarf Artificer",
+    "oracleText": "At the beginning of combat on your turn, target artifact creature you control gets +2/+2 and gains indestructible until end of turn. (Damage and effects that say \"destroy\" don't destroy it.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "BEGIN_COMBAT"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "ModifyStats",
+                            "powerModifier": {
+                                "type": "Fixed",
+                                "amount": 2
+                            },
+                            "toughnessModifier": {
+                                "type": "Fixed",
+                                "amount": 2
+                            },
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "artifact creature you control"
+                            }
+                        },
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "INDESTRUCTIBLE",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "artifact creature you control"
+                            }
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "artifact creature ctrl:you"
+                    },
+                    "id": "artifact creature you control"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "2",
+        "rarity": "UNCOMMON",
+        "artist": "Izzy",
+        "flavorText": "Most smiths shape metal, but some prefer more delicate materials.",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/2/226f7c45-db9f-4d48-b575-4d2f1904c963.jpg?1783934613"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Aggressive Mammoth
 {
     "name": "Aggressive Mammoth",
@@ -121,6 +190,279 @@
     ]
 }
 
+// Bristling Boar
+{
+    "name": "Bristling Boar",
+    "manaCost": "{3}{G}",
+    "typeLine": "Creature — Boar",
+    "oracleText": "This creature can't be blocked by more than one creature.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 3
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "CantBeBlockedByMoreThan",
+                "maxBlockers": 1
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "170",
+        "artist": "Svetlin Velinov",
+        "flavorText": "\"Nicol Bolas destroyed my world. I owe it to Skalla to celebrate all life, no matter how dangerous.\" —Vivien Reid",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/9/999030b2-2f91-4c45-981f-acdbbf9034af.jpg?1783934541",
+        "rulings": [
+            {
+                "date": "2020-04-17",
+                "text": "If Bristling Boar gains menace, it can't be blocked at all."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Catalyst Elemental
+{
+    "name": "Catalyst Elemental",
+    "manaCost": "{2}{R}",
+    "typeLine": "Creature — Elemental",
+    "oracleText": "Sacrifice this creature: Add {R}{R}.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostSacrificeSelf",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "RED",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 2
+                    }
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "132",
+        "artist": "Deruchenko Alexander",
+        "flavorText": "As the hyperstormic generator crept past redline, a being emerged from the arc.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/8/e83a678b-19d4-47a5-aa1c-c2437e5009c0.jpg?1783934556"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Cavalry Drillmaster
+{
+    "name": "Cavalry Drillmaster",
+    "manaCost": "{1}{W}",
+    "typeLine": "Creature — Human Knight",
+    "oracleText": "When this creature enters, target creature gets +2/+0 and gains first strike until end of turn. (It deals combat damage before creatures without first strike.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "ModifyStats",
+                            "powerModifier": {
+                                "type": "Fixed",
+                                "amount": 2
+                            },
+                            "toughnessModifier": {
+                                "type": "Fixed",
+                                "amount": 0
+                            },
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "creature"
+                            }
+                        },
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "FIRST_STRIKE",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "creature"
+                            }
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature"
+                    },
+                    "id": "creature"
+                },
+                "descriptionOverride": "When this creature enters, target creature gets +2/+0 and gains first strike until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "8",
+        "artist": "Slawomir Maniak",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/2/62d2e929-7ae3-4560-9cfa-53b89c8a6016.jpg?1783934610"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Colossal Majesty
+{
+    "name": "Colossal Majesty",
+    "manaCost": "{2}{G}",
+    "typeLine": "Enchantment",
+    "oracleText": "At the beginning of your upkeep, if you control a creature with power 4 or greater, draw a card.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "interveningIf": {
+                    "type": "Exists",
+                    "player": "You",
+                    "zone": "Battlefield",
+                    "filter": "creature pow>=4"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "173",
+        "rarity": "UNCOMMON",
+        "artist": "Randy Vargas",
+        "flavorText": "\"Might doesn't just build empires. It protects them.\" —Inti, Sun Empire knight",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/3/93f99796-ddc5-4ccd-b925-35622a8648b8.jpg?1783934541",
+        "rulings": [
+            {
+                "date": "2018-07-13",
+                "text": "If you don't control a creature with power 4 or greater as your upkeep begins, Colossal Majesty's ability won't trigger. You can't take any actions during your turn before your upkeep begins."
+            },
+            {
+                "date": "2018-07-13",
+                "text": "If you don't control a creature with power 4 or greater as Colossal Majesty's ability resolves, you won't draw a card."
+            },
+            {
+                "date": "2018-07-13",
+                "text": "The creature with power 4 or greater that you control as Colossal Majesty's ability resolves doesn't have to be the same creature with power 4 or greater that was under your control as the ability triggered."
+            },
+            {
+                "date": "2018-07-13",
+                "text": "You draw only one card, no matter how many creatures with power 4 or greater you control."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Daybreak Chaplain
+{
+    "name": "Daybreak Chaplain",
+    "manaCost": "{1}{W}",
+    "typeLine": "Creature — Human Cleric",
+    "oracleText": "Lifelink (Damage dealt by this creature also causes you to gain that much life.)",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 3
+    },
+    "keywords": [
+        "LIFELINK"
+    ],
+    "metadata": {
+        "collectorNumber": "10",
+        "artist": "Volkan Baǵa",
+        "flavorText": "\"May the light shine through me to guide the lost.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/2/c2f461b1-c801-4f0c-8fd7-fe68b6078ac6.jpg?1783934608"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Demon of Catastrophes
+{
+    "name": "Demon of Catastrophes",
+    "manaCost": "{2}{B}{B}",
+    "typeLine": "Creature — Demon",
+    "oracleText": "As an additional cost to cast this spell, sacrifice a creature.\nFlying, trample",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 6
+    },
+    "keywords": [
+        "FLYING",
+        "TRAMPLE"
+    ],
+    "script": {
+        "additionalCosts": [
+            {
+                "type": "AdditionalAtom",
+                "atom": {
+                    "type": "AtomSacrifice",
+                    "filter": "creature"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "91",
+        "rarity": "RARE",
+        "artist": "Sidharth Chaturvedi",
+        "flavorText": "A pit yawned open, a column of oily smoke arose, and a towering form hissed, \"I accept this offering.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/5/d50f9563-7bf8-4c3c-ac82-327221e56551.jpg?1783934573",
+        "rulings": [
+            {
+                "date": "2018-07-13",
+                "text": "You must sacrifice exactly one creature to cast Demon of Catastrophes; you can't cast it without sacrificing a creature, and you can't sacrifice additional creatures."
+            },
+            {
+                "date": "2018-07-13",
+                "text": "Players can respond only after Demon of Catastrophes has been cast and all its costs have been paid. No one can try to destroy the creature you sacrificed to prevent you from casting this spell."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Diamond Mare
 {
     "name": "Diamond Mare",
@@ -170,6 +512,76 @@
     }
 }
 
+// Dragon's Hoard
+{
+    "name": "Dragon's Hoard",
+    "manaCost": "{3}",
+    "typeLine": "Artifact",
+    "oracleText": "Whenever a Dragon you control enters, put a gold counter on this artifact.\n{T}, Remove a gold counter from this artifact: Draw a card.\n{T}: Add one mana of any color.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "permanent Dragon ctrl:you",
+                    "to": "Battlefield"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "gold",
+                    "count": 1,
+                    "target": "Self"
+                },
+                "descriptionOverride": "Whenever a Dragon you control enters, put a gold counter on this artifact."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        "CostTap",
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomRemoveCounters",
+                                "counterType": "gold",
+                                "self": true
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "descriptionOverride": "{T}, Remove a gold counter from this artifact: Draw a card."
+            },
+            {
+                "id": "ability_3",
+                "cost": "CostTap",
+                "effect": "AddManaOfChoice",
+                "timing": "ManaAbility",
+                "isManaAbility": true,
+                "descriptionOverride": "{T}: Add one mana of any color."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "232",
+        "rarity": "RARE",
+        "artist": "Adam Paquette",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/b/5b441fc8-bc89-47d4-8745-2525aeb6d98d.jpg?1783934514"
+    },
+    "colorIdentityOverride": []
+}
+
 // Exclusion Mage
 {
     "name": "Exclusion Mage",
@@ -212,6 +624,139 @@
         "artist": "Chris Seaman",
         "flavorText": "Successful battles start with knowing who's worth fighting.",
         "imageUri": "https://cards.scryfall.io/normal/front/c/c/ccad82f5-5c5c-42ad-b66e-942f0d9631ca.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Gallant Cavalry
+{
+    "name": "Gallant Cavalry",
+    "manaCost": "{3}{W}",
+    "typeLine": "Creature — Human Knight",
+    "oracleText": "Vigilance (Attacking doesn't cause this creature to tap.)\nWhen this creature enters, create a 2/2 white Knight creature token with vigilance.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "VIGILANCE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 2,
+                    "toughness": 2,
+                    "colors": [
+                        "WHITE"
+                    ],
+                    "creatureTypes": [
+                        "Knight"
+                    ],
+                    "keywords": [
+                        "VIGILANCE"
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "12",
+        "artist": "Craig J Spearing",
+        "flavorText": "\"Our duty does not stop at our borders.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/3/e388c433-3a37-45f6-825a-d13d2223b6f7.jpg?1783934607"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Gearsmith Guardian
+{
+    "name": "Gearsmith Guardian",
+    "manaCost": "{5}",
+    "typeLine": "Artifact Creature — Construct",
+    "oracleText": "This creature gets +2/+0 as long as you control a blue creature.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 5
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "ModifyStats",
+                    "powerBonus": 2,
+                    "toughnessBonus": 0,
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "Self"
+                    }
+                },
+                "condition": {
+                    "type": "Exists",
+                    "player": "You",
+                    "zone": "Battlefield",
+                    "filter": "creature blue"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "237",
+        "artist": "Deruchenko Alexander",
+        "flavorText": "Made in its creator's image, though slightly more clangy.",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/d/1d532b01-8bf7-4a27-a438-db03bcd00694.jpg?1783934512"
+    },
+    "colorIdentityOverride": []
+}
+
+// Gearsmith Prodigy
+{
+    "name": "Gearsmith Prodigy",
+    "manaCost": "{U}",
+    "typeLine": "Creature — Human Artificer",
+    "oracleText": "This creature gets +1/+0 as long as you control an artifact.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 2
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "ModifyStats",
+                    "powerBonus": 1,
+                    "toughnessBonus": 0,
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "Self"
+                    }
+                },
+                "condition": {
+                    "type": "Exists",
+                    "player": "You",
+                    "zone": "Battlefield",
+                    "filter": "artifact"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "57",
+        "artist": "Deruchenko Alexander",
+        "flavorText": "Young artificers on Kaladesh let their imaginations run wild.",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/7/77d9e666-d9c9-4ccd-89a5-83de79677fa6.jpg?1783934589"
     },
     "colorIdentityOverride": [
         "BLUE"
@@ -837,6 +1382,49 @@
         "artist": "Randy Vargas",
         "flavorText": "\"When it comes to killing with precision, a soul is but a hindrance.\"\n—Isareth the Awakener",
         "imageUri": "https://cards.scryfall.io/normal/front/8/f/8fee5cc4-a686-4ce6-aa6b-1b8a88e6dea3.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Strangling Spores
+{
+    "name": "Strangling Spores",
+    "manaCost": "{3}{B}",
+    "typeLine": "Instant",
+    "oracleText": "Target creature gets -3/-3 until end of turn.",
+    "script": {
+        "spellEffect": {
+            "type": "ModifyStats",
+            "powerModifier": {
+                "type": "Fixed",
+                "amount": -3
+            },
+            "toughnessModifier": {
+                "type": "Fixed",
+                "amount": -3
+            },
+            "target": {
+                "type": "BoundVariable",
+                "name": "target creature"
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target creature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "122",
+        "artist": "Jason A. Engle",
+        "flavorText": "Imagine a thousand tiny mushrooms cropping up within your lungs.",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/0/300468ab-fbae-42ae-97bc-b08f795efa5c.jpg?1783934561"
     },
     "colorIdentityOverride": [
         "BLACK"

@@ -1,3 +1,140 @@
+// Black Cat
+{
+    "name": "Black Cat",
+    "manaCost": "{1}{B}",
+    "typeLine": "Creature — Zombie Cat",
+    "oracleText": "When this creature dies, target opponent discards a card at random.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Hand",
+                                "player": {
+                                    "type": "ContextPlayer",
+                                    "index": 0
+                                }
+                            },
+                            "storeAs": "hand"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "hand",
+                            "selection": {
+                                "type": "Random",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "discarded"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "discarded",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard",
+                                "player": {
+                                    "type": "ContextPlayer",
+                                    "index": 0
+                                }
+                            },
+                            "moveType": "Discard"
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetOpponent",
+                    "id": "target opponent"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "54",
+        "artist": "David Palumbo",
+        "flavorText": "Its last life is spent tormenting your dreams.",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/b/bb1c6379-69d5-48aa-8d06-257c0592794e.jpg?1783940835"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Briarpack Alpha
+{
+    "name": "Briarpack Alpha",
+    "manaCost": "{3}{G}",
+    "typeLine": "Creature — Wolf",
+    "oracleText": "Flash (You may cast this spell any time you could cast an instant.)\nWhen this creature enters, target creature gets +2/+2 until end of turn.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "FLASH"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature"
+                    },
+                    "id": "target creature"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "108",
+        "rarity": "UNCOMMON",
+        "artist": "Daarken",
+        "flavorText": "\"The wolves turned on us and a chill swept over me. The pack had a new leader.\" —Alena, trapper of Kessig",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/0/a052e945-7535-4b0a-b580-cf76377633f3.jpg?1783940811"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Chalice of Life
 {
     "name": "Chalice of Life",
@@ -1084,6 +1221,46 @@
     "colorIdentityOverride": [
         "WHITE",
         "BLACK"
+    ]
+}
+
+// Midnight Guard
+{
+    "name": "Midnight Guard",
+    "manaCost": "{2}{W}",
+    "typeLine": "Creature — Human Soldier",
+    "oracleText": "Whenever another creature enters, untap this creature.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "creature",
+                    "to": "Battlefield"
+                },
+                "binding": "OTHER",
+                "effect": {
+                    "type": "TapUntap",
+                    "target": "Self",
+                    "tap": false
+                },
+                "descriptionOverride": "Whenever another creature enters, untap this creature."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "14",
+        "artist": "Jason A. Engle",
+        "flavorText": "\"When you're on watch, no noise is harmless and no shadow can be ignored.\" —Olgard of the Skiltfolk",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/2/2264b760-c527-470d-bad0-d8baaf543631.jpg?1783940853"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 

@@ -1119,6 +1119,68 @@
     ]
 }
 
+// Goldnight Commander
+{
+    "name": "Goldnight Commander",
+    "manaCost": "{3}{W}",
+    "typeLine": "Creature — Human Cleric Soldier",
+    "oracleText": "Whenever another creature you control enters, creatures you control get +1/+1 until end of turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "creature ctrl:you",
+                    "to": "Battlefield"
+                },
+                "binding": "OTHER",
+                "effect": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        }
+                    },
+                    "body": {
+                        "type": "ModifyStats",
+                        "powerModifier": {
+                            "type": "Fixed",
+                            "amount": 1
+                        },
+                        "toughnessModifier": {
+                            "type": "Fixed",
+                            "amount": 1
+                        },
+                        "target": "Self"
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "22",
+        "rarity": "UNCOMMON",
+        "artist": "Chris Rahn",
+        "flavorText": "\"One faith, but many hands in victory.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/6/c6ebec82-9d4a-4e78-b923-37c3a52133e7.jpg?1783940736",
+        "rulings": [
+            {
+                "date": "2012-05-01",
+                "text": "The creature that entered will also get +1/+1 until end of turn if it's still on the battlefield when the ability resolves."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Goldnight Redeemer
 {
     "name": "Goldnight Redeemer",

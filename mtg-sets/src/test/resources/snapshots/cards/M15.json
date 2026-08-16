@@ -1,3 +1,86 @@
+// Aeronaut Tinkerer
+{
+    "name": "Aeronaut Tinkerer",
+    "manaCost": "{2}{U}",
+    "typeLine": "Creature — Human Artificer",
+    "oracleText": "This creature has flying as long as you control an artifact. (It can't be blocked except by creatures with flying or reach.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "GrantKeyword",
+                    "keyword": "FLYING",
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "Self"
+                    }
+                },
+                "condition": {
+                    "type": "Exists",
+                    "player": "You",
+                    "zone": "Battlefield",
+                    "filter": "artifact"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "43",
+        "artist": "Willian Murai",
+        "flavorText": "\"All tinkerers have their heads in the clouds. I don't intend to stop there.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/1/e145e85d-1eaa-4ec6-9208-ca6491577302.jpg?1783939196"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Borderland Marauder
+{
+    "name": "Borderland Marauder",
+    "manaCost": "{1}{R}",
+    "typeLine": "Creature — Human Warrior",
+    "oracleText": "Whenever this creature attacks, it gets +2/+0 until end of turn.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 0
+                    },
+                    "target": "Self"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "131",
+        "artist": "Scott M. Fischer",
+        "flavorText": "Though she is rightly feared, there are relatively few tales of her deeds in battle, for few survive her raids.",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/2/12e29b2b-5fe3-4dee-b247-10cd139fe2d0.jpg?1783939177"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Reclamation Sage
 {
     "name": "Reclamation Sage",
@@ -48,6 +131,134 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Triplicate Spirits
+{
+    "name": "Triplicate Spirits",
+    "manaCost": "{4}{W}{W}",
+    "typeLine": "Sorcery",
+    "oracleText": "Convoke (Your creatures can help cast this spell. Each creature you tap while casting this spell pays for {1} or one mana of that creature's color.)\nCreate three 1/1 white Spirit creature tokens with flying.",
+    "keywords": [
+        "CONVOKE"
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "CreateToken",
+            "count": {
+                "type": "Fixed",
+                "amount": 3
+            },
+            "power": 1,
+            "toughness": 1,
+            "colors": [
+                "WHITE"
+            ],
+            "creatureTypes": [
+                "Spirit"
+            ],
+            "keywords": [
+                "FLYING"
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "40",
+        "artist": "Izzy",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/d/3d6498d3-bf1f-4bf1-a602-7c21fb44c106.jpg?1783939196",
+        "rulings": [
+            {
+                "date": "2024-01-12",
+                "text": "You can tap any untapped creature you control to convoke a spell, even one you haven't controlled continuously since the beginning of your most recent turn."
+            },
+            {
+                "date": "2024-01-12",
+                "text": "Tapping an untapped creature that's attacking or blocking to convoke a spell won't cause that creature to stop attacking or blocking."
+            },
+            {
+                "date": "2024-01-12",
+                "text": "When calculating a spell's total cost, include any alternative costs, additional costs, or anything else that increases or reduces the cost to cast the spell. Convoke applies after the total cost is calculated. Convoke doesn't change a spell's mana cost or mana value."
+            },
+            {
+                "date": "2024-01-12",
+                "text": "If a creature you control has a mana ability with {T} in the cost, activating that ability while casting a spell with convoke will result in the creature being tapped before you pay the spell's costs. You won't be able to tap it again for convoke. Similarly, if you sacrifice a creature to activate a mana ability while casting a spell with convoke, that creature won't be on the battlefield when you pay the spell's costs, so you won't be able to tap it for convoke."
+            },
+            {
+                "date": "2024-01-12",
+                "text": "Because convoke isn't an alternative cost, it can be used in conjunction with alternative costs."
+            },
+            {
+                "date": "2024-01-12",
+                "text": "Tapping a multicolored creature using convoke will pay for {1} or one mana of your choice of any of that creature's colors."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Ulcerate
+{
+    "name": "Ulcerate",
+    "manaCost": "{B}",
+    "typeLine": "Instant",
+    "oracleText": "Target creature gets -3/-3 until end of turn. You lose 3 life.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": -3
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": -3
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                {
+                    "type": "LoseLife",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 3
+                    },
+                    "target": "Controller"
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target creature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "119",
+        "rarity": "UNCOMMON",
+        "artist": "Johann Bodin",
+        "flavorText": "\"If it were merely lethal, that would be sufficient. The art, however, is in maximizing the suffering it causes.\" —Liliana Vess",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/e/2e06e6c8-05c0-4d87-9961-605b888bc794.jpg?1783939179",
+        "rulings": [
+            {
+                "date": "2017-11-17",
+                "text": "The loss of life isn't a cost. If the target creature is an illegal target when Ulcerate tries to resolve, it won't resolve and none of its effects will happen. You won't lose any life."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 

@@ -18,6 +18,65 @@
     ]
 }
 
+// Barrage Ogre
+{
+    "name": "Barrage Ogre",
+    "manaCost": "{3}{R}{R}",
+    "typeLine": "Creature — Ogre Warrior",
+    "oracleText": "{T}, Sacrifice an artifact: This creature deals 2 damage to any target.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        "CostTap",
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomSacrifice",
+                                "filter": "artifact"
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "any target"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "AnyTarget",
+                        "id": "any target"
+                    }
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "83",
+        "rarity": "UNCOMMON",
+        "artist": "David Rapoza",
+        "flavorText": "The elves had devised countless strategies to combat Memnarch's war machines, but they had no idea what to do when one was *thrown* at them.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/0/e02c6f71-2448-47e1-9133-7af6a4d4577a.jpg?1783941726"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Blackcleave Cliffs
 {
     "name": "Blackcleave Cliffs",

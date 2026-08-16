@@ -251,6 +251,67 @@
     ]
 }
 
+// Sanctum Gargoyle
+{
+    "name": "Sanctum Gargoyle",
+    "manaCost": "{3}{W}",
+    "typeLine": "Artifact Creature — Gargoyle",
+    "oracleText": "Flying\nWhen this creature enters, you may return target artifact card from your graveyard to your hand.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target"
+                        },
+                        "destination": "Hand"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "artifact own:you",
+                        "zone": "Graveyard"
+                    },
+                    "id": "target"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "24",
+        "artist": "Shelly Wan",
+        "flavorText": "As their supplies of etherium dwindled, mechanists sent gargoyles farther and farther afield in search of salvage.",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/d/1da1a2d5-d1fe-4aa2-aa83-64d6c269f7bc.jpg?1783942579",
+        "rulings": [
+            {
+                "date": "2008-10-01",
+                "text": "The only difference between a colored artifact and a colorless artifact is, obviously, its color. Unlike most artifacts, a colored artifact requires colored mana to cast. Also unlike most artifacts, a colored artifact has a color in all zones. It will interact with cards that care about color. Other than that, a colored artifact behaves just like any other artifact. It will interact as normal with any card that cares about artifacts, such as Shatter or Arcbound Ravager."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Woolly Thoctar
 {
     "name": "Woolly Thoctar",

@@ -1,3 +1,57 @@
+// Circuit Mender
+{
+    "name": "Circuit Mender",
+    "manaCost": "{3}",
+    "typeLine": "Artifact Creature — Insect",
+    "oracleText": "When this creature enters, you gain 2 life.\nWhen this creature leaves the battlefield, draw a card.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "GainLife",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 2
+                    }
+                },
+                "descriptionOverride": "When this creature enters, you gain 2 life."
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield"
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "descriptionOverride": "When this creature leaves the battlefield, draw a card."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "242",
+        "rarity": "UNCOMMON",
+        "artist": "Hector Ortiz",
+        "flavorText": "Inspired by industrious silkworms, its maker crafted it to restore the broken pieces of the world.",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/e/defaeb68-3f8a-4740-b13f-8c71c7e9c8b4.jpg?1783923827"
+    },
+    "colorIdentityOverride": []
+}
+
 // Secluded Courtyard
 {
     "name": "Secluded Courtyard",
@@ -41,6 +95,45 @@
         "imageUri": "https://cards.scryfall.io/normal/front/0/5/0539b1a5-8704-476f-ba1f-2fe01190e157.jpg?1783923815"
     },
     "colorIdentityOverride": []
+}
+
+// Spirited Companion
+{
+    "name": "Spirited Companion",
+    "manaCost": "{1}{W}",
+    "typeLine": "Enchantment Creature — Dog",
+    "oracleText": "When this creature enters, draw a card.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "38",
+        "artist": "Ilse Gort",
+        "flavorText": "She formed a friendship with several playful spirits, and soon \"the pack\" was known as the source of much mischief in Eiganjo.",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/a/5aa91a9e-2fe2-43bc-aa9c-cfb8a71829ff.jpg?1783923912"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
 }
 
 // Uncharted Haven

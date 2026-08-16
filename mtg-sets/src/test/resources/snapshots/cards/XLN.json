@@ -131,6 +131,30 @@
     ]
 }
 
+// Colossal Dreadmaw
+{
+    "name": "Colossal Dreadmaw",
+    "manaCost": "{4}{G}{G}",
+    "typeLine": "Creature — Dinosaur",
+    "oracleText": "Trample (This creature can deal excess combat damage to the player or planeswalker it's attacking.)",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 6
+    },
+    "keywords": [
+        "TRAMPLE"
+    ],
+    "metadata": {
+        "collectorNumber": "180",
+        "artist": "Jesper Ejsing",
+        "flavorText": "If you feel the ground quake, run. If you hear its bellow, flee. If you see its teeth, it's too late.",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/6/76ac5b70-47db-4cdb-91e7-e5c18c42e516.jpg?1783935730"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Crushing Canopy
 {
     "name": "Crushing Canopy",
@@ -589,6 +613,47 @@
     ]
 }
 
+// Inspiring Cleric
+{
+    "name": "Inspiring Cleric",
+    "manaCost": "{2}{W}",
+    "typeLine": "Creature — Vampire Cleric",
+    "oracleText": "When this creature enters, you gain 4 life.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "GainLife",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 4
+                    }
+                },
+                "descriptionOverride": "When this creature enters, you gain 4 life."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "16",
+        "rarity": "UNCOMMON",
+        "artist": "Randy Gallegos",
+        "flavorText": "\"The Immortal Sun will bring us true eternal life to replace the everlasting shadow of undeath.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/1/31b8f1da-c8ea-41d5-b1ad-b714c22d3683.jpg?1783935801"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Looming Altisaur
 {
     "name": "Looming Altisaur",
@@ -670,6 +735,30 @@
     ]
 }
 
+// Nest Robber
+{
+    "name": "Nest Robber",
+    "manaCost": "{1}{R}",
+    "typeLine": "Creature — Dinosaur",
+    "oracleText": "Haste",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "keywords": [
+        "HASTE"
+    ],
+    "metadata": {
+        "collectorNumber": "152",
+        "artist": "Jonathan Kuo",
+        "flavorText": "\"These sailors on our shores are like the dinosaurs that plunder eggs from nests. They live on the labors of others.\" —Itzama the Crested",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/7/576d3845-f45a-4db0-9f7c-845cedb64c49.jpg?1783935742"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // New Horizons
 {
     "name": "New Horizons",
@@ -742,6 +831,42 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// One With the Wind
+{
+    "name": "One With the Wind",
+    "manaCost": "{1}{U}",
+    "typeLine": "Enchantment — Aura",
+    "oracleText": "Enchant creature\nEnchanted creature gets +2/+2 and has flying.",
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 2,
+                "toughnessBonus": 2
+            },
+            {
+                "type": "GrantKeyword",
+                "keyword": "FLYING"
+            }
+        ],
+        "auraTarget": {
+            "type": "TargetObject",
+            "filter": {
+                "baseFilter": "creature"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "64",
+        "artist": "Naomi Baker",
+        "flavorText": "\"River and sea, jungle and sky. Water flows freely between the two halves of the world. We are creatures of the water.\" —Shaper Tuvasa",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/c/2c00f8bf-0088-44ad-b40b-26a2951a2428.jpg?1783935779"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 
@@ -895,6 +1020,57 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// River Sneak
+{
+    "name": "River Sneak",
+    "manaCost": "{1}{U}",
+    "typeLine": "Creature — Merfolk Warrior",
+    "oracleText": "This creature can't be blocked.\nWhenever another Merfolk you control enters, this creature gets +1/+1 until end of turn.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "permanent Merfolk ctrl:you",
+                    "to": "Battlefield"
+                },
+                "binding": "OTHER",
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": "Self"
+                },
+                "descriptionOverride": "Whenever another Merfolk you control enters, this creature gets +1/+1 until end of turn."
+            }
+        ],
+        "staticAbilities": [
+            "CantBeBlocked"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "70",
+        "rarity": "UNCOMMON",
+        "artist": "Slawomir Maniak",
+        "flavorText": "No ripples, no splashes, no warning.",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/b/2be32ffc-dc1d-4bb2-926f-51d110392b06.jpg?1783935775"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 
