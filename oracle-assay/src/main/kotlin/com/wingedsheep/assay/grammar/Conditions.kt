@@ -89,31 +89,54 @@ object Conditions {
             SdkConditions.Not(SdkConditions.OpponentControls(it))
         },
         // Lavaborn Muse's intervening-if. "That player" is the one whose step triggered, which the
-        // SDK names as `Player.TriggeringPlayer`, so the condition is a hand-size comparison against
-        // that player and the only variable is the number. It is written as a `Compare` rather than
-        // through a facade because `Conditions` publishes no hand-size entry — the same situation
-        // [Replacements] and the combat statics are in, and reported as the small SDK finding it is.
-        phrase<Condition>(
+        // SDK names as `Player.TriggeringPlayer`.
+        zoneCount(
             "that player has {n} or fewer cards in hand",
-            name = "the triggering player's hand size",
-        ) {
+            "the triggering player's hand size",
+            Player.TriggeringPlayer,
+            Zone.HAND,
+            ComparisonOperator.LTE,
+        ),
+        // Threshold's own condition, and the second member of the shape above rather than a second
+        // rule: both count one zone for one player against a spelled number, and the two differ only
+        // in which zone, whose, and which way the comparison points.
+        zoneCount(
+            "there are {n} or more cards in your graveyard",
+            "your graveyard's size",
+            Player.You,
+            Zone.GRAVEYARD,
+            ComparisonOperator.GTE,
+        ),
+    )
+
+    /**
+     * "There are seven or more cards in your graveyard", "that player has two or fewer cards in
+     * hand" — a zone's card count against a number the text spells.
+     *
+     * Written as a `Compare` rather than through a facade because `Conditions` publishes no
+     * zone-count entry — the same situation [Replacements] and the combat statics are in, and
+     * reported as the small SDK finding it is rather than routed around.
+     */
+    private fun zoneCount(
+        template: String,
+        name: String,
+        player: Player,
+        zone: Zone,
+        operator: ComparisonOperator,
+    ): Phrase<Condition> {
+        fun conditionFor(limit: Int): Condition =
+            Compare(DynamicAmount.Count(player, zone), operator, DynamicAmount.Fixed(limit))
+        return phrase(template, name = name) {
             slot("n", Cardinals.word)
-            build { handSizeAtMost(it.int("n")) }
+            build { conditionFor(it.int("n")) }
             match { value ->
                 val compare = value as? Compare ?: return@match null
                 val limit = (compare.right as? DynamicAmount.Fixed)?.amount ?: return@match null
-                if (!Cardinals.spellable(limit) || value != handSizeAtMost(limit)) return@match null
+                if (!Cardinals.spellable(limit) || value != conditionFor(limit)) return@match null
                 bind("n" to limit)
             }
-        },
-    )
-
-    /** "That player has N or fewer cards in hand" — the comparison Lavaborn Muse checks twice. */
-    private fun handSizeAtMost(limit: Int): Condition = Compare(
-        DynamicAmount.Count(Player.TriggeringPlayer, Zone.HAND),
-        ComparisonOperator.LTE,
-        DynamicAmount.Fixed(limit),
-    )
+        }
+    }
 
     val condition: Phrase<Condition> = oneOf("a condition", all)
 }

@@ -144,6 +144,15 @@ class StepsTest : StringSpec({
         roundTrips("~ deals 2 damage to target creature.")
         roundTrips("~ deals 1 damage to target creature an opponent controls.")
         roundTrips("~ deals 5 damage to target player.")
+        // Kindlespark Duo. "Target opponent" is its own requirement type rather than a filter on
+        // "target player", which is why it is a row beside it.
+        fragment("~ deals 1 damage to target opponent.") shouldBe CardFragment(
+            script = CardScript(
+                spellEffect = Effects.DealDamage(1, Targets.bound()),
+                targetRequirements = listOf(Targets.opponent()),
+            )
+        )
+        roundTrips("~ deals 1 damage to target opponent.")
     }
 
     // Giant Growth's golden. `Duration.EndOfTurn` is ModifyStats's default, which is why the

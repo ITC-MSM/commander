@@ -19,6 +19,7 @@ import com.wingedsheep.assay.corpus.OracleFace
  * | Self-reference | the face's own name → `~`, longest-match first | put the recorded surface form back |
  * | Attachment noun | "equipped creature" → "enchanted creature" | put the recorded surface word back |
  * | Ability split | one ability per line | join with `\n` |
+ * | Ability word | strip a line's `Landfall — ` prefix | put the recorded word back on that line |
  *
  * Two passes named in the design are handled elsewhere on purpose:
  *
@@ -43,15 +44,63 @@ object Normalizer {
         val (stripped, reminders) = stripReminders(face.oracleText)
         val (abstracted, selfRefs) = abstractSelfReference(stripped, selfReferenceForms(face.name))
         val (canonicalNoun, attachmentNouns) = canonicalizeAttachmentNoun(abstracted)
+        val split = canonicalNoun.split("\n")
         return NormalizedFace(
             faceName = face.name,
-            lines = canonicalNoun.split("\n"),
+            lines = split.map(::stripAbilityWord),
             reminders = reminders,
             selfReferences = selfRefs,
             attachmentNouns = attachmentNouns,
+            abilityWords = split.map(::abilityWordOf),
             raw = face.oracleText,
         )
     }
+
+    /**
+     * "**Landfall —** Whenever a land you control enters, …" → the ability the line actually states.
+     *
+     * CR 207.2c: *"An ability word appears in italics at the beginning of some abilities. … they have
+     * no special rules meaning and no individual entries in the Comprehensive Rules."* So the word is
+     * printed-shape information of exactly the kind this file owns — the model has nowhere to put it,
+     * and the alternative is a grammar rule per ability word wrapping every sentence the grammar can
+     * already read, which is the multiplicative cost the module's "lift, don't re-spell" rule exists
+     * to refuse. Nine BLB cards and hundreds elsewhere are one prefix away from an ability the rest of
+     * the grammar reads whole.
+     *
+     * **Enumerated, and from the rule rather than from the corpus.** CR 207.2d's *flavor words* have
+     * the identical printed shape — an italic prefix and a spaced em dash — and are "tailored to the
+     * specific ability", so they are unbounded and mean nothing as a class. A pattern match on
+     * `<Word> — ` would strip those too, along with a Saga's `I —` and a Class's `Level 2 —`, and
+     * would be reading punctuation instead of a rule. So the list is CR 207.2c's, verbatim; an
+     * ability word printed after that rule was last read declines until the list is updated, which
+     * is the fail-closed direction.
+     *
+     * **Line-initial only.** Oracle puts one ability on a line and the word at its start, which is
+     * what makes the pass positional and its inverse exact.
+     */
+    private fun abilityWordOf(line: String): String? =
+        ABILITY_WORDS.firstOrNull { line.startsWith("$it$ABILITY_WORD_DASH") }
+
+    private fun stripAbilityWord(line: String): String =
+        abilityWordOf(line)?.let { line.substring(it.length + ABILITY_WORD_DASH.length) } ?: line
+
+    internal const val ABILITY_WORD_DASH = " — "
+
+    /**
+     * CR 207.2c's list, in the sentence case Oracle prints it at the start of a line. Sorted longest
+     * first so "Descend 8" is not read as a prefix of nothing and "Council's dilemma" wins over any
+     * shorter member it contains.
+     */
+    private val ABILITY_WORDS: List<String> = listOf(
+        "Adamant", "Addendum", "Alliance", "Battalion", "Bloodrush", "Celebration", "Channel",
+        "Chroma", "Cohort", "Constellation", "Converge", "Council's dilemma", "Coven", "Delirium",
+        "Descend 4", "Descend 8", "Domain", "Eerie", "Eminence", "Enrage", "Fateful hour",
+        "Fathomless descent", "Ferocious", "Formidable", "Grandeur", "Hellbent", "Heroic", "Imprint",
+        "Inspired", "Join forces", "Kinship", "Landfall", "Lieutenant", "Magecraft", "Metalcraft",
+        "Morbid", "Pack tactics", "Paradox", "Parley", "Radiance", "Raid", "Rally", "Revolt",
+        "Secret council", "Spell mastery", "Strive", "Survival", "Sweep", "Tempting offer",
+        "Threshold", "Undergrowth", "Valiant", "Will of the council",
+    ).sortedByDescending { it.length }
 
     /**
      * "**Equipped** creature gets +2/+0." → "**Enchanted** creature gets +2/+0.", the surface word
@@ -259,6 +308,11 @@ data class NormalizedFace(
      * an Equipment, "Enchanted" on an Aura. See [Normalizer.canonicalizeAttachmentNoun].
      */
     val attachmentNouns: List<String> = emptyList(),
+    /**
+     * The ability word each line was printed with, positionally — one entry per line, null where the
+     * line had none. See [Normalizer.abilityWordOf].
+     */
+    val abilityWords: List<String?> = emptyList(),
     /** The face's original Oracle text — the byte string the touchstone compares against. */
     val raw: String,
 ) {
@@ -274,7 +328,8 @@ data class NormalizedFace(
      * that cannot round-trip its own output would let any grammar look correct.
      */
     fun restore(printedLines: List<String>): String {
-        var text = printedLines.joinToString("\n")
+        // First, because every later inverse works on offsets measured before the words came off.
+        var text = restoreAbilityWords(printedLines).joinToString("\n")
         // Before the self-references, and therefore while card names are still `~`: a card called
         // "Enchanted Evening" would otherwise put its own name back and have this scan read it as an
         // attachment noun, shifting every later surface word by one.
@@ -286,6 +341,21 @@ data class NormalizedFace(
             text = text.substring(0, removal.offset) + removal.text + text.substring(removal.offset)
         }
         return text
+    }
+
+    /**
+     * Put each line's recorded ability word back in front of it.
+     *
+     * By line index rather than by scanning, because the word was stripped by index: the pass has one
+     * entry per line and nothing about the printed sentence can move it. A printed-line count that
+     * disagrees with the recorded one means the grammar produced a different number of abilities than
+     * it read, so the lines are returned untouched and the caller's byte comparison reports it.
+     */
+    private fun restoreAbilityWords(printedLines: List<String>): List<String> {
+        if (abilityWords.size != printedLines.size) return printedLines
+        return printedLines.mapIndexed { index, line ->
+            abilityWords[index]?.let { "$it${Normalizer.ABILITY_WORD_DASH}$line" } ?: line
+        }
     }
 
     /**

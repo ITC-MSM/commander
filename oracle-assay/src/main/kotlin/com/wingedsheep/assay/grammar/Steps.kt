@@ -324,6 +324,16 @@ object Steps {
             },
             count = ::damageDealt,
         ),
+        countedStep(
+            "{self} deals {n} damage to target opponent", "deals damage to target opponent",
+            script = {
+                CardScript(
+                    spellEffect = Effects.DealDamage(it, Targets.bound()),
+                    targetRequirements = listOf(Targets.opponent()),
+                )
+            },
+            count = ::damageDealt,
+        ),
         // "Target opponent or planeswalker" is the modern redirection wording, and it is a
         // requirement type of its own rather than a filter — so it is a row beside "target player"
         // rather than a case inside it.
@@ -688,22 +698,30 @@ object Steps {
         )
     }
 
-    /** "Target creature gains flying until end of turn." — the pump rule's keyword sibling. */
+    /**
+     * "Target creature gains flying until end of turn.", "…gains trample and lifelink until end of
+     * turn." — the pump rule's keyword sibling, over [Keywords.keywordRun] rather than one keyword.
+     *
+     * One grant is the bare effect and several are a composite, which is not a special case but the
+     * SDK's own shape: `CompositeEffect` means "these effects, in order", and a list of one has
+     * nothing to sequence. Reading it the other way would print every single-keyword card's model as
+     * a one-element composite and disagree with every hand-written card that spells it.
+     */
     private val grantToTargetPermanent: Phrase<CardScript> = run {
-        fun scriptFor(keyword: Keyword, filter: GameObjectFilter) = CardScript(
-            spellEffect = Effects.GrantKeyword(keyword, Targets.bound()),
+        fun scriptFor(keywords: List<Keyword>, filter: GameObjectFilter) = CardScript(
+            spellEffect = grants(keywords, Targets.bound()),
             targetRequirements = listOf(Targets.permanent(filter)),
         )
-        phrase("target {filter} gains {kw} until end of turn", name = "grant a keyword to a target") {
+        phrase("target {filter} gains {kws} until end of turn", name = "grant keywords to a target") {
             slot("filter", Filters.filter)
-            slot("kw", Keywords.keyword)
-            build { scriptFor(it.value("kw"), it.value("filter")) }
+            slot("kws", Keywords.keywordRun)
+            build { scriptFor(it.value("kws"), it.value("filter")) }
             match { script ->
-                val keyword = grantedKeyword(script.spellEffect) ?: return@match null
+                val keywords = grantedKeywords(script.spellEffect) ?: return@match null
                 val requirement = script.targetRequirements.singleOrNull() ?: return@match null
                 val filter = Targets.permanentFilter(requirement) ?: return@match null
-                if (script != scriptFor(keyword, filter)) return@match null
-                bind("filter" to filter, "kw" to keyword)
+                if (script != scriptFor(keywords, filter)) return@match null
+                bind("filter" to filter, "kws" to keywords)
             }
         }
     }
@@ -718,31 +736,33 @@ object Steps {
      * would buy is nothing.
      */
     private val pumpAndGrantTarget: Phrase<CardScript> = run {
-        fun scriptFor(modifiers: Pair<Int, Int>, keyword: Keyword, filter: GameObjectFilter) = CardScript(
+        fun scriptFor(
+            modifiers: Pair<Int, Int>,
+            keywords: List<Keyword>,
+            filter: GameObjectFilter,
+        ) = CardScript(
             spellEffect = Effects.Composite(
-                listOf(
-                    Effects.ModifyStats(modifiers.first, modifiers.second, Targets.bound()),
-                    Effects.GrantKeyword(keyword, Targets.bound()),
-                )
+                listOf(Effects.ModifyStats(modifiers.first, modifiers.second, Targets.bound())) +
+                    keywords.map { Effects.GrantKeyword(it, Targets.bound()) }
             ),
             targetRequirements = listOf(Targets.permanent(filter)),
         )
         phrase(
-            "target {filter} gets {mod} and gains {kw} until end of turn",
-            name = "pump and grant a keyword to a target",
+            "target {filter} gets {mod} and gains {kws} until end of turn",
+            name = "pump and grant keywords to a target",
         ) {
             slot("filter", Filters.filter)
             slot("mod", Primitives.statModifiers)
-            slot("kw", Keywords.keyword)
-            build { scriptFor(it.value("mod"), it.value("kw"), it.value("filter")) }
+            slot("kws", Keywords.keywordRun)
+            build { scriptFor(it.value("mod"), it.value("kws"), it.value("filter")) }
             match { script ->
                 val effects = (script.spellEffect as? CompositeEffect)?.effects ?: return@match null
                 val modifiers = fixedModifiers(effects.firstOrNull()) ?: return@match null
-                val keyword = grantedKeyword(effects.getOrNull(1)) ?: return@match null
+                val keywords = grantedKeywords(effects.drop(1)) ?: return@match null
                 val requirement = script.targetRequirements.singleOrNull() ?: return@match null
                 val filter = Targets.permanentFilter(requirement) ?: return@match null
-                if (script != scriptFor(modifiers, keyword, filter)) return@match null
-                bind("filter" to filter, "mod" to modifiers, "kw" to keyword)
+                if (script != scriptFor(modifiers, keywords, filter)) return@match null
+                bind("filter" to filter, "mod" to modifiers, "kws" to keywords)
             }
         }
     }
@@ -1060,29 +1080,31 @@ object Steps {
      * Two passes also gather twice, and nothing in the printed line says to.
      */
     private fun groupPumpAndGrant(prefix: String, name: String, canonicalForm: Boolean): Phrase<CardScript> {
-        fun scriptFor(modifiers: Pair<Int, Int>, keyword: Keyword, filter: GameObjectFilter) = CardScript(
+        fun scriptFor(
+            modifiers: Pair<Int, Int>,
+            keywords: List<Keyword>,
+            filter: GameObjectFilter,
+        ) = CardScript(
             spellEffect = Effects.ForEachInGroup(
                 GroupFilter(filter),
                 Effects.Composite(
-                    listOf(
-                        Effects.ModifyStats(modifiers.first, modifiers.second, EffectTarget.Self),
-                        Effects.GrantKeyword(keyword, EffectTarget.Self),
-                    )
+                    listOf(Effects.ModifyStats(modifiers.first, modifiers.second, EffectTarget.Self)) +
+                        keywords.map { Effects.GrantKeyword(it, EffectTarget.Self) }
                 ),
             )
         )
-        val rule = phrase<CardScript>("$prefix{filter} get {mod} and gain {kw} until end of turn", name = name) {
+        val rule = phrase<CardScript>("$prefix{filter} get {mod} and gain {kws} until end of turn", name = name) {
             slot("filter", Filters.plural)
             slot("mod", Primitives.statModifiers)
-            slot("kw", Keywords.keyword)
-            build { scriptFor(it.value("mod"), it.value("kw"), it.value("filter")) }
+            slot("kws", Keywords.keywordRun)
+            build { scriptFor(it.value("mod"), it.value("kws"), it.value("filter")) }
             match { script ->
                 val filter = iteratedGroup(script.spellEffect) ?: return@match null
                 val body = (iteratedBody(script.spellEffect) as? CompositeEffect)?.effects ?: return@match null
                 val modifiers = fixedModifiers(body.firstOrNull()) ?: return@match null
-                val keyword = grantedKeyword(body.getOrNull(1)) ?: return@match null
-                if (script != scriptFor(modifiers, keyword, filter)) return@match null
-                bind("filter" to filter, "mod" to modifiers, "kw" to keyword)
+                val keywords = grantedKeywords(body.drop(1)) ?: return@match null
+                if (script != scriptFor(modifiers, keywords, filter)) return@match null
+                bind("filter" to filter, "mod" to modifiers, "kws" to keywords)
             }
             canonical = canonicalForm
         }
@@ -1947,6 +1969,28 @@ object Steps {
     internal fun grantedKeyword(effect: Effect?): Keyword? {
         val grant = effect as? com.wingedsheep.sdk.scripting.effects.GrantKeywordEffect ?: return null
         return Keyword.entries.firstOrNull { it.name == grant.keyword }
+    }
+
+    /**
+     * What a whole [Keywords.keywordRun] denotes: one grant per keyword, over one object.
+     *
+     * A list of one is the bare effect rather than a one-element `CompositeEffect`, because that is
+     * what the hand-written cards hold and what the SDK's composite means — an ordering of several
+     * effects, which one effect does not have.
+     */
+    internal fun grants(keywords: List<Keyword>, target: EffectTarget): Effect {
+        val effects = keywords.map { Effects.GrantKeyword(it, target) }
+        return effects.singleOrNull() ?: Effects.Composite(effects)
+    }
+
+    /** [grants]'s inverse: the keywords a grant — or a composite of nothing but grants — names. */
+    internal fun grantedKeywords(effect: Effect?): List<Keyword>? =
+        grantedKeywords((effect as? CompositeEffect)?.effects ?: listOfNotNull(effect))
+
+    /** The same over a clause's tail, for the rules whose first effect is a pump. */
+    internal fun grantedKeywords(effects: List<Effect>): List<Keyword>? {
+        if (effects.isEmpty()) return null
+        return effects.map { grantedKeyword(it) ?: return null }
     }
 
     /** The group a mass effect iterates, or null when the effect is not a plain battlefield sweep. */

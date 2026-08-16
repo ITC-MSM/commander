@@ -76,7 +76,7 @@ object SelfSteps {
         val named = listOf(
             selfGets(target, subject, tag),
             selfGetsAndGains(target, subject, tag),
-            selfGainsTwoKeywords(target, subject, tag),
+            selfGainsKeywords(target, subject, tag),
             selfLosesKeyword(target, subject, tag),
             move("untap {self}", "untap$tag", Effects.Untap(target), subject),
             move("regenerate {self}", "regenerate$tag", RegenerateEffect(target), subject),
@@ -194,60 +194,55 @@ object SelfSteps {
         subject: Phrase<Unit>,
         tag: String,
     ): Phrase<CardScript> {
-        fun scriptFor(modifiers: Pair<Int, Int>, keyword: Keyword) = CardScript(
+        fun scriptFor(modifiers: Pair<Int, Int>, keywords: List<Keyword>) = CardScript(
             spellEffect = Effects.Composite(
-                listOf(
-                    Effects.ModifyStats(modifiers.first, modifiers.second, target),
-                    Effects.GrantKeyword(keyword, target),
-                )
+                listOf(Effects.ModifyStats(modifiers.first, modifiers.second, target)) +
+                    keywords.map { Effects.GrantKeyword(it, target) }
             )
         )
         return phrase(
-            "{self} gets {mod} and gains {kw} until end of turn",
+            "{self} gets {mod} and gains {kws} until end of turn",
             name = "$tag gets and gains".trim(),
         ) {
             slot("self", subject)
             slot("mod", Primitives.statModifiers)
-            slot("kw", Keywords.keyword)
-            build { scriptFor(it.value("mod"), it.value("kw")) }
+            slot("kws", Keywords.keywordRun)
+            build { scriptFor(it.value("mod"), it.value("kws")) }
             match { script ->
                 val effects = (script.spellEffect as? CompositeEffect)?.effects ?: return@match null
                 val modifiers = Steps.fixedModifiers(effects.firstOrNull()) ?: return@match null
-                val keyword = Steps.grantedKeyword(effects.getOrNull(1)) ?: return@match null
-                if (script != scriptFor(modifiers, keyword)) return@match null
-                bind("self" to Unit, "mod" to modifiers, "kw" to keyword)
+                val keywords = Steps.grantedKeywords(effects.drop(1)) ?: return@match null
+                if (script != scriptFor(modifiers, keywords)) return@match null
+                bind("self" to Unit, "mod" to modifiers, "kws" to keywords)
             }
         }
     }
 
-    /** "~ gains flying and shroud until end of turn." — Warped Researcher. Two grants, one sentence. */
-    private fun selfGainsTwoKeywords(
+    /**
+     * "~ gains trample until end of turn.", "~ gains flying and shroud until end of turn." — Warped
+     * Researcher and every card that grants itself a run.
+     *
+     * One rule over [Keywords.keywordRun] rather than one per count. It used to be a two-keyword
+     * rule with no singular sibling, which is the shape a family looks like before it is one: the
+     * count was in the rule instead of in the slot, so "gains trample" had nowhere to parse.
+     */
+    private fun selfGainsKeywords(
         target: EffectTarget,
         subject: Phrase<Unit>,
         tag: String,
     ): Phrase<CardScript> {
-        fun scriptFor(first: Keyword, second: Keyword) = CardScript(
-            spellEffect = Effects.Composite(
-                listOf(
-                    Effects.GrantKeyword(first, target),
-                    Effects.GrantKeyword(second, target),
-                )
-            )
-        )
+        fun scriptFor(keywords: List<Keyword>) = CardScript(spellEffect = Steps.grants(keywords, target))
         return phrase(
-            "{self} gains {kw} and {kw2} until end of turn",
-            name = "$tag gains two keywords".trim(),
+            "{self} gains {kws} until end of turn",
+            name = "$tag gains keywords".trim(),
         ) {
             slot("self", subject)
-            slot("kw", Keywords.keyword)
-            slot("kw2", Keywords.keyword)
-            build { scriptFor(it.value("kw"), it.value("kw2")) }
+            slot("kws", Keywords.keywordRun)
+            build { scriptFor(it.value("kws")) }
             match { script ->
-                val effects = (script.spellEffect as? CompositeEffect)?.effects ?: return@match null
-                val first = Steps.grantedKeyword(effects.firstOrNull()) ?: return@match null
-                val second = Steps.grantedKeyword(effects.getOrNull(1)) ?: return@match null
-                if (script != scriptFor(first, second)) return@match null
-                bind("self" to Unit, "kw" to first, "kw2" to second)
+                val keywords = Steps.grantedKeywords(script.spellEffect) ?: return@match null
+                if (script != scriptFor(keywords)) return@match null
+                bind("self" to Unit, "kws" to keywords)
             }
         }
     }

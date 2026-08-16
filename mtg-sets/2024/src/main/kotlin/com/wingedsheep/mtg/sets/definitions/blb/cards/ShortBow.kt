@@ -13,25 +13,25 @@ import com.wingedsheep.sdk.scripting.ModifyStats
  * {2}
  * Artifact — Equipment
  *
- * Equipped creature gets +1/+1 and has vigilance and reach.
+ * Equipped creature gets +1/+1 and has reach and vigilance.
  * Equip {1}
  */
 val ShortBow = card("Short Bow") {
     manaCost = "{2}"
     colorIdentity = ""
     typeLine = "Artifact — Equipment"
-    oracleText = "Equipped creature gets +1/+1 and has vigilance and reach.\nEquip {1}"
+    oracleText = "Equipped creature gets +1/+1 and has reach and vigilance.\nEquip {1}"
 
     staticAbility {
         ability = ModifyStats(+1, +1, Filters.EquippedCreature)
     }
 
     staticAbility {
-        ability = GrantKeyword(Keyword.VIGILANCE, Filters.EquippedCreature)
+        ability = GrantKeyword(Keyword.REACH, Filters.EquippedCreature)
     }
 
     staticAbility {
-        ability = GrantKeyword(Keyword.REACH, Filters.EquippedCreature)
+        ability = GrantKeyword(Keyword.VIGILANCE, Filters.EquippedCreature)
     }
 
     equipAbility("{1}")

@@ -37,7 +37,12 @@ val CorsairCaptain = card("Corsair Captain") {
         ability = ModifyStats(
             powerBonus = 1,
             toughnessBonus = 1,
-            filter = GroupFilter(GameObjectFilter.Creature.withSubtype(Subtype.PIRATE).youControl(), excludeSelf = true)
+            // "Other Pirates you control" names the subtype and not the card type, so the lord
+            // reaches Pirate *permanents*. Found by the Assay differential.
+            filter = GroupFilter(
+                GameObjectFilter.Permanent.withSubtype(Subtype.PIRATE).youControl(),
+                excludeSelf = true,
+            )
         )
     }
     metadata {

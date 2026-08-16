@@ -461,49 +461,73 @@ object Statics {
      * rather than a slot — a *conditional lord* is a different sentence with a noun phrase in it,
      * and it declines rather than being printed as one about this creature.
      */
+    /**
+     * What the conditional sentence says about the source: a stat change, a keyword run, or both.
+     *
+     * Three forms rather than three rules, for [Keywords.keywordRun]'s reason one level up — the
+     * count of granted keywords moved into the slot, and once it had, "gets +2/+0 and has trample"
+     * and "has flying and vigilance" were the same sentence with one clause missing. The forms take
+     * disjoint printed templates *and* disjoint ability lists (a pump is always first, and
+     * [KEYWORDS] has none), so nothing here is left for the printer to choose.
+     */
+    private enum class ConditionalForm(val pumps: Boolean, val grants: Boolean) {
+        PUMP(pumps = true, grants = false),
+        PUMP_AND_KEYWORDS(pumps = true, grants = true),
+        KEYWORDS(pumps = false, grants = true),
+    }
+
     private fun conditionalSelfStatic(
         leading: Boolean,
-        pairForm: Boolean,
+        form: ConditionalForm,
     ): Phrase<List<StaticAbility>> {
         fun abilitiesFor(
-            modifiers: Pair<Int, Int>,
-            keyword: Keyword?,
+            modifiers: Pair<Int, Int>?,
+            keywords: List<Keyword>,
             condition: Condition,
         ): List<StaticAbility> = listOfNotNull(
-            ConditionalStaticAbility(ModifyStats(modifiers.first, modifiers.second, GroupFilter.source()), condition),
-            keyword?.let { ConditionalStaticAbility(GrantKeyword(it, GroupFilter.source()), condition) },
-        )
+            modifiers?.let {
+                ConditionalStaticAbility(ModifyStats(it.first, it.second, GroupFilter.source()), condition)
+            },
+        ) + keywords.map { ConditionalStaticAbility(GrantKeyword(it, GroupFilter.source()), condition) }
 
-        val effect = "${Normalizer.SELF} gets {mod}" + if (pairForm) " and has {kw}" else ""
+        val effect = buildString {
+            append(Normalizer.SELF)
+            if (form.pumps) append(" gets {mod}")
+            if (form.grants) append(if (form.pumps) " and has {kws}" else " has {kws}")
+        }
         val template =
             if (leading) "as long as {cond}, $effect." else "$effect as long as {cond}."
-        val name = "the source gets" + (if (pairForm) " and has" else "") + " under a condition"
+        val name = "the source" + (if (form.pumps) " gets" else "") +
+            (if (form.grants) (if (form.pumps) " and has" else " has") else "") + " under a condition"
 
         val inner = phrase<List<StaticAbility>>(template, name = name) {
             slot("cond", Conditions.condition)
-            slot("mod", Primitives.statModifiers)
-            if (pairForm) slot("kw", Keywords.keyword)
+            if (form.pumps) slot("mod", Primitives.statModifiers)
+            if (form.grants) slot("kws", Keywords.keywordRun)
             build { bindings ->
                 abilitiesFor(
-                    bindings.value("mod"),
-                    if (pairForm) bindings.value<Keyword>("kw") else null,
+                    if (form.pumps) bindings.value<Pair<Int, Int>>("mod") else null,
+                    if (form.grants) bindings.value("kws") else emptyList(),
                     bindings.value("cond"),
                 )
             }
             match { abilities ->
-                if (abilities.size != (if (pairForm) 2 else 1)) return@match null
-                val first = abilities.first() as? ConditionalStaticAbility ?: return@match null
-                val stats = first.ability as? ModifyStats ?: return@match null
-                val keyword = if (pairForm) {
-                    val second = abilities[1] as? ConditionalStaticAbility ?: return@match null
-                    val grant = second.ability as? GrantKeyword ?: return@match null
-                    Keyword.entries.firstOrNull { it.name == grant.keyword } ?: return@match null
+                val first = abilities.firstOrNull() as? ConditionalStaticAbility ?: return@match null
+                val modifiers = if (form.pumps) {
+                    val stats = first.ability as? ModifyStats ?: return@match null
+                    stats.powerBonus to stats.toughnessBonus
                 } else {
                     null
                 }
-                val modifiers = stats.powerBonus to stats.toughnessBonus
-                if (abilities != abilitiesFor(modifiers, keyword, first.condition)) return@match null
-                bind("cond" to first.condition, "mod" to modifiers, "kw" to keyword)
+                val granted = abilities.drop(if (form.pumps) 1 else 0)
+                if (form.grants == granted.isEmpty()) return@match null
+                val keywords = granted.map { ability ->
+                    val conditional = ability as? ConditionalStaticAbility ?: return@match null
+                    val grant = conditional.ability as? GrantKeyword ?: return@match null
+                    Keyword.entries.firstOrNull { it.name == grant.keyword } ?: return@match null
+                }
+                if (abilities != abilitiesFor(modifiers, keywords, first.condition)) return@match null
+                bind("cond" to first.condition, "mod" to modifiers, "kws" to keywords)
             }
             canonical = !leading
         }
@@ -655,52 +679,87 @@ object Statics {
     }
 
     /**
-     * "Enchanted creature gets +2/+2 and has flying." — **two** static abilities from one sentence,
-     * the third time a printed phrase denotes several models rather than one.
+     * "Enchanted creature gets +2/+2 and has flying.", "…gets +2/+0 and has first strike, vigilance,
+     * trample, and haste." — a pump and **one static per granted keyword**, from one sentence.
      *
      * [Keywords.qualityRun] (CR 702.16g's joined protection) and [Mana.alternatives] ("{T}: Add {B}
-     * or {G}." as two abilities sharing a cost) are the other two, and the answer is the same one
-     * each time: the rule denotes a *list*, and the slot above lifts the ordinary single-ability
-     * line into the same shape so nothing downstream has to know which it got. What is emphatically
-     * not the answer is a compound SDK type meaning "pump and grant" — the model is already right,
-     * and there are exactly two abilities in it.
+     * or {G}." as two abilities sharing a cost) are the other rules that denote several models from
+     * one phrase, and the answer is the same one each time: the rule denotes a *list*, and [single]
+     * lifts the ordinary one-ability line into the same shape so nothing downstream has to know
+     * which it got. What is emphatically not the answer is a compound SDK type meaning "pump and
+     * grant" — the model is already right.
      *
-     * Written as one rule rather than as a family: it has one member. Twenty-seven hand-written
+     * The count of keywords is [Keywords.keywordRun]'s slot rather than the rule's, which is what
+     * makes Sword of Vengeance's four the same rule as Holy Strength's one. Twenty-seven hand-written
      * cards print this sentence and all twenty-seven order the statics as the text does, pump then
-     * grant, which is what makes the reconstruction below a comparison and not a convention. A card
-     * carrying them the other way round declines rather than being reordered into agreement.
+     * grants in printed order, which is what makes the reconstruction below a comparison and not a
+     * convention. A card carrying them the other way round declines rather than being reordered into
+     * agreement.
      */
     private val pumpAndKeyword: Phrase<List<StaticAbility>> = run {
-        fun abilitiesFor(modifiers: Pair<Int, Int>, keyword: Keyword) =
-            listOf(ModifyStats(modifiers.first, modifiers.second), GrantKeyword(keyword))
-        phrase("enchanted creature gets {mod} and has {kw}.", name = "enchanted creature gets and has") {
+        fun abilitiesFor(modifiers: Pair<Int, Int>, keywords: List<Keyword>) =
+            listOf<StaticAbility>(ModifyStats(modifiers.first, modifiers.second)) +
+                keywords.map { GrantKeyword(it) }
+        phrase("enchanted creature gets {mod} and has {kws}.", name = "enchanted creature gets and has") {
             slot("mod", Primitives.statModifiers)
-            slot("kw", Keywords.keyword)
-            build { abilitiesFor(it.value("mod"), it.value("kw")) }
+            slot("kws", Keywords.keywordRun)
+            build { abilitiesFor(it.value("mod"), it.value("kws")) }
             match { abilities ->
                 val stats = abilities.firstOrNull() as? ModifyStats ?: return@match null
-                val grant = abilities.getOrNull(1) as? GrantKeyword ?: return@match null
-                val keyword = Keyword.entries.firstOrNull { it.name == grant.keyword } ?: return@match null
+                val keywords = attachedKeywords(abilities.drop(1)) ?: return@match null
                 val modifiers = stats.powerBonus to stats.toughnessBonus
-                if (abilities != abilitiesFor(modifiers, keyword)) return@match null
-                bind("mod" to modifiers, "kw" to keyword)
+                if (abilities != abilitiesFor(modifiers, keywords)) return@match null
+                bind("mod" to modifiers, "kws" to keywords)
             }
         }
     }
 
     /**
-     * What one static-ability line denotes: usually one ability, and for [pumpAndKeyword] two.
+     * "Enchanted creature has reach and vigilance." — one sentence, one static *per keyword*.
      *
-     * The two alternatives take disjoint list sizes, so printing is decided by the model rather than
-     * by the alternation's order — the property every `oneOf` in this grammar is written to have.
+     * The line-level twin of [attachedKeyword], and two rules rather than one because a run of one
+     * is the single-ability rule reached through [single]: [Keywords.severalKeywords] therefore
+     * starts at two, so the two rules take disjoint list sizes and printing is decided by the model.
+     */
+    private val attachedKeywordRun: Phrase<List<StaticAbility>> =
+        phrase("enchanted creature has {kws}.", name = "enchanted creature has keywords") {
+            slot("kws", Keywords.severalKeywords)
+            build { it.value<List<Keyword>>("kws").map { keyword -> GrantKeyword(keyword) } }
+            match { abilities ->
+                if (abilities.size < 2) return@match null
+                val keywords = attachedKeywords(abilities) ?: return@match null
+                if (abilities != keywords.map { GrantKeyword(it) }) return@match null
+                bind("kws" to keywords)
+            }
+        }
+
+    /** The keywords a run of plain [GrantKeyword] statics names, or null if any is something else. */
+    private fun attachedKeywords(abilities: List<StaticAbility>): List<Keyword>? {
+        if (abilities.isEmpty()) return null
+        return abilities.map { ability ->
+            val grant = ability as? GrantKeyword ?: return null
+            Keyword.entries.firstOrNull { it.name == grant.keyword } ?: return null
+        }
+    }
+
+    /**
+     * What one static-ability line denotes: usually one ability, and for the rules that spell a
+     * keyword run, one per keyword — plus a pump where the sentence has one.
+     *
+     * The alternatives take disjoint list *shapes* — [single] is exactly one, [attachedKeywordRun]
+     * two or more grants, [pumpAndKeyword] a pump first, and each [ConditionalForm] a distinct
+     * combination of the two under a condition — so printing is decided by the model rather than by
+     * the alternation's order, the property every `oneOf` in this grammar is written to have.
      */
     val line: Phrase<List<StaticAbility>> = oneOf(
         "static abilities",
-        pumpAndKeyword,
-        conditionalSelfStatic(leading = false, pairForm = false),
-        conditionalSelfStatic(leading = true, pairForm = false),
-        conditionalSelfStatic(leading = false, pairForm = true),
-        conditionalSelfStatic(leading = true, pairForm = true),
-        single,
+        listOf(pumpAndKeyword, attachedKeywordRun) +
+            ConditionalForm.entries.flatMap { form ->
+                listOf(
+                    conditionalSelfStatic(leading = false, form = form),
+                    conditionalSelfStatic(leading = true, form = form),
+                )
+            } +
+            single,
     )
 }

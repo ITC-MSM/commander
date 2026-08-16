@@ -16553,7 +16553,7 @@
                     "filter": "land ctrl:you",
                     "to": "Battlefield"
                 },
-                "binding": "OTHER",
+                "binding": "ANY",
                 "effect": "BecomePrepared",
                 "descriptionOverride": "Landfall — Whenever a land you control enters, Tam becomes prepared."
             }

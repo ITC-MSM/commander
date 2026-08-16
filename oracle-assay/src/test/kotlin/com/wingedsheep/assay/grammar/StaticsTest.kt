@@ -5,11 +5,17 @@ import com.wingedsheep.assay.syntax.parseLine
 import com.wingedsheep.assay.syntax.printLine
 import com.wingedsheep.sdk.core.AbilityFlag
 import com.wingedsheep.sdk.core.Keyword
+import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.CardScript
 import com.wingedsheep.sdk.scripting.CantBlock
+import com.wingedsheep.sdk.scripting.ConditionalStaticAbility
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.GrantKeyword
 import com.wingedsheep.sdk.scripting.ModifyStats
+import com.wingedsheep.sdk.scripting.conditions.Compare
+import com.wingedsheep.sdk.scripting.conditions.ComparisonOperator
+import com.wingedsheep.sdk.scripting.references.Player
+import com.wingedsheep.sdk.scripting.values.DynamicAmount
 import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
 import com.wingedsheep.sdk.scripting.filters.unified.TargetFilter
 import com.wingedsheep.sdk.scripting.targets.TargetPermanent
@@ -145,6 +151,23 @@ class StaticsTest : StringSpec({
     "the unfiltered form is a flag, not a static" {
         fragment("~ can't be blocked.") shouldBe CardFragment(flags = setOf(AbilityFlag.CANT_BE_BLOCKED))
         roundTrips("~ can't be blocked.")
+    }
+
+    // Threshold's condition, and the shape the hand-size comparison became when it got a second
+    // member: one zone, one player, one spelled number, and which way the comparison points.
+    "a zone-count condition compares the count the golden compares" {
+        fragment("~ gets +3/+0 as long as there are seven or more cards in your graveyard.")
+            .script.staticAbilities shouldBe listOf(
+            ConditionalStaticAbility(
+                ability = ModifyStats(3, 0, GroupFilter.source()),
+                condition = Compare(
+                    DynamicAmount.Count(Player.You, Zone.GRAVEYARD),
+                    ComparisonOperator.GTE,
+                    DynamicAmount.Fixed(7),
+                ),
+            )
+        )
+        roundTrips("~ gets +3/+0 as long as there are seven or more cards in your graveyard.")
     }
 
     // Every rule in the family can print what it parses — the meta-test each family gets, because a

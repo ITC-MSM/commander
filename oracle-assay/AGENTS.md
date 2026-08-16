@@ -151,6 +151,17 @@ both are worth knowing before touching a leaf: a subtype is a *proper noun* stan
 own type list — an ungated one reads "**Other** creatures you control get +0/+1." as a tribe called
 *Other*, byte-perfect and wrong, which the differential caught and the README records.
 
+The **Bloomburrow band** is the third, and it is the shape of a set picked *because it is already
+implemented*: every card in it has a golden, so every declined line is a grammar gap whose answer is
+written and whose fix the differential confirms on the same run. That is where it paid — four pieces
+of machinery moved 594 cards corpus-wide and surfaced sixteen bugs in the *corpus*, one of them in an
+`mtg-sdk` trigger facade that 29 cards share. Two of the four went outside `grammar/` again, and the
+reason is the one this file keeps stating: an ability word has no rules meaning (CR 207.2c), so it is
+printed shape and belongs to `normalize/`, exactly where the attachment noun went. The other lesson
+is subtractive — the keyword *run* deleted two rules while covering more, because the count belonged
+in the slot and not in the rule, and a family with a `pairForm` boolean in it is a family with an
+axis it has not named yet.
+
 ## Fail-closed matching — the rule that catches the dangerous bug class
 
 **A `match` half reconstructs what `build` would have produced and compares the whole model.** Not a

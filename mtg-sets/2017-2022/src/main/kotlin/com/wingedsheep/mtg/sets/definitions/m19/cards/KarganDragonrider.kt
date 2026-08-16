@@ -22,6 +22,10 @@ import com.wingedsheep.sdk.scripting.GrantKeyword
  * Modeled as a conditional static ability: GrantKeyword(FLYING, Self) gated by
  * YouControl(a Dragon). The continuous keyword grant is re-evaluated by the layer system
  * whenever the controlled-Dragon condition changes, matching "as long as".
+ *
+ * The condition counts Dragon *permanents*, not Dragon creatures: a bare tribal noun names the
+ * subtype and not the card type, so an animated Dragon land or a noncreature Dragon permanent
+ * satisfies "you control a Dragon" too. Found by the Assay differential.
  */
 val KarganDragonrider = card("Kargan Dragonrider") {
     manaCost = "{1}{R}"
@@ -34,7 +38,7 @@ val KarganDragonrider = card("Kargan Dragonrider") {
     staticAbility {
         ability = ConditionalStaticAbility(
             ability = GrantKeyword(Keyword.FLYING, Filters.Self),
-            condition = Conditions.YouControl(GameObjectFilter.Creature.withSubtype(Subtype.DRAGON))
+            condition = Conditions.YouControl(GameObjectFilter.Permanent.withSubtype(Subtype.DRAGON))
         )
     }
 

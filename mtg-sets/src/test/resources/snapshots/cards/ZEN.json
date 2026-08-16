@@ -13,7 +13,7 @@
                     "filter": "land ctrl:you",
                     "to": "Battlefield"
                 },
-                "binding": "OTHER",
+                "binding": "ANY",
                 "effect": {
                     "type": "ModifyStats",
                     "powerModifier": {

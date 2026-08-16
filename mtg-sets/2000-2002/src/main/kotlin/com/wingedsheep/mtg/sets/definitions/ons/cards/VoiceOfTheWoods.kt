@@ -24,7 +24,9 @@ val VoiceOfTheWoods = card("Voice of the Woods") {
     oracleText = "Tap five untapped Elves you control: Create a 7/7 green Elemental creature token with trample."
 
     activatedAbility {
-        cost = Costs.TapPermanents(5, GameObjectFilter.Creature.withSubtype("Elf"))
+        // "Elves" names the subtype and not the card type, so the cost counts Elf *permanents* — an
+        // animated Elf land pays it too. Found by the Assay differential.
+        cost = Costs.TapPermanents(5, GameObjectFilter.Permanent.withSubtype("Elf"))
         effect = CreateTokenEffect(
             power = 7,
             toughness = 7,

@@ -176,6 +176,26 @@ class TriggersTest : StringSpec({
         ) shouldBe null
     }
 
+    // Valiant. The whole configuration is one published `TriggerSpec`, so the rule calls the
+    // lowering rather than restating `BecomesTargetEvent`'s flags — and the once-each-turn cap is
+    // part of the event here rather than the ability's `oncePerTurn`, which the fail-closed match
+    // still refuses to print.
+    "the valiant trigger is the spec the SDK publishes" {
+        fragment(
+            "Whenever ~ becomes the target of a spell or ability you control for the first time " +
+                "each turn, draw a card."
+        ).script.triggeredAbilities.single().trigger shouldBe SdkTriggers.Valiant.event
+
+        roundTrips(
+            "Whenever ~ becomes the target of a spell or ability you control for the first time " +
+                "each turn, draw a card."
+        )
+        roundTrips(
+            "Whenever ~ becomes the target of a spell or ability you control for the first time " +
+                "each turn, ~ gets +0/+2 until end of turn."
+        )
+    }
+
     // The id is not in the text, so it must not stop a card's own ability from printing — the one
     // field the fail-closed comparison deliberately exempts.
     "an ability's arbitrary id does not stop it printing" {

@@ -18,7 +18,7 @@ import com.wingedsheep.sdk.dsl.Patterns
 
 // Lumra, Bellow of the Woods - {4}{G}{G}
 // Legendary Creature — Elemental Bear - star/star
-// Vigilance, reach
+// Reach, vigilance
 // P/T equal to number of lands you control.
 // When Lumra enters, mill four cards. Then return all land cards from your graveyard
 // to the battlefield tapped.
@@ -26,11 +26,11 @@ val LumraBellowOfTheWoods = card("Lumra, Bellow of the Woods") {
     manaCost = "{4}{G}{G}"
     colorIdentity = "G"
     typeLine = "Legendary Creature — Elemental Bear"
-    oracleText = "Vigilance, reach\nLumra, Bellow of the Woods's power and toughness are each equal to the number of lands you control.\nWhen Lumra, Bellow of the Woods enters, mill four cards. Then return all land cards from your graveyard to the battlefield tapped."
+    oracleText = "Reach, vigilance\nLumra, Bellow of the Woods's power and toughness are each equal to the number of lands you control.\nWhen Lumra, Bellow of the Woods enters, mill four cards. Then return all land cards from your graveyard to the battlefield tapped."
 
     dynamicStats(DynamicAmount.AggregateBattlefield(Player.You, GameObjectFilter.Land))
 
-    keywords(Keyword.VIGILANCE, Keyword.REACH)
+    keywords(Keyword.REACH, Keyword.VIGILANCE)
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield

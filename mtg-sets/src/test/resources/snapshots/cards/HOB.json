@@ -1037,7 +1037,7 @@
                     "filter": "land ctrl:you",
                     "to": "Battlefield"
                 },
-                "binding": "OTHER",
+                "binding": "ANY",
                 "effect": {
                     "type": "AddCounters",
                     "counterType": "+1/+1",
@@ -2005,7 +2005,7 @@
                     "filter": "land ctrl:you",
                     "to": "Battlefield"
                 },
-                "binding": "OTHER",
+                "binding": "ANY",
                 "effect": {
                     "type": "ModifyStats",
                     "powerModifier": {
@@ -2618,7 +2618,7 @@
                     "filter": "land ctrl:you",
                     "to": "Battlefield"
                 },
-                "binding": "OTHER",
+                "binding": "ANY",
                 "effect": {
                     "type": "CreateToken",
                     "power": 2,
@@ -2956,7 +2956,7 @@
                             "filter": "land ctrl:you",
                             "to": "Battlefield"
                         },
-                        "binding": "OTHER",
+                        "binding": "ANY",
                         "effect": {
                             "type": "CreateToken",
                             "power": 1,
@@ -8084,7 +8084,7 @@
                     "filter": "land ctrl:you",
                     "to": "Battlefield"
                 },
-                "binding": "OTHER",
+                "binding": "ANY",
                 "effect": {
                     "type": "Gated",
                     "gate": "Gate.MayDecide",
@@ -10517,7 +10517,7 @@
                     "filter": "land ctrl:you",
                     "to": "Battlefield"
                 },
-                "binding": "OTHER",
+                "binding": "ANY",
                 "effect": {
                     "type": "Gated",
                     "gate": {
@@ -13102,7 +13102,7 @@
                     "filter": "land ctrl:you",
                     "to": "Battlefield"
                 },
-                "binding": "OTHER",
+                "binding": "ANY",
                 "effect": {
                     "type": "Composite",
                     "effects": [
@@ -13232,7 +13232,7 @@
                     "filter": "land ctrl:you",
                     "to": "Battlefield"
                 },
-                "binding": "OTHER",
+                "binding": "ANY",
                 "effect": {
                     "type": "CreateToken",
                     "power": 1,

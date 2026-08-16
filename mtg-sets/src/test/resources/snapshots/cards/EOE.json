@@ -4696,7 +4696,7 @@
                     "filter": "land ctrl:you",
                     "to": "Battlefield"
                 },
-                "binding": "OTHER",
+                "binding": "ANY",
                 "effect": {
                     "type": "GainLife",
                     "amount": {
@@ -4740,7 +4740,7 @@
                     "filter": "land ctrl:you",
                     "to": "Battlefield"
                 },
-                "binding": "OTHER",
+                "binding": "ANY",
                 "effect": {
                     "type": "CreateToken",
                     "power": 2,
@@ -6186,7 +6186,7 @@
                     "filter": "land ctrl:you",
                     "to": "Battlefield"
                 },
-                "binding": "OTHER",
+                "binding": "ANY",
                 "effect": {
                     "type": "Gated",
                     "gate": {
@@ -6386,7 +6386,7 @@
                     "filter": "land ctrl:you",
                     "to": "Battlefield"
                 },
-                "binding": "OTHER",
+                "binding": "ANY",
                 "effect": {
                     "type": "ForEach",
                     "space": {
@@ -7304,7 +7304,7 @@
                     "filter": "land ctrl:you",
                     "to": "Battlefield"
                 },
-                "binding": "OTHER",
+                "binding": "ANY",
                 "effect": {
                     "type": "ModifyStats",
                     "powerModifier": {
@@ -7350,7 +7350,7 @@
                     "filter": "land ctrl:you",
                     "to": "Battlefield"
                 },
-                "binding": "OTHER",
+                "binding": "ANY",
                 "effect": {
                     "type": "Composite",
                     "effects": [
@@ -9941,7 +9941,7 @@
                     "filter": "land ctrl:you",
                     "to": "Battlefield"
                 },
-                "binding": "OTHER",
+                "binding": "ANY",
                 "effect": {
                     "type": "ModifyStats",
                     "powerModifier": {
@@ -12216,7 +12216,7 @@
                     "filter": "land ctrl:you",
                     "to": "Battlefield"
                 },
-                "binding": "OTHER",
+                "binding": "ANY",
                 "effect": {
                     "type": "ModifyStats",
                     "powerModifier": {
@@ -13452,7 +13452,7 @@
                     "filter": "land ctrl:you",
                     "to": "Battlefield"
                 },
-                "binding": "OTHER",
+                "binding": "ANY",
                 "effect": {
                     "type": "AddCounters",
                     "counterType": "+1/+1",
@@ -15376,27 +15376,21 @@
                     "to": "Battlefield"
                 },
                 "effect": {
-                    "type": "Gated",
-                    "gate": {
-                        "type": "Gate.WhenCondition",
-                        "condition": {
-                            "type": "Compare",
-                            "left": {
-                                "type": "AggregateBattlefield",
-                                "player": "EachOpponent",
-                                "filter": "land"
-                            },
-                            "operator": "GT",
-                            "right": {
-                                "type": "AggregateBattlefield",
-                                "player": "You",
-                                "filter": "land"
-                            }
-                        }
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Lander"
+                },
+                "interveningIf": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "AggregateBattlefield",
+                        "player": "EachOpponent",
+                        "filter": "land"
                     },
-                    "then": {
-                        "type": "CreatePredefinedToken",
-                        "tokenType": "Lander"
+                    "operator": "GT",
+                    "right": {
+                        "type": "AggregateBattlefield",
+                        "player": "You",
+                        "filter": "land"
                     }
                 }
             },
@@ -15407,7 +15401,7 @@
                     "filter": "land ctrl:you",
                     "to": "Battlefield"
                 },
-                "binding": "OTHER",
+                "binding": "ANY",
                 "effect": {
                     "type": "ModifyStats",
                     "powerModifier": {
@@ -16590,7 +16584,7 @@
                     "filter": "land ctrl:you",
                     "to": "Battlefield"
                 },
-                "binding": "OTHER",
+                "binding": "ANY",
                 "effect": {
                     "type": "Composite",
                     "effects": [
@@ -17106,7 +17100,7 @@
                     "filter": "land ctrl:you",
                     "to": "Battlefield"
                 },
-                "binding": "OTHER",
+                "binding": "ANY",
                 "effect": {
                     "type": "Composite",
                     "effects": [

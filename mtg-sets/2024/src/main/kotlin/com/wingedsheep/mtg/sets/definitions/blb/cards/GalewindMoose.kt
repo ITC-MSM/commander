@@ -11,7 +11,7 @@ import com.wingedsheep.sdk.model.Rarity
  * 6/6
  *
  * Flash
- * Vigilance, reach, trample
+ * Reach, vigilance, trample
  */
 val GalewindMoose = card("Galewind Moose") {
     manaCost = "{4}{G}{G}"
@@ -19,9 +19,9 @@ val GalewindMoose = card("Galewind Moose") {
     typeLine = "Creature — Elemental Elk"
     power = 6
     toughness = 6
-    oracleText = "Flash\nVigilance, reach, trample"
+    oracleText = "Flash\nReach, vigilance, trample"
 
-    keywords(Keyword.FLASH, Keyword.VIGILANCE, Keyword.REACH, Keyword.TRAMPLE)
+    keywords(Keyword.FLASH, Keyword.REACH, Keyword.VIGILANCE, Keyword.TRAMPLE)
 
     metadata {
         rarity = Rarity.UNCOMMON

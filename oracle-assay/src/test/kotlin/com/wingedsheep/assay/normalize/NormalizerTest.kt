@@ -132,6 +132,40 @@ class NormalizerTest : StringSpec({
         n.restore(n.lines) shouldBe f.oracleText
     }
 
+    // CR 207.2c: an ability word has no rules meaning, so it is printed shape and lives here rather
+    // than as a grammar rule wrapping every sentence the grammar can already read.
+    "an ability word comes off the line and goes back on it" {
+        val f = face(
+            "Iridescent Vinelasher",
+            "Landfall — Whenever a land you control enters, this creature deals 1 damage to target opponent.",
+        )
+        val n = Normalizer.normalize(f)
+
+        n.lines shouldBe listOf("Whenever a land you control enters, ~ deals 1 damage to target opponent.")
+        n.abilityWords shouldBe listOf("Landfall")
+        n.restore(n.lines) shouldBe f.oracleText
+    }
+
+    "the word is recorded per line, so a card with one word and one plain line stays aligned" {
+        val f = face("Whatever", "Flying\nThreshold — This creature gets +3/+0.")
+        val n = Normalizer.normalize(f)
+
+        n.lines shouldBe listOf("Flying", "~ gets +3/+0.")
+        n.abilityWords shouldBe listOf(null, "Threshold")
+        n.restore(n.lines) shouldBe f.oracleText
+    }
+
+    // The list is CR 207.2c's rather than a pattern, because CR 207.2d's *flavor* words have the
+    // identical printed shape and are unbounded — and so does a Saga's chapter marker.
+    "a prefix that is not an ability word is left where it stands" {
+        val f = face("Whatever", "Bounty — Whenever this creature attacks, draw a card.")
+        val n = Normalizer.normalize(f)
+
+        n.lines shouldBe listOf("Bounty — Whenever ~ attacks, draw a card.")
+        n.abilityWords shouldBe listOf(null)
+        n.restore(n.lines) shouldBe f.oracleText
+    }
+
     "the self-reference noun follows the printed type line" {
         Reminders.selfNoun("Creature — Angel") shouldBe "this creature"
         Reminders.selfNoun("Artifact") shouldBe "this artifact"

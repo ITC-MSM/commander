@@ -84,14 +84,23 @@ object Triggers {
 
     /**
      * Landfall — whenever a land you control enters the battlefield.
-     * (OTHER binding, filter = Land.youControl().)
+     * (ANY binding, filter = Land.youControl().)
+     *
+     * `ANY` and not `OTHER`, because no landfall ability prints the word "another": every one of the
+     * 29 cards using this spells "Whenever a land you control enters". The distinction is invisible
+     * on a creature or an enchantment — neither can be the land that entered — and load-bearing on a
+     * *land* with a landfall trigger, which under `OTHER` would silently not see itself enter. Found
+     * by the Assay differential once the ability-word prefix stopped blocking these lines.
+     *
+     * A card that does print "another land you control" wants
+     * [entersBattlefield] with `binding = TriggerBinding.OTHER`, not this constant.
      */
     val LandYouControlEnters: TriggerSpec = TriggerSpec(
         event = ZoneChangeEvent(
             filter = GameObjectFilter.Land.youControl(),
             to = Zone.BATTLEFIELD
         ),
-        binding = TriggerBinding.OTHER
+        binding = TriggerBinding.ANY
     )
 
     /**
