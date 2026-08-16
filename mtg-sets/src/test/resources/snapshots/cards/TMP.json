@@ -755,6 +755,58 @@
     ]
 }
 
+// Emerald Medallion
+{
+    "name": "Emerald Medallion",
+    "manaCost": "{2}",
+    "typeLine": "Artifact",
+    "oracleText": "Green spells you cast cost {1} less to cast.",
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ModifySpellCost",
+                "target": {
+                    "type": "YouCast",
+                    "filter": "green"
+                },
+                "modification": {
+                    "type": "ReduceGeneric",
+                    "amount": 1
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "283",
+        "rarity": "RARE",
+        "artist": "Sue Ellen Brown",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/7/67e87f30-b27a-48e2-a133-192309dd5902.jpg?1783946605",
+        "rulings": [
+            {
+                "date": "2023-07-28",
+                "text": "The ability doesn't change the mana cost or mana value of any spell. It changes only the total cost you pay."
+            },
+            {
+                "date": "2023-07-28",
+                "text": "The ability can't reduce the amount of colored mana you pay for a spell. It reduces only the generic mana component of that cost."
+            },
+            {
+                "date": "2023-07-28",
+                "text": "If there are additional costs to cast a spell, or if the cost to cast a spell is increased by an effect (such as the one created by Thalia, Guardian of Thraben's ability), apply those increases before applying cost reductions."
+            },
+            {
+                "date": "2023-07-28",
+                "text": "The cost reduction can apply to alternative costs such as flashback costs."
+            },
+            {
+                "date": "2023-07-28",
+                "text": "If a spell you cast has {X} in its mana cost, you choose the value of X before calculating the spell's total cost."
+            }
+        ]
+    },
+    "colorIdentityOverride": []
+}
+
 // Fighting Drake
 {
     "name": "Fighting Drake",
@@ -1232,6 +1284,58 @@
     "colorIdentityOverride": [
         "GREEN"
     ]
+}
+
+// Jet Medallion
+{
+    "name": "Jet Medallion",
+    "manaCost": "{2}",
+    "typeLine": "Artifact",
+    "oracleText": "Black spells you cast cost {1} less to cast.",
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ModifySpellCost",
+                "target": {
+                    "type": "YouCast",
+                    "filter": "black"
+                },
+                "modification": {
+                    "type": "ReduceGeneric",
+                    "amount": 1
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "292",
+        "rarity": "RARE",
+        "artist": "Sue Ellen Brown",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/0/c0db458c-2ced-454c-8061-fff8bd363b33.jpg?1783946604",
+        "rulings": [
+            {
+                "date": "2023-07-28",
+                "text": "The ability doesn't change the mana cost or mana value of any spell. It changes only the total cost you pay."
+            },
+            {
+                "date": "2023-07-28",
+                "text": "The ability can't reduce the amount of colored mana you pay for a spell. It reduces only the generic mana component of that cost."
+            },
+            {
+                "date": "2023-07-28",
+                "text": "If there are additional costs to cast a spell, or if the cost to cast a spell is increased by an effect (such as the one created by Thalia, Guardian of Thraben's ability), apply those increases before applying cost reductions."
+            },
+            {
+                "date": "2023-07-28",
+                "text": "The cost reduction can apply to alternative costs such as flashback costs."
+            },
+            {
+                "date": "2023-07-28",
+                "text": "If a spell you cast has {X} in its mana cost, you choose the value of X before calculating the spell's total cost."
+            }
+        ]
+    },
+    "colorIdentityOverride": []
 }
 
 // Jinxed Idol
@@ -1963,6 +2067,58 @@
     "colorIdentityOverride": []
 }
 
+// Pearl Medallion
+{
+    "name": "Pearl Medallion",
+    "manaCost": "{2}",
+    "typeLine": "Artifact",
+    "oracleText": "White spells you cast cost {1} less to cast.",
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ModifySpellCost",
+                "target": {
+                    "type": "YouCast",
+                    "filter": "white"
+                },
+                "modification": {
+                    "type": "ReduceGeneric",
+                    "amount": 1
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "300",
+        "rarity": "RARE",
+        "artist": "Sue Ellen Brown",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/4/44588d53-7cce-406a-8e61-cd9866691966.jpg?1783946602",
+        "rulings": [
+            {
+                "date": "2023-07-28",
+                "text": "The ability doesn't change the mana cost or mana value of any spell. It changes only the total cost you pay."
+            },
+            {
+                "date": "2023-07-28",
+                "text": "The ability can't reduce the amount of colored mana you pay for a spell. It reduces only the generic mana component of that cost."
+            },
+            {
+                "date": "2023-07-28",
+                "text": "If there are additional costs to cast a spell, or if the cost to cast a spell is increased by an effect (such as the one created by Thalia, Guardian of Thraben's ability), apply those increases before applying cost reductions."
+            },
+            {
+                "date": "2023-07-28",
+                "text": "The cost reduction can apply to alternative costs such as flashback costs."
+            },
+            {
+                "date": "2023-07-28",
+                "text": "If a spell you cast has {X} in its mana cost, you choose the value of X before calculating the spell's total cost."
+            }
+        ]
+    },
+    "colorIdentityOverride": []
+}
+
 // Phyrexian Hulk
 {
     "name": "Phyrexian Hulk",
@@ -2212,6 +2368,110 @@
     "colorIdentityOverride": [
         "BLACK"
     ]
+}
+
+// Ruby Medallion
+{
+    "name": "Ruby Medallion",
+    "manaCost": "{2}",
+    "typeLine": "Artifact",
+    "oracleText": "Red spells you cast cost {1} less to cast.",
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ModifySpellCost",
+                "target": {
+                    "type": "YouCast",
+                    "filter": "red"
+                },
+                "modification": {
+                    "type": "ReduceGeneric",
+                    "amount": 1
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "305",
+        "rarity": "RARE",
+        "artist": "Sue Ellen Brown",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/4/24cdb28b-85f3-41ae-b1f5-fac766b2dcd2.jpg?1783946602",
+        "rulings": [
+            {
+                "date": "2023-07-28",
+                "text": "The ability doesn't change the mana cost or mana value of any spell. It changes only the total cost you pay."
+            },
+            {
+                "date": "2023-07-28",
+                "text": "The ability can't reduce the amount of colored mana you pay for a spell. It reduces only the generic mana component of that cost."
+            },
+            {
+                "date": "2023-07-28",
+                "text": "If there are additional costs to cast a spell, or if the cost to cast a spell is increased by an effect (such as the one created by Thalia, Guardian of Thraben's ability), apply those increases before applying cost reductions."
+            },
+            {
+                "date": "2023-07-28",
+                "text": "The cost reduction can apply to alternative costs such as flashback costs."
+            },
+            {
+                "date": "2023-07-28",
+                "text": "If a spell you cast has {X} in its mana cost, you choose the value of X before calculating the spell's total cost."
+            }
+        ]
+    },
+    "colorIdentityOverride": []
+}
+
+// Sapphire Medallion
+{
+    "name": "Sapphire Medallion",
+    "manaCost": "{2}",
+    "typeLine": "Artifact",
+    "oracleText": "Blue spells you cast cost {1} less to cast.",
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ModifySpellCost",
+                "target": {
+                    "type": "YouCast",
+                    "filter": "blue"
+                },
+                "modification": {
+                    "type": "ReduceGeneric",
+                    "amount": 1
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "306",
+        "rarity": "RARE",
+        "artist": "Sue Ellen Brown",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/a/3ab1e253-47cb-4089-87d5-0f998025d98c.jpg?1783946601",
+        "rulings": [
+            {
+                "date": "2023-07-28",
+                "text": "The ability doesn't change the mana cost or mana value of any spell. It changes only the total cost you pay."
+            },
+            {
+                "date": "2023-07-28",
+                "text": "The ability can't reduce the amount of colored mana you pay for a spell. It reduces only the generic mana component of that cost."
+            },
+            {
+                "date": "2023-07-28",
+                "text": "If there are additional costs to cast a spell, or if the cost to cast a spell is increased by an effect (such as the one created by Thalia, Guardian of Thraben's ability), apply those increases before applying cost reductions."
+            },
+            {
+                "date": "2023-07-28",
+                "text": "The cost reduction can apply to alternative costs such as flashback costs."
+            },
+            {
+                "date": "2023-07-28",
+                "text": "If a spell you cast has {X} in its mana cost, you choose the value of X before calculating the spell's total cost."
+            }
+        ]
+    },
+    "colorIdentityOverride": []
 }
 
 // Sea Monster

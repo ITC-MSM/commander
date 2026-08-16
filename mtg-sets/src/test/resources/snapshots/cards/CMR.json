@@ -13,6 +13,16 @@
         "TRAMPLE",
         "CASCADE"
     ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "CastThisSpellEvent",
+                "effect": "Cascade",
+                "descriptionOverride": "Cascade"
+            }
+        ]
+    },
     "metadata": {
         "collectorNumber": "216",
         "artist": "Lars Grant-West",
@@ -469,6 +479,104 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Meteoric Mace
+{
+    "name": "Meteoric Mace",
+    "manaCost": "{4}{R}{R}",
+    "typeLine": "Artifact — Equipment",
+    "oracleText": "Equipped creature gets +4/+0 and has trample.\nEquip {4}\nCascade (When you cast this spell, exile cards from the top of your library until you exile a nonland card that costs less. You may cast it without paying its mana cost. Put the exiled cards on the bottom in a random order.)",
+    "keywords": [
+        "CASCADE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "CastThisSpellEvent",
+                "effect": "Cascade",
+                "descriptionOverride": "Cascade"
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{4}"
+                    }
+                },
+                "effect": {
+                    "type": "AttachEquipment",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "creature you control"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        },
+                        "id": "creature you control"
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "isEquipAbility": true
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 4,
+                "toughnessBonus": 0
+            },
+            {
+                "type": "GrantKeyword",
+                "keyword": "TRAMPLE"
+            }
+        ]
+    },
+    "equipCost": "{4}",
+    "metadata": {
+        "collectorNumber": "192",
+        "rarity": "UNCOMMON",
+        "artist": "Randy Vargas",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/8/28cb7e94-01df-4e80-9b24-bc303a27ffd6.jpg?1783928808",
+        "rulings": [
+            {
+                "date": "2021-06-18",
+                "text": "A spell's mana value is determined only by its mana cost. Ignore any alternative costs, additional costs, cost increases, or cost reductions."
+            },
+            {
+                "date": "2021-06-18",
+                "text": "Cascade triggers when you cast the spell, meaning that it resolves before that spell. If you end up casting the exiled card, it will go on the stack above the spell with cascade."
+            },
+            {
+                "date": "2021-06-18",
+                "text": "When the cascade ability resolves, you must exile cards. The only optional part of the ability is whether or not you cast the last card exiled."
+            },
+            {
+                "date": "2021-06-18",
+                "text": "If a spell with cascade is countered, the cascade ability will still resolve normally."
+            },
+            {
+                "date": "2021-06-18",
+                "text": "If you cast a card \"without paying its mana cost,\" you can't choose to cast it for any alternative costs. You can, however, pay additional costs. If the card has any mandatory additional costs, you must pay those to cast the card."
+            },
+            {
+                "date": "2021-06-18",
+                "text": "Due to a 2021 rules change to cascade, not only do you stop exiling cards if you exile a nonland card with lesser mana value than the spell with cascade, but the resulting spell you cast must also have lesser mana value."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
