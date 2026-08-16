@@ -122,6 +122,100 @@
     ]
 }
 
+// Monastery Mentor
+{
+    "name": "Monastery Mentor",
+    "manaCost": "{2}{W}",
+    "typeLine": "Creature — Human Monk",
+    "oracleText": "Prowess (Whenever you cast a noncreature spell, this creature gets +1/+1 until end of turn.)\nWhenever you cast a noncreature spell, create a 1/1 white Monk creature token with prowess.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "PROWESS"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            "IsNoncreature"
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": "Self"
+                }
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            "IsNoncreature"
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [
+                        "WHITE"
+                    ],
+                    "creatureTypes": [
+                        "Monk"
+                    ],
+                    "keywords": [
+                        "PROWESS"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/3/1/3142cb28-23cc-405f-9db5-7c4d168aab19.jpg?1783938663"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "20",
+        "rarity": "MYTHIC",
+        "artist": "Magali Villeneuve",
+        "flavorText": "\"Speak little. Do much.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/b/abcd0e32-2e6b-419b-9e8a-af38f2b48a66.jpg?1783938710",
+        "rulings": [
+            {
+                "date": "2014-11-24",
+                "text": "Casting a noncreature spell will cause both prowess and Monastery Mentor's other ability to trigger. You can put these abilities on the stack in either order. Whichever ability is put on the stack last will resolve first."
+            },
+            {
+                "date": "2014-11-24",
+                "text": "The spell that causes Monastery Mentor's second ability to trigger will not cause the prowess ability of the Monk token that's created to trigger."
+            },
+            {
+                "date": "2014-11-24",
+                "text": "Any spell you cast that doesn't have the type creature will cause prowess to trigger. If a spell has multiple types, and one of those types is creature (such as an artifact creature), casting it won't cause prowess to trigger. Playing a land also won't cause prowess to trigger."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Noxious Dragon
 {
     "name": "Noxious Dragon",

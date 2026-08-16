@@ -134,6 +134,55 @@
     ]
 }
 
+// Stoke the Flames
+{
+    "name": "Stoke the Flames",
+    "manaCost": "{2}{R}{R}",
+    "typeLine": "Instant",
+    "oracleText": "Convoke (Your creatures can help cast this spell. Each creature you tap while casting this spell pays for {1} or one mana of that creature's color.)\nStoke the Flames deals 4 damage to any target.",
+    "keywords": [
+        "CONVOKE"
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "DealDamage",
+            "amount": {
+                "type": "Fixed",
+                "amount": 4
+            },
+            "target": {
+                "type": "BoundVariable",
+                "name": "any target"
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "AnyTarget",
+                "id": "any target"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "164",
+        "rarity": "UNCOMMON",
+        "artist": "Ryan Barger",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/d/1d94c000-52e0-4215-83af-6351dc43e636.jpg?1783939169",
+        "rulings": [
+            {
+                "date": "2024-01-12",
+                "text": "When calculating a spell's total cost, include any alternative costs, additional costs, or anything else that increases or reduces the cost to cast the spell. Convoke applies after the total cost is calculated. Convoke doesn't change a spell's mana cost or mana value."
+            },
+            {
+                "date": "2024-01-12",
+                "text": "Tapping an untapped creature that's attacking or blocking to convoke a spell won't cause that creature to stop attacking or blocking."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Triplicate Spirits
 {
     "name": "Triplicate Spirits",

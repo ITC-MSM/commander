@@ -1711,3 +1711,40 @@
         "imageUri": "https://cards.scryfall.io/normal/front/c/0/c0f9c733-0818-4a03-8f0c-a163d09e0fff.jpg?1783935704"
     }
 }
+
+// Vanquish the Weak
+{
+    "name": "Vanquish the Weak",
+    "manaCost": "{2}{B}",
+    "typeLine": "Instant",
+    "oracleText": "Destroy target creature with power 3 or less.",
+    "script": {
+        "spellEffect": {
+            "type": "MoveToZone",
+            "target": {
+                "type": "BoundVariable",
+                "name": "target creature with power 3 or less"
+            },
+            "destination": "Graveyard",
+            "byDestruction": true
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature pow<=3"
+                },
+                "id": "target creature with power 3 or less"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "127",
+        "artist": "David Palumbo",
+        "flavorText": "The clerics known as condemners punish those who do not recognize the righteous authority of the church.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/5/e599ed0b-4b3b-4341-b6ac-7fdfdc6799a3.jpg?1783935752"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
