@@ -44,10 +44,13 @@ submits a map containing blockers controlled by either teammate, the entire map 
 together, and each controller with a tax share receives their own block-tax prompt. Payment responses are
 collected as zero-mutation intents; only after every payer accepts are all fixed-output tap-only mana
 payments applied to a candidate state and the block committed once. This includes deterministic
-multi-mana sources such as Elvish Aberration; any surplus remains in that controller's individual
-mana pool. Any decline, forged source,
+fixed-output tap-only sources such as Elvish Aberration and the ordinary `{T}: Add {C}` branch of
+Crystal Vein; applicable mana-production multipliers are preserved, and any surplus remains in
+that controller's individual mana pool. A branch that sacrifices or otherwise has side effects is
+never inferred from a source-only selection. Any decline, forged source,
 duplicate source, or failed payment leaves mana, blockers, and declaration markers unchanged.
-This first payment slice deliberately excludes sources with sacrifice, secondary tap, pain,
+This first payment slice deliberately excludes sacrifice branches (including Crystal Vein's
+`{T}, Sacrifice: Add {C}{C}` branch until selections identify an ability branch), secondary tap, pain,
 activation-mana, restricted-mana, or multi-mana side effects. Those source shapes remain an
 explicit implementation gap, separate from the FFA Commander simulation evidence above.
 

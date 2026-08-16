@@ -5315,8 +5315,12 @@ staticAbility {
   the engine fixes each controller's share when the combined block is proposed, collects one
   zero-mutation intent from each payer, and applies all payments plus the single declaration only
   after everyone accepts; declining or invalidating any intent rolls the whole proposal back. This
-  atomic team path currently admits simple one-mana tap-only sources; sacrifice, secondary-tap,
-  pain, activation-mana, restricted, and multi-mana sources remain unsupported there. The pre-existing
+  atomic team path admits deterministic fixed-output tap-only sources, including multiplied output
+  and only the non-sacrificing branch of a multi-ability source (for example Crystal Vein's `{T}: Add {C}`).
+  It cannot infer a sacrifice branch from a source ID: Crystal Vein's `{T}, Sacrifice: Add {C}{C}` is
+  deliberately unavailable until the decision protocol carries an ability-branch identity. Sacrifice,
+  secondary-tap, pain, activation-mana, restricted, and multi-mana side-effect sources remain unsupported
+  there. The pre-existing
   per-creature-type block tax (Whipgrass Entangler) uses `AttackBlockTaxPerCreatureType` floating
   effects instead.
 - `CantBeAttackedWithout(keyword, attackerFilter = null)` — Form of the Dragon-style "Creatures
