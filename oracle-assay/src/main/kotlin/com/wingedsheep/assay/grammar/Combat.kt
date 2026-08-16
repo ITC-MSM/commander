@@ -290,11 +290,11 @@ object Combat {
             "skip untap",
             Targets.opponent(),
         ) { SkipUntapEffect(it) },
-        turnEffect(
-            "prevent all damage that would be dealt to you this turn by attacking creatures",
-            "prevent damage from attackers",
-            Effects.PreventDamageFromAttackingCreatures(),
-        ),
+        // "Prevent all damage that would be dealt to you this turn by attacking creatures." used to
+        // be a whole-sentence rule here. It is now [Prevention]'s recipient clause wearing that
+        // family's source layer — one sentence assembled from three things that vary — and leaving
+        // both would have been two readings of one text with the same model, which the report counts
+        // as grammar redundancy and which is how it was found.
         turnEffect(
             "this turn, whenever an attacking creature deals combat damage to you, it deals that " +
                 "much damage to its controller",

@@ -229,7 +229,7 @@ object Continuations {
         itGets,
         ownerGainsLife,
         drawForEachInHand,
-    ) + putCountersOnThatPermanent
+    ) + putCountersOnThatPermanent + Prevention.continuationClauses
 
     val clause: Phrase<CardScript> = oneOf("a clause referring to the target", all)
 }

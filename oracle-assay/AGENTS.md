@@ -283,6 +283,32 @@ halves**, and it catches them where the corpus gates cannot: two texts collapsin
 row to a shared vocabulary is a change to every position that slots it — grep the value before you
 write it.
 
+The **prevention band** is the top-of-library lesson on an `Effect` rather than on a `Patterns`
+recipe, and it adds three things worth carrying forward. First, **a family whose axes are one type's
+fields still has to decide where each axis lives, and `null` is what forces the decision**:
+`PreventDamageEffect.amount` is nullable and "prevent **all** damage" is that null, so it cannot be a
+slot — a `build` returning null means the surface denotes nothing — and the quantifier became three
+instantiations of the shape over disjoint halves of `DynamicAmount` instead. Ask of every axis
+whether its value space contains an absence before reaching for a slot.
+
+Second, **read the redundancy number after generalizing a family, not just the coverage number.**
+`Combat` had held "prevent all damage that would be dealt to you this turn by attacking creatures" as
+a whole sentence; the new source layer read the same text into the same model, and the report's
+redundant-readings count went 0 → 2 in the run that added +75 cards. Nothing else would have said so
+— the touchstone is happy, the differential is happy, and a second rule for one model is precisely
+the configuration that becomes a hard `AMBIGUOUS` the moment either rule's model shifts. A band that
+makes a sentence composable should assume the sentence was already spelled somewhere.
+
+Third, **a whole-line probe is exact only when the construct behind the line is uniform.** The
+spell-cost band's rule was that the probe is honest when the family owns the line, and this family
+does — and it still overstated 101 → 75, because a family that is one SDK type's *product* has
+members the type cannot reach. Forty of the corpus's prevention lines carry no duration and are a
+different type entirely (`ReplacementEffect.PreventDamage` over an `EventPattern`, a vocabulary
+nobody has built); the rest name a noncombat scope, a recipient set of players, or divided damage.
+That last group is also this band's write-off with an expiry date, in the sense the tapped-entry band
+records: the day some band builds `EventPattern`, `Prevention`'s KDoc is what says the prevention
+statics are sitting there waiting for it.
+
 The top-of-library band's differential result is the argument for the whole discipline: it put
 `SelectFromCollectionEffect` under comparison for the first time, and **every newly-compared card
 that disagreed was wrong** — five had silently dropped `restOrder` so "in any order" resolved as "in

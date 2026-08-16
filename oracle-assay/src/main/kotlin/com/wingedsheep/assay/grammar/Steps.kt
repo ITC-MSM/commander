@@ -36,7 +36,6 @@ import com.wingedsheep.sdk.scripting.effects.Effect
 import com.wingedsheep.sdk.scripting.effects.ForEachTargetEffect
 import com.wingedsheep.sdk.scripting.effects.GainLifeEffect
 import com.wingedsheep.sdk.scripting.effects.GrantKeywordEffect
-import com.wingedsheep.sdk.scripting.effects.PreventDamageEffect
 import com.wingedsheep.sdk.scripting.effects.RegenerateEffect
 import com.wingedsheep.sdk.scripting.effects.SacrificeEffect
 import com.wingedsheep.sdk.scripting.effects.Gate
@@ -1096,47 +1095,6 @@ object Steps {
         }
     }
 
-    /**
-     * "Prevent the next 2 damage that would be dealt to any target this turn." — Aven Redeemer —
-     * and "Prevent all combat damage that would be dealt to and dealt by ~ this turn." — Deftblade
-     * Elite.
-     *
-     * One SDK type with two very different sentences: a counted prevention aimed at a target, and an
-     * uncounted one scoped to combat and to both directions. They share nothing but the verb, so
-     * they are two rules rather than a shape with a slot.
-     */
-    private val preventNextDamage: Phrase<CardScript> = run {
-        fun scriptFor(amount: Int) = CardScript(
-            spellEffect = Effects.PreventNextDamage(amount, Targets.bound()),
-            targetRequirements = listOf(Targets.any()),
-        )
-        phrase(
-            "prevent the next {n} damage that would be dealt to any target this turn",
-            name = "prevent the next damage to any target",
-        ) {
-            slot("n", Primitives.cardinal)
-            build { scriptFor(it.int("n")) }
-            match { script ->
-                val prevented = (script.spellEffect as? PreventDamageEffect)?.amount
-                    ?.let { it as? DynamicAmount.Fixed }?.amount ?: return@match null
-                if (script != scriptFor(prevented)) return@match null
-                bind("n" to prevented)
-            }
-        }
-    }
-
-    private val preventCombatDamageToAndBySelf: Phrase<CardScript> = run {
-        val script = CardScript(spellEffect = Effects.PreventCombatDamageToAndBy(EffectTarget.Self))
-        phrase(
-            "prevent all combat damage that would be dealt to and dealt by {self} this turn",
-            name = "prevent combat damage to and by the source",
-        ) {
-            slot("self", Primitives.self)
-            build { script }
-            match { if (it == script) bind("self" to Unit) else null }
-        }
-    }
-
     /** "You lose the game." / "That player loses the game." — Phage the Untouchable, both halves. */
     private fun losesTheGame(template: String, name: String, player: EffectTarget): Phrase<CardScript> {
         val script = CardScript(spellEffect = Effects.LoseGame(player))
@@ -1153,8 +1111,6 @@ object Steps {
         destroyTriggeringNoRegenerate,
         sacrificeFiltered,
         targetCantBeBlocked,
-        preventNextDamage,
-        preventCombatDamageToAndBySelf,
         losesTheGame("you lose the game", "you lose the game", EffectTarget.Controller),
         losesTheGame(
             "that player loses the game",
@@ -1693,6 +1649,7 @@ object Steps {
             Morph.clauses +
             CreatureTypes.clauses +
             Tokens.clauses +
+            Prevention.clauses +
             SelfSteps.clauses
 
     /**
