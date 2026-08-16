@@ -1,17 +1,14 @@
 package com.wingedsheep.mtg.sets.definitions.vow.cards
 
 import com.wingedsheep.sdk.core.Color
+import com.wingedsheep.sdk.dsl.Conditions
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.AbilityCost
 import com.wingedsheep.sdk.scripting.EntersTapped
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.TimingRule
-import com.wingedsheep.sdk.scripting.conditions.Compare
-import com.wingedsheep.sdk.scripting.conditions.ComparisonOperator
 import com.wingedsheep.sdk.scripting.effects.AddManaEffect
-import com.wingedsheep.sdk.scripting.references.Player
-import com.wingedsheep.sdk.scripting.values.DynamicAmount
 
 /**
  * Stormcarved Coast
@@ -31,11 +28,7 @@ val StormcarvedCoast = card("Stormcarved Coast") {
     oracleText = "This land enters tapped unless you control two or more other lands.\n{T}: Add {U} or {R}."
 
     replacementEffect(EntersTapped(
-        unlessCondition = Compare(
-            DynamicAmount.AggregateBattlefield(Player.You, GameObjectFilter.Land),
-            ComparisonOperator.GTE,
-            DynamicAmount.Fixed(3)
-        )
+        unlessCondition = Conditions.YouControlOtherAtLeast(2, GameObjectFilter.Land)
     ))
 
     activatedAbility {

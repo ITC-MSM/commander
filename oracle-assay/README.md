@@ -1128,6 +1128,97 @@ player's library", 21 cards), the single-card conditional ("Look at the top card
 card, you may put it onto the battlefield tapped.", 88 cards / 68 sole), and the dynamic count
 ("Look at the top X cards of your library, **where X is** …", 38 cards).
 
+## The conditional-tapped-entry band
+
+The lands that enter tapped *unless* something is true — the check lands, the fast lands, the slow
+lands, the Duskmourn cycle, and every one-off beside them. Whole-corpus coverage 7,910 → **7,967
+cards** (+57). No new SDK type; one grammar template, four new rows in the condition vocabulary, and
+two facade entries in `mtg-sdk` that name a composition the cards were already spelling by hand.
+
+**It was picked by measuring, and it was the top of the list on both numbers.** The tail ranking put
+`enters tapped unless …` at 107 cards blocked and **75 sole-blocked**, and the probe — substituting
+"~ enters tapped." for the whole clause — also said **75 whole cards**, because all 107 of the
+family's lines parse once the clause does. Every other family in the top twenty was probed in the
+same run; the next best were `unless its controller pays …` (58), `Spend this mana only …` (57) and
+`Prevent all damage …` (55), and the two families the tail rank put *above* this one both measured
+near zero — fronted `Until end of turn, …` (188 sole-blocked) at **0**, and `As ~ enters, …` (54
+sole-blocked) at 4, because every payload behind them is missing too.
+
+**75 predicted, 57 delivered, and the gap is a list rather than a mystery.** The probe replaces the
+family's whole clause with a known-good one, so its number is what the band is worth *if every
+condition in it can be spelled*. Seventy-five of the 107 lines now read; the other 32 are the four
+residue classes at the end of this section, and two of them are deliberate refusals rather than
+unwritten work. That is the honest reading of this probe shape: it sizes the sentence, not the
+vocabulary the sentence slots.
+
+**The band is a frozen field, which is the top-of-library band's lesson on a different type.**
+`EntersTapped(unlessCondition, payLifeCost)` has three printed shapes and
+[`Replacements`](src/main/kotlin/com/wingedsheep/assay/grammar/Replacements.kt) was reading two of
+them. The third was written off in that file's own KDoc — "an `unlessCondition` is an arbitrary
+`Condition`, and the grammar has no condition vocabulary yet" — and by the time the spell-cost band
+had built [`Conditions`](src/main/kotlin/com/wingedsheep/assay/grammar/Conditions.kt), that sentence
+had stopped being true without anyone noticing. So the whole band is one template with
+`Conditions.condition` in it, and the 107 lines spell 36 distinct clauses of which 35 belong to the
+vocabulary, where every other position that takes a condition gets them for free.
+
+### Two articles, and where the "or" lives
+
+"You control a **Mount or Vehicle**" is one noun phrase and one filter with a subtype `Or` in it.
+"You control a **Plains** or an **Island**" is two noun phrases with the verb elided, and it is a
+disjunction of *conditions*. The hand-written cards drew the line in exactly that place before the
+grammar did — Country Roads holds one `Exists` over a `Mount|Vehicle` filter, Sulfur Falls holds
+`Any(Exists(land Island), Exists(land Mountain))` — so the second article is what keeps the two
+rules disjoint, and it is a fact about the text rather than a convention this module invented. That
+is what lets the rule be canonical in both directions instead of an `alternate`.
+
+### "Other" is a field on the amount, and twenty cards were doing arithmetic instead
+
+The fast lands say "unless you control two or fewer **other** lands" and the slow lands "two or more
+other lands". Twenty goldens wrote that as *total lands ≤ 3* / *≥ 3* — the printed number plus one,
+over a tally that excludes nothing. That is equal to the sentence only while the source is itself a
+land already on the battlefield when the condition is checked, which is true of every card printing
+the line today and of nothing the shape guarantees.
+
+`DynamicAmount.AggregateBattlefield` has had `excludeSelf` all along, so the literal reading was
+always available; `GameObjectFilter` has no self-exclusion, which is why the word belongs to the
+*count* and the two rules are further corners of the existing `countAtLeast` shape rather than a new
+one. The differential named all twenty the day the rows landed, and all twenty moved in the same
+change through two new facade entries — `Conditions.YouControlOtherAtLeast` / `…AtMost`, naming an
+existing composition rather than adding a capability, so the cards and the grammar rule are one
+definition and neither can drift. `BloomingMarshScenarioTest` is the behaviour proof for the
+`AtMost` half (the `AtLeast` half already had the five slow-land tests).
+
+### What the gate found: 21 new divergences, and 21 fixed here
+
+The band brought **199 more cards** into the compared population (2,886 → 3,085) and every card that
+disagreed was one of two things. Twenty were the arithmetic above. The twenty-first was Cori Mountain
+Monastery, which became comparable only because its tapped-entry line now reads — and it turned out
+to hand-restate `Patterns.Exile.impulse` out of raw constructors under a different collection name,
+the fifth instance of the class the top-of-library band found four of. Both are fixed here, and the
+differential is back to its 13 standing divergences at **99.6% agreement**.
+
+### What is left in the family, and the next band it named
+
+Thirty-two of the 107 lines still decline, and the residue splits cleanly:
+
+- **Two SDK gaps, reported rather than routed around.** "You have two or more opponents" (10 cards)
+  and "your opponents control eight or more lands" (5) have no condition the SDK names, and a
+  `Compare` assembled here would be a second spelling of something `Conditions` should own.
+- **One refusal the module's own invariant demands.** "~ enters tapped unless **it's your turn**"
+  (Horned Loch-Whale) declines even though the SDK names `IsYourTurn`, because
+  `SpellCosts.leadingGate` already prints that value as the fronted "During your turn, …" clause and
+  a second row would be a second printed form for one model. The row was written, and the
+  `every spell-cost rule prints what it parses` meta-test rejected it within the same run — which is
+  what that meta-test is for, and worth recording as the first time it caught a *cross-family*
+  collision rather than a dead `match`.
+- **One `Filters` layer, and it is the next band.** "You control a **legendary** creature" (6 cards
+  here) declines because the grammar has no legendary layer — and **416 declined lines corpus-wide
+  mention "legendary"**, which is a band of its own rather than a row to bolt onto this one. It is
+  the documented shape: one layer that owns one field.
+- **The rest are genuinely separate constructs** — the bare non-creature subtype ("an Equipment",
+  which the `bareSubtype` gate declines on purpose), the colour disjunction over a permanent noun,
+  and the two "you revealed a Dragon card this way **or** you control a Dragon" compounds.
+
 ## What Phase 1 already found
 
 The report is two documents at once, and the second one is about `mtg-sdk`:

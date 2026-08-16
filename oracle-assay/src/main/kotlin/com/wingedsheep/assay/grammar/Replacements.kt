@@ -18,13 +18,13 @@ import com.wingedsheep.sdk.scripting.events.CounterTypeFilter
  *
  * ### Why a whole family for what looks like one sentence
  *
- * `EntersTapped` is one SDK type with three printed shapes, and the second of them costs nothing
+ * `EntersTapped` is one SDK type with three printed shapes, and each of the later two costs nothing
  * once the first is written: the plain form, the shock-land form (`payLifeCost`), and the
- * check-land form (`unlessCondition`). The third is deliberately absent — an `unlessCondition` is
- * an arbitrary `Condition`, and the grammar has no condition vocabulary yet, so those 55 lines
- * decline and rank as the condition family's first customers rather than being approximated by the
- * plain rule. Printing an `EntersTapped` that carries a condition as "~ enters tapped." would be
- * the reversible-but-wrong class in its purest form: byte-perfect, and a different card.
+ * check-land form (`unlessCondition`). The third was the condition family's first customer and is
+ * now a slot rather than a rule — [Conditions.condition] is the vocabulary, and the sentence around
+ * it is one template. Printing an `EntersTapped` that carries a condition as "~ enters tapped."
+ * would be the reversible-but-wrong class in its purest form: byte-perfect, and a different card,
+ * which is why the plain rule is a `constant` on the whole default value.
  *
  * The `match` halves are equality tests against a reconstruction for exactly that reason, so a
  * value carrying a non-default `appliesTo` — a *static* tapped-entry imposed on other permanents,
@@ -67,6 +67,33 @@ object Replacements {
             val life = (effect as? EntersTapped)?.payLifeCost ?: return@match null
             if (effect != EntersTapped(payLifeCost = life)) return@match null
             bind("n" to life)
+        }
+    }
+
+    /**
+     * "~ enters tapped unless you control a basic land." — the check lands, the fast lands, the slow
+     * lands, and every other conditional tapped entry.
+     *
+     * One template with [Conditions.condition] in it, for the reason the top-of-library band gives:
+     * the SDK type's field *is* the slot, and a rule per printed condition would be one
+     * whole-sentence rule per land cycle. The 107 lines behind this in the corpus spell 36 distinct
+     * clauses; the sentence is one of them and the other 35 belong to the condition vocabulary,
+     * where every other position that takes a condition gets them too.
+     *
+     * The `match` half is the family's usual reconstruct-and-compare, so a value that also carries a
+     * `payLifeCost` or a non-default `appliesTo` refuses to print rather than dropping the half this
+     * sentence has no room for.
+     */
+    private val entersTappedUnless: Phrase<ReplacementEffect> = phrase(
+        "${Normalizer.SELF} enters tapped unless {cond}.",
+        name = "enters tapped unless a condition holds",
+    ) {
+        slot("cond", Conditions.condition)
+        build { EntersTapped(unlessCondition = it.value("cond")) }
+        match { effect ->
+            val condition = (effect as? EntersTapped)?.unlessCondition ?: return@match null
+            if (effect != EntersTapped(unlessCondition = condition)) return@match null
+            bind("cond" to condition)
         }
     }
 
@@ -135,6 +162,7 @@ object Replacements {
         "a replacement effect",
         listOf(
             entersTapped,
+            entersTappedUnless,
             shockLand,
             entersWithChoice("a color", ChoiceType.COLOR),
             entersWithChoice("a creature type", ChoiceType.CREATURE_TYPE),

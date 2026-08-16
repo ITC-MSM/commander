@@ -1,17 +1,14 @@
 package com.wingedsheep.mtg.sets.definitions.kld.cards
 
 import com.wingedsheep.sdk.core.Color
+import com.wingedsheep.sdk.dsl.Conditions
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.AbilityCost
 import com.wingedsheep.sdk.scripting.EntersTapped
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.TimingRule
-import com.wingedsheep.sdk.scripting.conditions.Compare
-import com.wingedsheep.sdk.scripting.conditions.ComparisonOperator
 import com.wingedsheep.sdk.scripting.effects.AddManaEffect
-import com.wingedsheep.sdk.scripting.references.Player
-import com.wingedsheep.sdk.scripting.values.DynamicAmount
 
 /**
  * Inspiring Vantage
@@ -26,11 +23,7 @@ val InspiringVantage = card("Inspiring Vantage") {
     oracleText = "This land enters tapped unless you control two or fewer other lands.\n{T}: Add {R} or {W}."
 
     replacementEffect(EntersTapped(
-        unlessCondition = Compare(
-            DynamicAmount.AggregateBattlefield(Player.You, GameObjectFilter.Land),
-            ComparisonOperator.LTE,
-            DynamicAmount.Fixed(3)
-        )
+        unlessCondition = Conditions.YouControlOtherAtMost(2, GameObjectFilter.Land)
     ))
 
     activatedAbility {

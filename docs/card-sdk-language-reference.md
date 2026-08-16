@@ -7872,6 +7872,15 @@ answer it and would silently return `false`.
 - `YouControlAtLeast(count, filter)` — you control `count` or more matching permanents (the
   filtered-count generalization of `ControlCreaturesAtLeast`/`ControlLandsAtLeast`; e.g.
   `YouControlAtLeast(3, GameObjectFilter.Creature.attacking())` for Stormbeacon Blade).
+- `YouControlOtherAtLeast(count, filter)` / `YouControlOtherAtMost(count, filter)` — the same tally
+  with the source itself left out, i.e. `AggregateBattlefield(..., excludeSelf = true)`. These are
+  the "other" of the slow lands ("enters tapped unless you control two or more **other** lands" →
+  `YouControlOtherAtLeast(2, GameObjectFilter.Land)`) and the fast lands ("two or fewer other lands"
+  → `YouControlOtherAtMost(2, …)`). **Write these rather than counting the whole group against one
+  more:** the two agree only while the source itself matches `filter` and is already on the
+  battlefield when the condition is checked — true of a land testing lands, and of nothing the
+  signature promises. Self-exclusion is a property of the *count*, not a predicate on the filter,
+  which is why it is a separate entry and not a `GameObjectFilter` modifier.
 - `ControlCreature` — you control any creature.
 - `NoCreaturesOnBattlefield` — there are no creatures anywhere on the battlefield (global, either player;
   `Exists(Player.Each, …, negate = true)`). Used by Drop of Honey's "when there are no creatures on the
@@ -9880,11 +9889,14 @@ The priority groups are (CR 616.1a–f):
 - `EntersTapped(unlessCondition?, payLifeCost?)` — "this permanent enters tapped" (`unlessCondition = null`),
   or "enters tapped unless `<condition>`" when an `unlessCondition` is supplied. The "slow land" cycle
   (Deathcap Glade, Dreamroot Cascade, Sundown Pass — "enters tapped unless you control two or more other
-  lands") uses `unlessCondition = Conditions.YouControlAtLeast(3, GameObjectFilter.Land)`: the
-  `AggregateBattlefield` count includes the entering land itself, so "two or more *other* lands" is
-  "three or more lands total". The parallel "fast land" cycle (Blooming Marsh — "two or fewer other lands")
-  uses an `LTE`-direction `Compare(AggregateBattlefield(You, Land), LTE, Fixed(3))`. `payLifeCost` renders
-  the "you may pay N life; if you don't, it enters tapped" variant.
+  lands") uses `unlessCondition = Conditions.YouControlOtherAtLeast(2, GameObjectFilter.Land)`, and the
+  parallel "fast land" cycle (Blooming Marsh — "two or fewer other lands")
+  `Conditions.YouControlOtherAtMost(2, GameObjectFilter.Land)`. Both spell the printed "other" as
+  `AggregateBattlefield.excludeSelf`; counting the whole group against one more agrees arithmetically
+  *only* because the source is itself a land already on the battlefield when the condition is checked,
+  which is a fact about these twenty cards rather than about the shape. `payLifeCost` renders
+  the "you may pay N life; if you don't, it enters tapped" variant. Assay reads every shape of this
+  line — the condition is a slot over the whole condition vocabulary, not a rule per land cycle.
 - `EntersUntapped(appliesTo = ZoneChangeEvent(filter, to = Zone.BATTLEFIELD))` — the inverse of
   `EntersTapped`: "[filter] enter the battlefield untapped" (The Wandering Minstrel — "Lands you
   control enter untapped", `filter = GameObjectFilter.Land.youControl()`). Unlike `EntersTapped`,
