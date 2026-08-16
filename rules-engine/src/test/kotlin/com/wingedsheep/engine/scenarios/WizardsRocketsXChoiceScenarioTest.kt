@@ -52,17 +52,16 @@ class WizardsRocketsXChoiceScenarioTest : FunSpec({
         d.pendingDecision.shouldBeInstanceOf<ChooseNumberDecision>()
 
         // Choose X = 2.
-        d.submitDecision(active, NumberChosenResponse(d.pendingDecision!!.id, 2))
-        // Resolve the remaining flow: "add 2 mana in any combination of colors" pauses per mana for
-        // a color choice; then the sacrifice's draw trigger goes on the stack.
-        repeat(12) {
-            val dec = d.pendingDecision
-            when {
-                dec is ChooseColorDecision -> d.submitDecision(active, ColorChosenResponse(dec.id, Color.RED))
-                dec != null -> d.autoResolveDecision()
-                else -> d.bothPass()
-            }
+        d.submitDecision(active, NumberChosenResponse(d.pendingDecision!!.id, 2)).error shouldBe null
+        // "Any combination" asks once per produced pip.  Check each transition explicitly:
+        // a swallowed decision/pass error would otherwise look like a missing dies trigger.
+        repeat(2) {
+            val colorDecision = d.pendingDecision.shouldBeInstanceOf<ChooseColorDecision>()
+            d.submitDecision(active, ColorChosenResponse(colorDecision.id, Color.RED)).error shouldBe null
         }
+        d.pendingDecision shouldBe null
+        d.stackSize shouldBe 1
+        d.bothPass().error shouldBe null
 
         // The artifact was sacrificed to pay the cost, and its dies-trigger drew a card.
         d.getGraveyard(active).any { d.getCardName(it) == "Wizard's Rockets" } shouldBe true

@@ -1577,7 +1577,7 @@ class ActivateAbilityHandler(
                         effectResult.state.copy(continuationStack = newStack),
                         effectResult.pendingDecision!!,
                         events + effectResult.events
-                    )
+                    ).copy(triggersAlreadyProcessed = true)
                 }
                 return effectResult
             }
