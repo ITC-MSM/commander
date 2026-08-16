@@ -78,6 +78,38 @@ class CommanderZoneReplacementTest : FunSpec({
             .addToZone(ZoneKey(owner, Zone.BATTLEFIELD), redirector)
     }
 
+    /**
+     * Synthetic replacement sources for a single CR 616 / 903.9b chain:
+     * battlefield -> hand competes with the Commander rule; Command -> library
+     * then makes the Commander rule applicable again to that same event.
+     */
+    fun stateWithCompetingBattlefieldToHandAndCommandToLibraryRedirects(): GameState {
+        val handRedirector = EntityId.generate()
+        val commandRedirector = EntityId.generate()
+        return state()
+            .withEntity(handRedirector, ComponentContainer.of(
+                CardComponent("Hand Redirector", "Hand Redirector", ManaCost.ZERO,
+                    TypeLine(setOf(), setOf(CardType.ENCHANTMENT)), "", ownerId = owner),
+                OwnerComponent(owner), ControllerComponent(owner),
+                ReplacementEffectSourceComponent(listOf(
+                    RedirectZoneChange(
+                        Zone.EXILE,
+                        EventPattern.ZoneChangeEvent(from = Zone.BATTLEFIELD, to = Zone.HAND)
+                    )
+                ))
+            ))
+            .withEntity(commandRedirector, ComponentContainer.of(
+                CardComponent("Command Redirector", "Command Redirector", ManaCost.ZERO,
+                    TypeLine(setOf(), setOf(CardType.ENCHANTMENT)), "", ownerId = owner),
+                OwnerComponent(owner), ControllerComponent(owner),
+                ReplacementEffectSourceComponent(listOf(
+                    RedirectZoneChange(Zone.LIBRARY, EventPattern.ZoneChangeEvent(to = Zone.COMMAND))
+                ))
+            ))
+            .addToZone(ZoneKey(owner, Zone.BATTLEFIELD), handRedirector)
+            .addToZone(ZoneKey(owner, Zone.BATTLEFIELD), commandRedirector)
+    }
+
     test("bounce commander pauses before movement and accepting performs exactly one command-zone move") {
         val result = ZoneTransitionService.attemptMoveToZone(state(), commander, Zone.HAND, ZoneEntryOptions())
         result.isPaused shouldBe true
@@ -141,6 +173,58 @@ class CommanderZoneReplacementTest : FunSpec({
         completed.state.activeReplacementChain shouldBe null
         (attempted.events + afterFirstAccept.events + completed.events)
             .filterIsInstance<ZoneChangeEvent>().filter { it.entityId == commander }.size shouldBe 1
+    }
+
+    test("CMD-REPL-CHAIN-BF-HAND-CMD-LIB-001: chosen Commander replacement can apply again after Command to library redirect") {
+        val attempted = ZoneTransitionService.attemptMoveToZone(
+            stateWithCompetingBattlefieldToHandAndCommandToLibraryRedirects(), commander, Zone.HAND
+        )
+        attempted.isPaused shouldBe true
+        val initialChoice = attempted.state.pendingDecision.shouldBeInstanceOf<ChooseOptionDecision>()
+        initialChoice.playerId shouldBe owner
+        initialChoice.options.size shouldBe 2
+        initialChoice.options.any { it.contains("Hand Redirector") } shouldBe true
+        val commanderIndex = initialChoice.options.indexOfFirst { it.startsWith("Commander —") }
+        (commanderIndex >= 0) shouldBe true
+        attempted.state.getZone(ZoneKey(owner, Zone.BATTLEFIELD)).contains(commander) shouldBe true
+        attempted.events.filterIsInstance<ZoneChangeEvent>().none { it.entityId == commander } shouldBe true
+
+        val firstCommanderChoice = services.continuationHandler.resume(
+            attempted.state.clearPendingDecision(), OptionChosenResponse(initialChoice.id, commanderIndex)
+        )
+        firstCommanderChoice.isPaused shouldBe true
+        val firstPrompt = firstCommanderChoice.state.pendingDecision.shouldBeInstanceOf<YesNoDecision>()
+        firstPrompt.playerId shouldBe owner
+        firstPrompt.prompt.contains("your hand") shouldBe true
+        firstCommanderChoice.state.getZone(ZoneKey(owner, Zone.BATTLEFIELD)).contains(commander) shouldBe true
+        firstCommanderChoice.events.filterIsInstance<ZoneChangeEvent>().none { it.entityId == commander } shouldBe true
+
+        val afterFirstAccept = services.continuationHandler.resume(
+            firstCommanderChoice.state.clearPendingDecision(), YesNoResponse(firstPrompt.id, true)
+        )
+        afterFirstAccept.isPaused shouldBe true
+        val secondPrompt = afterFirstAccept.state.pendingDecision.shouldBeInstanceOf<YesNoDecision>()
+        secondPrompt.playerId shouldBe owner
+        secondPrompt.prompt.contains("your library") shouldBe true
+        afterFirstAccept.state.getZone(ZoneKey(owner, Zone.BATTLEFIELD)).contains(commander) shouldBe true
+        afterFirstAccept.events.filterIsInstance<ZoneChangeEvent>().none { it.entityId == commander } shouldBe true
+
+        val completed = services.continuationHandler.resume(
+            afterFirstAccept.state.clearPendingDecision(), YesNoResponse(secondPrompt.id, false)
+        )
+        completed.state.getZone(ZoneKey(owner, Zone.LIBRARY)).shouldContainExactly(commander)
+        completed.state.getZone(ZoneKey(owner, Zone.HAND)).shouldContainExactly()
+        completed.state.getZone(ZoneKey(owner, Zone.COMMAND)).shouldContainExactly()
+        completed.state.pendingDecision shouldBe null
+        completed.state.activeReplacementChain shouldBe null
+        completed.state.continuationStack shouldBe emptyList()
+
+        val commanderMoves = (attempted.events + firstCommanderChoice.events + afterFirstAccept.events + completed.events)
+            .filterIsInstance<ZoneChangeEvent>()
+            .filter { it.entityId == commander }
+        commanderMoves.size shouldBe 1
+        commanderMoves.single().fromZone shouldBe Zone.BATTLEFIELD
+        commanderMoves.single().toZone shouldBe Zone.LIBRARY
     }
 
     test("a competing zone redirect and Commander replacement give the owner the CR 616 choice") {

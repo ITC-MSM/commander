@@ -2019,6 +2019,14 @@ class StackResolver(
                 if (splicedSlotCount == 0) alignedTargets else alignedTargets.dropLast(splicedSlotCount)
             val mainTargets =
                 if (splicedSlotCount == 0) targets else mainAlignedTargets.filterNotNull()
+            // The stack component retains the raw cast-time modal groups for display and audit.
+            // Modal execution, however, must use the same 608.2b-valid target projection as
+            // the flat and named-target paths. Keep each mode's original group boundary, while
+            // dropping the null slots that identify targets that became illegal on resolution.
+            val resolvedModeTargets = projectValidatedModeTargetGroups(
+                spellComponent.modeTargetsOrdered,
+                mainAlignedTargets
+            )
             val context = EffectContext(
                 sourceId = spellId,
                 controllerId = spellComponent.casterId,
@@ -2047,7 +2055,7 @@ class StackResolver(
                 chosenEntitySnapshots = spellComponent.chosenEntitySnapshots,
                 damageDistribution = spellComponent.damageDistribution,
                 chosenModes = spellComponent.chosenModes,
-                modeTargetsOrdered = spellComponent.modeTargetsOrdered,
+                modeTargetsOrdered = resolvedModeTargets,
                 modeTargetRequirements = spellComponent.modeTargetRequirements,
                 chosenCreatureType = spellComponent.chosenCreatureType,
                 exiledCardCount = spellComponent.exiledCardCount,
@@ -3396,6 +3404,23 @@ class StackResolver(
             } else {
                 null
             }
+        }
+    }
+
+    /**
+     * Retain the cast-time modal group boundaries while projecting each group through the
+     * positionally-aligned 608.2b validation result. The raw groups remain on
+     * [SpellOnStackComponent] for audit/display; this return value is resolution-only.
+     */
+    private fun projectValidatedModeTargetGroups(
+        rawModeTargets: List<List<ChosenTarget>>,
+        alignedTargets: List<ChosenTarget?>
+    ): List<List<ChosenTarget>> {
+        var offset = 0
+        return rawModeTargets.map { rawGroup ->
+            val projected = alignedTargets.drop(offset).take(rawGroup.size).filterNotNull()
+            offset += rawGroup.size
+            projected
         }
     }
 
