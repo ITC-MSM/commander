@@ -370,6 +370,10 @@ data class TriggerContext(
                 )
                 is BecomesTargetEvent -> TriggerContext(
                     triggeringEntityId = event.targetEntityId,
+                    // A targeted *player* is the triggering player as well, so "that player" is
+                    // reachable from a player-target trigger (Loki, God of Mischief). Left null for
+                    // object targets, exactly as before.
+                    triggeringPlayerId = event.targetEntityId.takeIf { event.targetIsPlayer },
                     targetingSourceEntityId = event.sourceEntityId
                 )
                 is com.wingedsheep.engine.core.TargetsChosenEvent -> TriggerContext(

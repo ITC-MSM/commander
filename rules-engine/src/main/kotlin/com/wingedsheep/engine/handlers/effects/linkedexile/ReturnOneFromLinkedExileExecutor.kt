@@ -147,6 +147,11 @@ class ReturnOneFromLinkedExileExecutor : EffectExecutor<ReturnOneFromLinkedExile
                 ?: return EffectResult.success(state)
 
             var newState = state.removeFromZone(currentZone, cardId)
+            // The origin-zone stamp is only meaningful while the object sits in exile, and this
+            // path reuses the entity id — drop it so the resulting permanent doesn't carry one.
+            newState = newState.updateEntity(cardId) {
+                it.without<com.wingedsheep.engine.state.components.identity.ExiledFromZoneComponent>()
+            }
             newState = com.wingedsheep.engine.handlers.effects.BattlefieldEntry
                 .place(newState, ownerId, cardId)
 

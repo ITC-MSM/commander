@@ -1,0 +1,109 @@
+{
+  "player1Name": "Alice",
+  "player2Name": "Bob",
+  "player1": {
+    "lifeTotal": 20,
+    "hand": [
+      "Grizzly Bears",
+      "Centaur Courser",
+      "Hero in Training"
+    ],
+    "battlefield": [
+      {
+        "name": "Invisible Woman, Sue Storm"
+      },
+      {
+        "name": "Cathars' Crusade"
+      },
+      {
+        "name": "Hero in Training"
+      },
+      {
+        "name": "The Thing, Ben Grimm"
+      },
+      {
+        "name": "Plains"
+      },
+      {
+        "name": "Plains"
+      },
+      {
+        "name": "Plains"
+      },
+      {
+        "name": "Forest"
+      },
+      {
+        "name": "Forest"
+      },
+      {
+        "name": "Forest"
+      }
+    ],
+    "graveyard": [],
+    "library": [
+      "Plains",
+      "Forest",
+      "Plains",
+      "Forest",
+      "Plains"
+    ]
+  },
+  "player2": {
+    "lifeTotal": 20,
+    "hand": [
+      "Shock",
+      "Grizzly Bears"
+    ],
+    "battlefield": [
+      {
+        "name": "Savannah Lions"
+      },
+      {
+        "name": "Mountain"
+      },
+      {
+        "name": "Mountain"
+      },
+      {
+        "name": "Forest"
+      },
+      {
+        "name": "Forest"
+      }
+    ],
+    "graveyard": [],
+    "library": [
+      "Mountain",
+      "Mountain",
+      "Forest",
+      "Forest"
+    ]
+  },
+  "phase": "PRECOMBAT_MAIN",
+  "activePlayer": 1,
+  "priorityPlayer": 1,
+  "player1StopAtSteps": [
+    "UPKEEP",
+    "PRECOMBAT_MAIN",
+    "DECLARE_ATTACKERS",
+    "POSTCOMBAT_MAIN",
+    "END"
+  ],
+  "player2StopAtSteps": [
+    "PRECOMBAT_MAIN",
+    "POSTCOMBAT_MAIN"
+  ],
+  "player1OpponentStopAtSteps": [
+    "UPKEEP",
+    "PRECOMBAT_MAIN",
+    "DECLARE_ATTACKERS",
+    "POSTCOMBAT_MAIN",
+    "END"
+  ],
+  "player2OpponentStopAtSteps": [
+    "PRECOMBAT_MAIN",
+    "POSTCOMBAT_MAIN"
+  ],
+  "mode": "SELF"
+}

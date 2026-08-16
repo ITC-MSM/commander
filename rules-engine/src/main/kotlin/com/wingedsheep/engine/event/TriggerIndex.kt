@@ -172,6 +172,14 @@ class TriggerIndex(
          * double-fire — enabling graveyard-active recursion triggers like Killian's Confidence
          * ("Whenever one or more creatures you control deal combat damage to a player, … return this
          * card from your graveyard to your hand").
+         *
+         * Not the same set as "categories a batch detector reads": `TAPPED`, `UNTAPPED` and
+         * `COUNTERS_ADDED` are *hybrid* — the batch pass reads them via [getEntitiesForCategory]
+         * while the per-event loop reads the same category for the non-batch patterns filed under
+         * it. Nothing double-fires (matching is keyed on the pattern's `batch` flag, and
+         * [TriggerMatcher.matchesTrigger] returns `false` for a batch one), but a hybrid category
+         * must stay out of this set: indexing non-battlefield entities into it would expose them to
+         * the per-event loop too.
          */
         val NON_BATTLEFIELD_BATCH_CATEGORIES: Set<TriggerCategory> = setOf(
             TriggerCategory.COMBAT_DAMAGE_BATCH,

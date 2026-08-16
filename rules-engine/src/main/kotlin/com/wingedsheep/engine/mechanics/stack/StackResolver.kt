@@ -42,6 +42,7 @@ import com.wingedsheep.engine.state.components.identity.MorphDataComponent
 import com.wingedsheep.sdk.scripting.effects.FaceDownMode
 import com.wingedsheep.engine.state.components.identity.ExileAfterResolveComponent
 import com.wingedsheep.engine.state.components.identity.PlayWithoutPayingCostComponent
+import com.wingedsheep.engine.state.components.identity.PlayerComponent
 import com.wingedsheep.engine.state.components.identity.PlottedComponent
 import com.wingedsheep.engine.state.components.identity.RevealedToComponent
 import com.wingedsheep.engine.state.components.identity.TokenComponent
@@ -527,7 +528,7 @@ class StackResolver(
             events.add(TargetsChosenEvent(casterId, cardId, eventName))
         }
 
-        // Emit BecomesTargetEvent for each permanent or spell target (Rule 601.2c)
+        // Emit BecomesTargetEvent for each permanent, spell, or player target (Rule 601.2c)
         // Also track targeting for Valiant ("first time each turn")
         for (target in effectiveTargets) {
             newState = emitBecomesTarget(newState, target, cardId, casterId, events, sourceIsSpell = true)
@@ -573,13 +574,20 @@ class StackResolver(
         else state.copy(playersWhoCommittedCrimeThisTurn = state.playersWhoCommittedCrimeThisTurn + playerId)
 
     /**
-     * Emit a [BecomesTargetEvent] for a permanent or spell target. Players and other target kinds
-     * emit nothing. Returns the updated state.
+     * Emit a [BecomesTargetEvent] for a permanent, spell, or player target (CR 601.2c — "The chosen
+     * objects and/or players each become a target of that spell"). A [ChosenTarget.Card] (a card
+     * targeted in a non-battlefield zone) still emits nothing: no printed "becomes the target"
+     * trigger reaches into those zones, and the trigger side has no vocabulary to ask for it.
+     * Returns the updated state.
      *
-     * Only permanents participate in the "targeted by this controller this turn" tracking (Valiant's
-     * "first time each turn"): a spell's stack entity can be reused as the resolved permanent's
-     * entity, so marking it would leak a stale flag onto the permanent. Spell-target events carry
-     * `firstTime = true` and leave the tracking untouched.
+     * Spell targets are left out of the "targeted by this controller this turn" tracking (Valiant's
+     * "first time each turn") and always carry `firstTime = true`: a spell's stack entity can be
+     * reused as the resolved permanent's entity, so marking it would leak a stale flag onto the
+     * permanent. Permanents and players are tracked; `CleanupPhaseManager` clears the component for
+     * every entity, players included.
+     *
+     * [sourceIsSpell] is required rather than defaulted so every call site has to state whether a
+     * spell or an ability did the targeting — `spellsOnly` / `abilitiesOnly` read nothing else.
      */
     private fun emitBecomesTarget(
         state: GameState,
@@ -587,15 +595,21 @@ class StackResolver(
         sourceEntityId: EntityId,
         controllerId: EntityId,
         events: MutableList<GameEvent>,
-        sourceIsSpell: Boolean = false
+        sourceIsSpell: Boolean
     ): GameState {
         val isSpell = target is ChosenTarget.Spell
+        val isPlayer = target is ChosenTarget.Player
         val targetEntityId = when (target) {
             is ChosenTarget.Permanent -> target.entityId
             is ChosenTarget.Spell -> target.spellEntityId
-            else -> return state
+            is ChosenTarget.Player -> target.playerId
+            is ChosenTarget.Card -> return state
         }
-        val targetName = state.getEntity(targetEntityId)?.get<CardComponent>()?.name ?: "Unknown"
+        val targetName = if (isPlayer) {
+            state.getEntity(targetEntityId)?.get<PlayerComponent>()?.name ?: "Unknown"
+        } else {
+            state.getEntity(targetEntityId)?.get<CardComponent>()?.name ?: "Unknown"
+        }
         val firstTime = isSpell || !hasBeenTargetedByController(state, targetEntityId, controllerId)
         events.add(
             BecomesTargetEvent(
@@ -605,7 +619,8 @@ class StackResolver(
                 controllerId,
                 firstTime,
                 targetIsSpell = isSpell,
-                sourceIsSpell = sourceIsSpell
+                sourceIsSpell = sourceIsSpell,
+                targetIsPlayer = isPlayer
             )
         )
         return if (isSpell) state else markTargetedByController(state, targetEntityId, controllerId)
@@ -659,10 +674,12 @@ class StackResolver(
             events.add(TargetsChosenEvent(ability.controllerId, abilityId, ability.sourceName))
         }
 
-        // Emit BecomesTargetEvent for each permanent or spell target
+        // Emit BecomesTargetEvent for each permanent, spell, or player target
         // Use abilityId (the entity on the stack) as source so ward can counter it
         for (target in targets) {
-            newState = emitBecomesTarget(newState, target, abilityId, ability.controllerId, events)
+            newState = emitBecomesTarget(
+                newState, target, abilityId, ability.controllerId, events, sourceIsSpell = false
+            )
         }
 
         return ExecutionResult.success(
@@ -772,7 +789,7 @@ class StackResolver(
             )
         )
 
-        // Emit BecomesTargetEvent for each permanent or spell target — the copy is its own
+        // Emit BecomesTargetEvent for each permanent, spell, or player target — the copy is its own
         // source on the stack (ward on the target can counter the copy independently).
         for (target in effectiveTargets) {
             newState = emitBecomesTarget(newState, target, copyId, copyController, events, sourceIsSpell = true)
@@ -846,10 +863,12 @@ class StackResolver(
             events.add(TargetsChosenEvent(ability.controllerId, abilityId, ability.sourceName))
         }
 
-        // Emit BecomesTargetEvent for each permanent or spell target
+        // Emit BecomesTargetEvent for each permanent, spell, or player target
         // Use abilityId (the entity on the stack) as source so ward can counter it
         for (target in targets) {
-            newState = emitBecomesTarget(newState, target, abilityId, ability.controllerId, events)
+            newState = emitBecomesTarget(
+                newState, target, abilityId, ability.controllerId, events, sourceIsSpell = false
+            )
         }
 
         return ExecutionResult.success(
@@ -3533,8 +3552,14 @@ class StackResolver(
                 // the marker so it doesn't ride along onto the resulting permanent (which reuses
                 // this entity id). The exile-side countdown trigger is gated on time counters,
                 // so a leftover marker would be inert, but this keeps the permanent clean.
+                // The "which zone was this exiled from" stamp is only meaningful while the object
+                // is in exile; this path reuses the entity id, so leaving it on would put an
+                // ExiledFromZoneComponent on the resulting permanent.
                 val removed = state.removeFromZone(exileZone, cardId)
-                    .updateEntity(cardId) { it.without<com.wingedsheep.engine.state.components.battlefield.SuspendedComponent>() }
+                    .updateEntity(cardId) {
+                        it.without<com.wingedsheep.engine.state.components.battlefield.SuspendedComponent>()
+                            .without<com.wingedsheep.engine.state.components.identity.ExiledFromZoneComponent>()
+                    }
                 return com.wingedsheep.engine.handlers.effects.ZoneMovementUtils
                     .unlinkFromAllLinkedExiles(removed, cardId)
             }

@@ -29,6 +29,7 @@ import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.battlefield.CountersComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
+import com.wingedsheep.engine.state.components.identity.ExiledFromZoneComponent
 import com.wingedsheep.engine.state.components.identity.LifeTotalComponent
 import com.wingedsheep.engine.state.components.player.ManaPoolComponent
 import com.wingedsheep.sdk.core.ManaCost
@@ -560,6 +561,10 @@ class CostPaymentService(private val services: EngineServices) {
         for (cardId in selected) {
             val name = newState.getEntity(cardId)?.get<CardComponent>()?.name ?: "Unknown"
             newState = newState.removeFromZone(fromZone, cardId).addToZone(exileZone, cardId)
+            // Record the origin zone the way ZoneTransitionService does, so a later CR 610.3
+            // "return it to its previous zone" (CardDestination.ToZoneExiledFrom) can put a card
+            // exiled as a *cost* back where it came from instead of taking the fallback.
+            newState = newState.updateEntity(cardId) { c -> c.with(ExiledFromZoneComponent(zone)) }
             events.add(ZoneChangeEvent(cardId, name, zone, Zone.EXILE, payerId))
         }
         return CostPaymentExecution(newState, events, success = true)

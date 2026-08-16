@@ -739,34 +739,11 @@ class TriggerMatcher(
             is EventPattern.PermanentsEnteredEvent -> false
             is EventPattern.CountersPlacedEvent -> {
                 if (event !is CountersAddedEvent) return false
-                // SELF binding: only counters landing on this permanent ("counters on Aragorn"
-                // / "whenever you put counters on ~"). OTHER restricts to any *other* permanent.
-                if (binding == TriggerBinding.SELF && event.entityId != sourceId) return false
-                if (binding == TriggerBinding.OTHER && event.entityId == sourceId) return false
-                // Counters.ANY is the wildcard "counters of any type" sentinel.
-                if (trigger.counterType != com.wingedsheep.sdk.core.Counters.ANY &&
-                    !counterTypesMatch(trigger.counterType, event.counterType)) return false
-                // "First time counters this turn" intervening-if (Stalwart Successor).
-                if (trigger.firstTimeEachTurn && !event.firstThisTurn) return false
-                // Placer restriction (CR 122.6a): "Whenever YOU put counters ...". A placement the
-                // engine didn't attribute to a placer (null) never satisfies a non-null selector.
-                trigger.placedBy?.let { placer ->
-                    val placedBy = event.placedBy ?: return false
-                    if (!matchesPlayer(placer, placedBy, controllerId)) return false
-                }
-                // Check filter: the permanent receiving counters must match
-                if (trigger.filter != GameObjectFilter.Any) {
-                    val projected = state.projectedState
-                    val predicateContext = com.wingedsheep.engine.handlers.PredicateContext(
-                        controllerId = controllerId,
-                        sourceId = sourceId
-                    )
-                    val predicateEvaluator = PredicateEvaluator()
-                    if (!predicateEvaluator.matches(state, projected, event.entityId, trigger.filter, predicateContext)) {
-                        return false
-                    }
-                }
-                true
+                // Batch ("one or more counters on one or more permanents") triggers fire once per
+                // placement batch, handled by detectCountersPlacedBatchTriggers — never once per
+                // event here.
+                if (trigger.batch) return false
+                matchesCountersPlacedAxes(trigger, event, binding, sourceId, controllerId, state)
             }
             is EventPattern.CountersRemovedEvent -> {
                 if (event !is com.wingedsheep.engine.core.CountersRemovedEvent) return false
@@ -1402,8 +1379,16 @@ class TriggerMatcher(
         // Spiritualist) must not react to a creature spell on the stack being targeted.
         if (event.targetIsSpell && !trigger.includeSpellTargets) return false
 
-        // "Becomes the target of a spell" (King of the Oathbreakers) ignores abilities.
+        // Same opt-in for player targets ("a player or permanent becomes the target" — Loki, God of
+        // Mischief): every other becomes-target wording in the pool is about objects, so a targeted
+        // player must not wake them.
+        if (event.targetIsPlayer && !trigger.includePlayerTargets) return false
+
+        // "Becomes the target of a spell" (King of the Oathbreakers) ignores abilities;
+        // "becomes the target of an ability" (Loki, God of Mischief) ignores spells. Both read the
+        // same `sourceIsSpell` axis stamped by StackResolver.emitBecomesTarget.
         if (trigger.spellsOnly && !event.sourceIsSpell) return false
+        if (trigger.abilitiesOnly && event.sourceIsSpell) return false
 
         // Valiant: check if the targeting spell/ability is controlled by "you" (the trigger's controller)
         if (trigger.byYou && event.controllerId != controllerId) return false
@@ -1420,7 +1405,9 @@ class TriggerMatcher(
         // entity has a battlefield projection — an animated land IS "a creature you control"
         // while the effect lasts — and fall back to base card data for stack objects; the
         // controller predicate likewise falls back to the spell's caster (Surrak, Elusive
-        // Hunter). Targeted abilities on the stack carry no card data and never match.
+        // Hunter). Targeted abilities on the stack carry no card data and never match; players
+        // can't reach here at all, because `includePlayerTargets` requires filter `Any`
+        // (EventPattern.BecomesTargetEvent's init).
         if (trigger.targetFilter != GameObjectFilter.Any) {
             val targetContainer = state.getEntity(event.targetEntityId) ?: return false
             if (!targetContainer.has<CardComponent>()) return false
@@ -2115,6 +2102,68 @@ class TriggerMatcher(
         // so it fails closed rather than fail-open (which would create tokens for counter-less deaths).
         is com.wingedsheep.sdk.scripting.predicates.StatePredicate.HasCounter,
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.HasAnyCounter -> false
+    }
+
+    /**
+     * Does [event] satisfy every axis of a [EventPattern.CountersPlacedEvent] pattern *other than*
+     * its multiplicity — the counter type, the "first counters this turn" window, the placer, the
+     * recipient filter, and the ability's [TriggerBinding]?
+     *
+     * The single narrowing rule for both multiplicities. The per-permanent path calls it once for
+     * the one event it is considering; the batched path
+     * (`TriggerDetector.detectCountersPlacedBatchTriggers`) calls it per event to narrow a batch to
+     * its matching placements. Sharing it is what keeps a batch trigger and its per-permanent twin
+     * from disagreeing about what "+1/+1" means or which placements count — the same shape
+     * `DamageTriggerDetector.detectDamageObserverBatchTriggers` gets from
+     * [matchesDealsDamageTrigger]. [sourceId] and [controllerId] are the observing ability's, so
+     * SELF/OTHER and "you put" resolve relative to the observer either way.
+     */
+    fun matchesCountersPlacedAxes(
+        trigger: EventPattern.CountersPlacedEvent,
+        event: CountersAddedEvent,
+        binding: TriggerBinding,
+        sourceId: EntityId,
+        controllerId: EntityId,
+        state: GameState
+    ): Boolean {
+        // A placement of nothing is not a placement, so it can't fire a "one or more counters"
+        // payoff — the mirror of the CountersRemovedEvent guard. Reachable: a replacement effect
+        // (Solemnity-style modifiers via ReplacementEffectUtils.applyCounterPlacementModifiers) can
+        // reduce a placement to 0 and the executors still emit the event.
+        if (event.amount <= 0) return false
+        // SELF binding: only counters landing on this permanent ("counters on Aragorn"
+        // / "whenever you put counters on ~"). OTHER restricts to any *other* permanent.
+        if (binding == TriggerBinding.SELF && event.entityId != sourceId) return false
+        if (binding == TriggerBinding.OTHER && event.entityId == sourceId) return false
+        // Counters.ANY is the wildcard "counters of any type" sentinel.
+        if (trigger.counterType != com.wingedsheep.sdk.core.Counters.ANY &&
+            !counterTypesMatch(trigger.counterType, event.counterType)
+        ) {
+            return false
+        }
+        // "First time counters this turn" intervening-if (Stalwart Successor).
+        if (trigger.firstTimeEachTurn && !event.firstThisTurn) return false
+        // Placer restriction (CR 122.6 / 122.6a): "Whenever YOU put counters ...". A placement the
+        // engine didn't attribute to a placer (null) never satisfies a non-null selector.
+        trigger.placedBy?.let { placer ->
+            val placedBy = event.placedBy ?: return false
+            if (!matchesPlayer(placer, placedBy, controllerId)) return false
+        }
+        // Check filter: the permanent receiving counters must match. Battlefield recipients are read
+        // through projected state, so a Hero by virtue of a type-changing effect counts.
+        if (trigger.filter != GameObjectFilter.Any) {
+            val predicateContext = com.wingedsheep.engine.handlers.PredicateContext(
+                controllerId = controllerId,
+                sourceId = sourceId
+            )
+            if (!predicateEvaluator.matches(
+                    state, state.projectedState, event.entityId, trigger.filter, predicateContext
+                )
+            ) {
+                return false
+            }
+        }
+        return true
     }
 
     /**

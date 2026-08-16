@@ -995,6 +995,21 @@ object Effects {
     fun ReturnLinkedExileToHand(): Effect = ExilePatterns.returnLinkedExileToHand()
 
     /**
+     * Return every card in the source's linked exile to **the zone it was exiled from** — the
+     * generic "return it to its previous zone" of CR 610.3, for an exile-until clause whose exile
+     * half can reach more than one zone (Cloak and Dagger, Entwined: a card from an opponent's hand
+     * *or* a creature from the battlefield). Cards going back to the battlefield return as new
+     * objects (CR 400.7) under their owners' control (CR 610.3c).
+     *
+     * Prefer the fixed-destination [ReturnLinkedExile] / [ReturnLinkedExileUnderOwnersControl] /
+     * [ReturnLinkedExileToHand] when the card names one zone explicitly ("return the exiled card to
+     * the battlefield under its owner's control") — those say what the card says. Reach for this
+     * only when the destination genuinely varies per exiled card.
+     */
+    fun ReturnLinkedExileToZoneExiledFrom(): Effect =
+        ExilePatterns.returnLinkedExileToZoneExiledFrom()
+
+    /**
      * Return one card from the source's linked exile to the battlefield.
      * The active player chooses one of their owned exiled cards.
      */

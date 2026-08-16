@@ -1368,11 +1368,24 @@ object Triggers {
      * Successor shape. Pass a different [filter] or `firstTimeEachTurn = false` to reuse for
      * other "counters placed" payoffs. The triggering permanent is available via
      * [com.wingedsheep.sdk.scripting.targets.EffectTarget.TriggeringEntity].
+     *
+     * [batch] switches from the per-permanent template to the "on **one or more** <permanents>"
+     * batch template (CR 603.2c): one effect placing counters on several matching permanents then
+     * fires the ability once instead of once per permanent — see
+     * [CountersPlacedEvent.batch] for what the batch does and does not collapse.
+     *
+     * [firstTimeEachTurn] therefore defaults to `!batch`, not to a constant: the per-permanent
+     * default is the Stalwart Successor shape ("… for the first time this turn"), while a batch
+     * template essentially never carries that printed rider, and inheriting `true` there would
+     * silently narrow the batch to placements that were each the first on their recipient this
+     * turn. The combination is still expressible — pass `firstTimeEachTurn = true` alongside
+     * `batch = true` deliberately — it just isn't what you get by forgetting to.
      */
     fun countersPlacedOn(
         filter: GameObjectFilter = GameObjectFilter.Creature.youControl(),
         counterType: String = Counters.ANY,
-        firstTimeEachTurn: Boolean = true,
+        batch: Boolean = false,
+        firstTimeEachTurn: Boolean = !batch,
         binding: TriggerBinding = TriggerBinding.ANY,
         placedBy: Player? = null,
     ): TriggerSpec = TriggerSpec(
@@ -1381,6 +1394,7 @@ object Triggers {
             filter = filter,
             firstTimeEachTurn = firstTimeEachTurn,
             placedBy = placedBy,
+            batch = batch,
         ),
         binding = binding
     )
@@ -1938,6 +1952,31 @@ object Triggers {
      */
     fun BecomesTargetOfSpell(filter: GameObjectFilter): TriggerSpec = TriggerSpec(
         event = BecomesTargetEvent(targetFilter = filter, spellsOnly = true),
+        binding = TriggerBinding.ANY
+    )
+
+    /**
+     * Mirror of [BecomesTargetOfSpell]: whenever something becomes the target of an **ability**
+     * (not a spell) — Loki, God of Mischief: "Whenever a player or permanent becomes the target of
+     * an ability you control". Both activated and triggered abilities count; only spells are
+     * excluded.
+     *
+     * [includePlayerTargets] widens the trigger to targeted players as well, which is opt-in because
+     * every other becomes-target wording is about objects; it requires [filter] to stay
+     * `GameObjectFilter.Any` (a player has no card data for a filter to read) and throws otherwise.
+     * [byYou] is the "an ability **you control**" half. ANY-bound.
+     */
+    fun BecomesTargetOfAbility(
+        filter: GameObjectFilter = GameObjectFilter.Any,
+        byYou: Boolean = false,
+        includePlayerTargets: Boolean = false
+    ): TriggerSpec = TriggerSpec(
+        event = BecomesTargetEvent(
+            targetFilter = filter,
+            byYou = byYou,
+            abilitiesOnly = true,
+            includePlayerTargets = includePlayerTargets
+        ),
         binding = TriggerBinding.ANY
     )
 

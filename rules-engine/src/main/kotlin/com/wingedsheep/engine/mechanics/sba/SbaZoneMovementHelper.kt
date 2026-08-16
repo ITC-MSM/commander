@@ -125,6 +125,15 @@ object SbaZoneMovementHelper {
                 val ownerExileZone = ZoneKey(cardOwnerId, Zone.EXILE)
                 newState = newState.removeFromZone(graveyardZone, cardId)
                 newState = newState.addToZone(ownerExileZone, cardId)
+                // Same stamp ZoneTransitionService writes on an effect-driven exile — these cards
+                // came from a graveyard, so a later CR 610.3 "return it to its previous zone"
+                // (CardDestination.ToZoneExiledFrom) must not reanimate them via the fallback.
+                newState = newState.updateEntity(cardId) { c ->
+                    c.with(
+                        com.wingedsheep.engine.state.components.identity
+                            .ExiledFromZoneComponent(Zone.GRAVEYARD)
+                    )
+                }
                 events.add(
                     ZoneChangeEvent(
                         cardId,

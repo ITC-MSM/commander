@@ -1493,7 +1493,8 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
     // ---- Targeting Triggers ----
 
     /**
-     * When a permanent (or, opt-in, a spell on the stack) becomes the target of a spell or ability.
+     * When a permanent (or, opt-in, a spell on the stack or a player) becomes the target of a spell
+     * or ability.
      * Binding SELF = "when this creature becomes the target",
      * ANY = "whenever a creature you control becomes the target".
      *
@@ -1507,10 +1508,25 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
      * the spell's card data, so a creature spell matches a `Creature` filter (Surrak, Elusive Hunter:
      * "a creature you control or a creature spell you control becomes the target").
      *
+     * Players are the third target kind and are likewise opt-in, via [includePlayerTargets] — "a
+     * player or permanent becomes the target" (Loki, God of Mischief). Without it a targeted player
+     * never matches, so the many permanent-only triggers already in the pool stay unaffected by the
+     * engine emitting target events for players. [includePlayerTargets] requires [targetFilter] to
+     * be `Any` and throws otherwise: a player carries no card data for a filter to read, so the pair
+     * would fire on permanents only while [description] still promised the player half. A future "a
+     * player or *creature*" wording needs the object half and the player half kept apart.
+     *
      * [byYou] restricts to spells or abilities controlled by the trigger's controller.
      * [firstTimeEachTurn] restricts to the first time each turn (used by Valiant).
      * [spellsOnly] restricts to "becomes the target of a **spell**" wording (King of the
-     * Oathbreakers), ignoring abilities; the default matches both spells and abilities.
+     * Oathbreakers), ignoring abilities; [abilitiesOnly] is its mirror — "becomes the target of an
+     * **ability**" (Loki, God of Mischief), ignoring spells. The default (neither) matches both.
+     * They are mutually exclusive: asking for both would match nothing, and throws — as does the
+     * equally contradictory [byYou] + [byOpponent] pair.
+     *
+     * Note that [spellsOnly] / [abilitiesOnly] narrow *what did the targeting*, while
+     * [includeSpellTargets] / [includePlayerTargets] widen *what got targeted*; the two axes are
+     * independent.
      */
     @SerialName("BecomesTargetEvent")
     @Serializable
@@ -1520,12 +1536,40 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
         val byOpponent: Boolean = false,
         val firstTimeEachTurn: Boolean = false,
         val includeSpellTargets: Boolean = false,
-        val spellsOnly: Boolean = false
+        val spellsOnly: Boolean = false,
+        val includePlayerTargets: Boolean = false,
+        val abilitiesOnly: Boolean = false
     ) : EventPattern {
+        init {
+            require(!(spellsOnly && abilitiesOnly)) {
+                "BecomesTargetEvent cannot be both spellsOnly and abilitiesOnly — nothing would match"
+            }
+            require(!(byYou && byOpponent)) {
+                "BecomesTargetEvent cannot be both byYou and byOpponent — nothing would match"
+            }
+            require(!includePlayerTargets || targetFilter == GameObjectFilter.Any) {
+                "BecomesTargetEvent.includePlayerTargets only fires for players when targetFilter is Any — " +
+                    "a player has no card data for a filter to read; split the object and player halves first"
+            }
+        }
+
         override val description: String = buildString {
-            append(describeObjectForEvent(targetFilter))
-            append(" becomes the target of a spell")
-            if (!spellsOnly) append(" or ability")
+            if (includePlayerTargets) {
+                // The player half is only reachable with filter `Any` (see the require above), and
+                // the one printed wording that uses it says "a player or permanent" — deliberately
+                // narrower than the generic `describeObjectForEvent(Any)` phrasing ("a card or
+                // permanent"), which is what the object-only branch below still renders.
+                append("a player or ")
+                if (targetFilter == GameObjectFilter.Any) append("permanent")
+                else append(describeObjectForEvent(targetFilter))
+            } else {
+                append(describeObjectForEvent(targetFilter))
+            }
+            when {
+                spellsOnly -> append(" becomes the target of a spell")
+                abilitiesOnly -> append(" becomes the target of an ability")
+                else -> append(" becomes the target of a spell or ability")
+            }
             if (byYou) append(" you control")
             if (byOpponent) append(" an opponent controls")
             if (firstTimeEachTurn) append(" for the first time each turn")
@@ -1836,6 +1880,10 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
      * Examples:
      * - "Whenever you put one or more +1/+1 counters on a creature you control"
      *   → CountersPlacedEvent(counterType = Counters.PLUS_ONE_PLUS_ONE, filter = GameObjectFilter.Creature.youControl())
+     * - "Whenever you put one or more +1/+1 counters on one or more other Heroes you control"
+     *   → CountersPlacedEvent(counterType = Counters.PLUS_ONE_PLUS_ONE, placedBy = Player.You,
+     *     filter = GameObjectFilter.Creature.youControl().withSubtype(Subtype.HERO), batch = true)
+     *     with [TriggerBinding.OTHER]
      *
      * @property counterType The counter type to match (e.g., "+1/+1", "LORE")
      * @property filter Filter for the permanent receiving counters
@@ -1863,7 +1911,43 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
          * (for a permanent entering with counters) that permanent's controller (CR 122.6a).
          * A placement the engine can't attribute to a placer never matches a non-null selector.
          */
-        val placedBy: Player? = null
+        val placedBy: Player? = null,
+        /**
+         * Batch ("one or more counters on **one or more** permanents") semantics — CR 603.2c: an
+         * ability triggers only once each time its trigger event occurs, and a single effect that
+         * puts counters on several permanents at once is one such event.
+         *
+         * The two multiplicity shapes this flag selects, both of which the printed text writes as
+         * "one or more counters" (the counters on a *single* permanent are always one event, so
+         * that half needs no flag):
+         *  - `false` (default): the *per-permanent* template "Whenever one or more counters are put
+         *    on **a** creature you control" (Stalwart Successor, Exemplar of Light) — fires once for
+         *    EACH permanent that received counters, so an effect hitting three creatures fires it
+         *    three times.
+         *  - `true`: the *batch* template "Whenever you put one or more counters on **one or more**
+         *    creatures you control" (Invisible Woman, Sue Storm) — fires at most **once** per
+         *    placement batch no matter how many permanents received counters or how many counters
+         *    each got.
+         *
+         * Handled by the dedicated batch pass (`TriggerDetector.detectCountersPlacedBatchTriggers`);
+         * the per-event path skips it. Every other axis ([counterType], [placedBy],
+         * [firstTimeEachTurn], [filter], and the ability's [TriggerBinding]) *narrows* the batch
+         * rather than discarding it: a batch that also placed counters on non-matching permanents
+         * still fires, once, on its matching ones alone. Separate resolutions are separate batches,
+         * so two effects each placing counters this turn fire it twice. The matching recipients are
+         * exposed as the trigger's captured collection, as [UntapEvent.batch] does.
+         *
+         * Note that [firstTimeEachTurn] defaults to `false` here but to `!batch` in the
+         * `Triggers.countersPlacedOn(...)` facade: a batch template essentially never carries a
+         * printed "for the first time this turn" rider, so the facade stops handing one to it. The
+         * combination remains expressible on both — it just has to be asked for.
+         *
+         * Mirrors [TapEvent.batch] / [UntapEvent.batch] / [DealsDamageEvent.batch], except that
+         * those three are ANY-binding only while this one also honors [TriggerBinding.SELF]
+         * ("counters put on this permanent") and [TriggerBinding.OTHER] ("on one or more **other**
+         * Heroes you control").
+         */
+        val batch: Boolean = false
     ) : EventPattern {
         override val description: String = buildString {
             val typeLabel = if (counterType == com.wingedsheep.sdk.core.Counters.ANY) "" else "$counterType "
@@ -1872,7 +1956,16 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
             } else {
                 append("one or more ${typeLabel}counters are placed on ")
             }
-            append(describeObjectForEvent(filter))
+            // Batch wording names the recipients in the plural ("… on one or more Heroes you
+            // control"); the per-permanent wording names a single one ("… on a creature you
+            // control"). Both keep the controller as a suffix rather than the prefix
+            // `filter.description` would put it in ("… on one or more you control Hero creature").
+            if (batch) {
+                append("one or more ")
+                append(describeObjectsForEvent(filter))
+            } else {
+                append(describeObjectForEvent(filter))
+            }
             if (firstTimeEachTurn) append(" for the first time this turn")
         }
     }
@@ -2660,4 +2753,110 @@ internal fun describeObjectForEvent(filter: GameObjectFilter): String {
     val article = if (baseParts.first().lowercaseChar() in "aeiou") "an" else "a"
 
     return "$article $baseParts$controllerSuffix"
+}
+
+/**
+ * Head nouns whose MTG plural the regular rules in [pluralizeHeadNoun] get wrong. Curated from the
+ * `Subtype` catalog rather than derived: English pluralization can't be inferred from spelling
+ * (`Rhino` → `Rhinos` but `Hero` → `Heroes`; `Fox` → `Foxes` but `Fish` → `Fish`), and a wrong
+ * guess ships as player-visible text.
+ *
+ * **Only entries that differ from what the regular rules already produce are listed** — `Cyclops`,
+ * `Fungus`, `Pegasus` and `Plains` are absent because the "already ends in -s" rule leaves them
+ * alone, which is right for all four. Subtypes WotC writes as invariant plurals (`Fish`, `Merfolk`,
+ * `Myr`, `Eldrazi`, …) map to themselves.
+ *
+ * This list is deliberately incomplete: it covers the head nouns reachable from today's `Subtype`
+ * catalog. Extend it when a new wording needs one, and add the case to
+ * `DescribeObjectsForEventTest`.
+ */
+private val IRREGULAR_PLURAL_HEAD_NOUNS: Map<String, String> = mapOf(
+    // -f / -fe → -ves
+    "Elf" to "Elves",
+    "Wolf" to "Wolves",
+    "Werewolf" to "Werewolves",
+    "Dwarf" to "Dwarves",
+    // genuinely irregular
+    "Hero" to "Heroes",
+    "Mouse" to "Mice",
+    "Class" to "Classes",
+    "Homunculus" to "Homunculi",
+    "Octopus" to "Octopuses",
+    // invariant plurals
+    "Fish" to "Fish",
+    "Jellyfish" to "Jellyfish",
+    "Merfolk" to "Merfolk",
+    "Treefolk" to "Treefolk",
+    "Moonfolk" to "Moonfolk",
+    "Kithkin" to "Kithkin",
+    "Kor" to "Kor",
+    "Myr" to "Myr",
+    "Eldrazi" to "Eldrazi",
+    "Kavu" to "Kavu",
+    "Kree" to "Kree",
+    "Efreet" to "Efreet",
+    "Djinn" to "Djinn",
+)
+
+/**
+ * The plural of a single head noun — [IRREGULAR_PLURAL_HEAD_NOUNS] first, then the regular English
+ * rules. Split out from [describeObjectsForEvent] so it can be tested directly against the subtype
+ * catalog.
+ */
+internal fun pluralizeHeadNoun(head: String): String {
+    IRREGULAR_PLURAL_HEAD_NOUNS[head]?.let { return it }
+    return when {
+        // Already plural ("creatures", "permanents") or an invariant -s noun ("Plains").
+        head.endsWith("s", ignoreCase = true) -> head
+        head.endsWith("ch", ignoreCase = true) || head.endsWith("sh", ignoreCase = true) ||
+            head.endsWith("x", ignoreCase = true) || head.endsWith("z", ignoreCase = true) -> "${head}es"
+        else -> "${head}s"
+    }
+}
+
+/**
+ * The plural counterpart of [describeObjectForEvent], for the "one or more <things>" batch event
+ * wordings: no article, head noun pluralized, controller still a suffix rather than the prefix
+ * `GameObjectFilter.description` renders it as.
+ *
+ * Examples (each prefixed with "one or more " by the caller):
+ *   GameObjectFilter.Creature                                 -> "creatures"
+ *   GameObjectFilter.Creature.youControl()                    -> "creatures you control"
+ *   GameObjectFilter.Creature.youControl().withSubtype(HERO)  -> "creature Heroes you control"
+ *   GameObjectFilter.Creature.youControl().withSubtype(ELF)   -> "creature Elves you control"
+ *
+ * Note the word order in the last two: predicates render in the order they were added to the
+ * filter, and `withSubtype` *appends*, so the subtype trails the type ("creature Heroes", not
+ * "Hero creatures"). That is [describeObjectForEvent]'s existing convention — it renders the
+ * singular as "a creature Hero you control" — and is kept here on purpose so the two describers
+ * agree; changing it would move generated text for the whole corpus, not just batch triggers.
+ * It also means the head noun is the **subtype** whenever there is one, which is why
+ * [pluralizeHeadNoun] needs the irregular table.
+ */
+internal fun describeObjectsForEvent(filter: GameObjectFilter): String {
+    val baseParts = buildString {
+        filter.statePredicates.forEach { append(it.description); append(" ") }
+        filter.cardPredicates.forEach { append(it.description); append(" ") }
+    }.trim()
+
+    val controllerSuffix = filter.controllerPredicate
+        ?.description
+        ?.takeIf { it.isNotEmpty() }
+        ?.let { " $it" }
+        ?: ""
+
+    if (baseParts.isEmpty()) {
+        return "cards or permanents$controllerSuffix"
+    }
+
+    // Only the head noun (the last word) pluralizes: "creature Hero" -> "creature Heroes".
+    val head = baseParts.substringAfterLast(' ')
+    val plural = pluralizeHeadNoun(head)
+    val pluralized = if (baseParts.contains(' ')) {
+        "${baseParts.substringBeforeLast(' ')} $plural"
+    } else {
+        plural
+    }
+
+    return "$pluralized$controllerSuffix"
 }

@@ -1,0 +1,105 @@
+{
+  "player1Name": "Alice",
+  "player2Name": "Bob",
+  "player1": {
+    "lifeTotal": 20,
+    "hand": [
+      "Lightning Bolt",
+      "Grizzly Bears"
+    ],
+    "battlefield": [
+      {
+        "name": "Loki, God of Mischief"
+      },
+      {
+        "name": "Prodigal Sorcerer"
+      },
+      {
+        "name": "Prodigal Sorcerer"
+      },
+      {
+        "name": "Island"
+      },
+      {
+        "name": "Island"
+      },
+      {
+        "name": "Island"
+      },
+      {
+        "name": "Mountain"
+      },
+      {
+        "name": "Mountain"
+      }
+    ],
+    "graveyard": [],
+    "library": [
+      "Island",
+      "Island",
+      "Island",
+      "Mountain",
+      "Mountain",
+      "Grizzly Bears"
+    ]
+  },
+  "player2": {
+    "lifeTotal": 20,
+    "hand": [
+      "Shock"
+    ],
+    "battlefield": [
+      {
+        "name": "Prodigal Sorcerer"
+      },
+      {
+        "name": "Savannah Lions"
+      },
+      {
+        "name": "Island"
+      },
+      {
+        "name": "Island"
+      },
+      {
+        "name": "Island"
+      },
+      {
+        "name": "Mountain"
+      }
+    ],
+    "graveyard": [],
+    "library": [
+      "Island",
+      "Island",
+      "Mountain",
+      "Mountain"
+    ]
+  },
+  "phase": "PRECOMBAT_MAIN",
+  "activePlayer": 1,
+  "priorityPlayer": 1,
+  "player1StopAtSteps": [
+    "UPKEEP",
+    "PRECOMBAT_MAIN",
+    "DECLARE_ATTACKERS",
+    "POSTCOMBAT_MAIN",
+    "END"
+  ],
+  "player2StopAtSteps": [
+    "PRECOMBAT_MAIN",
+    "POSTCOMBAT_MAIN"
+  ],
+  "player1OpponentStopAtSteps": [
+    "UPKEEP",
+    "PRECOMBAT_MAIN",
+    "DECLARE_ATTACKERS",
+    "POSTCOMBAT_MAIN",
+    "END"
+  ],
+  "player2OpponentStopAtSteps": [
+    "PRECOMBAT_MAIN",
+    "POSTCOMBAT_MAIN"
+  ],
+  "mode": "SELF"
+}

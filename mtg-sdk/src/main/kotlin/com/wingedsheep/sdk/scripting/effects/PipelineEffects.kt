@@ -369,6 +369,48 @@ sealed interface CardDestination {
             }
         }
     }
+
+    /**
+     * Each card goes back to **the zone it was exiled from** — the "return it to its previous zone"
+     * half of an exile-until (CR 610.3: "A second one-shot effect is created immediately after the
+     * specified event. This second one-shot effect returns the object to its previous zone").
+     *
+     * Unlike [ToZone] the destination is *per card*, read from the `ExiledFromZoneComponent` the
+     * engine stamps as an object enters the exile zone. That makes it the right destination for a
+     * single exile clause that can reach more than one zone — Cloak and Dagger, Entwined exiles
+     * either a card from an opponent's **hand** or a creature from the **battlefield**, and a single
+     * leaves-the-battlefield trigger has to put each back where it belongs.
+     *
+     * Semantics worth stating, because they aren't obvious:
+     *  - A card returning to the battlefield returns as a **new object** (CR 400.7) under its
+     *    **owner's** control (CR 610.3c) — pair with `underOwnersControl = true`, which
+     *    [com.wingedsheep.sdk.dsl.Effects.ReturnLinkedExileToZoneExiledFrom] does.
+     *  - Cards that have left exile since (cast, blinked, exiled again) are already dropped by
+     *    `CardSource.FromLinkedExile`, and a token exiled from the battlefield has ceased to exist
+     *    (CR 111.7, swept by the CR 704.5d state-based action), so neither ever reaches this
+     *    destination.
+     *  - Every zone an object can be exiled from and returned to is honoured as recorded:
+     *    BATTLEFIELD, HAND, GRAVEYARD, LIBRARY, COMMAND and SIDEBOARD. Two recorded values are
+     *    special-cased: a card exiled from the **stack** takes [fallback] (there is no stack object
+     *    to go back to), and a card exiled **from exile** (CR 406.7 — "it doesn't change zones")
+     *    simply stays in exile, un-moved and with no event.
+     *  - **[fallback] is load-bearing, not a corner case.** The stamp is written by
+     *    `ZoneTransitionService` and by the direct-`addToZone` exile sites that opt in; an exile
+     *    path that does neither leaves no origin, and every such card lands on [fallback]. Set it
+     *    deliberately for the exile half your card actually performs.
+     *  - A card returning to a **library** lands at the default placement, not at the index it was
+     *    exiled from. CR 610.3 fixes only the zone, not a position.
+     *
+     * @property fallback Where a card whose origin zone is unknown or un-returnable goes. Defaults
+     *   to the battlefield, matching plain `ReturnLinkedExile`.
+     */
+    @SerialName("ToZoneExiledFrom")
+    @Serializable
+    data class ToZoneExiledFrom(
+        val fallback: Zone = Zone.BATTLEFIELD
+    ) : CardDestination {
+        override val description: String = "the zone it was exiled from"
+    }
 }
 
 /**

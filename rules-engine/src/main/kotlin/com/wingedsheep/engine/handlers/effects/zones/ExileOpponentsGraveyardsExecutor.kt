@@ -8,6 +8,7 @@ import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.identity.CardComponent
+import com.wingedsheep.engine.state.components.identity.ExiledFromZoneComponent
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.scripting.effects.ExileOpponentsGraveyardsEffect
 import kotlin.reflect.KClass
@@ -44,6 +45,12 @@ class ExileOpponentsGraveyardsExecutor : EffectExecutor<ExileOpponentsGraveyards
 
                 newState = newState.removeFromZone(graveyardZone, cardId)
                 newState = newState.addToZone(ownerExileZone, cardId)
+                // Same stamp ZoneTransitionService writes on an effect-driven exile, so a later
+                // CR 610.3 "return it to its previous zone" sends these back to the graveyard
+                // rather than taking CardDestination.ToZoneExiledFrom's battlefield fallback.
+                newState = newState.updateEntity(cardId) { c ->
+                    c.with(ExiledFromZoneComponent(Zone.GRAVEYARD))
+                }
                 events.add(
                     ZoneChangeEvent(
                         cardId,

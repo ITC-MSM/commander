@@ -3376,6 +3376,56 @@
     ]
 }
 
+// Captain Mar-Vell, Space-Born
+{
+    "name": "Captain Mar-Vell, Space-Born",
+    "manaCost": "{4}{W}",
+    "typeLine": "Legendary Creature — Kree Soldier Hero",
+    "oracleText": "Flying, vigilance\nCosmic Awareness — As long as an opponent has cast a spell this turn, you may cast spells as though they had flash.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "FLYING",
+        "VIGILANCE"
+    ],
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "GrantFlashToSpellType",
+                    "filter": {},
+                    "controllerOnly": true
+                },
+                "condition": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "SpellsCastThisTurn",
+                        "player": "EachOpponent"
+                    },
+                    "operator": "GTE",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "12",
+        "rarity": "UNCOMMON",
+        "artist": "Gintas Galvanauskas",
+        "flavorText": "\"I came here to study the people of Earth, not serve as their executioner!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/7/27924c2f-756c-42af-9830-18a5a2735137.jpg?1783902977"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Captain Marvel, Earth's Protector
 {
     "name": "Captain Marvel, Earth's Protector",
@@ -3620,6 +3670,160 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Cloak and Dagger, Entwined
+{
+    "name": "Cloak and Dagger, Entwined",
+    "manaCost": "{1}{W}{B}",
+    "typeLine": "Legendary Creature — Human Hero",
+    "oracleText": "Deathtouch, lifelink\nWhen Cloak and Dagger enter, choose target opponent and up to one target creature they control. They reveal their hand. You may exile a nonland card from their hand or the chosen creature until Cloak and Dagger leave the battlefield.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "DEATHTOUCH",
+        "LIFELINK"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "RevealHand",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target opponent"
+                            }
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": "Gate.MayDecide",
+                            "then": {
+                                "type": "ChooseAction",
+                                "choices": [
+                                    {
+                                        "label": "Exile a nonland card from their hand",
+                                        "effect": {
+                                            "type": "Composite",
+                                            "effects": [
+                                                {
+                                                    "type": "GatherCards",
+                                                    "source": {
+                                                        "type": "FromZone",
+                                                        "zone": "Hand",
+                                                        "player": {
+                                                            "type": "ContextPlayer",
+                                                            "index": 0
+                                                        },
+                                                        "filter": "nonland"
+                                                    },
+                                                    "storeAs": "cloakDaggerExiledCandidates"
+                                                },
+                                                {
+                                                    "type": "SelectFromCollection",
+                                                    "from": "cloakDaggerExiledCandidates",
+                                                    "selection": {
+                                                        "type": "ChooseExactly",
+                                                        "count": {
+                                                            "type": "Fixed",
+                                                            "amount": 1
+                                                        }
+                                                    },
+                                                    "storeSelected": "cloakDaggerExiled",
+                                                    "prompt": "Choose a nonland card to exile"
+                                                },
+                                                {
+                                                    "type": "MoveCollection",
+                                                    "from": "cloakDaggerExiled",
+                                                    "destination": {
+                                                        "type": "ToZone",
+                                                        "zone": "Exile",
+                                                        "player": {
+                                                            "type": "ContextPlayer",
+                                                            "index": 0
+                                                        }
+                                                    },
+                                                    "linkToSource": true
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "label": "Exile the chosen creature",
+                                        "effect": {
+                                            "type": "ExileUntilLeaves",
+                                            "target": {
+                                                "type": "BoundVariable",
+                                                "name": "up to one target creature they control"
+                                            }
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetOpponent",
+                    "id": "target opponent"
+                },
+                "additionalTargetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "optional": true,
+                        "filter": {
+                            "baseFilter": "creature ctrl:opponent"
+                        },
+                        "id": "up to one target creature they control"
+                    }
+                ],
+                "descriptionOverride": "When Cloak and Dagger enter, choose target opponent and up to one target creature they control. They reveal their hand. You may exile a nonland card from their hand or the chosen creature until Cloak and Dagger leave the battlefield."
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": "FromLinkedExile",
+                            "storeAs": "linked_return_origin"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "linked_return_origin",
+                            "destination": "ToZoneExiledFrom",
+                            "underOwnersControl": true
+                        }
+                    ]
+                },
+                "descriptionOverride": "When Cloak and Dagger leave the battlefield, return the exiled card to the zone it was exiled from."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "211",
+        "rarity": "RARE",
+        "artist": "Rimas Valeikis",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/a/fa01d35f-1064-4a7c-9475-4504566df850.jpg?1783902902"
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLACK"
     ]
 }
 
@@ -7684,6 +7888,64 @@
     ]
 }
 
+// Invisible Woman, Sue Storm
+{
+    "name": "Invisible Woman, Sue Storm",
+    "manaCost": "{4}{W}",
+    "typeLine": "Legendary Creature — Human Hero",
+    "oracleText": "Lifelink\nWhenever you put one or more +1/+1 counters on one or more other Heroes you control, you may create a 0/4 colorless Wall creature token with defender.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 5
+    },
+    "keywords": [
+        "LIFELINK"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "CountersPlacedEvent",
+                    "counterType": "+1/+1",
+                    "filter": "creature Hero ctrl:you",
+                    "placedBy": "You",
+                    "batch": true
+                },
+                "binding": "OTHER",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "CreateToken",
+                        "power": 0,
+                        "toughness": 4,
+                        "colors": [],
+                        "creatureTypes": [
+                            "Wall"
+                        ],
+                        "keywords": [
+                            "DEFENDER"
+                        ],
+                        "imageUri": "https://cards.scryfall.io/normal/front/8/2/82d35a61-3c87-405d-b857-cf43067cb1c4.jpg?1783902804"
+                    }
+                },
+                "descriptionOverride": "Whenever you put one or more +1/+1 counters on one or more other Heroes you control, you may create a 0/4 colorless Wall creature token with defender."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "17",
+        "rarity": "UNCOMMON",
+        "artist": "Paolo Rivera",
+        "flavorText": "\"I'll hold down the fort while you guys bicker.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/f/2f80394b-2f7e-40a7-8203-720bcf39d71b.jpg?1783902974"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Iron Fist, Living Weapon
 {
     "name": "Iron Fist, Living Weapon",
@@ -9263,6 +9525,51 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Loki, God of Mischief
+{
+    "name": "Loki, God of Mischief",
+    "manaCost": "{1}{U}",
+    "typeLine": "Legendary Creature — God Sorcerer Villain",
+    "oracleText": "Whenever a player or permanent becomes the target of an ability you control, draw a card. This ability triggers only once each turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "BecomesTargetEvent",
+                    "byYou": true,
+                    "includePlayerTargets": true,
+                    "abilitiesOnly": true
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "oncePerTurn": true,
+                "descriptionOverride": "Whenever a player or permanent becomes the target of an ability you control, draw a card. This ability triggers only once each turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "65",
+        "rarity": "RARE",
+        "artist": "Vilhelmas Banys",
+        "flavorText": "\"Foolish heroes. Loki can match you trick for trick, and *then* some.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/3/236c437f-ee9d-4145-a4db-b665908089cf.jpg?1783902955"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 

@@ -1,0 +1,97 @@
+{
+  "player1Name": "Alice",
+  "player2Name": "Bob",
+  "player1": {
+    "lifeTotal": 20,
+    "hand": [
+      "Grizzly Bears",
+      "Centaur Courser",
+      "Lightning Bolt"
+    ],
+    "battlefield": [
+      {
+        "name": "Captain Mar-Vell, Space-Born"
+      },
+      {
+        "name": "Plains"
+      },
+      {
+        "name": "Plains"
+      },
+      {
+        "name": "Forest"
+      },
+      {
+        "name": "Forest"
+      },
+      {
+        "name": "Mountain"
+      }
+    ],
+    "graveyard": [],
+    "library": [
+      "Plains",
+      "Forest",
+      "Plains",
+      "Forest",
+      "Mountain"
+    ]
+  },
+  "player2": {
+    "lifeTotal": 20,
+    "hand": [
+      "Shock",
+      "Grizzly Bears"
+    ],
+    "battlefield": [
+      {
+        "name": "Savannah Lions"
+      },
+      {
+        "name": "Mountain"
+      },
+      {
+        "name": "Mountain"
+      },
+      {
+        "name": "Forest"
+      },
+      {
+        "name": "Forest"
+      }
+    ],
+    "graveyard": [],
+    "library": [
+      "Mountain",
+      "Mountain",
+      "Forest",
+      "Forest"
+    ]
+  },
+  "phase": "PRECOMBAT_MAIN",
+  "activePlayer": 2,
+  "priorityPlayer": 2,
+  "player1StopAtSteps": [
+    "UPKEEP",
+    "PRECOMBAT_MAIN",
+    "DECLARE_ATTACKERS",
+    "POSTCOMBAT_MAIN",
+    "END"
+  ],
+  "player2StopAtSteps": [
+    "PRECOMBAT_MAIN",
+    "POSTCOMBAT_MAIN"
+  ],
+  "player1OpponentStopAtSteps": [
+    "UPKEEP",
+    "PRECOMBAT_MAIN",
+    "DECLARE_ATTACKERS",
+    "POSTCOMBAT_MAIN",
+    "END"
+  ],
+  "player2OpponentStopAtSteps": [
+    "PRECOMBAT_MAIN",
+    "POSTCOMBAT_MAIN"
+  ],
+  "mode": "SELF"
+}

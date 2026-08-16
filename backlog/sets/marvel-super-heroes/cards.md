@@ -3,7 +3,7 @@
 **Set Size:** 276 booster cards (collector numbers 1-276; basic lands 277-296 and showcase
 variants 297+ are excluded)
 **Release Date:** June 26, 2026
-**Implemented:** 258 / 276
+**Implemented:** 262 / 276
 - [x] Agent 13, Sharon Carter
 - [x] Agent Maria Hill
 - [x] Agent of Atlas
@@ -15,12 +15,12 @@ variants 297+ are excluded)
 - [x] Captain America, Super-Soldier
 - [x] Captain America, Wings of Freedom
 - [x] Captain Marvel, Earth's Protector
-- [ ] Captain Mar-Vell, Space-Born
+- [x] Captain Mar-Vell, Space-Born
 - [x] Colleen Wing, Street Samurai
 - [x] Crowd of True Believers
 - [x] Helicarrier Strike
 - [x] Hero in Training
-- [ ] Invisible Woman, Sue Storm
+- [x] Invisible Woman, Sue Storm
 - [x] Jennifer Walters // The Sensational She-Hulk
 - [x] Kree Commandos
 - [x] Luke Cage, Power Man
@@ -68,7 +68,7 @@ variants 297+ are excluded)
 - [ ] Kang the Conqueror
 - [x] Kid Loki
 - [ ] Leader, Super-Genius
-- [ ] Loki, God of Mischief
+- [x] Loki, God of Mischief
 - [x] Mister Fantastic, Reed Richards
 - [ ] Ms. Marvel, Kamala Khan
 - [x] Multiversal Incursion
@@ -214,7 +214,7 @@ variants 297+ are excluded)
 - [x] Black Widow, Double Agent
 - [x] Bullseye, Death Dealer
 - [x] Captain America, Living Legend
-- [ ] Cloak and Dagger, Entwined
+- [x] Cloak and Dagger, Entwined
 - [x] The Coming of Galactus
 - [x] Daredevil, Man Without Fear
 - [x] Ghost, Spectral Saboteur

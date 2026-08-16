@@ -1,0 +1,96 @@
+{
+  "player1Name": "Alice",
+  "player2Name": "Bob",
+  "player1": {
+    "lifeTotal": 20,
+    "hand": [
+      "Cloak and Dagger, Entwined",
+      "Lightning Bolt",
+      "Unsummon"
+    ],
+    "battlefield": [
+      {
+        "name": "Plains"
+      },
+      {
+        "name": "Plains"
+      },
+      {
+        "name": "Swamp"
+      },
+      {
+        "name": "Swamp"
+      },
+      {
+        "name": "Island"
+      },
+      {
+        "name": "Mountain"
+      }
+    ],
+    "graveyard": [],
+    "library": [
+      "Plains",
+      "Swamp",
+      "Island",
+      "Mountain"
+    ]
+  },
+  "player2": {
+    "lifeTotal": 20,
+    "hand": [
+      "Serra Angel",
+      "Shivan Dragon",
+      "Forest"
+    ],
+    "battlefield": [
+      {
+        "name": "Grizzly Bears"
+      },
+      {
+        "name": "Centaur Courser"
+      },
+      {
+        "name": "Forest"
+      },
+      {
+        "name": "Forest"
+      },
+      {
+        "name": "Forest"
+      }
+    ],
+    "graveyard": [],
+    "library": [
+      "Forest",
+      "Forest",
+      "Grizzly Bears"
+    ]
+  },
+  "phase": "PRECOMBAT_MAIN",
+  "activePlayer": 1,
+  "priorityPlayer": 1,
+  "player1StopAtSteps": [
+    "UPKEEP",
+    "PRECOMBAT_MAIN",
+    "DECLARE_ATTACKERS",
+    "POSTCOMBAT_MAIN",
+    "END"
+  ],
+  "player2StopAtSteps": [
+    "PRECOMBAT_MAIN",
+    "POSTCOMBAT_MAIN"
+  ],
+  "player1OpponentStopAtSteps": [
+    "UPKEEP",
+    "PRECOMBAT_MAIN",
+    "DECLARE_ATTACKERS",
+    "POSTCOMBAT_MAIN",
+    "END"
+  ],
+  "player2OpponentStopAtSteps": [
+    "PRECOMBAT_MAIN",
+    "POSTCOMBAT_MAIN"
+  ],
+  "mode": "SELF"
+}

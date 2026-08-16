@@ -301,6 +301,13 @@ class TriggerDetector(
         // payoff can count them. The per-event path skips batch untaps.
         detectUntapBatchTriggers(state, events, triggers, index)
 
+        // Detect "whenever you put one or more counters on one or more [permanents]" batching
+        // triggers (CountersPlacedEvent(batch = true), e.g. Invisible Woman, Sue Storm). One effect
+        // that puts counters on several permanents emits one CountersAddedEvent per recipient; this
+        // fires the trigger once for that batch, not once per recipient. The per-event path skips
+        // batch counter placements.
+        detectCountersPlacedBatchTriggers(state, events, triggers, index)
+
         // Detect "whenever one or more [creatures] you control deal combat damage to a player"
         // batching triggers (e.g., Kastral, the Windcrested). Groups combat damage events
         // and fires the trigger at most once per observer.
@@ -431,12 +438,14 @@ class TriggerDetector(
      *
      * Two cuts, in order:
      *  1. Drop any oncePerTurn trigger whose source has already fired that ability id this turn
-     *     (tracked by [TriggeredAbilityFiredThisTurnComponent], stamped on resolution).
+     *     (tracked by [TriggeredAbilityFiredThisTurnComponent], stamped when the trigger is put on
+     *     the stack — `TriggerProcessor.processSingleTrigger` — not when it resolves).
      *  2. Within this single detection pass, keep only the *first* trigger per
      *     `(sourceId, abilityId)` for oncePerTurn abilities. The fired-this-turn tracker is only
-     *     written when a trigger resolves, so a single multi-subject event (e.g. a player
-     *     discarding two cards, which fires a per-card "whenever a player discards" trigger twice)
-     *     would otherwise queue two instances before either resolves and stamps the tracker. This
+     *     written once a detected trigger reaches the processor, so a single multi-subject event
+     *     (e.g. a player discarding two cards, which fires a per-card "whenever a player discards"
+     *     trigger twice) would otherwise queue two instances from one pass before either is
+     *     processed and stamps the tracker. This
      *     dedupe enforces the "only once each turn" cap for batch-style triggers — e.g. Hostile
      *     Investigator investigating once even when several cards are discarded at once.
      *
@@ -2517,6 +2526,83 @@ class TriggerDetector(
                         triggerContext = TriggerContext(
                             triggeringEntityId = matched.first(),
                             capturedEntityIds = matched
+                        )
+                    )
+                )
+            }
+        }
+    }
+
+    /**
+     * Detect "whenever you put one or more counters on one or more [permanents]" batching triggers
+     * (`CountersPlacedEvent(batch = true)` — Invisible Woman, Sue Storm).
+     *
+     * One effect that puts counters on several permanents emits one [CountersAddedEvent] per
+     * recipient, and a placement of several counters on one permanent emits a single event with
+     * `amount > 1`. CR 603.2c makes both of those *one* occurrence of the trigger event for a batch
+     * template, so this fires the ability **once** for the whole detection pass — the over-count the
+     * per-event path (which skips batch placements) would produce for the multi-recipient case.
+     *
+     * Every axis of the pattern *narrows* the batch rather than discarding it, mirroring
+     * [detectTapBatchTriggers]: a batch that also placed counters of another type, by another
+     * player, or on non-matching permanents still fires, once, on its matching placements alone.
+     * The narrowing itself is [TriggerMatcher.matchesCountersPlacedAxes] — the same function the
+     * per-permanent path uses, so the two multiplicities can never disagree about which placements
+     * count (the shape [DamageTriggerDetector.detectDamageObserverBatchTriggers] uses).
+     *
+     * A permanent that can't have counters put on it (`ProjectedState.canReceiveCounters`) stays out
+     * of the batch only when the executor doing the placing checks that prohibition before emitting:
+     * [com.wingedsheep.engine.handlers.effects.permanent.counters.AddCountersExecutor] and its
+     * single-target siblings do, but `AddCountersToCollectionExecutor` and
+     * `DistributeCountersAmongTargetsExecutor` — the multi-recipient paths this batch template most
+     * often observes — do not, and a no-op placement from those would enter the batch. That gap is
+     * per-executor and pre-dates this pass (the counters are wrongly added to the component too, not
+     * just reported), so this is not the place to fix it; it is recorded here so no one reads a
+     * guarantee into the batch that the engine doesn't provide.
+     *
+     * Separate resolutions are separate detection passes and so separate batches: two effects each
+     * placing counters in the same turn fire the trigger twice.
+     */
+    private fun detectCountersPlacedBatchTriggers(
+        state: GameState,
+        events: List<EngineGameEvent>,
+        triggers: MutableList<PendingTrigger>,
+        index: TriggerIndex
+    ) {
+        val counterEvents = events.filterIsInstance<CountersAddedEvent>()
+        if (counterEvents.isEmpty()) return
+
+        for (entry in index.getEntitiesForCategory(TriggerCategory.COUNTERS_ADDED)) {
+            for (ability in entry.abilities) {
+                val trigger = ability.trigger
+                if (trigger !is EventPattern.CountersPlacedEvent || !trigger.batch) continue
+
+                // "one or more **other** …" excludes counters that landed on the source itself;
+                // SELF is the degenerate single-permanent batch ("counters put on this"). Unlike
+                // the ANY-only tap/untap batch passes, all three bindings are supported here.
+                val matched = counterEvents.filter { event ->
+                    matcher.matchesCountersPlacedAxes(
+                        trigger, event, ability.binding, entry.entityId, entry.controllerId, state
+                    )
+                }
+                if (matched.isEmpty()) continue
+
+                // Fire once for the whole batch; bind the first matching recipient as the triggering
+                // entity so any "it" payoff has a referent (CR 603.2c), and expose the recipients as
+                // the captured collection so a "for each of those creatures" payoff can count them
+                // (as [detectUntapBatchTriggers] does). `counterCount` is the batch total — the
+                // per-event path reports the counters of its single placement, so the batch's
+                // analogue is the counters of all the placements it collapsed.
+                triggers.add(
+                    PendingTrigger(
+                        ability = ability,
+                        sourceId = entry.entityId,
+                        sourceName = entry.cardComponent.name,
+                        controllerId = entry.controllerId,
+                        triggerContext = TriggerContext(
+                            triggeringEntityId = matched.first().entityId,
+                            capturedEntityIds = matched.map { it.entityId }.distinct(),
+                            counterCount = matched.sumOf { it.amount }
                         )
                     )
                 )
