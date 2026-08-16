@@ -351,6 +351,9 @@ private fun randomDecisionResponse(decision: PendingDecision, rng: Random): Deci
 
         is SelectManaSourcesDecision ->
             ManaSourcesSelectedResponse(decision.id, emptyList(), autoPay = true)
+
+        is SelectAtomicBlockTaxManaAbilitiesDecision ->
+            AtomicBlockTaxManaAbilitiesSelectedResponse(decision.id, autoPay = true)
     }
 }
 

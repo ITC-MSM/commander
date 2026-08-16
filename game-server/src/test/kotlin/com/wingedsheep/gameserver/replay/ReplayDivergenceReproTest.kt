@@ -353,6 +353,9 @@ class ReplayDivergenceReproTest : ScenarioTestBase() {
 
             is SelectManaSourcesDecision ->
                 ManaSourcesSelectedResponse(decision.id, emptyList(), autoPay = true)
+
+            is SelectAtomicBlockTaxManaAbilitiesDecision ->
+                AtomicBlockTaxManaAbilitiesSelectedResponse(decision.id, autoPay = true)
         }
     }
 

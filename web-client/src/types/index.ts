@@ -217,6 +217,9 @@ export type {
   ManaSourceOption,
   WaterbendPermanentChoice,
   SelectManaSourcesDecision,
+  AtomicBlockTaxManaAbilityRef,
+  AtomicBlockTaxManaAbilityOption,
+  SelectAtomicBlockTaxManaAbilitiesDecision,
   SplitPilesDecision,
   // Set types
   AvailableSet,

@@ -23,6 +23,7 @@ import { ChooseTargetsUI } from './ChooseTargetsUI'
 import { PlayerTargetingUI } from './PlayerTargetingUI'
 import { SplitPilesUI } from './SplitPilesUI'
 import { ManaSourceSelectionUI } from './ManaSourceSelectionUI'
+import { AtomicBlockTaxManaAbilitySelectionUI } from './AtomicBlockTaxManaAbilitySelectionUI'
 import { isLoneTargetRequirement, partitionTargetsByZone } from '@/utils/targeting.ts'
 import styles from './DecisionUI.module.css'
 
@@ -69,6 +70,10 @@ export function DecisionUI() {
   // Handle SelectManaSourcesDecision (mana source selection for Lightning Rift etc.)
   if (pendingDecision.type === 'SelectManaSourcesDecision') {
     return <ManaSourceSelectionUI decision={pendingDecision} />
+  }
+
+  if (pendingDecision.type === 'SelectAtomicBlockTaxManaAbilitiesDecision') {
+    return <AtomicBlockTaxManaAbilitySelectionUI decision={pendingDecision} />
   }
 
   // Handle SearchLibraryDecision with dedicated UI

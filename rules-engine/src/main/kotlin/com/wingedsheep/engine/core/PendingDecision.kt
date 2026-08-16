@@ -644,6 +644,23 @@ data class SelectManaSourcesDecision(
 ) : PendingDecision
 
 /**
+ * Atomic shared-team block-tax payment menu. Unlike [SelectManaSourcesDecision], every option
+ * names one exact mana ability so a multi-ability permanent cannot be charged with the wrong cost.
+ */
+@Serializable
+@SerialName("SelectAtomicBlockTaxManaAbilitiesDecision")
+data class SelectAtomicBlockTaxManaAbilitiesDecision(
+    override val id: String,
+    override val playerId: EntityId,
+    override val prompt: String,
+    override val context: DecisionContext,
+    val availableOptions: List<AtomicBlockTaxManaAbilityOption>,
+    val requiredCost: String,
+    val autoPaySuggestion: List<AtomicBlockTaxManaAbilityRef>,
+    val canDecline: Boolean = true,
+) : PendingDecision
+
+/**
  * An untapped artifact/creature offered as a Waterbend tap-to-help for a Ward—Waterbend payment.
  * [isCreature] lets the client distinguish creatures from artifacts for labelling only; the tap
  * always pays {1} generic regardless.
@@ -690,6 +707,7 @@ sealed interface DecisionResponse {
         is BudgetModalResponse -> copy(decisionId = newId)
         is DamageAssignmentResponse -> copy(decisionId = newId)
         is ManaSourcesSelectedResponse -> copy(decisionId = newId)
+        is AtomicBlockTaxManaAbilitiesSelectedResponse -> copy(decisionId = newId)
         is CombatResolutionResponse -> copy(decisionId = newId)
         is CancelDecisionResponse -> copy(decisionId = newId)
     }
@@ -924,6 +942,16 @@ data class ManaSourcesSelectedResponse(
         else -> !floatingCoversCost
     }
 }
+
+/** Response to [SelectAtomicBlockTaxManaAbilitiesDecision]. */
+@Serializable
+@SerialName("AtomicBlockTaxManaAbilitiesSelectedResponse")
+data class AtomicBlockTaxManaAbilitiesSelectedResponse(
+    override val decisionId: String,
+    val selectedManaAbilityRefs: List<AtomicBlockTaxManaAbilityRef> = emptyList(),
+    val autoPay: Boolean = false,
+    val declined: Boolean = false,
+) : DecisionResponse
 
 /**
  * Response to cancel a decision and go back to the previous choice.

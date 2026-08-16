@@ -4,6 +4,7 @@ import com.wingedsheep.ai.engine.TargetSelection
 import com.wingedsheep.ai.engine.TrivialDecisions
 import com.wingedsheep.ai.engine.knowledge.IntentCatalog
 import com.wingedsheep.engine.core.AssignDamageDecision
+import com.wingedsheep.engine.core.AtomicBlockTaxManaAbilitiesSelectedResponse
 import com.wingedsheep.engine.core.BatchYesNoDecision
 import com.wingedsheep.engine.core.BatchYesNoResponse
 import com.wingedsheep.engine.core.BudgetModalDecision
@@ -37,6 +38,7 @@ import com.wingedsheep.engine.core.ReorderLibraryDecision
 import com.wingedsheep.engine.core.ReplacementChosenResponse
 import com.wingedsheep.engine.core.SearchLibraryDecision
 import com.wingedsheep.engine.core.SelectCardsDecision
+import com.wingedsheep.engine.core.SelectAtomicBlockTaxManaAbilitiesDecision
 import com.wingedsheep.engine.core.SelectManaSourcesDecision
 import com.wingedsheep.engine.core.SplitPilesDecision
 import com.wingedsheep.engine.core.TargetsResponse
@@ -173,6 +175,13 @@ class FastDecisionResponder(private val intents: IntentCatalog = IntentCatalog.N
                 } else {
                     ManaSourcesSelectedResponse(decision.id, declined = true)
                 }
+
+            is SelectAtomicBlockTaxManaAbilitiesDecision ->
+                AtomicBlockTaxManaAbilitiesSelectedResponse(
+                    decision.id,
+                    autoPay = decision.autoPaySuggestion.isNotEmpty(),
+                    declined = decision.autoPaySuggestion.isEmpty(),
+                )
         }
     }
 

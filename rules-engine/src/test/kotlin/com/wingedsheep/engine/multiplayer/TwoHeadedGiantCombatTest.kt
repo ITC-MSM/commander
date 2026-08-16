@@ -11,10 +11,11 @@ import com.wingedsheep.engine.core.GameConfig
 import com.wingedsheep.engine.core.GameInitializer
 import com.wingedsheep.engine.core.BlockersDeclaredEvent
 import com.wingedsheep.engine.core.PlayerConfig
-import com.wingedsheep.engine.core.ManaSourcesSelectedResponse
 import com.wingedsheep.engine.core.ManaSourceOption
+import com.wingedsheep.engine.core.AtomicBlockTaxManaAbilityRef
+import com.wingedsheep.engine.core.AtomicBlockTaxManaAbilitiesSelectedResponse
 import com.wingedsheep.engine.core.PermanentsSacrificedEvent
-import com.wingedsheep.engine.core.SelectManaSourcesDecision
+import com.wingedsheep.engine.core.SelectAtomicBlockTaxManaAbilitiesDecision
 import com.wingedsheep.engine.core.SubmitDecision
 import com.wingedsheep.engine.core.TappedEvent
 import com.wingedsheep.engine.mechanics.combat.CombatDefenders
@@ -47,6 +48,10 @@ import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.AbilityId
+import com.wingedsheep.sdk.scripting.TimingRule
+import com.wingedsheep.sdk.dsl.Costs
+import com.wingedsheep.sdk.dsl.Effects
+import com.wingedsheep.sdk.dsl.card
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
@@ -98,10 +103,25 @@ class TwoHeadedGiantCombatTest : FunSpec({
         keywords = setOf(Keyword.FLYING),
     )
 
+    val sacrificeManaBear = card("Sacrifice Mana Bear") {
+        manaCost = "{1}{G}"
+        colorIdentity = "G"
+        typeLine = "Creature — Bear"
+        power = 2
+        toughness = 2
+        activatedAbility {
+            cost = Costs.Composite(Costs.Tap, Costs.SacrificeSelf)
+            effect = Effects.AddColorlessMana(2)
+            manaAbility = true
+            timing = TimingRule.ManaAbility
+        }
+    }
+
     fun registry() = CardRegistry().also {
         it.register(bear)
         it.register(menaceBear)
         it.register(flyingBear)
+        it.register(sacrificeManaBear)
         it.register(ArchangelOfTithes)
         it.register(ElvishAberration)
         it.register(CrystalVein)
@@ -366,7 +386,7 @@ class TwoHeadedGiantCombatTest : FunSpec({
             state,
             DeclareBlockers(p[2], mapOf(blkP2 to listOf(archangel), blkP3 to listOf(archangel))),
         ).result
-        val p2Prompt = declared.pendingDecision.shouldBeInstanceOf<SelectManaSourcesDecision>()
+        val p2Prompt = declared.pendingDecision.shouldBeInstanceOf<SelectAtomicBlockTaxManaAbilitiesDecision>()
         p2Prompt.playerId shouldBe p[2]
         declared.newState.getEntity(landP2)!!.has<TappedComponent>().shouldBeFalse()
         declared.newState.getEntity(landP3)!!.has<TappedComponent>().shouldBeFalse()
@@ -374,9 +394,11 @@ class TwoHeadedGiantCombatTest : FunSpec({
 
         val p2Accepted = proc.process(
             declared.newState,
-            SubmitDecision(p[2], ManaSourcesSelectedResponse(p2Prompt.id, selectedSources = listOf(landP2))),
+            SubmitDecision(p[2], AtomicBlockTaxManaAbilitiesSelectedResponse(
+                p2Prompt.id, selectedManaAbilityRefs = listOf(AtomicBlockTaxManaAbilityRef(landP2, -1)),
+            )),
         ).result
-        val p3Prompt = p2Accepted.pendingDecision.shouldBeInstanceOf<SelectManaSourcesDecision>()
+        val p3Prompt = p2Accepted.pendingDecision.shouldBeInstanceOf<SelectAtomicBlockTaxManaAbilitiesDecision>()
         p3Prompt.playerId shouldBe p[3]
         // The second prompt is still inside the same turn-based action; priority did not pass.
         p2Accepted.newState.priorityPlayerId shouldBe p[2]
@@ -386,7 +408,9 @@ class TwoHeadedGiantCombatTest : FunSpec({
 
         val paid = proc.process(
             p2Accepted.newState,
-            SubmitDecision(p[3], ManaSourcesSelectedResponse(p3Prompt.id, selectedSources = listOf(landP3))),
+            SubmitDecision(p[3], AtomicBlockTaxManaAbilitiesSelectedResponse(
+                p3Prompt.id, selectedManaAbilityRefs = listOf(AtomicBlockTaxManaAbilityRef(landP3, -1)),
+            )),
         ).result
         paid.isSuccess.shouldBeTrue()
         paid.events.filterIsInstance<BlockersDeclaredEvent>().size shouldBe 1
@@ -405,16 +429,18 @@ class TwoHeadedGiantCombatTest : FunSpec({
             state,
             DeclareBlockers(p[2], mapOf(blkP2 to listOf(archangel), blkP3 to listOf(archangel))),
         ).result
-        val p2Prompt = declared.pendingDecision.shouldBeInstanceOf<SelectManaSourcesDecision>()
+        val p2Prompt = declared.pendingDecision.shouldBeInstanceOf<SelectAtomicBlockTaxManaAbilitiesDecision>()
         val p2Accepted = proc.process(
             declared.newState,
-            SubmitDecision(p[2], ManaSourcesSelectedResponse(p2Prompt.id, selectedSources = listOf(landP2))),
+            SubmitDecision(p[2], AtomicBlockTaxManaAbilitiesSelectedResponse(
+                p2Prompt.id, selectedManaAbilityRefs = listOf(AtomicBlockTaxManaAbilityRef(landP2, -1)),
+            )),
         ).result
-        val p3Prompt = p2Accepted.pendingDecision.shouldBeInstanceOf<SelectManaSourcesDecision>()
+        val p3Prompt = p2Accepted.pendingDecision.shouldBeInstanceOf<SelectAtomicBlockTaxManaAbilitiesDecision>()
 
         val declined = proc.process(
             p2Accepted.newState,
-            SubmitDecision(p[3], ManaSourcesSelectedResponse(p3Prompt.id, declined = true)),
+            SubmitDecision(p[3], AtomicBlockTaxManaAbilitiesSelectedResponse(p3Prompt.id, declined = true)),
         ).result
         declined.isSuccess.shouldBeTrue()
         declined.pendingDecision shouldBe null
@@ -436,14 +462,16 @@ class TwoHeadedGiantCombatTest : FunSpec({
             state,
             DeclareBlockers(p[2], mapOf(aberration to listOf(archangel), blkP3 to listOf(archangel))),
         ).result
-        val p2Prompt = declared.pendingDecision.shouldBeInstanceOf<SelectManaSourcesDecision>()
+        val p2Prompt = declared.pendingDecision.shouldBeInstanceOf<SelectAtomicBlockTaxManaAbilitiesDecision>()
         p2Prompt.playerId shouldBe p[2]
 
         val p2Accepted = proc.process(
             declared.newState,
-            SubmitDecision(p[2], ManaSourcesSelectedResponse(p2Prompt.id, selectedSources = listOf(aberration))),
+            SubmitDecision(p[2], AtomicBlockTaxManaAbilitiesSelectedResponse(
+                p2Prompt.id, selectedManaAbilityRefs = listOf(AtomicBlockTaxManaAbilityRef(aberration, 0)),
+            )),
         ).result
-        p2Accepted.pendingDecision.shouldBeInstanceOf<SelectManaSourcesDecision>().playerId shouldBe p[3]
+        p2Accepted.pendingDecision.shouldBeInstanceOf<SelectAtomicBlockTaxManaAbilitiesDecision>().playerId shouldBe p[3]
         p2Accepted.newState.getEntity(aberration)!!.has<TappedComponent>().shouldBeFalse()
         p2Accepted.newState.getEntity(p[2])!!.get<ManaPoolComponent>()!!.green shouldBe 0
 
@@ -451,9 +479,9 @@ class TwoHeadedGiantCombatTest : FunSpec({
             p2Accepted.newState,
             SubmitDecision(
                 p[3],
-                ManaSourcesSelectedResponse(
-                    p2Accepted.pendingDecision.shouldBeInstanceOf<SelectManaSourcesDecision>().id,
-                    selectedSources = listOf(landP3),
+                AtomicBlockTaxManaAbilitiesSelectedResponse(
+                    p2Accepted.pendingDecision.shouldBeInstanceOf<SelectAtomicBlockTaxManaAbilitiesDecision>().id,
+                    selectedManaAbilityRefs = listOf(AtomicBlockTaxManaAbilityRef(landP3, -1)),
                 ),
             ),
         ).result
@@ -468,7 +496,7 @@ class TwoHeadedGiantCombatTest : FunSpec({
         paid.newState.getEntity(blkP3)!!.has<BlockingComponent>().shouldBeTrue()
     }
 
-    test("Crystal Vein's atomic tax selection uses its normal mana branch, not its sacrifice branch") {
+    test("Crystal Vein's atomic tax selection exposes and pays the exact normal branch") {
         val (state, p, objects) = taxedTeamBlockStateWithCrystalVein()
         val (archangel, blkP2, blkP3, crystalVein, landP3) = objects
         val proc = ActionProcessor(registry())
@@ -476,19 +504,26 @@ class TwoHeadedGiantCombatTest : FunSpec({
             state,
             DeclareBlockers(p[2], mapOf(blkP2 to listOf(archangel), blkP3 to listOf(archangel))),
         ).result
-        val p2Prompt = declared.pendingDecision.shouldBeInstanceOf<SelectManaSourcesDecision>()
-        p2Prompt.availableSources.map { it.entityId } shouldBe listOf(crystalVein)
-        p2Prompt.availableSources.single().manaAmount shouldBe 1
-        p2Prompt.availableSources.single().requiresSacrifice.shouldBeFalse()
+        val p2Prompt = declared.pendingDecision.shouldBeInstanceOf<SelectAtomicBlockTaxManaAbilitiesDecision>()
+        p2Prompt.availableOptions.map { it.ref } shouldBe listOf(
+            AtomicBlockTaxManaAbilityRef(crystalVein, 0),
+            AtomicBlockTaxManaAbilityRef(crystalVein, 1),
+        )
+        p2Prompt.availableOptions.map { it.manaAmount } shouldBe listOf(1, 2)
+        p2Prompt.availableOptions.map { it.requiresSacrificeSelf } shouldBe listOf(false, true)
         val p2Accepted = proc.process(
             declared.newState,
-            SubmitDecision(p[2], ManaSourcesSelectedResponse(p2Prompt.id, selectedSources = listOf(crystalVein))),
+            SubmitDecision(p[2], AtomicBlockTaxManaAbilitiesSelectedResponse(
+                p2Prompt.id, selectedManaAbilityRefs = listOf(AtomicBlockTaxManaAbilityRef(crystalVein, 0)),
+            )),
         ).result
-        val p3Prompt = p2Accepted.pendingDecision.shouldBeInstanceOf<SelectManaSourcesDecision>()
+        val p3Prompt = p2Accepted.pendingDecision.shouldBeInstanceOf<SelectAtomicBlockTaxManaAbilitiesDecision>()
 
         val paid = proc.process(
             p2Accepted.newState,
-            SubmitDecision(p[3], ManaSourcesSelectedResponse(p3Prompt.id, selectedSources = listOf(landP3))),
+            SubmitDecision(p[3], AtomicBlockTaxManaAbilitiesSelectedResponse(
+                p3Prompt.id, selectedManaAbilityRefs = listOf(AtomicBlockTaxManaAbilityRef(landP3, -1)),
+            )),
         ).result
 
         paid.isSuccess.shouldBeTrue()
@@ -500,6 +535,94 @@ class TwoHeadedGiantCombatTest : FunSpec({
         paid.events.filterIsInstance<BlockersDeclaredEvent>().size shouldBe 1
     }
 
+    test("Crystal Vein's atomic sacrifice branch pays two, sacrifices the source, and keeps the declaration valid") {
+        val (state, p, objects) = taxedTeamBlockStateWithCrystalVein()
+        val (archangel, blkP2, blkP3, crystalVein, landP3) = objects
+        val proc = ActionProcessor(registry())
+        val declared = proc.process(state, DeclareBlockers(p[2], mapOf(blkP2 to listOf(archangel), blkP3 to listOf(archangel)))).result
+        val p2Prompt = declared.pendingDecision.shouldBeInstanceOf<SelectAtomicBlockTaxManaAbilitiesDecision>()
+        val p2Accepted = proc.process(
+            declared.newState,
+            SubmitDecision(p[2], AtomicBlockTaxManaAbilitiesSelectedResponse(
+                p2Prompt.id, selectedManaAbilityRefs = listOf(AtomicBlockTaxManaAbilityRef(crystalVein, 1)),
+            )),
+        ).result
+        val p3Prompt = p2Accepted.pendingDecision.shouldBeInstanceOf<SelectAtomicBlockTaxManaAbilitiesDecision>()
+        val paid = proc.process(
+            p2Accepted.newState,
+            SubmitDecision(p[3], AtomicBlockTaxManaAbilitiesSelectedResponse(
+                p3Prompt.id, selectedManaAbilityRefs = listOf(AtomicBlockTaxManaAbilityRef(landP3, -1)),
+            )),
+        ).result
+
+        paid.isSuccess.shouldBeTrue()
+        paid.newState.getBattlefield().contains(crystalVein).shouldBeFalse()
+        paid.newState.getEntity(p[2])!!.get<ManaPoolComponent>()!!.colorless shouldBe 1
+        paid.events.filterIsInstance<PermanentsSacrificedEvent>().single().permanentIds shouldBe listOf(crystalVein)
+        paid.events.filterIsInstance<BlockersDeclaredEvent>().size shouldBe 1
+        paid.newState.getEntity(blkP2)!!.has<BlockingComponent>().shouldBeTrue()
+    }
+
+    test("atomic Crystal Vein branch decline and forged branch preserve the proposed declaration") {
+        val (state, p, objects) = taxedTeamBlockStateWithCrystalVein()
+        val (archangel, blkP2, _, crystalVein, _) = objects
+        val proc = ActionProcessor(registry())
+        val declared = proc.process(state, DeclareBlockers(p[2], mapOf(blkP2 to listOf(archangel)))).result
+        val prompt = declared.pendingDecision.shouldBeInstanceOf<SelectAtomicBlockTaxManaAbilitiesDecision>()
+        val forged = proc.process(
+            declared.newState,
+            SubmitDecision(p[2], AtomicBlockTaxManaAbilitiesSelectedResponse(
+                prompt.id, selectedManaAbilityRefs = listOf(AtomicBlockTaxManaAbilityRef(crystalVein, 99)),
+            )),
+        ).result
+        forged.isSuccess.shouldBeFalse()
+        forged.newState shouldBe declared.newState
+        forged.events shouldBe emptyList()
+
+        val declined = proc.process(
+            declared.newState,
+            SubmitDecision(p[2], AtomicBlockTaxManaAbilitiesSelectedResponse(prompt.id, declined = true)),
+        ).result
+        declined.isSuccess.shouldBeTrue()
+        // A valid decline records its submission, but must not produce payment or combat events.
+        declined.events.size shouldBe 1
+        declined.newState.getEntity(crystalVein)!!.has<TappedComponent>().shouldBeFalse()
+        declined.newState.getEntity(blkP2)!!.has<BlockingComponent>().shouldBeFalse()
+    }
+
+    test("a declared blocker sacrificed for atomic tax leaves its attacker blocked but is not blocking") {
+        val (base, p) = init2hg()
+        val (s1, archangel) = base.withBear(p[0], attacking = p[2], definition = ArchangelOfTithes)
+        val (s2, sacrificeBlocker) = s1.withBear(p[2], definition = sacrificeManaBear, extraKeywords = setOf(Keyword.FLYING))
+        val (s3, teammateBlocker) = s2.withBear(p[3], definition = flyingBear)
+        val (s4, teammateLand) = s3.withPlains(p[3])
+        val state = s4.updateEntity(p[0]) { it.with(AttackersDeclaredThisCombatComponent) }
+            .copy(step = Step.DECLARE_BLOCKERS, phase = Phase.COMBAT).withPriority(p[2])
+        val proc = ActionProcessor(registry())
+        val declared = proc.process(state, DeclareBlockers(p[2], mapOf(
+            sacrificeBlocker to listOf(archangel), teammateBlocker to listOf(archangel),
+        ))).result
+        val p2Prompt = declared.pendingDecision.shouldBeInstanceOf<SelectAtomicBlockTaxManaAbilitiesDecision>()
+        val p2Accepted = proc.process(
+            declared.newState,
+            SubmitDecision(p[2], AtomicBlockTaxManaAbilitiesSelectedResponse(
+                p2Prompt.id, selectedManaAbilityRefs = listOf(AtomicBlockTaxManaAbilityRef(sacrificeBlocker, 0)),
+            )),
+        ).result
+        val p3Prompt = p2Accepted.pendingDecision.shouldBeInstanceOf<SelectAtomicBlockTaxManaAbilitiesDecision>()
+        val paid = proc.process(
+            p2Accepted.newState,
+            SubmitDecision(p[3], AtomicBlockTaxManaAbilitiesSelectedResponse(
+                p3Prompt.id, selectedManaAbilityRefs = listOf(AtomicBlockTaxManaAbilityRef(teammateLand, -1)),
+            )),
+        ).result
+
+        paid.isSuccess.shouldBeTrue()
+        paid.newState.getBattlefield().contains(sacrificeBlocker).shouldBeFalse()
+        paid.newState.getEntity(archangel)!!.has<BlockedComponent>().shouldBeTrue()
+        paid.newState.getEntity(sacrificeBlocker)!!.has<BlockingComponent>().shouldBeFalse()
+    }
+
     test("an atomic payer preserves a tapped mana source's multiplied normal output") {
         val (state, p, objects) = taxedTeamBlockStateWithVirtueOfStrength()
         val (archangel, blkP2, blkP3, landP2, landP3) = objects
@@ -509,17 +632,23 @@ class TwoHeadedGiantCombatTest : FunSpec({
             state,
             DeclareBlockers(p[2], mapOf(blkP2 to listOf(archangel), blkP3 to listOf(archangel))),
         ).result
-        val p2Prompt = declared.pendingDecision.shouldBeInstanceOf<SelectManaSourcesDecision>()
-        p2Prompt.availableSources.single { it.entityId == landP2 }.manaAmount shouldBe 3
+        val p2Prompt = declared.pendingDecision.shouldBeInstanceOf<SelectAtomicBlockTaxManaAbilitiesDecision>()
+        p2Prompt.availableOptions.single {
+            it.ref == AtomicBlockTaxManaAbilityRef(landP2, -1)
+        }.manaAmount shouldBe 3
 
         val p2Accepted = proc.process(
             declared.newState,
-            SubmitDecision(p[2], ManaSourcesSelectedResponse(p2Prompt.id, selectedSources = listOf(landP2))),
+            SubmitDecision(p[2], AtomicBlockTaxManaAbilitiesSelectedResponse(
+                p2Prompt.id, selectedManaAbilityRefs = listOf(AtomicBlockTaxManaAbilityRef(landP2, -1)),
+            )),
         ).result
-        val p3Prompt = p2Accepted.pendingDecision.shouldBeInstanceOf<SelectManaSourcesDecision>()
+        val p3Prompt = p2Accepted.pendingDecision.shouldBeInstanceOf<SelectAtomicBlockTaxManaAbilitiesDecision>()
         val paid = proc.process(
             p2Accepted.newState,
-            SubmitDecision(p[3], ManaSourcesSelectedResponse(p3Prompt.id, selectedSources = listOf(landP3))),
+            SubmitDecision(p[3], AtomicBlockTaxManaAbilitiesSelectedResponse(
+                p3Prompt.id, selectedManaAbilityRefs = listOf(AtomicBlockTaxManaAbilityRef(landP3, -1)),
+            )),
         ).result
 
         paid.isSuccess.shouldBeTrue()
@@ -538,16 +667,18 @@ class TwoHeadedGiantCombatTest : FunSpec({
             state,
             DeclareBlockers(p[2], mapOf(aberration to listOf(archangel), blkP3 to listOf(archangel))),
         ).result
-        val p2Prompt = declared.pendingDecision.shouldBeInstanceOf<SelectManaSourcesDecision>()
+        val p2Prompt = declared.pendingDecision.shouldBeInstanceOf<SelectAtomicBlockTaxManaAbilitiesDecision>()
         val p2Accepted = proc.process(
             declared.newState,
-            SubmitDecision(p[2], ManaSourcesSelectedResponse(p2Prompt.id, selectedSources = listOf(aberration))),
+            SubmitDecision(p[2], AtomicBlockTaxManaAbilitiesSelectedResponse(
+                p2Prompt.id, selectedManaAbilityRefs = listOf(AtomicBlockTaxManaAbilityRef(aberration, 0)),
+            )),
         ).result
-        val p3Prompt = p2Accepted.pendingDecision.shouldBeInstanceOf<SelectManaSourcesDecision>()
+        val p3Prompt = p2Accepted.pendingDecision.shouldBeInstanceOf<SelectAtomicBlockTaxManaAbilitiesDecision>()
 
         val declined = proc.process(
             p2Accepted.newState,
-            SubmitDecision(p[3], ManaSourcesSelectedResponse(p3Prompt.id, declined = true)),
+            SubmitDecision(p[3], AtomicBlockTaxManaAbilitiesSelectedResponse(p3Prompt.id, declined = true)),
         ).result
 
         declined.isSuccess.shouldBeTrue()
@@ -568,12 +699,14 @@ class TwoHeadedGiantCombatTest : FunSpec({
             state,
             DeclareBlockers(p[2], mapOf(blkP2 to listOf(archangel), blkP3 to listOf(archangel))),
         ).result
-        val p2Prompt = declared.pendingDecision.shouldBeInstanceOf<SelectManaSourcesDecision>()
+        val p2Prompt = declared.pendingDecision.shouldBeInstanceOf<SelectAtomicBlockTaxManaAbilitiesDecision>()
         val p2Accepted = proc.process(
             declared.newState,
-            SubmitDecision(p[2], ManaSourcesSelectedResponse(p2Prompt.id, selectedSources = listOf(landP2))),
+            SubmitDecision(p[2], AtomicBlockTaxManaAbilitiesSelectedResponse(
+                p2Prompt.id, selectedManaAbilityRefs = listOf(AtomicBlockTaxManaAbilityRef(landP2, -1)),
+            )),
         ).result
-        val p3Prompt = p2Accepted.pendingDecision.shouldBeInstanceOf<SelectManaSourcesDecision>()
+        val p3Prompt = p2Accepted.pendingDecision.shouldBeInstanceOf<SelectAtomicBlockTaxManaAbilitiesDecision>()
         p3Prompt.playerId shouldBe p[3]
 
         val conceded = proc.process(
@@ -596,7 +729,7 @@ class TwoHeadedGiantCombatTest : FunSpec({
             DeclareBlockers(p[2], mapOf(blkP3 to listOf(archangel))),
         ).result
 
-        declared.pendingDecision.shouldBeInstanceOf<SelectManaSourcesDecision>().playerId shouldBe p[3]
+        declared.pendingDecision.shouldBeInstanceOf<SelectAtomicBlockTaxManaAbilitiesDecision>().playerId shouldBe p[3]
     }
 
     test("a direct mana ability is rejected without mutation while a combined team block-tax prompt is pending") {
@@ -607,7 +740,7 @@ class TwoHeadedGiantCombatTest : FunSpec({
             state,
             DeclareBlockers(p[2], mapOf(blkP2 to listOf(archangel), blkP3 to listOf(archangel))),
         ).result
-        declared.pendingDecision.shouldBeInstanceOf<SelectManaSourcesDecision>().playerId shouldBe p[2]
+        declared.pendingDecision.shouldBeInstanceOf<SelectAtomicBlockTaxManaAbilitiesDecision>().playerId shouldBe p[2]
 
         val p2DirectMana = proc.process(
             declared.newState,
@@ -618,12 +751,14 @@ class TwoHeadedGiantCombatTest : FunSpec({
         p2DirectMana.newState shouldBe declared.newState
         p2DirectMana.events shouldBe emptyList()
 
-        val p2Prompt = declared.pendingDecision.shouldBeInstanceOf<SelectManaSourcesDecision>()
+        val p2Prompt = declared.pendingDecision.shouldBeInstanceOf<SelectAtomicBlockTaxManaAbilitiesDecision>()
         val p2Accepted = proc.process(
             declared.newState,
-            SubmitDecision(p[2], ManaSourcesSelectedResponse(p2Prompt.id, selectedSources = listOf(landP2))),
+            SubmitDecision(p[2], AtomicBlockTaxManaAbilitiesSelectedResponse(
+                p2Prompt.id, selectedManaAbilityRefs = listOf(AtomicBlockTaxManaAbilityRef(landP2, -1)),
+            )),
         ).result
-        p2Accepted.pendingDecision.shouldBeInstanceOf<SelectManaSourcesDecision>().playerId shouldBe p[3]
+        p2Accepted.pendingDecision.shouldBeInstanceOf<SelectAtomicBlockTaxManaAbilitiesDecision>().playerId shouldBe p[3]
 
         val p3DirectMana = proc.process(
             p2Accepted.newState,
@@ -635,6 +770,56 @@ class TwoHeadedGiantCombatTest : FunSpec({
         p3DirectMana.events shouldBe emptyList()
     }
 
+    test("floating mana pays an atomic team tax without exposing or permitting extra mana activations") {
+        val (baseState, p, objects) = taxedTeamBlockState()
+        val (archangel, blkP2, blkP3, landP2, landP3) = objects
+        val state = baseState
+            .updateEntity(p[2]) { it.with(ManaPoolComponent(white = 1)) }
+            .updateEntity(p[3]) { it.with(ManaPoolComponent(white = 1)) }
+        val proc = ActionProcessor(registry())
+
+        val declared = proc.process(
+            state,
+            DeclareBlockers(p[2], mapOf(blkP2 to listOf(archangel), blkP3 to listOf(archangel))),
+        ).result
+        val p2Prompt = declared.pendingDecision.shouldBeInstanceOf<SelectAtomicBlockTaxManaAbilitiesDecision>()
+        p2Prompt.playerId shouldBe p[2]
+        p2Prompt.availableOptions shouldBe emptyList()
+        p2Prompt.autoPaySuggestion shouldBe emptyList()
+
+        val directMana = proc.process(
+            declared.newState,
+            ActivateAbility(p[2], landP2, AbilityId.intrinsicMana('W')),
+        ).result
+        directMana.isSuccess.shouldBeFalse()
+        directMana.newState shouldBe declared.newState
+        directMana.events shouldBe emptyList()
+
+        val p2Accepted = proc.process(
+            declared.newState,
+            SubmitDecision(p[2], AtomicBlockTaxManaAbilitiesSelectedResponse(p2Prompt.id, autoPay = true)),
+        ).result
+        val p3Prompt = p2Accepted.pendingDecision.shouldBeInstanceOf<SelectAtomicBlockTaxManaAbilitiesDecision>()
+        p3Prompt.playerId shouldBe p[3]
+        p3Prompt.availableOptions shouldBe emptyList()
+        p3Prompt.autoPaySuggestion shouldBe emptyList()
+
+        val declined = proc.process(
+            p2Accepted.newState,
+            SubmitDecision(p[3], AtomicBlockTaxManaAbilitiesSelectedResponse(p3Prompt.id, declined = true)),
+        ).result
+        declined.isSuccess.shouldBeTrue()
+        declined.pendingDecision shouldBe null
+        declined.events.filterIsInstance<TappedEvent>() shouldBe emptyList()
+        declined.events.filterIsInstance<BlockersDeclaredEvent>() shouldBe emptyList()
+        declined.newState.getEntity(landP2)!!.has<TappedComponent>().shouldBeFalse()
+        declined.newState.getEntity(landP3)!!.has<TappedComponent>().shouldBeFalse()
+        declined.newState.getEntity(blkP2)!!.has<BlockingComponent>().shouldBeFalse()
+        declined.newState.getEntity(blkP3)!!.has<BlockingComponent>().shouldBeFalse()
+        declined.newState.getEntity(p[2])!!.get<ManaPoolComponent>()!!.white shouldBe 1
+        declined.newState.getEntity(p[3])!!.get<ManaPoolComponent>()!!.white shouldBe 1
+    }
+
     test("a direct mana ability is rejected without mutation for a p3-only team block-tax payer") {
         val (state, p, objects) = taxedTeamBlockState()
         val (archangel, _, blkP3, _, landP3) = objects
@@ -643,7 +828,7 @@ class TwoHeadedGiantCombatTest : FunSpec({
             state,
             DeclareBlockers(p[2], mapOf(blkP3 to listOf(archangel))),
         ).result
-        declared.pendingDecision.shouldBeInstanceOf<SelectManaSourcesDecision>().playerId shouldBe p[3]
+        declared.pendingDecision.shouldBeInstanceOf<SelectAtomicBlockTaxManaAbilitiesDecision>().playerId shouldBe p[3]
 
         val directMana = proc.process(
             declared.newState,
@@ -663,11 +848,13 @@ class TwoHeadedGiantCombatTest : FunSpec({
             state,
             DeclareBlockers(p[2], mapOf(blkP2 to listOf(archangel))),
         ).result
-        val prompt = declared.pendingDecision.shouldBeInstanceOf<SelectManaSourcesDecision>()
+        val prompt = declared.pendingDecision.shouldBeInstanceOf<SelectAtomicBlockTaxManaAbilitiesDecision>()
 
         val forged = proc.process(
             declared.newState,
-            SubmitDecision(p[2], ManaSourcesSelectedResponse(prompt.id, selectedSources = listOf(landP3))),
+            SubmitDecision(p[2], AtomicBlockTaxManaAbilitiesSelectedResponse(
+                prompt.id, selectedManaAbilityRefs = listOf(AtomicBlockTaxManaAbilityRef(landP3, -1)),
+            )),
         ).result
         forged.isSuccess.shouldBeFalse()
         forged.newState shouldBe declared.newState
@@ -676,7 +863,13 @@ class TwoHeadedGiantCombatTest : FunSpec({
         val duplicate = shouldNotThrowAny {
             proc.process(
                 declared.newState,
-                SubmitDecision(p[2], ManaSourcesSelectedResponse(prompt.id, selectedSources = listOf(landP2, landP2))),
+                SubmitDecision(p[2], AtomicBlockTaxManaAbilitiesSelectedResponse(
+                    prompt.id,
+                    selectedManaAbilityRefs = listOf(
+                        AtomicBlockTaxManaAbilityRef(landP2, -1),
+                        AtomicBlockTaxManaAbilityRef(landP2, -1),
+                    ),
+                )),
             ).result
         }
         duplicate.isSuccess.shouldBeFalse()

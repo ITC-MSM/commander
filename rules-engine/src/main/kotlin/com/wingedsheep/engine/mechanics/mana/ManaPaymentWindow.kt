@@ -7,6 +7,7 @@ import com.wingedsheep.engine.core.PermanentsSacrificedEvent
 import com.wingedsheep.engine.core.TappedEvent
 import com.wingedsheep.engine.core.ReopenManaPaymentDecisionContinuation
 import com.wingedsheep.engine.core.SelectManaSourcesDecision
+import com.wingedsheep.engine.core.SelectAtomicBlockTaxManaAbilitiesDecision
 import com.wingedsheep.engine.core.BlockTaxManaSelectionContinuation
 import com.wingedsheep.engine.core.GameEvent
 import com.wingedsheep.engine.registry.CardRegistry
@@ -60,8 +61,10 @@ object ManaPaymentWindow {
      * therefore the sole payment surface for this narrow atomic flow.
      */
     fun isAtomicTeamBlockTaxWindow(state: GameState): Boolean {
-        val continuation = state.peekContinuation() as? BlockTaxManaSelectionContinuation ?: return false
-        return state.sharedTurnTeam(continuation.blockingPlayer).size > 1
+        // A payer may already have sufficient floating mana, leaving its source menu empty;
+        // that must not reopen independent mana-ability activation during this reversible team
+        // declaration. Legacy frames retain the old decision type and stay on their old path.
+        return state.pendingDecision is SelectAtomicBlockTaxManaAbilitiesDecision
     }
 
     /**

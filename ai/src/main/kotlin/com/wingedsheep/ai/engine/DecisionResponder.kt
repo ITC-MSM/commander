@@ -87,6 +87,12 @@ class DecisionResponder(
             is SearchLibraryDecision -> respondSearchLibrary(state, decision, playerId)
             is ReorderLibraryDecision -> respondReorderLibrary(state, decision, playerId)
             is SelectManaSourcesDecision -> respondManaSelection(decision)
+            is SelectAtomicBlockTaxManaAbilitiesDecision ->
+                AtomicBlockTaxManaAbilitiesSelectedResponse(
+                    decision.id,
+                    autoPay = decision.autoPaySuggestion.isNotEmpty(),
+                    declined = decision.autoPaySuggestion.isEmpty(),
+                )
         }
     }
 

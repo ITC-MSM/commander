@@ -2,7 +2,7 @@
  * Gameplay slice - handles game state, actions, events, and core game mechanics.
  */
 import type { SliceCreator, EntityId, LogEntry, MulliganState, GameOverState, ErrorState } from './types'
-import type { ClientGameState, ClientEvent, GameAction, LegalActionInfo, PendingDecision, OpponentDecisionStatus } from '@/types'
+import type { AtomicBlockTaxManaAbilityRef, ClientGameState, ClientEvent, GameAction, LegalActionInfo, PendingDecision, OpponentDecisionStatus } from '@/types'
 import {
   createCreateGameMessage,
   createJoinGameMessage,
@@ -78,6 +78,11 @@ export interface GameplaySliceActions {
     selectedSources: readonly EntityId[],
     autoPay: boolean,
     waterbendPermanents?: readonly EntityId[],
+  ) => void
+  submitAtomicBlockTaxManaAbilitiesDecision: (
+    selectedManaAbilityRefs: readonly AtomicBlockTaxManaAbilityRef[],
+    autoPay: boolean,
+    declined?: boolean,
   ) => void
   submitCancelDecision: () => void
   submitSplitPilesDecision: (piles: readonly (readonly EntityId[])[]) => void
@@ -457,6 +462,28 @@ export const createGameplaySlice: SliceCreator<GameplaySlice> = (set, get) => ({
         waterbendPermanents: [...waterbendPermanents],
         // Explicit refusal. An empty submission alone is ambiguous now that the player can float
         // mana themselves during the payment (CR 605.3a) and then confirm with nothing selected.
+        declined,
+      },
+    }
+    getWebSocket()?.send(createSubmitActionMessage(action))
+  },
+
+  submitAtomicBlockTaxManaAbilitiesDecision: (
+    selectedManaAbilityRefs: readonly AtomicBlockTaxManaAbilityRef[],
+    autoPay: boolean,
+    declined = false,
+  ) => {
+    const { pendingDecision, playerId } = get()
+    if (!pendingDecision || !playerId) return
+
+    const action = {
+      type: 'SubmitDecision' as const,
+      playerId: pendingDecision.playerId,
+      response: {
+        type: 'AtomicBlockTaxManaAbilitiesSelectedResponse' as const,
+        decisionId: pendingDecision.id,
+        selectedManaAbilityRefs: [...selectedManaAbilityRefs],
+        autoPay,
         declined,
       },
     }

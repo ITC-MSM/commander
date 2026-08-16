@@ -178,6 +178,7 @@ val engineSerializersModule = SerializersModule {
         subclass(SearchLibraryDecision::class)
         subclass(ReorderLibraryDecision::class)
         subclass(SelectManaSourcesDecision::class)
+        subclass(SelectAtomicBlockTaxManaAbilitiesDecision::class)
         subclass(BatchYesNoDecision::class)
     }
 
@@ -200,6 +201,7 @@ val engineSerializersModule = SerializersModule {
         subclass(CombatResolutionResponse::class)
         subclass(CancelDecisionResponse::class)
         subclass(ManaSourcesSelectedResponse::class)
+        subclass(AtomicBlockTaxManaAbilitiesSelectedResponse::class)
         subclass(BatchYesNoResponse::class)
     }
 

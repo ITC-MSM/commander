@@ -1,8 +1,32 @@
 package com.wingedsheep.engine.core
 
 import com.wingedsheep.sdk.core.ManaCost
+import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.model.EntityId
 import kotlinx.serialization.Serializable
+
+/**
+ * A replay-stable reference to one printed mana ability on a permanent.  Atomic team tax
+ * payment must identify an ability branch, not merely its source: one permanent can expose both
+ * a normal and a sacrifice-for-more-mana ability.
+ */
+@Serializable
+data class AtomicBlockTaxManaAbilityRef(
+    val sourceId: EntityId,
+    val printedManaAbilityIndex: Int,
+)
+
+/** A deterministic, no-further-input mana-ability branch offered by atomic team block tax. */
+@Serializable
+data class AtomicBlockTaxManaAbilityOption(
+    val ref: AtomicBlockTaxManaAbilityRef,
+    val sourceName: String,
+    val description: String,
+    val producesColors: Set<Color>,
+    val producesColorless: Boolean,
+    val manaAmount: Int,
+    val requiresSacrificeSelf: Boolean,
+)
 
 /**
  * Resume after the attacking player selects which mana sources to tap for an attack
@@ -41,6 +65,9 @@ data class BlockTaxPayerPlan(
     val manaCost: ManaCost,
     val availableSources: List<ManaSourceOption>,
     val autoPaySuggestion: List<EntityId>,
+    /** Empty for legacy/ordinary tax; populated only for shared-team atomic branch payment. */
+    val atomicManaAbilityOptions: List<AtomicBlockTaxManaAbilityOption> = emptyList(),
+    val atomicAutoPaySuggestion: List<AtomicBlockTaxManaAbilityRef> = emptyList(),
 )
 
 /**
@@ -52,6 +79,8 @@ data class BlockTaxPaymentIntent(
     val payerId: EntityId,
     val selectedSources: List<EntityId> = emptyList(),
     val autoPay: Boolean = false,
+    /** Exact branch choices for an atomic shared-team tax. Defaults preserve saved frames. */
+    val selectedManaAbilityRefs: List<AtomicBlockTaxManaAbilityRef> = emptyList(),
 )
 
 /**
@@ -74,6 +103,8 @@ data class BlockTaxManaSelectionContinuation(
     val payerPlans: List<BlockTaxPayerPlan> = emptyList(),
     val payerIndex: Int = 0,
     val acceptedIntents: List<BlockTaxPaymentIntent> = emptyList(),
+    /** Preserves the branch-qualified team transaction even when a payer needs no source. */
+    val isAtomicTeamPayment: Boolean = false,
     // Kept solely to deserialize a replay/save paused by the pre-atomic continuation schema.
     // The resumer turns these fields into one legacy payer plan and executes the old one-payer
     // payment path; newly created continuations leave all three at their defaults.

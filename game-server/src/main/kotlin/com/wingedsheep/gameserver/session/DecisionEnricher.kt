@@ -141,6 +141,7 @@ class DecisionEnricher(private val cardRegistry: CardRegistry) {
             is ChooseReplacementDecision -> "Changing text"
             is BudgetModalDecision -> "Choosing modes"
             is SelectManaSourcesDecision -> "Selecting mana sources"
+            is SelectAtomicBlockTaxManaAbilitiesDecision -> "Selecting mana abilities for block tax"
         }
         return ServerMessage.OpponentDecisionStatus(
             playerId = decision.playerId.value,

@@ -1,0 +1,138 @@
+import { useEffect, useMemo, useState } from 'react'
+import { useGameStore } from '@/store/gameStore.ts'
+import { usePlayer } from '@/store/selectors'
+import type {
+  AtomicBlockTaxManaAbilityOption,
+  AtomicBlockTaxManaAbilityRef,
+  SelectAtomicBlockTaxManaAbilitiesDecision,
+} from '@/types'
+import { AbilityText } from '../ui/ManaSymbols'
+import { DraggableBanner } from './DraggableBanner'
+import styles from './DecisionUI.module.css'
+
+const optionKey = (ref: AtomicBlockTaxManaAbilityRef): string =>
+  `${ref.sourceId}:${ref.printedManaAbilityIndex}`
+
+/**
+ * Exact-branch selector for a shared-team block tax. This deliberately uses local selection,
+ * rather than the battlefield's entity-id selection state: two legal mana abilities can belong
+ * to the same permanent, so an entity id alone would collapse distinct payment costs.
+ */
+export function AtomicBlockTaxManaAbilitySelectionUI({
+  decision,
+}: {
+  decision: SelectAtomicBlockTaxManaAbilitiesDecision
+}) {
+  const submit = useGameStore((s) => s.submitAtomicBlockTaxManaAbilitiesDecision)
+  const manaPool = usePlayer(decision.playerId)?.manaPool
+  const suggestionKey = decision.autoPaySuggestion.map(optionKey).join(',')
+  const [selectedKeys, setSelectedKeys] = useState<readonly string[]>([])
+
+  useEffect(() => {
+    const available = new Set(decision.availableOptions.map((option) => optionKey(option.ref)))
+    setSelectedKeys(
+      decision.autoPaySuggestion
+        .map(optionKey)
+        .filter((key) => available.has(key)),
+    )
+  }, [decision.id, suggestionKey, decision.availableOptions])
+
+  const selectedOptions = useMemo(
+    () => decision.availableOptions.filter((option) => selectedKeys.includes(optionKey(option.ref))),
+    [decision.availableOptions, selectedKeys],
+  )
+  const selectedRefs = useMemo(
+    () => selectedOptions.map((option) => option.ref),
+    [selectedOptions],
+  )
+  // Block taxes are generic costs. The server remains authoritative, but keeping the Pay button
+  // disabled until the visible choices plus already-floating mana cover that generic amount avoids
+  // a round trip that can only be rejected.
+  const requiredMana = Number.parseInt(decision.requiredCost.match(/\d+/)?.[0] ?? '0', 10)
+  const floatingMana =
+    (manaPool?.white ?? 0) +
+    (manaPool?.blue ?? 0) +
+    (manaPool?.black ?? 0) +
+    (manaPool?.red ?? 0) +
+    (manaPool?.green ?? 0) +
+    (manaPool?.colorless ?? 0)
+  const selectedMana = selectedOptions.reduce((total, option) => total + option.manaAmount, 0)
+  const isCovered = floatingMana + selectedMana >= requiredMana
+
+  const toggle = (option: AtomicBlockTaxManaAbilityOption) => {
+    const key = optionKey(option.ref)
+    setSelectedKeys((current) =>
+      current.includes(key) ? current.filter((entry) => entry !== key) : [...current, key],
+    )
+  }
+
+  const confirm = () => submit(selectedRefs, false)
+  const autoPay = () => submit([], true)
+  const decline = () => submit([], false, true)
+
+  return (
+    <DraggableBanner className={styles.sideBannerSelection}>
+      <div className={styles.bannerTitleSelection}>
+        {decision.canDecline ? 'Pay block tax?' : 'Pay block tax'}
+      </div>
+      <div className={styles.hint}>
+        <AbilityText text={decision.prompt} size={13} />
+      </div>
+      <div className={styles.hint}>
+        Choose mana abilities for {decision.requiredCost}. Each row is one exact ability branch.
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', width: '100%', gap: 5 }}>
+        {decision.availableOptions.map((option) => {
+          const key = optionKey(option.ref)
+          const selected = selectedKeys.includes(key)
+          return (
+            <button
+              key={key}
+              type="button"
+              onClick={() => toggle(option)}
+              aria-pressed={selected}
+              style={{
+                border: selected ? '2px solid var(--color-target)' : '1px solid var(--border-card)',
+                background: selected ? 'rgba(120, 220, 140, 0.16)' : 'var(--bg-surface)',
+                color: 'var(--text-primary)',
+                borderRadius: 6,
+                padding: '6px 8px',
+                textAlign: 'left',
+                cursor: 'pointer',
+              }}
+            >
+              <strong>{option.sourceName}</strong>
+              <div style={{ fontSize: 12, opacity: 0.9 }}>
+                <AbilityText text={option.description} size={12} />
+              </div>
+              {option.requiresSacrificeSelf && (
+                <div className={styles.effectHint}>Will sacrifice this permanent</div>
+              )}
+            </button>
+          )
+        })}
+      </div>
+      <div className={styles.hint}>
+        {selectedRefs.length} ability branch{selectedRefs.length === 1 ? '' : 'es'} selected
+        {floatingMana > 0 && `; ${floatingMana} mana already floating`}
+      </div>
+      <div className={styles.buttonContainerSmall}>
+        <button onClick={autoPay} className={`${styles.confirmButton} ${styles.confirmButtonSmall}`}>
+          Auto Pay
+        </button>
+        <button
+          onClick={confirm}
+          disabled={!isCovered}
+          className={`${styles.confirmButton} ${styles.confirmButtonSmall}`}
+        >
+          Pay ({selectedRefs.length})
+        </button>
+        {decision.canDecline && (
+          <button onClick={decline} className={`${styles.confirmButton} ${styles.confirmButtonSmall}`}>
+            Decline
+          </button>
+        )}
+      </div>
+    </DraggableBanner>
+  )
+}

@@ -336,6 +336,16 @@ class AiWebSocketSession(
                         )
                     )
                 }
+                is com.wingedsheep.engine.core.SelectAtomicBlockTaxManaAbilitiesDecision -> {
+                    logger.info("AI fallback: auto-paying atomic block-tax mana abilities")
+                    ActionResponse.SubmitDecision(
+                        aiPlayerId,
+                        com.wingedsheep.engine.core.AtomicBlockTaxManaAbilitiesSelectedResponse(
+                            decisionId = pendingDecision.id,
+                            autoPay = true,
+                        )
+                    )
+                }
                 is com.wingedsheep.engine.core.AssignDamageDecision -> {
                     logger.info("AI fallback: using default damage assignment")
                     ActionResponse.SubmitDecision(

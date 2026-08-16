@@ -18,6 +18,7 @@ import type {
   ErrorCode,
   PendingDecision,
   OpponentDecisionStatus,
+  AtomicBlockTaxManaAbilityRef,
   LobbyPlayerInfo,
   LobbySettings,
   TournamentFormat,
@@ -914,6 +915,11 @@ export type GameStore = {
     selectedSources: readonly EntityId[],
     autoPay: boolean,
     waterbendPermanents?: readonly EntityId[],
+    declined?: boolean,
+  ) => void
+  submitAtomicBlockTaxManaAbilitiesDecision: (
+    selectedManaAbilityRefs: readonly AtomicBlockTaxManaAbilityRef[],
+    autoPay: boolean,
     declined?: boolean,
   ) => void
   submitCancelDecision: () => void

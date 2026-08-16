@@ -4,6 +4,9 @@ import com.wingedsheep.engine.core.BlockTaxManaSelectionContinuation
 import com.wingedsheep.engine.core.BlockTaxPayerPlan
 import com.wingedsheep.engine.core.DecisionContext
 import com.wingedsheep.engine.core.ManaSourceOption
+import com.wingedsheep.engine.core.AtomicBlockTaxManaAbilityOption
+import com.wingedsheep.engine.core.AtomicBlockTaxManaAbilityRef
+import com.wingedsheep.engine.core.SelectAtomicBlockTaxManaAbilitiesDecision
 import com.wingedsheep.engine.core.SelectManaSourcesDecision
 import com.wingedsheep.engine.state.ComponentContainer
 import com.wingedsheep.engine.state.GameState
@@ -162,15 +165,23 @@ class TwoHeadedGiantSessionTest : ScenarioTestBase() {
                 producesColors = setOf(Color.WHITE),
                 producesColorless = false,
             )
-            val decision = SelectManaSourcesDecision(
+            val atomicOption = AtomicBlockTaxManaAbilityOption(
+                ref = AtomicBlockTaxManaAbilityRef(plains, -1),
+                sourceName = "Plains",
+                description = "{T}: Add {W}.",
+                producesColors = setOf(Color.WHITE),
+                producesColorless = false,
+                manaAmount = 1,
+                requiresSacrificeSelf = false,
+            )
+            val decision = SelectAtomicBlockTaxManaAbilitiesDecision(
                 id = "atomic-team-block-tax",
                 playerId = payer,
                 prompt = "Pay {1} to declare blockers?",
                 context = DecisionContext(),
-                availableSources = listOf(source),
+                availableOptions = listOf(atomicOption),
                 requiredCost = "{1}",
-                autoPaySuggestion = listOf(plains),
-                canDecline = true,
+                autoPaySuggestion = listOf(atomicOption.ref),
             )
             val atomicBlockTax = BlockTaxManaSelectionContinuation(
                 decisionId = decision.id,
@@ -182,8 +193,11 @@ class TwoHeadedGiantSessionTest : ScenarioTestBase() {
                         manaCost = ManaCost.parse("{1}"),
                         availableSources = listOf(source),
                         autoPaySuggestion = listOf(plains),
+                        atomicManaAbilityOptions = listOf(atomicOption),
+                        atomicAutoPaySuggestion = listOf(atomicOption.ref),
                     ),
                 ),
+                isAtomicTeamPayment = true,
             )
             val paused = withLand
                 .withPendingDecision(decision)
@@ -200,10 +214,10 @@ class TwoHeadedGiantSessionTest : ScenarioTestBase() {
 
             val update = session.createStateUpdate(payer, emptyList()) as ServerMessage.StateUpdate
             update.legalActions.shouldBeEmpty()
-            val visible = update.pendingDecision.shouldBeInstanceOf<SelectManaSourcesDecision>()
+            val visible = update.pendingDecision.shouldBeInstanceOf<SelectAtomicBlockTaxManaAbilitiesDecision>()
             visible.id shouldBe decision.id
             visible.playerId shouldBe payer
-            visible.availableSources.map { it.entityId } shouldContainExactly listOf(plains)
+            visible.availableOptions.map { it.ref.sourceId } shouldContainExactly listOf(plains)
         }
 
         test("non-team game is unchanged: no team index, every other seat is an opponent") {

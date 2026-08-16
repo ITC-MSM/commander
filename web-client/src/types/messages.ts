@@ -616,6 +616,36 @@ export interface SelectManaSourcesDecision extends PendingDecisionBase {
   readonly waterbendPermanents?: readonly WaterbendPermanentChoice[]
 }
 
+/** A replay-stable reference to one exact mana-ability branch on a permanent. */
+export interface AtomicBlockTaxManaAbilityRef {
+  readonly sourceId: EntityId
+  readonly printedManaAbilityIndex: number
+}
+
+/**
+ * One exact mana-ability branch offered while a Two-Headed Giant team pays an
+ * atomic block tax. A source may occur more than once when it has distinct
+ * abilities (for example, a normal tap branch and a tap-and-sacrifice branch).
+ */
+export interface AtomicBlockTaxManaAbilityOption {
+  readonly ref: AtomicBlockTaxManaAbilityRef
+  readonly sourceName: string
+  readonly description: string
+  readonly producesColors: readonly string[]
+  readonly producesColorless: boolean
+  readonly manaAmount: number
+  readonly requiresSacrificeSelf: boolean
+}
+
+/** Select exact mana-ability branches for an atomic shared-team block-tax payment. */
+export interface SelectAtomicBlockTaxManaAbilitiesDecision extends PendingDecisionBase {
+  readonly type: 'SelectAtomicBlockTaxManaAbilitiesDecision'
+  readonly availableOptions: readonly AtomicBlockTaxManaAbilityOption[]
+  readonly requiredCost: string
+  readonly autoPaySuggestion: readonly AtomicBlockTaxManaAbilityRef[]
+  readonly canDecline?: boolean
+}
+
 /**
  * Player must assign combat damage from an attacker to blockers (and defending player for trample).
  * Used when a creature with trample or multiple blockers needs manual damage assignment.
@@ -781,6 +811,7 @@ export type PendingDecision =
   | DistributeDecision
   | ChooseColorDecision
   | SelectManaSourcesDecision
+  | SelectAtomicBlockTaxManaAbilitiesDecision
   | AssignDamageDecision
   | CombatResolutionDecision
   | SplitPilesDecision

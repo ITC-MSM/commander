@@ -181,8 +181,7 @@ class ActivateAbilityHandler(
         // player to activate an arbitrary mana ability here would mutate the game between those
         // prompts and make a later decline impossible to roll back. The explicit, locked source
         // menu remains available through SubmitDecision.
-        if (manaPaymentWindow != null &&
-            ManaPaymentWindow.isAtomicTeamBlockTaxWindow(state) &&
+        if (ManaPaymentWindow.isAtomicTeamBlockTaxWindow(state) &&
             ability.isManaAbility
         ) {
             return "Mana abilities cannot be activated during an atomic team block-tax payment"

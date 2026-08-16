@@ -5,6 +5,7 @@ import com.wingedsheep.engine.mechanics.layers.ProjectedState
 import com.wingedsheep.engine.mechanics.layers.SerializableModification
 import com.wingedsheep.engine.mechanics.mana.ManaPool
 import com.wingedsheep.engine.mechanics.mana.ManaSolver
+import com.wingedsheep.engine.mechanics.mana.IntrinsicManaAbilities
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
@@ -36,6 +37,10 @@ import com.wingedsheep.sdk.scripting.CantBeBlockedByMoreThan
 import com.wingedsheep.sdk.scripting.CantBlock
 import com.wingedsheep.sdk.scripting.CantBlockUnless
 import com.wingedsheep.sdk.scripting.CantBlockUnlessCoBlocker
+import com.wingedsheep.sdk.scripting.AbilityCost
+import com.wingedsheep.sdk.scripting.effects.AddColorlessManaEffect
+import com.wingedsheep.sdk.scripting.effects.AddManaEffect
+import com.wingedsheep.sdk.scripting.values.DynamicAmount
 import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
 import com.wingedsheep.sdk.scripting.filters.unified.Scope
 import com.wingedsheep.engine.state.components.battlefield.AttachedToComponent
@@ -1143,7 +1148,8 @@ internal class BlockPhaseManager(
             // Only the new atomic shared-team path needs a side-effect-free source subset:
             // teammates may still decline later. Keep the established one-player tax payment
             // surface intact, including its solver support for complex mana abilities.
-            val sources = manaSolver.findAvailableManaSources(state, payerId).let { candidates ->
+            val solverSources = manaSolver.findAvailableManaSources(state, payerId)
+            val sources = solverSources.let { candidates ->
                 if (!atomicTeamPayment) candidates else candidates.filter { source ->
                     !source.requiresSacrifice &&
                         source.tapPermanentsSubCost == null &&
@@ -1181,10 +1187,17 @@ internal class BlockPhaseManager(
                     requiresTappingAnotherPermanent = source.tapPermanentsSubCost != null,
                 )
             }
+            // A shared-team declaration cannot mutate any payer's state until every teammate has
+            // accepted.  Unlike the ordinary aggregate-source picker, the atomic menu must name
+            // one concrete printed mana ability: a Crystal Vein selection therefore says whether
+            // it is `{T}: {C}` or `{T}, sacrifice: {C}{C}`.
             val pool = state.getEntity(payerId)?.get<ManaPoolComponent>()?.let {
                 ManaPool(it.white, it.blue, it.black, it.red, it.green, it.colorless)
             } ?: ManaPool()
             val remainingCost = pool.payPartial(manaCost).remainingCost
+            val atomicOptions = if (atomicTeamPayment && !remainingCost.isEmpty()) {
+                atomicFixedManaAbilityOptions(state, payerId, solverSources)
+            } else emptyList()
             val solution = if (remainingCost.isEmpty()) null else {
                 manaSolver.solve(
                     state = state,
@@ -1198,34 +1211,148 @@ internal class BlockPhaseManager(
                 manaCost = manaCost,
                 availableSources = sourceOptions,
                 autoPaySuggestion = solution?.sources?.map { it.entityId } ?: emptyList(),
+                atomicManaAbilityOptions = atomicOptions,
+                atomicAutoPaySuggestion = atomicAutoPaySuggestion(pool, manaCost, atomicOptions),
             )
         }
         val firstPlan = payerPlans.first()
         val decisionId = java.util.UUID.randomUUID().toString()
-        val decision = com.wingedsheep.engine.core.SelectManaSourcesDecision(
-            id = decisionId,
-            playerId = firstPlan.payerId,
-            prompt = "Pay {${firstPlan.manaCost.cmc}} to block with your declared creatures",
-            context = com.wingedsheep.engine.core.DecisionContext(
-                sourceId = null,
-                sourceName = "Block tax",
-                phase = com.wingedsheep.engine.core.DecisionPhase.COMBAT,
-            ),
-            availableSources = firstPlan.availableSources,
-            requiredCost = firstPlan.manaCost.toString(),
-            autoPaySuggestion = firstPlan.autoPaySuggestion,
-            canDecline = true,
-        )
+        val decision = if (atomicTeamPayment) atomicBlockTaxDecision(decisionId, firstPlan) else
+            com.wingedsheep.engine.core.SelectManaSourcesDecision(
+                id = decisionId,
+                playerId = firstPlan.payerId,
+                prompt = "Pay {${firstPlan.manaCost.cmc}} to block with your declared creatures",
+                context = com.wingedsheep.engine.core.DecisionContext(
+                    sourceId = null, sourceName = "Block tax", phase = com.wingedsheep.engine.core.DecisionPhase.COMBAT,
+                ),
+                availableSources = firstPlan.availableSources,
+                requiredCost = firstPlan.manaCost.toString(),
+                autoPaySuggestion = firstPlan.autoPaySuggestion,
+                canDecline = true,
+            )
         val continuation = com.wingedsheep.engine.core.BlockTaxManaSelectionContinuation(
             decisionId = decisionId,
             blockingPlayer = blockingPlayer,
             blockers = blockers,
             payerPlans = payerPlans,
+            isAtomicTeamPayment = atomicTeamPayment,
         )
         return ExecutionResult.paused(
             state.withPendingDecision(decision).pushContinuation(continuation),
             decision,
         )
+    }
+
+    private fun atomicBlockTaxDecision(
+        decisionId: String,
+        plan: BlockTaxPayerPlan,
+    ) = SelectAtomicBlockTaxManaAbilitiesDecision(
+        id = decisionId,
+        playerId = plan.payerId,
+        prompt = "Pay {${plan.manaCost.cmc}} to block with your declared creatures",
+        context = DecisionContext(sourceId = null, sourceName = "Block tax", phase = DecisionPhase.COMBAT),
+        availableOptions = plan.atomicManaAbilityOptions,
+        requiredCost = plan.manaCost.toString(),
+        autoPaySuggestion = plan.atomicAutoPaySuggestion,
+    )
+
+    /**
+     * The narrow, side-effect-free branch vocabulary accepted by the team transaction.  Ordinary
+     * mana payment remains deliberately broader.  We only expose targetless printed mana abilities
+     * with a fixed single-color/colorless output and exactly `{T}` or `{T}, Sacrifice this` costs.
+     */
+    private fun atomicFixedManaAbilityOptions(
+        state: GameState,
+        payerId: EntityId,
+        solverSources: List<com.wingedsheep.engine.mechanics.mana.ManaSource>,
+    ): List<AtomicBlockTaxManaAbilityOption> {
+        val projected = state.projectedState
+        val solverById = solverSources.associateBy { it.entityId }
+        return projected.getBattlefieldControlledBy(payerId).flatMap { sourceId ->
+            val container = state.getEntity(sourceId) ?: return@flatMap emptyList()
+            if (container.has<TappedComponent>() || projected.hasLostAllAbilities(sourceId)) return@flatMap emptyList()
+            val card = container.get<CardComponent>() ?: return@flatMap emptyList()
+            val definition = cardRegistry.getCard(card.cardDefinitionId) ?: return@flatMap emptyList()
+            val source = solverById[sourceId] ?: return@flatMap emptyList()
+            val printedOptions = definition.script.activatedAbilities.mapIndexedNotNull { index, ability ->
+                if (!ability.isManaAbility || ability.targetRequirements.isNotEmpty() || ability.restrictions.isNotEmpty()) return@mapIndexedNotNull null
+                val sacrifice = when (ability.cost) {
+                    AbilityCost.Tap -> false
+                    is AbilityCost.Composite -> {
+                        val costs = (ability.cost as AbilityCost.Composite).costs
+                        if (costs.size == 2 && costs.contains(AbilityCost.Tap) && costs.contains(AbilityCost.SacrificeSelf)) true else return@mapIndexedNotNull null
+                    }
+                    else -> return@mapIndexedNotNull null
+                }
+                val fixed = when (val effect = ability.effect) {
+                    is AddManaEffect -> {
+                        val amount = (effect.amount as? DynamicAmount.Fixed)?.amount ?: return@mapIndexedNotNull null
+                        Triple(setOf(effect.color), false, amount)
+                    }
+                    is AddColorlessManaEffect -> {
+                        val amount = (effect.amount as? DynamicAmount.Fixed)?.amount ?: return@mapIndexedNotNull null
+                        Triple(emptySet(), true, amount)
+                    }
+                    else -> return@mapIndexedNotNull null
+                }
+                // The solver has already applied source-tap replacement effects (for example
+                // Virtue of Strength).  Derive that factor from the ordinary non-sacrifice branch
+                // so this branch-specific surface cannot silently drop a multiplier.
+                val normalPrinted = definition.script.activatedAbilities.mapNotNull { other ->
+                    val amount = when (val effect = other.effect) {
+                        is AddManaEffect -> (effect.amount as? DynamicAmount.Fixed)?.amount
+                        is AddColorlessManaEffect -> (effect.amount as? DynamicAmount.Fixed)?.amount
+                        else -> null
+                    }
+                    if (other.cost == AbilityCost.Tap) amount else null
+                }.maxOrNull() ?: fixed.third
+                val multiplier = if (normalPrinted > 0 && source.nonSacrificeManaAmount % normalPrinted == 0)
+                    source.nonSacrificeManaAmount / normalPrinted else 1
+                AtomicBlockTaxManaAbilityOption(
+                    ref = AtomicBlockTaxManaAbilityRef(sourceId, index),
+                    sourceName = card.name,
+                    description = ability.description,
+                    producesColors = fixed.first,
+                    producesColorless = fixed.second,
+                    manaAmount = fixed.third * multiplier,
+                    requiresSacrificeSelf = sacrifice,
+                )
+            }
+            // Basic-land subtype mana abilities are intrinsic rather than printed in a card's
+            // script. Negative indexes reserve a replay-stable namespace distinct from every
+            // printed list index; the order comes from the shared intrinsic helper.
+            val intrinsicOptions = IntrinsicManaAbilities.forEntity(state, projected, sourceId)
+                .mapIndexed { intrinsicIndex, ability ->
+                    val effect = ability.effect as AddManaEffect
+                    val amount = (effect.amount as? DynamicAmount.Fixed)?.amount ?: 1
+                    val multiplier = if (amount > 0 && source.nonSacrificeManaAmount % amount == 0)
+                        source.nonSacrificeManaAmount / amount else 1
+                    AtomicBlockTaxManaAbilityOption(
+                        ref = AtomicBlockTaxManaAbilityRef(sourceId, -1 - intrinsicIndex),
+                        sourceName = card.name,
+                        description = ability.description,
+                        producesColors = setOf(effect.color),
+                        producesColorless = false,
+                        manaAmount = amount * multiplier,
+                        requiresSacrificeSelf = false,
+                    )
+                }
+            printedOptions + intrinsicOptions
+        }
+    }
+
+    private fun atomicAutoPaySuggestion(
+        pool: ManaPool,
+        manaCost: ManaCost,
+        options: List<AtomicBlockTaxManaAbilityOption>,
+    ): List<AtomicBlockTaxManaAbilityRef> {
+        var remaining = pool.payPartial(manaCost).remainingCost.cmc
+        if (remaining <= 0) return emptyList()
+        return options.sortedWith(compareBy<AtomicBlockTaxManaAbilityOption> { it.requiresSacrificeSelf }.thenByDescending { it.manaAmount })
+            .takeWhile { option ->
+                if (remaining <= 0) false else { remaining -= option.manaAmount; true }
+            }
+            .map { it.ref }
     }
 
     /**

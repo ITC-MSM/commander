@@ -37,6 +37,8 @@ import com.wingedsheep.engine.core.SearchLibraryDecision
 import com.wingedsheep.engine.core.SelectCardsDecision
 import com.wingedsheep.engine.core.SelectManaSourcesDecision
 import com.wingedsheep.engine.core.ManaSourcesSelectedResponse
+import com.wingedsheep.engine.core.SelectAtomicBlockTaxManaAbilitiesDecision
+import com.wingedsheep.engine.core.AtomicBlockTaxManaAbilitiesSelectedResponse
 import com.wingedsheep.engine.core.SplitPilesDecision
 import com.wingedsheep.engine.core.TargetsResponse
 import com.wingedsheep.engine.core.YesNoDecision
@@ -81,6 +83,7 @@ object DecisionValidators {
             is SearchLibraryDecision -> validateLibrarySearch(decision, response)
             is ReorderLibraryDecision -> validateLibraryReorder(decision, response)
             is SelectManaSourcesDecision -> validateManaSourcesSelection(decision, response)
+            is SelectAtomicBlockTaxManaAbilitiesDecision -> validateAtomicBlockTaxManaAbilities(decision, response)
             is BatchYesNoDecision -> validateBatchYesNo(response)
         }
     }
@@ -564,6 +567,24 @@ object DecisionValidators {
         val availableIds = decision.availableSources.map { it.entityId }.toSet()
         if (response.selectedSources.any { it !in availableIds }) {
             return "Selected mana source is not available for this payment"
+        }
+        return null
+    }
+
+    private fun validateAtomicBlockTaxManaAbilities(
+        decision: SelectAtomicBlockTaxManaAbilitiesDecision,
+        response: DecisionResponse,
+    ): String? {
+        if (response !is AtomicBlockTaxManaAbilitiesSelectedResponse) {
+            return "Expected atomic block-tax mana abilities response"
+        }
+        val refs = response.selectedManaAbilityRefs
+        if (refs.map { it.sourceId }.size != refs.map { it.sourceId }.toSet().size) {
+            return "Only one mana ability may be selected from each permanent"
+        }
+        val available = decision.availableOptions.map { it.ref }.toSet()
+        if (refs.any { it !in available }) {
+            return "Selected mana ability is not available for this payment"
         }
         return null
     }
