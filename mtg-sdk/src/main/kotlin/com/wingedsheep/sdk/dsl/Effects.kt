@@ -2206,6 +2206,28 @@ object Effects {
         com.wingedsheep.sdk.scripting.effects.PayDynamicManaCostEffect(amount, payer, color)
 
     /**
+     * "Pay [cost] up to [upTo] times" (or "any number of times" when [upTo] is null) — a
+     * repeatable optional payment at resolution whose payoff scales with the number of
+     * repetitions. See [com.wingedsheep.sdk.scripting.effects.PayManaCostRepeatedlyEffect]: the
+     * offered cap is affordability-aware, the count lands in the pipeline under [storeCountAs]
+     * (read it with [DynamicAmounts.timesPaid]), and the decline path belongs to the wrapping
+     * `ReflexiveTriggerEffect(optional = true)` / `Gate.MayPay`.
+     *
+     * Hawkeye, Master Marksman: `PayRepeatedly("{1}", upTo = 3)` as the action half of a reflexive
+     * trigger whose modal reads `dynamicChooseCount = DynamicAmounts.timesPaid`.
+     */
+    fun PayRepeatedly(
+        cost: String,
+        upTo: Int? = null,
+        storeCountAs: String =
+            com.wingedsheep.sdk.scripting.effects.PayManaCostRepeatedlyEffect.TIMES_PAID
+    ): Effect = com.wingedsheep.sdk.scripting.effects.PayManaCostRepeatedlyEffect(
+        cost = ManaCost.parse(cost),
+        maxTimes = upTo,
+        storeCountAs = storeCountAs
+    )
+
+    /**
      * Add mana of a color the player chooses from a [ManaColorSet] resolved at resolution
      * time. The unified "choose-from-set" primitive — see [AddManaOfChoiceEffect].
      *

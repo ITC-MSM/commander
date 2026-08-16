@@ -5,6 +5,7 @@ import com.wingedsheep.engine.core.GameEvent
 import com.wingedsheep.engine.core.tap
 import com.wingedsheep.engine.mechanics.mana.ManaPool
 import com.wingedsheep.engine.mechanics.mana.ManaSolver
+import com.wingedsheep.engine.mechanics.mana.ManaSource
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.player.ManaPoolComponent
@@ -83,4 +84,44 @@ fun payManaCostFromPool(
     }
 
     return EffectResult.success(currentState, events)
+}
+
+/**
+ * Whether [player] can pay [cost] *through the path [payManaCostFromPool] actually takes*: floating
+ * mana first, then auto-tap for the remainder.
+ *
+ * Deliberately **not** [ManaSolver.canPay]. `canPay` answers the broader question "is this cost
+ * payable at all", counting mana the auto-tap solver refuses to spend on the player's behalf —
+ * sacrificing a Treasure, Springleaf Drum's tap-a-creature sub-cost, an explicitly-activated
+ * ability (see the extras fallback in `ManaSolver.canPay`, and the matching `requiresSacrifice` /
+ * `tapPermanentsSubCost` filters in `ManaSolver.solve`). A caller that *gates* on `canPay` and then
+ * *pays* with [payManaCostFromPool] can therefore offer a payment that errors mid-resolution. Gate
+ * on this instead whenever the payment is the auto-tapped one.
+ *
+ * [precomputedSources] is threaded straight to [ManaSolver.solve]; hoist it once with
+ * [ManaSolver.findAvailableManaSources] when probing the same state repeatedly.
+ */
+fun canAutoPayManaCost(
+    state: GameState,
+    player: EntityId,
+    cost: ManaCost,
+    cardRegistry: CardRegistry,
+    precomputedSources: List<ManaSource>? = null
+): Boolean {
+    val manaPoolComponent = state.getEntity(player)?.get<ManaPoolComponent>() ?: return false
+
+    val manaPool = ManaPool(
+        manaPoolComponent.white,
+        manaPoolComponent.blue,
+        manaPoolComponent.black,
+        manaPoolComponent.red,
+        manaPoolComponent.green,
+        manaPoolComponent.colorless
+    )
+
+    val remainingCost = manaPool.payPartial(cost).remainingCost
+    if (remainingCost.isEmpty()) return true
+
+    return ManaSolver(cardRegistry)
+        .solve(state, player, remainingCost, precomputedSources = precomputedSources) != null
 }

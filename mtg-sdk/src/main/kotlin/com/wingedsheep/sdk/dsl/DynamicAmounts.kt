@@ -694,4 +694,19 @@ object DynamicAmounts {
      */
     fun permanentsSacrificedThisWay(): DynamicAmount =
         DynamicAmount.PermanentsSacrificedThisWay
+
+    /**
+     * "That many" — the number of repetitions a
+     * [com.wingedsheep.sdk.scripting.effects.PayManaCostRepeatedlyEffect] was paid, read back out
+     * of the resolution pipeline. Pair it with the matching `storeCountAs` when the effect uses a
+     * non-default name.
+     *
+     * Hawkeye, Master Marksman: "you may pay {1} up to three times. When you do, choose up to
+     * **that many** —" is `dynamicChooseCount = DynamicAmounts.timesPaid()` on the reflexive
+     * trigger's modal.
+     */
+    fun timesPaid(
+        storeCountAs: String =
+            com.wingedsheep.sdk.scripting.effects.PayManaCostRepeatedlyEffect.TIMES_PAID
+    ): DynamicAmount = DynamicAmount.VariableReference(storeCountAs)
 }

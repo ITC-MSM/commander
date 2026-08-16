@@ -1381,6 +1381,37 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   a set they can't pay for. Magnetic Mountain ("pay {4} for each tapped blue creature chosen, untap them") composes
   all three: the capped selection, then the dynamic cost in a `Gate.MayPay` whose `decisionMaker` is the same
   `Player.TriggeringPlayer`.
+- `PayRepeatedly(cost, upTo?, storeCountAs?)` → `PayManaCostRepeatedlyEffect` — **"pay {1} up to three times"**
+  / "pay {2}{R} any number of times", the repeatable optional payment whose payoff scales with the number of
+  repetitions (Hawkeye, Master Marksman; Tranquil Frillback; the Adversary cycle). The payer names a count and
+  pays `cost * n` in one auto-tapped payment; the count is published to the resolution pipeline under
+  `storeCountAs` (default `"times_paid"`), read back with `DynamicAmounts.timesPaid()`.
+  - **The offered ceiling is affordability-aware and color-aware.** The cap is the smaller of `upTo` (null =
+    "any number of times", bounded only by available mana) and how many repetitions the payer can actually make,
+    tested as `cost * n` — `{G}` three times needs three *green*, not three mana. The probe is the *same*
+    auto-tap predicate the payment itself uses (floating mana, then `ManaSolver.solve`), **not**
+    `ManaSolver.canPay`: `canPay` also counts mana the auto-tapper refuses to spend for you (sacrificing a
+    Treasure, Springleaf Drum's tap-a-creature sub-cost), so capping with it would offer a count the payment
+    then errors on. Because the two agree, the prompt never offers a payment that fails mid-resolution.
+  - **The floor is one repetition, not zero — declining belongs to the wrapper.** Wrap it in
+    `ReflexiveTriggerEffect(action = …, optional = true)` for the printed "you **may** pay … **when you do**"
+    (CR 603.12; and per CR 603.12a the reflexive half triggers **once**, not once per repetition) or in a
+    `Gate.MayPay` for "if you do" — `Gate.MayPay` scores this cost's affordability, so the gate's "yes" is
+    absent when even one repetition is unaffordable. A payer who can't afford even one repetition gets a
+    *failure*, which is what keeps the reflexive half from firing; `ReflexiveTriggerEffectExecutor.isActionFeasible`
+    scores it up front so the may-question isn't raised at all in that case. A cap of exactly 1 pays without a
+    prompt — the payer has already consented and there is nothing left to choose.
+  - **Why a stored number rather than an X value:** an effect result carries no X channel. A sub-effect hands its
+    outputs back up as collections, stored numbers and chosen values — that is the whole list — so there is no
+    way for this effect to *write* an X for the reflexive ability to read. (A trigger's own `xValue` does survive
+    the CR 603.12 round-trip, riding the carried trigger context; it just isn't settable from here.) Feeding the
+    stored count to a modal's `dynamicChooseCount` is the "choose up to **that many** —" payoff (Hawkeye), and it
+    is equally at home in "put **that many** +1/+1 counters" (`DynamicAmounts.timesPaid()` into `AddCounters`).
+  - Distinct from `Gate.MayPayX`, which is a single *variable-size* generic payment binding X: no cap, no repeat
+    unit, no colored pips. **Mind the opposite floor conventions** when picking between them: `MayPayX` prompts
+    `0..max` and reads 0 as "decline", while `PayRepeatedly` prompts `1..cap` because the wrapper already asked
+    the decline question. Reach for `MayPayX` when the payment *is* X; for `PayRepeatedly` when a fixed unit —
+    especially a colored one — repeats.
 
 ### Tokens & emblems
 
@@ -2145,7 +2176,9 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
     X = 0 declines → `otherwise`. An unaffordable gate (no mana) is skipped silently. A parameterless
     `data object` (the {X} cost is implicit). The executor builds a `ChooseNumberDecision` and reuses
     the existing `MayPayXContinuation`/`resumeMayPayX` to auto-tap and bind X. Replaces
-    `MayPayXForEffect` (see "Optional & gated" below).
+    `MayPayXForEffect` (see "Optional & gated" below). For the *repeated fixed* cost — "pay {1} up
+    to three times", where the count rather than the size is the variable — use
+    `Effects.PayRepeatedly` (see "Mana" above) as the gate's cost or as a reflexive trigger's action.
   - `Gate.OnceEachTurn(abilityId, spend = true)` — **not a decision, a per-turn action budget.** The
     lowered form of `TriggeredAbility.effectOncePerTurn` ("Do this only once each turn", CR 603.2h).
     Succeeds iff the source permanent's controller hasn't yet taken this ability's action this turn;
@@ -9436,6 +9469,12 @@ The cap is any `DynamicAmount` — e.g. **Bumi, King of Three Trials** uses
 own per-mode targets here just as in a fixed modal — each chosen mode's target (referenced as its
 mode-local `EffectTarget.ContextTarget(0)`) is only demanded when that mode is picked (Bumi's scry
 mode targets a player, its Earthbend mode targets a land).
+The cap may also come from something the *same resolution* just did rather than from board state:
+**Hawkeye, Master Marksman** feeds it `DynamicAmounts.timesPaid()`, the repetition count of the
+`Effects.PayRepeatedly` that formed the action half of its reflexive trigger ("you may pay {1} up to
+three times. When you do, choose up to **that many** —"). That works because the count rides across
+the CR 603.12 stack round-trip in the reflexive ability's carried pipeline, and the trigger-time
+evaluation site reads the pipeline (see `EffectContext.forTriggeredAbility`).
 
 **Cast-time mode-selection UX (Spree / "choose one or more").** A choose-N modal *spell* cast
 by a human is presented as a **single mode-selection panel** (web client), not a sequential

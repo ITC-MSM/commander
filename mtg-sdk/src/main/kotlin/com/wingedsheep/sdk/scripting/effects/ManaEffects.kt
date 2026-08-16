@@ -77,6 +77,69 @@ data class PayDynamicManaCostEffect(
 }
 
 /**
+ * "Pay [cost] up to [maxTimes] times" / "…any number of times" — a **repeatable** optional mana
+ * payment made during resolution, whose payoff scales with *how many times* it was paid
+ * (Hawkeye, Master Marksman; Tranquil Frillback; the Innistrad Adversary cycle).
+ *
+ * The payer names a number of repetitions and pays `cost` that many times in one go — one payment,
+ * and (CR 603.12a) one reflexive trigger, not one per repetition. The cap is the smaller of
+ * [maxTimes] and how many repetitions they can actually afford, computed color-aware from `cost * n`
+ * through the same auto-tap predicate the payment itself uses — so the prompt never offers a count
+ * the payment would then fail on. Paying is not optional *within* this effect: the number is
+ * chosen from `1..cap`, and the effect **fails** when the payer cannot afford a single repetition.
+ * The decline path belongs to the wrapper:
+ *
+ *  - `ReflexiveTriggerEffect(action = this, optional = true, reflexiveEffect = …)` — "you **may**
+ *    pay {1} up to three times. **When you do**, …" (CR 603.12). The yes/no is the decline, the
+ *    number chooser is the count, and the reflexive half never triggers when either is refused.
+ *  - `GatedEffect(Gate.MayPay(this), then = …)` for the "if you do" templating.
+ *
+ * The number of repetitions is written into the resolution pipeline under [storeCountAs], read
+ * back with `DynamicAmount.VariableReference` ([com.wingedsheep.sdk.dsl.DynamicAmounts.timesPaid]).
+ * A stored *number* rather than an X value, because an effect result carries no X channel: a
+ * sub-effect can hand its outputs back up as collections, stored numbers and chosen values, and
+ * that is the whole list — there is no way for this effect to *write* an X that the reflexive
+ * ability would later read. (A trigger's own `xValue` does survive the CR 603.12 round-trip; it
+ * rides the carried trigger context. It just isn't something a sub-effect can set.) Feeding the
+ * stored number to a modal's [ModalEffect.dynamicChooseCount] is the "choose up to **that many** —"
+ * payoff.
+ *
+ * Distinct from [Gate.MayPayX], which is one *variable-size* generic payment binding X (no cap, no
+ * repeat unit, no colored pips): here the unit cost is fixed and repeated, so `{G}` three times
+ * costs `{G}{G}{G}` and cannot be paid with three colorless.
+ *
+ * @property cost One repetition's cost. Repeated with `ManaCost.times`, so colored pips repeat too.
+ * @property maxTimes Cap on repetitions; `null` is the uncapped "any number of times" wording.
+ * @property storeCountAs Pipeline variable the repetition count is written to.
+ */
+@SerialName("PayManaCostRepeatedly")
+@Serializable
+data class PayManaCostRepeatedlyEffect(
+    val cost: ManaCost,
+    val maxTimes: Int? = null,
+    val storeCountAs: String = TIMES_PAID
+) : Effect {
+    init {
+        require(maxTimes == null || maxTimes >= 1) {
+            "maxTimes must be at least 1 when set, was $maxTimes"
+        }
+    }
+
+    override val description: String = buildString {
+        append("Pay $cost ")
+        append(
+            if (maxTimes == null) "any number of times"
+            else "up to ${com.wingedsheep.sdk.scripting.util.numberToWord(maxTimes)} times"
+        )
+    }
+
+    companion object {
+        /** Default [storeCountAs] name — the count of repetitions actually paid. */
+        const val TIMES_PAID: String = "times_paid"
+    }
+}
+
+/**
  * Add mana effect.
  * "Add {G}" or "Add {R}{R}" or "Add {R} for each Goblin on the battlefield."
  *

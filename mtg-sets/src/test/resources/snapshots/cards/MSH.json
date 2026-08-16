@@ -6877,6 +6877,143 @@
     ]
 }
 
+// Hawkeye, Master Marksman
+{
+    "name": "Hawkeye, Master Marksman",
+    "manaCost": "{1}{R}",
+    "typeLine": "Legendary Creature — Human Archer Hero",
+    "oracleText": "Reach, first strike\nTrick Arrows — Whenever Hawkeye becomes tapped, you may pay {1} up to three times. When you do, choose up to that many —\n• Net — Target creature can't block this turn.\n• Explosive — Hawkeye deals 2 damage to target player.\n• Boomerang — Discard a card, then draw a card.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "REACH",
+        "FIRST_STRIKE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "TapEvent",
+                "effect": {
+                    "type": "ReflexiveTrigger",
+                    "action": {
+                        "type": "PayManaCostRepeatedly",
+                        "cost": "{1}",
+                        "maxTimes": 3
+                    },
+                    "reflexiveEffect": {
+                        "type": "Modal",
+                        "modes": [
+                            {
+                                "effect": {
+                                    "type": "CantBlockTargetCreatures",
+                                    "target": {
+                                        "type": "ContextTarget",
+                                        "index": 0
+                                    }
+                                },
+                                "targetRequirements": [
+                                    {
+                                        "type": "TargetObject",
+                                        "filter": {
+                                            "baseFilter": "creature"
+                                        }
+                                    }
+                                ],
+                                "description": "Net — Target creature can't block this turn."
+                            },
+                            {
+                                "effect": {
+                                    "type": "DealDamage",
+                                    "amount": {
+                                        "type": "Fixed",
+                                        "amount": 2
+                                    },
+                                    "target": {
+                                        "type": "ContextTarget",
+                                        "index": 0
+                                    }
+                                },
+                                "targetRequirements": [
+                                    "TargetPlayer"
+                                ],
+                                "description": "Explosive — Hawkeye deals 2 damage to target player."
+                            },
+                            {
+                                "effect": {
+                                    "type": "Composite",
+                                    "effects": [
+                                        {
+                                            "type": "Composite",
+                                            "effects": [
+                                                {
+                                                    "type": "GatherCards",
+                                                    "source": {
+                                                        "type": "FromZone",
+                                                        "zone": "Hand"
+                                                    },
+                                                    "storeAs": "hand"
+                                                },
+                                                {
+                                                    "type": "SelectFromCollection",
+                                                    "from": "hand",
+                                                    "selection": {
+                                                        "type": "ChooseExactly",
+                                                        "count": {
+                                                            "type": "Fixed",
+                                                            "amount": 1
+                                                        }
+                                                    },
+                                                    "storeSelected": "discarded",
+                                                    "prompt": "Choose 1 card to discard"
+                                                },
+                                                {
+                                                    "type": "MoveCollection",
+                                                    "from": "discarded",
+                                                    "destination": {
+                                                        "type": "ToZone",
+                                                        "zone": "Graveyard"
+                                                    },
+                                                    "moveType": "Discard"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "type": "DrawCards",
+                                            "count": {
+                                                "type": "Fixed",
+                                                "amount": 1
+                                            }
+                                        }
+                                    ]
+                                },
+                                "description": "Boomerang — Discard a card, then draw a card."
+                            }
+                        ],
+                        "dynamicChooseCount": {
+                            "type": "VariableReference",
+                            "variableName": "times_paid"
+                        }
+                    },
+                    "descriptionOverride": "You may pay {1} up to three times. When you do, choose up to that many —\n• Net — Target creature can't block this turn.\n• Explosive — Hawkeye deals 2 damage to target player.\n• Boomerang — Discard a card, then draw a card."
+                },
+                "descriptionOverride": "Trick Arrows — Whenever Hawkeye becomes tapped, you may pay {1} up to three times. When you do, choose up to that many — Net — Target creature can't block this turn.; Explosive — Hawkeye deals 2 damage to target player.; Boomerang — Discard a card, then draw a card."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "130",
+        "rarity": "RARE",
+        "artist": "Bachzim",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/9/9991b684-0ae0-4aa4-8f22-a9c473f5d69c.jpg?1783902931"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Hawkeye, Young Avenger
 {
     "name": "Hawkeye, Young Avenger",
