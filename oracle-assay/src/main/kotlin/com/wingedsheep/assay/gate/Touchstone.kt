@@ -36,7 +36,14 @@ import com.wingedsheep.assay.grammar.CardFragment
  *   printed line whose model does **not** survive reparsing is a [LineVerdict.MISMATCH], and that
  *   number must be zero.
  */
-class Touchstone(private val grammar: Phrase<CardFragment> = Grammar.abilityLine) {
+class Touchstone(
+    /**
+     * Exposed so a caller that re-parses *substituted* text — [PrefixProbe] — reads with the grammar
+     * this instance assayed with, rather than reaching for [Grammar.abilityLine] and quietly
+     * measuring against a different one than the numbers beside it came from.
+     */
+    val grammar: Phrase<CardFragment> = Grammar.abilityLine,
+) {
 
     fun assay(card: OracleCard): CardResult {
         val faces = card.faces.map { assayFace(card, it) }

@@ -5,12 +5,14 @@ import com.wingedsheep.assay.corpus.OracleFace
 import com.wingedsheep.assay.corpus.SetCards
 import com.wingedsheep.assay.gate.CardComparison
 import com.wingedsheep.assay.gate.CardResult
+import com.wingedsheep.assay.gate.DeclineKey
 import com.wingedsheep.assay.gate.Differential
 import com.wingedsheep.assay.gate.DifferentialReport
 import com.wingedsheep.assay.gate.FinenessReport
 import com.wingedsheep.assay.gate.LineResult
 import com.wingedsheep.assay.gate.LineVerdict
 import com.wingedsheep.assay.gate.Population
+import com.wingedsheep.assay.gate.PrefixProbe
 import com.wingedsheep.assay.gate.Touchstone
 import com.wingedsheep.assay.grammar.Grammar
 import com.wingedsheep.assay.syntax.Phrase
@@ -60,8 +62,9 @@ internal object Views {
         put("cardsCovered", report.cardsCovered)
         put("cardsRoundTripped", report.cardsRoundTripped)
         put("redundantReadingLines", report.redundantReadingLines)
-        put("declineFamilies", index.declines.size)
-        put("shapeFamilies", index.shapes.size)
+        put("declineFamilies", index.families(DeclineKey.TOKEN).size)
+        put("shapeFamilies", index.families(DeclineKey.SHAPE).size)
+        put("tailFamilies", index.families(DeclineKey.TAIL).size)
         put("states", counts(index.stateCounts))
         put("verdicts", counts(LineVerdict.entries.associate { it.name to report.instancesByVerdict[it].orZero() }))
         put("uniqueVerdicts", counts(LineVerdict.entries.associate { it.name to report.uniqueByVerdict[it].orZero() }))
@@ -91,19 +94,18 @@ internal object Views {
     // Declines — the ranked SDK / grammar gap report
     // -------------------------------------------------------------------------------------------
 
-    fun declines(index: AssayIndex, ranking: Ranking, query: String?, limit: Int): JsonObject {
+    fun declines(index: AssayIndex, ranking: DeclineKey, query: String?, limit: Int): JsonObject {
         val needle = query?.trim()?.lowercase(Locale.ROOT).orEmpty()
         val all = index.families(ranking)
         val matching = all.filter {
             needle.isEmpty() ||
-                it.token.lowercase(Locale.ROOT).contains(needle) ||
+                it.key.lowercase(Locale.ROOT).contains(needle) ||
                 it.examples.any { line -> line.lowercase(Locale.ROOT).contains(needle) }
         }
         return buildJsonObject {
             put("ranking", ranking.name)
             put("total", all.size)
-            put("tokenFamilies", index.declines.size)
-            put("shapeFamilies", index.shapes.size)
+            put("familyCounts", counts(DeclineKey.entries.associate { it.name to index.families(it).size }))
             put("matching", matching.size)
             put("declinedLines", index.report.instancesByVerdict[LineVerdict.DECLINED].orZero())
             put("goldensAvailable", index.goldenNames.isNotEmpty())
@@ -111,18 +113,18 @@ internal object Views {
             put("corpusCards", index.report.cards)
             // Over the *unfiltered* ranking: it answers "what does working the top of this list
             // buy", and a text filter does not change the list you would work. Absent for the token
-            // ranking, deliberately — see AssayIndex.build.
+            // ranking, deliberately — see DeclineKey.namesWork.
             put("unlockCurve", JsonArray(index.unlockCurves[ranking].orEmpty().map(::JsonPrimitive)))
-            put("hasUnlocks", ranking == Ranking.SHAPE)
+            put("hasUnlocks", ranking.namesWork)
             put(
                 "families",
                 buildJsonArray {
                     matching.take(limit).forEach { family ->
                         add(
                             buildJsonObject {
-                                put("token", family.token)
+                                put("key", family.key)
                                 put("cards", family.cards)
-                                put("unlocks", family.unlocks)
+                                put("unlocks", family.soleBlocked ?: 0)
                                 put("lines", family.lines)
                                 put("implemented", family.implemented)
                                 put("examples", strings(family.examples))
@@ -134,26 +136,89 @@ internal object Views {
         }
     }
 
-    fun decline(index: AssayIndex, ranking: Ranking, token: String): JsonObject? {
-        val family = index.decline(token, ranking) ?: return null
+    /**
+     * One family's page. [DeclineFamily.cardNames] is uncapped in the index because the probe
+     * measures over all of it; the cap is here, where it is a statement about what a page can show.
+     */
+    fun decline(index: AssayIndex, ranking: DeclineKey, key: String): JsonObject? {
+        val family = index.decline(key, ranking) ?: return null
         return buildJsonObject {
             put("ranking", ranking.name)
-            put("hasUnlocks", ranking == Ranking.SHAPE)
-            put("token", family.token)
+            put("hasUnlocks", ranking.namesWork)
+            put("key", family.key)
             put("cards", family.cards)
-            put("unlocks", family.unlocks)
+            put("unlocks", family.soleBlocked ?: 0)
             put("lines", family.lines)
             put("implemented", family.implemented)
             put("examples", strings(family.examples))
+            put("probeFind", PrefixProbe.suggestedSpan(ranking, family.examples.firstOrNull().orEmpty(), family.key))
             put(
                 "blocked",
                 buildJsonArray {
-                    family.cardNames.forEach { name ->
+                    family.cardNames.take(MAX_SHOWN_CARDS).forEach { name ->
                         add(
                             buildJsonObject {
                                 put("name", name)
                                 put("golden", index.hasGolden(name))
                                 put("set", index.card(name)?.setCode ?: "")
+                            }
+                        )
+                    }
+                },
+            )
+        }
+    }
+
+    /**
+     * The feasibility probe over one family, run on the request thread against the live grammar.
+     *
+     * Re-assaying every blocked card is the cost, and it is the right one: the alternative is
+     * keeping every declined line of every card in the index so this could be answered from a
+     * snapshot, which would be both larger and — the moment a rule is edited — wrong. At sweep rates
+     * this is a fraction of a second for the largest family in the corpus.
+     */
+    fun probe(
+        index: AssayIndex,
+        touchstone: Touchstone,
+        ranking: DeclineKey,
+        key: String,
+        find: String,
+        replace: String,
+        regex: Boolean,
+    ): JsonObject {
+        val family = index.decline(key, ranking)
+            ?: return buildJsonObject { put("error", "no decline family \"$key\"") }
+        val cards = family.cardNames.mapNotNull(index::card)
+        val started = System.currentTimeMillis()
+        val result = PrefixProbe.run(
+            touchstone = touchstone,
+            cards = cards,
+            family = ranking,
+            key = key,
+            substitution = PrefixProbe.Substitution(find = find, replace = replace, regex = regex),
+        )
+        return buildJsonObject {
+            result.error?.let { put("error", it) }
+            put("find", find)
+            put("replace", replace)
+            put("regex", regex)
+            put("familyLines", result.familyLines)
+            put("familyLinesParsing", result.familyLinesParsing)
+            put("unmatched", result.unmatched)
+            put("cardsConsidered", result.cardsConsidered)
+            put("cardsFinished", result.cardsFinished)
+            put("soleBlocked", family.soleBlocked ?: 0)
+            put("millis", System.currentTimeMillis() - started)
+            put(
+                "examples",
+                buildJsonArray {
+                    result.examples.forEach {
+                        add(
+                            buildJsonObject {
+                                put("card", it.card)
+                                put("before", it.before)
+                                put("after", it.after)
+                                put("parses", it.parses)
                             }
                         )
                     }
@@ -192,7 +257,7 @@ internal object Views {
                                 put("state", state(row))
                                 put("inScope", row.inScope)
                                 put("golden", index.hasGolden(row.name))
-                                put("declines", strings(row.declineTokens))
+                                put("declines", strings(row.declineKeys(DeclineKey.TOKEN)))
                             }
                         )
                     }
@@ -223,13 +288,13 @@ internal object Views {
             "declines",
             buildJsonArray {
                 val needle = query.trim().lowercase(Locale.ROOT)
-                index.declines.asSequence()
-                    .filter { it.token.lowercase(Locale.ROOT).contains(needle) }
+                index.families(DeclineKey.TOKEN).asSequence()
+                    .filter { it.key.lowercase(Locale.ROOT).contains(needle) }
                     .take(6)
                     .forEach {
                         add(
                             buildJsonObject {
-                                put("token", it.token)
+                                put("key", it.key)
                                 put("cards", it.cards)
                             }
                         )
@@ -534,6 +599,9 @@ internal object Views {
 
     private fun script(script: CardScript) =
         JsonPrimitive(CardSerialization.json.encodeToString(CardScript.serializer(), script))
+
+    /** A page does not need 900 card names; the family's own count above says when it is showing fewer. */
+    private const val MAX_SHOWN_CARDS = 400
 
     private fun strings(values: List<String>) = JsonArray(values.map(::JsonPrimitive))
 

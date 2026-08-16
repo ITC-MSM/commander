@@ -66,6 +66,7 @@ just assay-report --top 40          # the same numbers, always exit 0
 just assay-report --scope           # restricted to Phase 1's own target class
 just assay-report --implemented     # restricted to cards that already have a golden — the *grammar* backlog
 just assay-report --set POR         # restricted to one set — every card *printed* in it
+just assay-report --rank tail       # declines keyed on the parse's tail, with the sole-blocked count
 just assay-differential             # Assay's readings vs. the hand-written cards
 just assay-explore                  # all of the above in a browser, on the live grammar
 just assay corpus --refresh         # re-download the Scryfall Oracle bulk (~24 MB, cached 7 days)
@@ -988,17 +989,24 @@ just edited is one restart away from being re-measured, and a custom card runs t
 stripping and the invertibility check included — instead of an approximation of it.
 `com.sun.net.httpserver` is in the JDK, so the SDK-only dependency rule is untouched.
 
-Two things it shows that no CLI report does:
+Three things it shows that no CLI report does:
 
 - **Which cards are behind a decline family**, and how many of those already have a hand-written
   golden. `assay report` ranks the families; clicking one is the backlog it names, split into the
   grammar gaps (answer already written, differential confirms it the moment it parses) and the
   possible SDK gaps.
-- **Both rankings side by side.** Keying declines by the token a line *died on* answers "what is the
-  grammar missing"; keying them by the **sentence shape** — the line with numbers and mana symbols
-  collapsed — answers "what should I write next", and they disagree sharply. The token ranking's top
-  row is `Whenever` at 5,070 cards, which names no piece of work; the shape ranking's is
-  `Enchant creature` at 921 cards, which is one rule.
+- **All three rankings side by side.** Keying declines by the token a line *died on* answers "what is
+  the grammar missing"; by the **sentence shape** — the line with numbers and mana symbols collapsed
+  — answers "which whole sentence needs a rule"; and by the **parse's tail** — the text from the
+  decline's own offset on, cut to three words — answers "what construct would let these lines get
+  further", which is the one that decides work. They disagree sharply, and the page says why.
+  `assay report --rank <token|shape|tail>` prints the same three tables.
+- **Whether writing a family would actually finish its cards.** The sole-blocked count says which
+  cards a band *reaches*; the probe on a family's page substitutes a known-good prefix for the
+  family's own span, re-parses every declined line of every card behind it on the live grammar, and
+  says how many whole cards come into coverage. Landfall reads 189 cards blocked and 104
+  sole-blocked, and the probe says **48**. That gap is why every band picked without this step has
+  been overstated.
 
 The corpus sweep (~5s) runs in the background at startup, so the live parser and the rule tree are
 usable before the numbers land; the differential runs on first request and is then cached, because

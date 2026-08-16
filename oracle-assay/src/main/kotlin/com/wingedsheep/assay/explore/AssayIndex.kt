@@ -4,6 +4,7 @@ import com.wingedsheep.assay.corpus.ImplementedCorpus
 import com.wingedsheep.assay.corpus.OracleCard
 import com.wingedsheep.assay.corpus.OracleCorpus
 import com.wingedsheep.assay.gate.CardResult
+import com.wingedsheep.assay.gate.DeclineKey
 import com.wingedsheep.assay.gate.FinenessReport
 import com.wingedsheep.assay.gate.LineVerdict
 import com.wingedsheep.assay.gate.Touchstone
@@ -27,12 +28,18 @@ import java.util.Locale
  * The one thing here that the CLI reports cannot: **which cards are behind a decline family**, and
  * how many of those already have a hand-written golden. The report ranks the families; the point of
  * a browser is to click one and see the backlog it names.
+ *
+ * That split is deliberate and it is where the "a view, never a second source of truth" rule lands
+ * here. The *keying* and the *counts* are [FinenessReport]'s, under [DeclineKey], so
+ * `assay report --rank tail` and the page below are the same ranking by construction. What this adds
+ * is a **link table** — which card names, a dozen example lines, the hand-written split — which is
+ * not a number the gate has any use for and would only make its memory unbounded.
  */
 class AssayIndex(
     val report: FinenessReport,
-    val declines: List<DeclineFamily>,
-    val shapes: List<DeclineFamily>,
-    val unlockCurves: Map<Ranking, List<Int>>,
+    /** Every keying's families, in the gate's own rank order, with the backlog joined onto each. */
+    val families: Map<DeclineKey, List<DeclineFamily>>,
+    val unlockCurves: Map<DeclineKey, List<Int>>,
     val cards: List<OracleCard>,
     val rows: List<CardRow>,
     /** Cards per [Companion.state] — the corpus in four buckets, which is the headline picture. */
@@ -71,11 +78,10 @@ class AssayIndex(
     fun hasGolden(name: String): Boolean =
         name in goldenNames || name.substringBefore(" // ") in goldenNames
 
-    fun families(ranking: Ranking): List<DeclineFamily> =
-        if (ranking == Ranking.SHAPE) shapes else declines
+    fun families(ranking: DeclineKey): List<DeclineFamily> = families[ranking].orEmpty()
 
-    fun decline(token: String, ranking: Ranking): DeclineFamily? =
-        families(ranking).firstOrNull { it.token == token }
+    fun decline(key: String, ranking: DeclineKey): DeclineFamily? =
+        families(ranking).firstOrNull { it.key == key }
 
     /**
      * Prefix-and-substring name search, ranked so an exact prefix wins.
@@ -121,8 +127,7 @@ class AssayIndex(
 
             val cards = mutableListOf<OracleCard>()
             val rows = mutableListOf<CardRow>()
-            val byToken = Grouping()
-            val byShape = Grouping()
+            val backlog = DeclineKey.entries.associateWith { Backlog() }
 
             var seen = 0
             var fraction = 0.0
@@ -132,16 +137,17 @@ class AssayIndex(
                 cards.add(card)
 
                 val declined = result.lines.filter { it.verdict == LineVerdict.DECLINED }
-                // Interned through the grouping's own key set, so a card's shape list holds the same
-                // String instances the ranking does rather than 52,463 fresh copies.
-                val tokens = declined.mapNotNull { it.declineToken }.distinct()
-                val shapes = declined.map { skeleton(it.line) }.distinct()
-                rows.add(row(card, result, tokens, shapes))
+                val keys = DeclineKey.entries.associateWith { dimension ->
+                    // Interned through the backlog's own key set, so a card's key list holds the
+                    // same String instances the ranking does rather than 52,463 fresh copies.
+                    declined.map { line -> backlog.getValue(dimension).intern(dimension.of(line)) }
+                }
+                rows.add(row(card, result, keys.mapValues { (_, list) -> list.distinct() }))
                 attribution.observe(result)
 
-                for ((index, line) in declined.withIndex()) {
-                    byToken.add(line.declineToken ?: "<unknown>", card.name, line.line)
-                    byShape.add(shapes.getOrElse(index) { skeleton(line.line) }, card.name, line.line)
+                for ((dimension, list) in keys) {
+                    val into = backlog.getValue(dimension)
+                    list.forEachIndexed { index, key -> into.add(key, card.name, declined[index].line) }
                 }
 
                 seen++
@@ -154,22 +160,19 @@ class AssayIndex(
             // Cheap — reads the goldens' `// name` headers without decoding a single definition, so
             // the implemented/unimplemented split of every decline family costs one directory read.
             val goldens = runCatching { ImplementedCorpus.names() }.getOrDefault(emptySet())
-
-            // Unlocks and the curve are computed for the SHAPE ranking only, and that restriction is
-            // the finding rather than a shortcut. Both numbers are claims about *work*: "write this
-            // and that many cards become covered". A sentence shape is a unit of work — one rule
-            // reads every line of it. A dead token is not: a line dies at its first unknown token,
-            // so "every declined line of this card died at `Whenever`" says nothing has been read
-            // and implies no rule. Computing it anyway produced a curve claiming the top 400 token
-            // families cover 93% of Magic, against 15% for the top 400 shapes. The token ranking
-            // keeps its own honest question — what is the grammar missing — and gives up this one.
-            val shapeFamilies = Unlocks.annotate(byShape.build(goldens), rows) { it.declineShapes }
+            val report = fineness.build()
+            val families = DeclineKey.entries.associateWith { dimension ->
+                backlog.getValue(dimension).join(report.declines(dimension), goldens)
+            }
 
             return AssayIndex(
-                report = fineness.build(),
-                declines = byToken.build(goldens),
-                shapes = shapeFamilies,
-                unlockCurves = mapOf(Ranking.SHAPE to Unlocks.curve(shapeFamilies, rows) { it.declineShapes }),
+                report = report,
+                families = families,
+                // The curve is a claim about work, so it exists exactly where a family names one —
+                // see DeclineKey.namesWork for why the token ranking gives this question up.
+                unlockCurves = DeclineKey.entries.filter { it.namesWork }.associateWith { dimension ->
+                    UnlockCurve.of(families.getValue(dimension), rows, dimension)
+                },
                 cards = cards,
                 rows = rows,
                 stateCounts = rows.groupingBy(::state).eachCount(),
@@ -193,30 +196,10 @@ class AssayIndex(
             else -> "declined"
         }
 
-        /**
-         * The sentence a declined line *is*, with the parts that differ between two printings of it
-         * collapsed: mana and tap symbols to `{§}`, numbers to `#`. Self-reference is already
-         * abstracted to `~` by [com.wingedsheep.assay.normalize.Normalizer], so a card's own name
-         * does not fragment its shape.
-         *
-         * This is the second ranking, and it exists because the first one answers a different
-         * question than the one someone choosing work is asking. A line dies on its *first* unknown
-         * token, so a trigger whose prefix is already known dies somewhere after the comma while a
-         * trigger whose prefix is unknown dies on "At" — one missing verb lands in several token
-         * buckets, and a missing prefix looks larger than it is. Ranking by shape puts the whole
-         * sentence in one row, which is the unit a rule is actually written for.
-         */
-        internal fun skeleton(line: String): String =
-            line.replace(SYMBOL, "{§}").replace(NUMBER, "#")
-
-        private val SYMBOL = Regex("""\{[^}]*}""")
-        private val NUMBER = Regex("""\b\d+\b""")
-
         private fun row(
             card: OracleCard,
             result: CardResult,
-            tokens: List<String>,
-            shapes: List<String>,
+            declineKeys: Map<DeclineKey, List<String>>,
         ) = CardRow(
             name = card.name,
             oracleId = card.oracleId,
@@ -228,66 +211,34 @@ class AssayIndex(
             covered = result.covered,
             inScope = result.inPhase1Scope,
             vanilla = card.isVanilla,
-            declineTokens = tokens,
-            declineShapes = shapes,
+            declineKeys = if (declineKeys.values.all { it.isEmpty() }) emptyMap() else declineKeys,
         )
     }
 }
 
 /**
- * How the decline list is keyed.
+ * Cards covered after implementing the top *N* families in rank order, cumulatively.
  *
- * Two rankings because they answer two questions, and the module's guidance is explicit that they
- * disagree in ways that change what you write next. [TOKEN] is "what is the grammar missing";
- * [SHAPE] is "what sentence should I write a rule for".
+ * The number the sole-blocked column is to one family, this is to a *plan*: each declined card is
+ * given the worst rank among its own families, so it joins the covered set at exactly the N where
+ * its last blocker is reached. That is why the curve sits far below the sum of the cards-blocked
+ * column, and why it is the one worth planning against.
+ *
+ * It exists only where [DeclineKey.namesWork] — the same restriction, for the same reason, as the
+ * sole-blocked count itself.
  */
-enum class Ranking { TOKEN, SHAPE }
-
-/**
- * **Cards blocked is not cards unlocked**, and the gap between them is the most useful number here.
- *
- * A card is covered only when *every* one of its lines parses, so a family's card count says how
- * many cards mention it — not how many would come into coverage if it were written. The module's
- * own worked example: 410 cards decline on "At the beginning of…", and adding every step-trigger
- * prefix moved whole-card coverage by 23, because the other 387 were blocked on their effect clause
- * all along. A ranked list showing only the 410 sends you at the wrong work.
- *
- * Two derived numbers close that gap, and both are exact rather than estimated:
- *
- * - [DeclineFamily.unlocks] — cards this family is the *only* thing blocking. Write this one rule
- *   and exactly that many cards become covered.
- * - [AssayIndex.unlockCurve] — cards covered after implementing the top *N* families in rank order,
- *   cumulatively. Computed by giving each declined card the worst rank among its own families: a
- *   card joins the covered set at exactly the N where its last blocker is reached.
- *
- * Both are computed for [Ranking.SHAPE] only; see the note at the call site for why applying them to
- * dead tokens yields a number that is well-defined and means nothing.
- */
-private object Unlocks {
+private object UnlockCurve {
 
     /** How far down the ranked list the curve is reported. Beyond this the tail is flat and long. */
     private const val CURVE_LENGTH = 400
 
-    fun annotate(
-        families: List<DeclineFamily>,
-        rows: List<CardRow>,
-        keysOf: (CardRow) -> List<String>,
-    ): List<DeclineFamily> {
-        val soleBlocker = HashMap<String, Int>()
-        for (row in rows) {
-            val keys = keysOf(row)
-            if (keys.size == 1) soleBlocker.merge(keys.single(), 1, Int::plus)
-        }
-        return families.map { it.copy(unlocks = soleBlocker[it.token] ?: 0) }
-    }
-
-    /** Cards covered after the top *N* families, for N = 1..[CURVE_LENGTH]. Index 0 is N = 1. */
-    fun curve(families: List<DeclineFamily>, rows: List<CardRow>, keysOf: (CardRow) -> List<String>): List<Int> {
-        val rank = families.withIndex().associate { (index, family) -> family.token to index }
+    /** For N = 1..[CURVE_LENGTH]. Index 0 is N = 1. */
+    fun of(families: List<DeclineFamily>, rows: List<CardRow>, dimension: DeclineKey): List<Int> {
+        val rank = families.withIndex().associate { (index, family) -> family.key to index }
         val length = minOf(families.size, CURVE_LENGTH)
         val joiningAt = IntArray(length)
         for (row in rows) {
-            val keys = keysOf(row)
+            val keys = row.declineKeys[dimension].orEmpty()
             if (keys.isEmpty()) continue
             // The card becomes covered once its *last* remaining blocker is written; a card with any
             // blocker outside the reported prefix simply never joins within it.
@@ -299,39 +250,47 @@ private object Unlocks {
     }
 }
 
-/** Accumulates one keying of the declined lines: counts, the cards behind them, example lines. */
-private class Grouping {
+/**
+ * The browsable half of one keying: which cards are behind each family, and a handful of its lines.
+ *
+ * Kept here rather than in [FinenessReport] on purpose. The counts are the gate's — this joins onto
+ * them — but a card-name list per family is a *link table for a page*, and putting it in a report
+ * whose whole cost model is "counters and bounded examples" would make a corpus run's memory grow
+ * with the corpus for a question no gate asks.
+ */
+private class Backlog {
 
-    private val lines = LinkedHashMap<String, Int>()
+    private val keys = HashMap<String, String>()
     private val cards = LinkedHashMap<String, MutableSet<String>>()
     private val examples = LinkedHashMap<String, MutableSet<String>>()
 
+    /** One String instance per family, so 35,000 card rows hold references rather than copies. */
+    fun intern(key: String): String = keys.getOrPut(key) { key }
+
     fun add(key: String, cardName: String, line: String) {
-        lines.merge(key, 1, Int::plus)
-        // Uncapped, because this set is what the *ranking* is computed from — capping it made the
-        // top of the list a plateau of families that all reported exactly the cap. It costs nothing:
-        // the total number of (family, card) pairs is bounded by the number of declined lines.
+        // Uncapped, for the reason the gate's own card sets are: this list is what the family page's
+        // hand-written split and the feasibility probe are computed from, and a cap would silently
+        // turn both into a measurement over the first 400 cards. Bounded by the declined line count.
         cards.getOrPut(key) { LinkedHashSet() }.add(cardName)
         examples.getOrPut(key) { LinkedHashSet() }.let { if (it.size < MAX_EXAMPLES) it.add(line) }
     }
 
-    fun build(goldens: Set<String>): List<DeclineFamily> =
-        lines.map { (key, count) ->
-            val blocked = cards[key].orEmpty()
+    /** Joins onto the gate's ranked families, preserving its order and its counts. */
+    fun join(ranked: List<FinenessReport.Decline>, goldens: Set<String>): List<DeclineFamily> =
+        ranked.map { family ->
+            val blocked = cards[family.key].orEmpty()
             DeclineFamily(
-                token = key,
-                cards = blocked.size,
-                lines = count,
+                key = family.key,
+                cards = family.cards,
+                lines = family.lines,
+                soleBlocked = family.soleBlocked,
                 implemented = blocked.count { it in goldens || it.substringBefore(" // ") in goldens },
-                // The *shown* list is bounded — a page does not need 900 names — but the count above
-                // is the real one, and the page says so when it is showing fewer.
-                cardNames = blocked.take(MAX_SHOWN_CARDS),
-                examples = examples[key].orEmpty().toList(),
+                cardNames = blocked.toList(),
+                examples = examples[family.key].orEmpty().toList(),
             )
-        }.sortedWith(compareByDescending<DeclineFamily> { it.cards }.thenByDescending { it.lines })
+        }
 
     private companion object {
-        const val MAX_SHOWN_CARDS = 400
         const val MAX_EXAMPLES = 12
     }
 }
@@ -353,9 +312,11 @@ data class CardRow(
     val covered: Boolean,
     val inScope: Boolean,
     val vanilla: Boolean,
-    val declineTokens: List<String>,
-    val declineShapes: List<String>,
-)
+    /** This card's distinct family keys under each keying. Empty when nothing declined. */
+    val declineKeys: Map<DeclineKey, List<String>>,
+) {
+    fun declineKeys(dimension: DeclineKey): List<String> = declineKeys[dimension].orEmpty()
+}
 
 /**
  * A decline family with the backlog behind it.
@@ -368,13 +329,17 @@ data class CardRow(
  * population; carrying the count per family answers it for every family at once.
  */
 data class DeclineFamily(
-    val token: String,
+    val key: String,
     /** Cards that mention this family — how big the gap looks. */
     val cards: Int,
     val lines: Int,
     val implemented: Int,
-    /** Cards this family is the *only* blocker of — how big the gap actually is. See [Unlocks]. */
-    val unlocks: Int = 0,
+    /**
+     * Cards this family is the *only* blocker of — how big the gap actually is. Null under
+     * [DeclineKey.TOKEN], where it would be well-defined and mean nothing.
+     */
+    val soleBlocked: Int?,
+    /** Every blocked card, uncapped — the probe measures over all of them. Capped at the view. */
     val cardNames: List<String>,
     val examples: List<String>,
 )
