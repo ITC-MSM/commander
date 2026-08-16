@@ -171,6 +171,18 @@ class PhraseTest : StringSpec({
         SentenceCase.decapitalize("• Setting: a land") shouldBe null
     }
 
+    // …and a mode's bullet, which is the third one. Normalization keeps a modal card's rows on one
+    // line, so without this the modal rules would need a capitalized copy of every effect verb.
+    "a mode's bullet starts a sentence, in both directions" {
+        SentenceCase.decapitalize("Choose one —\n• Draw a card.\n• You gain 2 life.") shouldBe
+            "choose one —\n• draw a card.\n• you gain 2 life."
+        SentenceCase.capitalize("choose one —\n• draw a card.\n• you gain 2 life.") shouldBe
+            "Choose one —\n• Draw a card.\n• You gain 2 life."
+        // A row opening on a symbol passes through, exactly as a line opening on one does.
+        SentenceCase.decapitalize("Choose one —\n• {T}: Add {C}.\n• Draw a card.") shouldBe
+            "choose one —\n• {T}: add {C}.\n• draw a card."
+    }
+
     // `shape` exists for the explorer, which walks the wired grammar from its root entry point. It
     // is read-only and never consulted while parsing or printing, so what these assert is that
     // every combinator describes itself — a new one that forgot to would silently make a whole

@@ -166,6 +166,33 @@ class NormalizerTest : StringSpec({
         n.restore(n.lines) shouldBe f.oracleText
     }
 
+    // A modal card's rows are one ability laid out over several printed lines. The joined line keeps
+    // its own newlines, which is what makes the inverse free — `restore` already joins with "\n".
+    "a bullet joins the line above it and comes back as its own row" {
+        val f = face(
+            "Abrade",
+            "Choose one —\n• Abrade deals 3 damage to target creature.\n• Destroy target artifact.",
+            typeLine = "Instant",
+        )
+        val n = Normalizer.normalize(f)
+
+        n.lines shouldBe listOf(
+            "Choose one —\n• ~ deals 3 damage to target creature.\n• Destroy target artifact."
+        )
+        n.restore(n.lines) shouldBe f.oracleText
+    }
+
+    // The join is positional and only downward, so a rider printed after the last mode is still its
+    // own ability — and the per-line ability-word record stays aligned with what the grammar prints.
+    "a line after the modes is not swallowed by them" {
+        val f = face("Whatever", "Choose one —\n• Draw a card.\n• You gain 2 life.\nEntwine {2}", typeLine = "Instant")
+        val n = Normalizer.normalize(f)
+
+        n.lines shouldBe listOf("Choose one —\n• Draw a card.\n• You gain 2 life.", "Entwine {2}")
+        n.abilityWords shouldBe listOf(null, null)
+        n.restore(n.lines) shouldBe f.oracleText
+    }
+
     "the self-reference noun follows the printed type line" {
         Reminders.selfNoun("Creature — Angel") shouldBe "this creature"
         Reminders.selfNoun("Artifact") shouldBe "this artifact"

@@ -1880,15 +1880,28 @@ object Steps {
         }
 
         /**
-         * What a spell's whole effect text denotes: one sentence, or a clause that ends itself.
+         * What a spell's whole effect text denotes, modes aside: one sentence, or a clause that ends
+         * itself.
          *
          * [sentence] spells the full stop, which is right for every clause whose text ends on one.
          * A clause ending *inside a quotation* does not — "…gains "This creature can't attack ….""
          * closes on a quote mark — so those are offered beside it rather than inside it, and the
          * two are disjoint by their last character.
          */
-        val step: Phrase<CardScript> =
+        private val plainStep: Phrase<CardScript> =
             oneOf("a spell effect line$tag", listOf(sentence) + Combat.selfTerminatingClauses)
+
+        /**
+         * …and with the modes on top.
+         *
+         * [Modal] reads the bullets as *sentences* rather than as steps, which is what keeps a mode
+         * from being modal — and, mechanically, what keeps this `val` constructible: a family
+         * reaching the rule it is a member of is left recursion. Offered here rather than inside
+         * [clause] because a modal block is sentence-terminal in the strongest sense — its last
+         * bullet carries the line's last full stop, so there is nothing a join could follow it with.
+         */
+        val step: Phrase<CardScript> =
+            oneOf("a spell effect line$tag", listOf(plainStep) + Modal.clauses(sentence, tag))
     }
 
     private val sourceCascade = Cascade(SelfSteps.anaphoric, tag = "")

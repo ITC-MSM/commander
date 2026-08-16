@@ -34,6 +34,14 @@ package com.wingedsheep.assay.syntax
  * followed by a lowercase letter and every one is an Un-set joke card or an abbreviation
  * ("B.F.M.", "S.N.E.A.K.", "Ph.D."). Those lines decline, which is what [decapitalize] returning
  * null means, and they declined before this too.
+ *
+ * A **mode's bullet** is the third such place, and it arrived with the same argument the full stop
+ * did. Normalization keeps a modal card's rows on one line (see
+ * [com.wingedsheep.assay.normalize.Normalizer]), so "Choose one —\n• Destroy target artifact." puts
+ * a capital after `\n• ` that no rule here would otherwise reach — and the alternative is a
+ * capitalized second copy of every verb in [com.wingedsheep.assay.grammar.Steps], which is exactly
+ * what this file exists to avoid. The corpus states this one too: of 2,117 bullet rows, every one
+ * begins with an uppercase letter or a symbol, and none with a lowercase letter.
  */
 object SentenceCase {
 
@@ -69,15 +77,16 @@ object SentenceCase {
     }
 
     /**
-     * The two places Oracle starts a new sentence *inside* one ability line: after an ability
-     * cost's `": "`, and after a full stop.
+     * The three places Oracle starts a new sentence *inside* one ability line: after an ability
+     * cost's `": "`, after a full stop, and at a mode's bullet.
      *
      * The full stop is what lets a line spelling two sentences — "Target creature gets +1/+3 until
      * end of turn. Untap that creature." — slot the ordinary effect vocabulary twice instead of
-     * needing a capitalized copy of every verb. It is the same argument the cost colon carries, and
-     * it is why this file exists rather than a `capitalized(...)` combinator in the grammar.
+     * needing a capitalized copy of every verb. It is the same argument the cost colon carries, the
+     * same one the bullet carries, and it is why this file exists rather than a `capitalized(...)`
+     * combinator in the grammar.
      */
-    private val SENTENCE_BREAK = Regex("""(?:: |\. )""")
+    private val SENTENCE_BREAK = Regex("""(?:: |\. |\n• )""")
 }
 
 /**

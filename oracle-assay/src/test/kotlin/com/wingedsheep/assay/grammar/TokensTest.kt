@@ -81,6 +81,28 @@ class TokensTest : StringSpec({
             "Create a 2/2 blue and red Otter creature token with flying and trample."
     }
 
+    // …and WUBRG is a *cycle* for a pair: the run starts at whichever colour leaves the other within
+    // two steps forward, which is the adjacency Magic names its allied and enemy pairs by. A plain
+    // ordinal sort spells five of the ten backwards; Exhibition Magician is the card that said so.
+    "a two-colour run starts where Oracle starts it, not at W" {
+        roundTrips("Create a 1/1 green and white Citizen creature token.")
+        roundTrips("Create a 2/2 black and green Zombie creature token.")
+        roundTrips("Create a 1/1 white and blue Bird creature token with flying.")
+        roundTrips("Create a 2/2 red and white Dwarf creature token.")
+
+        val stored = CardFragment(
+            script = CardScript(
+                spellEffect = Effects.CreateToken(
+                    power = 1,
+                    toughness = 1,
+                    colors = setOf(Color.WHITE, Color.GREEN),
+                    creatureTypes = setOf("Citizen"),
+                )
+            )
+        )
+        Grammar.abilityLine.printLine(stored) shouldBe "Create a 1/1 green and white Citizen creature token."
+    }
+
     "a predefined token is the noun the SDK names" {
         fragment("Create a Food token.").script.spellEffect shouldBe Effects.CreateFood()
         fragment("Create two Treasure tokens.").script.spellEffect shouldBe Effects.CreateTreasure(count = 2)

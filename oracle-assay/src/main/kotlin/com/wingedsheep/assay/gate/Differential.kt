@@ -290,9 +290,11 @@ class Differential(private val touchstone: Touchstone = Touchstone()) {
         return CardSerialization.json.encodeToString(
             JsonElement.serializer(),
             sortKeys(
-                Folds.dropPresentation(
-                    Folds.flattenComposites(
-                        canonicalizeGrantedAbilities(canonicalizeAbilities(normalizeSlots(tree))),
+                Folds.dropModeDescriptions(
+                    Folds.dropPresentation(
+                        Folds.flattenComposites(
+                            canonicalizeGrantedAbilities(canonicalizeAbilities(normalizeSlots(tree))),
+                        ),
                     ),
                 ),
             ),
@@ -541,6 +543,47 @@ internal object Folds {
     }
 
     private val PRESENTATION_KEYS = setOf("imageUri", "message", "prompt", "descriptionOverride")
+
+    /**
+     * **A mode's `description` is the same class of field, and it is scoped rather than named.**
+     *
+     * `Mode.description` is documented as "Human-readable description of the mode" and defaults to
+     * `effect.description` — presentation, never executed, derived by the SDK from the effect beside
+     * it. That is exactly what [dropPresentation] drops, and the only reason it is not a fifth entry
+     * in [PRESENTATION_KEYS] is that `description` is not a rare name: `ReplacementEffect`'s
+     * `AlternativeCostEffect` carries a serialized one that *is* part of what the effect does, and a
+     * key-wide drop would stop the gate seeing it. So this walks to the modes of a `ModalEffect` and
+     * drops the field only there.
+     *
+     * The two sides disagree by construction rather than by accident, which is what makes this a
+     * fold rather than a bug to fix. Hand-written cards spell the printed row out with the card's
+     * own name in it — Boros Charm's first mode reads "Boros Charm deals 4 damage to target player
+     * or planeswalker" — and the text Assay parses has had that name abstracted to `~` before any
+     * rule sees it. The grammar therefore leaves the field at its default and never invents prose;
+     * see `Modal.modeFor`. Everything that decides what a mode *does* — its effect, its targets, its
+     * per-mode costs — is still compared, and the count fields on the modal above it are compared
+     * too, which is where Winterflame's disagreement surfaced.
+     */
+    fun dropModeDescriptions(element: JsonElement): JsonElement = when (element) {
+        is JsonObject -> {
+            val walked = JsonObject(element.mapValues { dropModeDescriptions(it.value) })
+            val modes = walked["modes"] as? JsonArray
+            if (modes != null && (walked["type"] as? JsonPrimitive)?.content == MODAL_TYPE) {
+                JsonObject(walked + ("modes" to JsonArray(modes.map(::dropModeDescription))))
+            } else {
+                walked
+            }
+        }
+
+        is JsonArray -> JsonArray(element.map(::dropModeDescriptions))
+        else -> element
+    }
+
+    private fun dropModeDescription(mode: JsonElement): JsonElement =
+        (mode as? JsonObject)?.let { JsonObject(it - "description") } ?: mode
+
+    /** `ModalEffect`'s `@SerialName`. The discriminator is what keeps the fold above scoped. */
+    private const val MODAL_TYPE = "Modal"
 
     // `liftTriggerConsent` used to live here, bridging `TriggeredAbility.optional = true` (106 cards)
     // and a `MayEffect` around the effect (214 cards) — two SDK spellings of "you may" that the

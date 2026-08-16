@@ -112,6 +112,13 @@ ability, so every step rule enriches every trigger rule for free. Any new senten
 activated abilities, modal spells, "you may", delayed triggers — must slot the existing effect
 grammar rather than restating the verbs. The win is multiplicative; restating is additive and rots.
 
+`Modal` is the rule read in both directions at once, and the cheapest band so far because of it. A
+mode slots the cascade's whole `sentence`, so every effect the grammar can read is a mode; and the
+family is offered *at* `Steps.step` rather than as a line rule, so every context that already slots a
+step — spells, triggers, activated abilities — got modal abilities without being told. Ask of a new
+construct which of the two directions it wants before writing it: a line rule reaches one position, a
+clause reaches all of them.
+
 The **cost band** is the same rule applied to a *vocabulary* rather than to a clause, and it is the
 one to copy when the SDK has already done the factoring. `CostAtom`'s KDoc calls itself "the one cost
 language" — one payable thing, carried into each context by that context's own `Atom` wrapper — and
@@ -368,21 +375,31 @@ That band is the worked example and the method is reusable verbatim:
 2. Before writing anything, **substitute a known-good prefix for the family** into those cards'
    declined lines and re-parse. That says how many payoffs the rest of the grammar can already read,
    which is the number the band will actually deliver. The spell-cast family predicted 234 whole
-   cards and delivered 183; modal spells, which both other rankings put first, measured 126.
-   Landfall is the standing example on the live grammar: 189 cards blocked, 104 sole-blocked, and the
-   probe says **48** whole cards would be finished.
+   cards and delivered 183; modal spells, which both other rankings put first, measured 126 and
+   delivered **137**. Landfall is the standing example on the live grammar: 189 cards blocked, 104
+   sole-blocked, and the probe says **48** whole cards would be finished.
 
 Every ranking that skipped step 2 has overstated its band, four times in the same direction. Step 2
 is family-specific, so it cannot be precomputed and does not belong in a report — but it is one
 `PrefixProbe.run` over the live grammar, and it is what turns "which cards does this family reach"
 into "which lines does it finish".
 
+The modal band is the one case where the probe **under**-stated, and the reason is worth knowing
+before trusting a number: it substitutes a prefix into the lines that *declined*, and the modal
+family's payoff was partly in lines that had never declined as a family at all — the 204 cards whose
+header sits inside a trigger, which the probe measured as trigger declines. A family that is a
+*clause position* rather than a line shape will do this again. Read the probe as a floor there.
+
 **Three keyings, three biases, and knowing which to read.** `DeclineKey` holds all of them and the
 gate computes all three in the one sweep, so the CLI and the explorer cannot disagree about a family.
 Read the tail by default. Read `SHAPE` when the family's sentence *is* the whole line. Read `TOKEN`
 when the parse dies at offset 0 — a line that read nothing has no tail short of itself, so `TAIL`
-degenerates to `SHAPE` there and only the dead token holds the family together. The modal bullets are
-the case: 2,015 declined `•` lines are one token family and hundreds of tail rows.
+degenerates to `SHAPE` there and only the dead token holds the family together. The modal bullets
+*were* the case — 2,015 declined `•` lines were one token family and hundreds of tail rows — and how
+that resolved is the more useful half: a bullet is not a line, normalization now keeps a modal card's
+rows together, and the family stopped being a ranking problem by stopping being 2,015 lines. A
+keying that scatters one construct across hundreds of rows is worth reading as a question about where
+the line boundaries are, not only as a question about which key to use.
 
 The split re-weights the list rather than reordering it wholesale, which is itself the finding: the
 top families are the same in both populations, so the grammar backlog and the SDK backlog are being
