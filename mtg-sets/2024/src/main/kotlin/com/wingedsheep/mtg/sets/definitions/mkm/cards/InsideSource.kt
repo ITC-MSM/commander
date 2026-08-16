@@ -10,7 +10,7 @@ import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.TimingRule
 import com.wingedsheep.sdk.scripting.filters.unified.TargetFilter
-import com.wingedsheep.sdk.scripting.targets.TargetCreature
+import com.wingedsheep.sdk.scripting.targets.TargetPermanent
 
 /**
  * Inside Source — Murders at Karlov Manor #19
@@ -23,9 +23,10 @@ import com.wingedsheep.sdk.scripting.targets.TargetCreature
  * Two Detectives for three mana, then a mana sink that turns one of them into an attacker who
  * stays home. The pump targets *a Detective you control* — including the token it just made, and
  * including Inside Source itself only if something has made it a Detective, since a Human Citizen
- * isn't one. `TargetFilter.CreatureYouControl.withSubtype(DETECTIVE)` is evaluated against
- * projected state, so a creature that gained the type from a type-changing effect is a legal
- * target and one that lost it is not.
+ * isn't one. `TargetFilter.PermanentYouControl.withSubtype(DETECTIVE)` is evaluated against
+ * projected state, so a permanent that gained the type from a type-changing effect is a legal
+ * target and one that lost it is not. The noun is bare — "Detective", not "Detective creature" —
+ * so it names the subtype and not the card type; found by the Assay differential.
  *
  * "Activate only as a sorcery" is [TimingRule.SorcerySpeed] — your main phase, empty stack. Note
  * this bars the usual "pump at end of the opponent's turn to blank a blocker" line; the vigilance
@@ -59,7 +60,7 @@ val InsideSource = card("Inside Source") {
         timing = TimingRule.SorcerySpeed
         val detective = target(
             "target Detective you control",
-            TargetCreature(filter = TargetFilter.CreatureYouControl.withSubtype(Subtype.DETECTIVE))
+            TargetPermanent(filter = TargetFilter.PermanentYouControl.withSubtype(Subtype.DETECTIVE))
         )
         effect = Effects.Composite(
             Effects.ModifyStats(2, 0, detective),

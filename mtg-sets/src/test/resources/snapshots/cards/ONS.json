@@ -16848,7 +16848,7 @@
                     "atom": {
                         "type": "AtomTapPermanents",
                         "count": 5,
-                        "filter": "creature Elf"
+                        "filter": "permanent Elf"
                     }
                 },
                 "effect": {

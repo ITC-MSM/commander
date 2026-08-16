@@ -6471,14 +6471,14 @@
     "name": "Finneas, Ace Archer",
     "manaCost": "{G}{W}",
     "typeLine": "Legendary Creature — Rabbit Archer",
-    "oracleText": "Vigilance, reach\nWhenever Finneas attacks, put a +1/+1 counter on each other creature you control that's a token or a Rabbit. Then if creatures you control have total power 10 or greater, draw a card.",
+    "oracleText": "Reach, vigilance\nWhenever Finneas attacks, put a +1/+1 counter on each other creature you control that's a token or a Rabbit. Then if creatures you control have total power 10 or greater, draw a card.",
     "creatureStats": {
         "power": 2,
         "toughness": 2
     },
     "keywords": [
-        "VIGILANCE",
-        "REACH"
+        "REACH",
+        "VIGILANCE"
     ],
     "script": {
         "triggeredAbilities": [
@@ -7158,14 +7158,14 @@
     "name": "Frilled Sparkshooter",
     "manaCost": "{3}{R}",
     "typeLine": "Creature — Lizard Archer",
-    "oracleText": "Menace, reach\nThis creature enters with a +1/+1 counter on it if an opponent lost life this turn.",
+    "oracleText": "Reach, menace\nThis creature enters with a +1/+1 counter on it if an opponent lost life this turn.",
     "creatureStats": {
         "power": 3,
         "toughness": 3
     },
     "keywords": [
-        "MENACE",
-        "REACH"
+        "REACH",
+        "MENACE"
     ],
     "script": {
         "replacementEffects": [
@@ -7205,15 +7205,15 @@
     "name": "Galewind Moose",
     "manaCost": "{4}{G}{G}",
     "typeLine": "Creature — Elemental Elk",
-    "oracleText": "Flash\nVigilance, reach, trample",
+    "oracleText": "Flash\nReach, vigilance, trample",
     "creatureStats": {
         "power": 6,
         "toughness": 6
     },
     "keywords": [
         "FLASH",
-        "VIGILANCE",
         "REACH",
+        "VIGILANCE",
         "TRAMPLE"
     ],
     "metadata": {
@@ -8963,7 +8963,7 @@
     "name": "Hunter's Talent",
     "manaCost": "{1}{G}",
     "typeLine": "Enchantment — Class",
-    "oracleText": "When this Class enters the battlefield, target creature you control deals damage equal to its power to target creature you don't control.\n{1}{G}: Level 2 — Whenever you attack, target attacking creature gets +1/+0 and gains trample until end of turn.\n{3}{G}: Level 3 — At the beginning of your end step, if you control a creature with power 4 or greater, draw a card.",
+    "oracleText": "When this Class enters, target creature you control deals damage equal to its power to target creature you don't control.\n{1}{G}: Level 2 — Whenever you attack, target attacking creature gets +1/+0 and gains trample until end of turn.\n{3}{G}: Level 3 — At the beginning of your end step, if you control a creature with power 4 or greater, draw a card.",
     "script": {
         "triggeredAbilities": [
             {
@@ -9468,7 +9468,7 @@
                     "filter": "land ctrl:you",
                     "to": "Battlefield"
                 },
-                "binding": "OTHER",
+                "binding": "ANY",
                 "effect": {
                     "type": "DealDamage",
                     "amount": {
@@ -10965,7 +10965,7 @@
     "name": "Lumra, Bellow of the Woods",
     "manaCost": "{4}{G}{G}",
     "typeLine": "Legendary Creature — Elemental Bear",
-    "oracleText": "Vigilance, reach\nLumra, Bellow of the Woods's power and toughness are each equal to the number of lands you control.\nWhen Lumra, Bellow of the Woods enters, mill four cards. Then return all land cards from your graveyard to the battlefield tapped.",
+    "oracleText": "Reach, vigilance\nLumra, Bellow of the Woods's power and toughness are each equal to the number of lands you control.\nWhen Lumra, Bellow of the Woods enters, mill four cards. Then return all land cards from your graveyard to the battlefield tapped.",
     "creatureStats": {
         "power": {
             "type": "Dynamic",
@@ -10985,8 +10985,8 @@
         }
     },
     "keywords": [
-        "VIGILANCE",
-        "REACH"
+        "REACH",
+        "VIGILANCE"
     ],
     "script": {
         "triggeredAbilities": [
@@ -14144,6 +14144,7 @@
     "name": "Quaketusk Boar",
     "manaCost": "{3}{R}{R}",
     "typeLine": "Creature — Elemental Boar",
+    "oracleText": "Reach, trample, haste",
     "creatureStats": {
         "power": 5,
         "toughness": 5
@@ -16853,7 +16854,7 @@
     "name": "Short Bow",
     "manaCost": "{2}",
     "typeLine": "Artifact — Equipment",
-    "oracleText": "Equipped creature gets +1/+1 and has vigilance and reach.\nEquip {1}",
+    "oracleText": "Equipped creature gets +1/+1 and has reach and vigilance.\nEquip {1}",
     "script": {
         "activatedAbilities": [
             {
@@ -16893,11 +16894,11 @@
             },
             {
                 "type": "GrantKeyword",
-                "keyword": "VIGILANCE"
+                "keyword": "REACH"
             },
             {
                 "type": "GrantKeyword",
-                "keyword": "REACH"
+                "keyword": "VIGILANCE"
             }
         ]
     },

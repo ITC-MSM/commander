@@ -5,6 +5,7 @@ import com.wingedsheep.assay.syntax.bind
 import com.wingedsheep.assay.syntax.constant
 import com.wingedsheep.assay.syntax.oneOf
 import com.wingedsheep.assay.syntax.phrase
+import com.wingedsheep.assay.syntax.separated
 import com.wingedsheep.sdk.core.CardType
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.ManaCost
@@ -173,6 +174,62 @@ object Keywords {
      */
     val keyword: Phrase<Keyword> =
         oneOf("a keyword", SIMPLE_KEYWORDS.map { (keyword, surface) -> constant(surface, keyword) })
+
+    /**
+     * "trample", "lifelink and indestructible", "trample, hexproof, and indestructible" — the
+     * keywords **one** grant clause hands out.
+     *
+     * A grant sentence names a list, not a keyword. CR 702's templating joins the members with the
+     * ordinary English series comma and a final "and", and the SDK models each member as its own
+     * `GrantKeyword` — so the printed run and the model's list are the same list, and every rule that
+     * grants (to a target, to a group, to the source, to an enchanted permanent) slots this instead
+     * of [keyword].
+     *
+     * This is [Primitives.scopeRun]'s shape one level up, with one member added: the run includes
+     * the **singleton**, because a grant rule has exactly one keyword slot and the count is what
+     * varies. The three alternatives take disjoint list sizes, so nothing is left for the printer to
+     * choose — which is what lets one rule replace the "gains X", "gains X and Y" pairs the file used
+     * to carry as separate rules, rather than adding a third.
+     */
+    private val keywordSingleton: Phrase<List<Keyword>> = phrase("{one}", name = "one keyword") {
+        slot("one", keyword)
+        build { listOf(it.value<Keyword>("one")) }
+        match { it.singleOrNull()?.let { only -> bind("one" to only) } }
+    }
+
+    private val keywordPair: Phrase<List<Keyword>> =
+        phrase("{first} and {second}", name = "two keywords") {
+            slot("first", keyword)
+            slot("second", keyword)
+            build { listOf(it.value<Keyword>("first"), it.value<Keyword>("second")) }
+            match { keywords ->
+                keywords.takeIf { it.size == 2 }?.let { bind("first" to it[0], "second" to it[1]) }
+            }
+        }
+
+    /** "trample, hexproof, and indestructible" — three or more, with the printed Oxford comma. */
+    private val keywordSeries: Phrase<List<Keyword>> =
+        phrase("{most}, and {last}", name = "three or more keywords") {
+            slot("most", separated("keywords", keyword, ", ", min = 2))
+            slot("last", keyword)
+            build { it.value<List<Keyword>>("most") + it.value<Keyword>("last") }
+            match { keywords ->
+                keywords.takeIf { it.size >= 3 }
+                    ?.let { bind("most" to it.dropLast(1), "last" to it.last()) }
+            }
+        }
+
+    /** One or more keywords, joined the way printed Oracle text joins them. See above. */
+    val keywordRun: Phrase<List<Keyword>> =
+        oneOf("one or more keywords", keywordSingleton, keywordPair, keywordSeries)
+
+    /**
+     * Two or more, for the one position where the singleton is spoken for: a static-ability *line*
+     * already has a single-ability rule ([Statics.attachedKeyword]) reached through the one-element
+     * lift, so admitting the singleton here would give one text two readings of the same model.
+     */
+    val severalKeywords: Phrase<List<Keyword>> =
+        oneOf("two or more keywords", keywordPair, keywordSeries)
 
     /**
      * Keywords the SDK models as their own object rather than as [KeywordAbility.Simple].

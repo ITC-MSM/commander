@@ -12,7 +12,7 @@ import com.wingedsheep.sdk.scripting.events.CounterTypeFilter
  * {3}{R}
  * Creature — Lizard Archer
  * 3/3
- * Menace, reach
+ * Reach, menace
  * This creature enters with a +1/+1 counter on it if an opponent lost life this turn.
  */
 val FrilledSparkshooter = card("Frilled Sparkshooter") {
@@ -21,9 +21,9 @@ val FrilledSparkshooter = card("Frilled Sparkshooter") {
     typeLine = "Creature — Lizard Archer"
     power = 3
     toughness = 3
-    oracleText = "Menace, reach\nThis creature enters with a +1/+1 counter on it if an opponent lost life this turn."
+    oracleText = "Reach, menace\nThis creature enters with a +1/+1 counter on it if an opponent lost life this turn."
 
-    keywords(Keyword.MENACE, Keyword.REACH)
+    keywords(Keyword.REACH, Keyword.MENACE)
 
     replacementEffect(EntersWithCounters(
         counterType = CounterTypeFilter.PlusOnePlusOne,

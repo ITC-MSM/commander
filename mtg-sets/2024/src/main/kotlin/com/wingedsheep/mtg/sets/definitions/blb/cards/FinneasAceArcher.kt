@@ -25,7 +25,7 @@ import com.wingedsheep.sdk.dsl.Effects
  * Legendary Creature — Rabbit Archer
  * 2/2
  *
- * Vigilance, reach
+ * Reach, vigilance
  * Whenever Finneas attacks, put a +1/+1 counter on each other creature you control
  * that's a token or a Rabbit. Then if creatures you control have total power 10 or
  * greater, draw a card.
@@ -36,9 +36,9 @@ val FinneasAceArcher = card("Finneas, Ace Archer") {
     typeLine = "Legendary Creature — Rabbit Archer"
     power = 2
     toughness = 2
-    oracleText = "Vigilance, reach\nWhenever Finneas attacks, put a +1/+1 counter on each other creature you control that's a token or a Rabbit. Then if creatures you control have total power 10 or greater, draw a card."
+    oracleText = "Reach, vigilance\nWhenever Finneas attacks, put a +1/+1 counter on each other creature you control that's a token or a Rabbit. Then if creatures you control have total power 10 or greater, draw a card."
 
-    keywords(Keyword.VIGILANCE, Keyword.REACH)
+    keywords(Keyword.REACH, Keyword.VIGILANCE)
 
     triggeredAbility {
         trigger = Triggers.Attacks

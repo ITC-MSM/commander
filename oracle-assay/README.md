@@ -144,21 +144,22 @@ non-zero on. Declines are not failures.
 
 ```
 Cards assayed                    34882
-Ability lines                    66793  (38865 unique)
+Ability lines                    66793  (38843 unique)
 
-Round-trips byte-exact           24139   361.4‰ (36.1%)
-Alternate spelling normalized    1120
-Declined                         41534
+Round-trips byte-exact           24993   374.2‰ (37.4%)
+Alternate spelling normalized    1247
+Declined                         40553
 Ambiguous — distinct readings    0
 Print mismatch                   0
 Normalization not invertible     0
 Full inverse not reproduced      0
 Redundant readings (same model)  0
 
-Cards fully covered              6583 / 34882   188.7‰ (18.9%)
+Cards fully covered              7177 / 34882   205.8‰ (20.6%)
 Vanilla + keyword-only cards     1444 / 1712   843.5‰ (84.3%)   <- Phase 1 target
 Portal (set POR)                 200 / 200     1000.0‰ (100%)   <- the Portal band's target
 Legions (set LGN)                145 / 145     1000.0‰ (100%)   <- the Legions band's target
+Bloomburrow (set BLB)            58 / 280      207.1‰ (20.7%)   <- the Bloomburrow band, in progress
 Reminder-text glosses            2870 matched · 114 differed · 965 unglossed
 ```
 
@@ -462,6 +463,73 @@ the pre-band measurement and can only have risen, since a card blocked by two fa
 sole-blocked by neither.) A flat tail is the shape the equipment band's residue had, and it is the
 signal that the next target is a *set* rather than a family.
 
+## The Bloomburrow band
+
+Bloomburrow is 280 cards, every one of them implemented by hand here, which makes it the first set
+picked *because* the goldens exist: every line it declines is a grammar gap whose known-good answer
+is already written, and the differential confirms each one the moment it parses. The band took the
+set 42 → **58 cards** and the whole corpus 6,583 → **7,177**, and it is four pieces of machinery plus
+rows — the ratio the module's "cards covered per rule" curve is watching for.
+
+**A granted keyword is a run, not a keyword.** `Keywords.keywordRun` spells "trample",
+"lifelink and indestructible" and "trample, hexproof, and indestructible" as the list the model
+actually holds, and every grant position slots it: to a target, to a group, to the source, to the
+enchanted permanent. It *replaced* rules rather than adding them — `SelfSteps` carried a
+two-keyword rule with no singular sibling, which is what a family looks like before it is one, and
+`Statics.conditionalSelfStatic` collapsed a `pairForm` boolean into a three-member enum that also
+gained the keyword-only sentence ("As long as you've lost life this turn, ~ has flying and
+vigilance") for free. One grant is the bare effect and several are a composite, because that is what
+`CompositeEffect` means and what every hand-written card holds; a rule that printed the singular as
+a one-element composite would have disagreed with all of them.
+
+**A token's count, colours and keywords are slots.** Six rows out of two axes — the count ("a",
+a number word, "X") and the keyword rider — plus a colour *run* with `keywordRun`'s shape over
+`Set<Color>`. The sets have no order and the printed sentence needs one, so colours print WUBRG and
+keywords print in `Keyword`'s declaration order: both are `Color`/`Keyword`'s own, and a card that
+built its set the other way round still prints the sentence Oracle prints. The predefined nouns
+(Food, Treasure, Clue, Blood, Map, Lander, Shard) are a second family, each row calling the facade
+the SDK publishes for it — with "investigate" deliberately left out, because CR 701.36a makes it the
+same model as "create a Clue token" and two canonical spellings would leave printing undecided.
+
+**An ability word is printed shape, and belongs to normalization.** CR 207.2c: *"they have no
+special rules meaning and no individual entries in the Comprehensive Rules."* So `Landfall — `,
+`Threshold — ` and `Valiant — ` come off the line, are recorded per line index, and go back on in
+`restore` — the alternative being a grammar rule per ability word wrapping every sentence the grammar
+already reads, which is the multiplicative cost "lift, don't re-spell" exists to refuse. The list is
+**CR 207.2c's, verbatim, rather than a pattern**: CR 207.2d's *flavor* words have the identical
+printed shape and are unbounded, and so is a Saga's `I —` and a Class's `Level 2 —`. Worth 106 cards
+corpus-wide on its own, and it is what let the differential see the landfall bug below.
+
+Then three rows: Valiant's trigger (one `TriggerSpec` the SDK already publishes), "deals N damage to
+target opponent", and Threshold's graveyard count — which turned the hand-size comparison into a
+two-member shape over (player, zone, direction).
+
+**What it found.** Fifteen bugs in hand-written cards and one in `mtg-sdk`, every one surfaced by the
+differential on the day a line stopped declining:
+
+- **`Triggers.LandYouControlEnters` was `TriggerBinding.OTHER`** — one facade, 29 cards. No landfall
+  ability prints "another"; the distinction is invisible on a creature and load-bearing on a *land*
+  with a landfall trigger, which under `OTHER` would silently not see itself enter.
+- **Five more bare-noun-is-permanents cards** — Kargan Dragonrider, Corsair Captain, Lathliss,
+  Inside Source, Voice of the Woods, all `IsCreature` where the printed noun names only a subtype.
+  The same class the bare-tribal-noun migration fixed; these were never comparable before.
+- **Sunstar Expansionist read its intervening "if" as a resolution-time gate** — "When this creature
+  enters, **if** an opponent controls more lands than you, …" is CR 603.4, checked when the trigger
+  would go on the stack *and* again on resolution, not a `Gate.WhenCondition` that always triggers.
+- **Seven BLB cards printed text the card does not have** — five keyword runs in the wrong order
+  (Scryfall prints "Reach, vigilance"), Hunter's Talent on the pre-Bloomburrow "enters the
+  battlefield" wording, and Quaketusk Boar with no `oracleText` at all.
+- **Shocking Sharpshooter restated a documented default** — `damageSource = Self` is what `null`
+  already means for a permanent's own triggered ability. 72 other cards carry the same redundancy
+  and will surface as the grammar widens; it is *not* folded, because the field means something
+  when it is set to anything else.
+
+**Where the ranking points next, inside this set.** Gift is the largest family left by a wide margin
+— **17 BLB cards are sole-blocked by it** — and it is two halves rather than one: the `Gift a card`
+keyword line and the `If the gift was promised, …` rider, the second of which needs its base clause
+to read first. After it: the Class levels (`{3}{U}: Level 2`, 10 cards), modal spells (8), and
+"Spend this mana only to cast …" (6).
+
 ## What Phase 1 already found
 
 The report is two documents at once, and the second one is about `mtg-sdk`:
@@ -507,15 +575,15 @@ named population bucket instead and the denominator stays visible.
 
 ```
   Hand-written cards                 9127
-    compared                         2495
-    not yet covered by the grammar   5995
-    script slot not modelled yet      83
-    lines do not fold into one card   50
+    compared                         2698
+    not yet covered by the grammar   5789
+    script slot not modelled yet      88
+    lines do not fold into one card   54
     multi-face (out of scope)        301
-    Oracle text differs from golden  203
+    Oracle text differs from golden  197
     golden would not decode            0
 
-  Confirmed — models agree           2494    999.6‰ (100.0%)
+  Confirmed — models agree           2697    999.6‰ (100.0%)
   DIVERGENT — read every one            1
 ```
 

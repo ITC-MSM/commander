@@ -17,6 +17,7 @@ val QuaketuskBoar = card("Quaketusk Boar") {
     typeLine = "Creature — Elemental Boar"
     power = 5
     toughness = 5
+    oracleText = "Reach, trample, haste"
     keywords(Keyword.REACH, Keyword.TRAMPLE, Keyword.HASTE)
 
     metadata {

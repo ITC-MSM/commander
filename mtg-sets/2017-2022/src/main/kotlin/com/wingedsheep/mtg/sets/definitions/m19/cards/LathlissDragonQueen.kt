@@ -36,8 +36,10 @@ val LathlissDragonQueen = card("Lathliss, Dragon Queen") {
     toughness = 6
     keywords(Keyword.FLYING)
     triggeredAbility {
+        // Both nouns are bare tribal ones — "Dragon", "Dragons" — so they name the subtype and not
+        // the card type, and a noncreature Dragon permanent is one of them. Found by the differential.
         trigger = Triggers.entersBattlefield(
-            filter = GameObjectFilter.Creature.withSubtype(Subtype.DRAGON).nontoken().youControl(),
+            filter = GameObjectFilter.Permanent.withSubtype(Subtype.DRAGON).nontoken().youControl(),
             binding = TriggerBinding.OTHER
         )
         effect = Effects.CreateToken(
@@ -51,7 +53,7 @@ val LathlissDragonQueen = card("Lathliss, Dragon Queen") {
     activatedAbility {
         cost = Costs.Mana("{1}{R}")
         effect = Effects.ForEachInGroup(
-            GroupFilter(GameObjectFilter.Creature.withSubtype(Subtype.DRAGON).youControl()),
+            GroupFilter(GameObjectFilter.Permanent.withSubtype(Subtype.DRAGON).youControl()),
             Effects.ModifyStats(1, 0, EffectTarget.Self)
         )
     }

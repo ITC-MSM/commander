@@ -413,6 +413,17 @@ object Triggers {
             SdkTriggers.dealsDamage(damageType = DamageType.Combat),
         ),
         triggerRule("whenever ${Normalizer.SELF} is dealt damage", SdkTriggers.TakesDamage),
+        // Valiant, and one row rather than a shape over `BecomesTargetEvent`'s six flags: the SDK
+        // publishes the whole configuration as `Triggers.Valiant`, which is the lowering this file's
+        // rule says to call rather than restate. The other flag combinations (by an opponent, a
+        // filtered target, spells only) are separate printed sentences and become rows of their own
+        // when a card needs them — not a template with the flags as slots, which would print
+        // "for the first time each turn" as an optional phrase the model cannot decide.
+        triggerRule(
+            "whenever ${Normalizer.SELF} becomes the target of a spell or ability you control " +
+                "for the first time each turn",
+            SdkTriggers.Valiant,
+        ),
         // Morph's payoff. "Is turned face up" is a `When` rather than a `Whenever` because it can
         // happen once to a permanent, which is the property that decides the word (see [rules]).
         triggerRule("when ${Normalizer.SELF} is turned face up", SdkTriggers.TurnedFaceUp),

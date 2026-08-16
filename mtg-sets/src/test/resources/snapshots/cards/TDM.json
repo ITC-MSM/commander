@@ -4001,7 +4001,7 @@
                     "filter": "land ctrl:you",
                     "to": "Battlefield"
                 },
-                "binding": "OTHER",
+                "binding": "ANY",
                 "effect": {
                     "type": "CreateToken",
                     "power": 4,
@@ -14217,8 +14217,7 @@
                     "target": {
                         "type": "BoundVariable",
                         "name": "target"
-                    },
-                    "damageSource": "Self"
+                    }
                 },
                 "targetRequirement": {
                     "type": "TargetOpponent",

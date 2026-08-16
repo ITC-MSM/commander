@@ -729,7 +729,7 @@
                     "filter": "land ctrl:you",
                     "to": "Battlefield"
                 },
-                "binding": "OTHER",
+                "binding": "ANY",
                 "effect": {
                     "type": "ModifyStats",
                     "powerModifier": {
@@ -2978,7 +2978,7 @@
                     "filter": "land ctrl:you",
                     "to": "Battlefield"
                 },
-                "binding": "OTHER",
+                "binding": "ANY",
                 "effect": {
                     "type": "ModifyStats",
                     "powerModifier": {
@@ -15344,7 +15344,7 @@
                     "filter": "land ctrl:you",
                     "to": "Battlefield"
                 },
-                "binding": "OTHER",
+                "binding": "ANY",
                 "effect": {
                     "type": "AddCounters",
                     "counterType": "+1/+1",
@@ -15856,7 +15856,7 @@
                     "filter": "land ctrl:you",
                     "to": "Battlefield"
                 },
-                "binding": "OTHER",
+                "binding": "ANY",
                 "effect": {
                     "type": "Gated",
                     "gate": "Gate.MayDecide",
@@ -18348,7 +18348,7 @@
                         "filter": "land ctrl:you",
                         "to": "Battlefield"
                     },
-                    "binding": "OTHER",
+                    "binding": "ANY",
                     "effect": {
                         "type": "ForEach",
                         "space": {
@@ -23118,7 +23118,7 @@
                     "filter": "land ctrl:you",
                     "to": "Battlefield"
                 },
-                "binding": "OTHER",
+                "binding": "ANY",
                 "effect": {
                     "type": "ModifyStats",
                     "powerModifier": {

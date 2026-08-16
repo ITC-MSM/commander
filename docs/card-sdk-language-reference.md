@@ -4071,7 +4071,9 @@ for any other (filter, binding, to/excludeTo) combination.
 
 - `EntersBattlefield` — SELF, no filter. ("When this permanent enters.")
 - `OtherCreatureEnters` — OTHER binding, filter = `Creature.youControl()`.
-- `LandYouControlEnters` — landfall: OTHER binding, filter = `Land.youControl()`.
+- `LandYouControlEnters` — landfall: **ANY** binding, filter = `Land.youControl()`. No landfall
+  ability prints "another", so a land carrying one sees itself enter; a card that *does* print
+  "another land you control" wants `entersBattlefield(..., TriggerBinding.OTHER)` instead.
 - `entersBattlefield(filter, binding)` — factory. Covers face-down filters,
   ANY-binding tribal scopes, permanent-you-control scopes, enchantment-enters scopes (Eerie), etc.
 

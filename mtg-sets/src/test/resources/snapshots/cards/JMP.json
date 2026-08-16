@@ -28,7 +28,7 @@
                 "powerBonus": 1,
                 "toughnessBonus": 1,
                 "filter": {
-                    "baseFilter": "creature Pirate ctrl:you",
+                    "baseFilter": "permanent Pirate ctrl:you",
                     "excludeSelf": true
                 }
             }
