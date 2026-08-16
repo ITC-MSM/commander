@@ -610,21 +610,32 @@ gate lands inside the "may" rather than around the whole composite.
 > end of turn, Ms. Marvel gains "**Ms. Marvel's base power is equal to the number of cards in your
 > hand.**"
 
-The granted clause is a **characteristic-defining ability**: base power must keep tracking hand size
-for the rest of the turn. `Effects.SetBasePower` is a one-shot resolution-time *set* —
-`SetBaseStatsEffect` documents its `power` as "evaluated at resolution time" and is deliberately
-distinct from the projector's `SetPowerToughnessDynamic`, which is "re-evaluated per affected entity
-at projection time". So her power froze at whatever the hand was when the trigger resolved.
-Reproduced: hand 8 → power 11 (8 base + Giant Growth's 3); after a draw, hand 9 → power still 11.
+Base power must keep tracking hand size for the rest of the turn. `Effects.SetBasePower` used to be a
+one-shot resolution-time *set* — `SetBaseStatsEffect` documented its `power` as "evaluated at
+resolution time" — so her power froze at whatever the hand was when the trigger resolved. Reproduced:
+hand 8 → power 11 (8 base + Giant Growth's 3); after a draw, hand 9 → power still 11.
 
-**Implemented then removed from this branch.** The right shape is
-`Effects.GrantStaticAbility(<power-only dynamic CDA>, EffectTarget.Self, Duration.EndOfTurn)` —
-`GrantStaticAbility` already exists, but there is no power-only dynamic CDA to hand it:
-`SetBasePowerToughnessDynamicStatic` (`mtg-sdk/.../scripting/StatsStaticAbilities.kt`) sets **both**
-stats from one `DynamicAmount`, which would clobber her printed toughness of 4. Needed: a
-`SetBasePowerDynamicStatic` mirroring the existing toughness-only `SetBaseToughnessForCreatureGroup`,
-plus its `StaticAbilityHandler` branch onto the projector's existing `SetPowerToughnessDynamic` path.
-Narrow and reusable — any "power is equal to X" grant wants it.
+**Fixed (u35).** `SetBaseStatsEffect` now takes `reevaluateContinuously`; when true the executor
+carries the `DynamicAmount` into the floating effect as a nullable-halves
+`SetPowerToughnessDynamic` modification, which the projector re-reads on every pass. The card is
+`Effects.SetBasePower(EffectTarget.Self, DynamicAmounts.cardsInYourHand(), Duration.EndOfTurn,
+reevaluateContinuously = true)`.
+
+Two corrections to the earlier triage, for anyone reading it as precedent:
+ - The granted clause is **not** a characteristic-defining ability. CR 604.3a requires the ability to
+   be printed on the card it affects (criterion 2) and to not be one the object grants to itself
+   (criterion 4); this one fails both. It is a plain layer 7b effect (CR 613.4b).
+ - `Effects.GrantStaticAbility(<power-only dynamic CDA>, …)` would **not** have worked *as
+   `GrantStaticAbility` is wired*. Grants made that way land in `GameState.grantedStaticAbilities`,
+   which is read at points of use (combat, cast permission, ability legality) and is deliberately
+   never fed into the layer projector — see the KDoc on `GrantedStaticAbility` — so a base-P/T static
+   handed out that way would have compiled and done nothing. A projected route for runtime-granted
+   statics does exist (`StaticAbilityHandler.lowerToContinuousEffectData`, used by
+   `BecomeArtifactExecutor` so The Irencrag's granted `ModifyStats(3,3)` reaches the layer system),
+   and routing a `GrantStaticAbility` variant through it would have worked and would generalise to
+   any quoted static ability. The flag on the existing layer-7b atom is the smaller change for this
+   card; the lowering route is the one to reach for if a card ever needs to hand out a whole quoted
+   static ability.
 
 Her other two lines are fine today: `NoMaximumHandSize` and
 `Triggers.youCastSpellTargeting(Creature.youControl())`.

@@ -57,13 +57,24 @@ internal class EffectApplicator(
                     values.toughness = mod.toughness
                 }
                 is Modification.SetPowerToughnessDynamic -> {
-                    // CDA (CR 604.3): the dynamic value *is* the base P/T, set at Layer 7b.
+                    // The dynamic value *is* the base P/T, recomputed on every projection pass:
+                    // either an effect-granted "base power is equal to …" (CR 613.4b, layer 7b) or
+                    // a star/star CDA (CR 604.3), which CR 613.4a actually puts in layer 7a but
+                    // which this engine lowers into SET_VALUES alongside the 7b sets — see the
+                    // KDoc on Modification.SetPowerToughnessDynamic.
                     // Fall back to the effect's captured controller when the source has left the
                     // battlefield (its ControllerComponent is gone) — Titania's Song's until-EOT
                     // linger keeps animating after the enchantment leaves.
                     val controllerId = projectedValues[effect.sourceId]?.controllerId
                         ?: state.getEntity(effect.sourceId)?.get<ControllerComponent>()?.playerId
                         ?: effect.controllerId
+                    // CR 208.3a: an effect setting the base P/T of a *noncreature* permanent is
+                    // still created, it just "doesn't do anything unless that permanent becomes a
+                    // creature". Layer 4 has already been applied into `values.types` by the time
+                    // we get here and the gate is re-asked on every pass, so a Vehicle crewed later
+                    // in the turn does pick the value up. Note the fixed SetPower / SetToughness /
+                    // SetPowerToughness branches below write unconditionally — this is the one
+                    // place the dynamic and fixed base-P/T sets genuinely diverge.
                     if (controllerId != null && "CREATURE" in values.types) {
                         val context = EffectContext(
                             sourceId = effect.sourceId,
@@ -71,8 +82,15 @@ internal class EffectApplicator(
                             affectedEntityId = entityId
                         )
                         val intermediateProjected = buildIntermediateProjectedState(state, projectedValues)
-                        values.power = dynamicAmountEvaluator.evaluate(state, mod.power, context, intermediateProjected)
-                        values.toughness = dynamicAmountEvaluator.evaluate(state, mod.toughness, context, intermediateProjected)
+                        // A null half means "leave that stat alone" — the same semantics as
+                        // SetBaseStatsEffect's null power/toughness, so "base power is equal to X"
+                        // does not silently zero the printed toughness.
+                        mod.power?.let {
+                            values.power = dynamicAmountEvaluator.evaluate(state, it, context, intermediateProjected)
+                        }
+                        mod.toughness?.let {
+                            values.toughness = dynamicAmountEvaluator.evaluate(state, it, context, intermediateProjected)
+                        }
                     }
                 }
                 is Modification.SetPower -> {

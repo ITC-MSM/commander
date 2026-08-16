@@ -64,9 +64,8 @@ data class ModifyStatsEffect(
 }
 
 /**
- * Set a creature's base power and/or toughness to specific values via a one-shot floating
- * continuous effect at Layer.POWER_TOUGHNESS, Sublayer.SET_VALUES (CR 613.4b, layer 7b),
- * evaluated at resolution time.
+ * Set a creature's base power and/or toughness via a floating continuous effect at
+ * Layer.POWER_TOUGHNESS, Sublayer.SET_VALUES (CR 613.4b, layer 7b).
  *
  * A `null` [power] or [toughness] leaves that stat unchanged, so this single atom expresses every
  * shape the engine needs:
@@ -76,20 +75,59 @@ data class ModifyStatsEffect(
  * Both are [DynamicAmount] (the asymmetry the two predecessors carried — power-only was dynamic,
  * power-and-toughness was fixed Int — is gone), so either value can be read from game state.
  *
- * This is the one-shot, resolution-time *set*. It is deliberately distinct from:
+ * [reevaluateContinuously] picks *when* those `DynamicAmount`s are read — the headline difference
+ * between two genuinely different Magic templates on the same layer-7b set, though not the only one
+ * (see the three limits below):
+ *  - `false` (default) — **snapshot**: the amounts are evaluated once as the effect resolves and the
+ *    number is frozen for the duration. "Change this creature's base power to target creature's
+ *    power" keeps the number it saw even if that other creature is later pumped or dies.
+ *  - `true` — **re-evaluated**: the `DynamicAmount`s travel into the projection and are recomputed on
+ *    every layer pass, so the stat tracks the game state. This is what an effect that hands a
+ *    creature a *quoted static ability* needs — Ms. Marvel, Kamala Khan's "Until end of turn, this
+ *    creature gains 'This creature's base power is equal to the number of cards in your hand.'"
+ *    Note that a self-granted ability like that is **not** a characteristic-defining ability
+ *    (CR 604.3a criteria 2 and 4: not printed on the card, and granted by the object to itself), so
+ *    it belongs in layer 7b with the timestamp of the grant, not in layer 7a.
+ * Either way the *affected set* is locked in at resolution (CR 611.2c) — only the number moves.
+ *
+ * Three limits on `reevaluateContinuously = true`, none of which apply to the snapshot mode. They
+ * follow from the number being read by the layer projector rather than at resolution:
+ *  - **Only projection-scoped `DynamicAmount`s are supported.** The projector re-evaluates the
+ *    amount with just the source, its controller and the affected entity in scope, so anything
+ *    reading the resolution context — `XValue`/`CastX`, `ContextProperty`, the pipeline's stored
+ *    collections, or an `EntityReference`/`Player` naming a target, the triggering object or
+ *    something sacrificed or tapped as a cost — has nothing to resolve against. The executor
+ *    rejects those at resolution instead of reading them as 0 forever, so
+ *    `SetBasePower(t, EntityProperty(Triggering, Power), reevaluateContinuously = true)` is a load
+ *    error, not a silent zero. For X specifically, re-evaluation is also a rules error: CR 611.2d
+ *    fixes a continuous effect's X on resolution. Counts, battlefield/zone aggregates, life totals,
+ *    hand size and `EntityReference.Source`/`AffectedEntity` properties are all fine.
+ *  - **"Your" means the *source's* controller**, not the affected creature's — the projector
+ *    rebuilds the context from `sourceId`. That is right for a self-granted clause (Ms. Marvel:
+ *    source and affected permanent are the same object, so it follows her controller even after a
+ *    control change) and for a grant to a creature you control, but a re-evaluated grant handed to
+ *    another player's creature would read the granting player's hand rather than the creature
+ *    controller's. Keep the template to self-grants and creatures you control until an
+ *    affected-entity-controller player reference exists.
+ *  - **It applies only while the affected permanent is a creature** (CR 208.3a — the effect is still
+ *    created, it just "doesn't do anything unless that permanent becomes a creature"). The gate is
+ *    re-asked every projection pass, so a Vehicle crewed later in the turn picks the value up. The
+ *    snapshot mode writes its number unconditionally.
+ *
+ * It is deliberately distinct from:
  *  - [ModifyStatsEffect] — a +N/+N *modifier* (layer 7c), not a set.
  *  - the `SetBasePowerToughness*Static` characteristic-defining abilities — applied for as long as
- *    a static ability is active, not a one-shot floating effect.
- *  - the projector's `SetPowerToughnessDynamic` modification — re-evaluated per affected entity at
- *    projection time (mass animate), not once at resolution.
+ *    a static ability printed on a permanent is active, not a floating effect with a duration.
  *
- * Reach it through the [com.wingedsheep.sdk.dsl.Effects] `SetBasePower` / `SetBasePowerAndToughness`
- * facades rather than constructing it directly.
+ * Reach it through the [com.wingedsheep.sdk.dsl.Effects] `SetBasePower` / `SetBaseToughness` /
+ * `SetBasePowerAndToughness` facades rather than constructing it directly.
  *
  * @property target The creature whose base stats are being set
- * @property power The value to set base power to (evaluated at resolution time), or null to leave it
+ * @property power The value to set base power to, or null to leave it
  * @property toughness The value to set base toughness to, or null to leave it
  * @property duration How long the effect lasts (typically Permanent for indefinite effects)
+ * @property reevaluateContinuously Recompute [power]/[toughness] on every projection pass instead of
+ *   snapshotting them at resolution
  */
 @SerialName("SetBaseStats")
 @Serializable
@@ -97,7 +135,8 @@ data class SetBaseStatsEffect(
     val target: EffectTarget,
     val power: DynamicAmount? = null,
     val toughness: DynamicAmount? = null,
-    val duration: Duration = Duration.Permanent
+    val duration: Duration = Duration.Permanent,
+    val reevaluateContinuously: Boolean = false
 ) : Effect {
     override val description: String = buildString {
         when {

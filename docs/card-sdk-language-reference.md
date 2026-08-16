@@ -1065,17 +1065,53 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   turn). Pass `Duration.WhileSourceTapped("…")` for the Antiquities "tap-locked" buffs (Ashnod's Battle
   Gear `+2/-2`, Tawnos's Weaponry `+1/+1`): the bonus persists for as long as the source artifact remains
   tapped and the one-way latch drops it when it untaps.
-- `SetBasePower(target, power: DynamicAmount, duration)` — set base power to a dynamic value (Layer 7b),
-  leaving toughness unchanged.
-- `SetBaseToughness(target, toughness: DynamicAmount, duration)` — toughness-only sibling of `SetBasePower`.
+- `SetBasePower(target, power: DynamicAmount, duration, reevaluateContinuously = false)` — set base power
+  to a dynamic value (Layer 7b), leaving toughness unchanged.
+- `SetBaseToughness(target, toughness: DynamicAmount, duration, reevaluateContinuously = false)` —
+  toughness-only sibling of `SetBasePower`.
 - `SetBasePowerAndToughness(power, toughness, target?, duration)` — set base power AND toughness (Layer 7b,
   set values), e.g. "Target creature has base power and toughness 5/5 until end of turn" (Dreadful as the
-  Storm). Two overloads: fixed `Int`s or `DynamicAmount`s.
+  Storm). Two overloads: fixed `Int`s, or `DynamicAmount`s (which also take `reevaluateContinuously`).
   - All three facades lower onto the one **`SetBaseStatsEffect(target, power: DynamicAmount?, toughness:
-    DynamicAmount?, duration)`** atom — `null` power or toughness leaves that stat unchanged, so the same
-    type covers power-only, toughness-only, and both. (Distinct from `ModifyStatsEffect`, a +N/+N
-    *modifier* in layer 7c, and from the `SetBasePowerToughness*Static` CDAs, which apply for as long as a
-    static ability is active rather than as a one-shot floating effect.)
+    DynamicAmount?, duration, reevaluateContinuously)`** atom — `null` power or toughness leaves that stat
+    unchanged, so the same type covers power-only, toughness-only, and both. (Distinct from
+    `ModifyStatsEffect`, a +N/+N *modifier* in layer 7c, and from the `SetBasePowerToughness*Static` CDAs,
+    which apply for as long as a static ability printed on a permanent is active rather than as a floating
+    effect with a duration.)
+  - **`reevaluateContinuously`** picks *when* the `DynamicAmount`s are read — the headline difference
+    between two real Magic templates on the same layer, though not the only one (three further limits
+    follow):
+    - `false` (default) — **snapshot**: evaluated once as the effect resolves and frozen for the duration.
+      "Change this creature's base power to target creature's power" keeps the number it saw.
+    - `true` — **re-evaluated**: the `DynamicAmount` travels into the floating effect (a nullable-halves
+      `SetPowerToughnessDynamic` modification) and is recomputed on every projection pass, so the stat
+      tracks the game state. This is what an effect handing out a *quoted static ability* needs —
+      **Ms. Marvel, Kamala Khan**'s "Until end of turn, Ms. Marvel gains 'Ms. Marvel's base power is equal
+      to the number of cards in your hand.'" =
+      `Effects.SetBasePower(EffectTarget.Self, DynamicAmounts.cardsInYourHand(), Duration.EndOfTurn,
+      reevaluateContinuously = true)`.
+    Either way the *affected set* is locked in at resolution (CR 611.2c); only the number moves. A
+    self-granted clause like Ms. Marvel's is **not** a CDA (CR 604.3a criterion 2 — printed on the card it
+    affects — and criterion 4 — not an ability an object grants to itself), so it applies in layer 7b per
+    CR 613.4b ("effects that refer to the base power and/or toughness of a creature apply in this layer"),
+    not 7a. Counters and pump effects are layer 7c and still apply on top.
+    Three limits apply to `true` and not to the snapshot mode, all of them because the projector — not the
+    resolution — reads the number:
+    - **Only projection-scoped `DynamicAmount`s.** The amount is re-evaluated with just the source, its
+      controller and the affected entity in scope, so `XValue`/`CastX`, `ContextProperty`, pipeline
+      collections, and any `EntityReference`/`Player` naming a target, the triggering object, or something
+      sacrificed/tapped as a cost have nothing to resolve against. Those are **rejected at resolution**
+      rather than read as 0 (so the snapshot-mode template "base power becomes target creature's power"
+      must stay `reevaluateContinuously = false`; CR 611.2d also fixes X on resolution). Counts,
+      battlefield/zone aggregates, life totals, hand size and `Source`/`AffectedEntity` properties are all
+      supported.
+    - **"Your" is the source's controller**, not the affected creature's. Correct for a self-granted clause
+      or a grant to a creature you control; a re-evaluated grant handed to an *opponent's* creature would
+      read the granting player's hand. Keep the template to self-grants until an affected-entity-controller
+      player reference exists.
+    - **It applies only while the permanent is a creature** (CR 208.3a — the effect is created but does
+      nothing "unless that permanent becomes a creature"). Re-asked every pass, so a Vehicle crewed later
+      in the turn picks it up. Snapshot mode writes unconditionally.
 - `GrantKeyword(keyword, target, duration, condition = null)` — grant a keyword for a duration. The target may be a battlefield permanent **or a permanent spell still on the stack**: a permanent spell keeps its entity id as it resolves, so a keyword granted to `EffectTarget.TriggeringEntity` inside a "when you next cast a creature spell this turn" delayed trigger carries onto the creature the moment it enters (Summon: Brynhildr's Gestalt Mode = "it gains haste until end of turn"). On a non-permanent spell the floating effect simply never has a permanent to apply to.
   **`condition`** makes the granted keyword *conditionally live* rather than gating whether the grant happens: the grant always happens and still expires with `duration`, but the condition rides along as the floating effect's `sourceCondition` and is re-asked on every projection — the durational sibling of a printed `ConditionalStaticAbility`'s "as long as …" clause. This is how a **quoted conditional ability handed out by an animate effect** is modelled: Restless Spire's "{U}{R}: … becomes a 2/1 blue and red Elemental creature with *'During your turn, this creature has first strike.'*" is `Effects.Composite(Effects.BecomeCreature(...), Effects.GrantKeyword(Keyword.FIRST_STRIKE, EffectTarget.Self, Duration.EndOfTurn, Conditions.IsYourTurn))`. "You" resolves to the **source's projected controller**, and Layer 2 has already run when a later layer's modification is applied, so the clause correctly goes dark if another player gains control of the permanent mid-turn — and comes back if control returns. Do **not** reach for a `Duration.While…` here: those latch off permanently once their gate first fails (CR 611.2b), which is right for a "for as long as" duration and wrong for a conditional clause inside a granted ability. Also distinct from wrapping the grant in a `ConditionalEffect`, which tests the condition **once** at resolution and then grants unconditionally.
 - `GrantStaticAbility(ability, target, duration)` — grant a printed-shape `StaticAbility` (e.g. `CantBeBlockedByMoreThan(1)`) to a permanent for a duration. The runtime sibling of a printed static ability: unlike keyword grants (which flow through projected keywords) it is recorded as a `GrantedStaticAbility` keyed to the entity in `GameState.grantedStaticAbilities` and read **at the point of use** — combat blocker validation (`BlockPhaseManager`, CR 509.1b) consults granted `CantBeBlockedByMoreThan` alongside the creature's printed static abilities; the grant expires in the cleanup step (EndOfTurn). Compose inside `ForEachInGroup` with `EffectTarget.Self` for "each creature you control gains ..." (Full Steam Ahead = `ModifyStats(2,2)` + `GrantKeyword(TRAMPLE)` + `GrantStaticAbility(CantBeBlockedByMoreThan(1))`). `CantBeBlockedByMoreThan` (combat), `MayCastFromGraveyard` (graveyard-cast enumerator + `CastZoneResolver`, e.g. Forgotten Cellar's "cast spells from your graveyard this turn"), and `PreventActivatedAbilities` (activation legality: `CastPermissionUtils.isActivationPrevented`, consulted by the ability handler and both ability enumerators) are wired into read sites today; granting another `StaticAbility` kind compiles and stores but needs its own point-of-use read to take effect. A granted `PreventActivatedAbilities` behaves exactly like the printed form anchored to the grant's holder: its filter is evaluated with the holder as source, so the self-scoped `PreventActivatedAbilities(GameObjectFilter.Permanent.sourceItself())` locks the *holder's own* activated abilities — mana abilities included unless `nonManaAbilitiesOnly = true`. Pair it with `Duration.WhileAffectedTapped` ("for as long as it remains tapped", keyed to the granted-to permanent) for the Braided Net shape — "Tap another target nonland permanent. Its activated abilities can't be activated for as long as it remains tapped." = `Effects.Tap(target)` + `Effects.GrantStaticAbility(PreventActivatedAbilities(GameObjectFilter.Permanent.sourceItself()), target, Duration.WhileAffectedTapped)`. Like every "for as long as …" duration it is one-way (CR 611.2b): the read site gates per-frame, and `EndedDurationExpiryCheck` physically removes the grant the moment the permanent untaps (or leaves the battlefield), so a later re-tap does not re-lock it.

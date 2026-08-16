@@ -159,17 +159,22 @@ sealed interface SerializableModification {
     data class SetToughness(val toughness: Int) : SerializableModification
 
     /**
-     * Dynamic base power/toughness *setting* (characteristic-defining ability) — Layer 7b
-     * (SET_VALUES), evaluated per affected entity at projection time. Mirrors
-     * [Modification.SetPowerToughnessDynamic] for floating effects, so a one-shot animate
-     * (e.g. Titania's Song's "this effect continues until end of turn" linger) can set base
-     * P/T to a value computed from each animated permanent (its mana value, via
+     * Dynamic base power/toughness *setting* — Layer 7b (SET_VALUES), evaluated per affected entity
+     * at projection time. Mirrors [Modification.SetPowerToughnessDynamic] for floating effects, so
+     * a one-shot animate (e.g. Titania's Song's "this effect continues until end of turn" linger)
+     * can set base P/T to a value computed from each animated permanent (its mana value, via
      * `EntityProperty(EntityReference.AffectedEntity, EntityNumericProperty.ManaValue)`).
+     *
+     * Also the shape a `SetBaseStatsEffect(reevaluateContinuously = true)` resolves into, which is
+     * why [power] and [toughness] are independently nullable: "gains 'this creature's base *power*
+     * is equal to the number of cards in your hand'" sets power only and leaves toughness printed.
+     * The stat that is set keeps tracking the game state for the effect's whole duration, unlike the
+     * fixed [SetPower]/[SetToughness]/[SetPowerToughness] siblings, which freeze a number.
      */
     @Serializable
     data class SetPowerToughnessDynamic(
-        val power: DynamicAmount,
-        val toughness: DynamicAmount
+        val power: DynamicAmount?,
+        val toughness: DynamicAmount?
     ) : SerializableModification
 
     @Serializable
