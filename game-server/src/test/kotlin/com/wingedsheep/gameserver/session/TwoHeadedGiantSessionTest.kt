@@ -6,6 +6,7 @@ import com.wingedsheep.engine.core.DecisionContext
 import com.wingedsheep.engine.core.ManaSourceOption
 import com.wingedsheep.engine.core.AtomicBlockTaxManaAbilityOption
 import com.wingedsheep.engine.core.AtomicBlockTaxManaAbilityRef
+import com.wingedsheep.engine.core.AtomicBlockTaxSecondaryTapTarget
 import com.wingedsheep.engine.core.SelectAtomicBlockTaxManaAbilitiesDecision
 import com.wingedsheep.engine.core.SelectManaSourcesDecision
 import com.wingedsheep.engine.state.ComponentContainer
@@ -174,6 +175,7 @@ class TwoHeadedGiantSessionTest : ScenarioTestBase() {
                 manaAmount = 1,
                 requiresSacrificeSelf = false,
                 colorChoices = Color.entries.toSet(),
+                secondaryTapTargets = listOf(AtomicBlockTaxSecondaryTapTarget(EntityId.of("atomic-secondary-tap-target"), "Combat Test Bear")),
             )
             val decision = SelectAtomicBlockTaxManaAbilitiesDecision(
                 id = "atomic-team-block-tax",
@@ -183,7 +185,9 @@ class TwoHeadedGiantSessionTest : ScenarioTestBase() {
                 availableOptions = listOf(atomicOption),
                 requiredCost = "{1}",
                 autoPaySuggestion = listOf(atomicOption.ref),
-                autoPaySelections = listOf(com.wingedsheep.engine.core.AtomicBlockTaxManaAbilitySelection(atomicOption.ref, Color.RED)),
+                autoPaySelections = listOf(com.wingedsheep.engine.core.AtomicBlockTaxManaAbilitySelection(
+                    atomicOption.ref, Color.RED, secondaryTapTargetId = atomicOption.secondaryTapTargets.single().entityId,
+                )),
             )
             val atomicBlockTax = BlockTaxManaSelectionContinuation(
                 decisionId = decision.id,
@@ -197,7 +201,9 @@ class TwoHeadedGiantSessionTest : ScenarioTestBase() {
                         autoPaySuggestion = listOf(plains),
                         atomicManaAbilityOptions = listOf(atomicOption),
                         atomicAutoPaySuggestion = listOf(atomicOption.ref),
-                        atomicAutoPaySelections = listOf(com.wingedsheep.engine.core.AtomicBlockTaxManaAbilitySelection(atomicOption.ref, Color.RED)),
+                        atomicAutoPaySelections = listOf(com.wingedsheep.engine.core.AtomicBlockTaxManaAbilitySelection(
+                            atomicOption.ref, Color.RED, secondaryTapTargetId = atomicOption.secondaryTapTargets.single().entityId,
+                        )),
                     ),
                 ),
                 isAtomicTeamPayment = true,
@@ -222,8 +228,11 @@ class TwoHeadedGiantSessionTest : ScenarioTestBase() {
             visible.playerId shouldBe payer
             visible.availableOptions.map { it.ref.sourceId } shouldContainExactly listOf(plains)
             visible.availableOptions.single().colorChoices shouldBe Color.entries.toSet()
+            visible.availableOptions.single().secondaryTapTargets shouldContainExactly atomicOption.secondaryTapTargets
             visible.autoPaySelections shouldContainExactly listOf(
-                com.wingedsheep.engine.core.AtomicBlockTaxManaAbilitySelection(atomicOption.ref, Color.RED),
+                com.wingedsheep.engine.core.AtomicBlockTaxManaAbilitySelection(
+                    atomicOption.ref, Color.RED, secondaryTapTargetId = atomicOption.secondaryTapTargets.single().entityId,
+                ),
             )
         }
 
