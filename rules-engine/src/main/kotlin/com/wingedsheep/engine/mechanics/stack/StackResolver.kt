@@ -3533,8 +3533,14 @@ class StackResolver(
                 // the marker so it doesn't ride along onto the resulting permanent (which reuses
                 // this entity id). The exile-side countdown trigger is gated on time counters,
                 // so a leftover marker would be inert, but this keeps the permanent clean.
+                // The "which zone was this exiled from" stamp is only meaningful while the object
+                // is in exile; this path reuses the entity id, so leaving it on would put an
+                // ExiledFromZoneComponent on the resulting permanent.
                 val removed = state.removeFromZone(exileZone, cardId)
-                    .updateEntity(cardId) { it.without<com.wingedsheep.engine.state.components.battlefield.SuspendedComponent>() }
+                    .updateEntity(cardId) {
+                        it.without<com.wingedsheep.engine.state.components.battlefield.SuspendedComponent>()
+                            .without<com.wingedsheep.engine.state.components.identity.ExiledFromZoneComponent>()
+                    }
                 return com.wingedsheep.engine.handlers.effects.ZoneMovementUtils
                     .unlinkFromAllLinkedExiles(removed, cardId)
             }

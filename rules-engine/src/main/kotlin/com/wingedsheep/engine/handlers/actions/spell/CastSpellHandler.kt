@@ -2649,6 +2649,13 @@ class CastSpellHandler(
 
                                 currentState = currentState.removeFromZone(sourceZone, cardId)
                                 currentState = currentState.addToZone(exileZone, cardId)
+                                // Same origin stamp ZoneTransitionService writes (see below).
+                                currentState = currentState.updateEntity(cardId) { c ->
+                                    c.with(
+                                        com.wingedsheep.engine.state.components.identity
+                                            .ExiledFromZoneComponent(atom.zone)
+                                    )
+                                }
 
                                 events.add(ZoneChangeEvent(
                                     entityId = cardId,
@@ -2767,6 +2774,13 @@ class CastSpellHandler(
 
                             currentState = currentState.removeFromZone(sourceZone, cardId)
                             currentState = currentState.addToZone(exileZone, cardId)
+                            // Same origin stamp ZoneTransitionService writes (see below).
+                            currentState = currentState.updateEntity(cardId) { c ->
+                                c.with(
+                                    com.wingedsheep.engine.state.components.identity
+                                        .ExiledFromZoneComponent(zone)
+                                )
+                            }
 
                             events.add(ZoneChangeEvent(
                                 entityId = cardId,
@@ -2842,6 +2856,18 @@ class CastSpellHandler(
 
                             currentState = currentState.removeFromZone(sourceZone, cardId)
                             currentState = currentState.addToZone(exileZone, cardId)
+                            // Record the origin zone the way ZoneTransitionService does. This path
+                            // can exile from the battlefield *or* from hand and (just below) links
+                            // the result to the spell, so it is the one direct-`addToZone` site
+                            // that can feed a *linked*-exile pile: without the stamp a later
+                            // CR 610.3 "return it to its previous zone" would put a hand card onto
+                            // the battlefield via ToZoneExiledFrom's fallback.
+                            currentState = currentState.updateEntity(cardId) { c ->
+                                c.with(
+                                    com.wingedsheep.engine.state.components.identity
+                                        .ExiledFromZoneComponent(sourceZone.zoneType)
+                                )
+                            }
 
                             events.add(ZoneChangeEvent(
                                 entityId = cardId,

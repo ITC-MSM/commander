@@ -55,7 +55,17 @@ object ExilePatterns {
         )
     ))
 
+    /**
+     * Gather everything in the source's linked-exile pile and move it to [destination] — the shared
+     * shape behind every "return the exiled card(s)" clause. The destination is a parameter rather
+     * than three near-identical recipes: [returnLinkedExileToHand] and
+     * [returnLinkedExileToZoneExiledFrom] are thin facades over this with a different
+     * [CardDestination]. The consolidation preserves the effect trees the previous separate recipes
+     * built — same `storeAs` keys, same `underOwnersControl` — which is what the two pinning tests
+     * in `ReturnLinkedExileToZoneExiledFromTest` check.
+     */
     fun returnLinkedExile(
+        destination: CardDestination = CardDestination.ToZone(Zone.BATTLEFIELD),
         underOwnersControl: Boolean = false,
         storeAs: String = "linked_return"
     ): CompositeEffect = CompositeEffect(listOf(
@@ -65,21 +75,29 @@ object ExilePatterns {
         ),
         MoveCollectionEffect(
             from = storeAs,
-            destination = CardDestination.ToZone(Zone.BATTLEFIELD),
+            destination = destination,
             underOwnersControl = underOwnersControl
         )
     ))
 
-    fun returnLinkedExileToHand(storeAs: String = "linked_return_hand"): CompositeEffect = CompositeEffect(listOf(
-        GatherCardsEffect(
-            source = CardSource.FromLinkedExile(),
+    fun returnLinkedExileToHand(storeAs: String = "linked_return_hand"): CompositeEffect =
+        returnLinkedExile(
+            destination = CardDestination.ToZone(Zone.HAND),
             storeAs = storeAs
-        ),
-        MoveCollectionEffect(
-            from = storeAs,
-            destination = CardDestination.ToZone(Zone.HAND)
         )
-    ))
+
+    /**
+     * Return each linked-exiled card to **the zone it was exiled from** (CR 610.3), under its
+     * owner's control when that zone is the battlefield (CR 610.3c). The return half of an
+     * exile-until clause whose exile half can reach more than one zone.
+     */
+    fun returnLinkedExileToZoneExiledFrom(
+        storeAs: String = "linked_return_origin"
+    ): CompositeEffect = returnLinkedExile(
+        destination = CardDestination.ToZoneExiledFrom(),
+        underOwnersControl = true,
+        storeAs = storeAs
+    )
 
     fun takeFromLinkedExile(storeAs: String = "linked_take"): CompositeEffect = CompositeEffect(listOf(
         GatherCardsEffect(

@@ -3673,6 +3673,160 @@
     ]
 }
 
+// Cloak and Dagger, Entwined
+{
+    "name": "Cloak and Dagger, Entwined",
+    "manaCost": "{1}{W}{B}",
+    "typeLine": "Legendary Creature — Human Hero",
+    "oracleText": "Deathtouch, lifelink\nWhen Cloak and Dagger enter, choose target opponent and up to one target creature they control. They reveal their hand. You may exile a nonland card from their hand or the chosen creature until Cloak and Dagger leave the battlefield.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "DEATHTOUCH",
+        "LIFELINK"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "RevealHand",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target opponent"
+                            }
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": "Gate.MayDecide",
+                            "then": {
+                                "type": "ChooseAction",
+                                "choices": [
+                                    {
+                                        "label": "Exile a nonland card from their hand",
+                                        "effect": {
+                                            "type": "Composite",
+                                            "effects": [
+                                                {
+                                                    "type": "GatherCards",
+                                                    "source": {
+                                                        "type": "FromZone",
+                                                        "zone": "Hand",
+                                                        "player": {
+                                                            "type": "ContextPlayer",
+                                                            "index": 0
+                                                        },
+                                                        "filter": "nonland"
+                                                    },
+                                                    "storeAs": "cloakDaggerHand"
+                                                },
+                                                {
+                                                    "type": "SelectFromCollection",
+                                                    "from": "cloakDaggerHand",
+                                                    "selection": {
+                                                        "type": "ChooseExactly",
+                                                        "count": {
+                                                            "type": "Fixed",
+                                                            "amount": 1
+                                                        }
+                                                    },
+                                                    "storeSelected": "cloakDaggerExiled",
+                                                    "prompt": "Choose a nonland card to exile"
+                                                },
+                                                {
+                                                    "type": "MoveCollection",
+                                                    "from": "cloakDaggerExiled",
+                                                    "destination": {
+                                                        "type": "ToZone",
+                                                        "zone": "Exile",
+                                                        "player": {
+                                                            "type": "ContextPlayer",
+                                                            "index": 0
+                                                        }
+                                                    },
+                                                    "linkToSource": true
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "label": "Exile the chosen creature",
+                                        "effect": {
+                                            "type": "ExileUntilLeaves",
+                                            "target": {
+                                                "type": "BoundVariable",
+                                                "name": "up to one target creature they control"
+                                            }
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetOpponent",
+                    "id": "target opponent"
+                },
+                "additionalTargetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "optional": true,
+                        "filter": {
+                            "baseFilter": "creature ctrl:opponent"
+                        },
+                        "id": "up to one target creature they control"
+                    }
+                ],
+                "descriptionOverride": "When Cloak and Dagger enter, choose target opponent and up to one target creature they control. They reveal their hand. You may exile a nonland card from their hand or the chosen creature until Cloak and Dagger leave the battlefield."
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": "FromLinkedExile",
+                            "storeAs": "linked_return_origin"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "linked_return_origin",
+                            "destination": "ToZoneExiledFrom",
+                            "underOwnersControl": true
+                        }
+                    ]
+                },
+                "descriptionOverride": "When Cloak and Dagger leave the battlefield, return the exiled card to the zone it was exiled from."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "211",
+        "rarity": "RARE",
+        "artist": "Rimas Valeikis",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/a/fa01d35f-1064-4a7c-9475-4504566df850.jpg?1783902902"
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLACK"
+    ]
+}
+
 // Colleen Wing, Street Samurai
 {
     "name": "Colleen Wing, Street Samurai",

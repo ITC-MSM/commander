@@ -392,6 +392,18 @@ object ZoneTransitionService {
             if (entityContainer != null && entityContainer.has<FaceDownComponent>()) {
                 newState = newState.updateEntity(entityId) { c -> c.without<FaceDownComponent>() }
             }
+            // The "which zone was this exiled from" stamp is only meaningful while the object is
+            // actually in exile, so drop it on the way out. Two exits reuse the entity id and
+            // don't come through here — StackResolver's cast-from-exile and
+            // ReturnOneFromLinkedExileExecutor — and each clears it itself. An exile → exile move
+            // (CR 406.7) re-stamps it below.
+            if (entityContainer != null &&
+                entityContainer.has<com.wingedsheep.engine.state.components.identity.ExiledFromZoneComponent>()
+            ) {
+                newState = newState.updateEntity(entityId) { c ->
+                    c.without<com.wingedsheep.engine.state.components.identity.ExiledFromZoneComponent>()
+                }
+            }
             // A suspended card that leaves exile by any non-cast path (returned to hand,
             // shuffled in, exiled elsewhere) is no longer suspended (CR 702.62). The cast
             // path is guarded separately by the countdown's intervening-if, so a leftover
@@ -565,6 +577,18 @@ object ZoneTransitionService {
             }
             Zone.EXILE -> {
                 newState = newState.addToZone(destZoneKey, entityId)
+                // Record where this object came from, so a CR 610.3 "return it to its previous
+                // zone" effect can put it back (`CardDestination.ToZoneExiledFrom`). Stamped for
+                // every exile that comes through here, not just linked ones. This is the main
+                // road, not a choke point: the direct-`addToZone` exiles listed on
+                // ExiledFromZoneComponent write the same stamp themselves, and anything still
+                // unstamped takes ToZoneExiledFrom's fallback.
+                newState = newState.updateEntity(entityId) { c ->
+                    c.with(
+                        com.wingedsheep.engine.state.components.identity
+                            .ExiledFromZoneComponent(fromZone)
+                    )
+                }
                 if (options.faceDownExile) {
                     newState = newState.updateEntity(entityId) { c -> c.with(FaceDownComponent) }
                 }

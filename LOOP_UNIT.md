@@ -1,101 +1,93 @@
-# loop-msh-u31 — Invisible Woman, Sue Storm (MSH)
+# loop-msh-u26 — Cloak and Dagger, Entwined (feature unit)
 
-**Kind:** feature · **Base branch:** `loop-msh-u30` (local, **not** merged upstream). u30 sits on u28
-which sits on `origin/main`, so `main` *is* an ancestor now, but the u28/u30 commits below this
-branch are not upstream yet — this waits for them to land before it can be opened on its own.
-Reviewer: diff with `git diff loop-msh-u30...HEAD`.
+Base branch: `loop-msh-u31` (a local branch, **not** merged upstream — this is a stack). u31 → u30 →
+u28 → `origin/main`, so `main` *is* an ancestor now, but none of those commits are upstream yet;
+this waits for them to land before it can be opened on its own. Reviewer: diff with
+`git diff loop-msh-u31...HEAD`.
 
-The rebase onto the current u30 moved the card and its scenario test into the per-era modules that
-`origin/main` now uses: `mtg-sets/2026/src/main/.../msh/cards/InvisibleWomanSueStorm.kt` and
-`mtg-sets/2026/tests/src/test/.../InvisibleWomanSueStormScenarioTest.kt` (both byte-identical to
-their pre-rebase contents). The mechanic-level `CountersPlacedBatchTriggerTest.kt` uses
-`GameTestDriver`/`TestCards` and locally-defined cards, so it stays in
-`rules-engine/src/test/.../triggers/`.
+The rebase onto the current u31 moved the card and its scenario test into the per-era modules that
+`origin/main` now uses: `mtg-sets/2026/src/main/.../msh/cards/CloakAndDaggerEntwined.kt` and
+`mtg-sets/2026/tests/src/test/.../CloakAndDaggerEntwinedScenarioTest.kt` (both byte-identical to
+their pre-rebase contents). `ReturnLinkedExileToZoneExiledFromTest.kt` is pure engine — it builds
+`GameState` directly and names no corpus card — so it stays in
+`rules-engine/src/test/.../handlers/effects/library/` beside its siblings.
 
 ## The primitive
 
-- **What:** `EventPattern.CountersPlacedEvent.batch: Boolean = false` — the "one or more counters on
-  **one or more** permanents" batch multiplicity (CR 603.2c), alongside the existing per-permanent
-  reading of the same pattern.
-- **Where:**
-  - SDK: `mtg-sdk/.../scripting/EventPattern.kt` (the `batch` field + description branch),
-    `mtg-sdk/.../dsl/Triggers.kt` (`countersPlacedOn(..., batch = false)`).
-  - Engine: `rules-engine/.../event/TriggerDetector.kt` →
-    `detectCountersPlacedBatchTriggers` (new pass, called from `detectTriggers` next to the tap/untap
-    batch passes); `rules-engine/.../event/TriggerMatcher.kt` → the per-event `CountersPlacedEvent`
-    branch returns `false` for batch patterns, and both paths narrow through one shared
-    `matchesCountersPlacedAxes` (the `DamageTriggerDetector` → `matchesDealsDamageTrigger` shape), so
-    the two multiplicities cannot drift apart.
-- **Pattern followed:** the existing `TapEvent.batch` / `UntapEvent.batch` / `DealsDamageEvent.batch`
-  shape — same flag name, same "per-event matcher skips it, dedicated detector fires once" wiring,
-  same `TriggerCategory` reused (`COUNTERS_ADDED`; no new category, exactly like tap/untap).
-  **No new batching mechanism was invented.**
-- **Semantics:** every other axis (counter type, `placedBy`, `firstTimeEachTurn`, recipient filter,
-  `TriggerBinding.SELF/OTHER`) *narrows* the batch rather than discarding it. The first matching
-  recipient is bound as the triggering entity, all matching recipients as `capturedEntityIds` (as
-  `detectUntapBatchTriggers` does); `TriggerContext.counterCount` is the batch total.
-  Separate resolutions are separate detection passes and so separate batches. A placement of zero
-  counters is not a placement, for either multiplicity.
+- **`CardDestination.ToZoneExiledFrom(fallback = Zone.BATTLEFIELD)`**
+  (`mtg-sdk/.../scripting/effects/PipelineEffects.kt`) — a *per-card* `MoveCollection` destination:
+  each card returns to the zone it was exiled from. CR 610.3 ("this second one-shot effect returns
+  the object to its previous zone"); verified against `/workspace/MagicCompRules_20260619.txt`, as
+  were CR 610.3c (returns under owner's control), CR 400.7 (new object), CR 406.7 (exiled from
+  exile) and CR 704.5d (tokens in wrong zones).
+- **`ExiledFromZoneComponent(zone)`** (`rules-engine/.../state/components/identity/`) — the fact it
+  reads. Written by `ZoneTransitionService`'s `Zone.EXILE` entry branch (every effect-driven exile)
+  and, explicitly, by the direct-`addToZone` exile sites that matter: exile as a cost
+  (`CostPaymentService`, `CastSpellHandler`'s three additional-cost branches),
+  `ExileOpponentsGraveyardsExecutor`, and the graveyard sweep in `SbaZoneMovementHelper`. It is a
+  best-effort record, not a guarantee — anything unstamped takes `ToZoneExiledFrom`'s fallback, so
+  the fallback is load-bearing. Cleared by the same service on the way out, plus by the two exits
+  that reuse the entity id (`StackResolver`'s cast-from-exile, `ReturnOneFromLinkedExileExecutor`).
+  Registered in `Serialization.kt`.
+- **`MoveCollectionExecutor.moveToZonesExiledFrom`** groups the collection by recorded zone and runs
+  each group through the existing `ToZone` path, so owner routing / aura targeting / events are
+  unchanged. Battlefield group last (it's the one that can pause on an Aura's enchant target).
+- **Consolidation:** `ExilePatterns.returnLinkedExile` now takes a `destination`, and
+  `returnLinkedExileToHand` is a thin facade over it. Both existing facades build **byte-identical**
+  effect trees to before (same `storeAs` keys, same `underOwnersControl`), and
+  `ReturnLinkedExileToZoneExiledFromTest` has two tests pinning their old behaviour.
+- Facade: `Effects.ReturnLinkedExileToZoneExiledFrom()`.
 
 ## The card
 
-Invisible Woman, Sue Storm — {4}{W} Legendary Creature — Human Hero 2/5, lifelink, MSH #17.
-"Whenever you put one or more +1/+1 counters on one or more other Heroes you control, you may create
-a 0/4 colorless Wall creature token with defender." Uses `Triggers.countersPlacedOn(batch = true,
-placedBy = Player.You, binding = OTHER, filter = Creature.youControl().withSubtype(HERO))` plus
-`optional = true` and `Effects.CreateToken`. No new effect vocabulary.
-
-## Tests
-
-- `rules-engine/src/test/kotlin/.../triggers/CountersPlacedBatchTriggerTest.kt` — the primitive,
-  driven directly through `TriggerDetector.detectTriggers` with synthesized `CountersAddedEvent`s.
-  Every case is asserted against a **per-permanent twin observer** built from the same pattern with
-  `batch = false`, so the flag itself is what the assertions discriminate.
-- `rules-engine/src/test/kotlin/.../scenarios/InvisibleWomanSueStormScenarioTest.kt` — the card
-  end-to-end, driven by an **inline** "put a +1/+1 counter on each creature you control" sorcery.
-  (Cathars' Crusade has that exact printed text and was the first driver, but it re-triggers off the
-  Wall entering — a genuine loop with this card — so the driver is inline.)
-- `manual-scenarios/sets/msh/loop-msh-u31-invisible-woman-sue-storm.json` — playtest scenario. It
-  *does* pair Invisible Woman with Cathars' Crusade, deliberately, so the loop is visible by hand.
-- **Mutation-checked:** batching switched off in the detector → the three multi-recipient engine
-  assertions and the "one Wall" scenario assertion went red, the other 14 stayed green; restored.
+`Cloak and Dagger, Entwined` (MSH #211, {1}{W}{B} 2/2 deathtouch + lifelink). ETB targets an
+opponent + up to one creature they control, reveals their hand, then `MayEffect` → `ChooseAction`
+picks **either** a gather→select→move(EXILE, `linkToSource`) over their hand **or**
+`ExileUntilLeaves` on the chosen creature. The LTB trigger is the new
+`ReturnLinkedExileToZoneExiledFrom()`, which is what lets one trigger serve both branches.
 
 ## Gate
 
-`just test` after the review corrections — **10959 tests, 1 failed**, and that one is the known
-`ConniveTargetingTest` `TimeoutCancellationException` contention flake, which passes alone
-(`just test-class ConniveTargetingTest` → 2/0). Not cache-served: 21 tasks executed, every module's
-`test` task ran except `:mtg-search:`/`:mtgish-tooling:` (inputs untouched).
-`just rebless-cards` moved no snapshot (`MSH.json` was already blessed and the card is unchanged);
-`just check-card-printing "Invisible Woman, Sue Storm"` ok; backlog ticked + `just fix-backlog`
-(MSH 260/276).
+`just test` — **BUILD SUCCESSFUL** (10 975 tests). The first run had one failure,
+`ConniveTargetingTest` with a 120 s `TimeoutCancellationException` (contention, not an assertion,
+not in my diff); green standalone. The final run reports `1 executed, 52 up-to-date` because the
+preceding run had already executed the other modules' test tasks against this same tree — see the
+PR body, which spells this out.
+
+Mutation-checked twice: forcing `originZoneOf` to always return `Zone.BATTLEFIELD` turned red
+exactly the hand / graveyard / library / mixed-pile / source-left primitive tests **and** the card's
+hand-branch scenario test, leaving the battlefield and fallback cases green. Restored; no probe left
+in the tree.
 
 **Still owed — that green no longer covers this tree.** The branch has since been rebased onto the
-rewritten `loop-msh-u30` (new base, and the card/test changed modules), so the 10959-test result
-above is stale. This diff reaches `mtg-sdk` (`EventPattern`, `Triggers`) as well as `rules-engine`
-and `mtg-sets`, so the re-run is the **full** `test` suite, not the engine-only gate — and it must
-be re-run again after the eventual rebase onto `origin/main`.
+rewritten `loop-msh-u31` (new base, and the card/scenario test changed modules), so the 10 975-test
+result above is stale. This diff reaches `mtg-sdk` (`Effects`, `ExilePatterns`, `LibraryPatterns`,
+`PipelineEffects`) as well as `rules-engine` and `mtg-sets`, so the re-run is the **full** `test`
+suite, not the engine-only gate — and it must be re-run again after the eventual rebase onto
+`origin/main`.
 
-## Things I'm unsure about / worth a reviewer's eye
+## Things I'm unsure about / a reviewer should look at
 
-- `counterCount` on a batch trigger is the *sum* over the collapsed placements. No shipped card reads
-  it from a batch trigger, so this is a judgement call, not a verified requirement.
-- The batch is scoped **per detection pass**, not per placing effect. Two effects that somehow
-  resolve into the same event batch would collapse into one firing. I did not find a path where that
-  happens (each resolution triggers its own detection pass) but I did not exhaustively prove it.
-- I audited the `CountersAddedEvent` emission sites by grep and read the multi-recipient ones
-  (`AddCountersToCollectionExecutor`, `ProliferateExecutor`, `AddCountersExecutor` via
-  `ForEachInGroup`). I did **not** individually verify every one of the ~25 emit sites.
-- Pre-existing, **not** touched by this unit: `AddCountersToCollectionExecutor` and
-  `DistributeCountersAmongTargetsExecutor` do not check `ProjectedState.canReceiveCounters`, unlike
-  `AddCountersExecutor` / `AddCountersUpToExecutor` / `ProliferateExecutor` / `ExploreEffectExecutor`.
-  The check is per-executor, not central, so a no-op placement from those two *would* enter a batch —
-  the engine KDoc, the SDK reference and the scenario-test comment all now say so instead of claiming
-  the batch excludes it by construction. My scenario test for the prohibition goes through the
-  `ForEachInGroup` + `AddCounters` path, which does guard, and proves only that path. Fixing those two
-  executors is its own unit: they also add the counters to the component.
-- No mtgish bridge entry was added: the counters-placed IR tag
-  (`WhenAnyNumberOfCountersOfTypeArePutOnAPermanent`) is already `supported`, and this is a
-  multiplicity variation on it rather than a new capability or IR tag. The emitter still declines
-  non-SELF subjects to SCAFFOLD, which is the correct behaviour.
-- No web-client change: the card surfaces only the existing optional-trigger yes/no decision.
+- **The card's second target is a two-player rendering, not the printed text.** Printed: "up to one
+  target creature **they** control". Shipped: "up to one target creature an opponent controls".
+  `TargetFinder.findLegalTargets` enumerates one requirement at a time with no knowledge of the
+  other requirements' choices, so a filter bound to the chosen opponent yields an *empty* legal
+  list (I hit exactly that: `legalTargets={0=[player-2], 1=[]}`) and the creature could never be
+  picked. Same approximation Demonic Junker / Kitesail Larcenist / Unstable Glyphbridge document.
+  Identical in two-player; laxer in a pod. Fixing it properly = cross-requirement target
+  enumeration, an engine feature of its own.
+- Neither `ChooseAction` branch has a `FeasibilityCheck`: both available checks
+  (`ControlsPermanentMatching`, `HasCardsInZone`) evaluate against the **choosing** player, and both
+  of this card's conditions are about the *targeted opponent*. So an empty-handed opponent still
+  shows the "exile a nonland card from their hand" option, and it no-ops. Fixing that means a new
+  player-scoped `FeasibilityCheck`, which I judged out of scope for this unit.
+- The "You may" is a separate yes/no prompt before the two-option prompt (two clicks). A third
+  "exile nothing" choice would collapse them, but there is no no-op `Effect` in the SDK to hang it on.
+- `ToZoneExiledFrom` groups can pause; I order library and battlefield last and document that a
+  caller combining `CardOrder.ControllerChooses` with a library+battlefield split could strand the
+  battlefield group. The shipped facade uses `CardOrder.Preserve`, so it can't happen there.
+- mtgish step 8b skipped: the corpus's exile-return IR tags are all fixed-destination
+  (`PutExiledCardIntoOwnersHand`, `PutExiledCardOntoBattlefield`, …); I found no tag for
+  "return it to the zone it was exiled from", so there is nothing to register.
+- No manual playthrough in the web client, no e2e. A playtest scenario is staged at
+  `manual-scenarios/sets/msh/loop-msh-u26-cloak-and-dagger-entwined.json` but was not run.
