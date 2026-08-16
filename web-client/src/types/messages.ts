@@ -628,6 +628,13 @@ export interface AtomicBlockTaxManaAbilitySelection {
   readonly chosenColor?: string | null
   /** Exact produced colour spent on the generic tax by an activation-cost branch. */
   readonly taxPaymentColor?: string | null
+  /** Exact other permanent tapped by a secondary-tap mana-ability cost. */
+  readonly secondaryTapTargetId?: EntityId | null
+}
+
+export interface AtomicBlockTaxSecondaryTapTarget {
+  readonly entityId: EntityId
+  readonly name: string
 }
 
 /**
@@ -650,6 +657,8 @@ export interface AtomicBlockTaxManaAbilityOption {
   readonly fixedProducedMana?: Readonly<Record<string, number>>
   /** Exact output colours that may pay one unit of the generic block tax. */
   readonly taxPaymentColorChoices?: readonly string[]
+  /** Server-derived legal choices for a `{T}, tap a creature you control` branch. */
+  readonly secondaryTapTargets?: readonly AtomicBlockTaxSecondaryTapTarget[]
 }
 
 /** Select exact mana-ability branches for an atomic shared-team block-tax payment. */

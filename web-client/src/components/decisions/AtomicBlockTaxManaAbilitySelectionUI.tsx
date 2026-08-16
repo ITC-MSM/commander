@@ -29,13 +29,14 @@ export function AtomicBlockTaxManaAbilitySelectionUI({
   const autoPaySelections = useMemo(
     () => decision.autoPaySelections?.length
       ? decision.autoPaySelections
-      : decision.autoPaySuggestion.map((ref) => ({ ref, chosenColor: null, taxPaymentColor: null })),
+      : decision.autoPaySuggestion.map((ref) => ({ ref, chosenColor: null, taxPaymentColor: null, secondaryTapTargetId: null })),
     [decision.autoPaySelections, decision.autoPaySuggestion],
   )
-  const suggestionKey = autoPaySelections.map((selection) => `${optionKey(selection.ref)}:${selection.chosenColor ?? ''}:${selection.taxPaymentColor ?? ''}`).join(',')
+  const suggestionKey = autoPaySelections.map((selection) => `${optionKey(selection.ref)}:${selection.chosenColor ?? ''}:${selection.taxPaymentColor ?? ''}:${selection.secondaryTapTargetId ?? ''}`).join(',')
   const [selectedKeys, setSelectedKeys] = useState<readonly string[]>([])
   const [chosenColors, setChosenColors] = useState<Readonly<Record<string, string>>>({})
   const [taxPaymentColors, setTaxPaymentColors] = useState<Readonly<Record<string, string>>>({})
+  const [secondaryTapTargets, setSecondaryTapTargets] = useState<Readonly<Record<string, string>>>({})
 
   useEffect(() => {
     const available = new Set(decision.availableOptions.map((option) => optionKey(option.ref)))
@@ -54,6 +55,11 @@ export function AtomicBlockTaxManaAbilitySelectionUI({
         .filter((selection) => selection.taxPaymentColor != null)
         .map((selection) => [optionKey(selection.ref), selection.taxPaymentColor!]),
     ))
+    setSecondaryTapTargets(Object.fromEntries(
+      autoPaySelections
+        .filter((selection) => selection.secondaryTapTargetId != null)
+        .map((selection) => [optionKey(selection.ref), selection.secondaryTapTargetId!]),
+    ))
   }, [decision.id, suggestionKey, decision.availableOptions, autoPaySelections])
 
   const selectedOptions = useMemo(
@@ -69,8 +75,11 @@ export function AtomicBlockTaxManaAbilitySelectionUI({
       taxPaymentColor: option.taxPaymentColorChoices?.length
         ? (taxPaymentColors[optionKey(option.ref)] ?? option.taxPaymentColorChoices[0] ?? null)
         : null,
+      secondaryTapTargetId: option.secondaryTapTargets?.length
+        ? (secondaryTapTargets[optionKey(option.ref)] ?? option.secondaryTapTargets[0]!.entityId) as NonNullable<AtomicBlockTaxManaAbilitySelection['secondaryTapTargetId']>
+        : null,
     })),
-    [chosenColors, selectedOptions, taxPaymentColors],
+    [chosenColors, selectedOptions, secondaryTapTargets, taxPaymentColors],
   )
   // Block taxes are generic costs. The server remains authoritative, but keeping the Pay button
   // disabled until the visible choices plus already-floating mana cover that generic amount avoids
@@ -161,6 +170,18 @@ export function AtomicBlockTaxManaAbilitySelectionUI({
                     onChange={(event) => setTaxPaymentColors((current) => ({ ...current, [key]: event.target.value }))}
                   >
                     {option.taxPaymentColorChoices!.map((color) => <option key={color} value={color}>{color}</option>)}
+                  </select>
+                </label>
+              )}
+              {(option.secondaryTapTargets?.length ?? 0) > 0 && selected && (
+                <label className={styles.effectHint}>
+                  Tap creature
+                  <select
+                    value={secondaryTapTargets[key] ?? option.secondaryTapTargets![0]?.entityId}
+                    onClick={(event) => event.stopPropagation()}
+                    onChange={(event) => setSecondaryTapTargets((current) => ({ ...current, [key]: event.target.value }))}
+                  >
+                    {option.secondaryTapTargets!.map((target) => <option key={target.entityId} value={target.entityId}>{target.name}</option>)}
                   </select>
                 </label>
               )}

@@ -39,6 +39,7 @@ import com.wingedsheep.sdk.scripting.CantBlockUnless
 import com.wingedsheep.sdk.scripting.CantBlockUnlessCoBlocker
 import com.wingedsheep.sdk.scripting.AbilityCost
 import com.wingedsheep.sdk.scripting.costs.CostAtom
+import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.effects.AddColorlessManaEffect
 import com.wingedsheep.sdk.scripting.effects.AddManaEffect
 import com.wingedsheep.sdk.scripting.effects.AddManaOfChoiceEffect
@@ -1294,12 +1295,14 @@ internal class BlockPhaseManager(
             val printedOptions = definition.script.activatedAbilities.mapIndexedNotNull { index, ability ->
                 if (!ability.isManaAbility || ability.targetRequirements.isNotEmpty() || ability.restrictions.isNotEmpty()) return@mapIndexedNotNull null
                 val signetActivationManaCost = atomicIzzetSignetActivationManaCost(ability.cost)
+                val secondaryTap = atomicSecondaryCreatureTapCost(ability.cost)
                 val sacrifice = when (ability.cost) {
                     AbilityCost.Tap -> false
                     is AbilityCost.Composite -> {
                         val costs = (ability.cost as AbilityCost.Composite).costs
                         when {
                             costs.size == 2 && costs.contains(AbilityCost.Tap) && costs.contains(AbilityCost.SacrificeSelf) -> true
+                            secondaryTap -> false
                             signetActivationManaCost != null -> false
                             else -> return@mapIndexedNotNull null
                         }
@@ -1347,6 +1350,19 @@ internal class BlockPhaseManager(
                 }.maxOrNull() ?: fixed.amount
                 val multiplier = if (normalPrinted > 0 && source.nonSacrificeManaAmount % normalPrinted == 0)
                     source.nonSacrificeManaAmount / normalPrinted else 1
+                val secondaryTargets = if (secondaryTap) {
+                    projected.getBattlefieldControlledBy(payerId)
+                        .asSequence()
+                        .filter { it != sourceId && projected.isCreature(it) }
+                        .filter { candidate -> state.getEntity(candidate)?.has<TappedComponent>() != true }
+                        .mapNotNull { candidate ->
+                            state.getEntity(candidate)?.get<CardComponent>()?.name?.let { name ->
+                                AtomicBlockTaxSecondaryTapTarget(candidate, name)
+                            }
+                        }
+                        .toList()
+                } else emptyList()
+                if (secondaryTap && secondaryTargets.isEmpty()) return@mapIndexedNotNull null
                 AtomicBlockTaxManaAbilityOption(
                     ref = AtomicBlockTaxManaAbilityRef(sourceId, index),
                     sourceName = card.name,
@@ -1359,6 +1375,7 @@ internal class BlockPhaseManager(
                     activationManaCost = signetActivationManaCost,
                     fixedProducedMana = fixed.fixedProducedMana,
                     taxPaymentColorChoices = fixed.taxPaymentColorChoices,
+                    secondaryTapTargets = secondaryTargets,
                 )
             }
             // Basic-land subtype mana abilities are intrinsic rather than printed in a card's
@@ -1382,6 +1399,16 @@ internal class BlockPhaseManager(
                 }
             printedOptions + intrinsicOptions
         }
+    }
+
+    /** Exact `{T}, tap an untapped creature you control` branch used by Springleaf Drum. */
+    private fun atomicSecondaryCreatureTapCost(cost: AbilityCost): Boolean {
+        val parts = (cost as? AbilityCost.Composite)?.costs ?: return false
+        if (parts.size != 2 || AbilityCost.Tap !in parts) return false
+        val tapOther = parts.filterIsInstance<AbilityCost.Atom>()
+            .mapNotNull { it.atom as? CostAtom.TapPermanents }
+            .singleOrNull() ?: return false
+        return tapOther.count == 1 && tapOther.filter == GameObjectFilter.Creature && !tapOther.excludeSelf
     }
 
     private data class AtomicManaOutput(

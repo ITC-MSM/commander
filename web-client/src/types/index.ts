@@ -219,6 +219,7 @@ export type {
   SelectManaSourcesDecision,
   AtomicBlockTaxManaAbilityRef,
   AtomicBlockTaxManaAbilitySelection,
+  AtomicBlockTaxSecondaryTapTarget,
   AtomicBlockTaxManaAbilityOption,
   SelectAtomicBlockTaxManaAbilitiesDecision,
   SplitPilesDecision,

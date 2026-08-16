@@ -41,6 +41,7 @@ import com.wingedsheep.mtg.sets.definitions.ori.cards.ArchangelOfTithes
 import com.wingedsheep.mtg.sets.definitions.mir.cards.CrystalVein
 import com.wingedsheep.mtg.sets.definitions.dom.cards.GildedLotus
 import com.wingedsheep.mtg.sets.definitions.gpt.cards.IzzetSignet
+import com.wingedsheep.mtg.sets.definitions.lrw.cards.SpringleafDrum
 import com.wingedsheep.mtg.sets.definitions.scg.cards.ElvishAberration
 import com.wingedsheep.mtg.sets.definitions.woe.cards.VirtueOfStrength
 import com.wingedsheep.sdk.core.Format
@@ -135,6 +136,7 @@ class TwoHeadedGiantCombatTest : FunSpec({
         it.register(CrystalVein)
         it.register(GildedLotus)
         it.register(IzzetSignet)
+        it.register(SpringleafDrum)
         it.register(VirtueOfStrength)
         it.register(CardDefinition.basicLand("Plains", Subtype.PLAINS))
     }
@@ -245,6 +247,22 @@ class TwoHeadedGiantCombatTest : FunSpec({
         return withEntity(id, container).addToZone(ZoneKey(owner, Zone.BATTLEFIELD), id) to id
     }
 
+    fun GameState.withSpringleafDrum(owner: EntityId): Pair<GameState, EntityId> {
+        val id = EntityId.generate()
+        val container = ComponentContainer.of(
+            CardComponent(
+                cardDefinitionId = SpringleafDrum.name,
+                name = SpringleafDrum.name,
+                manaCost = SpringleafDrum.manaCost,
+                typeLine = SpringleafDrum.typeLine,
+                ownerId = owner,
+            ),
+            OwnerComponent(owner),
+            ControllerComponent(owner),
+        )
+        return withEntity(id, container).addToZone(ZoneKey(owner, Zone.BATTLEFIELD), id) to id
+    }
+
     fun taxedTeamBlockState(): Triple<GameState, List<EntityId>, List<EntityId>> {
         val (base, p) = init2hg()
         val (s1, archangel) = base.withBear(p[0], attacking = p[2], definition = ArchangelOfTithes)
@@ -305,6 +323,18 @@ class TwoHeadedGiantCombatTest : FunSpec({
             .copy(step = Step.DECLARE_BLOCKERS, phase = Phase.COMBAT).withPriority(p[2])
         if (preexistingActivationMana) state = state.updateEntity(p[2]) { it.with(ManaPoolComponent(colorless = 1)) }
         return Triple(state, p, listOf(archangel, blkP2, blkP3, signet, landP3))
+    }
+
+    fun taxedTeamBlockStateWithSpringleafDrum(): Triple<GameState, List<EntityId>, List<EntityId>> {
+        val (base, p) = init2hg()
+        val (s1, archangel) = base.withBear(p[0], attacking = p[2], definition = ArchangelOfTithes)
+        val (s2, blkP2) = s1.withBear(p[2], definition = flyingBear)
+        val (s3, blkP3) = s2.withBear(p[3], definition = flyingBear)
+        val (s4, drum) = s3.withSpringleafDrum(p[2])
+        val (s5, landP3) = s4.withPlains(p[3])
+        val state = s5.updateEntity(p[0]) { it.with(AttackersDeclaredThisCombatComponent) }
+            .copy(step = Step.DECLARE_BLOCKERS, phase = Phase.COMBAT).withPriority(p[2])
+        return Triple(state, p, listOf(archangel, blkP2, blkP3, drum, landP3))
     }
 
     fun taxedTeamBlockStateWithVirtueOfStrength(): Triple<GameState, List<EntityId>, List<EntityId>> {
@@ -864,6 +894,91 @@ class TwoHeadedGiantCombatTest : FunSpec({
         declined.newState.getEntity(p[2])!!.get<ManaPoolComponent>()!!.colorless shouldBe 1
         declined.newState.getEntity(p[2])!!.get<ManaPoolComponent>()!!.blue shouldBe 0
         declined.newState.getEntity(p[2])!!.get<ManaPoolComponent>()!!.red shouldBe 0
+        declined.events.filterIsInstance<TappedEvent>() shouldBe emptyList()
+        declined.events.filterIsInstance<BlockersDeclaredEvent>() shouldBe emptyList()
+    }
+
+    test("atomic Springleaf Drum records its tapped creature and commits it as a blocker") {
+        val (state, p, objects) = taxedTeamBlockStateWithSpringleafDrum()
+        val (archangel, blkP2, blkP3, drum, landP3) = objects
+        val proc = ActionProcessor(registry())
+        val declared = proc.process(
+            state, DeclareBlockers(p[2], mapOf(blkP2 to listOf(archangel), blkP3 to listOf(archangel))),
+        ).result
+        val p2Prompt = declared.pendingDecision.shouldBeInstanceOf<SelectAtomicBlockTaxManaAbilitiesDecision>()
+        val option = p2Prompt.availableOptions.single { it.ref == AtomicBlockTaxManaAbilityRef(drum, 0) }
+        option.secondaryTapTargets.map { it.entityId } shouldBe listOf(blkP2)
+
+        val p2Accepted = proc.process(
+            declared.newState,
+            SubmitDecision(p[2], AtomicBlockTaxManaAbilitiesSelectedResponse(
+                p2Prompt.id,
+                selectedManaAbilitySelections = listOf(AtomicBlockTaxManaAbilitySelection(
+                    ref = option.ref,
+                    chosenColor = Color.GREEN,
+                    secondaryTapTargetId = blkP2,
+                )),
+            )),
+        ).result
+        p2Accepted.newState.getEntity(drum)!!.has<TappedComponent>().shouldBeFalse()
+        p2Accepted.newState.getEntity(blkP2)!!.has<TappedComponent>().shouldBeFalse()
+        val p3Prompt = p2Accepted.pendingDecision.shouldBeInstanceOf<SelectAtomicBlockTaxManaAbilitiesDecision>()
+        val paid = proc.process(
+            p2Accepted.newState,
+            SubmitDecision(p[3], AtomicBlockTaxManaAbilitiesSelectedResponse(
+                p3Prompt.id,
+                selectedManaAbilitySelections = listOf(AtomicBlockTaxManaAbilitySelection(AtomicBlockTaxManaAbilityRef(landP3, -1))),
+            )),
+        ).result
+
+        paid.isSuccess.shouldBeTrue()
+        paid.newState.getEntity(drum)!!.has<TappedComponent>().shouldBeTrue()
+        paid.newState.getEntity(blkP2)!!.has<TappedComponent>().shouldBeTrue()
+        paid.newState.getEntity(blkP2)!!.has<BlockingComponent>().shouldBeTrue()
+        paid.newState.getEntity(archangel)!!.has<BlockedComponent>().shouldBeTrue()
+        paid.events.filterIsInstance<TappedEvent>().map { it.entityId }.toSet() shouldBe setOf(drum, blkP2, landP3)
+        paid.events.filterIsInstance<BlockersDeclaredEvent>().size shouldBe 1
+    }
+
+    test("atomic Springleaf Drum rejects a teammate creature and a late decline preserves both tap costs") {
+        val (state, p, objects) = taxedTeamBlockStateWithSpringleafDrum()
+        val (archangel, blkP2, blkP3, drum, _) = objects
+        val proc = ActionProcessor(registry())
+        val declared = proc.process(
+            state, DeclareBlockers(p[2], mapOf(blkP2 to listOf(archangel), blkP3 to listOf(archangel))),
+        ).result
+        val prompt = declared.pendingDecision.shouldBeInstanceOf<SelectAtomicBlockTaxManaAbilitiesDecision>()
+        val option = prompt.availableOptions.single { it.ref == AtomicBlockTaxManaAbilityRef(drum, 0) }
+        val forged = proc.process(
+            declared.newState,
+            SubmitDecision(p[2], AtomicBlockTaxManaAbilitiesSelectedResponse(
+                prompt.id,
+                selectedManaAbilitySelections = listOf(AtomicBlockTaxManaAbilitySelection(option.ref, Color.WHITE, secondaryTapTargetId = blkP3)),
+            )),
+        ).result
+        forged.isSuccess.shouldBeFalse()
+        forged.newState shouldBe declared.newState
+        forged.events shouldBe emptyList()
+
+        val accepted = proc.process(
+            declared.newState,
+            SubmitDecision(p[2], AtomicBlockTaxManaAbilitiesSelectedResponse(
+                prompt.id,
+                selectedManaAbilitySelections = listOf(AtomicBlockTaxManaAbilitySelection(option.ref, Color.WHITE, secondaryTapTargetId = blkP2)),
+            )),
+        ).result
+        val declined = proc.process(
+            accepted.newState,
+            SubmitDecision(p[3], AtomicBlockTaxManaAbilitiesSelectedResponse(
+                accepted.pendingDecision.shouldBeInstanceOf<SelectAtomicBlockTaxManaAbilitiesDecision>().id,
+                declined = true,
+            )),
+        ).result
+        declined.isSuccess.shouldBeTrue()
+        declined.newState.getEntity(drum)!!.has<TappedComponent>().shouldBeFalse()
+        declined.newState.getEntity(blkP2)!!.has<TappedComponent>().shouldBeFalse()
+        // A successful decision submission is auditable, but the declined declaration must not
+        // emit any game-play payment or combat events.
         declined.events.filterIsInstance<TappedEvent>() shouldBe emptyList()
         declined.events.filterIsInstance<BlockersDeclaredEvent>() shouldBe emptyList()
     }

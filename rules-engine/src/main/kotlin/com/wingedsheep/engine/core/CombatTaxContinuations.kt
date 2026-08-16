@@ -32,6 +32,19 @@ data class AtomicBlockTaxManaAbilitySelection(
      * blue and red rather than choosing one output colour.
      */
     val taxPaymentColor: Color? = null,
+    /**
+     * The other permanent tapped by the deliberately narrow Springleaf-Drum branch.  It is
+     * explicit because this atomic transaction must collect an intent without mutating the game
+     * state, then replay exactly that cost on the final candidate state.
+     */
+    val secondaryTapTargetId: EntityId? = null,
+)
+
+/** A server-derived, replay-safe target for an atomic secondary-tap mana ability. */
+@Serializable
+data class AtomicBlockTaxSecondaryTapTarget(
+    val entityId: EntityId,
+    val name: String,
 )
 
 /** A deterministic, no-further-input mana-ability branch offered by atomic team block tax. */
@@ -52,6 +65,8 @@ data class AtomicBlockTaxManaAbilityOption(
     val fixedProducedMana: Map<Color, Int> = emptyMap(),
     /** Which exact produced colour may be spent toward this generic block tax. */
     val taxPaymentColorChoices: Set<Color> = emptySet(),
+    /** Empty unless this exact branch requires tapping one other offered permanent as a cost. */
+    val secondaryTapTargets: List<AtomicBlockTaxSecondaryTapTarget> = emptyList(),
 )
 
 /**

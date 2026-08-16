@@ -591,6 +591,13 @@ object DecisionValidators {
         }
         for (selection in selections) {
             val option = options.getValue(selection.ref)
+            if (option.secondaryTapTargets.isEmpty()) {
+                if (selection.secondaryTapTargetId != null) {
+                    return "This mana ability has no secondary tap cost"
+                }
+            } else if (selection.secondaryTapTargetId !in option.secondaryTapTargets.map { it.entityId }) {
+                return "Selected secondary tap permanent is not available for this payment"
+            }
             if (option.activationManaCost != null) {
                 if (selection.chosenColor != null || selection.taxPaymentColor?.let { it in option.taxPaymentColorChoices } != true) {
                     return "Selected mana tax-payment color is not available for this payment"

@@ -419,6 +419,18 @@ class CombatTaxContinuationResumer(
             }
             val container = current.getEntity(ref.sourceId) ?: return null
             if (ref.sourceId !in current.getBattlefield() || current.projectedState.getController(ref.sourceId) != plan.payerId || container.has<TappedComponent>()) return null
+            val secondaryTapTargetId = selection.secondaryTapTargetId
+            if (option.secondaryTapTargets.isEmpty()) {
+                if (secondaryTapTargetId != null) return null
+            } else {
+                val secondaryId = secondaryTapTargetId ?: return null
+                if (secondaryId !in option.secondaryTapTargets.map { it.entityId }) return null
+                if (secondaryId == ref.sourceId || secondaryId !in current.getBattlefield() ||
+                    current.projectedState.getController(secondaryId) != plan.payerId ||
+                    !current.projectedState.isCreature(secondaryId) ||
+                    current.getEntity(secondaryId)?.has<TappedComponent>() == true
+                ) return null
+            }
             // The Signet branch pays its own `{1}` from this payer's already-floating mana
             // before its tap cost and output. Its selected produced colour then pays exactly one
             // unit of this payer's generic block tax; it must not be paid again below.
@@ -434,6 +446,15 @@ class CombatTaxContinuationResumer(
                 events += moved.events
             } else {
                 val tapped = tap(current, ref.sourceId)
+                current = tapped.first
+                tapped.second?.let(events::add)
+            }
+            // Secondary taps are a cost of the selected exact mana-ability branch. They are
+            // applied only on this candidate state, after every payer has supplied an intent.
+            // A creature selected as a blocker remains controlled/on the battlefield and can
+            // therefore still become blocking at the later declaration-commit step.
+            if (secondaryTapTargetId != null) {
+                val tapped = tap(current, secondaryTapTargetId)
                 current = tapped.first
                 tapped.second?.let(events::add)
             }
