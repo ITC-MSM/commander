@@ -751,12 +751,17 @@
 }
 
 /* ---- progress chart overlay ------------------------------------------- */
+/* The plot takes whatever height the header and stats leave over, so the modal — and with it the
+   chart — always fits the viewport instead of being clipped by `overflow: hidden`. */
 .chartOverlay {
   width: min(1800px, 95vw);
-  max-height: 100%;
+  height: min(900px, 100%);
   display: flex;
   flex-direction: column;
-  background: linear-gradient(180deg, #161a26, #11141d);
+  /* Flat surface, not a gradient: the chart's surface gaps and marker rings are painted in this
+     exact color, and a gradient would leave them visible as seams. */
+  background: #141824;
+  color: var(--text-primary);
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-2xl);
   box-shadow: var(--shadow-2xl);
@@ -767,6 +772,7 @@
   align-items: flex-start;
   gap: var(--space-4);
   padding: var(--space-5) var(--space-5) var(--space-3);
+  flex: none;
 }
 .chartHeadText {
   flex: 1;
@@ -787,6 +793,7 @@
   grid-template-columns: repeat(3, 1fr);
   gap: var(--space-3);
   padding: 0 var(--space-5) var(--space-4);
+  flex: none;
 }
 .chartStat {
   background: rgba(255, 255, 255, 0.03);
@@ -795,30 +802,56 @@
   padding: var(--space-3) var(--space-4);
 }
 .chartBox {
-  position: relative;
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
   padding: 0 var(--space-5) var(--space-5);
+}
+.chartPlot {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
 }
 .chartSvg {
   display: block;
   width: 100%;
-  height: auto;
-  overflow: visible;
+  height: 100%;
 }
 .chartGridLine {
-  stroke: var(--grid, #1a1f2c);
+  /* Hairline, solid, one step off the surface — chrome must stay behind the data. */
+  stroke: #232838;
   stroke-width: 1;
+  shape-rendering: crispEdges;
 }
 .chartCross {
-  stroke: #7c9cff;
+  stroke: rgba(255, 255, 255, 0.22);
   stroke-width: 1;
-  stroke-dasharray: 3 4;
 }
 .chartDot {
-  fill: #fff;
-  stroke: #7c9cff;
-  stroke-width: 3;
-  filter: drop-shadow(0 0 8px rgba(124, 156, 255, 0.45));
+  /* 2px ring in the surface color keeps the marker legible where it sits on the curve. */
+  stroke: #141824;
+  stroke-width: 2;
 }
+/* Short viewport: give the plot back the room the chrome would otherwise eat. */
+@media (max-height: 620px) {
+  .chartHeader {
+    padding: var(--space-3) var(--space-4) var(--space-2);
+  }
+  .chartSub {
+    display: none;
+  }
+  .chartStats {
+    padding: 0 var(--space-4) var(--space-3);
+  }
+  .chartStat {
+    padding: var(--space-2) var(--space-3);
+  }
+  .chartBox {
+    padding: 0 var(--space-4) var(--space-4);
+  }
+}
+
 .chartTip {
   position: absolute;
   pointer-events: none;
