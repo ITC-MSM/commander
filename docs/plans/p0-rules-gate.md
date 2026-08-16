@@ -38,8 +38,10 @@ green card-definition count or a successful UI build does not satisfy it.
 The Two-Headed Giant/shared-turn combined defending-team declaration is atomic: one defender
 submits a map containing blockers controlled by either teammate, the entire map is validated
 together, and each controller with a tax share receives their own block-tax prompt. Payment responses are
-collected as zero-mutation intents; only after every payer accepts are all simple tap-only mana
-payments applied to a candidate state and the block committed once. Any decline, forged source,
+collected as zero-mutation intents; only after every payer accepts are all fixed-output tap-only mana
+payments applied to a candidate state and the block committed once. This includes deterministic
+multi-mana sources such as Elvish Aberration; any surplus remains in that controller's individual
+mana pool. Any decline, forged source,
 duplicate source, or failed payment leaves mana, blockers, and declaration markers unchanged.
 This first payment slice deliberately excludes sources with sacrifice, secondary tap, pain,
 activation-mana, restricted-mana, or multi-mana side effects. Those source shapes remain an
@@ -47,8 +49,8 @@ explicit implementation gap, separate from the FFA Commander simulation evidence
 
 ## Next implementation order
 
-1. Expand the shared-team / Two-Headed Giant block-tax flow beyond the verified simple,
-   tap-only mana-source slice while preserving atomic payment and rollback.
+1. Expand the shared-team / Two-Headed Giant block-tax flow beyond verified fixed-output,
+   tap-only mana sources while preserving atomic payment and rollback.
 2. Add the remaining P0 composition traces (replacement chains, partial target fizzle,
    multiplayer stack/concession, and commander SBA-loss) to the repeatable release gate.
 3. Run the P0 scenario matrix and the broad rules-engine gate before treating readiness
