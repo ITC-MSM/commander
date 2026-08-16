@@ -6142,7 +6142,7 @@
                             "type": "CostAtomWrapper",
                             "atom": {
                                 "type": "AtomTapPermanents",
-                                "excludeSelf": true
+                                "filter": "permanent"
                             }
                         }
                     ]

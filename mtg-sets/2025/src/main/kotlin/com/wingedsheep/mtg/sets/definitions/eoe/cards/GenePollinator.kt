@@ -4,6 +4,7 @@ import com.wingedsheep.sdk.dsl.Costs
 import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
+import com.wingedsheep.sdk.scripting.GameObjectFilter
 
 /**
  * Gene Pollinator
@@ -21,9 +22,13 @@ val GenePollinator = card("Gene Pollinator") {
     oracleText = "{T}, Tap an untapped permanent you control: Add one mana of any color."
 
     activatedAbility {
+        // "Tap an untapped permanent you control" — not "another", and the noun is "permanent"
+        // rather than the unqualified `Any` the no-argument facade defaults to. The `excludeSelf`
+        // this used to carry restated what the co-paid {T} already guarantees: the source is tapped
+        // by it, so it is never an untapped permanent when this half of the cost is chosen.
         cost = Costs.Composite(
             Costs.Tap,
-            Costs.TapAnotherPermanent()
+            Costs.TapPermanents(1, GameObjectFilter.Permanent)
         )
         effect = Effects.AddAnyColorMana(1)
         manaAbility = true

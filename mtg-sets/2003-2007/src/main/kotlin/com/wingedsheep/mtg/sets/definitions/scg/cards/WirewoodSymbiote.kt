@@ -24,7 +24,10 @@ val WirewoodSymbiote = card("Wirewood Symbiote") {
     toughness = 1
 
     activatedAbility {
-        cost = Costs.ReturnToHand(GameObjectFilter.Creature.withSubtype("Elf"))
+        // "an Elf you control" is a bare tribal noun: any permanent that's an Elf, not only a
+        // creature one. Unobservable today — every Elf printed is a creature — which is why it
+        // survived; Assay's differential found it the moment it could read a cost's noun phrase.
+        cost = Costs.ReturnToHand(GameObjectFilter.Permanent.withSubtype("Elf"))
         val t = target("creature", Targets.Creature)
         effect = TapUntapEffect(
             target = t,

@@ -20,12 +20,21 @@ and those are the two sentences on it. The **aura band** followed: `Enchant <fil
 attached-permanent statics, which opened `staticAbilities` — the largest `CardScript` slot the
 differential could not see into, and the one every later static family lands in.
 
-The most recent work is the **spell-cast band** — "Whenever you cast a noncreature spell, …" — which
-gives the grammar its first noun phrase for a *spell* rather than a permanent, and is the largest
-single family left in the corpus by the honest ranking: 504 cards decline on nothing but a
+The most recent work is the **cost band** — what you pay, everywhere you pay it. It is the largest
+single delivery a family has made here (**+274 whole cards**, 7,177 → 7,451) and the first one that
+needed no new grammar *machinery* at all, only a refactoring: `CostAtom`'s own KDoc calls itself
+"the one cost language", and the grammar now reads it that way round — one `Phrase<CostAtom>`
+vocabulary lifted into an activated ability's cost and into a spell's additional cost, instead of
+two vocabularies over the same English. See [the cost band](#the-cost-band) below; it also found
+three hand-written cards whose noun phrases were wrong inside a cost, where nothing had ever looked.
+
+Before it came the **spell-cast band** — "Whenever you cast a noncreature spell, …" — which
+gives the grammar its first noun phrase for a *spell* rather than a permanent, and was the largest
+single family left in the corpus by the honest ranking: 504 cards declined on nothing but a
 spell-cast trigger, against 263 for the next one. See [the spell-cast band](#the-spell-cast-band)
 below; it is also where the ranking method itself changed, from the token a line died on to the
-**tail** the parse could not read.
+**tail** the parse could not read. Then the **Bloomburrow band** — the first set picked *because*
+its cards are already implemented, so every decline was a grammar gap with a written answer.
 
 Before it came the **counters band**, the first one picked by *ranking the backlog* rather than by
 picking a set: `just assay-report --implemented` said 656 cards with a hand-written golden decline
@@ -529,6 +538,75 @@ differential on the day a line stopped declining:
 keyword line and the `If the gift was promised, …` rider, the second of which needs its base clause
 to read first. After it: the Class levels (`{3}{U}: Level 2`, 10 cards), modal spells (8), and
 "Spend this mana only to cast …" (6).
+
+## The cost band
+
+What you pay, everywhere you pay it. Whole-corpus coverage went 7,177 → **7,451 cards**, byte-exact
+lines 24,993 → **25,377**, the differential's compared population 2,698 → **2,747** — and, being an
+`mtg-sdk`-shaped band, it needed no new SDK type at all: every atom it reads was already in
+`CostAtom`, waiting for a sentence.
+
+**It is the largest band the tail ranking has produced, and the probe agreed with it before a line
+was written.** Ranked by the parse's tail, the top rows are the modal bullets and a scatter of
+trigger prefixes; the cost family does not appear as a row at all, because a cost is *the text before
+a colon* and the tail keys on what came after. Ranking the colon lines directly — substituting `{T}: `
+for every cost the grammar could not read and re-parsing — says **465 whole cards are blocked on
+nothing but the cost clause**, against 104 for the modal band and 111 for cost reduction. A second
+probe, greedy over the individual atoms, ranked the rows: "Discard a card" alone finishes 86 cards,
+counter removal 49, the singular tap 35, "Sacrifice another" 35. The band delivered **274**, which is
+the sum of exactly the rows that were written; the residue is named below and each piece of it is a
+different band.
+
+**One vocabulary, two contexts, because the SDK says so.** `CostAtom`'s own KDoc calls itself "the
+one cost language": a payable thing is declared once and each *context* carries it through its own
+`Atom` wrapper. Assay had it the other way round — `Costs` read a list of cost sentences for an
+activated ability, and `Restrictions.additionalCostLine` was a separate rule that read
+"sacrifice {filter}" and nothing else. Two vocabularies over one English. So `Costs.atoms` is now a
+`Phrase<CostAtom>`, and the two contexts are two *lifts* of it. Adding "discard a card" to the
+activation side gave "As an additional cost to cast this spell, discard a card." for free, and the
+test for that property is one assertion in each of the two files.
+
+**What is deliberately *not* an atom is the other half of the argument.** "Sacrifice ~", "Exile ~",
+`{T}`, `{Q}`, "Exert ~" stay `AbilityCost` cases and are unreachable from the spell side — for the
+reason `CostAtom` gives for keeping `excludeSelf` off it: *a spell being cast has no source
+permanent*. That is a rule rather than a gap, and `RestrictionsTest` asserts the decline.
+
+**Capitalization stopped being an `alternate` and became a parameter.** A cost atom is the one clause
+Oracle capitalizes that is not a sentence start, so while costs lived in one position the lowercase
+spelling could be an `alternate` — parseable, never printed. It no longer holds: in
+"As an additional cost to cast this spell, **sacrifice** a creature." the lowercase form is
+*canonical*. The vocabulary is therefore a function of its leading word's spelling, instantiated
+twice, which is also what stops a row existing in one capitalization only.
+
+**Three card bugs, all of the same kind, all invisible in play.** The differential went 1 → 4 the
+first time the gate could read a cost's noun phrase, and every new one was a hand-written card:
+
+- **Wirewood Symbiote** and **Fungal Plots** spell "an Elf you control" and "two Saprolings" as
+  `GameObjectFilter.Creature.withSubtype(…)`. A bare tribal noun means any *permanent* of that
+  tribe — the same correction the 103-card migration made everywhere the grammar could already see,
+  and these two survived it because their nouns were inside a **cost**, which nothing read until now.
+  Unobservable today, since every printed Elf and Saproling is a creature.
+- **Gene Pollinator** writes `Costs.TapAnotherPermanent()` for "Tap an untapped permanent you
+  control" — a text with no "another" in it, and a filter left at the facade's unqualified default
+  where the noun is "permanent". The `excludeSelf` restated what the co-paid `{T}` already
+  guarantees.
+
+**Where the ranking points next, in this family.** The same greedy probe names the rows left, and
+they are three different bands rather than more rows:
+
+- **The self costs that are activated from another zone** — "Discard ~" (25 cards) and
+  "Exile ~ from your graveyard" (22). Both need `ActivatedAbility.activateFromZone`, which the cost
+  clause *determines* — you cannot discard a permanent, and "from your graveyard" says where the card
+  is. That makes the cost rule's result a pair of (cost, zone) rather than a cost, which is a change
+  to `Costs.cost`'s type and to `Activated`'s four call sites: a band of its own, not a row.
+- **The keyword-labelled costs** — "Exhaust — {5}{U}{U}" (6), "Power-up — {5}{G}{G}" (8),
+  "Boast — {4}{R}" (7), "Max speed — {3}" (10), "Renew —", "Forecast —", "Waterbend". Each is a flag
+  on `ActivatedAbility` plus a printed prefix; one shape, seven rows.
+- **Filter gaps, not cost gaps** — "Sacrifice a Food" (14) and "Sacrifice another creature or
+  artifact" decline in [`Filters`](src/main/kotlin/com/wingedsheep/assay/grammar/Filters.kt), not
+  here: the artifact subtypes the SDK publishes no list for, and the type disjunction.
+- **`{S}`** (20 cards) is an **SDK gap** — `ManaCost` cannot express snow mana, so `Primitives.manaCost`
+  declines rather than inventing a symbol. That one is `add-feature` work.
 
 ## What Phase 1 already found
 

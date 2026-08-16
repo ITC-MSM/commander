@@ -7759,7 +7759,7 @@
                     "type": "CostAtomWrapper",
                     "atom": {
                         "type": "AtomReturnToHand",
-                        "filter": "creature Elf"
+                        "filter": "permanent Elf"
                     }
                 },
                 "effect": {

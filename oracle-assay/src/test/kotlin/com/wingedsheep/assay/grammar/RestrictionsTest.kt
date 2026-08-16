@@ -59,6 +59,28 @@ class RestrictionsTest : StringSpec({
         roundTrips("As an additional cost to cast this spell, sacrifice a green creature.")
     }
 
+    // The spell side of the shared atom vocabulary. None of these has a rule of its own here: they
+    // are rows written for an activated ability's cost, and this line reaches them because both
+    // contexts slot the same `Phrase<CostAtom>` — which is the whole argument for that shape.
+    "every cost atom reaches the additional-cost line, lowercased, without a rule of its own" {
+        fragment("As an additional cost to cast this spell, discard a card.") shouldBe CardFragment(
+            script = CardScript(additionalCosts = listOf(Costs.additional.DiscardCards()))
+        )
+        roundTrips("As an additional cost to cast this spell, discard a card.")
+        roundTrips("As an additional cost to cast this spell, discard two cards.")
+        roundTrips("As an additional cost to cast this spell, pay 3 life.")
+        roundTrips("As an additional cost to cast this spell, exile a creature card from your graveyard.")
+        roundTrips("As an additional cost to cast this spell, return a land you control to its owner's hand.")
+        roundTrips("As an additional cost to cast this spell, tap an untapped Vampire creature you control.")
+    }
+
+    // The other half of the split: a spell being cast has no source permanent, so the costs that
+    // *are* the source stay on the activation side and this line cannot spell them.
+    "the costs only a permanent can pay are unreachable from the additional-cost line" {
+        Grammar.abilityLine.parseLine("As an additional cost to cast this spell, sacrifice ~.")
+            .shouldBeInstanceOf<ParseOutcome.Declined>()
+    }
+
     // The activation restriction is a *sentence* after the ability's own, joined by a comma rather
     // than by "and" — a printed-shape difference from the casting line, so each has its separator.
     "an activated ability carries its restrictions in a trailing sentence" {
