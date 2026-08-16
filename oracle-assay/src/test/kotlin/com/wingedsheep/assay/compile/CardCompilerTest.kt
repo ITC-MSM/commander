@@ -133,6 +133,20 @@ class CardCompilerTest : StringSpec({
         result.declines.map { it.kind } shouldContainExactly listOf(DeclineKind.MULTI_FACE)
     }
 
+    /**
+     * Spinal Parasite and the Un-sets print negative power. `CreatureStats` refuses a negative base
+     * and refuses it by *throwing*, so before this was caught the compiler crashed on the card —
+     * which the corpus bake found the first time anything handed it all 35,000 cards, and which the
+     * Scenario Builder would have turned into a 500 on a paste. A card the SDK cannot represent is
+     * the same product as a line the grammar cannot read: a named decline.
+     */
+    "a negative printed power declines instead of throwing out of the compiler" {
+        val result = declined(json("Sub Zero", "Flying", power = "-1", toughness = "3"))
+
+        result.declines.map { it.kind } shouldContainExactly listOf(DeclineKind.HEADER)
+        result.declines.single().detail shouldContain "-1"
+    }
+
     "text that is not a card object is a named decline, not an exception" {
         val result = declined("""{"not": "a card"}""")
 

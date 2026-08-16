@@ -55,6 +55,37 @@
   flex: 1;
 }
 
+/* ---- Assay Explorer tab ------------------------------------------------
+   The framed explorer is a full-height app of its own, so while it's up the page stops being a
+   scroll container and becomes a flex column that hands its leftover height to the frame. Without
+   this the iframe collapses to its default 150px inside a `height:100vh; overflow-y:auto` block. */
+.pageFramed {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding-bottom: 0;
+}
+/* The topbar's bottom margin separates it from the set grid; against a full-bleed frame it is just
+   a strip of page gradient above another app's header. */
+.pageFramed .topbar {
+  margin-bottom: 0;
+}
+.explorerPane {
+  flex: 1;
+  min-height: 0;
+  margin: 0 calc(-1 * var(--space-6));
+  border-top: 1px solid var(--border-light);
+}
+.explorerFrame {
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
+  /* The explorer ships its own light theme; a white ground behind it stops a flash of the dark
+     page gradient while it loads. */
+  background: #f5f7f8;
+}
+
 /* ---- overall summary -------------------------------------------------- */
 .summary {
   display: flex;
@@ -368,6 +399,47 @@
   border-radius: 999px;
   padding: 0 6px;
   white-space: nowrap;
+}
+
+/* ---- Assay verdicts ----------------------------------------------------
+   One accent, used for exactly one meaning across the page: "Argentum Assay already reads this,
+   so it's free to implement". Deliberately not the success green — this is opportunity, not
+   completion, and a reader who confuses the two would think the set was further along. */
+.assayTag {
+  color: var(--color-warning, #f2b134);
+  font-size: var(--font-xs);
+  font-weight: var(--font-weight-semibold);
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  padding: 0 6px;
+  white-space: nowrap;
+}
+.assayNote {
+  color: var(--color-warning, #f2b134);
+  white-space: nowrap;
+}
+/* Top-LEFT, opposite the implementation badge: the two answer different questions and a reader
+   scanning for one shouldn't have to disambiguate them by colour alone. */
+.assayBadge {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  font-size: var(--font-xs);
+  line-height: 1.4;
+  padding: 2px 5px;
+  border-radius: 999px;
+  background: var(--color-warning, #f2b134);
+  color: #1a1400;
+  font-weight: var(--font-weight-bold);
+}
+/* An Assay-ready tile is a missing tile worth looking at, so it keeps the dashed "not built"
+   border but loses the full desaturation the other missing cards get. */
+.tileMissing[data-assay-ready] {
+  border-color: var(--color-warning, #f2b134);
+  border-style: dashed;
+}
+.tileMissing[data-assay-ready] .tileImage {
+  filter: grayscale(0.55) brightness(0.7);
 }
 
 /* ---- detail overlay --------------------------------------------------- */

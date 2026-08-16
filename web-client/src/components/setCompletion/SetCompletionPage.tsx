@@ -15,14 +15,42 @@ import {
 } from '@/api/setCoverage'
 import styles from './SetCompletionPage.module.css'
 
-type SortKey = 'newest' | 'percent' | 'implemented' | 'name'
+type SortKey = 'newest' | 'percent' | 'implemented' | 'assayReady' | 'name'
 type Filter = 'all' | 'standard' | 'inProgress' | 'complete'
+type Tab = 'sets' | 'explorer'
 
 const SORT_LABELS: Record<SortKey, string> = {
   newest: 'Newest',
   percent: 'Most complete',
   implemented: 'Most cards done',
+  assayReady: 'Most Assay-ready',
   name: 'A–Z',
+}
+
+/** Where game-server mounts the live Argentum Assay explorer. Dev servers only — see `/api/config`. */
+const EXPLORER_URL = '/api/assay/explorer'
+
+/**
+ * One line of English for a card's Assay verdict, for the tile tooltip.
+ *
+ * Returns null when the baked ledger has no row for the card. That is *unknown*, not "no", and the
+ * tooltip stays silent rather than implying Assay was asked and refused.
+ */
+function assayTooltip(card: CardCoverage): string | null {
+  const a = card.assay
+  if (!a) return null
+  if (a.readsWhole) {
+    return card.implemented
+      ? 'Assay reads this card whole.'
+      : 'Assay reads this card whole — implementable with existing vocabulary.'
+  }
+  const where = a.line ? ` — “${a.line}”` : ''
+  return `Assay declines this card: ${a.kind}${where}`
+}
+
+/** A card nobody has authored that Assay already reads end to end: the cheapest work on the board. */
+function isAssayReady(card: CardCoverage): boolean {
+  return !card.implemented && card.notPlanned === null && card.assay?.readsWhole === true
 }
 
 const FILTER_LABELS: Record<Filter, string> = {
@@ -71,6 +99,7 @@ export function SetCompletionPage() {
   const [filter, setFilter] = useState<Filter>('all')
   const [openCode, setOpenCode] = useState<string | null>(null)
   const [showProgress, setShowProgress] = useState(false)
+  const [tab, setTab] = useState<Tab>('sets')
 
   useEffect(() => {
     let cancelled = false
@@ -118,6 +147,11 @@ export function SetCompletionPage() {
       case 'implemented':
         sorted.sort((a, b) => b.implemented - a.implemented || byName(a, b))
         break
+      case 'assayReady':
+        // "Which set has the most free work in it" — the question the Assay join exists to answer.
+        // A null (no ledger baked) sorts as 0 rather than dropping the set out of the list.
+        sorted.sort((a, b) => (b.assayReady ?? 0) - (a.assayReady ?? 0) || byName(a, b))
+        break
       case 'name':
         sorted.sort(byName)
         break
@@ -129,20 +163,130 @@ export function SetCompletionPage() {
     return sorted
   }, [sets, query, sort, filter])
 
+  // The explorer pane is a full-height frame rather than a block in the scrolling document, so the
+  // page stops being its own scroll container while that tab is up and hands the height to the frame.
+  const onExplorer = tab === 'explorer'
   return (
-    <div className={styles.page}>
+    <div className={onExplorer ? `${styles.page} ${styles.pageFramed}` : styles.page}>
       <header className={styles.topbar}>
         <button className={styles.backButton} onClick={() => navigate('/')}>
           ← Back to menu
         </button>
         <h1 className={styles.title}>Set Completion</h1>
+        <div className={styles.segmented} role="tablist" aria-label="View">
+          <button
+            role="tab"
+            aria-selected={tab === 'sets'}
+            className={tab === 'sets' ? styles.segmentActive : styles.segment}
+            onClick={() => setTab('sets')}
+          >
+            Sets
+          </button>
+          <button
+            role="tab"
+            aria-selected={tab === 'explorer'}
+            className={tab === 'explorer' ? styles.segmentActive : styles.segment}
+            onClick={() => setTab('explorer')}
+            title="Argentum Assay — the Oracle-text grammar and both its gates, against the live parser"
+          >
+            Assay Explorer
+          </button>
+        </div>
         <div className={styles.topbarSpacer} />
       </header>
 
+      {onExplorer && <ExplorerPane />}
+
+      {!onExplorer && (
+        <SetsTab
+          sets={sets}
+          summary={summary}
+          totals={totals}
+          visible={visible}
+          error={error}
+          query={query}
+          setQuery={setQuery}
+          sort={sort}
+          setSort={setSort}
+          filter={filter}
+          setFilter={setFilter}
+          onOpen={setOpenCode}
+          onShowProgress={() => setShowProgress(true)}
+        />
+      )}
+
+      {openCode && <SetDetailOverlay code={openCode} onClose={() => setOpenCode(null)} />}
+      {showProgress && <ProgressChartOverlay onClose={() => setShowProgress(false)} />}
+    </div>
+  )
+}
+
+/**
+ * The live Argentum Assay explorer, framed.
+ *
+ * Framed rather than reimplemented on purpose. `:oracle-assay` already serves this page against the
+ * **live grammar** — every number in it comes out of the same `Touchstone` / `Differential` objects
+ * the CLI gates print, so a rule you just edited is one server restart away from being re-measured.
+ * A React port would be a second implementation of those views, free to drift from the gates it
+ * claims to display, which is exactly what that module's "a view, never a second source of truth"
+ * rule exists to stop. game-server mounts the same handlers under `/api/assay/explorer`, so this is
+ * one `<iframe>` and no duplicated logic.
+ *
+ * Always available, so there is no flag to fetch and no tab that appears late. The server starts its
+ * corpus sweep on the first request to the tool, reports progress through its own `status` route
+ * while the page is already up, and degrades to "the sweep failed" with the live parser and rule
+ * tree still working if it can't reach one — so there is no state this component has to anticipate.
+ */
+function ExplorerPane() {
+  return (
+    <div className={styles.explorerPane}>
+      <iframe
+        className={styles.explorerFrame}
+        src={EXPLORER_URL}
+        title="Argentum Assay Explorer"
+        // Same origin, so the frame can talk to its own endpoints; it needs nothing else.
+        sandbox="allow-scripts allow-same-origin allow-forms"
+      />
+    </div>
+  )
+}
+
+/** The set grid and its banner — the page as it was before the explorer tab joined it. */
+function SetsTab({
+  sets,
+  summary,
+  totals,
+  visible,
+  error,
+  query,
+  setQuery,
+  sort,
+  setSort,
+  filter,
+  setFilter,
+  onOpen,
+  onShowProgress,
+}: {
+  sets: readonly SetCoverage[] | null
+  summary: CoverageSummary | null
+  totals: { implemented: number; total: number; complete: number; setCount: number; percent: number } | null
+  visible: readonly SetCoverage[]
+  error: string | null
+  query: string
+  setQuery: (q: string) => void
+  sort: SortKey
+  setSort: (s: SortKey) => void
+  filter: Filter
+  setFilter: (f: Filter) => void
+  onOpen: (code: string) => void
+  onShowProgress: () => void
+}) {
+  return (
+    <>
       {totals && (
         <button
           className={`${styles.summary} ${styles.summaryButton}`}
-          onClick={() => setShowProgress(true)}
+          onClick={onShowProgress}
           title="View implementation progress over time"
         >
           {(() => {
@@ -252,16 +396,13 @@ export function SetCompletionPage() {
           ) : (
             <div className={styles.grid}>
               {visible.map((s) => (
-                <SetCard key={s.code} set={s} onOpen={() => setOpenCode(s.code)} />
+                <SetCard key={s.code} set={s} onOpen={() => onOpen(s.code)} />
               ))}
             </div>
           )}
         </>
       )}
-
-      {openCode && <SetDetailOverlay code={openCode} onClose={() => setOpenCode(null)} />}
-      {showProgress && <ProgressChartOverlay onClose={() => setShowProgress(false)} />}
-    </div>
+    </>
   )
 }
 
@@ -313,6 +454,16 @@ function SetCard({ set, onOpen }: { set: SetCoverage; onOpen: () => void }) {
             {notPlanned} not planned
           </span>
         )}
+        {/* Only worth the pixels when there is free work: a "0 Assay-ready" tag on 900 sets would
+            bury the sets where the number is the reason to open them. Null (no ledger) hides too. */}
+        {set.assayReady != null && set.assayReady > 0 && (
+          <span
+            className={styles.assayTag}
+            title={`Argentum Assay already reads ${set.assayReady} of this set's missing cards end to end — they need no new SDK vocabulary`}
+          >
+            ⚡ {set.assayReady} Assay-ready
+          </span>
+        )}
         {t === 'done' ? (
           <span className={styles.doneTag}>Complete</span>
         ) : (
@@ -323,12 +474,13 @@ function SetCard({ set, onOpen }: { set: SetCoverage; onOpen: () => void }) {
   )
 }
 
-type CardFilter = 'all' | 'implemented' | 'missing' | 'notPlanned'
+type CardFilter = 'all' | 'implemented' | 'missing' | 'assayReady' | 'notPlanned'
 
 const CARD_FILTER_LABELS: Record<CardFilter, string> = {
   all: 'All',
   implemented: 'Implemented',
   missing: 'Missing',
+  assayReady: '⚡ Assay-ready',
   notPlanned: 'Not planned',
 }
 
@@ -390,6 +542,8 @@ function SetDetailOverlay({ code, onClose }: { code: string; onClose: () => void
           return c.implemented
         case 'missing':
           return !c.implemented && c.notPlanned === null
+        case 'assayReady':
+          return isAssayReady(c)
         case 'notPlanned':
           return c.notPlanned !== null
         default:
@@ -504,6 +658,14 @@ function SetDetailOverlay({ code, onClose }: { code: string; onClose: () => void
                   </>
                 )}
                 {notPlannedCount > 0 && <> · {notPlannedCount} not planned</>}
+                {detail.assayReady != null && detail.assayReady > 0 && (
+                  <span
+                    className={styles.assayNote}
+                    title="Argentum Assay reads these missing cards end to end — they need no new SDK vocabulary"
+                  >
+                    {' · '}⚡ {detail.assayReady} Assay-ready
+                  </span>
+                )}
               </span>
             </div>
           )}
@@ -522,14 +684,24 @@ function SetDetailOverlay({ code, onClose }: { code: string; onClose: () => void
           {(Object.keys(CARD_FILTER_LABELS) as CardFilter[])
             // The not-planned tab only exists for the handful of sets that have such a card.
             .filter((f) => f !== 'notPlanned' || notPlannedCount > 0)
+            // The Assay tab needs a baked ledger to mean anything. Hidden when `assayReady` is null
+            // (nobody ran `just assay-bake`); shown at zero, because "no free work left in this set"
+            // is a real answer and worth being able to read.
+            .filter((f) => f !== 'assayReady' || detail?.assayReady != null)
             .map((f) => (
               <button
                 key={f}
                 className={cardFilter === f ? styles.segmentActive : styles.segment}
                 onClick={() => setCardFilter(f)}
+                title={
+                  f === 'assayReady'
+                    ? 'Missing cards Argentum Assay already reads end to end — implementable with the SDK vocabulary that exists today'
+                    : undefined
+                }
               >
                 {CARD_FILTER_LABELS[f]}
                 {f === 'notPlanned' && ` (${notPlannedCount})`}
+                {f === 'assayReady' && ` (${detail?.assayReady ?? 0})`}
               </button>
             ))}
         </div>
@@ -637,10 +809,21 @@ const CardTile = memo(function CardTile({
     : card.notPlanned
       ? styles.tileNotPlanned
       : styles.tileMissing
+  const ready = isAssayReady(card)
+  // Assay's reading is on every tooltip but only badges the actionable case. A chip on all ~280
+  // tiles would be wallpaper; the one state worth spotting across a grid is "nobody built this and
+  // the grammar already reads it", which is a card you could pick up right now.
+  const tooltip = [
+    card.notPlanned ? `${card.name} — not planned: ${card.notPlanned.why}` : card.name,
+    assayTooltip(card),
+  ]
+    .filter(Boolean)
+    .join('\n')
   return (
     <div
       className={className}
-      title={card.notPlanned ? `${card.name} — not planned: ${card.notPlanned.why}` : card.name}
+      data-assay-ready={ready || undefined}
+      title={tooltip}
       onMouseEnter={(e) => onHover({ name: card.name, imageUri: card.imageUri, pos: { x: e.clientX, y: e.clientY } })}
       onMouseMove={(e) => onHover({ name: card.name, imageUri: card.imageUri, pos: { x: e.clientX, y: e.clientY } })}
       onMouseLeave={() => onHover(null)}
@@ -655,6 +838,11 @@ const CardTile = memo(function CardTile({
       <span className={styles.tileBadge}>
         {card.implemented ? '✓' : card.notPlanned ? card.notPlanned.kind : 'Missing'}
       </span>
+      {ready && (
+        <span className={styles.assayBadge} aria-label="Assay reads this card whole">
+          ⚡
+        </span>
+      )}
       <span className={styles.tileName}>{card.name}</span>
     </div>
   )

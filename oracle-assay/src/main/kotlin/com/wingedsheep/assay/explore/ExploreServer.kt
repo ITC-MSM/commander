@@ -2,15 +2,6 @@ package com.wingedsheep.assay.explore
 
 import com.sun.net.httpserver.HttpExchange
 import com.sun.net.httpserver.HttpServer
-import com.wingedsheep.assay.corpus.SetMembership
-import com.wingedsheep.assay.gate.DeclineKey
-import com.wingedsheep.assay.gate.Differential
-import com.wingedsheep.assay.gate.DifferentialReport
-import com.wingedsheep.assay.gate.Touchstone
-import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.Json
 import java.io.IOException
 import java.net.InetSocketAddress
 import java.net.URLDecoder
@@ -31,216 +22,44 @@ import java.util.concurrent.Executors
  * That is not a convenience, it is the difference between two tools: a page pinned to a build shows
  * what the grammar did at some commit, while this one shows what the rule you are editing does now.
  * A decline you are trying to fix is one restart away from being re-measured, and `parse` on text
- * that was never printed runs the identical [Touchstone] path a corpus card runs, normalization and
+ * that was never printed runs the identical `Touchstone` path a corpus card runs, normalization and
  * invertibility check included, instead of an approximation of it.
  *
- * ## Cost model
+ * ## What is left in this file
  *
- * Two things are expensive and both are done once. The corpus **sweep** ([AssayIndex]) runs at
- * startup on a background thread, so the page opens immediately and shows its progress; the
- * **differential** runs on first request to its own page and is then cached, because it decodes
- * 8,874 goldens and most sessions never ask for it. Everything else — a card, a custom parse, the
- * rule tree — is computed per request in milliseconds.
+ * Bytes, and nothing else. Every route's behaviour lives in [ExploreApi], because `game-server`
+ * serves the same page and the same routes under a prefix so the Set Completion view can frame the
+ * live tool — and two transports over one explorer is only true while neither of them decides
+ * anything. If you find yourself adding a `when` on a route name here, it belongs there.
  *
  * The dependency rule holds: this is `com.sun.net.httpserver`, in the JDK, so `:mtg-sdk` is still
  * the module's only production dependency.
  */
-class ExploreServer(private val port: Int, private val refresh: Boolean = false) {
+class ExploreServer(private val port: Int, refresh: Boolean = false) {
 
-    private val touchstone = Touchstone()
-    private val json = Json { prettyPrint = false }
-
-    @Volatile private var index: AssayIndex? = null
-    @Volatile private var goldens: GoldenIndex = GoldenIndex.load()
-    @Volatile private var swept = 0
-    @Volatile private var sweptFraction = 0.0
-    @Volatile private var failure: String? = null
-
-    /** Guarded by [differentialLock]; computed on first request because it is the expensive one. */
-    private var differential: DifferentialReport? = null
-    private val differentialLock = Any()
+    private val api = ExploreApi(refresh)
 
     fun start(): Int {
         val server = HttpServer.create(InetSocketAddress("127.0.0.1", port), 0)
         server.executor = Executors.newFixedThreadPool(4)
 
-        server.createContext("/") { exchange -> exchange.respond { page() } }
-        server.createContext("/api/status") { exchange -> exchange.json { status() } }
-        server.createContext("/api/overview") { exchange -> exchange.json { ready { Views.overview(it, goldens) } } }
-        server.createContext("/api/search") { exchange ->
-            exchange.json { ready { Views.search(it, exchange.param("q").orEmpty()) } }
-        }
-        server.createContext("/api/cards") { exchange -> exchange.json { cards(exchange) } }
-        server.createContext("/api/card") { exchange -> exchange.json { card(exchange) } }
-        server.createContext("/api/declines") { exchange ->
-            exchange.json {
-                ready {
-                    Views.declines(
-                        index = it,
-                        ranking = exchange.ranking(),
-                        query = exchange.param("q"),
-                        limit = exchange.param("limit")?.toIntOrNull() ?: 100,
-                    )
-                }
+        server.createContext("/") { exchange -> exchange.respond { api.page() } }
+        for (route in api.getRoutes) {
+            server.createContext("/api/$route") { exchange ->
+                exchange.json { api.get(route) { name -> exchange.param(name) } }
             }
         }
-        server.createContext("/api/decline") { exchange -> exchange.json { decline(exchange) } }
-        server.createContext("/api/probe") { exchange -> exchange.json { probe(exchange) } }
-        server.createContext("/api/grammar") { exchange -> exchange.json { Views.grammar(index) } }
-        server.createContext("/api/parse") { exchange -> exchange.json { parse(exchange) } }
-        server.createContext("/api/differential") { exchange -> exchange.json { differential() } }
+        for (route in api.postRoutes) {
+            server.createContext("/api/$route") { exchange ->
+                val body = exchange.requestBody.readBytes().toString(StandardCharsets.UTF_8)
+                exchange.json { api.post(route, body) }
+            }
+        }
 
         server.start()
-        Thread({ sweep() }, "assay-explore-sweep").apply { isDaemon = true }.start()
+        api.startSweep()
         return server.address.port
     }
-
-    // -------------------------------------------------------------------------------------------
-    // The one-time sweep
-    // -------------------------------------------------------------------------------------------
-
-    private fun sweep() {
-        try {
-            index = AssayIndex.build(refresh = refresh) { cards, fraction ->
-                swept = cards
-                sweptFraction = fraction
-            }
-        } catch (e: Exception) {
-            // A sweep that cannot start — no cached bulk file and no network — must leave the page
-            // usable rather than a dead socket: the live parser and the rule tree need no corpus.
-            failure = e.message ?: e::class.simpleName ?: "the corpus sweep failed"
-        }
-    }
-
-    private fun status(): JsonObject = JsonObject(
-        mapOf(
-            "ready" to JsonPrimitive(index != null),
-            "swept" to JsonPrimitive(index?.report?.cards ?: swept),
-            "progress" to JsonPrimitive(if (index != null) 1.0 else sweptFraction),
-            "goldens" to JsonPrimitive(goldens.size),
-            "error" to JsonPrimitive(failure ?: ""),
-        )
-    )
-
-    /** Every corpus-backed endpoint answers "still sweeping" rather than blocking a request thread. */
-    private fun ready(body: (AssayIndex) -> JsonElement): JsonElement {
-        val current = index ?: return JsonObject(
-            mapOf(
-                "indexing" to JsonPrimitive(true),
-                "swept" to JsonPrimitive(swept),
-                "progress" to JsonPrimitive(sweptFraction),
-                "error" to JsonPrimitive(failure ?: ""),
-            )
-        )
-        return body(current)
-    }
-
-    // -------------------------------------------------------------------------------------------
-    // Handlers
-    // -------------------------------------------------------------------------------------------
-
-    private fun cards(exchange: HttpExchange): JsonElement = ready { index ->
-        val set = exchange.param("set")?.takeIf { it.isNotBlank() }
-        val filter = CardFilter(
-            state = exchange.param("state"),
-            set = set,
-            // Resolved here rather than during the sweep, and on the request thread. A set list is
-            // ~200 KB and then memoized for the process, so exactly one request per set pays for it;
-            // pre-loading every set at startup would download 1,047 lists to serve a filter most
-            // sessions never touch, and baking membership into the sweep would make the corpus
-            // depend on the network for a question only this filter asks.
-            setCards = set?.let { SetMembership.of(it) },
-            query = exchange.param("q")?.takeIf { it.isNotBlank() },
-            scopeOnly = exchange.param("scope") == "1",
-            goldenOnly = exchange.param("golden") == "1",
-            goldens = index.goldenNames,
-        )
-        Views.cards(
-            index = index,
-            filter = filter,
-            offset = exchange.param("offset")?.toIntOrNull() ?: 0,
-            limit = (exchange.param("limit")?.toIntOrNull() ?: 100).coerceIn(1, 500),
-        )
-    }
-
-    private fun card(exchange: HttpExchange): JsonElement = ready { index ->
-        val name = exchange.param("name").orEmpty()
-        Views.cardPage(index, goldens, touchstone, name)
-            ?: JsonObject(mapOf("error" to JsonPrimitive("no card named \"$name\" in the Oracle bulk")))
-    }
-
-    private fun decline(exchange: HttpExchange): JsonElement = ready { index ->
-        val key = exchange.param("key").orEmpty()
-        Views.decline(index, exchange.ranking(), key)
-            ?: JsonObject(mapOf("error" to JsonPrimitive("no decline family \"$key\"")))
-    }
-
-    /**
-     * The feasibility probe. A POST because the span and its replacement are free text — a regex of
-     * Oracle punctuation in a query string is a URL-encoding accident waiting to happen — and
-     * because it is the one endpoint here that runs a measurement rather than reading one.
-     */
-    private fun probe(exchange: HttpExchange): JsonElement = ready { index ->
-        val fields = exchange.body() ?: return@ready JsonObject(
-            mapOf("error" to JsonPrimitive("expected a JSON object"))
-        )
-        fun field(key: String) = (fields[key] as? JsonPrimitive)?.content.orEmpty()
-        Views.probe(
-            index = index,
-            touchstone = touchstone,
-            ranking = DeclineKey.byName(field("by")) ?: DeclineKey.TAIL,
-            key = field("key"),
-            find = field("find"),
-            replace = field("replace"),
-            regex = field("regex") == "true",
-        )
-    }
-
-    private fun HttpExchange.ranking(): DeclineKey = DeclineKey.byName(param("by")) ?: DeclineKey.TOKEN
-
-    private fun HttpExchange.body(): JsonObject? {
-        val text = requestBody.readBytes().toString(StandardCharsets.UTF_8)
-        return runCatching { json.parseToJsonElement(text) as JsonObject }.getOrNull()
-    }
-
-    private fun parse(exchange: HttpExchange): JsonElement {
-        val fields = exchange.body()
-            ?: return JsonObject(mapOf("error" to JsonPrimitive("expected a JSON object")))
-        fun field(key: String) = (fields[key] as? JsonPrimitive)?.content.orEmpty()
-        return Views.parsed(
-            touchstone,
-            ParseRequest(
-                name = field("name"),
-                manaCost = field("manaCost"),
-                typeLine = field("typeLine"),
-                oracleText = field("oracleText"),
-            ),
-        )
-    }
-
-    private fun differential(): JsonElement = ready { index ->
-        if (!goldens.available) {
-            return@ready JsonObject(
-                mapOf(
-                    "error" to JsonPrimitive(
-                        "no hand-written card goldens found — run `just test-class CardDefinitionSnapshotTest`"
-                    )
-                )
-            )
-        }
-        val report = synchronized(differentialLock) {
-            differential ?: Differential(touchstone).run().also { differential = it }
-        }
-        Views.differential(report)
-    }
-
-    // -------------------------------------------------------------------------------------------
-    // Plumbing
-    // -------------------------------------------------------------------------------------------
-
-    private fun page(): ByteArray =
-        javaClass.getResourceAsStream(PAGE)?.readBytes()
-            ?: error("$PAGE is missing from the jar — the explorer page is a resource of :oracle-assay")
 
     private fun HttpExchange.param(name: String): String? {
         val query = requestURI.rawQuery ?: return null
@@ -250,15 +69,9 @@ class ExploreServer(private val port: Int, private val refresh: Boolean = false)
             ?.let { URLDecoder.decode(it, StandardCharsets.UTF_8) }
     }
 
-    private fun HttpExchange.json(body: () -> JsonElement) {
-        val payload = runCatching { json.encodeToString(JsonElement.serializer(), body()) }
-            .getOrElse { e ->
-                // A handler that throws must produce a readable error in the page rather than an
-                // empty response the browser reports as a network failure.
-                """{"error":${JsonPrimitive(e.message ?: e::class.simpleName ?: "internal error")}}"""
-            }
+    private fun HttpExchange.json(body: () -> kotlinx.serialization.json.JsonElement) {
         responseHeaders.add("Content-Type", "application/json; charset=utf-8")
-        send(payload.toByteArray(StandardCharsets.UTF_8))
+        send(api.encode(body).toByteArray(StandardCharsets.UTF_8))
     }
 
     private fun HttpExchange.respond(body: () -> ByteArray) {
@@ -277,9 +90,5 @@ class ExploreServer(private val port: Int, private val refresh: Boolean = false)
         } catch (_: IOException) {
             // The browser navigated away mid-response. Not worth a stack trace on the console.
         }
-    }
-
-    private companion object {
-        const val PAGE = "/explorer/index.html"
     }
 }

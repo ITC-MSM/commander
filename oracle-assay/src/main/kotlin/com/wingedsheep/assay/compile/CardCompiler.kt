@@ -131,7 +131,24 @@ object CardCompiler {
             return CompileResult.Declined(card.name, assay, declines)
         }
 
-        val definition = definition(card, face, header, fragment)
+        // Constructing the definition can still fail on an SDK invariant this file does not know
+        // about: the model types validate in `init`, and each one of those is a way for the SDK to
+        // say "no card looks like this". Every such refusal is a *finding* — the same product a
+        // declined line is — so it is caught and named rather than allowed to propagate. Letting one
+        // escape would take out whatever is driving the compile: a corpus-wide bake, or the Scenario
+        // Builder's paste box, which would 500 instead of showing the author what is wrong.
+        val definition = runCatching { definition(card, face, header, fragment) }.getOrElse { e ->
+            return CompileResult.Declined(
+                card.name,
+                assay,
+                listOf(
+                    CompileDecline(
+                        DeclineKind.INVALID_CARD,
+                        "the SDK will not construct this card: ${e.message ?: e::class.simpleName}",
+                    )
+                ),
+            )
+        }
         // The same validator a hand-written card is loaded through, and the same split: an ERROR is
         // a card the SDK considers malformed, a WARNING is the linter's advice. Only the first is
         // fail-closed — declining on advice would make the compiler stricter than the corpus.
@@ -173,12 +190,20 @@ object CardCompiler {
         // defining ability is a *line*, and mapping it to the stat slot is grammar work that has not
         // been done. Reading it as 0 would be the exact "reversible but wrong" failure the module
         // exists to prevent, so it declines and says which value it could not read.
-        val power = face.power?.toIntOrNull()
-        val toughness = face.toughness?.toIntOrNull()
+        //
+        // A *negative* printed value parses as a number and is still unrepresentable: `CreatureStats`
+        // requires a non-negative base (Spinal Parasite's -1/-1, and the Un-sets). That is an SDK
+        // finding rather than a grammar gap, and it is reported the same way every other one is —
+        // as a decline naming the value. Note it must be caught here rather than left to the
+        // `CreatureStats` constructor, which throws: a compiler that crashed on a card would break
+        // "declining is success" for every caller, and the corpus sweep that found this was the
+        // first thing to hand it a card printed that way.
+        val power = face.power?.toIntOrNull()?.takeIf { it >= 0 }
+        val toughness = face.toughness?.toIntOrNull()?.takeIf { it >= 0 }
         if (typeLine?.isCreature == true && (power == null || toughness == null)) {
             declines += CompileDecline(
                 DeclineKind.HEADER,
-                "power/toughness \"${face.power}/${face.toughness}\" is not a fixed number",
+                "power/toughness \"${face.power}/${face.toughness}\" is not a fixed non-negative number",
             )
         }
         val loyalty = face.loyalty?.toIntOrNull()

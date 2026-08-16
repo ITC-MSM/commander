@@ -1,5 +1,6 @@
 package com.wingedsheep.assay.cli
 
+import com.wingedsheep.assay.bake.VerdictLedger
 import com.wingedsheep.assay.compile.CardCompiler
 import com.wingedsheep.assay.compile.CompileResult
 import com.wingedsheep.assay.corpus.ImplementedCorpus
@@ -48,6 +49,7 @@ fun main(args: Array<String>) {
         "report" -> exitProcess(gate(flags, gating = false))
         "differential" -> exitProcess(differential(flags))
         "explore" -> exitProcess(explore(flags))
+        "bake" -> exitProcess(bake(flags))
         "corpus" -> exitProcess(corpus(flags))
         "-h", "--help", "help" -> {
             usage()
@@ -74,11 +76,15 @@ private fun usage() = System.err.println(
       assay report [options]         the same report, always exits 0
       assay differential [options]   diff Assay's readings against the hand-written cards
       assay explore [--port N]       browse all of the above against the live grammar
+      assay bake [--out PATH]        re-bless the whole-card verdict ledger: one sorted line per
+                                     card, read-whole or the decline that stopped it
       assay corpus [--refresh]       show or refresh the cached Scryfall Oracle bulk
 
     Options:
       --file PATH      compile: read the Scryfall(-style) card object from a file instead of
                        looking a name up in the corpus — the path a custom card takes
+      --out PATH       bake: where to write the ledger (default the game-server resource the Set
+                       Completion view reads)
       --limit N        assay only the first N cards (a fast smoke run)
       --set CODE       restrict to one set — every card *printed* in it for gate/report (a small
                        per-set list is fetched from Scryfall and cached), the golden's file name
@@ -130,6 +136,31 @@ private class Flags(args: List<String>) {
     fun has(name: String) = name in named
     fun int(name: String): Int? = named[name]?.toIntOrNull()
     fun str(name: String): String? = named[name]
+}
+
+/**
+ * `assay bake` — re-bless the whole-card verdict ledger.
+ *
+ * Deliberately a human action rather than a build step. The ledger is two things at once (see
+ * [VerdictLedger]): the Set Completion view's data source, which wants it current, and this module's
+ * regression ledger, which wants it re-blessed on purpose so a PR's diff is the list of cards whose
+ * reading changed. Wiring it into the build would satisfy the first and destroy the second.
+ */
+private fun bake(flags: Flags): Int {
+    val target = java.io.File(flags.str("out") ?: VerdictLedger.DEFAULT_OUTPUT)
+    val limit = flags.int("limit")
+    if (limit != null) {
+        System.err.println("assay: --limit is a smoke run; do not commit the result")
+    }
+    val ledger = VerdictLedger.build(refresh = flags.has("refresh"), limit = limit) { done ->
+        System.err.print("\rassay: baked $done cards…")
+    }
+    System.err.println()
+    VerdictLedger.write(ledger, target)
+    val permil = if (ledger.corpus == 0) 0 else ledger.whole * 1000 / ledger.corpus
+    println("baked ${ledger.corpus} cards — ${ledger.whole} read whole (${permil}‰) -> $target")
+    println("review the diff: a card that moved out of `whole` is a regression, not noise")
+    return 0
 }
 
 private fun corpus(flags: Flags): Int {

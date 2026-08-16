@@ -4,6 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Argentum Assay — Explorer</title>
+<!-- The page is served by two transports: `assay explore`'s own loopback server, which mounts the
+     endpoints at /api/, and game-server, which mounts the same handlers under a prefix so the
+     Set Completion view can frame it. The prefix is therefore a serve-time substitution rather than
+     a constant — ExploreApi.page(apiBase) replaces the token below. Opening this file straight off
+     disk leaves the token in place and every request 404s, which is the intended failure: the page
+     has never been usable without a server behind it. -->
+<script>window.ASSAY_API_BASE = "%%ASSAY_API_BASE%%";</script>
 <style>
   :root {
     color-scheme: light;
@@ -349,15 +356,19 @@ const go   = (hash) => { location.hash = hash; };
 const qs   = (o) => Object.entries(o).filter(([, v]) => v !== null && v !== undefined && v !== "")
                     .map(([k, v]) => k + "=" + encodeURIComponent(v)).join("&");
 
+/* Where the handlers are mounted. Injected by whichever server served this page — "/api/" for
+   `assay explore`, a prefixed path when game-server frames it — so no request path is hard-coded. */
+const API = window.ASSAY_API_BASE;
+
 async function api(path, params) {
-  const url = "/api/" + path + (params ? "?" + qs(params) : "");
+  const url = API + path + (params ? "?" + qs(params) : "");
   const r = await fetch(url);
   if (!r.ok) throw new Error(path + " -> " + r.status);
   return await r.json();
 }
 
 async function post(path, body) {
-  const r = await fetch("/api/" + path, {
+  const r = await fetch(API + path, {
     method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
   });
   if (!r.ok) throw new Error(path + " -> " + r.status);

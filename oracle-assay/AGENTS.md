@@ -487,7 +487,24 @@ resource — the whole value is that a rule you just edited is one restart away 
 
 **No new production dependency, and no path back to being a loader.** `com.sun.net.httpserver` is in
 the JDK; that is why the SDK-only rule still holds, and it is the constraint to check before reaching
-for a framework. The server binds loopback only and holds no state a request can mutate.
+for a framework. `ExploreServer` binds loopback only and holds no state a request can mutate.
+
+**Two transports, one explorer — and the split is by transport, not by feature.** `game-server`
+mounts the same page and the same routes under `/api/assay/explorer` so the web client's Set
+Completion view can frame the live tool as a tab. That is only safe while neither server *decides*
+anything: `explore/ExploreApi.kt` owns the sweep, the caches and every route's behaviour, and both
+`ExploreServer` and the Spring controller are reduced to moving bytes. If you find yourself writing a
+`when` on a route name in a transport, it belongs in `ExploreApi`. The page's request prefix is a
+serve-time substitution (`ExploreApi.page(apiBase)` replaces `%%ASSAY_API_BASE%%`) for the same
+reason — a hard-coded `/api/` would have forced the second server to proxy or the page to fork.
+
+The embedded tab is **not** gated, and the reason is worth stating so nobody "fixes" it: the explorer
+is a read over public card text with no state a request can mutate, so the cost of mounting it is
+resources rather than exposure. Those are handled where they arise — the sweep is lazy, so a server
+nobody opens the tool on pays nothing; a sweep that cannot run leaves the page usable and says so;
+the differential degrades to its "no goldens" message off a bootJar. What this does *not* license is
+treating the explorer as production infrastructure: it still wants a 24 MB corpus and a warm index,
+which is why the coverage badges read the baked ledger below instead of asking it.
 
 Two supporting pieces have their own reasons:
 
@@ -501,6 +518,40 @@ Two supporting pieces have their own reasons:
   `oneOf` prints through the first canonical alternative that can express a value, so "which rule
   printed this" is exact. Do not replace it with a re-match to attribute a number: that would be a
   second, unverified implementation of the half the round trip depends on.
+
+## The verdict ledger (`bake/`)
+
+`just assay-bake` writes one sorted line per card — read-whole, or the decline that stopped it — to
+`game-server/src/main/resources/coverage/assay-verdicts.json`. It is the one place this module
+*does* bake a snapshot, and the exception is principled rather than convenient: it answers a
+question for a machine that cannot run the grammar. The production `game-server` is a bare JRE with
+no `~/.cache/scryfall`, so the Set Completion view's "Assay already reads this card" badge has no
+live path to an answer, exactly as the coverage denominator has none and is baked by
+`scripts/gen-set-totals`. **This does not weaken the explorer's rule.** The explorer must stay live
+because its value is re-measuring an edited rule; the ledger is read by a server that has no grammar
+on hand at all.
+
+Three things to preserve when touching it:
+
+- **It is also the regression ledger this file has been asking for.** "Regressions need a diff, not a
+  total" describes exactly this artifact — one sorted line per card, re-blessed deliberately like the
+  card goldens — so a re-bake's `git diff` *is* the list of cards whose reading changed. That is why
+  `write` frames the JSON by hand instead of using `prettyPrint` (which would spread each card over
+  five lines and destroy the property), and why the bake is **not** wired into the build: an
+  auto-regenerated ledger erases the only signal that made it worth committing. A stale one degrades
+  into an out-of-date badge, which is the cheaper failure.
+- **It answers with `CardCompiler`, not with line verdicts.** "Could this be implemented using Assay"
+  is that object's exact question, and it is stricter than the line verdicts: a card whose every line
+  round-trips can still fail on a `*` power, a second face, or `CardValidator`. The explorer's
+  "cards fully covered" is therefore legitimately a little higher than the ledger's `whole`, and the
+  two are not meant to match.
+- **A bulk run is the first thing that hands the compiler every card, so it finds what nothing else
+  does.** The first bake crashed on a negative printed power — `CreatureStats` enforces a
+  non-negative base with `require`, and `CardCompiler` handed it `-1`. Both halves of the fix are the
+  module's own rules applied: negative P/T is now a `HEADER` decline naming the value (an SDK finding
+  reported like every other one), and constructing the definition is guarded so any *other* model
+  invariant becomes an `INVALID_CARD` decline. A compiler that throws breaks "declining is success"
+  for every caller — including the Scenario Builder's paste box, which would have answered a 500.
 
 ## Style
 
@@ -527,6 +578,7 @@ just assay-report --rank tail       # …keyed on the parse's tail, with the sol
 just assay-report --rank tail --tail-words 4   # re-measure the tail's one design parameter
 just assay-differential             # Assay's readings vs. the hand-written cards
 just assay-explore                  # all of the above in a browser, on the live grammar
+just assay-bake                     # re-bless the whole-card verdict ledger (own commit; read the diff)
 ```
 
 Unit tests are Kotest string-spec under `src/test/kotlin/com/wingedsheep/assay/`, named for the

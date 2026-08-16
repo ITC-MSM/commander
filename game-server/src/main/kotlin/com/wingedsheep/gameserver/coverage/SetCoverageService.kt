@@ -38,9 +38,22 @@ import org.springframework.stereotype.Service
  * the engine will never carry (ante, subgames, physical dexterity). They stay in the card lists
  * so the detail view can show them, but they drop out of the denominator while unimplemented, so
  * "complete" means *everything we intend to build is built* rather than a bar that can never fill.
+ *
+ * Each card also carries Argentum Assay's reading of it, joined in from [AssayVerdictService]'s baked
+ * ledger. That turns the *missing* half of the view into a ranked backlog rather than a flat list: a
+ * card nobody has authored that Assay already reads whole needs no new grammar and no new SDK
+ * vocabulary, which is the cheapest work on the board. It stays advisory — Assay is not a card
+ * loader, and a hand-written `cardDef` with a passing scenario test is still the only ground truth.
  */
 @Service
-class SetCoverageService {
+class SetCoverageService(
+    /**
+     * Defaulted so the tests that construct this directly to check the coverage *join* don't have to
+     * name a dependency they aren't exercising. Spring injects the singleton, so the ledger is read
+     * once in a running server; the default only ever fires in a test.
+     */
+    private val assay: AssayVerdictService = AssayVerdictService(),
+) {
 
     /**
      * Why a card will never be implemented. Exclusion is represented *as* its reason rather than
@@ -120,6 +133,12 @@ class SetCoverageService {
         val percent: Double,
         /** Whether this set is currently legal in the Standard format (baked by `scripts/gen-set-totals`). */
         val inStandard: Boolean,
+        /**
+         * Booster cards still to build that Argentum Assay already reads whole — the free-to-implement
+         * count, and the reason the join exists. Null when no verdict ledger is baked, so the grid can
+         * say nothing rather than claim a set has none.
+         */
+        val assayReady: Int?,
     )
 
     /** One canonical card and whether we've implemented it — for the per-set detail view. */
@@ -130,6 +149,11 @@ class SetCoverageService {
         val imageUri: String?,
         /** Non-null when the card is deliberately never going to be implemented, and why. */
         val notPlanned: NotPlanned?,
+        /**
+         * Argentum Assay's reading of this card, or null if the baked ledger has no row for it —
+         * which is "unknown", not "no". See [AssayVerdictService].
+         */
+        val assay: AssayVerdictService.Verdict?,
     )
 
     /**
@@ -169,6 +193,8 @@ class SetCoverageService {
         /** Extras flagged never-to-implement; excluded from [extraTotal] but still listed in [extra]. */
         val extraNotPlanned: Int,
         val percent: Double,
+        /** Booster cards still to build that Assay already reads whole. Null when no ledger is baked. */
+        val assayReady: Int?,
         /** Booster (draft) cards, A→Z — including the not-planned ones, each carrying its reason. */
         val draft: List<CardCoverageDTO>,
         /** Completionist extras in Scryfall's section order. Empty if the set has none. */
@@ -272,6 +298,9 @@ class SetCoverageService {
                     extraNotPlanned = secondary.second.size,
                     percent = percent(implemented, main.first.size),
                     inStandard = c.standardLegal,
+                    // Over the countable booster pool only, matching the headline %: an extra or a
+                    // not-planned card being Assay-readable is not work this bar is measuring.
+                    assayReady = assayReady(main.first, authored),
                 )
             }
             .sortedWith(compareByDescending<SetCoverageDTO> { it.releaseDate ?: "" }.thenBy { it.code })
@@ -351,7 +380,17 @@ class SetCoverageService {
         fun mark(cards: List<CanonicalCard>) =
             cards.map { card ->
                 val implemented = frontFace(card.name) in authored
-                CardCoverageDTO(card.name, implemented, card.img, card.notPlanned.takeIf { !implemented })
+                CardCoverageDTO(
+                    name = card.name,
+                    implemented = implemented,
+                    imageUri = card.img,
+                    notPlanned = card.notPlanned.takeIf { !implemented },
+                    // Attached to implemented cards too, not just missing ones: on a card we've
+                    // already authored, "Assay declines this" is the grammar backlog entry whose
+                    // known-good answer is sitting in the goldens — the cheapest work in that module,
+                    // and invisible if the badge only appeared on cards nobody has built.
+                    assay = assay.verdict(card.name),
+                )
             }
         val draft = mark(c.mainCards)
         // The baked extras already arrive sorted into Scryfall's sections, so grouping by label in
@@ -382,6 +421,11 @@ class SetCoverageService {
             notPlanned = draft.size - draftCountable,
             extraNotPlanned = extraGroups.sumOf { it.notPlanned },
             percent = percent(draft.count { it.implemented }, draftCountable),
+            assayReady = if (!assay.available) {
+                null
+            } else {
+                draft.count { !it.implemented && it.notPlanned == null && it.assay?.readsWhole == true }
+            },
             draft = draft,
             extraGroups = extraGroups,
         )
@@ -416,6 +460,18 @@ class SetCoverageService {
      */
     private fun CanonicalCard.counts(authored: Set<String>): Boolean =
         notPlanned == null || frontFace(name) in authored
+
+    /**
+     * Cards in [cards] still to build that Argentum Assay reads whole — the free-to-implement count.
+     *
+     * Null rather than 0 when no ledger is baked, because those two answers mean opposite things:
+     * "this set has no cheap work left" is a finding, and "nobody ran `just assay-bake`" is a
+     * missing input. The caller passes an already-countable list, so not-planned cards are gone.
+     */
+    private fun assayReady(cards: List<CanonicalCard>, authored: Set<String>): Int? {
+        if (!assay.available) return null
+        return cards.count { frontFace(it.name) !in authored && assay.verdict(it.name)?.readsWhole == true }
+    }
 
     private companion object {
         /** Section heading for extras the generator couldn't attribute to a product. */

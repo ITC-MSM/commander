@@ -384,6 +384,19 @@ assay-differential *ARGS: _assay-tool
 assay-explore *ARGS: _assay-tool
     @oracle-assay/build/install/oracle-assay/bin/oracle-assay explore {{ARGS}}
 
+# THE VERDICT LEDGER — one sorted line per card: read whole, or the decline that stopped it.
+# Two readers, and both matter. `game-server` serves it as the "Assay reads this card" badge on the
+# Set Completion view (production has no Scryfall cache, so the answer has to be baked); and `git
+# diff` reads it as the regression check the corpus totals can't give you — a card that moves out of
+# `whole` is a rule that broke, visible per card instead of hidden in a total that went up.
+# Re-bless it deliberately, in its own commit, after a grammar change:
+#   just assay-bake                      -> game-server/src/main/resources/coverage/assay-verdicts.json
+#   just assay-bake --refresh            re-download the Scryfall bulk first
+#   just assay-bake --out /tmp/l.json    somewhere else (a smoke run; don't commit it)
+[group: 'dev']
+assay-bake *ARGS: _assay-tool
+    @oracle-assay/build/install/oracle-assay/bin/oracle-assay bake {{ARGS}}
+
 # Verify backlog/sets/*/cards.md headers match actual [x] / [x]+[ ] counts
 [group: 'build']
 check-backlog:

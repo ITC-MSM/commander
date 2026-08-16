@@ -78,6 +78,7 @@ just assay-report --set POR         # restricted to one set — every card *prin
 just assay-report --rank tail       # declines keyed on the parse's tail, with the sole-blocked count
 just assay-differential             # Assay's readings vs. the hand-written cards
 just assay-explore                  # all of the above in a browser, on the live grammar
+just assay-bake                     # re-bless the whole-card verdict ledger (see below)
 just assay corpus --refresh         # re-download the Scryfall Oracle bulk (~24 MB, cached 7 days)
 ```
 
@@ -1186,6 +1187,59 @@ reading is a value, and the rule that produced it is gone by the time the gate s
 *print* side is deterministic: `oneOf` prints through the first canonical alternative that can
 express the value, so "which rule printed this" has one answer, and it is the same walk the round
 trip depends on. A rule showing no usage printed nothing in 34,882 cards.
+
+### The explorer inside the app
+
+`game-server` mounts the same page and the same handlers under `/api/assay/explorer`, so the web
+client's **Set Completion** view offers it as a tab beside the coverage grid. That is one `<iframe>`
+and no second implementation: `explore/ExploreApi.kt` holds every route's behaviour and both servers
+— `assay explore`'s loopback [`ExploreServer`] and the Spring controller — are reduced to moving
+bytes. A React port of these views would have been free to drift from the gates it displays, which is
+the thing "a view, never a second source of truth" exists to prevent.
+
+Unlike the custom-card sandbox next door, the tab is **not** gated. It is a read over public card
+text — no state a request can mutate, no game, no account, no corpus write — so the thing to weigh is
+resources, not exposure, and the sweep is already lazy: `ExploreApi` is built and its sweep started
+on the *first request*, so a server nobody opens it on fetches nothing. Where `~/.cache/scryfall`
+does not exist, that first sweep downloads the bulk; where it cannot, the page stays up with its
+live parser and rule tree and reports the failure. The differential needs `mtg-sets` test resources
+and so answers "no goldens found" off a bootJar — one page degraded, the rest intact.
+
+## The verdict ledger
+
+`just assay-bake` writes `game-server/src/main/resources/coverage/assay-verdicts.json`: one sorted
+line per card, saying whether [`CardCompiler`] reads it **whole** and, if not, the decline that
+stopped it and the printed line that decline points at. 6,979 of 34,882 cards, at the time of
+writing.
+
+It has two readers, and the second one is why the format is what it is.
+
+**The Set Completion view** joins it per card, which turns the *missing* half of that page into a
+ranked backlog: a card nobody has authored that Assay already reads end to end needs no new grammar
+and no new SDK vocabulary, so it is the cheapest work on the board. The page badges those cards,
+filters to them, counts them per set, and can sort every set by how many it has. Baked rather than
+computed because the production server has no Scryfall cache — the same reason, and the same answer,
+as the coverage denominator in `scripts/gen-set-totals`.
+
+**`git diff`** reads it as the regression check this module has been missing. At corpus size a change
+can move thousands of verdicts and "round-trips went up" hides the twelve cards that went *down*.
+One card per line, sorted by name, means a re-bake's diff *is* the list of cards whose reading
+changed — so re-bless it deliberately, in its own commit, the way the card goldens are. It is
+therefore not wired into the build: a stale ledger degrades into an out-of-date badge, while an
+auto-regenerated one would erase the only signal that made it worth committing.
+
+It answers with [`CardCompiler`] rather than with line verdicts because "could be implemented using
+Assay" is that object's exact question. A card whose every line round-trips can still fail on a `*`
+power, a second face, or `CardValidator`, and a badge reading "ready" for a card that cannot be
+produced would be worse than no badge.
+
+> Baking it for the first time found a bug the gates could not see: `CardCompiler` **threw** on a
+> card with a negative printed power (`CreatureStats` requires a non-negative base and enforces it
+> with `require`), so Spinal Parasite and the Un-set creatures crashed the compiler instead of
+> declining. Nothing had previously handed it all 34,882 cards; the Scenario Builder's paste box
+> would have answered a 500. Negative P/T is now a `HEADER` decline naming the value — an SDK finding
+> reported the way every other one is — and constructing the definition is guarded, so any *other*
+> model invariant becomes an `INVALID_CARD` decline rather than an exception out of a bulk run.
 
 ## Adding a rule
 

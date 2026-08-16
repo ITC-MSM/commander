@@ -21,6 +21,22 @@ export interface NotPlanned {
   readonly why: string
 }
 
+/**
+ * Argentum Assay's reading of a card, from the baked verdict ledger (`just assay-bake`).
+ *
+ * A missing verdict is `null` on the card, meaning *unknown* — the ledger has no row, or none is
+ * baked at all. Never render a negative badge for a null; "Assay can't read this" and "nobody asked
+ * Assay" are different statements and the second one isn't worth showing.
+ */
+export interface AssayVerdict {
+  /** Assay's grammar reads every line of this card, so it compiles to a whole CardDefinition. */
+  readonly readsWhole: boolean
+  /** The decline that stopped it — `LINE_DECLINED`, `MULTI_FACE`, `HEADER`, … Null when it reads whole. */
+  readonly kind: string | null
+  /** The printed line the decline points at, truncated. Null when the decline is card-wide. */
+  readonly line: string | null
+}
+
 export interface SetCoverage {
   readonly code: string
   readonly name: string
@@ -46,6 +62,11 @@ export interface SetCoverage {
   readonly percent: number
   /** Whether the set is currently legal in the Standard format (derived from per-card legality). */
   readonly inStandard: boolean
+  /**
+   * Booster cards still to build that Argentum Assay already reads whole — free-to-implement work.
+   * `null` when no verdict ledger is baked, which is not the same as `0`.
+   */
+  readonly assayReady: number | null
 }
 
 /**
@@ -77,6 +98,8 @@ export interface CardCoverage {
   readonly imageUri: string | null
   /** Non-null when we've decided never to implement this card, carrying the reason. */
   readonly notPlanned: NotPlanned | null
+  /** Argentum Assay's reading, or `null` when the baked ledger has no row — see {@link AssayVerdict}. */
+  readonly assay: AssayVerdict | null
 }
 
 /**
@@ -111,6 +134,11 @@ export interface SetDetail {
   /** Extras flagged never-to-implement; excluded from `extraTotal` but still listed in `extraGroups`. */
   readonly extraNotPlanned: number
   readonly percent: number
+  /**
+   * Booster cards still to build that Argentum Assay already reads whole. `null` when no verdict
+   * ledger is baked — which the view distinguishes from `0`, since only one of the two is a finding.
+   */
+  readonly assayReady: number | null
   /** Booster (draft) cards, A→Z — including the not-planned ones, each carrying its reason. */
   readonly draft: readonly CardCoverage[]
   /** Completionist extras in Scryfall's section order. Empty if the set has none. */

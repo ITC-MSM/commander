@@ -253,7 +253,7 @@ completionist extras are reported separately.
 [
   { "code": "BLB", "name": "Bloomburrow", "releaseDate": "2024-08-02", "setType": "expansion",
     "block": null, "implemented": 261, "total": 261, "extraImplemented": 18, "extraTotal": 18,
-    "notPlanned": 0, "extraNotPlanned": 0, "percent": 100.0 }
+    "notPlanned": 0, "extraNotPlanned": 0, "percent": 100.0, "inStandard": true, "assayReady": 0 }
 ]
 ```
 
@@ -264,15 +264,51 @@ set with baked totals. Drives the click-through detail view.
 ```json
 { "code": "ELD", "name": "Throne of Eldraine", "releaseDate": "2019-10-04", "block": null,
   "implemented": 254, "total": 254, "extraImplemented": 0, "extraTotal": 31,
-  "notPlanned": 0, "extraNotPlanned": 0, "percent": 100.0,
+  "notPlanned": 0, "extraNotPlanned": 0, "percent": 100.0, "assayReady": 0,
   "draft": [{ "name": "Acclaimed Contender", "implemented": true,
-              "imageUri": "https://cards.scryfall.io/normal/front/…jpg", "notPlanned": null }, ...],
+              "imageUri": "https://cards.scryfall.io/normal/front/…jpg", "notPlanned": null,
+              "assay": { "readsWhole": false, "kind": "LINE_DECLINED",
+                         "line": "When Acclaimed Contender enters, if you control…" } }, ...],
   "extraGroups": [
     { "label": "Planeswalker Decks", "implemented": 0, "total": 10, "notPlanned": 0,
-      "cards": [{ "name": "...", "implemented": false, "imageUri": "…", "notPlanned": null }, ...] },
+      "cards": [{ "name": "...", "implemented": false, "imageUri": "…", "notPlanned": null,
+                  "assay": { "readsWhole": true, "kind": null, "line": null } }, ...] },
     { "label": "Brawl Decks", "implemented": 0, "total": 20, "notPlanned": 0, "cards": [...] },
     { "label": "Promos", "implemented": 0, "total": 1, "notPlanned": 0, "cards": [...] }] }
 ```
+
+**Assay verdicts.** Every card carries `assay` — Argentum Assay's reading of it — and every set
+carries `assayReady`, the count of booster cards *still to build* that Assay reads whole. That's the
+free-to-implement number: such a card needs no new grammar and no new SDK vocabulary, so the view
+badges it, filters to it, and can sort the whole grid by it. `null` means **unknown**, never "no":
+either the ledger has no row for that card, or none is baked. The view distinguishes the two, since
+"this set has no cheap work left" is a finding and "nobody baked the ledger" is a missing input.
+
+Baked for the same reason the denominator is — production has no Scryfall cache, and computing a
+verdict means running the grammar over Oracle text. `just assay-bake` writes
+`game-server/.../resources/coverage/assay-verdicts.json`: one sorted line per card, `{ name }` when
+[`CardCompiler`](../oracle-assay/README.md#the-verdict-ledger) reads it whole and
+`{ name, kind, line }` when it doesn't, naming the decline and the printed line it points at.
+`AssayVerdictService` joins it by front-face name; a missing or malformed resource degrades to no
+badges rather than a server that won't boot. Re-bless it in its own commit after a grammar change —
+the file doubles as Assay's per-card regression ledger, so the diff is the list of cards whose
+reading moved.
+
+**Assay Explorer** — `GET /api/assay/explorer` (+ `/{route}`) → the live Argentum Assay explorer,
+mounted inside the app so the Set Completion view can offer it as a second tab. It is the *same*
+page and the same handlers `just assay-explore` serves: `ExploreApi` in `:oracle-assay` owns every
+route, both servers only move bytes, and the page's request prefix is substituted at serve time. The
+client frames it in an `<iframe>` rather than reimplementing the views, which would be free to drift
+from the gates they display.
+
+Ungated: it is a read over public card text, holds no state a request can mutate, and touches no
+game, account or corpus. The cost is resources, not exposure, and the sweep is lazy for exactly that
+reason — `ExploreApi` is constructed and its corpus sweep started on the **first request**, so a
+server nobody opens the tool on fetches nothing. Where `~/.cache/scryfall` is absent (a production
+container) that first sweep downloads the 24 MB Oracle bulk; if it can't, the page stays up with its
+live parser and rule tree and reports the failure through `status`. The differential decodes
+`mtg-sets` *test* resources, which aren't in the bootJar, so in production that one page answers
+"no goldens found" and the rest is unaffected.
 
 **Extras are sectioned like a Scryfall set page.** scryfall.com/sets/`<code>` splits a set into
 "Draft Cards" plus named runs of non-booster printings, and `extraGroups` mirrors the ones that
