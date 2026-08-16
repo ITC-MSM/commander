@@ -4791,6 +4791,54 @@
     ]
 }
 
+// Shadowmage Infiltrator
+{
+    "name": "Shadowmage Infiltrator",
+    "manaCost": "{1}{U}{B}",
+    "typeLine": "Creature — Human Wizard",
+    "oracleText": "Fear (This creature can't be blocked except by artifact creatures and/or black creatures.)\nWhenever this creature deals combat damage to a player, you may draw a card.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 3
+    },
+    "keywords": [
+        "FEAR"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "DealsDamageEvent",
+                    "damageType": "DamageCombat",
+                    "recipient": "AnyPlayer"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "DrawCards",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 1
+                        }
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "294",
+        "rarity": "RARE",
+        "artist": "Rick Farrell",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/3/932ce702-565f-4d8c-b9fc-2d7c939ef7d7.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "BLACK"
+    ]
+}
+
 // Skull Fracture
 {
     "name": "Skull Fracture",
