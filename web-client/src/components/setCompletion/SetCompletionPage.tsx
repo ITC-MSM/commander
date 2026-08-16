@@ -1,6 +1,7 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { SetIcon } from '../ui/SetIcon'
+import { HelpTip } from '../help/HelpTip'
 import { HoverCardPreview } from '../ui/HoverCardPreview'
 import { ProgressChartOverlay } from './ProgressChartOverlay'
 import { getScryfallFallbackUrl } from '@/utils/cardImages'
@@ -27,7 +28,13 @@ const SORT_LABELS: Record<SortKey, string> = {
   name: 'A–Z',
 }
 
-/** Where game-server mounts the live Argentum Assay explorer. Dev servers only — see `/api/config`. */
+/**
+ * Where game-server mounts the live Argentum Assay explorer.
+ *
+ * Mounted on *every* server, not just dev ones: the tool is a read over public card text and holds
+ * no state a request can mutate. See `AssayExploreController` for what that costs and why it is
+ * still worth it — and {@link ExplorerPane} for why there is consequently no flag to fetch.
+ */
 const EXPLORER_URL = '/api/assay/explorer'
 
 /**
@@ -187,11 +194,14 @@ export function SetCompletionPage() {
             aria-selected={tab === 'explorer'}
             className={tab === 'explorer' ? styles.segmentActive : styles.segment}
             onClick={() => setTab('explorer')}
-            title="Argentum Assay — the Oracle-text grammar and both its gates, against the live parser"
           >
             Assay Explorer
           </button>
         </div>
+        {/* Sibling of the tablist, never inside it: `HelpTip` is a button, and one nested in a
+            `role="tab"` would be both invalid markup and a click that switches tabs. The explanation
+            lives in `topics.ts` rather than in a `title=` so the popover and `/help` can't disagree. */}
+        <HelpTip topicId="assay-explorer" label="What is the Assay Explorer?" />
         <div className={styles.topbarSpacer} />
       </header>
 
@@ -659,11 +669,11 @@ function SetDetailOverlay({ code, onClose }: { code: string; onClose: () => void
                 )}
                 {notPlannedCount > 0 && <> · {notPlannedCount} not planned</>}
                 {detail.assayReady != null && detail.assayReady > 0 && (
-                  <span
-                    className={styles.assayNote}
-                    title="Argentum Assay reads these missing cards end to end — they need no new SDK vocabulary"
-                  >
+                  <span className={styles.assayNote}>
                     {' · '}⚡ {detail.assayReady} Assay-ready
+                    <span className={styles.assayNoteTip}>
+                      <HelpTip topicId="assay-ready" size="sm" />
+                    </span>
                   </span>
                 )}
               </span>

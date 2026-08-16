@@ -74,7 +74,7 @@ export const HELP_SECTIONS: readonly { id: HelpSection; title: string; blurb: st
   {
     id: 'advanced',
     title: 'Advanced',
-    blurb: 'Shortcuts, replays, spectating, the multiplayer camera and the Lab tools.',
+    blurb: 'Shortcuts, replays, spectating, the multiplayer camera, Argentum Assay and the Lab tools.',
   },
 ]
 
@@ -629,8 +629,28 @@ export const HELP_TOPICS: readonly HelpTopic[] = [
       'Set Completion, on the home screen under Build & Browse, lists every set and how much of it the engine can actually play. Useful before committing to a deck or picking a set to draft.',
     body: [
       { kind: 'p', text: 'The deckbuilder only ever offers implemented cards, so a deck you build there always works. This page is the other direction: it tells you what is missing from a set you had in mind.' },
+      { kind: 'p', text: 'Open a set to get its full card list, each card marked implemented or missing. A handful come back “not planned” — cards needing something the engine will never carry, like ante or physical dexterity — and those are left out of every total, so the percentage measures what there is any intention of building.' },
+      { kind: 'p', text: 'The second tab, Assay Explorer, is a different question about the same corpus: not which cards are written, but how much of Magic’s printed text the engine can read at all.' },
     ],
-    related: ['deckbuilder'],
+    related: ['deckbuilder', 'assay-ready', 'assay-explorer'],
+  },
+  {
+    id: 'assay-ready',
+    section: 'decks',
+    title: '⚡ Assay-ready cards',
+    summary:
+      'On Set Completion, ⚡ Assay-ready counts the cards a set is still missing that Argentum Assay already reads end to end — the ones the engine could express today, with nothing new built for them.',
+    body: [
+      { kind: 'p', text: 'It measures how much of what is left is cheap, which is a different question from how much is done. A set sitting at 40% with two hundred Assay-ready cards is closer to finished than its percentage suggests; one at 95% with none left is down to the cards that need new engine work first.' },
+      { kind: 'ul', items: [
+        'Set tiles carry a “⚡ 34 Assay-ready” tag in the footer — shown only above zero, because a row of “0 Assay-ready” across nine hundred sets would bury the sets where the number is the reason to look.',
+        'Sorting the grid by “Most Assay-ready” puts the sets holding the most of that work first.',
+        'Inside a set, the ⚡ Assay-ready filter lists exactly those cards, and each one wears a ⚡ on its tile.',
+      ] },
+      { kind: 'p', text: 'Hovering any card in a set gives you Assay’s reading of it: that it reads the card whole, or which line it declined and what stopped it. A card the reading does not cover stays silent rather than showing a negative — “Assay can’t read this” and “nobody asked Assay” are different statements, and only the first is worth a badge.' },
+      { kind: 'p', text: 'The counts come from a ledger baked from a full run of the parser rather than being recomputed per request, so they move when the grammar does rather than continuously.' },
+    ],
+    related: ['set-completion', 'assay', 'assay-explorer'],
   },
 
   // ── Advanced ───────────────────────────────────────────────────────────
@@ -680,7 +700,58 @@ export const HELP_TOPICS: readonly HelpTopic[] = [
     title: 'Lab tools',
     summary:
       'Debugging and content tools, not part of normal play: the Scenario Builder (start a game from a hand-authored board state), the LLM Tournament runner, and the AI Sandbox (a table of bots playing each other, so you can watch the built-in AI and spot where it goes wrong). They only appear in dev builds, because they all need server endpoints a production deployment does not expose.',
-    related: ['replays', 'set-completion'],
+    related: ['replays', 'set-completion', 'assay-custom-cards'],
+  },
+  {
+    id: 'assay',
+    section: 'advanced',
+    title: 'Argentum Assay',
+    summary:
+      'Argentum’s own reader for printed Magic text. It parses a card’s Oracle text into the engine’s model of that card — and because every grammar rule is written to run backwards too, it can print that model back out and check the two match word for word.',
+    body: [
+      { kind: 'p', text: 'Cards here are written by hand and each one carries its own test, and that is not changing. Assay answers the question that comes before writing one: does the engine already have the vocabulary this card needs? A line it reads is a line the engine can already express. A line it cannot is declined — and a decline names the exact word it stopped at instead of quietly approximating the rest.' },
+      { kind: 'p', text: 'Running the grammar backwards is what makes that reading worth trusting, because it can be checked at the scale of the whole corpus without anyone reading the output:' },
+      { kind: 'ul', items: [
+        'The touchstone parses every distinct piece of Oracle text Scryfall publishes and prints it back. A rule that quietly drops an “other”, or flattens “up to three” into “three”, fails on the next card that uses it.',
+        'The differential sets Assay’s reading of an already-implemented card against the definition someone hand-wrote for it. A disagreement is a bug in one of the two — and it has turned up both kinds.',
+      ] },
+      { kind: 'p', text: 'Coverage is reported as fineness, in parts per thousand, after the assay a metallurgist runs on ore — the name is the promise that it reports a number rather than “looks fine”. Text it cannot read is counted, never dropped.' },
+      { kind: 'p', text: 'Two things in this app are built on it: the ⚡ Assay-ready counts on Set Completion, and the Assay Explorer tab beside them.' },
+    ],
+    related: ['assay-ready', 'assay-explorer', 'assay-custom-cards', 'set-completion'],
+  },
+  {
+    id: 'assay-explorer',
+    section: 'advanced',
+    title: 'The Assay Explorer',
+    summary:
+      'The second tab on Set Completion. It runs against the live parser and answers three things: how much of Magic’s printed text the grammar reads today, what is blocking the rest, and what any text you paste into it parses to.',
+    body: [
+      { kind: 'p', text: 'What each of its views is for:' },
+      { kind: 'ul', items: [
+        'Overview — the fineness numbers: how much of the corpus round-trips, how much is declined, and how many cards are read whole rather than only in part.',
+        'Cards — the sweep, browsable by set or across the whole corpus, each card showing the lines that read and the ones that did not.',
+        'Declines — the ranked gap report: which missing piece of grammar blocks the most real cards. This is the backlog putting itself in order.',
+        'Grammar — every rule reachable from an ability line, with how many cards actually use each one.',
+        'Differential — Assay’s reading of an implemented card set against the hand-written definition, and every place the two disagree.',
+        'Parse — paste any Oracle text and read what it becomes, with a caret on the word a decline stopped at.',
+      ] },
+      { kind: 'p', text: 'The explorer only ever reads public card text — no game, no account, no deck — so it is mounted on every server rather than being a dev-build tool. The first time anyone opens it the server fetches Scryfall’s bulk Oracle data and sweeps it, so the numbers arrive shortly after the page does; the parser and the grammar tree work straight away either way.' },
+      { kind: 'p', text: 'Differential is the exception. It compares against the project’s own test fixtures, which a deployed server does not ship, so here it reports that it has nothing to compare against. It fills in when the explorer is run from a checkout of the repository.' },
+    ],
+    related: ['assay', 'assay-ready', 'set-completion'],
+  },
+  {
+    id: 'assay-custom-cards',
+    section: 'advanced',
+    title: 'Custom cards',
+    summary:
+      'The Scenario Builder can play a card that does not exist: paste a Scryfall-shaped card object, Assay reads it, and once it reads every line you can drop the compiled card into any zone and play with it. A dev-build tool — it needs endpoints a production deployment does not expose.',
+    body: [
+      { kind: 'p', text: 'Each printed line comes back with a verdict of its own — read, read (respelled), not read — and a caret on the word a decline stopped at. The card only becomes addable once every line reads: a half-read card would sit on the board looking correct and be quietly missing an ability, which is worse than being refused outright.' },
+      { kind: 'p', text: 'None of this touches the card corpus. The compiled card is scoped to that one scenario session, and cards that actually ship are still written by hand and still carry their own test — Assay makes a draft quick to trust, it does not make the review optional.' },
+    ],
+    related: ['lab-tools', 'assay'],
   },
 ]
 

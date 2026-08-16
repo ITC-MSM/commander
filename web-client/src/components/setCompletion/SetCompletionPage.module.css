@@ -418,6 +418,14 @@
   color: var(--color-warning, #f2b134);
   white-space: nowrap;
 }
+/* The `?` rides inside the note rather than after it, so the two read as one thing. Wrapped instead
+   of styling `HelpTip` directly (it takes no class), and nudged off the baseline because the button
+   is a 14px box sitting in a smaller line of running text. */
+.assayNoteTip {
+  display: inline-flex;
+  vertical-align: -2px;
+  margin-left: 5px;
+}
 /* Top-LEFT, opposite the implementation badge: the two answer different questions and a reader
    scanning for one shouldn't have to disambiguate them by colour alone. */
 .assayBadge {
