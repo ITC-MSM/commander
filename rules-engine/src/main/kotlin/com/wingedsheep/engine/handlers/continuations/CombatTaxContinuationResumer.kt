@@ -396,6 +396,7 @@ class CombatTaxContinuationResumer(
         var pool = ManaPool(oldPool.white, oldPool.blue, oldPool.black, oldPool.red, oldPool.green, oldPool.colorless)
         var current = state
         val events = mutableListOf<GameEvent>()
+        var explicitTaxManaPaid = 0
         for (selection in selections) {
             val ref = selection.ref
             val option = options.getValue(ref)
@@ -403,14 +404,27 @@ class CombatTaxContinuationResumer(
             // Fixed-output branches reject a forged colour; any-one-colour branches require one
             // of their offered colours.
             val outputColor = when {
+                option.activationManaCost != null -> {
+                    if (selection.chosenColor != null || selection.taxPaymentColor !in option.taxPaymentColorChoices) return null
+                    null
+                }
                 option.colorChoices.isEmpty() -> {
-                    if (selection.chosenColor != null) return null
+                    if (selection.chosenColor != null || selection.taxPaymentColor != null) return null
                     option.producesColors.singleOrNull()
                 }
-                else -> selection.chosenColor?.takeIf { it in option.colorChoices } ?: return null
+                else -> {
+                    if (selection.taxPaymentColor != null) return null
+                    selection.chosenColor?.takeIf { it in option.colorChoices } ?: return null
+                }
             }
             val container = current.getEntity(ref.sourceId) ?: return null
             if (ref.sourceId !in current.getBattlefield() || current.projectedState.getController(ref.sourceId) != plan.payerId || container.has<TappedComponent>()) return null
+            // The Signet branch pays its own `{1}` from this payer's already-floating mana
+            // before its tap cost and output. Its selected produced colour then pays exactly one
+            // unit of this payer's generic block tax; it must not be paid again below.
+            option.activationManaCost?.let { activationCost ->
+                pool = pool.pay(activationCost) ?: return null
+            }
             if (option.requiresSacrificeSelf) {
                 events += TappedEvent(ref.sourceId, option.sourceName)
                 val tracked = ZoneTransitionService.trackPermanentSacrifice(current, listOf(ref.sourceId), plan.payerId)
@@ -424,12 +438,19 @@ class CombatTaxContinuationResumer(
                 tapped.second?.let(events::add)
             }
             pool = when {
+                option.activationManaCost != null -> option.fixedProducedMana.entries.fold(pool) { accumulated, (color, amount) ->
+                    accumulated.add(color, amount)
+                }.spend(selection.taxPaymentColor!!) ?: return null
                 outputColor != null -> pool.add(outputColor, option.manaAmount)
                 option.producesColorless -> pool.addColorless(option.manaAmount)
                 else -> return null
             }
+            if (option.activationManaCost != null) explicitTaxManaPaid++
         }
-        val paid = pool.pay(plan.manaCost) ?: return null
+        // This bounded branch always spends one coloured output for one generic tax mana. Do not
+        // let a malformed future option silently pay more tax than the fixed generic tax permits.
+        if (explicitTaxManaPaid > plan.manaCost.genericAmount || plan.manaCost.colors.isNotEmpty() || plan.manaCost.colorlessAmount > 0) return null
+        val paid = pool.pay(plan.manaCost.reduceGeneric(explicitTaxManaPaid)) ?: return null
         current = current.updateEntity(plan.payerId) { it.with(ManaPoolComponent(
             white = paid.white, blue = paid.blue, black = paid.black, red = paid.red, green = paid.green, colorless = paid.colorless,
         )) }

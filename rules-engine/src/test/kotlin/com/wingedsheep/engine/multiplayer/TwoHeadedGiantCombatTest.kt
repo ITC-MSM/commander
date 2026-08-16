@@ -16,6 +16,7 @@ import com.wingedsheep.engine.core.PlayerConfig
 import com.wingedsheep.engine.core.ManaSourceOption
 import com.wingedsheep.engine.core.AtomicBlockTaxManaAbilityRef
 import com.wingedsheep.engine.core.AtomicBlockTaxManaAbilitySelection
+import com.wingedsheep.engine.core.AtomicBlockTaxManaAbilityOption
 import com.wingedsheep.engine.core.AtomicBlockTaxManaAbilitiesSelectedResponse
 import com.wingedsheep.engine.core.PermanentsSacrificedEvent
 import com.wingedsheep.engine.core.SelectAtomicBlockTaxManaAbilitiesDecision
@@ -39,6 +40,7 @@ import com.wingedsheep.engine.state.components.player.ManaPoolComponent
 import com.wingedsheep.mtg.sets.definitions.ori.cards.ArchangelOfTithes
 import com.wingedsheep.mtg.sets.definitions.mir.cards.CrystalVein
 import com.wingedsheep.mtg.sets.definitions.dom.cards.GildedLotus
+import com.wingedsheep.mtg.sets.definitions.gpt.cards.IzzetSignet
 import com.wingedsheep.mtg.sets.definitions.scg.cards.ElvishAberration
 import com.wingedsheep.mtg.sets.definitions.woe.cards.VirtueOfStrength
 import com.wingedsheep.sdk.core.Format
@@ -132,6 +134,7 @@ class TwoHeadedGiantCombatTest : FunSpec({
         it.register(ElvishAberration)
         it.register(CrystalVein)
         it.register(GildedLotus)
+        it.register(IzzetSignet)
         it.register(VirtueOfStrength)
         it.register(CardDefinition.basicLand("Plains", Subtype.PLAINS))
     }
@@ -226,6 +229,22 @@ class TwoHeadedGiantCombatTest : FunSpec({
         return withEntity(id, container).addToZone(ZoneKey(owner, Zone.BATTLEFIELD), id) to id
     }
 
+    fun GameState.withIzzetSignet(owner: EntityId): Pair<GameState, EntityId> {
+        val id = EntityId.generate()
+        val container = ComponentContainer.of(
+            CardComponent(
+                cardDefinitionId = IzzetSignet.name,
+                name = IzzetSignet.name,
+                manaCost = IzzetSignet.manaCost,
+                typeLine = IzzetSignet.typeLine,
+                ownerId = owner,
+            ),
+            OwnerComponent(owner),
+            ControllerComponent(owner),
+        )
+        return withEntity(id, container).addToZone(ZoneKey(owner, Zone.BATTLEFIELD), id) to id
+    }
+
     fun taxedTeamBlockState(): Triple<GameState, List<EntityId>, List<EntityId>> {
         val (base, p) = init2hg()
         val (s1, archangel) = base.withBear(p[0], attacking = p[2], definition = ArchangelOfTithes)
@@ -273,6 +292,19 @@ class TwoHeadedGiantCombatTest : FunSpec({
         val state = s5.updateEntity(p[0]) { it.with(AttackersDeclaredThisCombatComponent) }
             .copy(step = Step.DECLARE_BLOCKERS, phase = Phase.COMBAT).withPriority(p[2])
         return Triple(state, p, listOf(archangel, blkP2, blkP3, lotus, landP3))
+    }
+
+    fun taxedTeamBlockStateWithIzzetSignet(preexistingActivationMana: Boolean = true): Triple<GameState, List<EntityId>, List<EntityId>> {
+        val (base, p) = init2hg()
+        val (s1, archangel) = base.withBear(p[0], attacking = p[2], definition = ArchangelOfTithes)
+        val (s2, blkP2) = s1.withBear(p[2], definition = flyingBear)
+        val (s3, blkP3) = s2.withBear(p[3], definition = flyingBear)
+        val (s4, signet) = s3.withIzzetSignet(p[2])
+        val (s5, landP3) = s4.withPlains(p[3])
+        var state = s5.updateEntity(p[0]) { it.with(AttackersDeclaredThisCombatComponent) }
+            .copy(step = Step.DECLARE_BLOCKERS, phase = Phase.COMBAT).withPriority(p[2])
+        if (preexistingActivationMana) state = state.updateEntity(p[2]) { it.with(ManaPoolComponent(colorless = 1)) }
+        return Triple(state, p, listOf(archangel, blkP2, blkP3, signet, landP3))
     }
 
     fun taxedTeamBlockStateWithVirtueOfStrength(): Triple<GameState, List<EntityId>, List<EntityId>> {
@@ -730,6 +762,112 @@ class TwoHeadedGiantCombatTest : FunSpec({
         forgedRef.events shouldBe emptyList()
     }
 
+    test("atomic Izzet Signet pays its activation cost first and chooses its tax-output colour") {
+        val (state, p, objects) = taxedTeamBlockStateWithIzzetSignet()
+        val (archangel, blkP2, blkP3, signet, landP3) = objects
+        val proc = ActionProcessor(registry())
+        val declared = proc.process(
+            state, DeclareBlockers(p[2], mapOf(blkP2 to listOf(archangel), blkP3 to listOf(archangel))),
+        ).result
+        val p2Prompt = declared.pendingDecision.shouldBeInstanceOf<SelectAtomicBlockTaxManaAbilitiesDecision>()
+        val signetOption = p2Prompt.availableOptions.single { it.ref == AtomicBlockTaxManaAbilityRef(signet, 0) }
+        signetOption.activationManaCost shouldBe ManaCost.parse("{1}")
+        signetOption.fixedProducedMana shouldBe mapOf(Color.BLUE to 1, Color.RED to 1)
+        signetOption.taxPaymentColorChoices shouldBe setOf(Color.BLUE, Color.RED)
+
+        val p2Accepted = proc.process(
+            declared.newState,
+            SubmitDecision(p[2], AtomicBlockTaxManaAbilitiesSelectedResponse(
+                p2Prompt.id,
+                selectedManaAbilitySelections = listOf(AtomicBlockTaxManaAbilitySelection(
+                    signetOption.ref, taxPaymentColor = Color.BLUE,
+                )),
+            )),
+        ).result
+        val p3Prompt = p2Accepted.pendingDecision.shouldBeInstanceOf<SelectAtomicBlockTaxManaAbilitiesDecision>()
+        val paid = proc.process(
+            p2Accepted.newState,
+            SubmitDecision(p[3], AtomicBlockTaxManaAbilitiesSelectedResponse(
+                p3Prompt.id,
+                selectedManaAbilitySelections = listOf(AtomicBlockTaxManaAbilitySelection(AtomicBlockTaxManaAbilityRef(landP3, -1))),
+            )),
+        ).result
+
+        paid.isSuccess.shouldBeTrue()
+        paid.newState.getEntity(signet)!!.has<TappedComponent>().shouldBeTrue()
+        // `{1}` was spent before the Signet added {U}{R}; {U} paid the generic tax, leaving {R}.
+        paid.newState.getEntity(p[2])!!.get<ManaPoolComponent>()!!.blue shouldBe 0
+        paid.newState.getEntity(p[2])!!.get<ManaPoolComponent>()!!.red shouldBe 1
+        paid.events.filterIsInstance<BlockersDeclaredEvent>().size shouldBe 1
+    }
+
+    test("atomic Izzet Signet is unavailable without preexisting activation mana and rejects legacy or forged tax colours") {
+        val (withoutMana, p, noManaObjects) = taxedTeamBlockStateWithIzzetSignet(preexistingActivationMana = false)
+        val (archangel, blkP2, _, signet, _) = noManaObjects
+        val proc = ActionProcessor(registry())
+        val noManaDeclared = proc.process(withoutMana, DeclareBlockers(p[2], mapOf(blkP2 to listOf(archangel)))).result
+        val noManaPrompt = noManaDeclared.pendingDecision.shouldBeInstanceOf<SelectAtomicBlockTaxManaAbilitiesDecision>()
+        noManaPrompt.availableOptions.none { it.ref == AtomicBlockTaxManaAbilityRef(signet, 0) }.shouldBeTrue()
+
+        val (withMana, players, objects) = taxedTeamBlockStateWithIzzetSignet()
+        val (attacker, blocker, _, eligibleSignet, _) = objects
+        val declared = proc.process(withMana, DeclareBlockers(players[2], mapOf(blocker to listOf(attacker)))).result
+        val prompt = declared.pendingDecision.shouldBeInstanceOf<SelectAtomicBlockTaxManaAbilitiesDecision>()
+        val legacy = proc.process(
+            declared.newState,
+            SubmitDecision(players[2], AtomicBlockTaxManaAbilitiesSelectedResponse(
+                prompt.id, selectedManaAbilityRefs = listOf(AtomicBlockTaxManaAbilityRef(eligibleSignet, 0)),
+            )),
+        ).result
+        legacy.isSuccess.shouldBeFalse()
+        legacy.newState shouldBe declared.newState
+        val forged = proc.process(
+            declared.newState,
+            SubmitDecision(players[2], AtomicBlockTaxManaAbilitiesSelectedResponse(
+                prompt.id,
+                selectedManaAbilitySelections = listOf(AtomicBlockTaxManaAbilitySelection(
+                    AtomicBlockTaxManaAbilityRef(eligibleSignet, 0), taxPaymentColor = Color.WHITE,
+                )),
+            )),
+        ).result
+        forged.isSuccess.shouldBeFalse()
+        forged.newState shouldBe declared.newState
+    }
+
+    test("a late atomic-team decline rolls back a selected Izzet Signet without tapping or spending its payer's mana") {
+        val (state, p, objects) = taxedTeamBlockStateWithIzzetSignet()
+        val (archangel, blkP2, blkP3, signet, _) = objects
+        val proc = ActionProcessor(registry())
+        val declared = proc.process(
+            state, DeclareBlockers(p[2], mapOf(blkP2 to listOf(archangel), blkP3 to listOf(archangel))),
+        ).result
+        val prompt = declared.pendingDecision.shouldBeInstanceOf<SelectAtomicBlockTaxManaAbilitiesDecision>()
+        val p2Accepted = proc.process(
+            declared.newState,
+            SubmitDecision(p[2], AtomicBlockTaxManaAbilitiesSelectedResponse(
+                prompt.id,
+                selectedManaAbilitySelections = listOf(AtomicBlockTaxManaAbilitySelection(
+                    AtomicBlockTaxManaAbilityRef(signet, 0), taxPaymentColor = Color.RED,
+                )),
+            )),
+        ).result
+        val declined = proc.process(
+            p2Accepted.newState,
+            SubmitDecision(p[3], AtomicBlockTaxManaAbilitiesSelectedResponse(
+                p2Accepted.pendingDecision.shouldBeInstanceOf<SelectAtomicBlockTaxManaAbilitiesDecision>().id,
+                declined = true,
+            )),
+        ).result
+
+        declined.isSuccess.shouldBeTrue()
+        declined.newState.getEntity(signet)!!.has<TappedComponent>().shouldBeFalse()
+        declined.newState.getEntity(p[2])!!.get<ManaPoolComponent>()!!.colorless shouldBe 1
+        declined.newState.getEntity(p[2])!!.get<ManaPoolComponent>()!!.blue shouldBe 0
+        declined.newState.getEntity(p[2])!!.get<ManaPoolComponent>()!!.red shouldBe 0
+        declined.events.filterIsInstance<TappedEvent>() shouldBe emptyList()
+        declined.events.filterIsInstance<BlockersDeclaredEvent>() shouldBe emptyList()
+    }
+
     test("atomic Crystal Vein branch decline and forged branch preserve the proposed declaration") {
         val (state, p, objects) = taxedTeamBlockStateWithCrystalVein()
         val (archangel, blkP2, _, crystalVein, _) = objects
@@ -951,7 +1089,10 @@ class TwoHeadedGiantCombatTest : FunSpec({
         ).result
         val p2Prompt = declared.pendingDecision.shouldBeInstanceOf<SelectAtomicBlockTaxManaAbilitiesDecision>()
         p2Prompt.playerId shouldBe p[2]
-        p2Prompt.availableOptions shouldBe emptyList()
+        // Floating mana pays the tax, but the atomic menu may still offer a
+        // bounded mana branch. It is a source-selection option, not a normal
+        // mana-ability action; the transaction lock below must reject the latter.
+        p2Prompt.availableOptions.size shouldBe 1
         p2Prompt.autoPaySuggestion shouldBe emptyList()
 
         val directMana = proc.process(
@@ -968,7 +1109,7 @@ class TwoHeadedGiantCombatTest : FunSpec({
         ).result
         val p3Prompt = p2Accepted.pendingDecision.shouldBeInstanceOf<SelectAtomicBlockTaxManaAbilitiesDecision>()
         p3Prompt.playerId shouldBe p[3]
-        p3Prompt.availableOptions shouldBe emptyList()
+        p3Prompt.availableOptions.size shouldBe 1
         p3Prompt.autoPaySuggestion shouldBe emptyList()
 
         val declined = proc.process(
@@ -1141,5 +1282,37 @@ class TwoHeadedGiantCombatTest : FunSpec({
         val decoded = json.decodeFromString<ManaSourceOption>(JsonObject(payload).toString())
 
         decoded.manaAmount shouldBe 1
+    }
+
+    test("atomic Signet option and selection preserve new tax-payment metadata while old payloads retain defaults") {
+        val json = Json {
+            serializersModule = com.wingedsheep.engine.core.engineSerializersModule
+            encodeDefaults = true
+        }
+        val option = AtomicBlockTaxManaAbilityOption(
+            ref = AtomicBlockTaxManaAbilityRef(EntityId.of("izzet-signet"), 0),
+            sourceName = "Izzet Signet",
+            description = "{1}, {T}: Add {U}{R}.",
+            producesColors = setOf(Color.BLUE, Color.RED),
+            producesColorless = false,
+            manaAmount = 2,
+            requiresSacrificeSelf = false,
+            activationManaCost = ManaCost.parse("{1}"),
+            fixedProducedMana = mapOf(Color.BLUE to 1, Color.RED to 1),
+            taxPaymentColorChoices = setOf(Color.BLUE, Color.RED),
+        )
+        val selection = AtomicBlockTaxManaAbilitySelection(option.ref, taxPaymentColor = Color.RED)
+        json.decodeFromString<AtomicBlockTaxManaAbilityOption>(json.encodeToString(option)) shouldBe option
+        json.decodeFromString<AtomicBlockTaxManaAbilitySelection>(json.encodeToString(selection)) shouldBe selection
+
+        val legacyPayload = json.parseToJsonElement(json.encodeToString(option)).jsonObject.toMutableMap().apply {
+            remove("activationManaCost")
+            remove("fixedProducedMana")
+            remove("taxPaymentColorChoices")
+        }
+        val decodedLegacy = json.decodeFromString<AtomicBlockTaxManaAbilityOption>(JsonObject(legacyPayload).toString())
+        decodedLegacy.activationManaCost shouldBe null
+        decodedLegacy.fixedProducedMana shouldBe emptyMap()
+        decodedLegacy.taxPaymentColorChoices shouldBe emptySet()
     }
 })

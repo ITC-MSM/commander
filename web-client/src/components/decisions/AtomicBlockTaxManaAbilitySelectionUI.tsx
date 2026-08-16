@@ -29,12 +29,13 @@ export function AtomicBlockTaxManaAbilitySelectionUI({
   const autoPaySelections = useMemo(
     () => decision.autoPaySelections?.length
       ? decision.autoPaySelections
-      : decision.autoPaySuggestion.map((ref) => ({ ref, chosenColor: null })),
+      : decision.autoPaySuggestion.map((ref) => ({ ref, chosenColor: null, taxPaymentColor: null })),
     [decision.autoPaySelections, decision.autoPaySuggestion],
   )
-  const suggestionKey = autoPaySelections.map((selection) => `${optionKey(selection.ref)}:${selection.chosenColor ?? ''}`).join(',')
+  const suggestionKey = autoPaySelections.map((selection) => `${optionKey(selection.ref)}:${selection.chosenColor ?? ''}:${selection.taxPaymentColor ?? ''}`).join(',')
   const [selectedKeys, setSelectedKeys] = useState<readonly string[]>([])
   const [chosenColors, setChosenColors] = useState<Readonly<Record<string, string>>>({})
+  const [taxPaymentColors, setTaxPaymentColors] = useState<Readonly<Record<string, string>>>({})
 
   useEffect(() => {
     const available = new Set(decision.availableOptions.map((option) => optionKey(option.ref)))
@@ -48,6 +49,11 @@ export function AtomicBlockTaxManaAbilitySelectionUI({
         .filter((selection) => selection.chosenColor != null)
         .map((selection) => [optionKey(selection.ref), selection.chosenColor!]),
     ))
+    setTaxPaymentColors(Object.fromEntries(
+      autoPaySelections
+        .filter((selection) => selection.taxPaymentColor != null)
+        .map((selection) => [optionKey(selection.ref), selection.taxPaymentColor!]),
+    ))
   }, [decision.id, suggestionKey, decision.availableOptions, autoPaySelections])
 
   const selectedOptions = useMemo(
@@ -60,8 +66,11 @@ export function AtomicBlockTaxManaAbilitySelectionUI({
       chosenColor: option.colorChoices.length === 0
         ? null
         : (chosenColors[optionKey(option.ref)] ?? option.colorChoices[0] ?? null),
+      taxPaymentColor: option.taxPaymentColorChoices?.length
+        ? (taxPaymentColors[optionKey(option.ref)] ?? option.taxPaymentColorChoices[0] ?? null)
+        : null,
     })),
-    [chosenColors, selectedOptions],
+    [chosenColors, selectedOptions, taxPaymentColors],
   )
   // Block taxes are generic costs. The server remains authoritative, but keeping the Pay button
   // disabled until the visible choices plus already-floating mana cover that generic amount avoids
@@ -75,7 +84,14 @@ export function AtomicBlockTaxManaAbilitySelectionUI({
     (manaPool?.green ?? 0) +
     (manaPool?.colorless ?? 0)
   const selectedMana = selectedOptions.reduce((total, option) => total + option.manaAmount, 0)
-  const isCovered = floatingMana + selectedMana >= requiredMana
+  // A Signet-like branch first spends its printed activation cost from mana that is already
+  // floating. Its generated mana cannot retroactively pay that activation. Count the net
+  // available pool and require the pre-existing pool to cover every selected activation.
+  const activationMana = selectedOptions.reduce((total, option) => {
+    const generic = Number.parseInt(option.activationManaCost?.match(/\d+/)?.[0] ?? '0', 10)
+    return total + generic
+  }, 0)
+  const isCovered = floatingMana >= activationMana && floatingMana - activationMana + selectedMana >= requiredMana
 
   const toggle = (option: AtomicBlockTaxManaAbilityOption) => {
     const key = optionKey(option.ref)
@@ -133,6 +149,18 @@ export function AtomicBlockTaxManaAbilitySelectionUI({
                     onChange={(event) => setChosenColors((current) => ({ ...current, [key]: event.target.value }))}
                   >
                     {option.colorChoices.map((color) => <option key={color} value={color}>{color}</option>)}
+                  </select>
+                </label>
+              )}
+              {(option.taxPaymentColorChoices?.length ?? 0) > 0 && selected && (
+                <label className={styles.effectHint}>
+                  Tax mana
+                  <select
+                    value={taxPaymentColors[key] ?? option.taxPaymentColorChoices![0]}
+                    onClick={(event) => event.stopPropagation()}
+                    onChange={(event) => setTaxPaymentColors((current) => ({ ...current, [key]: event.target.value }))}
+                  >
+                    {option.taxPaymentColorChoices!.map((color) => <option key={color} value={color}>{color}</option>)}
                   </select>
                 </label>
               )}

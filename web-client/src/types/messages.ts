@@ -626,6 +626,8 @@ export interface AtomicBlockTaxManaAbilityRef {
 export interface AtomicBlockTaxManaAbilitySelection {
   readonly ref: AtomicBlockTaxManaAbilityRef
   readonly chosenColor?: string | null
+  /** Exact produced colour spent on the generic tax by an activation-cost branch. */
+  readonly taxPaymentColor?: string | null
 }
 
 /**
@@ -643,6 +645,11 @@ export interface AtomicBlockTaxManaAbilityOption {
   readonly requiresSacrificeSelf: boolean
   /** Empty for a fixed output; otherwise the only legal chosenColor values. */
   readonly colorChoices: readonly string[]
+  /** Present only for the bounded `{1}, {T}: Add {U}{R}` atomic branch. */
+  readonly activationManaCost?: string | null
+  readonly fixedProducedMana?: Readonly<Record<string, number>>
+  /** Exact output colours that may pay one unit of the generic block tax. */
+  readonly taxPaymentColorChoices?: readonly string[]
 }
 
 /** Select exact mana-ability branches for an atomic shared-team block-tax payment. */

@@ -26,6 +26,12 @@ data class AtomicBlockTaxManaAbilityRef(
 data class AtomicBlockTaxManaAbilitySelection(
     val ref: AtomicBlockTaxManaAbilityRef,
     val chosenColor: Color? = null,
+    /**
+     * The exact produced colour explicitly spent on the block tax by a branch that has an
+     * activation-mana cost. This is distinct from [chosenColor]: Izzet Signet produces both
+     * blue and red rather than choosing one output colour.
+     */
+    val taxPaymentColor: Color? = null,
 )
 
 /** A deterministic, no-further-input mana-ability branch offered by atomic team block tax. */
@@ -40,6 +46,12 @@ data class AtomicBlockTaxManaAbilityOption(
     val requiresSacrificeSelf: Boolean,
     /** Empty for a fixed colour/colorless branch; otherwise the exact permitted choice set. */
     val colorChoices: Set<Color> = emptySet(),
+    /** Non-null only for the deliberately narrow `{1}, {T}: Add {U}{R}` transaction branch. */
+    val activationManaCost: ManaCost? = null,
+    /** Exact fixed coloured output for an activation-cost branch, after its tap cost is paid. */
+    val fixedProducedMana: Map<Color, Int> = emptyMap(),
+    /** Which exact produced colour may be spent toward this generic block tax. */
+    val taxPaymentColorChoices: Set<Color> = emptySet(),
 )
 
 /**

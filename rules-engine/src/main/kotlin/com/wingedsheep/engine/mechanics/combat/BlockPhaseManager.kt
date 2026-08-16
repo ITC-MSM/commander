@@ -38,9 +38,11 @@ import com.wingedsheep.sdk.scripting.CantBlock
 import com.wingedsheep.sdk.scripting.CantBlockUnless
 import com.wingedsheep.sdk.scripting.CantBlockUnlessCoBlocker
 import com.wingedsheep.sdk.scripting.AbilityCost
+import com.wingedsheep.sdk.scripting.costs.CostAtom
 import com.wingedsheep.sdk.scripting.effects.AddColorlessManaEffect
 import com.wingedsheep.sdk.scripting.effects.AddManaEffect
 import com.wingedsheep.sdk.scripting.effects.AddManaOfChoiceEffect
+import com.wingedsheep.sdk.scripting.effects.CompositeEffect
 import com.wingedsheep.sdk.scripting.values.ManaColorSet
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
 import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
@@ -1197,8 +1199,16 @@ internal class BlockPhaseManager(
                 ManaPool(it.white, it.blue, it.black, it.red, it.green, it.colorless)
             } ?: ManaPool()
             val remainingCost = pool.payPartial(manaCost).remainingCost
-            val atomicOptions = if (atomicTeamPayment && !remainingCost.isEmpty()) {
-                atomicFixedManaAbilityOptions(state, payerId, solverSources)
+            // Even if this payer's floating mana already covers the generic tax, they may
+            // deliberately activate a bounded Signet branch: its pre-existing `{1}` pays the
+            // activation cost and one of its new outputs pays the tax. Do not erase that legal
+            // exact branch merely because the ordinary solver would need no source.
+            val atomicOptions = if (atomicTeamPayment) {
+                atomicFixedManaAbilityOptions(state, payerId, solverSources).filter { option ->
+                    // The bounded Signet branch cannot use mana it itself produces to pay its
+                    // activation cost. It is offered only when this payer already has `{1}`.
+                    option.activationManaCost?.let { pool.pay(it) != null } ?: true
+                }
             } else emptyList()
             val solution = if (remainingCost.isEmpty()) null else {
                 manaSolver.solve(
@@ -1283,11 +1293,16 @@ internal class BlockPhaseManager(
             val source = solverById[sourceId] ?: return@flatMap emptyList()
             val printedOptions = definition.script.activatedAbilities.mapIndexedNotNull { index, ability ->
                 if (!ability.isManaAbility || ability.targetRequirements.isNotEmpty() || ability.restrictions.isNotEmpty()) return@mapIndexedNotNull null
+                val signetActivationManaCost = atomicIzzetSignetActivationManaCost(ability.cost)
                 val sacrifice = when (ability.cost) {
                     AbilityCost.Tap -> false
                     is AbilityCost.Composite -> {
                         val costs = (ability.cost as AbilityCost.Composite).costs
-                        if (costs.size == 2 && costs.contains(AbilityCost.Tap) && costs.contains(AbilityCost.SacrificeSelf)) true else return@mapIndexedNotNull null
+                        when {
+                            costs.size == 2 && costs.contains(AbilityCost.Tap) && costs.contains(AbilityCost.SacrificeSelf) -> true
+                            signetActivationManaCost != null -> false
+                            else -> return@mapIndexedNotNull null
+                        }
                     }
                     else -> return@mapIndexedNotNull null
                 }
@@ -1311,6 +1326,12 @@ internal class BlockPhaseManager(
                         val amount = (effect.amount as? DynamicAmount.Fixed)?.amount ?: return@mapIndexedNotNull null
                         AtomicManaOutput(emptySet(), false, amount, com.wingedsheep.sdk.core.Color.entries.toSet())
                     }
+                    // Deliberately not a general CompositeEffect implementation. This is the
+                    // one printed Signet shape that the atomic 2HG transaction can replay:
+                    // `{1}, {T}: Add {U}{R}`. Other activation costs and composite outputs
+                    // remain outside this vocabulary until they get an explicit design.
+                    is CompositeEffect -> atomicIzzetSignetOutput(effect, signetActivationManaCost)
+                        ?: return@mapIndexedNotNull null
                     else -> return@mapIndexedNotNull null
                 }
                 // The solver has already applied source-tap replacement effects (for example
@@ -1335,6 +1356,9 @@ internal class BlockPhaseManager(
                     manaAmount = fixed.amount * multiplier,
                     requiresSacrificeSelf = sacrifice,
                     colorChoices = fixed.colorChoices,
+                    activationManaCost = signetActivationManaCost,
+                    fixedProducedMana = fixed.fixedProducedMana,
+                    taxPaymentColorChoices = fixed.taxPaymentColorChoices,
                 )
             }
             // Basic-land subtype mana abilities are intrinsic rather than printed in a card's
@@ -1365,7 +1389,42 @@ internal class BlockPhaseManager(
         val colorless: Boolean,
         val amount: Int,
         val colorChoices: Set<com.wingedsheep.sdk.core.Color> = emptySet(),
+        val fixedProducedMana: Map<com.wingedsheep.sdk.core.Color, Int> = emptyMap(),
+        val taxPaymentColorChoices: Set<com.wingedsheep.sdk.core.Color> = emptySet(),
     )
+
+    /** Exact parser for the bounded Izzet-Signet activation-cost branch, not a cost-shape generalizer. */
+    private fun atomicIzzetSignetActivationManaCost(cost: AbilityCost): ManaCost? {
+        val parts = (cost as? AbilityCost.Composite)?.costs ?: return null
+        if (parts.size != 2 || AbilityCost.Tap !in parts) return null
+        val mana = parts.filterIsInstance<AbilityCost.Atom>()
+            .mapNotNull { (it.atom as? CostAtom.Mana)?.cost }
+            .singleOrNull() ?: return null
+        return mana.takeIf { it.cmc == 1 && it.genericAmount == 1 && it.colors.isEmpty() && it.colorlessAmount == 0 }
+    }
+
+    /** Exact `{U}{R}` fixed output paired with [atomicIzzetSignetActivationManaCost]. */
+    private fun atomicIzzetSignetOutput(
+        effect: CompositeEffect,
+        activationManaCost: ManaCost?,
+    ): AtomicManaOutput? {
+        if (activationManaCost == null || effect.effects.size != 2 || effect.stopOnError || effect.descriptionOverride != null) return null
+        val produced = effect.effects.mapNotNull { part ->
+            val add = part as? AddManaEffect ?: return null
+            val amount = (add.amount as? DynamicAmount.Fixed)?.amount ?: return null
+            add.color to amount
+        }.toMap()
+        val blue = com.wingedsheep.sdk.core.Color.BLUE
+        val red = com.wingedsheep.sdk.core.Color.RED
+        if (produced != mapOf(blue to 1, red to 1)) return null
+        return AtomicManaOutput(
+            colors = produced.keys,
+            colorless = false,
+            amount = 2,
+            fixedProducedMana = produced,
+            taxPaymentColorChoices = produced.keys,
+        )
+    }
 
     private fun atomicAutoPaySuggestion(
         pool: ManaPool,
@@ -1393,6 +1452,7 @@ internal class BlockPhaseManager(
                     // Generic block tax does not constrain the colour, but replay does: choose a
                     // deterministic canonical colour for an automatic any-one-colour branch.
                     chosenColor = option.colorChoices.minByOrNull { it.name },
+                    taxPaymentColor = option.taxPaymentColorChoices.minByOrNull { it.name },
                 )
             }
     }

@@ -50,17 +50,23 @@ chosen colour for the bounded targetless `{T}: Add N mana of any one color` shap
 does not re-choose a colour when the transaction resumes. It supports deterministic fixed-output
 `{T}` and `{T}, Sacrifice this` branches (including Elvish Aberration and Crystal Vein) plus that
 fixed-`N`, unrestricted any-one-colour branch, preserves applicable mana-production multipliers,
-and retains surplus in that controller's individual mana pool. A selected blocker that sacrifices itself pays the locked tax and leaves its
+and retains surplus in that controller's individual mana pool. It also supports the deliberately
+narrow printed `{1}, {T}: Add {U}{R}` branch represented by Izzet Signet: the source controller
+must first supply its own pre-existing `{1}`, then explicitly records whether `{U}` or `{R}` pays
+that controller's `{1}` block-tax share. The other colour remains in that controller's pool; no
+teammate can fund either the activation or the tax. A selected blocker that sacrifices itself pays the locked tax and leaves its
 attacker blocked, but does not receive blocking status. Any decline, forged branch, duplicate
 source, direct mana activation, or failed payment leaves mana, blockers, and declaration markers
-unchanged. The slice still excludes secondary tap, pain, activation-mana, restricted-mana,
-dynamic/restricted-output, granted abilities, and other side-effecting branches; those remain explicit implementation
-gaps, separate from the FFA Commander simulation evidence above.
+unchanged. The slice still excludes other activation-mana shapes, secondary tap, pain,
+restricted-mana, dynamic/restricted-output, granted abilities, and other side-effecting branches;
+those remain explicit implementation gaps, separate from the FFA Commander simulation evidence
+above.
 
 ## Next implementation order
 
-1. Expand the shared-team / Two-Headed Giant block-tax flow beyond verified fixed-output,
-   tap-only mana sources while preserving atomic payment and rollback.
+1. Expand the shared-team / Two-Headed Giant block-tax flow beyond the verified fixed-output,
+   choice-output, self-sacrifice, and exact Izzet-Signet `{1},{T}` sources while preserving atomic
+   payment and rollback.
 2. Keep the P0 composition traces (replacement chains, partial target fizzle,
    multiplayer stack/concession, and commander SBA-loss) in every repeatable release gate.
 3. Run the P0 scenario matrix and the broad rules-engine gate before treating readiness

@@ -591,8 +591,17 @@ object DecisionValidators {
         }
         for (selection in selections) {
             val option = options.getValue(selection.ref)
+            if (option.activationManaCost != null) {
+                if (selection.chosenColor != null || selection.taxPaymentColor?.let { it in option.taxPaymentColorChoices } != true) {
+                    return "Selected mana tax-payment color is not available for this payment"
+                }
+                continue
+            }
             if (option.colorChoices.isEmpty() && selection.chosenColor != null) {
                 return "This mana ability has no color choice"
+            }
+            if (selection.taxPaymentColor != null) {
+                return "This mana ability has no tax-payment color choice"
             }
             if (option.colorChoices.isNotEmpty() && selection.chosenColor?.let { it in option.colorChoices } != true) {
                 return "Selected mana color is not available for this payment"
