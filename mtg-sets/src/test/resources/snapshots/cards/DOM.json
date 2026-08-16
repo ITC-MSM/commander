@@ -192,7 +192,7 @@
                     "space": {
                         "type": "IterationSpace.Group",
                         "filter": {
-                            "baseFilter": "creature Wizard ctrl:you"
+                            "baseFilter": "permanent Wizard ctrl:you"
                         }
                     },
                     "body": {
@@ -2592,16 +2592,19 @@
                     "to": "Battlefield"
                 },
                 "effect": {
-                    "type": "MoveToZone",
-                    "target": {
-                        "type": "BoundVariable",
-                        "name": "target"
-                    },
-                    "destination": "Hand"
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target"
+                        },
+                        "destination": "Hand"
+                    }
                 },
                 "targetRequirement": {
                     "type": "TargetObject",
-                    "optional": true,
                     "filter": {
                         "baseFilter": "artifact own:you",
                         "zone": "Graveyard"

@@ -33,9 +33,13 @@ val DaringArchaeologist = card("Daring Archaeologist") {
             filter = TargetFilter(
                 GameObjectFilter.Artifact.ownedByYou(),
                 zone = Zone.GRAVEYARD
-            ),
-            optional = true
+            )
         ))
+        // The "you may" is consent to *do it*, not permission to skip choosing a target. CR 603.3d
+        // routes a trigger's targets through CR 601.2c, which requires a choice for each target, and
+        // only "up to one target" makes one optional — which is exactly what `optional = true` on
+        // the requirement spells. So the consent belongs on the ability.
+        optional = true
         effect = Effects.Move(
             target = t,
             destination = Zone.HAND

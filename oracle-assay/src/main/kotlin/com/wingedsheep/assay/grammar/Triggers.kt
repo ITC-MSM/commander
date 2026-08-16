@@ -7,9 +7,11 @@ import com.wingedsheep.assay.syntax.bind
 import com.wingedsheep.assay.syntax.oneOf
 import com.wingedsheep.assay.syntax.phrase
 import com.wingedsheep.sdk.scripting.events.DamageType
+import com.wingedsheep.sdk.scripting.events.SpellCastPredicate
 import com.wingedsheep.sdk.model.CardScript
 import com.wingedsheep.sdk.scripting.AbilityId
 import com.wingedsheep.sdk.core.Zone
+import com.wingedsheep.sdk.scripting.references.Player
 import com.wingedsheep.sdk.scripting.EventPattern
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.TriggerBinding
@@ -70,9 +72,13 @@ object Triggers {
      * rather than printing a sentence that quietly drops it. Only the id is exempt, because the id
      * is not in the text.
      */
-    private fun triggerRule(surface: String, spec: TriggerSpec): Phrase<TriggeredAbility> {
+    private fun triggerRule(
+        surface: String,
+        spec: TriggerSpec,
+        effect: Phrase<CardScript> = Steps.step,
+    ): Phrase<TriggeredAbility> {
         return phrase("$surface, {effect}", name = surface) {
-            slot("effect", Steps.step)
+            slot("effect", effect)
             build { abilityFor(spec, it.value("effect")) }
             match { ability ->
                 val script = scriptFor(ability)
@@ -240,19 +246,21 @@ object Triggers {
      * the word "another" is the only thing in the text that says so. Two rows, not an optional
      * literal, so the model decides which prints.
      *
-     * [article] says which noun phrase the surface takes, and it is a property of the surface rather
+     * [noun] says which noun phrase the surface takes, and it is a property of the surface rather
      * than of the filter: "a Beast" carries its indefinite article and "another Beast" does not,
      * because "another" is already a determiner. [Filters.indefinite] owns the article in both
-     * directions, so a rule that took the wrong one would print "another a Beast".
+     * directions, so a rule that took the wrong one would print "another a Beast". A cast trigger
+     * passes [Spells.indefinite] through the same parameter — its event names a *spell*, and the
+     * noun phrase for one is a different vocabulary over the identical `GameObjectFilter`.
      */
     private fun filteredTriggerRule(
         surface: String,
         name: String,
-        article: Boolean,
+        noun: Phrase<GameObjectFilter>,
         spec: (GameObjectFilter) -> TriggerSpec,
     ): Phrase<TriggeredAbility> =
         phrase("$surface, {effect}", name = name) {
-            slot("filter", if (article) Filters.indefinite else Filters.filter)
+            slot("filter", noun)
             // [Steps.triggeredStep], not [Steps.step]: this trigger's event mentions an object of its
             // own, so "it" in the effect clause is that object rather than the source. See the
             // third-anaphor section on [SelfSteps]; the differential caught Tattered Ratter reading
@@ -278,7 +286,108 @@ object Triggers {
         when (val event = ability.trigger) {
             is EventPattern.ZoneChangeEvent -> event.filter
             is EventPattern.BecomesBlockedEvent -> event.filter
+            is EventPattern.SpellCastEvent -> event.spellFilter
             else -> null
+        }
+
+    /**
+     * "Whenever you cast a noncreature spell, …" — the spell-cast triggers.
+     *
+     * They are [filteredTriggerRule]s with [Spells.indefinite] in the noun slot rather than
+     * [Filters.indefinite], and that substitution is the whole of the first three rows: the event's
+     * filter is the same `GameObjectFilter` a battlefield trigger's is, and only the English for it
+     * differs. Widening the rule's `article: Boolean` into a noun-phrase parameter is what let the
+     * family be rows here instead of a second copy of the shape.
+     *
+     * **The caster is a parameter of the event and not of the noun.** "You", "an opponent" and "a
+     * player" are `Player.You` / `EachOpponent` / `Each` on `SpellCastEvent`, so they are three rows
+     * over one surface skeleton — not a subject vocabulary slotted into one rule, because a
+     * `Player` in that position would also let the rule print "each player casts", which no card
+     * writes.
+     *
+     * **The effect clause is [Steps.triggeredStep], for [filteredTriggerRule]'s reason.** This
+     * trigger's event names an object of its own — the spell being cast — so "it" in the payoff is
+     * that spell rather than the source, which is the third anaphor position exactly as a filtered
+     * enters-trigger is. "When you cast this spell" is the one row that uses the *source* cascade
+     * instead, and it has to: there the spell being cast **is** the source, so its "it" is the
+     * ordinary self-anaphor and reading it as the triggering entity would be a second spelling of
+     * one object.
+     */
+    private val castRules: List<Phrase<TriggeredAbility>> = listOf(
+        filteredTriggerRule(
+            "whenever you cast {filter}", "whenever you cast a spell", Spells.indefinite,
+        ) { SdkTriggers.youCastSpell(it) },
+        filteredTriggerRule(
+            "whenever an opponent casts {filter}", "whenever an opponent casts a spell", Spells.indefinite,
+        ) { SdkTriggers.opponentCasts(it) },
+        filteredTriggerRule(
+            "whenever a player casts {filter}", "whenever a player casts a spell", Spells.indefinite,
+        ) { SdkTriggers.anyPlayerCasts(it) },
+        triggerRule("when you cast this spell", SdkTriggers.WhenYouCastThisSpell()),
+        // "Adventure" is the one word in the spell noun's subtype slot that is not a
+        // characteristic — CR 715.3 makes an Adventure spell one *cast as* an Adventure, which is
+        // `SpellCastPredicate.CastAsAdventure` and not a subtype on the object. So the phrase is a
+        // row of its own and [Spells.spellSubtype] refuses the word, which is what keeps one
+        // printed form from having two models. See the leaf's KDoc for what the differential found.
+        triggerRule(
+            "whenever you cast an Adventure spell",
+            SdkTriggers.youCastSpell(requires = setOf(SpellCastPredicate.CastAsAdventure)),
+            effect = Steps.triggeredStep,
+        ),
+        nthCastRule("whenever you cast your", "whenever you cast your nth spell", Player.You),
+        nthCastRule("whenever a player casts their", "whenever a player casts their nth spell", Player.Each),
+    )
+
+    /**
+     * "Whenever you cast your second spell each turn, …" — the ordinal cast trigger.
+     *
+     * A rule of its own rather than a row above, because the event is a different SDK type:
+     * `NthSpellCastEvent` counts a caster's spells within the turn where `SpellCastEvent` watches
+     * every one. The possessive is part of the surface and tracks the subject — "you cast **your**
+     * second", "a player casts **their** second" — so it is baked into each row's prefix rather than
+     * being a vocabulary, for the same reason the caster is.
+     *
+     * **`GameObjectFilter.Any` is mapped to a null `spellFilter`, in both directions.** The SDK
+     * spells "count every spell" as `null` here and as `Any` on `SpellCastEvent`, and all 24
+     * hand-written ordinal triggers write the `null`. So the bare "spell" builds null and null reads
+     * back as the bare noun, which makes an event carrying `Any` **unprintable** by this rule — the
+     * fail-closed answer, since that value would be a second spelling of the same fact and nothing
+     * in the text chooses between them.
+     */
+    private fun nthCastRule(prefix: String, name: String, player: Player): Phrase<TriggeredAbility> =
+        phrase("$prefix {ordinal} {filter} each turn, {effect}", name = name) {
+            slot("ordinal", Cardinals.ordinal)
+            slot("filter", Spells.spell)
+            slot("effect", Steps.triggeredStep)
+            build { bindings ->
+                val filter = bindings.value<GameObjectFilter>("filter")
+                abilityFor(
+                    SdkTriggers.NthSpellCast(
+                        n = bindings.int("ordinal"),
+                        player = player,
+                        spellFilter = filter.takeIf { it != GameObjectFilter.Any },
+                    ),
+                    bindings.value("effect"),
+                )
+            }
+            match { ability ->
+                val event = ability.trigger as? EventPattern.NthSpellCastEvent ?: return@match null
+                val filter = event.spellFilter ?: GameObjectFilter.Any
+                val script = scriptFor(ability)
+                // Rebuilt through the *build* half's mapping, not through `event.spellFilter`:
+                // that is what makes an event carrying `Any` refuse to print rather than printing
+                // the bare noun that means `null`.
+                val rebuilt = abilityFor(
+                    SdkTriggers.NthSpellCast(
+                        event.nthSpell,
+                        player,
+                        filter.takeIf { it != GameObjectFilter.Any },
+                    ),
+                    script,
+                )
+                if (rebuilt?.copy(id = ability.id) != ability) return@match null
+                bind("ordinal" to event.nthSpell, "filter" to filter, "effect" to script)
+            }
         }
 
     private val rules: List<Phrase<TriggeredAbility>> = listOf(
@@ -313,10 +422,10 @@ object Triggers {
         triggerRule("when you cycle ${Normalizer.SELF}", SdkTriggers.YouCycleThis),
         triggerRule("whenever a player cycles a card", SdkTriggers.AnyPlayerCycles),
         filteredTriggerRule(
-            "whenever {filter} enters", "whenever a permanent enters", article = true,
+            "whenever {filter} enters", "whenever a permanent enters", Filters.indefinite,
         ) { SdkTriggers.entersBattlefield(it, TriggerBinding.ANY) },
         filteredTriggerRule(
-            "whenever another {filter} enters", "whenever another permanent enters", article = false,
+            "whenever another {filter} enters", "whenever another permanent enters", Filters.filter,
         ) { SdkTriggers.entersBattlefield(it, TriggerBinding.OTHER) },
         // "Whenever this creature or another Zombie enters" — Noxious Ghoul, Goblin Assassin. The
         // source is *in* the watched class, so the model is the plain `ANY` binding and the printed
@@ -326,10 +435,10 @@ object Triggers {
         filteredTriggerRule(
             "whenever ${Normalizer.SELF} or another {filter} enters",
             "whenever the source or another permanent enters",
-            article = false,
+            Filters.filter,
         ) { SdkTriggers.entersBattlefield(it, TriggerBinding.ANY) },
         filteredTriggerRule(
-            "whenever {filter} becomes blocked", "whenever a creature becomes blocked", article = true,
+            "whenever {filter} becomes blocked", "whenever a creature becomes blocked", Filters.indefinite,
         ) { SdkTriggers.becomesBlocked(it, TriggerBinding.ANY) },
         // "Whenever ~ or another creature dies, …" — Blood Artist, Skirk Drill Sergeant. One
         // ability with an `ANY` binding covers both halves, because the source is itself a member of
@@ -339,9 +448,9 @@ object Triggers {
         filteredTriggerRule(
             "whenever ${Normalizer.SELF} or another {filter} dies",
             "whenever the source or another permanent dies",
-            article = false,
+            Filters.filter,
         ) { SdkTriggers.leavesBattlefield(filter = it, to = Zone.GRAVEYARD, binding = TriggerBinding.ANY) },
-    ) + phaseRules
+    ) + castRules + phaseRules
 
     val trigger: Phrase<TriggeredAbility> = oneOf("a triggered ability", rules)
 

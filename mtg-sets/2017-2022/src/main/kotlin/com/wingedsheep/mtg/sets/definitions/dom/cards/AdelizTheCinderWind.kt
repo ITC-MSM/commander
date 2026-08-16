@@ -31,7 +31,11 @@ val AdelizTheCinderWind = card("Adeliz, the Cinder Wind") {
         effect = Patterns.Group.modifyStatsForAll(
             power = 1,
             toughness = 1,
-            filter = GroupFilter(GameObjectFilter.Creature.youControl().withSubtype("Wizard"))
+            // A bare tribal noun ("Wizards you control") names every *permanent* with the subtype;
+            // "Wizard creatures you control" is what narrows it. See Zombie Master, which prints
+            // both spellings on one card. Argentum Assay's differential reported the creature-scoped
+            // reading here.
+            filter = GroupFilter(GameObjectFilter.Permanent.youControl().withSubtype("Wizard"))
         )
     }
 
