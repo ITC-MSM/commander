@@ -119,7 +119,7 @@ class TouchstoneTest : StringSpec({
         report.instancesByVerdict[LineVerdict.DECLINED] shouldBe 1
         report.cardsCovered shouldBe 2
         report.clean shouldBe true
-        report.declines.single().token shouldBe "Cumulative"
+        report.declines.single().key shouldBe "Cumulative"
         report.declines.single().cards shouldBe 1
     }
 

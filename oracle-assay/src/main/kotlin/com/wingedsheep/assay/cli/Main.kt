@@ -6,6 +6,7 @@ import com.wingedsheep.assay.corpus.ImplementedCorpus
 import com.wingedsheep.assay.corpus.OracleCard
 import com.wingedsheep.assay.corpus.OracleCorpus
 import com.wingedsheep.assay.corpus.SetMembership
+import com.wingedsheep.assay.gate.DeclineKey
 import com.wingedsheep.assay.gate.Differential
 import com.wingedsheep.assay.gate.FinenessReport
 import com.wingedsheep.assay.gate.LineVerdict
@@ -87,6 +88,12 @@ private fun usage() = System.err.println(
       --implemented    restrict to cards that already have a hand-written golden, so the decline
                        table becomes the *grammar* backlog: gaps whose answer is already written
                        and which the differential confirms the moment they parse
+      --rank KEY       how the decline table is keyed: token (default — the token each line died
+                       on), shape (the whole line, skeletonized), or tail (the text from the decline
+                       onward — the ranking that names a piece of work, and the only one that also
+                       reports how many cards a family is the *sole* blocker of)
+      --tail-words N   how many words of the tail make a family (default 3). A design parameter that
+                       was measured rather than chosen; this is how to re-measure it
       --top N          how many decline families (or divergences) to list
       --refresh        re-download the bulk file before running
       --declines       after the report, list every declined line (long)
@@ -311,7 +318,21 @@ private const val DEFAULT_EXPLORE_PORT = 7345
 
 private fun gate(flags: Flags, gating: Boolean): Int {
     val touchstone = Touchstone()
-    val builder = FinenessReport.builder()
+    // The tail ranking is the one that decides work, and the reason it is reachable from here at all
+    // is that the band it named had to be measured with a throwaway probe because `assay report`
+    // could not print it. The default stays TOKEN: this command is also the gate's own diagnostic.
+    val ranking = DeclineKey.byName(flags.str("rank")) ?: run {
+        val given = flags.str("rank")
+        if (given != null) {
+            System.err.println(
+                "assay: unknown --rank \"$given\" — one of ${DeclineKey.entries.joinToString(", ") { it.name.lowercase() }}"
+            )
+            return 2
+        }
+        DeclineKey.TOKEN
+    }
+    val tailWords = flags.int("tail-words") ?: DeclineKey.TAIL_WORDS
+    val builder = FinenessReport.builder(tailWords = tailWords)
     val setFilter = flags.str("set")?.uppercase()
     val limit = flags.int("limit")
 
@@ -367,7 +388,7 @@ private fun gate(flags: Flags, gating: Boolean): Int {
         "vanilla + keyword-only (Phase 1 scope)".takeIf { scopeOnly },
         setCards?.let { "set ${it.code.uppercase()} — ${it.size} cards printed in it" },
     ).joinToString(" · ").ifEmpty { null }
-    println(report.render(topDeclines = flags.int("top") ?: 20, population = population))
+    println(report.render(topDeclines = flags.int("top") ?: 20, population = population, ranking = ranking))
 
     if (declineLines.isNotEmpty()) {
         println()

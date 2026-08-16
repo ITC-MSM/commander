@@ -445,7 +445,8 @@ function setStatus(cls, text) {
 const SECTIONS = [
   ["", "Overview", () => null],
   ["cards", "Cards", (o) => o && fmt(o.cards)],
-  ["declines", "Declines", (o) => o && fmt(o.declineFamilies)],
+  // The tail count, because that is the ranking the declines page opens on.
+  ["declines", "Declines", (o) => o && fmt(o.tailFamilies)],
   ["grammar", "Grammar", () => null],
   ["differential", "Differential", (o) => o && fmt(o.goldens)],
   ["parse", "Parse text", () => null],
@@ -486,7 +487,8 @@ function route() {
   else if (h.startsWith("#d/")) {
     const rest = h.slice(3);
     const cut = rest.indexOf("/");
-    viewDecline(rest.slice(0, cut) === "shape" ? "shape" : "token", decodeURIComponent(rest.slice(cut + 1)));
+    const by = rest.slice(0, cut);
+    viewDecline(RANKINGS.includes(by) ? by : "token", decodeURIComponent(rest.slice(cut + 1)));
   }
   else if (h.startsWith("#g/")) viewGrammar(decodeURIComponent(h.slice(3)));
   else if (h.startsWith("#cards")) {
@@ -527,7 +529,7 @@ async function viewOverview() {
       <div class="stat"><span class="v">${pct(d.fineness)}</span><span class="k">Lines round-tripped</span>
         <span class="s">${fmt(v.ROUND_TRIP)} / ${fmt(d.lineInstances)}</span></div>
       <div class="stat"><span class="v">${fmt(v.DECLINED)}</span><span class="k">Declined lines</span>
-        <span class="s">${fmt(d.shapeFamilies)} sentence shapes</span></div>
+        <span class="s">${fmt(d.tailFamilies)} tail families</span></div>
       <div class="stat"><span class="v ${bugs ? "bad" : "ok"}">${fmt(bugs)}</span><span class="k">Must be zero</span>
         <span class="s">mismatch + ambiguity</span></div>
     </div>
@@ -578,13 +580,17 @@ async function viewOverview() {
     b.onclick = () => go("#cards/" + b.dataset.state);
   }
 
-  const dec = await api("declines", { by: "shape", limit: 12 });
+  const dec = await api("declines", { by: "tail", limit: 12 });
   if (!indexing(dec)) {
-    el("topdeclines").innerHTML = "<h2>Top declines, by sentence shape</h2>" +
+    el("topdeclines").innerHTML = "<h2>Top declines, by the parse&rsquo;s tail</h2>" +
+      '<p class="note" style="margin-bottom:.6rem">Keyed on the text from each decline onward — the ' +
+      'construct that would have to exist for the line to get further. <b>Sole</b> is the cards a ' +
+      'family is the <em>only</em> blocker of, which is the number a band delivers.</p>' +
       declineTable(dec.families, dec.goldensAvailable, dec.ranking, dec.hasUnlocks) +
       '<p class="note" style="margin-top:.5rem">' + fmt(dec.total) +
-      ' shapes in all, ' + fmt(dec.tokenFamilies) + ' families keyed by the token they died on — ' +
-      '<a href="#declines">both rankings, and why they disagree</a>.</p>';
+      ' tail families in all, against ' + fmt(dec.familyCounts.TOKEN) + ' keyed by the token they died ' +
+      'on and ' + fmt(dec.familyCounts.SHAPE) + ' by whole sentence — ' +
+      '<a href="#declines">all three rankings, and why they disagree</a>.</p>';
   }
 }
 
@@ -646,22 +652,24 @@ function bugList(title, items) {
 
 /* =========================== declines =========================== */
 
+const RANKING_LABEL = { TOKEN: "Died on", SHAPE: "Sentence shape", TAIL: "Tail — what has to exist" };
+
 function declineTable(families, showImplemented, ranking, showUnlocks) {
   const max = families.reduce((m, f) => Math.max(m, f.cards), 1);
-  const by = ranking === "SHAPE" ? "shape" : "token";
+  const by = (ranking || "TOKEN").toLowerCase();
   return '<div class="tablewrap"><table><thead><tr>' +
-    "<th>" + (ranking === "SHAPE" ? "Sentence shape" : "Died on") + "</th>" +
+    "<th>" + (RANKING_LABEL[ranking] || "Died on") + "</th>" +
     '<th class="num" title="cards that mention it — how big the gap looks">Blocks</th>' +
-    (showUnlocks ? '<th class="num" title="cards this is the ONLY remaining blocker of — write it and exactly this many become covered">Unlocks</th>' : "") +
+    (showUnlocks ? '<th class="num" title="cards this is the ONLY remaining blocker of — write it and exactly this many become covered">Sole</th>' : "") +
     (showImplemented ? '<th class="num" title="of the blocked cards, how many already have a hand-written golden">Hand-written</th>' : "") +
     '<th class="num">Lines</th><th></th><th>Example line</th>' +
     "</tr></thead><tbody>" +
     families.map((f) => {
       const w = Math.round(100 * Math.sqrt(f.cards / max));
       const iw = f.cards ? Math.round(w * f.implemented / f.cards) : 0;
-      const link = "#d/" + by + "/" + encodeURIComponent(f.token);
+      const link = "#d/" + by + "/" + encodeURIComponent(f.key);
       return '<tr class="clickrow" onclick="go(\'' + link + "')\">" +
-        '<td class="nm"><a href="' + link + '">' + esc(f.token.slice(0, 70)) + "</a></td>" +
+        '<td class="nm"><a href="' + link + '">' + esc(f.key.slice(0, 70)) + "</a></td>" +
         '<td class="num">' + fmt(f.cards) + "</td>" +
         (showUnlocks ? '<td class="num" style="color:' + (f.unlocks ? "var(--accent)" : "var(--faint)") + '">' +
           (f.unlocks ? fmt(f.unlocks) : "—") + "</td>" : "") +
@@ -712,12 +720,15 @@ function unlockCurve(curve, covered, total) {
   </div>`;
 }
 
-let declineQuery = "", declineBy = "token";
+const RANKINGS = ["token", "shape", "tail"];
+let declineQuery = "", declineBy = "tail";
 
 async function viewDeclines() {
   const d = await api("declines", { by: declineBy, q: declineQuery, limit: 250 });
   if (indexing(d)) { el("view").innerHTML = indexingHTML(d); return; }
-  const shape = d.ranking === "SHAPE";
+  const seg = (by, label) => '<button data-by="' + by + '"' +
+    (d.ranking === by.toUpperCase() ? ' class="on"' : "") + ">" + label + " · " +
+    fmt(d.familyCounts[by.toUpperCase()]) + "</button>";
 
   el("view").innerHTML = `
     <div class="crumb"><a href="#">overview</a> <span>/</span> <span>declines</span></div>
@@ -725,20 +736,27 @@ async function viewDeclines() {
     <p class="lead" style="margin-top:.5rem">Every declined line, ranked by cards blocked. This is the
     module's primary product: a decline names a missing capability in Argentum's own vocabulary rather
     than in a third ontology's.</p>
-    <p>The two rankings answer <em>different questions</em> and they disagree in ways that change the
+    <p>The three rankings answer <em>different questions</em> and they disagree in ways that change the
     work. <b>Died on</b> keys each line by the token its parse stopped at — the right key for "what is
-    the grammar missing". <b>Sentence shape</b> keys it by the whole line with numbers and symbols
-    collapsed — the right key for "what should I write next", because a line dies on its <em>first</em>
-    unknown token, so one missing verb scatters across several token buckets and a missing prefix looks
-    larger than it is.</p>
+    the grammar missing", and the wrong one for choosing a band: a line dies at its <em>first</em>
+    unknown token, so one missing verb scatters across several buckets and a missing prefix looks
+    larger than it is. <b>Sentence shape</b> keys it by the whole line with numbers and symbols
+    collapsed, which aggregates a family whose sentence <em>is</em> the whole line — every printing of
+    <code>Choose one —</code> is one row — and shatters one whose sentence continues into an arbitrary
+    payload, because each payload gets its own row.</p>
+    <p><b>Tail</b> is the one that has decided work. It keys on the text from the decline's own offset
+    onward: not the token it stopped at and not the sentence it sits in, but <em>the construct that
+    would have to exist for the line to get further</em>. The spell-cast triggers are the worked
+    example — 504 cards sole-blocked, more than twice the next family, and neither other ranking
+    showed it. Died-on smeared them across <code>you</code>, which "whenever you gain life" also dies
+    at; sentence shape split them into hundreds of rows of one to six cards.</p>
     <p><b>Implemented</b> is the other split worth working from. A declined line on a card that already
     has a hand-written golden is a <em>grammar</em> gap whose known-good answer is already written, and
     the differential confirms it the moment it parses. A declined line on a card nobody has implemented
     may be an <em>SDK</em> gap, which is far longer work.</p>
     <div class="toolrow" style="margin-top:1.1rem">
       <div class="seg">
-        <button data-by="token"${shape ? "" : ' class="on"'}>died on · ${fmt(d.tokenFamilies)}</button>
-        <button data-by="shape"${shape ? ' class="on"' : ""}>sentence shape · ${fmt(d.shapeFamilies)}</button>
+        ${seg("tail", "tail")}${seg("shape", "sentence shape")}${seg("token", "died on")}
       </div>
       <input id="df" class="grow" placeholder="filter…" value="${esc(declineQuery)}"
              autocomplete="off" spellcheck="false">
@@ -752,8 +770,8 @@ async function viewDeclines() {
         not a unit of work: a line stops at its <em>first</em> unknown token, so "every declined line
         of this card died at <code>Whenever</code>" says nothing has been read and implies no rule.
         Computing it anyway claimed the top 400 token families cover 93% of Magic, against 15% for the
-        top 400 sentence shapes. <button class="linky" style="color:var(--accent)" data-by="shape">Switch
-        to sentence shape</button> to see the honest one.</div>`}
+        top 400 sentence shapes. <button class="linky" style="color:var(--accent)" data-by="tail">Switch
+        to the tail</button> to see the honest one.</div>`}
     </div>
     <div class="block">
     ${d.families.length ? declineTable(d.families, d.goldensAvailable, d.ranking, d.hasUnlocks)
@@ -777,31 +795,40 @@ async function viewDeclines() {
   };
 
   rail("Top families", d.families.slice(0, 60).map((f) =>
-    '<button class="rl" data-go="#d/' + declineBy + "/" + encodeURIComponent(f.token) +
-    '"><span>' + esc(f.token.slice(0, 44)) + '</span><span class="n">' + fmt(f.cards) + "</span></button>"));
+    '<button class="rl" data-go="#d/' + declineBy + "/" + encodeURIComponent(f.key) +
+    '"><span>' + esc(f.key.slice(0, 44)) + '</span><span class="n">' + fmt(f.cards) + "</span></button>"));
 }
 
-async function viewDecline(by, token) {
-  const d = await api("decline", { by, token });
+const DECLINE_BLURB = {
+  TAIL: (d) => "The text from each decline's own offset onward — <em>the construct that would have to " +
+    "exist for these " + fmt(d.lines) + " lines to get further</em>. That is what makes this a piece of " +
+    "work rather than a bucket: everything before it already reads, and everything after it is the " +
+    "payload the rest of the grammar may or may not already handle. Which of those it is, is the " +
+    "question the probe below answers.",
+  SHAPE: (d) => "Every line of this shape, with numbers and mana symbols collapsed. They are one row " +
+    "because one rule would read all " + fmt(d.lines) + " of them.",
+  TOKEN: (d) => "Every one of these lines parsed as far as this token and stopped. They are one family " +
+    "because they died in the same place, which is what makes them one piece of work rather than " +
+    fmt(d.cards) + ".",
+};
+const DECLINE_TAG = { TAIL: "parse tail", SHAPE: "sentence shape", TOKEN: "decline family" };
+
+async function viewDecline(by, key) {
+  const d = await api("decline", { by, key });
   if (indexing(d)) { el("view").innerHTML = indexingHTML(d); return; }
   if (d.error) { el("view").innerHTML = '<div class="empty">' + esc(d.error) + "</div>"; return; }
-  const shape = d.ranking === "SHAPE";
 
   el("view").innerHTML = `
     <div class="crumb"><a href="#">overview</a> <span>/</span> <a href="#declines">declines</a></div>
-    <div class="headline"><h1 style="font-size:1.1rem">${esc(d.token)}</h1>
-      <span class="tag">${shape ? "sentence shape" : "decline family"}</span></div>
-    <p>${shape
-      ? "Every line of this shape, with numbers and mana symbols collapsed. They are one row because " +
-        "one rule would read all " + fmt(d.lines) + " of them."
-      : "Every one of these lines parsed as far as this token and stopped. They are one family because " +
-        "they died in the same place, which is what makes them one piece of work rather than " + fmt(d.cards) + "."}</p>
+    <div class="headline"><h1 style="font-size:1.1rem">${esc(d.key)}</h1>
+      <span class="tag">${DECLINE_TAG[d.ranking] || "decline family"}</span></div>
+    <p>${DECLINE_BLURB[d.ranking](d)}</p>
 
     <div class="stats" style="margin-top:1rem">
       <div class="stat"><span class="v">${fmt(d.cards)}</span><span class="k">Cards blocked</span>
         <span class="s">how big it looks</span></div>
       ${d.hasUnlocks ? `<div class="stat"><span class="v ok">${fmt(d.unlocks)}</span>
-        <span class="k">Cards unlocked</span><span class="s">the only thing blocking them</span></div>` : ""}
+        <span class="k">Sole-blocked</span><span class="s">the only thing blocking them</span></div>` : ""}
       <div class="stat"><span class="v">${fmt(d.lines)}</span><span class="k">Lines</span></div>
       <div class="stat"><span class="v" style="color:var(--ochre)">${fmt(d.implemented)}</span>
         <span class="k">Already hand-written</span><span class="s">grammar gap, not SDK gap</span></div>
@@ -809,6 +836,8 @@ async function viewDecline(by, token) {
     ${d.hasUnlocks ? '<p class="note" style="margin-top:.6rem">The other ' + fmt(d.cards - d.unlocks) +
       " cards decline on something else as well, so writing this alone does not cover them — it is " +
       "still progress on every one of them, just not the whole of any.</p>" : ""}
+
+    ${probeHTML(d)}
 
     <div class="block">
       <h2>Example lines</h2>
@@ -829,7 +858,81 @@ async function viewDecline(by, token) {
       ${d.blocked.length < d.cards ? '<p class="note" style="margin-top:.5rem">Showing ' +
         fmt(d.blocked.length) + " of " + fmt(d.cards) + " — the list is capped.</p>" : ""}
     </div>`;
+  wireProbe(by, d);
   rail("", []);
+}
+
+/* =========================== the feasibility probe =========================== */
+
+/* Cards blocked says which cards a band REACHES. It does not say which lines it FINISHES, and every
+   ranking this module has used that skipped the difference overstated its band — four times in the
+   same direction. This box is the measurement that closes it: put a known-good prefix where the
+   family's own span is, re-parse on the live grammar, count what got through. */
+function probeHTML(d) {
+  return `
+    <div class="block">
+      <h2>Would writing it finish these cards?</h2>
+      <p class="note" style="margin-bottom:.7rem">Substitute a construct the grammar already reads for
+      this family's own span, and re-parse every declined line of every card behind it. What comes back
+      is how much of the payload the rest of the grammar can already handle — the number a band actually
+      delivers, against the card counts above, which are the number it merely reaches.</p>
+      <div class="form">
+        <div class="pair">
+          <label>Replace this span<input id="pb-find" value="${esc(d.probeFind || "")}"
+            autocomplete="off" spellcheck="false"></label>
+          <label>With this<input id="pb-repl" placeholder="When ~ enters,"
+            autocomplete="off" spellcheck="false"></label>
+        </div>
+        <div class="toolrow" style="margin-top:.2rem">
+          <label style="flex-direction:row;align-items:center;gap:.4rem;text-transform:none;letter-spacing:normal;font-size:.72rem;color:var(--muted)">
+            <input type="checkbox" id="pb-rx" style="width:auto"> regex — for a span that varies in the
+            middle, e.g. <code>Whenever you cast [^,]*,</code>
+          </label>
+          <button id="pb-run" class="linky" style="color:var(--accent)">Measure</button>
+        </div>
+      </div>
+      <div id="pb-out"></div>
+    </div>`;
+}
+
+function wireProbe(by, d) {
+  const run = async () => {
+    const find = el("pb-find").value, replace = el("pb-repl").value;
+    el("pb-out").innerHTML = '<p class="note" style="margin-top:.8rem">re-parsing…</p>';
+    const r = await post("probe", { by, key: d.key, find, replace, regex: el("pb-rx").checked ? "true" : "false" });
+    el("pb-out").innerHTML = r.error ? '<div class="empty">' + esc(r.error) + "</div>" : probeResultHTML(r);
+  };
+  el("pb-run").onclick = run;
+  for (const id of ["pb-find", "pb-repl"]) {
+    el(id).onkeydown = (e) => { if (e.key === "Enter") { e.preventDefault(); run(); } };
+  }
+}
+
+function probeResultHTML(r) {
+  return `
+    <div class="stats" style="margin-top:1rem">
+      <div class="stat"><span class="v ok">${fmt(r.cardsFinished)}</span><span class="k">Cards finished</span>
+        <span class="s">every declined line reads</span></div>
+      <div class="stat"><span class="v">${fmt(r.familyLinesParsing)} / ${fmt(r.familyLines)}</span>
+        <span class="k">Lines that now parse</span>
+        <span class="s">${share(r.familyLinesParsing, r.familyLines)} of the family</span></div>
+      <div class="stat"><span class="v" style="color:${r.unmatched ? "var(--bad)" : "var(--faint)"}">${fmt(r.unmatched)}</span>
+        <span class="k">Span not found</span><span class="s">lines the pattern missed</span></div>
+      <div class="stat"><span class="v">${fmt(r.cardsConsidered)}</span><span class="k">Cards re-assayed</span>
+        <span class="s">${fmt(r.millis)} ms on the live grammar</span></div>
+    </div>
+    <p class="note" style="margin-top:.7rem"><b>This is a prediction.</b> It assumes the construct you
+    would write reads everything this family's span does — it measures whether the <em>rest</em> of each
+    line is readable, and cannot tell you the span itself is expressible in <code>mtg-sdk</code> at all.
+    A large "span not found" means the pattern is describing a different family than this one.</p>
+    ${r.examples.length ? `<div class="tablewrap" style="margin-top:.8rem"><table>
+      <thead><tr><th>Card</th><th>Declined line</th><th>After substitution</th><th></th></tr></thead>
+      <tbody>${r.examples.map((e) => `<tr>
+        <td class="nm"><a href="#c/${encodeURIComponent(e.card)}">${esc(e.card)}</a></td>
+        <td class="mono" style="font-size:.72rem;color:var(--muted)">${esc(e.before)}</td>
+        <td class="mono" style="font-size:.72rem">${esc(e.after)}</td>
+        <td><span class="tag${e.parses ? " w" : ""}">${e.parses ? "reads" : "still declines"}</span></td>
+      </tr>`).join("")}</tbody></table></div>` : ""}`;
 }
 
 /* =========================== cards =========================== */
@@ -1355,8 +1458,8 @@ async function search(text) {
   if (d.declines.length) {
     html += '<div class="sec">Decline families</div>';
     for (const t of d.declines) {
-      rows.push("#d/token/" + encodeURIComponent(t.token));
-      html += '<button class="row"><span class="mono">' + esc(t.token) +
+      rows.push("#d/token/" + encodeURIComponent(t.key));
+      html += '<button class="row"><span class="mono">' + esc(t.key) +
         '</span><span class="rt">' + fmt(t.cards) + " cards</span></button>";
     }
   }

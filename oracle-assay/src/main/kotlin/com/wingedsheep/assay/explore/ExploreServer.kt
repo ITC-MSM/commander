@@ -3,6 +3,7 @@ package com.wingedsheep.assay.explore
 import com.sun.net.httpserver.HttpExchange
 import com.sun.net.httpserver.HttpServer
 import com.wingedsheep.assay.corpus.SetMembership
+import com.wingedsheep.assay.gate.DeclineKey
 import com.wingedsheep.assay.gate.Differential
 import com.wingedsheep.assay.gate.DifferentialReport
 import com.wingedsheep.assay.gate.Touchstone
@@ -84,6 +85,7 @@ class ExploreServer(private val port: Int, private val refresh: Boolean = false)
             }
         }
         server.createContext("/api/decline") { exchange -> exchange.json { decline(exchange) } }
+        server.createContext("/api/probe") { exchange -> exchange.json { probe(exchange) } }
         server.createContext("/api/grammar") { exchange -> exchange.json { Views.grammar(index) } }
         server.createContext("/api/parse") { exchange -> exchange.json { parse(exchange) } }
         server.createContext("/api/differential") { exchange -> exchange.json { differential() } }
@@ -168,17 +170,41 @@ class ExploreServer(private val port: Int, private val refresh: Boolean = false)
     }
 
     private fun decline(exchange: HttpExchange): JsonElement = ready { index ->
-        val token = exchange.param("token").orEmpty()
-        Views.decline(index, exchange.ranking(), token)
-            ?: JsonObject(mapOf("error" to JsonPrimitive("no decline family \"$token\"")))
+        val key = exchange.param("key").orEmpty()
+        Views.decline(index, exchange.ranking(), key)
+            ?: JsonObject(mapOf("error" to JsonPrimitive("no decline family \"$key\"")))
     }
 
-    private fun HttpExchange.ranking(): Ranking =
-        if (param("by") == "shape") Ranking.SHAPE else Ranking.TOKEN
+    /**
+     * The feasibility probe. A POST because the span and its replacement are free text — a regex of
+     * Oracle punctuation in a query string is a URL-encoding accident waiting to happen — and
+     * because it is the one endpoint here that runs a measurement rather than reading one.
+     */
+    private fun probe(exchange: HttpExchange): JsonElement = ready { index ->
+        val fields = exchange.body() ?: return@ready JsonObject(
+            mapOf("error" to JsonPrimitive("expected a JSON object"))
+        )
+        fun field(key: String) = (fields[key] as? JsonPrimitive)?.content.orEmpty()
+        Views.probe(
+            index = index,
+            touchstone = touchstone,
+            ranking = DeclineKey.byName(field("by")) ?: DeclineKey.TAIL,
+            key = field("key"),
+            find = field("find"),
+            replace = field("replace"),
+            regex = field("regex") == "true",
+        )
+    }
+
+    private fun HttpExchange.ranking(): DeclineKey = DeclineKey.byName(param("by")) ?: DeclineKey.TOKEN
+
+    private fun HttpExchange.body(): JsonObject? {
+        val text = requestBody.readBytes().toString(StandardCharsets.UTF_8)
+        return runCatching { json.parseToJsonElement(text) as JsonObject }.getOrNull()
+    }
 
     private fun parse(exchange: HttpExchange): JsonElement {
-        val body = exchange.requestBody.readBytes().toString(StandardCharsets.UTF_8)
-        val fields = runCatching { json.parseToJsonElement(body) as JsonObject }.getOrNull()
+        val fields = exchange.body()
             ?: return JsonObject(mapOf("error" to JsonPrimitive("expected a JSON object")))
         fun field(key: String) = (fields[key] as? JsonPrimitive)?.content.orEmpty()
         return Views.parsed(

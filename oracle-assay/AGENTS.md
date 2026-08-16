@@ -326,22 +326,34 @@ ranking in ways that change the work. The step triggers are the worked example: 
 the other 387 were blocked on their effect clause all along.
 
 **The ranking that has actually held up is over the parse's *tail*, and it is two measurements.**
-The spell-cast band is the worked example and the method is reusable verbatim:
+Both are now in the tool — `just assay-report --rank tail`, and the probe box on the explorer's
+decline-family page — because the spell-cast band had to be picked with a throwaway probe outside it.
+That band is the worked example and the method is reusable verbatim:
 
-1. `just assay-report --declines` (add `--implemented` for the grammar backlog), re-parse every
-   declined line, take the decline's `position`, and key the families on **the text from that offset
-   on**. That is neither the token ranking (which over-weights a missing prefix) nor the shape
-   ranking (which counts cards a family *mentions*): it names the piece of grammar that would have
-   to exist for the line to get further. Then count, per family, the cards **all** of whose declined
-   lines fall in it — the honest "sole-blocked" number.
+1. Key each declined line on **the text from the decline's `position` on**, skeletonized and cut to
+   its first three words (`DeclineKey.TAIL`). That is neither the token ranking (which over-weights a
+   missing prefix) nor the shape ranking (which counts cards a family *mentions*): it names the piece
+   of grammar that would have to exist for the line to get further. Then count, per family, the cards
+   **all** of whose declined lines fall in it — the honest "sole-blocked" number, which the report
+   prints as `sole` and the explorer as a column beside `Blocks`.
 2. Before writing anything, **substitute a known-good prefix for the family** into those cards'
    declined lines and re-parse. That says how many payoffs the rest of the grammar can already read,
    which is the number the band will actually deliver. The spell-cast family predicted 234 whole
    cards and delivered 183; modal spells, which both other rankings put first, measured 126.
+   Landfall is the standing example on the live grammar: 189 cards blocked, 104 sole-blocked, and the
+   probe says **48** whole cards would be finished.
 
-Every ranking that skipped step 2 has overstated its band, three times in the same direction. Step 2
-costs one throwaway probe over `Grammar.abilityLine.parseLine`, and it is what turns "which cards
-does this family reach" into "which lines does it finish".
+Every ranking that skipped step 2 has overstated its band, four times in the same direction. Step 2
+is family-specific, so it cannot be precomputed and does not belong in a report — but it is one
+`PrefixProbe.run` over the live grammar, and it is what turns "which cards does this family reach"
+into "which lines does it finish".
+
+**Three keyings, three biases, and knowing which to read.** `DeclineKey` holds all of them and the
+gate computes all three in the one sweep, so the CLI and the explorer cannot disagree about a family.
+Read the tail by default. Read `SHAPE` when the family's sentence *is* the whole line. Read `TOKEN`
+when the parse dies at offset 0 — a line that read nothing has no tail short of itself, so `TAIL`
+degenerates to `SHAPE` there and only the dead token holds the family together. The modal bullets are
+the case: 2,015 declined `•` lines are one token family and hundreds of tail rows.
 
 The split re-weights the list rather than reordering it wholesale, which is itself the finding: the
 top families are the same in both populations, so the grammar backlog and the SDK backlog are being
@@ -432,7 +444,12 @@ implementation of the thing it displays.
 `FinenessReport`, `Touchstone` or `Differential` — the same objects the CLI renders as text. If the
 explorer needs a number the gates do not produce, the number goes in the *gate* and both read it.
 An explorer that computed its own fineness would make two reports that can disagree, and the one
-people look at would be the one nobody gates on.
+people look at would be the one nobody gates on. The decline rankings are the worked example of the
+rule being applied rather than argued about: the keying (`gate/DeclineKey.kt`), the family counts and
+the sole-blocked number all live in `FinenessReport`, so `assay report --rank tail` and the page are
+one ranking. What stays in `AssayIndex` is the *link table* — which card names, a dozen example
+lines, the hand-written split — which is not a number and would make a corpus run's memory grow with
+the corpus for a question no gate asks.
 
 **It calls the live grammar; it never precomputes a payload.** The mtgish model explorer this is
 modelled on had to embed its data and ship the parser as WebAssembly, because the parser lived in
@@ -477,6 +494,8 @@ just assay explain "Wall of Omens"  # the same, with a caret on the token a decl
 just assay-gate                     # touchstone over the corpus; exit 1 on a bug
 just assay-gate --limit 2000        # fast smoke run while iterating
 just assay-report --top 40          # the same numbers, always exit 0 — the SDK gap report
+just assay-report --rank tail       # …keyed on the parse's tail, with the sole-blocked count
+just assay-report --rank tail --tail-words 4   # re-measure the tail's one design parameter
 just assay-differential             # Assay's readings vs. the hand-written cards
 just assay-explore                  # all of the above in a browser, on the live grammar
 ```
