@@ -21,7 +21,7 @@ val RecklessOne = card("Reckless One") {
     typeLine = "Creature — Goblin Avatar"
     oracleText = "Haste\nReckless One's power and toughness are each equal to the number of Goblins on the battlefield."
 
-    dynamicStats(DynamicAmount.AggregateBattlefield(Player.Each, GameObjectFilter.Creature.withSubtype("Goblin")))
+    dynamicStats(DynamicAmount.AggregateBattlefield(Player.Each, GameObjectFilter.Permanent.withSubtype("Goblin")))
 
     keywords(Keyword.HASTE)
 

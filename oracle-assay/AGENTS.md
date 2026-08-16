@@ -207,6 +207,31 @@ for the twelve lines that *end* in such a clause ("Counter target spell. If you 
 creature, draw a card, then discard a card."). Widening the full-stop join instead was tried and was
 wrong, and the ambiguity gate said so in one run: the scope simply leaked one join further along.
 
+The **counting band** is the second worked example of that same lesson, and it adds two of its own.
+`DynamicAmount` is the SDK's one language for "a number the game works out", and `Amounts` was
+holding a three-row `count` plus seventeen bespoke clauses each restating one verb over one count —
+so the fix was the cost band's fix: a layered vocabulary, and every sentence a lift of it. Its first
+new lesson is about **where a line's meaning is allowed to land**. A characteristic-defining ability
+(CR 604.3) is not an ability the engine executes; it is the value behind the printed `*`, and the SDK
+puts it in `CardDefinition.creatureStats`. So `CardFragment` grew a slot outside the script, one
+field per characteristic — two fields rather than one `CreatureStats` because Yavimaya Kavu prints
+the halves on separate lines — and `CardCompiler` is where the header's star and the text's
+definition meet, fail-closed in both directions and with the star's *offset* compared as a number
+rather than as a string (`1+*` in Oracle is `*+1` in the model). If a line's meaning has nowhere to
+go in `CardScript`, the answer is a fragment slot and a note here, never an approximation into the
+nearest ability list.
+
+Its second lesson is about **printing conventions the model does decide**. A damage sentence puts its
+"equal to …" clause before or after the recipient, 152 printed lines to 195, and neither is a
+minority to decline — but two rules that can each print one model is printing left to alternation
+order. The corpus draws the split on the *shape of the amount* (a property read off an object leads,
+a tally trails), which is a fact about the model, so the two orders take disjoint halves of
+`DynamicAmount` and the minority order for each half is an `alternate`. The mirror case is why life
+gain is **not** in the band: "for each" already spells that model 131 times to 23, so adding the
+clause there would have been the second printer, and an `alternate` would have left graveyard counts
+parseable and unprintable. When two spellings collide, check which rule can print the *whole* domain
+before deciding which is canonical.
+
 ## Fail-closed matching — the rule that catches the dangerous bug class
 
 **A `match` half reconstructs what `build` would have produced and compares the whole model.** Not a

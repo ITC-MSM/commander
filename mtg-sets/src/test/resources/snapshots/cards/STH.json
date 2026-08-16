@@ -288,16 +288,18 @@
         "power": {
             "type": "Dynamic",
             "source": {
-                "type": "AggregateBattlefield",
+                "type": "Count",
                 "player": "You",
+                "zone": "Graveyard",
                 "filter": "creature"
             }
         },
         "toughness": {
             "type": "Dynamic",
             "source": {
-                "type": "AggregateBattlefield",
+                "type": "Count",
                 "player": "You",
+                "zone": "Graveyard",
                 "filter": "creature"
             }
         }

@@ -10,6 +10,7 @@ import com.wingedsheep.assay.grammar.CardFragment
 import com.wingedsheep.sdk.core.ManaCost
 import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.CardScript
+import com.wingedsheep.sdk.model.CharacteristicValue
 import com.wingedsheep.sdk.scripting.KeywordAbility
 import com.wingedsheep.sdk.serialization.CardSerialization
 import kotlinx.serialization.json.JsonArray
@@ -162,6 +163,13 @@ class Differential(private val touchstone: Touchstone = Touchstone()) {
             // confirm an Equipment that can never be equipped: `CardValidator` and `CardLinter` both
             // read this field, and a card carrying the ability without the cost is a different card.
             equipCost = definition.equipCost,
+            // The second compared field outside the script, and the first that is not behaviour: a
+            // `*` in the stat box is a characteristic-defining ability (CR 604.3), and the SDK puts
+            // it here rather than in an ability list. Only the *dynamic* halves are compared — a
+            // fixed 2/2 is the printed header, which no line says and Assay never reads — so the
+            // pair is null on both sides for every card without a CDA.
+            dynamicPower = definition.creatureStats?.power?.takeIf { it !is CharacteristicValue.Fixed },
+            dynamicToughness = definition.creatureStats?.toughness?.takeIf { it !is CharacteristicValue.Fixed },
         )
 
         // The other half of the modelled-slot guard, now that whole *ability lists* are slots the
@@ -183,8 +191,10 @@ class Differential(private val touchstone: Touchstone = Touchstone()) {
         val cardKeywords = Folds.apply(fromCard.keywordAbilities.toSet())
         val scriptsAgree = normalizeSlotNames(fromText.script) == normalizeSlotNames(fromCard.script)
         val equipCostsAgree = fromText.equipCost == fromCard.equipCost
+        val statsAgree = fromText.dynamicPower == fromCard.dynamicPower &&
+            fromText.dynamicToughness == fromCard.dynamicToughness
 
-        return if (textKeywords == cardKeywords && scriptsAgree && equipCostsAgree) {
+        return if (textKeywords == cardKeywords && scriptsAgree && equipCostsAgree && statsAgree) {
             CardComparison(implemented, card, Population.COMPARED, Verdict.CONFIRMED)
         } else {
             CardComparison(
@@ -199,9 +209,20 @@ class Differential(private val touchstone: Touchstone = Touchstone()) {
                 textEquipCost = fromText.equipCost.takeUnless { equipCostsAgree },
                 cardEquipCost = fromCard.equipCost.takeUnless { equipCostsAgree },
                 equipCostsAgree = equipCostsAgree,
+                textStats = statLine(fromText).takeUnless { statsAgree },
+                cardStats = statLine(fromCard).takeUnless { statsAgree },
+                statsAgree = statsAgree,
             )
         }
     }
+
+    /**
+     * A card's two characteristic-defining halves as one printable line, `power/toughness`, with a
+     * dash where the half is not defined by an ability. Structural for [structural]'s reason: two
+     * `DynamicAmount`s that describe themselves identically are exactly the pair worth reading.
+     */
+    private fun statLine(fragment: CardFragment): String =
+        "${fragment.dynamicPower ?: "—"} / ${fragment.dynamicToughness ?: "—"}"
 
     /**
      * Do the Scryfall face and the golden say the same thing, once reminder text is out of the way?
@@ -725,6 +746,14 @@ data class CardComparison(
     val textEquipCost: ManaCost? = null,
     val cardEquipCost: ManaCost? = null,
     val equipCostsAgree: Boolean = true,
+    /**
+     * The characteristic-defining halves of the stat box, when they disagree — same three-field
+     * shape as the equip cost above, and for the same reason: "the card defines a `*` the text does
+     * not" is the interesting case and a pair of nulls cannot tell it from agreement.
+     */
+    val textStats: String? = null,
+    val cardStats: String? = null,
+    val statsAgree: Boolean = true,
 )
 
 /**
@@ -754,7 +783,10 @@ class DifferentialReport private constructor(
     val clean: Boolean get() = undecodable.isEmpty()
 
     fun render(topDivergences: Int = 40): String = buildString {
-        appendLine("Argentum Assay — differential (${CardFragment.MODELLED_SLOTS_NOTE}, keywords, equipCost)")
+        appendLine(
+            "Argentum Assay — differential " +
+                "(${CardFragment.MODELLED_SLOTS_NOTE}, keywords, equipCost, defined P/T)"
+        )
         appendLine("=".repeat(78))
         appendLine()
         appendLine(row("Hand-written cards", cards.toString()))
@@ -798,6 +830,10 @@ class DifferentialReport private constructor(
                 if (!d.equipCostsAgree) {
                     appendLine("    equip cost from text:  ${d.textEquipCost ?: "(none)"}")
                     appendLine("    equip cost on card:    ${d.cardEquipCost ?: "(none)"}")
+                }
+                if (!d.statsAgree) {
+                    appendLine("    defined P/T from text: ${d.textStats ?: "(none)"}")
+                    appendLine("    defined P/T on card:   ${d.cardStats ?: "(none)"}")
                 }
             }
             if (divergent > divergences.size) {

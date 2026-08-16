@@ -8702,7 +8702,7 @@
             "source": {
                 "type": "AggregateBattlefield",
                 "player": "Each",
-                "filter": "creature Elf"
+                "filter": "permanent Elf"
             }
         },
         "toughness": {
@@ -8710,7 +8710,7 @@
             "source": {
                 "type": "AggregateBattlefield",
                 "player": "Each",
-                "filter": "creature Elf"
+                "filter": "permanent Elf"
             }
         }
     },
@@ -10671,7 +10671,7 @@
             "source": {
                 "type": "AggregateBattlefield",
                 "player": "Each",
-                "filter": "creature Wizard"
+                "filter": "permanent Wizard"
             }
         },
         "toughness": {
@@ -10679,7 +10679,7 @@
             "source": {
                 "type": "AggregateBattlefield",
                 "player": "Each",
-                "filter": "creature Wizard"
+                "filter": "permanent Wizard"
             }
         }
     },
@@ -11963,7 +11963,7 @@
             "source": {
                 "type": "AggregateBattlefield",
                 "player": "Each",
-                "filter": "creature Goblin"
+                "filter": "permanent Goblin"
             }
         },
         "toughness": {
@@ -11971,7 +11971,7 @@
             "source": {
                 "type": "AggregateBattlefield",
                 "player": "Each",
-                "filter": "creature Goblin"
+                "filter": "permanent Goblin"
             }
         }
     },

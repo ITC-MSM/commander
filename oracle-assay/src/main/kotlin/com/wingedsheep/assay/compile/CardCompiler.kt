@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.core.ManaCost
 import com.wingedsheep.sdk.core.TypeLine
 import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.CardScript
+import com.wingedsheep.sdk.model.CharacteristicValue
 import com.wingedsheep.sdk.model.CreatureStats
 import com.wingedsheep.sdk.model.ScryfallMetadata
 import com.wingedsheep.sdk.scripting.AbilityId
@@ -41,7 +42,8 @@ import com.wingedsheep.sdk.serialization.LintSeverity
  * - every line is [LineVerdict.ROUND_TRIP] or [LineVerdict.VARIANT] — a single declined line means a
  *   line whose meaning nobody has read, and a card missing one ability is a card that lies;
  * - the lines fold into one card ([CardFragment.merge]);
- * - the printed header parses — a `*` power has no model, so it declines rather than becoming 0;
+ * - the printed header parses, and pairs up — a `*` power is defined by a line, so it compiles only
+ *   when a characteristic-defining line supplied it and declines when nothing did;
  * - [CardValidator] passes on the result, which is the same gate a hand-written card goes through.
  *
  * Partial compilation is the one thing that would make this dangerous: a card that silently dropped
@@ -125,7 +127,7 @@ object CardCompiler {
             )
         }
 
-        val header = readHeader(face, declines)
+        val header = readHeader(face, fragment ?: CardFragment.EMPTY, declines)
 
         if (declines.isNotEmpty() || fragment == null || header == null) {
             return CompileResult.Declined(card.name, assay, declines)
@@ -175,7 +177,11 @@ object CardCompiler {
      * The printed characteristics that are not text. Each unreadable one is its own decline, so a
      * card with a `*` power and an unknown line reports both rather than the first one hit.
      */
-    private fun readHeader(face: OracleFace, declines: MutableList<CompileDecline>): Header? {
+    private fun readHeader(
+        face: OracleFace,
+        fragment: CardFragment,
+        declines: MutableList<CompileDecline>,
+    ): Header? {
         val typeLine = runCatching { TypeLine.parse(face.typeLine) }.getOrNull()
         if (typeLine == null) {
             declines += CompileDecline(DeclineKind.HEADER, "type line \"${face.typeLine}\" does not parse")
@@ -185,25 +191,25 @@ object CardCompiler {
             declines += CompileDecline(DeclineKind.HEADER, "mana cost \"${face.manaCost}\" does not parse")
         }
 
-        // `*` and `1+*` are characteristic-defining abilities: real printed values with a real SDK
-        // model (`CharacteristicValue` is not just `Fixed`), but one nothing here has read — the
-        // defining ability is a *line*, and mapping it to the stat slot is grammar work that has not
-        // been done. Reading it as 0 would be the exact "reversible but wrong" failure the module
-        // exists to prevent, so it declines and says which value it could not read.
-        //
-        // A *negative* printed value parses as a number and is still unrepresentable: `CreatureStats`
-        // requires a non-negative base (Spinal Parasite's -1/-1, and the Un-sets). That is an SDK
-        // finding rather than a grammar gap, and it is reported the same way every other one is —
-        // as a decline naming the value. Note it must be caught here rather than left to the
-        // `CreatureStats` constructor, which throws: a compiler that crashed on a card would break
-        // "declining is success" for every caller, and the corpus sweep that found this was the
-        // first thing to hand it a card printed that way.
-        val power = face.power?.toIntOrNull()?.takeIf { it >= 0 }
-        val toughness = face.toughness?.toIntOrNull()?.takeIf { it >= 0 }
+        val power = characteristic(face.power, fragment.dynamicPower)
+        val toughness = characteristic(face.toughness, fragment.dynamicToughness)
         if (typeLine?.isCreature == true && (power == null || toughness == null)) {
             declines += CompileDecline(
                 DeclineKind.HEADER,
-                "power/toughness \"${face.power}/${face.toughness}\" is not a fixed non-negative number",
+                "power/toughness \"${face.power}/${face.toughness}\" is not a non-negative number, " +
+                    "and no characteristic-defining line on this card supplies it",
+            )
+        }
+        // The other direction of the same guard, for a card that is **not** a creature at all. A
+        // defining line that reached no stat box is a line whose meaning the definition would drop,
+        // and dropping one silently is the single thing this compiler must never do. Creatures are
+        // excluded because the check above already reports them, and one fact is one decline.
+        if (typeLine?.isCreature != true &&
+            (fragment.dynamicPower != null || fragment.dynamicToughness != null)
+        ) {
+            declines += CompileDecline(
+                DeclineKind.HEADER,
+                "a characteristic-defining line defines a power or toughness this card does not print",
             )
         }
         val loyalty = face.loyalty?.toIntOrNull()
@@ -211,6 +217,52 @@ object CardCompiler {
 
         if (typeLine == null || manaCost == null) return null
         return Header(typeLine, manaCost, power, toughness, loyalty, defense)
+    }
+
+    /**
+     * One printed stat, paired with the characteristic-defining line that may define it — or null
+     * when the two together still do not say what the value is.
+     *
+     * **The header and the text each hold half of a `*`, and this is the only place they meet.** A
+     * `*` is not a value: CR 208.2 says the printed star is defined by a characteristic-defining
+     * ability, and that ability is a *line* — which is why this used to decline outright, and why
+     * [CardFragment.dynamicPower] exists now that the grammar reads one. Reading a `*` as 0 would be
+     * the exact reversible-but-wrong failure the module is built to prevent, so the pairing is
+     * fail-closed in **both** directions: a star with no defining line declines, and a defining line
+     * over a numeric box declines too, because a card whose text and header disagree is a card
+     * something has misread.
+     *
+     * The offset is checked rather than trusted. Oracle prints Lhurgoyf's toughness as `1+*` where
+     * the model spells it `*+1`, so the star's *arithmetic* is compared — 0 for a bare star, N for
+     * either ordering of `*+N` — instead of the string. That is what stops "…toughness is equal to
+     * that number plus 1" compiling onto a creature whose box says plain `*`.
+     *
+     * A *negative* printed value parses as a number and is still unrepresentable: `CreatureStats`
+     * requires a non-negative base (Spinal Parasite's -1/-1, and the Un-sets). That is an SDK
+     * finding rather than a grammar gap, and it is reported the same way every other one is — as a
+     * decline naming the value. It must be caught here rather than left to the `CreatureStats`
+     * constructor, which throws: a compiler that crashed on a card would break "declining is
+     * success" for every caller, and the corpus sweep that found this was the first thing to hand it
+     * a card printed that way.
+     */
+    private fun characteristic(printed: String?, defined: CharacteristicValue?): CharacteristicValue? {
+        if (printed == null) return null
+        val fixed = printed.toIntOrNull()
+        if (fixed != null) return if (fixed >= 0 && defined == null) CharacteristicValue.Fixed(fixed) else null
+        val offset = starOffset(printed) ?: return null
+        return when (defined) {
+            is CharacteristicValue.Dynamic -> defined.takeIf { offset == 0 }
+            is CharacteristicValue.DynamicWithOffset -> defined.takeIf { offset == defined.offset }
+            else -> null
+        }
+    }
+
+    /** The N in a printed `*`, `*+N`, `N+*` or `*-N`; null when the string is not a star at all. */
+    private fun starOffset(printed: String): Int? = when {
+        printed == "*" -> 0
+        printed.startsWith("*") -> printed.drop(1).toIntOrNull()
+        printed.endsWith("+*") -> printed.dropLast(2).toIntOrNull()
+        else -> null
     }
 
     /**
@@ -278,8 +330,8 @@ object CardCompiler {
     private data class Header(
         val typeLine: TypeLine,
         val manaCost: ManaCost,
-        val power: Int?,
-        val toughness: Int?,
+        val power: CharacteristicValue?,
+        val toughness: CharacteristicValue?,
         val loyalty: Int?,
         val defense: Int?,
     )

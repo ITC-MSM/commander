@@ -3,6 +3,7 @@ package com.wingedsheep.assay.grammar
 import com.wingedsheep.sdk.core.AbilityFlag
 import com.wingedsheep.sdk.core.ManaCost
 import com.wingedsheep.sdk.model.CardScript
+import com.wingedsheep.sdk.model.CharacteristicValue
 import com.wingedsheep.sdk.scripting.KeywordAbility
 
 /**
@@ -51,6 +52,30 @@ data class CardFragment(
      * one carrying both. Holding it here is what lets the differential see that.
      */
     val equipCost: ManaCost? = null,
+    /**
+     * `CardDefinition.creatureStats`, one characteristic at a time — the fifth behavioural slot, and
+     * the first one that is not behaviour at all.
+     *
+     * "~'s power and toughness are each equal to the number of lands you control." is a
+     * **characteristic-defining ability** (CR 604.3), and the SDK spells it where the card prints
+     * it: in the stat box, as `CreatureStats(CharacteristicValue.Dynamic(…), …)`. So the line does
+     * not produce an ability at all — it produces the value behind the `*` in the header, which is
+     * the one direction Assay's line/header split does not otherwise run.
+     *
+     * Two fields rather than one `CreatureStats` because a card can print the two halves on
+     * **separate lines**: Yavimaya Kavu defines its power from red creatures and its toughness from
+     * green ones, in two sentences. A `CreatureStats` needs both at once and neither line has both,
+     * so the fold is per characteristic and the compiler is what pairs them with the printed header.
+     *
+     * The SDK's *other* spelling — `SetBasePowerToughnessDynamicStatic`, a Layer 7b static — is
+     * deliberately never emitted here. The corpus writes the header form 49 times against the
+     * static's 12, and the static exists for the CDA a card grants to *something else* (a token's
+     * quoted text, a granted body). One printed form per model: the header wins in header position,
+     * and that split is a finding rather than a preference.
+     */
+    val dynamicPower: CharacteristicValue? = null,
+    /** [dynamicPower]'s other half; see its KDoc for why the two are separate fields. */
+    val dynamicToughness: CharacteristicValue? = null,
 ) {
 
     /**
@@ -79,10 +104,19 @@ data class CardFragment(
         // a shape the SDK cannot hold — `CardDefinition.equipCost` is one field — so the fold
         // declines and the card is counted rather than losing the second one silently.
         if (equipCost != null && other.equipCost != null) return null
+        // …and a creature has one power and one toughness. Two lines each defining the *same*
+        // characteristic is the same collision one field over: a card whose text Assay has misread,
+        // since nothing in the rules lets two CDAs define one characteristic (CR 604.3 layers them,
+        // and a card printing both would be a card this fold has no model for). Two lines defining
+        // *different* characteristics is Yavimaya Kavu and folds normally.
+        if (dynamicPower != null && other.dynamicPower != null) return null
+        if (dynamicToughness != null && other.dynamicToughness != null) return null
         return CardFragment(
             keywordAbilities = keywordAbilities + other.keywordAbilities,
             flags = flags + other.flags,
             equipCost = equipCost ?: other.equipCost,
+            dynamicPower = dynamicPower ?: other.dynamicPower,
+            dynamicToughness = dynamicToughness ?: other.dynamicToughness,
             script = CardScript(
                 spellEffect = script.spellEffect ?: other.script.spellEffect,
                 targetRequirements = script.targetRequirements + other.script.targetRequirements,
@@ -108,7 +142,8 @@ data class CardFragment(
     }
 
     val isEmpty: Boolean
-        get() = keywordAbilities.isEmpty() && flags.isEmpty() && equipCost == null && script == CardScript.EMPTY
+        get() = keywordAbilities.isEmpty() && flags.isEmpty() && equipCost == null &&
+            dynamicPower == null && dynamicToughness == null && script == CardScript.EMPTY
 
     companion object {
         val EMPTY = CardFragment()

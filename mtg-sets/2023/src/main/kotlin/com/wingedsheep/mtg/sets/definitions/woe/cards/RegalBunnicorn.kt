@@ -1,6 +1,5 @@
 package com.wingedsheep.mtg.sets.definitions.woe.cards
 
-import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.dsl.Filters
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
@@ -24,7 +23,10 @@ val RegalBunnicorn = card("Regal Bunnicorn") {
     typeLine = "Creature — Rabbit Unicorn"
     oracleText = "Regal Bunnicorn's power and toughness are each equal to the number of nonland permanents you control."
 
-    dynamicStats(DynamicAmount.Count(Player.You, Zone.BATTLEFIELD, Filters.NonlandPermanent))
+    // `AggregateBattlefield`, not `Count(…, BATTLEFIELD, …)`: the SDK spells one battlefield tally
+    // twice and the corpus writes the aggregate 603 times against the other's 49. Same value, same
+    // evaluation — one printed form per model, so the majority spelling is the one to carry.
+    dynamicStats(DynamicAmount.AggregateBattlefield(Player.You, Filters.NonlandPermanent))
 
     metadata {
         rarity = Rarity.RARE

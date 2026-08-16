@@ -20,7 +20,16 @@ and those are the two sentences on it. The **aura band** followed: `Enchant <fil
 attached-permanent statics, which opened `staticAbilities` — the largest `CardScript` slot the
 differential could not see into, and the one every later static family lands in.
 
-The most recent work is the **modal band** — "Choose one —" and the rows under it (**+137 whole
+The most recent work is the **counting band** — *how many*, as one vocabulary and the three places a
+card puts it (**+109 whole cards**). It is the cost band's lesson applied to a second SDK type:
+`DynamicAmount` is the one language for a number the game works out, and the grammar was holding a
+three-row count plus seventeen bespoke clauses restating one verb each. It is also the first band
+whose reading lands **outside `CardScript`** — a characteristic-defining ability is the value behind
+the printed `*`, so the fragment grew a stat slot and the compiler is where the header's star and the
+text's definition finally meet. See [the counting band](#the-counting-band); it found six card bugs,
+one of them a Revenant counting the battlefield where its text says graveyard.
+
+Before it came the **modal band** — "Choose one —" and the rows under it (**+137 whole
 cards**). It is the first band whose main change is *outside* `grammar/`: a bullet is a continuation
 of the line above it, so a modal card's rows are one ability rather than four, and that is
 normalization's job — the one join whose inverse is free, because the joined line carries its own
@@ -178,16 +187,16 @@ non-zero on. Declines are not failures.
 Cards assayed                    34882
 Ability lines                    64753  (37998 unique)
 
-Round-trips byte-exact           25708   397.0‰ (39.7%)
+Round-trips byte-exact           25869   399.5‰ (40.0%)
 Alternate spelling normalized    1326
-Declined                         37719
+Declined                         37520
 Ambiguous — distinct readings    0
 Print mismatch                   0
 Normalization not invertible     0
 Full inverse not reproduced      0
 Redundant readings (same model)  0
 
-Cards fully covered              7714 / 34882   221.1‰ (22.1%)
+Cards fully covered              7823 / 34882   224.3‰ (22.4%)
 Vanilla + keyword-only cards     1444 / 1712   843.5‰ (84.3%)   <- Phase 1 target
 Portal (set POR)                 200 / 200     1000.0‰ (100%)   <- the Portal band's target
 Legions (set LGN)                145 / 145     1000.0‰ (100%)   <- the Legions band's target
@@ -894,6 +903,113 @@ the variants that reach a *different* `ModalEffect` field rather than a differen
 one —" (27 cards), "Choose one. If [condition], choose both instead." (30), "choose one that hasn't
 been chosen" and its this-turn sibling (20), and "choose one at random" (5), which has no SDK field at
 all and is a finding rather than a gap in a rule.
+
+## The counting band
+
+*How many* — one vocabulary, and the three places a card puts it. Whole-corpus coverage
+7,714 → **7,823 cards** (+109); the baked verdict ledger 7,513 → **7,618 whole**, with 105 cards
+gained and **none lost**. No new SDK type, and the largest thing it changed is not a rule at all but
+where a value is allowed to land.
+
+**The band is the SDK's own factoring, read back.** `DynamicAmount` is the one language for "a
+number the game works out", exactly as `CostAtom` is the one language for "a thing you pay" — and
+the grammar had it the way the cost band found `Costs`: [`Amounts`](src/main/kotlin/com/wingedsheep/assay/grammar/Amounts.kt)
+held a three-row `count` and **seventeen bespoke clauses**, each restating one verb over one
+count. That is the mtgish curve in miniature. The fix is the cost band's: make the count a real
+layered vocabulary and make each sentence a *lift* of it.
+
+The vocabulary now layers the way [`Filters`](src/main/kotlin/com/wingedsheep/assay/grammar/Filters.kt)
+does — one layer owning one field, never a combinator that can also print the others:
+
+| Layer | Reads | Model |
+|---|---|---|
+| battlefield tally | "the number of Swamps you control" | `AggregateBattlefield(player, filter)` |
+| zone tally | "the number of creature cards in your graveyard" | `Count(player, zone, filter)` |
+| unfiltered zone tally | "the number of cards in your hand" | `Count(player, zone)` |
+| aggregation | "the greatest mana value among artifacts you control" | the same aggregate, `aggregation` + `property` |
+| counters on the source | "the number of +1/+1 counters on ~" | `EntityProperty(Source, CounterCount)` |
+| player value | "your life total" | `YourLifeTotal` |
+| multiplier | "twice …" | `Multiply(inner, 2)` |
+
+### A `*` is half in the box and half in the text
+
+The band's centre of gravity is the **characteristic-defining ability** (CR 604.3), and it is the
+first line whose meaning does not land in `CardScript` at all. `Nightmare's power and toughness are
+each equal to the number of Swamps you control.` is not an ability the engine executes — the SDK
+puts it in `CardDefinition.creatureStats`, as `CharacteristicValue.Dynamic(…)`, which is what the
+printed `*` means. So [`CardFragment`](src/main/kotlin/com/wingedsheep/assay/grammar/CardFragment.kt)
+grew a fifth slot, one field per characteristic, and the compiler is where the two halves of a `*`
+finally meet — the header knows there is a star and only the line knows what defines it.
+
+Two fields rather than one `CreatureStats` because Yavimaya Kavu prints the halves on **separate
+lines**, defining its power from red creatures and its toughness from green ones. A `CreatureStats`
+needs both at once and neither line has both, so the fold is per characteristic.
+
+The pairing in [`CardCompiler`](src/main/kotlin/com/wingedsheep/assay/compile/CardCompiler.kt) is
+fail-closed in both directions, which is what makes it safe to have opened at all: a star with no
+defining line still declines (as it always did), a defining line over a printed *number* declines
+too, and the star's arithmetic is **checked rather than trusted** — Oracle prints Lhurgoyf's
+toughness as `1+*` where the model spells it `*+1`, so the offset is compared as a number and
+"…toughness is equal to that number plus 1" cannot compile onto a creature whose box says plain `*`.
+
+The differential now compares the stat box as well, and that is where the band paid.
+
+### Where the clause goes is decided by the model, not by rule order
+
+A damage sentence puts its "equal to …" clause in two places and **both are real Oracle**: 195
+printed lines trail it ("deals damage to target creature equal to the number of Mountains you
+control") and 152 lead with it ("deals damage equal to its power to target creature"). Neither is a
+minority spelling to decline — but two rules that can each print one model is printing decided by
+alternation order, which this module treats as a latent bug rather than a preference.
+
+The split the corpus actually draws is on the **shape of the amount**: a property read off an object
+is a light noun phrase and leads; a tally is a heavy one and trails. That is a fact about the model,
+so the two orders take disjoint halves of `DynamicAmount` and each refuses the other's — and the
+*minority* order for each half is registered as an `alternate`, parsed and never printed, so a card
+printing it comes back as a variant instead of declining. English is following the heavy-NP rule
+here; `EntityProperty` is where the light ones live.
+
+**Life is deliberately not in the band, and the reason is the same rule pointing the other way.**
+"You gain 1 life for each creature you control" and "You gain life equal to the number of creatures
+you control" are one model, and Oracle prints the first 131 times against the second's 23 — so the
+"for each" family is already canonical there and adding the clause would be a second rule that can
+print the same value. Making it an `alternate` does not work either: the "for each" rules only spell
+*battlefield* aggregates, so a life gain counting a graveyard would parse with nothing able to print
+it. The next step is to give "for each" the same vocabulary treatment this band gave "equal to", and
+that is a band of its own rather than a row.
+
+### Six card bugs, one of them a card doing something else entirely
+
+The differential reported six divergences the day the grammar could read these lines, all six fixed
+in the same change:
+
+- **Revenant** counted creatures on the *battlefield* where its text says creature cards in your
+  *graveyard* — a generated draft that nobody had reviewed, and a different card. It gets the
+  band's one new scenario test, pinning the zone, the filter and whose graveyard is counted.
+- **Heedless One, Nameless One, Reckless One** read "the number of Elves on the battlefield" as
+  creatures. A bare tribal noun names every *permanent* with the subtype — the reading
+  `TargetFilter.PermanentInYourGraveyard`'s KDoc settled and the 103-card migration established, and
+  Zombie Master is the card that proves it deliberate. Filter edits plus a re-bless, no new tests.
+- **Regal Bunnicorn** spelled its battlefield tally `Count(You, BATTLEFIELD, …)` where 603 goldens
+  write `AggregateBattlefield` and 49 write the other. Same value, same evaluation, one printed form
+  per model — so the grammar emits the majority spelling and this card moved to it.
+- **Torrent of Fire** left the noun out of its aggregate, passing the default `Any` filter where the
+  line prints "permanents". A no-op on the battlefield and still not what the card says.
+
+The last two are the shape this module keeps producing: **two SDK spellings of one value**, recorded
+as findings in `Amounts`' own KDoc rather than papered over. `Count(player, BATTLEFIELD, filter)`
+restates `AggregateBattlefield`; `AggregateZone` with its default aggregation restates `Count`
+(17 goldens against 236). The grammar emits one of each pair and says which.
+
+### What is left in the family
+
+The counts themselves. The top remaining tail row is `damage equal to …` at 116 cards, and its
+examples are now all **entity properties** — "equal to its power", "equal to that creature's
+toughness", "equal to the sacrificed creature's power" — which is 72% of every "deals damage equal
+to" line in the corpus and 41% of the life ones. That is not another vocabulary row: "its" means the
+source in one clause and the target in another, so it is a fourth **anaphor position**, and the
+module's rule is to instantiate the vocabulary per position rather than to add an `oneOf` branch.
+Sized by the probe at **47 whole cards**, and it is the natural next band.
 
 ## What Phase 1 already found
 
