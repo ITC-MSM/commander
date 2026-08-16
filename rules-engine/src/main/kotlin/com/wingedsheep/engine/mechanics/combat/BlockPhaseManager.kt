@@ -1297,7 +1297,7 @@ internal class BlockPhaseManager(
             val source = solverById[sourceId] ?: return@flatMap emptyList()
             val printedOptions = definition.script.activatedAbilities.mapIndexedNotNull { index, ability ->
                 if (!ability.isManaAbility || ability.targetRequirements.isNotEmpty() || ability.restrictions.isNotEmpty()) return@mapIndexedNotNull null
-                val signetActivationManaCost = atomicIzzetSignetActivationManaCost(ability.cost)
+                val signetActivationManaCost = atomicTwoColourSignetActivationManaCost(ability.cost)
                 val secondaryTap = atomicSecondaryCreatureTapCost(ability.cost)
                 val sacrifice = when (ability.cost) {
                     AbilityCost.Tap -> false
@@ -1333,10 +1333,10 @@ internal class BlockPhaseManager(
                         AtomicManaOutput(emptySet(), false, amount, com.wingedsheep.sdk.core.Color.entries.toSet())
                     }
                     // Deliberately not a general CompositeEffect implementation. This is the
-                    // one printed Signet shape that the atomic 2HG transaction can replay:
-                    // `{1}, {T}: Add {U}{R}`. Other activation costs and composite outputs
+                    // exact two-colour Signet shape that the atomic 2HG transaction can replay:
+                    // `{1}, {T}: Add {A}{B}`. Other activation costs and composite outputs
                     // remain outside this vocabulary until they get an explicit design.
-                    is CompositeEffect -> atomicIzzetSignetOutput(effect, signetActivationManaCost)
+                    is CompositeEffect -> atomicTwoColourSignetOutput(effect, signetActivationManaCost)
                         ?: atomicPainManaOutput(effect, ability.cost == AbilityCost.Tap)
                         ?: return@mapIndexedNotNull null
                     else -> return@mapIndexedNotNull null
@@ -1426,8 +1426,8 @@ internal class BlockPhaseManager(
         val hasImmediateSelfDamage: Boolean = false,
     )
 
-    /** Exact parser for the bounded Izzet-Signet activation-cost branch, not a cost-shape generalizer. */
-    private fun atomicIzzetSignetActivationManaCost(cost: AbilityCost): ManaCost? {
+    /** Exact parser for the bounded two-colour Signet activation-cost branch, not a cost-shape generalizer. */
+    private fun atomicTwoColourSignetActivationManaCost(cost: AbilityCost): ManaCost? {
         val parts = (cost as? AbilityCost.Composite)?.costs ?: return null
         if (parts.size != 2 || AbilityCost.Tap !in parts) return null
         val mana = parts.filterIsInstance<AbilityCost.Atom>()
@@ -1436,8 +1436,8 @@ internal class BlockPhaseManager(
         return mana.takeIf { it.cmc == 1 && it.genericAmount == 1 && it.colors.isEmpty() && it.colorlessAmount == 0 }
     }
 
-    /** Exact `{U}{R}` fixed output paired with [atomicIzzetSignetActivationManaCost]. */
-    private fun atomicIzzetSignetOutput(
+    /** Exact `{A}{B}` fixed output paired with [atomicTwoColourSignetActivationManaCost]. */
+    private fun atomicTwoColourSignetOutput(
         effect: CompositeEffect,
         activationManaCost: ManaCost?,
     ): AtomicManaOutput? {
@@ -1447,9 +1447,9 @@ internal class BlockPhaseManager(
             val amount = (add.amount as? DynamicAmount.Fixed)?.amount ?: return null
             add.color to amount
         }.toMap()
-        val blue = com.wingedsheep.sdk.core.Color.BLUE
-        val red = com.wingedsheep.sdk.core.Color.RED
-        if (produced != mapOf(blue to 1, red to 1)) return null
+        // A guild Signet has exactly two distinct coloured pips. This syntactic check keeps the
+        // transaction narrow rather than admitting arbitrary composite mana abilities.
+        if (produced.size != 2 || produced.values.any { it != 1 }) return null
         return AtomicManaOutput(
             colors = produced.keys,
             colorless = false,

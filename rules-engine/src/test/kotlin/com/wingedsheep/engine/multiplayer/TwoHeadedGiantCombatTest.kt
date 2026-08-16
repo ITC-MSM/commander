@@ -43,6 +43,7 @@ import com.wingedsheep.mtg.sets.definitions.apc.cards.BattlefieldForge
 import com.wingedsheep.mtg.sets.definitions.mir.cards.CrystalVein
 import com.wingedsheep.mtg.sets.definitions.dom.cards.GildedLotus
 import com.wingedsheep.mtg.sets.definitions.gpt.cards.IzzetSignet
+import com.wingedsheep.mtg.sets.definitions.gpt.cards.OrzhovSignet
 import com.wingedsheep.mtg.sets.definitions.lrw.cards.SpringleafDrum
 import com.wingedsheep.mtg.sets.definitions.scg.cards.ElvishAberration
 import com.wingedsheep.mtg.sets.definitions.woe.cards.VirtueOfStrength
@@ -139,6 +140,7 @@ class TwoHeadedGiantCombatTest : FunSpec({
         it.register(CrystalVein)
         it.register(GildedLotus)
         it.register(IzzetSignet)
+        it.register(OrzhovSignet)
         it.register(SpringleafDrum)
         it.register(VirtueOfStrength)
         it.register(CardDefinition.basicLand("Plains", Subtype.PLAINS))
@@ -250,6 +252,22 @@ class TwoHeadedGiantCombatTest : FunSpec({
         return withEntity(id, container).addToZone(ZoneKey(owner, Zone.BATTLEFIELD), id) to id
     }
 
+    fun GameState.withOrzhovSignet(owner: EntityId): Pair<GameState, EntityId> {
+        val id = EntityId.generate()
+        val container = ComponentContainer.of(
+            CardComponent(
+                cardDefinitionId = OrzhovSignet.name,
+                name = OrzhovSignet.name,
+                manaCost = OrzhovSignet.manaCost,
+                typeLine = OrzhovSignet.typeLine,
+                ownerId = owner,
+            ),
+            OwnerComponent(owner),
+            ControllerComponent(owner),
+        )
+        return withEntity(id, container).addToZone(ZoneKey(owner, Zone.BATTLEFIELD), id) to id
+    }
+
     fun GameState.withSpringleafDrum(owner: EntityId): Pair<GameState, EntityId> {
         val id = EntityId.generate()
         val container = ComponentContainer.of(
@@ -342,6 +360,17 @@ class TwoHeadedGiantCombatTest : FunSpec({
             .copy(step = Step.DECLARE_BLOCKERS, phase = Phase.COMBAT).withPriority(p[2])
         if (preexistingActivationMana) state = state.updateEntity(p[2]) { it.with(ManaPoolComponent(colorless = 1)) }
         return Triple(state, p, listOf(archangel, blkP2, blkP3, signet, landP3))
+    }
+
+    fun taxedTeamBlockStateWithOrzhovSignet(): Triple<GameState, List<EntityId>, List<EntityId>> {
+        val (base, p) = init2hg()
+        val (s1, archangel) = base.withBear(p[0], attacking = p[2], definition = ArchangelOfTithes)
+        val (s2, blkP2) = s1.withBear(p[2], definition = flyingBear)
+        val (s3, signet) = s2.withOrzhovSignet(p[2])
+        val state = s3.updateEntity(p[0]) { it.with(AttackersDeclaredThisCombatComponent) }
+            .copy(step = Step.DECLARE_BLOCKERS, phase = Phase.COMBAT).withPriority(p[2])
+            .updateEntity(p[2]) { it.with(ManaPoolComponent(colorless = 1)) }
+        return Triple(state, p, listOf(archangel, blkP2, signet))
     }
 
     fun taxedTeamBlockStateWithSpringleafDrum(): Triple<GameState, List<EntityId>, List<EntityId>> {
@@ -859,6 +888,33 @@ class TwoHeadedGiantCombatTest : FunSpec({
         // `{1}` was spent before the Signet added {U}{R}; {U} paid the generic tax, leaving {R}.
         paid.newState.getEntity(p[2])!!.get<ManaPoolComponent>()!!.blue shouldBe 0
         paid.newState.getEntity(p[2])!!.get<ManaPoolComponent>()!!.red shouldBe 1
+        paid.events.filterIsInstance<BlockersDeclaredEvent>().size shouldBe 1
+    }
+
+    test("atomic two-colour Signet form is not limited to Izzet Signet") {
+        val (state, p, objects) = taxedTeamBlockStateWithOrzhovSignet()
+        val (archangel, blocker, signet) = objects
+        val proc = ActionProcessor(registry())
+        val declared = proc.process(state, DeclareBlockers(p[2], mapOf(blocker to listOf(archangel)))).result
+        val prompt = declared.pendingDecision.shouldBeInstanceOf<SelectAtomicBlockTaxManaAbilitiesDecision>()
+        val option = prompt.availableOptions.single { it.ref == AtomicBlockTaxManaAbilityRef(signet, 0) }
+        option.fixedProducedMana shouldBe mapOf(Color.WHITE to 1, Color.BLACK to 1)
+        option.taxPaymentColorChoices shouldBe setOf(Color.WHITE, Color.BLACK)
+
+        val paid = proc.process(
+            declared.newState,
+            SubmitDecision(p[2], AtomicBlockTaxManaAbilitiesSelectedResponse(
+                prompt.id,
+                selectedManaAbilitySelections = listOf(AtomicBlockTaxManaAbilitySelection(
+                    option.ref, taxPaymentColor = Color.WHITE,
+                )),
+            )),
+        ).result
+
+        paid.isSuccess.shouldBeTrue()
+        paid.newState.getEntity(signet)!!.has<TappedComponent>().shouldBeTrue()
+        paid.newState.getEntity(p[2])!!.get<ManaPoolComponent>()!!.white shouldBe 0
+        paid.newState.getEntity(p[2])!!.get<ManaPoolComponent>()!!.black shouldBe 1
         paid.events.filterIsInstance<BlockersDeclaredEvent>().size shouldBe 1
     }
 

@@ -28,8 +28,8 @@ data class AtomicBlockTaxManaAbilitySelection(
     val chosenColor: Color? = null,
     /**
      * The exact produced colour explicitly spent on the block tax by a branch that has an
-     * activation-mana cost. This is distinct from [chosenColor]: Izzet Signet produces both
-     * blue and red rather than choosing one output colour.
+     * activation-mana cost. This is distinct from [chosenColor]: a two-colour Signet produces
+     * both colours rather than choosing one output colour.
      */
     val taxPaymentColor: Color? = null,
     /**
