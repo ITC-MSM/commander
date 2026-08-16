@@ -100,6 +100,34 @@ class ManaAbilitySideEffectExecutor(
             .firstOrNull { abilityProducesColor(it, producedColor) }
             ?: return state to emptyList()
 
+        return runSideEffectsForAbility(state, sourceId, controllerId, matchingAbility)
+    }
+
+    /**
+     * Execute the non-mana rider of one already-selected printed mana ability.  The atomic team
+     * block-tax transaction uses this instead of colour matching: two abilities on the same land
+     * can produce the same colour while carrying different costs or riders.
+     */
+    fun runSideEffectsForPrintedAbility(
+        state: GameState,
+        sourceId: EntityId,
+        printedManaAbilityIndex: Int,
+        controllerId: EntityId,
+    ): Pair<GameState, List<GameEvent>> {
+        val card = state.getEntity(sourceId)?.get<CardComponent>() ?: return state to emptyList()
+        val definition = cardRegistry.getCard(card.cardDefinitionId) ?: return state to emptyList()
+        val ability = definition.script.activatedAbilities.getOrNull(printedManaAbilityIndex)
+            ?.takeIf { it.isManaAbility } ?: return state to emptyList()
+        return runSideEffectsForAbility(state, sourceId, controllerId, ability)
+    }
+
+    private fun runSideEffectsForAbility(
+        state: GameState,
+        sourceId: EntityId,
+        controllerId: EntityId,
+        matchingAbility: ActivatedAbility,
+    ): Pair<GameState, List<GameEvent>> {
+
         var currentState = state
         val events = mutableListOf<GameEvent>()
 

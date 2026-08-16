@@ -44,6 +44,9 @@ import com.wingedsheep.sdk.scripting.effects.AddColorlessManaEffect
 import com.wingedsheep.sdk.scripting.effects.AddManaEffect
 import com.wingedsheep.sdk.scripting.effects.AddManaOfChoiceEffect
 import com.wingedsheep.sdk.scripting.effects.CompositeEffect
+import com.wingedsheep.sdk.scripting.effects.DealDamageEffect
+import com.wingedsheep.sdk.scripting.references.Player
+import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.scripting.values.ManaColorSet
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
 import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
@@ -1334,6 +1337,7 @@ internal class BlockPhaseManager(
                     // `{1}, {T}: Add {U}{R}`. Other activation costs and composite outputs
                     // remain outside this vocabulary until they get an explicit design.
                     is CompositeEffect -> atomicIzzetSignetOutput(effect, signetActivationManaCost)
+                        ?: atomicPainManaOutput(effect, ability.cost == AbilityCost.Tap)
                         ?: return@mapIndexedNotNull null
                     else -> return@mapIndexedNotNull null
                 }
@@ -1376,6 +1380,7 @@ internal class BlockPhaseManager(
                     fixedProducedMana = fixed.fixedProducedMana,
                     taxPaymentColorChoices = fixed.taxPaymentColorChoices,
                     secondaryTapTargets = secondaryTargets,
+                    hasImmediateSelfDamage = fixed.hasImmediateSelfDamage,
                 )
             }
             // Basic-land subtype mana abilities are intrinsic rather than printed in a card's
@@ -1418,6 +1423,7 @@ internal class BlockPhaseManager(
         val colorChoices: Set<com.wingedsheep.sdk.core.Color> = emptySet(),
         val fixedProducedMana: Map<com.wingedsheep.sdk.core.Color, Int> = emptyMap(),
         val taxPaymentColorChoices: Set<com.wingedsheep.sdk.core.Color> = emptySet(),
+        val hasImmediateSelfDamage: Boolean = false,
     )
 
     /** Exact parser for the bounded Izzet-Signet activation-cost branch, not a cost-shape generalizer. */
@@ -1450,6 +1456,29 @@ internal class BlockPhaseManager(
             amount = 2,
             fixedProducedMana = produced,
             taxPaymentColorChoices = produced.keys,
+        )
+    }
+
+    /**
+     * Exact pain-land rider: `{T}: Add {C}. This land deals 1 damage to you.` in its coloured
+     * branch form. The damage is executed only after all team payment intents have been accepted.
+     * Broader side-effecting mana abilities remain outside the atomic vocabulary.
+     */
+    private fun atomicPainManaOutput(effect: CompositeEffect, hasTapOnlyCost: Boolean): AtomicManaOutput? {
+        if (!hasTapOnlyCost || effect.effects.size != 2 || effect.stopOnError || effect.descriptionOverride != null) return null
+        val add = effect.effects[0] as? AddManaEffect ?: return null
+        val amount = (add.amount as? DynamicAmount.Fixed)?.amount ?: return null
+        val damage = effect.effects[1] as? DealDamageEffect ?: return null
+        val selfTarget = damage.target == EffectTarget.Controller ||
+            (damage.target as? EffectTarget.PlayerRef)?.player == Player.You
+        if (!selfTarget || damage.damageSource != null || damage.cantBePrevented || damage.excessToController ||
+            (damage.amount as? DynamicAmount.Fixed)?.amount != 1
+        ) return null
+        return AtomicManaOutput(
+            colors = setOf(add.color),
+            colorless = false,
+            amount = amount,
+            hasImmediateSelfDamage = true,
         )
     }
 

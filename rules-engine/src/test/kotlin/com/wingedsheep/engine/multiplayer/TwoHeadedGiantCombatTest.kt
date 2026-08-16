@@ -36,8 +36,10 @@ import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.engine.state.components.identity.OwnerComponent
+import com.wingedsheep.engine.state.components.identity.LifeTotalComponent
 import com.wingedsheep.engine.state.components.player.ManaPoolComponent
 import com.wingedsheep.mtg.sets.definitions.ori.cards.ArchangelOfTithes
+import com.wingedsheep.mtg.sets.definitions.apc.cards.BattlefieldForge
 import com.wingedsheep.mtg.sets.definitions.mir.cards.CrystalVein
 import com.wingedsheep.mtg.sets.definitions.dom.cards.GildedLotus
 import com.wingedsheep.mtg.sets.definitions.gpt.cards.IzzetSignet
@@ -132,6 +134,7 @@ class TwoHeadedGiantCombatTest : FunSpec({
         it.register(flyingBear)
         it.register(sacrificeManaBear)
         it.register(ArchangelOfTithes)
+        it.register(BattlefieldForge)
         it.register(ElvishAberration)
         it.register(CrystalVein)
         it.register(GildedLotus)
@@ -263,6 +266,22 @@ class TwoHeadedGiantCombatTest : FunSpec({
         return withEntity(id, container).addToZone(ZoneKey(owner, Zone.BATTLEFIELD), id) to id
     }
 
+    fun GameState.withBattlefieldForge(owner: EntityId): Pair<GameState, EntityId> {
+        val id = EntityId.generate()
+        val container = ComponentContainer.of(
+            CardComponent(
+                cardDefinitionId = BattlefieldForge.name,
+                name = BattlefieldForge.name,
+                manaCost = BattlefieldForge.manaCost,
+                typeLine = BattlefieldForge.typeLine,
+                ownerId = owner,
+            ),
+            OwnerComponent(owner),
+            ControllerComponent(owner),
+        )
+        return withEntity(id, container).addToZone(ZoneKey(owner, Zone.BATTLEFIELD), id) to id
+    }
+
     fun taxedTeamBlockState(): Triple<GameState, List<EntityId>, List<EntityId>> {
         val (base, p) = init2hg()
         val (s1, archangel) = base.withBear(p[0], attacking = p[2], definition = ArchangelOfTithes)
@@ -335,6 +354,18 @@ class TwoHeadedGiantCombatTest : FunSpec({
         val state = s5.updateEntity(p[0]) { it.with(AttackersDeclaredThisCombatComponent) }
             .copy(step = Step.DECLARE_BLOCKERS, phase = Phase.COMBAT).withPriority(p[2])
         return Triple(state, p, listOf(archangel, blkP2, blkP3, drum, landP3))
+    }
+
+    fun taxedTeamBlockStateWithBattlefieldForge(): Triple<GameState, List<EntityId>, List<EntityId>> {
+        val (base, p) = init2hg()
+        val (s1, archangel) = base.withBear(p[0], attacking = p[2], definition = ArchangelOfTithes)
+        val (s2, blkP2) = s1.withBear(p[2], definition = flyingBear)
+        val (s3, blkP3) = s2.withBear(p[3], definition = flyingBear)
+        val (s4, forge) = s3.withBattlefieldForge(p[2])
+        val (s5, landP3) = s4.withPlains(p[3])
+        val state = s5.updateEntity(p[0]) { it.with(AttackersDeclaredThisCombatComponent) }
+            .copy(step = Step.DECLARE_BLOCKERS, phase = Phase.COMBAT).withPriority(p[2])
+        return Triple(state, p, listOf(archangel, blkP2, blkP3, forge, landP3))
     }
 
     fun taxedTeamBlockStateWithVirtueOfStrength(): Triple<GameState, List<EntityId>, List<EntityId>> {
@@ -979,6 +1010,71 @@ class TwoHeadedGiantCombatTest : FunSpec({
         declined.newState.getEntity(blkP2)!!.has<TappedComponent>().shouldBeFalse()
         // A successful decision submission is auditable, but the declined declaration must not
         // emit any game-play payment or combat events.
+        declined.events.filterIsInstance<TappedEvent>() shouldBe emptyList()
+        declined.events.filterIsInstance<BlockersDeclaredEvent>() shouldBe emptyList()
+    }
+
+    test("atomic pain-land tax applies self damage only when every team payer accepts") {
+        val (state, p, objects) = taxedTeamBlockStateWithBattlefieldForge()
+        val (archangel, blkP2, blkP3, forge, landP3) = objects
+        val proc = ActionProcessor(registry())
+        val beforeLife = state.getEntity(p[2])!!.get<LifeTotalComponent>()!!.life
+        val declared = proc.process(
+            state, DeclareBlockers(p[2], mapOf(blkP2 to listOf(archangel), blkP3 to listOf(archangel))),
+        ).result
+        val p2Prompt = declared.pendingDecision.shouldBeInstanceOf<SelectAtomicBlockTaxManaAbilitiesDecision>()
+        val painfulRed = p2Prompt.availableOptions.single { it.ref == AtomicBlockTaxManaAbilityRef(forge, 1) }
+        painfulRed.hasImmediateSelfDamage.shouldBeTrue()
+        val p2Accepted = proc.process(
+            declared.newState,
+            SubmitDecision(p[2], AtomicBlockTaxManaAbilitiesSelectedResponse(
+                p2Prompt.id,
+                selectedManaAbilitySelections = listOf(AtomicBlockTaxManaAbilitySelection(painfulRed.ref)),
+            )),
+        ).result
+        // Intent collection does not tap the Forge or deal damage early.
+        p2Accepted.newState.getEntity(forge)!!.has<TappedComponent>().shouldBeFalse()
+        p2Accepted.newState.getEntity(p[2])!!.get<LifeTotalComponent>()!!.life shouldBe beforeLife
+
+        val paid = proc.process(
+            p2Accepted.newState,
+            SubmitDecision(p[3], AtomicBlockTaxManaAbilitiesSelectedResponse(
+                p2Accepted.pendingDecision.shouldBeInstanceOf<SelectAtomicBlockTaxManaAbilitiesDecision>().id,
+                selectedManaAbilitySelections = listOf(AtomicBlockTaxManaAbilitySelection(AtomicBlockTaxManaAbilityRef(landP3, -1))),
+            )),
+        ).result
+        paid.isSuccess.shouldBeTrue()
+        paid.newState.getEntity(forge)!!.has<TappedComponent>().shouldBeTrue()
+        paid.newState.getEntity(p[2])!!.get<LifeTotalComponent>()!!.life shouldBe (beforeLife - 1)
+        paid.events.filterIsInstance<BlockersDeclaredEvent>().size shouldBe 1
+    }
+
+    test("a late atomic-team decline rolls back the selected pain-land damage and tap") {
+        val (state, p, objects) = taxedTeamBlockStateWithBattlefieldForge()
+        val (archangel, blkP2, blkP3, forge, _) = objects
+        val proc = ActionProcessor(registry())
+        val beforeLife = state.getEntity(p[2])!!.get<LifeTotalComponent>()!!.life
+        val declared = proc.process(
+            state, DeclareBlockers(p[2], mapOf(blkP2 to listOf(archangel), blkP3 to listOf(archangel))),
+        ).result
+        val p2Prompt = declared.pendingDecision.shouldBeInstanceOf<SelectAtomicBlockTaxManaAbilitiesDecision>()
+        val accepted = proc.process(
+            declared.newState,
+            SubmitDecision(p[2], AtomicBlockTaxManaAbilitiesSelectedResponse(
+                p2Prompt.id,
+                selectedManaAbilitySelections = listOf(AtomicBlockTaxManaAbilitySelection(AtomicBlockTaxManaAbilityRef(forge, 1))),
+            )),
+        ).result
+        val declined = proc.process(
+            accepted.newState,
+            SubmitDecision(p[3], AtomicBlockTaxManaAbilitiesSelectedResponse(
+                accepted.pendingDecision.shouldBeInstanceOf<SelectAtomicBlockTaxManaAbilitiesDecision>().id,
+                declined = true,
+            )),
+        ).result
+        declined.isSuccess.shouldBeTrue()
+        declined.newState.getEntity(forge)!!.has<TappedComponent>().shouldBeFalse()
+        declined.newState.getEntity(p[2])!!.get<LifeTotalComponent>()!!.life shouldBe beforeLife
         declined.events.filterIsInstance<TappedEvent>() shouldBe emptyList()
         declined.events.filterIsInstance<BlockersDeclaredEvent>() shouldBe emptyList()
     }

@@ -466,6 +466,20 @@ class CombatTaxContinuationResumer(
                 option.producesColorless -> pool.addColorless(option.manaAmount)
                 else -> return null
             }
+            if (option.hasImmediateSelfDamage) {
+                val sideEffect = services.manaAbilitySideEffectExecutor.runSideEffectsForPrintedAbility(
+                    state = current,
+                    sourceId = ref.sourceId,
+                    printedManaAbilityIndex = ref.printedManaAbilityIndex,
+                    controllerId = plan.payerId,
+                )
+                // A mana ability cannot create a priority/choice window in the middle of this
+                // one atomic declaration. The supported pain-land rider is decision-free; if a
+                // future replacement path asks for input, abandon the candidate unchanged.
+                if (sideEffect.first.pendingDecision != null) return null
+                current = sideEffect.first
+                events += sideEffect.second
+            }
             if (option.activationManaCost != null) explicitTaxManaPaid++
         }
         // This bounded branch always spends one coloured output for one generic tax mana. Do not

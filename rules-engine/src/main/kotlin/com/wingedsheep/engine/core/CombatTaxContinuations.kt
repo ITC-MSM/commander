@@ -67,6 +67,8 @@ data class AtomicBlockTaxManaAbilityOption(
     val taxPaymentColorChoices: Set<Color> = emptySet(),
     /** Empty unless this exact branch requires tapping one other offered permanent as a cost. */
     val secondaryTapTargets: List<AtomicBlockTaxSecondaryTapTarget> = emptyList(),
+    /** True only when this exact branch has the supported immediate self-damage rider. */
+    val hasImmediateSelfDamage: Boolean = false,
 )
 
 /**
