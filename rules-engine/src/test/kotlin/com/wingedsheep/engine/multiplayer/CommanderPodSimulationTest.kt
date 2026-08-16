@@ -36,6 +36,7 @@ import com.wingedsheep.sdk.scripting.effects.MayEffect
 import com.wingedsheep.mtg.sets.definitions.ori.cards.ArchangelOfTithes
 import com.wingedsheep.mtg.sets.definitions.inv.cards.PhyrexianAltar
 import com.wingedsheep.mtg.sets.definitions.avr.cards.BloodArtist
+import com.wingedsheep.mtg.sets.definitions.mor.cards.Negate
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
@@ -122,7 +123,7 @@ class CommanderPodSimulationTest : FunSpec({
         val driver = GameTestDriver(InvariantCheckingActionObserver())
         driver.registerCards(TestCards.all + listOf(
             podCommander, wardedSentinel, doubleEtb, blockingWitness, doubleBlockingWitness,
-            ArchangelOfTithes, PhyrexianAltar, BloodArtist, deathgreeter,
+            ArchangelOfTithes, PhyrexianAltar, BloodArtist, deathgreeter, Negate,
         ))
         val players = driver.initMultiplayer(
             decks = List(4) { Deck(cards = List(99) { "Mountain" }) },
@@ -318,6 +319,100 @@ class CommanderPodSimulationTest : FunSpec({
             .filter { it.spellEntityId == bolt }.single().reason shouldBe "All targets are invalid"
         driver.events.drop(eventStart).filterIsInstance<DamageDealtEvent>()
             .filter { it.sourceId == bolt }.shouldContainExactly()
+        driver.priorityPlayer shouldBe a
+    }
+
+    test("P0-4P-STACK-CONCESSION-001: a conceding counterspell controller leaves its spell and targets invalid") {
+        val (driver, players) = pod()
+        val (a, b, c, d) = players
+        driver.passPriorityUntil(com.wingedsheep.sdk.core.Step.PRECOMBAT_MAIN)
+        driver.giveMana(a, Color.RED, 1)
+        driver.giveMana(b, Color.BLUE, 2)
+        driver.giveMana(c, Color.BLUE, 2)
+        val bolt = driver.putCardInHand(a, "Lightning Bolt")
+        val counterspell = driver.putCardInHand(b, "Counterspell")
+        val negate = driver.putCardInHand(c, "Negate")
+        val eventStart = driver.events.size
+
+        // A's Bolt, B's Counterspell, then C's Negate: stack bottom -> top is Bolt,
+        // Counterspell, Negate. Each target is legal when its spell is cast.
+        driver.castSpellWithTargets(a, bolt, listOf(ChosenTarget.Player(b))).error shouldBe null
+        driver.passPriority(a).error shouldBe null
+        driver.castSpellWithTargets(b, counterspell, listOf(ChosenTarget.Spell(bolt))).error shouldBe null
+        driver.passPriority(b).error shouldBe null
+        driver.castSpellWithTargets(c, negate, listOf(ChosenTarget.Spell(counterspell))).error shouldBe null
+        driver.getStackSpellNames() shouldContainExactly listOf("Negate", "Counterspell", "Lightning Bolt")
+
+        // C, D, and A pass. B has priority and concedes; B's Counterspell leaves
+        // the stack and B is skipped for all later priority passes.
+        driver.passPriority(c).error shouldBe null
+        driver.passPriority(d).error shouldBe null
+        driver.passPriority(a).error shouldBe null
+        driver.priorityPlayer shouldBe b
+        driver.submit(Concede(b)).error shouldBe null
+
+        driver.state.activePlayers.shouldContainExactly(a, c, d)
+        driver.state.getEntity(counterspell) shouldBe null
+        driver.getStackSpellNames() shouldContainExactly listOf("Negate", "Lightning Bolt")
+        driver.priorityPlayer shouldBe c
+
+        // A departed player cannot take the current priority action and the rejected
+        // action must not disturb the live three-player priority window.
+        val beforeRejectedPass = driver.state
+        val eventsBeforeRejectedPass = driver.events.size
+        driver.passPriority(b).error shouldNotBe null
+        driver.state shouldBe beforeRejectedPass
+        driver.events.size shouldBe eventsBeforeRejectedPass
+        driver.priorityPlayer shouldBe c
+
+        // The now-targetless Negate fizzles, then Bolt fizzles because B left the game.
+        passRound(driver, listOf(c, d, a))
+        driver.stackSize shouldBe 1
+        driver.getStackSpellNames() shouldContainExactly listOf("Lightning Bolt")
+        passRound(driver, listOf(a, c, d))
+
+        driver.stackSize shouldBe 0
+        driver.getGraveyardCardNames(c).contains("Negate") shouldBe true
+        driver.getGraveyardCardNames(a).contains("Lightning Bolt") shouldBe true
+        driver.events.drop(eventStart).filterIsInstance<SpellFizzledEvent>()
+            .filter { it.spellEntityId == negate || it.spellEntityId == bolt }
+            .map { it.spellEntityId }.shouldContainExactly(negate, bolt)
+        driver.events.drop(eventStart).filterIsInstance<SpellFizzledEvent>()
+            .filter { it.spellEntityId == negate || it.spellEntityId == bolt }
+            .map { it.reason }.shouldContainExactly("All targets are invalid", "All targets are invalid")
+        driver.events.drop(eventStart).filterIsInstance<DamageDealtEvent>()
+            .filter { it.sourceId == bolt }.shouldContainExactly()
+        driver.priorityPlayer shouldBe a
+    }
+
+    test("four-seat Commander pod resolves the same counter war in normal LIFO order") {
+        val (driver, players) = pod()
+        val (a, b, c, d) = players
+        driver.passPriorityUntil(com.wingedsheep.sdk.core.Step.PRECOMBAT_MAIN)
+        driver.giveMana(a, Color.RED, 1)
+        driver.giveMana(b, Color.BLUE, 2)
+        driver.giveMana(c, Color.BLUE, 2)
+        val bolt = driver.putCardInHand(a, "Lightning Bolt")
+        val counterspell = driver.putCardInHand(b, "Counterspell")
+        val negate = driver.putCardInHand(c, "Negate")
+
+        driver.castSpellWithTargets(a, bolt, listOf(ChosenTarget.Player(b))).error shouldBe null
+        driver.passPriority(a).error shouldBe null
+        driver.castSpellWithTargets(b, counterspell, listOf(ChosenTarget.Spell(bolt))).error shouldBe null
+        driver.passPriority(b).error shouldBe null
+        driver.castSpellWithTargets(c, negate, listOf(ChosenTarget.Spell(counterspell))).error shouldBe null
+        driver.getStackSpellNames() shouldContainExactly listOf("Negate", "Counterspell", "Lightning Bolt")
+
+        passRound(driver, listOf(c, d, a, b))
+        driver.getGraveyardCardNames(c).contains("Negate") shouldBe true
+        driver.stackSize shouldBe 1
+        driver.getStackSpellNames() shouldContainExactly listOf("Lightning Bolt")
+        passRound(driver, players)
+
+        driver.stackSize shouldBe 0
+        driver.getGraveyardCardNames(b).contains("Counterspell") shouldBe true
+        driver.getGraveyardCardNames(a).contains("Lightning Bolt") shouldBe true
+        driver.getLifeTotal(b) shouldBe 37
         driver.priorityPlayer shouldBe a
     }
 
