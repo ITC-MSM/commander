@@ -366,6 +366,52 @@
     ]
 }
 
+// Inspired Charge
+{
+    "name": "Inspired Charge",
+    "manaCost": "{2}{W}{W}",
+    "typeLine": "Instant",
+    "oracleText": "Creatures you control get +2/+1 until end of turn.",
+    "script": {
+        "spellEffect": {
+            "type": "ForEach",
+            "space": {
+                "type": "IterationSpace.Group",
+                "filter": {
+                    "baseFilter": "creature ctrl:you"
+                }
+            },
+            "body": {
+                "type": "ModifyStats",
+                "powerModifier": {
+                    "type": "Fixed",
+                    "amount": 2
+                },
+                "toughnessModifier": {
+                    "type": "Fixed",
+                    "amount": 1
+                },
+                "target": "Self"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "19",
+        "artist": "Wayne Reynolds",
+        "flavorText": "\"Impossible! How could they overwhelm us? We had barricades, war elephants, . . . and they were barely a tenth of our number!\"\n—General Avitora",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/8/98151986-90de-4f76-9abd-507039e7c9ad.jpg?1783941834",
+        "rulings": [
+            {
+                "date": "2016-09-20",
+                "text": "The set of creatures affected by Inspired Charge is determined as the spell resolves. Creatures you begin to control later in the turn and noncreature permanents that become creatures later in the turn won't get +2/+1."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Maritime Guard
 {
     "name": "Maritime Guard",

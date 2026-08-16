@@ -1,3 +1,314 @@
+// Aerial Boost
+{
+    "name": "Aerial Boost",
+    "manaCost": "{1}{W}",
+    "typeLine": "Instant",
+    "oracleText": "Convoke (Your creatures can help cast this spell. Each creature you tap while casting this spell pays for {1} or one mana of that creature's color.)\nTarget creature gets +2/+2 and gains flying until end of turn.",
+    "keywords": [
+        "CONVOKE"
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                {
+                    "type": "GrantKeyword",
+                    "keyword": "FLYING",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target creature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "2",
+        "artist": "Artur Nakhodkin",
+        "flavorText": "\"Ha! You missed!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/7/f7017afb-4c7c-4c8d-9c9d-3f056a55561e.jpg?1783917072",
+        "rulings": [
+            {
+                "date": "2024-01-12",
+                "text": "When calculating a spell's total cost, include any alternative costs, additional costs, or anything else that increases or reduces the cost to cast the spell. Convoke applies after the total cost is calculated. Convoke doesn't change a spell's mana cost or mana value."
+            },
+            {
+                "date": "2024-01-12",
+                "text": "Tapping an untapped creature that's attacking or blocking to convoke a spell won't cause that creature to stop attacking or blocking."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Akki Scrapchomper
+{
+    "name": "Akki Scrapchomper",
+    "manaCost": "{R}",
+    "typeLine": "Creature — Phyrexian Goblin",
+    "oracleText": "{1}{R}, {T}, Sacrifice an artifact or land: Draw a card.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}{R}"
+                            }
+                        },
+                        "CostTap",
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomSacrifice",
+                                "filter": "artifact|land"
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "130",
+        "artist": "Wisnu Tan",
+        "flavorText": "The Furnace Host found great value in the chaotic ingenuity of Kamigawa's akki and allowed willing converts to \"experiment\" however they saw fit.",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/0/b0e02737-0193-46e4-a506-cec86a44dc99.jpg?1783916998"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Alabaster Host Sanctifier
+{
+    "name": "Alabaster Host Sanctifier",
+    "manaCost": "{1}{W}",
+    "typeLine": "Creature — Phyrexian Cleric",
+    "oracleText": "Lifelink",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "LIFELINK"
+    ],
+    "metadata": {
+        "collectorNumber": "4",
+        "artist": "Konstantin Porubov",
+        "flavorText": "\"Heliod shines his light on all things, excising the shadows of doubt. Rejoice, for beneath his purifying eyes, Theros is united as one!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/f/efbd934a-39c4-4ce7-af2a-34ca226d7f23.jpg?1783917073"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Artistic Refusal
+{
+    "name": "Artistic Refusal",
+    "manaCost": "{4}{U}{U}",
+    "typeLine": "Instant",
+    "oracleText": "Convoke (Your creatures can help cast this spell. Each creature you tap while casting this spell pays for {1} or one mana of that creature's color.)\nChoose one or both —\n• Counter target spell.\n• Draw two cards, then discard a card.",
+    "keywords": [
+        "CONVOKE"
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "Modal",
+            "modes": [
+                {
+                    "effect": "Counter",
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": {},
+                                "zone": "Stack"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "effect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "DrawCards",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 2
+                                }
+                            },
+                            {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "GatherCards",
+                                        "source": {
+                                            "type": "FromZone",
+                                            "zone": "Hand"
+                                        },
+                                        "storeAs": "hand"
+                                    },
+                                    {
+                                        "type": "SelectFromCollection",
+                                        "from": "hand",
+                                        "selection": {
+                                            "type": "ChooseExactly",
+                                            "count": {
+                                                "type": "Fixed",
+                                                "amount": 1
+                                            }
+                                        },
+                                        "storeSelected": "discarded",
+                                        "prompt": "Choose 1 card to discard"
+                                    },
+                                    {
+                                        "type": "MoveCollection",
+                                        "from": "discarded",
+                                        "destination": {
+                                            "type": "ToZone",
+                                            "zone": "Graveyard"
+                                        },
+                                        "moveType": "Discard"
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    "description": "Draw two cards, then discard a card"
+                }
+            ],
+            "chooseCount": 2,
+            "minChooseCount": 1
+        }
+    },
+    "metadata": {
+        "collectorNumber": "46",
+        "rarity": "UNCOMMON",
+        "artist": "Olivier Bernard",
+        "flavorText": "Errant wouldn't allow anything to stop her from decorating the streets of New Capenna.",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/b/2bd05f97-ef8b-4cbe-a44b-6501aa5895b0.jpg?1783917045",
+        "rulings": [
+            {
+                "date": "2023-04-14",
+                "text": "If you choose both modes, and the target of the first mode is an illegal target at the time Artistic Refusal tries to resolve (probably because that spell has been countered by something else), Artistic Refusal won't resolve and none of its effects will happen. You won't draw or discard any cards."
+            },
+            {
+                "date": "2024-01-12",
+                "text": "When calculating a spell's total cost, include any alternative costs, additional costs, or anything else that increases or reduces the cost to cast the spell. Convoke applies after the total cost is calculated. Convoke doesn't change a spell's mana cost or mana value."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Astral Wingspan
+{
+    "name": "Astral Wingspan",
+    "manaCost": "{4}{U}",
+    "typeLine": "Enchantment — Aura",
+    "oracleText": "Convoke (Your creatures can help cast this spell. Each creature you tap while casting this spell pays for {1} or one mana of that creature's color.)\nEnchant creature\nWhen this Aura enters, draw a card.\nEnchanted creature gets +2/+2 and has flying.",
+    "keywords": [
+        "CONVOKE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                }
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 2,
+                "toughnessBonus": 2
+            },
+            {
+                "type": "GrantKeyword",
+                "keyword": "FLYING"
+            }
+        ],
+        "auraTarget": {
+            "type": "TargetObject",
+            "filter": {
+                "baseFilter": "creature"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "48",
+        "rarity": "UNCOMMON",
+        "artist": "Joseph Weston",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/e/be2ef728-a2c7-45ee-8594-372ed135b482.jpg?1783917046",
+        "rulings": [
+            {
+                "date": "2024-01-12",
+                "text": "When calculating a spell's total cost, include any alternative costs, additional costs, or anything else that increases or reduces the cost to cast the spell. Convoke applies after the total cost is calculated. Convoke doesn't change a spell's mana cost or mana value."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Chrome Host Seedshark
 {
     "name": "Chrome Host Seedshark",
@@ -66,6 +377,145 @@
     ]
 }
 
+// Collective Nightmare
+{
+    "name": "Collective Nightmare",
+    "manaCost": "{2}{B}",
+    "typeLine": "Instant",
+    "oracleText": "Convoke (Your creatures can help cast this spell. Each creature you tap while casting this spell pays for {1} or one mana of that creature's color.)\nTarget creature gets -3/-3 until end of turn.",
+    "keywords": [
+        "CONVOKE"
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "ModifyStats",
+            "powerModifier": {
+                "type": "Fixed",
+                "amount": -3
+            },
+            "toughnessModifier": {
+                "type": "Fixed",
+                "amount": -3
+            },
+            "target": {
+                "type": "BoundVariable",
+                "name": "target creature"
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target creature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "95",
+        "rarity": "UNCOMMON",
+        "artist": "Rovina Cai",
+        "flavorText": "Night fell all at once. Specifically, on the Phyrexian.",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/5/05864d3a-d8bb-4ddf-b721-883632050cb1.jpg?1783917017",
+        "rulings": [
+            {
+                "date": "2024-01-12",
+                "text": "When calculating a spell's total cost, include any alternative costs, additional costs, or anything else that increases or reduces the cost to cast the spell. Convoke applies after the total cost is calculated. Convoke doesn't change a spell's mana cost or mana value."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Coming In Hot
+{
+    "name": "Coming In Hot",
+    "manaCost": "{R}",
+    "typeLine": "Instant",
+    "oracleText": "Target creature gets +1/+0 and gains first strike until end of turn. Scry 1. (Look at the top card of your library. You may put that card on the bottom.)",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 0
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                {
+                    "type": "GrantKeyword",
+                    "keyword": "FIRST_STRIKE",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                {
+                    "type": "Scry",
+                    "count": 1
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target creature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "136",
+        "artist": "Cristi Balanescu",
+        "flavorText": "\"I have a reckless idea,\" Koth offered. Chandra grinned and cracked her knuckles.",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/f/4f6eb966-67af-4b18-8899-4a99a5179aa3.jpg?1783916993"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Copper Host Crusher
+{
+    "name": "Copper Host Crusher",
+    "manaCost": "{6}{G}{G}",
+    "typeLine": "Creature — Phyrexian Bear Rhino",
+    "oracleText": "Trample\nHexproof (This creature can't be the target of spells or abilities your opponents control.)",
+    "creatureStats": {
+        "power": 8,
+        "toughness": 8
+    },
+    "keywords": [
+        "TRAMPLE",
+        "HEXPROOF"
+    ],
+    "metadata": {
+        "collectorNumber": "181",
+        "rarity": "UNCOMMON",
+        "artist": "Nicholas Gregory",
+        "flavorText": "Walls built to withstand assaults even from Ikoria's apex monsters were quickly deemed tactically irrelevant by Vorinclex's forces.",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/f/af527344-9d88-4641-8f6d-0263a6797df3.jpg?1783916973"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Corrupted Conviction
 {
     "name": "Corrupted Conviction",
@@ -95,6 +545,55 @@
         "artist": "Joseph Weston",
         "flavorText": "\"For the good of all, those who stand against the harmony of Phyrexia must be cut down.\"\n—Ajani Goldmane",
         "imageUri": "https://cards.scryfall.io/normal/front/c/e/ce133ad5-8748-4a3d-ae8c-7b2a5938927d.jpg?1682203658"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Deadly Derision
+{
+    "name": "Deadly Derision",
+    "manaCost": "{2}{B}{B}",
+    "typeLine": "Instant",
+    "oracleText": "Destroy target creature or planeswalker. Create a Treasure token. (It's an artifact with \"{T}, Sacrifice this token: Add one mana of any color.\")",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature or planeswalker"
+                    },
+                    "destination": "Graveyard",
+                    "byDestruction": true
+                },
+                {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Treasure"
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetCreatureOrPlaneswalker",
+                "id": "target creature or planeswalker"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "99",
+        "artist": "Gaboleps",
+        "flavorText": "Daretti looked down disdainfully. \"You call yourself machines? Where's the elegance? Nothing but ugly piles of scrap.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/e/1ec1a02f-128c-44aa-b708-6fcda34b40c0.jpg?1783917014",
+        "rulings": [
+            {
+                "date": "2023-04-14",
+                "text": "If the target of Deadly Derision is illegal as the spell tries to resolve, it won't resolve and none of its effects will happen. You won't create a Treasure token."
+            }
+        ]
     },
     "colorIdentityOverride": [
         "BLACK"
@@ -163,6 +662,332 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Ephara's Dispersal
+{
+    "name": "Ephara's Dispersal",
+    "manaCost": "{2}{U}",
+    "typeLine": "Instant",
+    "oracleText": "This spell costs {2} less to cast if it targets an attacking creature.\nReturn target creature to its owner's hand. Surveil 2. (Look at the top two cards of your library, then put any number of them into your graveyard and the rest on top of your library in any order.)",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    },
+                    "destination": "Hand"
+                },
+                {
+                    "type": "Surveil",
+                    "count": 2
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target creature"
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifySpellCost",
+                "target": "SelfCast",
+                "modification": {
+                    "type": "ReduceGenericBy",
+                    "source": {
+                        "type": "FixedIfAnyTargetMatches",
+                        "amount": 2,
+                        "filter": "creature attacking"
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "55",
+        "artist": "Awanqi (Angela Wang)",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/0/b0bcc71f-72ec-4a76-9393-ed3ea61eeeb6.jpg?1783917039",
+        "rulings": [
+            {
+                "date": "2023-04-14",
+                "text": "The cost reduction ability of Ephara's Dispersal doesn't affect its mana cost or mana value. It affects only the total cost you pay. Specifically, its mana value is always 3."
+            },
+            {
+                "date": "2024-01-12",
+                "text": "You perform the actions stated on a card in sequence. For some spells and abilities, you'll surveil last. For others, you'll surveil and then perform other actions."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Furnace Host Charger
+{
+    "name": "Furnace Host Charger",
+    "manaCost": "{5}{R}",
+    "typeLine": "Creature — Phyrexian Giant",
+    "oracleText": "Haste\nMountaincycling {2} ({2}, Discard this card: Search your library for a Mountain card, reveal it, put it into your hand, then shuffle.)",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 5
+    },
+    "keywords": [
+        "HASTE"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Cycling",
+            "cost": "{2}",
+            "searchFilter": {
+                "cardPredicates": [
+                    {
+                        "type": "HasSubtype",
+                        "subtype": "Mountain"
+                    }
+                ]
+            },
+            "displayPrefix": "Mountaincycling"
+        }
+    ],
+    "metadata": {
+        "collectorNumber": "140",
+        "artist": "Andreas Zafiratos",
+        "flavorText": "With barely a moment's warning, a one-giant avalanche crashed into Kaldheim's defenders.",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/d/2d142ded-a2df-41b0-9c02-056b5f34abab.jpg?1783916991"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Furtive Analyst
+{
+    "name": "Furtive Analyst",
+    "manaCost": "{2}{U}",
+    "typeLine": "Creature — Human Wizard",
+    "oracleText": "Vigilance\n{2}, {T}: Draw a card, then discard a card.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 4
+    },
+    "keywords": [
+        "VIGILANCE"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        },
+                        {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "GatherCards",
+                                    "source": {
+                                        "type": "FromZone",
+                                        "zone": "Hand"
+                                    },
+                                    "storeAs": "hand"
+                                },
+                                {
+                                    "type": "SelectFromCollection",
+                                    "from": "hand",
+                                    "selection": {
+                                        "type": "ChooseExactly",
+                                        "count": {
+                                            "type": "Fixed",
+                                            "amount": 1
+                                        }
+                                    },
+                                    "storeSelected": "discarded",
+                                    "prompt": "Choose 1 card to discard"
+                                },
+                                {
+                                    "type": "MoveCollection",
+                                    "from": "discarded",
+                                    "destination": {
+                                        "type": "ToZone",
+                                        "zone": "Graveyard"
+                                    },
+                                    "moveType": "Discard"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "59",
+        "artist": "Marcela Bolívar",
+        "flavorText": "Where had she first seen that symbol? She usually took such detailed notes, but her memory of it was like a fading nightmare.",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/8/98c55aff-baed-4fb5-a490-abd59b8df5e7.jpg?1783917037"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Halo Hopper
+{
+    "name": "Halo Hopper",
+    "manaCost": "{3}",
+    "typeLine": "Artifact Creature — Frog",
+    "oracleText": "Convoke (Your creatures can help cast this spell. Each creature you tap while casting this spell pays for {1} or one mana of that creature's color.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "keywords": [
+        "CONVOKE"
+    ],
+    "metadata": {
+        "collectorNumber": "260",
+        "artist": "Daniel Ljunggren",
+        "flavorText": "Folded by an imaginative child, animated by a mischievous kami, and blessed by an otherworldly angel.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/0/e07baeb1-c873-42c2-8f1e-757f13572079.jpg?1783916937",
+        "rulings": [
+            {
+                "date": "2024-01-12",
+                "text": "When calculating a spell's total cost, include any alternative costs, additional costs, or anything else that increases or reduces the cost to cast the spell. Convoke applies after the total cost is calculated. Convoke doesn't change a spell's mana cost or mana value."
+            }
+        ]
+    },
+    "colorIdentityOverride": []
+}
+
+// Interdisciplinary Mascot
+{
+    "name": "Interdisciplinary Mascot",
+    "manaCost": "{6}{U}{U}",
+    "typeLine": "Creature — Elemental Fractal",
+    "oracleText": "Convoke (Your creatures can help cast this spell. Each creature you tap while casting this spell pays for {1} or one mana of that creature's color.)\nWard {3}\nWhen this creature enters, look at the top four cards of your library. Put one of them into your hand and the rest on the bottom of your library in a random order.",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 5
+    },
+    "keywords": [
+        "CONVOKE",
+        "WARD"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Ward",
+            "cost": {
+                "type": "WardCost.Mana",
+                "manaCost": "{3}"
+            }
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 4
+                                }
+                            },
+                            "storeAs": "looked"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "looked",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "kept",
+                            "storeRemainder": "rest",
+                            "selectedLabel": "Put in hand",
+                            "remainderLabel": "Put on bottom"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "kept",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Hand"
+                            }
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "rest",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Library",
+                                "placement": "Bottom"
+                            },
+                            "order": "Random"
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "326",
+        "rarity": "RARE",
+        "artist": "Mathias Kollros",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/e/0eecdd9a-6c3f-43ee-8d9c-e3466bd7bf5e.jpg?1783916905",
+        "rulings": [
+            {
+                "date": "2024-01-12",
+                "text": "When calculating a spell's total cost, include any alternative costs, additional costs, or anything else that increases or reduces the cost to cast the spell. Convoke applies after the total cost is calculated. Convoke doesn't change a spell's mana cost or mana value."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 
@@ -348,6 +1173,870 @@
     ]
 }
 
+// Iridescent Blademaster
+{
+    "name": "Iridescent Blademaster",
+    "manaCost": "{1}{G}",
+    "typeLine": "Creature — Elf Warrior",
+    "oracleText": "{3}{G}: This creature gets +2/+2 until end of turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{3}{G}"
+                    }
+                },
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "target": "Self"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "195",
+        "artist": "Livia Prima",
+        "flavorText": "Her arm and spirit were weary, but as the Halo flowed across her blade, it became weightless, and new strength flooded through her. She would fight on.",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/f/3fee189f-539f-48fa-b217-4b2599375364.jpg?1783916966"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Kithkin Billyrider
+{
+    "name": "Kithkin Billyrider",
+    "manaCost": "{2}{W}",
+    "typeLine": "Creature — Kithkin Knight",
+    "oracleText": "Double strike",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 3
+    },
+    "keywords": [
+        "DOUBLE_STRIKE"
+    ],
+    "metadata": {
+        "collectorNumber": "24",
+        "artist": "Zara Alfonso",
+        "flavorText": "\"Brother, guide my right hand. Sister, my left. Rest well, my kin, but Lorwyn still needs me. I will not be joining you quite yet.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/5/0535b69f-247d-49c9-97e1-d988700578ab.jpg?1783917058"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Knight of the New Coalition
+{
+    "name": "Knight of the New Coalition",
+    "manaCost": "{3}{W}",
+    "typeLine": "Creature — Human Knight",
+    "oracleText": "Vigilance\nWhen this creature enters, create a 2/2 white and blue Knight creature token with vigilance.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "VIGILANCE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 2,
+                    "toughness": 2,
+                    "colors": [
+                        "WHITE",
+                        "BLUE"
+                    ],
+                    "creatureTypes": [
+                        "Knight"
+                    ],
+                    "keywords": [
+                        "VIGILANCE"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/8/8/88439bfc-8942-473b-9e4f-863017788476.jpg?1783916669"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "25",
+        "artist": "Jake Murray",
+        "flavorText": "Raised in a long tradition of heroes, every Benalish knight knows the day might come when they will be called to face Phyrexia.",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/6/56a3108b-c33d-47c5-984b-01fa257fbd79.jpg?1783917059"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Kor Halberd
+{
+    "name": "Kor Halberd",
+    "manaCost": "{W}",
+    "typeLine": "Artifact — Equipment",
+    "oracleText": "Equipped creature gets +1/+1 and has vigilance.\nEquip {1} ({1}: Attach to target creature you control. Equip only as a sorcery.)",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{1}"
+                    }
+                },
+                "effect": {
+                    "type": "AttachEquipment",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "creature you control"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        },
+                        "id": "creature you control"
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "isEquipAbility": true
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 1,
+                "toughnessBonus": 1
+            },
+            {
+                "type": "GrantKeyword",
+                "keyword": "VIGILANCE"
+            }
+        ]
+    },
+    "equipCost": "{1}",
+    "metadata": {
+        "collectorNumber": "27",
+        "artist": "Bastien L. Deharme",
+        "flavorText": "An ancient weapon for a modern war.",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/4/a4705327-ada6-4575-82fc-351e183d060e.jpg?1783917057"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Meeting of Minds
+{
+    "name": "Meeting of Minds",
+    "manaCost": "{3}{U}",
+    "typeLine": "Instant",
+    "oracleText": "Convoke (Your creatures can help cast this spell. Each creature you tap while casting this spell pays for {1} or one mana of that creature's color.)\nDraw two cards.",
+    "keywords": [
+        "CONVOKE"
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "DrawCards",
+            "count": {
+                "type": "Fixed",
+                "amount": 2
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "66",
+        "artist": "Milivoj Ćeran",
+        "flavorText": "\"If something seems impossible, you probably haven't tried asking for help.\"\n—Niambi, cleric of Dominaria",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/0/508b8650-c283-4e54-abdc-32ec2fb1ee34.jpg?1783917031",
+        "rulings": [
+            {
+                "date": "2024-01-12",
+                "text": "When calculating a spell's total cost, include any alternative costs, additional costs, or anything else that increases or reduces the cost to cast the spell. Convoke applies after the total cost is calculated. Convoke doesn't change a spell's mana cost or mana value."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Nezumi Informant
+{
+    "name": "Nezumi Informant",
+    "manaCost": "{1}{B}",
+    "typeLine": "Creature — Rat Rogue",
+    "oracleText": "When this creature enters, each opponent discards a card.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Players",
+                        "players": "EachOpponent"
+                    },
+                    "body": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Hand"
+                                },
+                                "storeAs": "hand"
+                            },
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "hand",
+                                "selection": {
+                                    "type": "ChooseExactly",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "storeSelected": "discarded"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "discarded",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Graveyard"
+                                },
+                                "moveType": "Discard"
+                            }
+                        ]
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "120",
+        "artist": "Steve Prescott",
+        "flavorText": "\"Tell Boss Umezawa there's a new gang moving in on our territory. I'm forwarding their insignia. Watch for it elsewhere.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/3/e36fbff8-471e-4cf8-8946-e1e5cdf598af.jpg?1783917003",
+        "rulings": [
+            {
+                "date": "2023-04-14",
+                "text": "To resolve Nezumi Informant's ability in a multiplayer game, the next opponent in turn order (or, if it's an opponent's turn, the opponent whose turn it is) chooses a card in hand and sets it aside without revealing it. Then each other opponent in turn order does the same. Finally, all chosen cards are revealed and discarded at the same time."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Pile On
+{
+    "name": "Pile On",
+    "manaCost": "{3}{B}",
+    "typeLine": "Instant",
+    "oracleText": "Convoke (Your creatures can help cast this spell. Each creature you tap while casting this spell pays for {1} or one mana of that creature's color.)\nDestroy target creature or planeswalker. Surveil 2. (Look at the top two cards of your library, then put any number of them into your graveyard and the rest on top of your library in any order.)",
+    "keywords": [
+        "CONVOKE"
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature or planeswalker"
+                    },
+                    "destination": "Graveyard",
+                    "byDestruction": true
+                },
+                {
+                    "type": "Surveil",
+                    "count": 2
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetCreatureOrPlaneswalker",
+                "id": "target creature or planeswalker"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "122",
+        "rarity": "RARE",
+        "artist": "Javier Charro",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/9/492e9369-0ca3-4c31-b747-75d615daf6e4.jpg?1783917002",
+        "rulings": [
+            {
+                "date": "2024-01-12",
+                "text": "When calculating a spell's total cost, include any alternative costs, additional costs, or anything else that increases or reduces the cost to cast the spell. Convoke applies after the total cost is calculated. Convoke doesn't change a spell's mana cost or mana value."
+            },
+            {
+                "date": "2024-01-12",
+                "text": "You perform the actions stated on a card in sequence. For some spells and abilities, you'll surveil last. For others, you'll surveil and then perform other actions."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Preening Champion
+{
+    "name": "Preening Champion",
+    "manaCost": "{2}{U}",
+    "typeLine": "Creature — Bird Knight",
+    "oracleText": "Flying\nWhen this creature enters, create a 1/1 blue and red Elemental creature token.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [
+                        "BLUE",
+                        "RED"
+                    ],
+                    "creatureTypes": [
+                        "Elemental"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/2/8/28a7a9b0-d823-4b34-829f-ade81fc141e0.jpg?1783916668"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "73",
+        "artist": "Alix Branwyn",
+        "flavorText": "On Kylem, the omens of impending invasion went largely unnoticed, drowned out by the everyday fanfare of Valor's Reach.",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/4/44178ece-af31-4a94-88bc-c9ce43bb4573.jpg?1783917028"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Ral's Reinforcements
+{
+    "name": "Ral's Reinforcements",
+    "manaCost": "{1}{R}",
+    "typeLine": "Sorcery",
+    "oracleText": "Create two 1/1 blue and red Elemental creature tokens.",
+    "script": {
+        "spellEffect": {
+            "type": "CreateToken",
+            "count": {
+                "type": "Fixed",
+                "amount": 2
+            },
+            "power": 1,
+            "toughness": 1,
+            "colors": [
+                "BLUE",
+                "RED"
+            ],
+            "creatureTypes": [
+                "Elemental"
+            ],
+            "imageUri": "https://cards.scryfall.io/normal/front/2/8/28a7a9b0-d823-4b34-829f-ade81fc141e0.jpg?1783916668"
+        }
+    },
+    "metadata": {
+        "collectorNumber": "158",
+        "artist": "Nils Hamm",
+        "flavorText": "\"Good thing maintenance never got around to decatalyzing the bithermic plasma displacement conduits!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/4/74d0bb76-075c-49d7-9afb-e5bcf5b654f7.jpg?1783916984"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Ramosian Greatsword
+{
+    "name": "Ramosian Greatsword",
+    "manaCost": "{4}{R}",
+    "typeLine": "Artifact — Equipment",
+    "oracleText": "Convoke (Your creatures can help cast this spell. Each creature you tap while casting this spell pays for {1} or one mana of that creature's color.)\nEquipped creature gets +3/+1 and has trample.\nEquip {2} ({2}: Attach to target creature you control. Equip only as a sorcery.)",
+    "keywords": [
+        "CONVOKE"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{2}"
+                    }
+                },
+                "effect": {
+                    "type": "AttachEquipment",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "creature you control"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        },
+                        "id": "creature you control"
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "isEquipAbility": true
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 3,
+                "toughnessBonus": 1
+            },
+            {
+                "type": "GrantKeyword",
+                "keyword": "TRAMPLE"
+            }
+        ]
+    },
+    "equipCost": "{2}",
+    "metadata": {
+        "collectorNumber": "159",
+        "rarity": "UNCOMMON",
+        "artist": "Jason A. Engle",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/f/efd6f04e-e83d-4580-ae3f-583ada848868.jpg?1783916985",
+        "rulings": [
+            {
+                "date": "2024-01-12",
+                "text": "When calculating a spell's total cost, include any alternative costs, additional costs, or anything else that increases or reduces the cost to cast the spell. Convoke applies after the total cost is calculated. Convoke doesn't change a spell's mana cost or mana value."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Ravenous Sailback
+{
+    "name": "Ravenous Sailback",
+    "manaCost": "{4}{G}",
+    "typeLine": "Creature — Dinosaur",
+    "oracleText": "When this creature enters, choose one —\n• This creature gains haste until end of turn.\n• Destroy target artifact or enchantment.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 4
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Modal",
+                    "modes": [
+                        {
+                            "effect": {
+                                "type": "GrantKeyword",
+                                "keyword": "HASTE",
+                                "target": "Self"
+                            },
+                            "description": "This creature gains haste until end of turn."
+                        },
+                        {
+                            "effect": {
+                                "type": "MoveToZone",
+                                "target": {
+                                    "type": "ContextTarget",
+                                    "index": 0
+                                },
+                                "destination": "Graveyard",
+                                "byDestruction": true
+                            },
+                            "targetRequirements": [
+                                {
+                                    "type": "TargetObject",
+                                    "filter": {
+                                        "baseFilter": "artifact|enchantment"
+                                    }
+                                }
+                            ],
+                            "description": "Destroy target artifact or enchantment."
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "202",
+        "rarity": "UNCOMMON",
+        "artist": "Andrew Mar",
+        "flavorText": "Converter beasts were sent to ensnare as many of Ixalan's dinosaurs as possible. Many of them were converted themselves—into snacks.",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/2/a225cb30-9f3e-4cfa-bdd6-a7c73c95ea2b.jpg?1783916962"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Referee Squad
+{
+    "name": "Referee Squad",
+    "manaCost": "{2}{U}",
+    "typeLine": "Creature — Homunculus",
+    "oracleText": "Convoke (Your creatures can help cast this spell. Each creature you tap while casting this spell pays for {1} or one mana of that creature's color.)\nVigilance\nWhen this creature enters, tap target creature an opponent controls and put a stun counter on it. (If a permanent with a stun counter would become untapped, remove one from it instead.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "CONVOKE",
+        "VIGILANCE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "TapUntap",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature an opponent controls"
+                            }
+                        },
+                        {
+                            "type": "AddCounters",
+                            "counterType": "stun",
+                            "count": 1,
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature an opponent controls"
+                            }
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature ctrl:opponent"
+                    },
+                    "id": "target creature an opponent controls"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "327",
+        "rarity": "UNCOMMON",
+        "artist": "Steven Belledin",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/3/434515bf-de57-4c00-b0b4-c9579cc1b84c.jpg?1783916905",
+        "rulings": [
+            {
+                "date": "2023-04-14",
+                "text": "Referee Squad's enters-the-battlefield ability can target a creature that's already tapped."
+            },
+            {
+                "date": "2024-01-12",
+                "text": "When calculating a spell's total cost, include any alternative costs, additional costs, or anything else that increases or reduces the cost to cast the spell. Convoke applies after the total cost is calculated. Convoke doesn't change a spell's mana cost or mana value."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Ruins Recluse
+{
+    "name": "Ruins Recluse",
+    "manaCost": "{1}{G}",
+    "typeLine": "Creature — Spider",
+    "oracleText": "Reach, deathtouch\n{3}{G}: Put a +1/+1 counter on this creature.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "REACH",
+        "DEATHTOUCH"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{3}{G}"
+                    }
+                },
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": "Self"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "336",
+        "rarity": "UNCOMMON",
+        "artist": "Lorenzo Mastroianni",
+        "flavorText": "Desert horrors were its favorite treat, but it happily expanded its diet to include extraplanar horrors.",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/0/c0c0fdf5-2f56-4480-9ccb-84471b3e5331.jpg?1783916899"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Shivan Branch-Burner
+{
+    "name": "Shivan Branch-Burner",
+    "manaCost": "{5}{R}{R}",
+    "typeLine": "Creature — Dragon",
+    "oracleText": "Convoke (Your creatures can help cast this spell. Each creature you tap while casting this spell pays for {1} or one mana of that creature's color.)\nFlying, haste",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "CONVOKE",
+        "FLYING",
+        "HASTE"
+    ],
+    "metadata": {
+        "collectorNumber": "165",
+        "rarity": "UNCOMMON",
+        "artist": "Aaron Miller",
+        "flavorText": "The New Coalition gave Shiv time to prepare a warm welcome for the invaders.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/5/e585631c-bd41-4b48-aac4-4b6f5636ecd5.jpg?1783916980",
+        "rulings": [
+            {
+                "date": "2024-01-12",
+                "text": "When calculating a spell's total cost, include any alternative costs, additional costs, or anything else that increases or reduces the cost to cast the spell. Convoke applies after the total cost is calculated. Convoke doesn't change a spell's mana cost or mana value."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Thunderhead Squadron
+{
+    "name": "Thunderhead Squadron",
+    "manaCost": "{5}{U}",
+    "typeLine": "Creature — Human Knight",
+    "oracleText": "Convoke (Your creatures can help cast this spell. Each creature you tap while casting this spell pays for {1} or one mana of that creature's color.)\nFlying",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 4
+    },
+    "keywords": [
+        "CONVOKE",
+        "FLYING"
+    ],
+    "metadata": {
+        "collectorNumber": "81",
+        "artist": "PINDURSKI",
+        "flavorText": "Just as all seemed lost, the griffin riders of Zhalfir arrived with the force of a gathered storm.",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/e/8eaa0946-591f-4136-9d8a-e56934151383.jpg?1783917023",
+        "rulings": [
+            {
+                "date": "2024-01-12",
+                "text": "When calculating a spell's total cost, include any alternative costs, additional costs, or anything else that increases or reduces the cost to cast the spell. Convoke applies after the total cost is calculated. Convoke doesn't change a spell's mana cost or mana value."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Timberland Ancient
+{
+    "name": "Timberland Ancient",
+    "manaCost": "{4}{G}{G}",
+    "typeLine": "Creature — Treefolk",
+    "oracleText": "Reach, trample\nForestcycling {2} ({2}, Discard this card: Search your library for a Forest card, reveal it, put it into your hand, then shuffle.)",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 5
+    },
+    "keywords": [
+        "REACH",
+        "TRAMPLE"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Cycling",
+            "cost": "{2}",
+            "searchFilter": {
+                "cardPredicates": [
+                    {
+                        "type": "HasSubtype",
+                        "subtype": "Forest"
+                    }
+                ]
+            },
+            "displayPrefix": "Forestcycling"
+        }
+    ],
+    "metadata": {
+        "collectorNumber": "210",
+        "artist": "Pavel Kolomeyets",
+        "flavorText": "Only the trees were old enough to remember what happened when Moag ignored warnings of Phyrexia millennia ago. They were determined not to repeat the mistake.",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/f/5f73cd60-cd89-4c7a-85a6-e0ae34ca101b.jpg?1783916960"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Urn of Godfire
+{
+    "name": "Urn of Godfire",
+    "manaCost": "{1}",
+    "typeLine": "Artifact",
+    "oracleText": "{2}: Add one mana of any color.\n{6}, {T}, Sacrifice this artifact: Destroy target creature or enchantment.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{2}"
+                    }
+                },
+                "effect": "AddManaOfChoice",
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{6}"
+                            }
+                        },
+                        "CostTap",
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature or enchantment"
+                    },
+                    "destination": "Graveyard",
+                    "byDestruction": true
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature|enchantment"
+                        },
+                        "id": "target creature or enchantment"
+                    }
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "266",
+        "artist": "Ovidio Cartagena",
+        "flavorText": "Ephara blessed the defenders of Theros with godfire, a Nyx-infused incendiary substance that burned without fuel.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/f/ff5f302e-d884-4995-ba3c-8c22f9045318.jpg?1783916934"
+    },
+    "colorIdentityOverride": []
+}
+
 // Wary Thespian
 {
     "name": "Wary Thespian",
@@ -396,6 +2085,68 @@
     ]
 }
 
+// Wrenn's Resolve
+{
+    "name": "Wrenn's Resolve",
+    "manaCost": "{1}{R}",
+    "typeLine": "Sorcery",
+    "oracleText": "Exile the top two cards of your library. Until the end of your next turn, you may play those cards.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherCards",
+                    "source": {
+                        "type": "TopOfLibrary",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 2
+                        }
+                    },
+                    "storeAs": "impulseExiled"
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "impulseExiled",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Exile"
+                    }
+                },
+                {
+                    "type": "GrantMayPlayFromExile",
+                    "from": "impulseExiled",
+                    "expiry": {
+                        "type": "UntilControllerStep",
+                        "step": "CLEANUP",
+                        "includeCurrentTurn": false
+                    }
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "173",
+        "artist": "Viko Menezes",
+        "flavorText": "Even as she burned, Wrenn bent Realmbreaker to her will.",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/a/9a47999c-12d5-4e1a-a9c1-40a1757007f1.jpg?1783916978",
+        "rulings": [
+            {
+                "date": "2023-04-14",
+                "text": "The cards you play from exile follow the usual timing restrictions, and you must pay any costs for spells you cast."
+            },
+            {
+                "date": "2023-04-14",
+                "text": "Any cards you don't play will remain in exile."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Yargle and Multani
 {
     "name": "Yargle and Multani",
@@ -415,5 +2166,62 @@
     "colorIdentityOverride": [
         "BLACK",
         "GREEN"
+    ]
+}
+
+// Zhalfirin Lancer
+{
+    "name": "Zhalfirin Lancer",
+    "manaCost": "{2}{W}",
+    "typeLine": "Creature — Human Knight",
+    "oracleText": "Whenever another Knight you control enters, this creature gets +1/+1 and gains vigilance until end of turn.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "permanent Knight ctrl:you",
+                    "to": "Battlefield"
+                },
+                "binding": "OTHER",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "ModifyStats",
+                            "powerModifier": {
+                                "type": "Fixed",
+                                "amount": 1
+                            },
+                            "toughnessModifier": {
+                                "type": "Fixed",
+                                "amount": 1
+                            },
+                            "target": "Self"
+                        },
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "VIGILANCE",
+                            "target": "Self"
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "45",
+        "rarity": "UNCOMMON",
+        "artist": "Nino Vecia",
+        "flavorText": "The Phyrexians armored themselves against blades, fire, and every conjuration they could think of. She brought a war rhino.",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/7/277e5b49-c53f-4bf7-aac0-950d8708b957.jpg?1783917048"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
