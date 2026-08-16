@@ -3923,6 +3923,11 @@ no shared field to fall back on.
 | `interveningIf` | CR 603.4 | an `if` **immediately after the trigger event**: "When/Whenever/At [event], **if** [condition], [effect]" | when the trigger would fire **and again on resolution** — a false condition removes the ability from the stack with an `AbilityFizzledEvent` and it does nothing |
 | `triggerRestriction` | CR 603.2 | a **"while"** clause ("…attacks **while** you control a Dinosaur", "…**while saddled**"), a **"during"** narrowing ("…**during your turn**"), or a mechanic's own gate with no printed word (an Offspring cost paid, a chosen mode, a Station threshold, a max-speed grant) | when the trigger would fire, and **never again** |
 
+The second check is **CR 608.2a**, and it runs *before* CR 608.2b's target legality check — an
+ability whose intervening-"if" has gone false is removed from the stack whether or not its targets
+are still legal, and the `AbilityFizzledEvent` reads `"Intervening-if condition is no longer true"`
+rather than `"All targets are invalid"`.
+
 CR 603.4's own parenthetical draws the line: the rule *"only applies to an 'if' that immediately
 follows a trigger condition"*. So an `if` printed **after** the effect — "Whenever this creature
 attacks, create a token **if** you control a creature with power 4 or greater" — is neither field.

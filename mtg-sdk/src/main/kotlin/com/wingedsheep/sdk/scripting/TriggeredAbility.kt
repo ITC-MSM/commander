@@ -67,7 +67,9 @@ data class TriggeredAbility(
      * if it is true then; and again as the ability resolves, where a false condition removes the
      * ability from the stack and it does nothing. CR 603.4 calls the second check a mirror of the
      * check for legal targets, and [com.wingedsheep.engine.mechanics.stack.StackResolver] performs
-     * it in the same place, emitting an `AbilityFizzledEvent`.
+     * it in the same place, emitting an `AbilityFizzledEvent`. The two are ordered: CR 608.2a runs
+     * this check **before** CR 608.2b's target legality, so an ability whose condition has gone
+     * false is removed from the stack whether or not its targets are still legal.
      *
      * The rule's own parenthetical is the boundary: *"the word 'if' has only its normal English
      * meaning anywhere else in the text of a card; this rule only applies to an 'if' that
