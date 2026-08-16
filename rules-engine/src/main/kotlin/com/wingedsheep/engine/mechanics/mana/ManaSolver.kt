@@ -84,6 +84,12 @@ data class ManaSource(
     val canAttack: Boolean = false,
     /** Amount of mana this source produces per tap (e.g., 3 for Elvish Aberration) */
     val manaAmount: Int = 1,
+    /**
+     * Largest fixed output of a non-sacrifice mana ability on this permanent.  A source with
+     * both a normal and a sacrifice branch (Crystal Vein) must not expose the latter's larger
+     * output when a caller has only selected the source, rather than a specific ability branch.
+     */
+    val nonSacrificeManaAmount: Int = 1,
     /** Extra mana produced per tap from auras like Elvish Guidance */
     val bonusManaPerTap: Int = 0,
     /** Color of the bonus mana */
@@ -1040,6 +1046,7 @@ class ManaSolver(
             val combinedColors = mutableSetOf<Color>()
             var producesColorless = false
             var maxManaAmount = 1
+            var maxNonSacrificeManaAmount = 0
             // Extra mana produced by the SAME tap when one mana ability adds more than one mana of
             // different kinds via a CompositeEffect — Gruul Turf's "{T}: Add {R}{G}" and Mossfire
             // Valley's "{1}, {T}: Add {R}{G}" are `AddMana(RED).then(AddMana(GREEN))`. `producesColors`
@@ -1254,17 +1261,20 @@ class ManaSolver(
                         }
                     }
                 }
+                var abilityManaAmount = 1
                 val effectRestriction: ManaRestriction? = when (val effect = manaEffect) {
                     is AddManaEffect -> {
                         combinedColors.add(effect.color)
                         effectColors.add(effect.color)
                         val manaAmount = (effect.amount as? DynamicAmount.Fixed)?.amount ?: 1
+                        abilityManaAmount = manaAmount
                         maxManaAmount = maxOf(maxManaAmount, manaAmount)
                         effect.restriction
                     }
                     is AddColorlessManaEffect -> {
                         producesColorless = true
                         val manaAmount = (effect.amount as? DynamicAmount.Fixed)?.amount ?: 1
+                        abilityManaAmount = manaAmount
                         maxManaAmount = maxOf(maxManaAmount, manaAmount)
                         effect.restriction
                     }
@@ -1281,6 +1291,7 @@ class ManaSolver(
                         effectColors.addAll(resolved)
                         if (resolved.isNotEmpty()) {
                             val manaAmount = evaluateManaAmount(effect.amount, state, entityId, playerId)
+                            abilityManaAmount = manaAmount
                             maxManaAmount = maxOf(maxManaAmount, manaAmount)
                         }
                         effect.restriction
@@ -1292,6 +1303,7 @@ class ManaSolver(
                             combinedColors.addAll(Color.entries)
                             effectColors.addAll(Color.entries)
                             val manaAmount = evaluateManaAmount(effect.amount, state, entityId, playerId)
+                            abilityManaAmount = manaAmount
                             maxManaAmount = maxOf(maxManaAmount, manaAmount)
                             if (effect.riders.isNotEmpty()) {
                                 for (color in Color.entries) {
@@ -1305,10 +1317,15 @@ class ManaSolver(
                         combinedColors.addAll(effect.allowedColors)
                         effectColors.addAll(effect.allowedColors)
                         val manaAmount = (effect.amountSource as? DynamicAmount.Fixed)?.amount ?: 1
+                        abilityManaAmount = manaAmount
                         maxManaAmount = maxOf(maxManaAmount, manaAmount)
                         effect.restriction
                     }
                     else -> null
+                }
+
+                if (!abilityRequiresSacrifice) {
+                    maxNonSacrificeManaAmount = maxOf(maxNonSacrificeManaAmount, abilityManaAmount)
                 }
 
                 // Record the cheapest activation mana cost per color this ability produces.
@@ -1435,6 +1452,7 @@ class ManaSolver(
                     painAmount = painAmount,
                     canAttack = canAttack,
                     manaAmount = maxManaAmount,
+                    nonSacrificeManaAmount = maxNonSacrificeManaAmount.takeIf { it > 0 } ?: maxManaAmount,
                     bonusManaPerTap = extraBonusAmount,
                     bonusManaColor = extraBonusColor,
                     bonusManaColorlessPerTap = extraColorlessBonus,
@@ -1858,7 +1876,16 @@ class ManaSolver(
             multiplier *= entry.static.multiplier
         }
 
-        return if (multiplier > 1) source.copy(manaAmount = source.manaAmount * multiplier) else source
+        return if (multiplier > 1) {
+            // Keep the branch-safe atomic-payment projection in step with the source's
+            // ordinary solver output. A multiplier replaces the tapped mana ability's
+            // production, so it applies equally to its non-sacrificing branch (for
+            // example Crystal Vein's {T}: Add {C}).
+            source.copy(
+                manaAmount = source.manaAmount * multiplier,
+                nonSacrificeManaAmount = source.nonSacrificeManaAmount * multiplier,
+            )
+        } else source
     }
 
     /**

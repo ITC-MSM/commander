@@ -13,6 +13,7 @@ import com.wingedsheep.engine.core.BlockersDeclaredEvent
 import com.wingedsheep.engine.core.PlayerConfig
 import com.wingedsheep.engine.core.ManaSourcesSelectedResponse
 import com.wingedsheep.engine.core.ManaSourceOption
+import com.wingedsheep.engine.core.PermanentsSacrificedEvent
 import com.wingedsheep.engine.core.SelectManaSourcesDecision
 import com.wingedsheep.engine.core.SubmitDecision
 import com.wingedsheep.engine.core.TappedEvent
@@ -32,7 +33,9 @@ import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.engine.state.components.identity.OwnerComponent
 import com.wingedsheep.engine.state.components.player.ManaPoolComponent
 import com.wingedsheep.mtg.sets.definitions.ori.cards.ArchangelOfTithes
+import com.wingedsheep.mtg.sets.definitions.mir.cards.CrystalVein
 import com.wingedsheep.mtg.sets.definitions.scg.cards.ElvishAberration
+import com.wingedsheep.mtg.sets.definitions.woe.cards.VirtueOfStrength
 import com.wingedsheep.sdk.core.Format
 import com.wingedsheep.sdk.core.ManaCost
 import com.wingedsheep.sdk.core.Keyword
@@ -101,6 +104,8 @@ class TwoHeadedGiantCombatTest : FunSpec({
         it.register(flyingBear)
         it.register(ArchangelOfTithes)
         it.register(ElvishAberration)
+        it.register(CrystalVein)
+        it.register(VirtueOfStrength)
         it.register(CardDefinition.basicLand("Plains", Subtype.PLAINS))
     }
 
@@ -162,6 +167,22 @@ class TwoHeadedGiantCombatTest : FunSpec({
         return withEntity(id, container).addToZone(ZoneKey(owner, Zone.BATTLEFIELD), id) to id
     }
 
+    fun GameState.withCrystalVein(owner: EntityId): Pair<GameState, EntityId> {
+        val id = EntityId.generate()
+        val container = ComponentContainer.of(
+            CardComponent(
+                cardDefinitionId = CrystalVein.name,
+                name = CrystalVein.name,
+                manaCost = CrystalVein.manaCost,
+                typeLine = CrystalVein.typeLine,
+                ownerId = owner,
+            ),
+            OwnerComponent(owner),
+            ControllerComponent(owner),
+        )
+        return withEntity(id, container).addToZone(ZoneKey(owner, Zone.BATTLEFIELD), id) to id
+    }
+
     fun taxedTeamBlockState(): Triple<GameState, List<EntityId>, List<EntityId>> {
         val (base, p) = init2hg()
         val (s1, archangel) = base.withBear(p[0], attacking = p[2], definition = ArchangelOfTithes)
@@ -185,6 +206,24 @@ class TwoHeadedGiantCombatTest : FunSpec({
         var state = s4.updateEntity(p[0]) { it.with(AttackersDeclaredThisCombatComponent) }
         state = state.copy(step = Step.DECLARE_BLOCKERS, phase = Phase.COMBAT).withPriority(p[2])
         return Triple(state, p, listOf(archangel, aberration, blkP3, landP3))
+    }
+
+    fun taxedTeamBlockStateWithCrystalVein(): Triple<GameState, List<EntityId>, List<EntityId>> {
+        val (base, p) = init2hg()
+        val (s1, archangel) = base.withBear(p[0], attacking = p[2], definition = ArchangelOfTithes)
+        val (s2, blkP2) = s1.withBear(p[2], definition = flyingBear)
+        val (s3, blkP3) = s2.withBear(p[3], definition = flyingBear)
+        val (s4, crystalVein) = s3.withCrystalVein(p[2])
+        val (s5, landP3) = s4.withPlains(p[3])
+        var state = s5.updateEntity(p[0]) { it.with(AttackersDeclaredThisCombatComponent) }
+        state = state.copy(step = Step.DECLARE_BLOCKERS, phase = Phase.COMBAT).withPriority(p[2])
+        return Triple(state, p, listOf(archangel, blkP2, blkP3, crystalVein, landP3))
+    }
+
+    fun taxedTeamBlockStateWithVirtueOfStrength(): Triple<GameState, List<EntityId>, List<EntityId>> {
+        val (state, players, objects) = taxedTeamBlockState()
+        val (withVirtue, virtue) = state.withBear(players[2], definition = VirtueOfStrength)
+        return Triple(withVirtue, players, objects + virtue)
     }
 
     test("a creature attacks the opposing team, never a teammate (CR 805.10b)") {
@@ -427,6 +466,68 @@ class TwoHeadedGiantCombatTest : FunSpec({
         paid.newState.getEntity(p[3])!!.get<ManaPoolComponent>()!!.green shouldBe 0
         paid.newState.getEntity(aberration)!!.has<BlockingComponent>().shouldBeTrue()
         paid.newState.getEntity(blkP3)!!.has<BlockingComponent>().shouldBeTrue()
+    }
+
+    test("Crystal Vein's atomic tax selection uses its normal mana branch, not its sacrifice branch") {
+        val (state, p, objects) = taxedTeamBlockStateWithCrystalVein()
+        val (archangel, blkP2, blkP3, crystalVein, landP3) = objects
+        val proc = ActionProcessor(registry())
+        val declared = proc.process(
+            state,
+            DeclareBlockers(p[2], mapOf(blkP2 to listOf(archangel), blkP3 to listOf(archangel))),
+        ).result
+        val p2Prompt = declared.pendingDecision.shouldBeInstanceOf<SelectManaSourcesDecision>()
+        p2Prompt.availableSources.map { it.entityId } shouldBe listOf(crystalVein)
+        p2Prompt.availableSources.single().manaAmount shouldBe 1
+        p2Prompt.availableSources.single().requiresSacrifice.shouldBeFalse()
+        val p2Accepted = proc.process(
+            declared.newState,
+            SubmitDecision(p[2], ManaSourcesSelectedResponse(p2Prompt.id, selectedSources = listOf(crystalVein))),
+        ).result
+        val p3Prompt = p2Accepted.pendingDecision.shouldBeInstanceOf<SelectManaSourcesDecision>()
+
+        val paid = proc.process(
+            p2Accepted.newState,
+            SubmitDecision(p[3], ManaSourcesSelectedResponse(p3Prompt.id, selectedSources = listOf(landP3))),
+        ).result
+
+        paid.isSuccess.shouldBeTrue()
+        paid.newState.getEntity(crystalVein)!!.has<TappedComponent>().shouldBeTrue()
+        paid.newState.getBattlefield().contains(crystalVein).shouldBeTrue()
+        paid.newState.getEntity(p[2])!!.get<ManaPoolComponent>()!!.colorless shouldBe 0
+        paid.events.filterIsInstance<TappedEvent>().map { it.entityId }.toSet() shouldBe setOf(crystalVein, landP3)
+        paid.events.filterIsInstance<PermanentsSacrificedEvent>() shouldBe emptyList()
+        paid.events.filterIsInstance<BlockersDeclaredEvent>().size shouldBe 1
+    }
+
+    test("an atomic payer preserves a tapped mana source's multiplied normal output") {
+        val (state, p, objects) = taxedTeamBlockStateWithVirtueOfStrength()
+        val (archangel, blkP2, blkP3, landP2, landP3) = objects
+        val proc = ActionProcessor(registry())
+
+        val declared = proc.process(
+            state,
+            DeclareBlockers(p[2], mapOf(blkP2 to listOf(archangel), blkP3 to listOf(archangel))),
+        ).result
+        val p2Prompt = declared.pendingDecision.shouldBeInstanceOf<SelectManaSourcesDecision>()
+        p2Prompt.availableSources.single { it.entityId == landP2 }.manaAmount shouldBe 3
+
+        val p2Accepted = proc.process(
+            declared.newState,
+            SubmitDecision(p[2], ManaSourcesSelectedResponse(p2Prompt.id, selectedSources = listOf(landP2))),
+        ).result
+        val p3Prompt = p2Accepted.pendingDecision.shouldBeInstanceOf<SelectManaSourcesDecision>()
+        val paid = proc.process(
+            p2Accepted.newState,
+            SubmitDecision(p[3], ManaSourcesSelectedResponse(p3Prompt.id, selectedSources = listOf(landP3))),
+        ).result
+
+        paid.isSuccess.shouldBeTrue()
+        paid.newState.getEntity(p[2])!!.get<ManaPoolComponent>()!!.white shouldBe 2
+        paid.newState.getEntity(p[3])!!.get<ManaPoolComponent>()!!.white shouldBe 0
+        paid.newState.getEntity(landP2)!!.has<TappedComponent>().shouldBeTrue()
+        paid.newState.getEntity(landP3)!!.has<TappedComponent>().shouldBeTrue()
+        paid.events.filterIsInstance<BlockersDeclaredEvent>().size shouldBe 1
     }
 
     test("a declined teammate leaves a selected fixed-output multi-mana source and pool untouched") {

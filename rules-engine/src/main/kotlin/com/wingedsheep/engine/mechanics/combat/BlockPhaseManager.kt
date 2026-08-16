@@ -1163,6 +1163,11 @@ internal class BlockPhaseManager(
                         source.colorPainCost.isEmpty() &&
                         source.colorlessPainCost == 0 &&
                         source.colorsRequiringSacrifice.isEmpty()
+                }.map { source ->
+                    // The atomic source picker has no ability-branch payload.  For a mixed
+                    // source such as Crystal Vein, expose only its non-sacrifice branch rather
+                    // than granting the larger sacrifice branch without paying that cost.
+                    source.copy(manaAmount = source.nonSacrificeManaAmount)
                 }
             }
             val sourceOptions = sources.map { source ->
