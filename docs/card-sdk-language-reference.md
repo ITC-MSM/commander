@@ -1997,6 +1997,7 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
 - `AnimateLandEffect(target, subtypes, keywords, duration)` — land becomes a creature.
 - `MassAnimateEffect(filter, power, toughness, loseAllAbilities = true, duration = EndOfTurn)` — facade `Effects.MassAnimate(filter, power, toughness, loseAllAbilities, duration)`. One-shot: animate **every** permanent matching `filter` into a creature for `duration`, setting each one's base power and toughness to the `power`/`toughness` **`DynamicAmount`s** — resolved per affected permanent (Layer 7b `SetPowerToughnessDynamic`), so `EntityProperty(AffectedEntity, ManaValue)` gives "each equal to its own mana value" — and, when `loseAllAbilities`, stripping all of its abilities (Layer 6 `RemoveAllAbilities`); Layer 4 `AddType("CREATURE")` makes them creatures. The affected set is captured **once** at resolution against the current battlefield (CR 611.2c) and locked in for the duration. This is the fixed-set, one-shot companion to expressing the same effect *continuously* via the `GrantCardType` + `LoseAllAbilities` + `SetBasePowerToughnessDynamicStatic` group statics on a permanent (which take the same `DynamicAmount` P/T) — use the statics for the while-on-battlefield behavior and this effect for the "this effect continues until end of turn" linger when the generating permanent leaves. Used by **Titania's Song** ("Each noncreature artifact loses all abilities and becomes an artifact creature with power and toughness each equal to its mana value. If this enchantment leaves the battlefield, this effect continues until end of turn.") — a `LeavesBattlefield(SELF)` trigger replays the static set as until-EOT floating effects with `power = toughness = EntityProperty(AffectedEntity, ManaValue)`. The dynamic-P/T floating effect resolves its controller from the effect's captured controller (`ContinuousEffect.controllerId`) when the source has already left the battlefield.
 - `ExploreEffect(target)` — Explore mechanic (reveal top; land → battlefield, else hand + counter).
+- `ConniveEffect(subject, body, replacementsApplied = false)` — the connive keyword action (CR 701.50), wrapping the pipeline that carries it out. Built by `Patterns.Hand.connive` / `Effects.Connive(target)`; never constructed directly by a card. `body` is the ordinary draw → discard → conditional +1/+1 counter pipeline and runs unchanged — the wrapper exists to give the action a **name and a subject**, which is what `ModifyKeywordAction` needs to replace it (`EventPattern.ConnivedEvent`) and what lets `ConniveEffectExecutor` append `EmitConnivedEventEffect` as the pipeline's tail so `PermanentConnivedEvent` fires after the discard resolves (CR 701.50f). `replacementsApplied` is the CR 614.5 recursion guard, set only on the post-replacement re-issue. Mirrors `ExploreEffect`, the other replaceable/observable keyword action.
 - `AttachEquipmentEffect(equip, target)` — attach an Equipment. Facade `Effects.AttachEquipment(...)`.
   `Effects.AttachTargetEquipmentToCreature(equipmentTarget, creatureTarget)` force-attaches one
   *targeted* Equipment to one *targeted* creature (both are explicit targets, not the source) — used
@@ -2699,8 +2700,8 @@ one-off pipeline belongs inline in the card file via `Effects.Pipeline { }` (§5
   Forager). For forage as a *cost*, use `Costs.Forage()` / `Costs.additional.Forage` (§3).
 - `loot(draw?, discard?)` — "draw N, discard M" loop.
 - `rummage(count?)` — discard then draw.
-- `connive(target?)` — draw 1, discard 1, then put a +1/+1 counter on `target` (default Self) if the discard was a nonland (CR 701.50). Also exposed as `Effects.Connive(target)`.
-- `conniveTargeting(requirement, storeAs?)` — connive whose +1/+1 counter lands on a *reflexively chosen* target: "draw a card, then discard a card. When you discard a nonland card this way, put a +1/+1 counter on target creature you control" (Teo, Spirited Glider). The recipient is selected at resolution via `SelectTargetEffect` *inside* the nonland gate — so the player never chooses up front or when the discard is a land. Pass the recipient's `TargetRequirement` (e.g. `Targets.CreatureYouControl`); do **not** also declare it as a cast-time `target(...)`. Exposed as `Effects.ConniveTargeting(requirement)`.
+- `connive(target?)` — draw 1, discard 1, then put a +1/+1 counter on `target` (default Self) if the discard was a nonland (CR 701.50). Also exposed as `Effects.Connive(target)`. Returns the pipeline wrapped in `ConniveEffect(subject = target, body = …)`: the wrapper names the keyword action and its subject, which is what lets `ModifyKeywordAction` replace it and what makes it emit `PermanentConnivedEvent` (CR 701.50f). The pipeline itself is unchanged.
+- `conniveTargeting(requirement, storeAs?)` — connive whose +1/+1 counter lands on a *reflexively chosen* target: "draw a card, then discard a card. When you discard a nonland card this way, put a +1/+1 counter on target creature you control" (Teo, Spirited Glider). The recipient is selected at resolution via `SelectTargetEffect` *inside* the nonland gate — so the player never chooses up front or when the discard is a land. Pass the recipient's `TargetRequirement` (e.g. `Targets.CreatureYouControl`); do **not** also declare it as a cast-time `target(...)`. Exposed as `Effects.ConniveTargeting(requirement)`. Deliberately **not** wrapped in `ConniveEffect` — Teo's printed text spells the looting out and never says "connive", so it is not the keyword action: it fires no connive triggers and is not touched by "if a creature you control would connive" replacements.
 - `Patterns.Mechanic.recruit()` — **Recruit** (The Hobbit): "draw a card, then discard a card. If you
   discarded a nonland card, create a 1/1 white Human Soldier creature token." A keyword *action* with
   fixed reminder text, not a keyword ability, so there is no `Keyword.RECRUIT` — it is connive's pipeline
@@ -4981,6 +4982,22 @@ Triggers.youCastSpell(
     (Nicanzil's second ability).
   - Fires even on an **empty library** (CR 701.44b — the permanent still explored): `ANY` matches,
     `LAND`/`NONLAND` do not (`revealedCardWasLand == null`).
+
+### Connive (CR 701.50)
+
+- `Triggers.creatureConnives(filter)` / `Triggers.WheneverCreatureYouControlConnives` — "Whenever a
+  permanent matching `filter` connives." The conniving permanent is the event subject, so the
+  binding is `TriggerBinding.ANY` and `filter.youControl()` resolves "you" to the observing
+  ability's controller. Backed by `EventPattern.ConnivedEvent`; emitted by `ConniveEffectExecutor`
+  as `PermanentConnivedEvent`, once per connive, as the *tail* of the connive pipeline — after the
+  discard decision and the +1/+1 counter, so it lands in a completed resolution batch. Fires even
+  when the draw or the discard was impossible (CR 701.50f — the permanent connives even if some or
+  all of those actions were impossible).
+  - Only a **real** connive fires it. Connive-*shaped* looting that the printed card never calls
+    connive (`Effects.ConniveTargeting`, the Teo, Spirited Glider shape) emits nothing and is not
+    replaced.
+  - Doubles as the `appliesTo` pattern for `ModifyKeywordAction` ("if a creature you control would
+    connive, instead …" — Leader, Super-Genius).
 
 ### Library search (CR 701.23)
 
@@ -10196,21 +10213,34 @@ The priority groups are (CR 616.1a–f):
   instances sum. Use for "if an opponent would mill one or more cards, they mill that many cards plus
   four instead" (The Water Crystal:
   `ModifyMillAmount(modifier = 4, appliesTo = EventPattern.MillEvent(player = Player.EachOpponent))`).
-- `ModifyExplore(prefixEffect, appliesTo)` — insert an extra effect into an explore (CR 614, CR
-  701.44): replaces "[a matching permanent] explores" with "[prefixEffect], then that permanent
-  explores". `appliesTo` is an `EventPattern.ExploredEvent` whose `filter` scopes which explores are
-  modified, matched against the exploring creature with the **source's controller** as "you" (so
-  `ExploredEvent(GameObjectFilter.Creature.youControl())` = "if a creature you control would
-  explore"); `revealedType` is irrelevant (the replacement runs before the reveal). Like
-  `ReplaceDrawWithEffect`, explore isn't a generic replaceable event — `ExploreEffectExecutor`
-  consults printed `ModifyExplore` on the battlefield directly and, on a match, re-issues the explore
-  as `Composite(prefixEffect, ExploreEffect(sameCreature, replacementsApplied = true))` through the
-  registry recursion, so a pausing prefix (Scry's top/bottom decision) sequences fully before the
-  explore. The `replacementsApplied` guard on the inner `ExploreEffect` stops the same replacement
-  applying twice. Multiple applicable sources chain their prefixes in battlefield order (a faithful
-  APNAP order per CR 616 is unmodeled — no printed card stacks explore modifiers). Twists and Turns:
-  `ModifyExplore(Effects.Scry(1), EventPattern.ExploredEvent(GameObjectFilter.Creature.youControl()))`
-  ("If a creature you control would explore, instead you scry 1, then that creature explores").
+- `ModifyKeywordAction(prefixEffect, appliesTo)` — insert an extra effect *in front of* a keyword
+  action (CR 614): replaces "[a matching permanent] <acts>" with "[prefixEffect], then that permanent
+  <acts>". One type across keyword actions rather than one per action — `appliesTo` carries which
+  action (and its subject filter), `prefixEffect` carries the rest. Supported patterns:
+  `EventPattern.ExploredEvent` (CR 701.44) and `EventPattern.ConnivedEvent` (CR 701.50); any other
+  pattern never matches. The pattern's `filter` scopes which actions are modified, matched against
+  the acting permanent with the **source's controller** as "you" (so
+  `ConnivedEvent(GameObjectFilter.Creature.youControl())` = "if a creature you control would
+  connive"); `ExploredEvent.revealedType` is irrelevant (the replacement runs before the reveal).
+  Like `ReplaceDrawWithEffect`, neither action is a generic replaceable event —
+  `ExploreEffectExecutor` / `ConniveEffectExecutor` consult printed `ModifyKeywordAction` on the
+  battlefield directly (via `KeywordActionReplacements`) and, on a match, re-issue the action as
+  `Composite(prefixEffect, <action>(sameCreature, replacementsApplied = true))` through the registry
+  recursion, so a pausing prefix (Scry's top/bottom decision) and the action's own decision
+  (connive's discard) sequence in the printed order. The `replacementsApplied` guard on the inner
+  action stops the same replacement applying twice (CR 614.5). Multiple applicable sources chain
+  their prefixes in battlefield order (a faithful APNAP order per CR 616 is unmodeled — no printed
+  card stacks two modifiers on one action). Note the prefix runs in the *replaced action's* context,
+  so an opponent's effect making your creature act would run the prefix as the opponent; no printed
+  card distinguishes this today.
+  - Twists and Turns:
+    `ModifyKeywordAction(Effects.Scry(1), EventPattern.ExploredEvent(GameObjectFilter.Creature.youControl()))`
+    ("If a creature you control would explore, instead you scry 1, then that creature explores").
+  - Leader, Super-Genius:
+    `ModifyKeywordAction(Effects.DrawCards(1), EventPattern.ConnivedEvent(GameObjectFilter.Creature.youControl()))`
+    ("If a creature you control would connive, instead you draw a card, then that creature
+    connives") — the extra card is in hand *before* the discard is chosen, which a
+    "whenever … connives, draw a card" trigger could not do.
 - `ModifyLifeGain(multiplier, modifier, appliesTo, restrictions)` — modify life gain by a multiplicative *and/or*
   additive factor: `gained = (original * multiplier) + modifier`, clamped to ≥ 0. `appliesTo` is a `LifeGainEvent`
   whose `player` filter (default `Player.Each`) gates which players the replacement applies to. `restrictions`

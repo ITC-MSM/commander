@@ -426,12 +426,20 @@ counter-placement chokepoint and cleared by `TurnManager.startTurn`, plus
 
 ### Replacing a keyword action (connive) — **Leader, Super-Genius** [64]
 "If a creature you control would connive, instead you draw a card, then that creature connives."
-Connive is a *composed effect* (`Patterns.Hand.connive` / `Effects.Connive`), not an event the
-replacement system can see; `ReplacementEffect` has no keyword-action variants at all (its nearest
-neighbours are `ModifyDrawAmount`, `ModifyMillAmount`, `ModifyExplore`). Needed: either a
-`ConniveEvent` `EventPattern` + `ReplacementEffect.ModifyConnive(prefixEffect)` read by the connive
-executor, or a `ConniveModifier` static consulted at the same point. The card's second ability is fine
-today.
+Connive *was* a bare composed effect (`Patterns.Hand.connive` / `Effects.Connive`), not an action the
+replacement system could see.
+
+**Implemented (u18).** `HandPatterns.connive` now wraps the unchanged pipeline in a
+`ConniveEffect(subject, body)`, which gives the keyword action a name and a subject; the new
+`EventPattern.ConnivedEvent` + engine `PermanentConnivedEvent` make it replaceable and observable
+(`Triggers.creatureConnives`). The card is that replacement plus an ordinary `Effects.Connive` on a
+cast-time target.
+
+One correction to the earlier triage: the replacement is **not** a new `ModifyConnive` type. The
+explore-only `ModifyExplore` was generalized into `ModifyKeywordAction(prefixEffect, appliesTo)` —
+`appliesTo` already carried *which* action and `prefixEffect` *what else happens*, so the two printed
+cards (Twists and Turns, explore; Leader, connive) differ only in data. `ModifyExplore` no longer
+exists.
 
 ### "Becomes the target of an ability you control" — **Loki, God of Mischief** [65]
 Two independent gaps in `EventPattern.BecomesTargetEvent`: (1) **player targets are never emitted** —

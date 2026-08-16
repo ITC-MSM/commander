@@ -455,6 +455,29 @@ data class PermanentExploredEvent(
 ) : GameEvent
 
 /**
+ * A permanent just connived (CR 701.50). Emitted once per connive as the tail of the connive
+ * pipeline — after the discard decision and the +1/+1 counter — so it lands in a completed
+ * resolution batch. Per CR 701.50f the permanent connives even if some or all of the draw/discard
+ * was impossible, so this fires on an empty hand or an empty library too. Drives
+ * [com.wingedsheep.sdk.scripting.EventPattern.ConnivedEvent] triggers ("whenever a creature you
+ * control connives").
+ *
+ * Internal-only: dropped from the client log (`ClientEventTransformer`) — the draw, discard and
+ * counter are each surfaced by their own events already.
+ *
+ * @property connivingPermanentId The permanent that connived (the trigger's subject).
+ * @property controllerId The connive effect's controller at connive time.
+ * @property sourceName The card/ability that caused the connive (for display).
+ */
+@Serializable
+@SerialName("PermanentConnivedEvent")
+data class PermanentConnivedEvent(
+    val connivingPermanentId: EntityId,
+    val controllerId: EntityId,
+    val sourceName: String? = null
+) : GameEvent
+
+/**
  * A player just performed one of the four elemental bending keyword actions (CR 701.65b Airbend /
  * 701.66b Earthbend / 701.67c Waterbend / 702.189b Firebending). Fires once per bend so
  * [com.wingedsheep.sdk.scripting.EventPattern.BendPerformedEvent] triggers

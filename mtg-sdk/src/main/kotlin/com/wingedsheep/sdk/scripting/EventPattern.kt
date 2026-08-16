@@ -569,6 +569,34 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
     }
 
     /**
+     * Whenever a permanent matching [filter] connives (CR 701.50). The conniving permanent is the
+     * event subject, so "a creature you control connives" is
+     * `filter = GameObjectFilter.Creature.youControl()`, resolving "you" to the observing ability's
+     * controller. Fires once per connive, after the draw/discard/counter process completes — CR
+     * 701.50f, the permanent "connives" even if some or all of those actions were impossible (empty
+     * hand, empty library).
+     *
+     * Only a *real* connive fires this. Connive-shaped looting that the printed card never calls
+     * connive (Teo, Spirited Glider — "draw a card, then discard a card…", built from
+     * [com.wingedsheep.sdk.dsl.Effects.ConniveTargeting]) is not a connive and emits nothing.
+     *
+     * Doubles as the `appliesTo` filter for [com.wingedsheep.sdk.scripting.ModifyKeywordAction]
+     * ("if a creature you control would connive, instead …") — see that type.
+     */
+    @SerialName("ConnivedEvent")
+    @Serializable
+    data class ConnivedEvent(
+        val filter: GameObjectFilter? = null
+    ) : EventPattern {
+        override val description: String = "a permanent connives"
+
+        override fun applyTextReplacement(replacer: TextReplacer): EventPattern {
+            val newFilter = filter?.applyTextReplacement(replacer)
+            return if (newFilter !== filter) copy(filter = newFilter) else this
+        }
+    }
+
+    /**
      * Whenever [player] performs one of the four elemental bending keyword actions in [types]
      * (CR 701.65b Airbend / 701.66b Earthbend / 701.67c Waterbend / 702.189b Firebending). Fires
      * once per bend. The default [types] set is all four, backing "Whenever you waterbend,

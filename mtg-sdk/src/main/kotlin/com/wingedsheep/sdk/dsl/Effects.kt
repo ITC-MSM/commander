@@ -624,7 +624,11 @@ object Effects {
      * Connive (CR 701.50): draw a card, then discard a card. If the discarded card
      * is a nonland, put a +1/+1 counter on [target].
      *
-     * Composed entirely from atomic pipeline primitives — see [HandPatterns.connive].
+     * The keyword action proper: a
+     * [com.wingedsheep.sdk.scripting.effects.ConniveEffect] naming [target] as the conniving
+     * permanent, wrapped around the atomic pipeline that carries it out — so the action can be
+     * replaced ("if a creature you control would connive, instead …") and observed ("whenever a
+     * creature you control connives"). See [HandPatterns.connive].
      */
     fun Connive(target: EffectTarget = EffectTarget.Self): Effect =
         HandPatterns.connive(target)

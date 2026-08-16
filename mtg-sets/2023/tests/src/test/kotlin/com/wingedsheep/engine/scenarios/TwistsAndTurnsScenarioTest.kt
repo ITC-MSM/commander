@@ -22,7 +22,7 @@ import io.kotest.matchers.shouldBe
  * that creature explores." + ETB "target creature you control explores" + "when a land you control
  * enters, if you control seven or more lands, transform".
  *
- * The headline feature is the [com.wingedsheep.sdk.scripting.ModifyExplore] replacement (CR 614).
+ * The headline feature is the [com.wingedsheep.sdk.scripting.ModifyKeywordAction] replacement (CR 614).
  * The discriminating test seeds a nonland on top of the library and a land beneath it: the
  * replacement's scry 1 lets the controller bottom the nonland so the explore that follows reveals
  * the land (→ hand, no +1/+1 counter). Without the replacement the explore would reveal the nonland

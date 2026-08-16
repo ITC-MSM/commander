@@ -20281,7 +20281,7 @@
         ],
         "replacementEffects": [
             {
-                "type": "ModifyExplore",
+                "type": "ModifyKeywordAction",
                 "prefixEffect": {
                     "type": "Scry",
                     "count": 1

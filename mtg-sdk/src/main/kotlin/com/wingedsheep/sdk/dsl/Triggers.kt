@@ -2477,6 +2477,23 @@ object Triggers {
         creatureExplores(revealedType = ExploreReveal.NONLAND)
 
     /**
+     * Whenever a permanent matching [filter] connives (CR 701.50). Binding is
+     * [TriggerBinding.ANY] — the observer watches every matching permanent, so
+     * `filter.youControl()` resolves "you" to the observer's controller. Fires once per connive,
+     * including when the draw or the discard was impossible (CR 701.50f), and only for a real
+     * connive: the Teo, Spirited Glider looting shape (`Effects.ConniveTargeting`) is not one.
+     */
+    fun creatureConnives(
+        filter: GameObjectFilter = GameObjectFilter.Creature.youControl()
+    ): TriggerSpec = TriggerSpec(
+        event = ConnivedEvent(filter = filter),
+        binding = TriggerBinding.ANY
+    )
+
+    /** "Whenever a creature you control connives" (CR 701.50). */
+    val WheneverCreatureYouControlConnives: TriggerSpec = creatureConnives()
+
+    /**
      * "Whenever you waterbend, earthbend, firebend, or airbend, …" (CR 701.65b / 701.66b /
      * 701.67c / 702.189b). Fires once for each bend [player] performs whose type is in [types].
      * The default matches all four (Avatar Aang); pass a narrower set for a single-element variant

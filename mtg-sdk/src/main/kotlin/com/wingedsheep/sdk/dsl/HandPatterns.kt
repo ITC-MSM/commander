@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.scripting.effects.ChooseActionEffect
 import com.wingedsheep.sdk.scripting.effects.Chooser
 import com.wingedsheep.sdk.scripting.effects.CompositeEffect
 import com.wingedsheep.sdk.scripting.effects.ConditionalOnCollectionEffect
+import com.wingedsheep.sdk.scripting.effects.ConniveEffect
 import com.wingedsheep.sdk.scripting.effects.DrawCardsEffect
 import com.wingedsheep.sdk.scripting.effects.DrawUpToEffect
 import com.wingedsheep.sdk.scripting.effects.Effect
@@ -631,12 +632,21 @@ object HandPatterns {
     /**
      * Connive (CR 701.50): draw a card, then discard a card. If the discarded card
      * is a nonland, put a +1/+1 counter on [target].
+     *
+     * The pipeline is wrapped in [ConniveEffect] so the keyword action has a name and a subject —
+     * [target] is the conniving permanent (CR 701.50a puts the counter on it). That is what lets a
+     * printed replacement reach it ("If a creature you control would connive, instead …", Leader,
+     * Super-Genius) and what lets the connive emit its CR 701.50f event. The pipeline itself is
+     * unchanged and still runs step for step; see [ConniveEffect].
      */
-    fun connive(target: EffectTarget = EffectTarget.Self): CompositeEffect = connivePipeline(
-        AddCountersEffect(
-            counterType = Counters.PLUS_ONE_PLUS_ONE,
-            count = 1,
-            target = target
+    fun connive(target: EffectTarget = EffectTarget.Self): Effect = ConniveEffect(
+        subject = target,
+        body = connivePipeline(
+            AddCountersEffect(
+                counterType = Counters.PLUS_ONE_PLUS_ONE,
+                count = 1,
+                target = target
+            )
         )
     )
 
@@ -650,6 +660,11 @@ object HandPatterns {
      * gate, so the player only picks a creature once a nonland card has actually been discarded —
      * never up front, and never when the discard turns out to be a land (or the hand was empty). The
      * counter then lands on that [EffectTarget.PipelineTarget].
+     *
+     * Deliberately *not* wrapped in [ConniveEffect], unlike [connive]: Teo's printed text spells the
+     * looting out ("draw a card, then discard a card…") and never uses the word connive, so it is
+     * not the keyword action. Wrapping it would wrongly expose it to "if a creature you control
+     * would connive" replacements and make it fire connive triggers.
      *
      * @param requirement what the chosen counter recipient must satisfy (e.g.
      *   `Targets.CreatureYouControl`).
