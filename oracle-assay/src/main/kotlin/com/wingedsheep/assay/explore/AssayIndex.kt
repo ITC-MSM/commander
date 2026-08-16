@@ -109,10 +109,11 @@ class AssayIndex(
          * uses so the explorer's headline numbers are the gate's numbers rather than a second
          * implementation that could disagree with it.
          *
-         * @param progress called with cards-seen counts so the UI can show the sweep running instead
-         *   of a blank page for five seconds.
+         * @param progress cards seen so far, and how far through the bulk file that is, so the UI can
+         *   show the sweep running instead of a blank page for five seconds. See
+         *   [OracleCorpus.cards] for why the fraction is of bytes rather than of a card total.
          */
-        fun build(refresh: Boolean = false, progress: (Int) -> Unit = {}): AssayIndex {
+        fun build(refresh: Boolean = false, progress: (Int, Double) -> Unit = { _, _ -> }): AssayIndex {
             val started = System.currentTimeMillis()
             val touchstone = Touchstone()
             val fineness = FinenessReport.builder()
@@ -124,7 +125,8 @@ class AssayIndex(
             val byShape = Grouping()
 
             var seen = 0
-            for (card in OracleCorpus.cards(refresh = refresh)) {
+            var fraction = 0.0
+            for (card in OracleCorpus.cards(refresh = refresh, onProgress = { fraction = it })) {
                 val result = touchstone.assay(card)
                 fineness.add(result)
                 cards.add(card)
@@ -143,9 +145,11 @@ class AssayIndex(
                 }
 
                 seen++
-                if (seen % 2000 == 0) progress(seen)
+                // Every 250 rather than every 2,000: the status poll is 700ms and the whole sweep is
+                // ~5s, so a coarser tick makes a progress bar that moves in three visible jumps.
+                if (seen % 250 == 0) progress(seen, fraction)
             }
-            progress(seen)
+            progress(seen, 1.0)
 
             // Cheap — reads the goldens' `// name` headers without decoding a single definition, so
             // the implemented/unimplemented split of every decline family costs one directory read.

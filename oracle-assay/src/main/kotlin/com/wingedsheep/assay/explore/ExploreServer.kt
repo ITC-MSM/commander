@@ -52,6 +52,7 @@ class ExploreServer(private val port: Int, private val refresh: Boolean = false)
     @Volatile private var index: AssayIndex? = null
     @Volatile private var goldens: GoldenIndex = GoldenIndex.load()
     @Volatile private var swept = 0
+    @Volatile private var sweptFraction = 0.0
     @Volatile private var failure: String? = null
 
     /** Guarded by [differentialLock]; computed on first request because it is the expensive one. */
@@ -98,7 +99,10 @@ class ExploreServer(private val port: Int, private val refresh: Boolean = false)
 
     private fun sweep() {
         try {
-            index = AssayIndex.build(refresh = refresh) { swept = it }
+            index = AssayIndex.build(refresh = refresh) { cards, fraction ->
+                swept = cards
+                sweptFraction = fraction
+            }
         } catch (e: Exception) {
             // A sweep that cannot start — no cached bulk file and no network — must leave the page
             // usable rather than a dead socket: the live parser and the rule tree need no corpus.
@@ -110,6 +114,7 @@ class ExploreServer(private val port: Int, private val refresh: Boolean = false)
         mapOf(
             "ready" to JsonPrimitive(index != null),
             "swept" to JsonPrimitive(index?.report?.cards ?: swept),
+            "progress" to JsonPrimitive(if (index != null) 1.0 else sweptFraction),
             "goldens" to JsonPrimitive(goldens.size),
             "error" to JsonPrimitive(failure ?: ""),
         )
@@ -121,6 +126,7 @@ class ExploreServer(private val port: Int, private val refresh: Boolean = false)
             mapOf(
                 "indexing" to JsonPrimitive(true),
                 "swept" to JsonPrimitive(swept),
+                "progress" to JsonPrimitive(sweptFraction),
                 "error" to JsonPrimitive(failure ?: ""),
             )
         )
