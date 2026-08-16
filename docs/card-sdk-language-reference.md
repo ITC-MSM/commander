@@ -4929,7 +4929,7 @@ Dominant back faces that "stay" instead self-exile on their final chapter, dodgi
   gone by the time the event is observed, so only its last-known token-ness (`GameEvent.ExploitedEvent.sacrificedWasToken`,
   snapshotted before the zone change) is available. See the `Exploit` keyword entry for full wiring.
 - `PlusOneCountersPlacedOnYourCreature` — Hardened Scales shape (+1/+1 only).
-- `countersPlacedOn(filter = Creature.youControl(), counterType = Counters.ANY, firstTimeEachTurn = true, binding = ANY, placedBy = null)`
+- `countersPlacedOn(filter = Creature.youControl(), counterType = Counters.ANY, firstTimeEachTurn = true, binding = ANY, placedBy = null, batch = false)`
   — fires when counters of any type (`Counters.ANY` wildcard) land on a matching permanent;
   `firstTimeEachTurn` gates it to the first counter placement on *that* permanent this turn
   (engine-tracked via `ReceivedCountersThisTurnComponent`). `binding = SELF` restricts it to the
@@ -4944,6 +4944,30 @@ Dominant back faces that "stay" instead self-exile on their final chapter, dodgi
   low-value paths carry no placer (saga lore counters, poison counters on players) and never match a
   non-null `placedBy`. Default `null` matches any placer. Triggering permanent is
   `EffectTarget.TriggeringEntity`. Stalwart Successor shape.
+  `batch = true` switches the multiplicity from the per-permanent template ("… on **a** creature you
+  control") to the **batch** template ("… on **one or more** other Heroes you control" — Invisible
+  Woman, Sue Storm), CR 603.2c. A single effect that puts counters on several matching permanents
+  emits one `CountersAddedEvent` per recipient; batched, that is one firing instead of one per
+  recipient. Handled by `TriggerDetector.detectCountersPlacedBatchTriggers`; the per-event
+  `TriggerMatcher` path skips batch patterns. Every other axis *narrows* the batch rather than
+  discarding it — a batch that also placed counters of another type, by another player, or on
+  non-matching permanents still fires once on its matching placements alone — via the same
+  `TriggerMatcher.matchesCountersPlacedAxes` the per-permanent path uses, so the two multiplicities
+  can't drift apart. The first matching recipient is bound as `EffectTarget.TriggeringEntity`, all
+  matching recipients as the captured collection (countable with
+  `DynamicAmount.DistinctEntitiesInCollections(TRIGGER_CAPTURED_COLLECTION)`, as with
+  `UntapEvent(batch)`), and the trigger's counter count is the batch **total** across those
+  placements. Separate resolutions are separate batches, so two effects each placing counters in one
+  turn fire it twice. Pass `firstTimeEachTurn = false` explicitly — the facade defaults it to `true`,
+  which silently narrows a batch template that has no printed "first time this turn" rider.
+  Mirrors `TapEvent(batch)` / `UntapEvent(batch)` / `dealsDamage(batch)`, except those three are
+  ANY-binding only while this one also honors `SELF` and `OTHER`.
+  Caveat on no-op placements: a permanent that can't have counters put on it stays out of the batch
+  only when the placing executor checks `ProjectedState.canReceiveCounters` before emitting.
+  `AddCountersExecutor` and its single-target siblings do; `AddCountersToCollectionExecutor` and
+  `DistributeCountersAmongTargetsExecutor` — the multi-recipient paths — do not, and would put a
+  no-op placement in the batch. That gap is per-executor and pre-dates the batch pass (those
+  executors also add the counters to the component), so don't rely on the batch to filter it.
 - `CountersPlacedOnThis` — "whenever you put one or more counters on ~" (any kind, SELF-bound).
   Aragorn, Company Leader.
 - `countersRemovedFrom(filter = Any, counterType = Counters.ANY, lastRemoved = false, binding = ANY)`

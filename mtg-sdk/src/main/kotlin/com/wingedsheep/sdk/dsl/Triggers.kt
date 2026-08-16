@@ -1359,6 +1359,15 @@ object Triggers {
      * Successor shape. Pass a different [filter] or `firstTimeEachTurn = false` to reuse for
      * other "counters placed" payoffs. The triggering permanent is available via
      * [com.wingedsheep.sdk.scripting.targets.EffectTarget.TriggeringEntity].
+     *
+     * [batch] switches from the per-permanent template to the "on **one or more** <permanents>"
+     * batch template (CR 603.2c): one effect placing counters on several matching permanents then
+     * fires the ability once instead of once per permanent — see
+     * [CountersPlacedEvent.batch] for what the batch does and does not collapse. Pass
+     * `firstTimeEachTurn = false` alongside it: this facade defaults that to `true` (the Stalwart
+     * Successor shape it was written for), and a batch template essentially never carries a printed
+     * "for the first time this turn" rider, so leaving the default in place silently narrows the
+     * batch to placements that were each the first on their recipient this turn.
      */
     fun countersPlacedOn(
         filter: GameObjectFilter = GameObjectFilter.Creature.youControl(),
@@ -1366,12 +1375,14 @@ object Triggers {
         firstTimeEachTurn: Boolean = true,
         binding: TriggerBinding = TriggerBinding.ANY,
         placedBy: Player? = null,
+        batch: Boolean = false,
     ): TriggerSpec = TriggerSpec(
         event = CountersPlacedEvent(
             counterType = counterType,
             filter = filter,
             firstTimeEachTurn = firstTimeEachTurn,
             placedBy = placedBy,
+            batch = batch,
         ),
         binding = binding
     )

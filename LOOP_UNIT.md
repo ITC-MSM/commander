@@ -1,72 +1,101 @@
-# u30 — Captain Mar-Vell, Space-Born (conditional flash-cast permission)
+# loop-msh-u31 — Invisible Woman, Sue Storm (MSH)
 
-Branch `loop-msh-u30`, rebased onto `loop-msh-u28` (local, **not** merged upstream). u28 itself sits
-on `origin/main`, so `main` is an ancestor, but u28's commits are not upstream yet — this waits for
-u28 to land before it can be opened on its own. Reviewer: diff with `git diff loop-msh-u28...HEAD`.
+**Kind:** feature · **Base branch:** `loop-msh-u30` (local, **not** merged upstream). u30 sits on u28
+which sits on `origin/main`, so `main` *is* an ancestor now, but the u28/u30 commits below this
+branch are not upstream yet — this waits for them to land before it can be opened on its own.
+Reviewer: diff with `git diff loop-msh-u30...HEAD`.
 
-The rebase moved the card and its scenario test into the per-era modules that `origin/main` now
-uses: `mtg-sets/2026/src/main/.../msh/cards/CaptainMarVellSpaceBorn.kt` and
-`mtg-sets/2026/tests/src/test/.../CaptainMarVellSpaceBornScenarioTest.kt`. The mechanic-level
-`ConditionalFlashGrantTest.kt` uses only locally-defined cards and stays in `rules-engine`.
+The rebase onto the current u30 moved the card and its scenario test into the per-era modules that
+`origin/main` now uses: `mtg-sets/2026/src/main/.../msh/cards/InvisibleWomanSueStorm.kt` and
+`mtg-sets/2026/tests/src/test/.../InvisibleWomanSueStormScenarioTest.kt` (both byte-identical to
+their pre-rebase contents). The mechanic-level `CountersPlacedBatchTriggerTest.kt` uses
+`GameTestDriver`/`TestCards` and locally-defined cards, so it stays in
+`rules-engine/src/test/.../triggers/`.
 
-- **Primitive:** flash permission now honours a `ConditionalStaticAbility`-wrapped
-  `GrantFlashToSpellType`. Lives in
-  `rules-engine/src/main/kotlin/com/wingedsheep/engine/mechanics/FlashTypeGrants.kt`, which grew from
-  a single `nthGateAllows` helper into the whole `hasGrantedFlash` decision.
-- **Design route:** unwrap at the read site, **not** a `condition` field on `GrantFlashToSpellType`.
-  Flash has exactly two read sites (`CastPermissionUtils.hasGrantedFlash`,
-  `CastZoneResolver.hasGrantedFlash`); they were *semantically* identical copies of each other
-  (same control flow, guards, ordering and early returns — differing only in comments and one local's
-  name, `def` vs `cardDef`), and both now delegate to one `FlashTypeGrants.hasGrantedFlash` — so
-  teaching that one function to unwrap fixes every conditional flash grant at once and cannot drift.
-  The deciding factor is that shared owner, not a read-site count (`MayCastSelfFromZones` has two
-  sites as well and still folded its gate into the type).
-- **Consolidation:** the two read sites were duplicated in full (own-`conditionalFlash` check,
-  turn-scoped `FlashGrantsThisTurnComponent` grants, battlefield scan). They are now thin delegates.
-  That is a real dedup, not a drive-by refactor — it is the structural guarantee that both learned
-  the unwrap.
-- **Card:** `Captain Mar-Vell, Space-Born` (MSH #12, {4}{W} 4/4 Legendary Kree Soldier Hero, flying +
-  vigilance). "Cosmic Awareness — As long as an opponent has cast a spell this turn, you may cast
-  spells as though they had flash." Modelled as `staticAbility { condition = CompareAmounts(
-  SpellsCastThisTurn(EachOpponent) >= 1); ability = GrantFlashToSpellType(Any, controllerOnly = true) }`.
-  No new condition or dynamic-amount type was needed; `Player.EachOpponent` sums across opponents, so
-  `>= 1` is multiplayer-correct for "an opponent".
-- **Tests:** `ConditionalFlashGrantTest.kt` (mechanic-level, synthetic cards — closed gate, gate
-  opening mid-turn, open gate offered *and* castable, no leak past the grant's filter, granter
-  leaving revokes) and `CaptainMarVellSpaceBornScenarioTest.kt` (the card — closed gate, opponent's
-  spell opens it, no-Mar-Vell control, `controllerOnly`). Every assertion goes through
-  `getLegalActions`/`legalActions` or the cast handler, never the static-ability list.
-- **Mutation check:** with `activeGrant`'s `ConditionalStaticAbility` branch stubbed to `null` (the
-  pre-fix behaviour) 4 of 5 mechanic tests and the card's positive test went red; the closed-gate and
-  control tests correctly stayed green. Mutation reverted and both suites re-run green.
-- **Gate (re-run after the rebase onto `loop-msh-u28`; the earlier 11,273-test green predated it and
-  no longer applied — the base changed and the card/test moved modules):** an engine change, so
-  `:rules-engine:test :mtg-sets:scenarioTest`, run as `scripts/gradle-locked` (`just` doesn't parse on
-  this box) with `--no-build-cache`.
-  - `:rules-engine:test` — **2739 tests, 0 failures, 0 ignored**, task executed rather than cached.
-  - All 9 era scenario suites ran; `:mtg-sets:2026:tests:test` (this card's module, plus the rest of
-    MSH on the u28 stack) green in full, `CaptainMarVellSpaceBornScenarioTest` 6/6 and
-    `ConditionalFlashGrantTest` 9/9.
-  - The combined run first came back red **from the environment, not the diff**: a
-    `CorruptedCacheException` in the shared `/workspace/.gradle/9.6.1/fileHashes/fileHashes.bin`, the
-    `:rules-engine:test` executor killed (`exit value 13`, no assertion failure), a dead daemon, and
-    three 120 s `TimeoutCancellationException`s (`AgelessSentinelsTest`, `AbattoirGhoulScenarioTest`,
-    `AbhorrentOculusScenarioTest` — the known contention flake; load average peaked at 10.4 with a
-    sibling container's Kotlin daemon in the log). All three pass standalone in ~20 s, and
-    `:rules-engine:test` is clean on its own re-run. Shared cache state was not touched.
-  - **Not covered:** `:game-server`, `:ai`, `:gym*`, `:oracle-assay`, and the web client. The diff
-    reaches only `rules-engine` and `mtg-sets`, so those are out of scope by the module rule.
-- **Also found silently inert, NOT fixed (out of scope, reported):** the same missing unwrap makes a
-  `ConditionalStaticAbility`-wrapped grant inert in `FlashbackGrants`, `WarpGrants`, `MiracleGrants`,
-  `MayhemGrants`, `WebSlinging`, `GrantedKeywordResolver` (`GrantKeywordToOwnSpells`),
-  `CostCalculator` (`MayCastWithoutPayingManaCost`) and the `MayCastFromGraveyard` read sites in
-  `CastFromZoneEnumerator` / `CastZoneResolver`. None has a gated card today, so nothing is currently
-  broken by it — but the next author to gate one hits the same trap.
-- **Review corrections (see `build/pr/loop-msh-u30-correction.md`):** the battlefield scan now uses
-  `state.controlledBattlefield(playerId)` (a stolen granter follows its controller, CR 109.5; a
-  phased-out granter grants nothing, CR 702.26b) and `effectiveStaticAbilities(classLevel)` (a Class
-  card's level-gated grant is no longer inert), each with its own test. Added tests for
-  `EachOpponent` vs `Any`, the turn boundary, and the granter-controller condition context; the eight
-  still-inert sibling families are now warned about in `docs/card-sdk-language-reference.md`.
-- **Unsure / deliberately not changed:**
-  - No manual playthrough in the web client and no e2e; a playtest scenario JSON is shipped instead.
+## The primitive
+
+- **What:** `EventPattern.CountersPlacedEvent.batch: Boolean = false` — the "one or more counters on
+  **one or more** permanents" batch multiplicity (CR 603.2c), alongside the existing per-permanent
+  reading of the same pattern.
+- **Where:**
+  - SDK: `mtg-sdk/.../scripting/EventPattern.kt` (the `batch` field + description branch),
+    `mtg-sdk/.../dsl/Triggers.kt` (`countersPlacedOn(..., batch = false)`).
+  - Engine: `rules-engine/.../event/TriggerDetector.kt` →
+    `detectCountersPlacedBatchTriggers` (new pass, called from `detectTriggers` next to the tap/untap
+    batch passes); `rules-engine/.../event/TriggerMatcher.kt` → the per-event `CountersPlacedEvent`
+    branch returns `false` for batch patterns, and both paths narrow through one shared
+    `matchesCountersPlacedAxes` (the `DamageTriggerDetector` → `matchesDealsDamageTrigger` shape), so
+    the two multiplicities cannot drift apart.
+- **Pattern followed:** the existing `TapEvent.batch` / `UntapEvent.batch` / `DealsDamageEvent.batch`
+  shape — same flag name, same "per-event matcher skips it, dedicated detector fires once" wiring,
+  same `TriggerCategory` reused (`COUNTERS_ADDED`; no new category, exactly like tap/untap).
+  **No new batching mechanism was invented.**
+- **Semantics:** every other axis (counter type, `placedBy`, `firstTimeEachTurn`, recipient filter,
+  `TriggerBinding.SELF/OTHER`) *narrows* the batch rather than discarding it. The first matching
+  recipient is bound as the triggering entity, all matching recipients as `capturedEntityIds` (as
+  `detectUntapBatchTriggers` does); `TriggerContext.counterCount` is the batch total.
+  Separate resolutions are separate detection passes and so separate batches. A placement of zero
+  counters is not a placement, for either multiplicity.
+
+## The card
+
+Invisible Woman, Sue Storm — {4}{W} Legendary Creature — Human Hero 2/5, lifelink, MSH #17.
+"Whenever you put one or more +1/+1 counters on one or more other Heroes you control, you may create
+a 0/4 colorless Wall creature token with defender." Uses `Triggers.countersPlacedOn(batch = true,
+placedBy = Player.You, binding = OTHER, filter = Creature.youControl().withSubtype(HERO))` plus
+`optional = true` and `Effects.CreateToken`. No new effect vocabulary.
+
+## Tests
+
+- `rules-engine/src/test/kotlin/.../triggers/CountersPlacedBatchTriggerTest.kt` — the primitive,
+  driven directly through `TriggerDetector.detectTriggers` with synthesized `CountersAddedEvent`s.
+  Every case is asserted against a **per-permanent twin observer** built from the same pattern with
+  `batch = false`, so the flag itself is what the assertions discriminate.
+- `rules-engine/src/test/kotlin/.../scenarios/InvisibleWomanSueStormScenarioTest.kt` — the card
+  end-to-end, driven by an **inline** "put a +1/+1 counter on each creature you control" sorcery.
+  (Cathars' Crusade has that exact printed text and was the first driver, but it re-triggers off the
+  Wall entering — a genuine loop with this card — so the driver is inline.)
+- `manual-scenarios/sets/msh/loop-msh-u31-invisible-woman-sue-storm.json` — playtest scenario. It
+  *does* pair Invisible Woman with Cathars' Crusade, deliberately, so the loop is visible by hand.
+- **Mutation-checked:** batching switched off in the detector → the three multi-recipient engine
+  assertions and the "one Wall" scenario assertion went red, the other 14 stayed green; restored.
+
+## Gate
+
+`just test` after the review corrections — **10959 tests, 1 failed**, and that one is the known
+`ConniveTargetingTest` `TimeoutCancellationException` contention flake, which passes alone
+(`just test-class ConniveTargetingTest` → 2/0). Not cache-served: 21 tasks executed, every module's
+`test` task ran except `:mtg-search:`/`:mtgish-tooling:` (inputs untouched).
+`just rebless-cards` moved no snapshot (`MSH.json` was already blessed and the card is unchanged);
+`just check-card-printing "Invisible Woman, Sue Storm"` ok; backlog ticked + `just fix-backlog`
+(MSH 260/276).
+
+**Still owed — that green no longer covers this tree.** The branch has since been rebased onto the
+rewritten `loop-msh-u30` (new base, and the card/test changed modules), so the 10959-test result
+above is stale. This diff reaches `mtg-sdk` (`EventPattern`, `Triggers`) as well as `rules-engine`
+and `mtg-sets`, so the re-run is the **full** `test` suite, not the engine-only gate — and it must
+be re-run again after the eventual rebase onto `origin/main`.
+
+## Things I'm unsure about / worth a reviewer's eye
+
+- `counterCount` on a batch trigger is the *sum* over the collapsed placements. No shipped card reads
+  it from a batch trigger, so this is a judgement call, not a verified requirement.
+- The batch is scoped **per detection pass**, not per placing effect. Two effects that somehow
+  resolve into the same event batch would collapse into one firing. I did not find a path where that
+  happens (each resolution triggers its own detection pass) but I did not exhaustively prove it.
+- I audited the `CountersAddedEvent` emission sites by grep and read the multi-recipient ones
+  (`AddCountersToCollectionExecutor`, `ProliferateExecutor`, `AddCountersExecutor` via
+  `ForEachInGroup`). I did **not** individually verify every one of the ~25 emit sites.
+- Pre-existing, **not** touched by this unit: `AddCountersToCollectionExecutor` and
+  `DistributeCountersAmongTargetsExecutor` do not check `ProjectedState.canReceiveCounters`, unlike
+  `AddCountersExecutor` / `AddCountersUpToExecutor` / `ProliferateExecutor` / `ExploreEffectExecutor`.
+  The check is per-executor, not central, so a no-op placement from those two *would* enter a batch —
+  the engine KDoc, the SDK reference and the scenario-test comment all now say so instead of claiming
+  the batch excludes it by construction. My scenario test for the prohibition goes through the
+  `ForEachInGroup` + `AddCounters` path, which does guard, and proves only that path. Fixing those two
+  executors is its own unit: they also add the counters to the component.
+- No mtgish bridge entry was added: the counters-placed IR tag
+  (`WhenAnyNumberOfCountersOfTypeArePutOnAPermanent`) is already `supported`, and this is a
+  multiplicity variation on it rather than a new capability or IR tag. The emitter still declines
+  non-SELF subjects to SCAFFOLD, which is the correct behaviour.
+- No web-client change: the card surfaces only the existing optional-trigger yes/no decision.

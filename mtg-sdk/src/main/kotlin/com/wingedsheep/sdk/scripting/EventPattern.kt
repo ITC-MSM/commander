@@ -1836,6 +1836,10 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
      * Examples:
      * - "Whenever you put one or more +1/+1 counters on a creature you control"
      *   → CountersPlacedEvent(counterType = Counters.PLUS_ONE_PLUS_ONE, filter = GameObjectFilter.Creature.youControl())
+     * - "Whenever you put one or more +1/+1 counters on one or more other Heroes you control"
+     *   → CountersPlacedEvent(counterType = Counters.PLUS_ONE_PLUS_ONE, placedBy = Player.You,
+     *     filter = GameObjectFilter.Creature.youControl().withSubtype(Subtype.HERO), batch = true)
+     *     with [TriggerBinding.OTHER]
      *
      * @property counterType The counter type to match (e.g., "+1/+1", "LORE")
      * @property filter Filter for the permanent receiving counters
@@ -1863,7 +1867,43 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
          * (for a permanent entering with counters) that permanent's controller (CR 122.6a).
          * A placement the engine can't attribute to a placer never matches a non-null selector.
          */
-        val placedBy: Player? = null
+        val placedBy: Player? = null,
+        /**
+         * Batch ("one or more counters on **one or more** permanents") semantics — CR 603.2c: an
+         * ability triggers only once each time its trigger event occurs, and a single effect that
+         * puts counters on several permanents at once is one such event.
+         *
+         * The two multiplicity shapes this flag selects, both of which the printed text writes as
+         * "one or more counters" (the counters on a *single* permanent are always one event, so
+         * that half needs no flag):
+         *  - `false` (default): the *per-permanent* template "Whenever one or more counters are put
+         *    on **a** creature you control" (Stalwart Successor, Exemplar of Light) — fires once for
+         *    EACH permanent that received counters, so an effect hitting three creatures fires it
+         *    three times.
+         *  - `true`: the *batch* template "Whenever you put one or more counters on **one or more**
+         *    creatures you control" (Invisible Woman, Sue Storm) — fires at most **once** per
+         *    placement batch no matter how many permanents received counters or how many counters
+         *    each got.
+         *
+         * Handled by the dedicated batch pass (`TriggerDetector.detectCountersPlacedBatchTriggers`);
+         * the per-event path skips it. Every other axis ([counterType], [placedBy],
+         * [firstTimeEachTurn], [filter], and the ability's [TriggerBinding]) *narrows* the batch
+         * rather than discarding it: a batch that also placed counters on non-matching permanents
+         * still fires, once, on its matching ones alone. Separate resolutions are separate batches,
+         * so two effects each placing counters this turn fire it twice. The matching recipients are
+         * exposed as the trigger's captured collection, as [UntapEvent.batch] does.
+         *
+         * Note that [firstTimeEachTurn] defaults to `true` in the `Triggers.countersPlacedOn(...)`
+         * facade but `false` here: a batch template essentially never carries a printed "for the
+         * first time this turn" rider, so pass `firstTimeEachTurn = false` explicitly when building
+         * one through the facade.
+         *
+         * Mirrors [TapEvent.batch] / [UntapEvent.batch] / [DealsDamageEvent.batch], except that
+         * those three are ANY-binding only while this one also honors [TriggerBinding.SELF]
+         * ("counters put on this permanent") and [TriggerBinding.OTHER] ("on one or more **other**
+         * Heroes you control").
+         */
+        val batch: Boolean = false
     ) : EventPattern {
         override val description: String = buildString {
             val typeLabel = if (counterType == com.wingedsheep.sdk.core.Counters.ANY) "" else "$counterType "
@@ -1872,7 +1912,16 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
             } else {
                 append("one or more ${typeLabel}counters are placed on ")
             }
-            append(describeObjectForEvent(filter))
+            // Batch wording names the recipients in the plural ("… on one or more Heroes you
+            // control"); the per-permanent wording names a single one ("… on a creature you
+            // control"). Both keep the controller as a suffix rather than the prefix
+            // `filter.description` would put it in ("… on one or more you control Hero creature").
+            if (batch) {
+                append("one or more ")
+                append(describeObjectsForEvent(filter))
+            } else {
+                append(describeObjectForEvent(filter))
+            }
             if (firstTimeEachTurn) append(" for the first time this turn")
         }
     }
@@ -2660,4 +2709,48 @@ internal fun describeObjectForEvent(filter: GameObjectFilter): String {
     val article = if (baseParts.first().lowercaseChar() in "aeiou") "an" else "a"
 
     return "$article $baseParts$controllerSuffix"
+}
+
+/**
+ * The plural counterpart of [describeObjectForEvent], for the "one or more <things>" batch event
+ * wordings: no article, head noun pluralized, controller still a suffix rather than the prefix
+ * `GameObjectFilter.description` renders it as.
+ *
+ * Examples (each prefixed with "one or more " by the caller):
+ *   GameObjectFilter.Creature                                 -> "creatures"
+ *   GameObjectFilter.Creature.youControl()                    -> "creatures you control"
+ *   GameObjectFilter.Creature.youControl().withSubtype(HERO)  -> "Hero creatures you control"
+ */
+internal fun describeObjectsForEvent(filter: GameObjectFilter): String {
+    val baseParts = buildString {
+        filter.statePredicates.forEach { append(it.description); append(" ") }
+        filter.cardPredicates.forEach { append(it.description); append(" ") }
+    }.trim()
+
+    val controllerSuffix = filter.controllerPredicate
+        ?.description
+        ?.takeIf { it.isNotEmpty() }
+        ?.let { " $it" }
+        ?: ""
+
+    if (baseParts.isEmpty()) {
+        return "cards or permanents$controllerSuffix"
+    }
+
+    // Only the head noun (the last word) pluralizes: "Hero creature" -> "Hero creatures". The type
+    // and subtype words these descriptions are built from are all regular plurals.
+    val head = baseParts.substringAfterLast(' ')
+    val plural = when {
+        head.endsWith("s", ignoreCase = true) -> head
+        head.endsWith("ch", ignoreCase = true) || head.endsWith("sh", ignoreCase = true) ||
+            head.endsWith("x", ignoreCase = true) || head.endsWith("z", ignoreCase = true) -> "${head}es"
+        else -> "${head}s"
+    }
+    val pluralized = if (baseParts.contains(' ')) {
+        "${baseParts.substringBeforeLast(' ')} $plural"
+    } else {
+        plural
+    }
+
+    return "$pluralized$controllerSuffix"
 }
