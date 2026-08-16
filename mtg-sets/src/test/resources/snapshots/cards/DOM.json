@@ -4200,7 +4200,7 @@
                     "type": "CostAtomWrapper",
                     "atom": {
                         "type": "AtomSacrifice",
-                        "filter": "creature Saproling",
+                        "filter": "permanent Saproling",
                         "count": 2
                     }
                 },

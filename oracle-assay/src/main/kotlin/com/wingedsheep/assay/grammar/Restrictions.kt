@@ -7,12 +7,9 @@ import com.wingedsheep.assay.syntax.oneOf
 import com.wingedsheep.assay.syntax.phrase
 import com.wingedsheep.assay.syntax.separated
 import com.wingedsheep.sdk.core.Step
-import com.wingedsheep.sdk.dsl.Costs
 import com.wingedsheep.sdk.scripting.ActivationRestriction
 import com.wingedsheep.sdk.scripting.AdditionalCost
 import com.wingedsheep.sdk.scripting.CastRestriction
-import com.wingedsheep.sdk.scripting.GameObjectFilter
-import com.wingedsheep.sdk.scripting.costs.CostAtom
 
 /**
  * When a spell may be cast and when an ability may be activated — the two restriction vocabularies,
@@ -78,26 +75,26 @@ object Restrictions {
      * "As an additional cost to cast this spell, sacrifice a creature." — the line that adds to what
      * a spell costs rather than to what it does.
      *
-     * The noun phrase goes through [Filters.indefinite], so "a creature" and "a green creature" are
-     * the same rule; the cost is reconstructed from the filter for the comparison, the same
-     * fail-closed shape [SelfSteps.sacrificeUnless] uses on the pay-cost side.
+     * ### The clause after the comma is [Costs.additional], not a second cost vocabulary
+     *
+     * It used to be one rule that read "sacrifice {filter}" and nothing else, while the activation
+     * side of the grammar read a longer list of the *same English* — two vocabularies for the one
+     * thing `CostAtom`'s own KDoc calls "the one cost language". So this slots the shared atom
+     * vocabulary, lifted into `AdditionalCost`, and every row [Costs] gains reaches this line for
+     * free: "discard a card", "exile two creature cards from your graveyard", "pay 3 life",
+     * "return a permanent you control to its owner's hand".
+     *
+     * A *list* of one, because `CardScript.additionalCosts` is a list and the sentence spells one
+     * cost. The joined forms Oracle also prints — "sacrifice a creature **or pay** {3}{B}",
+     * "you may exile any number of …" — are `AdditionalCost.Choice` and the optional rail rather
+     * than a run over this, and they decline until they have rules of their own.
      */
-    val additionalCostLine: Phrase<List<AdditionalCost>> = run {
-        fun costFor(filter: GameObjectFilter) = listOf(Costs.additional.SacrificePermanent(filter))
-        phrase(
-            "as an additional cost to cast this spell, sacrifice {filter}.",
-            name = "an additional cost line",
-        ) {
-            slot("filter", Filters.indefinite)
-            build { costFor(it.value("filter")) }
-            match { costs ->
-                val atom = (costs.singleOrNull() as? AdditionalCost.Atom)?.atom as? CostAtom.Sacrifice
-                    ?: return@match null
-                if (costs != costFor(atom.filter)) return@match null
-                bind("filter" to atom.filter)
-            }
+    val additionalCostLine: Phrase<List<AdditionalCost>> =
+        phrase("as an additional cost to cast this spell, {cost}.", name = "an additional cost line") {
+            slot("cost", Costs.additional)
+            build { listOf(it.value<AdditionalCost>("cost")) }
+            match { costs -> costs.singleOrNull()?.let { bind("cost" to it) } }
         }
-    }
 
     // ---------------------------------------------------------------------------------------
     // Activation

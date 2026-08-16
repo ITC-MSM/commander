@@ -112,6 +112,22 @@ ability, so every step rule enriches every trigger rule for free. Any new senten
 activated abilities, modal spells, "you may", delayed triggers — must slot the existing effect
 grammar rather than restating the verbs. The win is multiplicative; restating is additive and rots.
 
+The **cost band** is the same rule applied to a *vocabulary* rather than to a clause, and it is the
+one to copy when the SDK has already done the factoring. `CostAtom`'s KDoc calls itself "the one cost
+language" — one payable thing, carried into each context by that context's own `Atom` wrapper — and
+the grammar had it the other way round: `Costs` read a list of cost sentences and
+`Restrictions.additionalCostLine` read one of them again, separately. The fix was to make the
+vocabulary a `Phrase<CostAtom>` and the two contexts two lifts of it. Read the SDK's own type before
+writing a second vocabulary; if it already unifies the thing, the grammar's factoring should be the
+same shape, and what stays outside the shared part (the self-costs, which a spell cannot pay) is then
+a stated rule rather than a gap.
+
+The band's other transferable finding is about **case**. A construct that lives in one sentence
+position can spell its second capitalization as an `alternate` — parseable, never printed. The moment
+it reaches a second position that spelling may become *canonical* there, and an `alternate` would
+print the wrong one. Make the capitalization a parameter of the family and instantiate it per
+position, exactly as `SelfSteps.retargetable` is instantiated per anaphor position.
+
 **Layer over a predicate bag; never compose.** A `GameObjectFilter` is a bag with no canonical
 spelling, so two rules that can each print *part* of one value leave printing underdetermined. The
 answer in `Filters` is layering: one alternation spells the whole type phrase, exactly one optional
