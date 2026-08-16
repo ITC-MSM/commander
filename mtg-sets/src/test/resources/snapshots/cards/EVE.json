@@ -1,0 +1,51 @@
+// Archon of Justice
+{
+    "name": "Archon of Justice",
+    "manaCost": "{3}{W}{W}",
+    "typeLine": "Creature — Archon",
+    "oracleText": "Flying\nWhen this creature dies, exile target permanent.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target permanent"
+                    },
+                    "destination": "Exile"
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "permanent"
+                    },
+                    "id": "target permanent"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "1",
+        "rarity": "RARE",
+        "artist": "Jason Chan",
+        "flavorText": "In dark times, Truth bears a blade.",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/b/ab707e7f-8ab5-43f1-9428-6a17c1b672fa.jpg?1783942696"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}

@@ -38,6 +38,187 @@
     ]
 }
 
+// Lava Serpent
+{
+    "name": "Lava Serpent",
+    "manaCost": "{5}{R}",
+    "typeLine": "Creature — Elemental Serpent",
+    "oracleText": "Haste\nCycling {2} ({2}, Discard this card: Draw a card.)",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 5
+    },
+    "keywords": [
+        "HASTE"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Cycling",
+            "cost": "{2}"
+        }
+    ],
+    "metadata": {
+        "collectorNumber": "124",
+        "artist": "Jason A. Engle",
+        "flavorText": "Lavabrink's boiling moat is a deterrent for most, and a relaxing bath for one.",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/0/00ebd57f-7f7c-41b0-aa56-511c1816bc14.jpg?1783931047"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Light of Hope
+{
+    "name": "Light of Hope",
+    "manaCost": "{W}",
+    "typeLine": "Instant",
+    "oracleText": "Choose one —\n• You gain 4 life.\n• Destroy target enchantment.\n• Put a +1/+1 counter on target creature.",
+    "script": {
+        "spellEffect": {
+            "type": "Modal",
+            "modes": [
+                {
+                    "effect": {
+                        "type": "GainLife",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 4
+                        }
+                    },
+                    "description": "You gain 4 life."
+                },
+                {
+                    "effect": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "ContextTarget",
+                            "index": 0
+                        },
+                        "destination": "Graveyard",
+                        "byDestruction": true
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "enchantment"
+                            }
+                        }
+                    ],
+                    "description": "Destroy target enchantment."
+                },
+                {
+                    "effect": {
+                        "type": "AddCounters",
+                        "counterType": "+1/+1",
+                        "count": 1,
+                        "target": {
+                            "type": "ContextTarget",
+                            "index": 0
+                        }
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "creature"
+                            }
+                        }
+                    ],
+                    "description": "Put a +1/+1 counter on target creature."
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "20",
+        "artist": "Kimonas Theodossiou",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/c/bcb00599-e082-49b0-88f3-ef91b75595e4.jpg?1783931088"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Neutralize
+{
+    "name": "Neutralize",
+    "manaCost": "{1}{U}{U}",
+    "typeLine": "Instant",
+    "oracleText": "Counter target spell.\nCycling {2} ({2}, Discard this card: Draw a card.)",
+    "keywordAbilities": [
+        {
+            "type": "Cycling",
+            "cost": "{2}"
+        }
+    ],
+    "script": {
+        "spellEffect": "Counter",
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": {},
+                    "zone": "Stack"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "59",
+        "rarity": "UNCOMMON",
+        "artist": "Yongjae Choi",
+        "flavorText": "On Ikoria, reactive magic can make the difference between barely grazed and really dead.",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/4/0430da3c-9460-4b62-ae28-2e7e6f4d06a4.jpg?1783931073"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Raking Claws
+{
+    "name": "Raking Claws",
+    "manaCost": "{1}{R}",
+    "typeLine": "Instant",
+    "oracleText": "Target creature gains double strike until end of turn.\nCycling {2} ({2}, Discard this card: Draw a card.)",
+    "keywordAbilities": [
+        {
+            "type": "Cycling",
+            "cost": "{2}"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "GrantKeyword",
+            "keyword": "DOUBLE_STRIKE",
+            "target": {
+                "type": "BoundVariable",
+                "name": "target"
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "131",
+        "artist": "Slawomir Maniak",
+        "flavorText": "\"How many claws does a monster have? Exactly one more than you've accounted for.\" —Alux, Skysail defender",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/e/6eb0d9a2-f9bb-4d8e-a1ca-896c42f8ad56.jpg?1783931044"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Savai Sabertooth
 {
     "name": "Savai Sabertooth",
@@ -55,6 +236,79 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Shredded Sails
+{
+    "name": "Shredded Sails",
+    "manaCost": "{1}{R}",
+    "typeLine": "Instant",
+    "oracleText": "Choose one —\n• Destroy target artifact.\n• Shredded Sails deals 4 damage to target creature with flying.\nCycling {2} ({2}, Discard this card: Draw a card.)",
+    "keywordAbilities": [
+        {
+            "type": "Cycling",
+            "cost": "{2}"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "Modal",
+            "modes": [
+                {
+                    "effect": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target artifact"
+                        },
+                        "destination": "Graveyard",
+                        "byDestruction": true
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "artifact"
+                            },
+                            "id": "target artifact"
+                        }
+                    ],
+                    "description": "Destroy target artifact"
+                },
+                {
+                    "effect": {
+                        "type": "DealDamage",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 4
+                        },
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target creature with flying"
+                        }
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "creature kw:flying"
+                            },
+                            "id": "target creature with flying"
+                        }
+                    ],
+                    "description": "Shredded Sails deals 4 damage to target creature with flying"
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "136",
+        "artist": "Titus Lunter",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/b/8b10219a-aa72-4431-9a6a-984109a605c8.jpg?1783931044"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 

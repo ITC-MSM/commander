@@ -1,3 +1,67 @@
+// Aradara Express
+{
+    "name": "Aradara Express",
+    "manaCost": "{5}",
+    "typeLine": "Artifact — Vehicle",
+    "oracleText": "Menace\nCrew 4 (Tap any number of creatures you control with total power 4 or more: This Vehicle becomes an artifact creature until end of turn.)",
+    "creatureStats": {
+        "power": 8,
+        "toughness": 6
+    },
+    "keywords": [
+        "MENACE",
+        "CREW"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "CREW",
+            "n": 4
+        }
+    ],
+    "metadata": {
+        "collectorNumber": "195",
+        "artist": "Adam Paquette",
+        "flavorText": "It glides around the city, a sublime combination of elegance and utility.",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/f/5fc0d1f7-c81c-4329-92b7-c4df227cc56c.jpg?1783937163",
+        "rulings": [
+            {
+                "date": "2017-09-29",
+                "text": "Each Vehicle is printed with a power and toughness, but it's not a creature. If it becomes a creature (most likely through its crew ability), it will have that power and toughness."
+            },
+            {
+                "date": "2017-09-29",
+                "text": "If an effect causes a Vehicle to become an artifact creature with a specified power and toughness, that effect overwrites the Vehicle's printed power and toughness."
+            },
+            {
+                "date": "2017-09-29",
+                "text": "Vehicle is an artifact type, not a creature type. A Vehicle that's crewed won't normally have any creature type."
+            },
+            {
+                "date": "2017-09-29",
+                "text": "Once a player announces that they are activating a crew ability, no player may take other actions until the ability has been paid for. Notably, players can't try to stop the ability by changing a creature's power or by removing or tapping a creature."
+            },
+            {
+                "date": "2017-09-29",
+                "text": "Any untapped creature you control can be tapped to pay a crew cost, even one that just came under your control."
+            },
+            {
+                "date": "2017-09-29",
+                "text": "You may tap more creatures than necessary to activate a crew ability."
+            },
+            {
+                "date": "2017-09-29",
+                "text": "Creatures that crew a Vehicle aren't attached to it or related in any other way. Effects that affect the Vehicle, such as by destroying it or giving it a +1/+1 counter, don't affect the creatures that crewed it."
+            },
+            {
+                "date": "2017-09-29",
+                "text": "Once a Vehicle becomes a creature, it behaves exactly like any other artifact creature. It can't attack unless you've controlled it continuously since your turn began, it can block if it's untapped, it can be tapped to pay a Vehicle's crew cost, and so on."
+            }
+        ]
+    },
+    "colorIdentityOverride": []
+}
+
 // Armorcraft Judge
 {
     "name": "Armorcraft Judge",
@@ -621,6 +685,58 @@
     ]
 }
 
+// Impeccable Timing
+{
+    "name": "Impeccable Timing",
+    "manaCost": "{1}{W}",
+    "typeLine": "Instant",
+    "oracleText": "Impeccable Timing deals 3 damage to target attacking or blocking creature.",
+    "script": {
+        "spellEffect": {
+            "type": "DealDamage",
+            "amount": {
+                "type": "Fixed",
+                "amount": 3
+            },
+            "target": {
+                "type": "BoundVariable",
+                "name": "target"
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": {
+                        "cardPredicates": [
+                            "IsCreature"
+                        ],
+                        "statePredicates": [
+                            {
+                                "type": "StateOr",
+                                "predicates": [
+                                    "IsAttacking",
+                                    "IsBlocking"
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "id": "target"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "19",
+        "artist": "Chris Rallis",
+        "flavorText": "When Baral constructed his trap for Chandra, he did not account for the arrival of an enormous leonin wielding a twin-headed axe.",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/9/2921c95e-bf2f-409b-a41d-86d873690562.jpg?1783937231"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Inspiring Vantage
 {
     "name": "Inspiring Vantage",
@@ -691,6 +807,60 @@
     ]
 }
 
+// Kujar Seedsculptor
+{
+    "name": "Kujar Seedsculptor",
+    "manaCost": "{1}{G}",
+    "typeLine": "Creature — Elf Druid",
+    "oracleText": "When this creature enters, put a +1/+1 counter on target creature you control.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature ctrl:you"
+                    },
+                    "id": "target"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "159",
+        "artist": "Anna Steinbauer",
+        "flavorText": "Every leaf, tree, and building in Kujar has been placed to achieve maximum harmony, in accordance with the elvish philosophy known as the Great Conduit.",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/8/a8664c65-77ca-4881-959a-e1923e1a6b98.jpg?1783937178",
+        "rulings": [
+            {
+                "date": "2016-09-20",
+                "text": "Kujar Seedsculptor can be the target of its own triggered ability."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Prakhata Club Security
 {
     "name": "Prakhata Club Security",
@@ -709,6 +879,83 @@
     "colorIdentityOverride": [
         "BLACK"
     ]
+}
+
+// Self-Assembler
+{
+    "name": "Self-Assembler",
+    "manaCost": "{5}",
+    "typeLine": "Artifact Creature — Assembly",
+    "oracleText": "When this creature enters, you may search your library for an Assembly-Worker creature card, reveal it, put it into your hand, then shuffle.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Library",
+                                    "filter": "creature Assembly-Worker"
+                                },
+                                "storeAs": "searchable"
+                            },
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "searchable",
+                                "selection": {
+                                    "type": "ChooseUpTo",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "storeSelected": "found"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "found",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Hand"
+                                },
+                                "revealed": true
+                            },
+                            "ShuffleLibrary",
+                            "EmitLibrarySearchedEvent"
+                        ]
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "232",
+        "artist": "Noah Bradley",
+        "flavorText": "It sees itself in all of its creations.",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/d/3d05c6c2-4bb3-468a-b23c-b0425a9982f1.jpg?1783937148",
+        "rulings": [
+            {
+                "date": "2018-03-16",
+                "text": "Self-Assembler's ability can find any creature card with the Assembly-Worker subtype, not only creature cards named Assembly-Worker. Notably, it can't find Mishra's Factory."
+            }
+        ]
+    },
+    "colorIdentityOverride": []
 }
 
 // Spirebluff Canal
@@ -838,6 +1085,87 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Weldfast Wingsmith
+{
+    "name": "Weldfast Wingsmith",
+    "manaCost": "{3}{U}",
+    "typeLine": "Creature — Human Artificer",
+    "oracleText": "Whenever an artifact you control enters, this creature gains flying until end of turn.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "artifact ctrl:you",
+                    "to": "Battlefield"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "GrantKeyword",
+                    "keyword": "FLYING",
+                    "target": "Self"
+                },
+                "descriptionOverride": "This creature gains flying until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "69",
+        "artist": "Dan Murayama Scott",
+        "flavorText": "\"Airships are too confining. If I'm in the sky, I want to feel the wind in my hair and taste the aether.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/b/8b115a65-e273-4264-9db7-317e1855f492.jpg?1783937211"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Wily Bandar
+{
+    "name": "Wily Bandar",
+    "manaCost": "{G}",
+    "typeLine": "Creature — Cat Monkey",
+    "oracleText": "{2}{G}: This creature gains indestructible until end of turn. (Damage and effects that say \"destroy\" don't destroy it.)",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{2}{G}"
+                    }
+                },
+                "effect": {
+                    "type": "GrantKeyword",
+                    "keyword": "INDESTRUCTIBLE",
+                    "target": "Self"
+                },
+                "descriptionOverride": "This creature gains indestructible until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "175",
+        "artist": "Yeong-Hao Han",
+        "flavorText": "Part feline, part primate, all trouble.",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/a/cac6ece3-9889-47fa-9140-420b4f31dd1b.jpg?1783937171"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 

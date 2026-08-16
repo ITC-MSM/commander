@@ -18,6 +18,70 @@
     ]
 }
 
+// Divine Verdict
+{
+    "name": "Divine Verdict",
+    "manaCost": "{3}{W}",
+    "typeLine": "Instant",
+    "oracleText": "Destroy target attacking or blocking creature.",
+    "script": {
+        "spellEffect": {
+            "type": "MoveToZone",
+            "target": {
+                "type": "BoundVariable",
+                "name": "creature"
+            },
+            "destination": "Graveyard",
+            "byDestruction": true
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": {
+                        "cardPredicates": [
+                            "IsCreature"
+                        ],
+                        "statePredicates": [
+                            {
+                                "type": "StateOr",
+                                "predicates": [
+                                    "IsAttacking",
+                                    "IsBlocking"
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "id": "creature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "8",
+        "artist": "Kev Walker",
+        "flavorText": "Giants and pit spawn attempted to topple the cathedral's pillars. The fine grit of their remains still swirls in the breeze outside.",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/8/48444e14-c73b-47d1-9c55-0ff4dc3c6034.jpg?1783942404",
+        "rulings": [
+            {
+                "date": "2012-07-01",
+                "text": "Destroying a blocking creature won't cause any of the creatures it was blocking to become unblocked. They won't deal combat damage to the defending player or planeswalker (unless they have trample)."
+            },
+            {
+                "date": "2009-10-01",
+                "text": "An “attacking creature” is one that has been declared as an attacker this combat, or one that was put onto the battlefield attacking this combat. Unless that creature leaves combat, it continues to be an attacking creature through the end of combat step, even if the player it was attacking has left the game, or the planeswalker it was attacking has left combat."
+            },
+            {
+                "date": "2009-10-01",
+                "text": "A “blocking creature” is one that has been declared as a blocker this combat, or one that was put onto the battlefield blocking this combat. Unless that creature leaves combat, it continues to be a blocking creature through the end of combat step, even if the creature or creatures it was blocking are no longer on the battlefield or have otherwise left combat."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Elite Vanguard
 {
     "name": "Elite Vanguard",
@@ -115,6 +179,71 @@
         "artist": "Jon Foster",
         "flavorText": "Some wizards compete not to summon the most interesting creatures, but to create the most interesting aftereffects when a summons goes awry.",
         "imageUri": "https://cards.scryfall.io/normal/front/c/2/c231101e-6620-46fc-a0ad-a53291d12dc2.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Merfolk Sovereign
+{
+    "name": "Merfolk Sovereign",
+    "manaCost": "{1}{U}{U}",
+    "typeLine": "Creature — Merfolk Noble",
+    "oracleText": "Other Merfolk creatures you control get +1/+1.\n{T}: Target Merfolk creature can't be blocked this turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "GrantKeyword",
+                    "keyword": "CANT_BE_BLOCKED",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature Merfolk"
+                        },
+                        "id": "target"
+                    }
+                ],
+                "descriptionOverride": "Target Merfolk creature can't be blocked this turn."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 1,
+                "toughnessBonus": 1,
+                "filter": {
+                    "baseFilter": "creature Merfolk ctrl:you",
+                    "excludeSelf": true
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "62",
+        "rarity": "RARE",
+        "artist": "Jesper Ejsing",
+        "flavorText": "\"The sharks envy our ferocity. The eels envy our cunning.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/9/b9826a2e-361e-4701-9177-0907c0c6dc9f.jpg?1783942390",
+        "rulings": [
+            {
+                "date": "2009-10-01",
+                "text": "To have any effect, Merfolk Sovereign's activated ability must be activated before the declare blockers step begins. Once a Merfolk has become blocked, activating Merfolk Sovereign's ability won't change that."
+            }
+        ]
     },
     "colorIdentityOverride": [
         "BLUE"

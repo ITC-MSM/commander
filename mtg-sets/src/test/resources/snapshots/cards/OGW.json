@@ -358,3 +358,43 @@
         "BLACK"
     ]
 }
+
+// Warden of Geometries
+{
+    "name": "Warden of Geometries",
+    "manaCost": "{4}",
+    "typeLine": "Creature — Eldrazi Drone",
+    "oracleText": "Vigilance\n{T}: Add {C}. ({C} represents colorless mana.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "keywords": [
+        "VIGILANCE"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddColorlessMana",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true,
+                "descriptionOverride": "{T}: Add {C}."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "11",
+        "artist": "Jason Felix",
+        "flavorText": "The wastelands disorient even the most experienced scouts, making them easy prey for Kozilek's drones.",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/7/c7f517b9-ac10-4710-8ef1-ced1253d5ecf.jpg?1783937928"
+    },
+    "colorIdentityOverride": []
+}

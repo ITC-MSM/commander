@@ -406,6 +406,54 @@
     ]
 }
 
+// Mudbutton Torchrunner
+{
+    "name": "Mudbutton Torchrunner",
+    "manaCost": "{2}{R}",
+    "typeLine": "Creature — Goblin Warrior",
+    "oracleText": "When this creature dies, it deals 3 damage to any target.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 3
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "any target"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "AnyTarget",
+                    "id": "any target"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "185",
+        "artist": "Steve Ellis",
+        "flavorText": "The oil sloshes against his skull as he nears his destination: the Frogtosser Games and the lighting of the Flaming Boggart.",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/0/50575eab-6c23-4f63-9667-458416c5caa5.jpg?1783942871"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Nameless Inversion
 {
     "name": "Nameless Inversion",
@@ -519,6 +567,31 @@
         "artist": "Mark Tedin",
         "flavorText": "\"We see the same sky as you, just through a different lens.\"",
         "imageUri": "https://cards.scryfall.io/normal/front/b/a/ba6b6fc5-5077-4812-b8e9-906783dbaf67.jpg?1783942899"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Sentinels of Glen Elendra
+{
+    "name": "Sentinels of Glen Elendra",
+    "manaCost": "{3}{U}",
+    "typeLine": "Creature — Faerie Soldier",
+    "oracleText": "Flash\nFlying",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "keywords": [
+        "FLASH",
+        "FLYING"
+    ],
+    "metadata": {
+        "collectorNumber": "84",
+        "artist": "Howard Lyon",
+        "flavorText": "Some say the valley of Glen Elendra is mythical, and that rumors of its existence are nothing but a faerie prank. Others say it is the fae's most fiercely guarded secret.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/4/f48daf7e-2f8e-4179-a145-a6b36dd11d44.jpg?1783942897"
     },
     "colorIdentityOverride": [
         "BLUE"

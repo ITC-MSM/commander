@@ -290,6 +290,65 @@
     "colorIdentityOverride": []
 }
 
+// Sigil of the Empty Throne
+{
+    "name": "Sigil of the Empty Throne",
+    "manaCost": "{3}{W}{W}",
+    "typeLine": "Enchantment",
+    "oracleText": "Whenever you cast an enchantment spell, create a 4/4 white Angel creature token with flying.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            "IsEnchantment"
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 4,
+                    "toughness": 4,
+                    "colors": [
+                        "WHITE"
+                    ],
+                    "creatureTypes": [
+                        "Angel"
+                    ],
+                    "keywords": [
+                        "FLYING"
+                    ]
+                },
+                "descriptionOverride": "Whenever you cast an enchantment spell, create a 4/4 white Angel creature token with flying."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "18",
+        "rarity": "RARE",
+        "artist": "Cyril Van Der Haegen",
+        "flavorText": "When Asha left Bant, she ensured that the world would have protection and order in her absence.",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/c/9c451f63-2827-49fe-9d1d-87c87f7f5f8d.jpg?1783942490",
+        "rulings": [
+            {
+                "date": "2021-03-19",
+                "text": "An ability that triggers when a player casts a spell resolves before the spell that caused it to trigger, but after targets have been chosen for that spell. It resolves even if that spell is countered."
+            },
+            {
+                "date": "2021-03-19",
+                "text": "Because it's not on the battlefield yet, casting Sigil of the Empty Throne won't cause its own ability to trigger."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Valiant Guard
 {
     "name": "Valiant Guard",

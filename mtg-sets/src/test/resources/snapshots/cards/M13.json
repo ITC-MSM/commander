@@ -315,6 +315,93 @@
     ]
 }
 
+// Rummaging Goblin
+{
+    "name": "Rummaging Goblin",
+    "manaCost": "{2}{R}",
+    "typeLine": "Creature — Goblin Rogue",
+    "oracleText": "{T}, Discard a card: Draw a card.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        "CostTap",
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": "AtomDiscard"
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "146",
+        "artist": "Karl Kopinski",
+        "flavorText": "To a goblin, value is based on the four S's: shiny, stabby, smelly, and super smelly.",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/c/cc5b622c-83a4-477e-a99c-2674e2bd6bb9.jpg?1783940480",
+        "rulings": [
+            {
+                "date": "2012-07-01",
+                "text": "Discarding a card is part of the cost to activate Rummaging Goblin's ability. If you don't have a card in your hand, you can't pay this part of the cost and you can't activate the ability."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Searing Spear
+{
+    "name": "Searing Spear",
+    "manaCost": "{1}{R}",
+    "typeLine": "Instant",
+    "oracleText": "Searing Spear deals 3 damage to any target.",
+    "script": {
+        "spellEffect": {
+            "type": "DealDamage",
+            "amount": {
+                "type": "Fixed",
+                "amount": 3
+            },
+            "target": {
+                "type": "BoundVariable",
+                "name": "target"
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "AnyTarget",
+                "id": "target"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "147",
+        "artist": "Chris Rahn",
+        "flavorText": "Sometimes you die a glorious death with your sword held high. Sometimes you're just target practice.",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/1/11a94b7c-0216-473c-87a6-71e5a64d7799.jpg?1783940479"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Sentinel Spider
 {
     "name": "Sentinel Spider",

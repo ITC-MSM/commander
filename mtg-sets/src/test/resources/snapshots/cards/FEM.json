@@ -1,3 +1,62 @@
+// Goblin Grenade
+{
+    "name": "Goblin Grenade",
+    "manaCost": "{R}",
+    "typeLine": "Sorcery",
+    "oracleText": "As an additional cost to cast this spell, sacrifice a Goblin.\nGoblin Grenade deals 5 damage to any target.",
+    "script": {
+        "spellEffect": {
+            "type": "DealDamage",
+            "amount": {
+                "type": "Fixed",
+                "amount": 5
+            },
+            "target": {
+                "type": "BoundVariable",
+                "name": "any target"
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "AnyTarget",
+                "id": "any target"
+            }
+        ],
+        "additionalCosts": [
+            {
+                "type": "AdditionalAtom",
+                "atom": {
+                    "type": "AtomSacrifice",
+                    "filter": "permanent Goblin"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "56a",
+        "artist": "Ron Spencer",
+        "flavorText": "\"According to accepted theory, the Grenade held some kind of flammable mixture and was carried to its target by a hapless Goblin.\" —*Sarpadian Empires, vol. IV*",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/8/8837eaba-9602-4f63-9897-85583fcdcf51.jpg?1783947894",
+        "rulings": [
+            {
+                "date": "2011-09-22",
+                "text": "Players can only respond once Goblin Grenade has been cast and all its costs have been paid. No one can try and destroy the Goblin to prevent you from casting Goblin Grenade."
+            },
+            {
+                "date": "2011-09-22",
+                "text": "The Goblin you sacrifice to cast Goblin Grenade doesn't have to be a creature. For example, you could sacrifice Boggart Shenanigans (a kindred enchantment with the subtype Goblin)."
+            },
+            {
+                "date": "2004-10-04",
+                "text": "You can't sacrifice more than one Goblin to get a greater effect."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Icatian Priest
 {
     "name": "Icatian Priest",

@@ -141,6 +141,51 @@
     ]
 }
 
+// Order of the Golden Cricket
+{
+    "name": "Order of the Golden Cricket",
+    "manaCost": "{1}{W}",
+    "typeLine": "Creature — Kithkin Knight",
+    "oracleText": "Whenever this creature attacks, you may pay {W}. If you do, it gains flying until end of turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.MayPay",
+                        "cost": {
+                            "type": "PayManaCost",
+                            "cost": "{W}"
+                        }
+                    },
+                    "then": {
+                        "type": "GrantKeyword",
+                        "keyword": "FLYING",
+                        "target": "Self"
+                    }
+                },
+                "descriptionOverride": "Whenever this creature attacks, you may pay {W}. If you do, it gains flying until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "19",
+        "artist": "Mark Zug",
+        "flavorText": "\"Should you take it in mind to ride a springjack, remember: there are easier ways to fly, and harder ways to break your skull.\" —Lann of Cloverdell",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/d/5d1c2f16-5661-4c17-8265-f4b88ff1e833.jpg?1783942804"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Taurean Mauler
 {
     "name": "Taurean Mauler",

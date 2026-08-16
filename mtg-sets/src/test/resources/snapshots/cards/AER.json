@@ -1,3 +1,27 @@
+// Alley Strangler
+{
+    "name": "Alley Strangler",
+    "manaCost": "{2}{B}",
+    "typeLine": "Creature — Aetherborn Rogue",
+    "oracleText": "Menace",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "keywords": [
+        "MENACE"
+    ],
+    "metadata": {
+        "collectorNumber": "52",
+        "artist": "Enora Mercier",
+        "flavorText": "\"You never know what day might be your last.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/1/a131d558-5f6b-448b-a378-1882e2d02bd2.jpg?1783936767"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Bastion Enforcer
 {
     "name": "Bastion Enforcer",

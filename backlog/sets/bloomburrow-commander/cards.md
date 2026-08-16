@@ -2,7 +2,7 @@
 
 **Set Size:** 312 cards
 **Release Date:** August 2, 2024
-**Implemented:** 114 / 312
+**Implemented:** 118 / 312
 | Color      | Total | Done |
 |------------|-------|------|
 | White      | 37    | 0    |
@@ -69,7 +69,7 @@
 - [ ] Chittering Witch
 - [ ] Chitterspitter
 - [x] Cinder Glade
-- [ ] Circuit Mender
+- [x] Circuit Mender
 - [x] Clifftop Retreat
 - [ ] Cloudblazer
 - [ ] Coiling Oracle
@@ -145,7 +145,7 @@
 - [ ] Inferno Titan
 - [ ] Ink-Eyes, Servant of Oni
 - [ ] Insatiable Frugivore
-- [ ] Inspiring Overseer
+- [x] Inspiring Overseer
 - [ ] Intellectual Offering
 - [ ] Ishai, Ojutai Dragonspeaker
 - [ ] Izzet Signet
@@ -241,7 +241,7 @@
 - [ ] Seaside Citadel
 - [ ] Second Harvest
 - [ ] Secret Rendezvous
-- [ ] Selfless Spirit
+- [x] Selfless Spirit
 - [ ] Selvala, Explorer Returned
 - [ ] Shamanic Revelation
 - [x] Sheltered Thicket
@@ -257,7 +257,7 @@
 - [ ] Solemn Simulacrum
 - [ ] Sphinx of Enlightenment
 - [x] Spine of Ish Sah
-- [ ] Spirited Companion
+- [x] Spirited Companion
 - [ ] Spore Frog
 - [ ] Squirrel Mob
 - [ ] Squirrel Nest

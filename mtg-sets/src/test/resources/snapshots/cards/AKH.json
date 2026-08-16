@@ -83,6 +83,45 @@
     ]
 }
 
+// Electrify
+{
+    "name": "Electrify",
+    "manaCost": "{3}{R}",
+    "typeLine": "Instant",
+    "oracleText": "Electrify deals 4 damage to target creature.",
+    "script": {
+        "spellEffect": {
+            "type": "DealDamage",
+            "amount": {
+                "type": "Fixed",
+                "amount": 4
+            },
+            "target": {
+                "type": "BoundVariable",
+                "name": "target creature"
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target creature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "129",
+        "artist": "Craig J Spearing",
+        "flavorText": "\"Some hid from the storm. I embraced it and learned its name.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/1/21c67128-2e5a-4c97-b265-6f3c73b4997a.jpg?1783936490"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Enigma Drake
 {
     "name": "Enigma Drake",
@@ -166,6 +205,38 @@
     ]
 }
 
+// Hieroglyphic Illumination
+{
+    "name": "Hieroglyphic Illumination",
+    "manaCost": "{3}{U}",
+    "typeLine": "Instant",
+    "oracleText": "Draw two cards.\nCycling {U} ({U}, Discard this card: Draw a card.)",
+    "keywordAbilities": [
+        {
+            "type": "Cycling",
+            "cost": "{U}"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "DrawCards",
+            "count": {
+                "type": "Fixed",
+                "amount": 2
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "57",
+        "artist": "Raoul Vitale",
+        "flavorText": "\"The answers are here. This is the way through the trial.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/6/c60a0e75-53bb-43e4-890f-0e1972a7e0b9.jpg?1783936520"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Hyena Pack
 {
     "name": "Hyena Pack",
@@ -183,6 +254,129 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Liliana's Mastery
+{
+    "name": "Liliana's Mastery",
+    "manaCost": "{3}{B}{B}",
+    "typeLine": "Enchantment",
+    "oracleText": "Zombies you control get +1/+1.\nWhen this enchantment enters, create two 2/2 black Zombie creature tokens.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "power": 2,
+                    "toughness": 2,
+                    "colors": [
+                        "BLACK"
+                    ],
+                    "creatureTypes": [
+                        "Zombie"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/b/5/b5bd6905-79be-4d2c-a343-f6e6a181b3e6.jpg?1783936411"
+                },
+                "descriptionOverride": "When this enchantment enters, create two 2/2 black Zombie creature tokens."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 1,
+                "toughnessBonus": 1,
+                "filter": {
+                    "baseFilter": "permanent Zombie ctrl:you"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "98",
+        "rarity": "RARE",
+        "artist": "Kieran Yanner",
+        "flavorText": "\"There are so many of them. It seems they've just been waiting for someone to serve.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/c/5c57b3b8-71f1-479c-b7f7-508fee2b5b0f.jpg?1783936503"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Lord of the Accursed
+{
+    "name": "Lord of the Accursed",
+    "manaCost": "{2}{B}",
+    "typeLine": "Creature — Zombie",
+    "oracleText": "Other Zombies you control get +1/+1.\n{1}{B}, {T}: All Zombies gain menace until end of turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}{B}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": "permanent Zombie"
+                        }
+                    },
+                    "body": {
+                        "type": "GrantKeyword",
+                        "keyword": "MENACE",
+                        "target": "Self"
+                    }
+                }
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 1,
+                "toughnessBonus": 1,
+                "filter": {
+                    "baseFilter": "permanent Zombie ctrl:you",
+                    "excludeSelf": true
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "99",
+        "rarity": "UNCOMMON",
+        "artist": "Grzegorz Rutkowski",
+        "flavorText": "The Curse of Wandering leaves only hatred.",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/9/3941562d-3e39-4746-9a18-d3aa6d3468b0.jpg?1783936503"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 

@@ -63,6 +63,83 @@
     ]
 }
 
+// Giant Ladybug
+{
+    "name": "Giant Ladybug",
+    "manaCost": "{2}{G}",
+    "typeLine": "Creature — Insect",
+    "oracleText": "Reach\nWhen this creature enters, you may search your library for a basic land card, reveal it, then shuffle and put that card on top.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 1
+    },
+    "keywords": [
+        "REACH"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Library",
+                                    "filter": "basicland"
+                                },
+                                "storeAs": "searchable"
+                            },
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "searchable",
+                                "selection": {
+                                    "type": "ChooseUpTo",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "storeSelected": "found"
+                            },
+                            "ShuffleLibrary",
+                            {
+                                "type": "MoveCollection",
+                                "from": "found",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Library",
+                                    "placement": "Top"
+                                },
+                                "revealed": true
+                            },
+                            "EmitLibrarySearchedEvent"
+                        ]
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "39",
+        "artist": "Marta Nael",
+        "flavorText": "It's bad luck to step on one, but worse luck to have one step on you.",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/7/67f55ef7-8479-4d56-9801-cb4fd5526e73.jpg?1783919180"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Ingenious Leonin
 {
     "name": "Ingenious Leonin",
@@ -201,6 +278,72 @@
         "rarity": "UNCOMMON",
         "artist": "Justyna Dura",
         "imageUri": "https://cards.scryfall.io/normal/front/3/e/3eee6f29-ef06-47f6-99af-fb0ff88f09d0.jpg?1782699338"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Spectral Hunt-Caller
+{
+    "name": "Spectral Hunt-Caller",
+    "manaCost": "{4}{G}",
+    "typeLine": "Creature — Wolf Spirit",
+    "oracleText": "{5}{G}: Creatures you control get +1/+1 and gain trample until end of turn.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{5}{G}"
+                    }
+                },
+                "effect": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        }
+                    },
+                    "body": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "ModifyStats",
+                                "powerModifier": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                },
+                                "toughnessModifier": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                },
+                                "target": "Self"
+                            },
+                            {
+                                "type": "GrantKeyword",
+                                "keyword": "TRAMPLE",
+                                "target": "Self"
+                            }
+                        ]
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "45",
+        "artist": "Uriah Voth",
+        "flavorText": "The nightsong begins with a lone howl, but soon swells to a deafening chorus.",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/5/358fc99b-b2e5-4967-ba5a-ab2caee1751c.jpg?1783919178"
     },
     "colorIdentityOverride": [
         "GREEN"

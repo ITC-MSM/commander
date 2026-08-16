@@ -187,6 +187,58 @@
     ]
 }
 
+// Goldhound
+{
+    "name": "Goldhound",
+    "manaCost": "{R}",
+    "typeLine": "Artifact Creature — Treasure Dog",
+    "oracleText": "First strike\nMenace (This creature can't be blocked except by two or more creatures.)\n{T}, Sacrifice this creature: Add one mana of any color.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "FIRST_STRIKE",
+        "MENACE"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        "CostTap",
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": "AddManaOfChoice",
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "108",
+        "artist": "Donato Giancola",
+        "flavorText": "The staccato clatter of its metal claws on pavement is unmistakable.",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/0/c059e4b4-1542-4b5c-810a-9f0abac5792b.jpg?1783923118",
+        "rulings": [
+            {
+                "date": "2022-04-29",
+                "text": "Even when it is on a creature, Treasure is an artifact type and not a creature type. Similarly, Dog is always a creature type and not an artifact type."
+            },
+            {
+                "date": "2022-04-29",
+                "text": "Since Goldhound is a creature, its {T} ability can't be activated the turn that it enters the battlefield or the turn a player gains control of it unless it has haste."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Inspiring Overseer
 {
     "name": "Inspiring Overseer",

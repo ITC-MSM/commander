@@ -135,6 +135,122 @@
     ]
 }
 
+// Faerie Formation
+{
+    "name": "Faerie Formation",
+    "manaCost": "{4}{U}",
+    "typeLine": "Creature — Faerie",
+    "oracleText": "Flying\n{3}{U}: Create a 1/1 blue Faerie creature token with flying. Draw a card.",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 4
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{3}{U}"
+                    }
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "CreateToken",
+                            "power": 1,
+                            "toughness": 1,
+                            "colors": [
+                                "BLUE"
+                            ],
+                            "creatureTypes": [
+                                "Faerie"
+                            ],
+                            "keywords": [
+                                "FLYING"
+                            ],
+                            "imageUri": "https://cards.scryfall.io/normal/front/d/1/d1c0556e-ba3c-4a8e-b704-8eaa7c4dba1c.jpg?1782727481"
+                        },
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "{3}{U}: Create a 1/1 blue Faerie creature token with flying. Draw a card."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "316",
+        "rarity": "RARE",
+        "artist": "Ryan Yee",
+        "flavorText": "The throng flitted from castle to castle, leaving a trail of star-crossed love, damaging rumors, and missing heirlooms in their wake.",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/5/15709316-7382-46b9-9b70-53a5147e7051.jpg?1783932552"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Fierce Witchstalker
+{
+    "name": "Fierce Witchstalker",
+    "manaCost": "{2}{G}{G}",
+    "typeLine": "Creature — Wolf",
+    "oracleText": "Trample (This creature can deal excess combat damage to the player or planeswalker it's attacking.)\nWhen this creature enters, create a Food token. (It's an artifact with \"{2}, {T}, Sacrifice this token: You gain 3 life.\")",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "TRAMPLE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Food"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "154",
+        "artist": "Nicholas Gregory",
+        "flavorText": "While the realm has laws, in the wilds there are other ways of balancing power.",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/6/d63a6be2-ae9a-4758-9d5c-0297ef9af57c.jpg?1783932611",
+        "rulings": [
+            {
+                "date": "2024-11-08",
+                "text": "Food is an artifact type. Even though it appears on some creatures, it's never a creature type."
+            },
+            {
+                "date": "2024-11-08",
+                "text": "You can't sacrifice a Food to pay multiple costs. For example, you can't sacrifice a Food token to activate its own ability and also to activate Maraleaf Rider's ability."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Gingerbrute
 {
     "name": "Gingerbrute",
@@ -374,6 +490,67 @@
     ]
 }
 
+// Locthwain Gargoyle
+{
+    "name": "Locthwain Gargoyle",
+    "manaCost": "{1}",
+    "typeLine": "Artifact Creature — Gargoyle",
+    "oracleText": "{4}: This creature gets +2/+0 and gains flying until end of turn.",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 3
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{4}"
+                    }
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "ModifyStats",
+                            "powerModifier": {
+                                "type": "Fixed",
+                                "amount": 2
+                            },
+                            "toughnessModifier": {
+                                "type": "Fixed",
+                                "amount": 0
+                            },
+                            "target": "Self"
+                        },
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "FLYING",
+                            "target": "Self"
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "225",
+        "artist": "Nils Hamm",
+        "flavorText": "\"As the traitor hurried across the courtyard, its eyes snapped open. It was time to pay the queen a visit.\" —*Beyond the Great Henge*",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/2/02551bee-335c-4bf7-b38e-67dd71d1d567.jpg?1783932583",
+        "rulings": [
+            {
+                "date": "2019-10-04",
+                "text": "You can activate Locthwain Gargoyle's ability multiple times during one turn, even if it already has flying."
+            }
+        ]
+    },
+    "colorIdentityOverride": []
+}
+
 // Raging Redcap
 {
     "name": "Raging Redcap",
@@ -511,6 +688,80 @@
     ]
 }
 
+// Shimmer Dragon
+{
+    "name": "Shimmer Dragon",
+    "manaCost": "{4}{U}{U}",
+    "typeLine": "Creature — Dragon",
+    "oracleText": "Flying\nAs long as you control four or more artifacts, this creature has hexproof. (It can't be the target of spells or abilities your opponents control.)\nTap two untapped artifacts you control: Draw a card.",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 6
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomTapPermanents",
+                        "count": 2,
+                        "filter": "artifact"
+                    }
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "descriptionOverride": "Tap two untapped artifacts you control: Draw a card."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "GrantKeyword",
+                    "keyword": "HEXPROOF",
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "Self"
+                    }
+                },
+                "condition": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "AggregateBattlefield",
+                        "player": "You",
+                        "filter": "artifact"
+                    },
+                    "operator": "GTE",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 4
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "317",
+        "rarity": "RARE",
+        "artist": "Lie Setiawan",
+        "flavorText": "The indigo dragon gladly traded a bit of its hoard for everlasting moonlight.",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/b/5beffa4c-4188-48c1-8374-3ac3e8ea1900.jpg?1783932551"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Syr Alin, the Lion's Claw
 {
     "name": "Syr Alin, the Lion's Claw",
@@ -566,6 +817,126 @@
     ]
 }
 
+// The Circle of Loyalty
+{
+    "name": "The Circle of Loyalty",
+    "manaCost": "{4}{W}{W}",
+    "typeLine": "Legendary Artifact",
+    "oracleText": "Affinity for Knights (This spell costs {1} less to cast for each Knight you control.)\nCreatures you control get +1/+1.\nWhenever you cast a legendary spell, create a 2/2 white Knight creature token with vigilance.\n{3}{W}, {T}: Create a 2/2 white Knight creature token with vigilance.",
+    "keywords": [
+        "AFFINITY"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "AffinityForSubtype",
+            "forSubtype": "Knight"
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            "IsLegendary"
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 2,
+                    "toughness": 2,
+                    "colors": [
+                        "WHITE"
+                    ],
+                    "creatureTypes": [
+                        "Knight"
+                    ],
+                    "keywords": [
+                        "VIGILANCE"
+                    ]
+                }
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{3}{W}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 2,
+                    "toughness": 2,
+                    "colors": [
+                        "WHITE"
+                    ],
+                    "creatureTypes": [
+                        "Knight"
+                    ],
+                    "keywords": [
+                        "VIGILANCE"
+                    ]
+                }
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 1,
+                "toughnessBonus": 1,
+                "filter": {
+                    "baseFilter": "creature ctrl:you"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "9",
+        "rarity": "MYTHIC",
+        "artist": "Bastien L. Deharme",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/9/79093d00-362d-4d07-8a0a-cf5e1ccf9c0f.jpg?1783932677",
+        "rulings": [
+            {
+                "date": "2019-10-04",
+                "text": "The Circle of Loyalty's triggered ability resolves before the spell that caused it to trigger. It resolves even if that spell is countered."
+            },
+            {
+                "date": "2019-10-04",
+                "text": "The Circle of Loyalty's triggered ability won't trigger when you cast it because it's not on the battlefield yet."
+            },
+            {
+                "date": "2019-10-04",
+                "text": "To determine the total cost of a spell, start with the mana cost or alternative cost you're paying, add any cost increases, then apply any cost reductions. The mana value of the spell remains unchanged, no matter what the total cost to cast it was."
+            },
+            {
+                "date": "2019-10-04",
+                "text": "The cost reduction ability reduces only the generic mana in the relic's cost. The colored mana must still be paid."
+            },
+            {
+                "date": "2019-10-04",
+                "text": "Once you announce that you're casting a spell, no player may take actions until the spell has been paid for. Notably, opponents can't try to change by how much a relic's cost is reduced."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Thrill of Possibility
 {
     "name": "Thrill of Possibility",
@@ -592,6 +963,53 @@
         "artist": "Steve Argyle",
         "flavorText": "\"Remember all the great heroes who were careful and never did anything risky? Me neither.\"\n—Syr Carah, the Bold",
         "imageUri": "https://cards.scryfall.io/normal/front/c/9/c9021f85-7ab4-4a78-a398-1611fe09cd14.jpg?1782707837"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Weaselback Redcap
+{
+    "name": "Weaselback Redcap",
+    "manaCost": "{R}",
+    "typeLine": "Creature — Goblin Knight",
+    "oracleText": "{1}{R}: This creature gets +2/+0 until end of turn.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{1}{R}"
+                    }
+                },
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 0
+                    },
+                    "target": "Self"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "148",
+        "artist": "Grzegorz Rutkowski",
+        "flavorText": "\"I would rather cast myself into the abyss than let my blood stain the cap of those monsters.\" —Syr Alin, the Lion's Claw",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/3/33a78207-fd76-4112-a257-54a25da6f818.jpg?1783932614"
     },
     "colorIdentityOverride": [
         "RED"

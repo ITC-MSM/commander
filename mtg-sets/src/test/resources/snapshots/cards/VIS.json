@@ -163,6 +163,65 @@
     ]
 }
 
+// Infantry Veteran
+{
+    "name": "Infantry Veteran",
+    "manaCost": "{W}",
+    "typeLine": "Creature — Human Soldier",
+    "oracleText": "{T}: Target attacking creature gets +1/+1 until end of turn.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target attacking creature"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature attacking"
+                        },
+                        "id": "target attacking creature"
+                    }
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "9",
+        "artist": "Christopher Rush",
+        "flavorText": "\"The true dishonor for a soldier is surviving the war.\" —Telim'Tor",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/3/0350470b-feea-4e15-bdf0-850b71dbeea6.jpg?1783947006",
+        "rulings": [
+            {
+                "date": "2010-08-15",
+                "text": "An “attacking creature” is one that has been declared as an attacker this combat, or one that was put onto the battlefield attacking this combat. Unless that creature leaves combat, it continues to be an attacking creature through the end of combat step, even if the player it was attacking has left the game, or the planeswalker it was attacking has left combat."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Inspiration
 {
     "name": "Inspiration",
@@ -242,6 +301,69 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Miraculous Recovery
+{
+    "name": "Miraculous Recovery",
+    "manaCost": "{4}{W}",
+    "typeLine": "Instant",
+    "oracleText": "Return target creature card from your graveyard to the battlefield. Put a +1/+1 counter on it.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature card from your graveyard"
+                    },
+                    "destination": "Battlefield",
+                    "fromZone": "Graveyard"
+                },
+                {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature card from your graveyard"
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature own:you",
+                    "zone": "Graveyard"
+                },
+                "id": "target creature card from your graveyard"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "13",
+        "rarity": "UNCOMMON",
+        "artist": "Brian Horton",
+        "flavorText": "\"You stop breathing for just a few minutes and everyone jumps to conclusions.\" —Zarkuu, necrosavant",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/6/76fecb31-790a-4454-918e-5aeb253021f0.jpg?1783947006",
+        "rulings": [
+            {
+                "date": "2018-12-07",
+                "text": "The creature returns to the battlefield without a +1/+1 counter on it. Any abilities that trigger when a creature enters the battlefield will trigger or not as appropriate before it receives the +1/+1 counter and resolve after it has received that counter."
+            },
+            {
+                "date": "2018-12-07",
+                "text": "No player may take actions between the time the creature returns to the battlefield and the time you put a +1/+1 counter on it."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 
@@ -683,6 +805,55 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Uktabi Orangutan
+{
+    "name": "Uktabi Orangutan",
+    "manaCost": "{2}{G}",
+    "typeLine": "Creature — Ape",
+    "oracleText": "When this creature enters, destroy target artifact.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target artifact"
+                    },
+                    "destination": "Graveyard",
+                    "byDestruction": true
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "artifact"
+                    },
+                    "id": "target artifact"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "123",
+        "rarity": "UNCOMMON",
+        "artist": "Una Fricker",
+        "flavorText": "\"Is it true that the apes wear furs of gold when they marry?\" —Rana, Suq'Ata market fool",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/0/101c7d58-43cc-4ebd-87f1-2016fbff56dd.jpg?1783946979"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 

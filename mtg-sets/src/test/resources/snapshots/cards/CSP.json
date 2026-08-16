@@ -130,6 +130,53 @@
     ]
 }
 
+// Simian Brawler
+{
+    "name": "Simian Brawler",
+    "manaCost": "{3}{G}",
+    "typeLine": "Creature — Ape Warrior",
+    "oracleText": "Discard a land card: This creature gets +1/+1 until end of turn.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomDiscard",
+                        "filter": "land"
+                    }
+                },
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": "Self"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "122",
+        "artist": "Warren Mahy",
+        "flavorText": "\"It's odd to see the apes rip down trees to arm themselves in defense of their forests.\" —Taaveti of Kelsinko, elvish hunter",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/f/df2ed9f3-50b1-493b-9c14-0f8ddb4d8c57.jpg?1783943326"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Zur the Enchanter
 {
     "name": "Zur the Enchanter",

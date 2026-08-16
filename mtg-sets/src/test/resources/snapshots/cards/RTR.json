@@ -227,6 +227,42 @@
     ]
 }
 
+// Goblin Rally
+{
+    "name": "Goblin Rally",
+    "manaCost": "{3}{R}{R}",
+    "typeLine": "Sorcery",
+    "oracleText": "Create four 1/1 red Goblin creature tokens.",
+    "script": {
+        "spellEffect": {
+            "type": "CreateToken",
+            "count": {
+                "type": "Fixed",
+                "amount": 4
+            },
+            "power": 1,
+            "toughness": 1,
+            "colors": [
+                "RED"
+            ],
+            "creatureTypes": [
+                "Goblin"
+            ],
+            "imageUri": "https://cards.scryfall.io/normal/front/e/d/ed418a8b-f158-492d-a323-6265b3175292.jpg?1562640121"
+        }
+    },
+    "metadata": {
+        "collectorNumber": "95",
+        "rarity": "UNCOMMON",
+        "artist": "Nic Klein",
+        "flavorText": "You don't so much hire goblins as put ideas in their heads.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/4/e4ec8ada-09a6-449a-ac4a-7d3acbd08014.jpg?1783940356"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Golgari Guildgate
 {
     "name": "Golgari Guildgate",
@@ -607,6 +643,77 @@
     "colorIdentityOverride": [
         "WHITE",
         "GREEN"
+    ]
+}
+
+// Seller of Songbirds
+{
+    "name": "Seller of Songbirds",
+    "manaCost": "{2}{W}",
+    "typeLine": "Creature — Human",
+    "oracleText": "When this creature enters, create a 1/1 white Bird creature token with flying.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [
+                        "WHITE"
+                    ],
+                    "creatureTypes": [
+                        "Bird"
+                    ],
+                    "keywords": [
+                        "FLYING"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/4/b/4b0c59f8-b407-47e7-8885-8c968f4ceecf.jpg?1783914993"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "22",
+        "artist": "Christopher Moeller",
+        "flavorText": "\"Lady Wren is the one merchant in Keyhole Downs who isn't running a scam.\" —Mirela, Azorius hussar",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/a/2a41edbe-4c5a-4535-a082-235dc3ffe60a.jpg?1783940373"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Trained Caracal
+{
+    "name": "Trained Caracal",
+    "manaCost": "{W}",
+    "typeLine": "Creature — Cat",
+    "oracleText": "Lifelink (Damage dealt by this creature also causes you to gain that much life.)",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "LIFELINK"
+    ],
+    "metadata": {
+        "collectorNumber": "27",
+        "artist": "James Ryman",
+        "flavorText": "Some Ravnicans consider carrying a sword to be beneath them, preferring instead a tooth-and-claw escort.",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/9/797e45d1-d17d-40c0-bfdf-ec533784e676.jpg?1783940372"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 

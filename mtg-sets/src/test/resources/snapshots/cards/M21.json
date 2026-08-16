@@ -1,3 +1,103 @@
+// Chandra's Magmutt
+{
+    "name": "Chandra's Magmutt",
+    "manaCost": "{1}{R}",
+    "typeLine": "Creature — Elemental Dog",
+    "oracleText": "{T}: This creature deals 1 damage to target player or planeswalker.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "player or planeswalker"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetPlayerOrPlaneswalker",
+                        "id": "player or planeswalker"
+                    }
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "137",
+        "artist": "Kimonas Theodossiou",
+        "flavorText": "\"Is it purebred? No, but it's pure fire.\" —Chandra Nalaar",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/1/91d3e366-4da5-42c8-bbd5-a0c178c0da28.jpg?1783930694"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Daybreak Charger
+{
+    "name": "Daybreak Charger",
+    "manaCost": "{1}{W}",
+    "typeLine": "Creature — Unicorn",
+    "oracleText": "When this creature enters, target creature gets +2/+0 until end of turn.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 0
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature"
+                    },
+                    "id": "target creature"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "14",
+        "artist": "Forrest Imel",
+        "flavorText": "It's often mistaken for the coming dawn as it gallops across the horizon.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/f/ff87a671-054f-4357-8a62-450d36559a1b.jpg?1783930743"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Garruk's Gorehorn
 {
     "name": "Garruk's Gorehorn",
@@ -191,6 +291,49 @@
     ]
 }
 
+// Library Larcenist
+{
+    "name": "Library Larcenist",
+    "manaCost": "{2}{U}",
+    "typeLine": "Creature — Merfolk Rogue",
+    "oracleText": "Whenever this creature attacks, draw a card.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "descriptionOverride": "Whenever this creature attacks, draw a card."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "55",
+        "artist": "Mila Pesic",
+        "flavorText": "\"I specialize in missing manuscripts, pilfered poetry, and lifted letters.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/b/cb33529b-80bd-4f52-94cc-d8371c53ad75.jpg?1783930725",
+        "rulings": [
+            {
+                "date": "2020-06-23",
+                "text": "You may cast spells and activate abilities after the card has been drawn but before blockers are declared."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Mazemind Tome
 {
     "name": "Mazemind Tome",
@@ -310,6 +453,73 @@
     "colorIdentityOverride": []
 }
 
+// Ornery Dilophosaur
+{
+    "name": "Ornery Dilophosaur",
+    "manaCost": "{3}{G}",
+    "typeLine": "Creature — Dinosaur",
+    "oracleText": "Deathtouch (Any amount of damage this deals to a creature is enough to destroy it.)\nWhenever this creature attacks, if you control a creature with power 4 or greater, this creature gets +2/+2 until end of turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "DEATHTOUCH"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "target": "Self"
+                },
+                "interveningIf": {
+                    "type": "Exists",
+                    "player": "You",
+                    "zone": "Battlefield",
+                    "filter": "creature pow>=4"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "194",
+        "artist": "Jonathan Kuo",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/2/c2c4a0e7-9ca4-4291-94de-165cc2ded822.jpg?1783930671",
+        "rulings": [
+            {
+                "date": "2020-06-23",
+                "text": "If you don't control a creature with power 4 or greater immediately after Ornery Dilophosaur attacks, its ability doesn't trigger. If you don't control one as the ability resolves, it has no effect. It doesn't have to be the same creature at both times, however."
+            },
+            {
+                "date": "2020-06-23",
+                "text": "If Ornery Dilophosaur's power is raised to 4 or greater, its ability triggers when it attacks."
+            },
+            {
+                "date": "2020-06-23",
+                "text": "Ornery Dilophosaur gets just +2/+2, no matter how many creatures you control with power 4 or greater."
+            },
+            {
+                "date": "2020-06-23",
+                "text": "Once Ornery Dilophosaur's ability has resolved, it keeps +2/+2 for the rest of the turn even if you no longer control a creature with power 4 or greater."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Primal Might
 {
     "name": "Primal Might",
@@ -369,6 +579,55 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Rambunctious Mutt
+{
+    "name": "Rambunctious Mutt",
+    "manaCost": "{3}{W}{W}",
+    "typeLine": "Creature — Dog",
+    "oracleText": "When this creature enters, destroy target artifact or enchantment an opponent controls.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 4
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    },
+                    "destination": "Graveyard",
+                    "byDestruction": true
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "artifact|enchantment ctrl:opponent"
+                    },
+                    "id": "target"
+                },
+                "descriptionOverride": "When this creature enters, destroy target artifact or enchantment an opponent controls."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "30",
+        "artist": "Campbell White",
+        "flavorText": "Emphatic words with powerful gestures. Clearly this was playtime.",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/f/3f602ecc-c264-4f3e-adeb-d0186668653e.jpg?1783930737"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 
@@ -536,6 +795,149 @@
     ]
 }
 
+// Teferi's Protege
+{
+    "name": "Teferi's Protege",
+    "manaCost": "{2}{U}",
+    "typeLine": "Creature — Human Wizard",
+    "oracleText": "{1}{U}, {T}: Draw a card, then discard a card.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}{U}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        },
+                        {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "GatherCards",
+                                    "source": {
+                                        "type": "FromZone",
+                                        "zone": "Hand"
+                                    },
+                                    "storeAs": "hand"
+                                },
+                                {
+                                    "type": "SelectFromCollection",
+                                    "from": "hand",
+                                    "selection": {
+                                        "type": "ChooseExactly",
+                                        "count": {
+                                            "type": "Fixed",
+                                            "amount": 1
+                                        }
+                                    },
+                                    "storeSelected": "discarded",
+                                    "prompt": "Choose 1 card to discard"
+                                },
+                                {
+                                    "type": "MoveCollection",
+                                    "from": "discarded",
+                                    "destination": {
+                                        "type": "ToZone",
+                                        "zone": "Graveyard"
+                                    },
+                                    "moveType": "Discard"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "77",
+        "artist": "Bram Sels",
+        "flavorText": "Teferi's legacy lives on in Tolaria through the study of time magic and a tradition of irrepressible mischief.",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/4/5449d71c-5c1b-44c6-9407-0212aa3c3e3a.jpg?1783930718",
+        "rulings": [
+            {
+                "date": "2020-06-23",
+                "text": "You draw a card and discard a card all while the ability is resolving. Nothing can happen between the two, and no player may choose to take actions."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Valorous Steed
+{
+    "name": "Valorous Steed",
+    "manaCost": "{4}{W}",
+    "typeLine": "Creature — Unicorn",
+    "oracleText": "Vigilance (Attacking doesn't cause this creature to tap.)\nWhen this creature enters, create a 2/2 white Knight creature token with vigilance.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "VIGILANCE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 2,
+                    "toughness": 2,
+                    "colors": [
+                        "WHITE"
+                    ],
+                    "creatureTypes": [
+                        "Knight"
+                    ],
+                    "keywords": [
+                        "VIGILANCE"
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "42",
+        "artist": "Donato Giancola",
+        "flavorText": "A unicorn chooses only the most virtuous and noble of knights to be its companion.",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/a/aa01cb8c-f080-456b-a91a-f1d7943a70b2.jpg?1783930732"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Village Rites
 {
     "name": "Village Rites",
@@ -633,5 +1035,69 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Witch's Cauldron
+{
+    "name": "Witch's Cauldron",
+    "manaCost": "{B}",
+    "typeLine": "Artifact",
+    "oracleText": "{1}{B}, {T}, Sacrifice a creature: You gain 1 life and draw a card.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}{B}"
+                            }
+                        },
+                        "CostTap",
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomSacrifice",
+                                "filter": "creature"
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GainLife",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        },
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "129",
+        "rarity": "UNCOMMON",
+        "artist": "Jason A. Engle",
+        "flavorText": "The best recipes start with reliable cookware.",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/4/d43a3eb7-3daf-4667-b824-1f5d801c9341.jpg?1783930697"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
