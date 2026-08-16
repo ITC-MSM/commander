@@ -463,7 +463,10 @@ produced one of each kind.
 - **The standing `ManaColorSet.Specific` finding, recurring — Spider Manifestation.** "{T}: Add {R}
   or {G}." as one `AddManaOfChoiceEffect` where 165 cards write two abilities. The README's own note
   said none of the thirteen was compared "because each one's rider declines anyway"; this band read
-  the rider. Still not folded, for the reason recorded below.
+  the rider. Read afterwards and classified a **card bug**: the note says `Specific` earns its place
+  on the riders the two-ability form cannot express, and this line has no rider — the card was in the
+  wrong group. Fixed to two abilities, with a scenario test. The finding below is unchanged and still
+  not folded.
 
 **Where the ranking points next.** On the same tail ranking, the row under `you cast` at 504 was
 `When ~` at 263 and then a flat run — `enchanted creature` 183, `for each` 175, `Until end of` 170,
@@ -652,25 +655,34 @@ partially-read card would count a keyword Assay never saw as agreement, so every
 named population bucket instead and the denominator stays visible.
 
 ```
-  Hand-written cards                 9127
+  Hand-written cards                 9131
     compared                         2698
-    not yet covered by the grammar   5789
+    not yet covered by the grammar   5793
     script slot not modelled yet      88
     lines do not fold into one card   54
     multi-face (out of scope)        301
     Oracle text differs from golden  197
     golden would not decode            0
 
-  Confirmed — models agree           2697    999.6‰ (100.0%)
-  DIVERGENT — read every one            1
+  Confirmed — models agree           2698   1000.0‰ (100.0%)
+  DIVERGENT — read every one            0
 ```
 
-**The one standing divergence is the already-open `ManaColorSet.Specific` finding**, recurring on
-Spider Manifestation exactly as the note below predicted it would. The count was at zero after the
-sweep and the two findings after it; the spell-cast band took it to four and three of those are
-fixed here, which is the gate behaving the way it is supposed to — zero is a checkpoint, not a
-property, and it has risen on the day the grammar reached every new card class but one. The sweep
-itself took the count from 122 to 1: every divergence the gate had
+**The count is back at zero, and the card that took it off zero was a card bug.** The Bloomburrow
+band's one standing divergence was the already-open `ManaColorSet.Specific` finding, recurring on
+Spider Manifestation exactly as the note below predicted it would: "{T}: Add {R} or {G}." written as
+one `AddManaOfChoiceEffect` where 165 cards write two abilities. What the finding's own note says
+justifies `Specific` is a *rider* the two-ability form cannot express correctly — and Spider
+Manifestation's mana line has no rider at all. It was the first of the thirteen to become comparable
+and the one that did not belong in the group; it is now two abilities, with the scenario test that
+asserts the observable half (activating adds the colour straight into the pool, with no colour
+decision to make). The finding itself stands, unchanged and still not folded: the other twelve keep
+their riders, and the grammar still never emits `Specific`.
+
+The count was at zero after the sweep and the two findings after it; the spell-cast band took it to
+four and three of those were fixed in that band, which is the gate behaving the way it is supposed to
+— zero is a checkpoint, not a property. The sweep itself took the count from 122 to 1: every
+divergence the gate had
 accumulated was read, classified as parser bug / card bug / fold, and acted on. The one it left
 standing was Lavaborn Muse, closed by the CR 603.4 split below. What the sweep found, by kind:
 
@@ -800,8 +812,10 @@ and never `triggerRestriction`, so a "while" card declines rather than printing 
 means something else.
 
 **The differential was at zero here, and the spell-cast band moved it off — exactly as this
-paragraph predicted.** Four divergences over 46 newly-compared cards, three of them fixed (one
-parser bug, two card bugs) and the fourth the standing `ManaColorSet.Specific` finding. Zero is a
+paragraph predicted.** Four divergences over 46 newly-compared cards, three of them fixed on the spot
+(one parser bug, two card bugs) and the fourth — Spider Manifestation, under the standing
+`ManaColorSet.Specific` finding — read afterwards and fixed as a third card bug, since that card's
+mana line carries none of the riders the finding says the type earns its place on. Zero is a
 checkpoint, not a destination: it means every card the grammar reads whole agrees with its golden on
 the day it is measured, and the next band of rules is expected to move it off again.
 
@@ -1064,12 +1078,21 @@ Found the way all five were, by running it on a card class it had never reached.
   "Target creature gets +3/+3 until end of turn." Different polymorphic hierarchies, so nothing
   clashes, but one card's JSON can show both under one type name.
 - **Open: `ManaColorSet.Specific` is a second spelling of a dual land's line.** 165 cards write
-  "{T}: Add {B} or {G}." as two `AddManaEffect` abilities sharing a cost, and 13 write it as one
+  "{T}: Add {B} or {G}." as two `AddManaEffect` abilities sharing a cost, and a much smaller group —
+  13 when this was written, 16 goldens today — write it as one
   `AddManaOfChoiceEffect(ManaColorSet.Specific(...))`. Unlike the other entries in this list the
   split has a *reason*: every card in the smaller group carries a rider the two-ability form cannot
   express correctly — "Activate only once each turn" on two abilities permits two activations — so
   the type earns its place. The grammar emits the majority and never emits `Specific`, and none of
-  the 13 is compared today because each one's rider declines anyway.
+  the smaller group is compared today because each one's rider declines anyway.
+
+  **The divergence it threw off is also its membership test.** Spider Manifestation was in the
+  smaller group with a bare "{T}: Add {R} or {G}." and no rider on it at all — so its line parsed, so
+  the card was compared, so it diverged, and the finding's own reason for the type is what says it
+  belonged in the majority. It is now two abilities. Generalized: **a card in the smaller group whose
+  mana line *reads* is a card in the wrong group**, because a rider is exactly what makes the line
+  decline. That test costs nothing to run — it is the differential, unchanged — and it is why the
+  finding is worth leaving open rather than folding.
 
 And the gate paid for itself before its first report: writing it surfaced that "Plains"
 de-pluralized to `Subtype("Plain")` — the "Elves" → `Elve` failure, live on the basic land types,

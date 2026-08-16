@@ -9510,14 +9510,18 @@
                 "id": "ability_2",
                 "cost": "CostTap",
                 "effect": {
-                    "type": "AddManaOfChoice",
-                    "colorSet": {
-                        "type": "ManaColorSet.Specific",
-                        "colors": [
-                            "RED",
-                            "GREEN"
-                        ]
-                    }
+                    "type": "AddMana",
+                    "color": "RED"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_3",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "GREEN"
                 },
                 "timing": "ManaAbility",
                 "isManaAbility": true
