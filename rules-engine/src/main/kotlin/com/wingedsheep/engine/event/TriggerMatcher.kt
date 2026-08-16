@@ -1379,8 +1379,16 @@ class TriggerMatcher(
         // Spiritualist) must not react to a creature spell on the stack being targeted.
         if (event.targetIsSpell && !trigger.includeSpellTargets) return false
 
-        // "Becomes the target of a spell" (King of the Oathbreakers) ignores abilities.
+        // Same opt-in for player targets ("a player or permanent becomes the target" — Loki, God of
+        // Mischief): every other becomes-target wording in the pool is about objects, so a targeted
+        // player must not wake them.
+        if (event.targetIsPlayer && !trigger.includePlayerTargets) return false
+
+        // "Becomes the target of a spell" (King of the Oathbreakers) ignores abilities;
+        // "becomes the target of an ability" (Loki, God of Mischief) ignores spells. Both read the
+        // same `sourceIsSpell` axis stamped by StackResolver.emitBecomesTarget.
         if (trigger.spellsOnly && !event.sourceIsSpell) return false
+        if (trigger.abilitiesOnly && event.sourceIsSpell) return false
 
         // Valiant: check if the targeting spell/ability is controlled by "you" (the trigger's controller)
         if (trigger.byYou && event.controllerId != controllerId) return false
@@ -1397,7 +1405,9 @@ class TriggerMatcher(
         // entity has a battlefield projection — an animated land IS "a creature you control"
         // while the effect lasts — and fall back to base card data for stack objects; the
         // controller predicate likewise falls back to the spell's caster (Surrak, Elusive
-        // Hunter). Targeted abilities on the stack carry no card data and never match.
+        // Hunter). Targeted abilities on the stack carry no card data and never match; players
+        // can't reach here at all, because `includePlayerTargets` requires filter `Any`
+        // (EventPattern.BecomesTargetEvent's init).
         if (trigger.targetFilter != GameObjectFilter.Any) {
             val targetContainer = state.getEntity(event.targetEntityId) ?: return false
             if (!targetContainer.has<CardComponent>()) return false

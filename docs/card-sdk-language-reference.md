@@ -4681,12 +4681,28 @@ Triggers.youCastSpell(
   Treasure for its old controller). `requireOpponent` (LOST only) adds the "new controller is an opponent"
   gate on top of the plain LOST direction.
 - `BecomesTarget(filter?)` — source becomes target of spell/ability. The engine emits the
-  underlying `BecomesTargetEvent` for both permanent targets and spell targets on the stack, but the
-  trigger matches **permanent targets only** by default — "a creature you control" is a battlefield
-  creature, not a creature spell. Set `includeSpellTargets = true` on the event for the "... or a
+  underlying `BecomesTargetEvent` for permanent targets, spell targets on the stack, and **player**
+  targets, but the trigger matches **permanent targets only** by default — "a creature you control"
+  is a battlefield creature, not a creature spell and not a player. Set `includeSpellTargets = true`
+  on the event for the "... or a
   creature spell you control" wording (Surrak, Elusive Hunter); the `filter` is then also matched
   against the spell's card data, so a `Creature` filter matches a creature spell on the stack. Ward
   never sees spell targets because it is generated only from battlefield permanents.
+  Set `includePlayerTargets = true` for the "a **player** or permanent becomes the target" wording
+  (Loki, God of Mischief). A player carries no card data for a `filter` to read, so the opt-in
+  **requires** `filter` to stay `GameObjectFilter.Any` and throws at load time otherwise, rather than
+  silently firing on permanents only; the only printed wording today pairs the two anyway. A future
+  "a player or *creature*" needs the object half and the player half kept apart. The
+  **retarget/reselect** effects (`Effects.ChangeTarget`, `Effects.ChangeSpellTarget`,
+  `Effects.ReselectTargetRandomly`, "change the triggering object's targets") rewrite a stack
+  object's targets without emitting a fresh `BecomesTargetEvent` — for any target kind — so no
+  becomes-target trigger sees a redirect. **Known bug (ward and every other becomes-target trigger
+  miss redirects), not intended behaviour:** CR 115.9c counts the targets chosen when the spell or
+  ability was put on the stack "(as modified by effects that changed those targets)", so a redirected
+  object *is* a target of it, and by CR 603.2e the "becomes a target" event happens at the moment the
+  redirect makes it one. Pre-existing and orthogonal to the player axis, so it is pinned rather than
+  fixed by `BecomesTargetPlayerAndAbilityAxesTest`, which characterizes current-and-wrong behaviour —
+  when a later unit fixes it, invert that test rather than deleting it.
 - `CreatureYouControlBecomesTargetByOpponent(filter?, includeSpellTargets = false)` — your creature
   gets targeted by an opponent's spell or ability. Permanent-only unless `includeSpellTargets = true`
   (Surrak), which also fires when an opponent targets a matching creature spell you control.
@@ -4699,6 +4715,16 @@ Triggers.youCastSpell(
   control" covers both halves of "King of the Oathbreakers or another Spirit you control becomes the
   target of a spell" because the source itself matches the filter. Pair with
   `Effects.PhaseOut(EffectTarget.TriggeringEntity)` to phase out the targeted permanent.
+- `BecomesTargetOfAbility(filter = Any, byYou = false, includePlayerTargets = false)` — the exact mirror of
+  `BecomesTargetOfSpell`: something becomes the target of an **ability** (activated *or* triggered),
+  never a spell. Sets `BecomesTargetEvent(abilitiesOnly = true)`, reading the same `sourceIsSpell`
+  axis from the other side; the two are mutually exclusive and asking for both throws. `byYou` is
+  the "an ability **you control**" half and `includePlayerTargets` the "a **player** or permanent"
+  half (which keeps `filter` at `Any` — see `BecomesTarget` above) —
+  Loki, God of Mischief is `BecomesTargetOfAbility(byYou = true, includePlayerTargets = true)` plus
+  `oncePerTurn = true` on the ability for "This ability triggers only once each turn". ANY-bound.
+  The trigger fires at target announcement (CR 601.2c for spells, CR 602.2b / 603.3d for activated
+  and triggered abilities), so it still fires when the ability is later countered or fizzles.
 - `PhasesIn(filter?)` — a permanent matching `filter` phases in (Rule 702.26). Matches the engine's
   `PhasedInEvent`, which `BeginningPhaseManager.performUntapStep` emits when a phased-out permanent
   returns during its controller's untap step. ANY-bound (use the filter, e.g. "a Spirit you control",

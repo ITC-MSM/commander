@@ -438,12 +438,14 @@ class TriggerDetector(
      *
      * Two cuts, in order:
      *  1. Drop any oncePerTurn trigger whose source has already fired that ability id this turn
-     *     (tracked by [TriggeredAbilityFiredThisTurnComponent], stamped on resolution).
+     *     (tracked by [TriggeredAbilityFiredThisTurnComponent], stamped when the trigger is put on
+     *     the stack — `TriggerProcessor.processSingleTrigger` — not when it resolves).
      *  2. Within this single detection pass, keep only the *first* trigger per
      *     `(sourceId, abilityId)` for oncePerTurn abilities. The fired-this-turn tracker is only
-     *     written when a trigger resolves, so a single multi-subject event (e.g. a player
-     *     discarding two cards, which fires a per-card "whenever a player discards" trigger twice)
-     *     would otherwise queue two instances before either resolves and stamps the tracker. This
+     *     written once a detected trigger reaches the processor, so a single multi-subject event
+     *     (e.g. a player discarding two cards, which fires a per-card "whenever a player discards"
+     *     trigger twice) would otherwise queue two instances from one pass before either is
+     *     processed and stamps the tracker. This
      *     dedupe enforces the "only once each turn" cap for batch-style triggers — e.g. Hostile
      *     Investigator investigating once even when several cards are discarded at once.
      *

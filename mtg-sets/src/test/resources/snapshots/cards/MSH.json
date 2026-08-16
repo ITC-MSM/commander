@@ -9525,6 +9525,51 @@
     ]
 }
 
+// Loki, God of Mischief
+{
+    "name": "Loki, God of Mischief",
+    "manaCost": "{1}{U}",
+    "typeLine": "Legendary Creature — God Sorcerer Villain",
+    "oracleText": "Whenever a player or permanent becomes the target of an ability you control, draw a card. This ability triggers only once each turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "BecomesTargetEvent",
+                    "byYou": true,
+                    "includePlayerTargets": true,
+                    "abilitiesOnly": true
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "oncePerTurn": true,
+                "descriptionOverride": "Whenever a player or permanent becomes the target of an ability you control, draw a card. This ability triggers only once each turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "65",
+        "rarity": "RARE",
+        "artist": "Vilhelmas Banys",
+        "flavorText": "\"Foolish heroes. Loki can match you trick for trick, and *then* some.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/3/236c437f-ee9d-4145-a4db-b665908089cf.jpg?1783902955"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Los Diablos Missile Base
 {
     "name": "Los Diablos Missile Base",

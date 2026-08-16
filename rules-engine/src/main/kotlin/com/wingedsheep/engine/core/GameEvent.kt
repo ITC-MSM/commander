@@ -1720,7 +1720,7 @@ data class ControlChangedEvent(
 // =============================================================================
 
 /**
- * A permanent or spell became the target of a spell or ability.
+ * A permanent, spell, or player became the target of a spell or ability.
  * [firstTimeByThisController] indicates whether this is the first time this turn
  * the target was targeted by a spell/ability controlled by [controllerId].
  * Used for Valiant triggers ("for the first time each turn").
@@ -1729,6 +1729,11 @@ data class ControlChangedEvent(
  * "creature spell you control" being targeted (e.g. Surrak, Elusive Hunter) match,
  * while battlefield-only triggers (ward) never see spell targets because they are
  * generated only from permanents.
+ * [targetIsPlayer] is its player counterpart — true when the chosen target is a player
+ * (Loki, God of Mischief: "a player or permanent becomes the target"). Like spell targets,
+ * player targets are opt-in on the trigger side (`EventPattern.BecomesTargetEvent
+ * .includePlayerTargets`), so the permanent-only wordings already in the card pool don't
+ * start firing on them.
  */
 @Serializable
 @SerialName("BecomesTargetEvent")
@@ -1740,7 +1745,8 @@ data class BecomesTargetEvent(
     val firstTimeByThisController: Boolean = true,
     val targetIsSpell: Boolean = false,
     /** True when the targeting source is a spell on the stack (vs. an activated/triggered ability). */
-    val sourceIsSpell: Boolean = false
+    val sourceIsSpell: Boolean = false,
+    val targetIsPlayer: Boolean = false
 ) : GameEvent
 
 // =============================================================================

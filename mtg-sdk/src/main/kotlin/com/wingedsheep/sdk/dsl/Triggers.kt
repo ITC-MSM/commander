@@ -1944,6 +1944,31 @@ object Triggers {
     )
 
     /**
+     * Mirror of [BecomesTargetOfSpell]: whenever something becomes the target of an **ability**
+     * (not a spell) — Loki, God of Mischief: "Whenever a player or permanent becomes the target of
+     * an ability you control". Both activated and triggered abilities count; only spells are
+     * excluded.
+     *
+     * [includePlayerTargets] widens the trigger to targeted players as well, which is opt-in because
+     * every other becomes-target wording is about objects; it requires [filter] to stay
+     * `GameObjectFilter.Any` (a player has no card data for a filter to read) and throws otherwise.
+     * [byYou] is the "an ability **you control**" half. ANY-bound.
+     */
+    fun BecomesTargetOfAbility(
+        filter: GameObjectFilter = GameObjectFilter.Any,
+        byYou: Boolean = false,
+        includePlayerTargets: Boolean = false
+    ): TriggerSpec = TriggerSpec(
+        event = BecomesTargetEvent(
+            targetFilter = filter,
+            byYou = byYou,
+            abilitiesOnly = true,
+            includePlayerTargets = includePlayerTargets
+        ),
+        binding = TriggerBinding.ANY
+    )
+
+    /**
      * Whenever a creature you control becomes the target of a spell or ability
      * an opponent controls.
      *

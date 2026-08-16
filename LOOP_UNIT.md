@@ -1,93 +1,62 @@
-# loop-msh-u26 — Cloak and Dagger, Entwined (feature unit)
+# loop-msh-u24 — Loki, God of Mischief
 
-Base branch: `loop-msh-u31` (a local branch, **not** merged upstream — this is a stack). u31 → u30 →
-u28 → `origin/main`, so `main` *is* an ancestor now, but none of those commits are upstream yet;
-this waits for them to land before it can be opened on its own. Reviewer: diff with
-`git diff loop-msh-u31...HEAD`.
-
-The rebase onto the current u31 moved the card and its scenario test into the per-era modules that
-`origin/main` now uses: `mtg-sets/2026/src/main/.../msh/cards/CloakAndDaggerEntwined.kt` and
-`mtg-sets/2026/tests/src/test/.../CloakAndDaggerEntwinedScenarioTest.kt` (both byte-identical to
-their pre-rebase contents). `ReturnLinkedExileToZoneExiledFromTest.kt` is pure engine — it builds
-`GameState` directly and names no corpus card — so it stays in
-`rules-engine/src/test/.../handlers/effects/library/` beside its siblings.
-
-## The primitive
-
-- **`CardDestination.ToZoneExiledFrom(fallback = Zone.BATTLEFIELD)`**
-  (`mtg-sdk/.../scripting/effects/PipelineEffects.kt`) — a *per-card* `MoveCollection` destination:
-  each card returns to the zone it was exiled from. CR 610.3 ("this second one-shot effect returns
-  the object to its previous zone"); verified against `/workspace/MagicCompRules_20260619.txt`, as
-  were CR 610.3c (returns under owner's control), CR 400.7 (new object), CR 406.7 (exiled from
-  exile) and CR 704.5d (tokens in wrong zones).
-- **`ExiledFromZoneComponent(zone)`** (`rules-engine/.../state/components/identity/`) — the fact it
-  reads. Written by `ZoneTransitionService`'s `Zone.EXILE` entry branch (every effect-driven exile)
-  and, explicitly, by the direct-`addToZone` exile sites that matter: exile as a cost
-  (`CostPaymentService`, `CastSpellHandler`'s three additional-cost branches),
-  `ExileOpponentsGraveyardsExecutor`, and the graveyard sweep in `SbaZoneMovementHelper`. It is a
-  best-effort record, not a guarantee — anything unstamped takes `ToZoneExiledFrom`'s fallback, so
-  the fallback is load-bearing. Cleared by the same service on the way out, plus by the two exits
-  that reuse the entity id (`StackResolver`'s cast-from-exile, `ReturnOneFromLinkedExileExecutor`).
-  Registered in `Serialization.kt`.
-- **`MoveCollectionExecutor.moveToZonesExiledFrom`** groups the collection by recorded zone and runs
-  each group through the existing `ToZone` path, so owner routing / aura targeting / events are
-  unchanged. Battlefield group last (it's the one that can pause on an Aura's enchant target).
-- **Consolidation:** `ExilePatterns.returnLinkedExile` now takes a `destination`, and
-  `returnLinkedExileToHand` is a thin facade over it. Both existing facades build **byte-identical**
-  effect trees to before (same `storeAs` keys, same `underOwnersControl`), and
-  `ReturnLinkedExileToZoneExiledFromTest` has two tests pinning their old behaviour.
-- Facade: `Effects.ReturnLinkedExileToZoneExiledFrom()`.
-
-## The card
-
-`Cloak and Dagger, Entwined` (MSH #211, {1}{W}{B} 2/2 deathtouch + lifelink). ETB targets an
-opponent + up to one creature they control, reveals their hand, then `MayEffect` → `ChooseAction`
-picks **either** a gather→select→move(EXILE, `linkToSource`) over their hand **or**
-`ExileUntilLeaves` on the chosen creature. The LTB trigger is the new
-`ReturnLinkedExileToZoneExiledFrom()`, which is what lets one trigger serve both branches.
-
-## Gate
-
-`just test` — **BUILD SUCCESSFUL** (10 975 tests). The first run had one failure,
-`ConniveTargetingTest` with a 120 s `TimeoutCancellationException` (contention, not an assertion,
-not in my diff); green standalone. The final run reports `1 executed, 52 up-to-date` because the
-preceding run had already executed the other modules' test tasks against this same tree — see the
-PR body, which spells this out.
-
-Mutation-checked twice: forcing `originZoneOf` to always return `Zone.BATTLEFIELD` turned red
-exactly the hand / graveyard / library / mixed-pile / source-left primitive tests **and** the card's
-hand-branch scenario test, leaving the battlefield and fallback cases green. Restored; no probe left
-in the tree.
-
-**Still owed — that green no longer covers this tree.** The branch has since been rebased onto the
-rewritten `loop-msh-u31` (new base, and the card/scenario test changed modules), so the 10 975-test
-result above is stale. This diff reaches `mtg-sdk` (`Effects`, `ExilePatterns`, `LibraryPatterns`,
-`PipelineEffects`) as well as `rules-engine` and `mtg-sets`, so the re-run is the **full** `test`
-suite, not the engine-only gate — and it must be re-run again after the eventual rebase onto
-`origin/main`.
-
-## Things I'm unsure about / a reviewer should look at
-
-- **The card's second target is a two-player rendering, not the printed text.** Printed: "up to one
-  target creature **they** control". Shipped: "up to one target creature an opponent controls".
-  `TargetFinder.findLegalTargets` enumerates one requirement at a time with no knowledge of the
-  other requirements' choices, so a filter bound to the chosen opponent yields an *empty* legal
-  list (I hit exactly that: `legalTargets={0=[player-2], 1=[]}`) and the creature could never be
-  picked. Same approximation Demonic Junker / Kitesail Larcenist / Unstable Glyphbridge document.
-  Identical in two-player; laxer in a pod. Fixing it properly = cross-requirement target
-  enumeration, an engine feature of its own.
-- Neither `ChooseAction` branch has a `FeasibilityCheck`: both available checks
-  (`ControlsPermanentMatching`, `HasCardsInZone`) evaluate against the **choosing** player, and both
-  of this card's conditions are about the *targeted opponent*. So an empty-handed opponent still
-  shows the "exile a nonland card from their hand" option, and it no-ops. Fixing that means a new
-  player-scoped `FeasibilityCheck`, which I judged out of scope for this unit.
-- The "You may" is a separate yes/no prompt before the two-option prompt (two clicks). A third
-  "exile nothing" choice would collapse them, but there is no no-op `Effect` in the SDK to hang it on.
-- `ToZoneExiledFrom` groups can pause; I order library and battlefield last and document that a
-  caller combining `CardOrder.ControllerChooses` with a library+battlefield split could strand the
-  battlefield group. The shipped facade uses `CardOrder.Preserve`, so it can't happen there.
-- mtgish step 8b skipped: the corpus's exile-return IR tags are all fixed-destination
-  (`PutExiledCardIntoOwnersHand`, `PutExiledCardOntoBattlefield`, …); I found no tag for
-  "return it to the zone it was exiled from", so there is nothing to register.
-- No manual playthrough in the web client, no e2e. A playtest scenario is staged at
-  `manual-scenarios/sets/msh/loop-msh-u26-cloak-and-dagger-entwined.json` but was not run.
+- **Primitive (1/2):** `StackResolver.emitBecomesTarget` now emits a `BecomesTargetEvent` for
+  `ChosenTarget.Player` too, stamped `targetIsPlayer = true` (new field on the engine event).
+  `rules-engine/.../mechanics/stack/StackResolver.kt`, `.../core/GameEvent.kt`.
+- **Primitive (2/2):** `EventPattern.BecomesTargetEvent` gains `includePlayerTargets` (widens *what
+  got targeted*) and `abilitiesOnly` (narrows *what did the targeting*, mirror of `spellsOnly`).
+  `mtg-sdk/.../scripting/EventPattern.kt`; matched in `TriggerMatcher.matchesBecomesTargetTrigger`.
+- **DSL:** `Triggers.BecomesTargetOfAbility(filter, byYou, includePlayers)` in
+  `mtg-sdk/.../dsl/Triggers.kt`, the mirror of the existing `BecomesTargetOfSpell`.
+- **Card:** `mtg-sets/.../definitions/msh/cards/LokiGodOfMischief.kt` — {1}{U} 2/1 legend; the new
+  trigger plus `oncePerTurn = true` and `Effects.DrawCards(1)`. No new effect type.
+- **Target-emission sites audited:** all 7 places a stack object gets a `TargetsComponent` (found by
+  `git grep "TargetsComponent.capture"`, which is the only construction path). The 4 declaration
+  sites in `StackResolver` (cast, triggered, activated, spell copy) all funnel through
+  `emitBecomesTarget` and now cover players. The 3 retarget/reselect sites
+  (`ManaPaymentContinuationResumer.resumeChangeSpellTarget`, `ContestedRetargetLogic.advance`,
+  `ReselectTargetRandomlyExecutor`) emit **nothing today for any target kind** — pre-existing, left
+  unchanged, pinned by a characterization test.
+- **Blast radius:** `EventPattern.BecomesTargetEvent` has exactly one matcher
+  (`TriggerMatcher.matchesBecomesTargetTrigger`, verified by grep across every module's `src/main`),
+  and the player-target guard sits ahead of the filter check, so no existing card can see a player
+  target. Ward is `TriggerBinding.SELF` on a permanent, so it can't match a player id either.
+- **Tests:** `rules-engine/.../triggers/BecomesTargetPlayerAndAbilityAxesTest.kt` (emission +
+  matching axes, plus the redirect characterization) and
+  `rules-engine/.../scenarios/LokiGodOfMischiefScenarioTest.kt` (the card, via Prodigal Sorcerer).
+- **Playtest scenario:** `manual-scenarios/sets/msh/loop-msh-u24-loki-god-of-mischief.json`.
+- **Docs:** `docs/card-sdk-language-reference.md` — `BecomesTarget` entry extended, new
+  `BecomesTargetOfAbility` entry, redirect gap recorded.
+- **Gate:** `just test` passed on the second run (first run failed only on the expected MSH snapshot
+  rebless plus `ConniveTargetingTest`'s 120s timeout flake, which passes standalone); the second run
+  genuinely executed `:rules-engine:test` and `:mtg-sets:test`. Details in
+  `build/pr/loop-msh-u24-body.md`.
+- **Base:** rebased onto `loop-msh-u26` (local, **not** merged upstream). u26 → u31 → u30 → u28 →
+  `origin/main`, so `main` *is* an ancestor now, but none of those commits are upstream yet; this
+  waits for them to land before it can be opened on its own. Reviewer: `git diff loop-msh-u26...HEAD`.
+  That rebase also moved the card and its scenario test into the per-era modules `origin/main` now
+  uses — `mtg-sets/2026/src/main/.../msh/cards/LokiGodOfMischief.kt` and
+  `mtg-sets/2026/tests/src/test/.../LokiGodOfMischiefScenarioTest.kt`, both byte-identical to their
+  pre-rebase contents. (`rules-engine`'s test source set does still depend on `:mtg-sets`, so the
+  test compiled where it was; the move is for the convention and the compile-sharding rationale in
+  `mtg-sets/2026/tests/build.gradle.kts`, not to fix a build error.) The mechanic-level
+  `BecomesTargetPlayerAndAbilityAxesTest.kt` stays in `rules-engine/src/test/.../triggers/`.
+- **Gate re-run owed:** the green below predates the rebase onto the rewritten `loop-msh-u26` (new
+  base, and the card/test changed modules), so it no longer covers this tree. The diff reaches
+  `mtg-sdk` (`EventPattern`, `Triggers`) and `mtgish-tooling` as well as `rules-engine` and
+  `mtg-sets`, so the re-run is the **full** `test` suite — and again after the eventual rebase onto
+  `origin/main`.
+- **Settled (was "unsure"):** the retarget/reselect paths *should* emit — this is a **known bug**, not
+  an open rules question. CR 115.9c counts the targets chosen when a spell or ability was put on the
+  stack "(as modified by effects that changed those targets)", so a redirected object *is* one of its
+  targets, and by CR 603.2e the "becomes a target" event happens the moment the redirect makes it
+  one. Ward and every other becomes-target trigger therefore miss every redirect today, for
+  permanents as much as for players. Pre-existing and orthogonal to this unit, so it stays audited
+  and pinned; the characterization test now says in as many words that it locks in
+  current-and-**wrong** behaviour and should be inverted, not deleted, when a follow-up unit fixes it.
+- **Settled (was "unsure"):** `includePlayerTargets` with a non-`Any` `targetFilter` used to fire on
+  permanents only while `description` still promised the player half. It is now a load-time
+  `require` in `EventPattern.BecomesTargetEvent`'s `init` (matching the `spellsOnly`/`abilitiesOnly`
+  one), so a future "a player or *creature*" wording fails loudly instead of half-working.
+- **Not done:** no manual playthrough in the web client, no UX pass, no e2e. `BecomesTargetEvent`
+  maps to no `ClientEvent`, and the card adds no new decision, so no client change was needed.

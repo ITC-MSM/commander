@@ -1493,7 +1493,8 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
     // ---- Targeting Triggers ----
 
     /**
-     * When a permanent (or, opt-in, a spell on the stack) becomes the target of a spell or ability.
+     * When a permanent (or, opt-in, a spell on the stack or a player) becomes the target of a spell
+     * or ability.
      * Binding SELF = "when this creature becomes the target",
      * ANY = "whenever a creature you control becomes the target".
      *
@@ -1507,10 +1508,25 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
      * the spell's card data, so a creature spell matches a `Creature` filter (Surrak, Elusive Hunter:
      * "a creature you control or a creature spell you control becomes the target").
      *
+     * Players are the third target kind and are likewise opt-in, via [includePlayerTargets] — "a
+     * player or permanent becomes the target" (Loki, God of Mischief). Without it a targeted player
+     * never matches, so the many permanent-only triggers already in the pool stay unaffected by the
+     * engine emitting target events for players. [includePlayerTargets] requires [targetFilter] to
+     * be `Any` and throws otherwise: a player carries no card data for a filter to read, so the pair
+     * would fire on permanents only while [description] still promised the player half. A future "a
+     * player or *creature*" wording needs the object half and the player half kept apart.
+     *
      * [byYou] restricts to spells or abilities controlled by the trigger's controller.
      * [firstTimeEachTurn] restricts to the first time each turn (used by Valiant).
      * [spellsOnly] restricts to "becomes the target of a **spell**" wording (King of the
-     * Oathbreakers), ignoring abilities; the default matches both spells and abilities.
+     * Oathbreakers), ignoring abilities; [abilitiesOnly] is its mirror — "becomes the target of an
+     * **ability**" (Loki, God of Mischief), ignoring spells. The default (neither) matches both.
+     * They are mutually exclusive: asking for both would match nothing, and throws — as does the
+     * equally contradictory [byYou] + [byOpponent] pair.
+     *
+     * Note that [spellsOnly] / [abilitiesOnly] narrow *what did the targeting*, while
+     * [includeSpellTargets] / [includePlayerTargets] widen *what got targeted*; the two axes are
+     * independent.
      */
     @SerialName("BecomesTargetEvent")
     @Serializable
@@ -1520,12 +1536,40 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
         val byOpponent: Boolean = false,
         val firstTimeEachTurn: Boolean = false,
         val includeSpellTargets: Boolean = false,
-        val spellsOnly: Boolean = false
+        val spellsOnly: Boolean = false,
+        val includePlayerTargets: Boolean = false,
+        val abilitiesOnly: Boolean = false
     ) : EventPattern {
+        init {
+            require(!(spellsOnly && abilitiesOnly)) {
+                "BecomesTargetEvent cannot be both spellsOnly and abilitiesOnly — nothing would match"
+            }
+            require(!(byYou && byOpponent)) {
+                "BecomesTargetEvent cannot be both byYou and byOpponent — nothing would match"
+            }
+            require(!includePlayerTargets || targetFilter == GameObjectFilter.Any) {
+                "BecomesTargetEvent.includePlayerTargets only fires for players when targetFilter is Any — " +
+                    "a player has no card data for a filter to read; split the object and player halves first"
+            }
+        }
+
         override val description: String = buildString {
-            append(describeObjectForEvent(targetFilter))
-            append(" becomes the target of a spell")
-            if (!spellsOnly) append(" or ability")
+            if (includePlayerTargets) {
+                // The player half is only reachable with filter `Any` (see the require above), and
+                // the one printed wording that uses it says "a player or permanent" — deliberately
+                // narrower than the generic `describeObjectForEvent(Any)` phrasing ("a card or
+                // permanent"), which is what the object-only branch below still renders.
+                append("a player or ")
+                if (targetFilter == GameObjectFilter.Any) append("permanent")
+                else append(describeObjectForEvent(targetFilter))
+            } else {
+                append(describeObjectForEvent(targetFilter))
+            }
+            when {
+                spellsOnly -> append(" becomes the target of a spell")
+                abilitiesOnly -> append(" becomes the target of an ability")
+                else -> append(" becomes the target of a spell or ability")
+            }
             if (byYou) append(" you control")
             if (byOpponent) append(" an opponent controls")
             if (firstTimeEachTurn) append(" for the first time each turn")
