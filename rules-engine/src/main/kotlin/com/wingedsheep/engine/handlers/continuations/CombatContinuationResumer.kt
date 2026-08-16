@@ -52,7 +52,7 @@ class CombatContinuationResumer(
             )
         }
 
-        return services.combatManager.applyCombatDamage(newState, firstStrike = continuation.firstStrike)
+        return applyCombatDamageAtActivePriority(newState, continuation.firstStrike)
     }
 
     fun resumeAssignAsUnblocked(
@@ -85,7 +85,7 @@ class CombatContinuationResumer(
             }
         }
 
-        return services.combatManager.applyCombatDamage(newState, firstStrike = continuation.firstStrike)
+        return applyCombatDamageAtActivePriority(newState, continuation.firstStrike)
     }
 
     /**
@@ -164,7 +164,7 @@ class CombatContinuationResumer(
             }
         }
 
-        return services.combatManager.applyCombatDamage(newState, firstStrike = continuation.firstStrike)
+        return applyCombatDamageAtActivePriority(newState, continuation.firstStrike)
     }
 
     fun resumeDamagePrevention(
@@ -206,7 +206,7 @@ class CombatContinuationResumer(
 
         val newState = workingState.copy(floatingEffects = updatedEffects)
 
-        return services.combatManager.applyCombatDamage(newState, firstStrike = continuation.firstStrike)
+        return applyCombatDamageAtActivePriority(newState, continuation.firstStrike)
     }
 
     fun resumeDistributeDamage(
@@ -242,6 +242,19 @@ class CombatContinuationResumer(
         }
 
         return checkForMore(newState, events)
+    }
+
+    /**
+     * Combat damage is a turn-based action. Once all combat-damage choices have been supplied,
+     * the next priority window belongs to the active player (CR 510.3a), not to the player who
+     * happened to hold the stale cursor when the combat decision was opened.  Seed that marker
+     * before generic SubmitDecision SBA/trigger processing so nested trigger-target decisions
+     * retain the correct eventual priority recipient.
+     */
+    private fun applyCombatDamageAtActivePriority(state: GameState, firstStrike: Boolean): ExecutionResult {
+        val result = services.combatManager.applyCombatDamage(state, firstStrike)
+        if (result.error != null) return result
+        return result.copy(state = result.state.withPriority(result.state.activePlayerId))
     }
 
     fun resumeDeflectDamageSourceChoice(

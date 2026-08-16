@@ -630,6 +630,61 @@ class CommanderPodSimulationTest : FunSpec({
         driver.priorityPlayer shouldBe a
     }
 
+    test("SBA-COMMANDER-LOSS-DIES-4P-001: commander loss stabilizes before a surviving Blood Artist is targeted") {
+        val (driver, players) = pod()
+        val (a, b, c, d) = players
+        val commander = commanderOnBattlefield(driver, a)
+        val artist = driver.putCreatureOnBattlefield(a, BloodArtist.name)
+        val blocker = driver.putCreatureOnBattlefield(b, blockingWitness.name)
+        driver.removeSummoningSickness(commander)
+
+        // The trample assignment gives lethal damage to B's 2/2 blocker and the remaining
+        // 19 commander damage to B. Together with the prior 2, this reaches 21 only at
+        // the combat-damage/SBA boundary.
+        driver.replaceState(driver.state.recordCommanderDamage(commander, b, 2))
+        val eventStart = driver.events.size
+
+        driver.passPriorityUntil(com.wingedsheep.sdk.core.Step.DECLARE_ATTACKERS)
+        driver.declareAttackers(a, listOf(commander), b).error shouldBe null
+        driver.passPriorityUntil(com.wingedsheep.sdk.core.Step.DECLARE_BLOCKERS)
+        driver.priorityPlayer shouldBe b
+        driver.declareBlockers(b, mapOf(blocker to listOf(commander))).error shouldBe null
+
+        // The driver advances through the blocker priority window without guessing which
+        // players are already in the engine's pass set, then stops at combat damage.
+        driver.passPriorityUntil(com.wingedsheep.sdk.core.Step.COMBAT_DAMAGE)
+        // Combat damage is represented by the offered resolution-board decision. Accepting
+        // its legal default assignment performs damage and the entire following SBA boundary.
+        driver.confirmCombatDamage().error shouldBe null
+
+        driver.state.commanderDamageOf(commander, b) shouldBe 21
+        driver.state.activePlayers.shouldContainExactly(a, c, d)
+        // B's owned blocker first dies, then leaves the game with B rather than remaining
+        // observable in B's graveyard. Preserve the death as an event-level assertion.
+        driver.events.drop(eventStart).filterIsInstance<ZoneChangeEvent>().any {
+            it.entityId == blocker && it.fromZone == Zone.BATTLEFIELD && it.toZone == Zone.GRAVEYARD
+        } shouldBe true
+        driver.state.getEntity(blocker) shouldBe null
+        driver.state.getZone(ZoneKey(a, Zone.BATTLEFIELD)).contains(artist) shouldBe true
+
+        driver.pendingDecision?.playerId shouldBe a
+        val beforeInactiveAction = driver.state
+        driver.passPriority(b).error shouldNotBe null
+        driver.state shouldBe beforeInactiveAction
+
+        // B is no longer a legal player target. Choosing C completes the surviving
+        // Blood Artist trigger; only active players A, C, and D pass to resolve it.
+        driver.submitTargetSelection(a, listOf(c)).error shouldBe null
+        driver.stackSize shouldBe 1
+        driver.priorityPlayer shouldBe a
+        passRound(driver, listOf(a, c, d))
+
+        driver.stackSize shouldBe 0
+        driver.getLifeTotal(a) shouldBe 41
+        driver.getLifeTotal(c) shouldBe 39
+        driver.priorityPlayer shouldBe a
+    }
+
     test("four-seat Commander pod waits for every defender before placing block triggers") {
         val (driver, players) = pod()
         val (a, b, c, d) = players
