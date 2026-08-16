@@ -389,6 +389,100 @@
     ]
 }
 
+// Alquist Proft, Master Sleuth
+{
+    "name": "Alquist Proft, Master Sleuth",
+    "manaCost": "{1}{W}{U}",
+    "typeLine": "Legendary Creature — Human Detective",
+    "oracleText": "Vigilance\nWhen Alquist Proft enters, investigate. (Create a Clue token. It's an artifact with \"{2}, Sacrifice this token: Draw a card.\")\n{X}{W}{U}{U}, {T}, Sacrifice a Clue: You draw X cards and gain X life.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "VIGILANCE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Clue"
+                },
+                "descriptionOverride": "When Alquist Proft enters, investigate."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{X}{W}{U}{U}"
+                            }
+                        },
+                        "CostTap",
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomSacrifice",
+                                "filter": "artifact Clue"
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DrawCards",
+                            "count": "XValue"
+                        },
+                        {
+                            "type": "GainLife",
+                            "amount": "XValue"
+                        }
+                    ]
+                },
+                "descriptionOverride": "{X}{W}{U}{U}, {T}, Sacrifice a Clue: You draw X cards and gain X life."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "185",
+        "rarity": "MYTHIC",
+        "artist": "Andreas Zafiratos",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/1/41129b44-4fa7-473b-b2b7-48c6a58be03c.jpg?1783912857",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "Clue is an artifact type. Even though it appears on some cards with other permanent types, it's never a creature type, a land type, or anything but an artifact type."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "If an effect refers to a Clue, it means any Clue artifact, not just a Clue artifact token. For example, you can sacrifice Wrench to pay for Alquist Proft, Master Sleuth's activated ability."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "You can't sacrifice a Clue to pay multiple costs. For example, you can't sacrifice a Clue token to activate its own ability and also to activate Alquist Proft, Master Sleuth's ability."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLUE"
+    ]
+}
+
 // Analyze the Pollen
 {
     "name": "Analyze the Pollen",
@@ -3812,6 +3906,112 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Ezrim, Agency Chief
+{
+    "name": "Ezrim, Agency Chief",
+    "manaCost": "{1}{W}{W}{U}{U}",
+    "typeLine": "Legendary Creature — Archon Detective",
+    "oracleText": "Flying\nWhen Ezrim enters, investigate twice. (To investigate, create a Clue token. It's an artifact with \"{2}, Sacrifice this token: Draw a card.\")\n{1}, Sacrifice an artifact: Ezrim gains your choice of vigilance, lifelink, or hexproof until end of turn.",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 5
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Clue",
+                    "count": 2
+                },
+                "descriptionOverride": "When Ezrim enters, investigate twice."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}"
+                            }
+                        },
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomSacrifice",
+                                "filter": "artifact"
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "Modal",
+                    "modes": [
+                        {
+                            "effect": {
+                                "type": "GrantKeyword",
+                                "keyword": "VIGILANCE",
+                                "target": "Self"
+                            },
+                            "description": "Ezrim gains vigilance until end of turn"
+                        },
+                        {
+                            "effect": {
+                                "type": "GrantKeyword",
+                                "keyword": "LIFELINK",
+                                "target": "Self"
+                            },
+                            "description": "Ezrim gains lifelink until end of turn"
+                        },
+                        {
+                            "effect": {
+                                "type": "GrantKeyword",
+                                "keyword": "HEXPROOF",
+                                "target": "Self"
+                            },
+                            "description": "Ezrim gains hexproof until end of turn"
+                        }
+                    ]
+                },
+                "descriptionOverride": "{1}, Sacrifice an artifact: Ezrim gains your choice of vigilance, lifelink, or hexproof until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "202",
+        "rarity": "RARE",
+        "artist": "Jason A. Engle",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/5/9554d5f2-7a33-4734-8cf3-dfae2ccc3596.jpg?1783912850",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "Clue is an artifact type. Even though it appears on some cards with other permanent types, it's never a creature type, a land type, or anything but an artifact type."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "Some abilities trigger \"whenever you sacrifice a Clue\". Those abilities trigger whenever you sacrifice a Clue for any reason, not just to activate a Clue's activated ability."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLUE"
     ]
 }
 
@@ -7414,6 +7614,72 @@
     ]
 }
 
+// Massacre Girl, Known Killer
+{
+    "name": "Massacre Girl, Known Killer",
+    "manaCost": "{2}{B}{B}",
+    "typeLine": "Legendary Creature — Human Assassin",
+    "oracleText": "Menace\nCreatures you control have wither. (They deal damage to creatures in the form of -1/-1 counters.)\nWhenever a creature an opponent controls dies, if its toughness was less than 1, draw a card.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "MENACE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "creature tou<=0 ctrl:opponent",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "descriptionOverride": "Whenever a creature an opponent controls dies, if its toughness was less than 1, draw a card."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "GrantKeyword",
+                "keyword": "WITHER",
+                "filter": {
+                    "baseFilter": "creature ctrl:you"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "94",
+        "rarity": "MYTHIC",
+        "artist": "Billy Christian",
+        "flavorText": "\"'Did I do it?' You'll have to be more specific.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/b/cb1c8800-9d33-485c-b776-042003b9ea92.jpg?1783912894",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "Use the toughness of the creature as it last existed on the battlefield to determine whether or not Massacre Girl's ability triggers."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "Wither applies to any damage dealt to creatures by creatures you control. This includes combat damage as well as anything that causes creatures you control to deal noncombat damage, such as Incinerator of the Guilty's reflexive triggered ability or the effect of Hard-Hitting Question."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Meddling Youths
 {
     "name": "Meddling Youths",
@@ -9054,6 +9320,61 @@
     "colorIdentityOverride": [
         "BLUE"
     ]
+}
+
+// Public Thoroughfare
+{
+    "name": "Public Thoroughfare",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "This land enters tapped.\nWhen this land enters, sacrifice it unless you tap an untapped artifact or land you control.\n{T}: Add one mana of any color.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "PayOrSuffer",
+                    "cost": {
+                        "type": "PayAtom",
+                        "atom": {
+                            "type": "AtomTapPermanents",
+                            "filter": "artifact|land"
+                        }
+                    },
+                    "suffer": "SacrificeSelf"
+                },
+                "descriptionOverride": "When this land enters, sacrifice it unless you tap an untapped artifact or land you control."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": "CostTap",
+                "effect": "AddManaOfChoice",
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            }
+        ],
+        "replacementEffects": [
+            "EntersTapped"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "265",
+        "artist": "Anthony Devine",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/f/1f8b915f-3e82-4b05-b963-01ebff7a8f7b.jpg?1783912824",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "In the unusual case where Public Thoroughfare is untapped as its triggered ability is resolving, you can tap it for its own triggered ability."
+            }
+        ]
+    },
+    "colorIdentityOverride": []
 }
 
 // Pyrotechnic Performer
@@ -11873,6 +12194,82 @@
         "imageUri": "https://cards.scryfall.io/normal/front/0/e/0eda1aff-c1f4-4171-a800-605396cc8168.jpg?1783912889"
     },
     "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Treacherous Greed
+{
+    "name": "Treacherous Greed",
+    "manaCost": "{1}{W}{B}",
+    "typeLine": "Instant",
+    "oracleText": "As an additional cost to cast this spell, sacrifice a creature that dealt damage this turn.\nDraw three cards. Each opponent loses 3 life and you gain 3 life.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 3
+                    }
+                },
+                {
+                    "type": "LoseLife",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 3
+                    },
+                    "target": {
+                        "type": "PlayerRef",
+                        "player": "EachOpponent"
+                    }
+                },
+                {
+                    "type": "GainLife",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 3
+                    }
+                }
+            ]
+        },
+        "additionalCosts": [
+            {
+                "type": "AdditionalAtom",
+                "atom": {
+                    "type": "AtomSacrifice",
+                    "filter": {
+                        "cardPredicates": [
+                            "IsCreature"
+                        ],
+                        "statePredicates": [
+                            {
+                                "type": "HasDealtDamage",
+                                "thisTurnOnly": true
+                            }
+                        ]
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "237",
+        "rarity": "RARE",
+        "artist": "Eli Minaya",
+        "flavorText": "Loot's easy to divide by one.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/4/e4b9260b-0993-42c5-9bcf-87ab394d51db.jpg?1783912838",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "You can sacrifice any creature you control that dealt damage this turn to pay Treacherous Greed's additional cost, even if the permanent it dealt damage to is no longer on the battlefield or the player it dealt damage to is no longer in the game."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE",
         "BLACK"
     ]
 }
