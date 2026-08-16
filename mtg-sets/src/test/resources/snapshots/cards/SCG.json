@@ -7096,6 +7096,7 @@
             "amount": {
                 "type": "AggregateBattlefield",
                 "player": "You",
+                "filter": "permanent",
                 "aggregation": "MAX",
                 "property": "MANA_VALUE"
             },

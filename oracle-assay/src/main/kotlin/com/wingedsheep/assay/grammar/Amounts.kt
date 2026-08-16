@@ -13,6 +13,9 @@ import com.wingedsheep.sdk.dsl.Patterns
 import com.wingedsheep.sdk.model.CardScript
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.events.CounterTypeFilter
+import com.wingedsheep.sdk.scripting.values.Aggregation
+import com.wingedsheep.sdk.scripting.values.CardNumericProperty
+import com.wingedsheep.sdk.scripting.values.EntityNumericProperty
 import com.wingedsheep.sdk.scripting.effects.CompositeEffect
 import com.wingedsheep.sdk.scripting.effects.DealDamageEffect
 import com.wingedsheep.sdk.scripting.effects.DrawCardsEffect
@@ -67,6 +70,14 @@ object Amounts {
      * The two surfaces differ only in whose battlefield is scanned, which is the `Player` field of
      * the aggregate, so they are two rows of one shape rather than a rule with a player slot: "on
      * the battlefield" and "you control" are not two values of one word, they are two clauses.
+     *
+     * **`AggregateBattlefield` is canonical for the battlefield and `Count` is never emitted for
+     * it.** The SDK spells one battlefield tally twice — `Count(You, BATTLEFIELD, f)` is the same
+     * value as `AggregateBattlefield(You, f)` — and the hand-written corpus writes the aggregate 603
+     * times against the `Count` spelling's 49. Registering both would be ambiguity by construction,
+     * so the minority spelling declines and this paragraph is the finding. The mirror image holds
+     * below: `Count` is canonical off the battlefield, where `AggregateZone`'s default aggregation
+     * restates it 17 times against `Count`'s 236.
      */
     private fun battlefieldCount(surface: String, player: Player, name: String): Phrase<DynamicAmount> =
         phrase("the number of {filter} $surface", name = name) {
@@ -81,21 +92,169 @@ object Amounts {
         }
 
     /**
-     * Everything a "where X is …" clause can define.
+     * "the number of creature cards in your graveyard", "the number of instant cards in all
+     * graveyards" — a tally of a *zone*, which Oracle spells with the noun **card**.
      *
-     * "the number of cards in their hand" is a *zone* count rather than a battlefield one and its
-     * player is the triggering one, so it is a constant here: nothing in it varies, and a rule with
-     * a zone slot would be a vocabulary for a phrase Oracle spells exactly one way.
+     * The noun is the whole difference from [battlefieldCount] and it is the rules' own: an object
+     * in a graveyard is a card, not a permanent (the same split [Graveyard] states), so the type
+     * phrase stays *singular* in front of the inflected "cards" and this rule slots
+     * [Filters.filter] where the battlefield rule slots [Filters.plural].
      */
-    val count: Phrase<DynamicAmount> = oneOf(
-        "a count",
+    private fun zoneCardCount(
+        surface: String,
+        player: Player,
+        zone: Zone,
+        name: String,
+    ): Phrase<DynamicAmount> =
+        phrase("the number of {filter} cards $surface", name = name) {
+            slot("filter", Filters.filter)
+            build { DynamicAmount.Count(player, zone, it.value("filter")) }
+            match { amount ->
+                val counted = amount as? DynamicAmount.Count ?: return@match null
+                if (counted != DynamicAmount.Count(player, zone, counted.filter)) return@match null
+                bind("filter" to counted.filter)
+            }
+        }
+
+    /**
+     * "the greatest mana value among creatures you control", "the number of colors among permanents
+     * you control" — a battlefield read that is **not** a tally.
+     *
+     * One layer owning one field, in [Filters]' sense: the head phrase is exactly what the
+     * `aggregation` (and its `property`) spell, and everything after it is the same noun phrase and
+     * controller clause [battlefieldCount] reads. So a new aggregation is a row, not a rule — and
+     * the counting head stays out of this list, because `COUNT` is [battlefieldCount] and offering
+     * it twice is ambiguity by construction.
+     */
+    private fun battlefieldAggregate(
+        head: String,
+        aggregation: Aggregation,
+        property: CardNumericProperty?,
+        surface: String,
+        player: Player,
+        name: String,
+    ): Phrase<DynamicAmount> =
+        phrase("$head {filter} $surface", name = name) {
+            slot("filter", Filters.plural)
+            build { DynamicAmount.AggregateBattlefield(player, it.value("filter"), aggregation, property) }
+            match { amount ->
+                val aggregate = amount as? DynamicAmount.AggregateBattlefield ?: return@match null
+                val rebuilt =
+                    DynamicAmount.AggregateBattlefield(player, aggregate.filter, aggregation, property)
+                if (amount != rebuilt) return@match null
+                bind("filter" to aggregate.filter)
+            }
+        }
+
+    /**
+     * "the number of cards in your hand" — the same tally with **no** filter, which English spells
+     * by dropping the type phrase rather than by writing a word for "any".
+     *
+     * A row rather than a `Filters.Any` inside [zoneCardCount], for the reason [Filters] gives for
+     * having no bare "card" noun: a filter that printed as the empty string would let every other
+     * layer print a phrase with a hole in it. The unfiltered count is a different *sentence*, so it
+     * is a different rule.
+     */
+    private fun bareZoneCount(surface: String, player: Player, zone: Zone): Phrase<DynamicAmount> =
+        constant("the number of cards $surface", DynamicAmount.Count(player, zone))
+
+    /** "the number of flame counters on ~" — see [plainCount]'s last row for why the kind is a slot. */
+    private val counterCount: Phrase<DynamicAmount> =
+        phrase("the number of {kind} counters on {self}", name = "a count of the source's counters") {
+            slot("kind", Primitives.counterKind)
+            slot("self", Primitives.self)
+            build { DynamicAmounts.countersOnSelf(Primitives.counterFilter(it.value("kind"))) }
+            match { amount ->
+                val property = (amount as? DynamicAmount.EntityProperty) ?: return@match null
+                val counter = (property.numericProperty as? EntityNumericProperty.CounterCount)
+                    ?: return@match null
+                val kind = Primitives.counterKindOf(counter.counterType) ?: return@match null
+                if (amount != DynamicAmounts.countersOnSelf(counter.counterType)) return@match null
+                bind("kind" to kind, "self" to Unit)
+            }
+        }
+
+    /**
+     * Everything a count can be, before the arithmetic layer.
+     *
+     * The four zones are rows rather than a slot for the same reason the two battlefields are:
+     * "in your graveyard" and "in all graveyards" are two clauses, not two values of one word, and
+     * the possessive changes with the player. What is shared is the *shape*, which is the point.
+     */
+    private val plainCount: Phrase<DynamicAmount> = oneOf(
+        "a plain count",
         battlefieldCount("on the battlefield", Player.Each, "a count of the whole battlefield"),
         battlefieldCount("you control", Player.You, "a count of your battlefield"),
-        constant(
-            "the number of cards in their hand",
-            DynamicAmount.Count(Player.TriggeringPlayer, Zone.HAND),
+        zoneCardCount("in your graveyard", Player.You, Zone.GRAVEYARD, "a count of your graveyard"),
+        zoneCardCount("in all graveyards", Player.Each, Zone.GRAVEYARD, "a count of every graveyard"),
+        bareZoneCount("in your graveyard", Player.You, Zone.GRAVEYARD),
+        bareZoneCount("in your hand", Player.You, Zone.HAND),
+        // "their" is the triggering player's, which is why this one names a player the others reach
+        // through a possessive: the sentence it lives in has already introduced them.
+        bareZoneCount("in their hand", Player.TriggeringPlayer, Zone.HAND),
+        constant("your life total", DynamicAmount.YourLifeTotal),
+        battlefieldAggregate(
+            "the greatest mana value among", Aggregation.MAX, CardNumericProperty.MANA_VALUE,
+            "you control", Player.You, "the greatest mana value on your battlefield",
         ),
+        battlefieldAggregate(
+            "the greatest power among", Aggregation.MAX, CardNumericProperty.POWER,
+            "you control", Player.You, "the greatest power on your battlefield",
+        ),
+        battlefieldAggregate(
+            "the greatest toughness among", Aggregation.MAX, CardNumericProperty.TOUGHNESS,
+            "you control", Player.You, "the greatest toughness on your battlefield",
+        ),
+        battlefieldAggregate(
+            "the number of colors among", Aggregation.DISTINCT_COLORS, null,
+            "you control", Player.You, "the colours on your battlefield",
+        ),
+        // Domain, spelled out. The SDK publishes `DynamicAmounts.domain()` for it, and that factory
+        // builds exactly this aggregate over `GameObjectFilter.Land` — so slotting the noun rather
+        // than fixing it costs nothing and reads the two cards that count the types among something
+        // narrower.
+        battlefieldAggregate(
+            "the number of basic land types among", Aggregation.DISTINCT_BASIC_LAND_SUBTYPES, null,
+            "you control", Player.You, "the basic land types on your battlefield",
+        ),
+        // Tarmogoyf's count, and the one aggregation the corpus spells over a *zone*. Bare rather
+        // than filtered because "card types among cards" is the only noun Oracle writes it with —
+        // a filtered version would be a printed form no card uses.
+        constant(
+            "the number of card types among cards in all graveyards",
+            DynamicAmount.AggregateZone(Player.Each, Zone.GRAVEYARD, aggregation = Aggregation.DISTINCT_TYPES),
+        ),
+        constant(
+            "the number of card types among cards in your graveyard",
+            DynamicAmount.AggregateZone(Player.You, Zone.GRAVEYARD, aggregation = Aggregation.DISTINCT_TYPES),
+        ),
+        // "the number of +1/+1 counters on ~" — a tally of the source's own counters, which the SDK
+        // reads as a property of an entity rather than as a count of a zone. The kind is a slot for
+        // [Primitives.counterFilter]'s reason: `CounterTypeFilter` has dedicated cases for the
+        // stat-changing kinds and a `Named` fallback for the rest, and one leaf spells both.
+        counterCount,
     )
+
+    /**
+     * The multiplier layer — "**twice** the number of cards in your hand".
+     *
+     * One layer owning one field, exactly as [Filters]' suffixes each own one predicate: it strips
+     * `Multiply`'s factor and hands the amount underneath back inwards. Only the doubling is
+     * spelled, because that is the multiplier English has a single word for; "three times …" is a
+     * different printed shape and would be a second row here, not a number slot in this one.
+     */
+    private val doubled: Phrase<DynamicAmount> = phrase("twice {amount}", name = "twice a count") {
+        slot("amount", plainCount)
+        build { DynamicAmount.Multiply(it.value("amount"), 2) }
+        match { amount ->
+            val product = amount as? DynamicAmount.Multiply ?: return@match null
+            if (product.multiplier != 2) return@match null
+            bind("amount" to product.amount)
+        }
+    }
+
+    /** Everything a "where X is …" clause, or an "equal to …" one, can define. */
+    val count: Phrase<DynamicAmount> = oneOf("a count", plainCount, doubled)
 
     /** "+1/+1 counters on it" / "+1/+1 counter on ~" — a tally of the source's own counters. */
     private val plusOneCounters: DynamicAmount = DynamicAmounts.countersOnSelf(CounterTypeFilter.PlusOnePlusOne)
@@ -265,49 +424,6 @@ object Amounts {
     // Counts of the source's own counters
     // ---------------------------------------------------------------------------------------
 
-    /**
-     * "~ deals damage equal to the number of +1/+1 counters on it to any target." — Kilnmouth
-     * Dragon, Daru Stinger.
-     *
-     * The recipient is a rule parameter rather than a slot for [Steps.countedStep]'s reason: "any
-     * target" and "target attacking or blocking creature" are different clauses with different
-     * requirements, not two values of one word.
-     */
-    private fun damageByOwnCounters(
-        recipient: String,
-        name: String,
-        requirement: com.wingedsheep.sdk.scripting.targets.TargetRequirement?,
-        filtered: Boolean,
-    ): Phrase<CardScript> {
-        fun scriptFor(target: com.wingedsheep.sdk.scripting.targets.TargetRequirement) = CardScript(
-            spellEffect = Effects.DealDamage(plusOneCounters, Targets.bound()),
-            targetRequirements = listOf(target),
-        )
-        return phrase(
-            "{self} deals damage equal to the number of +1/+1 counters on it to $recipient",
-            name = name,
-        ) {
-            slot("self", Primitives.self)
-            if (filtered) slot("filter", Filters.filter)
-            build { bindings ->
-                val target = requirement ?: Targets.permanent(bindings.value("filter"))
-                scriptFor(target)
-            }
-            match { script ->
-                val target = script.targetRequirements.singleOrNull() ?: return@match null
-                if ((script.spellEffect as? DealDamageEffect)?.amount != plusOneCounters) return@match null
-                if (script != scriptFor(target)) return@match null
-                if (requirement != null) {
-                    if (target != requirement) return@match null
-                    bind("self" to Unit)
-                } else {
-                    val filter = Targets.permanentFilter(target) ?: return@match null
-                    bind("self" to Unit, "filter" to filter)
-                }
-            }
-        }
-    }
-
     /** "Target creature gets +1/+1 until end of turn for each +1/+1 counter on ~." — Canopy Crawler. */
     private val pumpTargetPerOwnCounter: Phrase<CardScript> = run {
         fun scriptFor(filter: GameObjectFilter) = CardScript(
@@ -447,8 +563,6 @@ object Amounts {
         pumpTargetPerOwnCounter,
         loseLifePerOwnCounter,
         gainThatMuchLife,
-        damageByOwnCounters("any target", "damage by own counters to any target", Targets.any(), filtered = false),
-        damageByOwnCounters("target {filter}", "damage by own counters to a target", null, filtered = true),
         triggeringGetsPerBlocker,
         mayHaveTargetSuffer(
             "you may have target player lose life equal to {amount}",

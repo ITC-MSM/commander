@@ -12,10 +12,12 @@ import com.wingedsheep.sdk.core.AbilityFlag
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.ManaCost
 import com.wingedsheep.sdk.model.CardScript
+import com.wingedsheep.sdk.model.CharacteristicValue
 import com.wingedsheep.sdk.scripting.AbilityId
 import com.wingedsheep.sdk.scripting.ActivatedAbility
 import com.wingedsheep.sdk.scripting.EntersWithRevealCounters
 import com.wingedsheep.sdk.scripting.KeywordAbility
+import com.wingedsheep.sdk.scripting.values.DynamicAmount
 
 /**
  * The entry point: one normalized ability line ⇄ the [CardFragment] it denotes.
@@ -402,6 +404,85 @@ object Grammar {
         }
     )
 
+    /**
+     * "~'s power and toughness are each equal to the number of lands you control." — the
+     * **characteristic-defining ability** (CR 604.3), and the third line whose content lands outside
+     * the script.
+     *
+     * It is here rather than in [Statics] or [Amounts] for [amplifyLine]'s reason, one slot further
+     * out: the SDK puts a CDA in `CardDefinition.creatureStats`, not in an ability list, so no family
+     * producing a `CardScript` can express it and the fragment is the only place the line's meaning
+     * can land. See [CardFragment.dynamicPower] for why the header spelling is canonical over the
+     * Layer 7b static that says the same thing.
+     *
+     * The four printed shapes are three rows and one pairing rule, because English writes the
+     * conjunction two ways round: "power and toughness are each equal to X" defines both from one
+     * clause, "power is equal to X" and "toughness is equal to X" each define one — and Yavimaya
+     * Kavu prints those two as separate *lines*, which is why [CardFragment.merge] folds them per
+     * characteristic. The fourth, "…and its toughness is equal to that number plus 1" (Lhurgoyf,
+     * Tarmogoyf), is one sentence with an anaphor in it: "that number" is the same amount the first
+     * half named, so the model stores it once and the offset is what the second half adds. That
+     * makes it a rule spanning both halves rather than a [sequence] of two, exactly as
+     * [Amounts]' where-clause sentences are.
+     */
+    private val characteristicDefiningLines: List<Phrase<CardFragment>> = run {
+        fun fragmentFor(power: CharacteristicValue?, toughness: CharacteristicValue?) =
+            CardFragment(dynamicPower = power, dynamicToughness = toughness)
+
+        fun rule(
+            template: String,
+            name: String,
+            power: (DynamicAmount) -> CharacteristicValue?,
+            toughness: (DynamicAmount) -> CharacteristicValue?,
+        ): Phrase<CardFragment> = phrase(template, name = name) {
+            slot("self", Primitives.selfNamed)
+            slot("amount", Amounts.count)
+            build { fragmentFor(power(it.value("amount")), toughness(it.value("amount"))) }
+            match { fragment ->
+                // Whichever half this rule defines is where the amount is read back from; the
+                // reconstruction below is what refuses a fragment carrying the other half as well.
+                val source = (fragment.dynamicPower ?: fragment.dynamicToughness).sourceOrNull()
+                    ?: return@match null
+                if (fragment != fragmentFor(power(source), toughness(source))) return@match null
+                bind("self" to Unit, "amount" to source)
+            }
+        }
+
+        listOf(
+            rule(
+                "{self}'s power and toughness are each equal to {amount}.",
+                "a power and toughness defined by a count",
+                power = { CharacteristicValue.Dynamic(it) },
+                toughness = { CharacteristicValue.Dynamic(it) },
+            ),
+            rule(
+                "{self}'s power is equal to {amount}.",
+                "a power defined by a count",
+                power = { CharacteristicValue.Dynamic(it) },
+                toughness = { null },
+            ),
+            rule(
+                "{self}'s toughness is equal to {amount}.",
+                "a toughness defined by a count",
+                power = { null },
+                toughness = { CharacteristicValue.Dynamic(it) },
+            ),
+            rule(
+                "{self}'s power is equal to {amount} and its toughness is equal to that number plus 1.",
+                "a power defined by a count and a toughness one greater",
+                power = { CharacteristicValue.Dynamic(it) },
+                toughness = { CharacteristicValue.DynamicWithOffset(it, 1) },
+            ),
+        )
+    }
+
+    /** The [DynamicAmount] behind a dynamic characteristic, or null when the value is a fixed one. */
+    private fun CharacteristicValue?.sourceOrNull(): DynamicAmount? = when (this) {
+        is CharacteristicValue.Dynamic -> source
+        is CharacteristicValue.DynamicWithOffset -> source
+        else -> null
+    }
+
     val abilityLine: Phrase<CardFragment> = oneOf(
         "an ability line",
         emptyLine,
@@ -421,5 +502,6 @@ object Grammar {
         replacementLine,
         enchantLine,
         staticLine,
+        *characteristicDefiningLines.toTypedArray(),
     )
 }

@@ -13215,18 +13215,16 @@
         "power": {
             "type": "Dynamic",
             "source": {
-                "type": "Count",
+                "type": "AggregateBattlefield",
                 "player": "You",
-                "zone": "Battlefield",
                 "filter": "nonland permanent"
             }
         },
         "toughness": {
             "type": "Dynamic",
             "source": {
-                "type": "Count",
+                "type": "AggregateBattlefield",
                 "player": "You",
-                "zone": "Battlefield",
                 "filter": "nonland permanent"
             }
         }

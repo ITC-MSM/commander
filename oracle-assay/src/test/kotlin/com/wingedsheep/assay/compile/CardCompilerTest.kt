@@ -1,7 +1,13 @@
 package com.wingedsheep.assay.compile
 
 import com.wingedsheep.sdk.core.Keyword
+import com.wingedsheep.sdk.core.Zone
+import com.wingedsheep.sdk.model.CharacteristicValue
+import com.wingedsheep.sdk.scripting.GameObjectFilter
+import com.wingedsheep.sdk.scripting.references.Player
+import com.wingedsheep.sdk.scripting.values.DynamicAmount
 import io.kotest.core.spec.style.StringSpec
+import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
@@ -106,11 +112,64 @@ class CardCompilerTest : StringSpec({
         result.assay.shouldNotBeNull().lines.size shouldBe 2
     }
 
-    "a characteristic-defining power declines instead of becoming zero" {
+    /**
+     * The `*` in a stat box and the line that defines it are two halves of one value (CR 208.2), and
+     * the compiler is the only place they meet — the grammar's unit is a line and the star is in the
+     * header. So the pairing is fail-closed in both directions: a star with nothing to define it is
+     * still a decline, and a defining line over a printed number is one too.
+     */
+    "a characteristic-defining power declines when no line defines it" {
         val result = declined(json("Star Bear", "Flying", power = "*", toughness = "3"))
 
         result.declines.map { it.kind } shouldContainExactly listOf(DeclineKind.HEADER)
         result.declines.single().detail shouldContain "*"
+    }
+
+    "a characteristic-defining line fills the star it was printed for" {
+        val card = compiled(
+            json(
+                "Nightmare Horse",
+                "Flying\nNightmare Horse's power and toughness are each equal to the number of Swamps you control.",
+                power = "*",
+                toughness = "*",
+            )
+        ).definition
+
+        val swamps = DynamicAmount.AggregateBattlefield(
+            Player.You,
+            GameObjectFilter.Land.withSubtype("Swamp"),
+        )
+        card.creatureStats.shouldNotBeNull().power shouldBe CharacteristicValue.Dynamic(swamps)
+        card.creatureStats.shouldNotBeNull().toughness shouldBe CharacteristicValue.Dynamic(swamps)
+        // The line contributes the stat box and nothing else — it is not an ability.
+        card.script.staticAbilities.shouldBeEmpty()
+    }
+
+    "a defined half pairs with a printed half, and the arithmetic of the star is checked" {
+        val text = "Goyf's power is equal to the number of creature cards in all graveyards " +
+            "and its toughness is equal to that number plus 1."
+        val card = compiled(json("Goyf", text, power = "*", toughness = "1+*")).definition
+        val types = DynamicAmount.Count(Player.Each, Zone.GRAVEYARD, GameObjectFilter.Creature)
+
+        card.creatureStats.shouldNotBeNull().toughness shouldBe
+            CharacteristicValue.DynamicWithOffset(types, 1)
+
+        // The same text over a plain `*` toughness is a card whose box and text disagree.
+        declined(json("Goyf", text, power = "*", toughness = "*"))
+            .declines.map { it.kind } shouldContainExactly listOf(DeclineKind.HEADER)
+    }
+
+    "a defining line over a printed number declines rather than overriding the box" {
+        val result = declined(
+            json(
+                "Confused Bear",
+                "Confused Bear's power and toughness are each equal to the number of Swamps you control.",
+                power = "2",
+                toughness = "2",
+            )
+        )
+
+        result.declines.map { it.kind } shouldContainExactly listOf(DeclineKind.HEADER)
     }
 
     "a multi-faced card declines rather than guessing which slot the back face fills" {

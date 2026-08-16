@@ -5,6 +5,7 @@ import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.Targets
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
+import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.references.Player
 
 /**
@@ -23,7 +24,10 @@ val TorrentOfFire = card("Torrent of Fire") {
     spell {
         val t = target("target", Targets.Any)
         effect = Effects.DealDamage(
-            amount = DynamicAmounts.battlefield(Player.You).maxManaValue(),
+            // `GameObjectFilter.Permanent`, not the default `Any`: the card prints the noun
+            // "permanents", and on the battlefield the predicate is a no-op that still says
+            // what the line says. Assay's differential reported the omission.
+            amount = DynamicAmounts.battlefield(Player.You, GameObjectFilter.Permanent).maxManaValue(),
             target = t
         )
     }

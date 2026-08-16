@@ -199,6 +199,89 @@ object Steps {
     }
 
     /**
+     * A counted verb and its **"equal to …" sibling**, generated from one call site.
+     *
+     * Oracle spells one quantity two ways and the model stores one value: "you gain 3 life" puts the
+     * number where a numeral goes, and "you gain life equal to the number of Swamps you control"
+     * moves it behind the noun as a whole clause. Neither template can be derived from the other —
+     * the amount changes *position*, not just spelling — so the pair is two strings; what must not
+     * be two is the script, the reader and the fail-closed reconstruction, because those are what a
+     * second copy would drift on. This is [mayCountedStep]'s shape one axis over: one call site,
+     * both printed forms.
+     *
+     * **The forms are disjoint by domain, not by alternation order.** A `Fixed` amount is the
+     * numeral and everything else is the clause, so each rule refuses the other's values in `match`
+     * and printing stays determined by the model — the same fix `drawOne` versus [Cardinals.word]
+     * gets.
+     *
+     * ### Where the clause goes, and why the model decides
+     *
+     * A damage sentence puts the "equal to …" clause in **two** places, and both are real Oracle:
+     * "deals damage to target creature equal to the number of Mountains you control" (Spitting
+     * Earth) trails it, and "deals damage equal to its power to target creature" (every fight-like
+     * card) leads with it. 195 printed lines take the first order and 152 the second, so neither is
+     * a minority spelling to decline — but two rules that can each print one model is printing left
+     * to alternation order, which this module treats as a latent bug rather than a preference.
+     *
+     * The split the corpus actually draws is on the **shape of the amount**: a property read off an
+     * object ("its power", "the number of +1/+1 counters on it") leads, and everything else — the
+     * board and zone tallies, which are long noun phrases — trails. That is a fact about the model,
+     * so [leading] and the trailing form take disjoint halves of `DynamicAmount` and each refuses
+     * the other's. English is following the heavy-noun-phrase rule; `EntityProperty` is where the
+     * light ones live.
+     *
+     * That the amount is a slot at all is what makes this multiplicative: every counted verb naming
+     * a second spelling reads the whole of [Amounts.count], and every row added to that vocabulary
+     * reaches every one of these verbs without being told.
+     */
+    private fun countedStepPair(
+        template: String,
+        equalTo: String,
+        name: String,
+        script: (DynamicAmount) -> CardScript,
+        amount: (Effect) -> DynamicAmount?,
+        leading: String? = null,
+    ): List<Phrase<CardScript>> {
+        /** The amount this model carries, or null when it is not in [domain]. */
+        fun amountIn(model: CardScript, domain: (DynamicAmount) -> Boolean): DynamicAmount? {
+            val value = amount(model.spellEffect ?: return null) ?: return null
+            if (model != script(value)) return null
+            return value.takeIf(domain)
+        }
+
+        fun clause(surface: String, ruleName: String, domain: (DynamicAmount) -> Boolean) =
+            phrase<CardScript>(surface, name = ruleName) {
+                slot("amount", Amounts.count)
+                if (surface.contains("{self}")) slot("self", Primitives.self)
+                build { bindings -> bindings.value<DynamicAmount>("amount").takeIf(domain)?.let(script) }
+                match { model -> amountIn(model, domain)?.let { bind("amount" to it, "self" to Unit) } }
+            }
+
+        val numeral = phrase<CardScript>(template, name = name) {
+            slot("n", Primitives.cardinal)
+            if (template.contains("{self}")) slot("self", Primitives.self)
+            build { script(DynamicAmount.Fixed(it.int("n"))) }
+            match { model ->
+                val fixed = amountIn(model) { it is DynamicAmount.Fixed } as? DynamicAmount.Fixed
+                    ?: return@match null
+                bind("n" to fixed.amount, "self" to Unit)
+            }
+        }
+        if (leading == null) {
+            return listOf(numeral, clause(equalTo, "$name, by a count") { it !is DynamicAmount.Fixed })
+        }
+        val heavy = { value: DynamicAmount -> value !is DynamicAmount.Fixed && value !is DynamicAmount.EntityProperty }
+        val light = { value: DynamicAmount -> value is DynamicAmount.EntityProperty }
+        return listOf(
+            numeral,
+            clause(equalTo, "$name, by a count", heavy),
+            clause(leading, "$name, by a property of an object", light),
+            alternate(clause(equalTo, "$name, by a property of an object (trailing)", light)),
+            alternate(clause(leading, "$name, by a count (leading)", heavy)),
+        )
+    }
+
+    /**
      * The same shape over a [DynamicAmount] the text names in words rather than in digits — "deals
      * **X** damage", "gains life equal to the number of Mountains you control".
      *
@@ -247,98 +330,139 @@ object Steps {
         },
     )
 
+    /**
+     * The counted verbs. Those whose amount Oracle also spells as an "equal to …" clause are
+     * [countedStepPair]s, so both printed forms come from one call site and one reconstruction;
+     * scry and surveil are not, because their SDK count is an `Int` and no card writes them any way
+     * but as a numeral.
+     *
+     * **Life is deliberately not one of them, and the reason is a collision rather than an
+     * oversight.** "You gain 1 life for each creature you control" and "You gain life equal to the
+     * number of creatures you control" are one model, and Oracle prints the first 131 times against
+     * the second's 23 — so the "for each" family below is the canonical spelling, and adding the
+     * clause here would be a second rule that can print the same value. Making the clause an
+     * `alternate` does not work either: [gainLifeForEach] only spells *battlefield* aggregates, so a
+     * life gain counting a graveyard would parse with nothing able to print it. The fix is to give
+     * the "for each" form the same vocabulary treatment this band gave "equal to" — a singular noun
+     * phrase where this one takes [Amounts.count] — and that is a band of its own, not a row here.
+     */
     private val countedSteps: List<Phrase<CardScript>> = listOf(
-        countedStep(
-            "you gain {n} life", "you gain life",
-            script = { CardScript(spellEffect = Effects.GainLife(it)) },
-            count = ::lifeGained,
+        listOf(
+            countedStep(
+                "you gain {n} life", "you gain life",
+                script = { CardScript(spellEffect = Effects.GainLife(it)) },
+                count = ::lifeGained,
+            ),
         ),
-        mayCountedStep(
-            "you may gain {n} life", "you may gain life",
-            script = { CardScript(spellEffect = Effects.GainLife(it)) },
-            count = ::lifeGained,
+        listOf(
+            mayCountedStep(
+                "you may gain {n} life", "you may gain life",
+                script = { CardScript(spellEffect = Effects.GainLife(it)) },
+                count = ::lifeGained,
+            ),
         ),
-        countedStep(
-            "target player gains {n} life", "target player gains life",
-            script = {
-                CardScript(
-                    spellEffect = Effects.GainLife(it, Targets.bound()),
-                    targetRequirements = listOf(Targets.player()),
-                )
-            },
-            count = ::lifeGained,
+        listOf(
+            countedStep(
+                "target player gains {n} life", "target player gains life",
+                script = {
+                    CardScript(
+                        spellEffect = Effects.GainLife(it, Targets.bound()),
+                        targetRequirements = listOf(Targets.player()),
+                    )
+                },
+                count = ::lifeGained,
+            ),
         ),
-        countedStep(
-            "you lose {n} life", "you lose life",
-            script = { CardScript(spellEffect = Effects.LoseLife(it, EffectTarget.Controller)) },
-            count = ::lifeLost,
+        listOf(
+            countedStep(
+                "you lose {n} life", "you lose life",
+                script = { CardScript(spellEffect = Effects.LoseLife(it, EffectTarget.Controller)) },
+                count = ::lifeLost,
+            ),
         ),
-        countedStep(
-            "target player loses {n} life", "target player loses life",
-            script = {
-                CardScript(
-                    spellEffect = Effects.LoseLife(it, Targets.bound()),
-                    targetRequirements = listOf(Targets.player()),
-                )
-            },
-            count = ::lifeLost,
+        listOf(
+            countedStep(
+                "target player loses {n} life", "target player loses life",
+                script = {
+                    CardScript(
+                        spellEffect = Effects.LoseLife(it, Targets.bound()),
+                        targetRequirements = listOf(Targets.player()),
+                    )
+                },
+                count = ::lifeLost,
+            ),
         ),
-        countedStep(
-            "scry {n}", "scry",
-            script = { CardScript(spellEffect = Effects.Scry(it)) },
-            count = { (it as? ScryEffect)?.count },
+        listOf(
+            countedStep(
+                "scry {n}", "scry",
+                script = { CardScript(spellEffect = Effects.Scry(it)) },
+                count = { (it as? ScryEffect)?.count },
+            ),
+            countedStep(
+                "surveil {n}", "surveil",
+                script = { CardScript(spellEffect = Effects.Surveil(it)) },
+                count = { (it as? SurveilEffect)?.count },
+            ),
         ),
-        countedStep(
-            "surveil {n}", "surveil",
-            script = { CardScript(spellEffect = Effects.Surveil(it)) },
-            count = { (it as? SurveilEffect)?.count },
-        ),
-        countedStep(
-            "{self} deals {n} damage to any target", "deals damage to any target",
+        countedStepPair(
+            "{self} deals {n} damage to any target",
+            "{self} deals damage to any target equal to {amount}",
+            "deals damage to any target",
             script = {
                 CardScript(
                     spellEffect = Effects.DealDamage(it, Targets.bound()),
                     targetRequirements = listOf(Targets.any()),
                 )
             },
-            count = ::damageDealt,
+            amount = ::damageDealtAmount,
+            leading = "{self} deals damage equal to {amount} to any target",
         ),
         // Lavaborn Muse. "That player" is the one whose step triggered, which the model names
         // directly — so unlike "target player" this clause declares no requirement at all.
-        countedStep(
-            "{self} deals {n} damage to that player", "deals damage to the triggering player",
+        countedStepPair(
+            "{self} deals {n} damage to that player",
+            "{self} deals damage to that player equal to {amount}",
+            "deals damage to the triggering player",
             script = {
                 CardScript(
                     spellEffect = Effects.DealDamage(it, EffectTarget.PlayerRef(Player.TriggeringPlayer))
                 )
             },
-            count = ::damageDealt,
+            amount = ::damageDealtAmount,
+            leading = "{self} deals damage equal to {amount} to that player",
         ),
-        countedStep(
-            "{self} deals {n} damage to target player", "deals damage to target player",
+        countedStepPair(
+            "{self} deals {n} damage to target player",
+            "{self} deals damage to target player equal to {amount}",
+            "deals damage to target player",
             script = {
                 CardScript(
                     spellEffect = Effects.DealDamage(it, Targets.bound()),
                     targetRequirements = listOf(Targets.player()),
                 )
             },
-            count = ::damageDealt,
+            amount = ::damageDealtAmount,
+            leading = "{self} deals damage equal to {amount} to target player",
         ),
-        countedStep(
-            "{self} deals {n} damage to target opponent", "deals damage to target opponent",
+        countedStepPair(
+            "{self} deals {n} damage to target opponent",
+            "{self} deals damage to target opponent equal to {amount}",
+            "deals damage to target opponent",
             script = {
                 CardScript(
                     spellEffect = Effects.DealDamage(it, Targets.bound()),
                     targetRequirements = listOf(Targets.opponent()),
                 )
             },
-            count = ::damageDealt,
+            amount = ::damageDealtAmount,
+            leading = "{self} deals damage equal to {amount} to target opponent",
         ),
         // "Target opponent or planeswalker" is the modern redirection wording, and it is a
         // requirement type of its own rather than a filter — so it is a row beside "target player"
         // rather than a case inside it.
-        countedStep(
+        countedStepPair(
             "{self} deals {n} damage to target opponent or planeswalker",
+            "{self} deals damage to target opponent or planeswalker equal to {amount}",
             "deals damage to target opponent or planeswalker",
             script = {
                 CardScript(
@@ -346,10 +470,12 @@ object Steps {
                     targetRequirements = listOf(Targets.opponentOrPlaneswalker()),
                 )
             },
-            count = ::damageDealt,
+            amount = ::damageDealtAmount,
+            leading = "{self} deals damage equal to {amount} to target opponent or planeswalker",
         ),
-        countedStep(
+        countedStepPair(
             "{self} deals {n} damage to target player or planeswalker",
+            "{self} deals damage to target player or planeswalker equal to {amount}",
             "deals damage to target player or planeswalker",
             script = {
                 CardScript(
@@ -357,9 +483,10 @@ object Steps {
                     targetRequirements = listOf(Targets.playerOrPlaneswalker()),
                 )
             },
-            count = ::damageDealt,
+            amount = ::damageDealtAmount,
+            leading = "{self} deals damage equal to {amount} to target player or planeswalker",
         ),
-    )
+    ).flatten()
 
     /**
      * The clauses whose whole sentence is one published effect and whose only variable, if any, is a
@@ -599,28 +726,91 @@ object Steps {
     /**
      * "~ deals 2 damage to target creature." — the same verb as above over a noun phrase rather than
      * over the fixed "any target" / "target player" forms, so it carries two slots instead of one.
+     *
+     * And, like those, in two printed forms: the numeral and the "equal to …" clause. It is written
+     * out here rather than through [countedStepPair] because the target is a *slot* — the pair's
+     * script takes the amount alone, and this sentence's script takes the amount and the filter — so
+     * sharing the shape would mean parameterizing it over an arity nothing else needs. What is
+     * shared is what matters: one `scriptFor`, one reconstruction, and the same domain split
+     * (`Fixed` is the numeral, everything else is the clause).
      */
-    private val damageToTargetPermanent: Phrase<CardScript> = run {
-        fun scriptFor(amount: Int, filter: GameObjectFilter) = CardScript(
+    private val damageToTargetPermanent: List<Phrase<CardScript>> = run {
+        fun scriptFor(amount: DynamicAmount, filter: GameObjectFilter) = CardScript(
             spellEffect = Effects.DealDamage(amount, Targets.bound()),
             targetRequirements = listOf(Targets.permanent(filter)),
         )
-        phrase(
-            "{self} deals {n} damage to target {filter}",
-            name = "deals damage to target permanent",
-        ) {
-            slot("self", Primitives.self)
-            slot("n", Primitives.cardinal)
-            slot("filter", Filters.filter)
-            build { scriptFor(it.int("n"), it.value("filter")) }
-            match { script ->
-                val amount = damageDealt(script.spellEffect ?: return@match null) ?: return@match null
-                val requirement = script.targetRequirements.singleOrNull() ?: return@match null
-                val filter = Targets.permanentFilter(requirement) ?: return@match null
-                if (script != scriptFor(amount, filter)) return@match null
-                bind("self" to Unit, "n" to amount, "filter" to filter)
-            }
+
+        fun readBack(
+            script: CardScript,
+            domain: (DynamicAmount) -> Boolean,
+        ): Pair<DynamicAmount, GameObjectFilter>? {
+            val amount = damageDealtAmount(script.spellEffect ?: return null) ?: return null
+            if (!domain(amount)) return null
+            val requirement = script.targetRequirements.singleOrNull() ?: return null
+            val filter = Targets.permanentFilter(requirement) ?: return null
+            if (script != scriptFor(amount, filter)) return null
+            return amount to filter
         }
+
+        val heavy = { value: DynamicAmount -> value !is DynamicAmount.Fixed && value !is DynamicAmount.EntityProperty }
+        val light = { value: DynamicAmount -> value is DynamicAmount.EntityProperty }
+
+        fun clause(surface: String, ruleName: String, domain: (DynamicAmount) -> Boolean) =
+            phrase<CardScript>(surface, name = ruleName) {
+                slot("self", Primitives.self)
+                slot("amount", Amounts.count)
+                slot("filter", Filters.filter)
+                build { bindings ->
+                    bindings.value<DynamicAmount>("amount").takeIf(domain)
+                        ?.let { scriptFor(it, bindings.value("filter")) }
+                }
+                match { script ->
+                    val (amount, filter) = readBack(script, domain) ?: return@match null
+                    bind("self" to Unit, "amount" to amount, "filter" to filter)
+                }
+            }
+
+        listOf(
+            phrase<CardScript>(
+                "{self} deals {n} damage to target {filter}",
+                name = "deals damage to target permanent",
+            ) {
+                slot("self", Primitives.self)
+                slot("n", Primitives.cardinal)
+                slot("filter", Filters.filter)
+                build { scriptFor(DynamicAmount.Fixed(it.int("n")), it.value("filter")) }
+                match { script ->
+                    val (amount, filter) = readBack(script) { it is DynamicAmount.Fixed } ?: return@match null
+                    bind("self" to Unit, "n" to (amount as DynamicAmount.Fixed).amount, "filter" to filter)
+                }
+            },
+            clause(
+                "{self} deals damage to target {filter} equal to {amount}",
+                "deals damage to target permanent, by a count",
+                heavy,
+            ),
+            clause(
+                "{self} deals damage equal to {amount} to target {filter}",
+                "deals damage to target permanent, by a property of an object",
+                light,
+            ),
+            // The minority order for each domain: real Oracle, never printed. See
+            // [countedStepPair] for the split and the counts behind it.
+            alternate(
+                clause(
+                    "{self} deals damage to target {filter} equal to {amount}",
+                    "deals damage to target permanent, by a property of an object (trailing)",
+                    light,
+                )
+            ),
+            alternate(
+                clause(
+                    "{self} deals damage equal to {amount} to target {filter}",
+                    "deals damage to target permanent, by a count (leading)",
+                    heavy,
+                )
+            ),
+        )
     }
 
     /**
@@ -1275,41 +1465,6 @@ object Steps {
     )
 
     /**
-     * "~ deals damage to target creature equal to the number of Mountains you control." — Spitting
-     * Earth, and Fire Dragon's enters trigger with the same clause.
-     *
-     * Two filters in one sentence: the thing damaged and the thing counted. The count is the same
-     * `AggregateBattlefield` [gainLifeForEach] builds, which is why "you control" is a literal here
-     * — the player is the aggregate's field and the clause spells exactly one of them.
-     */
-    private val damageEqualToCount: Phrase<CardScript> = run {
-        fun scriptFor(counted: GameObjectFilter, filter: GameObjectFilter) = CardScript(
-            spellEffect = Effects.DealDamage(
-                DynamicAmount.AggregateBattlefield(Player.You, counted),
-                Targets.bound(),
-            ),
-            targetRequirements = listOf(Targets.permanent(filter)),
-        )
-        phrase(
-            "{self} deals damage to target {filter} equal to the number of {counted} you control",
-            name = "deals damage equal to a battlefield count",
-        ) {
-            slot("self", Primitives.self)
-            slot("filter", Filters.filter)
-            slot("counted", Filters.plural)
-            build { scriptFor(it.value("counted"), it.value("filter")) }
-            match { script ->
-                val amount = (script.spellEffect as? DealDamageEffect)?.amount
-                    as? DynamicAmount.AggregateBattlefield ?: return@match null
-                val requirement = script.targetRequirements.singleOrNull() ?: return@match null
-                val filter = Targets.permanentFilter(requirement) ?: return@match null
-                if (script != scriptFor(amount.filter, filter)) return@match null
-                bind("self" to Unit, "filter" to filter, "counted" to amount.filter)
-            }
-        }
-    }
-
-    /**
      * "~ deals 1 damage to each creature and each player." — the symmetric sweeps.
      *
      * One printed sentence, two effects: the board half is the ordinary [groupStep] iteration and
@@ -1501,7 +1656,6 @@ object Steps {
             countedSteps +
             xDamageSteps +
             damageToTargetPermanent +
-            damageEqualToCount +
             damageToEachAndEachPlayer(
                 "{self} deals {n} damage to each {filter} and each player",
                 "deals damage to each permanent and each player",
@@ -2034,6 +2188,13 @@ object Steps {
     internal fun lifeLost(effect: Effect): Int? = (effect as? LoseLifeEffect)?.amount?.fixed()
 
     internal fun damageDealt(effect: Effect): Int? = (effect as? DealDamageEffect)?.amount?.fixed()
+
+    /**
+     * The same reader before the `Fixed` unwrap, for [countedStepPair] — which needs the whole
+     * amount because the numeral and the "equal to …" clause are two domains of one value, not a
+     * number and something else.
+     */
+    internal fun damageDealtAmount(effect: Effect): DynamicAmount? = (effect as? DealDamageEffect)?.amount
 
     /**
      * The kind and the count an `AddCounters` effect carries, aimed at [target].

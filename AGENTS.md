@@ -56,7 +56,7 @@ docs it points at; load those when the work needs them.
 | `gym` / `gym-server` / `gym-trainer` | RL/MCTS env + HTTP transport + self-play SPI | engine, sdk |
 | `game-server` | Spring Boot orchestration, WebSocket, state masking | engine, sdk |
 | `mtgish-tooling` | Predictive coverage / auto-gen analyzer | — (scans source as text) |
-| [`oracle-assay`](oracle-assay/README.md) | Argentum Assay — bidirectional Oracle-text parser; touchstone gate (`just assay-gate`, `--set POR` and `--set LGN` both read 100%), differential gate against the hand-written cards (`just assay-differential`, 2,832 compared, 13 classified divergences), browser explorer over the live grammar (`just assay-explore`, also framed as a tab on the Set Completion view), the baked whole-card verdict ledger behind that view's "Assay-ready" badges (`just assay-bake`), and the Scenario Builder's dev-gated custom-card sandbox (`just assay compile`) | sdk |
+| [`oracle-assay`](oracle-assay/README.md) | Argentum Assay — bidirectional Oracle-text parser; touchstone gate (`just assay-gate`, `--set POR` and `--set LGN` both read 100%), differential gate against the hand-written cards (`just assay-differential`, 2,854 compared, 13 classified divergences), browser explorer over the live grammar (`just assay-explore`, also framed as a tab on the Set Completion view), the baked whole-card verdict ledger behind that view's "Assay-ready" badges (`just assay-bake`), and the Scenario Builder's dev-gated custom-card sandbox (`just assay compile`) | sdk |
 | `web-client` | React UI (dumb terminal — no game logic) | — |
 
 **Key principle:** the engine is pure (no card-specific code), content is data-driven (no execution
