@@ -45,21 +45,45 @@ object OracleCorpus {
      * stops early instead of parsing 38k cards first.
      *
      * @param refresh force a re-download even if the cached bulk file is current.
+     * @param onProgress how far through the file the stream is, in `0.0..1.0`, called once per card.
+     *   The fraction is of the *compressed bytes*, not of a card count, because nobody knows how many
+     *   cards the file holds until the stream ends — a count would cost a whole extra pass to learn
+     *   something that changes with every Scryfall rebuild. The records are homogeneous, so the two
+     *   ratios track each other closely; it is a progress bar, not a gate number.
      */
-    fun cards(refresh: Boolean = false): Sequence<OracleCard> {
+    fun cards(refresh: Boolean = false, onProgress: ((Double) -> Unit)? = null): Sequence<OracleCard> {
         val file = ensureBulk(refresh)
         return sequence {
-            BufferedReader(InputStreamReader(GZIPInputStream(file.inputStream()), StandardCharsets.UTF_8))
+            val total = file.length()
+            val counted = CountingStream(file.inputStream())
+            BufferedReader(InputStreamReader(GZIPInputStream(counted), StandardCharsets.UTF_8))
                 .use { reader ->
                     while (true) {
                         val line = reader.readLine() ?: break
                         val trimmed = line.trim().trimEnd(',')
                         if (trimmed.isEmpty() || trimmed == "[" || trimmed == "]") continue
                         val card = ScryfallJson.read(trimmed)
-                        if (card != null) yield(card)
+                        if (card != null) {
+                            onProgress?.invoke(if (total > 0) (counted.read.toDouble() / total).coerceIn(0.0, 1.0) else 0.0)
+                            yield(card)
+                        }
                     }
                 }
         }
+    }
+
+    /** Counts what the gzip actually pulled off disk; that is the only readable position a `GZIPInputStream` has. */
+    private class CountingStream(private val source: java.io.InputStream) : java.io.InputStream() {
+        var read: Long = 0; private set
+
+        override fun read(): Int = source.read().also { if (it >= 0) read++ }
+
+        override fun read(b: ByteArray, off: Int, len: Int): Int =
+            source.read(b, off, len).also { if (it > 0) read += it }
+
+        override fun available(): Int = source.available()
+
+        override fun close() = source.close()
     }
 
     /** True when a usable bulk file is already on disk, so the CLI can say so before downloading. */
