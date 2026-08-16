@@ -712,6 +712,16 @@ object HandPatterns {
      * @param storeExiledAs when non-null, pipeline key holding the cards that actually reached
      *   exile — the key to read for any rider that keys off the exiled card ("if the card's mana
      *   value is 1 or less …"), since it is empty when nothing was chosen or nothing moved.
+     * @param revealHand `false` drops the leading [RevealHandEffect] and keeps only the
+     *   choose-and-exile tail. For a card whose reveal is *unconditional* while the exile sits
+     *   behind a "you may" or a mode (Cloak and Dagger, Entwined: "They reveal their hand. You
+     *   **may** exile …"), the reveal has to be hoisted out of the optional half — bundling it in
+     *   would make the reveal conditional too.
+     * @param linkToSource `true` files the exiled card in the source permanent's linked-exile pile,
+     *   which is what an "exile … until this leaves the battlefield" clause needs so its
+     *   leaves-the-battlefield trigger can find the card again. `Effects.ExileUntilLeaves` only
+     *   accepts battlefield permanents and graveyard cards, so it can't reach a hand — this flag is
+     *   how a hand exile joins the same pile.
      */
     fun revealHandAndExileChosen(
         target: EffectTarget = EffectTarget.ContextTarget(0),
@@ -719,11 +729,13 @@ object HandPatterns {
         prompt: String = "Choose a nonland card to exile",
         storeChosenAs: String = "chosenCard",
         storeExiledAs: String? = null,
+        revealHand: Boolean = true,
+        linkToSource: Boolean = false,
     ): CompositeEffect {
         val player = effectTargetToPlayer(target)
         return CompositeEffect(
-            listOf(
-                RevealHandEffect(target),
+            listOfNotNull<Effect>(
+                RevealHandEffect(target).takeIf { revealHand },
                 GatherCardsEffect(
                     source = CardSource.FromZone(Zone.HAND, player, filter),
                     storeAs = "${storeChosenAs}Candidates"
@@ -738,7 +750,8 @@ object HandPatterns {
                 MoveCollectionEffect(
                     from = storeChosenAs,
                     destination = CardDestination.ToZone(Zone.EXILE, player),
-                    storeMovedAs = storeExiledAs
+                    storeMovedAs = storeExiledAs,
+                    linkToSource = linkToSource
                 )
             )
         )

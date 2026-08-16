@@ -1363,19 +1363,22 @@ object Triggers {
      * [batch] switches from the per-permanent template to the "on **one or more** <permanents>"
      * batch template (CR 603.2c): one effect placing counters on several matching permanents then
      * fires the ability once instead of once per permanent — see
-     * [CountersPlacedEvent.batch] for what the batch does and does not collapse. Pass
-     * `firstTimeEachTurn = false` alongside it: this facade defaults that to `true` (the Stalwart
-     * Successor shape it was written for), and a batch template essentially never carries a printed
-     * "for the first time this turn" rider, so leaving the default in place silently narrows the
-     * batch to placements that were each the first on their recipient this turn.
+     * [CountersPlacedEvent.batch] for what the batch does and does not collapse.
+     *
+     * [firstTimeEachTurn] therefore defaults to `!batch`, not to a constant: the per-permanent
+     * default is the Stalwart Successor shape ("… for the first time this turn"), while a batch
+     * template essentially never carries that printed rider, and inheriting `true` there would
+     * silently narrow the batch to placements that were each the first on their recipient this
+     * turn. The combination is still expressible — pass `firstTimeEachTurn = true` alongside
+     * `batch = true` deliberately — it just isn't what you get by forgetting to.
      */
     fun countersPlacedOn(
         filter: GameObjectFilter = GameObjectFilter.Creature.youControl(),
         counterType: String = Counters.ANY,
-        firstTimeEachTurn: Boolean = true,
+        batch: Boolean = false,
+        firstTimeEachTurn: Boolean = !batch,
         binding: TriggerBinding = TriggerBinding.ANY,
         placedBy: Player? = null,
-        batch: Boolean = false,
     ): TriggerSpec = TriggerSpec(
         event = CountersPlacedEvent(
             counterType = counterType,

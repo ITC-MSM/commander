@@ -1937,10 +1937,10 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
          * so two effects each placing counters this turn fire it twice. The matching recipients are
          * exposed as the trigger's captured collection, as [UntapEvent.batch] does.
          *
-         * Note that [firstTimeEachTurn] defaults to `true` in the `Triggers.countersPlacedOn(...)`
-         * facade but `false` here: a batch template essentially never carries a printed "for the
-         * first time this turn" rider, so pass `firstTimeEachTurn = false` explicitly when building
-         * one through the facade.
+         * Note that [firstTimeEachTurn] defaults to `false` here but to `!batch` in the
+         * `Triggers.countersPlacedOn(...)` facade: a batch template essentially never carries a
+         * printed "for the first time this turn" rider, so the facade stops handing one to it. The
+         * combination remains expressible on both — it just has to be asked for.
          *
          * Mirrors [TapEvent.batch] / [UntapEvent.batch] / [DealsDamageEvent.batch], except that
          * those three are ANY-binding only while this one also honors [TriggerBinding.SELF]
@@ -2756,6 +2756,65 @@ internal fun describeObjectForEvent(filter: GameObjectFilter): String {
 }
 
 /**
+ * Head nouns whose MTG plural the regular rules in [pluralizeHeadNoun] get wrong. Curated from the
+ * `Subtype` catalog rather than derived: English pluralization can't be inferred from spelling
+ * (`Rhino` → `Rhinos` but `Hero` → `Heroes`; `Fox` → `Foxes` but `Fish` → `Fish`), and a wrong
+ * guess ships as player-visible text.
+ *
+ * **Only entries that differ from what the regular rules already produce are listed** — `Cyclops`,
+ * `Fungus`, `Pegasus` and `Plains` are absent because the "already ends in -s" rule leaves them
+ * alone, which is right for all four. Subtypes WotC writes as invariant plurals (`Fish`, `Merfolk`,
+ * `Myr`, `Eldrazi`, …) map to themselves.
+ *
+ * This list is deliberately incomplete: it covers the head nouns reachable from today's `Subtype`
+ * catalog. Extend it when a new wording needs one, and add the case to
+ * `DescribeObjectsForEventTest`.
+ */
+private val IRREGULAR_PLURAL_HEAD_NOUNS: Map<String, String> = mapOf(
+    // -f / -fe → -ves
+    "Elf" to "Elves",
+    "Wolf" to "Wolves",
+    "Werewolf" to "Werewolves",
+    "Dwarf" to "Dwarves",
+    // genuinely irregular
+    "Hero" to "Heroes",
+    "Mouse" to "Mice",
+    "Class" to "Classes",
+    "Homunculus" to "Homunculi",
+    "Octopus" to "Octopuses",
+    // invariant plurals
+    "Fish" to "Fish",
+    "Jellyfish" to "Jellyfish",
+    "Merfolk" to "Merfolk",
+    "Treefolk" to "Treefolk",
+    "Moonfolk" to "Moonfolk",
+    "Kithkin" to "Kithkin",
+    "Kor" to "Kor",
+    "Myr" to "Myr",
+    "Eldrazi" to "Eldrazi",
+    "Kavu" to "Kavu",
+    "Kree" to "Kree",
+    "Efreet" to "Efreet",
+    "Djinn" to "Djinn",
+)
+
+/**
+ * The plural of a single head noun — [IRREGULAR_PLURAL_HEAD_NOUNS] first, then the regular English
+ * rules. Split out from [describeObjectsForEvent] so it can be tested directly against the subtype
+ * catalog.
+ */
+internal fun pluralizeHeadNoun(head: String): String {
+    IRREGULAR_PLURAL_HEAD_NOUNS[head]?.let { return it }
+    return when {
+        // Already plural ("creatures", "permanents") or an invariant -s noun ("Plains").
+        head.endsWith("s", ignoreCase = true) -> head
+        head.endsWith("ch", ignoreCase = true) || head.endsWith("sh", ignoreCase = true) ||
+            head.endsWith("x", ignoreCase = true) || head.endsWith("z", ignoreCase = true) -> "${head}es"
+        else -> "${head}s"
+    }
+}
+
+/**
  * The plural counterpart of [describeObjectForEvent], for the "one or more <things>" batch event
  * wordings: no article, head noun pluralized, controller still a suffix rather than the prefix
  * `GameObjectFilter.description` renders it as.
@@ -2763,7 +2822,16 @@ internal fun describeObjectForEvent(filter: GameObjectFilter): String {
  * Examples (each prefixed with "one or more " by the caller):
  *   GameObjectFilter.Creature                                 -> "creatures"
  *   GameObjectFilter.Creature.youControl()                    -> "creatures you control"
- *   GameObjectFilter.Creature.youControl().withSubtype(HERO)  -> "Hero creatures you control"
+ *   GameObjectFilter.Creature.youControl().withSubtype(HERO)  -> "creature Heroes you control"
+ *   GameObjectFilter.Creature.youControl().withSubtype(ELF)   -> "creature Elves you control"
+ *
+ * Note the word order in the last two: predicates render in the order they were added to the
+ * filter, and `withSubtype` *appends*, so the subtype trails the type ("creature Heroes", not
+ * "Hero creatures"). That is [describeObjectForEvent]'s existing convention — it renders the
+ * singular as "a creature Hero you control" — and is kept here on purpose so the two describers
+ * agree; changing it would move generated text for the whole corpus, not just batch triggers.
+ * It also means the head noun is the **subtype** whenever there is one, which is why
+ * [pluralizeHeadNoun] needs the irregular table.
  */
 internal fun describeObjectsForEvent(filter: GameObjectFilter): String {
     val baseParts = buildString {
@@ -2781,15 +2849,9 @@ internal fun describeObjectsForEvent(filter: GameObjectFilter): String {
         return "cards or permanents$controllerSuffix"
     }
 
-    // Only the head noun (the last word) pluralizes: "Hero creature" -> "Hero creatures". The type
-    // and subtype words these descriptions are built from are all regular plurals.
+    // Only the head noun (the last word) pluralizes: "creature Hero" -> "creature Heroes".
     val head = baseParts.substringAfterLast(' ')
-    val plural = when {
-        head.endsWith("s", ignoreCase = true) -> head
-        head.endsWith("ch", ignoreCase = true) || head.endsWith("sh", ignoreCase = true) ||
-            head.endsWith("x", ignoreCase = true) || head.endsWith("z", ignoreCase = true) -> "${head}es"
-        else -> "${head}s"
-    }
+    val plural = pluralizeHeadNoun(head)
     val pluralized = if (baseParts.contains(' ')) {
         "${baseParts.substringBeforeLast(' ')} $plural"
     } else {

@@ -1,27 +1,18 @@
 package com.wingedsheep.mtg.sets.definitions.msh.cards
 
 import com.wingedsheep.sdk.core.Keyword
-import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.dsl.Effects
+import com.wingedsheep.sdk.dsl.Patterns
 import com.wingedsheep.sdk.dsl.Targets
 import com.wingedsheep.sdk.dsl.Triggers
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.GameObjectFilter
-import com.wingedsheep.sdk.scripting.effects.CardDestination
-import com.wingedsheep.sdk.scripting.effects.CardSource
-import com.wingedsheep.sdk.scripting.effects.Chooser
 import com.wingedsheep.sdk.scripting.effects.EffectChoice
-import com.wingedsheep.sdk.scripting.effects.GatherCardsEffect
 import com.wingedsheep.sdk.scripting.effects.MayEffect
-import com.wingedsheep.sdk.scripting.effects.MoveCollectionEffect
 import com.wingedsheep.sdk.scripting.effects.RevealHandEffect
-import com.wingedsheep.sdk.scripting.effects.SelectFromCollectionEffect
-import com.wingedsheep.sdk.scripting.effects.SelectionMode
 import com.wingedsheep.sdk.scripting.filters.unified.TargetFilter
-import com.wingedsheep.sdk.scripting.references.Player
 import com.wingedsheep.sdk.scripting.targets.TargetCreature
-import com.wingedsheep.sdk.scripting.values.DynamicAmount
 
 /**
  * Cloak and Dagger, Entwined — Marvel Super Heroes #211 (rare)
@@ -57,10 +48,11 @@ import com.wingedsheep.sdk.scripting.values.DynamicAmount
  *    multiplayer pass has to revisit.
  *  - **The either/or is an [Effects.ChooseAction]**, wrapped in [MayEffect] for the "You may".
  *    The two branches exile from different zones, which is the whole point of this card:
- *      * the hand branch is the standard gather → select → move pipeline with
- *        `linkToSource = true`, which is what puts the card into Cloak and Dagger's linked-exile
- *        pile (`ExileUntilLeaves` only accepts battlefield permanents and graveyard cards, so it
- *        can't reach a hand);
+ *      * the hand branch is [Patterns.Hand.revealHandAndExileChosen] — the Cruelclaw's Heist /
+ *        Soul Search recipe — with `linkToSource = true`, which is what puts the card into Cloak
+ *        and Dagger's linked-exile pile (`ExileUntilLeaves` only accepts battlefield permanents and
+ *        graveyard cards, so it can't reach a hand), and `revealHand = false`, because this card's
+ *        reveal is unconditional and so has to be hoisted out of the "you may" (see the last bullet);
  *      * the creature branch is plain [Effects.ExileUntilLeaves] on the chosen creature.
  *    Neither branch carries a [com.wingedsheep.sdk.scripting.effects.FeasibilityCheck], and
  *    neither *can* today. `ChooseActionEffectExecutor` evaluates a check as
@@ -114,30 +106,13 @@ val CloakAndDaggerEntwined = card("Cloak and Dagger, Entwined") {
                     listOf(
                         EffectChoice(
                             label = "Exile a nonland card from their hand",
-                            effect = Effects.Composite(
-                                GatherCardsEffect(
-                                    source = CardSource.FromZone(
-                                        Zone.HAND,
-                                        Player.ContextPlayer(0),
-                                        GameObjectFilter.Nonland,
-                                    ),
-                                    storeAs = "cloakDaggerHand",
-                                ),
-                                SelectFromCollectionEffect(
-                                    from = "cloakDaggerHand",
-                                    selection = SelectionMode.ChooseExactly(DynamicAmount.Fixed(1)),
-                                    chooser = Chooser.Controller,
-                                    storeSelected = "cloakDaggerExiled",
-                                    prompt = "Choose a nonland card to exile",
-                                ),
-                                MoveCollectionEffect(
-                                    from = "cloakDaggerExiled",
-                                    destination = CardDestination.ToZone(
-                                        Zone.EXILE,
-                                        Player.ContextPlayer(0),
-                                    ),
-                                    linkToSource = true,
-                                ),
+                            // The reveal is already done, unconditionally, above.
+                            effect = Patterns.Hand.revealHandAndExileChosen(
+                                target = opponent,
+                                filter = GameObjectFilter.Nonland,
+                                storeChosenAs = "cloakDaggerExiled",
+                                revealHand = false,
+                                linkToSource = true,
                             ),
                         ),
                         EffectChoice(

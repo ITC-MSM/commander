@@ -2541,7 +2541,7 @@ one-off pipeline belongs inline in the card file via `Effects.Pipeline { }` (§5
 - `eachPlayerDrawsX(includeController?, includeOpponents?)` — Howling Mine shape.
 - `eachPlayerMayDraw(maxCards, lifePerCardNotDrawn?)` — optional group draw with a tax.
 - `exileFromHand(count?, target)` — exile N from hand.
-- `revealHandAndExileChosen(target?, filter?, prompt?, storeChosenAs?, storeExiledAs?)` — "Target opponent
+- `revealHandAndExileChosen(target?, filter?, prompt?, storeChosenAs?, storeExiledAs?, revealHand = true, linkToSource = false)` — "Target opponent
   reveals their hand. You choose a nonland card from it. Exile that card." (Cruelclaw's Heist, Soul Search).
   Thoughtseize with exile instead of discard. The chooser is always the **controller**, not the revealing
   player — that asymmetry is the pattern, so it is not derived from `target` the way `exileFromHand` derives
@@ -2550,6 +2550,12 @@ one-off pipeline belongs inline in the card file via `Effects.Pipeline { }` (§5
   (`ConditionalEffect(CollectionContainsMatch("exiledCard", Filters.ManaValueAtMost(1)), …)` for Soul
   Search's "if the card's mana value is 1 or less") — it is empty when the hand held no matching card,
   which is exactly when nothing should happen.
+  `revealHand = false` drops the leading reveal and keeps only the choose-and-exile tail, for a card
+  whose reveal is unconditional while the exile sits behind a "you may" or a mode — bundling the
+  reveal in would make it conditional too. `linkToSource = true` files the exiled card in the source
+  permanent's linked-exile pile so an "… until this leaves the battlefield" clause can find it again;
+  `Effects.ExileUntilLeaves` only accepts battlefield permanents and graveyard cards, so this flag is
+  how a **hand** exile joins the same pile. Cloak and Dagger, Entwined uses both.
 
 **Sacrifice / destroy**
 
@@ -4979,7 +4985,7 @@ Dominant back faces that "stay" instead self-exile on their final chapter, dodgi
   gone by the time the event is observed, so only its last-known token-ness (`GameEvent.ExploitedEvent.sacrificedWasToken`,
   snapshotted before the zone change) is available. See the `Exploit` keyword entry for full wiring.
 - `PlusOneCountersPlacedOnYourCreature` — Hardened Scales shape (+1/+1 only).
-- `countersPlacedOn(filter = Creature.youControl(), counterType = Counters.ANY, firstTimeEachTurn = true, binding = ANY, placedBy = null, batch = false)`
+- `countersPlacedOn(filter = Creature.youControl(), counterType = Counters.ANY, batch = false, firstTimeEachTurn = !batch, binding = ANY, placedBy = null)`
   — fires when counters of any type (`Counters.ANY` wildcard) land on a matching permanent;
   `firstTimeEachTurn` gates it to the first counter placement on *that* permanent this turn
   (engine-tracked via `ReceivedCountersThisTurnComponent`). `binding = SELF` restricts it to the
@@ -5008,8 +5014,10 @@ Dominant back faces that "stay" instead self-exile on their final chapter, dodgi
   `DynamicAmount.DistinctEntitiesInCollections(TRIGGER_CAPTURED_COLLECTION)`, as with
   `UntapEvent(batch)`), and the trigger's counter count is the batch **total** across those
   placements. Separate resolutions are separate batches, so two effects each placing counters in one
-  turn fire it twice. Pass `firstTimeEachTurn = false` explicitly — the facade defaults it to `true`,
-  which silently narrows a batch template that has no printed "first time this turn" rider.
+  turn fire it twice. `firstTimeEachTurn` defaults to `!batch` on the facade rather than to a
+  constant, so a batch template — which essentially never carries a printed "first time this turn"
+  rider — doesn't silently inherit one; pass `firstTimeEachTurn = true` alongside `batch = true` if
+  you actually want both.
   Mirrors `TapEvent(batch)` / `UntapEvent(batch)` / `dealsDamage(batch)`, except those three are
   ANY-binding only while this one also honors `SELF` and `OTHER`.
   Caveat on no-op placements: a permanent that can't have counters put on it stays out of the batch

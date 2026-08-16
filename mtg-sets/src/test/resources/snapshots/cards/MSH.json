@@ -3727,11 +3727,11 @@
                                                         },
                                                         "filter": "nonland"
                                                     },
-                                                    "storeAs": "cloakDaggerHand"
+                                                    "storeAs": "cloakDaggerExiledCandidates"
                                                 },
                                                 {
                                                     "type": "SelectFromCollection",
-                                                    "from": "cloakDaggerHand",
+                                                    "from": "cloakDaggerExiledCandidates",
                                                     "selection": {
                                                         "type": "ChooseExactly",
                                                         "count": {
@@ -7914,19 +7914,22 @@
                 },
                 "binding": "OTHER",
                 "effect": {
-                    "type": "CreateToken",
-                    "power": 0,
-                    "toughness": 4,
-                    "colors": [],
-                    "creatureTypes": [
-                        "Wall"
-                    ],
-                    "keywords": [
-                        "DEFENDER"
-                    ],
-                    "imageUri": "https://cards.scryfall.io/normal/front/8/2/82d35a61-3c87-405d-b857-cf43067cb1c4.jpg?1783902804"
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "CreateToken",
+                        "power": 0,
+                        "toughness": 4,
+                        "colors": [],
+                        "creatureTypes": [
+                            "Wall"
+                        ],
+                        "keywords": [
+                            "DEFENDER"
+                        ],
+                        "imageUri": "https://cards.scryfall.io/normal/front/8/2/82d35a61-3c87-405d-b857-cf43067cb1c4.jpg?1783902804"
+                    }
                 },
-                "optional": true,
                 "descriptionOverride": "Whenever you put one or more +1/+1 counters on one or more other Heroes you control, you may create a 0/4 colorless Wall creature token with defender."
             }
         ]
