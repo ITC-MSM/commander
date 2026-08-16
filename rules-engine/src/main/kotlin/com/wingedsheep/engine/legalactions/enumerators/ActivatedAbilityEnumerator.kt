@@ -390,6 +390,23 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                                         break
                                     }
                                 }
+                                // `{Q}` as one sub-cost, the mirror of the bare `Untap` branch
+                                // above: CR 302.6 gates the untap symbol exactly as it gates the
+                                // tap symbol, and the permanent must be tapped to untap it. Without
+                                // this the enumerator would offer an activation that
+                                // `ActivateAbilityHandler`'s authoritative re-check then rejects.
+                                is AbilityCost.Untap -> {
+                                    if (!container.has<TappedComponent>()) {
+                                        costCanBePaid = false
+                                        break
+                                    }
+                                    if (!cardComponent.typeLine.isLand && projected.isCreature(entityId) &&
+                                        SummoningSicknessRules.blocksTapOrUntapCost(entityId, container, projected)
+                                    ) {
+                                        costCanBePaid = false
+                                        break
+                                    }
+                                }
                                 is AbilityCost.Atom -> when (val atom = subCost.atom) {
                                     is CostAtom.Mana -> {
                                         if (!context.manaSolver.canPay(state, playerId, atom.cost, excludeSources = excludeFromMana, precomputedSources = context.availableManaSources, spellContext = abilityContext)) {

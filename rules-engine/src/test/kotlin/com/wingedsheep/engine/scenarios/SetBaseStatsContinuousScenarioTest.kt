@@ -4,7 +4,7 @@ import com.wingedsheep.engine.core.ActivateAbility
 import com.wingedsheep.engine.core.SelectManaSourcesDecision
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.permanent.stats.SetBaseStatsExecutor
-import com.wingedsheep.engine.handlers.effects.permanent.stats.contextScopedReferenceIn
+import com.wingedsheep.sdk.scripting.values.contextScopedReferenceIn
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
 import com.wingedsheep.engine.support.ScenarioTestBase
 import com.wingedsheep.sdk.core.Counters
@@ -424,7 +424,7 @@ class SetBaseStatsContinuousScenarioTest : ScenarioTestBase() {
             }
         }
 
-        test("a context-scoped amount is rejected under re-evaluation, not silently read as 0") {
+        test("a context-scoped amount is rejected at construction, not silently read as 0") {
             // The projector rebuilds a bare EffectContext from the source, so a reference to the
             // triggering object — the exact shape Belligerent Yearling uses in snapshot mode —
             // has nothing to resolve against and would read 0 on every pass forever.
@@ -460,13 +460,31 @@ class SetBaseStatsContinuousScenarioTest : ScenarioTestBase() {
                 executor.execute(game.state, snapshot, context).error shouldBe null
             }
 
-            val reevaluated = Effects.SetBasePower(
-                EffectTarget.Self, triggeringPower, Duration.EndOfTurn, reevaluateContinuously = true
-            ) as SetBaseStatsEffect
+            // The rejection is in SetBaseStatsEffect's init, so it fires as the effect is *built* —
+            // i.e. while the cardDef is being constructed at load, not the first time some game
+            // happens to resolve it. Nothing reaches the executor at all.
             val thrown = shouldThrow<IllegalArgumentException> {
-                executor.execute(game.state, reevaluated, context)
+                Effects.SetBasePower(
+                    EffectTarget.Self, triggeringPower, Duration.EndOfTurn,
+                    reevaluateContinuously = true
+                )
             }
             thrown.message!! shouldContain "Triggering"
+
+            withClue("the check is on the flag, not the amount: a nested one is caught too") {
+                shouldThrow<IllegalArgumentException> {
+                    Effects.SetBasePowerAndToughness(
+                        power = DynamicAmount.Add(
+                            DynamicAmounts.cardsInYourHand(),
+                            DynamicAmount.Multiply(triggeringPower, 2),
+                        ),
+                        toughness = DynamicAmounts.cardsInYourHand(),
+                        target = EffectTarget.Self,
+                        duration = Duration.EndOfTurn,
+                        reevaluateContinuously = true,
+                    )
+                }.message!! shouldContain "Triggering"
+            }
         }
     }
 }

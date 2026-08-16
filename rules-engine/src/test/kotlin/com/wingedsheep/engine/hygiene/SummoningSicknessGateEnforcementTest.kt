@@ -24,6 +24,9 @@ import java.io.File
  * [com.wingedsheep.sdk.scripting.ActivationRestriction.ControlledSinceYourMostRecentTurn]
  * restriction, and the client's display badge.
  *
+ * The scan matches both `has<…>` and `get<…>` spellings of the read, so `get<…>() != null` is not
+ * an escape hatch.
+ *
  * **Known limit, stated plainly:** the allowlist is per *file*, not per line, so a new open-coded
  * tap gate added inside **any** of the eight [ALLOWED_FILES] would not be caught — not just the two
  * biggest (`ManaSolver.kt`, `ActivateAbilityHandler.kt`) but `CastPermissionUtils.kt` and
@@ -45,9 +48,15 @@ class SummoningSicknessGateEnforcementTest : FunSpec({
 }) {
     companion object {
 
-        /** A direct read of the marker: `has<SummoningSicknessComponent>()`, qualified or not. */
+        /**
+         * A direct read of the marker: `has<SummoningSicknessComponent>()` or
+         * `get<SummoningSicknessComponent>()`, qualified or not. Both spellings, because
+         * `get<…>() != null` is the same gate written differently and matching only `has` would let
+         * it through in **any** file rather than just the allowlisted ones — a hole the per-file
+         * granularity documented above does not cover.
+         */
         private val DIRECT_READ_PATTERN =
-            Regex("""\.has<\s*(?:[\w.]+\.)?SummoningSicknessComponent\s*>""")
+            Regex("""\.(?:has|get)<\s*(?:[\w.]+\.)?SummoningSicknessComponent\s*>""")
 
         /**
          * Files permitted to read [com.wingedsheep.engine.state.components.battlefield.SummoningSicknessComponent]

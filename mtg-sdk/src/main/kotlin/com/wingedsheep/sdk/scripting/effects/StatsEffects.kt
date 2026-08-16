@@ -4,6 +4,7 @@ import com.wingedsheep.sdk.scripting.Duration
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.scripting.text.TextReplacer
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
+import com.wingedsheep.sdk.scripting.values.contextScopedReferenceIn
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -90,18 +91,20 @@ data class ModifyStatsEffect(
  *    it belongs in layer 7b with the timestamp of the grant, not in layer 7a.
  * Either way the *affected set* is locked in at resolution (CR 611.2c) — only the number moves.
  *
- * Three limits on `reevaluateContinuously = true`, none of which apply to the snapshot mode. They
- * follow from the number being read by the layer projector rather than at resolution:
+ * Four limits on `reevaluateContinuously = true`, none of which apply to the snapshot mode. The
+ * first three follow from the number being read by the layer projector rather than at resolution:
  *  - **Only projection-scoped `DynamicAmount`s are supported.** The projector re-evaluates the
  *    amount with just the source, its controller and the affected entity in scope, so anything
  *    reading the resolution context — `XValue`/`CastX`, `ContextProperty`, the pipeline's stored
  *    collections, or an `EntityReference`/`Player` naming a target, the triggering object or
- *    something sacrificed or tapped as a cost — has nothing to resolve against. The executor
- *    rejects those at resolution instead of reading them as 0 forever, so
- *    `SetBasePower(t, EntityProperty(Triggering, Power), reevaluateContinuously = true)` is a load
- *    error, not a silent zero. For X specifically, re-evaluation is also a rules error: CR 611.2d
- *    fixes a continuous effect's X on resolution. Counts, battlefield/zone aggregates, life totals,
- *    hand size and `EntityReference.Source`/`AffectedEntity` properties are all fine.
+ *    something sacrificed or tapped as a cost — has nothing to resolve against. This class's `init`
+ *    rejects those via
+ *    [com.wingedsheep.sdk.scripting.values.contextScopedReferenceIn] instead of letting them read as
+ *    0 forever, so `SetBasePower(t, EntityProperty(Triggering, Power), reevaluateContinuously =
+ *    true)` fails as the card is **loaded**, not silently at resolution. For X specifically,
+ *    re-evaluation is also a rules error: CR 611.2d fixes a continuous effect's X on resolution.
+ *    Counts, battlefield/zone aggregates, life totals, hand size and
+ *    `EntityReference.Source`/`AffectedEntity` properties are all fine.
  *  - **"Your" means the *source's* controller**, not the affected creature's — the projector
  *    rebuilds the context from `sourceId`. That is right for a self-granted clause (Ms. Marvel:
  *    source and affected permanent are the same object, so it follows her controller even after a
@@ -113,6 +116,14 @@ data class ModifyStatsEffect(
  *    created, it just "doesn't do anything unless that permanent becomes a creature"). The gate is
  *    re-asked every projection pass, so a Vehicle crewed later in the turn picks the value up. The
  *    snapshot mode writes its number unconditionally.
+ *  - **A quoted clause modelled this way is not an ability the creature actually has**, so
+ *    `LoseAllAbilities` cannot strip it. In paper, "gains '…'" and Humility are both layer 6 and the
+ *    later timestamp wins; here the grant is a layer-7b floating effect with nothing for layer 6 to
+ *    remove, so it keeps applying. The two agree whenever the grant is the later effect — the
+ *    common case, and Ms. Marvel's — and diverge only when the ability-removal arrives afterwards.
+ *    Routing a runtime-granted static through `StaticAbilityHandler.lowerToContinuousEffectData`
+ *    (as `BecomeArtifactExecutor` already does) is the shape that would close this; reach for it if
+ *    a card ever needs to hand out a whole quoted static ability rather than one base-P/T clause.
  *
  * It is deliberately distinct from:
  *  - [ModifyStatsEffect] — a +N/+N *modifier* (layer 7c), not a set.
@@ -138,6 +149,28 @@ data class SetBaseStatsEffect(
     val duration: Duration = Duration.Permanent,
     val reevaluateContinuously: Boolean = false
 ) : Effect {
+    init {
+        // Load-time, not resolution-time: an amount the projector cannot re-evaluate is an
+        // authoring mistake, and it should fail as the cardDef is built (CardDiscovery, the corpus
+        // tests) rather than throw mid-game the first time this effect happens to resolve. Only
+        // reached when the flag is set, so the JSON scan costs nothing for the common snapshot mode.
+        if (reevaluateContinuously) {
+            listOfNotNull(power, toughness).forEach { amount ->
+                val offending = contextScopedReferenceIn(amount)
+                require(offending == null) {
+                    "SetBaseStatsEffect(reevaluateContinuously = true) cannot carry the " +
+                        "context-scoped reference '$offending' in ${amount.description}: the " +
+                        "projector re-evaluates the amount with only the source, its controller " +
+                        "and the affected entity in scope, so target-, X-, triggering- and " +
+                        "cost-scoped references resolve to nothing on every pass. Use the default " +
+                        "snapshot mode (CR 611.2d requires X to be fixed on resolution anyway), " +
+                        "or an amount computable from the source, the affected entity and global " +
+                        "game state."
+                }
+            }
+        }
+    }
+
     override val description: String = buildString {
         when {
             power != null && toughness != null ->

@@ -412,11 +412,9 @@ class ActivateAbilityHandler(
         // became a creature this turn is gated correctly. The `!typeLine.isLand` carve-out is
         // preserved (basic-land mana abilities are not restricted by summoning sickness).
         //
-        // `ActivatedAbilityEnumerator` mirrors this for a bare `AbilityCost.Untap`, so the two
-        // agree on `{Q}`. A `Composite` *containing* `Untap` is still enumerated ungated (the
-        // enumerator's composite sub-`when` falls through to `else -> {}` for it) — no shipped card
-        // uses `Costs.Untap` at all, so the divergence is latent, but this re-check is
-        // authoritative and has to be right regardless of what the enumerator offered.
+        // `ActivatedAbilityEnumerator` mirrors this for `AbilityCost.Untap` both bare and inside a
+        // `Composite`, so the two agree on `{Q}` in either shape and the enumerator never offers an
+        // activation this re-check then rejects. This one stays authoritative regardless.
         val costTouchesTapSymbol = { c: AbilityCost -> c is AbilityCost.Tap || c is AbilityCost.Untap }
         if (costTouchesTapSymbol(effectiveCost) ||
             (effectiveCost is AbilityCost.Composite && effectiveCost.costs.any(costTouchesTapSymbol))

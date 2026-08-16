@@ -205,6 +205,38 @@ class HawkeyeMasterMarksmanScenarioTest : ScenarioTestBase() {
                 }
             }
 
+            test("'up to that many' is a ceiling, not a quota — pay twice, fire one arrow") {
+                // The payment count caps the modes; it does not oblige them. This is why the modal
+                // carries only `dynamicChooseCount` and no `dynamicMinChooseCount`: the minimum
+                // stays 0, so the executor offers a decline option once the first mode is picked.
+                val game = hawkeyeTappedByEffect()
+                game.answerYesNo(true)
+                game.chooseNumber(2)
+
+                chooseMode(game, "Explosive")
+
+                withClue("a second mode is offered, and declining it is one of the options") {
+                    modeQuestion(game).options.any {
+                        it.contains("Don't choose a mode", ignoreCase = true)
+                    } shouldBe true
+                }
+                chooseMode(game, "Don't choose a mode")
+
+                answerTargetsIfAsked(game)
+                game.resolveStack()
+
+                withClue("the one arrow chosen resolved") { game.getLifeTotal(2) shouldBe 18 }
+                withClue("the declined arrows did not — no discard, nothing drawn") {
+                    game.graveyardSize(1) shouldBe 1
+                    game.librarySize(1) shouldBe 1
+                }
+                withClue("both repetitions were still paid — the mana is spent either way") {
+                    game.findPermanents("Mountain").count {
+                        game.state.getEntity(it)?.get<TappedComponent>() != null
+                    } shouldBe 2
+                }
+            }
+
             test("paying the printed maximum asks three times and no fourth") {
                 val game = hawkeyeTappedByEffect(extraHandCard = "Test Bear")
                 game.answerYesNo(true)
