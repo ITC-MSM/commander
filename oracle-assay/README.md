@@ -581,8 +581,8 @@ spelling could be an `alternate` — parseable, never printed. It no longer hold
 *canonical*. The vocabulary is therefore a function of its leading word's spelling, instantiated
 twice, which is also what stops a row existing in one capitalization only.
 
-**Three card bugs, all of the same kind, all invisible in play.** The differential went 1 → 4 the
-first time the gate could read a cost's noun phrase, and every new one was a hand-written card:
+**Three card bugs, all of the same kind, all invisible in play.** The differential went 0 → 3 the
+first time the gate could read a cost's noun phrase, and every one of them was a hand-written card:
 
 - **Wirewood Symbiote** and **Fungal Plots** spell "an Elf you control" and "two Saprolings" as
   `GameObjectFilter.Creature.withSubtype(…)`. A bare tribal noun means any *permanent* of that
