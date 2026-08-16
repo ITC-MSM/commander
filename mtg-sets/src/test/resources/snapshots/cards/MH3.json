@@ -1,3 +1,114 @@
+// Arcbound Condor
+{
+    "name": "Arcbound Condor",
+    "manaCost": "{2}{B}{B}",
+    "typeLine": "Artifact Creature — Bird",
+    "oracleText": "Flying\nModular 3 (This creature enters with three +1/+1 counters on it. When it dies, you may put its +1/+1 counters on target artifact creature.)\nWhenever another artifact you control enters, target creature an opponent controls gets -1/-1 until end of turn.",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 0
+    },
+    "keywords": [
+        "FLYING",
+        "MODULAR"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "MODULAR",
+            "n": 3
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "AddDynamicCounters",
+                        "counterType": "+1/+1",
+                        "amount": {
+                            "type": "ContextProperty",
+                            "key": "LAST_KNOWN_PLUS_ONE_COUNTER_COUNT"
+                        },
+                        "target": {
+                            "type": "ContextTarget",
+                            "index": 0
+                        }
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "artifact creature"
+                    }
+                },
+                "descriptionOverride": "When this creature dies, you may put its +1/+1 counters on target artifact creature."
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "artifact ctrl:you",
+                    "to": "Battlefield"
+                },
+                "binding": "OTHER",
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": -1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": -1
+                    },
+                    "target": {
+                        "type": "ContextTarget",
+                        "index": 0
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature ctrl:opponent"
+                    }
+                },
+                "descriptionOverride": "Whenever another artifact you control enters, target creature an opponent controls gets -1/-1 until end of turn."
+            }
+        ],
+        "replacementEffects": [
+            {
+                "type": "EntersWithCounters",
+                "count": 3,
+                "selfOnly": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "81",
+        "rarity": "UNCOMMON",
+        "artist": "Michele Giorgi",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/7/e7995b44-7932-4d28-9a4c-a32ba35c60d7.jpg?1783911284",
+        "rulings": [
+            {
+                "date": "2024-06-07",
+                "text": "If this creature gets enough -1/-1 counters put on it to cause it to go to the graveyard, modular will put a number of +1/+1 counters on the target artifact creature equal to the number of +1/+1 counters on this creature before it left the battlefield."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Arena of Glory
 {
     "name": "Arena of Glory",
@@ -90,6 +201,99 @@
                 "text": "If the mana is spent on two different creature spells, each of those spells (and resulting creatures) will gain haste until end of turn."
             }
         ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Faithful Watchdog
+{
+    "name": "Faithful Watchdog",
+    "manaCost": "{G}{W}",
+    "typeLine": "Creature — Dog",
+    "oracleText": "Vigilance\nThis creature enters with three +1/+1 counters on it.",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 0
+    },
+    "keywords": [
+        "VIGILANCE"
+    ],
+    "script": {
+        "replacementEffects": [
+            {
+                "type": "EntersWithCounters",
+                "count": 3,
+                "selfOnly": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "185",
+        "artist": "Samuel Perin",
+        "flavorText": "Though its official designation was Third Battalion Patrol Hound 7, the soldiers dubbed their new companion Lord Fancy-Paws.",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/9/b9afac99-a094-41a8-8323-90dec29691c4.jpg?1783911251"
+    },
+    "colorIdentityOverride": [
+        "GREEN",
+        "WHITE"
+    ]
+}
+
+// Furnace Hellkite
+{
+    "name": "Furnace Hellkite",
+    "manaCost": "{5}{R}{R}",
+    "typeLine": "Artifact Creature — Dragon",
+    "oracleText": "Affinity for artifacts (This spell costs {1} less to cast for each artifact you control.)\nFlying\n{R}: This creature gets +1/+0 until end of turn.",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 5
+    },
+    "keywords": [
+        "FLYING",
+        "AFFINITY"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Affinity",
+            "forType": "ARTIFACT"
+        }
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{R}"
+                    }
+                },
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 0
+                    },
+                    "target": "Self"
+                },
+                "descriptionOverride": "{R}: This creature gets +1/+0 until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "121",
+        "rarity": "UNCOMMON",
+        "artist": "Fang Xinyu",
+        "flavorText": "Some mornings it wakes up determined to consume the red sun itself.",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/f/1f9d91b5-7c09-4a9c-9dc8-fdd4c049009c.jpg?1783911271"
     },
     "colorIdentityOverride": [
         "RED"
@@ -281,6 +485,138 @@
     ]
 }
 
+// Nightshade Dryad
+{
+    "name": "Nightshade Dryad",
+    "manaCost": "{1}{G}",
+    "typeLine": "Creature — Dryad",
+    "oracleText": "Deathtouch\n{T}: Add {C}.\n{T}: Add one mana of any color.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 2
+    },
+    "keywords": [
+        "DEATHTOUCH"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddColorlessMana",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": "CostTap",
+                "effect": "AddManaOfChoice",
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "163",
+        "artist": "Bastien L. Deharme",
+        "flavorText": "\"Death is a natural part of life. Without the mulch to feed new sprouts, everything withers.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/1/71f9252d-241f-45ea-9d80-663150963b59.jpg?1783911259"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Nulldrifter
+{
+    "name": "Nulldrifter",
+    "manaCost": "{7}",
+    "typeLine": "Creature — Eldrazi Elemental",
+    "oracleText": "When you cast this spell, draw two cards.\nFlying\nAnnihilator 1 (Whenever this creature attacks, defending player sacrifices a permanent of their choice.)\nEvoke {2}{U} (You may cast this spell for its evoke cost. If you do, it's sacrificed when it enters.)",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "FLYING",
+        "ANNIHILATOR",
+        "EVOKE"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "ANNIHILATOR",
+            "n": 1
+        },
+        {
+            "type": "Evoke",
+            "cost": "{2}{U}"
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "CastThisSpellEvent",
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 2
+                    }
+                },
+                "descriptionOverride": "When you cast this spell, draw two cards."
+            },
+            {
+                "id": "ability_2",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "ForceSacrifice",
+                    "filter": "permanent",
+                    "target": {
+                        "type": "PlayerRef",
+                        "player": "DefendingPlayer"
+                    }
+                },
+                "descriptionOverride": "Annihilator 1"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "13",
+        "rarity": "RARE",
+        "artist": "Johann Bodin",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/d/4d9f1bb8-c91b-40cd-a416-abbff0d65306.jpg?1783911308",
+        "rulings": [
+            {
+                "date": "2024-06-07",
+                "text": "Nulldrifter's first triggered ability will resolve before Nulldrifter does. If Nulldrifter is countered or otherwise leaves the stack in response to that triggered ability, the triggered ability will still resolve as normal."
+            },
+            {
+                "date": "2024-06-07",
+                "text": "To determine the total cost of a spell, start with the mana cost or alternative cost you're paying (such as an evoke cost), add any cost increases, then apply any cost reductions. The mana value of the spell is determined by only its mana cost, no matter what the total cost to cast that spell was."
+            },
+            {
+                "date": "2024-06-07",
+                "text": "Annihilator abilities trigger and resolve during the declare attackers step. The defending player sacrifices the required number of permanents of their choice before they declare blockers. Any creatures sacrificed this way won't be able to block."
+            },
+            {
+                "date": "2024-06-07",
+                "text": "If a creature with annihilator is attacking a planeswalker, and the defending player chooses to sacrifice that planeswalker, the attacking creature continues to attack. It may be blocked. If it isn't blocked, it simply won't deal combat damage to anything."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Ocelot Pride
 {
     "name": "Ocelot Pride",
@@ -395,6 +731,119 @@
     ]
 }
 
+// Sarpadian Simulacrum
+{
+    "name": "Sarpadian Simulacrum",
+    "manaCost": "{R}",
+    "typeLine": "Artifact Creature — Goblin",
+    "oracleText": "Haste\n{3}{R}, Sacrifice this creature: It deals 4 damage to target creature.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "HASTE"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{3}{R}"
+                            }
+                        },
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 4
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature"
+                        },
+                        "id": "target creature"
+                    }
+                ],
+                "descriptionOverride": "{3}{R}, Sacrifice this creature: It deals 4 damage to target creature."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "135",
+        "artist": "Forrest Schehl",
+        "flavorText": "Built to be super soldiers, the goblins preferred just being super destructive.",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/9/099c65d5-9dd3-41d3-9102-3f6cb30c7b8e.jpg?1783911267"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Serum Visionary
+{
+    "name": "Serum Visionary",
+    "manaCost": "{2}{U}",
+    "typeLine": "Creature — Vedalken Wizard",
+    "oracleText": "When this creature enters, draw a card, then scry 2.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        },
+                        {
+                            "type": "Scry",
+                            "count": 2
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "69",
+        "artist": "Warren Mahy",
+        "flavorText": "\"Pre-criminal notions detected in the Sixth Precinct. The suspect will confess when arrested in two hours.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/8/08a587f5-5910-405e-8982-c889dbbc7f98.jpg?1783911288"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Thraben Charm
 {
     "name": "Thraben Charm",
@@ -500,6 +949,121 @@
         "collectorNumber": "45",
         "artist": "Carlos Palma Cruchaga",
         "imageUri": "https://cards.scryfall.io/normal/front/d/d/dd28a646-f38f-4cdf-948c-969cd979e5e6.jpg?1783911295"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Warren Soultrader
+{
+    "name": "Warren Soultrader",
+    "manaCost": "{2}{B}",
+    "typeLine": "Creature — Zombie Goblin Wizard",
+    "oracleText": "Pay 1 life, Sacrifice another creature: Create a Treasure token. (It's an artifact with \"{T}, Sacrifice this token: Add one mana of any color.\")",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomPayLife",
+                                "amount": 1
+                            }
+                        },
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomSacrifice",
+                                "filter": "creature",
+                                "excludeSelf": true
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Treasure"
+                },
+                "descriptionOverride": "Pay 1 life, Sacrifice another creature: Create a Treasure token."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "110",
+        "rarity": "RARE",
+        "artist": "Pete Venters",
+        "flavorText": "The living take their souls for granted. The dead know what they're worth.",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/3/b334e4c6-d316-4141-8889-f95afcc04701.jpg?1784634565"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Wing It
+{
+    "name": "Wing It",
+    "manaCost": "{1}{W}",
+    "typeLine": "Instant",
+    "oracleText": "Target creature gets +2/+2 until end of turn. Put a flying counter on it. Scry 1.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                {
+                    "type": "AddCounters",
+                    "counterType": "flying",
+                    "count": 1,
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                {
+                    "type": "Scry",
+                    "count": 1
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target creature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "48",
+        "artist": "Christina Kraus",
+        "flavorText": "After a moment's confusion, the otter splashed through clouds and gamboled in the wind, delighting in its newfound freedom.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/2/e23abf47-22fa-4dca-bd42-fafa1c8b592f.jpg?1783911295"
     },
     "colorIdentityOverride": [
         "WHITE"
