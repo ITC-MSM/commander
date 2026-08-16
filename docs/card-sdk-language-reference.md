@@ -5324,7 +5324,10 @@ staticAbility {
   control: add one mana of any color`; its response includes the server-offered creature to tap,
   which is revalidated when the atomic candidate is applied. Other secondary-tap shapes, pain,
   activation-mana, restricted, dynamic, granted, rider-bearing, and other side-effecting sources
-  remain unsupported there. The pre-existing
+  remain unsupported there, except the exact pain-land rider `{T}: Add one fixed colored mana;
+  this land deals 1 damage to you`. That rider is executed from the selected printed ability only
+  when the whole atomic team payment commits; a declined teammate therefore leaves both life and
+  land state unchanged. The pre-existing
   per-creature-type block tax (Whipgrass Entangler) uses `AttackBlockTaxPerCreatureType` floating
   effects instead.
 - `CantBeAttackedWithout(keyword, attackerFilter = null)` — Form of the Dragon-style "Creatures
