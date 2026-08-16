@@ -38,6 +38,7 @@ import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.engine.state.components.identity.OwnerComponent
 import com.wingedsheep.engine.state.components.identity.LifeTotalComponent
 import com.wingedsheep.engine.state.components.player.ManaPoolComponent
+import com.wingedsheep.engine.state.components.player.RestrictedManaEntry
 import com.wingedsheep.mtg.sets.definitions.ori.cards.ArchangelOfTithes
 import com.wingedsheep.mtg.sets.definitions.apc.cards.BattlefieldForge
 import com.wingedsheep.mtg.sets.definitions.mir.cards.CrystalVein
@@ -60,6 +61,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.AbilityId
 import com.wingedsheep.sdk.scripting.TimingRule
+import com.wingedsheep.sdk.scripting.effects.ManaRestriction
 import com.wingedsheep.sdk.dsl.Costs
 import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.card
@@ -916,6 +918,50 @@ class TwoHeadedGiantCombatTest : FunSpec({
         paid.newState.getEntity(p[2])!!.get<ManaPoolComponent>()!!.white shouldBe 0
         paid.newState.getEntity(p[2])!!.get<ManaPoolComponent>()!!.black shouldBe 1
         paid.events.filterIsInstance<BlockersDeclaredEvent>().size shouldBe 1
+    }
+
+    test("atomic tax preserves unrelated restricted mana and leftover mana provenance") {
+        val (baseState, p, objects) = taxedTeamBlockStateWithIzzetSignet()
+        val (archangel, blocker, teammateBlocker, signet, teammateLand) = objects
+        val state = baseState.updateEntity(p[2]) { container ->
+            val pool = container.get<ManaPoolComponent>()!!
+            container.with(pool.copy(
+                restrictedMana = listOf(RestrictedManaEntry(Color.RED, ManaRestriction.InstantOrSorceryOnly)),
+                // The initial {C} was produced by this source earlier. It pays Signet's activation;
+                // the remaining tag must describe the one unspent Signet-produced mana.
+                manaBySource = mapOf(signet to 1),
+            ))
+        }
+        val proc = ActionProcessor(registry())
+        val declared = proc.process(
+            state,
+            DeclareBlockers(p[2], mapOf(blocker to listOf(archangel), teammateBlocker to listOf(archangel))),
+        ).result
+        val prompt = declared.pendingDecision.shouldBeInstanceOf<SelectAtomicBlockTaxManaAbilitiesDecision>()
+        val p2Accepted = proc.process(
+            declared.newState,
+            SubmitDecision(p[2], AtomicBlockTaxManaAbilitiesSelectedResponse(
+                prompt.id,
+                selectedManaAbilitySelections = listOf(AtomicBlockTaxManaAbilitySelection(
+                    AtomicBlockTaxManaAbilityRef(signet, 0), taxPaymentColor = Color.BLUE,
+                )),
+            )),
+        ).result
+        val paid = proc.process(
+            p2Accepted.newState,
+            SubmitDecision(p[3], AtomicBlockTaxManaAbilitiesSelectedResponse(
+                p2Accepted.pendingDecision.shouldBeInstanceOf<SelectAtomicBlockTaxManaAbilitiesDecision>().id,
+                selectedManaAbilitySelections = listOf(AtomicBlockTaxManaAbilitySelection(
+                    AtomicBlockTaxManaAbilityRef(teammateLand, -1),
+                )),
+            )),
+        ).result
+
+        paid.isSuccess.shouldBeTrue()
+        val remaining = paid.newState.getEntity(p[2])!!.get<ManaPoolComponent>()!!
+        remaining.restrictedMana shouldBe listOf(RestrictedManaEntry(Color.RED, ManaRestriction.InstantOrSorceryOnly))
+        remaining.manaBySource shouldBe mapOf(signet to 1)
+        remaining.red shouldBe 1
     }
 
     test("atomic Izzet Signet is unavailable without preexisting activation mana and rejects legacy or forged tax colours") {

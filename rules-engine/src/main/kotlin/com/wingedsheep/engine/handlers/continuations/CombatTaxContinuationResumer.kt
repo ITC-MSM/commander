@@ -28,6 +28,7 @@ import com.wingedsheep.engine.mechanics.mana.ManaSolver
 import com.wingedsheep.engine.handlers.actions.combat.BlockDeclarationFinalizer
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
+import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.player.ManaPoolComponent
 import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.sdk.core.Zone
@@ -314,8 +315,11 @@ class CombatTaxContinuationResumer(
         val playerEntity = state.getEntity(playerId) ?: return null
         val poolComponent = playerEntity.get<ManaPoolComponent>() ?: return null
         var pool = ManaPool(
-            poolComponent.white, poolComponent.blue, poolComponent.black,
-            poolComponent.red, poolComponent.green, poolComponent.colorless,
+            white = poolComponent.white, blue = poolComponent.blue, black = poolComponent.black,
+            red = poolComponent.red, green = poolComponent.green, colorless = poolComponent.colorless,
+            restrictedMana = poolComponent.restrictedMana,
+            manaBySubtype = poolComponent.manaBySubtype,
+            manaBySource = poolComponent.manaBySource,
         )
         val partial = pool.payPartial(manaCost)
         var currentState = state
@@ -337,11 +341,15 @@ class CombatTaxContinuationResumer(
             }
         }
         val newPool = pool.pay(manaCost) ?: return null
+        val remainingPool = newPool.consumeProvenance(pool.total - newPool.total).first
         currentState = currentState.updateEntity(playerId) { container ->
             container.with(
                 ManaPoolComponent(
-                    white = newPool.white, blue = newPool.blue, black = newPool.black,
-                    red = newPool.red, green = newPool.green, colorless = newPool.colorless,
+                    white = remainingPool.white, blue = remainingPool.blue, black = remainingPool.black,
+                    red = remainingPool.red, green = remainingPool.green, colorless = remainingPool.colorless,
+                    restrictedMana = remainingPool.restrictedMana,
+                    manaBySubtype = remainingPool.manaBySubtype,
+                    manaBySource = remainingPool.manaBySource,
                 )
             )
         }
@@ -393,10 +401,21 @@ class CombatTaxContinuationResumer(
         if (selections.any { it.ref !in options }) return null
         val playerEntity = state.getEntity(plan.payerId) ?: return null
         val oldPool = playerEntity.get<ManaPoolComponent>() ?: return null
-        var pool = ManaPool(oldPool.white, oldPool.blue, oldPool.black, oldPool.red, oldPool.green, oldPool.colorless)
+        var pool = ManaPool(
+            white = oldPool.white,
+            blue = oldPool.blue,
+            black = oldPool.black,
+            red = oldPool.red,
+            green = oldPool.green,
+            colorless = oldPool.colorless,
+            restrictedMana = oldPool.restrictedMana,
+            manaBySubtype = oldPool.manaBySubtype,
+            manaBySource = oldPool.manaBySource,
+        )
         var current = state
         val events = mutableListOf<GameEvent>()
         var explicitTaxManaPaid = 0
+        var unrestrictedManaSpent = 0
         for (selection in selections) {
             val ref = selection.ref
             val option = options.getValue(ref)
@@ -435,7 +454,9 @@ class CombatTaxContinuationResumer(
             // before its tap cost and output. Its selected produced colour then pays exactly one
             // unit of this payer's generic block tax; it must not be paid again below.
             option.activationManaCost?.let { activationCost ->
-                pool = pool.pay(activationCost) ?: return null
+                val paidActivation = pool.pay(activationCost) ?: return null
+                unrestrictedManaSpent += pool.total - paidActivation.total
+                pool = paidActivation
             }
             if (option.requiresSacrificeSelf) {
                 events += TappedEvent(ref.sourceId, option.sourceName)
@@ -458,12 +479,20 @@ class CombatTaxContinuationResumer(
                 current = tapped.first
                 tapped.second?.let(events::add)
             }
+            val producedAmount = option.fixedProducedMana.values.sum().takeIf { option.activationManaCost != null }
+                ?: option.manaAmount
+            val sourceSubtypes = current.getEntity(ref.sourceId)?.get<CardComponent>()?.typeLine?.subtypes?.toSet() ?: emptySet()
             pool = when {
-                option.activationManaCost != null -> option.fixedProducedMana.entries.fold(pool) { accumulated, (color, amount) ->
-                    accumulated.add(color, amount)
-                }.spend(selection.taxPaymentColor!!) ?: return null
-                outputColor != null -> pool.add(outputColor, option.manaAmount)
-                option.producesColorless -> pool.addColorless(option.manaAmount)
+                option.activationManaCost != null -> {
+                    val withOutput = option.fixedProducedMana.entries.fold(pool) { accumulated, (color, amount) ->
+                        accumulated.add(color, amount)
+                    }.withProvenance(ref.sourceId, sourceSubtypes, producedAmount)
+                    val paidTaxColor = withOutput.spend(selection.taxPaymentColor!!) ?: return null
+                    unrestrictedManaSpent += withOutput.total - paidTaxColor.total
+                    paidTaxColor
+                }
+                outputColor != null -> pool.add(outputColor, option.manaAmount).withProvenance(ref.sourceId, sourceSubtypes, producedAmount)
+                option.producesColorless -> pool.addColorless(option.manaAmount).withProvenance(ref.sourceId, sourceSubtypes, producedAmount)
                 else -> return null
             }
             if (option.hasImmediateSelfDamage) {
@@ -486,8 +515,14 @@ class CombatTaxContinuationResumer(
         // let a malformed future option silently pay more tax than the fixed generic tax permits.
         if (explicitTaxManaPaid > plan.manaCost.genericAmount || plan.manaCost.colors.isNotEmpty() || plan.manaCost.colorlessAmount > 0) return null
         val paid = pool.pay(plan.manaCost.reduceGeneric(explicitTaxManaPaid)) ?: return null
+        unrestrictedManaSpent += pool.total - paid.total
+        val remainingPool = paid.consumeProvenance(unrestrictedManaSpent).first
         current = current.updateEntity(plan.payerId) { it.with(ManaPoolComponent(
-            white = paid.white, blue = paid.blue, black = paid.black, red = paid.red, green = paid.green, colorless = paid.colorless,
+            white = remainingPool.white, blue = remainingPool.blue, black = remainingPool.black,
+            red = remainingPool.red, green = remainingPool.green, colorless = remainingPool.colorless,
+            restrictedMana = remainingPool.restrictedMana,
+            manaBySubtype = remainingPool.manaBySubtype,
+            manaBySource = remainingPool.manaBySource,
         )) }
         return TaxPayment(current, events)
     }
@@ -502,8 +537,11 @@ class CombatTaxContinuationResumer(
         val playerEntity = state.getEntity(playerId) ?: return null
         val poolComponent = playerEntity.get<ManaPoolComponent>() ?: return null
         var pool = ManaPool(
-            poolComponent.white, poolComponent.blue, poolComponent.black,
-            poolComponent.red, poolComponent.green, poolComponent.colorless,
+            white = poolComponent.white, blue = poolComponent.blue, black = poolComponent.black,
+            red = poolComponent.red, green = poolComponent.green, colorless = poolComponent.colorless,
+            restrictedMana = poolComponent.restrictedMana,
+            manaBySubtype = poolComponent.manaBySubtype,
+            manaBySource = poolComponent.manaBySource,
         )
 
         val partial = pool.payPartial(manaCost)
@@ -528,11 +566,15 @@ class CombatTaxContinuationResumer(
         }
 
         val newPool = pool.pay(manaCost) ?: return null
+        val remainingPool = newPool.consumeProvenance(pool.total - newPool.total).first
         currentState = currentState.updateEntity(playerId) { container ->
             container.with(
                 ManaPoolComponent(
-                    white = newPool.white, blue = newPool.blue, black = newPool.black,
-                    red = newPool.red, green = newPool.green, colorless = newPool.colorless,
+                    white = remainingPool.white, blue = remainingPool.blue, black = remainingPool.black,
+                    red = remainingPool.red, green = remainingPool.green, colorless = remainingPool.colorless,
+                    restrictedMana = remainingPool.restrictedMana,
+                    manaBySubtype = remainingPool.manaBySubtype,
+                    manaBySource = remainingPool.manaBySource,
                 )
             )
         }

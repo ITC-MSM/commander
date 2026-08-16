@@ -198,6 +198,25 @@ data class ManaPool(
     fun addColorless(amount: Int = 1): ManaPool = copy(colorless = colorless + amount)
 
     /**
+     * Attach provenance to newly produced unrestricted mana.  This mirrors
+     * [ManaPoolComponent.withProvenance] for candidate-state payment flows that keep the pool as
+     * a [ManaPool] until every part of a transaction has validated.
+     */
+    fun withProvenance(
+        sourceId: com.wingedsheep.sdk.model.EntityId,
+        subtypes: Set<com.wingedsheep.sdk.core.Subtype>,
+        amount: Int,
+    ): ManaPool {
+        if (amount <= 0) return this
+        val newBySource = manaBySource + (sourceId to ((manaBySource[sourceId] ?: 0) + amount))
+        val newBySubtype = if (subtypes.isEmpty()) manaBySubtype else buildMap {
+            putAll(manaBySubtype)
+            subtypes.forEach { put(it, (get(it) ?: 0) + amount) }
+        }
+        return copy(manaBySubtype = newBySubtype, manaBySource = newBySource)
+    }
+
+    /**
      * Add restricted mana to the pool.
      */
     fun addRestricted(
