@@ -20,10 +20,17 @@ and those are the two sentences on it. The **aura band** followed: `Enchant <fil
 attached-permanent statics, which opened `staticAbilities` — the largest `CardScript` slot the
 differential could not see into, and the one every later static family lands in.
 
-The most recent work is the **counters band**, and it is the first one picked by *ranking the
-backlog* rather than by picking a set: `just assay-report --implemented` says 656 cards with a
-hand-written golden decline on nothing but a counter sentence, which is the largest sole-blocked
-family in that population. See [the counters band](#the-counters-band) below.
+The most recent work is the **spell-cast band** — "Whenever you cast a noncreature spell, …" — which
+gives the grammar its first noun phrase for a *spell* rather than a permanent, and is the largest
+single family left in the corpus by the honest ranking: 504 cards decline on nothing but a
+spell-cast trigger, against 263 for the next one. See [the spell-cast band](#the-spell-cast-band)
+below; it is also where the ranking method itself changed, from the token a line died on to the
+**tail** the parse could not read.
+
+Before it came the **counters band**, the first one picked by *ranking the backlog* rather than by
+picking a set: `just assay-report --implemented` said 656 cards with a hand-written golden decline
+on nothing but a counter sentence, the largest sole-blocked family in that population. See
+[the counters band](#the-counters-band) below.
 
 Before that came the **Legions band**, the second set read end to end and the first *hard* one: `just assay-gate --set LGN` reads **145 of Legions' 145 cards**. Legions is every-card-a-
 creature, so it is a set made almost entirely of the things Portal had none of — morph payoffs,
@@ -87,10 +94,12 @@ its own population. The Set *column* still shows the representative printing, an
 syntax/     Phrase kernel — templates, slots, both directions, memoization, the parse cap
 normalize/  Scryfall text -> canonical ability lines, every pass with its inverse; reminder glosses
 corpus/     the Scryfall Oracle bulk: download, cache, stream; per-set membership for `--set`
-grammar/    the rules, by topic — Primitives, Keywords, Cardinals, Conditions, Filters, Targets,
-            Steps, Continuations, Triggers, Mana, Costs, Activated, Replacements, Statics,
+grammar/    the rules, by topic — Primitives, Keywords, Cardinals, Conditions, Filters, Spells,
+            Targets, Steps, Continuations, Triggers, Mana, Costs, Activated, Replacements, Statics,
             Restrictions, and the effect-topic files Library, Hand, Combat, Graveyard, Stack,
             SelfSteps
+            Filters is the noun phrase for a permanent and Spells the one for a spell — same
+            GameObjectFilter, different head noun, disjoint positions
             Steps is the clause vocabulary and the sentence/sequence machinery every other file
             slots into; Activated is the cost-colon-effect sentence; Statics is the continuous-
             ability slot; Restrictions is the three "when may this happen" vocabularies;
@@ -136,16 +145,16 @@ non-zero on. Declines are not failures.
 Cards assayed                    34882
 Ability lines                    66793  (38865 unique)
 
-Round-trips byte-exact           23861   357.2‰ (35.7%)
-Alternate spelling normalized    1110
-Declined                         41822
+Round-trips byte-exact           24139   361.4‰ (36.1%)
+Alternate spelling normalized    1120
+Declined                         41534
 Ambiguous — distinct readings    0
 Print mismatch                   0
 Normalization not invertible     0
 Full inverse not reproduced      0
 Redundant readings (same model)  0
 
-Cards fully covered              6400 / 34882   183.5‰ (18.3%)
+Cards fully covered              6583 / 34882   188.7‰ (18.9%)
 Vanilla + keyword-only cards     1444 / 1712   843.5‰ (84.3%)   <- Phase 1 target
 Portal (set POR)                 200 / 200     1000.0‰ (100%)   <- the Portal band's target
 Legions (set LGN)                145 / 145     1000.0‰ (100%)   <- the Legions band's target
@@ -362,6 +371,96 @@ but an "Enchanted creature …" sentence, and their tail is genuinely long — t
 the joined form is worth 22. There is no fourth large family hiding behind this one, which is the
 useful half of the finding.
 
+## The spell-cast band
+
+"Whenever you cast a noncreature spell, …" — the spell-cast triggers, and with them the first noun
+phrase the grammar has for a **spell** rather than a permanent. Whole-corpus coverage went
+6,400 → **6,583 cards**, byte-exact lines 23,861 → **24,139**, and the differential's compared
+population 2,449 → **2,495**.
+
+**It is the second band picked by ranking the backlog, and the ranking method is the part that
+changed.** The counters band ranked by "cards whose line dies at the verb"; this one ranks by *what
+the grammar could not read* — every declined line is re-parsed, the parse's death offset taken, and
+the **tail from that offset** is what the families are keyed on. That is the one key that neither
+over- nor under-counts a prefix: a line that dies at "you cast" has already read "Whenever ", so the
+family it names is the missing *event* rather than the word the report's table shows. By that
+measure a spell-cast event is far and away the largest family in the corpus — **504 cards decline on
+nothing but a spell-cast trigger**, against 263 for the next one, and 936 touch one.
+
+**And it was measured before it was written, which is the habit the equipment band's overstatement
+bought.** Substituting a known-good prefix ("When ~ enters, ") into all 712 of those cards' declined
+lines and re-parsing says how many payoffs the grammar can already read: **252 of the lines and 234
+whole cards**. The band delivered 183, and the residue is nameable rather than mysterious — the
+`SpellCastPredicate` riders ("from your hand", "a kicked spell", "a spell that targets ~"), the
+colour disjunction ("a blue or black spell"), "a colorless spell", and "your first spell during each
+opponent's turn", which is not an each-turn ordinal at all. For comparison, the same measurement run
+on modal spells — the family the token table and the shape table both rank first — says **126 whole
+cards**, because a modal card is finished only when *every* one of its bullets reads.
+
+**The whole band is rows plus one noun phrase, and no SDK change at all.** `SpellCastEvent`,
+`NthSpellCastEvent` and `CastThisSpellEvent` were already modelled with curated facades in front of
+them, so this is the cheapest thing the module can be doing: a grammar gap whose answer was already
+written, and which the differential confirms the moment it parses.
+
+- **The noun phrase is [`Spells`](src/main/kotlin/com/wingedsheep/assay/grammar/Spells.kt), and it is
+  a family rather than rows in `Filters` because of the head noun.** A permanent phrase's head is the
+  card type ("creature", "nonbasic land"); a spell phrase's head is the literal word "spell" with the
+  card type in front of it as an adjective. `GameObjectFilter.Creature` is therefore printed
+  "creature" in one file and "creature spell" in the other — one printed form per model in two
+  disjoint positions, not two forms for one. The layers are a deliberate *subset* of `Filters`',
+  because a spell has no controller, is never tapped or attacking, and has no power to compare: what
+  is left is the three axes a card carries on the stack, its types, its colour and its mana value.
+- **The subtype join is "or" here and "and/or" there, and that is not two spellings of one model.**
+  `Filters.anySubtype`'s inner is a type noun, so the value it builds always carries a card-type
+  predicate under the `Or`; this one never does. Deriving the join from the head noun would be a rule
+  reading a templating habit instead of a model.
+- **The caster is a field on the event, so "you" / "an opponent" / "a player" are three rows over one
+  skeleton** — not a subject vocabulary in a slot, which would also let the rule print "each player
+  casts", a sentence no card writes.
+- **The effect clause is `Steps.triggeredStep`, for the filtered-trigger reason.** The event names an
+  object of its own — the spell being cast — so "it" in the payoff is that spell, the third anaphor
+  position exactly as a filtered enters-trigger is. "When you cast this spell" is the one row that
+  takes the *source* cascade instead, and it has to: there the spell being cast **is** the source.
+- **Widening `filteredTriggerRule` is what made the family rows.** Its `article: Boolean` became a
+  noun-phrase parameter, so a cast trigger passes `Spells.indefinite` through the identical rule the
+  enters and becomes-blocked triggers use, and nothing about the shape was copied.
+
+**What the gate found: 46 newly-compared cards, and 4 divergences that are four different things** —
+which is roughly the ratio the differential is supposed to have, and the first time a band has
+produced one of each kind.
+
+- **A parser bug of the reversible-but-wrong class — Storyteller Pixie.** The subtype layer read
+  "an **Adventure** spell" as `Any.withSubtype(Adventure)`. The card is right and the grammar was
+  wrong: CR 715.3 makes an Adventure spell one *cast as* an Adventure, which is what
+  `SpellCastPredicate.CastAsAdventure` says in its own KDoc — "this is about how the card was cast,
+  not what the card is" — and the same adventurer card cast as its creature half does not satisfy it.
+  The reading round-tripped byte-perfectly and denoted a trigger the engine would never fire, which
+  is precisely what the touchstone structurally cannot see. Fixed by spelling the phrase as a row of
+  its own and having `Spells.spellSubtype` refuse the word, since one printed form with two models is
+  ambiguity by construction rather than a preference.
+- **A card bug of the bare-tribal-noun class — Adeliz, the Cinder Wind.** "Wizards you control get
+  +1/+1" filtered on `Creature.withSubtype(Wizard)`; a bare tribal noun names every *permanent* with
+  the subtype, which is the reading Zombie Master proves by printing both spellings on one card. It
+  is the residue of the migration that closed that finding: Adeliz was not in the compared population
+  then, and is now. Unobservable today, and fixed for the same reason the other 103 were.
+- **A card bug of the "you may" class — Daring Archaeologist.** "You may return target artifact card
+  from your graveyard to your hand" was spelled `optional = true` on the *target requirement*, which
+  is the SDK's phrasing for "up to one target" — a strictly different ability, and exactly the
+  conflation the trigger-`optional` collapse removed from the engine. The consent belongs on the
+  ability. Fixed with the scenario test that asserts the observable halves: the requirement's minimum
+  is 1, and declining asks for no target at all.
+- **The standing `ManaColorSet.Specific` finding, recurring — Spider Manifestation.** "{T}: Add {R}
+  or {G}." as one `AddManaOfChoiceEffect` where 165 cards write two abilities. The README's own note
+  said none of the thirteen was compared "because each one's rider declines anyway"; this band read
+  the rider. Still not folded, for the reason recorded below.
+
+**Where the ranking points next.** On the same tail ranking, the row under `you cast` at 504 was
+`When ~` at 263 and then a flat run — `enchanted creature` 183, `for each` 175, `Until end of` 170,
+`Each player` 165 — and none of those is one sentence the way a cast trigger is. (Those counts are
+the pre-band measurement and can only have risen, since a card blocked by two families was
+sole-blocked by neither.) A flat tail is the shape the equipment band's residue had, and it is the
+signal that the next target is a *set* rather than a family.
+
 ## What Phase 1 already found
 
 The report is two documents at once, and the second one is about `mtg-sdk`:
@@ -407,21 +506,24 @@ named population bucket instead and the denominator stays visible.
 
 ```
   Hand-written cards                 9127
-    compared                         2449
-    not yet covered by the grammar   6042
-    script slot not modelled yet      82
+    compared                         2495
+    not yet covered by the grammar   5995
+    script slot not modelled yet      83
     lines do not fold into one card   50
     multi-face (out of scope)        301
     Oracle text differs from golden  203
     golden would not decode            0
 
-  Confirmed — models agree           2449   1000.0‰ (100.0%)
-  DIVERGENT — read every one            0
+  Confirmed — models agree           2494    999.6‰ (100.0%)
+  DIVERGENT — read every one            1
 ```
 
-**Zero is where the sweep and the two findings after it landed**, and it is a checkpoint rather than
-a property — the number has gone up on the day the grammar reached every new card class but one, and
-it should be expected to again. The sweep took the count from 122 to 1: every divergence the gate had
+**The one standing divergence is the already-open `ManaColorSet.Specific` finding**, recurring on
+Spider Manifestation exactly as the note below predicted it would. The count was at zero after the
+sweep and the two findings after it; the spell-cast band took it to four and three of those are
+fixed here, which is the gate behaving the way it is supposed to — zero is a checkpoint, not a
+property, and it has risen on the day the grammar reached every new card class but one. The sweep
+itself took the count from 122 to 1: every divergence the gate had
 accumulated was read, classified as parser bug / card bug / fold, and acted on. The one it left
 standing was Lavaborn Muse, closed by the CR 603.4 split below. What the sweep found, by kind:
 
@@ -550,9 +652,11 @@ Cemetery and Edgar Markov — and the two models agree. `Triggers.abilityFor` wr
 and never `triggerRestriction`, so a "while" card declines rather than printing an "if" sentence that
 means something else.
 
-**The differential is at zero.** That is a checkpoint, not a destination: it means every card the
-grammar currently reads whole agrees with its golden, and the next band of rules is expected to move
-it off zero again.
+**The differential was at zero here, and the spell-cast band moved it off — exactly as this
+paragraph predicted.** Four divergences over 46 newly-compared cards, three of them fixed (one
+parser bug, two card bugs) and the fourth the standing `ManaColorSet.Specific` finding. Zero is a
+checkpoint, not a destination: it means every card the grammar reads whole agrees with its golden on
+the day it is measured, and the next band of rules is expected to move it off again.
 
 The divergence count is not meant to stay at zero — it rises every time the grammar reaches a new
 class of card, and each rise is the gate earning its keep. The five it opened with, the eight the

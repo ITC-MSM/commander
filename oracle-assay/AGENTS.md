@@ -325,6 +325,24 @@ ranking in ways that change the work. The step triggers are the worked example: 
 "At the beginning of…", and adding every step-trigger prefix moved whole-card coverage by 23, because
 the other 387 were blocked on their effect clause all along.
 
+**The ranking that has actually held up is over the parse's *tail*, and it is two measurements.**
+The spell-cast band is the worked example and the method is reusable verbatim:
+
+1. `just assay-report --declines` (add `--implemented` for the grammar backlog), re-parse every
+   declined line, take the decline's `position`, and key the families on **the text from that offset
+   on**. That is neither the token ranking (which over-weights a missing prefix) nor the shape
+   ranking (which counts cards a family *mentions*): it names the piece of grammar that would have
+   to exist for the line to get further. Then count, per family, the cards **all** of whose declined
+   lines fall in it — the honest "sole-blocked" number.
+2. Before writing anything, **substitute a known-good prefix for the family** into those cards'
+   declined lines and re-parse. That says how many payoffs the rest of the grammar can already read,
+   which is the number the band will actually deliver. The spell-cast family predicted 234 whole
+   cards and delivered 183; modal spells, which both other rankings put first, measured 126.
+
+Every ranking that skipped step 2 has overstated its band, three times in the same direction. Step 2
+costs one throwaway probe over `Grammar.abilityLine.parseLine`, and it is what turns "which cards
+does this family reach" into "which lines does it finish".
+
 The split re-weights the list rather than reordering it wholesale, which is itself the finding: the
 top families are the same in both populations, so the grammar backlog and the SDK backlog are being
 blocked by the same missing sentence shapes rather than by different ones. Where it does diverge is

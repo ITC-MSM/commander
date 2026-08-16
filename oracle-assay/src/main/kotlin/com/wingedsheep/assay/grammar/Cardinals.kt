@@ -50,4 +50,21 @@ object Cardinals {
 
     /** True for a count this vocabulary can spell as a word — the guard a counting rule builds on. */
     fun spellable(n: Int): Boolean = WORDS.any { it.second == n }
+
+    /**
+     * The ordinals — "your **second** spell each turn".
+     *
+     * A separate vocabulary rather than a suffix over [word], because English's ordinals are not
+     * derived from its cardinals by any rule a grammar could invert ("two" → "second", "three" →
+     * "third"), and because the two never stand in the same slot: a cardinal counts objects, an
+     * ordinal picks one out of a sequence. It starts at *one*, which is the other difference — "your
+     * first spell" is written, where "draw one card" is not.
+     *
+     * It stops at three for [word]'s reason: that is where the corpus stops. No card counts a
+     * fourth spell in a turn, and a rule that spelled one would round-trip against nothing.
+     */
+    val ordinal: Phrase<Int> = oneOf(
+        "an ordinal",
+        listOf("first" to 1, "second" to 2, "third" to 3).map { (text, value) -> constant(text, value) },
+    )
 }
