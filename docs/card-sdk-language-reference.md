@@ -6152,6 +6152,11 @@ riders, matching how the engine already treats e.g. City of Brass's damage durin
   normal cast. `findMayCastFromGraveyardGrant(selection)` returns the grant matching that choice,
   falling back to a rider-preferring auto-pick when the selection is unspecified or names a rider no
   applicable grant offers (so a client can't dodge a mandatory rider).
+  **Gating this with a condition is silently inert today.** `staticAbility { condition = … }`
+  wraps the ability in a `ConditionalStaticAbility`, and both read sites (`CastFromZoneEnumerator`
+  and `CastZoneResolver`) match the bare type without unwrapping it — so the grant never applies
+  rather than applying conditionally. Teach those read sites to unwrap first;
+  `FlashTypeGrants.activeGrant` is the worked example.
 - `GraveyardCardsHaveFlashback(filter, cost = null, duringYourTurnOnly = false)` — a **whole-graveyard
   flashback grant** (CR 702.34): a continuous static that grants flashback to *every* card in the
   controller's graveyard matching `filter` (not a single-card grant like `Effects.GrantFlashback` /
@@ -6167,6 +6172,10 @@ riders, matching how the engine already treats e.g. City of Brass's damage durin
   in your graveyard has flashback … equal to that card's mana cost") and one for
   `InstantOrSorcery.withSubtype(Lesson)` with `cost = {1}` ("each Lesson card in your graveyard has
   flashback {1}"), both `duringYourTurnOnly = true`.
+  **Gating this with a condition is silently inert today.** `staticAbility { condition = … }`
+  wraps the ability in a `ConditionalStaticAbility`, and `FlashbackGrants` matches the bare type
+  without unwrapping it — so the grant never applies rather than applying conditionally. Teach
+  that read site to unwrap first; `FlashTypeGrants.activeGrant` is the worked example.
 - `GraveyardCardsHaveMayhem(filter, cost = null, duringYourTurnOnly = false)` — the Mayhem (CR 702.187)
   analogue of `GraveyardCardsHaveFlashback`: a whole-graveyard group grant of the Mayhem keyword to
   every graveyard card matching `filter`. `cost = null` means "mayhem cost equal to that card's mana
@@ -6175,6 +6184,10 @@ riders, matching how the engine already treats e.g. City of Brass's damage durin
   still applies, and (unlike flashback) the spell is not exiled on resolution. Used by Green Goblin's
   "Goblin Formula — Each nonland card in your graveyard has mayhem. The mayhem cost is equal to its
   mana cost" (`GraveyardCardsHaveMayhem(GameObjectFilter.Nonland)`).
+  **Gating this with a condition is silently inert today.** `staticAbility { condition = … }`
+  wraps the ability in a `ConditionalStaticAbility`, and `MayhemGrants` matches the bare type
+  without unwrapping it — so the grant never applies rather than applying conditionally. Teach
+  that read site to unwrap first; `FlashTypeGrants.activeGrant` is the worked example.
 - `GrantMayCastFromLinkedExile(filter = Nonland, duringYourTurnOnly = false, additionalCost = null, ownedByYou = false, withoutPayingManaCost = false, oncePerTurn = false, maxManaValue = null, exiledThisTurnOnly = false, entersWithCounter = null)`
   — "you may cast cards exiled with this permanent" — reads the source's `LinkedExileComponent` (Rona,
   Disciple of Gix; Maralen, Fae Ascendant; Dawnhand Dissident). Casting spells from linked exile is
@@ -6254,6 +6267,10 @@ riders, matching how the engine already treats e.g. City of Brass's damage durin
   alternative cost (e.g. a red evoke creature), both casts are offered and disambiguated by
   `CastSpell.alternativeCostType` (see `engine-server-interface.md`) — picking "Evoke" charges the
   evoke cost, not warp, even though warp would win a naive priority order.
+  **Gating this with a condition is silently inert today.** `staticAbility { condition = … }`
+  wraps the ability in a `ConditionalStaticAbility`, and `WarpGrants` matches the bare type
+  without unwrapping it — so the grant never applies rather than applying conditionally. Teach
+  that read site to unwrap first; `FlashTypeGrants.activeGrant` is the worked example.
 - `GrantKeywordToOwnSpells(keyword, spellFilter = Creature)` — while this permanent is on the battlefield,
   spells its controller casts matching `spellFilter` effectively have `keyword` ("you cast" semantics). Read by
   the cast machinery via `GrantedKeywordResolver`:
@@ -6276,6 +6293,10 @@ riders, matching how the engine already treats e.g. City of Brass's damage durin
     (the same shape as the existing wither-on-spell check, which reads `SpellGrantedKeywordsComponent`). One-shot
     per-spell grants (`GrantKeywordToSpellEffect` → `SpellGrantedKeywordsComponent`, e.g. a copy that gains lifelink)
     feed the same check.
+  **Gating this with a condition is silently inert today.** `staticAbility { condition = … }`
+  wraps the ability in a `ConditionalStaticAbility`, and `GrantedKeywordResolver` matches the bare type
+  without unwrapping it — so the grant never applies rather than applying conditionally. Teach
+  that read site to unwrap first; `FlashTypeGrants.activeGrant` is the worked example.
 - `GrantFlashToSpellType(filter, controllerOnly = false, nthOfTypePerTurn = null)` — a battlefield
   static letting matching spells be cast as though they had flash (CR 702.8). `controllerOnly = true`
   is the "**You** may cast …" wording (Raff Capashen, Valley Floodcaller); the default covers "**Any
@@ -6290,8 +6311,28 @@ riders, matching how the engine already treats e.g. City of Brass's damage durin
   closes the window even if it was countered ("you cast" keys on the cast, not the resolution). Both
   flash read sites — `CastPermissionUtils.hasGrantedFlash` (legal-action enumeration, also consulted
   by the suspend paths) and `CastZoneResolver.hasGrantedFlash` (the authoritative cast-time check) —
-  route the gate through the shared `FlashTypeGrants.nthGateAllows`. Sibling of the durational
-  `Effects.GrantFlashToSpells`; use the static for "as long as this is on the battlefield" wording.
+  are thin delegates to the shared `FlashTypeGrants.hasGrantedFlash`, which is the single source of
+  truth for every non-printed flash (the card's own `conditionalFlash`, the turn-scoped
+  `Effects.GrantFlashToSpells` player grant, and this static), so enumeration and the cast handler
+  cannot disagree. Sibling of the durational `Effects.GrantFlashToSpells`; use the static for "as
+  long as this is on the battlefield" wording.
+
+  **Gating it on a condition** — wrap it in a `ConditionalStaticAbility` (i.e. set `condition` on the
+  `staticAbility { }` block); the grant needs no `condition` field of its own. `FlashTypeGrants`
+  unwraps the wrapper and re-asks the condition on every read, evaluated with the granting permanent
+  as the source and its controller as "you", so the permission appears and disappears live. **Captain
+  Mar-Vell, Space-Born** — "As long as an opponent has cast a spell this turn, you may cast spells as
+  though they had flash" — is `staticAbility { condition = Conditions.CompareAmounts(
+  DynamicAmount.SpellsCastThisTurn(Player.EachOpponent), GTE, DynamicAmount.Fixed(1));
+  ability = GrantFlashToSpellType(GameObjectFilter.Any, controllerOnly = true) }`.
+  `Player.EachOpponent` **sums** across opponents, so `>= 1` is exactly "an opponent" in multiplayer,
+  and the count reads the cast history, so a countered or still-on-the-stack opponent spell opens the
+  window. Note this is the read-site-unwrapping route, *not* the fold-the-gate-into-the-type route
+  that `ModifySpellCost` (`CostGating.OnlyIf`) and `MayCastSelfFromZones` (`condition`) took. The
+  reason is not a site count — `MayCastSelfFromZones` also has two read sites — but that flash's two
+  sites were collapsible into a single owner, `FlashTypeGrants`: with one implementation behind both,
+  teaching *it* to unwrap fixes every gated flash grant at once and none of them can drift. Fold the
+  gate into the type only where no such shared owner exists.
 - `MayCastWithoutPayingManaCost(controllerOnly = false, firstSpellOfTurnOnly = false, spellFilter = Any, oncePerTurn = false, fromExileOnly = false)` — a
   battlefield permission to cast a spell without paying its mana cost (CR 118.9). Composable
   gates: `controllerOnly = true` restricts the benefit to the source's controller ("you" wording);
@@ -6329,6 +6370,10 @@ riders, matching how the engine already treats e.g. City of Brass's damage durin
   / blight / behold / runtime tax skipped; mandatory additional costs like Embrace Oblivion's
   sacrifice are still enforced), matching the existing `PlayWithoutPayingCostComponent` flow
   used by Cascade and Omniscience.
+  **Gating this with a condition is silently inert today.** `staticAbility { condition = … }`
+  wraps the ability in a `ConditionalStaticAbility`, and `CostCalculator` matches the bare type
+  without unwrapping it — so the grant never applies rather than applying conditionally. Teach
+  that read site to unwrap first; `FlashTypeGrants.activeGrant` is the worked example.
 
 **Top-of-library reveal & play** (reveal the top card of a library, optionally with permission to
 play it from there). Visibility (public reveal to all players) and play permission are separate
@@ -6958,6 +7003,11 @@ composite abilities).
   instant and sorcery card in your hand has miracle {2}"); `MiracleGrants.effectiveMiracle` is the
   single source of truth consulted by the draw flow, enumerator, and cast handler (printed wins, else
   the first matching battlefield grant on a permanent the player controls).
+  **Gating `GrantMiracleToCardsInHand` with a condition is silently inert today.**
+  `staticAbility { condition = … }` wraps the ability in a `ConditionalStaticAbility`, and
+  `MiracleGrants` matches the bare type without unwrapping it — so the grant never applies rather
+  than applying conditionally. Teach that read site to unwrap first; `FlashTypeGrants.activeGrant`
+  is the worked example.
 - `Cleave(cost)` (`KeywordAbility.cleave("{cost}")`) — Cleave {cost} (CR 702.148, Innistrad: Crimson
   Vow). Two static abilities on a spell while it's on the stack: "You may cast this spell by paying
   [cost] rather than paying its mana cost" **and** "If this spell's cleave cost was paid, change its
@@ -7287,6 +7337,10 @@ composite abilities).
   `WebSlingingCastEnumerator` and `CastSpellHandler` consult, so a granted web-slinging behaves exactly like a printed
   one. Amazing Spider-Man (back of Peter Parker): "Each legendary spell you cast that's one or more colors has web-slinging
   {G}{W}{U}" → `GrantWebSlingingToSpells({G}{W}{U}, GameObjectFilter(cardPredicates = [IsLegendary, IsColored]))`.
+  **Gating this with a condition is silently inert today.** `staticAbility { condition = … }`
+  wraps the ability in a `ConditionalStaticAbility`, and `WebSlinging` matches the bare type
+  without unwrapping it — so the grant never applies rather than applying conditionally. Teach
+  that read site to unwrap first; `FlashTypeGrants.activeGrant` is the worked example.
 - `Emerge(cost)` — `card { emerge("{cost}") }` builder helper (CR 702.119, Eldritch Moon). A **hand** alternative
   cost that bundles a sacrifice *and* a cost reduction derived from it: *"You may cast this spell by paying [cost] and
   sacrificing a creature rather than paying its mana cost"* plus *"if you chose to pay this spell's emerge cost, its

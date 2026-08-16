@@ -26,7 +26,6 @@ import com.wingedsheep.engine.state.components.identity.CommanderComponent
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.engine.state.components.identity.PlayWithoutPayingCostComponent
 import com.wingedsheep.engine.state.permissions.hasMayPlayFor
-import com.wingedsheep.engine.state.components.player.FlashGrantsThisTurnComponent
 import com.wingedsheep.engine.state.components.player.MayCastCreaturesFromGraveyardWithForageComponent
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.CardDefinition
@@ -579,62 +578,21 @@ class CastZoneResolver(
     }
 
     /**
-     * Check if a card has been granted flash by a GrantFlashToSpellType static ability
-     * on any permanent on the battlefield (any player's battlefield), or by its own
-     * conditionalFlash condition.
+     * Check if a card has been granted flash by a [GrantFlashToSpellType] static ability on any
+     * permanent on the battlefield (any player's battlefield) — including one gated behind a
+     * `ConditionalStaticAbility` — by a turn-scoped player grant, or by its own conditionalFlash
+     * condition. Delegates to [FlashTypeGrants], the shared decision
+     * `CastPermissionUtils.hasGrantedFlash` also uses, so this authoritative cast-time re-check can
+     * never disagree with what enumeration offered.
      */
-    fun hasGrantedFlash(state: GameState, spellCardId: EntityId): Boolean {
-        val spellOwner = state.getEntity(spellCardId)?.get<ControllerComponent>()?.playerId
-            ?: return false
-
-        // Check the card's own conditionalFlash (e.g., Ferocious)
-        val spellCard = state.getEntity(spellCardId)?.get<CardComponent>()
-        val spellDef = spellCard?.let { cardRegistry.getCard(it.cardDefinitionId) }
-        val conditionalFlash = spellDef?.script?.conditionalFlash
-        if (conditionalFlash != null) {
-            val effectContext = EffectContext(
-                sourceId = spellCardId,
-                controllerId = spellOwner,
-            )
-            if (conditionEvaluator.evaluate(state, conditionalFlash, effectContext)) {
-                return true
-            }
-        }
-
-        val context = PredicateContext(controllerId = spellOwner)
-
-        // Turn-scoped grants on the spell owner (Borne Upon a Wind etc., via
-        // GrantFlashToSpellsEffect → FlashGrantsThisTurnComponent).
-        val turnGrants = state.getEntity(spellOwner)?.get<FlashGrantsThisTurnComponent>()
-        if (turnGrants != null) {
-            for (filter in turnGrants.filters) {
-                if (predicateEvaluator.matches(state, state.projectedState, spellCardId, filter, context)) {
-                    return true
-                }
-            }
-        }
-
-        // Check GrantFlashToSpellType static abilities on battlefield permanents
-        for (playerId in state.turnOrder) {
-            for (entityId in state.getBattlefield(playerId)) {
-                val card = state.getEntity(entityId)?.get<CardComponent>() ?: continue
-                val def = cardRegistry.getCard(card.cardDefinitionId) ?: continue
-                for (ability in def.script.staticAbilities) {
-                    if (ability is GrantFlashToSpellType) {
-                        // If controllerOnly, only the permanent's controller benefits
-                        if (ability.controllerOnly && playerId != spellOwner) continue
-                        // "The first [type] spell you cast each turn" — the grant covers only one
-                        // spell per turn (Radagast of Rhosgobel).
-                        if (!FlashTypeGrants.nthGateAllows(state, spellOwner, ability, predicateEvaluator)) continue
-                        if (predicateEvaluator.matches(state, state.projectedState, spellCardId, ability.filter, context)) {
-                            return true
-                        }
-                    }
-                }
-            }
-        }
-        return false
-    }
+    fun hasGrantedFlash(state: GameState, spellCardId: EntityId): Boolean =
+        FlashTypeGrants.hasGrantedFlash(
+            state = state,
+            spellCardId = spellCardId,
+            cardRegistry = cardRegistry,
+            predicateEvaluator = predicateEvaluator,
+            conditionEvaluator = conditionEvaluator,
+        )
 
     /**
      * Choose which permanent type to consume for graveyard casting.

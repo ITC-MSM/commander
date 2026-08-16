@@ -19,7 +19,6 @@ import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.engine.state.components.identity.FaceDownComponent
 import com.wingedsheep.engine.state.components.player.CantCastSpellsComponent
 import com.wingedsheep.engine.state.components.player.EquipActivationsThisTurnComponent
-import com.wingedsheep.engine.state.components.player.FlashGrantsThisTurnComponent
 import com.wingedsheep.sdk.core.ManaCost
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.AbilityCost
@@ -36,7 +35,6 @@ import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.EquipAbilitiesAtInstantSpeed
 import com.wingedsheep.sdk.scripting.FreeFirstEquipEachTurn
 import com.wingedsheep.sdk.scripting.GrantActivatedAbility
-import com.wingedsheep.sdk.scripting.GrantFlashToSpellType
 import com.wingedsheep.sdk.scripting.MayPlayLandsFromGraveyard
 import com.wingedsheep.sdk.scripting.MayPlayPermanentsFromGraveyard
 import com.wingedsheep.sdk.scripting.PlayFromTopOfLibrary
@@ -492,53 +490,19 @@ class CastPermissionUtils(
         return filter
     }
 
-    fun hasGrantedFlash(state: GameState, spellCardId: EntityId): Boolean {
-        val spellOwner = state.getEntity(spellCardId)?.get<ControllerComponent>()?.playerId
-            ?: return false
-
-        val spellCard = state.getEntity(spellCardId)?.get<CardComponent>()
-        val spellDef = spellCard?.let { cardRegistry.getCard(it.cardDefinitionId) }
-        val conditionalFlash = spellDef?.script?.conditionalFlash
-        if (conditionalFlash != null) {
-            val effectContext = EffectContext(
-                sourceId = spellCardId,
-                controllerId = spellOwner,
-            )
-            if (conditionEvaluator.evaluate(state, conditionalFlash, effectContext)) {
-                return true
-            }
-        }
-
-        val context = PredicateContext(controllerId = spellOwner)
-
-        // Turn-scoped grants on the spell owner (Borne Upon a Wind etc., via
-        // GrantFlashToSpellsEffect → FlashGrantsThisTurnComponent).
-        val turnGrants = state.getEntity(spellOwner)?.get<FlashGrantsThisTurnComponent>()
-        if (turnGrants != null) {
-            for (filter in turnGrants.filters) {
-                if (predicateEvaluator.matches(state, state.projectedState, spellCardId, filter, context)) {
-                    return true
-                }
-            }
-        }
-
-        for (playerId in state.turnOrder) {
-            for (entityId in state.getBattlefield(playerId)) {
-                val card = state.getEntity(entityId)?.get<CardComponent>() ?: continue
-                val cardDef = cardRegistry.getCard(card.cardDefinitionId) ?: continue
-                for (ability in cardDef.script.staticAbilities) {
-                    if (ability is GrantFlashToSpellType) {
-                        if (ability.controllerOnly && playerId != spellOwner) continue
-                        if (!FlashTypeGrants.nthGateAllows(state, spellOwner, ability, predicateEvaluator)) continue
-                        if (predicateEvaluator.matches(state, state.projectedState, spellCardId, ability.filter, context)) {
-                            return true
-                        }
-                    }
-                }
-            }
-        }
-        return false
-    }
+    /**
+     * Whether [spellCardId] may be cast at instant speed by something other than a printed flash
+     * keyword. Delegates to [FlashTypeGrants] — the shared decision `CastZoneResolver.hasGrantedFlash`
+     * also uses, so enumeration and the authoritative cast-time re-check can never disagree.
+     */
+    fun hasGrantedFlash(state: GameState, spellCardId: EntityId): Boolean =
+        FlashTypeGrants.hasGrantedFlash(
+            state = state,
+            spellCardId = spellCardId,
+            cardRegistry = cardRegistry,
+            predicateEvaluator = predicateEvaluator,
+            conditionEvaluator = conditionEvaluator,
+        )
 
     /**
      * True when [playerId] controls a permanent granting [EquipAbilitiesAtInstantSpeed]

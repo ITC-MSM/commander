@@ -3376,6 +3376,56 @@
     ]
 }
 
+// Captain Mar-Vell, Space-Born
+{
+    "name": "Captain Mar-Vell, Space-Born",
+    "manaCost": "{4}{W}",
+    "typeLine": "Legendary Creature — Kree Soldier Hero",
+    "oracleText": "Flying, vigilance\nCosmic Awareness — As long as an opponent has cast a spell this turn, you may cast spells as though they had flash.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "FLYING",
+        "VIGILANCE"
+    ],
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "GrantFlashToSpellType",
+                    "filter": {},
+                    "controllerOnly": true
+                },
+                "condition": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "SpellsCastThisTurn",
+                        "player": "EachOpponent"
+                    },
+                    "operator": "GTE",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "12",
+        "rarity": "UNCOMMON",
+        "artist": "Gintas Galvanauskas",
+        "flavorText": "\"I came here to study the people of Earth, not serve as their executioner!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/7/27924c2f-756c-42af-9830-18a5a2735137.jpg?1783902977"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Captain Marvel, Earth's Protector
 {
     "name": "Captain Marvel, Earth's Protector",
