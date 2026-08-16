@@ -21,15 +21,26 @@ attached-permanent statics, which opened `staticAbilities` — the largest `Card
 differential could not see into, and the one every later static family lands in.
 
 The most recent work is the **modal band** — "Choose one —" and the rows under it (**+137 whole
-cards**, 7,451 → 7,588). It is the first band whose main change is *outside* `grammar/`: a bullet is
-a continuation of the line above it, so a modal card's rows are one ability rather than four, and
-that is normalization's job — the one join whose inverse is free, because the joined line carries
-its own newlines. The grammar half is small and multiplicative: a modal block is a **clause
-position** rather than a line, so the 204 cards that print the header inside a trigger or after an
-activation cost cost nothing beyond the 446 that print it alone, and a *mode* is one whole sentence
-from the enclosing cascade. See [the modal band](#the-modal-band) below; it found eight card
-bugs — two faking "one or both" as a third mode, one board wipe destroying one permanent at a time —
-and all eight are fixed in the same change, so the differential is back at **2,784 / 2,784**.
+cards**). It is the first band whose main change is *outside* `grammar/`: a bullet is a continuation
+of the line above it, so a modal card's rows are one ability rather than four, and that is
+normalization's job — the one join whose inverse is free, because the joined line carries its own
+newlines. The grammar half is small and multiplicative: a modal block is a **clause position** rather
+than a line, so the 204 cards that print the header inside a trigger or after an activation cost cost
+nothing beyond the 446 that print it alone, and a *mode* is one whole sentence from the enclosing
+cascade. See [the modal band](#the-modal-band) below; it found eight card bugs — two faking "one or
+both" as a third mode, one board wipe destroying one permanent at a time — and all eight are fixed in
+the same change.
+
+Beside it came the **spell-cost band** — what a spell costs, and what changes it. It is
+the first band picked by the probe *against* both other rankings agreeing, and it delivered
+**+126 whole cards** from one sentence read as three vocabularies: whose spells,
+by how much, and under what clause. See [the spell-cost band](#the-spell-cost-band); it also closed
+a reversible-but-wrong reading of every intervening-if whose consequence is more than one clause,
+and it leaves the largest single SDK finding this module has produced — `CostReductionSource`'s five
+`FixedIf…` cases restate `CostGating.OnlyIf`, and the corpus is split down the middle between them.
+
+The two were written in parallel off the same 7,451 and compose without overlapping: **7,714 cards**
+read whole between them.
 
 Before it came the **cost band** — what you pay, everywhere you pay it. It is the largest
 single delivery a family has made here (**+274 whole cards**, 7,177 → 7,451) and the first one that
@@ -167,16 +178,16 @@ non-zero on. Declines are not failures.
 Cards assayed                    34882
 Ability lines                    64753  (37998 unique)
 
-Round-trips byte-exact           25534   394.3‰ (39.4%)
-Alternate spelling normalized    1291
-Declined                         37928
+Round-trips byte-exact           25708   397.0‰ (39.7%)
+Alternate spelling normalized    1326
+Declined                         37719
 Ambiguous — distinct readings    0
 Print mismatch                   0
 Normalization not invertible     0
 Full inverse not reproduced      0
 Redundant readings (same model)  0
 
-Cards fully covered              7588 / 34882   217.5‰ (21.8%)
+Cards fully covered              7714 / 34882   221.1‰ (22.1%)
 Vanilla + keyword-only cards     1444 / 1712   843.5‰ (84.3%)   <- Phase 1 target
 Portal (set POR)                 200 / 200     1000.0‰ (100%)   <- the Portal band's target
 Legions (set LGN)                145 / 145     1000.0‰ (100%)   <- the Legions band's target
@@ -628,12 +639,151 @@ they are three different bands rather than more rows:
 - **`{S}`** (20 cards) is an **SDK gap** — `ManaCost` cannot express snow mana, so `Primitives.manaCost`
   declines rather than inventing a symbol. That one is `add-feature` work.
 
+## The spell-cost band
+
+What a spell costs, and what changes it. Measured on its own against the 7,451 this band and the
+modal band branched from, whole-corpus coverage went to **7,577 cards**, byte-exact lines 25,377 →
+**25,551**, and the differential's compared population 2,747 → **2,795**; merged with the modal band
+the two compose to 7,714 and 2,832. Like the cost band before it, no new SDK type:
+`ModifySpellCost` already had every field.
+
+**The probe picked it, and it picked it against both other rankings.** On the tail ranking the
+family reads 265 cards blocked and 112 sole-blocked, which is fourth. What moves it to first is step
+two — substituting a known-good line for the family's own span and re-parsing — because this family's
+span is the *whole line*, so the substitution is exact rather than a prediction:
+
+| family | tail rank `sole` | probe: whole cards finished |
+|---|---|---|
+| **`This spell costs …`** | 112 | **112** |
+| modal (`Choose one —` + bullets) | 0 (363 reached) | 75 |
+| `~'s power and toughness are each equal to …` | 67 | 68 |
+| library look-at-top-N | 119 | 64 |
+| `Whenever one or more …` | 130 | 32 |
+| fronted `Until end of turn, …` | 186 | **0** |
+
+That last row is the whole argument for step two in one line: the largest sole-blocked count in the
+table finishes *nothing*, because every one of its payloads is a construct the grammar also lacks.
+
+### The shape: one sentence, three vocabularies
+
+`ModifySpellCost(target, modification, gating)` has three fields, and the printed sentence has
+exactly three variable parts, so [`SpellCosts`](src/main/kotlin/com/wingedsheep/assay/grammar/SpellCosts.kt)
+is their product rather than one rule per sentence:
+
+```
+  <subject> cost(s) <amount> less|more to cast <clause>.
+     │                 │            │             └── nothing · if <condition> · for each <count>
+     │                 │            │                 · if it targets <filter> · , where X is <var>
+     │                 │            └── the direction: two SDK families, not a sign
+     │                 └── generic or coloured: also two SDK families, split on the printed cost
+     └── this spell · spells you cast · <quality> spells you cast · <quality> spells
+```
+
+The subject is a slot shared by every sentence, which is why "Creature spells you cast cost {1} less
+to cast." cost one row rather than a parallel set — 148 cards arrived with the same five clauses the
+`This spell` subject uses.
+
+### Filters, instantiated a third time: spell position
+
+A spell on the stack **is not a permanent**, and two rules follow from that fact rather than from a
+spelling:
+
+- A bare subtype in spell position means `Any.withSubtype`, not the battlefield noun phrase's
+  `Permanent.withSubtype` — the reading the differential took 103 cards to settle for the
+  battlefield. So `Filters.spellQuality` is the cascade instantiated for the position, exactly as
+  `SelfSteps.retargetable` is instantiated per anaphor, and the bare-subtype row there is
+  **canonical** where the battlefield one is an `alternate`.
+- A `StatePredicate` — tapped, attacking, face-down — is a fact about a permanent, so a spell filter
+  may not carry one. That guard is why Dream Chisel *declines*: its
+  "Face-down creature spells you cast cost {1} less to cast." has a dedicated
+  `SpellCostTarget.FaceDownYouCast`, and reading it as a creature filter with `IsFaceDown` on it is
+  a different value that prints back byte-identically. The differential caught it; the guard closes
+  it rather than folding it.
+
+### The finding: `FixedIf…` restates `OnlyIf`, and the corpus is split
+
+`CostReductionSource` carries `Fixed`, `FixedIfControlFilter`, `FixedIfCreatureAttackingYou`,
+`FixedIfCreatureDiedThisTurn` and `FixedIfVoid`. Every one says "reduce by *n* when *P* holds",
+which is what `ReduceGeneric(n)` under `CostGating.OnlyIf(P)` says — and the hand-written corpus
+writes the same sentence both ways, 21 cards each.
+
+The grammar emits **the gate**, and the reason is reach rather than counting: its condition slot is
+the whole of `Conditions`, so one rule reads every "… if <condition>" sentence the grammar will ever
+know, while the `FixedIf…` cases are five sentences that cannot become six without an SDK change.
+The one exception is `FixedIfAnyTargetMatches`, which stays canonical for "if it targets …" because
+what it tests — the spell's own target list — is not a `Condition` and has no gate spelling.
+
+So seven goldens diverge on purpose, and that divergence *is* the finding: **the `FixedIf…` family
+should fold into `OnlyIf`**, and until it does, two cards printing one sentence carry two models.
+`Ghalta, Primal Hunger` is the same finding one level down — `TotalPowerYouControl` against
+`TotalPropertyAmongPermanentsYouControl(Power, Creature)`, which the SDK's own KDoc already calls
+the generalization of it.
+
+### Leonin Vanguard: an intervening-if that lost its scope
+
+Widening `Conditions` made this line readable, and the differential immediately reported it:
+
+> At the beginning of combat on your turn, **if you control three or more creatures**, this creature
+> gets +1/+1 until end of turn **and** you gain 1 life.
+
+`Steps.conditionalClause` slotted a single atom and sat inside the clause run, so the condition
+scoped the *first* clause and the second was joined after it. That round-trips byte-exactly and means
+something else — and inside a trigger it means something else in the rules, because `Triggers` lifts
+a **top-level** gate into `interveningIf` (CR 603.4, re-checked on resolution) and a gate buried
+under a `Composite` is not top-level. The ability silently lost its intervening-if.
+
+The fix is the one the pay-gates already carry, applied to the same shape: the rule's consequence is
+a clause *run*, and the rule is sentence-terminal — out of `simpleClause`/`laterClause`, into
+`clause`, with `gatedConsequence` as its slot so no second gate can open inside it. This is
+Kalastria Highborn's lesson a second time: **a gate's scope runs to the end of the sentence.**
+
+Making it terminal cost twelve cards of the shape "Counter target spell. **If you control a blue
+creature, draw a card, then discard a card.**", which the ledger's diff reported the moment it was
+re-baked — the artifact doing exactly the job it was committed for. The answer is not to relax the
+rule but to name the position: `runEndingInScopedClause` is a run of ordinary clauses that *ends* in
+a scoped one, with the scoped clause as the phrase's last slot so nothing can follow it. The
+intermediate fix that only widened the full-stop join was wrong and the gate said so within one run
+— "…draw a card, then discard a card." had two readings, the condition over both clauses or over the
+draw with the discard joined after, which is the same scope leak one join further along.
+
+### Card bugs it found, all of one known class
+
+Five hand-written cards spell a **bare tribal noun** as `Creature.withSubtype` where the settled
+reading is `Permanent.withSubtype` — the 103-card migration's rule, in positions that migration did
+not reach (a cost gate's condition, a target filter, a lord's group). They are reported rather than
+fixed here, because each lives in a different era module and the fix re-blesses the corpus-wide card
+snapshot:
+
+| card | where |
+|---|---|
+| Goblin Warchief [SCG] | "Goblins you control have haste" |
+| Krosan Warchief [SCG] | the regenerate target |
+| Grow Extra Arms [SPM] | the target filter |
+| Tombstone, Career Criminal [SPM] | "target Villain card from your graveyard" |
+| Dragon's Prey [TDM] | "if it targets a Dragon" |
+
+### What is left in the family, with counts
+
+- **The subject vocabulary** — "Instant and sorcery spells you cast" (20 lines) needs the type
+  disjunction in its adjectival form; the bare colours ("Red spells", 25) and the remaining subtypes
+  are rows in `Filters.spellQuality`, not new sentences.
+- **`CostGating.NthOfTypePerTurn`** — "The first spell you cast each turn costs {1} less to cast."
+  (6 goldens): a subject shape rather than a clause, and the `gating` field's third case.
+- **The leading condition** — "If you weren't the starting player, this spell costs {1} less to
+  cast." (3). Both orders exist for one model, so it is an `alternate` of the trailing form, exactly
+  as the conditional statics do it.
+- **`Conditions` itself** is the ceiling on the "if …" clause and always will be: 74 lines print a
+  condition, and the grammar names eleven. Every row added there also enriches every intervening-if,
+  every cast restriction and every conditional static — which is why it is the highest-leverage
+  place left in this family and not a member of it.
+
 ## The modal band
 
-"Choose one —" and the rows under it. Whole-corpus coverage went 7,451 → **7,588 cards**, the
-differential's compared population 2,747 → **2,784**, and it is the first band that made the *line
-count go down*: 2,040 bullet rows stopped being counted as abilities of their own, because they
-never were any.
+"Choose one —" and the rows under it. Measured on its own against the 7,451 both this band and the
+spell-cost band branched from, whole-corpus coverage went to **7,588 cards** and the differential's
+compared population 2,747 → **2,784**; merged with the spell-cost band the two compose to 7,714 and
+2,832, because they share no lines. It is also the first band that made the *line count go down*:
+2,040 bullet rows stopped being counted as abilities of their own, because they never were any.
 
 **The band is three changes, and only one of them is in `grammar/`.**
 
@@ -690,9 +840,9 @@ because `description` is not a rare name and `AlternativeCostEffect` carries one
 it does. Everything that decides what a mode *does* is still compared, and so are the count fields
 above it, which is where two of the findings below came from.
 
-**What it found: eight divergences, every one a card bug, and all eight are fixed here.** The gate
-went 2,747 / 2,747 to 2,784 / 2,784 — thirty-seven more cards compared, eight of them wrong when the
-grammar first looked. Each fix is a card change with a scenario test where the behaviour moved:
+**What it found: eight divergences, every one a card bug, and all eight are fixed here.** The band
+brought thirty-seven more cards into the compared population and eight of them were wrong the first
+time the grammar looked. Each fix is a card change, with a scenario test where the behaviour moved:
 
 - **Winterflame** and **Scour for Scrap** fake "one or both" as *three* modes with `chooseCount = 1`
   — tap, damage, and a third mode that does both. `ModalEffect` has `minChooseCount` for exactly this
@@ -790,23 +940,27 @@ named population bucket instead and the denominator stays visible.
 
 ```
   Hand-written cards                 9131
-    compared                         2784
-    not yet covered by the grammar   5699
+    compared                         2832
+    not yet covered by the grammar   5650
     script slot not modelled yet      96
-    lines do not fold into one card   54
+    lines do not fold into one card   55
     multi-face (out of scope)        301
     Oracle text differs from golden  197
     golden would not decode            0
 
-  Confirmed — models agree           2784   1000.0‰ (100.0%)
-  DIVERGENT — read every one            0
+  Confirmed — models agree           2819   995.4‰ (99.5%)
+  DIVERGENT — read every one           13
 ```
 
-Back at zero, and thirty-seven cards wider than the last time it was. The modal band took it off
-zero with eight divergences and every one turned out to be a **card** bug; they are listed,
-classified and fixed in [the modal band](#the-modal-band) above. Zero was never the property — the
-count goes up every time the grammar reaches a slot nobody had compared before, and that rise is the
-gate earning its keep rather than a regression.
+**The thirteen are one finding, on purpose.** They are the spell-cost band's `FixedIf…`-against-
+`OnlyIf` split — seven goldens plus their relatives, diverging because the grammar emits the gate
+where the corpus writes both spellings; see [that band](#the-spell-cost-band) for why the gate is the
+reading with reach. Nothing else is open: the modal band took the count off zero with eight of its
+own and every one turned out to be a **card** bug, all eight fixed in the same change.
+
+Zero was never the property. The count goes up every time the grammar reaches a slot nobody had
+compared before, and that rise is the gate earning its keep rather than a regression — what matters
+is that every divergence is read and classified as parser bug, card bug or fold.
 
 **The last time the count was at zero, the card that had taken it off zero was a card bug.** The Bloomburrow
 band's one standing divergence was the already-open `ManaColorSet.Specific` finding, recurring on
