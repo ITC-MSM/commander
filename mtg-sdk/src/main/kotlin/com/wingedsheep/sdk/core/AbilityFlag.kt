@@ -75,5 +75,24 @@ enum class AbilityFlag(val displayName: String) {
     CANT_TRANSFORM("Can't transform"),
 
     // ── Combat damage assignment flags ──────────────────────────
-    ASSIGNS_COMBAT_DAMAGE_AS_TOUGHNESS("Assigns combat damage equal to its toughness rather than its power")
+    ASSIGNS_COMBAT_DAMAGE_AS_TOUGHNESS("Assigns combat damage equal to its toughness rather than its power"),
+
+    // ── Summoning-sickness flags ────────────────────────────────
+    /**
+     * "You may activate abilities of this creature as though it had haste" — the
+     * Thousand-Year Elixir / Shang-Chi, Master of Kung Fu permission.
+     *
+     * CR 302.6 gates two separate things on the same condition: a creature can't activate an
+     * activated ability whose cost includes `{T}` or `{Q}`, *and* a creature can't attack. Haste
+     * (CR 702.10b/c) lifts both. This flag lifts **only the ability half** — a creature carrying it
+     * still can't attack the turn it arrives, which is exactly what "as though those creatures had
+     * haste" (limited to activating abilities) means.
+     *
+     * So it is deliberately *not* [Keyword.HASTE]: grant it with
+     * `GrantKeyword(AbilityFlag.MAY_ACTIVATE_ABILITIES_AS_THOUGH_HASTY, <filter>)` and the layer
+     * system carries it like any other granted keyword. It is read only by
+     * `SummoningSicknessRules` (the shared `{T}`/`{Q}` gate); `AttackRestrictionRules` keeps its own
+     * plain haste check, so the attack half is structurally unaffected.
+     */
+    MAY_ACTIVATE_ABILITIES_AS_THOUGH_HASTY("You may activate its abilities as though it had haste")
 }

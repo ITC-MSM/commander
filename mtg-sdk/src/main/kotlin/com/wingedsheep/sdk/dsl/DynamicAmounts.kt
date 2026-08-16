@@ -610,6 +610,15 @@ object DynamicAmounts {
     fun colorCountOf(entity: EntityReference): DynamicAmount =
         DynamicAmount.EntityProperty(entity, EntityNumericProperty.ColorCount)
 
+    /**
+     * The number of mana symbols of [colors] in the referenced entity's printed mana cost — the
+     * per-object pip count ("with one or more blue mana symbols in its mana cost … create that
+     * many", Namor the Sub-Mariner), *not* devotion. Use [devotionTo] for the whole-battlefield
+     * count of CR 700.5. Hybrid and Phyrexian pips count for their colour(s) (CR 107.4e/f).
+     */
+    fun coloredManaSymbolsOf(entity: EntityReference, vararg colors: Color): DynamicAmount =
+        DynamicAmount.EntityProperty(entity, EntityNumericProperty.ColoredManaSymbolCount(colors.toList()))
+
     fun sacrificedPower(index: Int = 0): DynamicAmount =
         DynamicAmount.EntityProperty(EntityReference.Sacrificed(index), EntityNumericProperty.Power)
 
@@ -685,4 +694,19 @@ object DynamicAmounts {
      */
     fun permanentsSacrificedThisWay(): DynamicAmount =
         DynamicAmount.PermanentsSacrificedThisWay
+
+    /**
+     * "That many" — the number of repetitions a
+     * [com.wingedsheep.sdk.scripting.effects.PayManaCostRepeatedlyEffect] was paid, read back out
+     * of the resolution pipeline. Pair it with the matching `storeCountAs` when the effect uses a
+     * non-default name.
+     *
+     * Hawkeye, Master Marksman: "you may pay {1} up to three times. When you do, choose up to
+     * **that many** —" is `dynamicChooseCount = DynamicAmounts.timesPaid()` on the reflexive
+     * trigger's modal.
+     */
+    fun timesPaid(
+        storeCountAs: String =
+            com.wingedsheep.sdk.scripting.effects.PayManaCostRepeatedlyEffect.TIMES_PAID
+    ): DynamicAmount = DynamicAmount.VariableReference(storeCountAs)
 }

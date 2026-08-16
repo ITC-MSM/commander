@@ -36,6 +36,7 @@ import com.wingedsheep.sdk.scripting.effects.PayDynamicLifeEffect
 import com.wingedsheep.sdk.scripting.effects.PayDynamicManaCostEffect
 import com.wingedsheep.sdk.scripting.effects.PayLifeEffect
 import com.wingedsheep.sdk.scripting.effects.PayManaCostEffect
+import com.wingedsheep.sdk.scripting.effects.PayManaCostRepeatedlyEffect
 import com.wingedsheep.sdk.scripting.effects.DamageRecipient
 import com.wingedsheep.sdk.scripting.effects.SuccessCriterion
 import com.wingedsheep.sdk.scripting.references.Player
@@ -586,8 +587,9 @@ class GatedEffectExecutor(
     /**
      * Whether [playerId] can pay [cost] right now. Mirrors the former
      * `OptionalCostEffectExecutor`: recognizes the payment primitives that appear in a
-     * [Gate.MayPay] cost slot ([PayManaCostEffect], [PayDynamicManaCostEffect], [PayLifeEffect], and
-     * a [CompositeEffect] composing them). The dynamic-mana branch charges the cost's own `payer`, so
+     * [Gate.MayPay] cost slot ([PayManaCostEffect], [PayDynamicManaCostEffect], [PayLifeEffect],
+     * [PayManaCostRepeatedlyEffect], and a [CompositeEffect] composing them). The dynamic-mana branch
+     * charges the cost's own `payer`, so
      * affordability stays correct even when it differs from the gate's decisionMaker. Unknown shapes
      * fail open (assumed payable) so exotic cost pipelines still prompt and abort later via the
      * resumer's `stopOnError` composite.
@@ -619,6 +621,13 @@ class GatedEffectExecutor(
                     ?: playerId
                 amount <= 0 || state.lifeTotal(payerId) >= amount
             }
+            // "You may pay {1} up to three times" as a gate cost: the repeated payment's floor is
+            // one repetition, so a payer who can't afford even that must not be offered the "yes"
+            // (the cost would then error and `stopOnError` would swallow the whole payoff). Mirrors
+            // ReflexiveTriggerEffectExecutor.isActionFeasible, which scores the same shape.
+            is PayManaCostRepeatedlyEffect -> PayManaCostRepeatedlyExecutor.affordableRepetitions(
+                state, playerId, cost.cost, cost.maxTimes, cardRegistry
+            ) >= 1
             is CompositeEffect -> cost.effects.all { canAfford(state, playerId, it, context) }
             // "You may sacrifice [filter]" — payable only if the player controls enough matching
             // permanents (`any = true`, "sacrifice any number", is always payable: zero is legal).

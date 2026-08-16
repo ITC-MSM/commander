@@ -779,6 +779,10 @@ internal class AffectsFilterResolver {
         CardPredicate.ManaValueIsEven -> card.manaValue % 2 == 0
         CardPredicate.ManaValueIsOdd -> card.manaValue % 2 != 0
         CardPredicate.HasXInManaCost -> if (isFaceDown) false else card.manaCost.hasX
+        is CardPredicate.ColoredManaSymbolsAtLeast ->
+            // Printed cost's colored pips (CR 107.4e/f); face-down has no mana cost (CR 708.2).
+            if (isFaceDown) false
+            else card.manaCost.coloredSymbolCount(predicate.colors.toSet()) >= predicate.min
         is CardPredicate.NameEquals -> card.name == predicate.name
         // Room-name distinctness is a resolution-time search filter, not a continuous/static
         // affects-filter concern.

@@ -21,6 +21,7 @@ import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.engine.handlers.PredicateContext
 import com.wingedsheep.engine.handlers.PredicateEvaluator
 import com.wingedsheep.engine.handlers.effects.composite.asOptionalManaPayment
+import com.wingedsheep.engine.handlers.effects.composite.payManaCostFromPool
 
 class ManaPaymentContinuationResumer(
     private val services: com.wingedsheep.engine.core.EngineServices
@@ -41,8 +42,54 @@ class ManaPaymentContinuationResumer(
         resumer(MayPayManaSelectionContinuation::class, ::resumeMayPayManaSelection),
         resumer(MayPayManaTriggerContinuation::class, ::resumeMayPayManaTrigger),
         resumer(MayPayXContinuation::class, ::resumeMayPayX),
+        resumer(PayManaCostRepeatedlyContinuation::class, ::resumePayManaCostRepeatedly),
         resumer(ManaSourceSelectionContinuation::class, ::resumeManaSourceSelection)
     )
+
+    /**
+     * Resume after the payer names how many times to pay a repeatable cost ("pay {1} up to three
+     * times"). The repetitions are charged as a single `cost * n` auto-tapped payment — separate
+     * payments of the same instruction during one resolution are indistinguishable, and one
+     * payment lets the solver pick a legal combination of sources for the whole amount rather than
+     * stranding itself on a greedy first pick.
+     *
+     * The count is then published to the frame beneath via [exposeCollectionsToNextFrame] rather
+     * than `DrawUpToExecutor.injectStoredNumber`, because the consumer here is usually a
+     * [ReflexiveTriggerTargetContinuation] ("when you do, choose up to that many"), which the
+     * narrower injector does not reach.
+     */
+    fun resumePayManaCostRepeatedly(
+        state: GameState,
+        continuation: PayManaCostRepeatedlyContinuation,
+        response: DecisionResponse,
+        checkForMore: CheckForMore
+    ): ExecutionResult {
+        if (response !is NumberChosenResponse) {
+            return ExecutionResult.error(state, "Expected number chosen response for repeated payment")
+        }
+        // The prompt's floor is 1 — declining is the wrapper's question, not this one — so an
+        // out-of-range answer is a protocol error, not a decline. Never clamp: clamping a 0 *up*
+        // to 1 would spend mana the payer didn't authorize. (DecisionValidators already rejects
+        // these, so this is the belt to that braces.)
+        val times = response.number
+        if (times < 1 || times > continuation.maxTimes) {
+            return ExecutionResult.error(
+                state, "Repeat count $times is outside 1..${continuation.maxTimes}"
+            )
+        }
+
+        val paid = payManaCostFromPool(
+            state, continuation.playerId, continuation.cost * times, services.cardRegistry
+        )
+        if (paid.error != null) return paid.toExecutionResult()
+
+        val published = exposeCollectionsToNextFrame(
+            paid.state,
+            collections = emptyMap(),
+            numbers = mapOf(continuation.storeCountAs to times)
+        )
+        return checkForMore(published, paid.events.toList())
+    }
 
     fun resumeCounterUnlessPays(
         state: GameState,

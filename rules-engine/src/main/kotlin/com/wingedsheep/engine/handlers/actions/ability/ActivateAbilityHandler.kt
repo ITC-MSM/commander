@@ -21,6 +21,7 @@ import com.wingedsheep.engine.handlers.actions.ActionHandler
 import com.wingedsheep.engine.handlers.effects.EffectExecutorRegistry
 import com.wingedsheep.engine.handlers.effects.TargetResolutionUtils.toEntityId
 import com.wingedsheep.engine.handlers.effects.bend.BendEvents
+import com.wingedsheep.engine.mechanics.SummoningSicknessRules
 import com.wingedsheep.engine.mechanics.mana.AlternativePaymentHandler
 import com.wingedsheep.engine.mechanics.mana.IntrinsicManaAbilities
 import com.wingedsheep.engine.core.SelectManaSourcesDecision
@@ -39,7 +40,6 @@ import com.wingedsheep.engine.state.components.battlefield.ClassLevelComponent
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.state.components.battlefield.AbilityActivatedEverComponent
 import com.wingedsheep.engine.state.components.battlefield.AbilityActivatedThisTurnComponent
-import com.wingedsheep.engine.state.components.battlefield.SummoningSicknessComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.engine.state.components.identity.FaceDownComponent
@@ -51,7 +51,6 @@ import com.wingedsheep.engine.state.components.stack.captureEntitySnapshots
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.core.BendType
-import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.ManaCost
 import com.wingedsheep.sdk.scripting.AbilityCost
 import com.wingedsheep.sdk.scripting.costs.CostAtom
@@ -336,12 +335,12 @@ class ActivateAbilityHandler(
             val attachedId = container.get<com.wingedsheep.engine.state.components.battlefield.AttachedToComponent>()?.targetId
             if (attachedId != null) {
                 val attachedContainer = state.getEntity(attachedId)
-                if (attachedContainer != null && state.projectedState.isCreature(attachedId)) {
-                    val hasSummoningSickness = attachedContainer.has<SummoningSicknessComponent>()
-                    val hasHaste = state.projectedState.hasKeyword(attachedId, Keyword.HASTE)
-                    if (hasSummoningSickness && !hasHaste) {
-                        return "Enchanted creature has summoning sickness"
-                    }
+                if (attachedContainer != null && state.projectedState.isCreature(attachedId) &&
+                    SummoningSicknessRules.blocksTapOrUntapCost(
+                        attachedId, attachedContainer, state.projectedState
+                    )
+                ) {
+                    return "Enchanted creature has summoning sickness"
                 }
             }
         }
@@ -407,19 +406,23 @@ class ActivateAbilityHandler(
             }
         }
 
-        // Check summoning sickness for tap abilities. CR 302.6 restricts a *creature's* {T}/{Q}
-        // activated ability — read creature-ness and haste from projected state so a Vehicle
-        // or animated permanent that became a creature this turn is gated correctly. The
-        // `!typeLine.isLand` carve-out is preserved (basic-land mana abilities are not
-        // restricted by summoning sickness).
-        if (effectiveCost is AbilityCost.Tap ||
-            (effectiveCost is AbilityCost.Composite && effectiveCost.costs.any { it is AbilityCost.Tap })) {
-            if (!cardComponent.typeLine.isLand && state.projectedState.isCreature(action.sourceId)) {
-                val hasSummoningSickness = container.has<SummoningSicknessComponent>()
-                val hasHaste = state.projectedState.hasKeyword(action.sourceId, Keyword.HASTE)
-                if (hasSummoningSickness && !hasHaste) {
-                    return "This creature has summoning sickness"
-                }
+        // Check summoning sickness for tap/untap abilities. CR 302.6 restricts a *creature's*
+        // activated ability whose cost includes the tap symbol **or the untap symbol** — read
+        // creature-ness and haste from projected state so a Vehicle or animated permanent that
+        // became a creature this turn is gated correctly. The `!typeLine.isLand` carve-out is
+        // preserved (basic-land mana abilities are not restricted by summoning sickness).
+        //
+        // `ActivatedAbilityEnumerator` mirrors this for `AbilityCost.Untap` both bare and inside a
+        // `Composite`, so the two agree on `{Q}` in either shape and the enumerator never offers an
+        // activation this re-check then rejects. This one stays authoritative regardless.
+        val costTouchesTapSymbol = { c: AbilityCost -> c is AbilityCost.Tap || c is AbilityCost.Untap }
+        if (costTouchesTapSymbol(effectiveCost) ||
+            (effectiveCost is AbilityCost.Composite && effectiveCost.costs.any(costTouchesTapSymbol))
+        ) {
+            if (!cardComponent.typeLine.isLand && state.projectedState.isCreature(action.sourceId) &&
+                SummoningSicknessRules.blocksTapOrUntapCost(action.sourceId, container, state.projectedState)
+            ) {
+                return "This creature has summoning sickness"
             }
         }
 

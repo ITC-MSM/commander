@@ -2082,22 +2082,42 @@ object Effects {
     /**
      * Set a creature's base power to a dynamic value (Layer 7b, set values), leaving toughness alone.
      * "Change this creature's base power to target creature's power."
+     *
+     * [reevaluateContinuously] recomputes [power] on every projection pass instead of freezing the
+     * number at resolution — what "gains 'this creature's base power is equal to …'" needs
+     * (Ms. Marvel, Kamala Khan). It accepts only amounts the projector can still evaluate (no
+     * target-, X-, triggering- or cost-scoped references — those are rejected at resolution),
+     * reads "your" as the *source's* controller, and applies only while the permanent is a
+     * creature. See [SetBaseStatsEffect] for the full contract and for why this is layer 7b and
+     * not a CDA.
      */
     fun SetBasePower(
         target: EffectTarget = EffectTarget.Self,
         power: DynamicAmount,
-        duration: Duration = Duration.Permanent
-    ): Effect = SetBaseStatsEffect(target, power = power, duration = duration)
+        duration: Duration = Duration.Permanent,
+        reevaluateContinuously: Boolean = false
+    ): Effect = SetBaseStatsEffect(
+        target,
+        power = power,
+        duration = duration,
+        reevaluateContinuously = reevaluateContinuously
+    )
 
     /**
      * Set a creature's base toughness to a dynamic value (Layer 7b, set values), leaving power alone.
-     * The toughness-only sibling of [SetBasePower].
+     * The toughness-only sibling of [SetBasePower], including [reevaluateContinuously].
      */
     fun SetBaseToughness(
         target: EffectTarget = EffectTarget.Self,
         toughness: DynamicAmount,
-        duration: Duration = Duration.Permanent
-    ): Effect = SetBaseStatsEffect(target, toughness = toughness, duration = duration)
+        duration: Duration = Duration.Permanent,
+        reevaluateContinuously: Boolean = false
+    ): Effect = SetBaseStatsEffect(
+        target,
+        toughness = toughness,
+        duration = duration,
+        reevaluateContinuously = reevaluateContinuously
+    )
 
     /**
      * Set a creature's base power AND toughness to fixed values (Layer 7b, set values).
@@ -2113,14 +2133,15 @@ object Effects {
     /**
      * Set a creature's base power AND toughness to dynamic values (Layer 7b, set values).
      * "Base power and toughness each become equal to ..." — the dynamic counterpart of the fixed
-     * overload above.
+     * overload above. [reevaluateContinuously] behaves as on [SetBasePower].
      */
     fun SetBasePowerAndToughness(
         power: DynamicAmount,
         toughness: DynamicAmount,
         target: EffectTarget = EffectTarget.ContextTarget(0),
-        duration: Duration = Duration.EndOfTurn
-    ): Effect = SetBaseStatsEffect(target, power, toughness, duration)
+        duration: Duration = Duration.EndOfTurn,
+        reevaluateContinuously: Boolean = false
+    ): Effect = SetBaseStatsEffect(target, power, toughness, duration, reevaluateContinuously)
 
     // =========================================================================
     // Mana Effects
@@ -2183,6 +2204,28 @@ object Effects {
         color: com.wingedsheep.sdk.core.Color? = null
     ): Effect =
         com.wingedsheep.sdk.scripting.effects.PayDynamicManaCostEffect(amount, payer, color)
+
+    /**
+     * "Pay [cost] up to [upTo] times" (or "any number of times" when [upTo] is null) — a
+     * repeatable optional payment at resolution whose payoff scales with the number of
+     * repetitions. See [com.wingedsheep.sdk.scripting.effects.PayManaCostRepeatedlyEffect]: the
+     * offered cap is affordability-aware, the count lands in the pipeline under [storeCountAs]
+     * (read it with [DynamicAmounts.timesPaid]), and the decline path belongs to the wrapping
+     * `ReflexiveTriggerEffect(optional = true)` / `Gate.MayPay`.
+     *
+     * Hawkeye, Master Marksman: `PayRepeatedly("{1}", upTo = 3)` as the action half of a reflexive
+     * trigger whose modal reads `dynamicChooseCount = DynamicAmounts.timesPaid`.
+     */
+    fun PayRepeatedly(
+        cost: String,
+        upTo: Int? = null,
+        storeCountAs: String =
+            com.wingedsheep.sdk.scripting.effects.PayManaCostRepeatedlyEffect.TIMES_PAID
+    ): Effect = com.wingedsheep.sdk.scripting.effects.PayManaCostRepeatedlyEffect(
+        cost = ManaCost.parse(cost),
+        maxTimes = upTo,
+        storeCountAs = storeCountAs
+    )
 
     /**
      * Add mana of a color the player chooses from a [ManaColorSet] resolved at resolution

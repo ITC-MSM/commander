@@ -10,6 +10,7 @@ import com.wingedsheep.engine.handlers.TargetFinder
 import com.wingedsheep.engine.handlers.effects.BattlefieldFilterUtils
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.handlers.effects.TargetResolutionUtils
+import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.identity.CardComponent
@@ -59,6 +60,7 @@ class ReflexiveTriggerEffectExecutor(
     private val effectExecutor: (GameState, Effect, EffectContext) -> EffectResult,
     private val targetFinder: TargetFinder,
     private val decisionHandler: DecisionHandler,
+    private val cardRegistry: CardRegistry,
     private val amountEvaluator: DynamicAmountEvaluator = DynamicAmountEvaluator()
 ) : EffectExecutor<ReflexiveTriggerEffect> {
 
@@ -229,6 +231,14 @@ class ReflexiveTriggerEffectExecutor(
         is com.wingedsheep.sdk.scripting.effects.RemoveCountersEffect ->
             countersOn(state, context, action.target, kind = action.counterType)
                 ?.let { it >= action.count } ?: true
+        // "You may pay {1} up to three times" (Hawkeye, Master Marksman) — the repeated payment's
+        // floor is one repetition, so a payer who can't afford even that can't perform the action
+        // at all and the may-question must be absent. Without this the executor would raise the
+        // prompt and then fail on every answer.
+        is com.wingedsheep.sdk.scripting.effects.PayManaCostRepeatedlyEffect ->
+            PayManaCostRepeatedlyExecutor.affordableRepetitions(
+                state, context.controllerId, action.cost, action.maxTimes, cardRegistry
+            ) >= 1
         // "You may collect evidence 3" (Sample Collector) — CR 701.59b is explicit that a player
         // unable to exile cards totalling N *can't choose to collect evidence*, so the option must
         // be absent rather than offered and refused. Without this branch the `else -> true` below

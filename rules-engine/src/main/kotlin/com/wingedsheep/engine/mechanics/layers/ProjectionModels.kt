@@ -622,15 +622,33 @@ sealed interface Modification {
     }
 
     /**
-     * Dynamic base power/toughness *setting* (characteristic-defining ability) — Layer 7b
-     * (SET_VALUES). The amounts are computed at projection time by evaluating the DynamicAmounts.
-     * Distinct from [ModifyPowerToughnessDynamic], which is a Layer 7c additive bonus. Used for
-     * star/star CDAs like Beau ("power and toughness each equal to the number of lands you control").
+     * Dynamic base power/toughness *setting* — Layer 7b (SET_VALUES). The amounts are computed at
+     * projection time by evaluating the DynamicAmounts, so the stat tracks the game state instead of
+     * freezing a number. Distinct from [ModifyPowerToughnessDynamic], which is a Layer 7c additive
+     * bonus.
+     *
+     * Two callers:
+     *  - a *resolved* effect that hands a creature a re-evaluated base-P/T set for a duration
+     *    (`SetBaseStatsEffect(reevaluateContinuously = true)` — Ms. Marvel, Kamala Khan). That one is
+     *    genuinely layer 7b: it is not a CDA (CR 604.3a criteria 2 and 4) and CR 613.4b puts
+     *    "effects that refer to the base power and/or toughness of a creature" in this layer.
+     *  - star/star CDAs like Beau ("power and toughness each equal to the number of lands you
+     *    control"), lowered from `SetBasePowerToughnessDynamicStatic`. Those belong in **layer 7a**
+     *    per CR 613.4a ("effects from characteristic-defining abilities that define power and/or
+     *    toughness"), not 7b; the engine lowers them into this same [Sublayer.SET_VALUES] as a
+     *    known simplification — [Sublayer.CHARACTERISTIC_DEFINING] exists but is currently
+     *    unreferenced. The two are therefore ordered against each other by timestamp, where CR says
+     *    a 7b set always wins over a 7a CDA. No shipped card needs that fight yet; whoever finds one
+     *    should split the sublayer rather than reorder here.
+     *
+     * A `null` [power] or [toughness] leaves that stat alone, mirroring
+     * `SetBaseStatsEffect`'s null semantics — that is how "base *power* is equal to …" sets power
+     * while toughness stays printed.
      */
     @Serializable
     data class SetPowerToughnessDynamic(
-        val power: DynamicAmount,
-        val toughness: DynamicAmount
+        val power: DynamicAmount?,
+        val toughness: DynamicAmount?
     ) : Modification {
         override val layer get() = Layer.POWER_TOUGHNESS
         override val sublayer get() = Sublayer.SET_VALUES

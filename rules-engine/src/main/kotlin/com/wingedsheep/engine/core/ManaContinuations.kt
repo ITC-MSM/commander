@@ -124,6 +124,26 @@ data class MayPayXContinuation(
 ) : ContinuationFrame
 
 /**
+ * Resume after the payer names how many times to pay a
+ * [com.wingedsheep.sdk.scripting.effects.PayManaCostRepeatedlyEffect] ("pay {1} up to three
+ * times"). The chosen count is multiplied into one `cost * n` payment and then published to the
+ * frame beneath as [storeCountAs], so a "when you do, choose up to **that many**" reflexive
+ * trigger can read it after the stack round-trip.
+ *
+ * @property cost One repetition's cost — repeated, not divided, so colored pips repeat with it.
+ * @property maxTimes The affordability-capped ceiling that was offered, kept for validation.
+ * @property storeCountAs Pipeline variable the repetition count is published under.
+ */
+@Serializable
+data class PayManaCostRepeatedlyContinuation(
+    override val decisionId: String,
+    val playerId: EntityId,
+    val cost: ManaCost,
+    val maxTimes: Int,
+    val storeCountAs: String
+) : ContinuationFrame
+
+/**
  * Resume after the controller decides whether to pay a mana cost for a triggered
  * ability that also requires targets (e.g., Lightning Rift).
  *

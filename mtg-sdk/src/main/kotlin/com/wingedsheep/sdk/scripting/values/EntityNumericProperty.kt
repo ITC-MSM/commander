@@ -1,5 +1,6 @@
 package com.wingedsheep.sdk.scripting.values
 
+import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.scripting.events.CounterTypeFilter
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -135,6 +136,35 @@ sealed interface EntityNumericProperty {
     @Serializable
     data object ColorCount : EntityNumericProperty {
         override val description: String = "the number of its colors"
+    }
+
+    /**
+     * The number of mana symbols of [colors] in **this one entity's** printed mana cost —
+     * `{1}{U}{U}` counts 2 blue, `{U/R}{R}` counts 1 blue. Delegates to
+     * [com.wingedsheep.sdk.core.ManaCost.coloredSymbolCount], so hybrid and Phyrexian pips count
+     * for their color(s) (CR 107.4e/f) and a pip that is two of the requested colors is counted
+     * once. Reads the *printed* cost — a card's mana cost is the mana symbols printed on it
+     * (CR 202.1/202.1a), while additional costs, cost increases and cost reductions only produce
+     * the spell's *total cost* (CR 601.2f), so none of them change what this counts; `{X}` is a
+     * generic symbol (CR 107.4b) and counts nothing whatever value was announced for it. A
+     * face-down object has no mana cost and counts 0 (CR 708.2a).
+     *
+     * The per-object counterpart of [com.wingedsheep.sdk.scripting.values.DynamicAmount.DevotionTo],
+     * which counts the same symbols but across every permanent a player controls (CR 700.5). Do not
+     * reach for `DevotionTo` when the card says "in its mana cost" — the scopes are different.
+     *
+     * Namor the Sub-Mariner: "Whenever you cast a noncreature spell with one or more blue mana
+     * symbols in its mana cost, create that many 1/1 blue Merfolk creature tokens" is
+     * `EntityProperty(EntityReference.Triggering, ColoredManaSymbolCount(listOf(Color.BLUE)))`. The
+     * matching filter side is
+     * [com.wingedsheep.sdk.scripting.predicates.CardPredicate.ColoredManaSymbolsAtLeast].
+     */
+    @SerialName("ColoredManaSymbolCount")
+    @Serializable
+    data class ColoredManaSymbolCount(val colors: List<Color>) : EntityNumericProperty {
+        override val description: String =
+            "the number of ${colors.joinToString(" or ") { it.displayName.lowercase() }} " +
+                "mana symbols in its mana cost"
     }
 
     /**

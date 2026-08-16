@@ -10,15 +10,26 @@ data class ManaCost(val symbols: List<ManaSymbol>) {
         get() = symbols.sumOf { it.cmc }
 
     val colors: Set<Color>
-        get() = symbols.flatMap { symbol ->
-            when (symbol) {
-                is ManaSymbol.Colored -> listOf(symbol.color)
-                is ManaSymbol.Hybrid -> listOf(symbol.color1, symbol.color2)
-                is ManaSymbol.Phyrexian -> listOf(symbol.color)
-                is ManaSymbol.MonocolorHybrid -> listOf(symbol.color)
-                else -> emptyList()
-            }
-        }.toSet()
+        get() = symbols.flatMapTo(mutableSetOf()) { it.colors }
+
+    /**
+     * The number of mana symbols in this cost that are any of [colors] — the count behind
+     * devotion (CR 700.5, summed over a player's permanents) and behind "a spell with one or more
+     * blue mana symbols in its mana cost" (Namor the Sub-Mariner, read from one object's cost).
+     *
+     * Which symbols are which colors is [ManaSymbol.colors]: hybrid and Phyrexian pips count for
+     * their color(s) (CR 107.4e/f), generic/colorless/`{X}` count for none. A symbol that is more
+     * than one of the requested colors — `{U/R}` against "blue or red" — is still **one** symbol
+     * and is counted once, exactly as CR 700.5 defines devotion to two colors.
+     *
+     * An empty [colors] counts nothing. Callers that read an object's *printed* cost are
+     * responsible for the zone-level rules around it (a face-down object has no mana cost,
+     * CR 708.2).
+     */
+    fun coloredSymbolCount(colors: Set<Color>): Int {
+        if (colors.isEmpty()) return 0
+        return symbols.count { symbol -> symbol.colors.any { it in colors } }
+    }
 
     val colorCount: Map<Color, Int>
         get() = symbols

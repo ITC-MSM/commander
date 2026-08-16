@@ -1215,6 +1215,8 @@ class CostCalculator(
             CardPredicate.ManaValueIsEven -> cardDef.manaCost.cmc % 2 == 0
             CardPredicate.ManaValueIsOdd -> cardDef.manaCost.cmc % 2 != 0
             CardPredicate.HasXInManaCost -> cardDef.manaCost.hasX
+            is CardPredicate.ColoredManaSymbolsAtLeast ->
+                cardDef.manaCost.coloredSymbolCount(predicate.colors.toSet()) >= predicate.min
 
             is CardPredicate.PowerEquals -> cardDef.creatureStats?.basePower == predicate.value
             // CostCalculator has no X context; predicate has no static answer here.

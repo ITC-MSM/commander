@@ -6,6 +6,29 @@ import kotlinx.serialization.Serializable
 sealed interface ManaSymbol {
     val cmc: Int
 
+    /**
+     * The color(s) this one symbol *is* — the single rule every "count/collect the colored mana
+     * symbols" read in the engine goes through (object color CR 202.2, devotion CR 700.5, and
+     * "with one or more blue mana symbols in its mana cost").
+     *
+     * Per CR 107.4e a hybrid symbol is also a colored mana symbol and **is all of its component
+     * colors**, so `{U/R}` is both blue and red and a monocolored hybrid `{2/U}` is blue. Per
+     * CR 107.4f a Phyrexian symbol is a colored mana symbol of its color, so `{U/P}` is blue.
+     * Generic (`{2}`), colorless (`{C}`) and `{X}` symbols are no color at all (CR 107.4b/c).
+     *
+     * A symbol is one symbol however many colors it is: counting *symbols* matching a color set
+     * must count the symbol once, which is why this returns a set and callers use `any { }` rather
+     * than summing (CR 700.5's "devotion to [color 1] and [color 2]" says the same thing).
+     */
+    val colors: Set<Color>
+        get() = when (this) {
+            is Colored -> setOf(color)
+            is Hybrid -> setOf(color1, color2)
+            is Phyrexian -> setOf(color)
+            is MonocolorHybrid -> setOf(color)
+            is Generic, Colorless, X -> emptySet()
+        }
+
     @Serializable
     data class Colored(val color: Color) : ManaSymbol {
         override val cmc: Int = 1

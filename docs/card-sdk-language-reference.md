@@ -1065,17 +1065,61 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   turn). Pass `Duration.WhileSourceTapped("…")` for the Antiquities "tap-locked" buffs (Ashnod's Battle
   Gear `+2/-2`, Tawnos's Weaponry `+1/+1`): the bonus persists for as long as the source artifact remains
   tapped and the one-way latch drops it when it untaps.
-- `SetBasePower(target, power: DynamicAmount, duration)` — set base power to a dynamic value (Layer 7b),
-  leaving toughness unchanged.
-- `SetBaseToughness(target, toughness: DynamicAmount, duration)` — toughness-only sibling of `SetBasePower`.
+- `SetBasePower(target, power: DynamicAmount, duration, reevaluateContinuously = false)` — set base power
+  to a dynamic value (Layer 7b), leaving toughness unchanged.
+- `SetBaseToughness(target, toughness: DynamicAmount, duration, reevaluateContinuously = false)` —
+  toughness-only sibling of `SetBasePower`.
 - `SetBasePowerAndToughness(power, toughness, target?, duration)` — set base power AND toughness (Layer 7b,
   set values), e.g. "Target creature has base power and toughness 5/5 until end of turn" (Dreadful as the
-  Storm). Two overloads: fixed `Int`s or `DynamicAmount`s.
+  Storm). Two overloads: fixed `Int`s, or `DynamicAmount`s (which also take `reevaluateContinuously`).
   - All three facades lower onto the one **`SetBaseStatsEffect(target, power: DynamicAmount?, toughness:
-    DynamicAmount?, duration)`** atom — `null` power or toughness leaves that stat unchanged, so the same
-    type covers power-only, toughness-only, and both. (Distinct from `ModifyStatsEffect`, a +N/+N
-    *modifier* in layer 7c, and from the `SetBasePowerToughness*Static` CDAs, which apply for as long as a
-    static ability is active rather than as a one-shot floating effect.)
+    DynamicAmount?, duration, reevaluateContinuously)`** atom — `null` power or toughness leaves that stat
+    unchanged, so the same type covers power-only, toughness-only, and both. (Distinct from
+    `ModifyStatsEffect`, a +N/+N *modifier* in layer 7c, and from the `SetBasePowerToughness*Static` CDAs,
+    which apply for as long as a static ability printed on a permanent is active rather than as a floating
+    effect with a duration.)
+  - **`reevaluateContinuously`** picks *when* the `DynamicAmount`s are read — the headline difference
+    between two real Magic templates on the same layer, though not the only one (three further limits
+    follow):
+    - `false` (default) — **snapshot**: evaluated once as the effect resolves and frozen for the duration.
+      "Change this creature's base power to target creature's power" keeps the number it saw.
+    - `true` — **re-evaluated**: the `DynamicAmount` travels into the floating effect (a nullable-halves
+      `SetPowerToughnessDynamic` modification) and is recomputed on every projection pass, so the stat
+      tracks the game state. This is what an effect handing out a *quoted static ability* needs —
+      **Ms. Marvel, Kamala Khan**'s "Until end of turn, Ms. Marvel gains 'Ms. Marvel's base power is equal
+      to the number of cards in your hand.'" =
+      `Effects.SetBasePower(EffectTarget.Self, DynamicAmounts.cardsInYourHand(), Duration.EndOfTurn,
+      reevaluateContinuously = true)`.
+    Either way the *affected set* is locked in at resolution (CR 611.2c); only the number moves. A
+    self-granted clause like Ms. Marvel's is **not** a CDA (CR 604.3a criterion 2 — printed on the card it
+    affects — and criterion 4 — not an ability an object grants to itself), so it applies in layer 7b per
+    CR 613.4b ("effects that refer to the base power and/or toughness of a creature apply in this layer"),
+    not 7a. Counters and pump effects are layer 7c and still apply on top.
+    Four limits apply to `true` and not to the snapshot mode; the first three because the projector — not
+    the resolution — reads the number:
+    - **Only projection-scoped `DynamicAmount`s.** The amount is re-evaluated with just the source, its
+      controller and the affected entity in scope, so `XValue`/`CastX`, `ContextProperty`, pipeline
+      collections, and any `EntityReference`/`Player` naming a target, the triggering object, or something
+      sacrificed/tapped as a cost have nothing to resolve against. Those are **rejected at card load** —
+      `SetBaseStatsEffect`'s `init` runs `contextScopedReferenceIn` (`mtg-sdk/.../scripting/values/`)
+      whenever the flag is set, so a bad amount throws as the `cardDef { }` is built and `CardDiscovery`
+      surfaces it, rather than reading 0 forever or blowing up mid-game. (So the snapshot-mode template
+      "base power becomes target creature's power" must stay `reevaluateContinuously = false`; CR 611.2d
+      also fixes X on resolution.) Counts, battlefield/zone aggregates, life totals, hand size and
+      `Source`/`AffectedEntity` properties are all supported.
+    - **"Your" is the source's controller**, not the affected creature's. Correct for a self-granted clause
+      or a grant to a creature you control; a re-evaluated grant handed to an *opponent's* creature would
+      read the granting player's hand. Keep the template to self-grants until an affected-entity-controller
+      player reference exists.
+    - **It applies only while the permanent is a creature** (CR 208.3a — the effect is created but does
+      nothing "unless that permanent becomes a creature"). Re-asked every pass, so a Vehicle crewed later
+      in the turn picks it up. Snapshot mode writes unconditionally.
+    - **The quoted clause is not an ability the creature has**, so `LoseAllAbilities` can't strip it. Paper
+      settles "gains '…'" against Humility by layer-6 timestamp; here it is a layer-7b floating effect with
+      nothing for layer 6 to remove, so the two agree whenever the grant is the later effect (the common
+      case) and diverge only when ability-removal lands afterwards. Handing out a *whole* quoted static
+      instead wants `StaticAbilityHandler.lowerToContinuousEffectData`, the route `BecomeArtifactExecutor`
+      already uses — not `GrantStaticAbility`, whose grants are read at points of use and never projected.
 - `GrantKeyword(keyword, target, duration, condition = null)` — grant a keyword for a duration. The target may be a battlefield permanent **or a permanent spell still on the stack**: a permanent spell keeps its entity id as it resolves, so a keyword granted to `EffectTarget.TriggeringEntity` inside a "when you next cast a creature spell this turn" delayed trigger carries onto the creature the moment it enters (Summon: Brynhildr's Gestalt Mode = "it gains haste until end of turn"). On a non-permanent spell the floating effect simply never has a permanent to apply to.
   **`condition`** makes the granted keyword *conditionally live* rather than gating whether the grant happens: the grant always happens and still expires with `duration`, but the condition rides along as the floating effect's `sourceCondition` and is re-asked on every projection — the durational sibling of a printed `ConditionalStaticAbility`'s "as long as …" clause. This is how a **quoted conditional ability handed out by an animate effect** is modelled: Restless Spire's "{U}{R}: … becomes a 2/1 blue and red Elemental creature with *'During your turn, this creature has first strike.'*" is `Effects.Composite(Effects.BecomeCreature(...), Effects.GrantKeyword(Keyword.FIRST_STRIKE, EffectTarget.Self, Duration.EndOfTurn, Conditions.IsYourTurn))`. "You" resolves to the **source's projected controller**, and Layer 2 has already run when a later layer's modification is applied, so the clause correctly goes dark if another player gains control of the permanent mid-turn — and comes back if control returns. Do **not** reach for a `Duration.While…` here: those latch off permanently once their gate first fails (CR 611.2b), which is right for a "for as long as" duration and wrong for a conditional clause inside a granted ability. Also distinct from wrapping the grant in a `ConditionalEffect`, which tests the condition **once** at resolution and then grants unconditionally.
 - `GrantStaticAbility(ability, target, duration)` — grant a printed-shape `StaticAbility` (e.g. `CantBeBlockedByMoreThan(1)`) to a permanent for a duration. The runtime sibling of a printed static ability: unlike keyword grants (which flow through projected keywords) it is recorded as a `GrantedStaticAbility` keyed to the entity in `GameState.grantedStaticAbilities` and read **at the point of use** — combat blocker validation (`BlockPhaseManager`, CR 509.1b) consults granted `CantBeBlockedByMoreThan` alongside the creature's printed static abilities; the grant expires in the cleanup step (EndOfTurn). Compose inside `ForEachInGroup` with `EffectTarget.Self` for "each creature you control gains ..." (Full Steam Ahead = `ModifyStats(2,2)` + `GrantKeyword(TRAMPLE)` + `GrantStaticAbility(CantBeBlockedByMoreThan(1))`). `CantBeBlockedByMoreThan` (combat), `MayCastFromGraveyard` (graveyard-cast enumerator + `CastZoneResolver`, e.g. Forgotten Cellar's "cast spells from your graveyard this turn"), and `PreventActivatedAbilities` (activation legality: `CastPermissionUtils.isActivationPrevented`, consulted by the ability handler and both ability enumerators) are wired into read sites today; granting another `StaticAbility` kind compiles and stores but needs its own point-of-use read to take effect. A granted `PreventActivatedAbilities` behaves exactly like the printed form anchored to the grant's holder: its filter is evaluated with the holder as source, so the self-scoped `PreventActivatedAbilities(GameObjectFilter.Permanent.sourceItself())` locks the *holder's own* activated abilities — mana abilities included unless `nonManaAbilitiesOnly = true`. Pair it with `Duration.WhileAffectedTapped` ("for as long as it remains tapped", keyed to the granted-to permanent) for the Braided Net shape — "Tap another target nonland permanent. Its activated abilities can't be activated for as long as it remains tapped." = `Effects.Tap(target)` + `Effects.GrantStaticAbility(PreventActivatedAbilities(GameObjectFilter.Permanent.sourceItself()), target, Duration.WhileAffectedTapped)`. Like every "for as long as …" duration it is one-way (CR 611.2b): the read site gates per-frame, and `EndedDurationExpiryCheck` physically removes the grant the moment the permanent untaps (or leaves the battlefield), so a later re-tap does not re-lock it.
@@ -1345,6 +1389,37 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   a set they can't pay for. Magnetic Mountain ("pay {4} for each tapped blue creature chosen, untap them") composes
   all three: the capped selection, then the dynamic cost in a `Gate.MayPay` whose `decisionMaker` is the same
   `Player.TriggeringPlayer`.
+- `PayRepeatedly(cost, upTo?, storeCountAs?)` → `PayManaCostRepeatedlyEffect` — **"pay {1} up to three times"**
+  / "pay {2}{R} any number of times", the repeatable optional payment whose payoff scales with the number of
+  repetitions (Hawkeye, Master Marksman; Tranquil Frillback; the Adversary cycle). The payer names a count and
+  pays `cost * n` in one auto-tapped payment; the count is published to the resolution pipeline under
+  `storeCountAs` (default `"times_paid"`), read back with `DynamicAmounts.timesPaid()`.
+  - **The offered ceiling is affordability-aware and color-aware.** The cap is the smaller of `upTo` (null =
+    "any number of times", bounded only by available mana) and how many repetitions the payer can actually make,
+    tested as `cost * n` — `{G}` three times needs three *green*, not three mana. The probe is the *same*
+    auto-tap predicate the payment itself uses (floating mana, then `ManaSolver.solve`), **not**
+    `ManaSolver.canPay`: `canPay` also counts mana the auto-tapper refuses to spend for you (sacrificing a
+    Treasure, Springleaf Drum's tap-a-creature sub-cost), so capping with it would offer a count the payment
+    then errors on. Because the two agree, the prompt never offers a payment that fails mid-resolution.
+  - **The floor is one repetition, not zero — declining belongs to the wrapper.** Wrap it in
+    `ReflexiveTriggerEffect(action = …, optional = true)` for the printed "you **may** pay … **when you do**"
+    (CR 603.12; and per CR 603.12a the reflexive half triggers **once**, not once per repetition) or in a
+    `Gate.MayPay` for "if you do" — `Gate.MayPay` scores this cost's affordability, so the gate's "yes" is
+    absent when even one repetition is unaffordable. A payer who can't afford even one repetition gets a
+    *failure*, which is what keeps the reflexive half from firing; `ReflexiveTriggerEffectExecutor.isActionFeasible`
+    scores it up front so the may-question isn't raised at all in that case. A cap of exactly 1 pays without a
+    prompt — the payer has already consented and there is nothing left to choose.
+  - **Why a stored number rather than an X value:** an effect result carries no X channel. A sub-effect hands its
+    outputs back up as collections, stored numbers and chosen values — that is the whole list — so there is no
+    way for this effect to *write* an X for the reflexive ability to read. (A trigger's own `xValue` does survive
+    the CR 603.12 round-trip, riding the carried trigger context; it just isn't settable from here.) Feeding the
+    stored count to a modal's `dynamicChooseCount` is the "choose up to **that many** —" payoff (Hawkeye), and it
+    is equally at home in "put **that many** +1/+1 counters" (`DynamicAmounts.timesPaid()` into `AddCounters`).
+  - Distinct from `Gate.MayPayX`, which is a single *variable-size* generic payment binding X: no cap, no repeat
+    unit, no colored pips. **Mind the opposite floor conventions** when picking between them: `MayPayX` prompts
+    `0..max` and reads 0 as "decline", while `PayRepeatedly` prompts `1..cap` because the wrapper already asked
+    the decline question. Reach for `MayPayX` when the payment *is* X; for `PayRepeatedly` when a fixed unit —
+    especially a colored one — repeats.
 
 ### Tokens & emblems
 
@@ -2109,7 +2184,9 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
     X = 0 declines → `otherwise`. An unaffordable gate (no mana) is skipped silently. A parameterless
     `data object` (the {X} cost is implicit). The executor builds a `ChooseNumberDecision` and reuses
     the existing `MayPayXContinuation`/`resumeMayPayX` to auto-tap and bind X. Replaces
-    `MayPayXForEffect` (see "Optional & gated" below).
+    `MayPayXForEffect` (see "Optional & gated" below). For the *repeated fixed* cost — "pay {1} up
+    to three times", where the count rather than the size is the variable — use
+    `Effects.PayRepeatedly` (see "Mana" above) as the gate's cost or as a reflexive trigger's action.
   - `Gate.OnceEachTurn(abilityId, spend = true)` — **not a decision, a per-turn action budget.** The
     lowered form of `TriggeredAbility.effectOncePerTurn` ("Do this only once each turn", CR 603.2h).
     Succeeds iff the source permanent's controller hasn't yet taken this ability's action this turn;
@@ -3489,6 +3566,26 @@ This is the player-arm prerequisite for the planned composable mixed `TargetUnio
   printed cost. Face-down objects (no mana cost) never match; the cast-record path returns `false`
   (a record stores the resolved mana value, not the printed cost). Used by *Paradox Surveyor*
   ("a card with {X} in its mana cost"). Underlying predicate: `CardPredicate.HasXInManaCost`.
+- `.coloredManaSymbolsAtLeast(vararg colors, min = 1)` — the card's **printed** mana cost contains
+  at least `min` mana symbols of `colors`: "a noncreature spell with one or more blue mana symbols
+  in its mana cost" (*Namor the Sub-Mariner*, `coloredManaSymbolsAtLeast(Color.BLUE)`), and the
+  same shape over every colour at a higher threshold for *Omnath, Locus of All*'s "three or more
+  colored mana symbols in its mana cost" (`coloredManaSymbolsAtLeast(*Color.entries.toTypedArray(),
+  min = 3)`). `min` comes after the varargs, so it must be named. Both `min < 1` and an empty
+  colour list are rejected at construction — they would match every object, including costless
+  ones. **Not `.withColor(BLUE)`** — colour is a characteristic that layer 5,
+  colour indicators and devoid can change, this is the pips printed on the card. A hybrid symbol is
+  all of its component colours and a Phyrexian symbol is its colour (CR 107.4e/f), so `{U/R}`,
+  `{2/U}` and `{U/P}` each count as one blue symbol; generic, `{C}` and `{X}` count as none.
+  A symbol that is two of the requested colours counts once. Counting is
+  `ManaCost.coloredSymbolCount`, shared with `EntityNumericProperty.ColoredManaSymbolCount` so the
+  filter and the amount can never disagree. Honored in all five object-evaluation sites (resolution
+  predicate, trigger matcher, layer projection, cast-zone resolver, cost calculation); face-down
+  objects never match (CR 708.2a) and the cast-record path returns `false` (a record stores the
+  resolved mana value, not the printed cost). Underlying predicate:
+  `CardPredicate.ColoredManaSymbolsAtLeast`. **Per-object only** — a card that totals pips across a
+  chosen *group* ("fifteen or more black mana symbols **among their mana costs**", *Baron Helmut
+  Zemo*) is a different shape and this predicate does not serve it.
 - `.toughnessAtMost(n)` / `.toughnessAtLeast(n)` — toughness comparator.
 - `.powerOrToughnessAtLeast(n)` / `.powerOrToughnessAtMost(n)` — **OR** caps over power and
   toughness: matches when *either* power or toughness is ≥ (resp. ≤) `n`. `powerOrToughnessAtMost`
@@ -5478,6 +5575,17 @@ staticAbility {
   toughness rather than its power"), grant the `AbilityFlag.ASSIGNS_COMBAT_DAMAGE_AS_TOUGHNESS` flag via
   `Effects.GrantKeyword(AbilityFlag.ASSIGNS_COMBAT_DAMAGE_AS_TOUGHNESS, target, duration)`; the same combat
   util reads it from projected keywords (unconditional — no toughness > power gate).
+- `GrantKeyword(AbilityFlag.MAY_ACTIVATE_ABILITIES_AS_THOUGH_HASTY.name, filter)` — "you may activate
+  abilities of [filter] as though those creatures had haste" (Thousand-Year Elixir, Shang-Chi, Master of
+  Kung Fu). CR 302.6 gates a creature's `{T}`/`{Q}` activated abilities *and* its ability to attack on the
+  same condition; haste (CR 702.10b/c) lifts both, and this flag lifts **only the ability half** — so it is
+  deliberately not `Keyword.HASTE`, and an affected creature still can't attack the turn it arrives. Use
+  `GroupFilter.AllCreaturesYouControl` for the printed "creatures you control" wording. Read by exactly one
+  place, `SummoningSicknessRules.blocksTapOrUntapCost` (`rules-engine/mechanics/`), which every `{T}`/`{Q}`
+  activation gate routes through — the mana solver, both ability enumerators, the cost helpers and
+  `ActivateAbilityHandler`'s authoritative re-check. Combat's `AttackRestrictionRules` keeps its own plain
+  haste check and never consults it; `SummoningSicknessGateEnforcementTest` fails the build if a new
+  open-coded `has<SummoningSicknessComponent>()` gate appears outside the allowlisted files.
 - **Untap restriction flags** — granted via `GrantKeyword(AbilityFlag.X.name)` and read off projected keywords,
   so they vanish when the granting source leaves play. The two "can't untap" flags differ in *scope*:
   - `AbilityFlag.CANT_BECOME_UNTAPPED` — "can't become untapped" (Blossombind). The **stronger**
@@ -8537,7 +8645,9 @@ Numbers computed at resolution time.
   twobrid ({2/B} is black), and Phyrexian ({B/P} is black); generic/colorless/{X} never count.
   Face-down permanents have no mana cost and contribute 0. Controller read via projected state.
   Facade: `DynamicAmounts.devotionTo(color, …)`. Used by "draw cards equal to your devotion to red"
-  (Clive, Ifrit's Dominant).
+  (Clive, Ifrit's Dominant). For the pips inside **one object's** cost ("a spell with one or more
+  blue mana symbols in its mana cost") use `DynamicAmounts.coloredManaSymbolsOf(entity, …)` — same
+  counting rule (`ManaCost.coloredSymbolCount`), different scope.
 - `UnlockedDoors(player = You, distinctNames = false)` — the number of unlocked doors among Rooms
   `player` controls (CR 709.5). Reads per-face door state, so a single Room with **both** doors
   unlocked counts as **two** — an entity-level `AggregateBattlefield`/`Count` cannot see this. With
@@ -8816,6 +8926,23 @@ both spellings, and the ability its bare-noun line grants says "Regenerate this 
   `EntityProperty(entity, EntityNumericProperty.ColorCount)`. Read from projected state for
   battlefield permanents (honors layer-5 color-changing — a creature turned colorless counts 0).
   Powers "for each color of [it]" amounts, e.g. Dragonfire Blade's equip cost reduction.
+- `DynamicAmounts.coloredManaSymbolsOf(entity, vararg colors)` — the number of mana symbols of
+  `colors` in **that one entity's printed mana cost**. Desugars to
+  `EntityProperty(entity, EntityNumericProperty.ColoredManaSymbolCount(colors))`. Namor the
+  Sub-Mariner's "…with one or more blue mana symbols in its mana cost, create **that many** 1/1 blue
+  Merfolk creature tokens" is `coloredManaSymbolsOf(EntityReference.Triggering, Color.BLUE)`, paired
+  with the `.coloredManaSymbolsAtLeast(Color.BLUE)` filter on the trigger. Hybrid and Phyrexian
+  pips count for their colour(s) (CR 107.4e/f); generic, `{C}` and `{X}` count for none, whatever
+  value was announced for X (`{X}` is a generic symbol, CR 107.4b). The *printed* cost is what is
+  read — a card's mana cost is the symbols printed on it (CR 202.1/202.1a), while alternative
+  costs, additional costs and cost reductions only build the spell's **total cost** (CR 601.2f) —
+  so none of them change the count. Face-down objects have no mana cost and count 0
+  (CR 708.2a); a missing entity counts 0.
+  **Not `DevotionTo`** — devotion (CR 700.5) counts the same symbols across every permanent a
+  player controls, this counts them inside one object's cost. The two share one counting rule
+  (`ManaCost.coloredSymbolCount`), so they agree symbol-for-symbol and differ only in scope.
+  Being `Triggering`-scoped, it is rejected by `SetBaseStatsEffect(reevaluateContinuously = true)`
+  like every other context-scoped amount; read off `EntityReference.Source` it is projector-safe.
 - `EntityProperty(entity, EntityNumericProperty.ExcessMarkedDamage)` — the excess damage (CR 120.4a)
   marked on a creature: `max(0, marked − toughness)`, read from post-damage state. Amount-valued twin of
   the `TargetMarkedDamageExceedsToughness` condition. Read it AFTER a deal-damage step in the same
@@ -9355,6 +9482,12 @@ The cap is any `DynamicAmount` — e.g. **Bumi, King of Three Trials** uses
 own per-mode targets here just as in a fixed modal — each chosen mode's target (referenced as its
 mode-local `EffectTarget.ContextTarget(0)`) is only demanded when that mode is picked (Bumi's scry
 mode targets a player, its Earthbend mode targets a land).
+The cap may also come from something the *same resolution* just did rather than from board state:
+**Hawkeye, Master Marksman** feeds it `DynamicAmounts.timesPaid()`, the repetition count of the
+`Effects.PayRepeatedly` that formed the action half of its reflexive trigger ("you may pay {1} up to
+three times. When you do, choose up to **that many** —"). That works because the count rides across
+the CR 603.12 stack round-trip in the reflexive ability's carried pipeline, and the trigger-time
+evaluation site reads the pipeline (see `EffectContext.forTriggeredAbility`).
 
 **Cast-time mode-selection UX (Spree / "choose one or more").** A choose-N modal *spell* cast
 by a human is presented as a **single mode-selection panel** (web client), not a sequential

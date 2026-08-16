@@ -7,6 +7,7 @@ import com.wingedsheep.sdk.scripting.ChoiceSlot
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.text.TextReplaceable
 import com.wingedsheep.sdk.scripting.text.TextReplacer
+import com.wingedsheep.sdk.scripting.util.numberToWord
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
 import com.wingedsheep.sdk.scripting.values.EntityReference
 import kotlinx.serialization.SerialName
@@ -595,6 +596,51 @@ sealed interface CardPredicate : TextReplaceable<CardPredicate> {
         override val description: String = "with {X} in its mana cost"
     }
 
+    /**
+     * Matches an object whose printed mana cost contains at least [min] mana symbols of [colors]
+     * — "a noncreature spell with one or more blue mana symbols in its mana cost" (Namor the
+     * Sub-Mariner) with the default `min = 1`, and the same shape over every colour at a higher
+     * threshold for Omnath, Locus of All's "if it has three or more colored mana symbols in its
+     * mana cost" (`colors` = all five, `min = 3`).
+     *
+     * **Not the same as [HasColor].** Colour is a characteristic that layer-5 effects, colour
+     * indicators and devoid can change; this reads the printed cost's pips. A blue-pipped spell
+     * made colourless still matches, and a card that is blue only by colour indicator does not.
+     *
+     * Counting is [com.wingedsheep.sdk.core.ManaCost.coloredSymbolCount], shared with
+     * [com.wingedsheep.sdk.scripting.values.EntityNumericProperty.ColoredManaSymbolCount] so the
+     * "does it match" and the "how many" sides of one card can never disagree: hybrid and
+     * Phyrexian pips count for their colour(s) (CR 107.4e/f), generic/colorless/`{X}` count for
+     * none, and a pip that is two of the requested colours counts once. Face-down objects have no
+     * mana cost (CR 708.2) and never match.
+     *
+     * This is a **per-object** read. A card that totals its pips across a chosen *group* — Baron
+     * Helmut Zemo's "exile any number of black cards from your graveyard with fifteen or more
+     * black mana symbols among their mana costs" — is not this predicate; it needs the count
+     * aggregated over the selection, not a per-card threshold.
+     */
+    @SerialName("ColoredManaSymbolsAtLeast")
+    @Serializable
+    data class ColoredManaSymbolsAtLeast(
+        val colors: List<Color>,
+        val min: Int = 1
+    ) : CardPredicate {
+        init {
+            // Both degenerate values would silently match *every* object (the count is 0 and
+            // `0 >= 0`), which is never what a caller asking for coloured pips means.
+            require(colors.isNotEmpty()) { "ColoredManaSymbolsAtLeast needs at least one color" }
+            require(min >= 1) { "ColoredManaSymbolsAtLeast needs min >= 1, got $min" }
+        }
+
+        override val description: String =
+            "with ${numberToWord(min)} or more ${colorPhrase(colors)} mana symbols in its mana cost"
+
+        override fun applyTextReplacement(replacer: TextReplacer): CardPredicate {
+            val replaced = colors.map { replacer.replaceColor(it) }.distinct()
+            return if (replaced != colors) copy(colors = replaced) else this
+        }
+    }
+
     // =============================================================================
     // Power/Toughness Predicates
     // =============================================================================
@@ -1131,3 +1177,12 @@ sealed interface CardPredicate : TextReplaceable<CardPredicate> {
         }
     }
 }
+
+/**
+ * How a colour set reads inside a "…mana symbols in its mana cost" phrase. All five colours is
+ * oracle's "colored" (Omnath, Locus of All: "three or more colored mana symbols"); anything
+ * narrower is listed — "blue", "blue or red".
+ */
+private fun colorPhrase(colors: List<Color>): String =
+    if (colors.toSet() == Color.entries.toSet()) "colored"
+    else colors.joinToString(" or ") { it.displayName.lowercase() }

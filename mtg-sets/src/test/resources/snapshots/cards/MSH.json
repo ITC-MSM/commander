@@ -6877,6 +6877,143 @@
     ]
 }
 
+// Hawkeye, Master Marksman
+{
+    "name": "Hawkeye, Master Marksman",
+    "manaCost": "{1}{R}",
+    "typeLine": "Legendary Creature — Human Archer Hero",
+    "oracleText": "Reach, first strike\nTrick Arrows — Whenever Hawkeye becomes tapped, you may pay {1} up to three times. When you do, choose up to that many —\n• Net — Target creature can't block this turn.\n• Explosive — Hawkeye deals 2 damage to target player.\n• Boomerang — Discard a card, then draw a card.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "REACH",
+        "FIRST_STRIKE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "TapEvent",
+                "effect": {
+                    "type": "ReflexiveTrigger",
+                    "action": {
+                        "type": "PayManaCostRepeatedly",
+                        "cost": "{1}",
+                        "maxTimes": 3
+                    },
+                    "reflexiveEffect": {
+                        "type": "Modal",
+                        "modes": [
+                            {
+                                "effect": {
+                                    "type": "CantBlockTargetCreatures",
+                                    "target": {
+                                        "type": "ContextTarget",
+                                        "index": 0
+                                    }
+                                },
+                                "targetRequirements": [
+                                    {
+                                        "type": "TargetObject",
+                                        "filter": {
+                                            "baseFilter": "creature"
+                                        }
+                                    }
+                                ],
+                                "description": "Net — Target creature can't block this turn."
+                            },
+                            {
+                                "effect": {
+                                    "type": "DealDamage",
+                                    "amount": {
+                                        "type": "Fixed",
+                                        "amount": 2
+                                    },
+                                    "target": {
+                                        "type": "ContextTarget",
+                                        "index": 0
+                                    }
+                                },
+                                "targetRequirements": [
+                                    "TargetPlayer"
+                                ],
+                                "description": "Explosive — Hawkeye deals 2 damage to target player."
+                            },
+                            {
+                                "effect": {
+                                    "type": "Composite",
+                                    "effects": [
+                                        {
+                                            "type": "Composite",
+                                            "effects": [
+                                                {
+                                                    "type": "GatherCards",
+                                                    "source": {
+                                                        "type": "FromZone",
+                                                        "zone": "Hand"
+                                                    },
+                                                    "storeAs": "hand"
+                                                },
+                                                {
+                                                    "type": "SelectFromCollection",
+                                                    "from": "hand",
+                                                    "selection": {
+                                                        "type": "ChooseExactly",
+                                                        "count": {
+                                                            "type": "Fixed",
+                                                            "amount": 1
+                                                        }
+                                                    },
+                                                    "storeSelected": "discarded",
+                                                    "prompt": "Choose 1 card to discard"
+                                                },
+                                                {
+                                                    "type": "MoveCollection",
+                                                    "from": "discarded",
+                                                    "destination": {
+                                                        "type": "ToZone",
+                                                        "zone": "Graveyard"
+                                                    },
+                                                    "moveType": "Discard"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "type": "DrawCards",
+                                            "count": {
+                                                "type": "Fixed",
+                                                "amount": 1
+                                            }
+                                        }
+                                    ]
+                                },
+                                "description": "Boomerang — Discard a card, then draw a card."
+                            }
+                        ],
+                        "dynamicChooseCount": {
+                            "type": "VariableReference",
+                            "variableName": "times_paid"
+                        }
+                    },
+                    "descriptionOverride": "You may pay {1} up to three times. When you do, choose up to that many —\n• Net — Target creature can't block this turn.\n• Explosive — Hawkeye deals 2 damage to target player.\n• Boomerang — Discard a card, then draw a card."
+                },
+                "descriptionOverride": "Trick Arrows — Whenever Hawkeye becomes tapped, you may pay {1} up to three times. When you do, choose up to that many — Net — Target creature can't block this turn.; Explosive — Hawkeye deals 2 damage to target player.; Boomerang — Discard a card, then draw a card."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "130",
+        "rarity": "RARE",
+        "artist": "Bachzim",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/9/9991b684-0ae0-4aa4-8f22-a9c473f5d69c.jpg?1783902931"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Hawkeye, Young Avenger
 {
     "name": "Hawkeye, Young Avenger",
@@ -10736,6 +10873,75 @@
     ]
 }
 
+// Ms. Marvel, Kamala Khan
+{
+    "name": "Ms. Marvel, Kamala Khan",
+    "manaCost": "{2}{U}",
+    "typeLine": "Legendary Creature — Mutant Inhuman Hero",
+    "oracleText": "Reach, vigilance\nYou have no maximum hand size.\nEmbiggen Fist — Whenever you cast a spell that targets a creature you control, draw a card. Until end of turn, Ms. Marvel gains \"Ms. Marvel's base power is equal to the number of cards in your hand.\"",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 4
+    },
+    "keywords": [
+        "REACH",
+        "VIGILANCE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "requires": [
+                        {
+                            "type": "SpellTargetsMatching",
+                            "filter": "creature ctrl:you"
+                        }
+                    ]
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        },
+                        {
+                            "type": "SetBaseStats",
+                            "target": "Self",
+                            "power": {
+                                "type": "Count",
+                                "player": "You",
+                                "zone": "Hand"
+                            },
+                            "duration": "EndOfTurn",
+                            "reevaluateContinuously": true
+                        }
+                    ]
+                },
+                "descriptionOverride": "Embiggen Fist — Whenever you cast a spell that targets a creature you control, draw a card. Until end of turn, Ms. Marvel gains \"Ms. Marvel's base power is equal to the number of cards in your hand.\""
+            }
+        ],
+        "staticAbilities": [
+            "NoMaximumHandSize"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "67",
+        "rarity": "RARE",
+        "artist": "Smirtouille",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/d/9dd2d627-10fc-4045-8545-03bcf75e60ca.jpg?1783902954"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Multiversal Incursion
 {
     "name": "Multiversal Incursion",
@@ -10887,6 +11093,81 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Namor the Sub-Mariner
+{
+    "name": "Namor the Sub-Mariner",
+    "manaCost": "{1}{U}{U}",
+    "typeLine": "Legendary Creature — Mutant Merfolk Villain",
+    "oracleText": "Flying\nNamor's power is equal to the number of Merfolk you control.\nWhenever you cast a noncreature spell with one or more blue mana symbols in its mana cost, create that many 1/1 blue Merfolk creature tokens.",
+    "creatureStats": {
+        "power": {
+            "type": "Dynamic",
+            "source": {
+                "type": "AggregateBattlefield",
+                "player": "You",
+                "filter": "Merfolk"
+            }
+        },
+        "toughness": 4
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            "IsNoncreature",
+                            {
+                                "type": "ColoredManaSymbolsAtLeast",
+                                "colors": [
+                                    "BLUE"
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "CreateToken",
+                    "count": {
+                        "type": "EntityProperty",
+                        "entity": "Triggering",
+                        "numericProperty": {
+                            "type": "ColoredManaSymbolCount",
+                            "colors": [
+                                "BLUE"
+                            ]
+                        }
+                    },
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [
+                        "BLUE"
+                    ],
+                    "creatureTypes": [
+                        "Merfolk"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/7/f/7f7a4f95-f12b-4c28-a6f7-f3c64364abba.jpg?1783902797"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "69",
+        "rarity": "MYTHIC",
+        "artist": "Chris Rallis",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/a/7aaefcf9-fbe1-4767-92a5-09825761d116.jpg?1783902956"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 
@@ -13668,6 +13949,60 @@
         "artist": "Daniel Landerman",
         "flavorText": "\"A wonderful score, my pet. I can't wait to see what we slither away with tomorrow.\"\n—Princess Python, Zelda DuBois",
         "imageUri": "https://cards.scryfall.io/normal/front/7/2/72727c2a-08a9-47bc-a5eb-cda52e21684b.jpg?1783902912"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Shang-Chi, Master of Kung Fu
+{
+    "name": "Shang-Chi, Master of Kung Fu",
+    "manaCost": "{1}{G}",
+    "typeLine": "Legendary Creature — Human Warrior Hero",
+    "oracleText": "You may activate abilities of creatures you control as though those creatures had haste.\n{T}: Add two mana of any one color. Spend this mana only to activate abilities of creature sources.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddManaOfChoice",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "restriction": {
+                        "type": "CardTypeSpellsOrAbilitiesOnly",
+                        "cardType": "CREATURE",
+                        "allowSpells": false,
+                        "allowAbilities": true
+                    }
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "GrantKeyword",
+                "keyword": "MAY_ACTIVATE_ABILITIES_AS_THOUGH_HASTY",
+                "filter": {
+                    "baseFilter": "creature ctrl:you"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "187",
+        "rarity": "MYTHIC",
+        "artist": "Lee Woo-chul",
+        "flavorText": "\"Many underestimate me because I carry no weapon. But I am the weapon.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/e/2edbb62f-ad45-4422-850b-68dcc18b4c73.jpg?1783902911"
     },
     "colorIdentityOverride": [
         "GREEN"
