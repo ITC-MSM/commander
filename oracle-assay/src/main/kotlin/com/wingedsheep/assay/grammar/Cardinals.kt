@@ -52,6 +52,29 @@ object Cardinals {
     fun spellable(n: Int): Boolean = WORDS.any { it.second == n }
 
     /**
+     * The number words in a position whose **noun is elided** — "put **one** of them into your
+     * hand", "put **two** of them into your graveyard".
+     *
+     * One is present here for exactly the reason it is absent from [word], rather than in spite of
+     * it. That rule's argument is about the *article*: English writes "draw a card" because there is
+     * a noun for "a" to attach to. Here the noun has already been said and the phrase refers back to
+     * it with "of them", so there is nothing to take an article and English spells the number —
+     * "put one of them", never "put a of them". Same domain, different sentence position, and the
+     * two never stand in the same slot.
+     *
+     * It is therefore not a second vocabulary over one English: [word] and this one are disjoint on
+     * the surface they read, so nothing has two spellings and nothing is left for a printer to
+     * choose. See [TopOfLibrary.lookAtTopAndKeep], the position that named it.
+     */
+    val pronominal: Phrase<Int> = oneOf(
+        "a number word for an elided noun",
+        listOf(constant("one", 1)) + WORDS.map { (text, value) -> constant(text, value) },
+    )
+
+    /** [spellable]'s sibling for [pronominal] — one, and everything [word] can spell. */
+    fun spellablePronominally(n: Int): Boolean = n == 1 || spellable(n)
+
+    /**
      * The ordinals — "your **second** spell each turn".
      *
      * A separate vocabulary rather than a suffix over [word], because English's ordinals are not

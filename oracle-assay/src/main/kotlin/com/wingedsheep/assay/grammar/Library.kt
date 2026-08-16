@@ -40,6 +40,13 @@ import com.wingedsheep.sdk.scripting.values.DynamicAmount
  * the model suggests where the sentence's boundaries are; only the recipe does. [Steps.sequence]
  * never decomposes one of these, because its own split is over the *outer* composite and none of
  * these inner steps has a clause rule of its own.
+ *
+ * **What is *searched* lives here; what comes off the **top** lives in [TopOfLibrary].** The split
+ * is by pipeline rather than by topic: a search gathers `FromZone` by filter and shuffles, while a
+ * look/reveal/exile gathers `TopOfLibrary` by count and decides where two piles go. They share this
+ * file's discipline and nothing else, and keeping the top-of-library family separate is what let it
+ * become a layered vocabulary instead of the one-rule-per-printed-card list it used to be — see that
+ * file's KDoc for what the frozen destinations were costing.
  */
 object Library {
 
@@ -266,43 +273,6 @@ object Library {
     }
 
     /**
-     * "Look at the top seven cards of your library. Put two of them into your hand and the rest into
-     * your graveyard." — Ancestral Memories.
-     *
-     * Two printed sentences and one recipe, for [lookAtOpponentTopAndBury]'s reason: the second
-     * sentence is the *disposition* of the cards the first gathered, which the model carries as two
-     * destinations on one pipeline rather than as a second effect.
-     */
-    private val lookAtTopAndKeep: Phrase<CardScript> = run {
-        fun scriptFor(count: Int, keep: Int) =
-            CardScript(spellEffect = Patterns.Library.lookAtTopAndKeep(count = count, keepCount = keep))
-        phrase(
-            "look at the top {n} cards of your library. put {k} of them into your hand and the rest " +
-                "into your graveyard",
-            name = "look at the top cards and keep some",
-        ) {
-            slot("n", Cardinals.word)
-            slot("k", Cardinals.word)
-            build { scriptFor(it.int("n"), it.int("k")) }
-            match { script ->
-                val count = topOfLibraryCount(script) ?: return@match null
-                val keep = keptCount(script) ?: return@match null
-                if (!Cardinals.spellable(count) || !Cardinals.spellable(keep)) return@match null
-                if (script != scriptFor(count, keep)) return@match null
-                bind("n" to count, "k" to keep)
-            }
-        }
-    }
-
-    /** How many of the looked-at cards a `lookAtTopAndKeep` pipeline keeps. */
-    private fun keptCount(script: CardScript): Int? {
-        val select = (script.spellEffect as? CompositeEffect)?.effects
-            ?.filterIsInstance<SelectFromCollectionEffect>()?.firstOrNull() ?: return null
-        val mode = select.selection as? SelectionMode.ChooseExactly ?: return null
-        return (mode.count as? DynamicAmount.Fixed)?.amount
-    }
-
-    /**
      * "Search your library for a Zombie card and a Swamp card, reveal them, put them into your
      * hand, then shuffle." — Corpse Harvester.
      *
@@ -439,7 +409,6 @@ object Library {
     val clauses: List<Phrase<CardScript>> = listOf(
         revealTopAndSplit,
         lookAtTopAndReorder,
-        lookAtTopAndKeep,
         searchForACardToTop,
         searchUpToNToHand,
         mayShuffle,

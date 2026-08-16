@@ -277,7 +277,8 @@
                     "destination": {
                         "type": "ToZone",
                         "zone": "Hand"
-                    }
+                    },
+                    "revealed": true
                 },
                 {
                     "type": "MoveCollection",
@@ -286,7 +287,8 @@
                         "type": "ToZone",
                         "zone": "Library",
                         "placement": "Bottom"
-                    }
+                    },
+                    "order": "ControllerChooses"
                 }
             ]
         }

@@ -6,6 +6,7 @@ import com.wingedsheep.sdk.dsl.Patterns
 import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.scripting.effects.CardDestination
+import com.wingedsheep.sdk.scripting.effects.CardOrder
 import com.wingedsheep.sdk.scripting.effects.ZonePlacement
 
 /**
@@ -28,7 +29,8 @@ val DigThroughTime = card("Dig Through Time") {
         effect = Patterns.Library.lookAtTopAndKeep(
             count = 7,
             keepCount = 2,
-            restDestination = CardDestination.ToZone(Zone.LIBRARY, placement = ZonePlacement.Bottom)
+            restDestination = CardDestination.ToZone(Zone.LIBRARY, placement = ZonePlacement.Bottom),
+            restOrder = CardOrder.ControllerChooses
         )
     }
 
