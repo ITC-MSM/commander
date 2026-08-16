@@ -173,6 +173,7 @@ class TwoHeadedGiantSessionTest : ScenarioTestBase() {
                 producesColorless = false,
                 manaAmount = 1,
                 requiresSacrificeSelf = false,
+                colorChoices = Color.entries.toSet(),
             )
             val decision = SelectAtomicBlockTaxManaAbilitiesDecision(
                 id = "atomic-team-block-tax",
@@ -182,6 +183,7 @@ class TwoHeadedGiantSessionTest : ScenarioTestBase() {
                 availableOptions = listOf(atomicOption),
                 requiredCost = "{1}",
                 autoPaySuggestion = listOf(atomicOption.ref),
+                autoPaySelections = listOf(com.wingedsheep.engine.core.AtomicBlockTaxManaAbilitySelection(atomicOption.ref, Color.RED)),
             )
             val atomicBlockTax = BlockTaxManaSelectionContinuation(
                 decisionId = decision.id,
@@ -195,6 +197,7 @@ class TwoHeadedGiantSessionTest : ScenarioTestBase() {
                         autoPaySuggestion = listOf(plains),
                         atomicManaAbilityOptions = listOf(atomicOption),
                         atomicAutoPaySuggestion = listOf(atomicOption.ref),
+                        atomicAutoPaySelections = listOf(com.wingedsheep.engine.core.AtomicBlockTaxManaAbilitySelection(atomicOption.ref, Color.RED)),
                     ),
                 ),
                 isAtomicTeamPayment = true,
@@ -218,6 +221,10 @@ class TwoHeadedGiantSessionTest : ScenarioTestBase() {
             visible.id shouldBe decision.id
             visible.playerId shouldBe payer
             visible.availableOptions.map { it.ref.sourceId } shouldContainExactly listOf(plains)
+            visible.availableOptions.single().colorChoices shouldBe Color.entries.toSet()
+            visible.autoPaySelections shouldContainExactly listOf(
+                com.wingedsheep.engine.core.AtomicBlockTaxManaAbilitySelection(atomicOption.ref, Color.RED),
+            )
         }
 
         test("non-team game is unchanged: no team index, every other seat is an opponent") {

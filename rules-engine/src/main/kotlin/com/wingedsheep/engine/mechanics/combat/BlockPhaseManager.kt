@@ -40,6 +40,8 @@ import com.wingedsheep.sdk.scripting.CantBlockUnlessCoBlocker
 import com.wingedsheep.sdk.scripting.AbilityCost
 import com.wingedsheep.sdk.scripting.effects.AddColorlessManaEffect
 import com.wingedsheep.sdk.scripting.effects.AddManaEffect
+import com.wingedsheep.sdk.scripting.effects.AddManaOfChoiceEffect
+import com.wingedsheep.sdk.scripting.values.ManaColorSet
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
 import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
 import com.wingedsheep.sdk.scripting.filters.unified.Scope
@@ -1206,13 +1208,17 @@ internal class BlockPhaseManager(
                     precomputedSources = sources,
                 )
             }
+            val atomicAutoPaySelections = atomicAutoPaySuggestion(pool, manaCost, atomicOptions)
             com.wingedsheep.engine.core.BlockTaxPayerPlan(
                 payerId = payerId,
                 manaCost = manaCost,
                 availableSources = sourceOptions,
                 autoPaySuggestion = solution?.sources?.map { it.entityId } ?: emptyList(),
                 atomicManaAbilityOptions = atomicOptions,
-                atomicAutoPaySuggestion = atomicAutoPaySuggestion(pool, manaCost, atomicOptions),
+                // Keep the old ref payload populated for saved fixed-branch frames; new
+                // color-qualified selections are carried separately.
+                atomicAutoPaySuggestion = atomicAutoPaySelections.map { it.ref },
+                atomicAutoPaySelections = atomicAutoPaySelections,
             )
         }
         val firstPlan = payerPlans.first()
@@ -1254,6 +1260,7 @@ internal class BlockPhaseManager(
         availableOptions = plan.atomicManaAbilityOptions,
         requiredCost = plan.manaCost.toString(),
         autoPaySuggestion = plan.atomicAutoPaySuggestion,
+        autoPaySelections = plan.atomicAutoPaySelections,
     )
 
     /**
@@ -1287,11 +1294,22 @@ internal class BlockPhaseManager(
                 val fixed = when (val effect = ability.effect) {
                     is AddManaEffect -> {
                         val amount = (effect.amount as? DynamicAmount.Fixed)?.amount ?: return@mapIndexedNotNull null
-                        Triple(setOf(effect.color), false, amount)
+                        AtomicManaOutput(setOf(effect.color), false, amount)
                     }
                     is AddColorlessManaEffect -> {
                         val amount = (effect.amount as? DynamicAmount.Fixed)?.amount ?: return@mapIndexedNotNull null
-                        Triple(emptySet(), true, amount)
+                        AtomicManaOutput(emptySet(), true, amount)
+                    }
+                    // This intentionally recognizes only the direct, targetless Gilded Lotus
+                    // shape. Dynamic/restricted/granted/rider-bearing and secondary-cost
+                    // abilities keep using the ordinary payment path until they have their own
+                    // explicit atomic transaction vocabulary.
+                    is AddManaOfChoiceEffect -> {
+                        if (effect.colorSet !is ManaColorSet.AnyColor || effect.restriction != null ||
+                            effect.riders.isNotEmpty() || effect.recipient != com.wingedsheep.sdk.scripting.targets.EffectTarget.Controller
+                        ) return@mapIndexedNotNull null
+                        val amount = (effect.amount as? DynamicAmount.Fixed)?.amount ?: return@mapIndexedNotNull null
+                        AtomicManaOutput(emptySet(), false, amount, com.wingedsheep.sdk.core.Color.entries.toSet())
                     }
                     else -> return@mapIndexedNotNull null
                 }
@@ -1305,17 +1323,18 @@ internal class BlockPhaseManager(
                         else -> null
                     }
                     if (other.cost == AbilityCost.Tap) amount else null
-                }.maxOrNull() ?: fixed.third
+                }.maxOrNull() ?: fixed.amount
                 val multiplier = if (normalPrinted > 0 && source.nonSacrificeManaAmount % normalPrinted == 0)
                     source.nonSacrificeManaAmount / normalPrinted else 1
                 AtomicBlockTaxManaAbilityOption(
                     ref = AtomicBlockTaxManaAbilityRef(sourceId, index),
                     sourceName = card.name,
                     description = ability.description,
-                    producesColors = fixed.first,
-                    producesColorless = fixed.second,
-                    manaAmount = fixed.third * multiplier,
+                    producesColors = fixed.colors,
+                    producesColorless = fixed.colorless,
+                    manaAmount = fixed.amount * multiplier,
                     requiresSacrificeSelf = sacrifice,
+                    colorChoices = fixed.colorChoices,
                 )
             }
             // Basic-land subtype mana abilities are intrinsic rather than printed in a card's
@@ -1341,18 +1360,41 @@ internal class BlockPhaseManager(
         }
     }
 
+    private data class AtomicManaOutput(
+        val colors: Set<com.wingedsheep.sdk.core.Color>,
+        val colorless: Boolean,
+        val amount: Int,
+        val colorChoices: Set<com.wingedsheep.sdk.core.Color> = emptySet(),
+    )
+
     private fun atomicAutoPaySuggestion(
         pool: ManaPool,
         manaCost: ManaCost,
         options: List<AtomicBlockTaxManaAbilityOption>,
-    ): List<AtomicBlockTaxManaAbilityRef> {
+    ): List<AtomicBlockTaxManaAbilitySelection> {
         var remaining = pool.payPartial(manaCost).remainingCost.cmc
         if (remaining <= 0) return emptyList()
-        return options.sortedWith(compareBy<AtomicBlockTaxManaAbilityOption> { it.requiresSacrificeSelf }.thenByDescending { it.manaAmount })
+        // A permanent may expose several exact branches (Crystal Vein). An auto-pay plan may
+        // activate at most one branch from each source; choose the strongest deterministic
+        // branch first so a valid sacrifice branch is not shadowed by its weaker tap-only branch.
+        return options.groupBy { it.ref.sourceId }.values.map { branches ->
+            branches.sortedWith(
+                compareByDescending<AtomicBlockTaxManaAbilityOption> { it.manaAmount }
+                    .thenBy { it.requiresSacrificeSelf }
+                    .thenBy { it.ref.printedManaAbilityIndex }
+            ).first()
+        }.sortedWith(compareBy<AtomicBlockTaxManaAbilityOption> { it.requiresSacrificeSelf }.thenByDescending { it.manaAmount })
             .takeWhile { option ->
                 if (remaining <= 0) false else { remaining -= option.manaAmount; true }
             }
-            .map { it.ref }
+            .map { option ->
+                AtomicBlockTaxManaAbilitySelection(
+                    ref = option.ref,
+                    // Generic block tax does not constrain the colour, but replay does: choose a
+                    // deterministic canonical colour for an automatic any-one-colour branch.
+                    chosenColor = option.colorChoices.minByOrNull { it.name },
+                )
+            }
     }
 
     /**

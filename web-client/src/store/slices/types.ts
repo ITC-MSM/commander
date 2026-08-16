@@ -18,7 +18,7 @@ import type {
   ErrorCode,
   PendingDecision,
   OpponentDecisionStatus,
-  AtomicBlockTaxManaAbilityRef,
+  AtomicBlockTaxManaAbilitySelection,
   LobbyPlayerInfo,
   LobbySettings,
   TournamentFormat,
@@ -918,7 +918,7 @@ export type GameStore = {
     declined?: boolean,
   ) => void
   submitAtomicBlockTaxManaAbilitiesDecision: (
-    selectedManaAbilityRefs: readonly AtomicBlockTaxManaAbilityRef[],
+    selectedManaAbilitySelections: readonly AtomicBlockTaxManaAbilitySelection[],
     autoPay: boolean,
     declined?: boolean,
   ) => void

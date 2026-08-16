@@ -2,7 +2,7 @@
  * Gameplay slice - handles game state, actions, events, and core game mechanics.
  */
 import type { SliceCreator, EntityId, LogEntry, MulliganState, GameOverState, ErrorState } from './types'
-import type { AtomicBlockTaxManaAbilityRef, ClientGameState, ClientEvent, GameAction, LegalActionInfo, PendingDecision, OpponentDecisionStatus } from '@/types'
+import type { AtomicBlockTaxManaAbilitySelection, ClientGameState, ClientEvent, GameAction, LegalActionInfo, PendingDecision, OpponentDecisionStatus } from '@/types'
 import {
   createCreateGameMessage,
   createJoinGameMessage,
@@ -80,7 +80,7 @@ export interface GameplaySliceActions {
     waterbendPermanents?: readonly EntityId[],
   ) => void
   submitAtomicBlockTaxManaAbilitiesDecision: (
-    selectedManaAbilityRefs: readonly AtomicBlockTaxManaAbilityRef[],
+    selectedManaAbilitySelections: readonly AtomicBlockTaxManaAbilitySelection[],
     autoPay: boolean,
     declined?: boolean,
   ) => void
@@ -469,7 +469,7 @@ export const createGameplaySlice: SliceCreator<GameplaySlice> = (set, get) => ({
   },
 
   submitAtomicBlockTaxManaAbilitiesDecision: (
-    selectedManaAbilityRefs: readonly AtomicBlockTaxManaAbilityRef[],
+    selectedManaAbilitySelections: readonly AtomicBlockTaxManaAbilitySelection[],
     autoPay: boolean,
     declined = false,
   ) => {
@@ -482,7 +482,12 @@ export const createGameplaySlice: SliceCreator<GameplaySlice> = (set, get) => ({
       response: {
         type: 'AtomicBlockTaxManaAbilitiesSelectedResponse' as const,
         decisionId: pendingDecision.id,
-        selectedManaAbilityRefs: [...selectedManaAbilityRefs],
+        selectedManaAbilitySelections: [...selectedManaAbilitySelections],
+        // Fixed-output selections remain legible to the immediately preceding server schema.
+        // A color-qualified Gilded Lotus choice necessarily requires the new server contract.
+        selectedManaAbilityRefs: selectedManaAbilitySelections
+          .filter((selection) => selection.chosenColor == null)
+          .map((selection) => selection.ref),
         autoPay,
         declined,
       },

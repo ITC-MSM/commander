@@ -3,6 +3,8 @@ package com.wingedsheep.engine.multiplayer
 import com.wingedsheep.engine.core.ActionProcessor
 import com.wingedsheep.engine.core.ActivateAbility
 import com.wingedsheep.engine.core.BlockTaxManaSelectionContinuation
+import com.wingedsheep.engine.core.BlockTaxPayerPlan
+import com.wingedsheep.engine.core.BlockTaxPaymentIntent
 import com.wingedsheep.engine.core.ContinuationFrame
 import com.wingedsheep.engine.core.DeclareAttackers
 import com.wingedsheep.engine.core.DeclareBlockers
@@ -13,6 +15,7 @@ import com.wingedsheep.engine.core.BlockersDeclaredEvent
 import com.wingedsheep.engine.core.PlayerConfig
 import com.wingedsheep.engine.core.ManaSourceOption
 import com.wingedsheep.engine.core.AtomicBlockTaxManaAbilityRef
+import com.wingedsheep.engine.core.AtomicBlockTaxManaAbilitySelection
 import com.wingedsheep.engine.core.AtomicBlockTaxManaAbilitiesSelectedResponse
 import com.wingedsheep.engine.core.PermanentsSacrificedEvent
 import com.wingedsheep.engine.core.SelectAtomicBlockTaxManaAbilitiesDecision
@@ -35,9 +38,11 @@ import com.wingedsheep.engine.state.components.identity.OwnerComponent
 import com.wingedsheep.engine.state.components.player.ManaPoolComponent
 import com.wingedsheep.mtg.sets.definitions.ori.cards.ArchangelOfTithes
 import com.wingedsheep.mtg.sets.definitions.mir.cards.CrystalVein
+import com.wingedsheep.mtg.sets.definitions.dom.cards.GildedLotus
 import com.wingedsheep.mtg.sets.definitions.scg.cards.ElvishAberration
 import com.wingedsheep.mtg.sets.definitions.woe.cards.VirtueOfStrength
 import com.wingedsheep.sdk.core.Format
+import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.core.ManaCost
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.Phase
@@ -61,6 +66,7 @@ import io.kotest.matchers.shouldBe
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 
 /**
@@ -125,6 +131,7 @@ class TwoHeadedGiantCombatTest : FunSpec({
         it.register(ArchangelOfTithes)
         it.register(ElvishAberration)
         it.register(CrystalVein)
+        it.register(GildedLotus)
         it.register(VirtueOfStrength)
         it.register(CardDefinition.basicLand("Plains", Subtype.PLAINS))
     }
@@ -203,6 +210,22 @@ class TwoHeadedGiantCombatTest : FunSpec({
         return withEntity(id, container).addToZone(ZoneKey(owner, Zone.BATTLEFIELD), id) to id
     }
 
+    fun GameState.withGildedLotus(owner: EntityId): Pair<GameState, EntityId> {
+        val id = EntityId.generate()
+        val container = ComponentContainer.of(
+            CardComponent(
+                cardDefinitionId = GildedLotus.name,
+                name = GildedLotus.name,
+                manaCost = GildedLotus.manaCost,
+                typeLine = GildedLotus.typeLine,
+                ownerId = owner,
+            ),
+            OwnerComponent(owner),
+            ControllerComponent(owner),
+        )
+        return withEntity(id, container).addToZone(ZoneKey(owner, Zone.BATTLEFIELD), id) to id
+    }
+
     fun taxedTeamBlockState(): Triple<GameState, List<EntityId>, List<EntityId>> {
         val (base, p) = init2hg()
         val (s1, archangel) = base.withBear(p[0], attacking = p[2], definition = ArchangelOfTithes)
@@ -238,6 +261,18 @@ class TwoHeadedGiantCombatTest : FunSpec({
         var state = s5.updateEntity(p[0]) { it.with(AttackersDeclaredThisCombatComponent) }
         state = state.copy(step = Step.DECLARE_BLOCKERS, phase = Phase.COMBAT).withPriority(p[2])
         return Triple(state, p, listOf(archangel, blkP2, blkP3, crystalVein, landP3))
+    }
+
+    fun taxedTeamBlockStateWithGildedLotus(): Triple<GameState, List<EntityId>, List<EntityId>> {
+        val (base, p) = init2hg()
+        val (s1, archangel) = base.withBear(p[0], attacking = p[2], definition = ArchangelOfTithes)
+        val (s2, blkP2) = s1.withBear(p[2], definition = flyingBear)
+        val (s3, blkP3) = s2.withBear(p[3], definition = flyingBear)
+        val (s4, lotus) = s3.withGildedLotus(p[2])
+        val (s5, landP3) = s4.withPlains(p[3])
+        val state = s5.updateEntity(p[0]) { it.with(AttackersDeclaredThisCombatComponent) }
+            .copy(step = Step.DECLARE_BLOCKERS, phase = Phase.COMBAT).withPriority(p[2])
+        return Triple(state, p, listOf(archangel, blkP2, blkP3, lotus, landP3))
     }
 
     fun taxedTeamBlockStateWithVirtueOfStrength(): Triple<GameState, List<EntityId>, List<EntityId>> {
@@ -561,6 +596,138 @@ class TwoHeadedGiantCombatTest : FunSpec({
         paid.events.filterIsInstance<PermanentsSacrificedEvent>().single().permanentIds shouldBe listOf(crystalVein)
         paid.events.filterIsInstance<BlockersDeclaredEvent>().size shouldBe 1
         paid.newState.getEntity(blkP2)!!.has<BlockingComponent>().shouldBeTrue()
+    }
+
+    test("Crystal Vein auto-pay chooses one sufficient branch rather than two branches of one source") {
+        val (baseState, p, objects) = taxedTeamBlockStateWithCrystalVein()
+        val (archangel, blkP2, blkP3, crystalVein, landP3) = objects
+        val (state, secondP2Blocker) = baseState.withBear(p[2], definition = flyingBear)
+        val proc = ActionProcessor(registry())
+        val declared = proc.process(
+            state,
+            DeclareBlockers(p[2], mapOf(
+                blkP2 to listOf(archangel),
+                secondP2Blocker to listOf(archangel),
+                blkP3 to listOf(archangel),
+            )),
+        ).result
+        val p2Prompt = declared.pendingDecision.shouldBeInstanceOf<SelectAtomicBlockTaxManaAbilitiesDecision>()
+        p2Prompt.autoPaySelections shouldBe listOf(
+            AtomicBlockTaxManaAbilitySelection(AtomicBlockTaxManaAbilityRef(crystalVein, 1)),
+        )
+        val p2Accepted = proc.process(
+            declared.newState,
+            SubmitDecision(p[2], AtomicBlockTaxManaAbilitiesSelectedResponse(p2Prompt.id, autoPay = true)),
+        ).result
+        val p3Prompt = p2Accepted.pendingDecision.shouldBeInstanceOf<SelectAtomicBlockTaxManaAbilitiesDecision>()
+        val paid = proc.process(
+            p2Accepted.newState,
+            SubmitDecision(p[3], AtomicBlockTaxManaAbilitiesSelectedResponse(
+                p3Prompt.id, selectedManaAbilityRefs = listOf(AtomicBlockTaxManaAbilityRef(landP3, -1)),
+            )),
+        ).result
+
+        paid.isSuccess.shouldBeTrue()
+        paid.newState.getBattlefield().contains(crystalVein).shouldBeFalse()
+        paid.events.filterIsInstance<PermanentsSacrificedEvent>().single().permanentIds shouldBe listOf(crystalVein)
+        paid.newState.getEntity(blkP2)!!.has<BlockingComponent>().shouldBeTrue()
+        paid.newState.getEntity(secondP2Blocker)!!.has<BlockingComponent>().shouldBeTrue()
+    }
+
+    test("Gilded Lotus atomic branch records its chosen color and retains its generic-tax surplus") {
+        val (state, p, objects) = taxedTeamBlockStateWithGildedLotus()
+        val (archangel, blkP2, blkP3, lotus, landP3) = objects
+        val proc = ActionProcessor(registry())
+        val declared = proc.process(
+            state, DeclareBlockers(p[2], mapOf(blkP2 to listOf(archangel), blkP3 to listOf(archangel))),
+        ).result
+        val p2Prompt = declared.pendingDecision.shouldBeInstanceOf<SelectAtomicBlockTaxManaAbilitiesDecision>()
+        val lotusOption = p2Prompt.availableOptions.single { it.ref == AtomicBlockTaxManaAbilityRef(lotus, 0) }
+        lotusOption.manaAmount shouldBe 3
+        lotusOption.colorChoices shouldBe Color.entries.toSet()
+
+        val p2Accepted = proc.process(
+            declared.newState,
+            SubmitDecision(p[2], AtomicBlockTaxManaAbilitiesSelectedResponse(
+                p2Prompt.id,
+                selectedManaAbilitySelections = listOf(AtomicBlockTaxManaAbilitySelection(lotusOption.ref, Color.RED)),
+            )),
+        ).result
+        val p3Prompt = p2Accepted.pendingDecision.shouldBeInstanceOf<SelectAtomicBlockTaxManaAbilitiesDecision>()
+        val paid = proc.process(
+            p2Accepted.newState,
+            SubmitDecision(p[3], AtomicBlockTaxManaAbilitiesSelectedResponse(
+                p3Prompt.id,
+                selectedManaAbilitySelections = listOf(AtomicBlockTaxManaAbilitySelection(AtomicBlockTaxManaAbilityRef(landP3, -1))),
+            )),
+        ).result
+
+        paid.isSuccess.shouldBeTrue()
+        paid.newState.getEntity(lotus)!!.has<TappedComponent>().shouldBeTrue()
+        paid.newState.getEntity(p[2])!!.get<ManaPoolComponent>()!!.red shouldBe 2
+        paid.newState.getEntity(p[2])!!.get<ManaPoolComponent>()!!.white shouldBe 0
+        paid.events.filterIsInstance<BlockersDeclaredEvent>().size shouldBe 1
+    }
+
+    test("a late atomic team decline rolls back a chosen Gilded Lotus branch") {
+        val (state, p, objects) = taxedTeamBlockStateWithGildedLotus()
+        val (archangel, blkP2, blkP3, lotus, _) = objects
+        val proc = ActionProcessor(registry())
+        val declared = proc.process(
+            state, DeclareBlockers(p[2], mapOf(blkP2 to listOf(archangel), blkP3 to listOf(archangel))),
+        ).result
+        val p2Prompt = declared.pendingDecision.shouldBeInstanceOf<SelectAtomicBlockTaxManaAbilitiesDecision>()
+        val p2Accepted = proc.process(
+            declared.newState,
+            SubmitDecision(p[2], AtomicBlockTaxManaAbilitiesSelectedResponse(
+                p2Prompt.id,
+                selectedManaAbilitySelections = listOf(AtomicBlockTaxManaAbilitySelection(
+                    AtomicBlockTaxManaAbilityRef(lotus, 0), Color.BLUE,
+                )),
+            )),
+        ).result
+        val declined = proc.process(
+            p2Accepted.newState,
+            SubmitDecision(p[3], AtomicBlockTaxManaAbilitiesSelectedResponse(
+                p2Accepted.pendingDecision.shouldBeInstanceOf<SelectAtomicBlockTaxManaAbilitiesDecision>().id,
+                declined = true,
+            )),
+        ).result
+
+        declined.isSuccess.shouldBeTrue()
+        declined.newState.getEntity(lotus)!!.has<TappedComponent>().shouldBeFalse()
+        declined.newState.getEntity(p[2])!!.get<ManaPoolComponent>()!!.blue shouldBe 0
+        declined.newState.getEntity(blkP2)!!.has<BlockingComponent>().shouldBeFalse()
+        declined.newState.getEntity(blkP3)!!.has<BlockingComponent>().shouldBeFalse()
+        declined.events.filterIsInstance<TappedEvent>() shouldBe emptyList()
+        declined.events.filterIsInstance<BlockersDeclaredEvent>() shouldBe emptyList()
+    }
+
+    test("atomic Gilded Lotus rejects a missing color or forged ability branch before payment") {
+        val (state, p, objects) = taxedTeamBlockStateWithGildedLotus()
+        val (archangel, blkP2, _, lotus, _) = objects
+        val proc = ActionProcessor(registry())
+        val declared = proc.process(state, DeclareBlockers(p[2], mapOf(blkP2 to listOf(archangel)))).result
+        val prompt = declared.pendingDecision.shouldBeInstanceOf<SelectAtomicBlockTaxManaAbilitiesDecision>()
+        val missingColor = proc.process(
+            declared.newState,
+            SubmitDecision(p[2], AtomicBlockTaxManaAbilitiesSelectedResponse(
+                prompt.id,
+                selectedManaAbilitySelections = listOf(AtomicBlockTaxManaAbilitySelection(AtomicBlockTaxManaAbilityRef(lotus, 0))),
+            )),
+        ).result
+        missingColor.isSuccess.shouldBeFalse()
+        missingColor.newState shouldBe declared.newState
+        val forgedRef = proc.process(
+            declared.newState,
+            SubmitDecision(p[2], AtomicBlockTaxManaAbilitiesSelectedResponse(
+                prompt.id,
+                selectedManaAbilitySelections = listOf(AtomicBlockTaxManaAbilitySelection(AtomicBlockTaxManaAbilityRef(lotus, 99), Color.GREEN)),
+            )),
+        ).result
+        forgedRef.isSuccess.shouldBeFalse()
+        forgedRef.newState shouldBe declared.newState
+        forgedRef.events shouldBe emptyList()
     }
 
     test("atomic Crystal Vein branch decline and forged branch preserve the proposed declaration") {
@@ -906,6 +1073,54 @@ class TwoHeadedGiantCombatTest : FunSpec({
         decoded.payerPlans shouldBe emptyList()
         decoded.manaCost shouldBe com.wingedsheep.sdk.core.ManaCost.parse("{1}")
         decoded.blockingPlayer shouldBe EntityId.of("defender")
+    }
+
+    test("legacy atomic block-tax plans and accepted refs still decode without losing payment intent") {
+        val json = Json {
+            serializersModule = com.wingedsheep.engine.core.engineSerializersModule
+            encodeDefaults = true
+        }
+        val ref = AtomicBlockTaxManaAbilityRef(EntityId.of("legacy-atomic-source"), -1)
+        val original: ContinuationFrame = BlockTaxManaSelectionContinuation(
+            decisionId = "legacy-atomic-block-tax",
+            blockingPlayer = EntityId.of("defender"),
+            blockers = emptyMap(),
+            payerPlans = listOf(BlockTaxPayerPlan(
+                payerId = EntityId.of("defender"),
+                manaCost = ManaCost.parse("{1}"),
+                availableSources = emptyList(),
+                autoPaySuggestion = emptyList(),
+                atomicAutoPaySuggestion = listOf(ref),
+            )),
+            acceptedIntents = listOf(BlockTaxPaymentIntent(
+                payerId = EntityId.of("defender"),
+                selectedManaAbilityRefs = listOf(ref),
+            )),
+            isAtomicTeamPayment = true,
+        )
+
+        val payload = json.parseToJsonElement(json.encodeToString(ContinuationFrame.serializer(), original))
+        val legacyPayload = payload.jsonObject.toMutableMap().apply {
+            remove("atomicAutoPaySelections")
+            remove("selectedManaAbilitySelections")
+            // The new fields live within plan/intent objects, so remove them from the historical
+            // nested shape rather than merely omitting unrelated top-level continuation fields.
+            val plans = getValue("payerPlans").jsonArray.map { plan ->
+                JsonObject(plan.jsonObject.toMutableMap().apply { remove("atomicAutoPaySelections") })
+            }
+            val intents = getValue("acceptedIntents").jsonArray.map { intent ->
+                JsonObject(intent.jsonObject.toMutableMap().apply { remove("selectedManaAbilitySelections") })
+            }
+            put("payerPlans", kotlinx.serialization.json.JsonArray(plans))
+            put("acceptedIntents", kotlinx.serialization.json.JsonArray(intents))
+        }
+        val decoded = json.decodeFromString(ContinuationFrame.serializer(), JsonObject(legacyPayload).toString())
+            .shouldBeInstanceOf<BlockTaxManaSelectionContinuation>()
+
+        decoded.payerPlans.single().atomicAutoPaySuggestion shouldBe listOf(ref)
+        decoded.payerPlans.single().atomicAutoPaySelections shouldBe emptyList()
+        decoded.acceptedIntents.single().selectedManaAbilityRefs shouldBe listOf(ref)
+        decoded.acceptedIntents.single().selectedManaAbilitySelections shouldBe emptyList()
     }
 
     test("legacy mana-source options default to one mana when decoding") {

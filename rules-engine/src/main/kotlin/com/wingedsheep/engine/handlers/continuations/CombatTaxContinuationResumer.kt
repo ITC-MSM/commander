@@ -13,6 +13,7 @@ import com.wingedsheep.engine.core.ManaSourceOption
 import com.wingedsheep.engine.core.ManaSourcesSelectedResponse
 import com.wingedsheep.engine.core.AtomicBlockTaxManaAbilitiesSelectedResponse
 import com.wingedsheep.engine.core.AtomicBlockTaxManaAbilityRef
+import com.wingedsheep.engine.core.AtomicBlockTaxManaAbilitySelection
 import com.wingedsheep.engine.core.AtomicBlockTaxManaAbilityOption
 import com.wingedsheep.engine.core.PostDecisionHandling
 import com.wingedsheep.engine.core.SelectManaSourcesDecision
@@ -140,7 +141,7 @@ class CombatTaxContinuationResumer(
         val declined = when (response) {
             is ManaSourcesSelectedResponse -> response.isDecline(floatingCovers(state, plan.payerId, plan.manaCost))
             is AtomicBlockTaxManaAbilitiesSelectedResponse -> response.declined ||
-                (!response.autoPay && response.selectedManaAbilityRefs.isEmpty() && !floatingCovers(state, plan.payerId, plan.manaCost))
+                (!response.autoPay && atomicSelections(response).isEmpty() && !floatingCovers(state, plan.payerId, plan.manaCost))
             else -> return ExecutionResult.error(state, "Expected block-tax mana payment response")
         }
         if (declined) {
@@ -188,6 +189,7 @@ class CombatTaxContinuationResumer(
             )
             is AtomicBlockTaxManaAbilitiesSelectedResponse -> BlockTaxPaymentIntent(
                 payerId = plan.payerId, autoPay = response.autoPay,
+                selectedManaAbilitySelections = atomicSelections(response),
                 selectedManaAbilityRefs = response.selectedManaAbilityRefs,
             )
             else -> return ExecutionResult.error(state, "Expected block-tax mana payment response")
@@ -236,10 +238,10 @@ class CombatTaxContinuationResumer(
         // Commit the original declaration first (which preserves the attacker's 509.1h status),
         // then clear only the departed blocker's own combat markers.
         val sacrificedBlockers = accepted.flatMap { intent ->
-            intent.selectedManaAbilityRefs.filter { ref ->
+            atomicSelections(intent).filter { selection ->
                 payerPlans.firstOrNull { it.payerId == intent.payerId }
-                    ?.atomicManaAbilityOptions?.firstOrNull { it.ref == ref }?.requiresSacrificeSelf == true
-            }.map { it.sourceId }
+                    ?.atomicManaAbilityOptions?.firstOrNull { it.ref == selection.ref }?.requiresSacrificeSelf == true
+            }.map { it.ref.sourceId }
         }.toSet()
         val committed = services.combatManager.blockPhase.commitBlockDeclaration(
             state = paidState,
@@ -293,6 +295,7 @@ class CombatTaxContinuationResumer(
         availableOptions = plan.atomicManaAbilityOptions,
         requiredCost = plan.manaCost.toString(),
         autoPaySuggestion = plan.atomicAutoPaySuggestion,
+        autoPaySelections = plan.atomicAutoPaySelections,
     )
 
     /** Existing single-payer attack-tax path, including solver-driven auto-pay. */
@@ -382,17 +385,30 @@ class CombatTaxContinuationResumer(
         plan: BlockTaxPayerPlan,
         intent: BlockTaxPaymentIntent,
     ): TaxPayment? {
-        val refs = if (intent.autoPay) plan.atomicAutoPaySuggestion else intent.selectedManaAbilityRefs
-        if (refs.map { it.sourceId }.size != refs.map { it.sourceId }.toSet().size) return null
+        val selections = if (intent.autoPay) {
+            plan.atomicAutoPaySelections.ifEmpty { plan.atomicAutoPaySuggestion.map(::AtomicBlockTaxManaAbilitySelection) }
+        } else atomicSelections(intent)
+        if (selections.map { it.ref.sourceId }.size != selections.map { it.ref.sourceId }.toSet().size) return null
         val options = plan.atomicManaAbilityOptions.associateBy { it.ref }
-        if (refs.any { it !in options }) return null
+        if (selections.any { it.ref !in options }) return null
         val playerEntity = state.getEntity(plan.payerId) ?: return null
         val oldPool = playerEntity.get<ManaPoolComponent>() ?: return null
         var pool = ManaPool(oldPool.white, oldPool.blue, oldPool.black, oldPool.red, oldPool.green, oldPool.colorless)
         var current = state
         val events = mutableListOf<GameEvent>()
-        for (ref in refs) {
+        for (selection in selections) {
+            val ref = selection.ref
             val option = options.getValue(ref)
+            // Colour choice is part of the accepted branch, not a resumption-time default.
+            // Fixed-output branches reject a forged colour; any-one-colour branches require one
+            // of their offered colours.
+            val outputColor = when {
+                option.colorChoices.isEmpty() -> {
+                    if (selection.chosenColor != null) return null
+                    option.producesColors.singleOrNull()
+                }
+                else -> selection.chosenColor?.takeIf { it in option.colorChoices } ?: return null
+            }
             val container = current.getEntity(ref.sourceId) ?: return null
             if (ref.sourceId !in current.getBattlefield() || current.projectedState.getController(ref.sourceId) != plan.payerId || container.has<TappedComponent>()) return null
             if (option.requiresSacrificeSelf) {
@@ -408,7 +424,7 @@ class CombatTaxContinuationResumer(
                 tapped.second?.let(events::add)
             }
             pool = when {
-                option.producesColors.size == 1 -> pool.add(option.producesColors.first(), option.manaAmount)
+                outputColor != null -> pool.add(outputColor, option.manaAmount)
                 option.producesColorless -> pool.addColorless(option.manaAmount)
                 else -> return null
             }
@@ -474,4 +490,16 @@ class CombatTaxContinuationResumer(
      */
     private fun floatingCovers(state: GameState, playerId: EntityId, cost: ManaCost): Boolean =
         com.wingedsheep.engine.mechanics.mana.ManaPaymentWindow.floatingManaCovers(state, playerId, cost)
+
+    @Suppress("DEPRECATION")
+    private fun atomicSelections(response: AtomicBlockTaxManaAbilitiesSelectedResponse): List<AtomicBlockTaxManaAbilitySelection> =
+        response.selectedManaAbilitySelections.ifEmpty {
+            response.selectedManaAbilityRefs.map(::AtomicBlockTaxManaAbilitySelection)
+        }
+
+    @Suppress("DEPRECATION")
+    private fun atomicSelections(intent: BlockTaxPaymentIntent): List<AtomicBlockTaxManaAbilitySelection> =
+        intent.selectedManaAbilitySelections.ifEmpty {
+            intent.selectedManaAbilityRefs.map(::AtomicBlockTaxManaAbilitySelection)
+        }
 }

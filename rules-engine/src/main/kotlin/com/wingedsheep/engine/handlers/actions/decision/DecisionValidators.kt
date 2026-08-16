@@ -578,13 +578,25 @@ object DecisionValidators {
         if (response !is AtomicBlockTaxManaAbilitiesSelectedResponse) {
             return "Expected atomic block-tax mana abilities response"
         }
-        val refs = response.selectedManaAbilityRefs
-        if (refs.map { it.sourceId }.size != refs.map { it.sourceId }.toSet().size) {
+        @Suppress("DEPRECATION")
+        val selections = response.selectedManaAbilitySelections.ifEmpty {
+            response.selectedManaAbilityRefs.map { com.wingedsheep.engine.core.AtomicBlockTaxManaAbilitySelection(it) }
+        }
+        if (selections.map { it.ref.sourceId }.size != selections.map { it.ref.sourceId }.toSet().size) {
             return "Only one mana ability may be selected from each permanent"
         }
-        val available = decision.availableOptions.map { it.ref }.toSet()
-        if (refs.any { it !in available }) {
+        val options = decision.availableOptions.associateBy { it.ref }
+        if (selections.any { it.ref !in options }) {
             return "Selected mana ability is not available for this payment"
+        }
+        for (selection in selections) {
+            val option = options.getValue(selection.ref)
+            if (option.colorChoices.isEmpty() && selection.chosenColor != null) {
+                return "This mana ability has no color choice"
+            }
+            if (option.colorChoices.isNotEmpty() && selection.chosenColor?.let { it in option.colorChoices } != true) {
+                return "Selected mana color is not available for this payment"
+            }
         }
         return null
     }

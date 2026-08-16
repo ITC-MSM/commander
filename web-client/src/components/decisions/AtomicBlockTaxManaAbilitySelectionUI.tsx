@@ -4,6 +4,7 @@ import { usePlayer } from '@/store/selectors'
 import type {
   AtomicBlockTaxManaAbilityOption,
   AtomicBlockTaxManaAbilityRef,
+  AtomicBlockTaxManaAbilitySelection,
   SelectAtomicBlockTaxManaAbilitiesDecision,
 } from '@/types'
 import { AbilityText } from '../ui/ManaSymbols'
@@ -25,25 +26,42 @@ export function AtomicBlockTaxManaAbilitySelectionUI({
 }) {
   const submit = useGameStore((s) => s.submitAtomicBlockTaxManaAbilitiesDecision)
   const manaPool = usePlayer(decision.playerId)?.manaPool
-  const suggestionKey = decision.autoPaySuggestion.map(optionKey).join(',')
+  const autoPaySelections = useMemo(
+    () => decision.autoPaySelections?.length
+      ? decision.autoPaySelections
+      : decision.autoPaySuggestion.map((ref) => ({ ref, chosenColor: null })),
+    [decision.autoPaySelections, decision.autoPaySuggestion],
+  )
+  const suggestionKey = autoPaySelections.map((selection) => `${optionKey(selection.ref)}:${selection.chosenColor ?? ''}`).join(',')
   const [selectedKeys, setSelectedKeys] = useState<readonly string[]>([])
+  const [chosenColors, setChosenColors] = useState<Readonly<Record<string, string>>>({})
 
   useEffect(() => {
     const available = new Set(decision.availableOptions.map((option) => optionKey(option.ref)))
     setSelectedKeys(
-      decision.autoPaySuggestion
-        .map(optionKey)
+      autoPaySelections
+        .map((selection) => optionKey(selection.ref))
         .filter((key) => available.has(key)),
     )
-  }, [decision.id, suggestionKey, decision.availableOptions])
+    setChosenColors(Object.fromEntries(
+      autoPaySelections
+        .filter((selection) => selection.chosenColor != null)
+        .map((selection) => [optionKey(selection.ref), selection.chosenColor!]),
+    ))
+  }, [decision.id, suggestionKey, decision.availableOptions, autoPaySelections])
 
   const selectedOptions = useMemo(
     () => decision.availableOptions.filter((option) => selectedKeys.includes(optionKey(option.ref))),
     [decision.availableOptions, selectedKeys],
   )
-  const selectedRefs = useMemo(
-    () => selectedOptions.map((option) => option.ref),
-    [selectedOptions],
+  const selectedSelections = useMemo<readonly AtomicBlockTaxManaAbilitySelection[]>(
+    () => selectedOptions.map((option) => ({
+      ref: option.ref,
+      chosenColor: option.colorChoices.length === 0
+        ? null
+        : (chosenColors[optionKey(option.ref)] ?? option.colorChoices[0] ?? null),
+    })),
+    [chosenColors, selectedOptions],
   )
   // Block taxes are generic costs. The server remains authoritative, but keeping the Pay button
   // disabled until the visible choices plus already-floating mana cover that generic amount avoids
@@ -61,12 +79,13 @@ export function AtomicBlockTaxManaAbilitySelectionUI({
 
   const toggle = (option: AtomicBlockTaxManaAbilityOption) => {
     const key = optionKey(option.ref)
-    setSelectedKeys((current) =>
-      current.includes(key) ? current.filter((entry) => entry !== key) : [...current, key],
-    )
+    setSelectedKeys((current) => current.includes(key)
+      ? current.filter((entry) => entry !== key)
+      // A single permanent can pay through exactly one branch in this atomic transaction.
+      : [...current.filter((entry) => entry.split(':')[0] !== option.ref.sourceId), key])
   }
 
-  const confirm = () => submit(selectedRefs, false)
+  const confirm = () => submit(selectedSelections, false)
   const autoPay = () => submit([], true)
   const decline = () => submit([], false, true)
 
@@ -105,6 +124,18 @@ export function AtomicBlockTaxManaAbilitySelectionUI({
               <div style={{ fontSize: 12, opacity: 0.9 }}>
                 <AbilityText text={option.description} size={12} />
               </div>
+              {option.colorChoices.length > 0 && selected && (
+                <label className={styles.effectHint}>
+                  Color
+                  <select
+                    value={chosenColors[key] ?? option.colorChoices[0]}
+                    onClick={(event) => event.stopPropagation()}
+                    onChange={(event) => setChosenColors((current) => ({ ...current, [key]: event.target.value }))}
+                  >
+                    {option.colorChoices.map((color) => <option key={color} value={color}>{color}</option>)}
+                  </select>
+                </label>
+              )}
               {option.requiresSacrificeSelf && (
                 <div className={styles.effectHint}>Will sacrifice this permanent</div>
               )}
@@ -113,7 +144,7 @@ export function AtomicBlockTaxManaAbilitySelectionUI({
         })}
       </div>
       <div className={styles.hint}>
-        {selectedRefs.length} ability branch{selectedRefs.length === 1 ? '' : 'es'} selected
+        {selectedSelections.length} ability branch{selectedSelections.length === 1 ? '' : 'es'} selected
         {floatingMana > 0 && `; ${floatingMana} mana already floating`}
       </div>
       <div className={styles.buttonContainerSmall}>
@@ -125,7 +156,7 @@ export function AtomicBlockTaxManaAbilitySelectionUI({
           disabled={!isCovered}
           className={`${styles.confirmButton} ${styles.confirmButtonSmall}`}
         >
-          Pay ({selectedRefs.length})
+          Pay ({selectedSelections.length})
         </button>
         {decision.canDecline && (
           <button onClick={decline} className={`${styles.confirmButton} ${styles.confirmButtonSmall}`}>

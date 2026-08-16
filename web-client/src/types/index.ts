@@ -218,6 +218,7 @@ export type {
   WaterbendPermanentChoice,
   SelectManaSourcesDecision,
   AtomicBlockTaxManaAbilityRef,
+  AtomicBlockTaxManaAbilitySelection,
   AtomicBlockTaxManaAbilityOption,
   SelectAtomicBlockTaxManaAbilitiesDecision,
   SplitPilesDecision,

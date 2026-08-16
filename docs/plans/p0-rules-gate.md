@@ -45,14 +45,16 @@ together, and each controller with a tax share receives their own block-tax prom
 collected as zero-mutation intents; only after every payer accepts are all selected fixed-output
 branches applied to a candidate state and the block committed once. The atomic decision names a
 source plus its printed mana-ability index, so it distinguishes Crystal Vein's `{T}: Add {C}`
-branch from its `{T}, Sacrifice: Add {C}{C}` branch. It supports deterministic, targetless,
-fixed-output `{T}` and `{T}, Sacrifice this` branches (including Elvish Aberration and Crystal
-Vein), preserves applicable mana-production multipliers, and retains surplus in that controller's
-individual mana pool. A selected blocker that sacrifices itself pays the locked tax and leaves its
+branch from its `{T}, Sacrifice: Add {C}{C}` branch. Its accepted intent additionally stores a
+chosen colour for the bounded targetless `{T}: Add N mana of any one color` shape, so Gilded Lotus
+does not re-choose a colour when the transaction resumes. It supports deterministic fixed-output
+`{T}` and `{T}, Sacrifice this` branches (including Elvish Aberration and Crystal Vein) plus that
+fixed-`N`, unrestricted any-one-colour branch, preserves applicable mana-production multipliers,
+and retains surplus in that controller's individual mana pool. A selected blocker that sacrifices itself pays the locked tax and leaves its
 attacker blocked, but does not receive blocking status. Any decline, forged branch, duplicate
 source, direct mana activation, or failed payment leaves mana, blockers, and declaration markers
 unchanged. The slice still excludes secondary tap, pain, activation-mana, restricted-mana,
-choice/dynamic-output, and other side-effecting branches; those remain explicit implementation
+dynamic/restricted-output, granted abilities, and other side-effecting branches; those remain explicit implementation
 gaps, separate from the FFA Commander simulation evidence above.
 
 ## Next implementation order

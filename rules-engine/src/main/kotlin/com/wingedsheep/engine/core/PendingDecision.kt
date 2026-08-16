@@ -656,7 +656,10 @@ data class SelectAtomicBlockTaxManaAbilitiesDecision(
     override val context: DecisionContext,
     val availableOptions: List<AtomicBlockTaxManaAbilityOption>,
     val requiredCost: String,
-    val autoPaySuggestion: List<AtomicBlockTaxManaAbilityRef>,
+    /** Legacy fixed-branch auto-pay refs, preserved for persisted decision payloads. */
+    val autoPaySuggestion: List<AtomicBlockTaxManaAbilityRef> = emptyList(),
+    /** Branch-qualified auto-pay choices, required for AnyColor branches. */
+    val autoPaySelections: List<AtomicBlockTaxManaAbilitySelection> = emptyList(),
     val canDecline: Boolean = true,
 ) : PendingDecision
 
@@ -948,6 +951,9 @@ data class ManaSourcesSelectedResponse(
 @SerialName("AtomicBlockTaxManaAbilitiesSelectedResponse")
 data class AtomicBlockTaxManaAbilitiesSelectedResponse(
     override val decisionId: String,
+    val selectedManaAbilitySelections: List<AtomicBlockTaxManaAbilitySelection> = emptyList(),
+    /** Legacy fixed-output transport field. New clients must submit branch selections. */
+    @Deprecated("Use selectedManaAbilitySelections so any-one-colour branches are replay-stable")
     val selectedManaAbilityRefs: List<AtomicBlockTaxManaAbilityRef> = emptyList(),
     val autoPay: Boolean = false,
     val declined: Boolean = false,

@@ -16,6 +16,18 @@ data class AtomicBlockTaxManaAbilityRef(
     val printedManaAbilityIndex: Int,
 )
 
+/**
+ * One replay-stable atomic payment branch.  [chosenColor] is required only for a
+ * branch whose printed ability says "any one color"; keeping it alongside the
+ * ability reference prevents a resumed transaction from silently re-choosing a
+ * colour.
+ */
+@Serializable
+data class AtomicBlockTaxManaAbilitySelection(
+    val ref: AtomicBlockTaxManaAbilityRef,
+    val chosenColor: Color? = null,
+)
+
 /** A deterministic, no-further-input mana-ability branch offered by atomic team block tax. */
 @Serializable
 data class AtomicBlockTaxManaAbilityOption(
@@ -26,6 +38,8 @@ data class AtomicBlockTaxManaAbilityOption(
     val producesColorless: Boolean,
     val manaAmount: Int,
     val requiresSacrificeSelf: Boolean,
+    /** Empty for a fixed colour/colorless branch; otherwise the exact permitted choice set. */
+    val colorChoices: Set<Color> = emptySet(),
 )
 
 /**
@@ -67,7 +81,10 @@ data class BlockTaxPayerPlan(
     val autoPaySuggestion: List<EntityId>,
     /** Empty for legacy/ordinary tax; populated only for shared-team atomic branch payment. */
     val atomicManaAbilityOptions: List<AtomicBlockTaxManaAbilityOption> = emptyList(),
+    /** Legacy fixed-branch auto-pay refs. Kept for persisted atomic continuations. */
     val atomicAutoPaySuggestion: List<AtomicBlockTaxManaAbilityRef> = emptyList(),
+    /** Branch-qualified auto-pay choices for new AnyColor atomic sources. */
+    val atomicAutoPaySelections: List<AtomicBlockTaxManaAbilitySelection> = emptyList(),
 )
 
 /**
@@ -79,8 +96,11 @@ data class BlockTaxPaymentIntent(
     val payerId: EntityId,
     val selectedSources: List<EntityId> = emptyList(),
     val autoPay: Boolean = false,
-    /** Exact branch choices for an atomic shared-team tax. Defaults preserve saved frames. */
+    /** Legacy fixed-branch selections retained so accepted persisted intents resume faithfully. */
+    @Deprecated("Use selectedManaAbilitySelections for branch-qualified atomic payment")
     val selectedManaAbilityRefs: List<AtomicBlockTaxManaAbilityRef> = emptyList(),
+    /** Exact branch choices for an atomic shared-team tax. Defaults preserve saved frames. */
+    val selectedManaAbilitySelections: List<AtomicBlockTaxManaAbilitySelection> = emptyList(),
 )
 
 /**

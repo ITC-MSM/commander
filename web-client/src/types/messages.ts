@@ -622,6 +622,12 @@ export interface AtomicBlockTaxManaAbilityRef {
   readonly printedManaAbilityIndex: number
 }
 
+/** Exact branch plus the colour chosen for an any-one-colour mana ability. */
+export interface AtomicBlockTaxManaAbilitySelection {
+  readonly ref: AtomicBlockTaxManaAbilityRef
+  readonly chosenColor?: string | null
+}
+
 /**
  * One exact mana-ability branch offered while a Two-Headed Giant team pays an
  * atomic block tax. A source may occur more than once when it has distinct
@@ -635,6 +641,8 @@ export interface AtomicBlockTaxManaAbilityOption {
   readonly producesColorless: boolean
   readonly manaAmount: number
   readonly requiresSacrificeSelf: boolean
+  /** Empty for a fixed output; otherwise the only legal chosenColor values. */
+  readonly colorChoices: readonly string[]
 }
 
 /** Select exact mana-ability branches for an atomic shared-team block-tax payment. */
@@ -642,7 +650,10 @@ export interface SelectAtomicBlockTaxManaAbilitiesDecision extends PendingDecisi
   readonly type: 'SelectAtomicBlockTaxManaAbilitiesDecision'
   readonly availableOptions: readonly AtomicBlockTaxManaAbilityOption[]
   readonly requiredCost: string
+  /** Legacy fixed-branch refs retained during rolling upgrades. */
   readonly autoPaySuggestion: readonly AtomicBlockTaxManaAbilityRef[]
+  /** Branch-qualified suggestions, used when a selected ability needs a color. */
+  readonly autoPaySelections?: readonly AtomicBlockTaxManaAbilitySelection[]
   readonly canDecline?: boolean
 }
 
