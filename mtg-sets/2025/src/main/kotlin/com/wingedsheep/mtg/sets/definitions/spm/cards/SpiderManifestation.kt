@@ -13,7 +13,6 @@ import com.wingedsheep.sdk.scripting.TriggerBinding
 import com.wingedsheep.sdk.scripting.TriggerSpec
 import com.wingedsheep.sdk.scripting.references.Player
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
-import com.wingedsheep.sdk.scripting.values.ManaColorSet
 
 /**
  * Spider Manifestation
@@ -22,6 +21,12 @@ import com.wingedsheep.sdk.scripting.values.ManaColorSet
  * Reach
  * {T}: Add {R} or {G}.
  * Whenever you cast a spell with mana value 4 or greater, untap this creature.
+ *
+ * The dual mana line is two abilities sharing the tap cost, the spelling every unridered
+ * "{T}: Add {A} or {B}." uses.
+ * [ManaColorSet.Specific][com.wingedsheep.sdk.scripting.values.ManaColorSet.Specific] is the other
+ * spelling, and it is only needed when a rider ("Activate only once each turn") would be defeated
+ * by there being two abilities to activate. This line has no rider.
  */
 val SpiderManifestation = card("Spider Manifestation") {
     manaCost = "{1}{R/G}"
@@ -35,7 +40,14 @@ val SpiderManifestation = card("Spider Manifestation") {
 
     activatedAbility {
         cost = Costs.Tap
-        effect = Effects.AddManaOfChoice(ManaColorSet.Specific(setOf(Color.RED, Color.GREEN)))
+        effect = Effects.AddMana(Color.RED)
+        manaAbility = true
+        timing = TimingRule.ManaAbility
+    }
+
+    activatedAbility {
+        cost = Costs.Tap
+        effect = Effects.AddMana(Color.GREEN)
         manaAbility = true
         timing = TimingRule.ManaAbility
     }

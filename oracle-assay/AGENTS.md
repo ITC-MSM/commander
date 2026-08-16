@@ -84,9 +84,11 @@ review, it is a change to decline.
 - **Two SDK spellings of one thing get one rule, and a finding.** Registering both is genuine
   ambiguity. `Primitives.protectionScope` deliberately never emits
   `Simple(PROTECTION_FROM_EACH_OPPONENT)`; `ProtectionScope.Colors` is a scope the grammar never
-  produces; `Mana` never emits `ManaColorSet.Specific`, which 13 cards use for a dual land's line
-  where 165 use two abilities. Each such omission carries a KDoc paragraph naming it as an SDK
-  finding.
+  produces; `Mana` never emits `ManaColorSet.Specific`, which a handful of cards use for a dual
+  land's line where 165 use two abilities. Each such omission carries a KDoc paragraph naming it as
+  an SDK finding. Declining the minority spelling also polices the minority's membership: what earns
+  `Specific` is a rider, a rider is what makes the line decline, so a card in that group whose mana
+  line *reads* is in the wrong group. That is how Spider Manifestation's card bug surfaced.
 - **A value the SDK carries twice is derived, not spelled.** `ActivatedAbility` says a mana ability
   is one in `isManaAbility` *and* in `timing`; no printed word says either, and CR 605.1a defines it
   as a property of the effect and the target list. `Activated.abilityFor` therefore computes both,

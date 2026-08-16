@@ -26,15 +26,21 @@ import com.wingedsheep.sdk.scripting.values.DynamicAmount
  * ### `Add {B} or {G}.` is two abilities, and the SDK can say it two ways
  *
  * 165 hand-written cards spell a dual land's line as **two** `AddManaEffect` abilities sharing a
- * cost — Jungle Hollow's golden is two `CostTap` entries, one `BLACK` and one `GREEN` — and 13
- * spell it as one `AddManaOfChoiceEffect(ManaColorSet.Specific(...))`. Both work, and the split is
- * not arbitrary: every card in the second group carries a rider the first group cannot express
- * correctly ("Activate only once each turn" on two abilities would permit two activations), which
- * is a good reason for the type to exist and no reason for it to be a second spelling of the plain
- * case. The grammar therefore emits the majority form and never emits `ManaColorSet.Specific`, the
- * same treatment [Primitives.protectionScope] gives `ProtectionScope.Colors`. Registering both
+ * cost — Jungle Hollow's golden is two `CostTap` entries, one `BLACK` and one `GREEN` — and a much
+ * smaller group spells it as one `AddManaOfChoiceEffect(ManaColorSet.Specific(...))`. Both work, and
+ * the split is not arbitrary: every card in the second group carries a rider the first group cannot
+ * express correctly ("Activate only once each turn" on two abilities would permit two activations),
+ * which is a good reason for the type to exist and no reason for it to be a second spelling of the
+ * plain case. The grammar therefore emits the majority form and never emits `ManaColorSet.Specific`,
+ * the same treatment [Primitives.protectionScope] gives `ProtectionScope.Colors`. Registering both
  * would be genuine ambiguity — one text, two models — which the design says never to resolve by
  * picking one.
+ *
+ * Declining the minority form is also how the group polices its own membership. A rider is what
+ * makes the line decline, so a card in the smaller group whose mana line *reads* has no rider and
+ * therefore belongs in the majority. Spider Manifestation is the worked example: a bare
+ * "{T}: Add {R} or {G}." that parsed, got compared, and diverged against its own golden. The card
+ * was the bug, and it is now two abilities.
  *
  * A rule that denotes several things from one phrase is [Keywords.qualityRun]'s shape, which is why
  * [alternatives] hands back a list and [Activated] does the joining.
