@@ -12,6 +12,7 @@ import com.wingedsheep.engine.core.GameInitializer
 import com.wingedsheep.engine.core.BlockersDeclaredEvent
 import com.wingedsheep.engine.core.PlayerConfig
 import com.wingedsheep.engine.core.ManaSourcesSelectedResponse
+import com.wingedsheep.engine.core.ManaSourceOption
 import com.wingedsheep.engine.core.SelectManaSourcesDecision
 import com.wingedsheep.engine.core.SubmitDecision
 import com.wingedsheep.engine.core.TappedEvent
@@ -29,7 +30,9 @@ import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.engine.state.components.identity.OwnerComponent
+import com.wingedsheep.engine.state.components.player.ManaPoolComponent
 import com.wingedsheep.mtg.sets.definitions.ori.cards.ArchangelOfTithes
+import com.wingedsheep.mtg.sets.definitions.scg.cards.ElvishAberration
 import com.wingedsheep.sdk.core.Format
 import com.wingedsheep.sdk.core.ManaCost
 import com.wingedsheep.sdk.core.Keyword
@@ -97,6 +100,7 @@ class TwoHeadedGiantCombatTest : FunSpec({
         it.register(menaceBear)
         it.register(flyingBear)
         it.register(ArchangelOfTithes)
+        it.register(ElvishAberration)
         it.register(CardDefinition.basicLand("Plains", Subtype.PLAINS))
     }
 
@@ -120,6 +124,7 @@ class TwoHeadedGiantCombatTest : FunSpec({
         owner: EntityId,
         attacking: EntityId? = null,
         definition: CardDefinition = bear,
+        extraKeywords: Set<Keyword> = emptySet(),
     ): Pair<GameState, EntityId> {
         val id = EntityId.generate()
         var container = ComponentContainer.of(
@@ -129,7 +134,7 @@ class TwoHeadedGiantCombatTest : FunSpec({
                 manaCost = definition.manaCost,
                 typeLine = definition.typeLine,
                 baseStats = definition.creatureStats,
-                baseKeywords = definition.keywords,
+                baseKeywords = definition.keywords + extraKeywords,
                 ownerId = owner
             ),
             OwnerComponent(owner),
@@ -167,6 +172,19 @@ class TwoHeadedGiantCombatTest : FunSpec({
         var state = s5.updateEntity(p[0]) { it.with(AttackersDeclaredThisCombatComponent) }
         state = state.copy(step = Step.DECLARE_BLOCKERS, phase = Phase.COMBAT).withPriority(p[2])
         return Triple(state, p, listOf(archangel, blkP2, blkP3, landP2, landP3))
+    }
+
+    fun taxedTeamBlockStateWithAberration(): Triple<GameState, List<EntityId>, List<EntityId>> {
+        val (base, p) = init2hg()
+        val (s1, archangel) = base.withBear(p[0], attacking = p[2], definition = ArchangelOfTithes)
+        // The real Aberration supplies {G}{G}{G}; Flying is only fixture support so it can
+        // legally block the attacking Archangel.
+        val (s2, aberration) = s1.withBear(p[2], definition = ElvishAberration, extraKeywords = setOf(Keyword.FLYING))
+        val (s3, blkP3) = s2.withBear(p[3], definition = flyingBear)
+        val (s4, landP3) = s3.withPlains(p[3])
+        var state = s4.updateEntity(p[0]) { it.with(AttackersDeclaredThisCombatComponent) }
+        state = state.copy(step = Step.DECLARE_BLOCKERS, phase = Phase.COMBAT).withPriority(p[2])
+        return Triple(state, p, listOf(archangel, aberration, blkP3, landP3))
     }
 
     test("a creature attacks the opposing team, never a teammate (CR 805.10b)") {
@@ -370,6 +388,77 @@ class TwoHeadedGiantCombatTest : FunSpec({
         declined.events.filterIsInstance<BlockersDeclaredEvent>() shouldBe emptyList()
     }
 
+    test("a fixed-output multi-mana source pays only its controller's atomic team block tax") {
+        val (state, p, objects) = taxedTeamBlockStateWithAberration()
+        val (archangel, aberration, blkP3, landP3) = objects
+        val proc = ActionProcessor(registry())
+
+        val declared = proc.process(
+            state,
+            DeclareBlockers(p[2], mapOf(aberration to listOf(archangel), blkP3 to listOf(archangel))),
+        ).result
+        val p2Prompt = declared.pendingDecision.shouldBeInstanceOf<SelectManaSourcesDecision>()
+        p2Prompt.playerId shouldBe p[2]
+
+        val p2Accepted = proc.process(
+            declared.newState,
+            SubmitDecision(p[2], ManaSourcesSelectedResponse(p2Prompt.id, selectedSources = listOf(aberration))),
+        ).result
+        p2Accepted.pendingDecision.shouldBeInstanceOf<SelectManaSourcesDecision>().playerId shouldBe p[3]
+        p2Accepted.newState.getEntity(aberration)!!.has<TappedComponent>().shouldBeFalse()
+        p2Accepted.newState.getEntity(p[2])!!.get<ManaPoolComponent>()!!.green shouldBe 0
+
+        val paid = proc.process(
+            p2Accepted.newState,
+            SubmitDecision(
+                p[3],
+                ManaSourcesSelectedResponse(
+                    p2Accepted.pendingDecision.shouldBeInstanceOf<SelectManaSourcesDecision>().id,
+                    selectedSources = listOf(landP3),
+                ),
+            ),
+        ).result
+
+        paid.isSuccess.shouldBeTrue()
+        paid.events.filterIsInstance<BlockersDeclaredEvent>().size shouldBe 1
+        paid.newState.getEntity(aberration)!!.has<TappedComponent>().shouldBeTrue()
+        paid.newState.getEntity(landP3)!!.has<TappedComponent>().shouldBeTrue()
+        paid.newState.getEntity(p[2])!!.get<ManaPoolComponent>()!!.green shouldBe 2
+        paid.newState.getEntity(p[3])!!.get<ManaPoolComponent>()!!.green shouldBe 0
+        paid.newState.getEntity(aberration)!!.has<BlockingComponent>().shouldBeTrue()
+        paid.newState.getEntity(blkP3)!!.has<BlockingComponent>().shouldBeTrue()
+    }
+
+    test("a declined teammate leaves a selected fixed-output multi-mana source and pool untouched") {
+        val (state, p, objects) = taxedTeamBlockStateWithAberration()
+        val (archangel, aberration, blkP3, _) = objects
+        val proc = ActionProcessor(registry())
+        val declared = proc.process(
+            state,
+            DeclareBlockers(p[2], mapOf(aberration to listOf(archangel), blkP3 to listOf(archangel))),
+        ).result
+        val p2Prompt = declared.pendingDecision.shouldBeInstanceOf<SelectManaSourcesDecision>()
+        val p2Accepted = proc.process(
+            declared.newState,
+            SubmitDecision(p[2], ManaSourcesSelectedResponse(p2Prompt.id, selectedSources = listOf(aberration))),
+        ).result
+        val p3Prompt = p2Accepted.pendingDecision.shouldBeInstanceOf<SelectManaSourcesDecision>()
+
+        val declined = proc.process(
+            p2Accepted.newState,
+            SubmitDecision(p[3], ManaSourcesSelectedResponse(p3Prompt.id, declined = true)),
+        ).result
+
+        declined.isSuccess.shouldBeTrue()
+        declined.pendingDecision shouldBe null
+        declined.events.filterIsInstance<TappedEvent>() shouldBe emptyList()
+        declined.events.filterIsInstance<BlockersDeclaredEvent>() shouldBe emptyList()
+        declined.newState.getEntity(aberration)!!.has<TappedComponent>().shouldBeFalse()
+        declined.newState.getEntity(p[2])!!.get<ManaPoolComponent>()!!.green shouldBe 0
+        declined.newState.getEntity(aberration)!!.has<BlockingComponent>().shouldBeFalse()
+        declined.newState.getEntity(blkP3)!!.has<BlockingComponent>().shouldBeFalse()
+    }
+
     test("a payer conceding during atomic team block-tax collection cancels the whole proposal") {
         val (state, p, objects) = taxedTeamBlockState()
         val (archangel, blkP2, blkP3, landP2, landP3) = objects
@@ -523,5 +612,25 @@ class TwoHeadedGiantCombatTest : FunSpec({
         decoded.payerPlans shouldBe emptyList()
         decoded.manaCost shouldBe com.wingedsheep.sdk.core.ManaCost.parse("{1}")
         decoded.blockingPlayer shouldBe EntityId.of("defender")
+    }
+
+    test("legacy mana-source options default to one mana when decoding") {
+        val json = Json {
+            serializersModule = com.wingedsheep.engine.core.engineSerializersModule
+            encodeDefaults = true
+        }
+        val original = ManaSourceOption(
+            entityId = EntityId.of("legacy-source"),
+            name = "Legacy Forest",
+            producesColors = setOf(com.wingedsheep.sdk.core.Color.GREEN),
+            producesColorless = false,
+            manaAmount = 3,
+        )
+        val payload = json.parseToJsonElement(json.encodeToString(original)).jsonObject.toMutableMap()
+        payload.remove("manaAmount")
+
+        val decoded = json.decodeFromString<ManaSourceOption>(JsonObject(payload).toString())
+
+        decoded.manaAmount shouldBe 1
     }
 })

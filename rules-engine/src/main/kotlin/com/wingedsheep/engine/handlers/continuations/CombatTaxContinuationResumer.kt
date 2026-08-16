@@ -352,8 +352,8 @@ class CombatTaxContinuationResumer(
                 currentState = tappedState
                 tapEvent?.let(events::add)
                 pool = when {
-                    source.producesColors.isNotEmpty() -> pool.add(source.producesColors.first())
-                    source.producesColorless -> pool.addColorless(1)
+                    source.producesColors.isNotEmpty() -> pool.add(source.producesColors.first(), source.manaAmount)
+                    source.producesColorless -> pool.addColorless(source.manaAmount)
                     else -> pool
                 }
             }

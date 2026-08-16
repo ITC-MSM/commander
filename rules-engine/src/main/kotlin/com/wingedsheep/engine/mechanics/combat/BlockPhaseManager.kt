@@ -1149,7 +1149,12 @@ internal class BlockPhaseManager(
                         source.tapPermanentsSubCost == null &&
                         !source.hasPainCost &&
                         source.painAmount == 0 &&
-                        source.manaAmount == 1 &&
+                        source.manaAmount > 0 &&
+                        // Atomic team payment has no nested colour-choice continuation.  Admit
+                        // only deterministic fixed-output sources; surplus stays in this
+                        // controller's own pool after their tax is paid.
+                        ((source.producesColors.size == 1 && !source.producesColorless) ||
+                            (source.producesColors.isEmpty() && source.producesColorless)) &&
                         source.bonusManaPerTap == 0 &&
                         source.bonusManaColorlessPerTap == 0 &&
                         source.restriction == null &&
@@ -1166,6 +1171,7 @@ internal class BlockPhaseManager(
                     name = source.name,
                     producesColors = source.producesColors,
                     producesColorless = source.producesColorless,
+                    manaAmount = source.manaAmount,
                     requiresSacrifice = source.requiresSacrifice,
                     requiresTappingAnotherPermanent = source.tapPermanentsSubCost != null,
                 )

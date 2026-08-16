@@ -408,6 +408,8 @@ data class ManaSourceOption(
     val name: String,
     val producesColors: Set<Color>,
     val producesColorless: Boolean,
+    /** Fixed amount produced by this source when selected. Defaults preserve older frames. */
+    val manaAmount: Int = 1,
     val requiresSacrifice: Boolean = false,
     val requiresTappingAnotherPermanent: Boolean = false
 )
