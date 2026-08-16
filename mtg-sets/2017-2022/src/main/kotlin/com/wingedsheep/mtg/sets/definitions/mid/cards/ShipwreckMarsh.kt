@@ -26,7 +26,7 @@ val ShipwreckMarsh = card("Shipwreck Marsh") {
     colorIdentity = "UB"
     typeLine = "Land"
     oracleText = "This land enters tapped unless you control two or more other lands.\n{T}: Add {U} or {B}."
-    replacementEffect(EntersTapped(unlessCondition = Conditions.YouControlAtLeast(3, GameObjectFilter.Land)))
+    replacementEffect(EntersTapped(unlessCondition = Conditions.YouControlOtherAtLeast(2, GameObjectFilter.Land)))
     activatedAbility {
         cost = Costs.Tap
         effect = Effects.AddMana(Color.BLUE)

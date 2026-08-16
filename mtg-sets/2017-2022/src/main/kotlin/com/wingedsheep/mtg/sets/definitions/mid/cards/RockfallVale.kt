@@ -26,7 +26,7 @@ val RockfallVale = card("Rockfall Vale") {
     colorIdentity = "RG"
     typeLine = "Land"
     oracleText = "This land enters tapped unless you control two or more other lands.\n{T}: Add {R} or {G}."
-    replacementEffect(EntersTapped(unlessCondition = Conditions.YouControlAtLeast(3, GameObjectFilter.Land)))
+    replacementEffect(EntersTapped(unlessCondition = Conditions.YouControlOtherAtLeast(2, GameObjectFilter.Land)))
     activatedAbility {
         cost = Costs.Tap
         effect = Effects.AddMana(Color.RED)

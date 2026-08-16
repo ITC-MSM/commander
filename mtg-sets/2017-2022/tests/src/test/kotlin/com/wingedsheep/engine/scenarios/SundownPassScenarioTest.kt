@@ -14,8 +14,9 @@ import io.kotest.matchers.shouldBe
  *   This land enters tapped unless you control two or more other lands.
  *   {T}: Add {R} or {W}.
  *
- * One of the "slow lands" — exercises the EntersTapped replacement effect gated on controlling
- * three or more lands total (the entering land plus two others).
+ * One of the "slow lands" — exercises the EntersTapped replacement effect gated on controlling two
+ * or more lands *other than* this one, which is `AggregateBattlefield.excludeSelf` rather than a
+ * count of three over the whole group.
  */
 class SundownPassScenarioTest : ScenarioTestBase() {
 

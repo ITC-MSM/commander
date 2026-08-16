@@ -114,12 +114,13 @@
                     "left": {
                         "type": "AggregateBattlefield",
                         "player": "You",
-                        "filter": "land"
+                        "filter": "land",
+                        "excludeSelf": true
                     },
                     "operator": "LTE",
                     "right": {
                         "type": "Fixed",
-                        "amount": 3
+                        "amount": 2
                     }
                 }
             }
@@ -185,12 +186,13 @@
                     "left": {
                         "type": "AggregateBattlefield",
                         "player": "You",
-                        "filter": "land"
+                        "filter": "land",
+                        "excludeSelf": true
                     },
                     "operator": "LTE",
                     "right": {
                         "type": "Fixed",
-                        "amount": 3
+                        "amount": 2
                     }
                 }
             }
@@ -256,12 +258,13 @@
                     "left": {
                         "type": "AggregateBattlefield",
                         "player": "You",
-                        "filter": "land"
+                        "filter": "land",
+                        "excludeSelf": true
                     },
                     "operator": "LTE",
                     "right": {
                         "type": "Fixed",
-                        "amount": 3
+                        "amount": 2
                     }
                 }
             }
@@ -592,12 +595,13 @@
                     "left": {
                         "type": "AggregateBattlefield",
                         "player": "You",
-                        "filter": "land"
+                        "filter": "land",
+                        "excludeSelf": true
                     },
                     "operator": "LTE",
                     "right": {
                         "type": "Fixed",
-                        "amount": 3
+                        "amount": 2
                     }
                 }
             }
@@ -683,12 +687,13 @@
                     "left": {
                         "type": "AggregateBattlefield",
                         "player": "You",
-                        "filter": "land"
+                        "filter": "land",
+                        "excludeSelf": true
                     },
                     "operator": "LTE",
                     "right": {
                         "type": "Fixed",
-                        "amount": 3
+                        "amount": 2
                     }
                 }
             }

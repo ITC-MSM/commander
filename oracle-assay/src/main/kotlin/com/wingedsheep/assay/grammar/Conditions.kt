@@ -7,6 +7,8 @@ import com.wingedsheep.assay.syntax.oneOf
 import com.wingedsheep.assay.syntax.phrase
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.scripting.GameObjectFilter
+import com.wingedsheep.sdk.scripting.conditions.APlayerLifeAtMost
+import com.wingedsheep.sdk.scripting.conditions.AnyCondition
 import com.wingedsheep.sdk.scripting.conditions.Condition
 import com.wingedsheep.sdk.scripting.conditions.Compare
 import com.wingedsheep.sdk.scripting.conditions.ComparisonOperator
@@ -74,8 +76,57 @@ object Conditions {
         else -> null
     }
 
+    /**
+     * "You control a Plains or an Island" — the check lands' disjunction, and the one place a
+     * condition rather than a filter carries the "or".
+     *
+     * ### Why this is not [Filters]' job
+     *
+     * English draws the line and the hand-written cards draw it in the same place. **One** article
+     * makes one noun phrase — "a Mount or Vehicle" is a single filter with a subtype `Or` in it, and
+     * [Filters] owns that. **Two** articles make two noun phrases with the verb elided — "a Plains or
+     * an Island" is "you control a Plains" or "you control an Island", and that is a disjunction of
+     * *conditions*. The goldens agree without being asked to: Country Roads holds one `Exists` over
+     * a `Mount|Vehicle` filter and Sulfur Falls holds `Any(Exists(land Island), Exists(land
+     * Mountain))`.
+     *
+     * The second article is therefore what keeps the two rules disjoint, and it is a fact about the
+     * text rather than a convention this file invented — which is why the rule can be canonical in
+     * both directions instead of an `alternate`.
+     */
+    private val eitherControlled: Phrase<Condition> =
+        phrase("you control {first} or {second}", name = "you control one of two permanents") {
+            slot("first", Filters.indefinite)
+            slot("second", Filters.indefinite)
+            build {
+                SdkConditions.Any(
+                    SdkConditions.YouControl(it.value("first")),
+                    SdkConditions.YouControl(it.value("second")),
+                )
+            }
+            match { value ->
+                val parts = (value as? AnyCondition)?.conditions ?: return@match null
+                if (parts.size != 2) return@match null
+                val filters = parts.map { part -> (part as? Exists)?.filter ?: return@match null }
+                if (value != SdkConditions.Any(
+                        SdkConditions.YouControl(filters[0]),
+                        SdkConditions.YouControl(filters[1]),
+                    )
+                ) {
+                    return@match null
+                }
+                bind("first" to filters[0], "second" to filters[1])
+            }
+        }
+
     val all: List<Phrase<Condition>> = listOf(
         constant("an opponent controls more lands than you", SdkConditions.OpponentControlsMoreLands),
+        // `IsYourTurn` / `IsNotYourTurn` are deliberately absent, and the reason is one position
+        // over: `SpellCosts.leadingGate` prints them as the fronted "During your turn, …" clause and
+        // says in its own KDoc that a row here would make that a second printed form for one model.
+        // Horned Loch-Whale ("~ enters tapped unless it's your turn.") is the one card that wants it
+        // and declines instead — one card is not a reason to break the second invariant, and the
+        // family meta-test in `SpellCostsTest` is what caught the attempt.
         // `YouWereAttackedThisStep` has no facade entry — it is a `data object` cards reference
         // directly, the same situation `Replacements` and the combat statics are in. Reported as the
         // small SDK finding it is rather than routed around.
@@ -100,10 +151,36 @@ object Conditions {
         // spellings arrive as sibling rows rather than as a shape.
         constant("it's bargained", SdkConditions.WasBargained),
         constant("it's kicked", SdkConditions.WasKicked),
+        eitherControlled,
         countAtLeast(
             "you control {n} or more {filter}",
             "you control several permanents",
         ) { count, filter -> SdkConditions.YouControlAtLeast(count, filter) },
+        // The "other" corners of the same shape — the fast lands and the slow lands.
+        //
+        // "Other" is a field on the *amount* and not a predicate on the filter: `GameObjectFilter`
+        // has no self-exclusion, and `excludeSelf` lives on `DynamicAmount.AggregateBattlefield` for
+        // exactly this. So these are two more rows of `countAtLeast`'s shape rather than a rule of
+        // their own, and the SDK facades they build through were named in the same change.
+        //
+        // Twenty goldens used to write "you control two or fewer other lands" as *total lands ≤ 3* —
+        // the printed number plus one, over a tally that excludes nothing. That is arithmetic rather
+        // than a reading: it equals the printed sentence only while the source is itself a land
+        // already on the battlefield when the condition is checked, which is true of every card
+        // printing the line today and of nothing the shape guarantees. The differential named all
+        // twenty the day these rows landed, and each moved to `excludeSelf` in the same change.
+        countAtLeast(
+            "you control {n} or more other {filter}",
+            "you control several other permanents",
+        ) { count, filter -> SdkConditions.YouControlOtherAtLeast(count, filter) },
+        countAtLeast(
+            "you control {n} or fewer other {filter}",
+            "you control few other permanents",
+        ) { count, filter -> SdkConditions.YouControlOtherAtMost(count, filter) },
+        // "~ enters tapped unless a player has 13 or less life" — the Duskmourn cycle. The threshold
+        // is a numeral rather than a number word because Oracle spells a life total in digits, so the
+        // leaf is [Primitives.cardinal] and not [Cardinals.word].
+        lifeThreshold(),
         countAtLeast(
             "there are {n} or more {filter} cards in your graveyard",
             "several cards of a kind in your graveyard",
@@ -194,6 +271,25 @@ object Conditions {
             bind("n" to count, "filter" to filter)
         }
     }
+
+    /**
+     * "A player has 13 or less life" — the Duskmourn lands' shared condition.
+     *
+     * `APlayerLifeAtMost` is the whole clause, so the only slot is the threshold, and it reads
+     * digits: Oracle spells a life total as a numeral where it spells a count of permanents as a
+     * word. The two leaves are not interchangeable in either direction, which is the distinction
+     * [Cardinals] exists to keep.
+     */
+    private fun lifeThreshold(): Phrase<Condition> =
+        phrase("a player has {n} or less life", name = "a player is low on life") {
+            slot("n", Primitives.cardinal)
+            build { SdkConditions.APlayerLifeAtMost(it.int("n")) }
+            match { value ->
+                val threshold = (value as? APlayerLifeAtMost)?.threshold ?: return@match null
+                if (value != SdkConditions.APlayerLifeAtMost(threshold)) return@match null
+                bind("n" to threshold)
+            }
+        }
 
     /** The filter a counted amount narrows by — a candidate only; [countAtLeast] decides. */
     private fun countedFilter(amount: DynamicAmount): GameObjectFilter? = when (amount) {

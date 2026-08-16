@@ -3,8 +3,10 @@ package com.wingedsheep.assay.grammar
 import com.wingedsheep.assay.syntax.ParseOutcome
 import com.wingedsheep.assay.syntax.parseLine
 import com.wingedsheep.assay.syntax.printLine
+import com.wingedsheep.sdk.dsl.Conditions
 import com.wingedsheep.sdk.model.CardScript
 import com.wingedsheep.sdk.scripting.EntersTapped
+import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.conditions.IsYourTurn
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
@@ -35,18 +37,79 @@ class ReplacementsTest : StringSpec({
         roundTrips("As ~ enters, you may pay 2 life. If you don't, it enters tapped.")
     }
 
-    // The check lands. An `unlessCondition` is an arbitrary Condition and there is no condition
-    // vocabulary yet, so these decline and rank — printing one as "~ enters tapped." would be
-    // byte-perfect and a different card.
-    "a conditional tapped entry declines in both directions rather than losing its condition" {
-        Grammar.abilityLine.parseLine("~ enters tapped unless you control a basic land.")
-            .shouldBeInstanceOf<ParseOutcome.Declined>()
-
-        val conditional = CardFragment(
+    // The check lands. The condition is a slot rather than a rule, so the whole of `Conditions`
+    // arrives at once — the four sentences below are one template with four fillings.
+    "a conditional tapped entry is the type's third field, filled from the condition vocabulary" {
+        fragment("~ enters tapped unless you control a basic land.") shouldBe CardFragment(
             script = CardScript(
-                replacementEffects = listOf(EntersTapped(unlessCondition = IsYourTurn))
+                replacementEffects = listOf(
+                    EntersTapped(unlessCondition = Conditions.YouControl(GameObjectFilter.BasicLand))
+                )
             )
         )
-        Grammar.abilityLine.printLine(conditional) shouldBe null
+        roundTrips("~ enters tapped unless you control a basic land.")
+        roundTrips("~ enters tapped unless a player has 13 or less life.")
+        roundTrips("~ enters tapped unless you control two or more basic lands.")
+    }
+
+    // Two articles make two noun phrases with the verb elided, which is a disjunction of
+    // *conditions*; one article makes one noun phrase, which is a disjunction inside the filter.
+    // The goldens draw the line in the same place — Sulfur Falls holds `Any(Exists, Exists)`.
+    "the check lands' two-article disjunction is a condition, not a filter" {
+        fragment("~ enters tapped unless you control an Island or a Mountain.") shouldBe CardFragment(
+            script = CardScript(
+                replacementEffects = listOf(
+                    EntersTapped(
+                        unlessCondition = Conditions.Any(
+                            Conditions.YouControl(GameObjectFilter.Land.withSubtype("Island")),
+                            Conditions.YouControl(GameObjectFilter.Land.withSubtype("Mountain")),
+                        )
+                    )
+                )
+            )
+        )
+        roundTrips("~ enters tapped unless you control an Island or a Mountain.")
+    }
+
+    // "Other" is `AggregateBattlefield.excludeSelf`, not one-higher arithmetic over the whole
+    // group: the two agree only while the source itself matches the filter. Twenty hand-written
+    // lands spelled the shortcut and moved to this reading in the change that added the rule.
+    "the fast and slow lands count OTHER lands, and the word is a field on the amount" {
+        fragment("~ enters tapped unless you control two or fewer other lands.") shouldBe CardFragment(
+            script = CardScript(
+                replacementEffects = listOf(
+                    EntersTapped(
+                        unlessCondition = Conditions.YouControlOtherAtMost(2, GameObjectFilter.Land)
+                    )
+                )
+            )
+        )
+        roundTrips("~ enters tapped unless you control two or fewer other lands.")
+        roundTrips("~ enters tapped unless you control two or more other lands.")
+        roundTrips("~ enters tapped unless you control three or more other Islands.")
+    }
+
+    // The reconstruct-and-compare in the `match` half: a value carrying a field this sentence has
+    // no room for refuses to print rather than dropping it.
+    "a tapped entry that also costs life refuses to print as the conditional sentence" {
+        val both = CardFragment(
+            script = CardScript(
+                replacementEffects = listOf(
+                    EntersTapped(unlessCondition = IsYourTurn, payLifeCost = 2)
+                )
+            )
+        )
+        Grammar.abilityLine.printLine(both) shouldBe null
+    }
+
+    // A condition the SDK cannot name still declines, and is counted rather than approximated —
+    // "you have two or more opponents" is ten corpus cards with no facade to build through. The turn
+    // clause declines for the opposite reason: the SDK names it, and `SpellCosts.leadingGate`
+    // already owns its one printed form.
+    "a condition outside the vocabulary declines rather than losing itself" {
+        Grammar.abilityLine.parseLine("~ enters tapped unless you have two or more opponents.")
+            .shouldBeInstanceOf<ParseOutcome.Declined>()
+        Grammar.abilityLine.parseLine("~ enters tapped unless it's your turn.")
+            .shouldBeInstanceOf<ParseOutcome.Declined>()
     }
 })

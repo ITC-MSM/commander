@@ -26,7 +26,7 @@ val DesertedBeach = card("Deserted Beach") {
     colorIdentity = "WU"
     typeLine = "Land"
     oracleText = "This land enters tapped unless you control two or more other lands.\n{T}: Add {W} or {U}."
-    replacementEffect(EntersTapped(unlessCondition = Conditions.YouControlAtLeast(3, GameObjectFilter.Land)))
+    replacementEffect(EntersTapped(unlessCondition = Conditions.YouControlOtherAtLeast(2, GameObjectFilter.Land)))
     activatedAbility {
         cost = Costs.Tap
         effect = Effects.AddMana(Color.WHITE)

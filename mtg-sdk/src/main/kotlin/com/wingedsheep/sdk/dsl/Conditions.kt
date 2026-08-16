@@ -379,6 +379,37 @@ object Conditions {
         )
 
     /**
+     * If you control [count] or more **other** permanents matching [filter] — the source itself is
+     * left out of the tally.
+     *
+     * The "other" of "this land enters tapped unless you control two or more other lands" (Deserted
+     * Beach and the rest of the slow lands). It is [DynamicAmount.AggregateBattlefield.excludeSelf],
+     * not a predicate on [filter], because self-exclusion is a property of the count rather than of
+     * the permanents counted.
+     *
+     * Write this rather than counting the whole group against one more. The two agree only while the
+     * source itself matches [filter] and is already on the battlefield when the condition is
+     * checked — true of a land testing lands, and of nothing the signature promises.
+     */
+    fun YouControlOtherAtLeast(count: Int, filter: GameObjectFilter): ConditionInterface =
+        Compare(
+            DynamicAmount.AggregateBattlefield(Player.You, filter, excludeSelf = true),
+            ComparisonOperator.GTE,
+            DynamicAmount.Fixed(count)
+        )
+
+    /**
+     * If you control [count] or fewer **other** permanents matching [filter] — the fast lands'
+     * "unless you control two or fewer other lands", and [YouControlOtherAtLeast]'s mirror.
+     */
+    fun YouControlOtherAtMost(count: Int, filter: GameObjectFilter): ConditionInterface =
+        Compare(
+            DynamicAmount.AggregateBattlefield(Player.You, filter, excludeSelf = true),
+            ComparisonOperator.LTE,
+            DynamicAmount.Fixed(count)
+        )
+
+    /**
      * If [count] or more different kinds of counters are among permanents you control matching
      * [filter] (default: creatures). Counts distinct counter kinds across the whole group — a
      * +1/+1 and a finality counter on two creatures is two kinds; the same kind on several

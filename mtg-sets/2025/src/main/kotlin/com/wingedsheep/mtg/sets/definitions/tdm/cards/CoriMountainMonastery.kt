@@ -4,22 +4,16 @@ import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.dsl.Conditions
 import com.wingedsheep.sdk.dsl.Costs
+import com.wingedsheep.sdk.dsl.Patterns
 import com.wingedsheep.sdk.dsl.card
-import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.EntersTapped
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.TimingRule
 import com.wingedsheep.sdk.scripting.conditions.Exists
 import com.wingedsheep.sdk.scripting.effects.AddManaEffect
-import com.wingedsheep.sdk.scripting.effects.CardDestination
-import com.wingedsheep.sdk.scripting.effects.CardSource
-import com.wingedsheep.sdk.scripting.effects.GatherCardsEffect
-import com.wingedsheep.sdk.scripting.effects.GrantMayPlayFromExileEffect
 import com.wingedsheep.sdk.scripting.effects.MayPlayExpiry
-import com.wingedsheep.sdk.scripting.effects.MoveCollectionEffect
 import com.wingedsheep.sdk.scripting.references.Player
-import com.wingedsheep.sdk.scripting.values.DynamicAmount
 
 /**
  * Cori Mountain Monastery
@@ -59,19 +53,7 @@ val CoriMountainMonastery = card("Cori Mountain Monastery") {
     // play that card.
     activatedAbility {
         cost = Costs.Composite(Costs.Mana("{3}{R}"), Costs.Tap)
-        effect = Effects.Composite(
-            listOf(
-                GatherCardsEffect(
-                    source = CardSource.TopOfLibrary(DynamicAmount.Fixed(1)),
-                    storeAs = "exiledCard"
-                ),
-                MoveCollectionEffect(
-                    from = "exiledCard",
-                    destination = CardDestination.ToZone(Zone.EXILE)
-                ),
-                GrantMayPlayFromExileEffect("exiledCard", MayPlayExpiry.UntilEndOfNextTurn)
-            )
-        )
+        effect = Patterns.Exile.impulse(expiry = MayPlayExpiry.UntilEndOfNextTurn)
     }
 
     metadata {
