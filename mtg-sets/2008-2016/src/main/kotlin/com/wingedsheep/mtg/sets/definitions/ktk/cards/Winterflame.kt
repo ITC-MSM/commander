@@ -21,23 +21,18 @@ val Winterflame = card("Winterflame") {
     oracleText = "Choose one or both —\n• Tap target creature.\n• Winterflame deals 2 damage to target creature."
 
     spell {
-        // Modeled as 3 modes: tap only, damage only, or both (choose one or both)
-        modal(chooseCount = 1) {
+        // "Choose one or both" is the *count*, not a third mode: `chooseCount = 2` with
+        // `minChooseCount = 1` (CR 700.2). Spelling the "both" branch as an extra mode looked
+        // equivalent and is a different card — the spell would report one chosen mode to
+        // `SpellCastEvent.chosenModesCount`, and a copy effect changing modes would see three.
+        modal(chooseCount = 2, minChooseCount = 1) {
             mode("Tap target creature") {
-                val t = target("creature", TargetCreature())
+                val t = target("creature to tap", TargetCreature())
                 effect = Effects.Tap(t)
             }
             mode("Winterflame deals 2 damage to target creature") {
-                val t = target("creature", TargetCreature())
+                val t = target("creature to damage", TargetCreature())
                 effect = DealDamageEffect(2, t)
-            }
-            mode("Tap target creature and deal 2 damage to target creature") {
-                val tapTarget = target("creature to tap", TargetCreature())
-                val damageTarget = target("creature to damage", TargetCreature())
-                effect = Effects.Composite(listOf(
-                    Effects.Tap(tapTarget),
-                    DealDamageEffect(2, damageTarget)
-                ))
             }
         }
     }

@@ -36,9 +36,11 @@ import com.wingedsheep.sdk.scripting.values.DynamicAmount
  * taking disjoint set *sizes*, which is what leaves printing determined by the model.
  *
  * Printing a set needs an order the model does not carry, and Magic's is not arbitrary: Oracle text
- * lists colours in WUBRG order on every card that names more than one, and [Color]'s own declaration
- * order is that order. So the printed run is the set sorted by ordinal, and a card that happened to
- * store its colours in another order still compares equal — sets have no order to disagree about.
+ * lists colours in WUBRG order, and [Color]'s own declaration order is that order. So the printed run
+ * is the set sorted by ordinal, and a card that happened to store its colours in another order still
+ * compares equal — sets have no order to disagree about. A **pair** rotates that sequence rather than
+ * starting at its head; see [pairOrder], which is where the corpus turned out to disagree with the
+ * plain sort.
  *
  * ### `imageUri` is not in the text, and the differential already knows it
  *
@@ -57,6 +59,34 @@ object Tokens {
     /** WUBRG — [Color]'s declaration order, which is the order printed Oracle text uses. */
     private fun ordered(colours: Set<Color>): List<Color> = colours.sortedBy { it.ordinal }
 
+    /**
+     * …except for **two** colours, where the sequence is the same but the starting point is not.
+     *
+     * WUBRG is a cycle rather than a list, and a printed pair begins at whichever of its two colours
+     * leaves the other within two steps *forward* around it. That produces "green and white" and
+     * "black and green" — neither of which is WUBRG order — and it is not a house style: it is the
+     * colour-pie adjacency Magic names its allied and enemy pairs by, so the allied pairs come out
+     * one step apart (WU, UB, BR, RG, GW) and the enemy pairs two (WB, UR, BG, RW, GU). Exactly one
+     * of the two orders can satisfy it, since the other is three or four steps, which is what makes
+     * this a function of the set rather than a choice the printer makes.
+     *
+     * The corpus states it without exception: of 351 two-colour phrases in Oracle text, all ten
+     * pairs appear and every one is spelled this way. A plain ordinal sort spells five of them
+     * backwards — Exhibition Magician's "1/1 green and white Citizen" is the one that surfaced it,
+     * on the day the modal band made a two-colour token line reachable.
+     *
+     * **Three or more is left at [ordered]**, and the reason is that the corpus does not yet settle
+     * it: eleven phrases, and the two that name the same three colours disagree with each other
+     * ("white, blue, and red" against "red, white, and blue"). Guessing a rotation from four
+     * examples would be inventing a convention; the shards agree with WUBRG rotation and the wedges
+     * are the open question, so it stays as it is until a line makes one reachable and says so.
+     */
+    private fun pairOrder(colours: Set<Color>): List<Color> {
+        val (first, second) = ordered(colours)
+        val forward = (second.ordinal - first.ordinal + Color.entries.size) % Color.entries.size
+        return if (forward <= 2) listOf(first, second) else listOf(second, first)
+    }
+
     private val colourPair: Phrase<Set<Color>> =
         phrase("{first} and {second}", name = "two colours") {
             slot("first", Primitives.color)
@@ -64,7 +94,7 @@ object Tokens {
             build { setOf(it.value<Color>("first"), it.value<Color>("second")) }
             match { colours ->
                 colours.takeIf { it.size == 2 }?.let {
-                    val order = ordered(it)
+                    val order = pairOrder(it)
                     bind("first" to order[0], "second" to order[1])
                 }
             }

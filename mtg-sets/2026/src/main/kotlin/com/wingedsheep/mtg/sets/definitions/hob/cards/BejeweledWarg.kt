@@ -11,7 +11,7 @@ import com.wingedsheep.sdk.scripting.effects.Mode
 import com.wingedsheep.sdk.scripting.effects.ModalEffect
 import com.wingedsheep.sdk.scripting.filters.unified.TargetFilter
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
-import com.wingedsheep.sdk.scripting.targets.TargetCreature
+import com.wingedsheep.sdk.scripting.targets.TargetPermanent
 
 /**
  * Bejeweled Warg — The Hobbit #117
@@ -25,10 +25,16 @@ import com.wingedsheep.sdk.scripting.targets.TargetCreature
  *
  * Modeling notes:
  *  - The mode is chosen as the trigger goes on the stack, and only the counter mode targets
- *    (CR 603.3d) — so with no Wolf you control the player is left with the Treasure mode. Bejeweled
+ *    (CR 700.2b) — so with no Wolf you control the player is left with the Treasure mode. Bejeweled
  *    Warg is itself a Wolf, so it is normally its own legal target.
- *  - `countsAsModalSpell = false`: this is a modal *ability*, not a modal spell, so it must not feed
- *    `SpellCastEvent.chosenModesCount` / `SpellCastPredicate.IsModal`.
+ *  - `countsAsModalSpell` stays at its `true` default. CR 700.2 makes a *spell or ability* modal when
+ *    it prints a bulleted list under "Choose one —", and this one does; the flag marks the cards that
+ *    reuse [ModalEffect] for a mechanic with no such wording (Gift, "discard a card or pay {3}").
+ *    Setting it false here read as "this is not really modal" about text that plainly is — and it
+ *    was inert either way, since the only reader is the spell-cast path a triggered ability never
+ *    reaches.
+ *  - "Target **Wolf** you control" is a bare tribal noun, so it names any *permanent* of that type
+ *    rather than only a creature.
  */
 val BejeweledWarg = card("Bejeweled Warg") {
     manaCost = "{1}{G}"
@@ -48,14 +54,13 @@ val BejeweledWarg = card("Bejeweled Warg") {
         effect = ModalEffect.chooseOne(
             Mode.withTarget(
                 Effects.AddCounters(Counters.PLUS_ONE_PLUS_ONE, 1, EffectTarget.ContextTarget(0)),
-                TargetCreature(filter = TargetFilter.CreatureYouControl.withSubtype(Subtype.WOLF)),
+                TargetPermanent(filter = TargetFilter.PermanentYouControl.withSubtype(Subtype.WOLF)),
                 "Put a +1/+1 counter on target Wolf you control"
             ),
             Mode.noTarget(
                 Effects.CreateTreasure(1),
                 "Create a Treasure token"
-            ),
-            countsAsModalSpell = false
+            )
         )
         description = "Whenever Bejeweled Warg deals combat damage to a player, choose one — " +
             "put a +1/+1 counter on target Wolf you control; or create a Treasure token."

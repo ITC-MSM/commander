@@ -9,6 +9,7 @@ import com.wingedsheep.sdk.scripting.effects.CreateTokenEffect
 import com.wingedsheep.sdk.scripting.effects.RegenerateEffect
 import com.wingedsheep.sdk.scripting.filters.unified.TargetFilter
 import com.wingedsheep.sdk.scripting.targets.TargetCreature
+import com.wingedsheep.sdk.scripting.targets.TargetPermanent
 
 /**
  * Vitality Charm
@@ -18,6 +19,9 @@ import com.wingedsheep.sdk.scripting.targets.TargetCreature
  * • Create a 1/1 green Insect creature token.
  * • Target creature gets +1/+1 and gains trample until end of turn.
  * • Regenerate target Beast.
+ *
+ * Modeling note: "Beast" is a bare tribal noun, so the third mode names every *permanent* of that
+ * type rather than only a creature; the adjectival "Beast creature" is what would narrow it.
  */
 val VitalityCharm = card("Vitality Charm") {
     manaCost = "{G}"
@@ -42,7 +46,7 @@ val VitalityCharm = card("Vitality Charm") {
                     .then(Effects.GrantKeyword(Keyword.TRAMPLE, t))
             }
             mode("Regenerate target Beast") {
-                val t = target("target", TargetCreature(filter = TargetFilter.Creature.withSubtype("Beast")))
+                val t = target("target", TargetPermanent(filter = TargetFilter.Permanent.withSubtype("Beast")))
                 effect = RegenerateEffect(t)
             }
         }

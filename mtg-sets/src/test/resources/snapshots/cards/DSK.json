@@ -16752,37 +16752,51 @@
             "modes": [
                 {
                     "effect": {
-                        "type": "ForEach",
-                        "space": {
-                            "type": "IterationSpace.Group",
-                            "filter": {
-                                "baseFilter": "creature tapped"
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "BattlefieldMatching",
+                                    "filter": "creature tapped"
+                                },
+                                "storeAs": "destroyAll_gathered"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "destroyAll_gathered",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Graveyard"
+                                },
+                                "moveType": "Destroy"
                             }
-                        },
-                        "body": {
-                            "type": "MoveToZone",
-                            "target": "Self",
-                            "destination": "Graveyard",
-                            "byDestruction": true
-                        }
+                        ]
                     },
                     "description": "Destroy all tapped creatures"
                 },
                 {
                     "effect": {
-                        "type": "ForEach",
-                        "space": {
-                            "type": "IterationSpace.Group",
-                            "filter": {
-                                "baseFilter": "creature untapped"
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "BattlefieldMatching",
+                                    "filter": "creature untapped"
+                                },
+                                "storeAs": "destroyAll_gathered"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "destroyAll_gathered",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Graveyard"
+                                },
+                                "moveType": "Destroy"
                             }
-                        },
-                        "body": {
-                            "type": "MoveToZone",
-                            "target": "Self",
-                            "destination": "Graveyard",
-                            "byDestruction": true
-                        }
+                        ]
                     },
                     "description": "Destroy all untapped creatures"
                 }

@@ -782,7 +782,7 @@
                                 {
                                     "type": "TargetObject",
                                     "filter": {
-                                        "baseFilter": "creature Wolf ctrl:you"
+                                        "baseFilter": "permanent Wolf ctrl:you"
                                     }
                                 }
                             ],
@@ -794,8 +794,7 @@
                                 "tokenType": "Treasure"
                             }
                         }
-                    ],
-                    "countsAsModalSpell": false
+                    ]
                 },
                 "descriptionOverride": "Whenever Bejeweled Warg deals combat damage to a player, choose one — put a +1/+1 counter on target Wolf you control; or create a Treasure token."
             }

@@ -2299,7 +2299,7 @@
                 "id": "ability_1",
                 "trigger": {
                     "type": "ZoneChangeEvent",
-                    "filter": "creature Hero nontoken ctrl:you",
+                    "filter": "permanent Hero nontoken ctrl:you",
                     "to": "Battlefield"
                 },
                 "binding": "OTHER",
@@ -4537,7 +4537,7 @@
                         {
                             "type": "TargetObject",
                             "filter": {
-                                "baseFilter": "Villain own:you",
+                                "baseFilter": "permanent Villain own:you",
                                 "zone": "Graveyard"
                             },
                             "id": "target Villain card in your graveyard"
@@ -4558,7 +4558,7 @@
                         {
                             "type": "TargetObject",
                             "filter": {
-                                "baseFilter": "Hero own:you",
+                                "baseFilter": "permanent Hero own:you",
                                 "zone": "Graveyard"
                             },
                             "id": "target Hero card in your graveyard"

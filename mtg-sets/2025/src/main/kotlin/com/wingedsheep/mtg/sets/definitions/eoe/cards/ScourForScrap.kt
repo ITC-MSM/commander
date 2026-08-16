@@ -6,11 +6,8 @@ import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.dsl.Patterns
 import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.GameObjectFilter
-import com.wingedsheep.sdk.scripting.effects.ModalEffect
-import com.wingedsheep.sdk.scripting.effects.Mode
 import com.wingedsheep.sdk.scripting.effects.SearchDestination
 import com.wingedsheep.sdk.scripting.filters.unified.TargetFilter
-import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.scripting.targets.TargetObject
 
 /**
@@ -30,34 +27,29 @@ val ScourForScrap = card("Scour for Scrap") {
         "• Return target artifact card from your graveyard to your hand."
 
     spell {
-        // Modeled as 3 modes: search only, return only, or both (choose one or both)
-        val searchEffect = Patterns.Library.searchLibrary(
-            filter = GameObjectFilter.Artifact,
-            count = 1,
-            destination = SearchDestination.HAND,
-            reveal = true,
-            shuffleAfter = true
-        )
-
-        effect = ModalEffect.chooseOne(
-            Mode.noTarget(
-                searchEffect,
-                "Search your library for an artifact card, reveal it, put it into your hand, then shuffle"
-            ),
-            Mode.withTarget(
-                Effects.ReturnToHand(EffectTarget.ContextTarget(0)),
-                TargetObject(filter = TargetFilter(GameObjectFilter.Companion.Artifact.ownedByYou(), zone = Zone.GRAVEYARD)),
-                "Return target artifact card from your graveyard to your hand"
-            ),
-            Mode.withTarget(
-                Effects.Composite(listOf(
-                    searchEffect,
-                    Effects.ReturnToHand(EffectTarget.ContextTarget(0))
-                )),
-                TargetObject(filter = TargetFilter(GameObjectFilter.Companion.Artifact.ownedByYou(), zone = Zone.GRAVEYARD)),
-                "Search your library for an artifact card and return target artifact card from your graveyard to your hand"
-            )
-        )
+        // "Choose one or both" is the *count*, not a third mode — `chooseCount = 2` with
+        // `minChooseCount = 1` (CR 700.2). See Winterflame for the same correction: an extra
+        // "do both" mode reports one chosen mode where the spell chose two.
+        modal(chooseCount = 2, minChooseCount = 1) {
+            mode("Search your library for an artifact card, reveal it, put it into your hand, then shuffle") {
+                effect = Patterns.Library.searchLibrary(
+                    filter = GameObjectFilter.Artifact,
+                    count = 1,
+                    destination = SearchDestination.HAND,
+                    reveal = true,
+                    shuffleAfter = true
+                )
+            }
+            mode("Return target artifact card from your graveyard to your hand") {
+                val artifact = target(
+                    "artifact card in your graveyard",
+                    TargetObject(
+                        filter = TargetFilter(GameObjectFilter.Artifact.ownedByYou(), zone = Zone.GRAVEYARD)
+                    ),
+                )
+                effect = Effects.ReturnToHand(artifact)
+            }
+        }
     }
 
     metadata {

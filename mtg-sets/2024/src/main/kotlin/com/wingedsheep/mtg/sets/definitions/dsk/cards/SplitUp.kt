@@ -4,13 +4,10 @@
 
 package com.wingedsheep.mtg.sets.definitions.dsk.cards
 
-import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.GameObjectFilter
-import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
-import com.wingedsheep.sdk.scripting.targets.EffectTarget
 
 
 /**
@@ -27,20 +24,17 @@ val SplitUp = card("Split Up") {
     typeLine = "Sorcery"
     oracleText = "Choose one —\n• Destroy all tapped creatures.\n• Destroy all untapped creatures."
     spell {
+        // `Effects.DestroyAll`, not an iteration: a "destroy all" is one effect, so it gathers the
+        // matching permanents and destroys the collection, and they leave the battlefield in a
+        // single event. A `ForEachInGroup` destroys them one at a time, so a dies-trigger on the
+        // first would see the rest still on the battlefield, and a creature whose toughness comes
+        // from the others could survive a sweep that should have killed it.
         modal(chooseCount = 1) {
             mode("Destroy all tapped creatures") {
-                effect = Effects.ForEachInGroup(
-                    GroupFilter(GameObjectFilter.Creature.tapped()),
-                    Effects.Move(EffectTarget.Self, Zone.GRAVEYARD, byDestruction = true),
-                    noRegenerate = false
-                )
+                effect = Effects.DestroyAll(GameObjectFilter.Creature.tapped())
             }
             mode("Destroy all untapped creatures") {
-                effect = Effects.ForEachInGroup(
-                    GroupFilter(GameObjectFilter.Creature.untapped()),
-                    Effects.Move(EffectTarget.Self, Zone.GRAVEYARD, byDestruction = true),
-                    noRegenerate = false
-                )
+                effect = Effects.DestroyAll(GameObjectFilter.Creature.untapped())
             }
         }
     }

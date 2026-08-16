@@ -18,7 +18,7 @@ import com.wingedsheep.assay.corpus.OracleFace
  * | Reminder text | strip ` (…)` spans | re-insert at the recorded offsets (or regenerate — see [Reminders]) |
  * | Self-reference | the face's own name → `~`, longest-match first | put the recorded surface form back |
  * | Attachment noun | "equipped creature" → "enchanted creature" | put the recorded surface word back |
- * | Ability split | one ability per line | join with `\n` |
+ * | Ability split | one ability per line, bullets kept with their header | join with `\n` |
  * | Ability word | strip a line's `Landfall — ` prefix | put the recorded word back on that line |
  *
  * Two passes named in the design are handled elsewhere on purpose:
@@ -44,7 +44,7 @@ object Normalizer {
         val (stripped, reminders) = stripReminders(face.oracleText)
         val (abstracted, selfRefs) = abstractSelfReference(stripped, selfReferenceForms(face.name))
         val (canonicalNoun, attachmentNouns) = canonicalizeAttachmentNoun(abstracted)
-        val split = canonicalNoun.split("\n")
+        val split = joinBulletedBlocks(canonicalNoun.split("\n"))
         return NormalizedFace(
             faceName = face.name,
             lines = split.map(::stripAbilityWord),
@@ -55,6 +55,43 @@ object Normalizer {
             raw = face.oracleText,
         )
     }
+
+    /**
+     * A bullet is a *continuation* of the line above it, so the two are one ability.
+     *
+     * The newline in "Choose one —\n• Destroy target artifact.\n• ~ deals 3 damage to target
+     * creature." is Oracle laying one ability out over three printed rows, not three abilities: a
+     * modal spell has one `spellEffect`, and a lone "• Destroy target artifact." denotes nothing at
+     * all — it is a mode of something, and the something is on the row above. Splitting there is the
+     * same mistake as splitting "Flying, vigilance" into two lines would be, one dimension over.
+     *
+     * This is the *ability split* pass doing its stated job, which is why it lives here rather than
+     * in the grammar: line grouping is a property of the printed text and the model has nowhere to
+     * keep it. And it is the one join whose inverse is free — the joined line **carries its own
+     * newlines**, and [NormalizedFace.restore] already joins lines with `\n`, so a modal line
+     * printed back byte for byte reassembles the printed rows with nothing recorded and nothing to
+     * replay. Every other choice (a spacer, a sentinel) would have needed an inverse to get wrong.
+     *
+     * **Positional, and only downward.** A bullet joins onto whatever precedes it, whether that is
+     * "Choose one —" or a whole trigger ("When ~ enters, choose one —"); the grammar decides whether
+     * the result means anything and declines when it does not. Four faces in the corpus open on a
+     * bullet with no row above it; those keep their own line, because there is nothing to join to
+     * and inventing a header would be reading punctuation.
+     */
+    private fun joinBulletedBlocks(lines: List<String>): List<String> {
+        val joined = mutableListOf<String>()
+        for (line in lines) {
+            if (line.startsWith(BULLET) && joined.isNotEmpty()) {
+                joined[joined.lastIndex] = joined.last() + "\n" + line
+            } else {
+                joined.add(line)
+            }
+        }
+        return joined
+    }
+
+    /** The character Oracle opens a mode's row with. See [joinBulletedBlocks]. */
+    const val BULLET = "•"
 
     /**
      * "**Landfall —** Whenever a land you control enters, …" → the ability the line actually states.

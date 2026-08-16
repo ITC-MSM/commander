@@ -3,11 +3,10 @@ package com.wingedsheep.mtg.sets.definitions.ons.cards
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
-import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.effects.LoseLifeEffect
 import com.wingedsheep.sdk.scripting.filters.unified.TargetFilter
-import com.wingedsheep.sdk.scripting.targets.TargetCreature
 import com.wingedsheep.sdk.scripting.targets.TargetObject
+import com.wingedsheep.sdk.scripting.targets.TargetPermanent
 import com.wingedsheep.sdk.scripting.targets.TargetPlayer
 import com.wingedsheep.sdk.dsl.Effects
 
@@ -19,6 +18,11 @@ import com.wingedsheep.sdk.dsl.Effects
  * • Destroy target Cleric.
  * • Return target Cleric card from your graveyard to your hand.
  * • Target player loses 2 life.
+ *
+ * Modeling note: "Cleric" is a bare tribal noun in both of the first two modes, so it names every
+ * *permanent* of that type rather than only a creature — [TargetFilter.Permanent] on the battlefield
+ * and [TargetFilter.PermanentInYourGraveyard] for the card in the graveyard, which is the facade the
+ * bare-noun migration created for exactly this phrase.
  */
 val MiseryCharm = card("Misery Charm") {
     manaCost = "{B}"
@@ -29,7 +33,7 @@ val MiseryCharm = card("Misery Charm") {
     spell {
         modal(chooseCount = 1) {
             mode("Destroy target Cleric") {
-                val t = target("target", TargetCreature(filter = TargetFilter.Creature.withSubtype("Cleric")))
+                val t = target("target", TargetPermanent(filter = TargetFilter.Permanent.withSubtype("Cleric")))
                 effect = Effects.Move(
                     target = t,
                     destination = Zone.GRAVEYARD,
@@ -38,10 +42,7 @@ val MiseryCharm = card("Misery Charm") {
             }
             mode("Return target Cleric card from your graveyard to your hand") {
                 val t = target("target", TargetObject(
-                    filter = TargetFilter(
-                        GameObjectFilter.Any.withSubtype("Cleric").ownedByYou(),
-                        zone = Zone.GRAVEYARD
-                    )
+                    filter = TargetFilter.PermanentInYourGraveyard.withSubtype("Cleric")
                 ))
                 effect = Effects.Move(
                     target = t,
