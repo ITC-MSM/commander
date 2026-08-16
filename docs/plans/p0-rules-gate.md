@@ -30,7 +30,7 @@ green card-definition count or a successful UI build does not satisfy it.
 | Independent priority review | Direct, paused-resolution, and cast-time paths reviewed against CR 117.3b/c | Passed |
 | APNAP controller ordering and generic trigger waves | `TriggeredAbilityOrderingTest` (ordering, non-combat wave, paused wave), `FirebenderAscensionScenarioTest` | Implemented; Ubuntu-tested |
 | Commander 903.9a graveyard/exile choice | `CommanderZoneChoiceCheckTest`, `CommanderZoneRedirectTest` | Implemented; staging-tested |
-| Commander 903.9b hand/library replacement | Pauseable zone-transition replacement boundary plus scenario matrix | Blocked: not yet implemented |
+| Commander 903.9b hand/library replacement | `CommanderZoneReplacementTest`, including `CMD-REPL-CHAIN-BF-HAND-CMD-LIB-001` for CR 616 choice → command redirect → re-evaluation | Implemented; Ubuntu-tested |
 | FFA multiplayer declare-blockers boundary | `CommanderPodSimulationTest`: APNAP defender cursor, paid/declined block tax, deferred triggers, player leave, post-placement SBA loop | Implemented; independently reviewed and Ubuntu-tested |
 
 ## Explicit scope boundary
@@ -47,10 +47,9 @@ explicit implementation gap, separate from the FFA Commander simulation evidence
 
 ## Next implementation order
 
-1. Introduce the pauseable, generic `ZoneChangePending` replacement path and migrate zone
-   movers in safe slices.  Only then remove hand/library from the Commander SBA check and add
-   the Commander 903.9b optional replacement.
-2. Centralize trigger placement into waves with explicit same-controller ordering decisions;
-   remove combat-only cascade behavior only after generic regression coverage passes.
-3. Run the P0 scenario matrix, then permit the readiness dashboard and serial card work to
-   treat rules evidence as eligible.
+1. Expand the shared-team / Two-Headed Giant block-tax flow beyond the verified simple,
+   tap-only mana-source slice while preserving atomic payment and rollback.
+2. Add the remaining P0 composition traces (replacement chains, partial target fizzle,
+   multiplayer stack/concession, and commander SBA-loss) to the repeatable release gate.
+3. Run the P0 scenario matrix and the broad rules-engine gate before treating readiness
+   dashboard evidence as eligible for larger card batches.
