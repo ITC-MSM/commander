@@ -1009,8 +1009,8 @@
                             "filter": "artifact",
                             "storeSelected": "kept",
                             "storeRemainder": "rest",
-                            "selectedLabel": "Put in hand",
-                            "remainderLabel": "Put on bottom"
+                            "prompt": "You may reveal an artifact card from among them and put it into your hand",
+                            "showAllCards": true
                         },
                         {
                             "type": "MoveCollection",

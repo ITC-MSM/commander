@@ -1,5 +1,6 @@
 package com.wingedsheep.engine.scenarios
 
+import com.wingedsheep.engine.core.ReorderLibraryDecision
 import com.wingedsheep.engine.core.SelectCardsDecision
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.support.GameTestDriver
@@ -63,6 +64,13 @@ class DigThroughTimeTest : FunSpec({
         // Player selects card7 and card5 to keep
         val selectedCards = listOf(card7, card5)
         driver.submitCardSelection(activePlayer, selectedCards)
+
+        // "…and the rest on the bottom of your library **in any order**" — the controller chooses
+        // that order, so the engine pauses a second time for the five cards going to the bottom.
+        driver.isPaused shouldBe true
+        val reorderDecision = driver.pendingDecision.shouldBeInstanceOf<ReorderLibraryDecision>()
+        reorderDecision.cards.size shouldBe 5
+        driver.submitOrderedResponse(activePlayer, reorderDecision.cards)
 
         driver.isPaused shouldBe false
 

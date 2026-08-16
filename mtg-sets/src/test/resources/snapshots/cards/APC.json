@@ -2047,13 +2047,13 @@
                                 "type": "ChooseExactly",
                                 "count": {
                                     "type": "Fixed",
-                                    "amount": 4
+                                    "amount": 1
                                 }
                             },
                             "storeSelected": "kept",
                             "storeRemainder": "rest",
                             "selectedLabel": "Put in hand",
-                            "remainderLabel": "Put in graveyard"
+                            "remainderLabel": "Put on bottom"
                         },
                         {
                             "type": "MoveCollection",
@@ -2068,8 +2068,10 @@
                             "from": "rest",
                             "destination": {
                                 "type": "ToZone",
-                                "zone": "Graveyard"
-                            }
+                                "zone": "Library",
+                                "placement": "Bottom"
+                            },
+                            "order": "ControllerChooses"
                         }
                     ]
                 }

@@ -232,6 +232,35 @@ clause there would have been the second printer, and an `alternate` would have l
 parseable and unprintable. When two spellings collide, check which rule can print the *whole* domain
 before deciding which is canonical.
 
+The **top-of-library band** is the third instance of that same "read the SDK's factoring back"
+lesson, and it is the one to copy when the recipe you need already exists and the grammar is calling
+it wrong. `Patterns.Library` publishes these sentences as functions whose **parameters are exactly
+the words that vary** — `keepDestination`, `restDestination`, `restOrder`, `count`, `filter` — and
+[`Library`](src/main/kotlin/com/wingedsheep/assay/grammar/Library.kt) was calling them with every
+parameter frozen, one whole-sentence rule per printed card. So "…and the rest on the bottom of your
+library in any order" was a rule nobody had written rather than a *word* nobody had slotted. Before
+adding a rule beside an existing one, check whether the two differ only in an argument the facade
+already takes; if they do, the rule is a slot, not a sibling.
+
+Three of its lessons transfer. **Put the noun inside the count**: "the top card" and "the top four
+cards" are one slot because the phrase carries its own grammatical number, so no sentence above it
+can get the agreement wrong — the alternative is the singular/plural split repeated in every
+sentence, and one of them eventually getting it backwards. **Check agreement, don't spell it**: the
+impulse anaphor ("that card" / "those cards") is decided by a count the sentence already carries, so
+the rule's `build` returns null on a mismatch rather than taking two rows per duration; a second
+place that decides the number is a second place to get it wrong. And **the canonical word order can
+be decided by a field other than the one the counting band found**: every impulse duration is printed
+both fronted and trailing, and which is the majority *flips with the duration* — "this turn" trails
+115:40, `UntilEndOfNextTurn` fronts 59:16. A duration slot in one template would print the minority
+spelling for two of three, so each duration takes its own pair of rows.
+
+Its differential result is the argument for the whole discipline: the band put
+`SelectFromCollectionEffect` under comparison for the first time, and **every newly-compared card
+that disagreed was wrong** — five had silently dropped `restOrder` so "in any order" resolved as "in
+the printed order", two had dropped `showAllCards` so a player told to look at five cards saw only
+the takeable ones, and Prophetic Bolt kept all four cards its text says to keep one of. A field the
+grammar cannot yet produce is a field nothing is checking.
+
 ## Fail-closed matching — the rule that catches the dangerous bug class
 
 **A `match` half reconstructs what `build` would have produced and compares the whole model.** Not a

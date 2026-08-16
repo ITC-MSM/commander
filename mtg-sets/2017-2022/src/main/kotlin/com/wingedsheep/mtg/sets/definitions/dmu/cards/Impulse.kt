@@ -1,8 +1,12 @@
 package com.wingedsheep.mtg.sets.definitions.dmu.cards
 
+import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.dsl.Patterns
 import com.wingedsheep.sdk.model.Rarity
+import com.wingedsheep.sdk.scripting.effects.CardDestination
+import com.wingedsheep.sdk.scripting.effects.CardOrder
+import com.wingedsheep.sdk.scripting.effects.ZonePlacement
 
 /**
  * Impulse
@@ -20,8 +24,9 @@ val Impulse = card("Impulse") {
         effect = Patterns.Library.lookAtTopAndKeep(
             count = 4,
             keepCount = 1,
-            keepDestination = com.wingedsheep.sdk.scripting.effects.CardDestination.ToZone(com.wingedsheep.sdk.core.Zone.HAND),
-            restDestination = com.wingedsheep.sdk.scripting.effects.CardDestination.ToZone(com.wingedsheep.sdk.core.Zone.LIBRARY, placement = com.wingedsheep.sdk.scripting.effects.ZonePlacement.Bottom)
+            keepDestination = CardDestination.ToZone(Zone.HAND),
+            restDestination = CardDestination.ToZone(Zone.LIBRARY, placement = ZonePlacement.Bottom),
+            restOrder = CardOrder.ControllerChooses
         )
     }
 

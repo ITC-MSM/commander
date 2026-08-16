@@ -20,7 +20,18 @@ and those are the two sentences on it. The **aura band** followed: `Enchant <fil
 attached-permanent statics, which opened `staticAbilities` — the largest `CardScript` slot the
 differential could not see into, and the one every later static family lands in.
 
-The most recent work is the **counting band** — *how many*, as one vocabulary and the three places a
+The most recent work is the **top-of-library band** — how many cards you see, what you keep, and
+where the rest go (**+87 whole cards**). It is the cost band's lesson applied a third time, and the
+first one where the grammar got *smaller*: `Patterns.Library` had published these sentences as
+recipes whose parameters are exactly the words that vary, and the grammar was calling them with every
+parameter frozen — so four whole-sentence rules became one three-layer vocabulary, and
+"…and the rest on the bottom of your library in any order" stopped being a rule nobody had written.
+It is also the band that put `SelectFromCollectionEffect` under the differential for the first time,
+and every card it newly compared that disagreed was wrong: see [the top-of-library
+band](#the-top-of-library-band) for the eleven, one of which had been drawing all four cards it was
+told to look at.
+
+Before it came the **counting band** — *how many*, as one vocabulary and the three places a
 card puts it (**+109 whole cards**). It is the cost band's lesson applied to a second SDK type:
 `DynamicAmount` is the one language for a number the game works out, and the grammar was holding a
 three-row count plus seventeen bespoke clauses restating one verb each. It is also the first band
@@ -1010,6 +1021,112 @@ to" line in the corpus and 41% of the life ones. That is not another vocabulary 
 source in one clause and the target in another, so it is a fourth **anaphor position**, and the
 module's rule is to instantiate the vocabulary per position rather than to add an `oneOf` branch.
 Sized by the probe at **47 whole cards**, and it is the natural next band.
+
+## The top-of-library band
+
+The top of the library — how many cards you see, what you keep, and where the rest go. Whole-corpus
+coverage 7,823 → **7,910 cards** (+87); the baked verdict ledger 7,618 → **7,701 whole**, with 83
+cards gained and **none lost**. No new SDK type, and the grammar shrank: four whole-sentence rules
+became one three-layer vocabulary in a file of its own,
+[`TopOfLibrary`](src/main/kotlin/com/wingedsheep/assay/grammar/TopOfLibrary.kt).
+
+**It was picked by measuring, and the three families it covers are disjoint.** The tail ranking put
+`cards of your …` (165 cards), `card of your …` (98) and `exile the top …` (90) at three separate
+places in the list; the probe sized them at 64, 27 and 40 whole cards, and their blocked-card sets
+turned out to share **zero** members — so 131 predicted against `enters tapped unless`'s 74, the next
+best. Five other candidates were probed and dropped, and two of them are worth recording because the
+tail rank ranked them *above* this one: the aura payoffs (`enchanted creature deals …` and its four
+siblings, 404 cards between them) probe at **7–10 whole cards each**, because the missing piece is
+never the attached-permanent subject — it is the payload behind it.
+
+**The band is the SDK's own factoring, read back — the third time.** `Patterns.Library` publishes
+these sentences as recipes whose *parameters are exactly the words that vary*: `keepDestination`,
+`restDestination`, `restOrder`, `count`, `filter`. The grammar was calling them with every parameter
+frozen, so `lookAtTopAndKeep` could spell hand-and-graveyard and nothing else — and "…and the rest on
+the bottom of your library in any order", which the corpus prints far more often, was a rule nobody
+had written rather than a *word* nobody had slotted. The fix is the cost band's and the counting
+band's: three layers, every sentence a lift.
+
+| Layer | Reads | Model |
+|---|---|---|
+| how many | "the top card", "the top four cards", "the top X cards" | `TopOfLibrary(count)` |
+| where a pile goes | "into your hand", "onto the battlefield", "on the bottom of your library" | `CardDestination` |
+| …and in what order | "…in a random order", "…in any order", and the empty suffix | `CardOrder` |
+
+The count layer carries its own noun, which is what makes the grammatical number free: "the top
+card" and "the top four cards" are one slot, and no sentence above it can get the agreement wrong.
+The order layer is [`Filters`](src/main/kotlin/com/wingedsheep/assay/grammar/Filters.kt)' rule over a
+different value — one printed suffix per `CardOrder`, the empty one included, so exactly one row can
+express any given value and the printer never chooses.
+
+### Three splits the model decides, not the alternation
+
+- **"the rest" against "the other."** English writes "the other" when the remainder is exactly one
+  card, and the corpus does it **16 times to 0**. So the two rules take disjoint halves of one value
+  space on `count - keep == 1`; without that guard both could print Tower Geist and the alternation's
+  *order* would pick, which this module treats as a bug that has not surfaced yet.
+- **The impulse anaphor agrees with the count.** "That card" against "those cards" is decided by the
+  number already in the sentence, so the rule *checks* the agreement rather than spelling it in two
+  rows per duration — a second place that decides the number is a second place to get it wrong.
+- **Which word order is canonical flips with the duration.** Every impulse duration is printed both
+  ways, so neither is a minority to decline, but the majority changes: "this turn" **trails** 115
+  lines to 40, while `UntilEndOfNextTurn` **fronts** 59 to 16 and `UntilNextEndStep` fronts 8 to 5.
+  A template with the duration as a slot would print the minority spelling for two of the three.
+  This is the counting band's damage-clause lesson arriving again, with a different field deciding.
+
+### Eleven cards it found, and a fold
+
+The band put `SelectFromCollectionEffect` under the differential for the first time, and every card
+it newly compared that disagreed was wrong:
+
+- **Prophetic Bolt** kept **all four** cards it looked at (`keepCount = 4` under a text that says
+  "put one of those cards into your hand") and buried the rest in the graveyard rather than on the
+  bottom of the library. Generated by `:mtgish-tooling` and never reviewed — precisely the failure
+  mode [`../mtgish-tooling/README.md`](../mtgish-tooling/README.md) warns about, caught by running.
+- **Stock Up** sent the remainder to the graveyard instead of the bottom of the library.
+- **Impulse**, **Dig Through Time**, **Stock Up**, **Prophetic Bolt** and **Adventurous Impulse** all
+  dropped `restOrder`, so "in any order" resolved as "in the order they were on top" — the controller
+  never got the choice the card grants. Adventurous Impulse also dropped the reveal on the kept card.
+- **Ashe, Princess of Dalmasca** and **Boughside Wanderers** dropped `showAllCards`, so a player told
+  to "look at the top five cards" was shown only the ones they could take.
+- **Alania's Pathmaker**, **Kulrath Zealot**, **Sizzling Changeling** and **Gundabad Opportunist**
+  each restated `Patterns.Exile.impulse`'s pipeline by hand under a different collection key. Not a
+  behaviour bug, but exactly what `mtg-sdk/AGENTS.md`'s "use the facades, not raw constructors" is
+  for, and all four now call it.
+
+All eleven are fixed in this change, and the differential is back to its 13 standing divergences with
+**32 more cards compared** (2,854 → 2,886).
+
+The one **fold** added is `selectedLabel`/`remainderLabel`, `prompt`'s two siblings on the same
+object and documented by the SDK in the same words ("Shown in the UI"). It loses nothing: the labels
+are *derived* from the two destinations by `defaultDestinationLabel`, and the destinations are still
+compared, so a label that disagreed because the destination did is still caught — by the destination.
+`showAllCards` is the nearest miss and stays compared, because it decides which cards the player is
+shown rather than what they are told about them.
+
+### What is left in the family, and the probe's fifth data point
+
++87 against a predicted 131 — the probe over-stated by 1.5×, which is the same direction and roughly
+the same size as every band before it. The gap is legible rather than mysterious, and it is one thing:
+`SelectionMode` has four cases and this band reads two of them. `ChooseExactly` and `ChooseUpTo(1)`
+are in; "Put **up to two** of them into your hand" (`ChooseUpTo(n)`, 56 cards / 35 sole-blocked) and
+"You may put **any number of** them into your hand" (`ChooseAnyNumber`) are not, and both rose in the
+ranking *because* of this band — the lines now get further before dying.
+
+Both are blocked on the same **SDK finding**, which is reported here rather than routed around:
+
+- `Patterns.Library.lookAtTopAndKeep` hardcodes `SelectionMode.ChooseExactly` and takes no `filter`.
+- `Patterns.Library.lookAtTopRevealMatchingToHand` hardcodes the hand as the kept card's destination,
+  so "You may put a land card from among them **onto the battlefield** tapped" (~20 lines) has no
+  recipe to call.
+
+Both are one parameter each, and both are a *capability* change to `mtg-sdk` — `add-feature` work
+with the SDK's own bar, not something this module may do on its own. Hand-building the pipelines here
+instead would restate recipes the SDK already owns, which is the exact curve this file exists to stay
+off. The other residue is genuinely different constructs: the whose-library slot ("of target
+player's library", 21 cards), the single-card conditional ("Look at the top card. If it's a land
+card, you may put it onto the battlefield tapped.", 88 cards / 68 sole), and the dynamic count
+("Look at the top X cards of your library, **where X is** …", 38 cards).
 
 ## What Phase 1 already found
 

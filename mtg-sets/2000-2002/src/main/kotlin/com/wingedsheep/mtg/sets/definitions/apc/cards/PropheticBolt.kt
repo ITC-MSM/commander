@@ -4,11 +4,15 @@
 
 package com.wingedsheep.mtg.sets.definitions.apc.cards
 
+import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.Patterns
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
+import com.wingedsheep.sdk.scripting.effects.CardDestination
+import com.wingedsheep.sdk.scripting.effects.CardOrder
 import com.wingedsheep.sdk.scripting.effects.DealDamageEffect
+import com.wingedsheep.sdk.scripting.effects.ZonePlacement
 import com.wingedsheep.sdk.scripting.targets.AnyTarget
 
 
@@ -27,7 +31,12 @@ val PropheticBolt = card("Prophetic Bolt") {
         val t = target("target", AnyTarget())
         effect = Effects.Composite(
             DealDamageEffect(4, t),
-            Patterns.Library.lookAtTopAndKeep(count = 4, keepCount = 4)
+            Patterns.Library.lookAtTopAndKeep(
+                count = 4,
+                keepCount = 1,
+                restDestination = CardDestination.ToZone(Zone.LIBRARY, placement = ZonePlacement.Bottom),
+                restOrder = CardOrder.ControllerChooses
+            )
         )
     }
     metadata {

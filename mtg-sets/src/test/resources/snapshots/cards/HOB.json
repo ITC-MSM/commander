@@ -1972,8 +1972,8 @@
                             "filter": "permanent",
                             "storeSelected": "kept",
                             "storeRemainder": "rest",
-                            "selectedLabel": "Put in hand",
-                            "remainderLabel": "Put on bottom"
+                            "prompt": "You may reveal a permanent card from among them and put it into your hand",
+                            "showAllCards": true
                         },
                         {
                             "type": "MoveCollection",
@@ -6485,11 +6485,11 @@
                                     "amount": 1
                                 }
                             },
-                            "storeAs": "exiledCard"
+                            "storeAs": "impulseExiled"
                         },
                         {
                             "type": "MoveCollection",
-                            "from": "exiledCard",
+                            "from": "impulseExiled",
                             "destination": {
                                 "type": "ToZone",
                                 "zone": "Exile"
@@ -6497,7 +6497,7 @@
                         },
                         {
                             "type": "GrantMayPlayFromExile",
-                            "from": "exiledCard",
+                            "from": "impulseExiled",
                             "expiry": {
                                 "type": "UntilControllerStep",
                                 "step": "CLEANUP",

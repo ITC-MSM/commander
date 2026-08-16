@@ -2976,7 +2976,8 @@
                         "type": "ToZone",
                         "zone": "Library",
                         "placement": "Bottom"
-                    }
+                    },
+                    "order": "ControllerChooses"
                 }
             ]
         }

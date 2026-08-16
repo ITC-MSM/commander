@@ -4,9 +4,13 @@
 
 package com.wingedsheep.mtg.sets.definitions.dft.cards
 
+import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.dsl.Patterns
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
+import com.wingedsheep.sdk.scripting.effects.CardDestination
+import com.wingedsheep.sdk.scripting.effects.CardOrder
+import com.wingedsheep.sdk.scripting.effects.ZonePlacement
 
 
 /**
@@ -21,7 +25,12 @@ val StockUp = card("Stock Up") {
     typeLine = "Sorcery"
     oracleText = "Look at the top five cards of your library. Put two of them into your hand and the rest on the bottom of your library in any order."
     spell {
-        effect = Patterns.Library.lookAtTopAndKeep(count = 5, keepCount = 2)
+        effect = Patterns.Library.lookAtTopAndKeep(
+            count = 5,
+            keepCount = 2,
+            restDestination = CardDestination.ToZone(Zone.LIBRARY, placement = ZonePlacement.Bottom),
+            restOrder = CardOrder.ControllerChooses
+        )
     }
     metadata {
         rarity = Rarity.UNCOMMON

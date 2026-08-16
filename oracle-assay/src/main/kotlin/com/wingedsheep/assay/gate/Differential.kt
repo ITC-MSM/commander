@@ -548,11 +548,25 @@ internal object Folds {
      * - **`prompt`** is the label a decision shows its controller. Flow of Knowledge says
      *   "Choose two cards to discard" where the grammar builds "Choose 2 cards to discard": the same
      *   decision, spelled for a human two ways.
+     * - **`selectedLabel`** and **`remainderLabel`** are `prompt`'s two siblings on the same object,
+     *   and the SDK says so in the same words: "Label describing where selected cards go (e.g.,
+     *   'Put on bottom'). **Shown in the UI.**" They were added when the top-of-library band made
+     *   `SelectFromCollectionEffect` reachable from the grammar at all, and the four cards that
+     *   surfaced them — Commune with Nature, Ashe, Boughside Wanderers, Casey Jones — agreed about
+     *   every destination and disagreed only about how to caption it.
+     *
+     *   Folding them loses nothing the gate was checking, and that is a property rather than a hope:
+     *   `Patterns.Library.lookAtTopAndKeep` *derives* both labels from the two destinations
+     *   (`defaultDestinationLabel`), and the destinations themselves are still compared. A label
+     *   that disagreed because the destination did would still be caught, by the destination.
      *
      * The bar the fold list sets is "both spellings already agreed to mean the same thing somewhere
      * outside this file", and here that agreement is the SDK's own KDoc on each field. The narrowness
-     * is that this drops *these three names* and nothing else — a field that changes what the effect
+     * is that this drops *these five names* and nothing else — a field that changes what the effect
      * does keeps diverging, including every sibling of these inside the same object.
+     * `SelectFromCollectionEffect.showAllCards` is the nearest miss and stays compared: it decides
+     * which cards the player is *shown*, not what they are told about them, and on a "look at the top
+     * N cards" effect the text says all of them.
      */
     fun dropPresentation(element: JsonElement): JsonElement = when (element) {
         is JsonObject -> JsonObject(
@@ -563,7 +577,8 @@ internal object Folds {
         else -> element
     }
 
-    private val PRESENTATION_KEYS = setOf("imageUri", "message", "prompt", "descriptionOverride")
+    private val PRESENTATION_KEYS =
+        setOf("imageUri", "message", "prompt", "selectedLabel", "remainderLabel", "descriptionOverride")
 
     /**
      * **A mode's `description` is the same class of field, and it is scoped rather than named.**

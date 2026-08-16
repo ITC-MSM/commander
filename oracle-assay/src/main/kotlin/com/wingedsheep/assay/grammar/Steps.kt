@@ -1685,6 +1685,7 @@ object Steps {
             Mana.addClause +
             Mana.addClauses +
             Library.clauses +
+            TopOfLibrary.clauses +
             Hand.clauses +
             Combat.clauses +
             Graveyard.clauses +
