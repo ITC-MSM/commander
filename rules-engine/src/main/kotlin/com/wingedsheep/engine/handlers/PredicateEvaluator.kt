@@ -4,6 +4,7 @@ import com.wingedsheep.engine.state.components.battlefield.chosenCreatureType
 import com.wingedsheep.engine.state.components.battlefield.chosenColor
 import com.wingedsheep.engine.state.components.battlefield.CastChoicesComponent
 import com.wingedsheep.engine.state.components.battlefield.ChoiceValue
+import com.wingedsheep.engine.handlers.predicates.becameTappedOnlyOnceThisTurn
 import com.wingedsheep.engine.handlers.predicates.hasDealtDamage
 import com.wingedsheep.engine.handlers.predicates.receivedCounterThisTurn
 import com.wingedsheep.engine.mechanics.layers.ProjectedState
@@ -1334,6 +1335,11 @@ class PredicateEvaluator {
             // side of Conditions.SourceReceivedCounterThisTurn (SourceMatches over this predicate).
             is StatePredicate.ReceivedCounterThisTurn ->
                 receivedCounterThisTurn(container, predicate)
+
+            // Tap history — "it's the first time it has become tapped this turn", read live off the
+            // tap counter so CR 603.4's resolution-time re-check can differ from the trigger-time one.
+            StatePredicate.BecameTappedOnlyOnceThisTurn ->
+                becameTappedOnlyOnceThisTurn(container, state.turnNumber)
 
             // Damage state
             StatePredicate.WasDealtDamageThisTurn -> {

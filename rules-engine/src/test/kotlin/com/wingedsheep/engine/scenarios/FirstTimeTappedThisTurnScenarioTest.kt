@@ -4,6 +4,8 @@ import com.wingedsheep.engine.core.CrewVehicle
 import com.wingedsheep.engine.core.GameEvent
 import com.wingedsheep.engine.core.TappedEvent
 import com.wingedsheep.engine.core.engineSerializersModule
+import com.wingedsheep.engine.handlers.PredicateContext
+import com.wingedsheep.engine.handlers.PredicateEvaluator
 import com.wingedsheep.engine.state.components.battlefield.HasBecomeTappedComponent
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.support.ScenarioTestBase
@@ -18,6 +20,7 @@ import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.TriggerBinding
 import com.wingedsheep.sdk.scripting.filters.unified.TargetFilter
 import com.wingedsheep.sdk.scripting.targets.TargetCreature
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -37,6 +40,12 @@ import kotlinx.serialization.json.Json
  * already existed and looks like the same thing; it isn't, and the two are run head-to-head below on
  * the same two taps — `firstTimeEachTurn` fires twice, `oncePerTurn` once.
  *
+ * This rider is only the **first** of the two checks the printed clause gets: it is an intervening
+ * "if" (CR 603.4), so the second check happens at resolution and reads the same
+ * [HasBecomeTappedComponent] counter live, through
+ * `StatePredicate.BecameTappedOnlyOnceThisTurn`. The two can disagree, which is the whole point;
+ * that case is a card-level one and lives in `CaptainAmericaLivingLegendScenarioTest`.
+ *
  * Enumerating the tapping paths is cheap here because nearly all of them are one: `TapEventEnforcementTest`
  * bans open-coded `with(TappedComponent)` outside its enters-tapped/cleanup allowlist, so tap
  * transitions go through the `tap()` atom, which is where the flag is computed. The path tests below
@@ -44,12 +53,7 @@ import kotlinx.serialization.json.Json
  * payment) exercise a representative caller of each shape rather than a list the feature depends on
  * being complete.
  *
- * Two qualifications on that argument, both deliberate:
- * - **Regeneration is a genuine exception**, not an enters-tapped one. `ZoneMovementUtils`
- *   open-codes regeneration's tap (CR 701.19a — "its controller taps it") while sitting on the
- *   allowlist, so a creature regenerated while untapped is never stamped and its next tap that turn
- *   still reports `firstThisTurn = true`. Routing regeneration through `tap()` is the fix and is its
- *   own change (it also restores the "becomes tapped" trigger regeneration silently skips today).
+ * One qualification on that argument, deliberate:
  * - **The guard is a text scan with two holes**: its regex matches `.with(TappedComponent)` /
  *   `.without<TappedComponent>()` but not `components.add(TappedComponent)`, and it scans only
  *   `rules-engine/src/main/kotlin`, so `game-server`'s scenario builder is invisible to it. Every
@@ -63,6 +67,20 @@ class FirstTimeTappedThisTurnScenarioTest : ScenarioTestBase() {
 
     private fun List<GameEvent>.tapsOf(entityId: EntityId): List<TappedEvent> =
         filterIsInstance<TappedEvent>().filter { it.entityId == entityId }
+
+    /**
+     * Evaluate a filter against a battlefield permanent the way every real caller does — through
+     * [PredicateEvaluator] over *projected* state — so the state-side predicate is exercised on the
+     * same path a card's filter would take.
+     */
+    private fun TestGame.matchesFilter(entityId: EntityId, filter: GameObjectFilter): Boolean =
+        PredicateEvaluator().matches(
+            state,
+            state.projectedState,
+            entityId,
+            filter,
+            PredicateContext(controllerId = player1Id),
+        )
 
     /** "Tap target creature." The repeatable tap handle for the same-turn re-tap cases. */
     private val tapPulse = card("Tap Pulse") {
@@ -127,31 +145,11 @@ class FirstTimeTappedThisTurnScenarioTest : ScenarioTestBase() {
         }
     }
 
-    /**
-     * The batch match site (`TriggerDetector.detectTapBatchTriggers`) is separate from the per-event
-     * one, so the window has to narrow there too: "Whenever one or more creatures you control become
-     * tapped for the first time this turn, draw a card."
-     */
-    private val firstTapRollCall = card("First Tap Roll Call") {
-        manaCost = "{1}"
-        typeLine = "Enchantment"
-        oracleText = "Whenever one or more creatures you control become tapped for the first time " +
-            "this turn, draw a card."
-        triggeredAbility {
-            trigger = Triggers.OneOrMoreBecomeTapped(
-                GameObjectFilter.Creature.youControl(),
-                firstTimeEachTurn = true,
-            )
-            effect = Effects.DrawCards(1)
-        }
-    }
-
     init {
         cardRegistry.register(tapPulse)
         cardRegistry.register(untapPulse)
         cardRegistry.register(firstTapLedger)
         cardRegistry.register(oncePerTurnLedger)
-        cardRegistry.register(firstTapRollCall)
 
         /** Two creatures, two Tap Pulses, plenty of mana and library — the shared head-to-head board. */
         fun twoCreatureBoard(ledgerName: String) = scenario()
@@ -246,6 +244,61 @@ class FirstTimeTappedThisTurnScenarioTest : ScenarioTestBase() {
                 }
                 withClue("but it was not the first tap this turn, so no second draw") {
                     game.librarySize(1) shouldBe libraryBefore - 1
+                }
+                withClue("the counter is what remembers it — a bare 'was tapped this turn' stamp could not") {
+                    val marker = game.state.getEntity(bears)
+                        ?.get<HasBecomeTappedComponent>().shouldNotBeNull()
+                    marker.lastBecameTappedTurn shouldBe game.state.turnNumber
+                    marker.timesThisTurn shouldBe 2
+                }
+                withClue("so the live 'only once this turn' predicate is false by now") {
+                    game.matchesFilter(
+                        bears,
+                        GameObjectFilter.Any.becameTappedOnlyOnceThisTurn()
+                    ) shouldBe false
+                }
+            }
+
+            test("the live 'became tapped only once this turn' predicate tracks the counter") {
+                // The resolution-time half of the clause. It is a *state* read, not an event read,
+                // so it has to answer correctly for a permanent nobody has tapped (zero taps is not
+                // "the first time"), for one tapped once, and for one tapped again afterwards.
+                val game = scenario()
+                    .withPlayers("Player", "Opponent")
+                    .withCardOnBattlefield(1, "Grizzly Bears")
+                    .withCardOnBattlefield(1, "Craw Wurm")
+                    .withCardsInHand(1, "Tap Pulse", 2)
+                    .withCardInHand(1, "Untap Pulse")
+                    .withLandsOnBattlefield(1, "Plains", 8)
+                    .withActivePlayer(1)
+                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                    .build()
+
+                val bears = game.findPermanent("Grizzly Bears").shouldNotBeNull()
+                val wurm = game.findPermanent("Craw Wurm").shouldNotBeNull()
+                val onlyOnce = GameObjectFilter.Any.becameTappedOnlyOnceThisTurn()
+
+                withClue("never tapped is not 'the first time'") {
+                    game.matchesFilter(bears, onlyOnce) shouldBe false
+                }
+
+                game.castSpell(1, "Tap Pulse", targetId = bears).error shouldBe null
+                game.resolveStack()
+                withClue("tapped exactly once") {
+                    game.matchesFilter(bears, onlyOnce) shouldBe true
+                    game.matchesFilter(wurm, onlyOnce) shouldBe false
+                }
+
+                game.castSpell(1, "Untap Pulse", targetId = bears).error shouldBe null
+                game.resolveStack()
+                withClue("untapping is not a tap, so the count — and the answer — is unchanged") {
+                    game.matchesFilter(bears, onlyOnce) shouldBe true
+                }
+
+                game.castSpell(1, "Tap Pulse", targetId = bears).error shouldBe null
+                game.resolveStack()
+                withClue("twice is no longer once") {
+                    game.matchesFilter(bears, onlyOnce) shouldBe false
                 }
             }
 
@@ -484,78 +537,22 @@ class FirstTimeTappedThisTurnScenarioTest : ScenarioTestBase() {
                 }
             }
 
-            // ---- the batch match site ----------------------------------------------------------
-
-            test("a batch trigger fires once when several creatures take their first tap together") {
-                val game = scenario()
-                    .withPlayers("Player", "Opponent")
-                    .withCardOnBattlefield(1, "First Tap Roll Call")
-                    .withCardOnBattlefield(1, "Craw Wurm")
-                    .withCardOnBattlefield(1, "Grizzly Bears")
-                    .withCardInLibrary(1, "Island")
-                    .withCardInLibrary(1, "Island")
-                    .withActivePlayer(1)
-                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
-                    .build()
-
-                val libraryBefore = game.librarySize(1)
-                game.advanceToPhase(Phase.COMBAT, Step.DECLARE_ATTACKERS)
-                game.declareAttackers(mapOf("Craw Wurm" to 2, "Grizzly Bears" to 2)).error shouldBe null
-                game.resolveStack()
-
-                // "One or more … become tapped" batches because the trigger event is itself plural,
-                // so one simultaneous tap batch is one occurrence of it. (Not CR 603.2c, this
-                // codebase's usual shorthand: that rule is about one event containing *multiple*
-                // occurrences, which is the per-permanent `becomesTapped` reading instead.)
-                withClue("two first taps in one batch is one trigger") {
-                    game.librarySize(1) shouldBe libraryBefore - 1
-                }
-            }
-
-            test("a batch of taps that are all re-taps does not fire the batch trigger") {
-                val game = scenario()
-                    .withPlayers("Player", "Opponent")
-                    .withCardOnBattlefield(1, "First Tap Roll Call")
-                    .withCardOnBattlefield(1, "Craw Wurm")
-                    .withCardOnBattlefield(1, "Grizzly Bears")
-                    .withCardsInHand(1, "Tap Pulse", 2)
-                    .withCardsInHand(1, "Untap Pulse", 2)
-                    .withLandsOnBattlefield(1, "Plains", 8)
-                    .withCardInLibrary(1, "Island")
-                    .withCardInLibrary(1, "Island")
-                    .withCardInLibrary(1, "Island")
-                    .withActivePlayer(1)
-                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
-                    .build()
-
-                val wurm = game.findPermanent("Craw Wurm").shouldNotBeNull()
-                val bears = game.findPermanent("Grizzly Bears").shouldNotBeNull()
-
-                // Burn both creatures' windows one at a time, then untap them.
-                game.castSpell(1, "Tap Pulse", targetId = wurm).error shouldBe null
-                game.resolveStack()
-                game.castSpell(1, "Tap Pulse", targetId = bears).error shouldBe null
-                game.resolveStack()
-                game.castSpell(1, "Untap Pulse", targetId = wurm).error shouldBe null
-                game.resolveStack()
-                game.castSpell(1, "Untap Pulse", targetId = bears).error shouldBe null
-                game.resolveStack()
-
-                val libraryBefore = game.librarySize(1)
-                game.advanceToPhase(Phase.COMBAT, Step.DECLARE_ATTACKERS)
-                val result = game.declareAttackers(mapOf("Craw Wurm" to 2, "Grizzly Bears" to 2))
-                result.error shouldBe null
-                withClue("both really were tapped again, and both taps report not-first") {
-                    result.events.tapsOf(wurm).single().firstThisTurn shouldBe false
-                    result.events.tapsOf(bears).single().firstThisTurn shouldBe false
-                }
-                game.resolveStack()
-                withClue("a batch holding only re-taps narrows to nothing, so no draw") {
-                    game.librarySize(1) shouldBe libraryBefore
-                }
-            }
-
             // ---- the data types ---------------------------------------------------------------
+
+            test("the window is per-permanent, and the batch combination is refused, not guessed") {
+                // No printed card pairs "one or more … become tapped" with a first-time clause, and
+                // the two readings of that pairing (narrow the batch to its first-time taps, versus
+                // fire only on the turn's first tap batch) can't be told apart without one. Rejecting
+                // the combination is what keeps a future card from silently inheriting a guess — so
+                // this pins the refusal, not a semantics.
+                shouldThrow<IllegalArgumentException> {
+                    EventPattern.TapEvent(batch = true, firstTimeEachTurn = true)
+                }
+                withClue("each half alone is fine") {
+                    EventPattern.TapEvent(batch = true).firstTimeEachTurn shouldBe false
+                    EventPattern.TapEvent(firstTimeEachTurn = true).batch shouldBe false
+                }
+            }
 
             test("the window is opt-in and renders in the pattern description") {
                 EventPattern.TapEvent().firstTimeEachTurn shouldBe false

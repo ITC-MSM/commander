@@ -224,7 +224,10 @@ sealed interface ManaRestriction {
      * shipped `data object` whose `@SerialName` is already on the wire — turning it into a
      * parameterized `data class` would change its serial shape. Ronin, Shadow Stalker's
      * "cast Equipment spells or activate equip abilities" is
-     * `AnyOf(SubtypeSpellsOnly(setOf("Equipment")), EquipAbilityActivationOnly)`.
+     * `AnyOf(SubtypeSpellsOnly(setOf("Equipment")), EquipAbilityActivationOnly)`, and Freya
+     * Crescent's identically-meant "cast an Equipment spell or activate an equip ability" is the
+     * same expression — it predates this atom and was converged onto it off
+     * [SubtypeSpellsOrAbilitiesOnly], which had been paying for Iron Man Armor's animate ability.
      */
     @SerialName("EquipAbilityActivationOnly")
     @Serializable

@@ -2039,6 +2039,16 @@ class TriggerMatcher(
                     container, state.turnNumber, predicate
                 )
         }
+        // Tap history — the same per-entity read, so a trigger filter naming "the first time it has
+        // become tapped this turn" gates exactly here too. Note this is the *state* half of Captain
+        // America's clause; the tap *event* half is `TapEvent.firstTimeEachTurn`, matched above.
+        com.wingedsheep.sdk.scripting.predicates.StatePredicate.BecameTappedOnlyOnceThisTurn -> {
+            val container = state.getEntity(entityId)
+            container != null &&
+                com.wingedsheep.engine.handlers.predicates.becameTappedOnlyOnceThisTurn(
+                    container, state.turnNumber
+                )
+        }
         // Graveyard-zone-only predicates; trigger gating never sees a stamped entity here.
         is com.wingedsheep.sdk.scripting.predicates.StatePredicate.PutIntoGraveyardThisTurn -> false
         is com.wingedsheep.sdk.scripting.predicates.StatePredicate.PutIntoGraveyardFromBattlefieldThisTurn -> false

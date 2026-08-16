@@ -26,12 +26,16 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  * - **"during your turn"** — `triggerRestriction = Conditions.IsYourTurn`. It is an adverbial
  *   narrowing of the *trigger event*, not the printed "if", so it is checked when the trigger would
  *   fire and never again (CR 603.2). Tapping your creatures on an opponent's turn does nothing.
- * - **"if it's the first time that creature has become tapped this turn"** —
- *   `firstTimeEachTurn = true`, the per-**permanent** window
- *   (`EventPattern.TapEvent.firstTimeEachTurn`). Note this is *not* `oncePerTurn`, which caps the
- *   *ability* at one firing per turn and would therefore untap only the first of several creatures
- *   tapped that turn. Tap three creatures for convoke and all three untap; untap one by other means
- *   and tap it again the same turn and it stays tapped.
+ * - **"if it's the first time that creature has become tapped this turn"** — the printed
+ *   intervening-`if` (CR 603.4), and therefore carried **twice**, once per check the rule demands:
+ *   `firstTimeEachTurn = true` on the tap event for the check made when the trigger event occurs,
+ *   and `interveningIf = Conditions.TriggeringPermanentBecameTappedOnlyOnceThisTurn` for the check
+ *   made again as the ability resolves. See below for why it takes two.
+ *
+ *   Note this is *not* `oncePerTurn`, which caps the *ability* at one firing per turn and would
+ *   therefore untap only the first of several creatures tapped that turn — the clause names the
+ *   creature, not the ability. Tap three creatures for convoke and all three untap; untap one by
+ *   other means and tap it again the same turn and it stays tapped.
  *
  * A creature that *entered the battlefield tapped* never became tapped (CR 701.26a — only untapped
  * permanents can be tapped), so it emits no tap event on entry and its first real tap that turn still
@@ -44,20 +48,21 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  * doesn't prevent its combat damage"), which is why the convoke/crew/tap-for-mana angle and the attack
  * angle both work.
  *
- * **Known divergence in the "if" clause's timing.** The clause that immediately follows the trigger
- * event — "if it's the first time that creature has become tapped this turn" — is the printed
- * intervening-`if` (CR 603.4), so it should be checked on trigger *and* re-checked on resolution.
- * Here it is carried by the `firstTimeEachTurn` event-pattern rider, which is evaluated only when the
- * tap event happens, so the second check never runs. It is deliberately **not** [interveningIf]:
- * that field takes a `Condition` evaluated against game state at resolution, and the fact this clause
- * needs — the triggering `TappedEvent.firstThisTurn` — is a property of the event, which the stack
- * object does not carry (it carries last-known subtypes and card types, not event flags).
+ * **Why the "if" clause needs both halves.** CR 603.4 checks a printed intervening-`if` when the
+ * trigger event occurs *and* again as the ability resolves, and the two checks have to be able to
+ * disagree or the second one is decorative. They read the same per-permanent tap counter
+ * (`HasBecomeTappedComponent`) from opposite ends:
+ *
+ *  - The event rider reads the tap **event** (`TappedEvent.firstThisTurn`, computed by `tap()` from
+ *    the counter before it incremented). Per-event, so it stays exact even when one game action taps
+ *    the same creature more than once.
+ *  - The intervening-`if` reads the counter **live** at resolution. Untap the creature and tap it
+ *    again in response to the trigger and it has become tapped twice by the time the ability
+ *    resolves, so the condition is false and the ability is removed from the stack — which is the
+ *    printed outcome, and the one a frozen copy of the event flag could never produce.
  *
  * The "during your turn" half is *not* part of this: it narrows the trigger event, so being checked
- * once is correct for it, and it is a `triggerRestriction`.
- *
- * The divergence needs the creature untapped and tapped again in response to the trigger — two
- * instants deep — and can only grant an extra untap, never withhold one.
+ * once is correct for it, and it stays a `triggerRestriction`.
  */
 val CaptainAmericaLivingLegend = card("Captain America, Living Legend") {
     manaCost = "{1}{W}{U}"
@@ -77,6 +82,7 @@ val CaptainAmericaLivingLegend = card("Captain America, Living Legend") {
             firstTimeEachTurn = true
         )
         triggerRestriction = Conditions.IsYourTurn
+        interveningIf = Conditions.TriggeringPermanentBecameTappedOnlyOnceThisTurn
         effect = Effects.Untap(EffectTarget.TriggeringEntity)
     }
 

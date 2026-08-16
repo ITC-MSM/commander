@@ -4,6 +4,7 @@ import com.wingedsheep.engine.state.components.battlefield.chosenColor
 import com.wingedsheep.engine.state.components.battlefield.chosenCreatureType
 import com.wingedsheep.engine.state.components.battlefield.CastChoicesComponent
 import com.wingedsheep.engine.state.components.battlefield.ChoiceValue
+import com.wingedsheep.engine.handlers.predicates.becameTappedOnlyOnceThisTurn
 import com.wingedsheep.engine.handlers.predicates.hasDealtDamage
 import com.wingedsheep.engine.handlers.predicates.receivedCounterThisTurn
 import com.wingedsheep.engine.state.ComponentContainer
@@ -475,6 +476,10 @@ internal class AffectsFilterResolver {
         // is identical to PredicateEvaluator's.
         is StatePredicate.ReceivedCounterThisTurn ->
             receivedCounterThisTurn(container, predicate)
+        // Tap history — likewise plain per-entity state, so a group static gated on "each creature
+        // that has become tapped for the first time this turn" resolves during projection.
+        StatePredicate.BecameTappedOnlyOnceThisTurn ->
+            becameTappedOnlyOnceThisTurn(container, state.turnNumber)
         StatePredicate.WasDealtDamageThisTurn -> container.has<WasDealtDamageThisTurnComponent>()
         // Damage history — plain per-entity state with no source-relative half, so a group static
         // gated on "each creature that dealt damage this turn" resolves during projection and gives

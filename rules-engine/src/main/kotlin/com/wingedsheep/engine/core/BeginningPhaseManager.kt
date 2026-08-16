@@ -481,6 +481,12 @@ class BeginningPhaseManager(
         // answer (match everything rather than nothing). The lifetime window is just the marker.
         is StatePredicate.HasDealtDamage ->
             if (predicate.thisTurnOnly) false else container.has<HasDealtDamageComponent>()
+        // Tap history, by the same argument as the per-turn damage window above: the untap step is
+        // the first step of the turn, so no permanent has become tapped this turn yet and nothing can
+        // have become tapped exactly once. Answered exactly rather than falling open, because an
+        // "untap each creature that became tapped for the first time this turn" filter that matched
+        // everything would untap the whole board.
+        StatePredicate.BecameTappedOnlyOnceThisTurn -> false
         is StatePredicate.HasCounter -> {
             val countersComponent = container.get<CountersComponent>()
             if (countersComponent == null) {

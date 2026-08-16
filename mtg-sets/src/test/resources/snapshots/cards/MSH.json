@@ -3203,6 +3203,15 @@
                     "target": "TriggeringEntity",
                     "tap": false
                 },
+                "interveningIf": {
+                    "type": "EntityMatches",
+                    "entity": "TriggeringEntity",
+                    "filter": {
+                        "statePredicates": [
+                            "BecameTappedOnlyOnceThisTurn"
+                        ]
+                    }
+                },
                 "triggerRestriction": "IsYourTurn"
             }
         ]

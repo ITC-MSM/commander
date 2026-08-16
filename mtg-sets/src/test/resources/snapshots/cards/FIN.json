@@ -6905,8 +6905,16 @@
                     "type": "AddMana",
                     "color": "RED",
                     "restriction": {
-                        "type": "SubtypeSpellsOrAbilitiesOnly",
-                        "subtype": "Equipment"
+                        "type": "AnyOf",
+                        "restrictions": [
+                            {
+                                "type": "SubtypeSpellsOnly",
+                                "subtypes": [
+                                    "Equipment"
+                                ]
+                            },
+                            "EquipAbilityActivationOnly"
+                        ]
                     }
                 },
                 "timing": "ManaAbility",

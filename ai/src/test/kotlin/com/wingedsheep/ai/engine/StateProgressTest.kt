@@ -92,7 +92,9 @@ class StateProgressTest : FunSpec({
         val here = StateProgress.digest(base)
 
         withClue("HasBecomeTappedComponent") {
-            val stamped = base.updateEntity(bears) { it.with(HasBecomeTappedComponent(base.turnNumber)) }
+            val stamped = base.updateEntity(bears) {
+                it.with(HasBecomeTappedComponent(base.turnNumber, timesThisTurn = 1))
+            }
             StateProgress.digest(stamped) shouldBe here
         }
         withClue("TargetedByControllerThisTurnComponent") {

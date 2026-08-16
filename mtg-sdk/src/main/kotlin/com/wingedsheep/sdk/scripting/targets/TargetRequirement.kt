@@ -253,6 +253,16 @@ data class TargetCreatureOrPlayer(
  * anti-drift at zero serialization cost — once its face-down special case (CR 708.2) is confirmed
  * to survive the general path. Not done in this change.
  *
+ * **Before adding a sixth "… or player" type, read `backlog/target-union-with-arms.md`.**
+ * That scoping doc proposes collapsing this whole family — [AnyTarget], [TargetCreatureOrPlayer],
+ * [TargetPlayerOrPlaneswalker], [TargetOpponentOrPlaneswalker] and this type — into one
+ * `TargetUnion(arms)` where each arm carries its own criteria. This requirement is the closest
+ * existing type to that shape (it is the only member of the family with a criteria slot, and the
+ * proposal's central complaint about the others is that they have none), so it is the intended
+ * migration target: a new "X or player" wording should be `TargetPermanentOrPlayer(permanentFilter
+ * = …)` rather than another bespoke type, and if it genuinely cannot be, that is the signal to build
+ * `TargetUnion` instead of extending the family again.
+ *
  * Legality is the union of the two halves — a permanent target is checked for
  * hexproof/shroud/protection like any permanent, a player target like any player — and, being a
  * target, it is chosen on announcement (CR 601.2c) and re-checked on resolution (CR 608.2b).

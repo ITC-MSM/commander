@@ -767,6 +767,21 @@ data class GameObjectFilter(
     )
 
     /**
+     * Must have become tapped **exactly once so far this turn** — the live reading of "if it's the
+     * first time that creature has become tapped this turn" (Captain America, Living Legend), backed
+     * by [StatePredicate.BecameTappedOnlyOnceThisTurn].
+     *
+     * Answers from the permanent's current tap count, so it is the half of that printed intervening
+     * "if" that CR 603.4 re-checks at resolution; the trigger-time half rides on the tap event as
+     * `Triggers.becomesTapped(firstTimeEachTurn = true)`. `Conditions
+     * .TriggeringPermanentBecameTappedOnlyOnceThisTurn` is this predicate aimed at the triggering
+     * permanent.
+     */
+    fun becameTappedOnlyOnceThisTurn() = copy(
+        statePredicates = statePredicates + StatePredicate.BecameTappedOnlyOnceThisTurn
+    )
+
+    /**
      * Must have had one or more counters put on it this turn — the counter-history counterpart of
      * [wasDealtDamageThisTurn]. Recorded at placement time, so it survives the counters being removed
      * again; cleared at end-of-turn cleanup.

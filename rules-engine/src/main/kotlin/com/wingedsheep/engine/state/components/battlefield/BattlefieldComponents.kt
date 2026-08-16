@@ -1204,32 +1204,50 @@ data object WasDealtDamageThisTurnComponent : Component
 data class HasDealtDamageComponent(val lastDealtDamageTurn: Int) : Component
 
 /**
- * Records the turn a permanent most recently *became tapped* (CR 701.26a — a transition from
- * untapped to tapped, which is what emits a `TappedEvent`).
+ * Counts how many times a permanent has *become tapped* (CR 701.26a — a transition from untapped to
+ * tapped, which is what emits a `TappedEvent`) during the turn named by [lastBecameTappedTurn].
  *
- * Read by [com.wingedsheep.engine.core.tap] immediately *before* it stamps the new turn, to compute
- * `TappedEvent.firstThisTurn` for the per-permanent "if it's the first time that creature has become
- * tapped this turn" trigger rider (`EventPattern.TapEvent.firstTimeEachTurn`, Captain America,
- * Living Legend).
+ * Written by [com.wingedsheep.engine.core.tap] on every tap transition, and read by the two halves
+ * of Captain America, Living Legend's "if it's the first time that creature has become tapped this
+ * turn" — which is a printed intervening "if" (CR 603.4) and therefore gets **two** checks:
  *
- * Deliberately a turn *stamp*, not a cleared marker: the window expires on its own once
- * [com.wingedsheep.engine.state.GameState.turnNumber] moves past the stamp, so there is no
- * `CleanupPhaseManager` entry to forget (the same reasoning as [HasDealtDamageComponent]). It IS
- * stripped when the permanent changes zones (`ZoneMovementUtils`), because what comes back is a new
- * object with no memory of having been tapped (CR 400.7).
+ *  - **When the trigger event occurs.** [com.wingedsheep.engine.core.tap] reads the counter *before*
+ *    incrementing it to compute `TappedEvent.firstThisTurn`, which the event-pattern rider
+ *    `EventPattern.TapEvent.firstTimeEachTurn` matches on. Per-*event*, so it stays exact even if a
+ *    single game action taps the same permanent more than once.
+ *  - **Again as the ability resolves.** `StatePredicate.BecameTappedOnlyOnceThisTurn` reads the
+ *    counter live — "exactly once so far this turn". A creature untapped and re-tapped in response
+ *    to the trigger reads 2 by then, so the ability correctly fizzles. A frozen event flag could not
+ *    answer this: it would repeat the trigger-time answer and make CR 603.4's second check a no-op.
+ *
+ * Keeping the count (rather than a bare turn stamp) is what makes the second check possible at all,
+ * and it is why both halves read one component instead of a marker plus a parallel tracker.
+ *
+ * Deliberately a turn *stamp* plus a count, not a cleared marker: the window expires on its own once
+ * [com.wingedsheep.engine.state.GameState.turnNumber] moves past the stamp — a stale stamp reads as
+ * zero taps this turn — so there is no `CleanupPhaseManager` entry to forget (the same reasoning as
+ * [HasDealtDamageComponent]). It IS stripped when the permanent changes zones
+ * (`ZoneMovementUtils`), because what comes back is a new object with no memory of having been
+ * tapped (CR 400.7).
  *
  * A permanent that *enters the battlefield tapped* never became tapped, so it is never stamped here
  * — tapping it later that turn is correctly still its first time.
  *
- * Regeneration's tap (CR 701.19a — "its controller taps it") stamps here like any other tap:
+ * Regeneration's tap (CR 701.19a — "its controller taps it") counts here like any other tap:
  * `ZoneMovementUtils.applyRegenerationReplacement` routes through [com.wingedsheep.engine.core.tap],
- * so a creature regenerated while untapped is stamped and a later tap that turn correctly reads as
+ * so a creature regenerated while untapped is counted and a later tap that turn correctly reads as
  * *not* its first.
  *
- * [lastBecameTappedTurn] has no default: every stamp site must name the turn it is recording.
+ * Neither field has a default: every write site must name the turn it is recording and the count it
+ * is recording for that turn. Read it through
+ * [com.wingedsheep.engine.core.becameTappedTimesThisTurn] rather than directly, so the
+ * stale-stamp-means-zero rule is applied in one place.
  */
 @Serializable
-data class HasBecomeTappedComponent(val lastBecameTappedTurn: Int) : Component
+data class HasBecomeTappedComponent(
+    val lastBecameTappedTurn: Int,
+    val timesThisTurn: Int
+) : Component
 
 /**
  * Marks a permanent as having dealt combat damage to a player since entering the battlefield.

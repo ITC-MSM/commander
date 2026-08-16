@@ -190,6 +190,52 @@ class CaptainAmericaLivingLegendScenarioTest : ScenarioTestBase() {
                 }
             }
 
+            test("untapping and re-tapping in response fizzles the trigger (CR 603.4's second check)") {
+                // The printed "if" is an intervening-`if`, so it is checked when the trigger event
+                // occurs *and again as the ability resolves*. This is the only case where the two
+                // checks disagree, and therefore the only test that can tell a real second check
+                // from a frozen copy of the first: hold the trigger on the stack, untap the creature
+                // and tap it again underneath it, and by resolution the creature has become tapped
+                // twice this turn — so the ability is removed from the stack and the creature stays
+                // tapped. An implementation that re-read the triggering event's flag would untap it.
+                val game = scenario()
+                    .withPlayers("Player", "Opponent")
+                    .withCardOnBattlefield(1, "Captain America, Living Legend")
+                    .withCardOnBattlefield(1, "Grizzly Bears")
+                    .withCardsInHand(1, "Tap Pulse", 2)
+                    .withCardInHand(1, "Untap Pulse")
+                    .withLandsOnBattlefield(1, "Plains", 9)
+                    .withActivePlayer(1)
+                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                    .build()
+
+                val bears = game.findPermanent("Grizzly Bears").shouldNotBeNull()
+
+                // Resolve only the Tap Pulse, so the trigger it spawns is left sitting on the stack.
+                game.castSpell(1, "Tap Pulse", targetId = bears).error shouldBe null
+                game.passPriority()
+                game.passPriority()
+                withClue("the tap happened and Captain America's trigger is waiting to resolve") {
+                    game.state.getEntity(bears)?.has<TappedComponent>() shouldBe true
+                    game.state.stack.isNotEmpty() shouldBe true
+                }
+
+                // Respond underneath it: untap, then tap a second time. The second tap is not a
+                // first tap, so the event rider stops it spawning a trigger of its own — the stack
+                // still holds exactly the one trigger from the first tap.
+                game.castSpell(1, "Untap Pulse", targetId = bears).error shouldBe null
+                game.passPriority()
+                game.passPriority()
+                game.castSpell(1, "Tap Pulse", targetId = bears).error shouldBe null
+                game.passPriority()
+                game.passPriority()
+
+                game.resolveStack()
+                withClue("the intervening-'if' is false on resolution, so nothing untaps") {
+                    game.state.getEntity(bears)?.has<TappedComponent>() shouldBe true
+                }
+            }
+
             test("a creature you control tapped on an opponent's turn stays tapped") {
                 val game = scenario()
                     .withPlayers("Player", "Opponent")

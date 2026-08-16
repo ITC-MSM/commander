@@ -41,8 +41,11 @@ import io.kotest.matchers.shouldNotBe
  * from restricted mana; the refusal of the same Equipment's non-equip ability (through **legal-action
  * enumeration**, not just a rejected submission); and the mana emptying as the step ends.
  *
- * Ronin, Shadow Stalker is the only current producer; its card-level behaviour lives in
- * `RoninShadowStalkerScenarioTest`.
+ * Two cards produce this mana today, both printing the same clause: Ronin, Shadow Stalker
+ * ("Spend this mana only to cast Equipment spells or activate equip abilities") and Freya Crescent
+ * ("…an Equipment spell or activate an equip ability"). Their card-level behaviour lives in
+ * `RoninShadowStalkerScenarioTest` and `FreyaCrescentScenarioTest`; Freya is the convergence case —
+ * it shipped on the over-broad `SubtypeSpellsOrAbilitiesOnly` spelling and moved onto this atom.
  */
 class EquipAbilityManaRestrictionTest : ScenarioTestBase() {
 

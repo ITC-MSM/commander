@@ -1605,12 +1605,29 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
          *
          * The window is a *becomes tapped* window, not a *was tapped* one: a permanent that **entered
          * the battlefield tapped** never became tapped (CR 701.26a — only untapped permanents can be
-         * tapped), so tapping it later that turn is still its first time. Batch triggers narrow to the
-         * first-time taps in the batch rather than being discarded, the same way [reason] and [tapper]
-         * narrow.
+         * tapped), so tapping it later that turn is still its first time.
+         *
+         * **Per-permanent only — cannot be combined with [batch].** No printed card pairs the "one or
+         * more … become tapped" wording with a first-time clause, and the two plausible readings of
+         * that combination (narrow the batch to its first-time taps, versus fire only on the turn's
+         * first tap *batch*) are not obviously distinguishable without one. Rather than ship a guess
+         * that a future card would silently inherit, the combination is rejected outright; the first
+         * real card decides the reading, and this `require` is where that decision gets recorded.
+         *
+         * This clause is a printed intervening "if" (CR 603.4), so a card using it wants **both**
+         * checks: this rider for the check made when the trigger event occurs, and
+         * `interveningIf = Conditions.TriggeringPermanentBecameTappedOnlyOnceThisTurn` for the check
+         * made again at resolution. This one alone leaves the second check unimplemented.
          */
         val firstTimeEachTurn: Boolean = false
     ) : EventPattern {
+        init {
+            require(!(batch && firstTimeEachTurn)) {
+                "TapEvent: firstTimeEachTurn is per-permanent and has no settled batch reading; " +
+                    "see the field's documentation"
+            }
+        }
+
         override val description: String = buildString {
             if (tapper != null) {
                 append(tapper.description.replaceFirstChar { it.uppercase() })

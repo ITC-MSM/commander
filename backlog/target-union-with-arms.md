@@ -58,6 +58,7 @@ The right model separates these: the **arm type** encodes kind; the **arm payloa
 |---|---|---|
 | `AnyTarget` | creature / planeswalker / player (CR also battle) | ❌ none |
 | `TargetCreatureOrPlayer` | creature, player | ❌ none |
+| `TargetPermanentOrPlayer` | permanent, player | `permanentFilter` ✅ |
 | `TargetPlayerOrPlaneswalker` | player, planeswalker | ❌ none |
 | `TargetOpponentOrPlaneswalker` | opponent, planeswalker | ❌ none |
 | `TargetCreatureOrPlaneswalker` | creature, planeswalker — **both objects** | (object OR; no player) |
@@ -68,6 +69,15 @@ Note the last two object-only rows: `TargetCreatureOrPlaneswalker` and `TargetSp
 cross the player boundary and do **not** need this proposal — creature-or-planeswalker is already a plain
 `TargetObject(filter = GameObjectFilter.CreatureOrPlaneswalker)`, and spell-or-permanent is an object union
 across zones. `TargetUnion` earns its keep specifically **when a player arm is involved.**
+
+**`TargetPermanentOrPlayer` (added for Powerful Broker) is the interim shape and the migration target.**
+It is the only player-crossing member with a criteria slot on its object arm, which is half of what this
+proposal asks for — the missing half is criteria on the *player* arm (§3.2). Until `TargetUnion` exists,
+a new "… or player" wording should be spelled `TargetPermanentOrPlayer(permanentFilter = …)` rather than
+a seventh bespoke type; a wording that genuinely cannot be expressed that way is the signal to build
+`TargetUnion` rather than extend the family again. When `TargetUnion` lands, this type is the natural
+first one to reduce to `TargetUnion(Obj(permanentFilter), Player(null))`, since it has no legacy
+serialized shape to preserve beyond its own.
 
 ### 3.2 There is no player-criteria layer at enumeration time
 
