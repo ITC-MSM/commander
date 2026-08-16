@@ -27,9 +27,9 @@ that is normalization's job — the one join whose inverse is free, because the 
 its own newlines. The grammar half is small and multiplicative: a modal block is a **clause
 position** rather than a line, so the 204 cards that print the header inside a trigger or after an
 activation cost cost nothing beyond the 446 that print it alone, and a *mode* is one whole sentence
-from the enclosing cascade. See [the modal band](#the-modal-band) below; it found eight card bugs,
-including two cards that fake "one or both" as a third mode and one whose board wipe destroys one
-permanent at a time.
+from the enclosing cascade. See [the modal band](#the-modal-band) below; it found eight card
+bugs — two faking "one or both" as a third mode, one board wipe destroying one permanent at a time —
+and all eight are fixed in the same change, so the differential is back at **2,784 / 2,784**.
 
 Before it came the **cost band** — what you pay, everywhere you pay it. It is the largest
 single delivery a family has made here (**+274 whole cards**, 7,177 → 7,451) and the first one that
@@ -690,30 +690,41 @@ because `description` is not a rare name and `AlternativeCostEffect` carries one
 it does. Everything that decides what a mode *does* is still compared, and so are the count fields
 above it, which is where two of the findings below came from.
 
-**What it found: eight divergences, and every one is a card bug.** The first non-zero the gate has
-reported since the cost band, and the classification is the product:
+**What it found: eight divergences, every one a card bug, and all eight are fixed here.** The gate
+went 2,747 / 2,747 to 2,784 / 2,784 — thirty-seven more cards compared, eight of them wrong when the
+grammar first looked. Each fix is a card change with a scenario test where the behaviour moved:
 
 - **Winterflame** and **Scour for Scrap** fake "one or both" as *three* modes with `chooseCount = 1`
   — tap, damage, and a third mode that does both. `ModalEffect` has `minChooseCount` for exactly this
-  (CR 700.2), and the hand-written spelling is a different card: it lets a player choose the
-  "both" mode while paying no attention to the two-target rules, and it reports one chosen mode where
-  `SpellCastEvent.chosenModesCount` should say two.
-- **Split Up** destroys each half of the board with a `ForEach` over the group where every other
+  (CR 700.2), and the hand-written spelling is a different card: it offers a mode the card does not
+  print, and it reports one chosen mode where `SpellCastEvent.chosenModesCount` should say two. Both
+  are now `chooseCount = 2, minChooseCount = 1` over the two printed modes, with
+  `WinterflameScenarioTest` and `ScourForScrapScenarioTest` covering one mode, both modes, and the
+  mode count itself.
+- **Split Up** destroyed each half of the board with a `ForEach` over the group where every other
   sweep in the corpus gathers first and destroys the collection. That is not a spelling: gathering is
-  what makes a wrath destroy simultaneously, and one-at-a-time changes what dies-triggers see.
-- **Bejeweled Warg** carries `countsAsModalSpell = false` on a printed "Choose one —" trigger. The
+  what makes the creatures leave together, and one at a time changes what a dies-trigger sees. It is
+  `Effects.DestroyAll` now, with `SplitUpScenarioTest` asserting both halves and a two-trigger sweep.
+- **Bejeweled Warg** carried `countsAsModalSpell = false` on a printed "Choose one —" trigger. The
   field's own KDoc says `true` is for exactly that wording and `false` is for the non-modal mechanics
-  that reuse the type (Gift).
+  that reuse the type (Gift); CR 700.2 makes a *spell or ability* modal on that wording, so the flag
+  was saying something untrue about text that plainly is modal. It was also inert, since the only
+  reader is the spell-cast path a triggered ability never reaches — which is why it survived review.
+  Removed; the card's existing scenario test still passes unchanged.
 - **Four cards are the bare-tribal-noun family again** — Bejeweled Warg's "target Wolf you control",
   Black Panther's "another nontoken Hero you control", Misery Charm's "target Cleric" and Vitality
   Charm's "target Beast", all `IsCreature` where the printed noun names only a subtype. The same
   class the 103-card migration fixed everywhere the grammar could already see; these four sat inside
-  a modal block, which nothing read until now.
+  a modal block, which nothing read until now. All four now name `Permanent`, which is a filter edit
+  and a re-bless — the treatment that migration established.
 - **Misery Charm and Decoy Ploy** put no `IsPermanent` on "target Cleric card from your graveyard"
   where `TargetFilter.PermanentInYourGraveyard` — a facade that migration created, and whose KDoc
   says a bare tribal noun in front of "card" names any permanent card — says they should. Two cards
   on one side of a decided question and two (Angel of Flight Alabaster, Lord of the Undead) on the
-  other; the grammar follows the SDK's documented reading and reports the two that do not.
+  other. **The grammar was flipped to match the minority and the flip was reverted**: the SDK facade
+  documents the reading and the migration created it, so reversing a decided question inside a
+  band's PR would be the gate lying about which side is wrong. Both cards now go through the facade.
+  Decoy Ploy's was the wider miss — `GameObjectFilter.Any` would let a Villain *instant* be chosen.
 
 **One print mismatch, and it was not in this family.** A two-colour token line became reachable for
 the first time and `Tokens` printed "white and green" where Exhibition Magician prints "green and
@@ -787,14 +798,15 @@ named population bucket instead and the denominator stays visible.
     Oracle text differs from golden  197
     golden would not decode            0
 
-  Confirmed — models agree           2776   997.1‰ (99.7%)
-  DIVERGENT — read every one            8
+  Confirmed — models agree           2784   1000.0‰ (100.0%)
+  DIVERGENT — read every one            0
 ```
 
-The eight are the modal band's, and every one is a **card** bug — they are listed and classified in
-[the modal band](#the-modal-band) above. Zero was never the property; a run at zero means the gate
-has nothing left to say about the cards it can currently see, and the number goes up every time the
-grammar reaches a slot nobody had compared before. That is the gate earning its keep.
+Back at zero, and thirty-seven cards wider than the last time it was. The modal band took it off
+zero with eight divergences and every one turned out to be a **card** bug; they are listed,
+classified and fixed in [the modal band](#the-modal-band) above. Zero was never the property — the
+count goes up every time the grammar reaches a slot nobody had compared before, and that rise is the
+gate earning its keep rather than a regression.
 
 **The last time the count was at zero, the card that had taken it off zero was a card bug.** The Bloomburrow
 band's one standing divergence was the already-open `ManaColorSet.Specific` finding, recurring on

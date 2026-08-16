@@ -23,11 +23,12 @@ import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
  *
  * Modeling notes:
  *  - "Another nontoken Hero you control" is an OTHER-bound [Triggers.entersBattlefield] over
- *    `Creature.withSubtype(HERO).youControl().nontoken()`. The OTHER binding supplies the
+ *    `Permanent.withSubtype(HERO).youControl().nontoken()`. The OTHER binding supplies the
  *    "another", so Black Panther entering never triggers himself; the `nontoken()` clause means
- *    the Soldier / Hero tokens this deck makes don't feed him. Note the printed filter is a
- *    *creature* Hero — every Hero in the set is a creature, and reading it as one keeps the
- *    trigger off noncreature permanents that pick up the subtype.
+ *    the Soldier / Hero tokens this deck makes don't feed him. **`Permanent`, not `Creature`**: a
+ *    bare tribal noun names every permanent with the subtype, and the adjectival "Hero creature"
+ *    is what would narrow it. Every printed Hero being a creature makes the two select the same
+ *    permanents today and does not make them the same filter.
  *  - The mode choice is made as the ability goes on the stack (CR 603.3c), which is why this is
  *    a [ModalEffect] with `chooseCount = 1` rather than a resolution-time branch. Neither mode
  *    targets, so both are [Mode.noTarget].
@@ -47,7 +48,7 @@ val BlackPantherVanguard = card("Black Panther, Vanguard") {
 
     triggeredAbility {
         trigger = Triggers.entersBattlefield(
-            filter = GameObjectFilter.Creature.withSubtype(Subtype.HERO).youControl().nontoken(),
+            filter = GameObjectFilter.Permanent.withSubtype(Subtype.HERO).youControl().nontoken(),
             binding = TriggerBinding.OTHER,
         )
         effect = ModalEffect(

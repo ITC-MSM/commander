@@ -10139,7 +10139,7 @@
                         {
                             "type": "TargetObject",
                             "filter": {
-                                "baseFilter": "creature Cleric"
+                                "baseFilter": "permanent Cleric"
                             },
                             "id": "target"
                         }
@@ -10159,7 +10159,7 @@
                         {
                             "type": "TargetObject",
                             "filter": {
-                                "baseFilter": "Cleric own:you",
+                                "baseFilter": "permanent Cleric own:you",
                                 "zone": "Graveyard"
                             },
                             "id": "target"
@@ -16808,7 +16808,7 @@
                         {
                             "type": "TargetObject",
                             "filter": {
-                                "baseFilter": "creature Beast"
+                                "baseFilter": "permanent Beast"
                             },
                             "id": "target"
                         }

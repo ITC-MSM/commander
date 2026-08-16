@@ -1,11 +1,9 @@
 package com.wingedsheep.mtg.sets.definitions.msh.cards
 
 import com.wingedsheep.sdk.core.Subtype
-import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
-import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.filters.unified.TargetFilter
 import com.wingedsheep.sdk.scripting.targets.TargetObject
 
@@ -24,6 +22,9 @@ import com.wingedsheep.sdk.scripting.targets.TargetObject
  * - A card that is both a Villain *and* a Hero can legally be chosen by either mode, and the
  *   two modes may pick different cards (they are separate targets); nothing forbids them from
  *   picking the same card if it has both subtypes, in which case the second return is a no-op.
+ * - [TargetFilter.PermanentInYourGraveyard] is the facade for a bare tribal noun in front of the
+ *   noun *card*: "target Villain card" names any permanent card with the subtype, not any card at
+ *   all. `GameObjectFilter.Any` would also let a Villain instant or sorcery be chosen.
  */
 val DecoyPloy = card("Decoy Ploy") {
     manaCost = "{1}{B}"
@@ -38,24 +39,14 @@ val DecoyPloy = card("Decoy Ploy") {
             mode("Return target Villain card from your graveyard to your hand") {
                 val villain = target(
                     "target Villain card in your graveyard",
-                    TargetObject(
-                        filter = TargetFilter(
-                            GameObjectFilter.Any.ownedByYou().withSubtype(Subtype.VILLAIN),
-                            zone = Zone.GRAVEYARD
-                        )
-                    )
+                    TargetObject(filter = TargetFilter.PermanentInYourGraveyard.withSubtype(Subtype.VILLAIN))
                 )
                 effect = Effects.ReturnToHand(villain)
             }
             mode("Return target Hero card from your graveyard to your hand") {
                 val hero = target(
                     "target Hero card in your graveyard",
-                    TargetObject(
-                        filter = TargetFilter(
-                            GameObjectFilter.Any.ownedByYou().withSubtype(Subtype.HERO),
-                            zone = Zone.GRAVEYARD
-                        )
-                    )
+                    TargetObject(filter = TargetFilter.PermanentInYourGraveyard.withSubtype(Subtype.HERO))
                 )
                 effect = Effects.ReturnToHand(hero)
             }

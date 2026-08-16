@@ -13701,7 +13701,7 @@
                         "type": "TapUntap",
                         "target": {
                             "type": "BoundVariable",
-                            "name": "creature"
+                            "name": "creature to tap"
                         }
                     },
                     "targetRequirements": [
@@ -13710,7 +13710,7 @@
                             "filter": {
                                 "baseFilter": "creature"
                             },
-                            "id": "creature"
+                            "id": "creature to tap"
                         }
                     ],
                     "description": "Tap target creature"
@@ -13724,52 +13724,10 @@
                         },
                         "target": {
                             "type": "BoundVariable",
-                            "name": "creature"
+                            "name": "creature to damage"
                         }
                     },
                     "targetRequirements": [
-                        {
-                            "type": "TargetObject",
-                            "filter": {
-                                "baseFilter": "creature"
-                            },
-                            "id": "creature"
-                        }
-                    ],
-                    "description": "Winterflame deals 2 damage to target creature"
-                },
-                {
-                    "effect": {
-                        "type": "Composite",
-                        "effects": [
-                            {
-                                "type": "TapUntap",
-                                "target": {
-                                    "type": "BoundVariable",
-                                    "name": "creature to tap"
-                                }
-                            },
-                            {
-                                "type": "DealDamage",
-                                "amount": {
-                                    "type": "Fixed",
-                                    "amount": 2
-                                },
-                                "target": {
-                                    "type": "BoundVariable",
-                                    "name": "creature to damage"
-                                }
-                            }
-                        ]
-                    },
-                    "targetRequirements": [
-                        {
-                            "type": "TargetObject",
-                            "filter": {
-                                "baseFilter": "creature"
-                            },
-                            "id": "creature to tap"
-                        },
                         {
                             "type": "TargetObject",
                             "filter": {
@@ -13778,9 +13736,11 @@
                             "id": "creature to damage"
                         }
                     ],
-                    "description": "Tap target creature and deal 2 damage to target creature"
+                    "description": "Winterflame deals 2 damage to target creature"
                 }
-            ]
+            ],
+            "chooseCount": 2,
+            "minChooseCount": 1
         }
     },
     "metadata": {

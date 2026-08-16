@@ -13004,8 +13004,8 @@
                     "effect": {
                         "type": "MoveToZone",
                         "target": {
-                            "type": "ContextTarget",
-                            "index": 0
+                            "type": "BoundVariable",
+                            "name": "artifact card in your graveyard"
                         },
                         "destination": "Hand"
                     },
@@ -13015,74 +13015,15 @@
                             "filter": {
                                 "baseFilter": "artifact own:you",
                                 "zone": "Graveyard"
-                            }
+                            },
+                            "id": "artifact card in your graveyard"
                         }
                     ],
                     "description": "Return target artifact card from your graveyard to your hand"
-                },
-                {
-                    "effect": {
-                        "type": "Composite",
-                        "effects": [
-                            {
-                                "type": "Composite",
-                                "effects": [
-                                    {
-                                        "type": "GatherCards",
-                                        "source": {
-                                            "type": "FromZone",
-                                            "zone": "Library",
-                                            "filter": "artifact"
-                                        },
-                                        "storeAs": "searchable"
-                                    },
-                                    {
-                                        "type": "SelectFromCollection",
-                                        "from": "searchable",
-                                        "selection": {
-                                            "type": "ChooseUpTo",
-                                            "count": {
-                                                "type": "Fixed",
-                                                "amount": 1
-                                            }
-                                        },
-                                        "storeSelected": "found"
-                                    },
-                                    {
-                                        "type": "MoveCollection",
-                                        "from": "found",
-                                        "destination": {
-                                            "type": "ToZone",
-                                            "zone": "Hand"
-                                        },
-                                        "revealed": true
-                                    },
-                                    "ShuffleLibrary",
-                                    "EmitLibrarySearchedEvent"
-                                ]
-                            },
-                            {
-                                "type": "MoveToZone",
-                                "target": {
-                                    "type": "ContextTarget",
-                                    "index": 0
-                                },
-                                "destination": "Hand"
-                            }
-                        ]
-                    },
-                    "targetRequirements": [
-                        {
-                            "type": "TargetObject",
-                            "filter": {
-                                "baseFilter": "artifact own:you",
-                                "zone": "Graveyard"
-                            }
-                        }
-                    ],
-                    "description": "Search your library for an artifact card and return target artifact card from your graveyard to your hand"
                 }
-            ]
+            ],
+            "chooseCount": 2,
+            "minChooseCount": 1
         }
     },
     "metadata": {

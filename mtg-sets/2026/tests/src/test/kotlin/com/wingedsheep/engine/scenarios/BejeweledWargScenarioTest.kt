@@ -19,8 +19,11 @@ import io.kotest.matchers.shouldBe
  * • Put a +1/+1 counter on target Wolf you control.
  * • Create a Treasure token.
  *
- * Proves the modal *ability* (not a modal spell) reaches a mode decision off combat damage, and
- * that each mode does what it says.
+ * Proves the modal ability reaches a mode decision off combat damage, and that each mode does what
+ * it says. It is a modal ability rather than a modal spell, which is a statement about where the
+ * choice happens (CR 700.2b) and not about the `countsAsModalSpell` flag — that one marks the cards
+ * reusing [com.wingedsheep.sdk.scripting.effects.ModalEffect] for a mechanic with no printed
+ * "Choose one —", and this card prints one.
  */
 class BejeweledWargScenarioTest : ScenarioTestBase() {
 
