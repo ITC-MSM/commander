@@ -402,43 +402,6 @@ object Statics {
             }
         }
 
-    /**
-     * "Noncreature spells cost {1} more to cast." — Glowrider, and the tax half of the Sphere of
-     * Resistance family.
-     *
-     * `SpellCostTarget.AnyCaster` is the "everyone's spells" subject; `YouCast` is the other one and
-     * a different printed sentence ("Creature spells you cast cost {1} less"), so it is a future row
-     * rather than a slot. The modification is `IncreaseGeneric` and the amount is read off the
-     * printed mana symbol, which is why the slot is a whole [Primitives.manaCost] rather than a
-     * digit: the text spells the tax as `{1}`, a symbol, and generic mana is the only shape the
-     * model can hold.
-     */
-    private val spellsCostMore: Phrase<StaticAbility> =
-        phrase("{filter} spells cost {cost} more to cast.", name = "spells cost more to cast") {
-            slot("filter", Filters.plural)
-            slot("cost", Primitives.manaCost)
-            build { bindings ->
-                val generic = genericOnly(bindings.value("cost")) ?: return@build null
-                ModifySpellCost(
-                    target = SpellCostTarget.AnyCaster(bindings.value("filter")),
-                    modification = CostModification.IncreaseGeneric(generic),
-                )
-            }
-            match { value ->
-                val modify = value as? ModifySpellCost ?: return@match null
-                val target = modify.target as? SpellCostTarget.AnyCaster ?: return@match null
-                val increase = modify.modification as? CostModification.IncreaseGeneric ?: return@match null
-                val cost = ManaCost.parse("{${increase.amount}}")
-                if (value != ModifySpellCost(target, CostModification.IncreaseGeneric(increase.amount))) {
-                    return@match null
-                }
-                bind("filter" to target.filter, "cost" to cost)
-            }
-        }
-
-    /** The generic amount a mana cost is, or null when it says anything a tax cannot hold. */
-    private fun genericOnly(cost: ManaCost): Int? =
-        cost.takeIf { it == ManaCost.parse("{${it.genericAmount}}") }?.genericAmount
 
     // ---------------------------------------------------------------------------------------
     // Conditional statics — "as long as …"
@@ -548,7 +511,7 @@ object Statics {
     ) {
         slot("cost", Primitives.manaCost)
         build { bindings ->
-            genericOnly(bindings.value("cost"))?.let { AttackTax(DynamicAmount.Fixed(it)) }
+            Primitives.genericAmount(bindings.value("cost"))?.let { AttackTax(DynamicAmount.Fixed(it)) }
         }
         match { value ->
             val tax = value as? AttackTax ?: return@match null
@@ -602,7 +565,6 @@ object Statics {
         groupCantBeBlockedExceptBy,
         spellsCantBeCountered,
         spellsHaveFlash,
-        spellsCostMore,
         attackTax,
         selfPumpPerCount,
         chosenColourProtection("", canonicalForm = true),
@@ -644,7 +606,7 @@ object Statics {
             "${Normalizer.SELF} can block only {blockers}.",
             "can block only",
         ) { CanOnlyBlockCreaturesWith(blockerFilter = it) },
-    ) + lordStatic(
+    ) + SpellCosts.all + lordStatic(
         "get", "a group gets",
         parameter = Primitives.statModifiers,
         ability = { (power, toughness), group -> ModifyStats(power, toughness, group) },

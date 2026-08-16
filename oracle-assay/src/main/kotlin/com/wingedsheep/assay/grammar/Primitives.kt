@@ -186,6 +186,19 @@ object Primitives {
     )
 
     /**
+     * The generic amount a [manaCost] denotes, or null where it says anything a plain number cannot
+     * hold — `{W}`, `{1}{U}`, `{X}`.
+     *
+     * The generic/coloured split is a *model* distinction the SDK makes twice over (`ReduceGeneric`
+     * against `ReduceColored`, `AttackTax` against nothing), and both call sites need the same
+     * answer, so it is one function rather than a private copy in each. The test is a round trip
+     * rather than a field read: a cost equals its own generic amount respelled exactly when it holds
+     * nothing else.
+     */
+    fun genericAmount(cost: ManaCost): Int? =
+        cost.takeIf { it == ManaCost.parse("{${it.genericAmount}}") }?.genericAmount
+
+    /**
      * A card's **name**, as a card that searches for one by name prints it — "a card named Scion of
      * Darkness".
      *

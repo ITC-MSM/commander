@@ -20,7 +20,15 @@ and those are the two sentences on it. The **aura band** followed: `Enchant <fil
 attached-permanent statics, which opened `staticAbilities` — the largest `CardScript` slot the
 differential could not see into, and the one every later static family lands in.
 
-The most recent work is the **cost band** — what you pay, everywhere you pay it. It is the largest
+The most recent work is the **spell-cost band** — what a spell costs, and what changes it. It is
+the first band picked by the probe *against* both other rankings agreeing, and it delivered
+**+126 whole cards** (7,451 → 7,577) from one sentence read as three vocabularies: whose spells,
+by how much, and under what clause. See [the spell-cost band](#the-spell-cost-band); it also closed
+a reversible-but-wrong reading of every intervening-if whose consequence is more than one clause,
+and it leaves the largest single SDK finding this module has produced — `CostReductionSource`'s five
+`FixedIf…` cases restate `CostGating.OnlyIf`, and the corpus is split down the middle between them.
+
+Before it came the **cost band** — what you pay, everywhere you pay it. It is the largest
 single delivery a family has made here (**+274 whole cards**, 7,177 → 7,451) and the first one that
 needed no new grammar *machinery* at all, only a refactoring: `CostAtom`'s own KDoc calls itself
 "the one cost language", and the grammar now reads it that way round — one `Phrase<CostAtom>`
@@ -156,16 +164,16 @@ non-zero on. Declines are not failures.
 Cards assayed                    34882
 Ability lines                    66793  (38843 unique)
 
-Round-trips byte-exact           24993   374.2‰ (37.4%)
-Alternate spelling normalized    1247
-Declined                         40553
+Round-trips byte-exact           25551   382.5‰ (38.3%)
+Alternate spelling normalized    1326
+Declined                         39916
 Ambiguous — distinct readings    0
 Print mismatch                   0
 Normalization not invertible     0
 Full inverse not reproduced      0
 Redundant readings (same model)  0
 
-Cards fully covered              7177 / 34882   205.8‰ (20.6%)
+Cards fully covered              7577 / 34882   217.2‰ (21.7%)
 Vanilla + keyword-only cards     1444 / 1712   843.5‰ (84.3%)   <- Phase 1 target
 Portal (set POR)                 200 / 200     1000.0‰ (100%)   <- the Portal band's target
 Legions (set LGN)                145 / 145     1000.0‰ (100%)   <- the Legions band's target
@@ -611,6 +619,142 @@ they are three different bands rather than more rows:
   here: the artifact subtypes the SDK publishes no list for, and the type disjunction.
 - **`{S}`** (20 cards) is an **SDK gap** — `ManaCost` cannot express snow mana, so `Primitives.manaCost`
   declines rather than inventing a symbol. That one is `add-feature` work.
+
+## The spell-cost band
+
+What a spell costs, and what changes it. Whole-corpus coverage went 7,451 → **7,577 cards**,
+byte-exact lines 25,377 → **25,551**, the differential's compared population 2,747 → **2,795** — and
+like the cost band before it, no new SDK type: `ModifySpellCost` already had every field.
+
+**The probe picked it, and it picked it against both other rankings.** On the tail ranking the
+family reads 265 cards blocked and 112 sole-blocked, which is fourth. What moves it to first is step
+two — substituting a known-good line for the family's own span and re-parsing — because this family's
+span is the *whole line*, so the substitution is exact rather than a prediction:
+
+| family | tail rank `sole` | probe: whole cards finished |
+|---|---|---|
+| **`This spell costs …`** | 112 | **112** |
+| modal (`Choose one —` + bullets) | 0 (363 reached) | 75 |
+| `~'s power and toughness are each equal to …` | 67 | 68 |
+| library look-at-top-N | 119 | 64 |
+| `Whenever one or more …` | 130 | 32 |
+| fronted `Until end of turn, …` | 186 | **0** |
+
+That last row is the whole argument for step two in one line: the largest sole-blocked count in the
+table finishes *nothing*, because every one of its payloads is a construct the grammar also lacks.
+
+### The shape: one sentence, three vocabularies
+
+`ModifySpellCost(target, modification, gating)` has three fields, and the printed sentence has
+exactly three variable parts, so [`SpellCosts`](src/main/kotlin/com/wingedsheep/assay/grammar/SpellCosts.kt)
+is their product rather than one rule per sentence:
+
+```
+  <subject> cost(s) <amount> less|more to cast <clause>.
+     │                 │            │             └── nothing · if <condition> · for each <count>
+     │                 │            │                 · if it targets <filter> · , where X is <var>
+     │                 │            └── the direction: two SDK families, not a sign
+     │                 └── generic or coloured: also two SDK families, split on the printed cost
+     └── this spell · spells you cast · <quality> spells you cast · <quality> spells
+```
+
+The subject is a slot shared by every sentence, which is why "Creature spells you cast cost {1} less
+to cast." cost one row rather than a parallel set — 148 cards arrived with the same five clauses the
+`This spell` subject uses.
+
+### Filters, instantiated a third time: spell position
+
+A spell on the stack **is not a permanent**, and two rules follow from that fact rather than from a
+spelling:
+
+- A bare subtype in spell position means `Any.withSubtype`, not the battlefield noun phrase's
+  `Permanent.withSubtype` — the reading the differential took 103 cards to settle for the
+  battlefield. So `Filters.spellQuality` is the cascade instantiated for the position, exactly as
+  `SelfSteps.retargetable` is instantiated per anaphor, and the bare-subtype row there is
+  **canonical** where the battlefield one is an `alternate`.
+- A `StatePredicate` — tapped, attacking, face-down — is a fact about a permanent, so a spell filter
+  may not carry one. That guard is why Dream Chisel *declines*: its
+  "Face-down creature spells you cast cost {1} less to cast." has a dedicated
+  `SpellCostTarget.FaceDownYouCast`, and reading it as a creature filter with `IsFaceDown` on it is
+  a different value that prints back byte-identically. The differential caught it; the guard closes
+  it rather than folding it.
+
+### The finding: `FixedIf…` restates `OnlyIf`, and the corpus is split
+
+`CostReductionSource` carries `Fixed`, `FixedIfControlFilter`, `FixedIfCreatureAttackingYou`,
+`FixedIfCreatureDiedThisTurn` and `FixedIfVoid`. Every one says "reduce by *n* when *P* holds",
+which is what `ReduceGeneric(n)` under `CostGating.OnlyIf(P)` says — and the hand-written corpus
+writes the same sentence both ways, 21 cards each.
+
+The grammar emits **the gate**, and the reason is reach rather than counting: its condition slot is
+the whole of `Conditions`, so one rule reads every "… if <condition>" sentence the grammar will ever
+know, while the `FixedIf…` cases are five sentences that cannot become six without an SDK change.
+The one exception is `FixedIfAnyTargetMatches`, which stays canonical for "if it targets …" because
+what it tests — the spell's own target list — is not a `Condition` and has no gate spelling.
+
+So seven goldens diverge on purpose, and that divergence *is* the finding: **the `FixedIf…` family
+should fold into `OnlyIf`**, and until it does, two cards printing one sentence carry two models.
+`Ghalta, Primal Hunger` is the same finding one level down — `TotalPowerYouControl` against
+`TotalPropertyAmongPermanentsYouControl(Power, Creature)`, which the SDK's own KDoc already calls
+the generalization of it.
+
+### Leonin Vanguard: an intervening-if that lost its scope
+
+Widening `Conditions` made this line readable, and the differential immediately reported it:
+
+> At the beginning of combat on your turn, **if you control three or more creatures**, this creature
+> gets +1/+1 until end of turn **and** you gain 1 life.
+
+`Steps.conditionalClause` slotted a single atom and sat inside the clause run, so the condition
+scoped the *first* clause and the second was joined after it. That round-trips byte-exactly and means
+something else — and inside a trigger it means something else in the rules, because `Triggers` lifts
+a **top-level** gate into `interveningIf` (CR 603.4, re-checked on resolution) and a gate buried
+under a `Composite` is not top-level. The ability silently lost its intervening-if.
+
+The fix is the one the pay-gates already carry, applied to the same shape: the rule's consequence is
+a clause *run*, and the rule is sentence-terminal — out of `simpleClause`/`laterClause`, into
+`clause`, with `gatedConsequence` as its slot so no second gate can open inside it. This is
+Kalastria Highborn's lesson a second time: **a gate's scope runs to the end of the sentence.**
+
+Making it terminal cost twelve cards of the shape "Counter target spell. **If you control a blue
+creature, draw a card, then discard a card.**", which the ledger's diff reported the moment it was
+re-baked — the artifact doing exactly the job it was committed for. The answer is not to relax the
+rule but to name the position: `runEndingInScopedClause` is a run of ordinary clauses that *ends* in
+a scoped one, with the scoped clause as the phrase's last slot so nothing can follow it. The
+intermediate fix that only widened the full-stop join was wrong and the gate said so within one run
+— "…draw a card, then discard a card." had two readings, the condition over both clauses or over the
+draw with the discard joined after, which is the same scope leak one join further along.
+
+### Card bugs it found, all of one known class
+
+Five hand-written cards spell a **bare tribal noun** as `Creature.withSubtype` where the settled
+reading is `Permanent.withSubtype` — the 103-card migration's rule, in positions that migration did
+not reach (a cost gate's condition, a target filter, a lord's group). They are reported rather than
+fixed here, because each lives in a different era module and the fix re-blesses the corpus-wide card
+snapshot:
+
+| card | where |
+|---|---|
+| Goblin Warchief [SCG] | "Goblins you control have haste" |
+| Krosan Warchief [SCG] | the regenerate target |
+| Grow Extra Arms [SPM] | the target filter |
+| Tombstone, Career Criminal [SPM] | "target Villain card from your graveyard" |
+| Dragon's Prey [TDM] | "if it targets a Dragon" |
+
+### What is left in the family, with counts
+
+- **The subject vocabulary** — "Instant and sorcery spells you cast" (20 lines) needs the type
+  disjunction in its adjectival form; the bare colours ("Red spells", 25) and the remaining subtypes
+  are rows in `Filters.spellQuality`, not new sentences.
+- **`CostGating.NthOfTypePerTurn`** — "The first spell you cast each turn costs {1} less to cast."
+  (6 goldens): a subject shape rather than a clause, and the `gating` field's third case.
+- **The leading condition** — "If you weren't the starting player, this spell costs {1} less to
+  cast." (3). Both orders exist for one model, so it is an `alternate` of the trailing form, exactly
+  as the conditional statics do it.
+- **`Conditions` itself** is the ceiling on the "if …" clause and always will be: 74 lines print a
+  condition, and the grammar names eleven. Every row added there also enriches every intervening-if,
+  every cast restriction and every conditional static — which is why it is the highest-leverage
+  place left in this family and not a member of it.
 
 ## What Phase 1 already found
 

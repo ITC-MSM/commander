@@ -180,6 +180,26 @@ is subtractive — the keyword *run* deleted two rules while covering more, beca
 in the slot and not in the rule, and a family with a `pairForm` boolean in it is a family with an
 axis it has not named yet.
 
+The **spell-cost band** is the one to read for a family whose axes are the SDK type's own fields.
+`ModifySpellCost(target, modification, gating)` has three, the printed sentence has three variable
+parts, and the grammar is their product — one subject slot shared by every clause, so the second
+subject ("Creature spells you cast cost {1} less to cast.", 148 cards) was one row rather than a
+parallel set. Three of its lessons generalize. **Read the SDK's duplicates before choosing a
+canonical, and choose by reach**: `CostReductionSource`'s five `FixedIf…` cases restate
+`CostGating.OnlyIf`, the corpus writes both 21 times each, and the gate wins because its slot is the
+whole of `Conditions` while the `FixedIf…` cases can never become six. **A position can need its own
+instantiation of `Filters`**: a spell is not a permanent, so a bare subtype in spell position is
+`Any.withSubtype` and a `StatePredicate` is refused outright — the guard that made Dream Chisel
+decline instead of round-tripping a different value. And **widening a condition vocabulary exposes
+the sentences above it**: the new `Conditions` rows made Leonin Vanguard readable, and the
+differential immediately showed `conditionalClause` scoping its condition over only the first clause
+of a run — which inside a trigger silently dropped the CR 603.4 intervening-if, because `Triggers`
+lifts only a *top-level* gate. The fix was the pay-gates' own shape: a clause run for the
+consequence, and the rule made sentence-terminal — plus a named position, `runEndingInScopedClause`,
+for the twelve lines that *end* in such a clause ("Counter target spell. If you control a blue
+creature, draw a card, then discard a card."). Widening the full-stop join instead was tried and was
+wrong, and the ambiguity gate said so in one run: the scope simply leaked one join further along.
+
 ## Fail-closed matching — the rule that catches the dangerous bug class
 
 **A `match` half reconstructs what `build` would have produced and compares the whole model.** Not a

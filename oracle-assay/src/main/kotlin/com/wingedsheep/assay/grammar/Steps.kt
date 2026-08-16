@@ -1689,6 +1689,32 @@ object Steps {
     }
 
     /**
+     * A clause run with one more clause after it, flattened — the fold [runEndingInScopedClause]
+     * needs and [merge] cannot give it, because the head is already *one* script holding a
+     * composite rather than the list of clauses it came from.
+     *
+     * Flat, never nested: a card carries `Composite[A, B, gated]`, and a `Composite[Composite[A, B],
+     * gated]` is a model no card holds and nothing else could print. The guards are [merge]'s own —
+     * a clause contributes an effect and the targets it declared and nothing else, and two clauses
+     * that each declared a target refuse to fold, for the reason [merge] states.
+     */
+    private fun appendClause(head: CardScript, last: CardScript): CardScript? {
+        val headEffect = head.spellEffect ?: return null
+        val lastEffect = last.spellEffect ?: return null
+        if (head != CardScript(spellEffect = headEffect, targetRequirements = head.targetRequirements)) return null
+        if (last != CardScript(spellEffect = lastEffect, targetRequirements = last.targetRequirements)) return null
+        if (head.targetRequirements.isNotEmpty() && last.targetRequirements.isNotEmpty()) return null
+        val headEffects = (headEffect as? CompositeEffect)
+            ?.takeIf { it == CompositeEffect(it.effects) }
+            ?.effects
+            ?: listOf(headEffect)
+        return CardScript(
+            spellEffect = Effects.Composite(headEffects + lastEffect),
+            targetRequirements = head.targetRequirements + last.targetRequirements,
+        )
+    }
+
+    /**
      * The whole clause cascade — atoms, the wrappers, the joins, the sentence — over **one** anaphor
      * vocabulary.
      *
@@ -1814,13 +1840,26 @@ object Steps {
          *
          * The SDK lowers a spell's `condition` into a `ConditionalEffect` wrapping the whole
          * effect, so this is a wrapper for the same reason [mayClause] is one, and the condition is
-         * the slot. The condition vocabulary is [Conditions]; it has two members, which is what a
-         * condition family looks like the first time cards need one.
+         * the slot. The condition vocabulary is [Conditions].
+         *
+         * **Its consequence is a clause run, and the rule is sentence-terminal** — both halves of
+         * the same property the pay-gates have, and for the same reason. "If you control three or
+         * more creatures, this creature gets +1/+1 until end of turn and you gain 1 life." states
+         * one condition over the whole sentence; reading it as a gate on the first clause with the
+         * second joined after would round-trip byte-exactly and mean something else. Inside a
+         * trigger it would mean something else *in the rules*, too: [Triggers] lifts a top-level
+         * gate into `interveningIf`, which CR 603.4 re-checks on resolution, and a gate buried under
+         * a `Composite` is not top-level, so the ability would silently lose its intervening-if.
+         * Leonin Vanguard is the card the differential caught doing exactly that.
+         *
+         * So the rule moves out of [simpleClause] and [laterClause] into [clause], where the full
+         * stop is the only thing that can follow it, and its slot is [gatedConsequence] — which
+         * admits no second gate, so the scope has exactly one reading.
          */
         private val conditionalClause: Phrase<CardScript> =
             phrase("if {cond}, {inner}", name = "a conditional clause$tag") {
                 slot("cond", Conditions.condition)
-                slot("inner", atom)
+                slot("inner", gatedConsequence)
                 build { bindings ->
                     val condition = bindings.value<Condition>("cond")
                     wrap(bindings.value("inner")) { ConditionalEffect(condition, it) }
@@ -1845,7 +1884,7 @@ object Steps {
          * that can follow them.
          */
         private val simpleClause: Phrase<CardScript> =
-            oneOf("a spell effect$tag", nonAnaphoric + anaphora + mayClause + conditionalClause)
+            oneOf("a spell effect$tag", nonAnaphoric + anaphora + mayClause)
 
         /**
          * A clause that can only be a *later* one: it refers back to something an earlier clause
@@ -1855,7 +1894,7 @@ object Steps {
             "a later spell effect$tag",
             // Everything except the source-anaphora: once a clause has introduced a target, "it" means
             // that target, and [Continuations] owns the pronoun from here on. See [SelfSteps.anaphoric].
-            nonAnaphoric + mayClause + conditionalClause + Continuations.all,
+            nonAnaphoric + mayClause + Continuations.all,
         )
 
         /** A whole line's clauses, joined. The shape and its KDoc are [clauseRun]. */
@@ -1863,14 +1902,61 @@ object Steps {
             clauseRun(simpleClause, laterClause, name = "several clauses$tag")
 
         /**
+         * "Counter target spell. **If you control a blue creature, draw a card, then discard a
+         * card.**" — a run of ordinary clauses that *ends* in a scoped one.
+         *
+         * A scoped clause takes the rest of the sentence as its consequence, which is what makes it
+         * unavailable as an ordinary run member: "if X, A, then B" would be the condition over both
+         * clauses, or over A with B joined after it, and no ordering of an alternation is allowed to
+         * decide that. But a line may still *end* in one, and this rule is that position — the
+         * scoped clause is the last slot of the phrase, so nothing can follow it and the second
+         * reading has nowhere to come from.
+         *
+         * The head is [clause]'s ordinary vocabulary, so the twelve cards this shape covers keep the
+         * whole effect grammar in front of the condition; only the join is fixed, at the full stop
+         * the condition's own sentence opens on.
+         */
+        private val runEndingInScopedClause: Phrase<CardScript> =
+            phrase("{head}. {scoped}", name = "clauses ending in a scoped clause$tag") {
+                slot("head", oneOf("a clause run$tag", simpleClause, sequenceClause))
+                slot("scoped", conditionalClause)
+                build { bindings ->
+                    appendClause(bindings.value("head"), bindings.value("scoped"))
+                }
+                match { script ->
+                    val composite = script.spellEffect as? CompositeEffect ?: return@match null
+                    val effects = composite.effects
+                    if (effects.size < 2) return@match null
+                    if (composite != CompositeEffect(effects)) return@match null
+                    // Which clause declared the line's targets is decided by printability, exactly
+                    // as in [clauseRun]: at most one split can print from both positions.
+                    for (owner in effects.indices) {
+                        val parts = clauseParts(effects, script.targetRequirements, owner)
+                        if (merge(parts) != script) continue
+                        val scoped = parts.last()
+                        if (conditionalClause.unparse(scoped) == null) continue
+                        val head = merge(parts.dropLast(1)) ?: continue
+                        if (appendClause(head, scoped) != script) continue
+                        if (simpleClause.unparse(head) == null && sequenceClause.unparse(head) == null) continue
+                        return@match bind("head" to head, "scoped" to scoped)
+                    }
+                    null
+                }
+            }
+
+        /**
          * Everything one clause position can hold.
          *
-         * The pay-gates sit here rather than in [simpleClause] because they are sentence-terminal:
-         * their consequence runs to the end of the sentence, so nothing can be joined after one.
-         * See [gatedConsequence].
+         * The pay-gates and the conditional sit here rather than in [simpleClause] because they are
+         * sentence-terminal: their consequence runs to the end of the sentence, so nothing can be
+         * joined after one. See [gatedConsequence] and [runEndingInScopedClause].
          */
         private val clause: Phrase<CardScript> =
-            oneOf("a clause position$tag", listOf(simpleClause, sequenceClause) + mayPayClauses)
+            oneOf(
+                "a clause position$tag",
+                listOf(simpleClause, sequenceClause, conditionalClause, runEndingInScopedClause) +
+                    mayPayClauses,
+            )
 
         /** One clause and the stop that ends it — what a whole effect line is. */
         private val sentence: Phrase<CardScript> = phrase("{clause}.", name = "a sentence$tag") {

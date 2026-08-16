@@ -85,9 +85,29 @@ object Conditions {
         // to slot.
         constant("you didn't cast it from your hand", SdkConditions.Not(SdkConditions.WasCastFromHand)),
         existence("you control {filter}", "you control a permanent") { SdkConditions.YouControl(it) },
+        existence("an opponent controls {filter}", "an opponent controls a permanent") {
+            SdkConditions.OpponentControls(it)
+        },
         existence("no opponent controls {filter}", "no opponent controls a permanent") {
             SdkConditions.Not(SdkConditions.OpponentControls(it))
         },
+        existence("an opponent controls no {filter}", "an opponent controls none of a permanent") {
+            SdkConditions.OpponentControls(it, negate = true)
+        },
+        // "This spell costs {2} less to cast if it's bargained." — Hamlet Glutton. The SDK reads the
+        // durable cast-choice slot rather than naming a condition per mechanic, and `WasBargained`
+        // is the facade over exactly that read, so the rule is a constant and the mechanic's other
+        // spellings arrive as sibling rows rather than as a shape.
+        constant("it's bargained", SdkConditions.WasBargained),
+        constant("it's kicked", SdkConditions.WasKicked),
+        countAtLeast(
+            "you control {n} or more {filter}",
+            "you control several permanents",
+        ) { count, filter -> SdkConditions.YouControlAtLeast(count, filter) },
+        countAtLeast(
+            "there are {n} or more {filter} cards in your graveyard",
+            "several cards of a kind in your graveyard",
+        ) { count, filter -> SdkConditions.CardsInGraveyardMatchingAtLeast(count, filter) },
         // Lavaborn Muse's intervening-if. "That player" is the one whose step triggered, which the
         // SDK names as `Player.TriggeringPlayer`.
         zoneCount(
@@ -136,6 +156,50 @@ object Conditions {
                 bind("n" to limit)
             }
         }
+    }
+
+    /**
+     * "You control two or more legendary creatures", "there are two or more creature cards in your
+     * graveyard" — a *counted* group against a spelled number, where [existence] asks only whether
+     * one exists.
+     *
+     * The two shapes stay disjoint by construction rather than by convention. [existence] builds an
+     * `Exists` and this builds a `Compare`, so no value is reachable from both; and the number comes
+     * from [Cardinals.word], which starts at two, so "you control a Wizard" cannot also be read as a
+     * count of one. That is the same disjoint-domains fix `drawOne` and `Cardinals.word` use, and it
+     * is what keeps the printer from having to choose.
+     *
+     * The filter must narrow something. `GameObjectFilter.Any` would print as a bare noun the
+     * unfiltered rules already spell, which is one model with two printed forms — so an unnarrowed
+     * count declines here and is counted, rather than being spelled a second way.
+     */
+    private fun countAtLeast(
+        template: String,
+        name: String,
+        condition: (Int, GameObjectFilter) -> Condition,
+    ): Phrase<Condition> = phrase(template, name = name) {
+        slot("n", Cardinals.word)
+        slot("filter", Filters.plural)
+        build { bindings ->
+            val filter = bindings.value<GameObjectFilter>("filter")
+            if (filter == GameObjectFilter.Any) return@build null
+            condition(bindings.int("n"), filter)
+        }
+        match { value ->
+            val compare = value as? Compare ?: return@match null
+            val count = (compare.right as? DynamicAmount.Fixed)?.amount ?: return@match null
+            val filter = countedFilter(compare.left) ?: return@match null
+            if (filter == GameObjectFilter.Any || !Cardinals.spellable(count)) return@match null
+            if (value != condition(count, filter)) return@match null
+            bind("n" to count, "filter" to filter)
+        }
+    }
+
+    /** The filter a counted amount narrows by — a candidate only; [countAtLeast] decides. */
+    private fun countedFilter(amount: DynamicAmount): GameObjectFilter? = when (amount) {
+        is DynamicAmount.AggregateBattlefield -> amount.filter
+        is DynamicAmount.Count -> amount.filter
+        else -> null
     }
 
     val condition: Phrase<Condition> = oneOf("a condition", all)
