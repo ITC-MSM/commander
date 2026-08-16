@@ -185,7 +185,7 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                 // Ability payment context — lets the solver consider restricted mana that's
                 // only spendable on this kind of activation (e.g., Steelswarm Operator's mana
                 // restricted to abilities of artifact sources).
-                val abilityContext = com.wingedsheep.engine.mechanics.mana.buildAbilityPaymentContext(cardComponent, projected, entityId)
+                val abilityContext = com.wingedsheep.engine.mechanics.mana.buildAbilityPaymentContext(cardComponent, projected, entityId, ability)
 
                 // Check cost requirements and gather sacrifice/tap/bounce targets if needed
                 var sacrificeTargets: List<EntityId>? = null
@@ -260,7 +260,7 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                         is CostAtom.Sacrifice -> {
                             sacrificeCost = atom
                             sacrificeTargets = context.costUtils.findAbilitySacrificeTargets(
-                                state, playerId, atom.filter, if (atom.excludeSelf) entityId else null
+                                state, playerId, atom.filter, if (atom.excludeSelf) entityId else null, sourceId = entityId
                             )
                             if (sacrificeTargets.size < atom.count) continue
                         }
@@ -270,7 +270,7 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                             // picks which during activation (the handler pauses). Same candidate pool
                             // as a sacrifice cost.
                             val eligible = context.costUtils.findAbilitySacrificeTargets(
-                                state, playerId, atom.filter, if (atom.excludeSelf) entityId else null
+                                state, playerId, atom.filter, if (atom.excludeSelf) entityId else null, sourceId = entityId
                             )
                             if (eligible.size < atom.minCount) continue
                         }
@@ -344,7 +344,7 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                         if (chosenType == null) continue
                         val dynamicFilter = GameObjectFilter.Creature.withSubtype(chosenType)
                         sacrificeCost = CostAtom.Sacrifice(dynamicFilter)
-                        sacrificeTargets = context.costUtils.findAbilitySacrificeTargets(state, playerId, dynamicFilter)
+                        sacrificeTargets = context.costUtils.findAbilitySacrificeTargets(state, playerId, dynamicFilter, sourceId = entityId)
                         if (sacrificeTargets.isEmpty()) continue
                     }
                     is AbilityCost.SacrificeSelf -> {
@@ -414,7 +414,7 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                                     is CostAtom.Sacrifice -> {
                                         sacrificeCost = atom
                                         sacrificeTargets = context.costUtils.findAbilitySacrificeTargets(
-                                            state, playerId, atom.filter, if (atom.excludeSelf) entityId else null
+                                            state, playerId, atom.filter, if (atom.excludeSelf) entityId else null, sourceId = entityId
                                         )
                                         if (sacrificeTargets.size < atom.count) {
                                             costCanBePaid = false
@@ -427,7 +427,7 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                                         // Exile …). Affordable when at least minCount eligible
                                         // permanents exist; the player picks which during activation.
                                         val eligible = context.costUtils.findAbilitySacrificeTargets(
-                                            state, playerId, atom.filter, if (atom.excludeSelf) entityId else null
+                                            state, playerId, atom.filter, if (atom.excludeSelf) entityId else null, sourceId = entityId
                                         )
                                         if (eligible.size < atom.minCount) {
                                             costCanBePaid = false
@@ -531,7 +531,7 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                                     }
                                     val dynamicFilter = GameObjectFilter.Creature.withSubtype(chosenType)
                                     sacrificeCost = CostAtom.Sacrifice(dynamicFilter)
-                                    sacrificeTargets = context.costUtils.findAbilitySacrificeTargets(state, playerId, dynamicFilter)
+                                    sacrificeTargets = context.costUtils.findAbilitySacrificeTargets(state, playerId, dynamicFilter, sourceId = entityId)
                                     if (sacrificeTargets.isEmpty()) {
                                         costCanBePaid = false
                                         break
@@ -1062,7 +1062,7 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                 }
 
                 // Check cost payability (Free cost always passes)
-                val anyPlayerAbilityContext = com.wingedsheep.engine.mechanics.mana.buildAbilityPaymentContext(cardComponent, projected, entityId)
+                val anyPlayerAbilityContext = com.wingedsheep.engine.mechanics.mana.buildAbilityPaymentContext(cardComponent, projected, entityId, ability)
                 val anyPlayerManaCostString = when (effectiveCost) {
                     is AbilityCost.Free -> null
                     is AbilityCost.Atom -> {

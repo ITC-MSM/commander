@@ -57,7 +57,7 @@ class CommandZoneAbilityEnumerator : ActionEnumerator {
                 val effectiveCost = ability.cost
                 val handCards = state.getZone(playerId, Zone.HAND)
                 val abilityContext = com.wingedsheep.engine.mechanics.mana.buildAbilityPaymentContext(
-                    cardComponent, context.projected, entityId
+                    cardComponent, context.projected, entityId, ability
                 )
                 var costCanBePaid = true
                 var hasDiscardCost = false

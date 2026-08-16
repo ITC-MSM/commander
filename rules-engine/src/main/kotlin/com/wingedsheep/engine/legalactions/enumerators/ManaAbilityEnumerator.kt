@@ -120,8 +120,11 @@ class ManaAbilityEnumerator : ActionEnumerator {
             // Apply text-changing effects to mana ability costs
             val manaTextReplacement = container.get<TextReplacementComponent>()
 
+            // `ability = null` is safe for every ability below: a mana ability is never an equip
+            // ability (equip attaches an Equipment, CR 702.6a — it adds no mana, CR 605.1a), so the
+            // only ability-specific fact in the context reads false for all of them anyway.
             val manaAbilityContext = com.wingedsheep.engine.mechanics.mana.buildAbilityPaymentContext(
-                cardComponent, projected, entityId
+                cardComponent, projected, entityId, ability = null
             )
 
             for (ability in manaAbilities) {
@@ -156,7 +159,7 @@ class ManaAbilityEnumerator : ActionEnumerator {
                             sacrificeCost = atom
                             sacrificeTargets = context.costUtils.findAbilitySacrificeTargets(
                                 state, playerId, atom.filter,
-                                if (atom.excludeSelf) entityId else null
+                                if (atom.excludeSelf) entityId else null, sourceId = entityId
                             )
                             if (sacrificeTargets.size < atom.count) affordable = false
                         }
@@ -176,7 +179,7 @@ class ManaAbilityEnumerator : ActionEnumerator {
                         } else {
                             val dynamicFilter = GameObjectFilter.Creature.withSubtype(chosenType)
                             sacrificeCost = CostAtom.Sacrifice(dynamicFilter)
-                            sacrificeTargets = context.costUtils.findAbilitySacrificeTargets(state, playerId, dynamicFilter)
+                            sacrificeTargets = context.costUtils.findAbilitySacrificeTargets(state, playerId, dynamicFilter, sourceId = entityId)
                             if (sacrificeTargets.isEmpty()) affordable = false
                         }
                     }
@@ -209,7 +212,7 @@ class ManaAbilityEnumerator : ActionEnumerator {
                                         sacrificeCost = atom
                                         sacrificeTargets = context.costUtils.findAbilitySacrificeTargets(
                                             state, playerId, atom.filter,
-                                            if (atom.excludeSelf) entityId else null
+                                            if (atom.excludeSelf) entityId else null, sourceId = entityId
                                         )
                                         if (sacrificeTargets.size < atom.count) {
                                             affordable = false; break
@@ -241,7 +244,7 @@ class ManaAbilityEnumerator : ActionEnumerator {
                                     }
                                     val dynamicFilter = GameObjectFilter.Creature.withSubtype(chosenType)
                                     sacrificeCost = CostAtom.Sacrifice(dynamicFilter)
-                                    sacrificeTargets = context.costUtils.findAbilitySacrificeTargets(state, playerId, dynamicFilter)
+                                    sacrificeTargets = context.costUtils.findAbilitySacrificeTargets(state, playerId, dynamicFilter, sourceId = entityId)
                                     if (sacrificeTargets.isEmpty()) {
                                         affordable = false; break
                                     }

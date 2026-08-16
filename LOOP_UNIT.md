@@ -1,51 +1,83 @@
-# loop-msh-u27 — Powerful Broker (targeted proliferate)
+# loop-msh-u28 — Ronin, Shadow Stalker + equip-ability mana restriction
 
-Base branch: **`loop-msh-u25`** (not `main`). Stacked. Since u25 sits on u32 → u23, which was itself
-rebased onto `origin/main`, `main` *is* now an ancestor, but the u23, u32 and u25 commits below this
-branch are not upstream yet — this still waits for those to land before it can be opened on its own.
+Branch `loop-msh-u28`, based on `loop-msh-u27` (local, **not** merged upstream). Since u27 sits on
+u25 → u32 → u23, which was itself rebased onto `origin/main`, `main` *is* now an ancestor, but the
+u23/u32/u25/u27 commits below this branch are not upstream yet, so this still waits for those to
+land before it can be opened on its own. Reviewer: diff with `git diff loop-msh-u27...HEAD`.
 
-- **Primitive:** `ProliferateEffect` gains `target: EffectTarget? = null`
-  (`mtg-sdk/.../scripting/effects/CounterEffects.kt`). `null` keeps CR 701.34 proliferate
-  (resolution-time choose-any-number, no targeting); non-null is the targeted single-object form.
-- **Primitive:** new `TargetPermanentOrPlayer(permanentFilter: TargetFilter = Permanent)`
-  (`mtg-sdk/.../scripting/targets/TargetRequirement.kt`), surfaced as `Targets.PermanentOrPlayer`.
-  Wired in `TargetFinder`, `TargetValidator`, `TargetEnumerationUtils`, `ChangeTargetExecutor`,
-  `ReselectTargetRandomlyExecutor`.
-- **Shared placement:** `ProliferateExecutor.addOneOfEachKind(state, recipients, controllerId)` is
-  now the single implementation; `MiscContinuationResumer.resumeProliferate` calls it instead of
-  its own copy. The moved code is line-for-line the old resumer body, so the untargeted path's
-  runtime behavior is meant to be identical — I verified this by reading, not by a diff tool.
-- **Card:** `mtg-sets/.../msh/cards/PowerfulBroker.kt` — `{T}`, sorcery-speed, one
-  `Targets.PermanentOrPlayer` target, `Effects.Proliferate(recipient)`.
-- **Tests:** `TargetedProliferateTest` (primitive: no counters, several kinds, noncreature
-  permanent, player target, fizzle on an illegal target, counter-history recording, untargeted
-  proliferate still pauses for its decision) and `PowerfulBrokerScenarioTest` (card: creature /
-  player / land targets, sorcery-speed gate, summoning sickness, Kid Loki hexproof as the
-  behavioral proof that the placement is attributed to the activating player).
-- **Playtest scenario:** `manual-scenarios/sets/msh/loop-msh-u27-powerful-broker.json`.
-- **Docs:** `docs/card-sdk-language-reference.md` — `Proliferate(target?)` entry rewritten (and its
-  wrong CR 701.27 corrected to 701.34, verified against `MagicCompRules_20260619.txt:3592`) plus a
-  `Targets.PermanentOrPlayer` entry. Retired the now-closed gap note in
-  `backlog/sets/marvel-super-heroes/mechanics.md`.
-- **Gate:** `just test` passed (11239 tests) on the re-run after `just rebless-cards`. The first run
-  failed only on the MSH snapshot (expected for a new card) and `ConniveTargetingTest`, which timed
-  out rather than asserting — the known flake — and passes standalone.
-- **Snapshot:** only `MSH.json` moved, by exactly the Powerful Broker block. That is the evidence
-  that `data object` → `data class` on `ProliferateEffect` is encoding-identical.
+## The primitive
 
-## Things I'm unsure about / deliberately did not do
+- **`ManaRestriction.EquipAbilityActivationOnly`** — `mtg-sdk/.../scripting/effects/ManaRestriction.kt`.
+  "Spend this mana only to activate equip abilities" (CR 702.6). A new `data object` atom, not a
+  parameter on `AbilityActivationOnly`, because that one is a shipped `@SerialName` `data object`
+  (turning it into a `data class` changes its serial shape) and because this file already models one
+  spend context per atom (`TurnPermanentsFaceUpOnly`, `UnlockDoorOnly`, `FaceDownSpellsOnly`),
+  composed with `AnyOf`.
+- **`SpellPaymentContext.isEquipAbilityActivation`** — `rules-engine/.../mechanics/mana/ManaPool.kt`.
+  Guarded by an `init { require(...) }` so it can't be set without `isAbilityActivation`.
+- **`buildAbilityPaymentContext(..., ability)`** — `rules-engine/.../mechanics/mana/AbilityPaymentContextBuilder.kt`.
+  The 4th parameter is required (nullable, no default) so every activation site had to be revisited;
+  it is the single builder all ability-activation paths funnel through. All 8 call sites audited —
+  see the PR body for the list.
+- **Source-relative sacrifice-cost filters** — `CostEnumerationUtils.findAbilitySacrificeTargets`,
+  `CostHandler.findMatchingPermanentsUnified` / `findMatchingCardsUnified` / `paySacrificeList`, and
+  the sacrifice-choice pause in `ActivateAbilityHandler` now put the ability's source into the
+  `PredicateContext`. Needed by Ronin's "Sacrifice an Equipment attached to Ronin"
+  (`…attachedToSource()` = `StatePredicate.IsAttachedToSource`, unconditionally false without a
+  source). This was *not* named in the unit's brief — I found it while implementing and it is the
+  one piece of scope I added. Faunsbane Troll (WOE) ships the same untested shape and is fixed
+  incidentally.
 
-- I did **not** merge `TargetCreatureOrPlayer` into the new filter-parameterized type. It would be
-  strictly more general (`permanentFilter = Creature`), but it is the serialized `@SerialName` of
-  the two cards using it, so folding it in churns their snapshots for no behavior change. Flagging
-  it as a judgment call, not an oversight.
-- ~~Neither proliferate path consults `projectedState.canReceiveCounters(...)`.~~ **Fixed in
-  review corrections:** the guard now lives in `addOneOfEachKind`, so both the targeted and the
-  untargeted form skip a recipient that can't have counters put on it (Blossombind). This is a
-  behavior change to untargeted proliferate — it was a pre-existing bug, not a semantic worth
-  preserving.
-- No mtgish emitter/bridge entry: the tooling has no proliferate mapping at all today
-  (`grep -i proliferate mtgish-tooling/src` is empty), so there was no capability to extend.
-- No manual playthrough in the web client, no UX pass, no e2e. The targeted form adds no new
-  decision type — it reuses ordinary target announcement — so no client work was expected, but
-  that is reasoning, not an observation of the running app.
+## The card
+
+`mtg-sets/.../definitions/msh/cards/RoninShadowStalker.kt` — {2}{B} 3/3 Legendary Human Rogue Hero.
+
+1. `Pay 2 life: Add two mana of any one color. … Activate only once each turn.` —
+   `Effects.AddAnyColorMana(2, restriction = AnyOf(SubtypeSpellsOnly(setOf("Equipment")),
+   EquipAbilityActivationOnly))`, `manaAbility = true`, `ActivationRestriction.OncePerTurn`.
+2. `{T}, Sacrifice an Equipment attached to Ronin: Target creature gets -4/-4 until end of turn.` —
+   `Costs.Composite(Costs.Tap, Costs.Sacrifice(Artifact.withSubtype("Equipment").attachedToSource()))`,
+   `Effects.ModifyStats(-4, -4, target)`, `TimingRule.SorcerySpeed`.
+
+## Tests
+
+- `rules-engine/src/test/.../scenarios/EquipAbilityManaRestrictionTest.kt` — the primitive: the
+  restriction's truth table over every spend context; proof that the old spelling
+  `SubtypeSpellsOrAbilitiesOnly("Equipment")` really does admit an Equipment's non-equip ability;
+  the `isAbilityActivation` invariant; end-to-end payment of Iron Man Armor's Equip {2} from Ronin's
+  mana; **legal-action enumeration** showing Iron Man Armor's `{2}` animate ability greyed out while
+  its equip is affordable (both cost {2}, so only the restriction separates them); and the mana
+  emptying as the step ends.
+- `rules-engine/src/test/.../scenarios/RoninShadowStalkerScenarioTest.kt` — the card: life cost,
+  once-each-turn cap, both halves of the spend clause end-to-end, the sacrifice ability's
+  source-relative scoping (enumeration *and* submission, positive *and* negative), the no-cost-
+  payment auto-pick, and the sorcery-speed gate.
+- `rules-engine/src/test/.../scenarios/FaunsbaneTrollScenarioTest.kt` — the WOE card the sacrifice
+  fix switches on: its enters-Role pays the fight (enumerated affordable, sacrificed as a cost,
+  loser exiled), and an Aura on another creature doesn't qualify.
+- `manual-scenarios/sets/msh/loop-msh-u28-ronin-shadow-stalker.json` — playtest scenario; a
+  Bonesplitter starts attached to Ronin so both halves of the card are reachable on turn one.
+
+## Gate
+
+`just test` — 10917 tests, 1 failure: `ConniveTargetingTest`, a 120 s `TimeoutCancellationException`
+(contention, the known flake), which passes standalone on the same tree. Unrelated to this diff.
+`just rebless-cards` moved only Ronin in
+`mtg-sets/src/test/resources/snapshots/cards/MSH.json`. `just check-card-printing
+"Ronin, Shadow Stalker"` clean. Backlog ticked and `just fix-backlog` run.
+
+## Unsure / worth a reviewer's eye
+
+- The added `PredicateContext.sourceId` threading in the sacrifice cost paths is scope I decided to
+  take on; it changes behaviour only for cost filters carrying source-relative predicates, of which
+  the whole corpus has exactly two (Ronin and Faunsbane Troll, both `attachedToSource()`, both
+  previously matching nothing). Note the direction isn't universal: a *negated* source-relative
+  predicate (`notAttachedToSource()`, `NotOfSourceChosenType`) matches everything without a source,
+  so supplying one narrows rather than widens. It is a shared path either way.
+- `LegalActionEnricher` resolves the ability by id from the printed script only, so a *granted*
+  equip ability's restricted-mana hint is under-reported to the client. Presentation only — the
+  server's own payment check always has the real ability. Documented at the call site.
+- `SubtypeSpellsOnly` used to render "cast a Equipment spell" (a pre-existing article bug in that
+  atom's `description`, player-visible on the client's restricted-mana orbs). Fixed in the atom;
+  no snapshot moves, since every card using it spells its own oracle text out.
+- I did not manually play the card in the web client, and there is no e2e coverage.

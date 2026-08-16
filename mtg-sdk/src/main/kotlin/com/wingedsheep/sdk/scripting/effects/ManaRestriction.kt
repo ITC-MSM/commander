@@ -205,6 +205,34 @@ sealed interface ManaRestriction {
     }
 
     /**
+     * "Spend this mana only to activate equip abilities." Satisfied only by paying the cost of an
+     * **equip** ability (CR 702.6a — "[Cost]: Attach this permanent to target creature you control.
+     * Activate only as a sorcery"), including the "Equip [quality]" (CR 702.6c) and
+     * "Equip planeswalker" (CR 702.6e) variants and non-mana equip costs such as
+     * "Equip—Sacrifice a creature": everything the engine flags `ActivatedAbility.isEquipAbility`.
+     *
+     * A strict narrowing of [AbilityActivationOnly], and deliberately *not* expressible as
+     * `SubtypeSpellsOrAbilitiesOnly("Equipment")`: that one admits **every** activated ability of
+     * an Equipment source, so it would also pay Iron Man Armor's `{2}: … becomes a creature` or
+     * Batterskull's `{3}: Return this Equipment to its owner's hand`. It is likewise not
+     * `AbilityActivationOnly` narrowed by a card type — the equip ability of an Equipment and its
+     * other abilities share a card type, so the type test can't separate them.
+     *
+     * Kept as its own atom rather than a `equipOnly` flag on [AbilityActivationOnly] for the same
+     * reason [TurnPermanentsFaceUpOnly], [UnlockDoorOnly] and [FaceDownSpellsOnly] are separate
+     * atoms: each names one spend context, `AnyOf` composes them, and [AbilityActivationOnly] is a
+     * shipped `data object` whose `@SerialName` is already on the wire — turning it into a
+     * parameterized `data class` would change its serial shape. Ronin, Shadow Stalker's
+     * "cast Equipment spells or activate equip abilities" is
+     * `AnyOf(SubtypeSpellsOnly(setOf("Equipment")), EquipAbilityActivationOnly)`.
+     */
+    @SerialName("EquipAbilityActivationOnly")
+    @Serializable
+    data object EquipAbilityActivationOnly : ManaRestriction {
+        override val description: String = "Spend this mana only to activate equip abilities"
+    }
+
+    /**
      * "This mana can't be spent to cast a non-[cardTypes] spell" (Hydraulic Helper:
      * "{T}: Add {U}. This mana can't be spent to cast a nonartifact spell").
      *
@@ -264,7 +292,14 @@ sealed interface ManaRestriction {
     ) : ManaRestriction {
         override val description: String = buildString {
             append("Spend this mana only to cast ")
-            append(subtypes.joinToString(" or ") { "a $it spell" })
+            // "an Equipment spell" / "an Omen spell" — the article follows the subtype, and this
+            // string is player-visible (the client groups restricted-mana orbs by it).
+            append(
+                subtypes.joinToString(" or ") { subtype ->
+                    val article = if (subtype.firstOrNull()?.lowercaseChar() in setOf('a', 'e', 'i', 'o', 'u')) "an" else "a"
+                    "$article $subtype spell"
+                }
+            )
         }
     }
 

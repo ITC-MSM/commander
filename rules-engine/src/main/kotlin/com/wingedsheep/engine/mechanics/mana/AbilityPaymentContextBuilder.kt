@@ -16,11 +16,20 @@ import com.wingedsheep.sdk.model.EntityId
  * them. Works for any zone — projected types simply aren't reported for entities the layer
  * system doesn't project, which is why the base subtypes go through [paymentSubtypesOf] (so a
  * changeling source keeps every creature type outside the battlefield too).
+ *
+ * [ability] is the activated ability whose cost is being paid. It is a required parameter (nullable
+ * rather than defaulted) so every activation site has to state what it is activating: facts about
+ * the *ability* rather than its source — currently only "is this an equip ability", CR 702.6, for
+ * [com.wingedsheep.sdk.scripting.effects.ManaRestriction.EquipAbilityActivationOnly] — can't be
+ * recovered from [cardComponent]. Pass null only where the ability genuinely isn't resolvable
+ * (a granted ability the caller can't look up); the equip fact then reads false, i.e. the
+ * restriction refuses, which is the safe direction.
  */
 internal fun buildAbilityPaymentContext(
     cardComponent: CardComponent,
     projected: ProjectedState,
     sourceId: EntityId,
+    ability: com.wingedsheep.sdk.scripting.ActivatedAbility?,
 ): SpellPaymentContext {
     val projectedTypes = projected.getTypes(sourceId)
         .mapNotNull { name -> CardType.entries.find { it.name == name } }
@@ -31,5 +40,6 @@ internal fun buildAbilityPaymentContext(
         isAbilityActivation = true,
         abilitySourceCardTypes = cardTypes,
         subtypes = subtypes,
+        isEquipAbilityActivation = ability?.isEquipAbility == true,
     )
 }

@@ -3763,6 +3763,10 @@ work for abilities-on-stack (which carry no `CardComponent`).
   attachments — Cloud, Midgar Mercenary's "an Equipment attached to it" via
   `GameObjectFilter.Artifact.withSubtype("Equipment").attachedToSource()`. Source-relative; inert with no
   source context. Negated builder `notAttachedToSource()` — excludes all of the source's own attachments.
+  Also legal inside an **activated-ability cost filter** — "{T}, Sacrifice an Equipment attached to Ronin"
+  (Ronin, Shadow Stalker), "{1}, Sacrifice an Aura attached to this creature" (Faunsbane Troll) — because
+  the sacrifice enumeration (`CostEnumerationUtils.findAbilitySacrificeTargets`) and payment
+  (`CostHandler.paySacrificeList`) both put the ability's source into the `PredicateContext`.
 - `IsGrantingPermanent` (negated builder `notGrantingPermanent()`) — matches the *granting permanent* of the
   resolving ability: the Equipment/Aura/permanent whose `GrantActivatedAbility`/`GrantTriggeredAbility` static
   granted the ability, read from the evaluation context's `granterId`. For a granted triggered ability the
@@ -8948,6 +8952,18 @@ restriction matches the spell context.
   `AnyOf` for "... or to activate an ability" clauses — Purple Dragon Punks:
   `AnyOf(CardTypeSpellsOrAbilitiesOnly(ARTIFACT, allowSpells = true, allowAbilities = false), AbilityActivationOnly)`
   ("spend only to cast an artifact spell or to activate an ability").
+- `ManaRestriction.EquipAbilityActivationOnly` — only **equip** ability activations (CR 702.6): the
+  strict narrowing of `AbilityActivationOnly` to abilities the engine flags
+  `ActivatedAbility.isEquipAbility`, which covers "Equip [quality]" (CR 702.6c), "Equip planeswalker"
+  (CR 702.6e) and non-mana "Equip—[cost]" variants. Satisfied by
+  `SpellPaymentContext.isEquipAbilityActivation`, set by `buildAbilityPaymentContext` — the one
+  builder every ability-activation path funnels through. Do **not** reach for
+  `SubtypeSpellsOrAbilitiesOnly("Equipment")` for this wording: that admits *every* activated ability
+  of an Equipment source, so it also pays Iron Man Armor's "{2}: … it becomes a 0/0 Construct Hero
+  artifact creature" (or Batterskull's "{3}: Return this Equipment to its owner's hand"). A card type
+  can't separate them either — the equip ability and the other ability share one source. Ronin,
+  Shadow Stalker's "Spend this mana only to cast Equipment spells or activate equip abilities" is
+  `AnyOf(SubtypeSpellsOnly(setOf("Equipment")), EquipAbilityActivationOnly)`.
 - `ManaRestriction.TurnPermanentsFaceUpOnly` — only the turn-face-up special action (disguise/
   morph face-up). Satisfied by `SpellPaymentContext.isTurnFaceUpAction`; the turn-face-up handler/
   enumerator pass that context so restricted mana in the pool is consumed. Overgrown Zealot,

@@ -461,14 +461,6 @@ The same missing `maxCasts` on `CastAnyNumberFromCollectionWithoutPayingCostEffe
 spells from among the exiled cards"). Everything else on the card — including the plan-counter
 threshold — composes today.
 
-### Mana restricted to equip abilities — **Ronin, Shadow Stalker** [112]
-"Spend this mana only to cast Equipment spells **or activate equip abilities**". `ManaRestriction` has
-`SubtypeSpellsOnly(setOf("Equipment"))` for the spell half and `AbilityActivationOnly` for *any*
-activated ability; `AnyOf(...)` of the two would wrongly pay for every activated ability in play.
-Needed: `ManaRestriction.EquipActivationOnly` plus an `isEquipActivation` flag threaded onto
-`SpellPaymentContext` (the `ActivatedAbility.isEquipAbility` marker it would read already exists).
-Everything else on the card is available.
-
 ### "Until the end of your next turn" continuous duration — **Evil's Thrall** [128]
 `Duration` has `EndOfTurn`, `UntilYourNextTurn` (which ends at the *beginning* of your next turn — a
 full turn short), `UntilNextEndStep` and `UntilYourNextUpkeep`, but no "until the end of your next
