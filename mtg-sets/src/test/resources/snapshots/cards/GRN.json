@@ -264,6 +264,45 @@
     ]
 }
 
+// March of the Multitudes
+{
+    "name": "March of the Multitudes",
+    "manaCost": "{X}{G}{W}{W}",
+    "typeLine": "Instant",
+    "oracleText": "Convoke (Your creatures can help cast this spell. Each creature you tap while casting this spell pays for {1} or one mana of that creature's color.)\nCreate X 1/1 white Soldier creature tokens with lifelink.",
+    "keywords": [
+        "CONVOKE"
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "CreateToken",
+            "count": "XValue",
+            "power": 1,
+            "toughness": 1,
+            "colors": [
+                "WHITE"
+            ],
+            "creatureTypes": [
+                "Soldier"
+            ],
+            "keywords": [
+                "LIFELINK"
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "188",
+        "rarity": "MYTHIC",
+        "artist": "Zack Stella",
+        "flavorText": "\"Our forces number more than the leaves of Vitu-Ghazi. Do not provoke us.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/c/2cc2b646-0181-4f0a-a141-00ca56069a06.jpg"
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "GREEN"
+    ]
+}
+
 // Midnight Reaper
 {
     "name": "Midnight Reaper",
