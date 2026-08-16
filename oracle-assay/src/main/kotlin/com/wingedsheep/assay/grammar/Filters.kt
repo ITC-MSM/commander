@@ -443,7 +443,7 @@ object Filters {
             subtyped(named, "a permanent of a subtype$suffix"),
             notSubtyped(named, "a permanent of another subtype$suffix"),
             anySubtype(named, "a permanent of either subtype$suffix"),
-            bareSubtype(plural, "a creature of a subtype$suffix"),
+            bareSubtype(plural, "a subtype standing alone$suffix"),
         )
         val counted = oneOf(
             "a permanent or token$suffix",

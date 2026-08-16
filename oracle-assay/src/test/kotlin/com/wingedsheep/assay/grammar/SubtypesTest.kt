@@ -11,6 +11,7 @@ import com.wingedsheep.sdk.scripting.ModifyStats
 import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 
 /**
@@ -82,13 +83,20 @@ class SubtypesTest : StringSpec({
         roundTrips(line)
     }
 
-    // The bare noun denotes what the adjective form denotes, so exactly one of them may print. The
-    // adjective is canonical because it says what the model says; the bare one comes back as a
-    // variant rather than as a decline.
+    // A bare creature-type noun names every *permanent* with the subtype — the adjectival "Sliver
+    // creature" is what narrows it to creatures. So the bare noun denotes what "Sliver permanent"
+    // denotes, and exactly one of those two spellings may print: the adjective is canonical because
+    // it says what the model says, and the bare one comes back as a variant rather than a decline.
     "the bare noun parses and prints back as the adjective form" {
-        fragment("Slivers can't block.") shouldBe fragment("Sliver creatures can't block.")
+        fragment("Slivers can't block.") shouldBe fragment("Sliver permanents can't block.")
         Grammar.abilityLine.printLine(fragment("Slivers can't block.")) shouldBe
-            "Sliver creatures can't block."
+            "Sliver permanents can't block."
+    }
+
+    // …and the two spellings are not interchangeable, which is the whole point of the layer:
+    // "Sliver creatures" is the narrower filter and keeps its own reading.
+    "the bare noun and the creature adjective are different filters" {
+        fragment("Sliver creatures can't block.") shouldNotBe fragment("Slivers can't block.")
     }
 
     // A bare noun has to *imply* "creature", which is a guess — so it is offered only for words the
