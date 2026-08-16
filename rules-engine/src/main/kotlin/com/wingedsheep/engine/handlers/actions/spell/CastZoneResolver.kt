@@ -924,6 +924,8 @@ class CastZoneResolver(
                 is CardPredicate.ManaValueIsEven -> cmc % 2 == 0
                 is CardPredicate.ManaValueIsOdd -> cmc % 2 != 0
                 is CardPredicate.HasXInManaCost -> card.manaCost.hasX
+                is CardPredicate.ColoredManaSymbolsAtLeast ->
+                    card.manaCost.coloredSymbolCount(predicate.colors.toSet()) >= predicate.min
                 // --- Power / toughness (null base P/T — e.g. */noncreature — never matches) ---
                 is CardPredicate.PowerEquals -> power == predicate.value
                 is CardPredicate.PowerAtMost -> power != null && power <= predicate.max

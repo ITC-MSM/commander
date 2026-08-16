@@ -477,6 +477,21 @@ data class GameObjectFilter(
         cardPredicates = cardPredicates + CardPredicate.HasXInManaCost
     )
 
+    /**
+     * Printed mana cost contains at least [min] mana symbols of [colors] — "with one or more blue
+     * mana symbols in its mana cost" (Namor the Sub-Mariner), or every colour at `min = 3` for
+     * Omnath, Locus of All's "three or more colored mana symbols in its mana cost". Hybrid and
+     * Phyrexian pips count for their colour(s); this is the printed cost, not the object's colour
+     * (see [CardPredicate.ColoredManaSymbolsAtLeast]).
+     *
+     * Colours are varargs to match the amount-side facade
+     * [com.wingedsheep.sdk.dsl.DynamicAmounts.coloredManaSymbolsOf], so the gate and the count
+     * read the same way at a card's two call sites; [min] follows them and must be named.
+     */
+    fun coloredManaSymbolsAtLeast(vararg colors: Color, min: Int = 1) = copy(
+        cardPredicates = cardPredicates + CardPredicate.ColoredManaSymbolsAtLeast(colors.toList(), min)
+    )
+
     /** Power equals */
     fun power(value: Int) = copy(
         cardPredicates = cardPredicates + CardPredicate.PowerEquals(value)

@@ -10959,6 +10959,81 @@
     ]
 }
 
+// Namor the Sub-Mariner
+{
+    "name": "Namor the Sub-Mariner",
+    "manaCost": "{1}{U}{U}",
+    "typeLine": "Legendary Creature — Mutant Merfolk Villain",
+    "oracleText": "Flying\nNamor's power is equal to the number of Merfolk you control.\nWhenever you cast a noncreature spell with one or more blue mana symbols in its mana cost, create that many 1/1 blue Merfolk creature tokens.",
+    "creatureStats": {
+        "power": {
+            "type": "Dynamic",
+            "source": {
+                "type": "AggregateBattlefield",
+                "player": "You",
+                "filter": "Merfolk"
+            }
+        },
+        "toughness": 4
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            "IsNoncreature",
+                            {
+                                "type": "ColoredManaSymbolsAtLeast",
+                                "colors": [
+                                    "BLUE"
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "CreateToken",
+                    "count": {
+                        "type": "EntityProperty",
+                        "entity": "Triggering",
+                        "numericProperty": {
+                            "type": "ColoredManaSymbolCount",
+                            "colors": [
+                                "BLUE"
+                            ]
+                        }
+                    },
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [
+                        "BLUE"
+                    ],
+                    "creatureTypes": [
+                        "Merfolk"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/7/f/7f7a4f95-f12b-4c28-a6f7-f3c64364abba.jpg?1783902797"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "69",
+        "rarity": "MYTHIC",
+        "artist": "Chris Rallis",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/a/7aaefcf9-fbe1-4767-92a5-09825761d116.jpg?1783902956"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Night Nurse, Healer of Heroes
 {
     "name": "Night Nurse, Healer of Heroes",

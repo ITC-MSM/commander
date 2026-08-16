@@ -1191,6 +1191,12 @@ class TriggerMatcher(
             com.wingedsheep.sdk.scripting.predicates.CardPredicate.HasXInManaCost ->
                 // Printed cost's {X} symbol, not the computed CMC. Face-down has no mana cost.
                 if (isFaceDown) false else cardComponent.manaCost.hasX
+            is com.wingedsheep.sdk.scripting.predicates.CardPredicate.ColoredManaSymbolsAtLeast ->
+                // "a noncreature spell with one or more blue mana symbols in its mana cost"
+                // (Namor the Sub-Mariner). Printed cost, shared counting rule (CR 107.4e/f);
+                // face-down objects have no mana cost (CR 708.2).
+                if (isFaceDown) false
+                else cardComponent.manaCost.coloredSymbolCount(predicate.colors.toSet()) >= predicate.min
             is com.wingedsheep.sdk.scripting.predicates.CardPredicate.PowerAtLeast -> {
                 val power = if (isFaceDown) 2
                     else lastKnownPower ?: projected.getPower(entityId) ?: cardComponent.baseStats?.basePower ?: 0

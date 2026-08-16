@@ -610,6 +610,15 @@ object DynamicAmounts {
     fun colorCountOf(entity: EntityReference): DynamicAmount =
         DynamicAmount.EntityProperty(entity, EntityNumericProperty.ColorCount)
 
+    /**
+     * The number of mana symbols of [colors] in the referenced entity's printed mana cost — the
+     * per-object pip count ("with one or more blue mana symbols in its mana cost … create that
+     * many", Namor the Sub-Mariner), *not* devotion. Use [devotionTo] for the whole-battlefield
+     * count of CR 700.5. Hybrid and Phyrexian pips count for their colour(s) (CR 107.4e/f).
+     */
+    fun coloredManaSymbolsOf(entity: EntityReference, vararg colors: Color): DynamicAmount =
+        DynamicAmount.EntityProperty(entity, EntityNumericProperty.ColoredManaSymbolCount(colors.toList()))
+
     fun sacrificedPower(index: Int = 0): DynamicAmount =
         DynamicAmount.EntityProperty(EntityReference.Sacrificed(index), EntityNumericProperty.Power)
 

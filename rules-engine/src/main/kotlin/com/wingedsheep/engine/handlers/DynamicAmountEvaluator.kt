@@ -24,9 +24,7 @@ import com.wingedsheep.engine.state.components.identity.PlayerComponent
 import com.wingedsheep.engine.state.components.player.ManaPoolComponent
 import com.wingedsheep.engine.state.components.identity.RoomComponent
 import com.wingedsheep.engine.state.components.stack.SpellOnStackComponent
-import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.core.CounterType
-import com.wingedsheep.sdk.core.ManaSymbol
 import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.CharacteristicValue
@@ -350,7 +348,7 @@ class DynamicAmountEvaluator(
             // and Phyrexian ({B/P}) symbols each count toward their color(s); a symbol matching more
             // than one of the requested colors is still counted once. Controller is read from
             // projection so control-changing effects are honored (700.5a). Face-down permanents have
-            // no mana cost (CR 711.4) and contribute nothing.
+            // no mana cost (CR 708.2a) and contribute nothing.
             is DynamicAmount.DevotionTo -> {
                 val playerIds = resolveUnifiedPlayerIds(state, amount.player, context).toSet()
                 if (playerIds.isEmpty()) return 0
@@ -361,7 +359,7 @@ class DynamicAmountEvaluator(
                     val entity = state.getEntity(entityId) ?: return@sumOf 0
                     if (entity.has<FaceDownComponent>()) return@sumOf 0
                     val cost = entity.get<CardComponent>()?.manaCost ?: return@sumOf 0
-                    cost.symbols.count { symbol -> manaSymbolColors(symbol).any { it in wanted } }
+                    cost.coloredSymbolCount(wanted)
                 }
             }
 
@@ -1214,6 +1212,18 @@ class DynamicAmountEvaluator(
             is EntityNumericProperty.ColorCount ->
                 resolveColorCount(state, entityId, useProjected, explicitProjected)
 
+            // Pips of the named colors in *this* object's printed mana cost — the per-object twin
+            // of DevotionTo, sharing its counting rule via ManaCost.coloredSymbolCount (hybrid and
+            // Phyrexian pips count for their colors, CR 107.4e/f). Never projected: a card's mana
+            // cost is the symbols printed on it (CR 202.1/202.1a), and cost increases/reductions
+            // only build the spell's total cost (CR 601.2f), so they never change this count.
+            // A face-down object has no mana cost (CR 708.2a) and counts 0.
+            is EntityNumericProperty.ColoredManaSymbolCount -> {
+                val entity = state.getEntity(entityId) ?: return 0
+                if (entity.has<FaceDownComponent>()) return 0
+                entity.get<CardComponent>()?.manaCost?.coloredSymbolCount(property.colors.toSet()) ?: 0
+            }
+
             // Excess damage (CR 120.4a) marked on the creature: max(0, marked − toughness).
             // Amount-valued twin of the TargetMarkedDamageExceedsToughness condition — read it after
             // a deal-damage step in the same composite (Hell to Pay's "excess damage dealt this
@@ -1336,19 +1346,6 @@ class DynamicAmountEvaluator(
             is CounterTypeFilter.Any -> counters.counters.values.sum()
             else -> counters.getCount(resolveCounterType(filter))
         }
-    }
-
-    /**
-     * The color(s) a single mana symbol contributes to devotion (CR 700.5). A two-color hybrid
-     * contributes both halves; a monocolored hybrid ({2/B}) and a Phyrexian symbol ({B/P})
-     * contribute their one color. Generic, colorless, and {X} symbols contribute nothing.
-     */
-    private fun manaSymbolColors(symbol: ManaSymbol): List<Color> = when (symbol) {
-        is ManaSymbol.Colored -> listOf(symbol.color)
-        is ManaSymbol.Hybrid -> listOf(symbol.color1, symbol.color2)
-        is ManaSymbol.Phyrexian -> listOf(symbol.color)
-        is ManaSymbol.MonocolorHybrid -> listOf(symbol.color)
-        else -> emptyList()
     }
 
     private fun resolveCounterType(filter: CounterTypeFilter): CounterType {

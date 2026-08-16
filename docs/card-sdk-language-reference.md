@@ -3525,6 +3525,26 @@ This is the player-arm prerequisite for the planned composable mixed `TargetUnio
   printed cost. Face-down objects (no mana cost) never match; the cast-record path returns `false`
   (a record stores the resolved mana value, not the printed cost). Used by *Paradox Surveyor*
   ("a card with {X} in its mana cost"). Underlying predicate: `CardPredicate.HasXInManaCost`.
+- `.coloredManaSymbolsAtLeast(vararg colors, min = 1)` — the card's **printed** mana cost contains
+  at least `min` mana symbols of `colors`: "a noncreature spell with one or more blue mana symbols
+  in its mana cost" (*Namor the Sub-Mariner*, `coloredManaSymbolsAtLeast(Color.BLUE)`), and the
+  same shape over every colour at a higher threshold for *Omnath, Locus of All*'s "three or more
+  colored mana symbols in its mana cost" (`coloredManaSymbolsAtLeast(*Color.entries.toTypedArray(),
+  min = 3)`). `min` comes after the varargs, so it must be named. Both `min < 1` and an empty
+  colour list are rejected at construction — they would match every object, including costless
+  ones. **Not `.withColor(BLUE)`** — colour is a characteristic that layer 5,
+  colour indicators and devoid can change, this is the pips printed on the card. A hybrid symbol is
+  all of its component colours and a Phyrexian symbol is its colour (CR 107.4e/f), so `{U/R}`,
+  `{2/U}` and `{U/P}` each count as one blue symbol; generic, `{C}` and `{X}` count as none.
+  A symbol that is two of the requested colours counts once. Counting is
+  `ManaCost.coloredSymbolCount`, shared with `EntityNumericProperty.ColoredManaSymbolCount` so the
+  filter and the amount can never disagree. Honored in all five object-evaluation sites (resolution
+  predicate, trigger matcher, layer projection, cast-zone resolver, cost calculation); face-down
+  objects never match (CR 708.2a) and the cast-record path returns `false` (a record stores the
+  resolved mana value, not the printed cost). Underlying predicate:
+  `CardPredicate.ColoredManaSymbolsAtLeast`. **Per-object only** — a card that totals pips across a
+  chosen *group* ("fifteen or more black mana symbols **among their mana costs**", *Baron Helmut
+  Zemo*) is a different shape and this predicate does not serve it.
 - `.toughnessAtMost(n)` / `.toughnessAtLeast(n)` — toughness comparator.
 - `.powerOrToughnessAtLeast(n)` / `.powerOrToughnessAtMost(n)` — **OR** caps over power and
   toughness: matches when *either* power or toughness is ≥ (resp. ≤) `n`. `powerOrToughnessAtMost`
@@ -8568,7 +8588,9 @@ Numbers computed at resolution time.
   twobrid ({2/B} is black), and Phyrexian ({B/P} is black); generic/colorless/{X} never count.
   Face-down permanents have no mana cost and contribute 0. Controller read via projected state.
   Facade: `DynamicAmounts.devotionTo(color, …)`. Used by "draw cards equal to your devotion to red"
-  (Clive, Ifrit's Dominant).
+  (Clive, Ifrit's Dominant). For the pips inside **one object's** cost ("a spell with one or more
+  blue mana symbols in its mana cost") use `DynamicAmounts.coloredManaSymbolsOf(entity, …)` — same
+  counting rule (`ManaCost.coloredSymbolCount`), different scope.
 - `UnlockedDoors(player = You, distinctNames = false)` — the number of unlocked doors among Rooms
   `player` controls (CR 709.5). Reads per-face door state, so a single Room with **both** doors
   unlocked counts as **two** — an entity-level `AggregateBattlefield`/`Count` cannot see this. With
@@ -8847,6 +8869,23 @@ both spellings, and the ability its bare-noun line grants says "Regenerate this 
   `EntityProperty(entity, EntityNumericProperty.ColorCount)`. Read from projected state for
   battlefield permanents (honors layer-5 color-changing — a creature turned colorless counts 0).
   Powers "for each color of [it]" amounts, e.g. Dragonfire Blade's equip cost reduction.
+- `DynamicAmounts.coloredManaSymbolsOf(entity, vararg colors)` — the number of mana symbols of
+  `colors` in **that one entity's printed mana cost**. Desugars to
+  `EntityProperty(entity, EntityNumericProperty.ColoredManaSymbolCount(colors))`. Namor the
+  Sub-Mariner's "…with one or more blue mana symbols in its mana cost, create **that many** 1/1 blue
+  Merfolk creature tokens" is `coloredManaSymbolsOf(EntityReference.Triggering, Color.BLUE)`, paired
+  with the `.coloredManaSymbolsAtLeast(Color.BLUE)` filter on the trigger. Hybrid and Phyrexian
+  pips count for their colour(s) (CR 107.4e/f); generic, `{C}` and `{X}` count for none, whatever
+  value was announced for X (`{X}` is a generic symbol, CR 107.4b). The *printed* cost is what is
+  read — a card's mana cost is the symbols printed on it (CR 202.1/202.1a), while alternative
+  costs, additional costs and cost reductions only build the spell's **total cost** (CR 601.2f) —
+  so none of them change the count. Face-down objects have no mana cost and count 0
+  (CR 708.2a); a missing entity counts 0.
+  **Not `DevotionTo`** — devotion (CR 700.5) counts the same symbols across every permanent a
+  player controls, this counts them inside one object's cost. The two share one counting rule
+  (`ManaCost.coloredSymbolCount`), so they agree symbol-for-symbol and differ only in scope.
+  Being `Triggering`-scoped, it is rejected by `SetBaseStatsEffect(reevaluateContinuously = true)`
+  like every other context-scoped amount; read off `EntityReference.Source` it is projector-safe.
 - `EntityProperty(entity, EntityNumericProperty.ExcessMarkedDamage)` — the excess damage (CR 120.4a)
   marked on a creature: `max(0, marked − toughness)`, read from post-damage state. Amount-valued twin of
   the `TargetMarkedDamageExceedsToughness` condition. Read it AFTER a deal-damage step in the same
