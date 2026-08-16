@@ -1132,7 +1132,8 @@ card, you may put it onto the battlefield tapped.", 88 cards / 68 sole), and the
 
 The lands that enter tapped *unless* something is true — the check lands, the fast lands, the slow
 lands, the Duskmourn cycle, and every one-off beside them. Whole-corpus coverage 7,910 → **7,967
-cards** (+57). No new SDK type; one grammar template, four new rows in the condition vocabulary, and
+cards** (+57); the baked verdict ledger 7,701 → **7,758 whole**, with 57 cards gained and **none
+lost**. No new SDK type; one grammar template, four new rows in the condition vocabulary, and
 two facade entries in `mtg-sdk` that name a composition the cards were already spelling by hand.
 
 **It was picked by measuring, and it was the top of the list on both numbers.** The tail ranking put
