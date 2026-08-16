@@ -81,6 +81,57 @@
     ]
 }
 
+// Meteorite
+{
+    "name": "Meteorite",
+    "manaCost": "{5}",
+    "typeLine": "Artifact",
+    "oracleText": "When this artifact enters, it deals 2 damage to any target.\n{T}: Add one mana of any color.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "any target"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "AnyTarget",
+                    "id": "any target"
+                }
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": "CostTap",
+                "effect": "AddManaOfChoice",
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "221",
+        "rarity": "UNCOMMON",
+        "artist": "Scott Murphy",
+        "flavorText": "\"And if I'm lying,\" he began . . .",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/7/d7a39c1a-7615-4ac8-8984-b8459d201cb2.jpg?1783939157"
+    },
+    "colorIdentityOverride": []
+}
+
 // Reclamation Sage
 {
     "name": "Reclamation Sage",

@@ -193,6 +193,55 @@
     ]
 }
 
+// Griffin Protector
+{
+    "name": "Griffin Protector",
+    "manaCost": "{3}{W}",
+    "typeLine": "Creature — Griffin",
+    "oracleText": "Flying\nWhenever another creature you control enters, this creature gets +1/+1 until end of turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "creature ctrl:you",
+                    "to": "Battlefield"
+                },
+                "binding": "OTHER",
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": "Self"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "16",
+        "artist": "Christopher Moeller",
+        "flavorText": "The drums of war stir the hearts of all who fight for righteousness.",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/d/ddae4f7a-525c-4306-81b5-b0991840a11e.jpg?1783940518"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Krenko, Mob Boss
 {
     "name": "Krenko, Mob Boss",
