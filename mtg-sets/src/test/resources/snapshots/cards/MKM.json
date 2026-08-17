@@ -7354,6 +7354,111 @@
     ]
 }
 
+// Hedge Whisperer
+{
+    "name": "Hedge Whisperer",
+    "manaCost": "{G}",
+    "typeLine": "Creature — Elf Druid Detective",
+    "oracleText": "You may choose not to untap this creature during your untap step.\n{3}{G}, {T}, Collect evidence 4: Target land you control becomes a 5/5 green Plant Boar creature with haste for as long as this creature remains tapped. It's still a land. Activate only as a sorcery. (To collect evidence 4, exile cards with total mana value 4 or greater from your graveyard.)",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 3
+    },
+    "flags": [
+        "MAY_NOT_UNTAP"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{3}{G}"
+                            }
+                        },
+                        "CostTap",
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomCollectEvidence",
+                                "amount": 4
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "BecomeCreature",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target land you control"
+                    },
+                    "power": {
+                        "type": "Fixed",
+                        "amount": 5
+                    },
+                    "toughness": {
+                        "type": "Fixed",
+                        "amount": 5
+                    },
+                    "keywords": [
+                        "HASTE"
+                    ],
+                    "creatureTypes": [
+                        "Plant",
+                        "Boar"
+                    ],
+                    "colors": [
+                        "G"
+                    ],
+                    "duration": {
+                        "type": "WhileSourceTapped",
+                        "sourceDescription": "Hedge Whisperer"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "land ctrl:you"
+                        },
+                        "id": "target land you control"
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "descriptionOverride": "Target land you control becomes a 5/5 green Plant Boar creature with haste for as long as Hedge Whisperer remains tapped. It's still a land. Activate only as a sorcery."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "165",
+        "rarity": "UNCOMMON",
+        "artist": "Simon Dominic",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/6/4627adcd-ace7-4777-a7e6-fc80ac6b9dfe.jpg?1783912865",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "If Hedge Whisperer leaves the battlefield before its activated ability resolves, the target land won't become a creature at all."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "If you can't exile enough cards to meet or exceed the required mana value, you can't choose to collect evidence at all."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "Once you've announced that you're casting a spell, players can't take actions until you've finished doing so. Notably, opponents can't try to remove cards from your graveyard to stop you from collecting evidence."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Hide in Plain Sight
 {
     "name": "Hide in Plain Sight",
