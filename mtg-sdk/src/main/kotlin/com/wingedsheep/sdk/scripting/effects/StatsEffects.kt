@@ -49,10 +49,16 @@ data class ModifyStatsEffect(
         if (duration.description.isNotEmpty()) append(" ${duration.description}")
     }
 
-    override fun runtimeDescription(resolver: (DynamicAmount) -> Int): String = buildString {
+    override fun runtimeDescription(resolver: (DynamicAmount) -> Int?): String = buildString {
         append("${target.description} gets ")
-        fun fmt(v: Int) = if (v >= 0) "+$v" else "$v"
-        append("${fmt(resolver(powerModifier))}/${fmt(resolver(toughnessModifier))}")
+        // An amount the context can't determine yet — "double its power", read off a target that
+        // hasn't been chosen — falls back to its own wording, exactly as [description] does for a
+        // non-Fixed amount. Formatting the absent value as "+0" would read as a real +0/+0 pump.
+        fun fmt(amount: DynamicAmount): String {
+            val v = resolver(amount) ?: return amount.description
+            return if (v >= 0) "+$v" else "$v"
+        }
+        append("${fmt(powerModifier)}/${fmt(toughnessModifier)}")
         if (duration.description.isNotEmpty()) append(" ${duration.description}")
     }
 

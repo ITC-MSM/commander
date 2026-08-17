@@ -129,7 +129,7 @@ data class ForEachEffect(
 ) : Effect {
     override val description: String = render { it.description }
 
-    override fun runtimeDescription(resolver: (DynamicAmount) -> Int): String =
+    override fun runtimeDescription(resolver: (DynamicAmount) -> Int?): String =
         render { it.runtimeDescription(resolver) }
 
     /**

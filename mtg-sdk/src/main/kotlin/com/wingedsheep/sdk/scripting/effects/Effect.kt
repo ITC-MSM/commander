@@ -44,8 +44,15 @@ sealed interface Effect : TextReplaceable<Effect> {
     /**
      * Returns a description with dynamic amounts evaluated to concrete values.
      * Override in effects that use [DynamicAmount] to show runtime values on the stack.
+     *
+     * [resolver] returns `null` when the current context cannot determine the amount yet. The case
+     * that matters is a [DynamicAmount] reading a property off a target the player has not chosen
+     * yet — the targeting banner renders its hint in exactly that state, before any target exists.
+     * An override MUST fall back to the amount's own [DynamicAmount.description] there: rendering
+     * an absent value as `0` claims a concrete number ("+0/+0") for something merely unknown, and
+     * is indistinguishable from an amount that genuinely resolved to zero.
      */
-    fun runtimeDescription(resolver: (DynamicAmount) -> Int): String = description
+    fun runtimeDescription(resolver: (DynamicAmount) -> Int?): String = description
 
     /**
      * Operator to chain effects.

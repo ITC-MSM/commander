@@ -757,7 +757,7 @@ class TriggerProcessor(
                 triggerXValueOfTriggeringSpell = trigger.triggerContext.xValueOfTriggeringSpell,
                 pipeline = trigger.carriedPipeline ?: com.wingedsheep.engine.handlers.PipelineState.EMPTY
             )
-            ability.effect.runtimeDescription { amount -> evaluator.evaluate(state, amount, context) }
+            ability.effect.runtimeDescription { amount -> evaluator.evaluateForDisplay(state, amount, context) }
         } catch (_: Exception) {
             ability.effect.description
         }

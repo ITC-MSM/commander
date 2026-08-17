@@ -98,6 +98,67 @@ class DynamicAmountEvaluator(
         explicit ?: defaultProjection(state)
 
     /**
+     * Evaluate [amount] for *display*, reporting `null` when [context] cannot determine it yet.
+     *
+     * [evaluate] answers `0` for a reference that doesn't resolve, which is the right answer when an
+     * effect is actually being applied but the wrong one when text is being rendered: a caller can't
+     * tell that `0` apart from an amount that genuinely resolved to zero. The gap that matters is the
+     * targeting banner — it renders an ability's text *before* the player picks a target, so an
+     * amount reading "target's power" cannot resolve by construction, and printing `0` claims a
+     * concrete "+0/+0". Description renderers take `null` as "fall back to the amount's own wording".
+     *
+     * Only entity-reference reads can be undeterminable; every other amount reads state that already
+     * exists. Composite amounts are undeterminable if any operand is.
+     */
+    fun evaluateForDisplay(
+        state: GameState,
+        amount: DynamicAmount,
+        context: EffectContext,
+        projectedState: ProjectedState? = null
+    ): Int? = if (isDeterminable(state, amount, context)) {
+        evaluate(state, amount, context, projectedState)
+    } else {
+        null
+    }
+
+    /**
+     * Whether every entity reference inside [amount] binds in [context]. Mirrors the operand
+     * structure of [evaluate]; a reference the evaluator would silently read as `0` is the thing
+     * being detected, so this walks the same composites [evaluate] recurses through.
+     */
+    private fun isDeterminable(
+        state: GameState,
+        amount: DynamicAmount,
+        context: EffectContext
+    ): Boolean = when (amount) {
+        is DynamicAmount.EntityProperty ->
+            // The enchanted-creature branch of [evaluate] has its own last-known-information
+            // fallback and stays determinable even once the aura has detached.
+            amount.entity is EntityReference.EnchantedCreature ||
+                TargetResolutionUtils.resolveEntityReference(amount.entity, context, state) != null
+
+        is DynamicAmount.Add -> isDeterminable(state, amount.left, context) &&
+            isDeterminable(state, amount.right, context)
+        is DynamicAmount.Subtract -> isDeterminable(state, amount.left, context) &&
+            isDeterminable(state, amount.right, context)
+        is DynamicAmount.Max -> isDeterminable(state, amount.left, context) &&
+            isDeterminable(state, amount.right, context)
+        is DynamicAmount.Min -> isDeterminable(state, amount.left, context) &&
+            isDeterminable(state, amount.right, context)
+        is DynamicAmount.Multiply -> isDeterminable(state, amount.amount, context)
+        is DynamicAmount.Power -> isDeterminable(state, amount.exponent, context)
+        is DynamicAmount.IfPositive -> isDeterminable(state, amount.amount, context)
+        is DynamicAmount.Divide -> isDeterminable(state, amount.numerator, context) &&
+            isDeterminable(state, amount.denominator, context)
+        // Both arms, not just the one the condition selects: the text renders before resolution,
+        // and the condition itself may not be evaluable in a display-only context either.
+        is DynamicAmount.Conditional -> isDeterminable(state, amount.ifTrue, context) &&
+            isDeterminable(state, amount.ifFalse, context)
+
+        else -> true
+    }
+
+    /**
      * Evaluate a DynamicAmount to get an actual integer value.
      *
      * @param projectedState Optional pre-computed projected state for battlefield reads.
