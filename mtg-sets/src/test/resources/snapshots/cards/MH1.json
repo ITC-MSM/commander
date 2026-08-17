@@ -225,6 +225,54 @@
     ]
 }
 
+// Irregular Cohort
+{
+    "name": "Irregular Cohort",
+    "manaCost": "{2}{W}{W}",
+    "typeLine": "Creature — Shapeshifter",
+    "oracleText": "Changeling (This card is every creature type.)\nWhen this creature enters, create a 2/2 colorless Shapeshifter creature token with changeling.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "CHANGELING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 2,
+                    "toughness": 2,
+                    "colors": [],
+                    "creatureTypes": [
+                        "Shapeshifter"
+                    ],
+                    "keywords": [
+                        "CHANGELING"
+                    ]
+                },
+                "descriptionOverride": "When this creature enters, create a 2/2 colorless Shapeshifter creature token with changeling."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "15",
+        "artist": "Steve Argyle",
+        "flavorText": "Where fickle form meets lasting loyalty.",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/2/92c46961-cf1a-4f20-83aa-3d256db2388f.jpg?1783933160"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // King of the Pride
 {
     "name": "King of the Pride",

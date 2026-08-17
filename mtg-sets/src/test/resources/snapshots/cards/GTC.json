@@ -498,6 +498,58 @@
     ]
 }
 
+// High Priest of Penance
+{
+    "name": "High Priest of Penance",
+    "manaCost": "{W}{B}",
+    "typeLine": "Creature — Human Cleric",
+    "oracleText": "Whenever this creature is dealt damage, you may destroy target nonland permanent.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "DamageReceivedEvent",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target nonland permanent"
+                        },
+                        "destination": "Graveyard",
+                        "byDestruction": true
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "nonland permanent"
+                    },
+                    "id": "target nonland permanent"
+                },
+                "descriptionOverride": "Whenever this creature is dealt damage, you may destroy target nonland permanent."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "171",
+        "rarity": "RARE",
+        "artist": "Mark Zug",
+        "flavorText": "\"All I require is faith, loyalty, obedience, trust, and complete and utter devotion.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/4/84a3ff8d-6d7e-49f0-8d30-7f8c23db568b.jpg?1783940106"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "WHITE"
+    ]
+}
+
 // Ivy Lane Denizen
 {
     "name": "Ivy Lane Denizen",

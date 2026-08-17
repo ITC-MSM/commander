@@ -804,7 +804,8 @@
                     "counterType": "+1/+1",
                     "count": 1,
                     "target": "Self"
-                }
+                },
+                "descriptionOverride": "Whenever a player casts a spell, put a +1/+1 counter on this creature."
             }
         ]
     },

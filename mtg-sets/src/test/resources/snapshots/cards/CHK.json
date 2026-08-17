@@ -2271,6 +2271,68 @@
     ]
 }
 
+// Ryusei, the Falling Star
+{
+    "name": "Ryusei, the Falling Star",
+    "manaCost": "{5}{R}",
+    "typeLine": "Legendary Creature — Dragon Spirit",
+    "oracleText": "Flying\nWhen Ryusei dies, it deals 5 damage to each creature without flying.",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 5
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "effect": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": {
+                                "cardPredicates": [
+                                    "IsCreature",
+                                    {
+                                        "type": "NotKeyword",
+                                        "keyword": "FLYING"
+                                    }
+                                ]
+                            }
+                        }
+                    },
+                    "body": {
+                        "type": "DealDamage",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 5
+                        },
+                        "target": "Self"
+                    }
+                },
+                "descriptionOverride": "When Ryusei dies, it deals 5 damage to each creature without flying."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "185",
+        "rarity": "RARE",
+        "artist": "Nottsuo",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/7/17898412-6275-4762-a03b-04daf30fee7f.jpg?1783944296"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Sachi, Daughter of Seshiro
 {
     "name": "Sachi, Daughter of Seshiro",

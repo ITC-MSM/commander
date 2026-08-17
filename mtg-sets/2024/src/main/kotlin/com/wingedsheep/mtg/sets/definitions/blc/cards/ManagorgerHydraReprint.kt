@@ -4,8 +4,9 @@ import com.wingedsheep.sdk.model.Printing
 import com.wingedsheep.sdk.model.Rarity
 
 /**
- * Managorger Hydra reprint in BLC. Canonical CardDefinition lives in ORI, the card's earliest
- * real printing; this file contributes only the BLC presentation row.
+ * Managorger Hydra reprint in BLC. The canonical CardDefinition lives in
+ * Magic Origins (`ori`), the card's earliest real printing; this file
+ * contributes only per-printing presentation data.
  */
 val ManagorgerHydraReprint = Printing(
     oracleId = "b3f2265b-dd65-4b74-8b74-35ee0b147617",

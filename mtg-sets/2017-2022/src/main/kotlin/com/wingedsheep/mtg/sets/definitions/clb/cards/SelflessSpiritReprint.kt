@@ -4,9 +4,9 @@ import com.wingedsheep.sdk.model.Printing
 import com.wingedsheep.sdk.model.Rarity
 
 /**
- * Selfless Spirit reprint in Commander Legends: Battle for Baldur's Gate. The canonical
- * [com.wingedsheep.sdk.model.CardDefinition] lives in the `emn` `cards/` package
- * (the card's earliest real printing); this file contributes only per-printing presentation data.
+ * Selfless Spirit reprint in CLB. The canonical CardDefinition lives in
+ * Eldritch Moon (`emn`), the card's earliest real printing; this file
+ * contributes only per-printing presentation data.
  */
 val SelflessSpiritReprint = Printing(
     oracleId = "71d785a9-ddc8-472e-a778-a551b444a4bd",
