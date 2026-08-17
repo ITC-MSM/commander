@@ -16,6 +16,7 @@ import com.wingedsheep.sdk.dsl.RIOT_MODE_COUNTER
 import com.wingedsheep.sdk.dsl.RIOT_MODE_HASTE
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.Duration
+import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.GrantChosenColor
 import com.wingedsheep.sdk.scripting.KeywordAbility
 import com.wingedsheep.sdk.scripting.ProtectionScope
@@ -2342,6 +2343,32 @@ class ClientStateTransformer(
                     name = "Uncounterable",
                     description = "Your next $filterDesc spell can't be countered ($sourceName)",
                     icon = "no-counter"
+                )
+            )
+        }
+
+        // Check for pending "next spell can be cast without paying its mana cost" riders
+        // (e.g. World War Hulk I) — the player needs to see the free cast is still available.
+        val pendingFreeCasts = state.pendingFreeCastSpells.filter { it.controllerId == playerId }
+        if (pendingFreeCasts.isNotEmpty()) {
+            val sourceName = pendingFreeCasts.map { it.sourceName }.distinct().joinToString(", ")
+            // With several riders the broadest one sets the wording: an unfiltered rider frees the
+            // next spell whatever it is, so naming only a filtered sibling's types would understate
+            // it — and joining a blank filter into the list rendered as "red or green creature /".
+            val filterDesc = if (pendingFreeCasts.any { it.spellFilter == GameObjectFilter.Any }) {
+                ""
+            } else {
+                pendingFreeCasts
+                    .map { it.spellFilter.description }
+                    .distinct()
+                    .joinToString("/") + " "
+            }
+            effects.add(
+                ClientPlayerEffect(
+                    effectId = "pending_free_cast_spell",
+                    name = "Free Cast",
+                    description = "Your next ${filterDesc}spell can be cast without paying its mana cost ($sourceName)",
+                    icon = "free-cast"
                 )
             )
         }

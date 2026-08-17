@@ -3933,6 +3933,32 @@ class CastSpellHandler(
             }
         }
 
+        // Consume any matching "the next matching spell you cast this turn can be cast without
+        // paying its mana cost" riders (World War Hulk I). The permission was already offered by
+        // CostCalculator.hasFreeCastPermission while the rider was present; removing it here means
+        // only *the next* matching spell benefits. Deliberately not gated on
+        // `action.useWithoutPayingManaCost`: the printed text names a spell ("the next red or green
+        // creature spell you cast this turn"), so a matching spell cast for full price is that
+        // spell and spends the rider — the same contract as the affinity rider above.
+        run {
+            val matchingFreeCastRiders = currentCastState.pendingFreeCastSpells.filter { pending ->
+                if (pending.controllerId != action.playerId) return@filter false
+                // Source-relative filters, as above.
+                val freeCastEvalContext = PredicateContext(
+                    controllerId = action.playerId,
+                    sourceId = pending.sourceId
+                )
+                predicateEvaluator.matches(
+                    currentCastState, currentCastState.projectedState, action.cardId, pending.spellFilter, freeCastEvalContext
+                )
+            }
+            if (matchingFreeCastRiders.isNotEmpty()) {
+                currentCastState = currentCastState.copy(
+                    pendingFreeCastSpells = currentCastState.pendingFreeCastSpells.filter { it !in matchingFreeCastRiders }
+                )
+            }
+        }
+
         // Detect and process triggers from casting (including additional cost events like sacrifice).
         // Storm pending triggers (built above) are prepended so they go on the stack just above the
         // spell itself — per CR 603.3b Storm goes on top of the spell that caused it to trigger.

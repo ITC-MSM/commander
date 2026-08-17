@@ -1060,6 +1060,43 @@ data class MakeNextSpellUncounterableEffect(
 }
 
 /**
+ * The next spell its controller casts this turn matching [spellFilter] can be cast without paying
+ * its mana cost (CR 118.9 — "without paying its mana cost" is an alternative cost, so mandatory
+ * additional costs still apply, and X is 0 per CR 107.3b because the free-cast action variant the
+ * enumerator offers carries no X).
+ *
+ * One-shot rider, the same shape as [MakeNextSpellUncounterableEffect] and
+ * [GrantNextSpellAffinityEffect]: it waits on the game state for the controller's next matching
+ * cast, offers that cast the free-cast alternative, and is then consumed. **Consumption is by the
+ * cast, not by the discount** — the printed text names "the next" matching spell, so a matching
+ * spell cast for full price is that spell and spends the rider; a later one is not "the next".
+ *
+ * Unlike [com.wingedsheep.sdk.scripting.MayCastWithoutPayingManaCost], which is a static ability
+ * read off a permanent on the battlefield, this rider lives on the game state: it survives its
+ * source leaving the battlefield (the ability has already resolved) and is not tied to the source
+ * being a permanent at all.
+ *
+ * Used by World War Hulk chapter I ("The next red or green creature spell you cast this turn can
+ * be cast without paying its mana cost.").
+ *
+ * @property spellFilter Which spell the rider waits for (defaults to any spell).
+ */
+@SerialName("GrantNextSpellFreeCast")
+@Serializable
+data class GrantNextSpellFreeCastEffect(
+    val spellFilter: GameObjectFilter = GameObjectFilter.Any
+) : Effect {
+    override val description: String = buildString {
+        append("The next ")
+        if (spellFilter != GameObjectFilter.Any) append("${spellFilter.description} ")
+        append("spell you cast this turn can be cast without paying its mana cost")
+    }
+
+    override fun applyTextReplacement(replacer: TextReplacer): Effect =
+        copy(spellFilter = spellFilter.applyTextReplacement(replacer))
+}
+
+/**
  * Grant the next [spellFilter] spell the controller casts this turn affinity for [forType] —
  * the same one-shot pending-rider shape as [MakeNextSpellUncounterableEffect], but the matched
  * spell costs {1} less to cast for each permanent of [forType] the controller has *at cast time*

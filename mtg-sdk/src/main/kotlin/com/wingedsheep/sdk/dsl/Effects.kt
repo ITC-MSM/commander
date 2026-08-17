@@ -3757,6 +3757,17 @@ object Effects {
     ): Effect = com.wingedsheep.sdk.scripting.effects.MakeNextSpellUncounterableEffect(spellFilter)
 
     /**
+     * The next spell matching [spellFilter] you cast this turn can be cast without paying its mana
+     * cost (World War Hulk I). One-shot: the next matching spell you cast consumes the rider,
+     * whether or not you take the free cast — "the next" names a spell, not a discount. Unlike the
+     * battlefield static [com.wingedsheep.sdk.scripting.MayCastWithoutPayingManaCost], the
+     * permission lives on the game state and survives its source leaving the battlefield.
+     */
+    fun GrantNextSpellFreeCast(
+        spellFilter: GameObjectFilter = GameObjectFilter.Any
+    ): Effect = com.wingedsheep.sdk.scripting.effects.GrantNextSpellFreeCastEffect(spellFilter)
+
+    /**
      * Grant the next [spellFilter] spell you cast this turn affinity for [forType] (Don & Raph).
      * The matched spell costs {1} less per [forType] permanent you control at cast time.
      */
