@@ -4706,6 +4706,19 @@ caster with `EffectTarget.PlayerRef(Player.TriggeringPlayer)`.
 - `youCastSpellTargeting(filter)` — "whenever you cast a spell that targets a [filter]" (Legolas,
   Master Archer's `Creature.opponentControls()`). Sugar for
   `youCastSpell(requires = setOf(SpellCastPredicate.TargetsMatching(filter)))`.
+  **The matching targets are captured for the payoff**: the detector records exactly the targets
+  that satisfied the gate into `IterationSpace.TRIGGER_CAPTURED_COLLECTION` (the same engine-seeded
+  slot a batched ETB trigger uses), so "…, **those** creatures gain flying until end of turn"
+  (Storm, Windrider) is
+  `ForEachInCollectionEffect(IterationSpace.TRIGGER_CAPTURED_COLLECTION, GrantKeyword(FLYING, EffectTarget.Self))`
+  — no separate target-reading effect, and the gate and the payoff are one computation, so they
+  can't drift. The capture is a **snapshot taken when the ability triggers** (CR 113.7a: the
+  ability is on the stack independently of the spell that caused it), which is what makes it
+  correct when an opponent counters or retargets that spell in response to the trigger — a live
+  read of the spell's targets at resolution would find none, because countering strips the
+  spell's `TargetsComponent`. Narrow the payoff further with
+  `FilterCollectionEffect(from = TRIGGER_CAPTURED_COLLECTION, …)` if it must act on fewer objects
+  than the gate matched.
 
 - `youPlayLand(fromZoneOtherThan: Zone? = null)` — "whenever you play a land" (CR 305.1, the special
   land-play action). Pass `fromZoneOtherThan = Zone.HAND` for "whenever you play a land … from anywhere
@@ -5746,6 +5759,13 @@ staticAbility {
   host-scoped scan mirrors the `MustBeBlocked` one above: `AttachedTo` resolves to the attachment's
   host, `Specific` to the bound entity, `Battlefield` matches every attacker, and the attacker must
   also satisfy the filter's base filter (evaluated with the host as predicate source).
+  A **battlefield-scoped** `GroupFilter` is how "creatures you control can't be blocked by X" is
+  written (Wall Crawl's Spiders; Storm, Windrider's "creatures with flying can't … block creatures
+  you control" — the block half of that card is a `CantBeBlockedBy`, read from the attacker's side,
+  not a `CantBlock`, which would also stop those fliers blocking a *third* player). The host is
+  **not** skipped when it is itself the attacker, so a creature whose own group clause covers
+  "creatures you control" gets the evasion too; set `excludeSelf` on the `GroupFilter` for the
+  "other creatures you control …" wording.
 - `CantBeBlockedByMoreThan(maxBlockers)` — static cap on how many creatures may block the source (CR
   509.1b). For the **turn-scoped, granted** form (Glorfindel, Dauntless Rescuer: "can't be blocked by
   more than one creature each combat this turn"), grant `AbilityFlag.CANT_BE_BLOCKED_BY_MORE_THAN_ONE`
@@ -5792,11 +5812,26 @@ staticAbility {
   declaration pauses for the same mana-source confirmation as the attack tax. The pre-existing
   per-creature-type block tax (Whipgrass Entangler) uses `AttackBlockTaxPerCreatureType` floating
   effects instead.
-- `CantBeAttackedWithout(keyword, attackerFilter = null)` — Form of the Dragon-style "Creatures
-  without flying can't attack you." defender-side restriction. Optional `attackerFilter` narrows
-  which attackers are restricted (evaluated with the source permanent as predicate source, so
-  chosen-color/subtype predicates resolve against it) — e.g. Teferi's Moat:
-  `CantBeAttackedWithout(Keyword.FLYING, GameObjectFilter.Creature.sharingChosenColorWithSource())`.
+- `CantBeAttackedBy(attackerFilter)` — the general **defender-side** attack restriction (CR
+  508.1c): creatures matching `attackerFilter` can't attack the controller of the permanent carrying
+  it. Resolved by `CantBeAttackedByDefenderRule`, which scans the *defending* player's projected
+  battlefield (skipping face-down permanents, CR 708.2) and matches the attacker against the filter
+  with the projection in hand, using the restricting permanent as predicate source and the defending
+  player as "you" — so `youControl()` / chosen-color / chosen-subtype predicates resolve against the
+  restriction's own side. The filter carries the whole clause, positive or negative; there is no
+  separate "…without keyword" shape:
+  - Storm, Windrider — `CantBeAttackedBy(GameObjectFilter.Creature.withKeyword(Keyword.FLYING))`
+  - Form of the Dragon — `CantBeAttackedBy(GameObjectFilter.Creature.withoutKeyword(Keyword.FLYING))`
+  - Teferi's Moat —
+    `CantBeAttackedBy(GameObjectFilter.Creature.sharingChosenColorWithSource().withoutKeyword(Keyword.FLYING))`
+
+  **"You" means the player, not their permanents**: attacking a planeswalker or battle that player
+  controls stays legal (Form of the Dragon's 2014-02-01 ruling; CR 506.3 — only a player,
+  planeswalker or battle can be attacked — and CR 508.1b, which announces which of those each
+  attacker is attacking). The rule therefore fires only when
+  the chosen defender *is* the restricting permanent's controller. For "… or block creatures you
+  control" on the same card, don't reach for `CantBlock` — that is global; use `CantBeBlockedBy`
+  with a battlefield-scoped `GroupFilter` (below).
 - `CantBeAttackedWhileAttached` — the source permanent can't be chosen as an attack defender while
   it has an `AttachedToComponent`. The restriction is checked only as attackers are declared, so
   attaching the source after it is already being attacked doesn't remove it from combat. Used by

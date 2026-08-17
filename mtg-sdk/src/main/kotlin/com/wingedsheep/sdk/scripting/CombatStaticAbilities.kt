@@ -1,6 +1,5 @@
 package com.wingedsheep.sdk.scripting
 
-import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.scripting.conditions.Condition
 import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
@@ -387,34 +386,65 @@ data class CanAttackDespiteDefender(
 }
 
 /**
- * Creatures without a specified keyword can't attack the controller of this permanent.
- * Used for Form of the Dragon: "Creatures without flying can't attack you."
+ * Creatures matching [attackerFilter] can't attack the controller of this permanent — the general
+ * defender-side attack restriction (CR 508.1c).
  *
- * This is a defender-side restriction — the engine checks the defending player's battlefield
- * for permanents with this ability, and blocks any attacker that lacks the required keyword.
+ * The engine checks the *defending* player's battlefield for permanents with this ability and
+ * rejects any attacker that matches the filter. The filter is evaluated with this permanent as the
+ * predicate source and the defending player as "you", so `youControl()` / chosen-color / chosen-
+ * subtype predicates all resolve against the restriction's own side.
  *
- * An optional [attackerFilter] narrows which attackers the restriction applies to. When set,
- * only attackers matching the filter (evaluated with this permanent as the predicate source,
- * so chosen-color/subtype predicates resolve against it) are restricted; all others may attack
- * freely. Used for Teferi's Moat: "Creatures of the chosen color without flying can't attack
- * you." When null (the default) the restriction applies to every attacker (Form of the Dragon).
+ * The filter carries the whole restriction, positive or negative — there is no separate
+ * "…without keyword" shape:
+ *  - Storm, Windrider — "Creatures with flying can't attack you":
+ *    `CantBeAttackedBy(GameObjectFilter.Creature.withKeyword(Keyword.FLYING))`
+ *  - Form of the Dragon — "Creatures without flying can't attack you":
+ *    `CantBeAttackedBy(GameObjectFilter.Creature.withoutKeyword(Keyword.FLYING))`
+ *  - Teferi's Moat — "Creatures of the chosen color without flying can't attack you":
+ *    `CantBeAttackedBy(GameObjectFilter.Creature.sharingChosenColorWithSource().withoutKeyword(FLYING))`
  *
- * @property requiredKeyword The keyword attackers must have (e.g., FLYING)
- * @property attackerFilter Optional filter limiting which attackers are restricted
+ * @property attackerFilter Which attackers are restricted.
  */
-@SerialName("CantBeAttackedWithout")
+@SerialName("CantBeAttackedBy")
 @Serializable
-data class CantBeAttackedWithout(
-    val requiredKeyword: Keyword,
-    val attackerFilter: com.wingedsheep.sdk.scripting.GameObjectFilter? = null
+data class CantBeAttackedBy(
+    val attackerFilter: com.wingedsheep.sdk.scripting.GameObjectFilter
 ) : StaticAbility {
-    override val description: String =
-        if (attackerFilter == null) {
-            "Creatures without ${requiredKeyword.displayName.lowercase()} can't attack you"
-        } else {
-            "${attackerFilter.description} without ${requiredKeyword.displayName.lowercase()} can't attack you"
-        }
+    override val description: String = "${pluralAttackerSubject(attackerFilter)} can't attack you"
+
+    override fun applyTextReplacement(replacer: TextReplacer): StaticAbility {
+        val newFilter = attackerFilter.applyTextReplacement(replacer)
+        return if (newFilter !== attackerFilter) copy(attackerFilter = newFilter) else this
+    }
 }
+
+/**
+ * Sentence-subject rendering of an attacker filter: "creature with flying" → "Creatures with
+ * flying". This string is user-visible — it is the attack-rejection message and the label of a
+ * granted static — and the clause it heads is always plural ("Creatures without flying can't
+ * attack you").
+ *
+ * [GameObjectFilter.description] is a *singular* noun phrase whose qualifiers trail the type word
+ * ("creature of the chosen color without flying"), so only the **type** word may take the "s":
+ * pluralizing the last word instead would give "creature with flyings". A filter whose description
+ * carries no recognizable type noun is left alone rather than mangled.
+ */
+private fun pluralAttackerSubject(filter: GameObjectFilter): String {
+    val words = filter.description.split(" ")
+    val typeIndex = words.indexOfFirst { it.lowercase() in PLURALIZABLE_TYPE_NOUNS }
+    val plural = if (typeIndex < 0) {
+        words
+    } else {
+        words.mapIndexed { index, word -> if (index == typeIndex) "${word}s" else word }
+    }
+    return plural.joinToString(" ").replaceFirstChar { it.uppercase() }
+}
+
+/** Type nouns a [GameObjectFilter] description can head with, all regular "+s" plurals. */
+private val PLURALIZABLE_TYPE_NOUNS = setOf(
+    "creature", "permanent", "artifact", "enchantment", "land", "planeswalker", "battle",
+    "token", "card", "spell"
+)
 
 /**
  * The source permanent can't be chosen as an attack defender while it is attached to another

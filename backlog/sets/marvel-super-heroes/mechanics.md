@@ -535,19 +535,24 @@ and nothing returns each card to the zone it came from. Needed: a `ReturnLinkedE
 (or an origin-zone field on `LinkedExileComponent`), plus lifting the hand-zone restriction on
 `ExileUntilLeaves` so the card reads as one primitive.
 
-### Two additions on one card — **Storm, Windrider** [230]
-1. **"those creatures gain flying"** — `Triggers.youCastSpellTargeting(filter)` exists, but nothing
-   names *the targets of the triggering spell*. `EffectTarget` has `TriggeringEntity`, `CardSource` has
-   `ChosenTargets` (this effect's own targets) — neither reaches the spell's targets. Cleanest fix: have
-   the `SpellCastPredicate.TargetsMatching` matcher record the matching target ids into
-   `TriggerContext.capturedEntityIds` (already plumbed to `PipelineState.TRIGGER_CAPTURED_COLLECTION` by
-   `StackResolver`), after which the card is a plain `ForEachInCollection(…, GrantKeyword(FLYING, …))` —
-   no new effect type.
-2. **"Creatures with flying can't attack you"** — the only defender-relative attack restriction is
-   `CantBeAttackedWithout(requiredKeyword, attackerFilter)`, which is *inverted*; `CantAttack(filter)` is
-   global. Needs either a nullable `requiredKeyword` or a new `CantBeAttackedBy(attackerFilter)` static
-   plus its branch in the attack-legality check. (The "or block creatures you control" half is already
-   `CantBeBlockedBy`.)
+### Two additions on one card — **Storm, Windrider** [230] — SHIPPED ✅
+1. **"those creatures gain flying"** — shipped as the `capturedEntityIds` route sketched here, and it
+   was the right call: `TriggerDetector` records the targets that satisfied the trigger's own
+   `SpellCastPredicate.TargetsMatching` gate (one site, next to the four existing batch-capture
+   precedents), and the card is a plain
+   `ForEachInCollection(TRIGGER_CAPTURED_COLLECTION, GrantKeyword(FLYING, Self))` — no new effect
+   type, no new `IterationSpace` variant. A first pass added an `IterationSpace.TriggeringSpellTargets`
+   variant that read the spell's live `TargetsComponent` at resolution instead; that is wrong as well
+   as redundant, because the trigger sits *on top of* the spell (CR 603.3), so countering the spell in
+   response strips its targets and the payoff silently did nothing. A capture is a snapshot by
+   construction, which is what CR 113.7a asks for.
+2. **"Creatures with flying can't attack you"** — shipped by *generalizing* the inverted
+   `CantBeAttackedWithout(requiredKeyword, attackerFilter)` into `CantBeAttackedBy(attackerFilter)`;
+   `GameObjectFilter.withoutKeyword` already expressed the old negative form, so Form of the Dragon and
+   Teferi's Moat migrated onto it and the old type was deleted. The "or block creatures you control"
+   half is indeed `CantBeBlockedBy`, with a battlefield-scoped `GroupFilter` — that needed one engine
+   fix, since the host-scoped scan skipped the host when it was itself the attacker (Storm is in her
+   own "creatures you control" group).
 
 ### Per-turn "dealt damage this turn" predicate — **Red Guardian, Super-Soldier** [34] — SHIPPED ✅
 "Destroy target creature an opponent controls **that dealt damage this turn**" — a per-turn record of

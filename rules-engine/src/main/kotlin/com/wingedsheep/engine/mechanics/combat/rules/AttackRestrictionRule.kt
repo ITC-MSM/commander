@@ -28,7 +28,7 @@ interface AttackRestrictionRule {
 
 /**
  * Per-defender attack restriction: checks whether a creature can attack a specific defender.
- * Used for mechanics like CantAttackUnless and CantBeAttackedWithout where the defender matters.
+ * Used for mechanics like CantAttackUnless and CantBeAttackedBy where the defender matters.
  *
  * Returns an error message if the creature CANNOT attack this defender, null if allowed.
  */

@@ -5,7 +5,8 @@ import com.wingedsheep.sdk.dsl.Targets
 import com.wingedsheep.sdk.dsl.Triggers
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
-import com.wingedsheep.sdk.scripting.CantBeAttackedWithout
+import com.wingedsheep.sdk.scripting.CantBeAttackedBy
+import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.effects.DealDamageEffect
 import com.wingedsheep.sdk.scripting.effects.SetLifeTotalEffect
 
@@ -40,7 +41,7 @@ val FormOfTheDragon = card("Form of the Dragon") {
 
     // Creatures without flying can't attack you.
     staticAbility {
-        ability = CantBeAttackedWithout(Keyword.FLYING)
+        ability = CantBeAttackedBy(GameObjectFilter.Creature.withoutKeyword(Keyword.FLYING))
     }
 
     metadata {

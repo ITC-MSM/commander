@@ -3,7 +3,7 @@ package com.wingedsheep.mtg.sets.definitions.inv.cards
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
-import com.wingedsheep.sdk.scripting.CantBeAttackedWithout
+import com.wingedsheep.sdk.scripting.CantBeAttackedBy
 import com.wingedsheep.sdk.scripting.ChoiceType
 import com.wingedsheep.sdk.scripting.EntersWithChoice
 import com.wingedsheep.sdk.scripting.GameObjectFilter
@@ -16,9 +16,9 @@ import com.wingedsheep.sdk.scripting.GameObjectFilter
  * Creatures of the chosen color without flying can't attack you.
  *
  * The chosen color is stored at ETB via [EntersWithChoice] (ChoiceType.COLOR →
- * CastChoicesComponent). The attack restriction reuses [CantBeAttackedWithout], narrowed by
- * an [CantBeAttackedWithout.attackerFilter] that matches only creatures sharing the chosen
- * color (resolved with this enchantment as the predicate source).
+ * CastChoicesComponent). The attack restriction is [CantBeAttackedBy] over the whole clause —
+ * creatures sharing the chosen color (resolved with this enchantment as the predicate source)
+ * that lack flying.
  */
 val TeferisMoat = card("Teferi's Moat") {
     manaCost = "{3}{W}{U}"
@@ -30,9 +30,8 @@ val TeferisMoat = card("Teferi's Moat") {
     replacementEffect(EntersWithChoice(ChoiceType.COLOR))
 
     staticAbility {
-        ability = CantBeAttackedWithout(
-            requiredKeyword = Keyword.FLYING,
-            attackerFilter = GameObjectFilter.Creature.sharingChosenColorWithSource()
+        ability = CantBeAttackedBy(
+            GameObjectFilter.Creature.sharingChosenColorWithSource().withoutKeyword(Keyword.FLYING)
         )
     }
 

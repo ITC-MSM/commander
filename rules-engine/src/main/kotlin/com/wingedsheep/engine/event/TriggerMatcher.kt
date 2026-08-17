@@ -1772,18 +1772,8 @@ class TriggerMatcher(
                     it.entityId == sourceId
             }
         }
-        is SpellCastPredicate.TargetsMatching -> {
-            val predicateEvaluator = PredicateEvaluator()
-            val predicateContext = com.wingedsheep.engine.handlers.PredicateContext(
-                controllerId = controllerId,
-                sourceId = sourceId
-            )
-            castTargetEntities(event, state).any { targetId ->
-                predicateEvaluator.matches(
-                    state, state.projectedState, targetId, predicate.filter, predicateContext
-                )
-            }
-        }
+        is SpellCastPredicate.TargetsMatching ->
+            matchingCastTargets(predicate.filter, event, state, sourceId, controllerId).isNotEmpty()
         // Cast as an Adventure (CR 715.3): an ADVENTURE-layout card declares exactly one face —
         // the Adventure — so a recorded faceIndex on an adventurer card means the alternative
         // characteristics were used. Casting the same card as its creature half leaves faceIndex
@@ -1809,6 +1799,70 @@ class TriggerMatcher(
                 ?: spellEntity?.get<CardComponent>()?.ownerId
             ownerId != null && ownerId != event.casterId
         }
+    }
+
+    /**
+     * The just-cast spell's chosen targets that match [filter] — the list behind
+     * [SpellCastPredicate.TargetsMatching], and the same list a "…, those creatures …" payoff acts
+     * on. Deduplicated, so a spell with two instances of the word "target" both aimed at the same
+     * creature yields it once (CR 601.2c); order follows the spell's target list.
+     *
+     * Read at *trigger detection* time, which is what makes it usable as a snapshot: the trigger
+     * exists on the stack independently of the spell that caused it (CR 113.7a), so countering or
+     * retargeting that spell in response to the trigger must not change what "those creatures" are.
+     *
+     * @return the matching target ids; empty when nothing matches (i.e. the predicate is false).
+     */
+    fun matchingCastTargets(
+        filter: GameObjectFilter,
+        event: SpellCastEvent,
+        state: GameState,
+        sourceId: EntityId,
+        controllerId: EntityId
+    ): List<EntityId> {
+        val predicateEvaluator = PredicateEvaluator()
+        val predicateContext = PredicateContext(
+            controllerId = controllerId,
+            sourceId = sourceId
+        )
+        return castTargetEntities(event, state).distinct().filter { targetId ->
+            predicateEvaluator.matches(
+                state, state.projectedState, targetId, filter, predicateContext
+            )
+        }
+    }
+
+    /**
+     * The targets a [EventPattern.SpellCastEvent] trigger captures for its payoff, or `null` when
+     * the trigger says nothing about targets. One entry per
+     * [SpellCastPredicate.TargetsMatching] filter the trigger gates on, intersected — the gate and
+     * the capture are the same computation, so "which targets made it trigger" and "which targets
+     * the payoff acts on" cannot drift.
+     *
+     * Narrowed to permanents on the battlefield when the ability triggered, because "…, **those
+     * creatures** …" is about permanents. The gate deliberately is not: a creature *card on the
+     * stack* satisfies an `IsCreature` filter, so a counterspell aimed at a creature spell fires
+     * these triggers (pre-existing, shared with Mockingbird and Iron Fist). Capturing that spell
+     * would be worse than useless — a permanent spell keeps its entity id as it resolves
+     * (`StackResolver.resolvePermanentSpell`) and `GrantKeywordExecutor` accepts a stack target, so
+     * the payoff would land on the permanent the spell became.
+     */
+    fun capturedCastTargets(
+        trigger: EventPattern,
+        event: SpellCastEvent,
+        state: GameState,
+        sourceId: EntityId,
+        controllerId: EntityId
+    ): List<EntityId>? {
+        if (trigger !is EventPattern.SpellCastEvent) return null
+        val filters = trigger.requires.filterIsInstance<SpellCastPredicate.TargetsMatching>()
+        if (filters.isEmpty()) return null
+        val battlefield = state.getBattlefield().toSet()
+        return filters
+            .map { matchingCastTargets(it.filter, event, state, sourceId, controllerId).toSet() }
+            .reduce { a, b -> a intersect b }
+            .filter { it in battlefield }
+            .takeIf { it.isNotEmpty() }
     }
 
     /** Permanent/spell entity ids chosen as targets by the just-cast spell. */

@@ -15038,6 +15038,91 @@
     ]
 }
 
+// Storm, Windrider
+{
+    "name": "Storm, Windrider",
+    "manaCost": "{1}{G}{W}{W}",
+    "typeLine": "Legendary Creature — Mutant Hero",
+    "oracleText": "Flying\nCreatures with flying can't attack you or block creatures you control.\nWhenever you cast a spell that targets one or more creatures, those creatures gain flying until end of turn.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "requires": [
+                        {
+                            "type": "SpellTargetsMatching",
+                            "filter": "creature"
+                        }
+                    ]
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Collection",
+                        "collection": "trigger.captured"
+                    },
+                    "body": {
+                        "type": "GrantKeyword",
+                        "keyword": "FLYING",
+                        "target": "Self"
+                    }
+                },
+                "descriptionOverride": "Whenever you cast a spell that targets one or more creatures, those creatures gain flying until end of turn."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "CantBeAttackedBy",
+                "attackerFilter": {
+                    "cardPredicates": [
+                        "IsCreature",
+                        {
+                            "type": "HasKeyword",
+                            "keyword": "FLYING"
+                        }
+                    ]
+                }
+            },
+            {
+                "type": "CantBeBlockedBy",
+                "blockerFilter": {
+                    "cardPredicates": [
+                        "IsCreature",
+                        {
+                            "type": "HasKeyword",
+                            "keyword": "FLYING"
+                        }
+                    ]
+                },
+                "filter": {
+                    "baseFilter": "creature ctrl:you"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "230",
+        "rarity": "RARE",
+        "artist": "Immanuela Crovius",
+        "flavorText": "\"Wind and lightning, hear my call!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/9/e90196a9-5a76-42f8-9b40-097d02b47f33.jpg?1783902896"
+    },
+    "colorIdentityOverride": [
+        "GREEN",
+        "WHITE"
+    ]
+}
+
 // Subterranean Cavern
 {
     "name": "Subterranean Cavern",
