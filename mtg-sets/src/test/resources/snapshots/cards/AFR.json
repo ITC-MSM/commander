@@ -43,6 +43,58 @@
     ]
 }
 
+// Priest of Ancient Lore
+{
+    "name": "Priest of Ancient Lore",
+    "manaCost": "{2}{W}",
+    "typeLine": "Creature — Dwarf Cleric",
+    "oracleText": "When this creature enters, you gain 1 life and draw a card.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GainLife",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        },
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "When this creature enters, you gain 1 life and draw a card."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "35",
+        "artist": "Jarel Threat",
+        "flavorText": "\"We are a product of our ancestors, the apotheosis of countless noble generations. Speak their names with reverence, and they will guide your path.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/1/b10caff0-701a-48d8-a943-f947482e795a.jpg?1783926524"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Vampire Spawn
 {
     "name": "Vampire Spawn",

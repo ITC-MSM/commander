@@ -777,6 +777,49 @@
     ]
 }
 
+// Managorger Hydra
+{
+    "name": "Managorger Hydra",
+    "manaCost": "{2}{G}",
+    "typeLine": "Creature — Hydra",
+    "oracleText": "Trample\nWhenever a player casts a spell, put a +1/+1 counter on this creature.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "TRAMPLE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "player": "Each"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": "Self"
+                },
+                "descriptionOverride": "Whenever a player casts a spell, put a +1/+1 counter on this creature."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "186",
+        "rarity": "RARE",
+        "artist": "Lucas Graciano",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/a/1a08e5ab-1ff9-4470-ab28-fea19bb79845.jpg?1783938321"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Priest of the Blood Rite
 {
     "name": "Priest of the Blood Rite",

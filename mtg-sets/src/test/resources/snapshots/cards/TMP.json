@@ -622,6 +622,45 @@
     ]
 }
 
+// Dauthi Horror
+{
+    "name": "Dauthi Horror",
+    "manaCost": "{1}{B}",
+    "typeLine": "Creature — Dauthi Horror",
+    "oracleText": "Shadow (This creature can block or be blocked by only creatures with shadow.)\nThis creature can't be blocked by white creatures.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "keywords": [
+        "SHADOW"
+    ],
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "CantBeBlockedBy",
+                "blockerFilter": {
+                    "cardPredicates": [
+                        "IsCreature",
+                        {
+                            "type": "HasColor",
+                            "color": "WHITE"
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "122",
+        "artist": "Jeff Laubenstein",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/5/c5a8bb3a-3a84-442f-8e31-8af2f04408ab.jpg?1783946642"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Dauthi Slayer
 {
     "name": "Dauthi Slayer",
@@ -2305,6 +2344,35 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Propaganda
+{
+    "name": "Propaganda",
+    "manaCost": "{2}{U}",
+    "typeLine": "Enchantment",
+    "oracleText": "Creatures can't attack you unless their controller pays {2} for each creature they control that's attacking you.",
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "AttackTax",
+                "amountPerAttacker": {
+                    "type": "Fixed",
+                    "amount": 2
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "80",
+        "rarity": "UNCOMMON",
+        "artist": "Jeff Miracola",
+        "flavorText": "\"You've failed Gerrard. You've failed the Legacy. You've failed yourself. I can do no more.\"\n—Volrath, to Karn",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/6/f67dde4d-3df1-480d-a8b8-ab22c768bb12.jpg?1783946652"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 

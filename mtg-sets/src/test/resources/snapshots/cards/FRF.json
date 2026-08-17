@@ -122,6 +122,53 @@
     ]
 }
 
+// Mardu Strike Leader
+{
+    "name": "Mardu Strike Leader",
+    "manaCost": "{2}{B}",
+    "typeLine": "Creature — Human Warrior",
+    "oracleText": "Whenever this creature attacks, create a 2/1 black Warrior creature token.\nDash {3}{B} (You may cast this spell for its dash cost. If you do, it gains haste, and it's returned from the battlefield to its owner's hand at the beginning of the next end step.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "keywordAbilities": [
+        {
+            "type": "Dash",
+            "cost": "{3}{B}"
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 2,
+                    "toughness": 1,
+                    "colors": [
+                        "BLACK"
+                    ],
+                    "creatureTypes": [
+                        "Warrior"
+                    ]
+                },
+                "descriptionOverride": "Whenever this creature attacks, create a 2/1 black Warrior creature token."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "75",
+        "rarity": "RARE",
+        "artist": "Jason Rainville",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/9/c93fd5f0-fb62-42cc-8c7d-c0368e191c4b.jpg?1783938696"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Monastery Mentor
 {
     "name": "Monastery Mentor",
