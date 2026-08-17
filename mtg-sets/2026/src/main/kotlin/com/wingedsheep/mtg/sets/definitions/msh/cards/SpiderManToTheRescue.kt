@@ -43,7 +43,7 @@ val SpiderManToTheRescue = card("Spider-Man, To the Rescue") {
     colorIdentity = "WG"
     typeLine = "Legendary Creature — Spider Human Hero"
     oracleText = "Flash\n" +
-        "Vigilance, reach\n" +
+        "Reach, vigilance\n" +
         "No One Dies! — When Spider-Man enters, you may tap him. When you do, another target " +
         "nonattacking creature you control gains indestructible until end of turn. (Damage and " +
         "effects that say \"destroy\" don't destroy it.)"

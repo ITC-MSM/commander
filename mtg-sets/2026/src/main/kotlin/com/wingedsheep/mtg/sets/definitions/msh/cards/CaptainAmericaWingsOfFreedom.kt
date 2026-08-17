@@ -41,8 +41,7 @@ val CaptainAmericaWingsOfFreedom = card("Captain America, Wings of Freedom") {
     typeLine = "Legendary Creature — Human Soldier Hero"
     power = 3
     toughness = 1
-    oracleText = "Flying, first strike, ward {1} (Whenever this creature becomes the target of a " +
-        "spell or ability an opponent controls, counter it unless that player pays {1}.)\n" +
+    oracleText = "Flying, first strike, ward {1}\n" +
         "Whenever Captain America attacks, each other Hero you control gets +X/+X until end of " +
         "turn, where X is Captain America's toughness."
 

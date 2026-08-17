@@ -64,9 +64,7 @@ val BaronHelmutZemo = card("Baron Helmut Zemo") {
     typeLine = "Legendary Creature — Human Noble Villain"
     power = 3
     toughness = 3
-    oracleText = "Whenever you cast a black spell from your hand, Baron Helmut Zemo connives. " +
-        "(Draw a card, then discard a card. If you discarded a nonland card, put a +1/+1 counter " +
-        "on this creature.)\n" +
+    oracleText = "Whenever you cast a black spell from your hand, Baron Helmut Zemo connives.\n" +
         "Boast — Exile any number of black cards from your graveyard with fifteen or more black " +
         "mana symbols among their mana costs: Copy those exiled cards. You may cast up to three " +
         "of the copies without paying their mana costs. (Activate only if this creature attacked " +
