@@ -175,6 +175,11 @@ class ForEachExecutor(
     ): EffectContext = when (item) {
         is ForEachItem.OfTarget -> outerContext.copy(
             targets = listOf(item.target),
+            // This iteration deliberately re-scopes ContextTarget(0) to its one live
+            // target. Keep its aligned partner in the same scope; inheriting an outer
+            // [null, target] projection would make ContextTarget(0) resolve to the
+            // stale dropped slot instead.
+            alignedTargets = listOf(item.target),
             pipeline = outerContext.pipeline.copy(storedCollections = emptyMap())
         )
 

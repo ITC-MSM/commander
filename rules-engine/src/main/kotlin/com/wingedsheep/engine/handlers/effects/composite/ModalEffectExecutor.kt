@@ -265,15 +265,15 @@ internal fun processPreTargetedEffectQueue(
     val head = entries.first()
     val tail = entries.drop(1)
 
-    // 608.2b per-mode fizzle: if the mode required targets and at least one is now illegal,
-    // skip the mode entirely. Partial per-target filtering is a future refinement — for now
-    // we mirror the all-or-nothing shape used by the resolution-time ModalContinuation path.
+    // CR 608.2b: a later mode retains every target that is still legal at the point this
+    // entry executes. Keep the aligned slots as well as the compact execution list: a
+    // surviving later target must not be rebound into an earlier named/context slot.
     val cardComponent = ctx.sourceId?.let { state.getEntity(it)?.get<CardComponent>() }
     val sourceColors = cardComponent?.colors ?: emptySet()
     val sourceSubtypes = cardComponent?.typeLine?.subtypes?.map { it.value }?.toSet() ?: emptySet()
 
-    val validationError = if (head.targetRequirements.isNotEmpty()) {
-        targetValidator.validateTargets(
+    val alignedTargets = if (head.targetRequirements.isNotEmpty()) {
+        targetValidator.projectLegalTargetsAtResolution(
             state = state,
             targets = head.targets,
             requirements = head.targetRequirements,
@@ -282,10 +282,11 @@ internal fun processPreTargetedEffectQueue(
             sourceSubtypes = sourceSubtypes,
             sourceId = ctx.sourceId
         )
-    } else null
+    } else head.targets
 
-    if (validationError != null) {
-        // Skip this mode; drain the rest.
+    val resolvedTargets = alignedTargets.filterNotNull()
+    if (head.targetRequirements.isNotEmpty() && resolvedTargets.isEmpty()) {
+        // All targets for this mode are now illegal; drain the rest of the spell.
         return processPreTargetedEffectQueue(state, tail, ctx, effectExecutor, targetValidator, accumulatedEvents)
     }
 
@@ -293,9 +294,10 @@ internal fun processPreTargetedEffectQueue(
         sourceId = ctx.sourceId,
         controllerId = ctx.controllerId,
         xValue = ctx.xValue,
-        targets = head.targets,
+        targets = resolvedTargets,
+        alignedTargets = alignedTargets,
         pipeline = PipelineState(
-            namedTargets = EffectContext.buildNamedTargets(head.targetRequirements, head.targets)
+            namedTargets = EffectContext.buildNamedTargets(head.targetRequirements, alignedTargets)
         ),
         triggeringEntityId = ctx.triggeringEntityId
     )

@@ -45,6 +45,63 @@ class TargetValidator {
     private val predicateEvaluator = PredicateEvaluator()
 
     /**
+     * Re-check each already-chosen target independently at resolution time.
+     *
+     * Unlike [validateTargets], this deliberately does not apply cast-time minimum,
+     * duplicate, or group constraints: CR 608.2b keeps the legal members of an
+     * already legal target group and drops only the members that have since become
+     * illegal. The returned list remains parallel to [targets] so callers can retain
+     * named/context target slot identity.
+     */
+    fun projectLegalTargetsAtResolution(
+        state: GameState,
+        targets: List<ChosenTarget>,
+        requirements: List<TargetRequirement>,
+        casterId: EntityId,
+        sourceColors: Set<Color> = emptySet(),
+        sourceSubtypes: Set<String> = emptySet(),
+        sourceId: EntityId? = null,
+        xValue: Int? = null
+    ): List<ChosenTarget?> {
+        if (requirements.isEmpty()) return targets
+
+        fun effectiveMaxCount(req: TargetRequirement): Int {
+            val unboundedFallback = if (req.unlimited) Int.MAX_VALUE else req.count
+            if (req is TargetObject) {
+                val dyn = req.dynamicMaxCount
+                if (dyn == DynamicAmount.XValue) return xValue ?: unboundedFallback
+                if (dyn != null) {
+                    return try {
+                        DynamicAmountEvaluator().evaluate(
+                            state,
+                            dyn,
+                            EffectContext(sourceId = sourceId, controllerId = casterId, xValue = xValue)
+                        ).coerceAtLeast(0)
+                    } catch (_: Exception) {
+                        unboundedFallback
+                    }
+                }
+            }
+            return unboundedFallback
+        }
+
+        var requirementIndex = 0
+        var requirementEnd = requirements.firstOrNull()?.let(::effectiveMaxCount) ?: 0
+        return targets.mapIndexed { index, target ->
+            while (requirementIndex < requirements.lastIndex && index >= requirementEnd) {
+                requirementIndex++
+                requirementEnd += effectiveMaxCount(requirements[requirementIndex])
+            }
+            val requirement = requirements.getOrNull(requirementIndex) ?: return@mapIndexed null
+            target.takeIf {
+                validateSingleTarget(
+                    state, it, requirement, casterId, sourceColors, sourceSubtypes, sourceId, xValue, targets
+                ) == null
+            }
+        }
+    }
+
+    /**
      * Validate all targets for a spell/ability against their requirements.
      *
      * @param state The current game state
