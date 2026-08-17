@@ -480,8 +480,17 @@ object Filters {
      * determined by the model rather than by alternation order, because every rule's `match` tests
      * the exact field it owns and the type nouns are exact values.
      */
-    private fun nounPhrase(plural: Boolean, spellPosition: Boolean = false): Phrase<GameObjectFilter> {
-        val suffix = if (plural) " (plural)" else if (spellPosition) " (of a spell)" else ""
+    private fun nounPhrase(
+        plural: Boolean,
+        spellPosition: Boolean = false,
+        controlled: Boolean = true,
+    ): Phrase<GameObjectFilter> {
+        val suffix = when {
+            plural && !controlled -> " (plural, uncontrolled)"
+            plural -> " (plural)"
+            spellPosition -> " (of a spell)"
+            else -> ""
+        }
         val named = typeNoun(plural)
         val types = oneOf(
             "a permanent type or subtype$suffix",
@@ -518,6 +527,7 @@ object Filters {
             withPowerAtMost(coloured, "a permanent with power at most$suffix"),
             withManaValueAtMost(coloured, "a permanent with mana value at most$suffix"),
         )
+        if (!controlled) return qualified
         return oneOf(
             "a permanent$suffix",
             qualified,
@@ -536,6 +546,46 @@ object Filters {
 
     /** …and in the plural — "creatures you control", "creatures with power 2 or greater". */
     val plural: Phrase<GameObjectFilter> = nounPhrase(plural = true)
+
+    /**
+     * …and in the plural with the controller clause **left to the sentence** — the subject of a
+     * batch trigger, "one or more Treefolk you control attack".
+     *
+     * A third instantiation of the cascade rather than a use of [plural], for the same kind of
+     * reason [spellQuality] is one: the position changes what an *absent* controller predicate
+     * means. Every batched `EventPattern` in `mtg-sdk` folds a null `controllerPredicate` to "you
+     * control" — `PermanentsEnteredEvent` and `CreaturesYouControlDiedEvent` say so in their KDoc
+     * and their detectors do it, and `OneOrMoreDealCombatDamageToPlayerEvent` is scoped to the
+     * observer before its filter is consulted at all. So the bare noun here does not mean "any
+     * controller" the way it does on the battlefield, and a slot that printed "creatures you
+     * control" from `ControlledByYou` would be a second spelling of what the event already says.
+     * The controller clause is a word in each batch trigger's own surface, one row per scope, and
+     * this vocabulary stops one layer below the one that owns the field.
+     */
+    val pluralSubject: Phrase<GameObjectFilter> = nounPhrase(plural = true, controlled = false)
+
+    /**
+     * "cards", "creature cards", "land cards" — the plural card noun a zone-change batch names.
+     *
+     * Outside the cascade for [subtypeOnly]'s reason and [Graveyard]'s: "card" is not a permanent
+     * type, and a row for it inside [typeNoun] would let "destroy target card" parse. Oracle
+     * inflects only the head noun, so the type phrase in front of it stays singular ("creature
+     * cards") — which is why this is [filter] with a fixed plural noun after it rather than a use
+     * of [plural].
+     *
+     * The unmodified form is a row of its own rather than an optional slot, because
+     * `GameObjectFilter.Any` is exactly what the bare word means and the qualified row refuses it.
+     * One printed form per model, in both directions.
+     */
+    val pluralCards: Phrase<GameObjectFilter> = oneOf(
+        "cards",
+        constant("cards", GameObjectFilter.Any),
+        phrase("{type} cards", name = "cards of a type") {
+            slot("type", filter)
+            build { it.value<GameObjectFilter>("type").takeIf { f -> f != GameObjectFilter.Any } }
+            match { f -> if (f == GameObjectFilter.Any) null else bind("type" to f) }
+        },
+    )
 
     /**
      * …and in **spell position** — the adjective in "Zombie spells you cast", "Red spells",

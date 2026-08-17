@@ -19,6 +19,12 @@ import com.wingedsheep.sdk.scripting.effects.CreateTokenEffect
  * most once per death batch (CR 603.3b) and is further capped to once per turn (`oncePerTurn`).
  * The token gets Decayed via a decayed counter ([Counters.DECAYED]) — the engine realizes "can't
  * block" + "when it attacks, sacrifice it at end of combat" off the counter (CR 702.147a).
+ *
+ * That counter is why Assay's differential reports this card: the printed "with decayed" is a
+ * keyword on the token, so the grammar reads `CreateTokenEffect.keywords`, and the engine does not
+ * realize Decayed from there. Deliberately left as it is — this spelling is the one that works, and
+ * closing the gap is engine work rather than a card edit. See `Tokens.createToken`'s KDoc in
+ * `:oracle-assay`.
  */
 val GhoulishProcession = card("Ghoulish Procession") {
     manaCost = "{1}{B}"

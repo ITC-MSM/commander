@@ -160,15 +160,19 @@ class TriggersTest : StringSpec({
     }
 
     // Fail-closed, the same rule the step matchers follow: an ability carrying anything the sentence
-    // does not spell must refuse to print rather than print a sentence that drops it. A
-    // once-per-turn cap is the example — no trigger rule spells one.
+    // does not spell must refuse to print rather than print a sentence that drops it.
+    //
+    // The example used to be `oncePerTurn`, and the batch band's rider now spells that — which is
+    // the point rather than a loosening: the property is about fields *no rule spells*, so the
+    // witness moves to the next one. `triggersOnce` is the permanent-lifetime cap ("This ability
+    // triggers only once."), a different printed sentence and still nobody's row.
     "an ability with content the prefix does not spell refuses to print" {
         val capped = TriggeredAbility(
             id = AbilityId("trigger"),
             trigger = SdkTriggers.EntersBattlefield.event,
             binding = SdkTriggers.EntersBattlefield.binding,
             effect = Effects.DrawCards(1),
-            oncePerTurn = true,
+            triggersOnce = true,
         )
 
         Grammar.abilityLine.printLine(
@@ -209,5 +213,73 @@ class TriggersTest : StringSpec({
         Grammar.abilityLine.printLine(
             CardFragment(script = CardScript(triggeredAbilities = listOf(theirs)))
         ) shouldBe "When ~ enters, draw a card."
+    }
+
+    // ---------------------------------------------------------------------------------------
+    // Batch triggers — CR 603.2c's "one or more"
+    // ---------------------------------------------------------------------------------------
+
+    fun declines(line: String) {
+        Grammar.abilityLine.parseLine(line).shouldBeInstanceOf<ParseOutcome.Declined>()
+    }
+
+    // The three controller scopes are the three facades `dsl.Triggers` publishes over one event, so
+    // this is the assertion that the clause in the sentence and the field on the filter are the
+    // same fact. "You control" is the *absent* predicate — see [Filters.pluralSubject].
+    "a batch subject's controller clause names the facade the SDK publishes" {
+        ability("Whenever one or more creatures you control die, draw a card.").trigger shouldBe
+            SdkTriggers.OneOrMoreCreaturesYouControlDie().event
+        ability("Whenever one or more creatures die, draw a card.").trigger shouldBe
+            SdkTriggers.OneOrMoreCreaturesDie().event
+        ability("Whenever one or more creatures your opponents control die, draw a card.").trigger shouldBe
+            SdkTriggers.OneOrMoreCreaturesAnOpponentControlsDie().event
+    }
+
+    // The cap is a rider on the *ability*, so one rule reaches every trigger family rather than
+    // every family growing a row. Until it existed the fail-closed reconstruction refused to print
+    // a capped ability at all, so every card carrying the rider declined.
+    "the once-each-turn rider caps any trigger the grammar can read" {
+        ability("When ~ enters, draw a card. This ability triggers only once each turn.")
+            .oncePerTurn shouldBe true
+        ability(
+            "Whenever one or more other creatures die, draw a card. " +
+                "This ability triggers only once each turn."
+        ).oncePerTurn shouldBe true
+
+        roundTrips("When ~ enters, draw a card. This ability triggers only once each turn.")
+    }
+
+    // This band's two write-offs, asserted so they stay declines rather than drifting into a
+    // half-reading. Attacks: `YouAttackEvent` cannot carry the "attack **a player**" narrowing that
+    // eight of its printed lines have, so the two English sentences would collapse to one model.
+    // "During your turn" is a `triggerRestriction`, a clause nobody has written yet.
+    "the band's write-offs decline rather than being approximated" {
+        declines("Whenever one or more Merfolk you control attack, draw a card.")
+        declines("Whenever one or more cards leave your graveyard during your turn, draw a card.")
+    }
+
+    "every batch trigger rule prints what it parses" {
+        listOf(
+            "Whenever one or more creatures you control deal combat damage to a player, draw a card.",
+            "Whenever one or more creatures deal combat damage to you, draw a card.",
+            "Whenever one or more cards leave your graveyard, draw a card.",
+            "Whenever one or more creature cards leave your graveyard, draw a card.",
+            "Whenever one or more cards are put into your graveyard from anywhere, draw a card.",
+            "Whenever one or more creature cards are put into your graveyard from your library, draw a card.",
+            "Whenever one or more creatures you control enter, draw a card.",
+            "Whenever one or more other creatures you control enter, draw a card.",
+            "Whenever one or more creatures your opponents control enter, draw a card.",
+            "Whenever one or more creatures enter, draw a card.",
+            "Whenever one or more artifacts you control enter, draw a card.",
+            "Whenever one or more creatures you control die, draw a card.",
+            "Whenever one or more other creatures die, draw a card.",
+            "Whenever one or more creatures your opponents control die, draw a card.",
+            "Whenever one or more other creatures you control leave the battlefield without dying, draw a card.",
+            "Whenever one or more +1/+1 counters are put on ~, draw a card.",
+            "Whenever one or more +1/+1 counters are put on a creature you control, draw a card.",
+            "Whenever you put one or more +1/+1 counters on a creature you control, draw a card.",
+            "Whenever one or more creatures attack you, draw a card.",
+            "Whenever one or more of your opponents are attacked, draw a card.",
+        ).forEach { line -> Grammar.abilityLine.printLine(fragment(line)) shouldBe line }
     }
 })

@@ -24,7 +24,9 @@ val MaryJaneWatson = card("Mary Jane Watson") {
     toughness = 2
     triggeredAbility {
         trigger = Triggers.entersBattlefield(
-            filter = GameObjectFilter.Creature.withSubtype(Subtype.SPIDER).youControl(),
+            // "a Spider you control", not "a Spider creature" — a bare tribal noun names
+            // *permanents* of that type, so a noncreature Spider entering fires this too.
+            filter = GameObjectFilter.Permanent.withSubtype(Subtype.SPIDER).youControl(),
             binding = TriggerBinding.ANY
         )
         oncePerTurn = true

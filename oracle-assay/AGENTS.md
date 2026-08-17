@@ -309,6 +309,40 @@ That last group is also this band's write-off with an expiry date, in the sense 
 records: the day some band builds `EventPattern`, `Prevention`'s KDoc is what says the prevention
 statics are sitting there waiting for it.
 
+The **batch-trigger band** — CR 603.2c's "one or more" — adds three, and the first is about *where a
+rider lives*. "This ability triggers only once each turn." is `TriggeredAbility.oncePerTurn`: a field
+on the ability, part of no event, so **one wrapper rule reaches every trigger sentence the grammar
+can read** where a row per family would have been thirty rows. It also had to be written before the
+family it was written for could land, because the fail-closed reconstruction each trigger family
+performs compares the whole model — a capped ability *refused to print*, so every card carrying the
+rider declined however ordinary its trigger. Ask of any rider whether it belongs to the sentence or
+to the model the sentence builds; the second kind is one rule, and it is usually overdue.
+
+Its corollary is about the meta-tests. `TriggersTest` asserted that an ability carrying `oncePerTurn`
+refuses to print, and that assertion became *false* — correctly — the moment the rider was spelled.
+**A fail-closed test names a field no rule spells, so it is expected to move every time a band spells
+one**; the witness went to `triggersOnce`. A fail-closed test that never moves is one whose property
+has quietly stopped being checked.
+
+Second, **a position can change what an absent field means.** `Filters.pluralSubject` is a third
+instantiation of the noun cascade beside `filter` and `spellQuality`, and its reason is sharper than
+the spell-cost band's: every batched `EventPattern` folds a null `controllerPredicate` to "you
+control", so the bare plural does not mean "any controller" there. Slotting `Filters.plural` would
+have printed "creatures you control" out of `ControlledByYou` — a second spelling of what the event
+already says — so the controller clause is a word in each trigger's own surface, one row per scope,
+and the vocabulary stops one layer below the field. Crossed with each family's "other" flag that is a
+six-row product per family rather than six rules. Before slotting an existing vocabulary, ask what
+its *default* denotes in the new position.
+
+Third, the probe's sharpest result so far, and it names the *next* band rather than this one.
+`one or more …` led the tail ranking by every column — 355 cards, 140 sole, 359 lines — and the probe
+put it at 89 lines and **35 whole cards**. Sub-family by sub-family the split was the whole story:
+26 of 68 combat-damage payoffs read, against **6 of 48** for attacks and **2 of 24** for enters,
+because a batch names a *set* and Oracle addresses it as "that many", "them", "those creatures". The
+grammar has no vocabulary for a captured collection, and 261 of the family's lines are still waiting
+on one. **When a probe's sub-families disagree by an order of magnitude, the number is telling you
+where the real band is** — here it is the collection, not any of the trigger prefixes.
+
 The top-of-library band's differential result is the argument for the whole discipline: it put
 `SelectFromCollectionEffect` under comparison for the first time, and **every newly-compared card
 that disagreed was wrong** — five had silently dropped `restOrder` so "in any order" resolved as "in

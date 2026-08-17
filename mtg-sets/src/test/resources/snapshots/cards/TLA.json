@@ -10949,7 +10949,7 @@
                 "id": "ability_2",
                 "trigger": {
                     "type": "OneOrMoreDealCombatDamageToPlayerEvent",
-                    "sourceFilter": "creature Ally"
+                    "sourceFilter": "permanent Ally"
                 },
                 "binding": "ANY",
                 "effect": {
