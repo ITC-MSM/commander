@@ -195,8 +195,11 @@ class CombatContinuationResumer(
             updatedEffects.add(
                 // Copy the original shield so every field carries — including duration-specific
                 // bookkeeping such as `expiresAfterTurn`. Rebuilding field-by-field silently drops
-                // whatever the next duration adds.
-                originalShield?.copy(id = effectId, effect = splitEffectData)
+                // whatever the next duration adds. `timestamp` is restated rather than left to the
+                // copy: it is the same value either way (it is derived from the original shield
+                // above), and saying so keeps the split pieces pinned to the shield's own Rule 613
+                // ordering if that derivation ever changes.
+                originalShield?.copy(id = effectId, effect = splitEffectData, timestamp = timestamp)
                     ?: ActiveFloatingEffect(
                         id = effectId,
                         effect = splitEffectData,

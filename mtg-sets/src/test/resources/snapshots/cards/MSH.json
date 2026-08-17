@@ -5175,7 +5175,7 @@
                     ],
                     "descriptionOverride": "Sacrifice this enchantment. When you do, target opponent exiles the top five cards of their library. You may cast up to two spells from among the exiled cards without paying their mana costs."
                 },
-                "triggerCondition": {
+                "triggerRestriction": {
                     "type": "Compare",
                     "left": {
                         "type": "EntityProperty",

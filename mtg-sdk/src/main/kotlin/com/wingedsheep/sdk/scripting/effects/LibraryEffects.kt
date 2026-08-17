@@ -380,10 +380,19 @@ data class CastFromCollectionWithoutPayingCostEffect(
  * (CR 601.2c) casts nothing and leaves the count untouched, though that card is out of the pool
  * for the rest of the loop.
  *
+ * **[maxCasts] is only wired for the free form.** No printed card pairs "up to N" with "paying
+ * their mana costs", so the facade ([com.wingedsheep.sdk.dsl.Effects.CastUpToNFromCollectionWithoutPayingCost])
+ * only offers the `payManaCost = false` combination. The raw constructor does allow both together,
+ * but the engine's "did the cast initiate" precondition asks only about legal targets — not about
+ * whether the controller can afford the cost — so a pick that is abandoned for want of mana would
+ * still spend one of the N. Don't author that combination without wiring the affordability check
+ * to match.
+ *
  * @property from Name of the collection of already-exiled candidate cards.
  * @property payManaCost When true, each chosen card is cast paying its normal mana cost.
  * @property maxCasts Maximum number of cards that may still be cast by this loop, or `null`
- *   for no cap. A value of `0` or less makes the effect a no-op.
+ *   for no cap. A value of `0` or less makes the effect a no-op. Only meaningful alongside the
+ *   default `payManaCost = false` — see above.
  */
 @SerialName("CastAnyNumberFromCollectionWithoutPayingCost")
 @Serializable

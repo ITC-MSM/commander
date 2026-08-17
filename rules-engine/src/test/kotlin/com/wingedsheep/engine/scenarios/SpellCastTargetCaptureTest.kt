@@ -2,8 +2,10 @@ package com.wingedsheep.engine.scenarios
 
 import com.wingedsheep.engine.core.CastSpell
 import com.wingedsheep.engine.core.PaymentStrategy
+import com.wingedsheep.engine.core.SelectCardsDecision
 import com.wingedsheep.engine.state.components.battlefield.CountersComponent
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
+import com.wingedsheep.engine.state.components.stack.TargetsComponent
 import com.wingedsheep.engine.support.GameTestDriver
 import com.wingedsheep.engine.support.TestCards
 import com.wingedsheep.sdk.core.Color
@@ -138,8 +140,24 @@ class SpellCastTargetCaptureTest : FunSpec({
         }
     }
 
+    /**
+     * Bolt Bend's shape — "change the target of target spell with a single target". Cast by the
+     * opponent while the trigger sits on top of the spell, it is the other half of the snapshot
+     * argument: countering proves a live read would find *nothing*, retargeting proves it would
+     * find the *wrong* creature.
+     */
+    val retarget = card("Test Retarget") {
+        manaCost = "{U}"
+        typeLine = "Instant"
+        spell {
+            target("target spell with a single target", Targets.SpellOrAbilityWithSingleTarget)
+            effect = Effects.ChangeTarget()
+        }
+    }
+
     val extras = listOf(
-        doublePump, splitPump, anyCreatureObserver, ownCreatureObserver, spellNudge, flyingObserver
+        doublePump, splitPump, anyCreatureObserver, ownCreatureObserver, spellNudge, flyingObserver,
+        retarget
     )
 
     fun driver(): GameTestDriver {
@@ -305,6 +323,65 @@ class SpellCastTargetCaptureTest : FunSpec({
         }
         withClue("\"those creatures\" was fixed when the ability triggered (CR 113.7a)") {
             d.plusOneCounters(bear) shouldBe 1
+        }
+    }
+
+    test("retargeting the triggering spell in response does not move the capture") {
+        val d = driver()
+        val me = d.activePlayer!!
+        val opp = d.getOpponent(me)
+
+        val observer = d.putCreatureOnBattlefield(me, "Test Target Observer")
+        val aimedAt = d.putCreatureOnBattlefield(me, "Grizzly Bears")
+        val movedTo = d.putCreatureOnBattlefield(me, "Grizzly Bears")
+        val growth = d.putCardInHand(me, "Giant Growth")
+        val bend = d.putCardInHand(opp, "Test Retarget")
+        d.giveMana(me, Color.GREEN, 1)
+        d.giveMana(opp, Color.BLUE, 1)
+
+        d.castSpell(me, growth, listOf(aimedAt)).error shouldBe null
+        withClue("the spell and its cast trigger are both on the stack") {
+            d.stackSize shouldBe 2
+        }
+
+        // Same window the counter test uses: the trigger is on top, so the spell underneath it is
+        // still answerable — here by moving its target rather than removing it.
+        val spellOnStack = d.state.stack.first()
+        d.passPriority(me)
+        d.submit(
+            CastSpell(
+                playerId = opp,
+                cardId = bend,
+                targets = listOf(ChosenTarget.Spell(spellOnStack)),
+                paymentStrategy = PaymentStrategy.FromPool
+            )
+        ).error shouldBe null
+
+        // The redirect resolves first and asks its own controller to pick the new target. The
+        // observer is a legal new target too, so the choice is submitted rather than auto-resolved.
+        var guard = 0
+        while (d.pendingDecision !is SelectCardsDecision && guard++ < 8) d.bothPass()
+        withClue("the redirect paused for the new-target choice") {
+            (d.pendingDecision is SelectCardsDecision) shouldBe true
+        }
+        withClue("the creature the spell already targets is not offered as a *new* target") {
+            (d.pendingDecision as SelectCardsDecision).options.toSet() shouldBe setOf(observer, movedTo)
+        }
+        d.submitCardSelection(opp, listOf(movedTo)).error shouldBe null
+
+        withClue("the retarget really landed: the spell under the trigger now points somewhere else") {
+            d.state.getEntity(spellOnStack)?.get<TargetsComponent>()?.targets shouldBe
+                listOf(ChosenTarget.Permanent(movedTo))
+        }
+
+        d.resolveStack()
+
+        withClue("\"those creatures\" was fixed when the ability triggered, so the counter stayed put") {
+            d.plusOneCounters(aimedAt) shouldBe 1
+        }
+        withClue("and did not follow the spell to its new target") {
+            d.plusOneCounters(movedTo) shouldBe 0
+            d.plusOneCounters(observer) shouldBe 0
         }
     }
 })

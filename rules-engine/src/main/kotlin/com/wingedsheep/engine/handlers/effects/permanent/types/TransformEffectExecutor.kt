@@ -172,10 +172,20 @@ internal fun flipDfcInPlace(
 }
 
 /**
- * Give [entityId] the front-face [DoubleFacedComponent] it needs to be turned over later, if it is a
- * double-faced card and doesn't already carry one. A no-op for single-faced cards, for tokens, and
- * for an entity whose face is already being tracked (so a caller that deliberately stamped a *back*
- * face — [returnDfcFace] — is never clobbered).
+ * Give [entityId] the front-face [DoubleFacedComponent] it needs to be turned over later, if its
+ * card definition has a back face and it doesn't already carry one. The two guards are exactly
+ * those: a definition with no `backFace` is a no-op, and so is an entity whose face is already
+ * being tracked (so a caller that deliberately stamped a *back* face — [returnDfcFace] — is never
+ * clobbered).
+ *
+ * Note there is deliberately **no token guard**, because "is this a card" is not the question here.
+ * Face tracking is about the *object*, and a token copy of a double-faced permanent is a
+ * double-faced token that can transform (CR 707.8a / 712.9) even though it is not a double-faced
+ * card (CR 111.1) — the card-level question is [CardComponent.isDoubleFaced], which the token-copy
+ * executors clear. In practice every token path stamps its own [DoubleFacedComponent] (copying the
+ * original's `currentFace`, so a back-face token copy stays on its back face) and therefore hits
+ * the already-tracked guard before reaching this; a future token path that didn't would get the
+ * front-face default, which is the right answer for a token created face up.
  *
  * That component is what [flipDfcInPlace] keys on, so without it a transform is silently a no-op.
  * The cast pipeline stamps it as a resolving permanent spell enters (CR 712.13, `StackResolver`),
