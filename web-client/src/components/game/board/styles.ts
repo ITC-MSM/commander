@@ -2229,6 +2229,7 @@ const passiveCounterPalette: Record<string, CounterBadgePalette> = {
   HARNESS: { bg: 'rgba(48, 26, 12, 0.95)', border: 'rgba(240, 180, 80, 0.8)', color: '#ffc860', glow: 'rgba(240, 180, 80, 0.7)' },
   PLAN: { bg: 'rgba(24, 40, 62, 0.95)', border: 'rgba(120, 175, 230, 0.7)', color: '#a8cdee', glow: 'rgba(120, 175, 230, 0.55)' },
   INVASION: { bg: 'rgba(52, 22, 20, 0.95)', border: 'rgba(230, 110, 90, 0.7)', color: '#f0a090', glow: 'rgba(230, 110, 90, 0.55)' },
+  UNLOCK: { bg: 'rgba(44, 36, 16, 0.95)', border: 'rgba(214, 182, 96, 0.75)', color: '#efd694', glow: 'rgba(214, 182, 96, 0.6)' },
   HONE: { bg: 'rgba(36, 42, 50, 0.95)', border: 'rgba(196, 214, 228, 0.8)', color: '#e4eef8', glow: 'rgba(196, 214, 228, 0.65)' },
   PLUS_ONE_PLUS_ZERO: { bg: 'rgba(20, 60, 25, 0.95)', border: 'rgba(120, 220, 130, 0.7)', color: '#9ce0a8' },
   PLUS_ZERO_PLUS_ONE: { bg: 'rgba(20, 60, 25, 0.95)', border: 'rgba(120, 220, 130, 0.7)', color: '#9ce0a8' },
