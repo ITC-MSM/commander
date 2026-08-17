@@ -1,6 +1,7 @@
 package com.wingedsheep.engine.scenarios
 
 import com.wingedsheep.engine.mechanics.layers.StateProjector
+import com.wingedsheep.engine.handlers.effects.DamageUtils
 import com.wingedsheep.engine.state.components.battlefield.CountersComponent
 import com.wingedsheep.engine.support.GameTestDriver
 import com.wingedsheep.engine.support.TestCards
@@ -138,10 +139,20 @@ class ExcessDamageTriggerScenarioTest : FunSpec({
         keywords = setOf(Keyword.DEFENDER, Keyword.INDESTRUCTIBLE),
     )
 
+    val WitherGiant = CardDefinition.creature(
+        name = "Wither Giant",
+        manaCost = ManaCost.parse("{0}"),
+        subtypes = setOf(Subtype("Giant")),
+        power = 5,
+        toughness = 5,
+        oracleText = "Wither",
+        keywords = setOf(Keyword.WITHER),
+    )
+
     fun createDriver(): GameTestDriver {
         val driver = GameTestDriver()
         driver.registerCards(
-            TestCards.all + listOf(Watcher, CombatWatcher, BigBolt, ExactBolt, Bear, DeathtouchAdder, IndestructibleWall)
+            TestCards.all + listOf(Watcher, CombatWatcher, BigBolt, ExactBolt, Bear, DeathtouchAdder, IndestructibleWall, WitherGiant)
         )
         return driver
     }
@@ -154,6 +165,43 @@ class ExcessDamageTriggerScenarioTest : FunSpec({
 
     fun GameTestDriver.plusOneCounters(id: EntityId): Int =
         state.getEntity(id)?.get<CountersComponent>()?.getCount(CounterType.PLUS_ONE_PLUS_ONE) ?: 0
+
+    test("wither damage still reports excess above the creature's pre-damage toughness") {
+        val driver = createDriver()
+        driver.initMirrorMatch(deck = Deck.of("Mountain" to 20))
+        val active = driver.activePlayer!!
+        val opponent = driver.getOpponent(active)
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        val source = driver.putCreatureOnBattlefield(active, "Wither Giant")
+        val target = driver.putCreatureOnBattlefield(opponent, "Bear")
+        val result = DamageUtils.dealDamageToTarget(driver.state, target, 5, sourceId = source)
+
+        val damage = result.events
+            .filterIsInstance<com.wingedsheep.engine.core.DamageDealtEvent>()
+            .single { it.targetId == target }
+        damage.excessAmount shouldBe 3
+        result.state.getEntity(target)?.get<CountersComponent>()
+            ?.getCount(CounterType.MINUS_ONE_MINUS_ONE) shouldBe 5
+    }
+
+    test("redirected excess wither damage puts only the lethal counters on the creature") {
+        val driver = createDriver()
+        driver.initMirrorMatch(deck = Deck.of("Mountain" to 20))
+        val active = driver.activePlayer!!
+        val opponent = driver.getOpponent(active)
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        val source = driver.putCreatureOnBattlefield(active, "Wither Giant")
+        val target = driver.putCreatureOnBattlefield(opponent, "Bear")
+        val result = DamageUtils.dealDamageToTarget(
+            driver.state, target, 5, sourceId = source, excessToController = true
+        )
+
+        result.state.getEntity(target)?.get<CountersComponent>()
+            ?.getCount(CounterType.MINUS_ONE_MINUS_ONE) shouldBe 2
+        result.state.lifeTotal(opponent) shouldBe 17
+    }
 
     test("3 excess damage to an opponent's 2/2 triggers amass for exactly the excess (Fall of Cair Andros)") {
         val driver = createDriver()

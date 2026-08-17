@@ -300,8 +300,8 @@ object DamageUtils {
         val events = mutableListOf<EngineGameEvent>()
         events.addAll(shieldCounterEvents)
         events.addAll(reflectEvents)
-        // Excess damage (CR 120.4a) is computed for ordinary creatures, planeswalkers, and
-        // battles. Wither damage (dealt as -1/-1 counters) remains unmodelled here.
+        // Excess damage (CR 120.4a) is computed for ordinary creatures, planeswalkers, battles,
+        // and wither creatures.
         var creatureExcessDamage = 0
 
         // Check if target is a player, planeswalker, or creature
@@ -360,20 +360,29 @@ object DamageUtils {
             )
             if (hasWither) {
                 // Wither (CR 702.80): damage to creatures is dealt in the form of -1/-1 counters
+                // rather than marked damage, but it still has an ordinary CR 120.4a excess
+                // calculation using the creature's pre-damage toughness and marked damage.
+                val existingDamage = newState.getEntity(targetId)?.get<DamageComponent>()?.amount ?: 0
+                val hasDeathtouch = projected.hasKeyword(sourceId, Keyword.DEATHTOUCH)
+                val lethalNeeded = if (hasDeathtouch) 1
+                else ((projected.getToughness(targetId) ?: 0) - existingDamage).coerceAtLeast(0)
+                creatureExcessDamage = (effectiveAmount - lethalNeeded).coerceAtLeast(0)
+                val countersOnCreature = if (excessToController) effectiveAmount - creatureExcessDamage
+                else effectiveAmount
                 val counters = newState.getEntity(targetId)?.get<CountersComponent>() ?: CountersComponent()
                 newState = newState.updateEntity(targetId) { container ->
-                    container.with(counters.withAdded(CounterType.MINUS_ONE_MINUS_ONE, effectiveAmount))
+                    container.with(counters.withAdded(CounterType.MINUS_ONE_MINUS_ONE, countersOnCreature))
                 }
                 // CR 702.80 / 122.6a: the -1/-1 counters are put on the creature by the wither
                 // source's controller, so "whenever you put counters" triggers see them as yours.
-                events.add(CountersAddedEvent(targetId, CounterType.MINUS_ONE_MINUS_ONE.name, effectiveAmount,
+                events.add(CountersAddedEvent(targetId, CounterType.MINUS_ONE_MINUS_ONE.name, countersOnCreature,
                     newState.getEntity(targetId)?.get<CardComponent>()?.name ?: "Creature",
                     placedBy = newState.projectedState.getController(sourceId)))
                 // Wither only changes the FORM of the damage (CR 702.80a); the creature was still
                 // dealt damage by this source, so a deathtouch source still marks it for
                 // destruction as an SBA (CR 702.2b / 704.5h) even though nothing is marked as
                 // normal damage. Record the deathtouch flag without marking damage.
-                if (projected.hasKeyword(sourceId, Keyword.DEATHTOUCH)) {
+                if (hasDeathtouch) {
                     newState = newState.updateEntity(targetId) { container ->
                         val existing = container.get<DamageComponent>()
                         container.with(DamageComponent(
