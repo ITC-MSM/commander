@@ -31,7 +31,6 @@ import com.wingedsheep.sdk.scripting.EntersAsCopy
 import com.wingedsheep.sdk.scripting.EntersTapped
 import com.wingedsheep.sdk.scripting.ChoiceType
 import com.wingedsheep.sdk.scripting.EntersWithChoice
-import com.wingedsheep.sdk.scripting.OnEnterRunEffect
 import com.wingedsheep.sdk.scripting.ConditionalStaticAbility
 import com.wingedsheep.sdk.scripting.MayPlayLandsFromGraveyard
 import com.wingedsheep.engine.state.components.battlefield.ClassLevelComponent
@@ -291,9 +290,8 @@ class PlayLandHandler(
         // Effects.Tap(EffectTarget.Self) (Game Trail's "otherwise" rider) apply
         // synchronously with entry. May pause for player input via continuations.
         if (cardDef != null) {
-            val onEnter = cardDef.script.replacementEffects
-                .filterIsInstance<OnEnterRunEffect>()
-                .firstOrNull()
+            val onEnter = com.wingedsheep.engine.handlers.effects.PermanentEntryReplacements
+                .onEnterRunEffectFor(cardDef)
             if (onEnter != null) {
                 // Use up the land drop and emit the entry event before running the
                 // effect — by this point the land is fully on the battlefield and

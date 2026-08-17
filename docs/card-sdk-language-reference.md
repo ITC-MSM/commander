@@ -10276,8 +10276,23 @@ The priority groups are (CR 616.1a–f):
   executes via the normal effect-executor pipeline at entry time (so `EffectTarget.Self` resolves to
   the entering permanent) and may pause for player input. Compose with atomic pausable effects like
   `Effects.MayRevealCardFromHand` to build SOI shadow lands or other "as ~ enters" choices.
-  **Scope today:** only wired into the land-play path (`PlayLandHandler`). When the first non-land
-  permanent needs this, also wire it into `StackResolver.enterPermanentOnBattlefield`.
+  **Scope today:** the land-play path (`PlayLandHandler`) and the single-card `MoveToZoneEffect`
+  path (`MoveToZoneEffectExecutor` → `PermanentEntryReplacements.runOnEnterRunEffect`), which covers
+  reanimation, blink, and an earthbend/"return it to the battlefield" trigger. Not yet wired into:
+  - `MoveCollectionExecutor` — the batch move. This is **not** only multi-card: a library search that
+    puts a *single* card onto the battlefield (`SearchDestination.BATTLEFIELD`, e.g. Wayfarer's
+    Bauble) routes here too, so tutoring up one of these lands still skips the clause. Closing it
+    needs a continuation, because the replacement can pause mid-loop.
+  - `StackResolver.enterPermanentOnBattlefield` — the spell-resolution path; needed when the first
+    non-land permanent uses this replacement.
+  - Auras, on any path — `MoveToZoneEffectExecutor` hands an entering Aura to its choose-a-host
+    continuation before reaching the replacement.
+
+  **Entry order caveat.** CR 614.12a says an as-enters choice is made *before* the permanent enters;
+  the engine places the permanent first and then runs the effect, so `EffectTarget.Self` resolves.
+  The observable difference is that the entry's triggers are matched against the pre-choice
+  characteristics — a "whenever a Mountain enters" trigger won't see the type a Multiversal Passage
+  just chose. Both entry paths behave the same way here, so it is consistent, not path-dependent.
 - `EntersWithCounters(counterType?, count, selfOnly?, condition?, otherOnly?, appliesTo?)` /
   `EntersWithDynamicCounters(counterType?, count, otherOnly?, appliesTo?)` — "[permanent] enters with
   N counters." `EntersWithCounters` takes a fixed `count: Int` (Master Biomancer, Metallic Mimic);

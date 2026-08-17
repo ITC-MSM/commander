@@ -12,6 +12,7 @@ import com.wingedsheep.engine.handlers.TargetFinder
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.handlers.effects.EntersWithReplacements
 import com.wingedsheep.engine.handlers.effects.LibraryPlacement
+import com.wingedsheep.engine.handlers.effects.PermanentEntryReplacements
 import com.wingedsheep.engine.handlers.effects.ZoneEntryOptions
 import com.wingedsheep.engine.handlers.effects.ZoneMovementUtils
 import com.wingedsheep.engine.handlers.effects.ZoneMovementUtils.destroyPermanent
@@ -24,6 +25,7 @@ import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.OwnerComponent
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
+import com.wingedsheep.sdk.scripting.effects.Effect
 import com.wingedsheep.sdk.scripting.effects.FaceDownMode
 import com.wingedsheep.sdk.scripting.effects.MoveToZoneEffect
 import com.wingedsheep.sdk.scripting.effects.ZonePlacement
@@ -36,10 +38,17 @@ import kotlin.reflect.KClass
  * shuffle-into-library, put-on-top, etc.
  *
  * Delegates all zone movement to [ZoneTransitionService] for consistent cleanup.
+ *
+ * @param effectExecutor the registry's recursive executor, used to run an entering permanent's
+ *   [com.wingedsheep.sdk.scripting.OnEnterRunEffect] replacement. Required rather than nullable:
+ *   a caller that provably never reaches the battlefield passes a throwing stub (the
+ *   bounce-to-hand reuse in `ReturnSpellOrPermanentToOwnersHandExecutor`), so if that destination
+ *   ever changes it fails loudly instead of silently skipping a rules-required replacement.
  */
 class MoveToZoneEffectExecutor(
     private val cardRegistry: CardRegistry,
-    private val targetFinder: TargetFinder = TargetFinder()
+    private val targetFinder: TargetFinder = TargetFinder(),
+    private val effectExecutor: (GameState, Effect, EffectContext) -> EffectResult
 ) : EffectExecutor<MoveToZoneEffect> {
 
     override val effectType: KClass<MoveToZoneEffect> = MoveToZoneEffect::class
@@ -152,18 +161,68 @@ class MoveToZoneEffectExecutor(
         // as the opponent. controllerId only diverges from ownerId for a controller-override
         // move onto the battlefield (see above); returns to hand/library never carry an
         // override, so controllerId == ownerId there and behaviour is unchanged.
-        val revealEvents = autoRevealForReturn(
-            fromZone = currentZone.zoneType,
-            toZone = effect.destination,
-            targetId = targetId,
-            cardName = cardComponent.name,
-            imageUri = cardComponent.imageUri,
-            controllerId = controllerId,
-            sourceId = context.sourceId,
-            state = resultState
+        extraEvents.addAll(
+            autoRevealForReturn(
+                fromZone = currentZone.zoneType,
+                toZone = effect.destination,
+                targetId = targetId,
+                cardName = cardComponent.name,
+                imageUri = cardComponent.imageUri,
+                controllerId = controllerId,
+                sourceId = context.sourceId,
+                state = resultState
+            )
         )
 
-        return EffectResult.success(resultState, transitionResult.events + extraEvents + revealEvents)
+        // "As this permanent enters, run [effect]" (OnEnterRunEffect) — the self-replacement
+        // PlayLandHandler runs inline for a played land, applied here for every *other* way a card
+        // reaches the battlefield: reanimation, a blink or earthbend return from exile. Without it
+        // a permanent whose entry choice lives in this replacement — Multiversal Passage's "as
+        // this land enters, choose a basic land type" — comes back with the choice never made and
+        // no way to make it afterwards. (A library search that puts a card onto the battlefield
+        // does NOT land here even for a single card: it routes through MoveCollectionExecutor,
+        // which doesn't run this replacement yet.)
+        //
+        // Runs last so the entry's own events are already collected: the effect may pause for the
+        // choice, and the paused result carries them (including the entry ZoneChangeEvent) so the
+        // entry's ETB triggers are deferred by the resume path rather than lost. Skipped for
+        // face-down entries (CR 708.2 — no abilities) and for a battlefield→battlefield redirect,
+        // which is not a new entry. An Aura never reaches here either — attachAuraOnEnter above
+        // returns first — so an Aura carrying this replacement would still skip it; no card does
+        // today, and wiring it belongs with the choose-a-host continuation, not here.
+        if (actualDestZone == Zone.BATTLEFIELD &&
+            effect.faceDown == null &&
+            currentZone.zoneType != Zone.BATTLEFIELD
+        ) {
+            val onEnterResult = PermanentEntryReplacements.runOnEnterRunEffect(
+                resultState, targetId, controllerId, cardRegistry, effectExecutor,
+                resolutionDepth = context.resolutionDepth
+            )
+            if (onEnterResult != null) {
+                resultState = onEnterResult.state
+                extraEvents.addAll(onEnterResult.events)
+                // pendingDecision is null when the replacement finished without asking anything,
+                // so this one return covers both the paused and the completed case.
+                //
+                // triggersAlreadyProcessed must ride along: the replacement can nest a cast
+                // (CastFromCollectionWithoutPayingCost routes through CastSpellHandler, which
+                // stacks its own cast-triggers), and dropping the flag makes the resume path
+                // re-scan those events and fire the trigger twice.
+                //
+                // onEnterResult.error is deliberately NOT propagated. The permanent did enter —
+                // only the as-enters clause failed — and surfacing an error here would make the
+                // enclosing composite treat the whole move as the failed step (CR 609.3: an
+                // effect that attempts something impossible does only as much as possible).
+                return EffectResult(
+                    state = resultState,
+                    events = transitionResult.events + extraEvents,
+                    pendingDecision = onEnterResult.pendingDecision,
+                    triggersAlreadyProcessed = onEnterResult.triggersAlreadyProcessed,
+                )
+            }
+        }
+
+        return EffectResult.success(resultState, transitionResult.events + extraEvents)
     }
 
     /**

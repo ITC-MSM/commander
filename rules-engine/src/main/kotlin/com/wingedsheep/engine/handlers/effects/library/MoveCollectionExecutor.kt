@@ -822,6 +822,14 @@ class MoveCollectionExecutor(
             // battlefield from a non-stack zone (e.g., Celestial Reunion tutoring directly to
             // play, Hideaway's free-cast pile). Face-down entries skip this — morphed creatures
             // enter as 2/2 nameless with no replacement effects from their face-up identity.
+            //
+            // KNOWN GAP: the single-card sibling of this path (MoveToZoneEffectExecutor) also runs
+            // PermanentEntryReplacements.runOnEnterRunEffect here; this one does not, so a card
+            // with an "as ~ enters, run [effect]" replacement (Multiversal Passage, Game Trail)
+            // tutored onto the battlefield still enters with its clause never run. Closing it
+            // needs more than the two-line call: this is a loop, the replacement can pause for a
+            // decision, and pausing mid-loop requires a continuation that resumes the remaining
+            // cards. See docs/card-sdk-language-reference.md, OnEnterRunEffect "Scope today".
             if (destZone == Zone.BATTLEFIELD && faceDown == null) {
                 val (counterState, counterEvents) = EntersWithReplacements.applyOnEntry(
                     newState, cardId, actualDestPlayerId, cardRegistry
