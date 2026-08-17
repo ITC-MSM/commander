@@ -677,6 +677,61 @@
     ]
 }
 
+// Sunscorch Regent
+{
+    "name": "Sunscorch Regent",
+    "manaCost": "{3}{W}{W}",
+    "typeLine": "Creature — Dragon",
+    "oracleText": "Flying\nWhenever an opponent casts a spell, put a +1/+1 counter on this creature and you gain 1 life.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 3
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "player": "EachOpponent"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "AddCounters",
+                            "counterType": "+1/+1",
+                            "count": 1,
+                            "target": "Self"
+                        },
+                        {
+                            "type": "GainLife",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "41",
+        "rarity": "RARE",
+        "artist": "Matt Stewart",
+        "flavorText": "\"We trust in the scalelords, bringers of justice that none can escape.\"\n—Urdnan, Dromoka warrior",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/3/c3d2e638-f478-40b8-8c89-120746b7cefd.jpg?1783938611"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Surrak, the Hunt Caller
 {
     "name": "Surrak, the Hunt Caller",

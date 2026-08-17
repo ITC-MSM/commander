@@ -1,3 +1,50 @@
+// Ant Queen
+{
+    "name": "Ant Queen",
+    "manaCost": "{3}{G}{G}",
+    "typeLine": "Creature — Insect",
+    "oracleText": "{1}{G}: Create a 1/1 green Insect creature token.",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 5
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{1}{G}"
+                    }
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [
+                        "GREEN"
+                    ],
+                    "creatureTypes": [
+                        "Insect"
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "166",
+        "rarity": "RARE",
+        "artist": "Trevor Claxton",
+        "flavorText": "\"Kill the queen first, or we'll be fighting her drones forever. It is not in a queen's nature to have enough servants.\"\n—Borzard, exterminator captain",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/e/6ee46d8b-559e-4c33-99fb-b55f00aeee72.jpg?1783942367"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Centaur Courser
 {
     "name": "Centaur Courser",
@@ -181,6 +228,70 @@
         "imageUri": "https://cards.scryfall.io/normal/front/c/2/c231101e-6620-46fc-a0ad-a53291d12dc2.jpg"
     },
     "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Glacial Fortress
+{
+    "name": "Glacial Fortress",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "This land enters tapped unless you control a Plains or an Island.\n{T}: Add {W} or {U}.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "WHITE"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "BLUE"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            }
+        ],
+        "replacementEffects": [
+            {
+                "type": "EntersTapped",
+                "unlessCondition": {
+                    "type": "Any",
+                    "conditions": [
+                        {
+                            "type": "Exists",
+                            "player": "You",
+                            "zone": "Battlefield",
+                            "filter": "land Plains"
+                        },
+                        {
+                            "type": "Exists",
+                            "player": "You",
+                            "zone": "Battlefield",
+                            "filter": "land Island"
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "226",
+        "rarity": "RARE",
+        "artist": "Franz Vohwinkel",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/e/ee834e27-595d-4d12-8e69-e94e84ef337a.jpg?1783942353"
+    },
+    "colorIdentityOverride": [
+        "WHITE",
         "BLUE"
     ]
 }
@@ -431,6 +542,70 @@
         "imageUri": "https://cards.scryfall.io/normal/front/e/a/ea82996f-a05f-4831-9bbd-3281ebca9a61.jpg?1783942398"
     },
     "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Sunpetal Grove
+{
+    "name": "Sunpetal Grove",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "This land enters tapped unless you control a Forest or a Plains.\n{T}: Add {G} or {W}.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "GREEN"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "WHITE"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            }
+        ],
+        "replacementEffects": [
+            {
+                "type": "EntersTapped",
+                "unlessCondition": {
+                    "type": "Any",
+                    "conditions": [
+                        {
+                            "type": "Exists",
+                            "player": "You",
+                            "zone": "Battlefield",
+                            "filter": "land Forest"
+                        },
+                        {
+                            "type": "Exists",
+                            "player": "You",
+                            "zone": "Battlefield",
+                            "filter": "land Plains"
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "228",
+        "rarity": "RARE",
+        "artist": "Jason Chan",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/f/9f4e8ead-8c82-4258-bc59-551f7a74e042.jpg?1783942353"
+    },
+    "colorIdentityOverride": [
+        "GREEN",
         "WHITE"
     ]
 }

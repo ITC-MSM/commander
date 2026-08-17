@@ -1,3 +1,69 @@
+// Chatterstorm
+{
+    "name": "Chatterstorm",
+    "manaCost": "{1}{G}",
+    "typeLine": "Sorcery",
+    "oracleText": "Create a 1/1 green Squirrel creature token.\nStorm (When you cast this spell, copy it for each spell cast before it this turn.)",
+    "keywords": [
+        "STORM"
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "CreateToken",
+            "power": 1,
+            "toughness": 1,
+            "colors": [
+                "GREEN"
+            ],
+            "creatureTypes": [
+                "Squirrel"
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "152",
+        "artist": "Milivoj Ćeran",
+        "flavorText": "\"Friends, foragers, fuzzy fighters! Tonight we're after more than just acorns!\"\n—Larrel, Deep Forest hermit",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/3/b34f0ac1-6894-4761-b62c-b85d927acf09.jpg?1783926835"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Ornithopter of Paradise
+{
+    "name": "Ornithopter of Paradise",
+    "manaCost": "{2}",
+    "typeLine": "Artifact Creature — Thopter",
+    "oracleText": "Flying\n{T}: Add one mana of any color.",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 2
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": "AddManaOfChoice",
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "232",
+        "artist": "Raoul Vitale",
+        "flavorText": "\"Through even our darkest days, we must never cease creating. Each new invention brings value to the world, be it beauty, utility, or both.\"\n—Rashmi, aether-seer",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/2/025b0f0f-daf6-4071-82e7-39c015447ce4.jpg?1783926803"
+    },
+    "colorIdentityOverride": []
+}
+
 // Ragavan, Nimble Pilferer
 {
     "name": "Ragavan, Nimble Pilferer",
@@ -96,6 +162,41 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Squirrel Sovereign
+{
+    "name": "Squirrel Sovereign",
+    "manaCost": "{1}{G}",
+    "typeLine": "Creature — Squirrel Noble",
+    "oracleText": "Other Squirrels you control get +1/+1.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 1,
+                "toughnessBonus": 1,
+                "filter": {
+                    "baseFilter": "permanent Squirrel ctrl:you",
+                    "excludeSelf": true
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "175",
+        "rarity": "UNCOMMON",
+        "artist": "Ilse Gort",
+        "flavorText": "For rule of the Aldering Forest, Numstail stole the acorn from Nestwind, who stole it from Brankie, who stole it from Lightroot, who stole it from Leafpaw, who stole it from Darkfur . . .",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/f/8f739d55-30d6-4879-872a-82c6778113de.jpg?1783926824"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 
