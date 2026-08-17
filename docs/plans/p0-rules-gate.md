@@ -22,6 +22,14 @@ green card-definition count or a successful UI build does not satisfy it.
 
 ## Evidence ledger
 
+**Fresh isolated verification (2026-08-17):** the focused P0 matrix passed from a
+clean detached worktree at `cdcf21d7`: `CommanderPodSimulationTest`,
+`CommanderZoneReplacementTest`, `CastIntoTheFirePartialFizzleScenarioTest`,
+`TwoHeadedGiantCombatTest`, `TwoHeadedGiantStepTriggerMultiplicityTest`,
+`BattleCardTypeScenarioTest`, `TriggerDetectorBatchTriggerTest`, and
+`TobyBeastieBefrienderTest`. The broad `:rules-engine:test` gate must still be
+recorded as a fresh execution separately; a cache hit is not equivalent evidence.
+
 | Gate | Evidence | Status |
 | --- | --- | --- |
 | Direct priority after a nonactive spell resolves | `HearthbornBattlerTest` | Implemented; staging-tested |

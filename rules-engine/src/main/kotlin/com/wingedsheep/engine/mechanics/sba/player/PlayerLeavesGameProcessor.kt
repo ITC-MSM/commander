@@ -34,11 +34,12 @@ import com.wingedsheep.sdk.model.EntityId
  * [PlayerLeftGameComponent]) so it remains in [GameState.turnOrder] for history and the
  * game-end SBA. The turn-order iteration helpers already skip players who have left.
  *
- * Deliberately not modelled here (documented simplifications of the deeper CR 800.4
- * sub-rules, none of which the current corpus exercises): firing the remaining players'
- * "leaves the battlefield" triggers off these mass removals (CR 800.4a vs 800.4d — the
- * leaver's own triggers must never fire), delegating a choice a leaver was mid-way through
- * making (CR 800.4g–h), and exiling an object the leaver controlled via a *static* ability
+ * Ordinary owned permanents leaving with their owner intentionally do not emit zone-change events:
+ * they leave the game rather than moving from the battlefield to another zone, so ordinary
+ * leaves-the-battlefield triggers do not trigger. The phased-in-permanent exception needs its own
+ * event path if phasing is expanded. Other documented simplifications of the deeper multiplayer
+ * rules, none of which the current corpus exercises, are delegating a choice a leaver was mid-way
+ * through making and exiling an object the leaver controlled via a *static* ability
  * on a permanent owned by another player (CR 800.4c). Floating control effects — the common
  * case (theft like Control Magic, "gain control until end of turn") — are handled.
  */

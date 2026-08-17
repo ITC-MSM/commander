@@ -118,12 +118,22 @@ class CommanderPodSimulationTest : FunSpec({
             effect = MayEffect(Effects.GainLife(1))
         }
     }
+    val leaveGameWitness = card("Pod Leave-Game Witness") {
+        manaCost = "{1}{W}"
+        typeLine = "Creature — Human Cleric"
+        power = 1
+        toughness = 1
+        triggeredAbility {
+            trigger = Triggers.leavesBattlefield(binding = TriggerBinding.ANY)
+            effect = Effects.GainLife(1)
+        }
+    }
 
     fun pod(): Pair<GameTestDriver, List<com.wingedsheep.sdk.model.EntityId>> {
         val driver = GameTestDriver(InvariantCheckingActionObserver())
         driver.registerCards(TestCards.all + listOf(
             podCommander, wardedSentinel, doubleEtb, blockingWitness, doubleBlockingWitness,
-            ArchangelOfTithes, PhyrexianAltar, BloodArtist, deathgreeter, Negate,
+            ArchangelOfTithes, PhyrexianAltar, BloodArtist, deathgreeter, leaveGameWitness, Negate,
         ))
         val players = driver.initMultiplayer(
             decks = List(4) { Deck(cards = List(99) { "Mountain" }) },
@@ -320,6 +330,29 @@ class CommanderPodSimulationTest : FunSpec({
         driver.events.drop(eventStart).filterIsInstance<DamageDealtEvent>()
             .filter { it.sourceId == bolt }.shouldContainExactly()
         driver.priorityPlayer shouldBe a
+    }
+
+    test("ordinary permanents leaving with a conceding owner do not trigger leaves-the-battlefield abilities") {
+        val (driver, players) = pod()
+        val (a, _, c, _) = players
+        driver.passPriorityUntil(com.wingedsheep.sdk.core.Step.PRECOMBAT_MAIN)
+        val witness = driver.putCreatureOnBattlefield(a, leaveGameWitness.name)
+        val departingCreature = driver.putCreatureOnBattlefield(c, wardedSentinel.name)
+        val lifeBefore = driver.getLifeTotal(a)
+        val eventStart = driver.events.size
+
+        // A permanent that leaves the game with its owner does not move from the battlefield to
+        // another zone. The observer remains, but its ordinary leaves-the-battlefield ability
+        // must not trigger.
+        driver.submit(Concede(c)).error shouldBe null
+
+        driver.state.getEntity(witness) shouldNotBe null
+        driver.state.getEntity(departingCreature) shouldBe null
+        driver.stackSize shouldBe 0
+        driver.pendingDecision shouldBe null
+        driver.getLifeTotal(a) shouldBe lifeBefore
+        driver.events.drop(eventStart).filterIsInstance<ZoneChangeEvent>()
+            .none { it.entityId == departingCreature && it.fromZone == Zone.BATTLEFIELD } shouldBe true
     }
 
     test("P0-4P-STACK-CONCESSION-001: a conceding counterspell controller leaves its spell and targets invalid") {
