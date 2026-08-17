@@ -813,6 +813,177 @@
     ]
 }
 
+// Archdruid's Charm
+{
+    "name": "Archdruid's Charm",
+    "manaCost": "{G}{G}{G}",
+    "typeLine": "Instant",
+    "oracleText": "Choose one —\n• Search your library for a creature or land card and reveal it. Put it onto the battlefield tapped if it's a land card. Otherwise, put it into your hand. Then shuffle.\n• Put a +1/+1 counter on target creature you control. It deals damage equal to its power to target creature you don't control.\n• Exile target artifact or enchantment.",
+    "script": {
+        "spellEffect": {
+            "type": "Modal",
+            "modes": [
+                {
+                    "effect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Library",
+                                    "filter": "creature|land"
+                                },
+                                "storeAs": "gathered0"
+                            },
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "gathered0",
+                                "selection": {
+                                    "type": "ChooseUpTo",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "storeSelected": "selected1",
+                                "prompt": "Search your library for a creature or land card"
+                            },
+                            {
+                                "type": "RevealCollection",
+                                "from": "selected1",
+                                "revealToSelf": false
+                            },
+                            {
+                                "type": "FilterCollection",
+                                "from": "selected1",
+                                "filter": {
+                                    "type": "MatchesFilter",
+                                    "filter": "land"
+                                },
+                                "storeMatching": "matching3",
+                                "storeNonMatching": "rest3"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "matching3",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Battlefield",
+                                    "placement": "Tapped"
+                                }
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "rest3",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Hand"
+                                }
+                            },
+                            "ShuffleLibrary",
+                            "EmitLibrarySearchedEvent"
+                        ]
+                    },
+                    "description": "Search your library for a creature or land card and reveal it. Put it onto the battlefield tapped if it's a land card. Otherwise, put it into your hand. Then shuffle."
+                },
+                {
+                    "effect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "AddCounters",
+                                "counterType": "+1/+1",
+                                "count": 1,
+                                "target": {
+                                    "type": "BoundVariable",
+                                    "name": "target creature you control"
+                                }
+                            },
+                            {
+                                "type": "DealDamage",
+                                "amount": {
+                                    "type": "EntityProperty",
+                                    "entity": "Target",
+                                    "numericProperty": "Power"
+                                },
+                                "target": {
+                                    "type": "BoundVariable",
+                                    "name": "target creature you don't control"
+                                },
+                                "damageSource": {
+                                    "type": "BoundVariable",
+                                    "name": "target creature you control"
+                                }
+                            }
+                        ]
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "creature ctrl:you"
+                            },
+                            "id": "target creature you control"
+                        },
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "creature ctrl:opponent"
+                            },
+                            "id": "target creature you don't control"
+                        }
+                    ],
+                    "description": "Put a +1/+1 counter on target creature you control. It deals damage equal to its power to target creature you don't control."
+                },
+                {
+                    "effect": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target artifact or enchantment"
+                        },
+                        "destination": "Exile"
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "artifact|enchantment"
+                            },
+                            "id": "target artifact or enchantment"
+                        }
+                    ],
+                    "description": "Exile target artifact or enchantment"
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "151",
+        "rarity": "RARE",
+        "artist": "Liiga Smilshkalne",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/c/5caae5ae-845f-42c2-b1ae-956df2739433.jpg?1783912870",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "You can't choose the second mode for Archdruid's Charm unless you and another player have creatures to target."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "If you choose the second mode and your creature is not a legal target as Archdruid's Charm resolves, you won't put a +1/+1 counter on it, and no damage will be dealt."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "If you choose the second mode and the creature you don't control is not a legal target as Archdruid's Charm resolves, you'll still put a +1/+1 counter on your creature."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Assemble the Players
 {
     "name": "Assemble the Players",
@@ -2912,6 +3083,111 @@
         "GREEN",
         "WHITE"
     ]
+}
+
+// Cryptex
+{
+    "name": "Cryptex",
+    "manaCost": "{2}",
+    "typeLine": "Artifact",
+    "oracleText": "{T}, Collect evidence 3: Add one mana of any color. Put an unlock counter on this artifact. (To collect evidence 3, exile cards with total mana value 3 or greater from your graveyard.)\nSacrifice this artifact: Surveil 3, then draw three cards. Activate only if this artifact has five or more unlock counters on it.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        "CostTap",
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomCollectEvidence",
+                                "amount": 3
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        "AddManaOfChoice",
+                        {
+                            "type": "AddCounters",
+                            "counterType": "unlock",
+                            "count": 1,
+                            "target": "Self"
+                        }
+                    ]
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true,
+                "descriptionOverride": "Add one mana of any color. Put an unlock counter on this artifact."
+            },
+            {
+                "id": "ability_2",
+                "cost": "CostSacrificeSelf",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "Surveil",
+                            "count": 3
+                        },
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 3
+                            }
+                        }
+                    ]
+                },
+                "restrictions": [
+                    {
+                        "type": "ActivationOnlyIfCondition",
+                        "condition": {
+                            "type": "Compare",
+                            "left": {
+                                "type": "EntityProperty",
+                                "entity": "Source",
+                                "numericProperty": {
+                                    "type": "CounterCount",
+                                    "counterType": {
+                                        "type": "Named",
+                                        "name": "unlock"
+                                    }
+                                }
+                            },
+                            "operator": "GTE",
+                            "right": {
+                                "type": "Fixed",
+                                "amount": 5
+                            }
+                        }
+                    }
+                ],
+                "descriptionOverride": "Surveil 3, then draw three cards."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "251",
+        "rarity": "RARE",
+        "artist": "Yeong-Hao Han",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/9/f92a2563-6cfb-4d12-9513-b44d1a7a20ab.jpg?1783912829",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "Cryptex's first ability is a mana ability. It doesn't use the stack and can't be responded to."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "If you can't exile enough cards to meet or exceed the required mana value, you can't choose to collect evidence at all."
+            }
+        ]
+    },
+    "colorIdentityOverride": []
 }
 
 // Culvert Ambusher
@@ -6758,6 +7034,94 @@
     ]
 }
 
+// Insidious Roots
+{
+    "name": "Insidious Roots",
+    "manaCost": "{B}{G}",
+    "typeLine": "Enchantment",
+    "oracleText": "Creature tokens you control have \"{T}: Add one mana of any color.\"\nWhenever one or more creature cards leave your graveyard, create a 0/1 green Plant creature token, then put a +1/+1 counter on each Plant you control.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "CardsLeftYourGraveyardEvent",
+                    "filter": "creature"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "CreateToken",
+                            "power": 0,
+                            "toughness": 1,
+                            "colors": [
+                                "GREEN"
+                            ],
+                            "creatureTypes": [
+                                "Plant"
+                            ]
+                        },
+                        {
+                            "type": "ForEach",
+                            "space": {
+                                "type": "IterationSpace.Group",
+                                "filter": {
+                                    "baseFilter": "creature Plant ctrl:you"
+                                }
+                            },
+                            "body": {
+                                "type": "AddCounters",
+                                "counterType": "+1/+1",
+                                "count": 1,
+                                "target": "Self"
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "Whenever one or more creature cards leave your graveyard, create a 0/1 green Plant creature token, then put a +1/+1 counter on each Plant you control."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "GrantActivatedAbility",
+                "ability": {
+                    "id": "ability_2",
+                    "cost": "CostTap",
+                    "effect": "AddManaOfChoice",
+                    "timing": "ManaAbility",
+                    "isManaAbility": true
+                },
+                "filter": {
+                    "baseFilter": "creature token ctrl:you"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "208",
+        "rarity": "UNCOMMON",
+        "artist": "Jeremy Wilson",
+        "flavorText": "The roots of Vitu-Ghazi allowed Trostani to reach every crack and crevice in the city.",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/b/0bb91a22-2040-4a37-85f8-5f22de8c5907.jpg?1783912846",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "In the rare case where Insidious Roots is a creature token, it will grant itself the ability \"{T}: Add one mana of any color.\""
+            },
+            {
+                "date": "2024-02-02",
+                "text": "If multiple creature cards leave your graveyard at the same time, Insidious Roots's last ability will trigger only once."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "GREEN"
+    ]
+}
+
 // It Doesn't Add Up
 {
     "name": "It Doesn't Add Up",
@@ -9617,6 +9981,99 @@
     },
     "colorIdentityOverride": [
         "WHITE",
+        "BLUE"
+    ]
+}
+
+// Proft's Eidetic Memory
+{
+    "name": "Proft's Eidetic Memory",
+    "manaCost": "{1}{U}",
+    "typeLine": "Legendary Enchantment",
+    "oracleText": "When Proft's Eidetic Memory enters, draw a card.\nYou have no maximum hand size.\nAt the beginning of combat on your turn, if you've drawn more than one card this turn, put X +1/+1 counters on target creature you control, where X is the number of cards you've drawn this turn minus one.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "descriptionOverride": "When Proft's Eidetic Memory enters, draw a card."
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "BEGIN_COMBAT"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "AddDynamicCounters",
+                    "counterType": "+1/+1",
+                    "amount": {
+                        "type": "Subtract",
+                        "left": {
+                            "type": "TurnTracking",
+                            "player": "You",
+                            "tracker": "CARDS_DRAWN"
+                        },
+                        "right": {
+                            "type": "Fixed",
+                            "amount": 1
+                        }
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature you control"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature ctrl:you"
+                    },
+                    "id": "target creature you control"
+                },
+                "interveningIf": {
+                    "type": "PlayerDrewCardsThisTurn",
+                    "atLeast": 2
+                },
+                "descriptionOverride": "At the beginning of combat on your turn, if you've drawn more than one card this turn, put X +1/+1 counters on target creature you control, where X is the number of cards you've drawn this turn minus one."
+            }
+        ],
+        "staticAbilities": [
+            "NoMaximumHandSize"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "67",
+        "rarity": "RARE",
+        "artist": "Julie Dillon",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/f/af5b29b3-974c-4200-8df8-b072c11e1600.jpg?1783912906",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "If you haven't drawn more than one card by the time a beginning of combat step begins on your turn, Proft's Eidetic Memory's last ability won't trigger at all."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "Proft's Eidetic Memory's last ability looks at how many cards you've drawn this turn, even if it wasn't on the battlefield when you drew those cards."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "The value of X is determined only once, as Proft's Eidetic Memory's last ability resolves."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
         "BLUE"
     ]
 }
@@ -13333,6 +13790,137 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Unyielding Gatekeeper
+{
+    "name": "Unyielding Gatekeeper",
+    "manaCost": "{1}{W}",
+    "typeLine": "Creature — Elephant Cleric",
+    "oracleText": "Disguise {1}{W} (You may cast this card face down for {3} as a 2/2 creature with ward {2}. Turn it face up any time for its disguise cost.)\nWhen this creature is turned face up, exile another target nonland permanent. If you controlled it, return it to the battlefield tapped. Otherwise, its controller creates a 2/2 white and blue Detective creature token.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "keywordAbilities": [
+        {
+            "type": "Disguise",
+            "disguiseCost": {
+                "type": "PayAtom",
+                "atom": {
+                    "type": "AtomMana",
+                    "cost": "{1}{W}"
+                }
+            }
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "TurnFaceUpEvent",
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.WhenCondition",
+                        "condition": {
+                            "type": "EntityMatches",
+                            "entity": {
+                                "type": "ContextTarget",
+                                "index": 0
+                            },
+                            "filter": "nonland permanent ctrl:you"
+                        }
+                    },
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "MoveToZone",
+                                "target": {
+                                    "type": "BoundVariable",
+                                    "name": "another target nonland permanent"
+                                },
+                                "destination": "Exile"
+                            },
+                            {
+                                "type": "MoveToZone",
+                                "target": {
+                                    "type": "BoundVariable",
+                                    "name": "another target nonland permanent"
+                                },
+                                "destination": "Battlefield",
+                                "placement": "Tapped",
+                                "controllerOverride": "Controller"
+                            }
+                        ]
+                    },
+                    "otherwise": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "MoveToZone",
+                                "target": {
+                                    "type": "BoundVariable",
+                                    "name": "another target nonland permanent"
+                                },
+                                "destination": "Exile"
+                            },
+                            {
+                                "type": "CreateToken",
+                                "power": 2,
+                                "toughness": 2,
+                                "colors": [
+                                    "WHITE",
+                                    "BLUE"
+                                ],
+                                "creatureTypes": [
+                                    "Detective"
+                                ],
+                                "controller": "TargetController"
+                            }
+                        ]
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "nonland permanent",
+                        "excludeSelf": true
+                    },
+                    "id": "another target nonland permanent"
+                },
+                "descriptionOverride": "When this creature is turned face up, exile another target nonland permanent. If you controlled it, return it to the battlefield tapped. Otherwise, its controller creates a 2/2 white and blue Detective creature token."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "35",
+        "rarity": "RARE",
+        "artist": "Borja Pindado",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/3/f3a0d597-d2df-4aaf-8084-c8eeda64ce60.jpg?1783912917",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "If you controlled the target permanent earlier in the turn but not at the time Unyielding Gatekeeper's last ability resolves, you won't return it to the battlefield tapped. The player who controlled that permanent at the time it was exiled will create a Detective."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "If the controller of Unyielding Gatekeeper's last ability controlled the target permanent at the time the ability began to resolve, the permanent will return to the battlefield tapped under that player's control, regardless of who its owner is."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "Because the permanent is on the battlefield both before and after it's turned face up, turning a permanent face up doesn't cause any enters-the-battlefield abilities to trigger."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "Any time you have priority, you may turn the face-down creature face up by revealing what its disguise cost is and paying that cost. This is a special action. It doesn't use the stack and can't be responded to."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 
