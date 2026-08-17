@@ -1364,6 +1364,102 @@
     ]
 }
 
+// Behind the Mask
+{
+    "name": "Behind the Mask",
+    "manaCost": "{U}",
+    "typeLine": "Instant",
+    "oracleText": "As an additional cost to cast this spell, you may collect evidence 6. (Exile cards with total mana value 6 or greater from your graveyard.)\nUntil end of turn, target artifact or creature becomes an artifact creature with base power and toughness 4/3. If evidence was collected, it has base power and toughness 1/1 until end of turn instead.",
+    "keywordAbilities": [
+        {
+            "type": "Kicker",
+            "additionalCost": {
+                "type": "AdditionalAtom",
+                "atom": {
+                    "type": "AtomCollectEvidence",
+                    "amount": 6
+                }
+            },
+            "declaredSlot": "EVIDENCE_COLLECTED"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "Gated",
+            "gate": {
+                "type": "Gate.WhenCondition",
+                "condition": {
+                    "type": "CastChoiceMade",
+                    "slot": "EVIDENCE_COLLECTED"
+                }
+            },
+            "then": {
+                "type": "BecomeCreature",
+                "target": {
+                    "type": "BoundVariable",
+                    "name": "target artifact or creature"
+                },
+                "power": {
+                    "type": "Fixed",
+                    "amount": 1
+                },
+                "toughness": {
+                    "type": "Fixed",
+                    "amount": 1
+                },
+                "addTypes": [
+                    "ARTIFACT"
+                ]
+            },
+            "otherwise": {
+                "type": "BecomeCreature",
+                "target": {
+                    "type": "BoundVariable",
+                    "name": "target artifact or creature"
+                },
+                "power": {
+                    "type": "Fixed",
+                    "amount": 4
+                },
+                "toughness": {
+                    "type": "Fixed",
+                    "amount": 3
+                },
+                "addTypes": [
+                    "ARTIFACT"
+                ]
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature|artifact"
+                },
+                "id": "target artifact or creature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "39",
+        "artist": "Caio Monteiro",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/5/e522b043-fbd8-48a4-9f20-39e2a66a35ec.jpg?1783912917",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "Behind the Mask overwrites earlier effects that set specific power and toughness values, while modifiers and counters continue to apply."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "Making a Vehicle an artifact creature this way does not count as crewing it."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Benthic Criminologists
 {
     "name": "Benthic Criminologists",
