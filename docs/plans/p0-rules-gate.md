@@ -34,6 +34,7 @@ green card-definition count or a successful UI build does not satisfy it.
 | FFA multiplayer declare-blockers boundary | `CommanderPodSimulationTest`: APNAP defender cursor, paid/declined block tax, deferred triggers, player leave, post-placement SBA loop | Implemented; independently reviewed and Ubuntu-tested |
 | Commander replacement re-evaluation chain | `CommanderZoneReplacementTest :: CMD-REPL-CHAIN-BF-HAND-CMD-LIB-001` | Implemented; focused and broad rules-engine-tested |
 | Modal partial-target fizzle | `CastIntoTheFirePartialFizzleScenarioTest` | Implemented; focused and broad rules-engine-tested |
+| Modal target changes during the same resolution | `ModalIntraResolutionPartialTargetTest` | Implemented; independently reviewed and broad rules-engine-tested |
 | Four-player stack, counter, and concession | `CommanderPodSimulationTest :: P0-4P-STACK-CONCESSION-001` | Implemented; broad rules-engine-tested |
 | Commander-loss / lethal-damage SBA / survivor trigger chain | `CommanderPodSimulationTest :: SBA-COMMANDER-LOSS-DIES-4P-001` | Implemented; broad rules-engine-tested |
 
