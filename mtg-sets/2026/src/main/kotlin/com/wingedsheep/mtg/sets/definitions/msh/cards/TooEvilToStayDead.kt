@@ -29,7 +29,9 @@ import com.wingedsheep.sdk.scripting.targets.TargetObject
  *
  * The mana value is the graveyard card's own printed value; a card in a graveyard has no
  * continuous effects applied to it, so no projection is involved on either branch. Both branches
- * end in the same [Effects.PutOntoBattlefield] because "return the chosen card to the battlefield"
+ * end in the same [Effects.PutOntoBattlefieldFromGraveyard] — [Effects.PutOntoBattlefield] plus the
+ * `fromZone = GRAVEYARD` guard that is this sentence's canonical rendering (a card omitting it shows
+ * up in the Argentum Assay differential) — because "return the chosen card to the battlefield"
  * is the shared last sentence — the branch replaces the whole effect, so it has to restate it.
  */
 val TooEvilToStayDead = card("Too Evil to Stay Dead") {
@@ -49,13 +51,13 @@ val TooEvilToStayDead = card("Too Evil to Stay Dead") {
             "target creature card in your graveyard with mana value 4 or less",
             TargetObject(filter = TargetFilter.CreatureInYourGraveyard.manaValueAtMost(4)),
         )
-        effect = Effects.PutOntoBattlefield(cheapCreature)
+        effect = Effects.PutOntoBattlefieldFromGraveyard(cheapCreature)
 
         val anyCreature = kickerTarget(
             "target creature card in your graveyard",
             Targets.CreatureCardInYourGraveyard,
         )
-        kickerEffect = Effects.PutOntoBattlefield(anyCreature)
+        kickerEffect = Effects.PutOntoBattlefieldFromGraveyard(anyCreature)
     }
 
     metadata {

@@ -1,15 +1,10 @@
 package com.wingedsheep.mtg.sets.definitions.msh.cards
 
+import com.wingedsheep.sdk.dsl.DynamicAmounts
 import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.Targets
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
-import com.wingedsheep.sdk.scripting.GameObjectFilter
-import com.wingedsheep.sdk.scripting.filters.unified.TargetFilter
-import com.wingedsheep.sdk.scripting.targets.TargetCreature
-import com.wingedsheep.sdk.scripting.values.DynamicAmount
-import com.wingedsheep.sdk.scripting.values.EntityNumericProperty
-import com.wingedsheep.sdk.scripting.values.EntityReference
 
 /**
  * Epic Fight — Marvel Super Heroes #166
@@ -29,7 +24,8 @@ import com.wingedsheep.sdk.scripting.values.EntityReference
  * instead of just power. The bonus is locked in when the effect is applied, so it does
  * not feed back on itself, and a creature with negative toughness is left alone rather than
  * halved-then-doubled. Each mode's targets are scoped to that mode, so
- * [EntityReference.Target]`(0)` reads *this* mode's creature.
+ * [DynamicAmounts.targetPower]`()` / [DynamicAmounts.targetToughness]`()` — index 0 by default —
+ * read *this* mode's creature.
  */
 val EpicFight = card("Epic Fight") {
     manaCost = "{2}{G}"
@@ -44,25 +40,16 @@ val EpicFight = card("Epic Fight") {
             mode("Double target creature's power and toughness until end of turn") {
                 val creature = target("target creature", Targets.Creature)
                 effect = Effects.ModifyStats(
-                    power = DynamicAmount.EntityProperty(
-                        EntityReference.Target(0),
-                        EntityNumericProperty.Power
-                    ),
-                    toughness = DynamicAmount.EntityProperty(
-                        EntityReference.Target(0),
-                        EntityNumericProperty.Toughness
-                    ),
+                    power = DynamicAmounts.targetPower(),
+                    toughness = DynamicAmounts.targetToughness(),
                     target = creature
                 )
             }
             mode("Target creature you control fights target creature an opponent controls") {
-                val yours = target(
-                    "target creature you control",
-                    TargetCreature(filter = TargetFilter(GameObjectFilter.Creature.youControl()))
-                )
+                val yours = target("target creature you control", Targets.CreatureYouControl)
                 val theirs = target(
                     "target creature an opponent controls",
-                    TargetCreature(filter = TargetFilter(GameObjectFilter.Creature.opponentControls()))
+                    Targets.CreatureOpponentControls
                 )
                 effect = Effects.Fight(yours, theirs)
             }

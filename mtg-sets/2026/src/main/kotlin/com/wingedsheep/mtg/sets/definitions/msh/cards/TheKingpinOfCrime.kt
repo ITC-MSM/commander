@@ -51,10 +51,18 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  *  - **"creatures you control with toughness greater than their power"** is resolved *once*, when
  *    the trigger resolves: [Effects.ForEachInGroup] snapshots the matching battlefield creatures
  *    and grants each of them the [AbilityFlag.ASSIGNS_COMBAT_DAMAGE_AS_TOUGHNESS] floating flag
- *    for the turn (Bill the Pony's grant, applied to a group instead of a target). That matches
- *    the printed wording's timing: a creature that only later becomes toughness-heavy, or that
- *    enters after resolution, does *not* pick the effect up. `CombatDamageUtils` reads the flag
- *    off projected keywords, so first-strike/regular damage steps both honor it.
+ *    for the turn (Bill the Pony's grant, applied to a group instead of a target).
+ *    `CombatDamageUtils` reads the flag off projected keywords, so first-strike/regular damage
+ *    steps both honor it.
+ *
+ *    **Known limitation: the snapshot is *not* the printed timing.** The printed effect changes no
+ *    object's characteristics and no object's controller, so by CR 611.2c it modifies the rules of
+ *    the game and its affected set has to stay *dynamic* — a creature that only later becomes
+ *    toughness-heavy, or that enters the battlefield after the trigger resolves, should pick the
+ *    effect up for the rest of the turn. This model does not: the group is frozen at resolution.
+ *    Nothing in `Effects.*` currently grants a group-dynamic continuous effect, so a faithful
+ *    version is add-feature work (a new dynamic-set grant), not something this card can fix on its
+ *    own.
  */
 val TheKingpinOfCrime = card("The Kingpin of Crime") {
     manaCost = "{1}{W}{B}"

@@ -23,9 +23,11 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  * Implementation notes:
  * - This is a **source-side** damage trigger: the observed object is the damage *source* (a Hero
  *   you control), not the recipient. That is [Triggers.dealsDamage] with a `sourceFilter` of
- *   `Creature.youControl().withSubtype(HERO)` and `recipient = RecipientFilter.AnyPlayer`, on
+ *   `Any.withSubtype(HERO).youControl()` and `recipient = RecipientFilter.AnyPlayer`, on
  *   [TriggerBinding.ANY] so every Hero you control is watched — The Thing is itself a Hero, so its
- *   own damage counts.
+ *   own damage counts. The filter is deliberately *not* narrowed to creatures: a bare tribal noun
+ *   means any permanent with that creature type, and a noncreature Hero permanent (an animated-off
+ *   Vehicle, a Hero enchantment) can still deal noncombat damage.
  * - `batch = true` gives the printed "one or more … deal damage" wording (CR 603.2c): three Heroes
  *   connecting in the same combat damage step is one trigger, not three.
  * - `DamageType.Any` (the default) is deliberate. The printed text is not combat-restricted, so a
@@ -59,7 +61,7 @@ val TheThingBenGrimm = card("The Thing, Ben Grimm") {
     triggeredAbility {
         trigger = Triggers.dealsDamage(
             recipient = RecipientFilter.AnyPlayer,
-            sourceFilter = GameObjectFilter.Creature.youControl().withSubtype(Subtype.HERO),
+            sourceFilter = GameObjectFilter.Any.withSubtype(Subtype.HERO).youControl(),
             binding = TriggerBinding.ANY,
             batch = true,
         )

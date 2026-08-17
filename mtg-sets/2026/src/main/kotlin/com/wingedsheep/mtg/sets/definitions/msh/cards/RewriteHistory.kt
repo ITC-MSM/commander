@@ -1,7 +1,6 @@
 package com.wingedsheep.mtg.sets.definitions.msh.cards
 
 import com.wingedsheep.sdk.core.Counters
-import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.dsl.Conditions
 import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.Triggers
@@ -69,7 +68,7 @@ val RewriteHistory = card("Rewrite History") {
             action = Effects.SacrificeTarget(EffectTarget.Self),
             optional = false,
             reflexiveEffect = ForEachTargetEffect(
-                effects = listOf(Effects.Move(EffectTarget.ContextTarget(0), Zone.HAND)),
+                effects = listOf(Effects.ReturnToHand(EffectTarget.ContextTarget(0))),
             ),
             reflexiveTargetRequirements = listOf(
                 TargetObject(

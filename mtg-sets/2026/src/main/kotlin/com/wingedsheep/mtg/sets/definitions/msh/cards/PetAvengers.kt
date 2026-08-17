@@ -23,7 +23,7 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  * live text for the set's tribal payoffs, not decoration.
  *
  * `{6}{G}` − `{3}{G}` = `{3}`, and the token is the set's standard 3/2 white Hero with vigilance
- * (shared with Agent Phil Coulson and Hero in Training), so it reuses that token's art.
+ * (shared with Borough Backup, which creates two of them), so it reuses that token's art.
  */
 val PetAvengers = card("Pet Avengers") {
     manaCost = "{3}{G}"
