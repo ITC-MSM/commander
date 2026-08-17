@@ -5,6 +5,7 @@ import com.wingedsheep.gym.service.MultiEnvService
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.registry.PrintingRegistry
 import com.wingedsheep.mtg.sets.MtgSetCatalog
+import com.wingedsheep.mtg.sets.tokens.PredefinedTokens
 import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.MtgSet
 import org.springframework.context.annotation.Bean
@@ -24,6 +25,12 @@ class GymBeansConfig {
 
     @Bean
     fun cardRegistry(): CardRegistry = CardRegistry().apply {
+        // Predefined tokens (Treasure, Food, Clue, Map, Incubator, …) are looked up by name at
+        // resolution time by `CreatePredefinedTokenExecutor`, which returns an `EffectResult.error`
+        // when the name is unregistered — so without this line every card in the corpus that mints
+        // one silently minted nothing over the gym API, while `game-server`'s `GameBeansConfig`
+        // (which does register them) behaved correctly. Self-play then reported those cards as broken.
+        register(PredefinedTokens.allTokens)
         for (set in MtgSetCatalog.all) {
             register(set.cards.stampSetCode(set.code))
             // Basic-land variants are needed for the RandomSealed path so that
