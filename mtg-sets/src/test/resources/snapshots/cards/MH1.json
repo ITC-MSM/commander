@@ -8,57 +8,20 @@
         "power": 1,
         "toughness": 1
     },
+    "keywords": [
+        "VANISHING"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "VANISHING",
+            "n": 3
+        }
+    ],
     "script": {
         "triggeredAbilities": [
             {
                 "id": "ability_1",
-                "trigger": {
-                    "type": "StepEvent",
-                    "step": "UPKEEP"
-                },
-                "binding": "ANY",
-                "effect": {
-                    "type": "RemoveCounters",
-                    "counterType": "time",
-                    "count": 1,
-                    "target": "Self"
-                },
-                "interveningIf": {
-                    "type": "Compare",
-                    "left": {
-                        "type": "EntityProperty",
-                        "entity": "Source",
-                        "numericProperty": {
-                            "type": "CounterCount",
-                            "counterType": {
-                                "type": "Named",
-                                "name": "time"
-                            }
-                        }
-                    },
-                    "operator": "GTE",
-                    "right": {
-                        "type": "Fixed",
-                        "amount": 1
-                    }
-                },
-                "descriptionOverride": "At the beginning of your upkeep, remove a time counter from this creature."
-            },
-            {
-                "id": "ability_2",
-                "trigger": {
-                    "type": "CountersRemovedEvent",
-                    "counterType": "time",
-                    "lastRemoved": true
-                },
-                "effect": {
-                    "type": "SacrificeTarget",
-                    "target": "Self"
-                },
-                "descriptionOverride": "When the last time counter is removed from this creature, sacrifice it."
-            },
-            {
-                "id": "ability_3",
                 "trigger": {
                     "type": "ZoneChangeEvent",
                     "to": "Battlefield"
@@ -88,17 +51,6 @@
                 "filter": {
                     "baseFilter": "permanent Squirrel ctrl:you"
                 }
-            }
-        ],
-        "replacementEffects": [
-            {
-                "type": "EntersWithCounters",
-                "counterType": {
-                    "type": "Named",
-                    "name": "time"
-                },
-                "count": 3,
-                "selfOnly": true
             }
         ]
     },

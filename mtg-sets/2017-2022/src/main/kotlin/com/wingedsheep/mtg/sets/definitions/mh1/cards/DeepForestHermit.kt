@@ -1,20 +1,15 @@
 package com.wingedsheep.mtg.sets.definitions.mh1.cards
 
 import com.wingedsheep.sdk.core.Color
-import com.wingedsheep.sdk.core.Counters
 import com.wingedsheep.sdk.core.Subtype
-import com.wingedsheep.sdk.dsl.Conditions
 import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.Triggers
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
-import com.wingedsheep.sdk.scripting.EntersWithCounters
 import com.wingedsheep.sdk.scripting.GameObjectFilter
+import com.wingedsheep.sdk.scripting.KeywordAbility
 import com.wingedsheep.sdk.scripting.ModifyStats
-import com.wingedsheep.sdk.scripting.TriggerBinding
-import com.wingedsheep.sdk.scripting.events.CounterTypeFilter
 import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
-import com.wingedsheep.sdk.scripting.targets.EffectTarget
 
 /**
  * Deep Forest Hermit
@@ -26,15 +21,8 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  * When this creature enters, create four 1/1 green Squirrel creature tokens.
  * Squirrels you control get +1/+1.
  *
- * Vanishing (CR 702.62) is spelled out from its three parts rather than declared as a keyword:
- * `Keyword.VANISHING` / `KeywordAbility.vanishing(n)` exist for rendering only — no engine
- * executor reads them — so a declared-only vanishing creature would enter with no time counters
- * and never be sacrificed. The three printed abilities are:
- *  - "enters with three time counters on it" → [EntersWithCounters] over [Counters.TIME]
- *  - "at the beginning of your upkeep, if it has a time counter on it, remove one" → an
- *    intervening-"if" upkeep trigger
- *  - "when the last is removed, sacrifice it" → [Triggers.countersRemovedFrom] with
- *    `lastRemoved = true` bound to the source
+ * Vanishing is declared, not spelled out: the engine supplies all three of CR 702.62's abilities
+ * from the keyword — see [com.wingedsheep.sdk.scripting.Vanishing].
  *
  * "Squirrels you control" carries no card type, so it is every Squirrel *permanent* you control —
  * [GameObjectFilter.Permanent], not `.Creature`. The Hermit is an Elf Druid, so it never pumps
@@ -52,34 +40,7 @@ val DeepForestHermit = card("Deep Forest Hermit") {
     power = 1
     toughness = 1
 
-    // Vanishing 3, part 1 — enters with three time counters on it.
-    replacementEffect(
-        EntersWithCounters(
-            counterType = CounterTypeFilter.Named(Counters.TIME),
-            count = 3,
-            selfOnly = true
-        )
-    )
-
-    // Vanishing 3, part 2 — at the beginning of your upkeep, if it has a time counter on it,
-    // remove a time counter from it.
-    triggeredAbility {
-        trigger = Triggers.YourUpkeep
-        interveningIf = Conditions.SourceCounterCountAtLeast(Counters.TIME, 1)
-        effect = Effects.RemoveCounters(Counters.TIME, 1, EffectTarget.Self)
-        description = "At the beginning of your upkeep, remove a time counter from this creature."
-    }
-
-    // Vanishing 3, part 3 — when the last time counter is removed, sacrifice it.
-    triggeredAbility {
-        trigger = Triggers.countersRemovedFrom(
-            counterType = Counters.TIME,
-            lastRemoved = true,
-            binding = TriggerBinding.SELF
-        )
-        effect = Effects.SacrificeTarget(EffectTarget.Self)
-        description = "When the last time counter is removed from this creature, sacrifice it."
-    }
+    keywordAbility(KeywordAbility.vanishing(3))
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield

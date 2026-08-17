@@ -24,11 +24,12 @@ import io.kotest.matchers.shouldBe
  *  When this creature enters, create four 1/1 green Squirrel creature tokens.
  *  Squirrels you control get +1/+1."
  *
- * Vanishing (CR 702.62) has no engine executor — `Keyword.VANISHING` and
- * `KeywordAbility.vanishing(n)` exist for rendering only — so the card spells its three printed
- * abilities out of existing primitives. These tests are the proof that the composition behaves:
- * the Hermit enters with three time counters, sheds exactly one per *its controller's* upkeep, and
- * is sacrificed when the last one leaves. The Squirrel lord is asserted alongside, because the
+ * The card declares `KeywordAbility.vanishing(3)` and nothing else for it: all three of CR 702.62's
+ * abilities come from the engine ([com.wingedsheep.sdk.scripting.Vanishing]). These tests are the
+ * card-level proof that the declaration is enough — the Hermit enters with three time counters,
+ * sheds exactly one per *its controller's* upkeep, and is sacrificed when the last one leaves. The
+ * mechanic itself, including granted vanishing and off-turn counter removal, is pinned by
+ * `VanishingKeywordTest` in `rules-engine`. The Squirrel lord is asserted alongside, because the
  * tokens it makes are the reason the countdown matters.
  *
  * The countdown test drives a real [GameTestDriver] game rather than a static scenario board: it
