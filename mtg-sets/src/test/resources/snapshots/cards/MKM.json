@@ -613,6 +613,95 @@
     ]
 }
 
+// Assemble the Players
+{
+    "name": "Assemble the Players",
+    "manaCost": "{1}{W}",
+    "typeLine": "Enchantment",
+    "oracleText": "You may look at the top card of your library any time.\nOnce each turn, you may cast a creature spell with power 2 or less from the top of your library.",
+    "script": {
+        "staticAbilities": [
+            "LookAtTopOfLibrary",
+            {
+                "type": "CastSpellTypesFromTopOfLibrary",
+                "filter": "creature pow<=2",
+                "maxCastsPerTurn": 1
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "3",
+        "rarity": "RARE",
+        "artist": "Evyn Fong",
+        "flavorText": "\"All will soon be made clear, but I can give you this: our killer is here with us, in this very room.\"\n—Alquist Proft",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/5/f5bcb21a-8559-4791-8cd0-482e7b8dcfd2.jpg?1783912930",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "If Assemble the Players leaves the battlefield and returns to the battlefield in the same turn, the casting permission granted by the old one is different than the casting permission granted by the new one. Similarly, if you control multiple Assemble the Players, each one has a different casting permission that may be used once each turn."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "Because you never \"cast\" a land card, Assemble the Players doesn't allow you to play a land creature (such as Dryad Arbor) from the top of your library."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Audience with Trostani
+{
+    "name": "Audience with Trostani",
+    "manaCost": "{2}{G}",
+    "typeLine": "Sorcery",
+    "oracleText": "Create a 0/1 green Plant creature token, then draw cards equal to the number of differently named creature tokens you control.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "CreateToken",
+                    "power": 0,
+                    "toughness": 1,
+                    "colors": [
+                        "GREEN"
+                    ],
+                    "creatureTypes": [
+                        "Plant"
+                    ]
+                },
+                {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "AggregateBattlefield",
+                        "player": "You",
+                        "filter": "creature token",
+                        "aggregation": "DISTINCT_NAMES"
+                    }
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "152",
+        "rarity": "RARE",
+        "artist": "Ben Hill",
+        "flavorText": "Trostani was as regal and vibrant as ever, but Kaya couldn't shake the sense that there was something off, some discordant note lurking deep within the chorus.",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/8/a8e23d15-33af-4fd8-964b-8ca4efdebc37.jpg?1783912873",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "To determine the number of differently named creature tokens you control, count each creature token you control once, but only if its English name isn't exactly the same as another creature token you've already counted this way."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Auspicious Arrival
 {
     "name": "Auspicious Arrival",
@@ -3035,6 +3124,81 @@
     ]
 }
 
+// Detective's Satchel
+{
+    "name": "Detective's Satchel",
+    "manaCost": "{2}{U}{R}",
+    "typeLine": "Artifact",
+    "oracleText": "When this artifact enters, investigate twice. (To investigate, create a Clue token. It's an artifact with \"{2}, Sacrifice this token: Draw a card.\")\n{T}: Create a 1/1 colorless Thopter artifact creature token with flying. Activate only if you've sacrificed an artifact this turn.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Clue",
+                    "count": 2
+                },
+                "descriptionOverride": "When this artifact enters, investigate twice."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [],
+                    "creatureTypes": [
+                        "Thopter"
+                    ],
+                    "keywords": [
+                        "FLYING"
+                    ],
+                    "name": "Thopter",
+                    "artifactToken": true
+                },
+                "restrictions": [
+                    {
+                        "type": "ActivationOnlyIfCondition",
+                        "condition": {
+                            "type": "Compare",
+                            "left": {
+                                "type": "TurnTracking",
+                                "player": "You",
+                                "tracker": "ARTIFACT_SACRIFICED"
+                            },
+                            "operator": "GTE",
+                            "right": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        }
+                    }
+                ],
+                "descriptionOverride": "{T}: Create a 1/1 colorless Thopter artifact creature token with flying. Activate only if you've sacrificed an artifact this turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "196",
+        "rarity": "UNCOMMON",
+        "artist": "Andrew Mar",
+        "flavorText": "It's a crime lab in a bag.",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/c/2c05bf2d-7d4f-4717-b1ea-ec4284854f4f.jpg?1783912852"
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "RED"
+    ]
+}
+
 // Dog Walker
 {
     "name": "Dog Walker",
@@ -4957,6 +5121,87 @@
     "colorIdentityOverride": [
         "BLUE"
     ]
+}
+
+// Fuss // Bother
+{
+    "name": "Fuss // Bother",
+    "manaCost": "",
+    "typeLine": "Instant",
+    "oracleText": "Put a +1/+1 counter on each attacking creature you control.\n//\nCreate three 1/1 colorless Thopter artifact creature tokens with flying. Surveil 2.",
+    "metadata": {
+        "collectorNumber": "248",
+        "rarity": "UNCOMMON",
+        "artist": "Dominik Mayer",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/6/269a031e-0b89-40e1-b11b-ae870d72161c.jpg?1783912831"
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLUE",
+        "RED"
+    ],
+    "layout": "SPLIT",
+    "cardFaces": [
+        {
+            "name": "Fuss",
+            "manaCost": "{2}{R/W}",
+            "typeLine": "Instant",
+            "oracleText": "Put a +1/+1 counter on each attacking creature you control.",
+            "script": {
+                "spellEffect": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": "creature attacking ctrl:you"
+                        }
+                    },
+                    "body": {
+                        "type": "AddCounters",
+                        "counterType": "+1/+1",
+                        "count": 1,
+                        "target": "Self"
+                    }
+                }
+            }
+        },
+        {
+            "name": "Bother",
+            "manaCost": "{4}{W/U}{W/U}",
+            "typeLine": "Sorcery",
+            "oracleText": "Create three 1/1 colorless Thopter artifact creature tokens with flying. Surveil 2.",
+            "script": {
+                "spellEffect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "CreateToken",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 3
+                            },
+                            "power": 1,
+                            "toughness": 1,
+                            "colors": [],
+                            "creatureTypes": [
+                                "Thopter"
+                            ],
+                            "keywords": [
+                                "FLYING"
+                            ],
+                            "name": "Thopter",
+                            "artifactToken": true
+                        },
+                        {
+                            "type": "Surveil",
+                            "count": 2
+                        }
+                    ]
+                }
+            }
+        }
+    ],
+    "hasNoManaCost": true
 }
 
 // Gadget Technician
