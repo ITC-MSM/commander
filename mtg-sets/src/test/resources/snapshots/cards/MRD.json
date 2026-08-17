@@ -928,6 +928,85 @@
     ]
 }
 
+// Chalice of the Void
+{
+    "name": "Chalice of the Void",
+    "manaCost": "{X}{X}",
+    "typeLine": "Artifact",
+    "oracleText": "This artifact enters with X charge counters on it.\nWhenever a player casts a spell with mana value equal to the number of charge counters on this artifact, counter that spell.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "player": "Each"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Counter",
+                    "targetSource": "CounterTargetSource.TriggeringEntity"
+                },
+                "triggerRestriction": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "EntityProperty",
+                        "entity": "Triggering",
+                        "numericProperty": "ManaValue"
+                    },
+                    "operator": "EQ",
+                    "right": {
+                        "type": "EntityProperty",
+                        "entity": "Source",
+                        "numericProperty": {
+                            "type": "CounterCount",
+                            "counterType": {
+                                "type": "Named",
+                                "name": "charge"
+                            }
+                        }
+                    }
+                }
+            }
+        ],
+        "replacementEffects": [
+            {
+                "type": "EntersWithDynamicCounters",
+                "counterType": {
+                    "type": "Named",
+                    "name": "charge"
+                },
+                "count": "CastX"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "150",
+        "rarity": "RARE",
+        "artist": "Mark Zug",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/a/1a02ca71-5e39-4a5f-aaba-a1e3e10a6a3e.jpg?1783944526",
+        "rulings": [
+            {
+                "date": "2021-03-19",
+                "text": "A mana cost of {X}{X} means that you pay twice X. For example, if you want X to be 3, you pay {6} to cast Chalice of the Void."
+            },
+            {
+                "date": "2021-03-19",
+                "text": "The number of charge counters on Chalice of the Void matters only at the time the spell is cast. Changing the number of charge counters on Chalice of the Void after a spell has been cast won't change whether the ability triggers or counters the spell."
+            },
+            {
+                "date": "2021-03-19",
+                "text": "If there are zero charge counters on Chalice of the Void, it counters each spell with a mana value of 0. This includes face-down creature spells cast with morph's alternative cost."
+            },
+            {
+                "date": "2021-03-19",
+                "text": "Chalice of the Void has to be on the battlefield at the end of casting a spell for the ability to trigger. If you sacrifice Chalice of the Void as a cost to cast a spell, its ability can't trigger. However, if it leaves the battlefield once its ability has triggered, that ability will still counter the spell."
+            }
+        ]
+    },
+    "colorIdentityOverride": []
+}
+
 // Chimney Imp
 {
     "name": "Chimney Imp",
@@ -5408,6 +5487,78 @@
         "flavorText": "\"Ideas drift like petals on the wind. I have only to lift my face to the breeze.\"",
         "imageUri": "https://cards.scryfall.io/normal/front/0/8/0899f753-c229-4cdf-a60c-4978a6506def.jpg?1783944513"
     }
+}
+
+// Mindslaver
+{
+    "name": "Mindslaver",
+    "manaCost": "{6}",
+    "typeLine": "Legendary Artifact",
+    "oracleText": "{4}, {T}, Sacrifice Mindslaver: You control target player during that player's next turn. (You see all cards that player could see and make all decisions for them.)",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{4}"
+                            }
+                        },
+                        "CostTap",
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "HijackNextTurn",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target player"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetPlayer",
+                        "id": "target player"
+                    }
+                ],
+                "descriptionOverride": "{4}, {T}, Sacrifice Mindslaver: You control target player during that player's next turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "206",
+        "rarity": "RARE",
+        "artist": "Glen Angus",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/8/98fb1eaa-2871-491a-a4f5-3e358778ba40.jpg?1783944513",
+        "rulings": [
+            {
+                "date": "2024-04-12",
+                "text": "The player you're controlling is still the active player during that turn."
+            },
+            {
+                "date": "2024-04-12",
+                "text": "You only control the player. You don't control any of that player's permanents, spells, or abilities."
+            },
+            {
+                "date": "2024-04-12",
+                "text": "You can use only the affected player's resources (cards, mana, and so on) to pay costs for that player; you can't use your own. Similarly, you can use the affected player's resources only to pay that player's costs; you can't spend them on your costs."
+            },
+            {
+                "date": "2024-04-12",
+                "text": "If the targeted player skips their next turn, you'll control the next turn the affected player actually takes."
+            },
+            {
+                "date": "2024-04-12",
+                "text": "Multiple player-controlling effects that affect the same player overwrite each other. The last one to be created is the one that works."
+            }
+        ]
+    },
+    "colorIdentityOverride": []
 }
 
 // Molder Slug
