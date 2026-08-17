@@ -6,6 +6,8 @@ import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.Triggers
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
+import com.wingedsheep.sdk.scripting.GameObjectFilter
+import com.wingedsheep.sdk.scripting.references.Player
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 
 /**
@@ -26,7 +28,16 @@ val StockingThePantry = card("Stocking the Pantry") {
         "{2}, Remove a supply counter from this enchantment: Draw a card."
 
     triggeredAbility {
-        trigger = Triggers.PlusOneCountersPlacedOnYourCreature
+        // "Whenever **you** put …" — CR 122.6 makes the placer part of the event, so this needs
+        // `placedBy`. `Triggers.PlusOneCountersPlacedOnYourCreature` leaves it null, which is the
+        // passive "are put on a creature you control" wording and fires on an opponent's placement
+        // too. Found by the differential gate.
+        trigger = Triggers.countersPlacedOn(
+            filter = GameObjectFilter.Creature.youControl(),
+            counterType = Counters.PLUS_ONE_PLUS_ONE,
+            firstTimeEachTurn = false,
+            placedBy = Player.You,
+        )
         effect = Effects.AddCounters(Counters.SUPPLY, 1, EffectTarget.Self)
     }
 

@@ -20,6 +20,7 @@ import com.wingedsheep.sdk.scripting.effects.Gate
 import com.wingedsheep.sdk.scripting.effects.GatedEffect
 import com.wingedsheep.sdk.scripting.TriggerSpec
 import com.wingedsheep.sdk.scripting.conditions.Condition
+import com.wingedsheep.sdk.scripting.predicates.ControllerPredicate
 import com.wingedsheep.sdk.scripting.TriggeredAbility
 import com.wingedsheep.sdk.dsl.Triggers as SdkTriggers
 
@@ -259,19 +260,45 @@ object Triggers {
         noun: Phrase<GameObjectFilter>,
         spec: (GameObjectFilter) -> TriggerSpec,
     ): Phrase<TriggeredAbility> =
+        // [Steps.triggeredStep], not [Steps.step]: this trigger's event mentions an object of its
+        // own, so "it" in the effect clause is that object rather than the source. See the
+        // third-anaphor section on [SelfSteps]; the differential caught Tattered Ratter reading
+        // "Whenever a Rat you control becomes blocked, it gets +2/+0" as pumping the *Ratter*.
+        slottedTriggerRule(surface, name, noun, Steps.triggeredStep, ::triggeredFilter, spec)
+
+    /**
+     * [filteredTriggerRule]'s shape, with the slot's *type* and the event's reader as parameters.
+     *
+     * The filtered rules read one `GameObjectFilter` off three event shapes through the shared
+     * [triggeredFilter]; the batch family below reads one off a dozen, and several of those rows
+     * need the value **stripped of the field the surface itself spells** before it can reach the
+     * noun phrase — a batch subject's controller clause is a word in the sentence rather than a
+     * layer of the noun, for the reason [Filters.pluralSubject] records. A shared `when` cannot do
+     * that, because the stripping is a property of the *row* and not of the event type. So the
+     * reader is a parameter, the slot's type follows it, and the counter family's `String` slot is
+     * this same shape rather than a third copy of it.
+     *
+     * What the reader returns is still only a *candidate*: the reconstruction compares the whole
+     * ability, so a row whose event carries a field the surface does not spell refuses to print
+     * rather than printing a sentence that drops it.
+     */
+    private fun <T : Any> slottedTriggerRule(
+        surface: String,
+        name: String,
+        noun: Phrase<T>,
+        effect: Phrase<CardScript>,
+        valueOf: (TriggeredAbility) -> T?,
+        spec: (T) -> TriggerSpec,
+    ): Phrase<TriggeredAbility> =
         phrase("$surface, {effect}", name = name) {
             slot("filter", noun)
-            // [Steps.triggeredStep], not [Steps.step]: this trigger's event mentions an object of its
-            // own, so "it" in the effect clause is that object rather than the source. See the
-            // third-anaphor section on [SelfSteps]; the differential caught Tattered Ratter reading
-            // "Whenever a Rat you control becomes blocked, it gets +2/+0" as pumping the *Ratter*.
-            slot("effect", Steps.triggeredStep)
+            slot("effect", effect)
             build { abilityFor(spec(it.value("filter")), it.value("effect")) }
             match { ability ->
-                val filter = triggeredFilter(ability) ?: return@match null
+                val value = valueOf(ability) ?: return@match null
                 val script = scriptFor(ability)
-                if (abilityFor(spec(filter), script)?.copy(id = ability.id) != ability) return@match null
-                bind("filter" to filter, "effect" to script)
+                if (abilityFor(spec(value), script)?.copy(id = ability.id) != ability) return@match null
+                bind("filter" to value, "effect" to script)
             }
         }
 
@@ -390,6 +417,264 @@ object Triggers {
             }
         }
 
+    // ---------------------------------------------------------------------------------------
+    // Batch triggers — CR 603.2c's "one or more …"
+    // ---------------------------------------------------------------------------------------
+
+    /**
+     * CR 603.2c: an ability triggers once each time its event occurs, and one event can hold
+     * several occurrences — a sweeper killing four creatures, a multi-block, one resolution putting
+     * counters on three permanents. Oracle templates that reading as "**one or more**", and the
+     * distinction is not decoration: the per-object spelling of the same payoff fires four times
+     * where this one fires once.
+     *
+     * `mtg-sdk` spells it as a dedicated `EventPattern` per family rather than as a flag on the
+     * per-object one — `PermanentsEnteredEvent`, `CreaturesYouControlDiedEvent`,
+     * `CardsLeftYourGraveyardEvent`, `OneOrMoreDealCombatDamageToPlayerEvent` and their siblings —
+     * so the whole family is rows over [slottedTriggerRule] with a plural subject in the noun slot.
+     * Nothing here is a new lowering; all but one of the events already publish a `dsl.Triggers`
+     * facade, and the rows call it.
+     *
+     * ### The controller clause belongs to the sentence, not to the noun
+     *
+     * [Filters.pluralSubject] records why: these events fold an absent `controllerPredicate` to
+     * "you control", so the bare plural does not mean what it means on the battlefield. Each scope
+     * is therefore a row — three of them, generated from [SCOPES] — and the noun phrase in the slot
+     * stops below the layer that owns the field. That also gives each family its "other" wording
+     * for free, because `excludeSource` / `excludeSelf` is the second axis of the same product.
+     *
+     * ### The effect clause is [Steps.step] — a batch has no "it"
+     *
+     * The filtered trigger rules slot [Steps.triggeredStep] because their event names one object,
+     * and "it" in the payoff is that object. A batch names a *set*: the engine hands the ability a
+     * captured collection, and Oracle's payoffs say "them", "those creatures", "that many". None of
+     * that vocabulary exists yet, so those lines decline — but reading them through the third
+     * anaphor would be worse than declining, since it would quietly resolve a plural to whichever
+     * member the engine happened to record. The source anaphor is the one that stays true: it is
+     * what "Whenever one or more +1/+1 counters are put on ~, **it** gains menace" means, and it is
+     * the only bare "it" the corpus prints after a batch trigger.
+     *
+     * ### Two write-offs with a stated reason
+     *
+     * **Attacks.** "Whenever one or more Merfolk you control attack" is `YouAttackEvent`, and the
+     * family is left out rather than half-read for two reasons that would each cost more than the
+     * rows are worth: 8 of its lines print "attack **a player**", which is a narrowing
+     * (`AttackPredicate.DefenderIsPlayer` exists only on the per-creature `AttackEvent`) that the
+     * batch event cannot carry — so the two English sentences would collapse to one model — and the
+     * corpus writes the attacker filter's card type three different ways. A probe over the family's
+     * declined lines puts the payoff at 6 readable lines out of 48; the rest are blocked on "that
+     * many" and "them" regardless.
+     *
+     * **The missing facade.** `OneOrMoreDealCombatDamageToPlayerEvent` is the one event here with
+     * no `dsl.Triggers` factory — the five hand-written cards that use it write the raw
+     * `TriggerSpec`, and so does the row below, which keeps the grammar and the cards one
+     * definition. Naming it would be the right change and it is an `mtg-sdk` one.
+     */
+    private data class Scope(val words: String, val predicate: ControllerPredicate?)
+
+    /**
+     * The three controller clauses a batch subject prints, and the predicate each denotes.
+     *
+     * "You control" is the *absent* predicate rather than `ControlledByYou`: the events fold the
+     * two together and the corpus writes the absent one far more often, so spelling it would be a
+     * second spelling of one value. `ControlledByYou` therefore has no printed form here and the
+     * cards that carry it are reported — the same treatment `ManaColorSet.Specific` gets, and the
+     * same membership check: a card in the minority whose line otherwise reads is a card to fix.
+     */
+    private val SCOPES: List<Scope> = listOf(
+        Scope(" you control", null),
+        Scope("", ControllerPredicate.ControlledByAny),
+        Scope(" your opponents control", ControllerPredicate.ControlledByOpponent),
+    )
+
+    /** The event filter a subject printed under this scope denotes. */
+    private fun Scope.scoped(subject: GameObjectFilter): GameObjectFilter =
+        if (predicate == null) subject else subject.copy(controllerPredicate = predicate)
+
+    /** …and its inverse — null when the filter is scoped to a different one of [SCOPES]. */
+    private fun Scope.subjectOf(filter: GameObjectFilter): GameObjectFilter? =
+        filter.takeIf { it.controllerPredicate == predicate }?.copy(controllerPredicate = null)
+
+    /**
+     * One batch family as its scope × "other" product — six rows from one sentence skeleton.
+     *
+     * [verb] is everything after the subject, [reader] pulls the event's own filter out (returning
+     * null for any other event), and [exclusion] reads the family's own "other" flag. The `spec`
+     * takes the scoped filter and the flag, so a family whose facade spells the opponent scope with
+     * a factory of its own still goes through one row here — the two are the same value.
+     */
+    private fun batchProduct(
+        verb: String,
+        noun: String,
+        reader: (EventPattern) -> Pair<GameObjectFilter, Boolean>?,
+        spec: (GameObjectFilter, Boolean) -> TriggerSpec,
+    ): List<Phrase<TriggeredAbility>> = SCOPES.flatMap { scope ->
+        listOf(false, true).map { other ->
+            val another = if (other) "other " else ""
+            slottedTriggerRule(
+                surface = "whenever one or more $another{filter}${scope.words} $verb",
+                name = "whenever one or more $another$noun${scope.words} $verb",
+                noun = Filters.pluralSubject,
+                effect = Steps.step,
+                valueOf = { ability ->
+                    reader(ability.trigger)
+                        ?.takeIf { (_, excluded) -> excluded == other }
+                        ?.let { (filter, _) -> scope.subjectOf(filter) }
+                },
+            ) { spec(scope.scoped(it), other) }
+        }
+    }
+
+    /** A batch family with no controller axis at all — the subject's scope is in the event's name. */
+    private fun batchRule(
+        surface: String,
+        name: String,
+        noun: Phrase<GameObjectFilter>,
+        reader: (EventPattern) -> GameObjectFilter?,
+        spec: (GameObjectFilter) -> TriggerSpec,
+    ): Phrase<TriggeredAbility> =
+        slottedTriggerRule(surface, name, noun, Steps.step, { reader(it.trigger) }, spec)
+
+    /**
+     * "Whenever one or more +1/+1 counters are put on ~, …" — the counter-placement batch.
+     *
+     * Two slots of different types, which is why it is a rule rather than a row: the counter *kind*
+     * is a `String` on `CountersPlacedEvent` and the recipient is a `GameObjectFilter`. The
+     * recipient slot is optional for [Triggers.pairedTriggerRule]'s reason — the self-bound wording
+     * names no noun at all, and an event whose filter is anything but `Any` refuses to print
+     * through it.
+     *
+     * `firstTimeEachTurn` is passed explicitly because the facade defaults it to `!batch`: that
+     * default is the Stalwart Successor shape, whose printed rider these sentences do not carry,
+     * and inheriting it would silently narrow every one of them.
+     */
+    private fun countersPlacedRule(
+        surface: String,
+        name: String,
+        recipient: Phrase<GameObjectFilter>?,
+        placedBy: Player?,
+    ): Phrase<TriggeredAbility> {
+        fun spec(kind: String, filter: GameObjectFilter) = SdkTriggers.countersPlacedOn(
+            filter = filter,
+            counterType = kind,
+            firstTimeEachTurn = false,
+            binding = if (recipient == null) TriggerBinding.SELF else TriggerBinding.ANY,
+            placedBy = placedBy,
+        )
+        return phrase("$surface, {effect}", name = name) {
+            slot("kind", Primitives.counterKind)
+            if (recipient != null) slot("recipient", recipient)
+            slot("effect", Steps.step)
+            build { bindings ->
+                val filter = if (recipient == null) GameObjectFilter.Any else bindings.value("recipient")
+                abilityFor(spec(bindings.value("kind"), filter), bindings.value("effect"))
+            }
+            match { ability ->
+                val event = ability.trigger as? EventPattern.CountersPlacedEvent ?: return@match null
+                val script = scriptFor(ability)
+                val rebuilt = abilityFor(spec(event.counterType, event.filter), script)
+                if (rebuilt?.copy(id = ability.id) != ability) return@match null
+                bind("kind" to event.counterType, "recipient" to event.filter, "effect" to script)
+            }
+        }
+    }
+
+    private val batchRules: List<Phrase<TriggeredAbility>> =
+        batchProduct(
+            verb = "enter",
+            noun = "permanents",
+            reader = { (it as? EventPattern.PermanentsEnteredEvent)?.let { e -> e.filter to e.excludeSource } },
+        ) { filter, other -> SdkTriggers.OneOrMorePermanentsEnter(filter, excludeSource = other) } +
+        batchProduct(
+            verb = "die",
+            noun = "creatures",
+            reader = { (it as? EventPattern.CreaturesYouControlDiedEvent)?.let { e -> e.filter to e.excludeSelf } },
+        ) { filter, other -> SdkTriggers.OneOrMoreCreaturesYouControlDie(filter, excludeSelf = other) } +
+        listOf(
+            // The one row whose event has no facade; see this family's KDoc.
+            batchRule(
+                "whenever one or more {filter} you control deal combat damage to a player",
+                "whenever one or more creatures you control deal combat damage to a player",
+                Filters.pluralSubject,
+                { (it as? EventPattern.OneOrMoreDealCombatDamageToPlayerEvent)?.sourceFilter },
+            ) {
+                TriggerSpec(
+                    event = EventPattern.OneOrMoreDealCombatDamageToPlayerEvent(sourceFilter = it),
+                    binding = TriggerBinding.ANY,
+                )
+            },
+            batchRule(
+                "whenever one or more {filter} deal combat damage to you",
+                "whenever one or more creatures deal combat damage to you",
+                Filters.pluralSubject,
+                { (it as? EventPattern.OneOrMoreDealCombatDamageToYouEvent)?.sourceFilter },
+            ) { SdkTriggers.OneOrMoreCreaturesDealCombatDamageToYou(it) },
+            batchRule(
+                "whenever one or more {filter} leave your graveyard",
+                "whenever one or more cards leave your graveyard",
+                Filters.pluralCards,
+                { (it as? EventPattern.CardsLeftYourGraveyardEvent)?.filter },
+            ) { SdkTriggers.CardsLeaveYourGraveyard(it) },
+            batchRule(
+                "whenever one or more {filter} are put into your graveyard from anywhere",
+                "whenever one or more cards are put into your graveyard from anywhere",
+                Filters.pluralCards,
+                { (it as? EventPattern.CardsPutIntoYourGraveyardEvent)?.filter },
+            ) { SdkTriggers.CardsPutIntoYourGraveyard(it) },
+            // The library variant publishes only two fixed vals rather than a function of the
+            // filter, so this row writes the `TriggerSpec` the way the two hand-written cards do.
+            batchRule(
+                "whenever one or more {filter} are put into your graveyard from your library",
+                "whenever one or more cards are put into your graveyard from your library",
+                Filters.pluralCards,
+                { (it as? EventPattern.CardsPutIntoGraveyardFromLibraryEvent)?.filter },
+            ) {
+                TriggerSpec(
+                    event = EventPattern.CardsPutIntoGraveyardFromLibraryEvent(filter = it),
+                    binding = TriggerBinding.ANY,
+                )
+            },
+            countersPlacedRule(
+                "whenever one or more {kind} counters are put on ${Normalizer.SELF}",
+                "whenever one or more counters are put on the source",
+                recipient = null,
+                placedBy = null,
+            ),
+            countersPlacedRule(
+                "whenever one or more {kind} counters are put on {recipient}",
+                "whenever one or more counters are put on a permanent",
+                recipient = Filters.indefinite,
+                placedBy = null,
+            ),
+            // The active voice is a *different* model rather than a second spelling: `placedBy`
+            // asks who put them (CR 122.6), so "whenever **you** put" declines a placement by an
+            // opponent that the passive sentence would fire on.
+            countersPlacedRule(
+                "whenever you put one or more {kind} counters on {recipient}",
+                "whenever you put one or more counters on a permanent",
+                recipient = Filters.indefinite,
+                placedBy = Player.You,
+            ),
+            triggerRule("whenever one or more creatures attack you", SdkTriggers.CreaturesAttackYou),
+            triggerRule(
+                "whenever one or more of your opponents are attacked",
+                SdkTriggers.CreaturesAttackYourOpponent,
+            ),
+        ) +
+        listOf(false, true).map { other ->
+            val another = if (other) "other " else ""
+            batchRule(
+                "whenever one or more $another{filter} you control leave the battlefield without dying",
+                "whenever one or more ${another}creatures you control leave the battlefield without dying",
+                Filters.pluralSubject,
+                { trigger ->
+                    (trigger as? EventPattern.LeaveBattlefieldWithoutDyingEvent)
+                        ?.takeIf { it.excludeSelf == other }
+                        ?.filter
+                },
+            ) { SdkTriggers.OneOrMoreLeaveWithoutDying(it, excludeSelf = other) }
+        }
+
     private val rules: List<Phrase<TriggeredAbility>> = listOf(
         triggerRule("when ${Normalizer.SELF} enters", SdkTriggers.EntersBattlefield),
         triggerRule("when ${Normalizer.SELF} dies", SdkTriggers.Dies),
@@ -461,9 +746,45 @@ object Triggers {
             "whenever the source or another permanent dies",
             Filters.filter,
         ) { SdkTriggers.leavesBattlefield(filter = it, to = Zone.GRAVEYARD, binding = TriggerBinding.ANY) },
-    ) + castRules + phaseRules
+    ) + castRules + phaseRules + batchRules
 
-    val trigger: Phrase<TriggeredAbility> = oneOf("a triggered ability", rules)
+    /** Every trigger sentence without the cap [onceEachTurn] can put on one. */
+    private val uncapped: Phrase<TriggeredAbility> = oneOf("a triggered ability", rules)
+
+    /**
+     * "…, draw a card. **This ability triggers only once each turn.**" — the printed trigger cap.
+     *
+     * A wrapper rather than a row in every family, which is the whole point: it is a rider on the
+     * *ability* (`TriggeredAbility.oncePerTurn`) and not part of any event, so one rule reaches
+     * every trigger sentence the grammar can read — and it had to, because the fail-closed
+     * reconstruction each family does compares the whole model, so until now a capped ability
+     * refused to print and every card carrying the rider declined. 49 of the batch family's own
+     * lines carry it; so do a hundred-odd elsewhere.
+     *
+     * It is the *trigger* cap, spent by the first trigger whether or not anything came of it — not
+     * `effectOncePerTurn`, which is the "Do this only once each turn." rider CR 603.2h defines over
+     * the action taken on resolution. The SDK keeps them as two fields for exactly that reason and
+     * the two English sentences are different, so this rule prints one of them and the other keeps
+     * declining until someone writes its row.
+     *
+     * The rider is a **second sentence**, and the template says so by putting no full stop of its
+     * own in front of the slot: [Steps.step] is `"{clause}."` — a sentence spells the stop that ends
+     * it — so the trigger has already consumed the one after its payoff, and what is left to match
+     * is a space and a sentence of its own. Its first letter is lowercase here because
+     * `SentenceCase` lowercases the clause after every full stop; see the case section in this
+     * module's AGENTS.md.
+     */
+    private val onceEachTurn: Phrase<TriggeredAbility> =
+        phrase("{trigger} this ability triggers only once each turn.", name = "a trigger capped at once each turn") {
+            slot("trigger", uncapped)
+            build { it.value<TriggeredAbility>("trigger").copy(oncePerTurn = true) }
+            match { ability ->
+                if (!ability.oncePerTurn) return@match null
+                bind("trigger" to ability.copy(oncePerTurn = false))
+            }
+        }
+
+    val trigger: Phrase<TriggeredAbility> = oneOf("a triggered ability", uncapped, onceEachTurn)
 
     /** One trigger, lifted into the one-element list a line usually denotes. */
     private val single: Phrase<List<TriggeredAbility>> = phrase("{one}", name = "a triggered ability") {

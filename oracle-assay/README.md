@@ -20,16 +20,29 @@ and those are the two sentences on it. The **aura band** followed: `Enchant <fil
 attached-permanent statics, which opened `staticAbilities` — the largest `CardScript` slot the
 differential could not see into, and the one every later static family lands in.
 
-The most recent work is the **fronted duration** — "Until end of turn, target creature gets +3/+3."
+The most recent work is the **batch-trigger band** — CR 603.2c's "one or more" (**+30 whole cards**),
+which was the decline table's number-one family by every column: 355 cards blocked, 140 of them
+solely, 359 lines. Its lesson is about what a band is *worth*: the probe cut the headline to 89 lines
+and 35 cards, because what follows a batch trigger is overwhelmingly "that many", "them" and "those
+creatures" — the batch **collection**, which is the band this one identified and did not write. Its
+own machinery is two things: a third instantiation of the `Filters` cascade, because these events
+fold an absent controller predicate to "you control" and so the controller clause belongs to the
+sentence; and the "This ability triggers only once each turn." rider, one rule on the *ability* that
+reaches every trigger family and immediately exposed five card bugs. See
+[the batch-trigger band](#the-batch-trigger-band).
+
+Alongside it, one row further down the same ranking, came the **fronted duration** — "Until end of turn, target creature gets +3/+3."
 (**+4 whole cards**), and it is the band whose *measurement* is the product. It is the second family
 on the tail ranking, 265 cards blocked and 189 sole-blocked, and moving the duration to the back of
 its own 266 declined lines finishes **five** of them: everything behind that opening clause is a
 construct nobody has written yet. So what shipped is the position — one kernel capability
 (`PhraseBuilder.alsoSpelled`), one derivation ([`Durations`](src/main/kotlin/com/wingedsheep/assay/grammar/Durations.kt)),
 and one line on each of thirteen durational rules — and the four bands the measurement named are the
-work. See [the fronted duration](#the-fronted-duration).
+work. See [the fronted duration](#the-fronted-duration). The two bands are worth reading together:
+each is a top-of-the-ranking family whose probe said the payload behind it, not the family itself,
+is where the work is.
 
-Before it came the **prevention band** — "Prevent all combat damage that would be dealt this
+Before them came the **prevention band** — "Prevent all combat damage that would be dealt this
 turn." and everything the same SDK type can say (**+75 whole cards**). It is the top-of-library
 band's lesson on an `Effect` rather than on a `Patterns` recipe: `PreventDamageEffect` calls itself
 "a single parametrized type that can express any combination" of six fields, and the grammar was
@@ -40,7 +53,7 @@ strips exactly it. See [the prevention band](#the-prevention-band); it also foun
 probe overstating by a third for a new reason, and its own redundancy report found the rule it had
 just generalized.
 
-Before it came the **conditional-tapped-entry band** — the lands that enter tapped *unless*
+And before that the **conditional-tapped-entry band** — the lands that enter tapped *unless*
 something is true (**+57 whole cards**), which is the same lesson again with a twist worth
 remembering: the rule had been written off in `Replacements`' own KDoc for want of a condition
 vocabulary, and the spell-cost band had built one without anyone re-reading the write-off. See
@@ -224,16 +237,16 @@ non-zero on. Declines are not failures.
 Cards assayed                    34882
 Ability lines                    64753  (37998 unique)
 
-Round-trips byte-exact           26134   403.6‰ (40.4%)
-Alternate spelling normalized    1407
-Declined                         37212
+Round-trips byte-exact           26196   404.6‰ (40.5%)
+Alternate spelling normalized    1423
+Declined                         37134
 Ambiguous — distinct readings    0
 Print mismatch                   0
 Normalization not invertible     0
 Full inverse not reproduced      0
 Redundant readings (same model)  0
 
-Cards fully covered              8042 / 34882   230.5‰ (23.1%)
+Cards fully covered              8076 / 34882   231.5‰ (23.2%)
 Vanilla + keyword-only cards     1444 / 1712   843.5‰ (84.3%)   <- Phase 1 target
 Portal (set POR)                 200 / 200     1000.0‰ (100%)   <- the Portal band's target
 Legions (set LGN)                145 / 145     1000.0‰ (100%)   <- the Legions band's target
@@ -1386,6 +1399,97 @@ prevention one — "creatures your opponents control" (Thwart the Enemy, and 86 
 no controller layer yet, which is the same shape as the `legendary` layer the tapped-entry band
 measured at 416 lines.
 
+## The batch-trigger band
+
+CR 603.2c's "one or more". Whole-corpus coverage 8,046 → **8,076 cards** (+30, over the fronted
+duration band it merged with); the baked ledger 7,833 → **7,863 whole**, 30 in and **none out**; the
+differential's divergence count 13 → **14**, the four new ones being card bugs fixed in the same
+change. No new SDK type and no new SDK field; rows in
+[`Triggers`](src/main/kotlin/com/wingedsheep/assay/grammar/Triggers.kt) over one generalized shape,
+two noun phrases in [`Filters`](src/main/kotlin/com/wingedsheep/assay/grammar/Filters.kt).
+
+**It was the tail ranking's number-one family and the probe cut it by an order of magnitude.**
+`one or more …` blocked **355 cards**, was the sole blocker of **140**, and owned **359 declined
+lines** — the largest family in the report by every column. The probe over its own span
+(`^Whenever one or more [^,]*, ` → `When ~ enters, `) put the payoff at **89 lines and 35 whole
+cards**. The gap is the family's payoffs, not its prefixes: sub-family by sub-family the probe read
+26 of 68 combat-damage lines, 17 of 34 leave-your-graveyard, 14 of 34 counters-placed — and **6 of
+48** attack lines and **2 of 24** enters lines, because what follows a batch trigger is
+overwhelmingly "that many", "them" and "those creatures".
+
+**That is the band's real finding, and it is about the collection.** A batch names a *set*: the
+engine hands the resolving ability a captured collection, and Oracle's payoffs address it in the
+plural. The grammar has no vocabulary for that, and the whole residue of this family sits behind it —
+261 lines still open, led by 56 combat-damage payoffs. The batch **collection** is the next band, and
+it is worth more than any of the trigger prefixes were.
+
+### The controller clause belongs to the sentence, not to the noun
+
+Every batched `EventPattern` in `mtg-sdk` folds an *absent* `controllerPredicate` to "you control" —
+`PermanentsEnteredEvent` and `CreaturesYouControlDiedEvent` say so in their KDoc and their detectors
+do it, and `OneOrMoreDealCombatDamageToPlayerEvent` is scoped to the observer before its filter is
+consulted at all. So the bare plural noun does not mean here what it means on the battlefield, and
+`Filters.plural` is the wrong slot: it would print "creatures you control" from `ControlledByYou`,
+which is a second spelling of what the event already says. The answer is the spell-cost band's —
+**a position can need its own instantiation of `Filters`** — so `Filters.pluralSubject` is a third
+instance of the cascade that stops one layer below the controller clause, and each scope is a row:
+
+| Printed | `controllerPredicate` | Facade |
+|---|---|---|
+| "one or more creatures **you control** die" | *absent* | `OneOrMoreCreaturesYouControlDie` |
+| "one or more creatures die" | `ControlledByAny` | `OneOrMoreCreaturesDie` |
+| "one or more creatures **your opponents control** die" | `ControlledByOpponent` | `OneOrMoreCreaturesAnOpponentControlsDie` |
+
+Three printed forms, three SDK facades, one row each — and `ControlledByYou` has no printed form,
+which is the `ManaColorSet.Specific` treatment and the same membership check: a card in the minority
+whose line otherwise reads is a card to look at. Crossed with the family's "other"
+(`excludeSource` / `excludeSelf`) that is one six-row product per family rather than six rules.
+
+### The rider was worth more than any single family
+
+"This ability triggers only once each turn." is `TriggeredAbility.oncePerTurn`, a rider on the
+*ability* and part of no event — so **one rule reaches every trigger sentence the grammar can read**.
+It had to be written here because the fail-closed reconstruction each trigger family performs
+compares the whole model: until this rule existed a capped ability *refused to print*, so every card
+carrying the rider declined no matter how ordinary its trigger was. 49 of this family's own lines
+carry it, and so do a hundred-odd outside it.
+
+Two things fell out of it immediately. The rider made four previously-unreadable lines readable, and
+**all four were card bugs the differential then caught** — three of the bare-tribal-noun family
+(Flying Octobot's "another Villain you control", Mary Jane Watson's "a Spider you control", Invasion
+Tactics' "Allies you control", all reading `Creature` where a bare tribal noun names *permanents*)
+and one real rules bug: Stocking the Pantry and Terrasymbiosis both print "Whenever **you** put one
+or more +1/+1 counters…" and both used the shared `PlusOneCountersPlacedOnYourCreature` facade, which
+leaves `placedBy` null — the passive wording, which fires on an opponent's placement too (CR 122.6).
+All five fixed here.
+
+And it moved the fail-closed meta-test's witness. `TriggersTest` asserted that an ability carrying
+`oncePerTurn` refuses to print; that assertion is now false *because the rider is spelled*, so the
+witness moved to `triggersOnce` ("This ability triggers only once."), which is still nobody's row.
+**A fail-closed test names a field no rule spells, so it has to move every time a band spells one.**
+
+### Two write-offs, and one finding left standing
+
+**Attacks are out on purpose.** "Whenever one or more Merfolk you control attack" is `YouAttackEvent`
+and looks like the family's second-biggest row, but eight of its printed lines say "attack **a
+player**" — a narrowing (`AttackPredicate.DefenderIsPlayer`) that lives only on the per-creature
+`AttackEvent`, so the two English sentences would collapse to one model and printing would be
+underdetermined. The probe reads 6 of 48 lines behind it regardless. "During your turn" is the other:
+it is `triggerRestriction = Conditions.IsYourTurn`, a clause nobody has written, at 7 lines.
+
+**`OneOrMoreDealCombatDamageToPlayerEvent` is the one event in the family with no `dsl.Triggers`
+facade.** The five hand-written cards using it write the raw `TriggerSpec` and so does the rule, which
+keeps the grammar and the cards one definition — but naming it is the right change, and it is an
+`mtg-sdk` one.
+
+**Ghoulish Procession stays divergent, and it is an engine gap.** "Create a 2/2 black Zombie creature
+token with decayed" is a keyword on the token per CR 702.147, so the grammar reads
+`CreateTokenEffect.keywords` — but the engine realizes Decayed's "can't block" and its
+attack-sacrifice trigger only off `CounterType.DECAYED`, so the keyword alone is inert and the card
+writes `initialCounters = {decayed: 1}`. The card's spelling is the one that *works* and the
+grammar's is the one the text states; neither is right to change on its own, so the gap is reported.
+Same shape as the display-only keywords the report's bottom table already ranks.
+
 ## The fronted duration
 
 "Until end of turn, target creature gets +3/+3." — the same sentence the grammar already read, with
@@ -1470,24 +1574,26 @@ partially-read card would count a keyword Assay never saw as agreement, so every
 named population bucket instead and the denominator stays visible.
 
 ```
-  Hand-written cards                 9131
-    compared                         2832
-    not yet covered by the grammar   5650
-    script slot not modelled yet      96
-    lines do not fold into one card   55
-    multi-face (out of scope)        301
-    Oracle text differs from golden  197
+  Hand-written cards                 9598
+    compared                         3384
+    not yet covered by the grammar   5535
+    script slot not modelled yet     121
+    lines do not fold into one card   57
+    multi-face (out of scope)        302
+    Oracle text differs from golden  199
     golden would not decode            0
 
-  Confirmed — models agree           2819   995.4‰ (99.5%)
-  DIVERGENT — read every one           13
+  Confirmed — models agree           3370   995.9‰ (99.6%)
+  DIVERGENT — read every one           14
 ```
 
-**The thirteen are one finding, on purpose.** They are the spell-cost band's `FixedIf…`-against-
-`OnlyIf` split — seven goldens plus their relatives, diverging because the grammar emits the gate
-where the corpus writes both spellings; see [that band](#the-spell-cost-band) for why the gate is the
-reading with reach. Nothing else is open: the modal band took the count off zero with eight of its
-own and every one turned out to be a **card** bug, all eight fixed in the same change.
+**Thirteen of the fourteen are one finding, on purpose.** They are the spell-cost band's
+`FixedIf…`-against-`OnlyIf` split — seven goldens plus their relatives, diverging because the grammar
+emits the gate where the corpus writes both spellings; see [that band](#the-spell-cost-band) for why
+the gate is the reading with reach. The fourteenth is Ghoulish Procession's decayed token, an engine
+gap the [batch-trigger band](#the-batch-trigger-band) records. Nothing else is open: the modal band
+took the count off zero with eight of its own and every one turned out to be a **card** bug, all
+eight fixed in the same change — as were the four the batch-trigger band's rider exposed.
 
 Zero was never the property. The count goes up every time the grammar reaches a slot nobody had
 compared before, and that rise is the gate earning its keep rather than a regression — what matters

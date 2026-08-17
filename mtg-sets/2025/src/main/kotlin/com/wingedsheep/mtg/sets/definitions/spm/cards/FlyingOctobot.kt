@@ -28,7 +28,9 @@ val FlyingOctobot = card("Flying Octobot") {
     keywords(Keyword.FLYING)
     triggeredAbility {
         trigger = Triggers.entersBattlefield(
-            filter = GameObjectFilter.Creature.withSubtype("Villain").youControl(),
+            // "another Villain you control", not "another Villain creature" — a bare tribal noun
+            // names *permanents* of that type, so a noncreature Villain entering fires this too.
+            filter = GameObjectFilter.Permanent.withSubtype("Villain").youControl(),
             binding = TriggerBinding.OTHER
         )
         oncePerTurn = true

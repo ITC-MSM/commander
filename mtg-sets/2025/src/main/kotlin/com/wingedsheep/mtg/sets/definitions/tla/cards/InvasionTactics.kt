@@ -41,7 +41,11 @@ val InvasionTactics = card("Invasion Tactics") {
     triggeredAbility {
         trigger = TriggerSpec(
             OneOrMoreDealCombatDamageToPlayerEvent(
-                sourceFilter = GameObjectFilter.Creature.withSubtype("Ally"),
+                // "Allies", not "Ally creatures" — a bare tribal noun names *permanents* of that
+                // type. Behaviourally the same here, since the event's detector already requires
+                // the damage source to be a creature; spelled this way so the corpus has one
+                // reading of the noun.
+                sourceFilter = GameObjectFilter.Permanent.withSubtype("Ally"),
             ),
             TriggerBinding.ANY,
         )

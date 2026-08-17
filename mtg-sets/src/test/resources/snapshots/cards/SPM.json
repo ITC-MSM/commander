@@ -2578,7 +2578,7 @@
                 "id": "ability_1",
                 "trigger": {
                     "type": "ZoneChangeEvent",
-                    "filter": "creature Villain ctrl:you",
+                    "filter": "permanent Villain ctrl:you",
                     "to": "Battlefield"
                 },
                 "binding": "OTHER",
@@ -4755,7 +4755,7 @@
                 "id": "ability_1",
                 "trigger": {
                     "type": "ZoneChangeEvent",
-                    "filter": "creature Spider ctrl:you",
+                    "filter": "permanent Spider ctrl:you",
                     "to": "Battlefield"
                 },
                 "binding": "ANY",

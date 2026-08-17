@@ -16989,7 +16989,8 @@
                 "trigger": {
                     "type": "CountersPlacedEvent",
                     "counterType": "+1/+1",
-                    "filter": "creature ctrl:you"
+                    "filter": "creature ctrl:you",
+                    "placedBy": "You"
                 },
                 "binding": "ANY",
                 "effect": {
