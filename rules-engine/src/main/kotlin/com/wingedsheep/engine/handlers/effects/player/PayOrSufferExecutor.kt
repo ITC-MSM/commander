@@ -251,7 +251,9 @@ class PayOrSufferExecutor(
         controllerId: EntityId
     ): EffectResult {
         // Find all valid permanents on the battlefield that the player controls
-        val validPermanents = findValidPermanentsOnBattlefield(state, controllerId, cost.filter, sourceId)
+        val validPermanents = findValidPermanentsOnBattlefield(
+            state, controllerId, cost.filter, selfExclusion(cost.excludeSelf, sourceId)
+        )
 
         // If the player doesn't have enough permanents, automatically execute suffer effect
         if (validPermanents.size < cost.count) {
@@ -306,9 +308,8 @@ class PayOrSufferExecutor(
      * Handle a tap cost - player must tap one or more of their untapped permanents
      * to avoid the suffer effect.
      *
-     * Filters candidates to permanents the paying player controls that are untapped,
-     * excluding the source itself (the source is typically tapped or off-battlefield
-     * but we exclude defensively, matching the sacrifice-cost convention).
+     * Filters candidates to permanents the paying player controls that are untapped. Whether the
+     * source itself is among them is the atom's call, not this method's — see [selfExclusion].
      */
     private fun handleTapCost(
         state: GameState,
@@ -319,9 +320,9 @@ class PayOrSufferExecutor(
         sourceName: String,
         controllerId: EntityId
     ): EffectResult {
-        // Untapped permanents the player controls that match the filter, excluding the source.
+        // Untapped permanents the player controls that match the filter.
         val validPermanents = findValidUntappedPermanentsOnBattlefield(
-            state, controllerId, cost.filter, sourceId
+            state, controllerId, cost.filter, selfExclusion(cost.excludeSelf, sourceId)
         )
 
         // If the player doesn't have enough untapped permanents, automatically suffer.
@@ -708,14 +709,18 @@ class PayOrSufferExecutor(
             is PayCost.Choice -> cost.options.any { canPayCost(state, playerId, it, sourceId) }
             is PayCost.Atom -> when (val atom = cost.atom) {
                 is CostAtom.Discard -> findValidCardsInHand(state, playerId, atom.filter).size >= atom.count
-                is CostAtom.Sacrifice -> findValidPermanentsOnBattlefield(state, playerId, atom.filter, sourceId).size >= atom.count
+                is CostAtom.Sacrifice -> findValidPermanentsOnBattlefield(
+                    state, playerId, atom.filter, selfExclusion(atom.excludeSelf, sourceId)
+                ).size >= atom.count
                 is CostAtom.PayLife -> {
                     val life = state.lifeTotal(playerId) // CR 810.9a — team's shared total
                     life > atom.amount
                 }
                 is CostAtom.Mana -> ManaSolver(cardRegistry).canPay(state, playerId, atom.cost)
                 is CostAtom.ExileFrom -> findValidCardsInZone(state, playerId, atom.filter, atom.zone).size >= atom.count
-                is CostAtom.TapPermanents -> findValidUntappedPermanentsOnBattlefield(state, playerId, atom.filter, sourceId).size >= atom.count
+                is CostAtom.TapPermanents -> findValidUntappedPermanentsOnBattlefield(
+                    state, playerId, atom.filter, selfExclusion(atom.excludeSelf, sourceId)
+                ).size >= atom.count
                 is CostAtom.ReturnToHand -> false
                 is CostAtom.RevealFromHand -> false
                 is CostAtom.PutCountersOnSelf -> false
@@ -788,34 +793,56 @@ class PayOrSufferExecutor(
     }
 
     /**
+     * The source id to keep out of a cost's candidate set, or `null` to leave it in.
+     *
+     * The printed word "another" is what decides this, and the cost atom already carries it as
+     * `excludeSelf` — so the answer has to come from the atom, never from a blanket policy here.
+     * Vulshok War-Boar's "sacrifice an artifact" and Public Thoroughfare's "tap an untapped
+     * artifact or land you control" are both self-inclusive as printed; only a cost authored with
+     * `Costs.SacrificeAnother`-style intent excludes the source.
+     *
+     * This mirrors [com.wingedsheep.engine.mechanics.cost.CostPaymentService], which has always
+     * read the flag. Hardcoding the exclusion here made the two payment paths disagree about the
+     * same atom, and silently outlawed the self-payment line that Public Thoroughfare's and
+     * Command Bridge's rulings both spell out (2024-02-02: "In the unusual case where Public
+     * Thoroughfare is untapped as its triggered ability is resolving, you can tap it for its own
+     * triggered ability.").
+     */
+    private fun selfExclusion(excludeSelf: Boolean, sourceId: EntityId): EntityId? =
+        if (excludeSelf) sourceId else null
+
+    /**
      * Find all permanents on the battlefield that match the filter.
-     * Excludes the source permanent itself.
+     *
+     * [excludeSelfId] is the source only when the cost atom asks for it — see
+     * [selfExclusion] for why this can't be hardcoded.
      */
     private fun findValidPermanentsOnBattlefield(
         state: GameState,
         playerId: EntityId,
         filter: GameObjectFilter,
-        sourceId: EntityId
+        excludeSelfId: EntityId?
     ): List<EntityId> {
         return BattlefieldFilterUtils.findMatchingOnBattlefield(
-            state, filter.youControl(), PredicateContext(controllerId = playerId), excludeSelfId = sourceId
+            state, filter.youControl(), PredicateContext(controllerId = playerId), excludeSelfId = excludeSelfId
         )
     }
 
     /**
      * Find all untapped permanents the player controls that match the filter.
-     * Excludes the source permanent itself.
+     *
+     * [excludeSelfId] is the source only when the cost atom asks for it — see [selfExclusion].
      */
     private fun findValidUntappedPermanentsOnBattlefield(
         state: GameState,
         playerId: EntityId,
         filter: GameObjectFilter,
-        sourceId: EntityId
+        excludeSelfId: EntityId?
     ): List<EntityId> {
         return BattlefieldFilterUtils.findMatchingOnBattlefield(
             state, filter.youControl().untapped(),
             PredicateContext(controllerId = playerId),
-            excludeSelfId = sourceId
+            excludeSelfId = excludeSelfId
         )
     }
 

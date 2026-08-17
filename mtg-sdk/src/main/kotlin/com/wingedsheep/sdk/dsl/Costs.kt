@@ -704,9 +704,17 @@ object Costs {
             random: Boolean = false
         ): PayCost = PayCost.Atom(CostAtom.Discard(count, filter, random))
 
-        /** Sacrifice [count] permanents matching [filter]. */
+        /**
+         * Sacrifice [count] permanents matching [filter]. The source is a legal choice when it
+         * matches — "sacrifice it unless you sacrifice an artifact" on an artifact creature lets
+         * you name the creature itself. Use [SacrificeAnother] for a printed "another".
+         */
         fun Sacrifice(filter: GameObjectFilter = GameObjectFilter.Any, count: Int = 1): PayCost =
             PayCost.Atom(CostAtom.Sacrifice(filter, count))
+
+        /** Sacrifice [count] permanents matching [filter] **other than the source** ("another"). */
+        fun SacrificeAnother(filter: GameObjectFilter = GameObjectFilter.Any, count: Int = 1): PayCost =
+            PayCost.Atom(CostAtom.Sacrifice(filter, count, excludeSelf = true))
 
         /** Pay [amount] life. */
         fun PayLife(amount: Int): PayCost = PayCost.Atom(CostAtom.PayLife(amount))
@@ -729,9 +737,17 @@ object Costs {
         fun ReturnToHand(filter: GameObjectFilter = GameObjectFilter.Any, count: Int = 1): PayCost =
             PayCost.Atom(CostAtom.ReturnToHand(filter, count))
 
-        /** Tap [count] untapped permanents matching [filter] you control. */
+        /**
+         * Tap [count] untapped permanents matching [filter] you control. The source is a legal
+         * choice when it matches and is untapped — Public Thoroughfare's and Command Bridge's
+         * rulings both allow tapping the land itself. Use [TapAnother] for a printed "another".
+         */
         fun Tap(filter: GameObjectFilter = GameObjectFilter.Any, count: Int = 1): PayCost =
             PayCost.Atom(CostAtom.TapPermanents(count, filter))
+
+        /** Tap [count] untapped permanents matching [filter] **other than the source** ("another"). */
+        fun TapAnother(filter: GameObjectFilter = GameObjectFilter.Any, count: Int = 1): PayCost =
+            PayCost.Atom(CostAtom.TapPermanents(count, filter, excludeSelf = true))
 
         /**
          * Remove [count] counters of the specified [counterType] (or any type when null)

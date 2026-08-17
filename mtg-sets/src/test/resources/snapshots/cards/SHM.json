@@ -169,3 +169,55 @@
         "WHITE"
     ]
 }
+
+// Woodfall Primus
+{
+    "name": "Woodfall Primus",
+    "manaCost": "{5}{G}{G}{G}",
+    "typeLine": "Creature — Treefolk Shaman",
+    "oracleText": "Trample\nWhen this creature enters, destroy target noncreature permanent.\nPersist (When this creature dies, if it had no -1/-1 counters on it, return it to the battlefield under its owner's control with a -1/-1 counter on it.)",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 6
+    },
+    "keywords": [
+        "TRAMPLE",
+        "PERSIST"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "ContextTarget",
+                        "index": 0
+                    },
+                    "destination": "Graveyard",
+                    "byDestruction": true
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "noncreature permanent"
+                    }
+                },
+                "descriptionOverride": "When this creature enters, destroy target noncreature permanent."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "135",
+        "rarity": "RARE",
+        "artist": "Adam Rex",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/3/43aa7e35-55ee-4e02-a8aa-ea2b267055d1.jpg"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}

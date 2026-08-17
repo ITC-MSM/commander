@@ -55,6 +55,53 @@
     ]
 }
 
+// Jenara, Asura of War
+{
+    "name": "Jenara, Asura of War",
+    "manaCost": "{G}{W}{U}",
+    "typeLine": "Legendary Creature — Angel",
+    "oracleText": "Flying\n{1}{W}: Put a +1/+1 counter on Jenara.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{1}{W}"
+                    }
+                },
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": "Self"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "128",
+        "rarity": "MYTHIC",
+        "artist": "Chris Rahn",
+        "flavorText": "Wounded soldiers looked up, grateful for her appearance. But she passed over them, her eyes firmly on their foe.",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/6/d643c335-e3a7-461d-a024-095795ab6770.jpg"
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLUE",
+        "GREEN"
+    ]
+}
+
 // Maelstrom Pulse
 {
     "name": "Maelstrom Pulse",

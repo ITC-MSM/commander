@@ -106,6 +106,45 @@
     ]
 }
 
+// Canopy Vista
+{
+    "name": "Canopy Vista",
+    "manaCost": "",
+    "typeLine": "Land — Forest Plains",
+    "oracleText": "({T}: Add {G} or {W}.)\nThis land enters tapped unless you control two or more basic lands.",
+    "script": {
+        "replacementEffects": [
+            {
+                "type": "EntersTapped",
+                "unlessCondition": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "AggregateBattlefield",
+                        "player": "You",
+                        "filter": "basicland"
+                    },
+                    "operator": "GTE",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 2
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "234",
+        "rarity": "RARE",
+        "artist": "Adam Paquette",
+        "flavorText": "The continent of Murasa lies beneath a blanket of dense vegetation, its enormous branches tangled so thickly that some inhabitants never see the ground.",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/3/a3262c7f-4fdf-4648-ba59-9279c75d222d.jpg"
+    },
+    "colorIdentityOverride": [
+        "GREEN",
+        "WHITE"
+    ]
+}
+
 // Cinder Glade
 {
     "name": "Cinder Glade",
@@ -406,6 +445,45 @@
     ]
 }
 
+// Prairie Stream
+{
+    "name": "Prairie Stream",
+    "manaCost": "",
+    "typeLine": "Land — Plains Island",
+    "oracleText": "({T}: Add {W} or {U}.)\nThis land enters tapped unless you control two or more basic lands.",
+    "script": {
+        "replacementEffects": [
+            {
+                "type": "EntersTapped",
+                "unlessCondition": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "AggregateBattlefield",
+                        "player": "You",
+                        "filter": "basicland"
+                    },
+                    "operator": "GTE",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 2
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "241",
+        "rarity": "RARE",
+        "artist": "Adam Paquette",
+        "flavorText": "The continent of Ondu is a vast plateau crisscrossed by deep trenches and meandering rivers.",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/6/9625911f-1dd3-4044-ac06-3c0c3198b6fd.jpg"
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLUE"
+    ]
+}
+
 // Sandstone Bridge
 {
     "name": "Sandstone Bridge",
@@ -480,6 +558,45 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Smoldering Marsh
+{
+    "name": "Smoldering Marsh",
+    "manaCost": "",
+    "typeLine": "Land — Swamp Mountain",
+    "oracleText": "({T}: Add {B} or {R}.)\nThis land enters tapped unless you control two or more basic lands.",
+    "script": {
+        "replacementEffects": [
+            {
+                "type": "EntersTapped",
+                "unlessCondition": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "AggregateBattlefield",
+                        "player": "You",
+                        "filter": "basicland"
+                    },
+                    "operator": "GTE",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 2
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "247",
+        "rarity": "RARE",
+        "artist": "Adam Paquette",
+        "flavorText": "The continent of Guul Draz is a geothermal swampland reeking of heat and decay.",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/5/359b189d-aa51-4e90-820a-e79884562e34.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "RED"
     ]
 }
 
@@ -686,11 +803,11 @@
         "rarity": "RARE",
         "artist": "Adam Paquette",
         "flavorText": "On the continent of Tazeem, rushing waters plunge through narrow canyons into mist-cloaked lakes.",
-        "imageUri": "https://cards.scryfall.io/normal/front/0/d/0dd1726f-b899-491a-8b0e-8e3d25f17d3d.jpg?1783938172"
+        "imageUri": "https://cards.scryfall.io/normal/front/0/d/0dd1726f-b899-491a-8b0e-8e3d25f17d3d.jpg"
     },
     "colorIdentityOverride": [
-        "BLACK",
-        "BLUE"
+        "BLUE",
+        "BLACK"
     ]
 }
 
