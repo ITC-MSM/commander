@@ -421,13 +421,19 @@ object Effects {
     /**
      * Take an extra turn after this one (Time Walk, Lost Isle Calling). When [loseAtEndStep]
      * is true, the player loses the game at the beginning of that turn's end step (Last Chance,
-     * Final Fortune). Prevented by `PreventExtraTurns` (Ugin's Nexus).
+     * Final Fortune). When [powerUpAbilitiesCantBeActivated] is true, no player may activate a
+     * power-up ability during that turn (Kang the Conqueror). Both riders are scoped to the extra
+     * turn this effect creates, so neither applies when `PreventExtraTurns` (Ugin's Nexus) stops
+     * the extra turn from happening at all.
      */
     fun TakeExtraTurn(
         target: EffectTarget = EffectTarget.Controller,
-        loseAtEndStep: Boolean = false
+        loseAtEndStep: Boolean = false,
+        powerUpAbilitiesCantBeActivated: Boolean = false
     ): Effect =
-        com.wingedsheep.sdk.scripting.effects.TakeExtraTurnEffect(loseAtEndStep, target)
+        com.wingedsheep.sdk.scripting.effects.TakeExtraTurnEffect(
+            loseAtEndStep, target, powerUpAbilitiesCantBeActivated
+        )
 
     /**
      * Force a player to exile from multiple zones (battlefield, hand, graveyard).

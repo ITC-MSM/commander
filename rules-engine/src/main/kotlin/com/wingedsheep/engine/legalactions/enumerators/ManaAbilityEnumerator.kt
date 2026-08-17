@@ -127,6 +127,12 @@ class ManaAbilityEnumerator : ActionEnumerator {
             )
 
             for (ability in manaAbilities) {
+                // Kang the Conqueror's turn-scoped power-up lockout says "power-up abilities can't
+                // be activated", with no carve-out for mana abilities. No printed power-up ability
+                // is a mana ability today; the guard is here so a future one can't be offered as a
+                // mana source that `ActivateAbilityHandler.validate` would then reject.
+                if (context.castPermissionUtils.isPowerUpActivationRestricted(state, ability)) continue
+
                 // Apply text replacement to cost filters
                 val effectiveCost = if (manaTextReplacement != null) {
                     ability.cost.applyTextReplacement(manaTextReplacement)

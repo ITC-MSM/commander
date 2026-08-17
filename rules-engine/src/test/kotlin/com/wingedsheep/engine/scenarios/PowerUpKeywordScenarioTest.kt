@@ -2,15 +2,18 @@ package com.wingedsheep.engine.scenarios
 
 import com.wingedsheep.engine.core.ActivateAbility
 import com.wingedsheep.engine.state.components.battlefield.CountersComponent
+import com.wingedsheep.engine.state.components.player.SkipNextTurnComponent
 import com.wingedsheep.engine.support.ScenarioTestBase
 import com.wingedsheep.sdk.core.CounterType
 import com.wingedsheep.sdk.core.Counters
 import com.wingedsheep.sdk.core.Phase
 import com.wingedsheep.sdk.core.Step
+import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.dsl.Costs
 import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.Targets
 import com.wingedsheep.sdk.dsl.card
+import com.wingedsheep.sdk.scripting.AbilityId
 import com.wingedsheep.sdk.scripting.ActivationRestriction
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.ReduceActivatedAbilityCost
@@ -38,6 +41,14 @@ import io.kotest.matchers.string.shouldStartWith
  *    silently passing.
  *  - **"If this permanent entered this turn"** — the discount is gone on every later turn, and the
  *    enumerator's displayed cost and the handler's paid cost agree in both states.
+ *
+ * The last context covers the *extra-turn lockout* Kang the Conqueror puts on the mechanic — "Take
+ * an extra turn after this one. During that turn, power-up abilities can't be activated." — which
+ * is the `powerUpAbilitiesCantBeActivated` rider on `TakeExtraTurnEffect`. Five things pin it down:
+ * it does not bind the rest of the turn that created it, it binds *both* players during the extra
+ * turn (enumerator and handler alike), it reaches a power-up activated from outside the battlefield
+ * (the command zone, whose enumerator is separate), it lifts when that turn ends, and it never
+ * applies at all when a `PreventExtraTurns` source means there is no extra turn to bind.
  */
 class PowerUpKeywordScenarioTest : ScenarioTestBase() {
 
@@ -122,10 +133,86 @@ class PowerUpKeywordScenarioTest : ScenarioTestBase() {
         }
     }
 
+    /**
+     * Kang the Conqueror's rider in isolation: a power-up that takes an extra turn and locks
+     * power-up abilities out of it. Deliberately carries no counter effect, so every assertion
+     * below is about *other* permanents' power-ups rather than this one's spent `Once`.
+     */
+    private val warlord = card("Temporal Warlord") {
+        manaCost = "{2}{U}{U}"
+        typeLine = "Creature — Human Villain"
+        power = 3
+        toughness = 3
+        oracleText = "Power-up — {U}: Take an extra turn after this one. During that turn, " +
+            "power-up abilities can't be activated."
+        activatedAbility {
+            isPowerUp = true
+            cost = Costs.Mana("{U}")
+            effect = Effects.TakeExtraTurn(powerUpAbilitiesCantBeActivated = true)
+        }
+    }
+
+    /** A cheap power-up for the lockout's controller — the "other permanent you control" case. */
+    private val alliedVanguard = card("Allied Vanguard") {
+        manaCost = "{1}{U}"
+        typeLine = "Creature — Human Soldier"
+        power = 2
+        toughness = 2
+        oracleText = "Power-up — {U}: Put a +1/+1 counter on this creature."
+        activatedAbility {
+            isPowerUp = true
+            cost = Costs.Mana("{U}")
+            effect = Effects.AddCounters(Counters.PLUS_ONE_PLUS_ONE, 1, EffectTarget.Self)
+        }
+    }
+
+    /**
+     * The same card under the opponent. Distinctly named so the assertions can name a side without
+     * disambiguating two same-named permanents.
+     */
+    private val rivalVanguard = card("Rival Vanguard") {
+        manaCost = "{1}{U}"
+        typeLine = "Creature — Human Soldier"
+        power = 2
+        toughness = 2
+        oracleText = "Power-up — {U}: Put a +1/+1 counter on this creature."
+        activatedAbility {
+            isPowerUp = true
+            cost = Costs.Mana("{U}")
+            effect = Effects.AddCounters(Counters.PLUS_ONE_PLUS_ONE, 1, EffectTarget.Self)
+        }
+    }
+
+    /**
+     * A power-up activated from the **command zone** — the one enumerator
+     * (`CommandZoneAbilityEnumerator`) the other tests here never reach, since every printed
+     * power-up activates from the battlefield. Shaped like the Momir Basic avatar: a Vanguard card
+     * with `activateFromZone = Zone.COMMAND`, which is how a card gets into the command zone with
+     * an activated ability at all.
+     */
+    private val timelineAvatar = card("Timeline Avatar") {
+        typeLine = "Vanguard"
+        oracleText = "Power-up — {U}: Draw a card."
+        activatedAbility {
+            isPowerUp = true
+            cost = Costs.Mana("{U}")
+            effect = Effects.DrawCards(1)
+            activateFromZone = Zone.COMMAND
+        }
+    }
+
     private val conquerorAbilityId
         get() = cardRegistry.getCard("Temporal Conqueror")!!.script.activatedAbilities[0].id
     private val technicianAbilityId
         get() = cardRegistry.getCard("Steady Technician")!!.script.activatedAbilities[0].id
+    private val warlordAbilityId
+        get() = cardRegistry.getCard("Temporal Warlord")!!.script.activatedAbilities[0].id
+    private val alliedAbilityId
+        get() = cardRegistry.getCard("Allied Vanguard")!!.script.activatedAbilities[0].id
+    private val rivalAbilityId
+        get() = cardRegistry.getCard("Rival Vanguard")!!.script.activatedAbilities[0].id
+    private val avatarAbilityId
+        get() = cardRegistry.getCard("Timeline Avatar")!!.script.activatedAbilities[0].id
 
     /**
      * The power-up action the enumerator offers [playerNumber], or null when it offers none. The
@@ -135,12 +222,42 @@ class PowerUpKeywordScenarioTest : ScenarioTestBase() {
     private fun TestGame.powerUpAction(playerNumber: Int = 1) =
         getLegalActions(playerNumber).firstOrNull { it.description.startsWith("Power-up —") }
 
+    /** The offered activation of one specific ability, or null when the enumerator withholds it. */
+    private fun TestGame.actionFor(playerNumber: Int, abilityId: AbilityId) =
+        getLegalActions(playerNumber).firstOrNull {
+            it.action.let { a -> a is ActivateAbility && a.abilityId == abilityId }
+        }
+
+    /**
+     * Pass priority through the rest of this turn and into the next turn's precombat main. The
+     * next turn to *begin* is the extra turn when one is pending, because the skip that models it
+     * never reaches `TurnManager.startTurn`.
+     */
+    private fun TestGame.crossIntoNextTurn() {
+        passUntilPhase(Phase.ENDING, Step.END)
+        passUntilPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+    }
+
+    /** Activate the warlord's power-up and let it resolve, paying its {U} from an Island. */
+    private fun TestGame.takeLockedExtraTurn() {
+        val warlordId = findPermanent("Temporal Warlord")!!
+        execute(ActivateAbility(player1Id, warlordId, warlordAbilityId)).error shouldBe null
+        if (getPendingDecision() is com.wingedsheep.engine.core.SelectManaSourcesDecision) {
+            submitManaSourcesAutoPay()
+        }
+        resolveStack()
+    }
+
     init {
         cardRegistry.register(conqueror)
         cardRegistry.register(madTitan)
         cardRegistry.register(gammaGoliath)
         cardRegistry.register(plainActivator)
         cardRegistry.register(bounce)
+        cardRegistry.register(warlord)
+        cardRegistry.register(alliedVanguard)
+        cardRegistry.register(rivalVanguard)
+        cardRegistry.register(timelineAvatar)
 
         context("Power-up keyword") {
 
@@ -332,6 +449,156 @@ class PowerUpKeywordScenarioTest : ScenarioTestBase() {
                 withClue("the technician's ability must be offered") { action shouldNotBe null }
                 withClue("powerUpOnly gates on the ability, so a plain one keeps its printed cost") {
                     action!!.description shouldStartWith "{5}{U}{U}{U}:"
+                }
+            }
+        }
+
+        context("Power-up — the extra-turn lockout (Kang the Conqueror)") {
+
+            /** Both sides hold a cheap power-up plus mana; libraries keep the draw steps legal. */
+            fun lockoutScenario() = scenario()
+                .withPlayers("Player", "Opponent")
+                .withCardOnBattlefield(1, "Temporal Warlord")
+                .withCardOnBattlefield(1, "Allied Vanguard")
+                .withCardOnBattlefield(2, "Rival Vanguard")
+                .withLandsOnBattlefield(1, "Island", 4)
+                .withLandsOnBattlefield(2, "Island", 4)
+                .withCardInLibrary(1, "Island")
+                .withCardInLibrary(1, "Island")
+                .withCardInLibrary(2, "Island")
+                .withCardInLibrary(2, "Island")
+                .withActivePlayer(1)
+                .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+
+            test("the lockout binds the extra turn only — not the rest of the turn that made it") {
+                val game = lockoutScenario().build()
+                game.takeLockedExtraTurn()
+
+                withClue("'during that turn' is the extra turn, so this turn is untouched") {
+                    game.actionFor(1, alliedAbilityId) shouldNotBe null
+                }
+
+                val vanguardId = game.findPermanent("Allied Vanguard")!!
+                val result = game.execute(ActivateAbility(game.player1Id, vanguardId, alliedAbilityId))
+                withClue("and the handler must agree with the enumerator: ${result.error}") {
+                    result.error shouldBe null
+                }
+                if (game.getPendingDecision() is com.wingedsheep.engine.core.SelectManaSourcesDecision) {
+                    game.submitManaSourcesAutoPay()
+                }
+                game.resolveStack()
+                game.state.getEntity(vanguardId)?.get<CountersComponent>()
+                    ?.getCount(CounterType.PLUS_ONE_PLUS_ONE) shouldBe 1
+            }
+
+            test("during the extra turn neither player may activate a power-up ability") {
+                val game = lockoutScenario().build()
+                game.takeLockedExtraTurn()
+                game.crossIntoNextTurn()
+
+                withClue("the opponent skipped, so the next turn to begin is the extra turn") {
+                    game.state.activePlayerId shouldBe game.player1Id
+                }
+
+                withClue("the turn taker's own power-up is withheld by the enumerator") {
+                    game.actionFor(1, alliedAbilityId) shouldBe null
+                }
+                val vanguardId = game.findPermanent("Allied Vanguard")!!
+                val rejected = game.execute(ActivateAbility(game.player1Id, vanguardId, alliedAbilityId))
+                withClue("and rejected by the handler for the lockout, not for some other reason") {
+                    rejected.error shouldBe "Power-up abilities can't be activated this turn"
+                }
+
+                // "Power-up abilities can't be activated" is unqualified — it binds the opponent
+                // too, who holds priority during the turn taker's turn.
+                game.passPriority()
+                withClue("the opponent must hold priority for their legal actions to be listed") {
+                    game.state.priorityPlayerId shouldBe game.player2Id
+                }
+                withClue("the opponent's power-up is withheld as well") {
+                    game.actionFor(2, rivalAbilityId) shouldBe null
+                }
+                val rivalId = game.findPermanent("Rival Vanguard")!!
+                val rejectedForOpponent =
+                    game.execute(ActivateAbility(game.player2Id, rivalId, rivalAbilityId))
+                withClue("the lockout is global, not scoped to whoever created it") {
+                    rejectedForOpponent.error shouldBe "Power-up abilities can't be activated this turn"
+                }
+            }
+
+            test("the lockout lifts once the extra turn is over") {
+                val game = lockoutScenario().build()
+                game.takeLockedExtraTurn()
+                game.crossIntoNextTurn() // the extra turn
+                game.crossIntoNextTurn() // the opponent's turn, no longer locked
+
+                withClue("the opponent's skip was consumed by the extra turn, so this turn is theirs") {
+                    game.state.activePlayerId shouldBe game.player2Id
+                }
+                withClue("only the stamped turn is locked") {
+                    game.actionFor(2, rivalAbilityId) shouldNotBe null
+                }
+
+                val rivalId = game.findPermanent("Rival Vanguard")!!
+                val result = game.execute(ActivateAbility(game.player2Id, rivalId, rivalAbilityId))
+                withClue("activation is legal again: ${result.error}") { result.error shouldBe null }
+                if (game.getPendingDecision() is com.wingedsheep.engine.core.SelectManaSourcesDecision) {
+                    game.submitManaSourcesAutoPay()
+                }
+                game.resolveStack()
+                game.state.getEntity(rivalId)?.get<CountersComponent>()
+                    ?.getCount(CounterType.PLUS_ONE_PLUS_ONE) shouldBe 1
+            }
+
+            test("the lockout reaches a power-up activated from the command zone") {
+                val game = lockoutScenario()
+                    .withCardInCommandZone(1, "Timeline Avatar")
+                    .build()
+
+                withClue("control: CommandZoneAbilityEnumerator offers it while nothing is locked") {
+                    game.actionFor(1, avatarAbilityId) shouldNotBe null
+                }
+
+                game.takeLockedExtraTurn()
+                game.crossIntoNextTurn()
+                withClue("the extra turn belongs to the lockout's creator") {
+                    game.state.activePlayerId shouldBe game.player1Id
+                }
+
+                withClue("the command-zone enumerator must withhold it like the other three") {
+                    game.actionFor(1, avatarAbilityId) shouldBe null
+                }
+                val avatarId = game.state.getZone(game.player1Id, Zone.COMMAND).first()
+                val rejected =
+                    game.execute(ActivateAbility(game.player1Id, avatarId, avatarAbilityId))
+                withClue("and the handler rejects it for the lockout, not for zone or cost reasons") {
+                    rejected.error shouldBe "Power-up abilities can't be activated this turn"
+                }
+            }
+
+            test("no extra turn (Ugin's Nexus) means no lockout either") {
+                val game = lockoutScenario()
+                    .withCardOnBattlefield(1, "Ugin's Nexus")
+                    .build()
+                game.takeLockedExtraTurn()
+
+                withClue("PreventExtraTurns stops the extra turn — no skip is handed out") {
+                    game.state.getEntity(game.player2Id)?.has<SkipNextTurnComponent>() shouldBe false
+                }
+                withClue("and with no 'that turn' to bind, nothing is stamped") {
+                    game.state.powerUpRestrictedTurns shouldBe emptySet<Int>()
+                }
+
+                game.crossIntoNextTurn()
+                withClue("the opponent's turn comes as normal") {
+                    game.state.activePlayerId shouldBe game.player2Id
+                }
+                withClue("the opponent's power-up is unaffected") {
+                    game.actionFor(2, rivalAbilityId) shouldNotBe null
+                }
+                game.passPriority()
+                withClue("and so is the lockout creator's own side") {
+                    game.actionFor(1, alliedAbilityId) shouldNotBe null
                 }
             }
         }

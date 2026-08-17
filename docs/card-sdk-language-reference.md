@@ -855,9 +855,14 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   at 0; a player with no maximum hand size has nothing to reduce (the reduction is inert while that
   holds).
 - `WinGame(target, message?)` — target wins the game.
-- `TakeExtraTurn(target, loseAtEndStep?)` — target takes an extra turn after this one (Time Walk, Lost Isle Calling).
-  Set `loseAtEndStep = true` for "...you lose the game at the beginning of that turn's end step" (Last Chance, Final
-  Fortune). Prevented by the `PreventExtraTurns` replacement (Ugin's Nexus).
+- `TakeExtraTurn(target, loseAtEndStep?, powerUpAbilitiesCantBeActivated?)` — target takes an extra turn after this
+  one (Time Walk, Lost Isle Calling). Set `loseAtEndStep = true` for "...you lose the game at the beginning of that
+  turn's end step" (Last Chance, Final Fortune). Set `powerUpAbilitiesCantBeActivated = true` for "During that turn,
+  power-up abilities can't be activated" (Kang the Conqueror) — a global lockout on every player's power-up abilities
+  (§ Power-up, CR 702.193) for the extra turn only, on every permanent, that outlives its source. Both riders are
+  scoped to the extra turn *this* effect creates, so neither applies when the `PreventExtraTurns` replacement
+  (Ugin's Nexus) stops the extra turn from happening; that is why they are parameters here rather than separate
+  effects sequenced after it in a `Composite`.
 - `EndTheTurn` — end the current turn (CR 720): Ultima ("Destroy all artifacts and creatures. End the turn."),
   Time Stop, Sundial of the Infinite, Discontinuity. When it resolves the whole stack is exiled (including the
   source and any triggered abilities the resolution queued — even ones that can't be countered — so those never
@@ -6759,6 +6764,17 @@ activatedAbility {
 
 Do **not** reach for `genericCostReduction` for this: it is generic-only (CR 118.7a) and so cannot
 express any power-up cost whose reduction includes a colored pip — which is most of the cycle.
+
+Two effects read the `isPowerUp` flag rather than the permanent, and both gate on the *ability*, so a
+permanent's ordinary activated abilities are untouched:
+
+- `ReduceActivatedAbilityCost(..., powerUpOnly = true)` — the sibling of `exhaustOnly`, for "Power-up
+  abilities of other creatures you control cost {3} less to activate" (Hulk, Gamma Goliath).
+- `TakeExtraTurn(powerUpAbilitiesCantBeActivated = true)` — "During that turn, power-up abilities
+  can't be activated" (Kang the Conqueror). Not a static on the permanent: the lockout binds every
+  player, on every permanent and in every zone, applies to the extra turn only, and outlives its
+  source leaving the battlefield. (Engine-side plumbing is documented on
+  `CastPermissionUtils.isPowerUpActivationRestricted`, next to the code.)
 
 **`ManaCost.subtract(other)` — pip-wise cost reduction (CR 118.7).** The primitive behind power-up
 (CR 702.193b) and, identically worded, offering (CR 702.48c): generic reduces generic; colored and

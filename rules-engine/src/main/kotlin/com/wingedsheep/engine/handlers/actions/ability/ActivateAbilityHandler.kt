@@ -172,6 +172,12 @@ class ActivateAbilityHandler(
             return "Only mana abilities can be activated while paying a cost"
         }
 
+        // "During that turn, power-up abilities can't be activated" (Kang the Conqueror). Global and
+        // zone-independent, so it is checked before the battlefield/other-zone split below.
+        if (castPermissionUtils.isPowerUpActivationRestricted(state, ability)) {
+            return "Power-up abilities can't be activated this turn"
+        }
+
         // Check that the card is in the correct zone for this ability
         if (ability.activateFromZone != Zone.BATTLEFIELD) {
             val ownerId = container.get<OwnerComponent>()?.playerId ?: return "Card has no owner"

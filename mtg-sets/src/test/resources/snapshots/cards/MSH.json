@@ -8890,6 +8890,63 @@
     ]
 }
 
+// Kang the Conqueror
+{
+    "name": "Kang the Conqueror",
+    "manaCost": "{2}{U}{U}",
+    "typeLine": "Legendary Creature — Human Villain",
+    "oracleText": "Flying\nPower-up — {5}{U}{U}{U}: Put a +1/+1 counter on Kang. Take an extra turn after this one. During that turn, power-up abilities can't be activated. (Activate each power-up ability only once. Reduce the cost by his mana cost if he entered this turn.)",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 5
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{5}{U}{U}{U}"
+                    }
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "AddCounters",
+                            "counterType": "+1/+1",
+                            "count": 1,
+                            "target": "Self"
+                        },
+                        {
+                            "type": "TakeExtraTurn",
+                            "powerUpAbilitiesCantBeActivated": true
+                        }
+                    ]
+                },
+                "restrictions": [
+                    "Once"
+                ],
+                "isPowerUp": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "62",
+        "rarity": "MYTHIC",
+        "artist": "Peter Scanlan",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/9/79747b45-fd7b-4023-9a9c-4d9dab2429fe.jpg?1783902956"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Kang, Temporal Tyrant
 {
     "name": "Kang, Temporal Tyrant",

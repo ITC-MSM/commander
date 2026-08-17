@@ -1050,6 +1050,28 @@ class CastPermissionUtils(
     }
 
     /**
+     * True when [ability] is a power-up ability (CR 702.193) and this turn is one that a
+     * [com.wingedsheep.sdk.scripting.effects.TakeExtraTurnEffect] rider locked out — Kang the
+     * Conqueror's "During that turn, power-up abilities can't be activated."
+     *
+     * The prohibition is global: it applies to every player, on every permanent, regardless of who
+     * created it or who is taking the turn. It is therefore checked against
+     * [GameState.powerUpRestrictedTurns] alone, with no battlefield scan — unlike
+     * [isActivationPrevented] / [isActivationPreventedForPlayer], both of which read statics off
+     * permanents and so would stop applying the moment the source left play.
+     *
+     * `ActivateAbilityHandler.validate` is the authority. Every enumerator that offers an activation
+     * also consults this so an ability is never offered and then rejected: `ActivatedAbilityEnumerator`
+     * (own-permanent and any-player-may paths), `ManaAbilityEnumerator`, `ZoneActivatedAbilityEnumerator`
+     * and `CommandZoneAbilityEnumerator` — the four enumerators that construct an `ActivateAbility`.
+     * Not literally every path: `ManaSolver`'s auto-tap payment search filters on `isManaAbility`
+     * with no permission check, so a power-up *mana* ability (none is printed today) could still be
+     * auto-tapped for a cost.
+     */
+    fun isPowerUpActivationRestricted(state: GameState, ability: ActivatedAbility): Boolean =
+        ability.isPowerUp && state.turnNumber in state.powerUpRestrictedTurns
+
+    /**
      * Count additional land drops granted by static abilities on permanents
      * controlled by the given player (e.g., GrantAdditionalLandDrop from Hugs, Grisly Guardian).
      * Multiple sources are additive.

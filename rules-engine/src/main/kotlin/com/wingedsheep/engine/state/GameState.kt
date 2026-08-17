@@ -181,6 +181,31 @@ data class GameState(
      */
     val damageCantBePreventedThisTurn: Boolean = false,
 
+    /**
+     * Turn numbers during which **no player** may activate a power-up ability (CR 702.193). Written
+     * by [com.wingedsheep.engine.handlers.effects.player.TakeExtraTurnExecutor] when the resolving
+     * [com.wingedsheep.sdk.scripting.effects.TakeExtraTurnEffect] carries
+     * `powerUpAbilitiesCantBeActivated` — Kang the Conqueror's "Take an extra turn after this one.
+     * During that turn, power-up abilities can't be activated."
+     *
+     * The stamp is `turnNumber + 1`, the number of the next turn to actually *begin*: [turnNumber]
+     * counts turns that begin, and a turn skipped via
+     * [com.wingedsheep.engine.state.components.player.SkipNextTurnComponent] never reaches
+     * `TurnManager.startTurn`, so the skips that model the extra turn consume no numbers. That is
+     * the extra turn **in a two-player game**. With three or more players it may not be:
+     * `TurnManager.endTurn` consumes at most one pending skip per turn boundary, so a second
+     * skipped opponent takes `turnNumber + 1` anyway and the lockout lands on their ordinary turn.
+     * The limitation is in the pre-existing skip-based extra-turn model, not here.
+     *
+     * Recorded against the turn rather than against a player or the source permanent because the
+     * prohibition is global, applies on a turn that has not started yet (so it must *not* bind for
+     * the rest of the current turn), and survives the source leaving the battlefield. A set, so two
+     * riders in the same turn are idempotent; entries earlier than the current turn are pruned at
+     * each turn boundary. Read through
+     * [com.wingedsheep.engine.legalactions.utils.CastPermissionUtils.isPowerUpActivationRestricted].
+     */
+    val powerUpRestrictedTurns: Set<Int> = emptySet(),
+
     /** Whether a nonland permanent left the battlefield this turn (for the Void ability word). */
     val nonlandPermanentLeftBattlefieldThisTurn: Boolean = false,
 

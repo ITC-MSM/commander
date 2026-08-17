@@ -65,6 +65,11 @@ class ZoneActivatedAbilityEnumerator(private val zone: Zone) : ActionEnumerator 
                 // it anyway).
                 if (ability.timing == TimingRule.SorcerySpeed && !context.canPlaySorcerySpeed) continue
 
+                // Kang the Conqueror's turn-scoped power-up lockout is zone-independent, and so is
+                // the matching check in `ActivateAbilityHandler.validate`. Every printed power-up
+                // ability activates from the battlefield, so this only guards future cards.
+                if (context.castPermissionUtils.isPowerUpActivationRestricted(state, ability)) continue
+
                 // Check activation restrictions
                 var restrictionsMet = true
                 for (restriction in ability.restrictions) {
