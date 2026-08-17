@@ -515,6 +515,19 @@ class CleanupPhaseManager(
                 is Duration.NextUse -> false  // Consumed on use or expired at end of turn
                 is Duration.EndOfCombat -> false  // Should already be removed, but clean up
                 is Duration.UntilYourNextTurn -> true  // Keep until that player's next turn
+                is Duration.EndOfYourNextTurn -> {
+                    // Ends at the cleanup of the controller's next turn (CR 514.2) — see the
+                    // Duration.EndOfYourNextTurn KDoc for why the window is a turn-number floor
+                    // plus a controller guard rather than an exact turn.
+                    when (val floor = floatingEffect.expiresAfterTurn) {
+                        // No floor means the effect was assembled without going through
+                        // `createFloatingEffect`. Fail closed: expire it here like an "until end of
+                        // turn" effect rather than stranding a control change permanently.
+                        null -> false
+                        else -> !(newState.turnNumber >= floor &&
+                            newState.activePlayerId == floatingEffect.controllerId)
+                    }
+                }
                 is Duration.UntilYourNextUpkeep -> true  // Keep until upkeep
                 is Duration.UntilNextEndStep -> true  // Expired on entry to the next end step (performNextEndStepExpiry)
                 is Duration.Permanent -> true  // Never expires

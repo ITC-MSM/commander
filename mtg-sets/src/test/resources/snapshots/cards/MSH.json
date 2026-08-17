@@ -5572,6 +5572,94 @@
     ]
 }
 
+// Evil's Thrall
+{
+    "name": "Evil's Thrall",
+    "manaCost": "{2}{R}",
+    "typeLine": "Sorcery",
+    "oracleText": "Gain control of target creature until end of turn. If you control a Villain with greater mana value than that creature, gain control of that creature until the end of your next turn instead. Untap that creature. It gains haste until end of turn.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.WhenCondition",
+                        "condition": {
+                            "type": "Compare",
+                            "left": {
+                                "type": "AggregateBattlefield",
+                                "player": "You",
+                                "filter": "permanent Villain",
+                                "aggregation": "MAX",
+                                "property": "MANA_VALUE"
+                            },
+                            "operator": "GT",
+                            "right": {
+                                "type": "EntityProperty",
+                                "entity": "Target",
+                                "numericProperty": "ManaValue"
+                            }
+                        }
+                    },
+                    "then": {
+                        "type": "GainControl",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target creature"
+                        },
+                        "duration": "EndOfYourNextTurn"
+                    },
+                    "otherwise": {
+                        "type": "GainControl",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target creature"
+                        },
+                        "duration": "EndOfTurn"
+                    }
+                },
+                {
+                    "type": "TapUntap",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    },
+                    "tap": false
+                },
+                {
+                    "type": "GrantKeyword",
+                    "keyword": "HASTE",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target creature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "128",
+        "rarity": "UNCOMMON",
+        "artist": "Mintautas Šukys",
+        "flavorText": "\"Stay your fists, Rand. You are not well!\"\n—T'Challa, the Black Panther",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/1/310e30cd-b8c3-40ea-9d61-57c5c5fc2a0b.jpg?1783902932"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Falcon's Wing Harness
 {
     "name": "Falcon's Wing Harness",

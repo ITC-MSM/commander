@@ -1728,7 +1728,16 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
 
 ### Control & combat
 
-- `GainControlEffect(target, duration)` — gain control until end of turn (default). Pair with
+- `GainControlEffect(target, duration)` — gain control of a permanent; `duration` defaults to
+  `Duration.Permanent` (Blatant Thievery). Pair with `Duration.EndOfTurn` for the Threaten pattern
+  (Act of Treason), or **`Duration.EndOfYourNextTurn`** for the long Threaten — "gain control of
+  that creature until the **end of** your next turn" (Evil's Thrall). That duration is strictly
+  longer than `Duration.UntilYourNextTurn`, which ends at the *beginning* of your next turn; it runs
+  through that whole turn and ends at its cleanup step (CR 514.2). Only the floating-effect path
+  honours it — see the `Duration.EndOfYourNextTurn` KDoc for the mechanism and its limits. For the
+  "if <condition>, … **instead**" duration switch, wrap two `GainControlEffect`s that differ only in
+  `duration` in one `ConditionalEffect` — never a short steal followed by a second grab; that would
+  be two control changes where the card describes one. Pair with
   `Duration.WhileSourceTapped` (Callous Oppressor) or
   `Duration.WhileSourceTappedAndAffectedPowerAtMostSource` (Old Man of the Sea) for the classic
   "for as long as this creature remains tapped [and the stolen creature's power stays ≤ source's

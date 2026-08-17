@@ -47,6 +47,38 @@ sealed interface Duration {
     }
 
     /**
+     * Effect lasts through the *whole* of your next turn, ending during that turn's cleanup step
+     * (CR 514.2, the same moment an "until end of turn" effect ends) — "until the end of your next
+     * turn".
+     *
+     * Strictly longer than [UntilYourNextTurn], which ends at the *beginning* of your next turn
+     * (right after its untap step). The current turn never counts, even when the effect is created
+     * on your own turn: a sorcery you cast on your turn keeps its effect alive through this turn,
+     * every intervening opponent's turn, and all of your following turn.
+     *
+     * Implementation: the creating [com.wingedsheep.engine.mechanics.layers.ActiveFloatingEffect]
+     * records `expiresAfterTurn = turnNumber + 1` and `CleanupPhaseManager.cleanupEndOfTurn` drops
+     * it at the cleanup of the first turn the effect's controller takes at or after that floor.
+     * Pairing the floor with the controller guard is what keeps it right across extra turns,
+     * skipped turns, and eliminated seats — the same mechanism
+     * `MayPlayPermission.expiresAfterTurn` uses for the "you may play it until the end of your next
+     * turn" wording.
+     *
+     * Only the **floating-effect** path honours this duration (control changes, P/T, keyword and
+     * type grants, and everything else that lands in `GameState.floatingEffects`). The separate
+     * granted-ability records (`grantedTriggeredAbilities`, `grantedStaticAbilities`, …) have no
+     * expiry hook for it yet — exactly as they have none for [UntilYourNextTurn] — so don't reach
+     * for it there without wiring the matching cleanup first.
+     *
+     * Example: Evil's Thrall — "gain control of that creature until the end of your next turn".
+     */
+    @SerialName("EndOfYourNextTurn")
+    @Serializable
+    data object EndOfYourNextTurn : Duration {
+        override val description = "until the end of your next turn"
+    }
+
+    /**
      * Effect lasts until the beginning of your next upkeep.
      * Example: Various older cards
      */
@@ -320,6 +352,7 @@ sealed interface Duration {
 object Durations {
     val EndOfTurn = Duration.EndOfTurn
     val UntilYourNextTurn = Duration.UntilYourNextTurn
+    val EndOfYourNextTurn = Duration.EndOfYourNextTurn
     val UntilNextEndStep = Duration.UntilNextEndStep
     val EndOfCombat = Duration.EndOfCombat
     val Permanent = Duration.Permanent
