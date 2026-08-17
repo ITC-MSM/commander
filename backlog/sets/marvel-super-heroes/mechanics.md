@@ -8,7 +8,7 @@ Scope: the 276 booster cards (collector numbers 1–276). Triaged against the SD
 updated 2026-08-07 after **power-up** and the **per-turn effect budget** shipped, 2026-08-08
 after **teamwork** shipped in full, and 2026-08-10 after **copy-with-exceptions**,
 **ward with a non-listed cost**, the **ability-source predicate on stack targets** and **improvise**
-shipped. **23 of the 276 are blocked**; every other card is buildable from existing primitives.
+shipped. **22 of the 276 are blocked**; every other card is buildable from existing primitives.
 
 Supported today and *not* a blocker despite looking like one: **power-up** (see the first section
 below — the keyword, its once-only limit and its pip-wise cost reduction all ship), **harness / ∞ abilities**
@@ -21,7 +21,7 @@ documented routine card work — see `docs/card-sdk-language-reference.md` §16)
 
 ---
 
-## Power-up — SHIPPED ✅ (20 of 24 cards unblocked)
+## Power-up — SHIPPED ✅ (21 of 24 cards unblocked)
 
 > Power-up — {4}{W}: Put two +1/+1 counters on this creature. *(Activate each power-up ability
 > only once. Reduce the cost by its mana cost if it entered this turn.)*
@@ -54,8 +54,8 @@ Tests: `ManaCostSubtractTest` (every printed MSH power-up cost/mana-cost pair, p
 subrules the set doesn't exercise) and `PowerUpKeywordScenarioTest` (once-only, re-entry reset,
 entered-this-turn gating, displayed-vs-paid lockstep, stacking with `powerUpOnly`).
 
-**Now buildable as ordinary card work (20):** Brave Brawler [8] · Captain Marvel, Earth's Protector
-[11] · Aerial Doombot [43] · Bold Biochemist [48] · Stature,
+**Now buildable as ordinary card work (21):** Brave Brawler [8] · Captain Marvel, Earth's Protector
+[11] · Nick Fury, Agent of S.H.I.E.L.D. [25] · Aerial Doombot [43] · Bold Biochemist [48] · Stature,
 Size Shifter [76] · Ninja of the Hand [108] · Unliving Legionnaire [119] · Human Torch, Johnny Storm
 [136] · Quicksilver, Brash Blur [148] · Volcanic Villain [159] · Hercules, Prince of Power [171] ·
 Pet Avengers [178] · Serpent Specialist [186] · She-Hulk, Jade Defender [188] · White Tiger, Ava
@@ -68,7 +68,7 @@ Non-blocking notes for those: Stature's "can't be blocked if her power is 1 or l
 switch off; Quicksilver's opening-hand clause is `mayBeginGameOnBattlefield()`; Thanos's odd/even
 sweep is `.manaValueIsOdd()` / `.manaValueIsEven()` + a modal.
 
-### Still blocked — 1 card ⛔ (the other three shipped; kept below for the design notes)
+### Still blocked — 0 cards ✅ (all four shipped; kept below for the design notes)
 
 - ~~**Wonder Man, Hollywood Hero** [160]~~ — **SHIPPED.** Built by generalizing the structural
   precedent rather than adding a second primitive next to it: `IgnoreExhaustActivationLimit` /
@@ -81,16 +81,22 @@ sweep is `.manaValueIsOdd()` / `.manaValueIsEven()` + a modal.
   turn-scoped flag on `GameState`, read where granted `PreventActivatedAbilities` is read
   (`CastPermissionUtils.isActivationPrevented`) and gated on `ActivatedAbility.isPowerUp`, which now
   exists. The extra turn itself is fine (`Effects.TakeExtraTurn`).
-- **Nick Fury, Agent of S.H.I.E.L.D.** [25] — the power-up and the top-seven dig are both ordinary
-  composition (Gather → Select → Move, Gishath's shape), but *"If it's a double-faced card, you may
-  transform it"* has no faithful modelling: there is no "is a double-faced card" predicate anywhere
-  in the SDK, so the optional transform can only be offered unconditionally — a prompt on a
-  single-faced permanent, where the printed card offers none. Needed: a `StatePredicate.IsDoubleFaced`
-  (the card component already knows its back face; it is the *predicate* and its `PredicateEvaluator`
-  branch that are missing), then wrap the existing `MayEffect(ForEachInCollectionEffect(…,
-  TransformEffect))` in a `ConditionalEffect` over it. Note the transform must stay *post-entry* —
-  the printed order puts the card onto the battlefield first, so its ETB triggers fire on the front
-  face and only then does it flip, which is not the same as entering transformed.
+- ~~**Nick Fury, Agent of S.H.I.E.L.D.** [25]~~ — **SHIPPED.** The power-up and the top-seven dig were
+  always ordinary composition (Gather → Select → Move, Gishath's shape); what blocked the card was
+  *"If it's a double-faced card, you may transform it"*, which could only be offered unconditionally
+  and so prompted on single-faced permanents. Two things unblocked it, and the predicate turned out
+  to belong on the **card** axis rather than the state axis: `CardPredicate.IsDoubleFaced` (a printed
+  layout characteristic, CR 712.1 — modelled exactly like `HasAdventure`, stamped onto
+  `CardComponent.isDoubleFaced` at entity creation and *carried across a flip*, since a back face's
+  own definition has no back face), surfaced as `Filters.DoubleFaced` and wrapped around the existing
+  `MayEffect(ForEachInCollectionEffect(…, TransformEffect))` as a `ConditionalEffect`. And the
+  engine gap behind it: `DoubleFacedComponent` was only ever stamped by the **cast** pipeline, so a
+  double-faced card put onto the battlefield by an effect had no face tracking and could not be
+  turned over at all — `ZoneTransitionService.applyBattlefieldEntry` now stamps the front face for
+  every non-cast entry (reanimation, fetch, return from exile), via the shared
+  `stampDoubleFacedFrontFace` helper that `DayNightService` also uses. The transform stays
+  *post-entry*, as the printed order requires: the card enters front face up, its ETB triggers fire
+  on that face, and only then is it offered the flip.
 - ~~**Loki Laufeyson** [143]~~ — **SHIPPED.** The power-up half is done; the *other* ability needs a delayed "when you
   next cast" trigger whose spell filter is source-relative
   (`CardPredicate.ManaValueAtMostDynamic(DynamicAmounts.sourcePower())` — the predicate exists, but

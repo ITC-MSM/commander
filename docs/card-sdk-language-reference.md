@@ -985,6 +985,23 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   battlefield as its back face, under its owner's control, and re-attaches the source's
   `CraftedFromExiledComponent` recording the exiled materials. Pair with `AbilityCost.Craft`; see the `Craft`
   keyword helper in the keyword catalog.
+- `Transform(target = Self)` — turn a double-faced **permanent** over in place (CR 701.27a). The entity id,
+  counters, damage, attachments, controller and timestamp all survive; only the identity characteristics
+  change, and the new face's static/replacement abilities are re-registered. Emits `TransformedEvent`, so
+  "whenever this transforms" triggers fire. A target that isn't a double-faced permanent is a silent no-op
+  (CR 701.27c), as is one that can't transform (`AbilityFlag.CANT_TRANSFORM`, daybound/nightbound).
+  The front-face tracking a flip needs (`DoubleFacedComponent`, stamped front face up per CR 712.14) is
+  installed on **three** entry routes: the cast pipeline (`StackResolver`), every effect-driven entry —
+  reanimation, a fetch that puts the card onto the battlefield, a return from exile — via
+  `ZoneTransitionService.applyBattlefieldEntry`, and *playing a land*, which is a special action that
+  bypasses that service and so calls `stampDoubleFacedFrontFace` from `PlayLandHandler` itself (Balamb
+  Garden, SeeD Academy). Face-down entries are excluded (CR 708.2). Still **not** covered: the handful of
+  ad-hoc "put it onto the battlefield already attached" placements that call `BattlefieldEntry.place`
+  directly (`MoveCollectionExecutor.moveAuraToBattlefield`, `ReturnSelfToBattlefieldAttachedExecutor`,
+  `ReturnOneFromLinkedExileExecutor`) — no shipped double-faced Aura or Equipment reaches the battlefield
+  that way today, but a `Transform` on one that did would be a silent no-op. To gate the flip on the card
+  actually having two faces — "If it's a double-faced card, you may transform it" — wrap it in a
+  `ConditionalEffect` over `Filters.DoubleFaced` (§ filters).
 - `ExileAndReturnTransformed(target = Self, returnAs = ReturnFace.TRANSFORMED)` — "Exile [this], then return it
   to the battlefield transformed under its owner's control" (FIN Dominant / eikon transform). Exiles a
   double-faced permanent and re-enters it as a **new object** on the chosen face — unlike `Transform`, which
@@ -3307,6 +3324,20 @@ This is the player-arm prerequisite for the planned composable mixed `TargetUnio
 - `Filters.HasAdventure` — card that has an Adventure (adventurer card), regardless of which face it
   currently shows (`CardPredicate.HasAdventure`, backed by `CardComponent.hasAdventure`). A static,
   whole-card characteristic evaluated the same way in every zone.
+- `Filters.DoubleFaced` — double-faced card (CR 712.1): a card with a face on each side, whether
+  nonmodal ("transforming") or modal (`CardPredicate.IsDoubleFaced`, backed by
+  `CardComponent.isDoubleFaced`). Like `HasAdventure` it is a static whole-card layout
+  characteristic, so it reads the same in every zone **and stays true once the permanent is sitting
+  on its back face** — it is carried across a flip rather than re-derived from the face that's up,
+  whose own definition has no back face. **Tokens never match**, a token copy of a double-faced
+  permanent included — a token is not a card (CR 111.1) and layout is not a copiable value (CR 707.2),
+  so a copy answers with its *own* card's layout (CR 712.9's Clone example). Such a token is still a
+  double-faced *token* and can be transformed; that is `DoubleFacedComponent` face-tracking, a
+  different question. Backs the "If it's a double-faced card,
+  you may transform it" gate on Nick Fury, Agent of S.H.I.E.L.D., where it is what keeps the optional
+  transform from prompting on a single-faced permanent. Not the same question as CR 701.27g's
+  "transformed permanent" (is the *back* face currently up) — this asks only whether the card has two
+  faces at all. Meld cards, CR 712.1's third kind, are unmodelled by design and so never arise.
 - `Filters.InstantSorceryOrAdventure` (= `GameObjectFilter.InstantSorceryOrAdventure`) — instant,
   sorcery, or a card that has an Adventure. Backs Frantic Firebolt's "cards in your graveyard that
   are instant cards, sorcery cards, and/or have an Adventure" tally (a single membership test, so a

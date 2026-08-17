@@ -7,6 +7,7 @@ import com.wingedsheep.engine.event.TriggerDetector
 import com.wingedsheep.engine.event.TriggerProcessor
 import com.wingedsheep.engine.core.EngineServices
 import com.wingedsheep.engine.handlers.actions.ActionHandler
+import com.wingedsheep.engine.handlers.effects.permanent.types.stampDoubleFacedFrontFace
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
@@ -199,6 +200,18 @@ class PlayLandHandler(
         // GameObjectFilter.enteredThisTurn() check keyed on a land would never see it as true,
         // even on the very turn it was played.
         newState = newState.updateEntity(action.cardId) { c -> c.with(EnteredThisTurnComponent) }
+
+        // Same bypass, same consequence for Rule 712 face tracking: a double-faced *land* played
+        // from hand (Balamb Garden, SeeD Academy — "{5}{G}{U}, {T}: Transform this land") never went
+        // through ZoneTransitionService's stamp, so it arrived with no DoubleFacedComponent and its
+        // printed transform was silently a no-op. A land is always played face up (CR 305.1) and a
+        // double-faced card put onto the battlefield from a zone other than the stack enters with
+        // its front face up (CR 712.14), so the front face is the right one here — and the helper
+        // no-ops on a single-faced land and on an entity that is already face-tracked. (CR 712.12's
+        // "play a modal double-faced card as its land face" chooses the face before the entry; the
+        // engine doesn't model a back-face land play yet, and if it does, that path stamps the face
+        // it chose first and this call sees an already-tracked entity.)
+        newState = stampDoubleFacedFrontFace(newState, cardRegistry, action.cardId)
 
         // Lands bypass ZoneTransitionService (which bakes ETB components for everything else),
         // so install the land's own static + replacement effect components here — mirroring

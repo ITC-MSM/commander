@@ -3059,6 +3059,8 @@ class TriggerDetector(
                     is com.wingedsheep.sdk.scripting.predicates.CardPredicate.IsEnchantment -> info.cardComponent.typeLine.isEnchantment
                     is com.wingedsheep.sdk.scripting.predicates.CardPredicate.IsToken -> info.isToken
                     is com.wingedsheep.sdk.scripting.predicates.CardPredicate.IsNontoken -> !info.isToken
+                    is com.wingedsheep.sdk.scripting.predicates.CardPredicate.IsDoubleFaced ->
+                        info.cardComponent.isDoubleFaced
                     else -> true
                 }
             }

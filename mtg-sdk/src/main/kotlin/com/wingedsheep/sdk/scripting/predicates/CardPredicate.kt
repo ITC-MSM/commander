@@ -81,6 +81,37 @@ sealed interface CardPredicate : TextReplaceable<CardPredicate> {
         override val description: String = "has an Adventure"
     }
 
+    /**
+     * The card is a **double-faced card** (CR 712.1) — it has a card face on each side rather than a
+     * Magic card back. True for both kinds the engine models: nonmodal ("transforming") DFCs, whose
+     * back face is reached by transforming, and modal DFCs, either face of which can be cast. CR
+     * 712.1 names a third kind, meld cards; meld is unmodelled by design, so nothing answers `true`
+     * here on that account.
+     *
+     * Like [HasAdventure] this is a printed layout characteristic of the **whole card**, not of the
+     * face that happens to be up, so it reads the same in every zone and stays true after the card
+     * transforms. It is stamped onto the entity at creation from
+     * [com.wingedsheep.sdk.model.CardDefinition.isDoubleFaced] and carried across face swaps —
+     * deliberately *not* derived from "does the current face have a back face", which would answer
+     * `false` for a permanent sitting on its back face.
+     *
+     * **Tokens never match**, including a token copy of a double-faced permanent: a token is not a
+     * card (CR 111.1), and layout is not a copiable value (CR 707.2). Such a token *is* a
+     * double-faced token and can still be transformed (CR 707.8a / 712.9) — that is face-tracking
+     * state, not this predicate. For the same reason a non-token permanent that becomes a copy of a
+     * double-faced permanent keeps its own answer, per CR 712.9's Clone example.
+     *
+     * Models the "If it's a double-faced card, …" clause that gates an optional transform on a card
+     * an effect just put onto the battlefield (Nick Fury, Agent of S.H.I.E.L.D.). Note this asks
+     * whether the *card* has two faces, not whether the permanent is currently transformed — CR
+     * 701.27g's "transformed permanent" is a different question and is not this predicate.
+     */
+    @SerialName("IsDoubleFaced")
+    @Serializable
+    data object IsDoubleFaced : CardPredicate {
+        override val description: String = "double-faced card"
+    }
+
     /** Matches a card whose Oracle rules-text box is empty. */
     @SerialName("HasNoAbilities")
     @Serializable

@@ -3,6 +3,7 @@ package com.wingedsheep.engine.mechanics.daynight
 import com.wingedsheep.engine.core.DayNightChangedEvent
 import com.wingedsheep.engine.core.GameEvent
 import com.wingedsheep.engine.handlers.effects.permanent.types.flipDfcInPlace
+import com.wingedsheep.engine.handlers.effects.permanent.types.stampDoubleFacedFrontFace
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.identity.DoubleFacedComponent
@@ -76,10 +77,11 @@ object DayNightService {
     /**
      * Apply daybound's "enters transformed" entry modification to [entityId].
      *
-     * The permanent must already have its card identity and battlefield controller. Non-spell entry
-     * paths do not otherwise create a [DoubleFacedComponent], so this helper creates the front-face
-     * identity before applying the night-side entry. The returned transform event is deliberately
-     * discarded: entering transformed is not transforming, so transform triggers must not fire.
+     * The permanent must already have its card identity and battlefield controller. The front-face
+     * [DoubleFacedComponent] is ensured via [stampDoubleFacedFrontFace] before the night-side entry is
+     * applied, so this is correct whichever entry path called it (a caller that already stamped one
+     * gets a no-op). The returned transform event is deliberately discarded: entering transformed is
+     * not transforming, so transform triggers must not fire.
      */
     fun applyDayboundEntry(
         state: GameState,
@@ -94,19 +96,7 @@ object DayNightService {
         val cardDefinition = cardRegistry.getCard(cardDefinitionId) ?: return state
         if (Keyword.DAYBOUND !in cardDefinition.keywords || !cardDefinition.isDoubleFaced) return state
 
-        val withDfc = if (entity.get<DoubleFacedComponent>() == null) {
-            state.updateEntity(entityId) { container ->
-                container.with(
-                    DoubleFacedComponent(
-                        frontCardDefinitionId = cardDefinition.name,
-                        backCardDefinitionId = cardDefinition.backFace!!.name,
-                        currentFace = DoubleFacedComponent.Face.FRONT,
-                    )
-                )
-            }
-        } else {
-            state
-        }
+        val withDfc = stampDoubleFacedFrontFace(state, cardRegistry, entityId)
         if (withDfc.dayNight != DayNight.NIGHT) return withDfc
         val dfc = withDfc.getEntity(entityId)?.get<DoubleFacedComponent>() ?: return withDfc
         if (dfc.currentFace != DoubleFacedComponent.Face.FRONT) return withDfc

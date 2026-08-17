@@ -11365,6 +11365,136 @@
     ]
 }
 
+// Nick Fury, Agent of S.H.I.E.L.D.
+{
+    "name": "Nick Fury, Agent of S.H.I.E.L.D.",
+    "manaCost": "{W}",
+    "typeLine": "Legendary Creature — Human Spy Hero",
+    "oracleText": "Power-up — {W}{U}{B}{R}{G}: Put two +1/+1 counters on Nick Fury, then look at the top seven cards of your library. You may put a Hero, Equipment, or Vehicle card from among them onto the battlefield. If it's a double-faced card, you may transform it. Put the rest on the bottom of your library in a random order. (Activate each power-up ability only once. Reduce the cost by his mana cost if he entered this turn.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{W}{U}{B}{R}{G}"
+                    }
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "AddCounters",
+                            "counterType": "+1/+1",
+                            "count": 2,
+                            "target": "Self"
+                        },
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 7
+                                }
+                            },
+                            "storeAs": "fury_looked"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "fury_looked",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "filter": "Hero|Equipment|Vehicle",
+                            "storeSelected": "fury_toBattlefield",
+                            "storeRemainder": "fury_toBottom",
+                            "prompt": "You may put a Hero, Equipment, or Vehicle card onto the battlefield",
+                            "selectedLabel": "Put onto the battlefield",
+                            "remainderLabel": "Put on the bottom of your library",
+                            "showAllCards": true
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "fury_toBattlefield",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Battlefield"
+                            },
+                            "storeMovedAs": "fury_entered"
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "CollectionContainsMatch",
+                                    "collection": "fury_entered",
+                                    "filter": {
+                                        "cardPredicates": [
+                                            "IsDoubleFaced"
+                                        ]
+                                    }
+                                }
+                            },
+                            "then": {
+                                "type": "Gated",
+                                "gate": "Gate.MayDecide",
+                                "then": {
+                                    "type": "ForEach",
+                                    "space": {
+                                        "type": "IterationSpace.Collection",
+                                        "collection": "fury_entered"
+                                    },
+                                    "body": "Transform"
+                                },
+                                "descriptionOverride": "transform it"
+                            }
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "fury_toBottom",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Library",
+                                "placement": "Bottom"
+                            },
+                            "order": "Random"
+                        }
+                    ]
+                },
+                "restrictions": [
+                    "Once"
+                ],
+                "isPowerUp": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "25",
+        "rarity": "RARE",
+        "artist": "Marco Turini",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/a/3aa6fc02-ef76-426b-accd-6c0ef88b2a5e.jpg?1783902971"
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLUE",
+        "BLACK",
+        "RED",
+        "GREEN"
+    ]
+}
+
 // Night Nurse, Healer of Heroes
 {
     "name": "Night Nurse, Healer of Heroes",

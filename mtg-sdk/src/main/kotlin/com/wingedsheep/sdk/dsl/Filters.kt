@@ -95,6 +95,13 @@ object Filters {
     val HasAdventure: GameObjectFilter = GameObjectFilter.Any.withCardPredicate(CardPredicate.HasAdventure)
 
     /**
+     * Double-faced card (CR 712.1) — a card with a face on each side, whether nonmodal
+     * ("transforming") or modal. A whole-card characteristic, so it reads the same in every zone and
+     * after a transform. "If it's a double-faced card, you may transform it."
+     */
+    val DoubleFaced: GameObjectFilter = GameObjectFilter.Any.withCardPredicate(CardPredicate.IsDoubleFaced)
+
+    /**
      * Instant card, sorcery card, or a card that has an Adventure — Frantic Firebolt's graveyard tally.
      */
     val InstantSorceryOrAdventure: GameObjectFilter = GameObjectFilter.InstantSorceryOrAdventure

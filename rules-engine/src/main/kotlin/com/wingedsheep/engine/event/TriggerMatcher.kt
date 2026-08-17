@@ -1289,6 +1289,10 @@ class TriggerMatcher(
                 !projected.hasKeyword(entityId, predicate.keyword)
             is com.wingedsheep.sdk.scripting.predicates.CardPredicate.IsToken -> isToken()
             is com.wingedsheep.sdk.scripting.predicates.CardPredicate.IsNontoken -> !isToken()
+            // Static whole-card layout characteristic, so it is read off the card component and is
+            // unaffected by face-down status or by which face is currently up.
+            is com.wingedsheep.sdk.scripting.predicates.CardPredicate.IsDoubleFaced ->
+                cardComponent.isDoubleFaced
             is com.wingedsheep.sdk.scripting.predicates.CardPredicate.Or ->
                 predicate.predicates.any { matchesCardPredicate(it, cardComponent, projected, entityId, isFaceDown, lastKnownPower, lastKnownToughness, lastKnownWasToken) }
             is com.wingedsheep.sdk.scripting.predicates.CardPredicate.And ->

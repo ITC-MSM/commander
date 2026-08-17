@@ -18,6 +18,7 @@ import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.CommanderComponent
 import com.wingedsheep.engine.state.components.identity.CommanderZoneChoiceAskedComponent
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
+import com.wingedsheep.engine.handlers.effects.permanent.types.stampDoubleFacedFrontFace
 import com.wingedsheep.engine.handlers.effects.permanent.types.withDfcFaceSelfRedirects
 import com.wingedsheep.engine.state.components.identity.DoubleFacedComponent
 import com.wingedsheep.engine.state.components.identity.PutIntoGraveyardThisTurnComponent
@@ -1167,17 +1168,29 @@ object ZoneTransitionService {
             updated
         }
 
+        // Rule 712 face tracking for every *non-cast* battlefield entry (reanimation, a fetch that
+        // puts the card onto the battlefield, a return from exile). The cast pipeline stamps its own
+        // DoubleFacedComponent as the permanent spell resolves; nothing stamped it here, so a
+        // double-faced card that arrived by any other route could not be turned over at all. Face-down
+        // entries are excluded: a face-down permanent has no characteristics to flip between (CR 708.2).
+        // (Playing a land bypasses this whole method, so PlayLandHandler makes the same call itself.)
+        val withDfcEntry = if (!options.faceDown && ::cardRegistry.isInitialized) {
+            stampDoubleFacedFrontFace(withEntity, cardRegistry, entityId)
+        } else {
+            withEntity
+        }
+
+        val withDayboundEntry = if (!options.faceDown && ::cardRegistry.isInitialized) {
+            DayNightService.applyDayboundEntry(withDfcEntry, cardRegistry, entityId)
+        } else {
+            withDfcEntry
+        }
+
         // "Lands you control enter untapped" (The Wandering Minstrel): an EntersUntapped effect on
         // another battlefield permanent overrides a tapped entry from an effect that put this
         // permanent onto the battlefield tapped (ramp/fetch). Checked after the entity is fully
         // placed so its controller/type are visible to the filter. (tappedAndAttacking — combat
         // tokens — is intentionally not overridden; its filter never matches a land anyway.)
-        val withDayboundEntry = if (!options.faceDown && ::cardRegistry.isInitialized) {
-            DayNightService.applyDayboundEntry(withEntity, cardRegistry, entityId)
-        } else {
-            withEntity
-        }
-
         val entersUntapped = EnterUntappedReplacements.entersUntapped(
             withDayboundEntry,
             entityId,
