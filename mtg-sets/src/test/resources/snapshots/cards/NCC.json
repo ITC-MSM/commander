@@ -43,6 +43,122 @@
     ]
 }
 
+// Grand Crescendo
+{
+    "name": "Grand Crescendo",
+    "manaCost": "{X}{W}{W}",
+    "typeLine": "Instant",
+    "oracleText": "Create X 1/1 green and white Citizen creature tokens. Creatures you control gain indestructible until end of turn.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "CreateToken",
+                    "count": "XValue",
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [
+                        "GREEN",
+                        "WHITE"
+                    ],
+                    "creatureTypes": [
+                        "Citizen"
+                    ]
+                },
+                {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        }
+                    },
+                    "body": {
+                        "type": "GrantKeyword",
+                        "keyword": "INDESTRUCTIBLE",
+                        "target": "Self"
+                    }
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "16",
+        "rarity": "RARE",
+        "artist": "Raluca Marinescu",
+        "flavorText": "The roar of applause drowned out the melee raging in the lobby.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/0/e09ff04d-cdcc-4798-b89a-9ad08ef52ad9.jpg"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Prosperous Partnership
+{
+    "name": "Prosperous Partnership",
+    "manaCost": "{1}{R}{W}",
+    "typeLine": "Enchantment",
+    "oracleText": "When this enchantment enters, create two 1/1 green and white Citizen creature tokens.\nTap three untapped creatures you control: Create a Treasure token.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [
+                        "GREEN",
+                        "WHITE"
+                    ],
+                    "creatureTypes": [
+                        "Citizen"
+                    ]
+                }
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomTapPermanents",
+                        "count": 3,
+                        "filter": "creature"
+                    }
+                },
+                "effect": {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Treasure"
+                },
+                "descriptionOverride": "Create a Treasure token."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "78",
+        "rarity": "RARE",
+        "artist": "Evyn Fong",
+        "flavorText": "Partners in love, partners in life, and partners in crime.",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/5/a50267d1-f4b7-494f-b50b-cfb08b760b47.jpg"
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "RED"
+    ]
+}
+
 // Rain of Riches
 {
     "name": "Rain of Riches",

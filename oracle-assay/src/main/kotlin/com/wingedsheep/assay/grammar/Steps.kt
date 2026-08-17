@@ -827,6 +827,7 @@ object Steps {
             targetRequirements = listOf(Targets.permanent(filter)),
         )
         phrase("target {filter} gets {mod} until end of turn", name = "pump target") {
+            frontedDuration()
             slot("filter", Filters.filter)
             slot("mod", Primitives.statModifiers)
             build { scriptFor(it.value("mod"), it.value("filter")) }
@@ -902,6 +903,7 @@ object Steps {
             targetRequirements = listOf(Targets.permanent(filter)),
         )
         phrase("target {filter} gains {kws} until end of turn", name = "grant keywords to a target") {
+            frontedDuration()
             slot("filter", Filters.filter)
             slot("kws", Keywords.keywordRun)
             build { scriptFor(it.value("kws"), it.value("filter")) }
@@ -940,6 +942,7 @@ object Steps {
             "target {filter} gets {mod} and gains {kws} until end of turn",
             name = "pump and grant keywords to a target",
         ) {
+            frontedDuration()
             slot("filter", Filters.filter)
             slot("mod", Primitives.statModifiers)
             slot("kws", Keywords.keywordRun)
@@ -1195,6 +1198,10 @@ object Steps {
             spellEffect = Effects.ForEachInGroup(GroupFilter(filter), member(value, EffectTarget.Self)),
         )
         val rule = phrase<CardScript>(template, name = name) {
+            // This shape carries durational and non-durational sentences alike — "{filter} get {v}
+            // until end of turn" and "{self} deals {v} damage to each {filter}" — so the position
+            // applies to the ones that have a duration to move.
+            if (Durations.isDurational(template)) frontedDuration()
             if (template.contains("{self}")) slot("self", Primitives.self)
             slot("filter", if (plural) Filters.plural else Filters.filter)
             slot("v", parameter)
@@ -1240,6 +1247,7 @@ object Steps {
             )
         )
         val rule = phrase<CardScript>("$prefix{filter} get {mod} and gain {kws} until end of turn", name = name) {
+            frontedDuration()
             slot("filter", Filters.plural)
             slot("mod", Primitives.statModifiers)
             slot("kws", Keywords.keywordRun)

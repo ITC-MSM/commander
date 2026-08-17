@@ -170,6 +170,7 @@ object SelfSteps {
             spellEffect = Effects.ModifyStats(modifiers.first, modifiers.second, target)
         )
         return phrase("{self} gets {mod} until end of turn", name = "$tag gets".trim()) {
+            frontedDuration()
             slot("self", subject)
             slot("mod", Primitives.statModifiers)
             build { scriptFor(it.value("mod")) }
@@ -204,6 +205,7 @@ object SelfSteps {
             "{self} gets {mod} and gains {kws} until end of turn",
             name = "$tag gets and gains".trim(),
         ) {
+            frontedDuration()
             slot("self", subject)
             slot("mod", Primitives.statModifiers)
             slot("kws", Keywords.keywordRun)
@@ -236,6 +238,7 @@ object SelfSteps {
             "{self} gains {kws} until end of turn",
             name = "$tag gains keywords".trim(),
         ) {
+            frontedDuration()
             slot("self", subject)
             slot("kws", Keywords.keywordRun)
             build { scriptFor(it.value("kws")) }
@@ -256,6 +259,7 @@ object SelfSteps {
         fun scriptFor(keyword: Keyword) =
             CardScript(spellEffect = Effects.RemoveKeyword(keyword, target))
         return phrase("{self} loses {kw} until end of turn", name = "$tag loses a keyword".trim()) {
+            frontedDuration()
             slot("self", subject)
             slot("kw", Keywords.keyword)
             build { scriptFor(it.value("kw")) }

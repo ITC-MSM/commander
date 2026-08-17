@@ -330,6 +330,7 @@ object Amounts {
             )
         )
         return phrase("$prefix{filter} get -X/-X until end of turn", name = name) {
+            frontedDuration()
             slot("filter", Filters.plural)
             build { scriptFor(it.value("filter")) }
             match { script ->

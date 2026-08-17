@@ -1,3 +1,60 @@
+// Arcane Sanctum
+{
+    "name": "Arcane Sanctum",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "This land enters tapped.\n{T}: Add {W}, {U}, or {B}.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "WHITE"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "BLUE"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_3",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "BLACK"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            }
+        ],
+        "replacementEffects": [
+            "EntersTapped"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "220",
+        "rarity": "UNCOMMON",
+        "artist": "Anthony Francisco",
+        "flavorText": "\"We must rely on our own knowledge, not on the dogma of the seekers or the mutterings of the sphinxes.\"\n—Tullus of Palandius",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/e/6edc0681-4252-4d3d-baf3-f03c22af1208.jpg"
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLUE",
+        "BLACK"
+    ]
+}
+
 // Bone Splinters
 {
     "name": "Bone Splinters",
@@ -41,6 +98,63 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Crumbling Necropolis
+{
+    "name": "Crumbling Necropolis",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "This land enters tapped.\n{T}: Add {U}, {B}, or {R}.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "BLUE"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "BLACK"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_3",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "RED"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            }
+        ],
+        "replacementEffects": [
+            "EntersTapped"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "222",
+        "rarity": "UNCOMMON",
+        "artist": "Dave Kendall",
+        "flavorText": "\"They say the ruins of Sedraxis were once a shining capital in Vithia. Now it is a blight, a place to be avoided by the living.\"\n—Olcot, Rider of Joffik",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/4/94da8e38-77a4-4d25-9e1f-f33c246f60c8.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "BLACK",
+        "RED"
     ]
 }
 
@@ -297,6 +411,63 @@
     ]
 }
 
+// Jungle Shrine
+{
+    "name": "Jungle Shrine",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "This land enters tapped.\n{T}: Add {R}, {G}, or {W}.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "RED"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "GREEN"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_3",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "WHITE"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            }
+        ],
+        "replacementEffects": [
+            "EntersTapped"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "226",
+        "rarity": "UNCOMMON",
+        "artist": "Wayne Reynolds",
+        "flavorText": "On Naya, ambition and treachery are scarce, hunted nearly to extinction by the awe owed to terrestrial gods.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/4/e4f0d262-cbfe-42d2-9066-0b48a38995d6.jpg"
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "RED",
+        "GREEN"
+    ]
+}
+
 // Sanctum Gargoyle
 {
     "name": "Sanctum Gargoyle",
@@ -358,6 +529,63 @@
     ]
 }
 
+// Savage Lands
+{
+    "name": "Savage Lands",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "This land enters tapped.\n{T}: Add {B}, {R}, or {G}.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "BLACK"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "RED"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_3",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "GREEN"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            }
+        ],
+        "replacementEffects": [
+            "EntersTapped"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "228",
+        "rarity": "UNCOMMON",
+        "artist": "Vance Kovacs",
+        "flavorText": "Jund is a world as cruel as those who call it home. Their brutal struggles scar the land even as it carves them in its image, a vicious circle spiraling out of control.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/6/f6bcded3-6eea-4533-a855-e03d4c4620d6.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "RED",
+        "GREEN"
+    ]
+}
+
 // Seaside Citadel
 {
     "name": "Seaside Citadel",
@@ -406,12 +634,12 @@
         "rarity": "UNCOMMON",
         "artist": "Volkan Baǵa",
         "flavorText": "For wisdom's sake, it was built high to gaze on all things. For glory's sake, it was built high as a testament of power. For strength's sake, it was built high to repel all attacks.",
-        "imageUri": "https://cards.scryfall.io/normal/front/c/1/c1995d2a-4550-4c84-ad44-183b06579e98.jpg?1783942531"
+        "imageUri": "https://cards.scryfall.io/normal/front/c/1/c1995d2a-4550-4c84-ad44-183b06579e98.jpg"
     },
     "colorIdentityOverride": [
-        "GREEN",
         "WHITE",
-        "BLUE"
+        "BLUE",
+        "GREEN"
     ]
 }
 

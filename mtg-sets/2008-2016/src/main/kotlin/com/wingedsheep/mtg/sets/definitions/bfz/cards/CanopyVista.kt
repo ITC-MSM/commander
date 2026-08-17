@@ -21,7 +21,7 @@ val CanopyVista = card("Canopy Vista") {
     typeLine = "Land — Forest Plains"
     oracleText = "({T}: Add {G} or {W}.)\nThis land enters tapped unless you control two or more basic lands."
 
-    // Mana abilities are intrinsic from basic land types (Forest → {G}, Plains → {W})
+    // Mana abilities are intrinsic from the basic land types in the type line.
 
     replacementEffect(EntersTapped(
         unlessCondition = Compare(
@@ -36,6 +36,6 @@ val CanopyVista = card("Canopy Vista") {
         collectorNumber = "234"
         artist = "Adam Paquette"
         flavorText = "The continent of Murasa lies beneath a blanket of dense vegetation, its enormous branches tangled so thickly that some inhabitants never see the ground."
-        imageUri = "https://cards.scryfall.io/normal/front/a/3/a3262c7f-4fdf-4648-ba59-9279c75d222d.jpg?1783938174"
+        imageUri = "https://cards.scryfall.io/normal/front/a/3/a3262c7f-4fdf-4648-ba59-9279c75d222d.jpg"
     }
 }

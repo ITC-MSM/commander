@@ -97,6 +97,69 @@
     ]
 }
 
+// Lifecrafter's Bestiary
+{
+    "name": "Lifecrafter's Bestiary",
+    "manaCost": "{3}",
+    "typeLine": "Artifact",
+    "oracleText": "At the beginning of your upkeep, scry 1.\nWhenever you cast a creature spell, you may pay {G}. If you do, draw a card.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Scry",
+                    "count": 1
+                }
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            "IsCreature"
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.MayPay",
+                        "cost": {
+                            "type": "PayManaCost",
+                            "cost": "{G}"
+                        }
+                    },
+                    "then": {
+                        "type": "DrawCards",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 1
+                        }
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "162",
+        "rarity": "RARE",
+        "artist": "Izzy",
+        "flavorText": "\"Inspiration is found by looking outward.\"\n—Oviya Pashiri, sage lifecrafter",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/4/7439a855-4041-4d14-8edf-6741a734e55d.jpg"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Metallic Mimic
 {
     "name": "Metallic Mimic",

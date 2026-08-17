@@ -574,48 +574,6 @@
     ]
 }
 
-// Big Score
-{
-    "name": "Big Score",
-    "manaCost": "{3}{R}",
-    "typeLine": "Instant",
-    "oracleText": "As an additional cost to cast this spell, discard a card.\nDraw two cards and create two Treasure tokens. (They're artifacts with \"{T}, Sacrifice this token: Add one mana of any color.\")",
-    "script": {
-        "spellEffect": {
-            "type": "Composite",
-            "effects": [
-                {
-                    "type": "DrawCards",
-                    "count": {
-                        "type": "Fixed",
-                        "amount": 2
-                    }
-                },
-                {
-                    "type": "CreatePredefinedToken",
-                    "tokenType": "Treasure",
-                    "count": 2
-                }
-            ]
-        },
-        "additionalCosts": [
-            {
-                "type": "AdditionalAtom",
-                "atom": "AtomDiscard"
-            }
-        ]
-    },
-    "metadata": {
-        "collectorNumber": "193",
-        "rarity": "UNCOMMON",
-        "artist": "Daren Bader",
-        "imageUri": "https://cards.scryfall.io/normal/front/2/4/243b460e-e67a-40d7-a874-a61fdb011c5a.jpg?1721429138"
-    },
-    "colorIdentityOverride": [
-        "RED"
-    ]
-}
-
 // Blasphemous Act
 {
     "name": "Blasphemous Act",
@@ -677,41 +635,6 @@
     },
     "colorIdentityOverride": [
         "RED"
-    ]
-}
-
-// Bootleggers' Stash
-{
-    "name": "Bootleggers' Stash",
-    "manaCost": "{5}{G}",
-    "typeLine": "Artifact",
-    "oracleText": "Lands you control have \"{T}: Create a Treasure token.\"",
-    "script": {
-        "staticAbilities": [
-            {
-                "type": "GrantActivatedAbility",
-                "ability": {
-                    "id": "ability_1",
-                    "cost": "CostTap",
-                    "effect": {
-                        "type": "CreatePredefinedToken",
-                        "tokenType": "Treasure"
-                    }
-                },
-                "filter": {
-                    "baseFilter": "land ctrl:you"
-                }
-            }
-        ]
-    },
-    "metadata": {
-        "collectorNumber": "207",
-        "rarity": "MYTHIC",
-        "artist": "Anastasia Ovchinnikova",
-        "imageUri": "https://cards.scryfall.io/normal/front/c/1/c10525b5-067c-4a30-a069-875f11f2ff19.jpg?1721429213"
-    },
-    "colorIdentityOverride": [
-        "GREEN"
     ]
 }
 
