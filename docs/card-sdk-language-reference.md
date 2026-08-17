@@ -10178,8 +10178,12 @@ The priority groups are (CR 616.1a–f):
   executes via the normal effect-executor pipeline at entry time (so `EffectTarget.Self` resolves to
   the entering permanent) and may pause for player input. Compose with atomic pausable effects like
   `Effects.MayRevealCardFromHand` to build SOI shadow lands or other "as ~ enters" choices.
-  **Scope today:** only wired into the land-play path (`PlayLandHandler`). When the first non-land
-  permanent needs this, also wire it into `StackResolver.enterPermanentOnBattlefield`.
+  **Scope today:** the land-play path (`PlayLandHandler`) and every single-card "put onto the
+  battlefield" effect (`MoveToZoneEffectExecutor` → `PermanentEntryReplacements.runOnEnterRunEffect`),
+  which covers reanimation, blink, an earthbend/"return it to the battlefield" trigger, and fetches
+  that move one card. Not yet wired into the spell-resolution path
+  (`StackResolver.enterPermanentOnBattlefield` — needed when the first non-land permanent uses this)
+  or into the multi-card `MoveCollectionExecutor` batch move.
 - `EntersWithCounters(counterType?, count, selfOnly?, condition?, otherOnly?, appliesTo?)` /
   `EntersWithDynamicCounters(counterType?, count, otherOnly?, appliesTo?)` — "[permanent] enters with
   N counters." `EntersWithCounters` takes a fixed `count: Int` (Master Biomancer, Metallic Mimic);

@@ -12,6 +12,7 @@ import com.wingedsheep.engine.handlers.TargetFinder
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.handlers.effects.EntersWithReplacements
 import com.wingedsheep.engine.handlers.effects.LibraryPlacement
+import com.wingedsheep.engine.handlers.effects.PermanentEntryReplacements
 import com.wingedsheep.engine.handlers.effects.ZoneEntryOptions
 import com.wingedsheep.engine.handlers.effects.ZoneMovementUtils
 import com.wingedsheep.engine.handlers.effects.ZoneMovementUtils.destroyPermanent
@@ -24,6 +25,7 @@ import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.OwnerComponent
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
+import com.wingedsheep.sdk.scripting.effects.Effect
 import com.wingedsheep.sdk.scripting.effects.FaceDownMode
 import com.wingedsheep.sdk.scripting.effects.MoveToZoneEffect
 import com.wingedsheep.sdk.scripting.effects.ZonePlacement
@@ -36,10 +38,16 @@ import kotlin.reflect.KClass
  * shuffle-into-library, put-on-top, etc.
  *
  * Delegates all zone movement to [ZoneTransitionService] for consistent cleanup.
+ *
+ * @param effectExecutor the registry's recursive executor, used to run an entering permanent's
+ *   [com.wingedsheep.sdk.scripting.OnEnterRunEffect] replacement. Null only for the internal
+ *   bounce-to-hand reuse in `ReturnSpellOrPermanentToOwnersHandExecutor`, which never puts a
+ *   permanent onto the battlefield.
  */
 class MoveToZoneEffectExecutor(
     private val cardRegistry: CardRegistry,
-    private val targetFinder: TargetFinder = TargetFinder()
+    private val targetFinder: TargetFinder = TargetFinder(),
+    private val effectExecutor: ((GameState, Effect, EffectContext) -> EffectResult)? = null
 ) : EffectExecutor<MoveToZoneEffect> {
 
     override val effectType: KClass<MoveToZoneEffect> = MoveToZoneEffect::class
@@ -152,18 +160,52 @@ class MoveToZoneEffectExecutor(
         // as the opponent. controllerId only diverges from ownerId for a controller-override
         // move onto the battlefield (see above); returns to hand/library never carry an
         // override, so controllerId == ownerId there and behaviour is unchanged.
-        val revealEvents = autoRevealForReturn(
-            fromZone = currentZone.zoneType,
-            toZone = effect.destination,
-            targetId = targetId,
-            cardName = cardComponent.name,
-            imageUri = cardComponent.imageUri,
-            controllerId = controllerId,
-            sourceId = context.sourceId,
-            state = resultState
+        extraEvents.addAll(
+            autoRevealForReturn(
+                fromZone = currentZone.zoneType,
+                toZone = effect.destination,
+                targetId = targetId,
+                cardName = cardComponent.name,
+                imageUri = cardComponent.imageUri,
+                controllerId = controllerId,
+                sourceId = context.sourceId,
+                state = resultState
+            )
         )
 
-        return EffectResult.success(resultState, transitionResult.events + extraEvents + revealEvents)
+        // "As this permanent enters, run [effect]" (OnEnterRunEffect) — the self-replacement
+        // PlayLandHandler runs inline for a played land, applied here for every *other* way a card
+        // reaches the battlefield: reanimation, a blink or earthbend return from exile, a fetch
+        // that puts the card onto the battlefield. Without it a permanent whose entry choice lives
+        // in this replacement — Multiversal Passage's "as this land enters, choose a basic land
+        // type" — comes back with the choice never made and no way to make it afterwards.
+        //
+        // Runs last so the entry's own events are already collected: the effect may pause for the
+        // choice, and the paused result carries them (including the entry ZoneChangeEvent) so the
+        // entry's ETB triggers are deferred by the resume path rather than lost. Skipped for
+        // face-down entries (CR 708.2 — no abilities) and for a battlefield→battlefield redirect,
+        // which is not a new entry.
+        if (actualDestZone == Zone.BATTLEFIELD &&
+            effect.faceDown == null &&
+            currentZone.zoneType != Zone.BATTLEFIELD &&
+            effectExecutor != null
+        ) {
+            val onEnterResult = PermanentEntryReplacements.runOnEnterRunEffect(
+                resultState, targetId, controllerId, cardRegistry, effectExecutor,
+                resolutionDepth = context.resolutionDepth
+            )
+            if (onEnterResult != null) {
+                resultState = onEnterResult.state
+                extraEvents.addAll(onEnterResult.events)
+                onEnterResult.pendingDecision?.let { decision ->
+                    return EffectResult.paused(
+                        resultState, decision, transitionResult.events + extraEvents
+                    )
+                }
+            }
+        }
+
+        return EffectResult.success(resultState, transitionResult.events + extraEvents)
     }
 
     /**

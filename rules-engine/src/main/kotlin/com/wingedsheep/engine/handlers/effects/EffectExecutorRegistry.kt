@@ -58,6 +58,9 @@ class EffectExecutorRegistry(
     // Held as a field so its recursion (for ModifyKeywordAction's Composite delegation) can be wired
     // before the module is registered, mirroring libraryExecutors.
     private val permanentExecutors = PermanentExecutors(decisionHandler, amountEvaluator, cardRegistry)
+    // Held as a field so its recursion (for an entering permanent's OnEnterRunEffect) can be wired
+    // before the module is registered, mirroring permanentExecutors.
+    private val zonesExecutors = ZonesExecutors(cardRegistry)
 
     /**
      * Exposed so [com.wingedsheep.engine.core.EngineServices] can call
@@ -82,7 +85,11 @@ class EffectExecutorRegistry(
         registerModule(StackExecutors(amountEvaluator, cardRegistry))
         registerModule(InformationExecutors())
         registerModule(CombatExecutors(amountEvaluator))
-        registerModule(ZonesExecutors(cardRegistry))
+        // Wire the recursion (so a card put onto the battlefield by an effect can run its
+        // OnEnterRunEffect replacement) before registering; the ref is read lazily at execution
+        // time, so order is not load-bearing.
+        zonesExecutors.initializeRecursion(::recurse)
+        registerModule(zonesExecutors)
         registerModule(LinkedExileExecutors())
         registerModule(RegenerationExecutors())
         registerModule(BendExecutors())

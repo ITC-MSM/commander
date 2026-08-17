@@ -6,10 +6,14 @@ import com.wingedsheep.engine.core.OptionChosenResponse
 import com.wingedsheep.engine.core.YesNoDecision
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.state.components.player.ManaPoolComponent
+import com.wingedsheep.engine.state.components.stack.ChosenTarget
 import com.wingedsheep.engine.support.GameTestDriver
 import com.wingedsheep.engine.support.TestCards
 import com.wingedsheep.mtg.sets.definitions.spm.cards.MultiversalPassage
+import com.wingedsheep.mtg.sets.definitions.spm.cards.SandmanShiftingScoundrel
+import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.core.Step
+import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.AbilityId
@@ -35,7 +39,7 @@ class MultiversalPassageScenarioTest : FunSpec({
 
     fun createDriver(): GameTestDriver {
         val driver = GameTestDriver()
-        driver.registerCards(TestCards.all + MultiversalPassage)
+        driver.registerCards(TestCards.all + MultiversalPassage + SandmanShiftingScoundrel)
         return driver
     }
 
@@ -91,6 +95,50 @@ class MultiversalPassageScenarioTest : FunSpec({
         driver.state.getEntity(passage)?.has<TappedComponent>() shouldBe true
         driver.getLifeTotal(p1) shouldBe 20
         driver.state.projectedState.hasSubtype(passage, "Island").shouldBeTrue()
+    }
+
+    test("returning it to the battlefield with an effect asks for the basic land type again") {
+        val driver = createDriver()
+        driver.initMirrorMatch(deck = Deck.of("Forest" to 40), startingLife = 20)
+        val p1 = driver.activePlayer!!
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        // Sandman's graveyard ability ("return this card and target land card from your graveyard
+        // to the battlefield tapped") is a plain MoveToZone onto the battlefield — the same shape
+        // every other non-cast entry uses (reanimation, blink, the earthbend return trigger).
+        val sandman = driver.putCardInGraveyard(p1, "Sandman, Shifting Scoundrel")
+        val passage = driver.putCardInGraveyard(p1, "Multiversal Passage")
+        driver.giveMana(p1, Color.GREEN, 5) // {3}{G}{G}
+
+        driver.submitSuccess(
+            ActivateAbility(
+                playerId = p1,
+                sourceId = sandman,
+                abilityId = SandmanShiftingScoundrel.activatedAbilities.first().id,
+                targets = listOf(ChosenTarget.Card(passage, ownerId = p1, zone = Zone.GRAVEYARD)),
+            )
+        )
+        var guard = 0
+        while (driver.state.stack.isNotEmpty() && driver.pendingDecision == null && guard++ < 20) {
+            driver.bothPass()
+        }
+
+        // The as-enters clause applies to this entry too (it is not limited to playing the land):
+        // choose a basic land type, then the pay-2-life gate.
+        val choice = driver.pendingDecision
+        choice.shouldBeInstanceOf<ChooseOptionDecision>()
+        choice.options shouldContain "Mountain"
+        driver.submitDecision(p1, OptionChosenResponse(choice.id, choice.options.indexOf("Mountain")))
+
+        val payDecision = driver.pendingDecision
+        payDecision.shouldBeInstanceOf<YesNoDecision>()
+        driver.submitYesNo(p1, false)
+
+        // It came back as a Mountain rather than a typeless land that can't do anything.
+        driver.state.projectedState.hasSubtype(passage, "Mountain").shouldBeTrue()
+        driver.untapPermanent(passage) // it returned tapped, per Sandman's ability
+        driver.submitSuccess(ActivateAbility(p1, passage, AbilityId.intrinsicMana('R')))
+        driver.pool(p1).red shouldBe 1
     }
 
     test("choosing Mountain makes it a Mountain that taps for R") {
