@@ -4,6 +4,10 @@
 variants 297+ are excluded)
 **Release Date:** June 26, 2026
 **Implemented:** 276 / 276
+**Status:** COMPLETE and verified 2026-08-17 (`verify-set`). All 276 draft cards, 6 reprint rows and
+30 basic-land printings exist and match Scryfall field for field; every card's script was reviewed
+against its oracle text. What that does and does not prove is in
+[`marvel-super-heroes-engine-gaps.md`](marvel-super-heroes-engine-gaps.md).
 - [x] Agent 13, Sharon Carter
 - [x] Agent Maria Hill
 - [x] Agent of Atlas
