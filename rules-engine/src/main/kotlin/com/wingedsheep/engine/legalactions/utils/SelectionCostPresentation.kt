@@ -60,8 +60,9 @@ object SelectionCostPresentation {
                     .filter { it != castCardId }
                 is CostAtom.Discard -> handCandidates(state, playerId, castCardId, atom.filter, predicateEvaluator)
                 is CostAtom.RevealFromHand -> handCandidates(state, playerId, castCardId, atom.filter, predicateEvaluator)
-                is CostAtom.TapPermanents -> costUtils.findAbilityTapTargets(state, playerId, atom.filter)
-                    .let { if (atom.excludeSelf) it.filter { id -> id != castCardId } else it }
+                is CostAtom.TapPermanents -> costUtils.findAbilityTapTargets(
+                    state, playerId, atom.filter, if (atom.excludeSelf) castCardId else null
+                )
                 is CostAtom.ReturnToHand -> costUtils.findAbilityBounceTargets(state, playerId, atom.filter)
                 else -> emptyList()
             }

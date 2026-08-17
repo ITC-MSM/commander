@@ -205,6 +205,11 @@ class CostPaymentContinuationResumer(
         if (selectedCount < paymentService.requiredCount(cost)) {
             return declined(state, continuation, checkForMore)
         }
+        // No domain re-check here: `DecisionValidators.validateSelectCards` already rejects anything
+        // outside the decision's `options`, and those options come from
+        // `CostPaymentService.selectionCandidates` — the same source-relative rule affordability
+        // counted. So a pick outside the domain (the source itself under an `excludeSelf` cost)
+        // never reaches this payment.
         // "Sacrifice N ... with different names" — reject selections that repeat a name (CR 601.2g costs
         // must be paid in full and legally). The chosen permanents must be pairwise distinctly named.
         if (atom is CostAtom.Sacrifice && atom.distinctNames &&

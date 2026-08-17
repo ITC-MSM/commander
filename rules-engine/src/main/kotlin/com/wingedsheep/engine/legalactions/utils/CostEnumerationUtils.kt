@@ -100,14 +100,25 @@ class CostEnumerationUtils(
 
     // --- Tap targets ---
 
+    /**
+     * Untapped battlefield permanents [playerId] controls that match a tap cost's [filter].
+     *
+     * [excludeEntityId] is the cost's own source when
+     * [CostAtom.TapPermanents.excludeSelf][com.wingedsheep.sdk.scripting.costs.CostAtom.TapPermanents.excludeSelf]
+     * is set — "tap another untapped …". Pass `if (atom.excludeSelf) sourceId else null` from every
+     * enumeration site so the offered pool matches what payment validation will accept; a plain
+     * "tap two untapped …" may tap the source itself, so null is correct there.
+     */
     fun findAbilityTapTargets(
         state: GameState,
         playerId: EntityId,
-        filter: GameObjectFilter
+        filter: GameObjectFilter,
+        excludeEntityId: EntityId? = null
     ): List<EntityId> {
         val predicateContext = PredicateContext(controllerId = playerId)
         val projected = state.projectedState
         return projected.getBattlefieldControlledBy(playerId).filter { entityId ->
+            if (entityId == excludeEntityId) return@filter false
             val container = state.getEntity(entityId) ?: return@filter false
             container.get<CardComponent>() ?: return@filter false
             if (container.has<TappedComponent>()) return@filter false

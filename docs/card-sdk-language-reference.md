@@ -724,8 +724,12 @@ preview — in the turn-face-up handler.)
   the source excluded.
 
 The word **"another"** is the only thing that decides self-exclusion, and it lives on the cost atom
-(`excludeSelf`). Both `PayOrSufferExecutor` and `CostPaymentService` read that flag; neither applies
-a blanket exclusion.
+(`excludeSelf`). Every path that asks "which objects could pay this?" reads that flag and nothing
+else — `PayOrSufferExecutor`, `AnyPlayerMayPayExecutor` (and the continuation that asks the next
+player), `CostHandler`, both enumerators, and `CostPaymentService.selectionCandidates`, the single
+candidate-domain helper behind the last one's affordability *and* prompt. None of them applies a
+blanket exclusion: a self-inclusive cost stays payable on a board holding only the source, and a
+self-exclusive one is never offered the source in the first place.
 - `Costs.pay.Choice(options)` — present several `PayCost`s; player picks one (or the suffer effect).
   Unaffordable options are hidden. "...unless they sacrifice a nonland permanent or discard a card."
 - `Costs.pay.ReturnToHand(filter, count = 1)` — return permanents you control to their owner's hand.
