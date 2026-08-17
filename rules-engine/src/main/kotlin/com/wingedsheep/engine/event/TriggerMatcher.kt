@@ -1485,7 +1485,7 @@ class TriggerMatcher(
             true
         }
         // "Excess damage" triggers (Fall of Cair Andros) fire only when the recipient took
-        // damage past lethal — CR 120.4a. Non-creature targets and at-or-below-lethal hits leave
+        // damage past lethal, loyalty, or defense — CR 120.4a. At-or-below-threshold hits leave
         // event.excessAmount at 0 and silently fail this gate.
         val excessMatches = !trigger.requireExcess || event.excessAmount > 0
         val requirementsMatch = trigger.requires.all { requirement ->
