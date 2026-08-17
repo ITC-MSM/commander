@@ -7,7 +7,11 @@ authoring (`add-feature` territory, per `AGENTS.md`). A gap here is a documented
 
 Ordered by how much it matters.
 
-## 1. `DamageType` is silently unenforced on `ModifyDamageAmount` — affects Hawkeye, Young Avenger [MSH]
+## 1. ~~`DamageType` is silently unenforced on `ModifyDamageAmount`~~ — **FIXED** (Hawkeye, Young Avenger) [MSH]
+
+> Fixed 2026-08-17 on `verify-bugs`: the `damageTypeMatches` guard is now in the `ModifyDamageAmount`
+> branch, and `HawkeyeYoungAvengerScenarioTest` covers both sides (burn amplified, combat damage not).
+> The original write-up follows.
 
 `rules-engine/src/main/kotlin/com/wingedsheep/engine/handlers/effects/DamageUtils.kt`, the
 `ModifyDamageAmount` loop (~line 1863). It checks `restrictions`, `damageSourceMatches` and
@@ -25,7 +29,18 @@ is exposed by exactly one card, and that card is in this set.
 own PR + `just test-rules`, plus a `HawkeyeYoungAvengerScenarioTest` asserting a burn spell is amplified
 and a creature's combat damage is not.
 
-## 2. Resolution-time snapshot where CR 611.2c requires a dynamic set — The Kingpin of Crime [MSH]
+## 2. ~~Resolution-time snapshot where CR 611.2c requires a dynamic set~~ — **FIXED** (The Kingpin of Crime) [MSH]
+
+> Fixed 2026-08-17 on `verify-bugs`, and it needed no new SDK vocabulary in the end. The card now
+> grants *itself* `AssignDamageEqualToToughness(AllCreaturesYouControl, onlyWhenToughnessGreaterThan…)`
+> — Bedrock Tortoise's printed static ability — until end of turn, and `CombatDamageUtils` was taught
+> to read granted static abilities alongside printed ones. Because that read happens at the point of
+> use, against the *final* projected power and toughness, the affected set is re-decided per creature
+> per damage step. (A floating group-flag effect, the shape the write-up below proposed, would not
+> have worked: `dynamicGroupFilter` is resolved in layer 6, before layer 7 applies, so it cannot see a
+> toughness pumped after the trigger resolved.) Residual: the grant is anchored to the Kingpin, so it
+> stops applying if he leaves the battlefield mid-turn. `TheKingpinOfCrimeScenarioTest` covers it.
+> The original write-up follows.
 
 > Whenever you attack, you may pay 2 life. If you do, until end of turn, creatures you control with
 > toughness greater than their power assign combat damage equal to their toughness rather than their power.
@@ -44,7 +59,8 @@ step. The printed card includes it; ours does not.
 
 **Fix:** needs a floating filtered continuous effect — there is no group-dynamic keyword grant in
 `Effects.*`. The card's KDoc has been corrected to state this as a known limitation rather than as
-correct timing.
+correct timing. *(Superseded — see the fix note above; the answer turned out to be a granted static
+ability read at the point of use, not a new effect type.)*
 
 ## 3. Aggregate mana-value caps ignore battlefield permanents — The Super Hero Civil War [MSH]
 

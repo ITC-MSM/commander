@@ -164,9 +164,26 @@ internal object CombatDamageUtils {
 
         // Global permanents with Scope.Battlefield (e.g., Tapestry Warden: "creatures you control")
         // The source may equal the creature (e.g., Tapestry Warden applying to itself).
+        //
+        // Printed abilities *and* ones granted at runtime and recorded in
+        // [GameState.grantedStaticAbilities] — the point-of-use read every granted `StaticAbility`
+        // kind needs, in the shape `BlockPhaseManager` already uses for `CantBeBlockedByMoreThan`.
+        // Reading it here rather than through projection is what keeps the affected set dynamic in
+        // the way CR 611.2c demands of a rules modification: `power`/`toughness` are the *final*
+        // projected values, so a creature pumped after the effect began is covered, and one whose
+        // power outgrows its toughness stops being. The Kingpin of Crime's "until end of turn,
+        // creatures you control with toughness greater than their power assign combat damage equal
+        // to their toughness" is the durational form of Bedrock Tortoise's printed sentence, and
+        // grants exactly this ability to itself.
+        // Indexed once rather than re-scanned per permanent: this runs for every creature assigning
+        // combat damage, and the list is empty in the overwhelmingly common case.
+        val grantsByEntity = state.grantedStaticAbilities.groupBy { it.entityId }
         for (permanentId in state.getBattlefield()) {
-            val permCardId = state.getEntity(permanentId)?.get<CardComponent>()?.cardDefinitionId ?: continue
-            val abilities = cardRegistry.getCard(permCardId)?.staticAbilities.orEmpty()
+            val permCardId = state.getEntity(permanentId)?.get<CardComponent>()?.cardDefinitionId
+            val printed = permCardId?.let { cardRegistry.getCard(it)?.staticAbilities }.orEmpty()
+            val granted = grantsByEntity[permanentId]?.map { it.ability }.orEmpty()
+            val abilities = if (granted.isEmpty()) printed else printed + granted
+            if (abilities.isEmpty()) continue
             if (matchesBattlefield(state, projected, permanentId, creatureId, abilities, power, toughness)) return true
         }
 

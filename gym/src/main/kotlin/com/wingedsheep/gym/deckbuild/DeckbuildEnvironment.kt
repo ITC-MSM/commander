@@ -2,6 +2,7 @@ package com.wingedsheep.gym.deckbuild
 
 import com.wingedsheep.ai.engine.LimitedCardRater
 import com.wingedsheep.gym.GymEnv
+import com.wingedsheep.gym.contract.ActionParams
 import com.wingedsheep.gym.contract.ActionRegistry
 import com.wingedsheep.gym.contract.DeckbuildObservation
 import com.wingedsheep.gym.contract.LegalActionView
@@ -84,8 +85,11 @@ class DeckbuildEnvironment(
         return ObservationResult(obs, ActionRegistry.EMPTY)
     }
 
-    override fun step(actionId: Int): ObservationResult {
+    override fun step(actionId: Int, params: ActionParams): ObservationResult {
         require(!finalized) { "Deck already finalized; env is terminal" }
+        // Every deckbuild action is fully described by its ID (add/remove a card, finalize), so
+        // params can only be a caller mistake — say so rather than dropping them.
+        require(params.isEmpty) { "Deckbuild actions take no step params; got $params" }
         val action = actions.getOrNull(actionId)
             ?: throw IllegalArgumentException("Action ID $actionId is not valid for the current step")
         apply(action)

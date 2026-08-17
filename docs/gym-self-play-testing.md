@@ -95,13 +95,61 @@ curl -s -X POST localhost:8081/envs/$ENV/step \
 **Action IDs are per-step.** They are regenerated on every step/decision. Always pick from the
 *latest* observation; a stale id returns `400`.
 
+### Actions that need more than an ID
+
+Some enumerated actions are *templates*: the engine offers one `DeclareAttackers` action carrying an
+**empty** attacker map, and advertises the candidates on the same entry. Stepping it by ID alone is
+a legal move that declares no attackers — so combat happens only if you say who attacks. The same
+holds for blocks, for a spell's targets, and for X.
+
+Send those choices as `params`:
+
+```bash
+# Attack: every eligible creature at the first legal defender.
+curl -s -X POST localhost:8081/envs/$ENV/step -H 'Content-Type: application/json' -d '{
+  "actionId": 4,
+  "params": { "attackers": { "<attackerId>": "<defenderId>" } }
+}'
+
+# Block: one blocker onto one attacker.
+curl -s -X POST localhost:8081/envs/$ENV/step -H 'Content-Type: application/json' -d '{
+  "actionId": 2,
+  "params": { "blockers": { "<blockerId>": ["<attackerId>"] } }
+}'
+
+# Cast with targets and X.
+curl -s -X POST localhost:8081/envs/$ENV/step -H 'Content-Type: application/json' -d '{
+  "actionId": 7,
+  "params": { "targets": ["<entityId>"], "xValue": 3 }
+}'
+```
+
+| `params` field | Shape | Comes from |
+|---|---|---|
+| `attackers` | attacker id → defender id | `validAttackers`, `validAttackTargets` on the action |
+| `blockers` | blocker id → `[attacker id, …]` | `validBlockers`, `blockerMaxBlockCounts`, `mandatoryBlockerAssignments` on the action; attackers from the board |
+| `targets` | `[entity id, …]`, in requirement order | `targetEntityIds`, `minTargets`, `maxTargets` |
+| `xValue` | int | `hasXCost`, `maxAffordableX` |
+
+The declaration constraints are not advisory — a declaration that disobeys one is illegal, and the
+step is rejected. `mandatoryAttackers` lists creatures that must attack if able (CR 508.1d);
+`mandatoryBlockerAssignments` lists blocks that must be made if able (CR 509.1c); and
+`blockerMaxBlockCounts` caps how many attackers a blocker may block at once, where absent means the
+default one (CR 509.1a). Params a given action can't use, and a declaration the engine rejects, both
+return `400` with the reason — neither is silently dropped, on `/step` or on `/step-batch`. Anything
+richer (bands, alternative-cost payments, convoke/delve selections) is not expressible over `step`;
+complex decisions go to `POST /envs/{id}/decision` (section 5).
+
 ### Reading an observation
 
 The fields that matter most for spotting bugs:
 
 - `agentToAct` — whose decision this is. (With `revealAll` you make moves for both.)
-- `legalActions[]` — each has `actionId`, `kind` (`PLAY_CARD`, `ACTIVATE_ABILITY`, `PASS`,
-  `DECISION`, …), `description`, `affordable`, `manaCost`, target counts.
+- `legalActions[]` — each has `actionId`, `kind` (the engine's action type verbatim: `CastSpell`,
+  `PlayLand`, `ActivateAbility`, `DeclareAttackers`, `DeclareBlockers`, `PassPriority`, `DECISION`,
+  …), `description`, `affordable`, `manaCost`, target counts, and the combat candidates
+  (`validAttackers`, `mandatoryAttackers`, `validAttackTargets`, `validBlockers`,
+  `blockerMaxBlockCounts`, `mandatoryBlockerAssignments`).
 - `zones[]` → `cards[]` → `EntityFeatures` — the projected (post-layers) truth about each object:
   `oracleText`, `power`/`toughness`, `types`/`subtypes`/`keywords`/`colors`, `tapped`, `counters`,
   `attachedTo`. **`oracleText` is your oracle**: read what the card *says*, then watch whether the
@@ -125,8 +173,9 @@ Play *purposefully toward exercising the cards under test*, not to win:
      the printed card.)
    - Did a triggered ability that should have fired appear on the `stack`?
 3. **Drive combat** to exercise attack/block/damage triggers and keywords (flying, trample, first
-   strike, deathtouch).
-4. **Pass priority** (`kind: "PASS"`) when there's nothing to test, to advance the turn.
+   strike, deathtouch) — declare attackers and blockers with `params` (section 3), not with a bare
+   `actionId`, which declares none.
+4. **Pass priority** (`kind: "PassPriority"`) when there's nothing to test, to advance the turn.
 
 Red flags that mean a card is probably broken — note them, don't just play around them:
 

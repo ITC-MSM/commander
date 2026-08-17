@@ -2,6 +2,7 @@ package com.wingedsheep.sdk.scripting
 
 import com.wingedsheep.sdk.scripting.conditions.Condition
 import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
+import com.wingedsheep.sdk.scripting.filters.unified.Scope
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
 import com.wingedsheep.sdk.scripting.text.TextReplacer
 import kotlinx.serialization.SerialName
@@ -104,6 +105,11 @@ data class MustBeBlocked(
  * Creature assigns combat damage equal to its toughness rather than its power.
  * Conditional variant: only when toughness is greater than power.
  * Used for cards like Bark of Doran, Doran the Siege Tower, etc.
+ *
+ * The description reads off [filter], because this ability is not equipment-only: Doran and
+ * Bedrock Tortoise scope it to a battlefield group, and The Kingpin of Crime grants that group form
+ * to itself for a turn (see `Effects.GrantStaticAbility`). Hardcoding "equipped creature" here
+ * rendered equipment flavour on every one of those.
  */
 @SerialName("AssignDamageEqualToToughness")
 @Serializable
@@ -111,13 +117,27 @@ data class AssignDamageEqualToToughness(
     val filter: GroupFilter = GroupFilter.attachedCreature(),
     val onlyWhenToughnessGreaterThanPower: Boolean = true
 ) : StaticAbility {
-    override val description: String = buildString {
-        if (onlyWhenToughnessGreaterThanPower) {
-            append("As long as equipped creature's toughness is greater than its power, it ")
-        } else {
-            append("This creature ")
+    override val description: String = when (filter.scope) {
+        // The single-permanent scopes read naturally in the singular ("As long as X's toughness …
+        // it assigns"); a battlefield group needs the plural, and takes its subject from the filter
+        // exactly as CantAttack / CantBlock do.
+        is Scope.Self, is Scope.AttachedTo -> {
+            val subject = filter.description
+            if (onlyWhenToughnessGreaterThanPower) {
+                "As long as $subject's toughness is greater than its power, it assigns " +
+                    "combat damage equal to its toughness rather than its power"
+            } else {
+                "${subject.replaceFirstChar(Char::uppercaseChar)} assigns combat damage equal to " +
+                    "its toughness rather than its power"
+            }
         }
-        append("assigns combat damage equal to its toughness rather than its power")
+        else -> buildString {
+            append(filter.description.replaceFirstChar(Char::uppercaseChar))
+            if (onlyWhenToughnessGreaterThanPower) {
+                append(" with toughness greater than their power")
+            }
+            append(" assign combat damage equal to their toughness rather than their power")
+        }
     }
     override fun applyTextReplacement(replacer: TextReplacer): StaticAbility {
         val newFilter = filter.applyTextReplacement(replacer)

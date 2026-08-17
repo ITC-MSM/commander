@@ -1,5 +1,6 @@
 package com.wingedsheep.gym
 
+import com.wingedsheep.gym.contract.ActionParams
 import com.wingedsheep.gym.contract.ObservationResult
 
 /**
@@ -28,9 +29,16 @@ interface GymEnv {
 
     /**
      * Advance by the action with [actionId] from the most recent observation.
-     * @throws IllegalArgumentException if the ID is stale / not valid this step.
+     *
+     * [params] completes an action the enumerator could only offer as a template — which creatures
+     * attack and whom, which blocks are made, a spell's targets, X. Omit them (or pass
+     * [ActionParams.EMPTY]) for an action that needs no choice beyond its ID; a deckbuild env has
+     * no such actions and rejects any non-empty params.
+     *
+     * @throws IllegalArgumentException if the ID is stale / not valid this step, if [params] carry
+     *   a field the action can't use, or if the completed action is illegal.
      */
-    fun step(actionId: Int): ObservationResult
+    fun step(actionId: Int, params: ActionParams = ActionParams.EMPTY): ObservationResult
 
     /** Branch this env. Children diverge independently from the next [step] on. */
     fun fork(): GymEnv

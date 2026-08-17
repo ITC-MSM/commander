@@ -1872,6 +1872,17 @@ object DamageUtils {
                 val damageEvent = effect.appliesTo
                 if (damageEvent !is com.wingedsheep.sdk.scripting.EventPattern.DamageEvent) continue
 
+                // Check damage type filter (combat vs non-combat), exactly as the DoubleDamage loop
+                // above does — combat damage reaches both loops through the same
+                // applyStaticDamageAmplification(isCombatDamage = true). Without this, Hawkeye, Young
+                // Avenger's "+X to *noncombat* damage" also pumped your creatures' combat damage.
+                val damageTypeMatches = when (damageEvent.damageType) {
+                    is DamageType.Any -> true
+                    is DamageType.Combat -> isCombatDamage
+                    is DamageType.NonCombat -> !isCombatDamage
+                }
+                if (!damageTypeMatches) continue
+
                 // Additional gating conditions, evaluated against the *replacement source's*
                 // controller like the PreventDamage / DoubleDamage sites above — so Far Fortune,
                 // End Boss's "Max speed — …" rider reads Far Fortune's controller's speed, not the

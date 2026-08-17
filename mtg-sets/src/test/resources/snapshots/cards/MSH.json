@@ -17617,24 +17617,14 @@
                         }
                     },
                     "then": {
-                        "type": "ForEach",
-                        "space": {
-                            "type": "IterationSpace.Group",
+                        "type": "GrantStaticAbility",
+                        "ability": {
+                            "type": "AssignDamageEqualToToughness",
                             "filter": {
-                                "baseFilter": {
-                                    "cardPredicates": [
-                                        "IsCreature",
-                                        "ToughnessGreaterThanPower"
-                                    ],
-                                    "controllerPredicate": "ControlledByYou"
-                                }
+                                "baseFilter": "creature ctrl:you"
                             }
                         },
-                        "body": {
-                            "type": "GrantKeyword",
-                            "keyword": "ASSIGNS_COMBAT_DAMAGE_AS_TOUGHNESS",
-                            "target": "Self"
-                        }
+                        "target": "Self"
                     },
                     "descriptionOverride": "You may pay 2 life. If you do, until end of turn, creatures you control with toughness greater than their power assign combat damage equal to their toughness rather than their power."
                 },
