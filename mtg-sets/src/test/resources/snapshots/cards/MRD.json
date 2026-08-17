@@ -7769,6 +7769,75 @@
     ]
 }
 
+// Second Sunrise
+{
+    "name": "Second Sunrise",
+    "manaCost": "{1}{W}{W}",
+    "typeLine": "Instant",
+    "oracleText": "Each player returns to the battlefield all artifact, creature, enchantment, and land cards in their graveyard that were put there from the battlefield this turn.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherCards",
+                    "source": {
+                        "type": "FromZone",
+                        "zone": "Graveyard",
+                        "player": "Each",
+                        "filter": {
+                            "cardPredicates": [
+                                {
+                                    "type": "Or",
+                                    "predicates": [
+                                        {
+                                            "type": "Or",
+                                            "predicates": [
+                                                {
+                                                    "type": "Or",
+                                                    "predicates": [
+                                                        "IsArtifact",
+                                                        "IsCreature"
+                                                    ]
+                                                },
+                                                "IsEnchantment"
+                                            ]
+                                        },
+                                        "IsLand"
+                                    ]
+                                }
+                            ],
+                            "statePredicates": [
+                                "PutIntoGraveyardFromBattlefieldThisTurn"
+                            ]
+                        }
+                    },
+                    "storeAs": "returningCards"
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "returningCards",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Battlefield"
+                    },
+                    "underOwnersControl": true
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "20",
+        "rarity": "RARE",
+        "artist": "Greg Staples",
+        "flavorText": "The bright tunnel sometimes leads back to life.",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/e/4e50ee7c-f2a2-4d49-a1cc-8233fd8dd0c5.jpg?1783944558"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Seething Song
 {
     "name": "Seething Song",
