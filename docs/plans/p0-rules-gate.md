@@ -40,6 +40,7 @@ green card-definition count or a successful UI build does not satisfy it.
 | 2HG each-opponent upkeep trigger multiplicity | `TwoHeadedGiantStepTriggerMultiplicityTest`, `TriggeredAbilitySemanticsTest` | Implemented; independently reviewed and focused/broad rules-engine-tested |
 | Single-source excess to battles / planeswalkers | `BattleCardTypeScenarioTest` | Implemented for combat battles and noncombat planeswalkers; independently reviewed and focused-tested. Simultaneous multi-source aggregation remains open. |
 | Single-source wither excess and excess redirection | `ExcessDamageTriggerScenarioTest` | Implemented; independently reviewed and focused-tested. Simultaneous multi-source aggregation remains open. |
+| Declaration-wide blocker restrictions in 509.1c maximum matching | `TobyBeastieBefrienderTest`: lone co-blocker, distinct-attacker partner, blocker cap, and multi-blocker controls | Implemented; independently reviewed and focused-tested. The exact co-blocker/must-be-blocked solver is exponential in adversarial board states; profiling/memoization remains a performance follow-up. |
 
 ## Explicit scope boundary
 

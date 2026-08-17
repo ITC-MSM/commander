@@ -3,6 +3,7 @@ package com.wingedsheep.engine.scenarios
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.support.GameTestDriver
 import com.wingedsheep.engine.support.TestCards
+import com.wingedsheep.mtg.sets.definitions.dsk.cards.FearOfBeingHunted
 import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.ManaCost
@@ -14,7 +15,10 @@ import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.CantBlockUnlessCoBlocker
+import com.wingedsheep.sdk.scripting.CantBeBlockedByMoreThan
+import com.wingedsheep.sdk.scripting.CanBlockAnyNumber
 import com.wingedsheep.sdk.scripting.GameObjectFilter
+import com.wingedsheep.sdk.scripting.MustBeBlocked
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
@@ -55,6 +59,26 @@ class TobyBeastieBefrienderTest : FunSpec({
         }
     }
 
+    val SolitaryDemand = card("Solitary Demand") {
+        manaCost = "{R}"
+        typeLine = "Creature — Beast"
+        power = 3
+        toughness = 3
+        oracleText = "This creature must be blocked if able.\nThis creature can't be blocked by more than one creature."
+        staticAbility { ability = MustBeBlocked(allCreatures = false) }
+        staticAbility { ability = CantBeBlockedByMoreThan(maxBlockers = 1) }
+    }
+
+    val ManyHandsSentinel = card("Many-Hands Sentinel") {
+        manaCost = "{W}"
+        typeLine = "Creature — Soldier"
+        power = 2
+        toughness = 2
+        oracleText = "This creature can't block alone.\nThis creature can block any number of creatures."
+        staticAbility { ability = CantBlockUnlessCoBlocker(coBlockerFilter = GameObjectFilter.Creature) }
+        staticAbility { ability = CanBlockAnyNumber() }
+    }
+
     // Token makers, used to drive Toby's "four or more creature tokens" static ability.
     val MakeThreeSaprolings = card("Make Three Saprolings") {
         manaCost = "{G}"
@@ -80,7 +104,10 @@ class TobyBeastieBefrienderTest : FunSpec({
     fun createDriver(): GameTestDriver {
         val driver = GameTestDriver()
         driver.registerCards(
-            TestCards.all + listOf(TestWarrior, LonelySentinel, MakeThreeSaprolings, MakeFourSaprolings)
+            TestCards.all + listOf(
+                TestWarrior, LonelySentinel, SolitaryDemand, ManyHandsSentinel, MakeThreeSaprolings, MakeFourSaprolings,
+                FearOfBeingHunted
+            )
         )
         return driver
     }
@@ -137,6 +164,100 @@ class TobyBeastieBefrienderTest : FunSpec({
                 p2, mapOf(sentinel to listOf(attacker), partner to listOf(attacker))
             ).error shouldBe null
         }
+    }
+
+    test("a lone 'can't block alone' creature does not make a must-be-blocked attacker able to be blocked") {
+        val driver = createDriver()
+        driver.initMirrorMatch(deck = Deck.of("Plains" to 20, "Mountain" to 20), startingLife = 20)
+        val p1 = driver.player1
+        val p2 = driver.player2
+
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+        val attacker = driver.putCreatureOnBattlefield(p1, "Fear of Being Hunted")
+        driver.removeSummoningSickness(attacker)
+        driver.putCreatureOnBattlefield(p2, "Lonely Sentinel")
+
+        driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
+        driver.declareAttackers(p1, listOf(attacker), p2).error shouldBe null
+        driver.bothPass()
+
+        // The Sentinel cannot legally block on its own. 509.1c therefore permits the empty
+        // declaration even though the attacker has "must be blocked if able".
+        driver.declareBlockers(p2, emptyMap()).error shouldBe null
+    }
+
+    test("a co-blocker can support a must-block assignment against a different attacker") {
+        val driver = createDriver()
+        driver.initMirrorMatch(deck = Deck.of("Plains" to 20, "Mountain" to 20), startingLife = 20)
+        val p1 = driver.player1
+        val p2 = driver.player2
+
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+        val firstAttacker = driver.putCreatureOnBattlefield(p1, "Fear of Being Hunted")
+        val secondAttacker = driver.putCreatureOnBattlefield(p1, "Fear of Being Hunted")
+        driver.removeSummoningSickness(firstAttacker)
+        driver.removeSummoningSickness(secondAttacker)
+        val sentinel = driver.putCreatureOnBattlefield(p2, "Lonely Sentinel")
+        val partner = driver.putCreatureOnBattlefield(p2, "Test Warrior")
+
+        driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
+        driver.declareAttackers(p1, listOf(firstAttacker, secondAttacker), p2).error shouldBe null
+        driver.bothPass()
+
+        // Two requirements can be obeyed: Sentinel's partner need not block the same attacker.
+        driver.declareBlockers(p2, emptyMap()).error shouldNotBe null
+        driver.declareBlockers(
+            p2, mapOf(sentinel to listOf(firstAttacker), partner to listOf(secondAttacker))
+        ).error shouldBe null
+    }
+
+    test("a blocker cap can make a co-blocker-restricted must-block requirement impossible") {
+        val driver = createDriver()
+        driver.initMirrorMatch(deck = Deck.of("Plains" to 20, "Mountain" to 20), startingLife = 20)
+        val p1 = driver.player1
+        val p2 = driver.player2
+
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+        val attacker = driver.putCreatureOnBattlefield(p1, "Solitary Demand")
+        driver.removeSummoningSickness(attacker)
+        val sentinel = driver.putCreatureOnBattlefield(p2, "Lonely Sentinel")
+        val partner = driver.putCreatureOnBattlefield(p2, "Lonely Sentinel")
+
+        driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
+        driver.declareAttackers(p1, listOf(attacker), p2).error shouldBe null
+        driver.bothPass()
+
+        // The two Sentinels can support one another only if both block, but the attacker permits
+        // only one blocker. No legal declaration can satisfy the must-block requirement.
+        driver.declareBlockers(p2, emptyMap()).error shouldBe null
+        driver.declareBlockers(p2, mapOf(sentinel to listOf(attacker))).error shouldNotBe null
+        driver.declareBlockers(p2, mapOf(partner to listOf(attacker))).error shouldNotBe null
+    }
+
+    test("a co-blocker-restricted creature that can block any number covers every attainable must-block attacker") {
+        val driver = createDriver()
+        driver.initMirrorMatch(deck = Deck.of("Plains" to 20, "Mountain" to 20), startingLife = 20)
+        val p1 = driver.player1
+        val p2 = driver.player2
+
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+        val firstAttacker = driver.putCreatureOnBattlefield(p1, "Fear of Being Hunted")
+        val secondAttacker = driver.putCreatureOnBattlefield(p1, "Fear of Being Hunted")
+        driver.removeSummoningSickness(firstAttacker)
+        driver.removeSummoningSickness(secondAttacker)
+        val sentinel = driver.putCreatureOnBattlefield(p2, "Many-Hands Sentinel")
+        val partner = driver.putCreatureOnBattlefield(p2, "Test Warrior")
+
+        driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
+        driver.declareAttackers(p1, listOf(firstAttacker, secondAttacker), p2).error shouldBe null
+        driver.bothPass()
+
+        driver.declareBlockers(
+            p2, mapOf(sentinel to listOf(firstAttacker), partner to listOf(firstAttacker))
+        ).error shouldNotBe null
+        driver.declareBlockers(
+            p2, mapOf(sentinel to listOf(firstAttacker, secondAttacker), partner to listOf(firstAttacker))
+        ).error shouldBe null
     }
 
     // -------------------------------------------------------------------------

@@ -709,15 +709,7 @@ internal class BlockPhaseManager(
     ): String? {
         for (blockerId in blockerIds) {
             val cardComponent = state.getEntity(blockerId)?.get<CardComponent>() ?: continue
-            if (state.getEntity(blockerId)?.has<FaceDownComponent>() == true) continue
-            val printed = cardRegistry.getCard(cardComponent.cardDefinitionId)
-                ?.staticAbilities.orEmpty()
-            val granted = state.grantedStaticAbilities
-                .filter { it.entityId == blockerId }
-                .map { it.ability }
-            val restrictions = (printed + granted)
-                .filterIsInstance<CantBlockUnlessCoBlocker>()
-                .filter { it.filter.scope is Scope.Self }
+            val restrictions = coBlockerRestrictions(state, blockerId)
             for (restriction in restrictions) {
                 val context = PredicateContext(controllerId = projected.getController(blockerId) ?: blockerId)
                 val satisfied = blockerIds.any { otherId ->
@@ -730,6 +722,29 @@ internal class BlockPhaseManager(
             }
         }
         return null
+    }
+
+    /**
+     * Co-blocker restrictions that apply to this permanent itself. Tokens can receive the
+     * restriction through [GameState.grantedStaticAbilities], while ordinary cards carry it in
+     * their printed definition, so hypothetical-declaration checks must use the same source as
+     * actual declaration validation.
+     */
+    private fun coBlockerRestrictions(
+        state: GameState,
+        blockerId: EntityId
+    ): List<CantBlockUnlessCoBlocker> {
+        val container = state.getEntity(blockerId) ?: return emptyList()
+        if (container.has<FaceDownComponent>()) return emptyList()
+        val cardComponent = container.get<CardComponent>() ?: return emptyList()
+        val printed = cardRegistry.getCard(cardComponent.cardDefinitionId)
+            ?.staticAbilities.orEmpty()
+        val granted = state.grantedStaticAbilities
+            .filter { it.entityId == blockerId }
+            .map { it.ability }
+        return (printed + granted)
+            .filterIsInstance<CantBlockUnlessCoBlocker>()
+            .filter { it.filter.scope is Scope.Self }
     }
 
     // =========================================================================
@@ -796,9 +811,10 @@ internal class BlockPhaseManager(
         // matching between the must-be-blocked attackers and the blockers hypothetically free to
         // cover them: a provoke-pinned blocker is only free for its pinned attacker, and a blocker
         // that can block a Lure-style attacker is claimed by that requirement (section 1 forces it
-        // there). Per-pair blocking restrictions go through canCreatureBlockAttacker; declaration-
-        // wide restrictions (e.g. can't-block-alone) are not modelled, so the computed maximum can
-        // only over-count in those corners — never rejecting more than 509.1c would.
+        // there). Per-pair blocking restrictions go through canCreatureBlockAttacker. A
+        // "can't block unless another [X] also blocks" restriction is declaration-wide, so the
+        // usual pairwise matching is not a sufficient witness: a proposed matching must be
+        // extendable to one whole legal blocker declaration.
         val mustBeBlockedIfAbleAttackers = findMustBeBlockedIfAbleAttackers(state)
         if (mustBeBlockedIfAbleAttackers.isNotEmpty()) {
             val provokePinnedAttackers = state.floatingEffects
@@ -822,26 +838,170 @@ internal class BlockPhaseManager(
                 return canCreatureBlockAttacker(state, blockerId, attackerId, blockingPlayer, projected)
             }
 
-            // Maximum bipartite matching (attackers ↔ hypothetically-free blockers): its size is
-            // the most requirements that could be simultaneously obeyed. Shared Kuhn's routine.
-            val matchedAttackerOfBlocker = com.wingedsheep.engine.mechanics.BipartiteMatching
-                .maximumMatching(mustBeBlockedIfAbleAttackers, potentialBlockers) { attackerId, blockerId ->
-                    canHypotheticallyBlock(blockerId, attackerId)
-                }
-            val maxSatisfiable = matchedAttackerOfBlocker.size
+            val hasCoBlockerRestriction = potentialBlockers.any {
+                coBlockerRestrictions(state, it).isNotEmpty()
+            }
+            val matchedAttackerOfBlocker = if (hasCoBlockerRestriction) emptyMap() else
+                com.wingedsheep.engine.mechanics.BipartiteMatching.maximumMatching(
+                    mustBeBlockedIfAbleAttackers, potentialBlockers
+                ) { attackerId, blockerId -> canHypotheticallyBlock(blockerId, attackerId) }
+            val maxSatisfiable = if (hasCoBlockerRestriction) {
+                maxLegalMustBeBlockedAssignments(
+                    state = state,
+                    blockingPlayer = blockingPlayer,
+                    potentialBlockers = potentialBlockers,
+                    mustBeBlockedIfAbleAttackers = mustBeBlockedIfAbleAttackers,
+                    mustBeBlockedByAllAttackers = mustBeBlockedByAllAttackers,
+                    provokePinnedAttackers = provokePinnedAttackers,
+                )
+            } else matchedAttackerOfBlocker.size
             val satisfied = mustBeBlockedIfAbleAttackers.count { !attackerToBlockers[it].isNullOrEmpty() }
 
             if (satisfied < maxSatisfiable) {
                 val matchedAttackers = matchedAttackerOfBlocker.values.toSet()
-                val culpritId = mustBeBlockedIfAbleAttackers.first {
-                    it in matchedAttackers && attackerToBlockers[it].isNullOrEmpty()
-                }
+                val culpritId = mustBeBlockedIfAbleAttackers.firstOrNull {
+                    (matchedAttackers.isEmpty() || it in matchedAttackers) && attackerToBlockers[it].isNullOrEmpty()
+                } ?: mustBeBlockedIfAbleAttackers.first { attackerToBlockers[it].isNullOrEmpty() }
                 val attackerName = state.getEntity(culpritId)?.get<CardComponent>()?.name ?: "Creature"
                 return "$attackerName must be blocked if able"
             }
         }
 
         return null
+    }
+
+    /**
+     * Find the greatest number of "must be blocked if able" requirements that can be obeyed by
+     * an actual complete blocker declaration when a candidate has a co-blocker restriction.
+     *
+     * This deliberately searches complete maps instead of applying a local edge heuristic: a
+     * support creature consumes a real blocker slot and may collide with an attacker-local or
+     * global blocker cap. Every terminal candidate is checked by the same group validators used
+     * for a submitted declaration.
+     */
+    private fun maxLegalMustBeBlockedAssignments(
+        state: GameState,
+        blockingPlayer: EntityId,
+        potentialBlockers: List<EntityId>,
+        mustBeBlockedIfAbleAttackers: List<EntityId>,
+        mustBeBlockedByAllAttackers: List<EntityId>,
+        provokePinnedAttackers: Map<EntityId, Set<EntityId>>,
+    ): Int {
+        val projected = state.projectedState
+        val attackers = state.findEntitiesWith<AttackingComponent>().map { it.first }
+        val optionsByBlocker = potentialBlockers.mapNotNull { blockerId ->
+            val controller = projected.getController(blockerId) ?: blockingPlayer
+            val legalTargets = attackers.filter { attackerId ->
+                validateBlocker(state, controller, blockerId, listOf(attackerId)) == null
+            }.sortedByDescending { it in mustBeBlockedIfAbleAttackers }
+            if (legalTargets.isEmpty()) return@mapNotNull null
+
+            val card = state.getEntity(blockerId)?.get<CardComponent>()
+            val canBlockAnyNumber = card != null &&
+                cardRegistry.getCard(card.cardDefinitionId)?.staticAbilities?.any { it is CanBlockAnyNumber } == true
+            val capacity = if (canBlockAnyNumber) legalTargets.size
+                else 1 + projected.getAdditionalBlockCount(blockerId)
+            val mustBlockLure = legalTargets.any { it in mustBeBlockedByAllAttackers }
+            val required = mustBlockLure || blockerId in provokePinnedAttackers || projected.mustBlock(blockerId)
+            HypotheticalBlockerOptions(
+                blockerId = blockerId,
+                controllerId = controller,
+                legalTargets = legalTargets,
+                capacity = capacity,
+                required = required,
+                mustBlockLure = mustBlockLure,
+                provokePins = provokePinnedAttackers[blockerId].orEmpty(),
+            )
+        }.sortedWith(
+            compareByDescending<HypotheticalBlockerOptions> { it.required }
+                .thenByDescending { it.legalTargets.count { target -> target in mustBeBlockedIfAbleAttackers } }
+        )
+        var maximum = 0
+        val candidate = LinkedHashMap<EntityId, List<EntityId>>()
+
+        // An upper bound on an incomplete branch: no unvisited blocker can cover an attacker that
+        // is absent from every one of its assignments. This turns token-heavy boards with a small
+        // must-block set into a small search rather than walking every terminal declaration.
+        val remainingCoverable = Array(optionsByBlocker.size + 1) { emptySet<EntityId>() }
+        for (index in optionsByBlocker.indices.reversed()) {
+            remainingCoverable[index] = remainingCoverable[index + 1] +
+                optionsByBlocker[index].legalTargets.intersect(mustBeBlockedIfAbleAttackers.toSet())
+        }
+
+        fun isLegalCandidate(): Boolean =
+            validateMenaceRequirements(state, candidate) == null &&
+            validateMinBlockersRequirements(state, candidate) == null &&
+            validateMaxBlockersRequirements(state, candidate) == null &&
+            validateGlobalBlockerCount(state, candidate.keys) == null &&
+            validateCoBlockerRequirements(state, projected, candidate.keys) == null &&
+            validateProvokeRequirements(state, blockingPlayer, candidate) == null &&
+            validateProjectedMustBlockRequirements(state, blockingPlayer, candidate) == null
+
+        fun search(index: Int) {
+            val currentlyCovered = mustBeBlockedIfAbleAttackers.count { attackerId ->
+                candidate.values.any { attackerId in it }
+            }
+            val stillCoverable = remainingCoverable[index].count { attackerId ->
+                candidate.values.none { attackerId in it }
+            }
+            if (currentlyCovered + stillCoverable <= maximum) return
+            if (index == optionsByBlocker.size) {
+                if (!isLegalCandidate()) return
+                if (currentlyCovered > maximum) maximum = currentlyCovered
+                return
+            }
+
+            val options = optionsByBlocker[index]
+            if (!options.required) search(index + 1)
+            forEachBlockAssignment(options.legalTargets, options.capacity) { assignment ->
+                if (
+                    (options.mustBlockLure && assignment.none { it in mustBeBlockedByAllAttackers }) ||
+                    !options.provokePins.all { it in assignment } ||
+                    validateBlocker(state, options.controllerId, options.blockerId, assignment) != null
+                ) return@forEachBlockAssignment
+                candidate[options.blockerId] = assignment
+                search(index + 1)
+                candidate.remove(options.blockerId)
+            }
+        }
+
+        search(0)
+        return maximum
+    }
+
+    private data class HypotheticalBlockerOptions(
+        val blockerId: EntityId,
+        val controllerId: EntityId,
+        val legalTargets: List<EntityId>,
+        val capacity: Int,
+        val required: Boolean,
+        val mustBlockLure: Boolean,
+        val provokePins: Set<EntityId>,
+    )
+
+    /**
+     * Visit nonempty target subsets up to [capacity] lazily, trying the largest groups first so
+     * the must-block upper bound becomes tight before optional support-only branches are explored.
+     */
+    private fun forEachBlockAssignment(
+        targets: List<EntityId>,
+        capacity: Int,
+        visit: (List<EntityId>) -> Unit
+    ) {
+        fun choose(start: Int, remaining: Int, chosen: MutableList<EntityId>) {
+            if (chosen.size == remaining) {
+                visit(chosen.toList())
+                return
+            }
+            for (index in start until targets.size) {
+                chosen += targets[index]
+                choose(index + 1, remaining, chosen)
+                chosen.removeAt(chosen.lastIndex)
+            }
+        }
+        for (size in minOf(capacity, targets.size) downTo 1) {
+            choose(start = 0, remaining = size, chosen = mutableListOf())
+        }
     }
 
     /**
