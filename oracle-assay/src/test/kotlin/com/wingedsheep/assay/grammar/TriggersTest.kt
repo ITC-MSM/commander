@@ -282,4 +282,73 @@ class TriggersTest : StringSpec({
             "Whenever one or more of your opponents are attacked, draw a card.",
         ).forEach { line -> Grammar.abilityLine.printLine(fragment(line)) shouldBe line }
     }
+
+    // ---------------------------------------------------------------------------------------
+    // Compound self-triggers — the pairs Oracle joins with "or"
+    // ---------------------------------------------------------------------------------------
+
+    // One printed sentence, two abilities: the events are different and the payoff is shared, which
+    // is what every hand-written card in the family writes (Queen's Bay Paladin, Ponyback Brigade).
+    "an enters-or-dies sentence is the two abilities the goldens carry" {
+        val abilities = fragment("When ~ enters or dies, draw a card.").script.triggeredAbilities
+        abilities.map { it.trigger } shouldBe
+            listOf(SdkTriggers.EntersBattlefield.event, SdkTriggers.Dies.event)
+        abilities.map { it.effect } shouldBe List(2) { Effects.DrawCards(1) }
+        roundTrips("When ~ enters or dies, draw a card.")
+    }
+
+    // Two spellings of one model, so exactly one prints. CR 700.4 defines "dies" as the long form,
+    // and the artifact cycle that predates the word spells it out (Ichor Wellspring); fourteen older
+    // cards spell "attacks or blocks" with "When" (Mardu Blazebringer, Windscouter).
+    "the older spellings of a pair parse and normalize to the printed one" {
+        fragment("When ~ enters or is put into a graveyard from the battlefield, draw a card.") shouldBe
+            fragment("When ~ enters or dies, draw a card.")
+        fragment("When ~ attacks or blocks, draw a card.") shouldBe
+            fragment("Whenever ~ attacks or blocks, draw a card.")
+
+        Grammar.abilityLine.printLine(
+            fragment("When ~ enters or is put into a graveyard from the battlefield, draw a card.")
+        ) shouldBe "When ~ enters or dies, draw a card."
+    }
+
+    // The standing finding this band leaves behind. `EventPattern.AnyOf` — `dsl.Triggers.or` — is
+    // one ability watching both events, and three cards use it for "enters or is turned face up"
+    // while three others in the same family write the two abilities this rule prints. The grammar
+    // emits the majority spelling and the differential reports Rakish Scoundrel; a `match` that
+    // also accepted the single ability would be two readings of one text.
+    "a single AnyOf ability is not what this sentence prints" {
+        val anyOf = CardFragment(
+            script = CardScript(
+                triggeredAbilities = listOf(
+                    TriggeredAbility(
+                        id = AbilityId("trigger"),
+                        trigger = SdkTriggers.or(
+                            SdkTriggers.EntersBattlefield,
+                            SdkTriggers.TurnedFaceUp,
+                        ).event,
+                        binding = SdkTriggers.EntersBattlefield.binding,
+                        effect = Effects.DrawCards(1),
+                    )
+                )
+            )
+        )
+        Grammar.abilityLine.printLine(anyOf) shouldBe null
+    }
+
+    // The joins deliberately left out: an event with no `TriggerSpec` ("specializes"), and one that
+    // is a filtered second event rather than a second self-event ("becomes blocked by a creature").
+    "a join over an event the SDK cannot name declines rather than losing half of it" {
+        declines("When ~ enters or specializes, draw a card.")
+        declines("Whenever ~ blocks or becomes blocked by a creature, draw a card.")
+    }
+
+    "every paired trigger rule prints what it parses" {
+        listOf(
+            "Whenever ~ enters or attacks, draw a card.",
+            "Whenever ~ attacks or blocks, draw a card.",
+            "When ~ enters or dies, draw a card.",
+            "When ~ enters or leaves the battlefield, draw a card.",
+            "When ~ enters or is turned face up, draw a card.",
+        ).forEach { line -> Grammar.abilityLine.printLine(fragment(line)) shouldBe line }
+    }
 })
