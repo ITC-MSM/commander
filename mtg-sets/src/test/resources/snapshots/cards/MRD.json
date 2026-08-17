@@ -2862,6 +2862,89 @@
     "colorIdentityOverride": []
 }
 
+// Gate to the Aether
+{
+    "name": "Gate to the Aether",
+    "manaCost": "{6}",
+    "typeLine": "Artifact",
+    "oracleText": "At the beginning of each player's upkeep, that player reveals the top card of their library. If it's an artifact, creature, enchantment, or land card, the player may put it onto the battlefield.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP",
+                    "player": "Each"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                },
+                                "player": "TriggeringPlayer"
+                            },
+                            "storeAs": "gathered0"
+                        },
+                        {
+                            "type": "RevealCollection",
+                            "from": "gathered0"
+                        },
+                        {
+                            "type": "FilterCollection",
+                            "from": "gathered0",
+                            "filter": {
+                                "type": "MatchesFilter",
+                                "filter": "permanent"
+                            },
+                            "storeMatching": "matching2"
+                        },
+                        {
+                            "type": "ConditionalOnCollection",
+                            "collection": "matching2",
+                            "ifNotEmpty": {
+                                "type": "Gated",
+                                "gate": "Gate.MayDecide",
+                                "then": {
+                                    "type": "MoveToZone",
+                                    "target": {
+                                        "type": "PipelineTarget",
+                                        "collectionName": "matching2"
+                                    },
+                                    "destination": "Battlefield",
+                                    "controllerOverride": {
+                                        "type": "PlayerRef",
+                                        "player": "TriggeringPlayer"
+                                    }
+                                },
+                                "decisionMaker": {
+                                    "type": "PlayerRef",
+                                    "player": "TriggeringPlayer"
+                                },
+                                "descriptionOverride": "Put the revealed permanent card onto the battlefield?"
+                            }
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "174",
+        "rarity": "RARE",
+        "artist": "Pete Venters",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/2/c28fd840-e633-46d3-991a-b9fea95a2f28.jpg?1783944521"
+    },
+    "colorIdentityOverride": []
+}
+
 // Gilded Lotus
 {
     "name": "Gilded Lotus",
@@ -4731,6 +4814,115 @@
         "imageUri": "https://cards.scryfall.io/normal/front/a/1/a1a6e375-5c47-4447-9453-adf0038693e3.jpg"
     },
     "colorIdentityOverride": []
+}
+
+// Lumengrid Augur
+{
+    "name": "Lumengrid Augur",
+    "manaCost": "{3}{U}",
+    "typeLine": "Creature — Vedalken Wizard",
+    "oracleText": "{1}, {T}: Target player draws a card, then discards a card. If that player discards an artifact card this way, untap this creature.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            },
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "player"
+                            }
+                        },
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Hand",
+                                "player": "TargetPlayer"
+                            },
+                            "storeAs": "gathered1"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "gathered1",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "chooser": "TargetPlayer",
+                            "storeSelected": "selected2",
+                            "prompt": "Choose a card to discard",
+                            "selectedLabel": "Discard"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "selected2",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard",
+                                "player": "TargetPlayer"
+                            },
+                            "moveType": "Discard"
+                        },
+                        {
+                            "type": "ConditionalOnCollection",
+                            "collection": "selected2",
+                            "ifNotEmpty": {
+                                "type": "TapUntap",
+                                "target": "Self",
+                                "tap": false
+                            },
+                            "filter": "artifact"
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetPlayer",
+                        "id": "player"
+                    }
+                ],
+                "descriptionOverride": "Target player draws a card, then discards a card. If that player discards an artifact card this way, untap this creature."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "39",
+        "rarity": "RARE",
+        "artist": "rk post",
+        "flavorText": "Information pumps like blood through vedalken society.",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/5/65704c0f-cc97-490e-a0f7-fab9a18e1e88.jpg?1783944554"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
 }
 
 // Lumengrid Sentinel
