@@ -25,6 +25,9 @@ docs it points at; load those when the work needs them.
   - Working autonomously through a whole set, one PR at a time, until it's done → **`set-loop`** (launches
     the harness's own loop — Claude Code `/loop`, Codex `/goal`; every PR it opens is titled
     `[agent-loop: <model-id>]`).
+  - Proving a set is *actually* finished once its backlog reads N/N, and archiving it → **`verify-set`**
+    (Scryfall field verification of every compiled card, reprint and basic-land coverage, self-play pass).
+    A green backlog is a claim; that skill is the proof.
 - **Verify MTG rule numbers before citing them** in code, comments, commit messages, PR bodies, or chat.
   613.8 vs 613.7 and 704.5 vs 704.6 are easy to swap. Check the official Comprehensive Rules
   <https://magic.wizards.com/en/rules> — the plain-text `.txt` is too large to fetch into context, so
