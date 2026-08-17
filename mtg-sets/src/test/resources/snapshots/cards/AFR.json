@@ -43,6 +43,58 @@
     ]
 }
 
+// Prosperous Innkeeper
+{
+    "name": "Prosperous Innkeeper",
+    "manaCost": "{1}{G}",
+    "typeLine": "Creature — Halfling Citizen",
+    "oracleText": "When this creature enters, create a Treasure token. (It's an artifact with \"{T}, Sacrifice this token: Add one mana of any color.\")\nWhenever another creature you control enters, you gain 1 life.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Treasure"
+                }
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "creature ctrl:you",
+                    "to": "Battlefield"
+                },
+                "binding": "OTHER",
+                "effect": {
+                    "type": "GainLife",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "200",
+        "rarity": "UNCOMMON",
+        "artist": "Eric Deschamps",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/9/096d3c0c-98e2-4cfc-a6e1-fddb0359c63f.jpg?1783926456"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Vampire Spawn
 {
     "name": "Vampire Spawn",

@@ -1,3 +1,48 @@
+// Baleful Strix
+{
+    "name": "Baleful Strix",
+    "manaCost": "{U}{B}",
+    "typeLine": "Artifact Creature — Bird",
+    "oracleText": "Flying, deathtouch\nWhen this creature enters, draw a card.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "FLYING",
+        "DEATHTOUCH"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "82",
+        "rarity": "UNCOMMON",
+        "artist": "Nils Hamm",
+        "flavorText": "Its beak rends flesh and bone, exposing the tender marrow of dream.",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/2/62090c97-7e3e-4854-bc44-c4a900133ec5.jpg?1783940604"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "BLUE"
+    ]
+}
+
 // Maelstrom Wanderer
 {
     "name": "Maelstrom Wanderer",

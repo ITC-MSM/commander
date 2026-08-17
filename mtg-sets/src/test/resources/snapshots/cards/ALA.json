@@ -358,6 +358,63 @@
     ]
 }
 
+// Seaside Citadel
+{
+    "name": "Seaside Citadel",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "This land enters tapped.\n{T}: Add {G}, {W}, or {U}.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "GREEN"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "WHITE"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_3",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "BLUE"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            }
+        ],
+        "replacementEffects": [
+            "EntersTapped"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "229",
+        "rarity": "UNCOMMON",
+        "artist": "Volkan Baǵa",
+        "flavorText": "For wisdom's sake, it was built high to gaze on all things. For glory's sake, it was built high as a testament of power. For strength's sake, it was built high to repel all attacks.",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/1/c1995d2a-4550-4c84-ad44-183b06579e98.jpg?1783942531"
+    },
+    "colorIdentityOverride": [
+        "GREEN",
+        "WHITE",
+        "BLUE"
+    ]
+}
+
 // Woolly Thoctar
 {
     "name": "Woolly Thoctar",

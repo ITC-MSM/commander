@@ -106,6 +106,45 @@
     ]
 }
 
+// Canopy Vista
+{
+    "name": "Canopy Vista",
+    "manaCost": "",
+    "typeLine": "Land — Forest Plains",
+    "oracleText": "({T}: Add {G} or {W}.)\nThis land enters tapped unless you control two or more basic lands.",
+    "script": {
+        "replacementEffects": [
+            {
+                "type": "EntersTapped",
+                "unlessCondition": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "AggregateBattlefield",
+                        "player": "You",
+                        "filter": "basicland"
+                    },
+                    "operator": "GTE",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 2
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "234",
+        "rarity": "RARE",
+        "artist": "Adam Paquette",
+        "flavorText": "The continent of Murasa lies beneath a blanket of dense vegetation, its enormous branches tangled so thickly that some inhabitants never see the ground.",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/3/a3262c7f-4fdf-4648-ba59-9279c75d222d.jpg?1783938174"
+    },
+    "colorIdentityOverride": [
+        "GREEN",
+        "WHITE"
+    ]
+}
+
 // Cinder Glade
 {
     "name": "Cinder Glade",
@@ -403,6 +442,45 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Prairie Stream
+{
+    "name": "Prairie Stream",
+    "manaCost": "",
+    "typeLine": "Land — Plains Island",
+    "oracleText": "({T}: Add {W} or {U}.)\nThis land enters tapped unless you control two or more basic lands.",
+    "script": {
+        "replacementEffects": [
+            {
+                "type": "EntersTapped",
+                "unlessCondition": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "AggregateBattlefield",
+                        "player": "You",
+                        "filter": "basicland"
+                    },
+                    "operator": "GTE",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 2
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "241",
+        "rarity": "RARE",
+        "artist": "Adam Paquette",
+        "flavorText": "The continent of Ondu is a vast plateau crisscrossed by deep trenches and meandering rivers.",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/6/9625911f-1dd3-4044-ac06-3c0c3198b6fd.jpg?1783938174"
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLUE"
     ]
 }
 
