@@ -34,6 +34,11 @@ import kotlin.reflect.KClass
  * whatever it's handed and leaves uncast cards in place. Timing restrictions based on card type
  * are ignored because the synthesized casts go through `CastSpellHandler.execute` directly
  * (the player-action `validate()` timing gate never runs), exactly like Cascade.
+ *
+ * A non-null `maxCasts` is the remaining budget for the "cast **up to N** spells from among
+ * them" wording: an exhausted budget (`<= 0`) ends the loop before the decision is offered, and
+ * the budget rides on the continuation so the resumer can re-enter with one fewer once a cast
+ * actually initiates (a pick that can't be cast for want of a legal target doesn't spend one).
  */
 class CastAnyNumberFromCollectionWithoutPayingCostExecutor :
     EffectExecutor<CastAnyNumberFromCollectionWithoutPayingCostEffect> {
@@ -46,6 +51,9 @@ class CastAnyNumberFromCollectionWithoutPayingCostExecutor :
         effect: CastAnyNumberFromCollectionWithoutPayingCostEffect,
         context: EffectContext,
     ): EffectResult {
+        val remainingCasts = effect.maxCasts
+        if (remainingCasts != null && remainingCasts <= 0) return EffectResult.success(state)
+
         val candidates = stillCastable(state, context.pipeline.storedCollections[effect.from].orEmpty())
         if (candidates.isEmpty()) return EffectResult.success(state)
 
@@ -67,8 +75,12 @@ class CastAnyNumberFromCollectionWithoutPayingCostExecutor :
         val decision = SelectCardsDecision(
             id = decisionId,
             playerId = controllerId,
-            prompt = if (effect.payManaCost) "Choose a spell to cast, or select none to stop"
-            else "Choose a spell to cast for free, or select none to stop",
+            prompt = buildString {
+                append(if (effect.payManaCost) "Choose a spell to cast" else "Choose a spell to cast for free")
+                // "$n remaining", not "$n more": the card being chosen right now is one of them.
+                if (remainingCasts != null) append(" ($remainingCasts remaining)")
+                append(", or select none to stop")
+            },
             context = DecisionContext(
                 sourceId = context.sourceId,
                 sourceName = sourceName,
@@ -93,6 +105,7 @@ class CastAnyNumberFromCollectionWithoutPayingCostExecutor :
             from = effect.from,
             effectContext = normalizedContext,
             payManaCost = effect.payManaCost,
+            maxCasts = effect.maxCasts,
         )
 
         val pausedState = state

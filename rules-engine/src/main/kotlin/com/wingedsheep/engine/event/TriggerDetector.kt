@@ -1345,14 +1345,32 @@ class TriggerDetector(
                             ?.targetId
                             ?.let { projected.getPower(it) }
 
+                        // "Whenever you cast a spell that targets one or more [filter], **those**
+                        // …" — capture the matching targets now, at trigger time. The triggered
+                        // ability exists on the stack independently of the spell that caused it
+                        // (CR 113.7a), and the spell sits *under* it, so an opponent can counter or
+                        // retarget it in response: a payoff that re-read the spell's live
+                        // TargetsComponent at resolution would silently act on nothing, or on the
+                        // wrong creature. Seeded into the resolving ability's pipeline as
+                        // TRIGGER_CAPTURED_COLLECTION, the same channel batch ETB triggers use.
+                        val capturedTargets = (event as? SpellCastEvent)?.let {
+                            matcher.capturedCastTargets(ability.trigger, it, state, entityId, controllerId)
+                        }
+
                         triggers.add(
                             PendingTrigger(
                                 ability = ability,
                                 sourceId = entityId,
                                 sourceName = cardComponent.name,
                                 controllerId = effectiveControllerId,
-                                triggerContext = TriggerContext.fromEvent(event)
-                                    .copy(enchantedCreatureLastKnownPower = enchantedPower)
+                                triggerContext = TriggerContext.fromEvent(event).let { ctx ->
+                                    ctx.copy(
+                                        enchantedCreatureLastKnownPower = enchantedPower,
+                                        // Never clobber a capture the event itself carries
+                                        // (manifest dread's graveyard cards).
+                                        capturedEntityIds = capturedTargets ?: ctx.capturedEntityIds
+                                    )
+                                }
                             )
                         )
                     }
@@ -1396,13 +1414,22 @@ class TriggerDetector(
                             ?: container.get<OwnerComponent>()?.playerId
                             ?: continue
                         if (matcher.matchesTrigger(ability.trigger, ability.binding, event, entityId, ownerId, state)) {
+                            // Same trigger-time capture as the battlefield scan above, so a
+                            // "…targets one or more X, those X …" ability active from the
+                            // graveyard or command zone reads the same snapshot.
+                            val capturedTargets = (event as? SpellCastEvent)?.let {
+                                matcher.capturedCastTargets(ability.trigger, it, state, entityId, ownerId)
+                            }
                             triggers.add(
                                 PendingTrigger(
                                     ability = ability,
                                     sourceId = entityId,
                                     sourceName = cardComponent.name,
                                     controllerId = ownerId,
-                                    triggerContext = TriggerContext.fromEvent(event)
+                                    triggerContext = TriggerContext.fromEvent(event).let { ctx ->
+                                        if (capturedTargets == null) ctx
+                                        else ctx.copy(capturedEntityIds = capturedTargets)
+                                    }
                                 )
                             )
                         }
@@ -3059,6 +3086,8 @@ class TriggerDetector(
                     is com.wingedsheep.sdk.scripting.predicates.CardPredicate.IsEnchantment -> info.cardComponent.typeLine.isEnchantment
                     is com.wingedsheep.sdk.scripting.predicates.CardPredicate.IsToken -> info.isToken
                     is com.wingedsheep.sdk.scripting.predicates.CardPredicate.IsNontoken -> !info.isToken
+                    is com.wingedsheep.sdk.scripting.predicates.CardPredicate.IsDoubleFaced ->
+                        info.cardComponent.isDoubleFaced
                     else -> true
                 }
             }

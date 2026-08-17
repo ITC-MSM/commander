@@ -489,6 +489,9 @@ class ScenarioBuilderService(
                 // Mirror CardEntityFactory so CardPredicate.HasAdventure (Frantic Firebolt's
                 // graveyard tally) sees adventurer cards created in dev scenarios.
                 hasAdventure = cardDef.isAdventure,
+                // Likewise for CardPredicate.IsDoubleFaced ("If it's a double-faced card, you may
+                // transform it") — a dev-scenario DFC must still report itself as one.
+                isDoubleFaced = cardDef.isDoubleFaced,
             )
 
             var container = ComponentContainer.of(

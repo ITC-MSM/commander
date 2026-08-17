@@ -98,7 +98,7 @@ internal class AttackPhaseManager(
                     return ExecutionResult.error(state, "Attacked permanent is not on the battlefield")
                 }
             }
-            // Check per-defender restrictions (CantAttackUnless, CantBeAttackedWithout, etc.)
+            // Check per-defender restrictions (CantAttackUnless, CantBeAttackedBy, etc.)
             val ctx = AttackCheckContext(state, projected, attackerId, attackingPlayer, cardRegistry)
             for (rule in attackDefenderRules) {
                 val error = rule.check(ctx, defenderId)

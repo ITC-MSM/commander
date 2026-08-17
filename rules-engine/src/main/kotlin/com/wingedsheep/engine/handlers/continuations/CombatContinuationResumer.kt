@@ -187,20 +187,28 @@ class CombatContinuationResumer(
             if (preventionAmount <= 0) continue
             val (effectId, advanced) = workingState.newEntity()
             workingState = advanced
+            val splitEffectData = FloatingEffectData(
+                layer = Layer.ABILITY,
+                modification = SerializableModification.PreventNextDamage(preventionAmount, onlyFromSource = sourceId),
+                affectedEntities = setOf(continuation.recipientId)
+            )
             updatedEffects.add(
-                ActiveFloatingEffect(
-                    id = effectId,
-                    effect = FloatingEffectData(
-                        layer = Layer.ABILITY,
-                        modification = SerializableModification.PreventNextDamage(preventionAmount, onlyFromSource = sourceId),
-                        affectedEntities = setOf(continuation.recipientId)
-                    ),
-                    duration = originalShield?.duration ?: com.wingedsheep.sdk.scripting.Duration.EndOfTurn,
-                    sourceId = originalShield?.sourceId,
-                    sourceName = originalShield?.sourceName,
-                    controllerId = originalShield?.controllerId ?: continuation.recipientId,
-                    timestamp = timestamp
-                )
+                // Copy the original shield so every field carries — including duration-specific
+                // bookkeeping such as `expiresAfterTurn`. Rebuilding field-by-field silently drops
+                // whatever the next duration adds. `timestamp` is restated rather than left to the
+                // copy: it is the same value either way (it is derived from the original shield
+                // above), and saying so keeps the split pieces pinned to the shield's own Rule 613
+                // ordering if that derivation ever changes.
+                originalShield?.copy(id = effectId, effect = splitEffectData, timestamp = timestamp)
+                    ?: ActiveFloatingEffect(
+                        id = effectId,
+                        effect = splitEffectData,
+                        duration = com.wingedsheep.sdk.scripting.Duration.EndOfTurn,
+                        sourceId = null,
+                        sourceName = null,
+                        controllerId = continuation.recipientId,
+                        timestamp = timestamp
+                    )
             )
         }
 

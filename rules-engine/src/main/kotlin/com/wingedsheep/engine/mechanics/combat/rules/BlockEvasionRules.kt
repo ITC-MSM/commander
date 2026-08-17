@@ -201,17 +201,24 @@ class CantBeBlockedByRule(
     }
 
     /**
-     * Restrictions projected onto the attacker by a *different* battlefield permanent through the
-     * static's [com.wingedsheep.sdk.scripting.filters.unified.GroupFilter] — an Equipment or Aura
-     * whose "equipped/enchanted creature can't be blocked by …" clause lives on the attachment, not
-     * on the attacker's own card (Blazing Torch, Artifact Ward). Mirrors the host-scoped
-     * `MustBeBlocked` scan in `BlockPhaseManager`: the filter's scope is resolved relative to the
-     * permanent carrying the static, and the attacker must also satisfy the filter's base filter.
+     * Restrictions projected onto the attacker by a battlefield permanent through the static's
+     * [com.wingedsheep.sdk.scripting.filters.unified.GroupFilter] — an Equipment or Aura whose
+     * "equipped/enchanted creature can't be blocked by …" clause lives on the attachment, not on
+     * the attacker's own card (Blazing Torch, Artifact Ward), or a permanent that hands the
+     * restriction to a whole battlefield group (Wall Crawl's Spiders, Storm, Windrider's "creatures
+     * with flying can't block creatures you control"). Mirrors the host-scoped `MustBeBlocked` scan
+     * in `BlockPhaseManager`: the filter's scope is resolved relative to the permanent carrying the
+     * static, and the attacker must also satisfy the filter's base filter.
+     *
+     * The host is **not** skipped when it is itself the attacker: a `Scope.Battlefield` group
+     * clause on a creature covers that creature too whenever it matches the group ("creatures you
+     * control" includes the creature saying so). `Scope.Self` is excluded here because the
+     * attacker's own printed read above already covers it, and `excludeSelf` on the group filter
+     * is honored so an "other creatures you control …" clause still leaves the host out.
      */
     private fun hostScopedRestrictions(ctx: BlockCheckContext): List<CantBeBlockedBy> {
         val result = mutableListOf<CantBeBlockedBy>()
         for (hostId in ctx.state.getBattlefield()) {
-            if (hostId == ctx.attackerId) continue
             val container = ctx.state.getEntity(hostId) ?: continue
             if (container.has<FaceDownComponent>()) continue
             val hostCard = container.get<CardComponent>() ?: continue
@@ -226,6 +233,8 @@ class CantBeBlockedByRule(
                     is Scope.Self -> false // already covered by the attacker's own printed read
                 }
                 if (!scopeMatches) continue
+                // "Other creatures …": the host never grants the clause to itself.
+                if (hostId == ctx.attackerId && ability.filter.excludeSelf) continue
                 val hostController = ctx.projected.getController(hostId) ?: continue
                 val baseMatches = predicateEvaluator.matches(
                     ctx.state, ctx.projected, ctx.attackerId, ability.filter.baseFilter,

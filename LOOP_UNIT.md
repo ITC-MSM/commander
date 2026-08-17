@@ -1,69 +1,93 @@
-# loop-msh-u21 — Wonder Man, Hollywood Hero
+# u39 — Evil's Thrall (+ one new duration)
 
-**Card.** Wonder Man, Hollywood Hero (MSH #160), {3}{R}{R} 4/4 Legendary Creature — Human Performer
-Hero: flying, "Each power-up ability of permanents you control can be activated an additional time",
-and Power-up — {5}{R}{R}: two +1/+1 counters on himself.
+**Card.** Evil's Thrall [MSH 128] — {2}{R} Sorcery. "Gain control of target creature until end of
+turn. If you control a Villain with greater mana value than that creature, gain control of that
+creature until the end of your next turn instead. Untap that creature. It gains haste until end of
+turn." A Threaten whose steal lasts a whole extra turn when your board has a bigger Villain.
 
-**Primitive.** No new type. The existing exhaust-waiver static was *generalized*:
-`IgnoreExhaustActivationLimit` → `ExtraOnceOnlyActivations(kind, extraActivations, condition)`, and
-its engine resolver `ExhaustActivationWaiver` → `OnceOnlyActivationAllowance`. `kind` picks exhaust
-(CR 702.177) vs power-up (CR 702.193) — they desugar to the *same* `ActivationRestriction.Once`, so
-without that axis a power-up permission would re-arm every exhaust ability on the board.
-`extraActivations` picks waive (`null`, Elvish Refueler) vs raise-by-N (`1`, Wonder Man), summed
-across the battlefield. `AbilityActivatedEverComponent` gained the per-object activation *count*
-raise-by-N needs (it was a `Set` before); `activationCount` falls back to set membership so a state
-serialized before the field still reports ≥1.
+**Triage (nobody triaged this card before me — I did it from Scryfall + the code).** Everything
+composes from existing vocabulary *except* the duration. There is no "until the end of your next
+turn" `Duration`: the existing `Duration.UntilYourNextTurn` ends at the **beginning** of your next
+turn (Teferi's Protection), one whole turn short. The engine already knows the wording — it is
+`MayPlayExpiry.UntilControllerStep(CLEANUP, includeCurrentTurn = false)` for may-play grants — but
+that mechanism is for play permissions, not floating effects.
 
-**Composition with u20's lockout.** Kang's `powerUpRestrictedTurns` gate is checked in
-`ActivateAbilityHandler.validate` and each enumerator *before* any `ActivationRestriction`, so it
-still wins — a raised ceiling has nothing to raise (CR 101.2, verified locally). Two tests in
-`ExtraOnceOnlyActivationsScenarioTest` pin it: during a locked turn the re-armed ability is withheld
-by the enumerator and rejected by the handler with the lockout's message (not the spent-`Once`
-message), and after the locked turn the unspent extra activation is still available.
+**Primitive — `Duration.EndOfYourNextTurn`.** A new `Duration` variant, plus
+`ActiveFloatingEffect.expiresAfterTurn: Int?` (set to `turnNumber + 1` only for this duration) and
+one branch in `CleanupPhaseManager.cleanupEndOfTurn`. The floor-plus-`activePlayerId == controllerId`
+guard is copied deliberately from `MayPlayPermission.expiresAfterTurn`, which encodes the same
+window: a floor rather than an exact turn is what survives extra turns, skipped turns and eliminated
+seats. Every other duration is untouched (`expiresAfterTurn` is `null` for them), so no existing
+floating effect changes behaviour. `docs/card-sdk-language-reference.md` updated in the same change,
+on the `GainControlEffect` bullet.
 
-**Gate.** `just test` — **passed**, verified from `build/test-results` (zero failures across all ten
-modules; `ExtraOnceOnlyActivationsScenarioTest` 12/12, `WonderManHollywoodHeroScenarioTest` 4/4,
-`ElvishRefuelerScenarioTest` 4/4, `ExhaustKeywordScenarioTest` 3/3, `PowerUpKeywordScenarioTest`
-13/13, `KangTheConquerorScenarioTest` 4/4). Run twice: the first stopped at the expected snapshot
-drift before `:rules-engine:test` was reached, so the green above is the post-rebless run.
-`just rebless-cards` — `MSH.json` gains only Wonder Man (zero deletions), `DFT.json` changes one
-line (Elvish Refueler's `"type"`). `just check-card-printing "Wonder Man, Hollywood Hero"` — ok,
-MSH is the only printing. `just fix-backlog` — MSH now 270/276.
+**Composition for everything else — no new predicate, no new effect.**
+- "If … instead" is one `ConditionalEffect` whose two branches are the *same* `GainControlEffect`
+  differing only in `Duration` — one control change, one `ControlChangedEvent`, never a short steal
+  followed by a second grab.
+- "You control a Villain with greater mana value than that creature" is
+  `Conditions.CompareAmounts(DynamicAmounts.battlefield(Player.You, Permanent.withSubtype(VILLAIN)).maxManaValue(), GT, DynamicAmounts.targetManaValue())`.
+  `AggregateBattlefield(MAX)` returns 0 on an empty set, so controlling no Villain can never satisfy
+  `> targetManaValue` — including a mana-value-0 target, since 0 is not greater than 0. The
+  aggregate reads *projected* state, so a creature that only has the Villain type from a continuous
+  effect counts. This is the Overload idiom (`EntityProperty(Target(0), ManaValue)` inside a
+  `Compare` in a resolving spell), so nothing new was needed to read the target's mana value.
+  - **I first wrote a `CardPredicate.ManaValueGreaterThanEntity` and then deleted it** when the
+    aggregate composition turned out to cover the shape. The final diff has no new predicate.
+- Untap + haste are the plain Act of Treason / Twisted Fealty facades, in printed order.
 
-**Things worth a reviewer's eye**
+**Gate — read this bit carefully, the first run was incomplete.** `just test` **stopped before
+`:rules-engine:test` ever ran**: `:mtg-sets:test` failed on the expected (not-yet-reblessed)
+`CardDefinitionSnapshotTest` MSH golden and `:ai:test` on the documented
+`AIPlayerTest > AI can evaluate board state` coroutine-timeout flake, and Gradle aborted the build
+with those two. Everything else in that run was green — mtg-sdk, mtg-search, mtgish-tooling, gym,
+gym-trainer, gym-server, game-server all passed, and `:rules-engine:compileTestKotlin` succeeded.
+So I re-blessed and then ran the module that actually carries this change's behaviour:
 
-- The rename changes `@SerialName("IgnoreExhaustActivationLimit")` → `"ExtraOnceOnlyActivations"`, so
-  Elvish Refueler moves in `DFT.json` and any *persisted* game state holding the old name would no
-  longer deserialize. I judged that acceptable; say so if this repo cares about save compatibility.
-- `CastPermissionUtils.checkActivationRestriction` and its `ActivateAbilityHandler` twin now take
-  `ability: ActivatedAbility?` instead of `isExhaustAbility: Boolean` — deliberate, so a second
-  keyword doesn't need a second boolean threaded through five call sites. All five enumerator call
-  sites plus the handler pass it; the `null` default still gives the restrictive answer.
-- `ManaSolver`'s inlined `Once` branch now calls the same helper, so auto-tap agrees. `ManaSolver`'s
-  *permission* blind spot (it filters on `isManaAbility` with no lockout check) is pre-existing and
-  untouched — no printed power-up or exhaust ability is a mana ability.
-- Elvish Refueler's static-ability `description` string is unchanged for the `null` case by
-  construction, but I have not eyeballed the reblessed `DFT.json` beyond that claim.
-- `kind` defaults to `EXHAUST`. That default is arbitrary on a two-kind type; I kept it so the
-  reblessed `DFT.json` diff stays a single type-name line (kotlinx omits defaults), and both call
-  sites pass `kind` explicitly anyway. Making it a required parameter is a one-line change if you
-  think the explicitness is worth the extra snapshot churn.
-- Not done: no manual playthrough, no e2e, no UX/AI-heuristic review.
+- `just rebless-cards` → exit 0. Only `mtg-sets/src/test/resources/snapshots/cards/MSH.json` moved:
+  **88 insertions, 0 deletions**, and the only added card `"name"` is `Evil's Thrall` (the two other
+  added `name` keys are the `"target creature"` requirement inside my own card's block). No other
+  set's golden moved.
+- `just test-rules` → exit 0. Counted from `rules-engine/build/test-results/test/*.xml`:
+  **11,187 tests, 0 failures, 0 errors, 0 skipped.** All three `EvilsThrallScenarioTest` cases passed.
+- `just check-card-printing "Evil's Thrall"` → ok (MSH is the card's only printing and is the canonical).
+- `just fix-backlog` → 274/276.
 
-## Review corrections (post-review commit)
+**I did not re-run the full `just test` after re-blessing.** The argument that it would now be green
+is: the only two failing tasks were the snapshot (now re-blessed, and `rebless-cards` re-ran that
+exact test class to green) and the known `ai` flake, and every other module passed in the aborted
+run. That is an argument, not an observation — if you want the whole gate green in one command,
+re-run it.
 
-- Oracle text now reproduces Scryfall verbatim, joke and all: `only . . . once?`, not `only once.`
-  (MSH.json reblessed — one line, Wonder Man only).
-- `ability` is a **required** parameter of both `CastPermissionUtils.checkActivationRestriction` and
-  its `ActivateAbilityHandler` twin; both dead `null` fallbacks deleted. A forgetful call site is now
-  a compile error rather than a silently disabled permission.
-- `ExtraOnceOnlyActivations.kind` no longer defaults (one added line in `DFT.json`), and an `init`
-  block requires `extraActivations == null || >= 1`.
-- `extraActivationsFor` skips the *printed* statics of a face-down granter (CR 708.2/708.2a); granted
-  statics still apply. The base-vs-projected-controller and `Duration`-gate gaps are documented in
-  place as house-wide and deliberately left alone.
-- Three tests added: no end-of-turn refresh of a spent allowance, CR 400.7 fresh allowance after a
-  bounce-and-recast, and waive-beats-counted for the same `kind`. Each was mutation-checked to fail
-  alone under a targeted break.
-- `activationCount`'s `abilityIds` fallback is **kept**: live `GameState` is Redis-persisted whole,
-  so it is reached by any game in flight across the deploy. Comment now says so.
+**Mutation-proved.** The `Duration.EndOfYourNextTurn` branch in `CleanupPhaseManager.cleanupEndOfTurn`
+was neutered to `false` (i.e. made to behave exactly like `EndOfTurn`) and
+`just test-class EvilsThrallScenarioTest` re-run: **exactly** "a Villain with greater mana value: the
+steal lasts until the end of your next turn" went red; the no-Villain case and the equal-mana-value
+case both stayed green. Restored from a byte copy and re-run — all three green, and
+`git diff --stat` on `CleanupPhaseManager.kt` is back to the 12-line addition.
+
+## Things I'm unsure about — please look
+
+- **The new duration is wired for floating effects only.** Control, P/T, keyword and type grants all
+  land in `GameState.floatingEffects` and are covered. The separate granted-ability records
+  (`grantedTriggeredAbilities`, `grantedStaticAbilities`, `grantedKeywordAbilities`,
+  `globalGrantedTriggeredAbilities`, `grantedActivatedAbilities`) filter only on
+  `!is Duration.EndOfTurn` at cleanup, so a future card authoring `EndOfYourNextTurn` *there* would
+  get a permanent grant. That is exactly the state `Duration.UntilYourNextTurn` is already in for
+  most of those lists, so I followed precedent rather than widening the diff — but I documented the
+  hazard in the `Duration` KDoc and the language reference instead of fixing it. Say if you'd rather
+  it were fixed.
+- **`expiresAfterTurn` is a new field on `ActiveFloatingEffect`,** which is part of the serialized
+  `GameState`. It defaults to `null`, so an older serialized state deserializes unchanged — but I did
+  not run a cross-version replay to prove that.
+- **"A Villain" is matched over `GameObjectFilter.Permanent`, not `Creature`** — the set's existing
+  idiom (Yellowjacket, Doom Reigns Supreme). Every printed Villain is a creature today, so the two
+  filters agree on the current pool.
+- **Multiplayer.** The controller guard means the window ends on the *caster's* next turn regardless
+  of how many opponents sit in between; the tests are two-player only, so that is an argument from
+  the mechanism, not an observation.
+- **Not done: manual playthrough in the web client, UX pass, e2e, AI-heuristic review.** No new
+  decision type, no new `GameEvent`, no new keyword — the card produces the same
+  `ControlChangedEvent` an Act of Treason does — but that is reasoning, not a check I ran.
+- **The rendered duration string** is "until the end of your next turn"; nobody has looked at how
+  the composed effect description reads in the real client.

@@ -1152,6 +1152,7 @@ class CostCalculator(
             CardPredicate.IsInstant -> typeLine.isInstant
             CardPredicate.IsSorcery -> typeLine.isSorcery
             CardPredicate.HasAdventure -> cardDef.isAdventure
+            CardPredicate.IsDoubleFaced -> cardDef.isDoubleFaced
             CardPredicate.HasNoAbilities -> cardDef.oracleText.isBlank()
             CardPredicate.IsBasicLand -> typeLine.isBasicLand
             CardPredicate.IsPermanent -> typeLine.isPermanent

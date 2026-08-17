@@ -172,6 +172,59 @@ internal fun flipDfcInPlace(
 }
 
 /**
+ * Give [entityId] the front-face [DoubleFacedComponent] it needs to be turned over later, if its
+ * card definition has a back face and it doesn't already carry one. The two guards are exactly
+ * those: a definition with no `backFace` is a no-op, and so is an entity whose face is already
+ * being tracked (so a caller that deliberately stamped a *back* face — [returnDfcFace] — is never
+ * clobbered).
+ *
+ * Note there is deliberately **no token guard**, because "is this a card" is not the question here.
+ * Face tracking is about the *object*, and a token copy of a double-faced permanent is a
+ * double-faced token that can transform (CR 707.8a / 712.9) even though it is not a double-faced
+ * card (CR 111.1) — the card-level question is [CardComponent.isDoubleFaced], which the token-copy
+ * executors clear. In practice every token path stamps its own [DoubleFacedComponent] (copying the
+ * original's `currentFace`, so a back-face token copy stays on its back face) and therefore hits
+ * the already-tracked guard before reaching this; a future token path that didn't would get the
+ * front-face default, which is the right answer for a token created face up.
+ *
+ * That component is what [flipDfcInPlace] keys on, so without it a transform is silently a no-op.
+ * The cast pipeline stamps it as a resolving permanent spell enters (CR 712.13, `StackResolver`),
+ * but nothing else did: a double-faced card put onto the battlefield by an *effect* — reanimated,
+ * fetched out of a library, returned from exile — arrived untracked, and "you may transform it"
+ * quietly did nothing to it. Called from the two places that between them cover every battlefield
+ * entry a cast doesn't:
+ *  - [com.wingedsheep.engine.handlers.effects.ZoneTransitionService.applyBattlefieldEntry], the
+ *    funnel every effect-driven entry goes through, and
+ *  - `PlayLandHandler`, because playing a land is a special action that deliberately bypasses that
+ *    funnel — so a double-faced land (Balamb Garden, SeeD Academy) needed its own call.
+ *
+ * Front face by construction: CR 712.14 — "a double-faced card put onto the battlefield from a zone
+ * other than the stack enters the battlefield with its front face up by default" (CR 712.8a says the
+ * same thing from the other side: outside the battlefield and stack the card has only its front
+ * face's characteristics). A caller that wants a *back*-face entry stamps it itself before the move.
+ */
+internal fun stampDoubleFacedFrontFace(
+    state: GameState,
+    cardRegistry: CardRegistry,
+    entityId: EntityId
+): GameState {
+    val container = state.getEntity(entityId) ?: return state
+    if (container.get<DoubleFacedComponent>() != null) return state
+    val cardDefinitionId = container.get<CardComponent>()?.cardDefinitionId ?: return state
+    val cardDef = cardRegistry.getCard(cardDefinitionId) ?: return state
+    val backFace = cardDef.backFace ?: return state
+    return state.updateEntity(entityId) { c ->
+        c.with(
+            DoubleFacedComponent(
+                frontCardDefinitionId = cardDef.name,
+                backCardDefinitionId = backFace.name,
+                currentFace = DoubleFacedComponent.Face.FRONT
+            )
+        )
+    }
+}
+
+/**
  * Re-derive the entity's card-intrinsic "would be put into [zone] from anywhere → redirect instead"
  * self-replacements ([SelfZoneRedirectComponent]) from [face].
  *
@@ -265,6 +318,10 @@ internal fun buildCardComponentForDfcFace(
     // (City in a Bottle) keeps matching a werewolf that transformed.
     printingSetCode = current.printingSetCode,
     originalSetCode = current.originalSetCode,
+    // Being double-faced belongs to the card, not the face that's up — and it can't be re-derived
+    // from [face], since a back face's own definition carries no back face. Carrying it keeps
+    // `CardPredicate.IsDoubleFaced` true on a permanent sitting on its back face.
+    isDoubleFaced = current.isDoubleFaced,
     // Carry the destination face's precomputed ability flags so predicates like
     // CardPredicate.HasActivatedAbility / HasNonManaActivatedAbility see the face that's actually up
     // (otherwise a transformed permanent silently reports the default `false`).

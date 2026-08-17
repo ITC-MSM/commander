@@ -700,6 +700,8 @@ internal class AffectsFilterResolver {
         CardPredicate.IsSorcery -> "SORCERY" in types
         // Adventure-ness is a static whole-card characteristic, not a projected type.
         CardPredicate.HasAdventure -> card.hasAdventure
+        // Double-faced-ness is likewise a static whole-card characteristic, not a projected type.
+        CardPredicate.IsDoubleFaced -> card.isDoubleFaced
         CardPredicate.HasNoAbilities -> card.oracleText.isBlank()
         CardPredicate.IsPermanent -> types.any { it in setOf("CREATURE", "LAND", "ARTIFACT", "ENCHANTMENT", "PLANESWALKER") }
         CardPredicate.IsNonland -> "LAND" !in types

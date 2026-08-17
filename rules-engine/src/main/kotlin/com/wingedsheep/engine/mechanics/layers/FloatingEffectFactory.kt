@@ -81,7 +81,10 @@ fun GameState.createFloatingEffect(
         sourceId = context.sourceId,
         sourceName = sourceName,
         controllerId = context.controllerId,
-        timestamp = timestamp
+        timestamp = timestamp,
+        // "Until the end of your next turn" never includes the turn it was created on — not even
+        // when that is the controller's own turn — so the floor is always the next turn number.
+        expiresAfterTurn = if (duration is Duration.EndOfYourNextTurn) turnNumber + 1 else null
     )
 }
 

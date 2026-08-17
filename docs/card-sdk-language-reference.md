@@ -985,6 +985,23 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   battlefield as its back face, under its owner's control, and re-attaches the source's
   `CraftedFromExiledComponent` recording the exiled materials. Pair with `AbilityCost.Craft`; see the `Craft`
   keyword helper in the keyword catalog.
+- `Transform(target = Self)` — turn a double-faced **permanent** over in place (CR 701.27a). The entity id,
+  counters, damage, attachments, controller and timestamp all survive; only the identity characteristics
+  change, and the new face's static/replacement abilities are re-registered. Emits `TransformedEvent`, so
+  "whenever this transforms" triggers fire. A target that isn't a double-faced permanent is a silent no-op
+  (CR 701.27c), as is one that can't transform (`AbilityFlag.CANT_TRANSFORM`, daybound/nightbound).
+  The front-face tracking a flip needs (`DoubleFacedComponent`, stamped front face up per CR 712.14) is
+  installed on **three** entry routes: the cast pipeline (`StackResolver`), every effect-driven entry —
+  reanimation, a fetch that puts the card onto the battlefield, a return from exile — via
+  `ZoneTransitionService.applyBattlefieldEntry`, and *playing a land*, which is a special action that
+  bypasses that service and so calls `stampDoubleFacedFrontFace` from `PlayLandHandler` itself (Balamb
+  Garden, SeeD Academy). Face-down entries are excluded (CR 708.2). Still **not** covered: the handful of
+  ad-hoc "put it onto the battlefield already attached" placements that call `BattlefieldEntry.place`
+  directly (`MoveCollectionExecutor.moveAuraToBattlefield`, `ReturnSelfToBattlefieldAttachedExecutor`,
+  `ReturnOneFromLinkedExileExecutor`) — no shipped double-faced Aura or Equipment reaches the battlefield
+  that way today, but a `Transform` on one that did would be a silent no-op. To gate the flip on the card
+  actually having two faces — "If it's a double-faced card, you may transform it" — wrap it in a
+  `ConditionalEffect` over `Filters.DoubleFaced` (§ filters).
 - `ExileAndReturnTransformed(target = Self, returnAs = ReturnFace.TRANSFORMED)` — "Exile [this], then return it
   to the battlefield transformed under its owner's control" (FIN Dominant / eikon transform). Exiles a
   double-faced permanent and re-enters it as a **new object** on the chosen face — unlike `Transform`, which
@@ -1716,7 +1733,16 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
 
 ### Control & combat
 
-- `GainControlEffect(target, duration)` — gain control until end of turn (default). Pair with
+- `GainControlEffect(target, duration)` — gain control of a permanent; `duration` defaults to
+  `Duration.Permanent` (Blatant Thievery). Pair with `Duration.EndOfTurn` for the Threaten pattern
+  (Act of Treason), or **`Duration.EndOfYourNextTurn`** for the long Threaten — "gain control of
+  that creature until the **end of** your next turn" (Evil's Thrall). That duration is strictly
+  longer than `Duration.UntilYourNextTurn`, which ends at the *beginning* of your next turn; it runs
+  through that whole turn and ends at its cleanup step (CR 514.2). Only the floating-effect path
+  honours it — see the `Duration.EndOfYourNextTurn` KDoc for the mechanism and its limits. For the
+  "if <condition>, … **instead**" duration switch, wrap two `GainControlEffect`s that differ only in
+  `duration` in one `ConditionalEffect` — never a short steal followed by a second grab; that would
+  be two control changes where the card describes one. Pair with
   `Duration.WhileSourceTapped` (Callous Oppressor) or
   `Duration.WhileSourceTappedAndAffectedPowerAtMostSource` (Old Man of the Sea) for the classic
   "for as long as this creature remains tapped [and the stolen creature's power stays ≤ source's
@@ -1904,7 +1930,7 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
 - `CopyCardIntoCollectionEffect(source, storeAs)` (facade `Effects.CopyCardIntoCollection(source, storeAs)`) — copy a **card in a zone** (not a spell on the stack), publishing the copy's entity id to pipeline collection `storeAs`. Per Rule 707.12 the copy is created in the card's current zone under the effect's controller and tagged as a stack-style copy, so once cast it becomes a token if it's a permanent spell and ceases to exist if it's an instant/sorcery (Rule 707.10). Pair with `CastFromCollectionWithoutPayingCostEffect(from)` (facade `Effects.CastFromCollectionWithoutPayingCost(from)`, wrap in `MayEffect` for "you may cast") to express "copy a card, then cast the copy" — e.g. **Shiko, Paragon of the Way**: `Composite(MoveToZoneEffect(target, Zone.EXILE), Effects.CopyCardIntoCollection(target, "copy"), MayEffect(Effects.CastFromCollectionWithoutPayingCost("copy")))`. A copy that is never cast is swept up by the Rule 707.10a state-based action (`PhantomCardCopiesCheck`), so no explicit cleanup step is needed. For the "you may cast it" wording that **doesn't** say "without paying its mana cost", use `Effects.CastFromCollection(from, storeCastTo?)` (`CastFromCollectionWithoutPayingCostEffect(from, payManaCost = true, storeCastTo)`): the controller pays the spell's normal cost (an {X} spell prompts for X) instead of casting for free. Pass `storeCastTo` to publish the cast card's id to that pipeline collection on a successful cast, then gate a follow-up with `IfYouDoEffect(this, then, SuccessCriterion.CollectionNonEmpty(storeCastTo))` — e.g. **Kaervek, the Punisher**: `Composite(Move(target, EXILE), CopyCardIntoCollection(target, "copy"), MayEffect(IfYouDoEffect(CastFromCollection("copy", storeCastTo = "cast"), LoseLife(2, Controller), SuccessCriterion.CollectionNonEmpty("cast"))))` — declining (or being unable to pay) leaves the collection empty, so no life is lost. (`storeCastTo` is reliably published for synchronous casts and target-selection casts; an {X}-cost spell cast with no targets is the one sub-case where the publish doesn't survive the X pause.) **Free-casting still pays the copied spell's non-mana additional costs** (CR 601.2f / 118.9 waive only the mana cost) — when the copy carries a printed sacrifice / discard / exile / tap additional cost, the engine resolves it during the synthesized cast: a forced single option is auto-paid, and a real choice pauses for an on-battlefield (sacrifice/tap) or overlay (discard/exile) selection; if the cost can't be paid the cast doesn't happen (e.g. Roving Actuator copying **Embrace Oblivion**'s "sacrifice an artifact or creature" still makes you sacrifice).
 - `CopyCollectionIntoCollectionEffect(from, storeAs)` (facade `Effects.CopyCollectionIntoCollection(from, storeAs)`) — the collection-wide sibling of `CopyCardIntoCollectionEffect`: copy **every** card in pipeline collection `from`, publishing all the copies' entity ids (in `from` order) to `storeAs`. For "copy them" over a set of cards rather than one (`CopyCardIntoCollection` overwrites its collection, so it can't accumulate across a `ForEach`). Each copy is created in its original's current zone (Rule 707.12) and tagged as a stack-style copy, so gather/exile the originals first, then copy. Pair with `Effects.CastAnyNumberFromCollection(storeAs)` for "copy them. You may cast any number of the copies" — e.g. **The Tale of Tamiyo** IV: `Composite(ForEachTargetEffect(Move(ContextTarget(0), EXILE)), GatherCards(ChosenTargets, "exiled"), CopyCollectionIntoCollection("exiled", "copies"), CastAnyNumberFromCollection("copies"))`. Copies never cast are swept by the Rule 707.10a state-based action.
 - `CastFromCollectionWithoutPayingCostEffect(from, payManaCost = false, storeCastTo = null, castTransformed = false)` — `castTransformed = true` casts the card **transformed**, back face up (CR 712.8c), the way disturb casts a card from the graveyard: the back face supplies the spell's card types (hence its timing), its targets and `auraTarget`, its name in the prompt, and the permanent it becomes. It is carried to the cast as `MayPlayPermission.castTransformed`, so the whole ordinary cast pipeline honors it — distinct from `MayPlayPermission.castFaceIndex`, which picks an alternative *face* of a multi-face card (an Adventure, a split half) rather than turning a transforming double-faced card over. A card with **no back face** is not cast at all and stays where it is (the CR 310.11b ruling: a token or non-transforming card that became a copy of a Siege "remains in exile"). Backs `Sieges.defeatAbility` — "exile it, then you may cast it transformed without paying its mana cost".
-- `CastAnyNumberFromCollectionWithoutPayingCostEffect(from, payManaCost = false)` (facades `Effects.CastAnyNumberFromCollectionWithoutPayingCost(from)` for free / `Effects.CastAnyNumberFromCollection(from)` for paid) — the multi-cast sibling of `CastFromCollectionWithoutPayingCostEffect`. **During this effect's resolution**, the controller is offered the cards in pipeline collection `from` (filtered to those still in exile) one at a time and may cast each until they decline; each cast's targets / X / modes flow through the normal cast machinery. With the default `payManaCost = false` each is cast for free; set `payManaCost = true` (facade `Effects.CastAnyNumberFromCollection`) for the "you may cast any number of [them]" wording **without** "without paying their mana costs" — each chosen card is then cast paying its normal cost (an {X} card prompts for X). Because the casts go through the synthesized-cast path (like Cascade), card-type **timing restrictions are ignored** and no lingering "you may play it later" permission is granted — cards left uncast just stay where they are (the controller can't wait until later in the turn). Hand it the eligible set: filter the collection upstream (e.g. nonland + `FilterCollection(ManaValueAtMost(...))`). The free form models "you may cast any number of spells with mana value X or less from among them without paying their mana costs" — e.g. **Kotis, the Fangkeeper**: `GatherCards(TopOfLibrary(damage, TriggeringPlayer)) → MoveCollection(→ exile) → FilterCollection(Nonland) → FilterCollection(ManaValueAtMost(damage)) → CastAnyNumberFromCollectionWithoutPayingCostEffect("castable")` (also **Villainous Wealth**, **Etali, Primal Storm**). The paid form models **The Tale of Tamiyo** IV (cast the copies paying their costs).
+- `CastAnyNumberFromCollectionWithoutPayingCostEffect(from, payManaCost = false, maxCasts = null)` (facades `Effects.CastAnyNumberFromCollectionWithoutPayingCost(from)` for free / `Effects.CastAnyNumberFromCollection(from)` for paid / `Effects.CastUpToNFromCollectionWithoutPayingCost(from, maxCasts)` for the capped free form) — the multi-cast sibling of `CastFromCollectionWithoutPayingCostEffect`. **During this effect's resolution**, the controller is offered the cards in pipeline collection `from` (filtered to those still in exile) one at a time and may cast each until they decline; each cast's targets / X / modes flow through the normal cast machinery. With the default `payManaCost = false` each is cast for free; set `payManaCost = true` (facade `Effects.CastAnyNumberFromCollection`) for the "you may cast any number of [them]" wording **without** "without paying their mana costs" — each chosen card is then cast paying its normal cost (an {X} card prompts for X). Because the casts go through the synthesized-cast path (like Cascade), card-type **timing restrictions are ignored** and no lingering "you may play it later" permission is granted — cards left uncast just stay where they are (the controller can't wait until later in the turn). Hand it the eligible set: filter the collection upstream (e.g. nonland + `FilterCollection(ManaValueAtMost(...))`). The free form models "you may cast any number of spells with mana value X or less from among them without paying their mana costs" — e.g. **Kotis, the Fangkeeper**: `GatherCards(TopOfLibrary(damage, TriggeringPlayer)) → MoveCollection(→ exile) → FilterCollection(Nonland) → FilterCollection(ManaValueAtMost(damage)) → CastAnyNumberFromCollectionWithoutPayingCostEffect("castable")` (also **Villainous Wealth**, **Etali, Primal Storm**). The paid form models **The Tale of Tamiyo** IV (cast the copies paying their costs). `maxCasts` bounds the loop for the "you may cast **up to N** spells from among them" wording (**Doom Reigns Supreme**: "target opponent exiles the top five cards of their library. You may cast up to two spells from among the exiled cards without paying their mana costs"); it is a ceiling only — the controller may still stop early, and the loop also ends when the collection runs out. The remaining budget rides on the engine's `CastAnyNumberFromCollectionContinuation`, so the resumer re-enters the loop with `maxCasts - 1` and a budget of 0 makes the effect a no-op before another decision is offered; `null` (the default) is the uncapped "any number" form and leaves every existing caller unchanged. The budget is spent on a cast that **initiates**, not on the pick: a chosen card whose required target has no legal choice can't be cast at all (CR 601.2c), so it stays in exile and the count is untouched (it is still dropped from the pool, so the loop can't re-offer it). Use the facade rather than the raw constructor — it rejects a non-positive `maxCasts`, which would otherwise be a silent no-op, and it only offers `maxCasts` alongside the free form. **`maxCasts` is wired for `payManaCost = false` only**: no printed card pairs "up to N" with "paying their mana costs", and the engine's "did the cast initiate" precondition asks only whether a required target had a legal choice, not whether the controller can afford the cost — so a pick abandoned for want of mana would still spend one of the N. Wire the affordability check before authoring that combination.
 - `FilterCollection(from, CollectionFilter.InZone(zone), storeMatching)` — keep only the cards in pipeline collection `from` that are **currently** in `zone`. Pipeline collections track entity refs, not live location, so a card can leave its zone mid-resolution (e.g. an exiled card cast for free moves to the stack). Use this to act on "the ones still there." Models the "you may cast it … if you don't, put that card into your hand" fallback of the **Tarkir: Dragonstorm "…storm" enchantments** (Breaching Dragonstorm): `GatherUntilMatch(Nonland) → MoveCollection(→ exile) → FilterCollection(ManaValueAtMost(8), "castable") → ConditionalOnCollection("castable", ifNotEmpty = MayEffect(CastFromCollectionWithoutPayingCost("castable"))) → FilterCollection("nonland", InZone(EXILE), "uncast") → MoveCollection("uncast" → hand)` — only the nonland still in exile (not the one just cast) goes to hand; the lands stay exiled. The `ConditionalOnCollection` wrapper suppresses the empty "you may cast" prompt when the nonland's mana value is > 8.
 - `MoveCollectionEffect(from, destination, filter = null, …)` — move a pipeline collection to a zone.
   `destination = ToZone(zone, player, placement)` or `ToZoneExiledFrom(fallback = BATTLEFIELD)`
@@ -3312,6 +3338,20 @@ This is the player-arm prerequisite for the planned composable mixed `TargetUnio
 - `Filters.HasAdventure` — card that has an Adventure (adventurer card), regardless of which face it
   currently shows (`CardPredicate.HasAdventure`, backed by `CardComponent.hasAdventure`). A static,
   whole-card characteristic evaluated the same way in every zone.
+- `Filters.DoubleFaced` — double-faced card (CR 712.1): a card with a face on each side, whether
+  nonmodal ("transforming") or modal (`CardPredicate.IsDoubleFaced`, backed by
+  `CardComponent.isDoubleFaced`). Like `HasAdventure` it is a static whole-card layout
+  characteristic, so it reads the same in every zone **and stays true once the permanent is sitting
+  on its back face** — it is carried across a flip rather than re-derived from the face that's up,
+  whose own definition has no back face. **Tokens never match**, a token copy of a double-faced
+  permanent included — a token is not a card (CR 111.1) and layout is not a copiable value (CR 707.2),
+  so a copy answers with its *own* card's layout (CR 712.9's Clone example). Such a token is still a
+  double-faced *token* and can be transformed; that is `DoubleFacedComponent` face-tracking, a
+  different question. Backs the "If it's a double-faced card,
+  you may transform it" gate on Nick Fury, Agent of S.H.I.E.L.D., where it is what keeps the optional
+  transform from prompting on a single-faced permanent. Not the same question as CR 701.27g's
+  "transformed permanent" (is the *back* face currently up) — this asks only whether the card has two
+  faces at all. Meld cards, CR 712.1's third kind, are unmodelled by design and so never arise.
 - `Filters.InstantSorceryOrAdventure` (= `GameObjectFilter.InstantSorceryOrAdventure`) — instant,
   sorcery, or a card that has an Adventure. Backs Frantic Firebolt's "cards in your graveyard that
   are instant cards, sorcery cards, and/or have an Adventure" tally (a single membership test, so a
@@ -4680,6 +4720,19 @@ caster with `EffectTarget.PlayerRef(Player.TriggeringPlayer)`.
 - `youCastSpellTargeting(filter)` — "whenever you cast a spell that targets a [filter]" (Legolas,
   Master Archer's `Creature.opponentControls()`). Sugar for
   `youCastSpell(requires = setOf(SpellCastPredicate.TargetsMatching(filter)))`.
+  **The matching targets are captured for the payoff**: the detector records exactly the targets
+  that satisfied the gate into `IterationSpace.TRIGGER_CAPTURED_COLLECTION` (the same engine-seeded
+  slot a batched ETB trigger uses), so "…, **those** creatures gain flying until end of turn"
+  (Storm, Windrider) is
+  `ForEachInCollectionEffect(IterationSpace.TRIGGER_CAPTURED_COLLECTION, GrantKeyword(FLYING, EffectTarget.Self))`
+  — no separate target-reading effect, and the gate and the payoff are one computation, so they
+  can't drift. The capture is a **snapshot taken when the ability triggers** (CR 113.7a: the
+  ability is on the stack independently of the spell that caused it), which is what makes it
+  correct when an opponent counters or retargets that spell in response to the trigger — a live
+  read of the spell's targets at resolution would find none, because countering strips the
+  spell's `TargetsComponent`. Narrow the payoff further with
+  `FilterCollectionEffect(from = TRIGGER_CAPTURED_COLLECTION, …)` if it must act on fewer objects
+  than the gate matched.
 
 - `youPlayLand(fromZoneOtherThan: Zone? = null)` — "whenever you play a land" (CR 305.1, the special
   land-play action). Pass `fromZoneOtherThan = Zone.HAND` for "whenever you play a land … from anywhere
@@ -5720,6 +5773,13 @@ staticAbility {
   host-scoped scan mirrors the `MustBeBlocked` one above: `AttachedTo` resolves to the attachment's
   host, `Specific` to the bound entity, `Battlefield` matches every attacker, and the attacker must
   also satisfy the filter's base filter (evaluated with the host as predicate source).
+  A **battlefield-scoped** `GroupFilter` is how "creatures you control can't be blocked by X" is
+  written (Wall Crawl's Spiders; Storm, Windrider's "creatures with flying can't … block creatures
+  you control" — the block half of that card is a `CantBeBlockedBy`, read from the attacker's side,
+  not a `CantBlock`, which would also stop those fliers blocking a *third* player). The host is
+  **not** skipped when it is itself the attacker, so a creature whose own group clause covers
+  "creatures you control" gets the evasion too; set `excludeSelf` on the `GroupFilter` for the
+  "other creatures you control …" wording.
 - `CantBeBlockedByMoreThan(maxBlockers)` — static cap on how many creatures may block the source (CR
   509.1b). For the **turn-scoped, granted** form (Glorfindel, Dauntless Rescuer: "can't be blocked by
   more than one creature each combat this turn"), grant `AbilityFlag.CANT_BE_BLOCKED_BY_MORE_THAN_ONE`
@@ -5766,11 +5826,26 @@ staticAbility {
   declaration pauses for the same mana-source confirmation as the attack tax. The pre-existing
   per-creature-type block tax (Whipgrass Entangler) uses `AttackBlockTaxPerCreatureType` floating
   effects instead.
-- `CantBeAttackedWithout(keyword, attackerFilter = null)` — Form of the Dragon-style "Creatures
-  without flying can't attack you." defender-side restriction. Optional `attackerFilter` narrows
-  which attackers are restricted (evaluated with the source permanent as predicate source, so
-  chosen-color/subtype predicates resolve against it) — e.g. Teferi's Moat:
-  `CantBeAttackedWithout(Keyword.FLYING, GameObjectFilter.Creature.sharingChosenColorWithSource())`.
+- `CantBeAttackedBy(attackerFilter)` — the general **defender-side** attack restriction (CR
+  508.1c): creatures matching `attackerFilter` can't attack the controller of the permanent carrying
+  it. Resolved by `CantBeAttackedByDefenderRule`, which scans the *defending* player's projected
+  battlefield (skipping face-down permanents, CR 708.2) and matches the attacker against the filter
+  with the projection in hand, using the restricting permanent as predicate source and the defending
+  player as "you" — so `youControl()` / chosen-color / chosen-subtype predicates resolve against the
+  restriction's own side. The filter carries the whole clause, positive or negative; there is no
+  separate "…without keyword" shape:
+  - Storm, Windrider — `CantBeAttackedBy(GameObjectFilter.Creature.withKeyword(Keyword.FLYING))`
+  - Form of the Dragon — `CantBeAttackedBy(GameObjectFilter.Creature.withoutKeyword(Keyword.FLYING))`
+  - Teferi's Moat —
+    `CantBeAttackedBy(GameObjectFilter.Creature.sharingChosenColorWithSource().withoutKeyword(Keyword.FLYING))`
+
+  **"You" means the player, not their permanents**: attacking a planeswalker or battle that player
+  controls stays legal (Form of the Dragon's 2014-02-01 ruling; CR 506.3 — only a player,
+  planeswalker or battle can be attacked — and CR 508.1b, which announces which of those each
+  attacker is attacking). The rule therefore fires only when
+  the chosen defender *is* the restricting permanent's controller. For "… or block creatures you
+  control" on the same card, don't reach for `CantBlock` — that is global; use `CantBeBlockedBy`
+  with a battlefield-scoped `GroupFilter` (below).
 - `CantBeAttackedWhileAttached` — the source permanent can't be chosen as an attack defender while
   it has an `AttachedToComponent`. The restriction is checked only as attackers are declared, so
   attaching the source after it is already being attacked doesn't remove it from combat. Used by

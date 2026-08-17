@@ -420,6 +420,9 @@ class PredicateEvaluator {
             // Adventure-ness is a static characteristic of the whole card (not a projected type),
             // read straight off the CardComponent flag stamped at entity creation.
             CardPredicate.HasAdventure -> card.hasAdventure
+            // Likewise for double-faced-ness (CR 712.1): a whole-card layout characteristic stamped
+            // at entity creation, not a projected type, and true on either face.
+            CardPredicate.IsDoubleFaced -> card.isDoubleFaced
             CardPredicate.HasNoAbilities -> card.oracleText.isBlank()
             CardPredicate.IsBasicLand -> "LAND" in types && card.typeLine.supertypes.any { it.name == "BASIC" }
             CardPredicate.IsPermanent -> types.any { it in setOf("CREATURE", "LAND", "ARTIFACT", "ENCHANTMENT", "PLANESWALKER") }
@@ -1712,6 +1715,9 @@ class PredicateEvaluator {
             // so adventure-ness can't be recovered here. No in-scope card queries it against cast
             // history; fall through to the safe default.
             CardPredicate.HasAdventure -> false
+            // Same limitation as HasAdventure above — the record keeps no layout, and no in-scope
+            // card asks about double-faced-ness against cast history.
+            CardPredicate.IsDoubleFaced -> false
             CardPredicate.HasNoAbilities -> false
             CardPredicate.IsBasicLand -> typeLine.isBasicLand
             CardPredicate.IsPermanent -> typeLine.isPermanent

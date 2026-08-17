@@ -65,8 +65,9 @@ class CreateTokenCopyOfEquippedCreatureExecutor(
         val (tokenId, stateWithId) = state.newEntity()
         var newState = stateWithId
 
-        // Copy the equipped creature's CardComponent
-        var tokenCard = equippedCard.copy(ownerId = controllerId)
+        // Copy the equipped creature's CardComponent. `isDoubleFaced` is cleared, not inherited:
+        // a token is not a card (CR 111.1) — see CreateTokenCopyOfTargetExecutor.
+        var tokenCard = equippedCard.copy(ownerId = controllerId, isDoubleFaced = false)
 
         // Remove legendary if requested
         if (effect.removeLegendary) {

@@ -3,7 +3,7 @@
 **Set Size:** 276 booster cards (collector numbers 1-276; basic lands 277-296 and showcase
 variants 297+ are excluded)
 **Release Date:** June 26, 2026
-**Implemented:** 270 / 276
+**Implemented:** 274 / 276
 - [x] Agent 13, Sharon Carter
 - [x] Agent Maria Hill
 - [x] Agent of Atlas
@@ -28,7 +28,7 @@ variants 297+ are excluded)
 - [x] Mockingbird, Ace Agent
 - [x] Monica Rambeau // Photon, Living Light
 - [x] Murdock's Crusade
-- [ ] Nick Fury, Agent of S.H.I.E.L.D.
+- [x] Nick Fury, Agent of S.H.I.E.L.D.
 - [x] Night Nurse, Healer of Heroes
 - [x] Okoye, Dora Milaje Leader
 - [x] Origin of the Avengers
@@ -99,7 +99,7 @@ variants 297+ are excluded)
 - [x] Dark Deed
 - [x] Decoy Ploy
 - [x] Doctor Doom
-- [ ] Doom Reigns Supreme
+- [x] Doom Reigns Supreme
 - [x] Elektra, Daughter of the Hand
 - [x] Grim Reaper, Lethal Legionnaire
 - [x] Hour of Defeat
@@ -131,7 +131,7 @@ variants 297+ are excluded)
 - [x] Blazing Crescendo
 - [x] Crimson Operative
 - [x] Death to Our Enemies
-- [ ] Evil's Thrall
+- [x] Evil's Thrall
 - [x] Fin Fang Foom
 - [x] Hawkeye, Master Marksman
 - [x] Hawkeye, Young Avenger
@@ -233,7 +233,7 @@ variants 297+ are excluded)
 - [x] Speedball, New Warrior
 - [x] Spider-Man, To the Rescue
 - [x] Spider-Woman, Secret Agent
-- [ ] Storm, Windrider
+- [x] Storm, Windrider
 - [x] The Super Hero Civil War
 - [x] Taskmaster, Mercenary Mimic
 - [x] Thanos, the Mad Titan

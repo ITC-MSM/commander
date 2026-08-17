@@ -6,8 +6,10 @@ import com.wingedsheep.mtg.sets.definitions.scg.cards.FormOfTheDragon
 import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
+import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Tests for Form of the Dragon:
@@ -128,7 +130,7 @@ class FormOfTheDragonTest : FunSpec({
         driver.getLifeTotal(activePlayer) shouldBe 5
     }
 
-    test("non-flying creature cannot attack controller") {
+    test("non-flying creature cannot attack controller, but a flier can") {
         val driver = createDriver()
         driver.initMirrorMatch(
             deck = Deck.of("Mountain" to 40),
@@ -141,23 +143,30 @@ class FormOfTheDragonTest : FunSpec({
 
         driver.putPermanentOnBattlefield(activePlayer, "Form of the Dragon")
 
-        // Give opponent a non-flying creature
+        // The opponent gets both polarities: the ground creature the restriction stops, and a
+        // flier that may attack — without a legal attacker the engine skips the declare-attackers
+        // step entirely and a rejection assertion would never be reached.
         val bear = driver.putCreatureOnBattlefield(opponent, "Grizzly Bears")
         driver.removeSummoningSickness(bear)
+        val bird = driver.putCreatureOnBattlefield(opponent, "Birds of Paradise")
+        driver.removeSummoningSickness(bird)
 
-        // Advance to opponent's turn
-        // First handle activePlayer's end step trigger
+        // Advance to the opponent's declare-attackers step (resolving the end-step trigger on the
+        // way, which sets the controller's life to 5).
         driver.passPriorityUntil(Step.END, maxPasses = 200)
-        driver.bothPass() // end step trigger
-
-        // Advance through opponent's turn — if DECLARE_ATTACKERS is reached,
-        // declaring the bear as attacker should fail. If it's auto-skipped
-        // (no legal attacks), the bear never attacks either way.
-        // Verify by advancing past combat entirely — opponent's life should be unchanged.
-        driver.passPriorityUntil(Step.POSTCOMBAT_MAIN, maxPasses = 200)
+        driver.bothPass()
+        driver.passPriorityUntil(Step.DECLARE_ATTACKERS, maxPasses = 200)
+        driver.currentStep shouldBe Step.DECLARE_ATTACKERS
         driver.activePlayer shouldBe opponent
 
-        // activePlayer's life should be unchanged (bear couldn't attack)
-        driver.getLifeTotal(activePlayer) shouldBe 5
+        withClue("Creatures without flying can't attack you") {
+            driver.declareAttackers(opponent, listOf(bear), activePlayer).error shouldNotBe null
+        }
+        withClue("one restricted attacker makes the whole declaration illegal") {
+            driver.declareAttackers(opponent, listOf(bear, bird), activePlayer).error shouldNotBe null
+        }
+        withClue("a flier is unrestricted") {
+            driver.declareAttackers(opponent, listOf(bird), activePlayer).error shouldBe null
+        }
     }
 })

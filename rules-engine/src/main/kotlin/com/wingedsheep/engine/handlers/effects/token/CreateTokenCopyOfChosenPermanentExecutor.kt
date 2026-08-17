@@ -111,8 +111,9 @@ class CreateTokenCopyOfChosenPermanentExecutor(
 
             val (tokenId, stateWithId) = state.newEntity()
 
-            // Copy the chosen permanent's CardComponent
-            val tokenCard = chosenCard.copy(ownerId = controllerId)
+            // Copy the chosen permanent's CardComponent. `isDoubleFaced` is cleared, not inherited:
+            // a token is not a card (CR 111.1) — see CreateTokenCopyOfTargetExecutor.
+            val tokenCard = chosenCard.copy(ownerId = controllerId, isDoubleFaced = false)
 
             var container = ComponentContainer.of(
                 tokenCard,

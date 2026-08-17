@@ -84,8 +84,11 @@ class CreateTokenCopyOfSourceExecutor(
         // its other types", "it's 1/1" — in the shared vocabulary, applied by the one engine-side
         // implementation. Hoisted out of the loop: the view rebuilds itself on every read.
         val exceptions = effect.copyExceptions
-        // Copy the source's CardComponent, re-homing the token to the controller.
-        val tokenCard = CopyExceptionApplier.apply(sourceCard, exceptions).copy(ownerId = controllerId)
+        // Copy the source's CardComponent, re-homing the token to the controller. `isDoubleFaced`
+        // is cleared, not inherited: a token is not a card (CR 111.1), so it never answers a
+        // "double-faced card" question — see CreateTokenCopyOfTargetExecutor.
+        val tokenCard = CopyExceptionApplier.apply(sourceCard, exceptions)
+            .copy(ownerId = controllerId, isDoubleFaced = false)
 
         val cappedCount = com.wingedsheep.engine.core.GameLimits.cappedTokenCount(count, "source-copy tokens")
         for (index in 0 until cappedCount) {

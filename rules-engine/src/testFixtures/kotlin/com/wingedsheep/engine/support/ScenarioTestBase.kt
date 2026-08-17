@@ -269,6 +269,9 @@ abstract class ScenarioTestBase : FunSpec() {
                             ownerId = it.ownerId,
                             spellEffect = frontFaceDef.spellEffect,
                             imageUri = frontFaceDef.metadata.imageUri,
+                            // By construction this is the front face of a double-faced card; the
+                            // 712.8a restore swaps this component back in, so the flag has to survive it.
+                            isDoubleFaced = true,
                         )
                     }
                     if (frontFaceCard != null) {
@@ -513,6 +516,7 @@ abstract class ScenarioTestBase : FunSpec() {
                 hasNonManaActivatedAbility = cardDef.hasNonManaActivatedAbility,
                 originalSetCode = cardDef.setCode,
                 hasAdventure = cardDef.isAdventure,
+                isDoubleFaced = cardDef.isDoubleFaced,
             )
 
             var container = ComponentContainer.of(

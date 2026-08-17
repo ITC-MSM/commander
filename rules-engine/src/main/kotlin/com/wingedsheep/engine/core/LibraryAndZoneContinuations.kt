@@ -420,5 +420,11 @@ data class CastAnyNumberFromCollectionContinuation(
     val effectContext: com.wingedsheep.engine.handlers.EffectContext,
     /** When true, each chosen card is cast paying its normal mana cost rather than for free. */
     val payManaCost: Boolean = false,
+    /**
+     * Remaining cast budget for a "cast up to N of them" loop, or `null` when uncapped. This is
+     * the budget *as offered by this iteration*; the resumer re-enters the loop with one fewer
+     * after a card is actually cast.
+     */
+    val maxCasts: Int? = null,
 ) : ContinuationFrame
 

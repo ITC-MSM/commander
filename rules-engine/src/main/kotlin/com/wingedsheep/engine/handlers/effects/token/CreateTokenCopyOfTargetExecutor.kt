@@ -142,8 +142,13 @@ class CreateTokenCopyOfTargetExecutor(
         // path and the "permanent becomes a copy" path can't drift. Both the exceptions view and
         // the resulting component are loop-invariant, so they are built once rather than per token.
         val exceptions = effect.copyExceptions
+        // `isDoubleFaced` is cleared rather than inherited: it answers "is this a double-faced
+        // *card*", and a token is not a card (CR 111.1) — nor is being double-faced a copiable value
+        // (CR 707.2 lists them; layout isn't one). A token copy of a double-faced permanent is a
+        // double-faced *token* and can still transform (CR 707.8a / 712.9), which is what the
+        // DoubleFacedComponent copied below is for.
         val tokenCard = CopyExceptionApplier.apply(targetCard, exceptions)
-            .copy(ownerId = controllerId)
+            .copy(ownerId = controllerId, isDoubleFaced = false)
 
         val cappedCount = com.wingedsheep.engine.core.GameLimits.cappedTokenCount(count, "target-copy tokens")
         for (index in 0 until cappedCount) {

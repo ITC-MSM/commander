@@ -99,7 +99,7 @@ import com.wingedsheep.sdk.scripting.CanAttackDespiteDefender
 import com.wingedsheep.sdk.scripting.CanBlockAnyNumber
 import com.wingedsheep.sdk.scripting.CantAttackUnless
 import com.wingedsheep.sdk.scripting.CantAttackUnlessCoAttacker
-import com.wingedsheep.sdk.scripting.CantBeAttackedWithout
+import com.wingedsheep.sdk.scripting.CantBeAttackedBy
 import com.wingedsheep.sdk.scripting.CantBeAttackedWhileAttached
 import com.wingedsheep.sdk.scripting.CantBeBlockedBy
 import com.wingedsheep.sdk.scripting.CantBeBlockedByCreaturesWithLessPower
@@ -928,7 +928,7 @@ class StaticAbilityHandler(
             is CanBlockAnyNumber,
             is CantAttackUnless,
             is CantAttackUnlessCoAttacker,
-            is CantBeAttackedWithout,
+            is CantBeAttackedBy,
             is CantBeAttackedWhileAttached,
             is CantBeBlockedBy,
             is CantBeBlockedByCreaturesWithLessPower,

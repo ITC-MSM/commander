@@ -14440,12 +14440,15 @@
     "script": {
         "staticAbilities": [
             {
-                "type": "CantBeAttackedWithout",
-                "requiredKeyword": "FLYING",
+                "type": "CantBeAttackedBy",
                 "attackerFilter": {
                     "cardPredicates": [
                         "IsCreature",
-                        "SharesChosenColorWithSource"
+                        "SharesChosenColorWithSource",
+                        {
+                            "type": "NotKeyword",
+                            "keyword": "FLYING"
+                        }
                     ]
                 }
             }

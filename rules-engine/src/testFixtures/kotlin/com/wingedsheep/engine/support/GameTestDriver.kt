@@ -674,6 +674,7 @@ class GameTestDriver {
             // characteristics other code reads back (SpellCastPredicate.CastAsAdventure,
             // CardPredicate.HasAdventure / OriginallyPrintedInSet).
             hasAdventure = cardDef.isAdventure,
+            isDoubleFaced = cardDef.isDoubleFaced,
             originalSetCode = cardDef.setCode,
         )
 
@@ -733,6 +734,7 @@ class GameTestDriver {
             // characteristics other code reads back (SpellCastPredicate.CastAsAdventure,
             // CardPredicate.HasAdventure / OriginallyPrintedInSet).
             hasAdventure = cardDef.isAdventure,
+            isDoubleFaced = cardDef.isDoubleFaced,
             originalSetCode = cardDef.setCode,
         )
 
@@ -829,6 +831,7 @@ class GameTestDriver {
             // characteristics other code reads back (SpellCastPredicate.CastAsAdventure,
             // CardPredicate.HasAdventure / OriginallyPrintedInSet).
             hasAdventure = cardDef.isAdventure,
+            isDoubleFaced = cardDef.isDoubleFaced,
             originalSetCode = cardDef.setCode,
         )
 
@@ -893,6 +896,7 @@ class GameTestDriver {
             // characteristics other code reads back (SpellCastPredicate.CastAsAdventure,
             // CardPredicate.HasAdventure / OriginallyPrintedInSet).
             hasAdventure = cardDef.isAdventure,
+            isDoubleFaced = cardDef.isDoubleFaced,
             originalSetCode = cardDef.setCode,
         )
 
@@ -1009,6 +1013,7 @@ class GameTestDriver {
             // characteristics other code reads back (SpellCastPredicate.CastAsAdventure,
             // CardPredicate.HasAdventure / OriginallyPrintedInSet).
             hasAdventure = cardDef.isAdventure,
+            isDoubleFaced = cardDef.isDoubleFaced,
             originalSetCode = cardDef.setCode,
         )
 

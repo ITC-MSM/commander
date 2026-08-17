@@ -73,6 +73,22 @@ data class CardComponent(
      */
     val hasAdventure: Boolean = false,
     /**
+     * Precomputed from the card definition: is this a double-faced card (CR 712.1)? Like
+     * [hasAdventure] this is a printed layout characteristic of the whole card in any zone — read by
+     * `CardPredicate.IsDoubleFaced` for "If it's a double-faced card, you may transform it" (Nick
+     * Fury, Agent of S.H.I.E.L.D.). False for tokens — including a token *copy* of a double-faced
+     * permanent, which is a double-faced token but not a double-faced card (CR 111.1 / 707.8a), and
+     * kept at the copier's own value when a non-token permanent becomes a copy (CR 707.2: layout is
+     * not a copiable value).
+     *
+     * Distinct from [DoubleFacedComponent], which is *face-tracking state* — which side of a
+     * double-faced **permanent** is currently up. This flag is the static characteristic and stays
+     * true on both faces, which is why [com.wingedsheep.engine.handlers.effects.permanent.types
+     * .buildCardComponentForDfcFace] carries it across a flip rather than re-deriving it from the
+     * destination face (a back face's own definition has no back face of its own).
+     */
+    val isDoubleFaced: Boolean = false,
+    /**
      * Mana value that stands in for the one [manaCost] would give. Set **only** while a *nonmodal*
      * double-faced object has its back face up: CR 712.8c (on the stack, a disturb cast) and
      * CR 712.8e (on the battlefield, after a transform) both calculate such an object's mana value

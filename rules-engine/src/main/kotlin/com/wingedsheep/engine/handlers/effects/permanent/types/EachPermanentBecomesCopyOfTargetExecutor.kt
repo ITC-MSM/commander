@@ -110,8 +110,11 @@ class EachPermanentBecomesCopyOfTargetExecutor(
             // The "except …" clause (CR 707.9) is applied by the shared [CopyExceptionApplier],
             // the same helper the token-copy path uses, so it rides on the copy's own
             // CardComponent and lasts exactly as long as the copy does.
+            // `isDoubleFaced` stays the copying permanent's own: layout is not a copiable value
+            // (CR 707.2), and CR 712.9's Clone/Kruin Outlaw examples turn on the copy's *own* card
+            // being double-faced, not the copied one's.
             val copiedCard = CopyExceptionApplier.apply(targetCard, effect.exceptions)
-                .copy(ownerId = currentCard.ownerId)
+                .copy(ownerId = currentCard.ownerId, isDoubleFaced = currentCard.isDoubleFaced)
 
             // If this permanent is already a copy, keep the existing pre-copy snapshot
             // so a chain of copy effects still reverts to the printed identity on exit.

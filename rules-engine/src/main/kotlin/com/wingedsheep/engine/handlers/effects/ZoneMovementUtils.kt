@@ -848,6 +848,7 @@ object ZoneMovementUtils {
                 CardPredicate.IsPermanent -> cardComponent.typeLine.isPermanent
                 CardPredicate.IsLegendary -> cardComponent.typeLine.isLegendary
                 CardPredicate.IsNonlegendary -> !cardComponent.typeLine.isLegendary
+                CardPredicate.IsDoubleFaced -> cardComponent.isDoubleFaced
                 else -> true // For unhandled predicates, don't filter out
             }
             if (!matches) return false

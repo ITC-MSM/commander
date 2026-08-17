@@ -57,7 +57,15 @@ data class ActiveFloatingEffect(
     val controllerId: EntityId,
 
     /** Timestamp when this effect was created (for ordering) */
-    val timestamp: Long
+    val timestamp: Long,
+
+    /**
+     * Turn-number **floor** for a turn-keyed duration: the effect is dropped at the cleanup of the
+     * first turn its [controllerId] takes with `turnNumber >= expiresAfterTurn`. Set only for
+     * [Duration.EndOfYourNextTurn] (see its KDoc for the rationale); `null` for every other
+     * duration, which has its own expiry hook.
+     */
+    val expiresAfterTurn: Int? = null
 )
 
 /**

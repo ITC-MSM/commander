@@ -3782,8 +3782,16 @@
         ],
         "staticAbilities": [
             {
-                "type": "CantBeAttackedWithout",
-                "requiredKeyword": "FLYING"
+                "type": "CantBeAttackedBy",
+                "attackerFilter": {
+                    "cardPredicates": [
+                        "IsCreature",
+                        {
+                            "type": "NotKeyword",
+                            "keyword": "FLYING"
+                        }
+                    ]
+                }
             }
         ]
     },

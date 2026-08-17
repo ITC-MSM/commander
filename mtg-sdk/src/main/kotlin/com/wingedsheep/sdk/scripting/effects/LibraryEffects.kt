@@ -370,18 +370,42 @@ data class CastFromCollectionWithoutPayingCostEffect(
  * You may cast any number of the copies."). Each chosen card is then cast paying its normal cost
  * (an {X} spell prompts for X, Rule 601.2b); with the default `false` each is cast for free.
  *
+ * **Capping the number of casts.** [maxCasts] bounds the loop for the "you may cast **up to N**
+ * spells from among them" wording (Doom Reigns Supreme — "up to two"). It is a ceiling, never a
+ * floor: the controller may still stop early, and the loop also ends when the collection runs
+ * out. `null` (the default) is the uncapped "any number" form. The remaining budget is carried
+ * through each loop iteration by the engine's continuation, so a cast that pauses for
+ * targets / X / modes resumes with the count already spent. The budget is spent on a cast that
+ * *initiates*, not on the pick: choosing a card whose required target has no legal choice
+ * (CR 601.2c) casts nothing and leaves the count untouched, though that card is out of the pool
+ * for the rest of the loop.
+ *
+ * **[maxCasts] is only wired for the free form.** No printed card pairs "up to N" with "paying
+ * their mana costs", so the facade ([com.wingedsheep.sdk.dsl.Effects.CastUpToNFromCollectionWithoutPayingCost])
+ * only offers the `payManaCost = false` combination. The raw constructor does allow both together,
+ * but the engine's "did the cast initiate" precondition asks only about legal targets — not about
+ * whether the controller can afford the cost — so a pick that is abandoned for want of mana would
+ * still spend one of the N. Don't author that combination without wiring the affordability check
+ * to match.
+ *
  * @property from Name of the collection of already-exiled candidate cards.
  * @property payManaCost When true, each chosen card is cast paying its normal mana cost.
+ * @property maxCasts Maximum number of cards that may still be cast by this loop, or `null`
+ *   for no cap. A value of `0` or less makes the effect a no-op. Only meaningful alongside the
+ *   default `payManaCost = false` — see above.
  */
 @SerialName("CastAnyNumberFromCollectionWithoutPayingCost")
 @Serializable
 data class CastAnyNumberFromCollectionWithoutPayingCostEffect(
     val from: String,
     val payManaCost: Boolean = false,
+    val maxCasts: Int? = null,
 ) : Effect {
-    override val description: String =
-        if (payManaCost) "Cast any number of those cards"
-        else "Cast any number of those cards without paying their mana costs"
+    override val description: String = buildString {
+        append("Cast ")
+        append(if (maxCasts == null) "any number of those cards" else "up to $maxCasts of those cards")
+        if (!payManaCost) append(" without paying their mana costs")
+    }
 }
 
 @SerialName("Cascade")

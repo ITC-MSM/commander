@@ -3347,6 +3347,21 @@ object Effects {
         CastAnyNumberFromCollectionWithoutPayingCostEffect(from = from)
 
     /**
+     * Cast **up to [maxCasts]** of the cards stored under [from] without paying their mana costs,
+     * during this effect's resolution — the capped form of
+     * [CastAnyNumberFromCollectionWithoutPayingCost] ("you may cast up to two spells from among
+     * the exiled cards without paying their mana costs", Doom Reigns Supreme). The cap is a
+     * ceiling only: the controller may stop earlier, and cards left uncast stay where they are.
+     */
+    fun CastUpToNFromCollectionWithoutPayingCost(from: String, maxCasts: Int): Effect {
+        require(maxCasts > 0) {
+            "maxCasts must be positive (was $maxCasts); use " +
+                "CastAnyNumberFromCollectionWithoutPayingCost for the uncapped form"
+        }
+        return CastAnyNumberFromCollectionWithoutPayingCostEffect(from = from, maxCasts = maxCasts)
+    }
+
+    /**
      * Cast any number of the cards stored under [from], **paying each one's normal mana cost**,
      * during this effect's resolution (the "you may cast any number of [them]" wording without
      * "without paying their mana costs" — The Tale of Tamiyo IV). The controller is offered the

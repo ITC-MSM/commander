@@ -258,7 +258,15 @@ class ModalAndCloneContinuationResumer(
             toughnessOverride = toughnessOverride,
         )
         val copiedCardComponent = CopyExceptionApplier.apply(
-            targetCardComponent.copy(ownerId = newOwnerId),
+            targetCardComponent.copy(
+                ownerId = newOwnerId,
+                // Which physical card this object is printed on doesn't change when it copies
+                // something: layout isn't a copiable value (CR 707.2). CR 712.9's example is exactly
+                // this — "a Clone enters as a copy of Wildblood Pack … because the Clone is itself
+                // not a double-faced card, it can't transform" — and its converse, a Kruin Outlaw
+                // copying Elite Vanguard that transforms anyway. So keep the copier's own flag.
+                isDoubleFaced = originalCardComponent.isDoubleFaced,
+            ),
             exceptions,
         )
         return state.updateEntity(entityId) { c ->
