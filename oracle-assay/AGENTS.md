@@ -369,6 +369,21 @@ to the kernel**: `alsoSpelled` knows nothing about durations, which is what keep
 next family that finds one model with two word orders, and what keeps Oracle vocabulary out of
 `syntax/`.
 
+The **entry band** — "When ~ enters …" and "As ~ enters, …" — is the one to read when the SDK offers
+*two* spellings of one sentence. Its trigger half found `pairedTriggerRule` already written for
+"attacks or blocks" and needed only the list, so the list was counted in the corpus rather than
+designed: five joins are printed, and a cross product of the ten self-events would have been
+forty-five rules for them. Its replacement half is `EntersWithChoice`, a type whose own KDoc calls it
+"a single parameterized type" and which the grammar was calling with every parameter frozen — the
+cost band's lesson a fourth time. Two things transfer. **Split the axes by how Oracle spells them**:
+the kind of choice is a *noun phrase*, so it is a rule parameter and each is a row, while who chooses
+is *one word position*, so it is a slot the whole noun list shares; getting that backwards is either
+eight copies of a rule or a slot with nothing to put in it. And **two SDK spellings of one sentence
+is a divergence to classify, never a fold and never a second reading**: `EventPattern.AnyOf` is one
+ability watching both events, and three cards use it where sixty write two abilities, so the grammar
+prints the majority and the gate reports the rest. A `match` that accepted both would be `AMBIGUOUS`
+by construction; a fold entry would be the gate agreeing with itself.
+
 The top-of-library band's differential result is the argument for the whole discipline: it put
 `SelectFromCollectionEffect` under comparison for the first time, and **every newly-compared card
 that disagreed was wrong** — five had silently dropped `restOrder` so "in any order" resolved as "in

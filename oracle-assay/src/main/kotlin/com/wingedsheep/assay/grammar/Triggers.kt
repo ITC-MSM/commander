@@ -803,15 +803,23 @@ object Triggers {
      * trigger *line* is a list rather than one ability.
      *
      * The two specs are a parameter rather than a slot because the joined phrase is one printed
-     * form: "attacks or blocks" is not "attacks" plus a word, and no other pair is spelled this way.
+     * form: "attacks or blocks" is not "attacks" plus a word, and the pairs Oracle joins this way
+     * are a short measured list ([pairedRules]) rather than the cross product of the self-events.
+     *
+     * [alsoSpelled] carries the second surface of a pair whose two spellings denote one model —
+     * "When" for "Whenever", "is put into a graveyard from the battlefield" for "dies". It shares
+     * this rule's `build` and `match` by construction, which is the whole reason the kernel has it:
+     * a copied pair of halves agrees until someone edits one of them.
      */
     private fun pairedTriggerRule(
         surface: String,
         name: String,
         specs: (GameObjectFilter?) -> List<TriggerSpec>,
         filtered: Boolean,
+        alternateSurfaces: List<String> = emptyList(),
     ): Phrase<List<TriggeredAbility>> =
         phrase("$surface, {effect}", name = name) {
+            alternateSurfaces.forEach { alsoSpelled("$it, {effect}", "$it (alternate spelling)") }
             if (filtered) slot("filter", Filters.filter)
             slot("effect", Steps.step)
             build { bindings ->
@@ -835,6 +843,67 @@ object Triggers {
         }
 
     /**
+     * The pairs Oracle joins with "or", one row each.
+     *
+     * Measured rather than enumerated: these are the joins the corpus actually prints over the
+     * self-events this file already reads, in the order of how many lines each carries — enters or
+     * attacks (164), attacks or blocks (41 plus 14 spelling it "When"), enters or dies (25 plus 6
+     * spelling it CR 700.4's long form), enters or leaves the battlefield (14), enters or is turned
+     * face up (7). A cross product of the self-event vocabulary would be forty-odd rules for five
+     * sentences, and most of the products it invented are not English anyone has printed.
+     *
+     * **The order of the two abilities is the sentence's order**, and the fail-closed `match` in
+     * [pairedTriggerRule] holds it there: a card that writes the same pair the other way round
+     * declines rather than printing a sentence that reorders it. Every hand-written card checked
+     * writes them as the text does (Queen's Bay Paladin, Ponyback Brigade, Mardu Blazebringer).
+     *
+     * The joins left out and why: "or specializes" (5) and "or the creature it haunts dies" (7) name
+     * events with no `TriggerSpec`; "or transforms into <name>" (7) names one per card; and
+     * "blocks or becomes blocked by …" (39) is not a pair of self-events but a filtered second
+     * event, so it belongs to a rule that can slot the filter rather than to this list.
+     */
+    private val pairedRules: List<Phrase<List<TriggeredAbility>>> = listOf(
+        pairedTriggerRule(
+            "whenever ${Normalizer.SELF} enters or attacks",
+            "whenever the source enters or attacks",
+            specs = { listOf(SdkTriggers.EntersBattlefield, SdkTriggers.Attacks) },
+            filtered = false,
+        ),
+        pairedTriggerRule(
+            "whenever ${Normalizer.SELF} attacks or blocks",
+            "whenever the source attacks or blocks",
+            specs = { listOf(SdkTriggers.Attacks, SdkTriggers.Blocks) },
+            filtered = false,
+            // Fourteen older cards spell the same two events with "When" — Mardu Blazebringer,
+            // Windscouter, Ceremonial Guard. One model, so one of the two prints.
+            alternateSurfaces = listOf("when ${Normalizer.SELF} attacks or blocks"),
+        ),
+        pairedTriggerRule(
+            "when ${Normalizer.SELF} enters or dies",
+            "when the source enters or dies",
+            specs = { listOf(SdkTriggers.EntersBattlefield, SdkTriggers.Dies) },
+            filtered = false,
+            // CR 700.4 defines "dies" as exactly this, and the artifact cycle that predates the
+            // word spells it out — Ichor Wellspring, Mycosynth Wellspring, Prized Statue.
+            alternateSurfaces = listOf(
+                "when ${Normalizer.SELF} enters or is put into a graveyard from the battlefield",
+            ),
+        ),
+        pairedTriggerRule(
+            "when ${Normalizer.SELF} enters or leaves the battlefield",
+            "when the source enters or leaves the battlefield",
+            specs = { listOf(SdkTriggers.EntersBattlefield, SdkTriggers.LeavesBattlefield) },
+            filtered = false,
+        ),
+        pairedTriggerRule(
+            "when ${Normalizer.SELF} enters or is turned face up",
+            "when the source enters or is turned face up",
+            specs = { listOf(SdkTriggers.EntersBattlefield, SdkTriggers.TurnedFaceUp) },
+            filtered = false,
+        ),
+    )
+
+    /**
      * Every trigger line, as the list of abilities it denotes.
      *
      * The alternatives take disjoint list sizes — [single] is exactly one and the paired rules are
@@ -843,12 +912,6 @@ object Triggers {
      */
     val line: Phrase<List<TriggeredAbility>> = oneOf(
         "a triggered ability line",
-        pairedTriggerRule(
-            "whenever ${Normalizer.SELF} attacks or blocks",
-            "whenever the source attacks or blocks",
-            specs = { listOf(SdkTriggers.Attacks, SdkTriggers.Blocks) },
-            filtered = false,
-        ),
-        single,
+        pairedRules + single,
     )
 }

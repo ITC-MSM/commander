@@ -6,12 +6,14 @@ import com.wingedsheep.assay.syntax.bind
 import com.wingedsheep.assay.syntax.constant
 import com.wingedsheep.assay.syntax.oneOf
 import com.wingedsheep.assay.syntax.phrase
+import com.wingedsheep.sdk.scripting.CardNamePool
 import com.wingedsheep.sdk.scripting.ChoiceType
 import com.wingedsheep.sdk.scripting.EntersTapped
 import com.wingedsheep.sdk.scripting.EntersWithChoice
 import com.wingedsheep.sdk.scripting.EntersWithCounters
 import com.wingedsheep.sdk.scripting.ReplacementEffect
 import com.wingedsheep.sdk.scripting.events.CounterTypeFilter
+import com.wingedsheep.sdk.scripting.references.Player
 
 /**
  * "This land enters tapped." — the self-replacements a permanent applies to its own entry.
@@ -101,13 +103,138 @@ object Replacements {
      * "As ~ enters, choose a color." — Ward Sliver, and the whole choose-as-it-enters family.
      *
      * A replacement rather than a triggered ability because "as … enters" happens *during* the
-     * entry, not after it, which is what `EntersWithChoice` models. The kind of choice is a rule
-     * parameter rather than a slot: each is a different English noun phrase ("a color", "a creature
-     * type") rather than a different word in one, the same argument [Library.search] makes about its
-     * destinations.
+     * entry, not after it, which is what `EntersWithChoice` models.
+     *
+     * ### Who chooses is a word; what is chosen is a noun phrase
+     *
+     * `EntersWithChoice` calls itself "a single parameterized type", and the sentence is its
+     * product. The two axes are spelled in different ways and so are read in different ways. The
+     * *chooser* is one word position — "choose" against "an opponent chooses" — with the same noun
+     * phrase after it either way, so it is a [chooser] slot and one rule covers both. The *kind* of
+     * choice is a rule parameter rather than a slot, because each is a different English noun phrase
+     * ("a color", "an opponent", "a nonland card name") rather than a different word in one: the
+     * same argument [Library.search] makes about its destinations.
+     *
+     * ### What is deliberately not here
+     *
+     * - **`ChoiceType.MODE`.** "As ~ enters, choose Khans or Dragons." is a `modeOptions` list whose
+     *   `id`, `description` and `iconKey` the printed sentence does not contain — Outpost Siege's
+     *   golden spells all three. A rule would have to invent two of them, and a reconstruction built
+     *   from invented fields is the reversible-but-wrong class the module's fail-closed matching
+     *   exists to refuse. 40-odd corpus lines, and they wait for a model whose only content is the
+     *   labels.
+     * - **A bare "choose a number."** (4 lines) against the bounded "choose a number between 0 and
+     *   7." ([entersWithChosenNumber], 2 lines). The bounds are two required fields with no default
+     *   the text implies, so the unbounded sentence has nothing to say about `minValue`/`maxValue`
+     *   and `0`/`0` would mean "always zero".
+     * - **`allowedCreatureTypes`** — "choose Elemental, Elf, Faerie, Giant, Goblin, Kithkin,
+     *   Merfolk, or Treefolk." (2 lines) needs a capitalized creature-type run with an Oxford "or",
+     *   which is [Primitives.scopeRun]'s shape over a vocabulary that does not exist yet.
      */
-    private fun entersWithChoice(noun: String, choice: ChoiceType): Phrase<ReplacementEffect> =
-        constant("as ${Normalizer.SELF} enters, choose $noun.", EntersWithChoice(choice))
+    private fun entersWithChoice(noun: String, value: EntersWithChoice): Phrase<ReplacementEffect> =
+        phrase("as ${Normalizer.SELF} enters, {chooser} $noun.", name = "as it enters, choose $noun") {
+            slot("chooser", chooser)
+            build { value.copy(chooser = it.value("chooser")) }
+            match { effect ->
+                val choice = effect as? EntersWithChoice ?: return@match null
+                if (choice != value.copy(chooser = choice.chooser)) return@match null
+                bind("chooser" to choice.chooser)
+            }
+        }
+
+    /**
+     * Who makes the choice — the one word position `EntersWithChoice.chooser` occupies.
+     *
+     * Two rows rather than the whole of a player vocabulary, because these are the only two players
+     * an as-it-enters line can name: the choice is made during the entry, so there is no target and
+     * no triggering player to refer to. A value carrying any other `Player` reconstructs equal in
+     * [entersWithChoice] and then fails to print here, which is where the fail-closed check lands
+     * for this field.
+     */
+    private val chooser: Phrase<Player> = oneOf(
+        "who chooses",
+        constant("choose", Player.You),
+        constant("an opponent chooses", Player.AnOpponent),
+    )
+
+    /**
+     * "As ~ enters, choose a number between 0 and 7." — Shapeshifter, Talion, the Kindly Lord.
+     *
+     * A rule of its own rather than a [entersWithChoice] noun, because the noun phrase has two
+     * numbers in it and they are the SDK fields `minValue`/`maxValue`. CR 614.1c's chosen number is
+     * the only `ChoiceType` whose sentence carries data beyond the kind of choice.
+     */
+    private val entersWithChosenNumber: Phrase<ReplacementEffect> = phrase(
+        "as ${Normalizer.SELF} enters, {chooser} a number between {lo} and {hi}.",
+        name = "as it enters, choose a number in a range",
+    ) {
+        slot("chooser", chooser)
+        slot("lo", Primitives.cardinal)
+        slot("hi", Primitives.cardinal)
+        build {
+            EntersWithChoice(
+                choiceType = ChoiceType.NUMBER,
+                chooser = it.value("chooser"),
+                minValue = it.int("lo"),
+                maxValue = it.int("hi"),
+            )
+        }
+        match { effect ->
+            val choice = effect as? EntersWithChoice ?: return@match null
+            if (choice.choiceType != ChoiceType.NUMBER) return@match null
+            val rebuilt = EntersWithChoice(
+                choiceType = ChoiceType.NUMBER,
+                chooser = choice.chooser,
+                minValue = choice.minValue,
+                maxValue = choice.maxValue,
+            )
+            if (choice != rebuilt) return@match null
+            bind("chooser" to choice.chooser, "lo" to choice.minValue, "hi" to choice.maxValue)
+        }
+    }
+
+    /**
+     * Every noun phrase an as-it-enters choice can take, paired with the value it denotes.
+     *
+     * The three `CARD_NAME` rows are one field's three published values, and the pool is a *word in
+     * the noun phrase* rather than a slot for the same reason the kind of choice is: "a nonland card
+     * name" and "a land card name" are noun phrases, not one noun phrase with an adjective slot the
+     * `ANY` spelling would then have to leave empty.
+     *
+     * Petrified Hamlet is the standing finding here. Its Oracle spells the land-name choice as a
+     * *trigger* — "When this land enters, choose a land card name." — while its golden, and this
+     * family, model it as the as-it-enters replacement CR 614.1c describes. The row stays because
+     * the value is real and the grammar must be able to print it; the card's line still declines,
+     * and which of the two is wrong is a question for the card rather than for this file.
+     */
+    private val choiceNouns: List<Pair<String, EntersWithChoice>> = listOf(
+        "a color" to EntersWithChoice(ChoiceType.COLOR),
+        "a creature type" to EntersWithChoice(ChoiceType.CREATURE_TYPE),
+        "another creature you control" to EntersWithChoice(ChoiceType.CREATURE_ON_BATTLEFIELD),
+        "a basic land type" to EntersWithChoice(ChoiceType.BASIC_LAND_TYPE),
+        "an opponent" to EntersWithChoice(ChoiceType.OPPONENT),
+        "a land card name" to EntersWithChoice(ChoiceType.CARD_NAME, cardNamePool = CardNamePool.LAND),
+        "a nonland card name" to EntersWithChoice(ChoiceType.CARD_NAME, cardNamePool = CardNamePool.NONLAND),
+        "a card name" to EntersWithChoice(ChoiceType.CARD_NAME, cardNamePool = CardNamePool.ANY),
+    )
+
+    /**
+     * "As ~ enters, look at an opponent's hand, then choose any card name." — Sorcerous Spyglass.
+     *
+     * `lookAtOpponentHand` is a flag on the same value, and the corpus spells the flag and the wider
+     * pool together: every line carrying the look also says "any card name", and every line without
+     * it says "a card name". So this is one sentence with the flag set rather than a prefix that
+     * could ride on any of the [choiceNouns] — a prefix would print "look at an opponent's hand,
+     * then choose a card name", which no card says.
+     */
+    private val entersWithLookedUpCardName: Phrase<ReplacementEffect> = constant(
+        "as ${Normalizer.SELF} enters, look at an opponent's hand, then choose any card name.",
+        EntersWithChoice(
+            choiceType = ChoiceType.CARD_NAME,
+            cardNamePool = CardNamePool.ANY,
+            lookAtOpponentHand = true,
+        ),
+    )
 
     /**
      * "~ enters with a +1/+1 counter on it.", "~ enters with three -1/-1 counters on it."
@@ -164,8 +291,8 @@ object Replacements {
             entersTapped,
             entersTappedUnless,
             shockLand,
-            entersWithChoice("a color", ChoiceType.COLOR),
-            entersWithChoice("a creature type", ChoiceType.CREATURE_TYPE),
-        ) + entersWithCounters,
+            entersWithChosenNumber,
+            entersWithLookedUpCardName,
+        ) + choiceNouns.map { (noun, value) -> entersWithChoice(noun, value) } + entersWithCounters,
     )
 }

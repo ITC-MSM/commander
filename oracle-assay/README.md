@@ -20,7 +20,19 @@ and those are the two sentences on it. The **aura band** followed: `Enchant <fil
 attached-permanent statics, which opened `staticAbilities` — the largest `CardScript` slot the
 differential could not see into, and the one every later static family lands in.
 
-The most recent work is the **batch-trigger band** — CR 603.2c's "one or more" (**+30 whole cards**),
+The most recent work is the **entry band** — "When ~ enters …" and "As ~ enters, …", the tail
+ranking's top two families, taken together because they are the two halves of one moment
+(**+26 whole cards**). Its two pieces are the same lesson read off two different SDK types. The
+trigger half is a *join*: Oracle writes "When this creature enters **or** dies, …" and the SDK writes
+two abilities, so the existing `pairedTriggerRule` — one rule, for "attacks or blocks" — became a
+measured five-row table plus two older spellings, and "~ enters or …" fell from 183 blocked cards to
+**21**. The replacement half is a *product*: `EntersWithChoice` calls itself "a single parameterized
+type" and the grammar was calling it with every parameter frozen at two of them, so eight noun
+phrases, a chooser slot and a bounded number replaced two constants. The band's own finding is the
+one it deliberately did not fold — `EventPattern.AnyOf` is a second SDK spelling of the join that
+three cards use and sixty do not. See [the entry band](#the-entry-band).
+
+Before it came the **batch-trigger band** — CR 603.2c's "one or more" (**+30 whole cards**),
 which was the decline table's number-one family by every column: 355 cards blocked, 140 of them
 solely, 359 lines. Its lesson is about what a band is *worth*: the probe cut the headline to 89 lines
 and 35 cards, because what follows a batch trigger is overwhelmingly "that many", "them" and "those
@@ -237,16 +249,16 @@ non-zero on. Declines are not failures.
 Cards assayed                    34882
 Ability lines                    64753  (37998 unique)
 
-Round-trips byte-exact           26196   404.6‰ (40.5%)
-Alternate spelling normalized    1423
-Declined                         37134
+Round-trips byte-exact           26264   405.6‰ (40.6%)
+Alternate spelling normalized    1436
+Declined                         37053
 Ambiguous — distinct readings    0
 Print mismatch                   0
 Normalization not invertible     0
 Full inverse not reproduced      0
 Redundant readings (same model)  0
 
-Cards fully covered              8076 / 34882   231.5‰ (23.2%)
+Cards fully covered              8102 / 34882   232.3‰ (23.2%)
 Vanilla + keyword-only cards     1444 / 1712   843.5‰ (84.3%)   <- Phase 1 target
 Portal (set POR)                 200 / 200     1000.0‰ (100%)   <- the Portal band's target
 Legions (set LGN)                145 / 145     1000.0‰ (100%)   <- the Legions band's target
@@ -1561,6 +1573,110 @@ belongs in the template. Which order is canonical is a fact about the duration �
 115:40 while `UntilEndOfNextTurn` fronts 59:16 — and this band changes nothing about that; it only
 gives the one duration whose majority is trailing its minority spelling.
 
+## The entry band
+
+"When ~ enters …" and "As ~ enters, …" — the tail ranking's **first and second** families, 230 and
+210 cards blocked, 131 and 54 of them solely. They are one band because they are one moment: CR
+614.1c's "as" happens *during* the entry and CR 603.2's "when" happens after it, and the grammar had
+a rule for the bare form of each and nothing for what the corpus actually prints around them.
+Whole-corpus coverage 8,076 → **8,102 cards** (+26); the baked ledger 7,863 → **7,888 whole**,
+25 cards gained and **none lost**; byte-exact round-trips 26,196 → 26,264, alternate spellings
+1,423 → 1,436. The differential's compared population rose to 3,412 and its divergences 14 → **15**,
+which is the finding below. No SDK change: rows and slots in
+[`Replacements`](src/main/kotlin/com/wingedsheep/assay/grammar/Replacements.kt) and
+[`Triggers`](src/main/kotlin/com/wingedsheep/assay/grammar/Triggers.kt).
+
+### The join: one printed sentence, two abilities, and a table that was measured
+
+`Triggers` already had the shape — `pairedTriggerRule`, written for "Whenever ~ attacks or blocks",
+whose KDoc says a `TriggeredAbility` watches one event and Oracle's "or" here joins two. It had one
+row. What was missing was not machinery but the *list*, and the list is a corpus question rather than
+a design one, so it was counted before it was written:
+
+| the join | lines | how the corpus spells it |
+|---|---|---|
+| enters or attacks | 164 | "Whenever" |
+| attacks or blocks | 41 + **14** | 14 older cards say "When" — Mardu Blazebringer, Windscouter |
+| enters or dies | 25 + **6** | 6 predate the word and spell CR 700.4 out — Ichor Wellspring |
+| enters or leaves the battlefield | 14 | "When" |
+| enters or is turned face up | 7 | "When" |
+
+The two bolded columns are `alsoSpelled`, the kernel capability the fronted-duration band added:
+same rule, same `build`, same `match`, a second surface that parses and never prints. That is what
+keeps "is put into a graveyard from the battlefield" from being a sixth rule whose two halves agree
+until someone edits one of them.
+
+**The cross product was not written, and the reason is the module's own rule.** Ten self-events would
+be forty-five joins; the corpus prints five. What is left out is left out for stated reasons rather
+than for scale: "or specializes" (5) and "or the creature it haunts dies" (7) name events with no
+`TriggerSpec`; "or transforms into <name>" (7) names one event per card; and "blocks or becomes
+blocked by a creature" (39) is not a second *self*-event at all but a filtered one, so it belongs to
+a rule that can slot the filter.
+
+### The finding: `AnyOf` is a second SDK spelling of the join, and it is not folded
+
+`dsl.Triggers.or` lowers to `EventPattern.AnyOf` — **one** ability watching both events — and
+Rakish Scoundrel's golden uses it, with a KDoc arguing that one printed ability should fire once.
+It is a good argument. It is also the minority: for "enters or is turned face up" the split is 3–3
+(Gadget Technician, Offender at Large, Rakish Scoundrel against Ponyback Brigade, Efreet Weaponmaster,
+Culvert Ambusher), and across every other join in the table it is 0–60. So the grammar prints the
+majority, Rakish Scoundrel is the differential's fifteenth divergence, and **the fold list does not
+grow**: two abilities and one `AnyOf` ability are genuinely different models — they differ the moment
+anything copies, counts or removes an ability — and folding them would be the gate agreeing with
+itself. A `match` that accepted both would be worse still: two readings of one text is the definition
+of `AMBIGUOUS`.
+
+### The product: eight noun phrases where there were two constants
+
+`EntersWithChoice`'s own KDoc says it "replaces the former EntersWithColorChoice,
+EntersWithCreatureTypeChoice, and EntersWithCreatureChoice with a single parameterized type", and the
+grammar was holding two frozen calls of it — `choose a color`, `choose a creature type`. The same
+move the top-of-library band made on `Patterns.Library` applies here, with the axes split by *how
+Oracle spells them*:
+
+- **The kind of choice is a noun phrase**, so it is a rule parameter and each is a row: a color, a
+  creature type, another creature you control, a basic land type, an opponent, and `CardNamePool`'s
+  three — a land card name, a nonland card name, a card name.
+- **Who chooses is one word position**, so it is a slot: "choose" against "an opponent chooses", one
+  vocabulary the whole noun list shares. Callous Oppressor is the only card that needs it today and
+  it costs one rule rather than eight.
+- **A chosen number carries data past the kind**, so CR 614.1c gets a rule of its own with the two
+  numerals as `minValue`/`maxValue` — Shapeshifter, Talion.
+- **`lookAtOpponentHand` is a flag whose spelling the corpus decides.** Every line that has the look
+  also says "any card name"; every line without it says "a card name". So Sorcerous Spyglass is one
+  sentence with the flag set, not a prefix on the plain rule — a prefix would print "look at an
+  opponent's hand, then choose a card name", which no card says.
+
+**Three write-offs, each with its reason, each asserted as a decline in `ReplacementsTest`.**
+`ChoiceType.MODE` (~40 lines) carries an `id`, a `description` and an `iconKey` that the printed
+"choose Khans or Dragons." does not contain — Outpost Siege's golden spells all three — and a
+reconstruction built from invented fields is the reversible-but-wrong class in its purest form. A
+bare "choose a number." (4 lines) has nothing to say about the bounds, and `0`/`0` would mean "always
+zero". `allowedCreatureTypes` (2 lines) wants a capitalized creature-type run with an Oxford "or"
+that no vocabulary here has yet.
+
+### What is left in the family
+
+"As ~ enters, …" dissolved as a decline family: 34 of its 231 declined lines now parse and the rest
+re-keyed onto whatever follows them. "When ~ enters …" fell 230 → **177 cards** and "~ enters or …"
+183 → **21**. Two things account for most of the residue, and neither is a rule this band should have
+written:
+
+- **The reveal lands** (~22 lines) — "As ~ enters, you may reveal a Faerie card from your hand. If
+  you don't, ~ enters tapped." Secluded Glen, Game Trail, and the Lorwyn and Zendikar duals.
+  `EntersTapped` has `payLifeCost` and `unlessCondition` and no third field for this, so it is an SDK
+  change and an `add-feature` rather than a row here.
+- **"When ~ enters the battlefield, …"** (~90 lines) — the pre-2024 templating, which Wizards never
+  re-issued for the cards that still carry it. 194 corpus cards have the phrase and **185 of them are
+  Un-sets, Mystery Booster playtest cards, Alchemy or tokens**; the probe says 8 of the ~100 lines in
+  this family would parse if the spelling were accepted. A normalization for it would be correct and
+  would buy almost nothing, which is why it is recorded here rather than written.
+
+The genuinely open row is the one the ranking now puts first in this family: "When ~ enters **and**
+whenever you cast …" and "When ~ enters **and** at the beginning of your upkeep, …" — a join over two
+*different* trigger prefixes rather than two self-events, which wants a rule that slots the trigger
+vocabulary on both sides.
+
 ## The differential gate
 
 `just assay-differential` diffs Assay's reading of a card against the `CardDefinition` a human wrote
@@ -1574,24 +1690,26 @@ partially-read card would count a keyword Assay never saw as agreement, so every
 named population bucket instead and the denominator stays visible.
 
 ```
-  Hand-written cards                 9598
-    compared                         3384
-    not yet covered by the grammar   5535
-    script slot not modelled yet     121
+  Hand-written cards                 9619
+    compared                         3412
+    not yet covered by the grammar   5524
+    script slot not modelled yet     125
     lines do not fold into one card   57
     multi-face (out of scope)        302
     Oracle text differs from golden  199
     golden would not decode            0
 
-  Confirmed — models agree           3370   995.9‰ (99.6%)
-  DIVERGENT — read every one           14
+  Confirmed — models agree           3397   995.6‰ (99.6%)
+  DIVERGENT — read every one           15
 ```
 
-**Thirteen of the fourteen are one finding, on purpose.** They are the spell-cost band's
+**Thirteen of the fifteen are one finding, on purpose.** They are the spell-cost band's
 `FixedIf…`-against-`OnlyIf` split — seven goldens plus their relatives, diverging because the grammar
 emits the gate where the corpus writes both spellings; see [that band](#the-spell-cost-band) for why
 the gate is the reading with reach. The fourteenth is Ghoulish Procession's decayed token, an engine
-gap the [batch-trigger band](#the-batch-trigger-band) records. Nothing else is open: the modal band
+gap the [batch-trigger band](#the-batch-trigger-band) records; the fifteenth is Rakish Scoundrel's
+`EventPattern.AnyOf`, the two-spellings-of-one-join finding the
+[entry band](#the-entry-band) deliberately did not fold. Nothing else is open: the modal band
 took the count off zero with eight of its own and every one turned out to be a **card** bug, all
 eight fixed in the same change — as were the four the batch-trigger band's rider exposed.
 
