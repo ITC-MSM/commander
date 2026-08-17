@@ -648,6 +648,78 @@
     ]
 }
 
+// Blinding Beam
+{
+    "name": "Blinding Beam",
+    "manaCost": "{2}{W}",
+    "typeLine": "Instant",
+    "oracleText": "Choose one —\n• Tap two target creatures.\n• Creatures don't untap during target player's next untap step.\nEntwine {1} (Choose both if you pay the entwine cost.)",
+    "script": {
+        "spellEffect": {
+            "type": "Modal",
+            "modes": [
+                {
+                    "effect": {
+                        "type": "ForEach",
+                        "space": "IterationSpace.Targets",
+                        "body": {
+                            "type": "TapUntap",
+                            "target": {
+                                "type": "ContextTarget",
+                                "index": 0
+                            }
+                        }
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "count": 2,
+                            "filter": {
+                                "baseFilter": "creature"
+                            }
+                        }
+                    ],
+                    "description": "Tap two target creatures"
+                },
+                {
+                    "effect": {
+                        "type": "SkipUntap",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target player"
+                        },
+                        "affectsLands": false
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetPlayer",
+                            "id": "target player"
+                        }
+                    ],
+                    "description": "Creatures don't untap during target player's next untap step"
+                }
+            ],
+            "chooseCount": 2,
+            "minChooseCount": 1,
+            "additionalManaCostPerExtraMode": "{1}"
+        }
+    },
+    "metadata": {
+        "collectorNumber": "7",
+        "artist": "Doug Chaffee",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/7/b73f6e4c-9da7-45ec-b786-1b2f59d6b73b.jpg?1783944562",
+        "rulings": [
+            {
+                "date": "2013-06-07",
+                "text": "The second mode affects all creatures during the player’s next untap step, including creatures controlled by other players and creatures that weren’t on the battlefield when Blinding Beam resolved."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Blinkmoth Well
 {
     "name": "Blinkmoth Well",
@@ -2126,6 +2198,71 @@
         "artist": "Jon Foster",
         "flavorText": "Since they haven't seen their original master for millennia, golems are eager to take orders from anyone.",
         "imageUri": "https://cards.scryfall.io/normal/front/c/0/c0010b89-afc4-4dee-bda3-2f34e552cba5.jpg?1783944556"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Dream's Grip
+{
+    "name": "Dream's Grip",
+    "manaCost": "{U}",
+    "typeLine": "Instant",
+    "oracleText": "Choose one —\n• Tap target permanent.\n• Untap target permanent.\nEntwine {1} (Choose both if you pay the entwine cost.)",
+    "script": {
+        "spellEffect": {
+            "type": "Modal",
+            "modes": [
+                {
+                    "effect": {
+                        "type": "TapUntap",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "permanent to tap"
+                        }
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "permanent"
+                            },
+                            "id": "permanent to tap"
+                        }
+                    ],
+                    "description": "Tap target permanent"
+                },
+                {
+                    "effect": {
+                        "type": "TapUntap",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "permanent to untap"
+                        },
+                        "tap": false
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "permanent"
+                            },
+                            "id": "permanent to untap"
+                        }
+                    ],
+                    "description": "Untap target permanent"
+                }
+            ],
+            "chooseCount": 2,
+            "minChooseCount": 1,
+            "additionalManaCostPerExtraMode": "{1}"
+        }
+    },
+    "metadata": {
+        "collectorNumber": "34",
+        "artist": "Jim Nelson",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/f/7ffaa6a2-7c86-45b4-8892-b837e05f11a6.jpg?1783944556"
     },
     "colorIdentityOverride": [
         "BLUE"
@@ -3946,6 +4083,85 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Journey of Discovery
+{
+    "name": "Journey of Discovery",
+    "manaCost": "{2}{G}",
+    "typeLine": "Sorcery",
+    "oracleText": "Choose one —\n• Search your library for up to two basic land cards, reveal them, put them into your hand, then shuffle.\n• You may play up to two additional lands this turn.\nEntwine {2}{G} (Choose both if you pay the entwine cost.)",
+    "script": {
+        "spellEffect": {
+            "type": "Modal",
+            "modes": [
+                {
+                    "effect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Library",
+                                    "filter": "basicland"
+                                },
+                                "storeAs": "searchable"
+                            },
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "searchable",
+                                "selection": {
+                                    "type": "ChooseUpTo",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 2
+                                    }
+                                },
+                                "storeSelected": "found"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "found",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Hand"
+                                },
+                                "revealed": true
+                            },
+                            "ShuffleLibrary",
+                            "EmitLibrarySearchedEvent"
+                        ]
+                    },
+                    "description": "Search your library for up to two basic land cards"
+                },
+                {
+                    "effect": {
+                        "type": "PlayAdditionalLands",
+                        "count": 2
+                    },
+                    "description": "You may play up to two additional lands this turn"
+                }
+            ],
+            "chooseCount": 2,
+            "minChooseCount": 1,
+            "additionalManaCostPerExtraMode": "{2}{G}"
+        }
+    },
+    "metadata": {
+        "collectorNumber": "123",
+        "artist": "John Matson",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/3/a3f4356f-8cfb-43ed-bdf9-6191bb563388.jpg?1783944533",
+        "rulings": [
+            {
+                "date": "2004-12-01",
+                "text": "If you cast an entwined Journey of Discovery during an opponent’s turn, you can’t play two lands during that turn."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 
@@ -7026,6 +7242,66 @@
         "imageUri": "https://cards.scryfall.io/normal/front/d/d/ddaa5c60-054f-4397-a110-21df58264caf.jpg"
     },
     "colorIdentityOverride": []
+}
+
+// One Dozen Eyes
+{
+    "name": "One Dozen Eyes",
+    "manaCost": "{5}{G}",
+    "typeLine": "Sorcery",
+    "oracleText": "Choose one —\n• Create a 5/5 green Beast creature token.\n• Create five 1/1 green Insect creature tokens.\nEntwine {G}{G}{G} (Choose both if you pay the entwine cost.)",
+    "script": {
+        "spellEffect": {
+            "type": "Modal",
+            "modes": [
+                {
+                    "effect": {
+                        "type": "CreateToken",
+                        "power": 5,
+                        "toughness": 5,
+                        "colors": [
+                            "GREEN"
+                        ],
+                        "creatureTypes": [
+                            "Beast"
+                        ],
+                        "imageUri": "https://cards.scryfall.io/normal/front/4/4/44675b6a-ea5a-44f1-9f2c-3725cdfcc814.jpg?1783934353"
+                    }
+                },
+                {
+                    "effect": {
+                        "type": "CreateToken",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 5
+                        },
+                        "power": 1,
+                        "toughness": 1,
+                        "colors": [
+                            "GREEN"
+                        ],
+                        "creatureTypes": [
+                            "Insect"
+                        ],
+                        "imageUri": "https://cards.scryfall.io/normal/front/e/5/e5aa36ec-5f3a-405d-9a65-5a56a44dcee3.jpg?1783902801"
+                    },
+                    "description": "Create five 1/1 green Insect creature tokens"
+                }
+            ],
+            "chooseCount": 2,
+            "minChooseCount": 1,
+            "additionalManaCostPerExtraMode": "{G}{G}{G}"
+        }
+    },
+    "metadata": {
+        "collectorNumber": "126",
+        "rarity": "UNCOMMON",
+        "artist": "Darrell Riche",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/3/c3216148-f64e-434b-80b8-772f6eb831ca.jpg?1783944533"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
 }
 
 // Override
@@ -11859,6 +12135,88 @@
         "imageUri": "https://cards.scryfall.io/normal/front/1/4/14a04bbd-1d07-4b11-aa54-01790b9dd3a0.jpg?1783944496"
     },
     "colorIdentityOverride": []
+}
+
+// Wail of the Nim
+{
+    "name": "Wail of the Nim",
+    "manaCost": "{2}{B}",
+    "typeLine": "Instant",
+    "oracleText": "Choose one —\n• Regenerate each creature you control.\n• Wail of the Nim deals 1 damage to each creature and each player.\nEntwine {B} (Choose both if you pay the entwine cost.)",
+    "script": {
+        "spellEffect": {
+            "type": "Modal",
+            "modes": [
+                {
+                    "effect": {
+                        "type": "ForEach",
+                        "space": {
+                            "type": "IterationSpace.Group",
+                            "filter": {
+                                "baseFilter": "creature ctrl:you"
+                            }
+                        },
+                        "body": {
+                            "type": "Regenerate",
+                            "target": "Self"
+                        }
+                    },
+                    "description": "Regenerate each creature you control"
+                },
+                {
+                    "effect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "ForEach",
+                                "space": {
+                                    "type": "IterationSpace.Group",
+                                    "filter": {
+                                        "baseFilter": "creature"
+                                    }
+                                },
+                                "body": {
+                                    "type": "DealDamage",
+                                    "amount": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    },
+                                    "target": "Self"
+                                }
+                            },
+                            {
+                                "type": "ForEach",
+                                "space": {
+                                    "type": "IterationSpace.Players",
+                                    "players": "Each"
+                                },
+                                "body": {
+                                    "type": "DealDamage",
+                                    "amount": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    },
+                                    "target": "Controller"
+                                }
+                            }
+                        ]
+                    },
+                    "description": "Wail of the Nim deals 1 damage to each creature and each player"
+                }
+            ],
+            "chooseCount": 2,
+            "minChooseCount": 1,
+            "additionalManaCostPerExtraMode": "{B}"
+        }
+    },
+    "metadata": {
+        "collectorNumber": "81",
+        "artist": "John Matson",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/8/a8c32faa-c6d1-418a-aed6-ccc5849daa1f.jpg?1783944544"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
 }
 
 // Wall of Blood
