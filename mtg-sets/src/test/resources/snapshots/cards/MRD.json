@@ -6776,6 +6776,49 @@
     ]
 }
 
+// Platinum Angel
+{
+    "name": "Platinum Angel",
+    "manaCost": "{7}",
+    "typeLine": "Artifact Creature — Angel",
+    "oracleText": "Flying\nYou can't lose the game and your opponents can't win the game.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "staticAbilities": [
+            "GrantCantLoseGame",
+            "GrantOpponentsCantWinGame"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "228",
+        "rarity": "RARE",
+        "artist": "Brom",
+        "flavorText": "In its heart lies the secret of immortality.",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/9/59bb5aee-b334-4c24-875b-56751d4add02.jpg?1783944508",
+        "rulings": [
+            {
+                "date": "2009-10-01",
+                "text": "No game effect can cause you to lose the game or cause any opponent to win the game while you control Platinum Angel. It doesn't matter whether you have 0 or less life, you're forced to draw a card while your library is empty, or you have ten or more poison counters. You keep playing."
+            },
+            {
+                "date": "2004-12-01",
+                "text": "Effects that say the game is a draw are not affected by Platinum Angel. They'll still work."
+            },
+            {
+                "date": "2004-12-01",
+                "text": "You can concede a game while Platinum Angel is on the battlefield. A concession causes you to leave the game, which then causes you to lose the game."
+            }
+        ]
+    },
+    "colorIdentityOverride": []
+}
+
 // Power Conduit
 {
     "name": "Power Conduit",
@@ -7723,6 +7766,75 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Second Sunrise
+{
+    "name": "Second Sunrise",
+    "manaCost": "{1}{W}{W}",
+    "typeLine": "Instant",
+    "oracleText": "Each player returns to the battlefield all artifact, creature, enchantment, and land cards in their graveyard that were put there from the battlefield this turn.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherCards",
+                    "source": {
+                        "type": "FromZone",
+                        "zone": "Graveyard",
+                        "player": "Each",
+                        "filter": {
+                            "cardPredicates": [
+                                {
+                                    "type": "Or",
+                                    "predicates": [
+                                        {
+                                            "type": "Or",
+                                            "predicates": [
+                                                {
+                                                    "type": "Or",
+                                                    "predicates": [
+                                                        "IsArtifact",
+                                                        "IsCreature"
+                                                    ]
+                                                },
+                                                "IsEnchantment"
+                                            ]
+                                        },
+                                        "IsLand"
+                                    ]
+                                }
+                            ],
+                            "statePredicates": [
+                                "PutIntoGraveyardFromBattlefieldThisTurn"
+                            ]
+                        }
+                    },
+                    "storeAs": "returningCards"
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "returningCards",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Battlefield"
+                    },
+                    "underOwnersControl": true
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "20",
+        "rarity": "RARE",
+        "artist": "Greg Staples",
+        "flavorText": "The bright tunnel sometimes leads back to life.",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/e/4e50ee7c-f2a2-4d49-a1cc-8233fd8dd0c5.jpg?1783944558"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 
