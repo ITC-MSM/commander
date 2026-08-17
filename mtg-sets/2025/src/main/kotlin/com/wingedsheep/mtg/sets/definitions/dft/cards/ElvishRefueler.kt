@@ -6,7 +6,8 @@ import com.wingedsheep.sdk.dsl.Costs
 import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
-import com.wingedsheep.sdk.scripting.IgnoreExhaustActivationLimit
+import com.wingedsheep.sdk.scripting.ExtraOnceOnlyActivations
+import com.wingedsheep.sdk.scripting.OnceOnlyAbilityKind
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 
 /**
@@ -18,7 +19,8 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  * Exhaust — {1}{G}: Put a +1/+1 counter on this creature.
  *
  * Modeling notes:
- *  - The permission is [IgnoreExhaustActivationLimit]: it waives the "activate only once" memory
+ *  - The permission is [ExtraOnceOnlyActivations] with `extraActivations = null` — the *waive*
+ *    shape rather than the raise-by-N one: it lifts the "activate only once" memory
  *    (CR 702.177a) that `isExhaust = true` installs as an
  *    [com.wingedsheep.sdk.scripting.ActivationRestriction.Once], and only for exhaust abilities — a
  *    non-exhaust ability with a printed `Once`/`OncePerTurn` restriction is untouched.
@@ -44,7 +46,9 @@ val ElvishRefueler = card("Elvish Refueler") {
         "(Activate each exhaust ability only once.)"
 
     staticAbility {
-        ability = IgnoreExhaustActivationLimit(
+        ability = ExtraOnceOnlyActivations(
+            kind = OnceOnlyAbilityKind.EXHAUST,
+            extraActivations = null,
             condition = Conditions.All(
                 Conditions.IsYourTurn,
                 Conditions.YouHaventActivatedAnExhaustAbilityThisTurn

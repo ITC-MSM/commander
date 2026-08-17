@@ -10,7 +10,6 @@ import com.wingedsheep.engine.handlers.PredicateEvaluator
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
-import com.wingedsheep.engine.state.components.battlefield.AbilityActivatedEverComponent
 import com.wingedsheep.engine.state.components.battlefield.AbilityActivatedThisTurnComponent
 import com.wingedsheep.engine.state.components.battlefield.AttachedToComponent
 import com.wingedsheep.engine.state.components.battlefield.SummoningSicknessComponent
@@ -1535,16 +1534,12 @@ class ManaSolver(
             val tracker = state.getEntity(sourceId)?.get<AbilityActivatedThisTurnComponent>()
             (tracker?.activationCount(ability.id) ?: 0) < restriction.count
         }
-        is ActivationRestriction.Once -> {
-            val tracker = state.getEntity(sourceId)?.get<AbilityActivatedEverComponent>()
-            tracker == null || !tracker.hasActivated(ability.id) ||
-                // An exhaust mana ability's once-only memory can be waived (Elvish Refueler), and
-                // auto-tap has to agree with the enumerator about whether it may be tapped again.
-                (
-                    ability.isExhaust && com.wingedsheep.engine.mechanics.ExhaustActivationWaiver
-                        .isWaivedFor(state, playerId, cardRegistry, conditionEvaluator)
-                    )
-        }
+        is ActivationRestriction.Once ->
+            // An exhaust or power-up mana ability's once-only memory can be raised or waived
+            // (Elvish Refueler, Wonder Man), and auto-tap has to agree with the enumerator about
+            // whether it may be tapped again.
+            com.wingedsheep.engine.mechanics.OnceOnlyActivationAllowance
+                .mayActivate(state, playerId, sourceId, ability, cardRegistry, conditionEvaluator)
         is ActivationRestriction.ControlledSinceYourMostRecentTurn ->
             state.getEntity(sourceId)
                 ?.has<com.wingedsheep.engine.state.components.battlefield.SummoningSicknessComponent>() != true

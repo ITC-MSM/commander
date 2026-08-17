@@ -20805,6 +20805,61 @@
     ]
 }
 
+// Wonder Man, Hollywood Hero
+{
+    "name": "Wonder Man, Hollywood Hero",
+    "manaCost": "{3}{R}{R}",
+    "typeLine": "Legendary Creature — Human Performer Hero",
+    "oracleText": "Flying\nEach power-up ability of permanents you control can be activated an additional time.\nPower-up — {5}{R}{R}: Put two +1/+1 counters on Wonder Man. (Activate each power-up ability only . . . once? Reduce the cost by his mana cost if he entered this turn.)",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{5}{R}{R}"
+                    }
+                },
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 2,
+                    "target": "Self"
+                },
+                "restrictions": [
+                    "Once"
+                ],
+                "isPowerUp": true
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ExtraOnceOnlyActivations",
+                "kind": "POWER_UP",
+                "extraActivations": 1
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "160",
+        "rarity": "UNCOMMON",
+        "artist": "Nanna Marie Steffensen",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/e/1ee52395-9523-4da1-9108-8ab79229fc7a.jpg?1783902922"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Worlds Within Worlds
 {
     "name": "Worlds Within Worlds",

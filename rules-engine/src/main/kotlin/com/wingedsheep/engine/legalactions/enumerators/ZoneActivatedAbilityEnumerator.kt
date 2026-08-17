@@ -74,7 +74,7 @@ class ZoneActivatedAbilityEnumerator(private val zone: Zone) : ActionEnumerator 
                 var restrictionsMet = true
                 for (restriction in ability.restrictions) {
                     if (!context.castPermissionUtils.checkActivationRestriction(
-                            state, playerId, restriction, entityId, ability.id, ability.isExhaust
+                            state, playerId, restriction, entityId, ability.id, ability
                         )
                     ) {
                         restrictionsMet = false

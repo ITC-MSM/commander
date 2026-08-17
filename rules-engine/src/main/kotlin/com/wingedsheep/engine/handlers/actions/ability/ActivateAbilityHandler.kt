@@ -435,7 +435,7 @@ class ActivateAbilityHandler(
         // Check activation restrictions
         for (restriction in ability.restrictions) {
             val error = checkActivationRestriction(
-                state, action.playerId, action.sourceId, action.abilityId, restriction, ability.isExhaust
+                state, action.playerId, action.sourceId, action.abilityId, restriction, ability
             )
             if (error != null) return error
         }
@@ -2365,7 +2365,10 @@ class ActivateAbilityHandler(
         sourceId: com.wingedsheep.sdk.model.EntityId,
         abilityId: com.wingedsheep.sdk.scripting.AbilityId,
         restriction: ActivationRestriction,
-        isExhaustAbility: Boolean = false
+        // Required, with no default: a defaulted `ability` would let a forgetful call site silently
+        // disable the ExtraOnceOnlyActivations permission on this path while the enumerators kept
+        // honouring it. Omission must be a compile error, not a behaviour difference.
+        ability: com.wingedsheep.sdk.scripting.ActivatedAbility
     ): String? {
         return when (restriction) {
             is ActivationRestriction.AnyPlayerMay -> null // Not a restriction; handled in validate()
@@ -2413,14 +2416,11 @@ class ActivateAbilityHandler(
                 } else null
             }
             is ActivationRestriction.Once -> {
-                val tracker = state.getEntity(sourceId)?.get<AbilityActivatedEverComponent>()
-                // An exhaust ability's once-only memory can be waived (Elvish Refueler); a plain
-                // Once restriction on a non-exhaust ability never is.
-                if (tracker != null && tracker.hasActivated(abilityId) &&
-                    !(isExhaustAbility && castPermissionUtils.isExhaustActivationLimitWaived(state, playerId))
-                ) {
-                    "This ability can only be activated once"
-                } else null
+                // An exhaust or power-up ability's once-only memory can be raised or waived by an
+                // ExtraOnceOnlyActivations permission (Elvish Refueler, Wonder Man); a plain Once
+                // restriction on an ordinary ability never is.
+                val allowed = castPermissionUtils.mayActivateOnceOnlyAbility(state, playerId, sourceId, ability)
+                if (!allowed) "This ability can only be activated once" else null
             }
             is ActivationRestriction.ControlledSinceYourMostRecentTurn -> {
                 if (state.getEntity(sourceId)
@@ -2430,7 +2430,7 @@ class ActivateAbilityHandler(
             }
             is ActivationRestriction.All -> {
                 restriction.restrictions.firstNotNullOfOrNull {
-                    checkActivationRestriction(state, playerId, sourceId, abilityId, it, isExhaustAbility)
+                    checkActivationRestriction(state, playerId, sourceId, abilityId, it, ability)
                 }
             }
         }

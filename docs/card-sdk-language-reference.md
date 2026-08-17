@@ -6197,18 +6197,34 @@ staticAbility {
   condition = IsYourTurn)` ("During your turn, your opponents can't activate abilities of artifacts,
   creatures, or enchantments."); loyalty abilities and land mana abilities are unaffected because the
   filter only matches those three permanent types.
-- `IgnoreExhaustActivationLimit(condition = null)` — the *permission* mirror of the above: the controller
-  may activate exhaust abilities (CR 702.177) as though they hadn't been activated, i.e. the
-  `ActivationRestriction.Once` memory `isExhaust = true` installs is waived. Scoped to the activating player
-  being this permanent's controller (there is no "who" axis — you can only activate abilities of permanents
-  you control) and gated by `condition`, evaluated in the controller's context; `null` = always. Resolved by
-  `ExhaustActivationWaiver`, which all three activation-legality paths consult (the enumerators and the
-  activate handler via `CastPermissionUtils`, plus `ManaSolver`'s inlined check for auto-tapping) so they
-  can't drift. It never reaches a plain `Once`/`OncePerTurn` restriction on a *non*-exhaust ability.
-  Elvish Refueler = `IgnoreExhaustActivationLimit(condition = Conditions.All(Conditions.IsYourTurn,
-  Conditions.YouHaventActivatedAnExhaustAbilityThisTurn))` — the gate re-evaluates every frame, so the
-  permission evaporates the instant the turn's first exhaust ability is activated. Net effect: once per turn,
-  on your turn, you may re-use one already-spent exhaust ability of any permanent you control.
+- `ExtraOnceOnlyActivations(kind, extraActivations = null, condition = null)`
+  — the *permission* counterpart of the above, over the keyword-prefixed "Activate this ability only once"
+  limits: exhaust (CR 702.177) and power-up (CR 702.193), selected by `kind` (**required, no default** —
+  a default on a two-valued discriminator would silently mean the wrong keyword). Both keywords install the
+  same `ActivationRestriction.Once`, so the permission has to say which one it lifts. `extraActivations`
+  is the second axis: `null` waives the limit outright ("as though they hadn't been activated"), an
+  integer ≥ 1 *raises* it by that many activations per instance and sums across the battlefield — except
+  that a single waiver anywhere on the battlefield short-circuits the sum to "no limit".
+  Not an exact mirror of `PlayersCantActivateAbilities`: that type carries a `permanentFilter`, this one
+  hardcodes "permanents you control" because both printed cards want that scope.
+  Scoped to the activating player being this permanent's controller (there is no "who" axis — you can only
+  activate abilities of permanents you control) and gated by `condition`, evaluated in the controller's
+  context; `null` = always. Resolved by `OnceOnlyActivationAllowance`, which all three activation-legality
+  paths consult (the enumerators and the activate handler via
+  `CastPermissionUtils.mayActivateOnceOnlyAbility`, plus `ManaSolver`'s inlined check for auto-tapping) so
+  they can't drift. It never reaches a plain `Once`/`OncePerTurn` restriction an ordinary ability printed
+  for itself, nor the other `kind`.
+  - **Waive** — Elvish Refueler = `ExtraOnceOnlyActivations(EXHAUST, extraActivations = null,
+    condition = Conditions.All(Conditions.IsYourTurn,
+    Conditions.YouHaventActivatedAnExhaustAbilityThisTurn))` — the gate re-evaluates every frame, so the
+    permission evaporates the instant the turn's first exhaust ability is activated. Net effect: once per
+    turn, on your turn, you may re-use one already-spent exhaust ability of any permanent you control.
+  - **Raise by N** — Wonder Man, Hollywood Hero = `ExtraOnceOnlyActivations(POWER_UP,
+    extraActivations = 1)` ("Each power-up ability of permanents you control can be activated an
+    additional time"). Counted against `AbilityActivatedEverComponent.activationCount(abilityId)`, the
+    per-object lifetime tally the `Once` tracker gained for this; two Wonder Men allow three activations
+    each. A prohibition still beats it (CR 101.2) — Kang the Conqueror's turn-scoped power-up lockout is
+    checked ahead of the ability's restrictions, so a raised ceiling has nothing to raise.
 
 **Tapped-for-mana mana statics** (extra mana / replaced mana when a land is tapped for mana — resolve
 inline as triggered mana abilities, off the stack per CR 605). These fire on the *manual* mana-ability
@@ -8406,7 +8422,7 @@ default to "you" so card authors don't need to pass it explicitly.
   `PlayerActivatedExhaustAbilitiesThisTurn(Player.You, atLeast)`, reading the per-player
   `ExhaustAbilitiesActivatedThisTurnComponent` (bumped at activation time, so a countered exhaust ability
   still counts; reset for all players at turn start). Gates Elvish Refueler's
-  `IgnoreExhaustActivationLimit`.
+  `ExtraOnceOnlyActivations`.
 - `TriggeringSpellMatches(filter)` — intervening-if guard: the spell that triggered this ability
   matches `filter`. Reads the triggering entity's static card characteristics (so it stays correct
   after the spell leaves the stack). General "whenever you cast a spell, if it's a/an X ..." gate.

@@ -829,35 +829,97 @@ data class PlayersCantActivateAbilities(
 }
 
 /**
- * The controller may activate exhaust abilities (CR 702.177) as though they hadn't been activated —
- * i.e. the "activate only once" memory an exhaust ability carries
- * ([com.wingedsheep.sdk.scripting.ActivationRestriction.Once]) is waived while this applies.
+ * Which family of keyword-prefixed "Activate this ability only once" abilities an
+ * [ExtraOnceOnlyActivations] permission reaches.
  *
- * The permission mirror of [PlayersCantActivateAbilities]: read at ability-activation-legality time
- * on every battlefield permanent, scoped to the activating player being this permanent's controller
- * (you can only activate abilities of permanents you control, so there is no separate "who" axis),
- * and gated by [condition], evaluated in the controller's context — `null` = always.
+ * Both keywords install the same [com.wingedsheep.sdk.scripting.ActivationRestriction.Once] on the
+ * ability they prefix, so the permission has to say *which* of them it lifts — a card that raises
+ * the power-up limit must not also raise an exhaust limit, and neither ever touches a plain `Once`
+ * an ordinary ability printed for itself.
+ */
+@Serializable
+enum class OnceOnlyAbilityKind {
+    /** Exhaust, CR 702.177. */
+    EXHAUST,
+
+    /** Power-up, CR 702.193. */
+    POWER_UP;
+
+    /** How the keyword reads inside a rules sentence. */
+    val displayName: String get() = when (this) {
+        EXHAUST -> "exhaust"
+        POWER_UP -> "power-up"
+    }
+}
+
+/**
+ * The controller may activate [kind] abilities more times than the keyword's "Activate this ability
+ * only once" allows — i.e. the [com.wingedsheep.sdk.scripting.ActivationRestriction.Once] memory
+ * that `isExhaust`/`isPowerUp` installs is raised by [extraActivations], or waived outright when
+ * that is `null`.
  *
- * Elvish Refueler: "During your turn, as long as you haven't activated an exhaust ability this turn,
- * you may activate exhaust abilities as though they haven't been activated." — the condition is
- * `IsYourTurn AND NoExhaustAbilityActivatedThisTurn`, which makes the waiver evaporate the moment
- * the first exhaust ability of the turn is activated. Non-exhaust abilities carrying a plain
- * `Once`/`OncePerTurn` restriction are untouched.
+ * Read at ability-activation-legality time on every battlefield permanent, scoped to the activating
+ * player being this permanent's controller (you can only activate abilities of permanents you
+ * control, so there is no separate "who" axis), and gated by [condition], evaluated in the
+ * controller's context — `null` = always.
  *
+ * It is the permission counterpart of [PlayersCantActivateAbilities] but not its exact mirror:
+ * that type carries a `permanentFilter`, while this one hardcodes "every [kind] ability of
+ * permanents you control". Both printed cards want that scope, so the axis is deliberately absent;
+ * a future "each power-up ability of *creatures* you control" would have to add it.
+ *
+ * Two shapes exist in print, and the [extraActivations] axis is exactly what separates them:
+ *  - **Waive** — Elvish Refueler: "During your turn, as long as you haven't activated an exhaust
+ *    ability this turn, you may activate exhaust abilities as though they haven't been activated."
+ *    = `ExtraOnceOnlyActivations(EXHAUST, extraActivations = null, condition = IsYourTurn AND
+ *    YouHaventActivatedAnExhaustAbilityThisTurn)`. The condition makes the waiver evaporate the
+ *    moment the turn's first exhaust ability is activated, which is what bounds it.
+ *  - **Raise by N** — Wonder Man, Hollywood Hero: "Each power-up ability of permanents you control
+ *    can be activated an additional time." = `ExtraOnceOnlyActivations(POWER_UP,
+ *    extraActivations = 1)`. Two copies grant two extra activations: the allowance is summed across
+ *    every permanent whose condition currently holds, and compared against how many times *that*
+ *    ability of *that* object has been activated.
+ *
+ * Abilities of the other kind, and any ability carrying a plain `Once`/`OncePerTurn` restriction it
+ * printed for itself, are untouched.
+ *
+ * @property kind Which keyword's once-only limit this lifts. Required — a default on a two-valued
+ *   discriminator would let `ExtraOnceOnlyActivations(extraActivations = 1)` compile and silently
+ *   mean the wrong keyword, which is the one mistake this axis exists to prevent.
+ * @property extraActivations Extra activations granted per instance; `null` = no limit at all.
+ *   Must otherwise be at least 1 — 0 grants nothing and a negative would lower the ceiling below
+ *   the printed activation.
  * @property condition Optional timing/state gate, evaluated in the controller's context; null = always.
  */
-@SerialName("IgnoreExhaustActivationLimit")
+@SerialName("ExtraOnceOnlyActivations")
 @Serializable
-data class IgnoreExhaustActivationLimit(
+data class ExtraOnceOnlyActivations(
+    val kind: OnceOnlyAbilityKind,
+    val extraActivations: Int? = null,
     val condition: Condition? = null
 ) : StaticAbility {
+    init {
+        require(extraActivations == null || extraActivations >= 1) {
+            "extraActivations must be null (waive the limit) or at least 1, was $extraActivations"
+        }
+    }
+
     override val description: String = buildString {
         when (condition) {
             is IsYourTurn -> append("During your turn, ")
             is IsNotYourTurn -> append("During your opponents' turns, ")
             else -> {}
         }
-        append("you may activate exhaust abilities as though they haven't been activated")
+        when (extraActivations) {
+            null -> append("you may activate ${kind.displayName} abilities as though they haven't been activated")
+            1 -> append(
+                "each ${kind.displayName} ability of permanents you control can be activated an additional time"
+            )
+            else -> append(
+                "each ${kind.displayName} ability of permanents you control can be activated " +
+                    "$extraActivations additional times"
+            )
+        }
         when (condition) {
             is IsYourTurn, is IsNotYourTurn, null -> {}
             else -> append(" ${condition.description}")

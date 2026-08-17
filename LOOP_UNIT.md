@@ -1,62 +1,69 @@
-# u20 — Kang the Conqueror (MSH)
+# loop-msh-u21 — Wonder Man, Hollywood Hero
 
-**Card.** `Kang the Conqueror` {2}{U}{U} 4/5 Legendary Creature — Human Villain. Flying, plus
-`Power-up — {5}{U}{U}{U}: Put a +1/+1 counter on Kang. Take an extra turn after this one. During
-that turn, power-up abilities can't be activated.` — `Effects.Composite(AddCounters, TakeExtraTurn)`
-under an `isPowerUp = true` activated ability, so the once-per-object limit and the pip-wise self
-discount ({5}{U}{U}{U} → {3}{U} the turn he lands) come for free.
+**Card.** Wonder Man, Hollywood Hero (MSH #160), {3}{R}{R} 4/4 Legendary Creature — Human Performer
+Hero: flying, "Each power-up ability of permanents you control can be activated an additional time",
+and Power-up — {5}{R}{R}: two +1/+1 counters on himself.
 
-**Primitive.** No new type. `TakeExtraTurnEffect` gained a third rider parameter,
-`powerUpAbilitiesCantBeActivated`, alongside the existing `loseAtEndStep` (Last Chance). The
-executor stamps the extra turn's number (`turnNumber + 1`) into a new
-`GameState.powerUpRestrictedTurns`, and `CastPermissionUtils.isPowerUpActivationRestricted` is
-consulted by `ActivateAbilityHandler.validate` plus all four ability enumerators (the fourth,
-`CommandZoneAbilityEnumerator`, was added in the review-correction pass along with a test).
+**Primitive.** No new type. The existing exhaust-waiver static was *generalized*:
+`IgnoreExhaustActivationLimit` → `ExtraOnceOnlyActivations(kind, extraActivations, condition)`, and
+its engine resolver `ExhaustActivationWaiver` → `OnceOnlyActivationAllowance`. `kind` picks exhaust
+(CR 702.177) vs power-up (CR 702.193) — they desugar to the *same* `ActivationRestriction.Once`, so
+without that axis a power-up permission would re-arm every exhaust ability on the board.
+`extraActivations` picks waive (`null`, Elvish Refueler) vs raise-by-N (`1`, Wonder Man), summed
+across the battlefield. `AbilityActivatedEverComponent` gained the per-object activation *count*
+raise-by-N needs (it was a `Set` before); `activationCount` falls back to set membership so a state
+serialized before the field still reports ≥1.
 
-**Planner triage was accurate this time.** "Power-up + extra turn + a turn-scoped activation
-restriction" is exactly what the Oracle text says (verified against Scryfall), `powerUp` and
-`TakeExtraTurn` both already existed, and the turn-scoped restriction was genuinely the new part.
+**Composition with u20's lockout.** Kang's `powerUpRestrictedTurns` gate is checked in
+`ActivateAbilityHandler.validate` and each enumerator *before* any `ActivationRestriction`, so it
+still wins — a raised ceiling has nothing to raise (CR 101.2, verified locally). Two tests in
+`ExtraOnceOnlyActivationsScenarioTest` pin it: during a locked turn the re-armed ability is withheld
+by the enumerator and rejected by the handler with the lockout's message (not the spent-`Once`
+message), and after the locked turn the unspent extra activation is still available.
 
-**Gate.** `just test` — see the PR body for the recorded result. `just rebless-cards` (only Kang
-moved), `just check-card-printing "Kang the Conqueror"` and the backlog tick + `just fix-backlog`
-(269/276) also ran.
+**Gate.** `just test` — **passed**, verified from `build/test-results` (zero failures across all ten
+modules; `ExtraOnceOnlyActivationsScenarioTest` 12/12, `WonderManHollywoodHeroScenarioTest` 4/4,
+`ElvishRefuelerScenarioTest` 4/4, `ExhaustKeywordScenarioTest` 3/3, `PowerUpKeywordScenarioTest`
+13/13, `KangTheConquerorScenarioTest` 4/4). Run twice: the first stopped at the expected snapshot
+drift before `:rules-engine:test` was reached, so the green above is the post-rebless run.
+`just rebless-cards` — `MSH.json` gains only Wonder Man (zero deletions), `DFT.json` changes one
+line (Elvish Refueler's `"type"`). `just check-card-printing "Wonder Man, Hollywood Hero"` — ok,
+MSH is the only printing. `just fix-backlog` — MSH now 270/276.
 
-## For the reviewer — things worth a second opinion
+**Things worth a reviewer's eye**
 
-- **Why a rider parameter and not a standalone effect.** "During *that* turn" refers to the turn
-  `TakeExtraTurnEffect` creates. If `PreventExtraTurns` (Ugin's Nexus) stops the extra turn, there
-  is no turn to bind and the lockout must not apply — a sibling effect sequenced after it in the
-  `Composite` could not see that, and would lock out a turn that was never granted. There is a test
-  for exactly this. The counter-argument is that it is another boolean parameter; say so if you'd
-  rather see a general "rider effect on the extra turn" shape instead.
-- **Why a `GameState` field rather than a player component.** The three existing restriction
-  vehicles all fail one of the requirements: `PlayersCantActivateAbilities` is a static read off a
-  battlefield permanent (dies with Kang), `CantActivateLoyaltyAbilitiesComponent` is per-player and
-  its `PlayerEffectRemoval` durations all *start now* (which would wrongly lock the rest of the
-  current turn), and a delayed trigger would leave an unlocked priority window in the extra turn's
-  upkeep before it resolved. Turn-number stamping is the only one that is global, future-scoped and
-  source-independent. `damageCantBePreventedThisTurn` is the nearest existing precedent.
-- **Extra-turn ordering (CR 500.7) is approximated.** The engine models extra turns as opponents
-  skipping, with no queue, so `turnNumber + 1` is "the next turn to begin". CR 500.7's "the most
-  recently created turn will be taken first" means that is correct when Kang's is the last extra
-  turn created — but if Kang resolves and *then* a Time Warp resolves in the same turn, Time Warp's
-  turn is taken first and the lockout lands on the wrong one. Not fixable without an extra-turn
-  queue; out of scope, and untested.
-- **`u18`'s `ai/EffectWalker` lesson checked and does not apply.** `TakeExtraTurnEffect` has no
-  consumer in `ai/`, `gym/` or `game-server/` (verified by grep); nothing is being wrapped, only a
-  defaulted parameter appended, so positional constructor/facade callers are unaffected.
-- **`u29`'s handler/enumerator split explicitly closed.** The guard is in
-  `ActivateAbilityHandler.validate` *and* in `ActivatedAbilityEnumerator` (own-permanent and
-  any-player-may paths), `ManaAbilityEnumerator` and `ZoneActivatedAbilityEnumerator`. The last two
-  are dead code today — no printed power-up ability is a mana ability or activates off the
-  battlefield — and are commented as such. Push back if you'd rather not carry speculative guards.
-- **`u21` (Wonder Man) is left room, not fought.** Wonder Man's "each power-up ability can be
-  activated an additional time" is a relaxation of `ActivationRestriction.Once`, tracked per-object
-  in `AbilityActivatedThisTurnComponent`/the `Once` check; this lockout is an independent hard gate
-  that runs before restrictions are evaluated. They compose the way the rules demand: an extra
-  activation still can't be used during Kang's turn. No `Once` machinery was touched.
-- **No `GameEvent` is emitted for the lockout.** `TakeExtraTurnExecutor` already writes the
-  `SkipNextTurnComponent`s silently, and `DamageCantBePreventedThisTurnExecutor` sets its `GameState`
-  flag the same way, so this follows precedent — but it does sit against AGENTS.md's "events, not
-  silent mutations". Flag it if a turn-restriction event should exist.
-- **No multiplayer test.** The restriction is global by construction, but every test is two-player.
+- The rename changes `@SerialName("IgnoreExhaustActivationLimit")` → `"ExtraOnceOnlyActivations"`, so
+  Elvish Refueler moves in `DFT.json` and any *persisted* game state holding the old name would no
+  longer deserialize. I judged that acceptable; say so if this repo cares about save compatibility.
+- `CastPermissionUtils.checkActivationRestriction` and its `ActivateAbilityHandler` twin now take
+  `ability: ActivatedAbility?` instead of `isExhaustAbility: Boolean` — deliberate, so a second
+  keyword doesn't need a second boolean threaded through five call sites. All five enumerator call
+  sites plus the handler pass it; the `null` default still gives the restrictive answer.
+- `ManaSolver`'s inlined `Once` branch now calls the same helper, so auto-tap agrees. `ManaSolver`'s
+  *permission* blind spot (it filters on `isManaAbility` with no lockout check) is pre-existing and
+  untouched — no printed power-up or exhaust ability is a mana ability.
+- Elvish Refueler's static-ability `description` string is unchanged for the `null` case by
+  construction, but I have not eyeballed the reblessed `DFT.json` beyond that claim.
+- `kind` defaults to `EXHAUST`. That default is arbitrary on a two-kind type; I kept it so the
+  reblessed `DFT.json` diff stays a single type-name line (kotlinx omits defaults), and both call
+  sites pass `kind` explicitly anyway. Making it a required parameter is a one-line change if you
+  think the explicitness is worth the extra snapshot churn.
+- Not done: no manual playthrough, no e2e, no UX/AI-heuristic review.
+
+## Review corrections (post-review commit)
+
+- Oracle text now reproduces Scryfall verbatim, joke and all: `only . . . once?`, not `only once.`
+  (MSH.json reblessed — one line, Wonder Man only).
+- `ability` is a **required** parameter of both `CastPermissionUtils.checkActivationRestriction` and
+  its `ActivateAbilityHandler` twin; both dead `null` fallbacks deleted. A forgetful call site is now
+  a compile error rather than a silently disabled permission.
+- `ExtraOnceOnlyActivations.kind` no longer defaults (one added line in `DFT.json`), and an `init`
+  block requires `extraActivations == null || >= 1`.
+- `extraActivationsFor` skips the *printed* statics of a face-down granter (CR 708.2/708.2a); granted
+  statics still apply. The base-vs-projected-controller and `Duration`-gate gaps are documented in
+  place as house-wide and deliberately left alone.
+- Three tests added: no end-of-turn refresh of a spent allowance, CR 400.7 fresh allowance after a
+  bounce-and-recast, and waive-beats-counted for the same `kind`. Each was mutation-checked to fail
+  alone under a targeted break.
+- `activationCount`'s `abilityIds` fallback is **kept**: live `GameState` is Redis-persisted whole,
+  so it is reached by any game in flight across the deploy. Comment now says so.

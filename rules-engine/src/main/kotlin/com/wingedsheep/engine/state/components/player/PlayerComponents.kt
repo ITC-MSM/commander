@@ -932,7 +932,7 @@ data class EquipActivationsThisTurnComponent(
  *
  * Read by [com.wingedsheep.sdk.scripting.conditions.PlayerActivatedExhaustAbilitiesThisTurn], whose
  * negation gates Elvish Refueler's
- * [com.wingedsheep.sdk.scripting.IgnoreExhaustActivationLimit] permission — "as long as you haven't
+ * [com.wingedsheep.sdk.scripting.ExtraOnceOnlyActivations] permission — "as long as you haven't
  * activated an exhaust ability this turn". Counted at activation time (CR 602.2), so it includes an
  * exhaust ability that was later countered or whose source has left the battlefield.
  */

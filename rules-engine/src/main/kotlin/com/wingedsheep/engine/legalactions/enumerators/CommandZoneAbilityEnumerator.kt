@@ -54,7 +54,7 @@ class CommandZoneAbilityEnumerator : ActionEnumerator {
 
                 // Activation restrictions (e.g. once each turn).
                 if (ability.restrictions.any {
-                        !context.castPermissionUtils.checkActivationRestriction(state, playerId, it, entityId, ability.id, ability.isExhaust)
+                        !context.castPermissionUtils.checkActivationRestriction(state, playerId, it, entityId, ability.id, ability)
                     }
                 ) continue
 
