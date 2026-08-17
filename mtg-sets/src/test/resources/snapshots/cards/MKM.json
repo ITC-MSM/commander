@@ -1736,6 +1736,74 @@
     ]
 }
 
+// Branch of Vitu-Ghazi
+{
+    "name": "Branch of Vitu-Ghazi",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "{T}: Add {C}.\nDisguise {3} (You may cast this card face down for {3} as a 2/2 creature with ward {2}. Turn it face up any time for its disguise cost.)\nWhen this land is turned face up, add two mana of any one color. Until end of turn, you don't lose this mana as steps and phases end.",
+    "keywordAbilities": [
+        {
+            "type": "Disguise",
+            "disguiseCost": {
+                "type": "PayAtom",
+                "atom": {
+                    "type": "AtomMana",
+                    "cost": "{3}"
+                }
+            }
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "TurnFaceUpEvent",
+                "effect": {
+                    "type": "AddManaOfChoice",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 2
+                    }
+                },
+                "descriptionOverride": "When this land is turned face up, add two mana of any one color. Until end of turn, you don't lose this mana as steps and phases end."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddColorlessMana",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "258",
+        "rarity": "UNCOMMON",
+        "artist": "Alayna Danner",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/3/73a8169f-b858-47a5-9c76-2e7c50ad4ecd.jpg?1783912825",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "Any time you have priority, you may turn the face-down creature face up by revealing what its disguise cost is and paying that cost. This is a special action. It doesn't use the stack and can't be responded to. Only a face-down permanent can be turned face up this way; a face-down spell cannot."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "Because the permanent is on the battlefield both before and after it's turned face up, turning a permanent face up doesn't cause any enters-the-battlefield abilities to trigger."
+            }
+        ]
+    },
+    "colorIdentityOverride": []
+}
+
 // Break Out
 {
     "name": "Break Out",
@@ -7973,6 +8041,120 @@
     ]
 }
 
+// Krenko, Baron of Tin Street
+{
+    "name": "Krenko, Baron of Tin Street",
+    "manaCost": "{2}{R}",
+    "typeLine": "Legendary Creature — Goblin",
+    "oracleText": "Haste\n{T}, Sacrifice an artifact: Put a +1/+1 counter on each Goblin you control.\nWhenever an artifact is put into a graveyard from the battlefield, you may pay {R}. If you do, create a 1/1 red Goblin creature token. It gains haste until end of turn.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "HASTE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "artifact",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.MayPay",
+                        "cost": {
+                            "type": "PayManaCost",
+                            "cost": "{R}"
+                        }
+                    },
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "CreateToken",
+                                "power": 1,
+                                "toughness": 1,
+                                "colors": [
+                                    "RED"
+                                ],
+                                "creatureTypes": [
+                                    "Goblin"
+                                ],
+                                "imageUri": "https://cards.scryfall.io/normal/front/c/d/cd6cd0d3-7973-49e6-9c1c-6f516a5d5fe5.jpg?1783912608"
+                            },
+                            {
+                                "type": "GrantKeyword",
+                                "keyword": "HASTE",
+                                "target": {
+                                    "type": "PipelineTarget",
+                                    "collectionName": "createdTokens"
+                                }
+                            }
+                        ]
+                    }
+                },
+                "descriptionOverride": "Whenever an artifact is put into a graveyard from the battlefield, you may pay {R}. If you do, create a 1/1 red Goblin creature token. It gains haste until end of turn."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        "CostTap",
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomSacrifice",
+                                "filter": "artifact"
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": "creature Goblin ctrl:you"
+                        }
+                    },
+                    "body": {
+                        "type": "AddCounters",
+                        "counterType": "+1/+1",
+                        "count": 1,
+                        "target": "Self"
+                    }
+                },
+                "descriptionOverride": "{T}, Sacrifice an artifact: Put a +1/+1 counter on each Goblin you control."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "135",
+        "rarity": "RARE",
+        "artist": "Brian Valeza",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/5/5524b712-c67d-4d2e-9344-9e85a6ce3227.jpg?1783912878",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "If Krenko, Baron of Tin Street dies at the same time as one or more artifacts are put into a graveyard from the battlefield, its last ability will still trigger for each of those artifacts."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Krovod Haunch
 {
     "name": "Krovod Haunch",
@@ -9120,6 +9302,71 @@
     "colorIdentityOverride": [
         "RED",
         "WHITE"
+    ]
+}
+
+// Melek, Reforged Researcher
+{
+    "name": "Melek, Reforged Researcher",
+    "manaCost": "{3}{U}{R}",
+    "typeLine": "Legendary Creature — Weird Detective",
+    "oracleText": "Melek's power and toughness are each equal to twice the number of instant and sorcery cards in your graveyard.\nThe first instant or sorcery spell you cast each turn costs {3} less to cast.",
+    "creatureStats": {
+        "power": {
+            "type": "Dynamic",
+            "source": {
+                "type": "Multiply",
+                "amount": {
+                    "type": "Count",
+                    "player": "You",
+                    "zone": "Graveyard",
+                    "filter": "instant|sorcery"
+                },
+                "multiplier": 2
+            }
+        },
+        "toughness": {
+            "type": "Dynamic",
+            "source": {
+                "type": "Multiply",
+                "amount": {
+                    "type": "Count",
+                    "player": "You",
+                    "zone": "Graveyard",
+                    "filter": "instant|sorcery"
+                },
+                "multiplier": 2
+            }
+        }
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ModifySpellCost",
+                "target": {
+                    "type": "YouCast",
+                    "filter": "instant|sorcery"
+                },
+                "modification": {
+                    "type": "ReduceGeneric",
+                    "amount": 3
+                },
+                "gating": {
+                    "type": "NthOfTypePerTurn",
+                    "n": 1
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "430",
+        "rarity": "MYTHIC",
+        "artist": "Andreas Zafiratos",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/1/01c5ede0-a098-4f21-8b7e-795a83e75aae.jpg?1783912764"
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "RED"
     ]
 }
 
