@@ -6605,6 +6605,142 @@
     "colorIdentityOverride": []
 }
 
+// Oblivion Stone
+{
+    "name": "Oblivion Stone",
+    "manaCost": "{3}",
+    "typeLine": "Artifact",
+    "oracleText": "{4}, {T}: Put a fate counter on target permanent.\n{5}, {T}, Sacrifice this artifact: Destroy each nonland permanent without a fate counter on it, then remove all fate counters from all permanents.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{4}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "fate",
+                    "count": 1,
+                    "target": {
+                        "type": "ContextTarget",
+                        "index": 0
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "permanent"
+                        }
+                    }
+                ],
+                "descriptionOverride": "{4}, {T}: Put a fate counter on target permanent."
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{5}"
+                            }
+                        },
+                        "CostTap",
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "GatherCards",
+                                    "source": {
+                                        "type": "BattlefieldMatching",
+                                        "filter": {
+                                            "cardPredicates": [
+                                                "IsNonland",
+                                                "IsPermanent"
+                                            ],
+                                            "statePredicates": [
+                                                {
+                                                    "type": "StateNot",
+                                                    "predicate": {
+                                                        "type": "HasCounter",
+                                                        "counterType": "fate"
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    "storeAs": "destroyAll_gathered"
+                                },
+                                {
+                                    "type": "MoveCollection",
+                                    "from": "destroyAll_gathered",
+                                    "destination": {
+                                        "type": "ToZone",
+                                        "zone": "Graveyard"
+                                    },
+                                    "moveType": "Destroy"
+                                }
+                            ]
+                        },
+                        {
+                            "type": "ForEach",
+                            "space": {
+                                "type": "IterationSpace.Group",
+                                "filter": {
+                                    "baseFilter": {
+                                        "cardPredicates": [
+                                            "IsPermanent"
+                                        ],
+                                        "statePredicates": [
+                                            {
+                                                "type": "HasCounter",
+                                                "counterType": "fate"
+                                            }
+                                        ]
+                                    }
+                                }
+                            },
+                            "body": {
+                                "type": "RemoveAllCountersOfType",
+                                "counterType": "fate",
+                                "target": "Self"
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "{5}, {T}, Sacrifice this artifact: Destroy each nonland permanent without a fate counter on it, then remove all fate counters from all permanents."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "222",
+        "rarity": "RARE",
+        "artist": "Sam Wood",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/d/ddba1566-2778-4636-b4d3-9095fb2d83c8.jpg?1783944509"
+    },
+    "colorIdentityOverride": []
+}
+
 // Ogre Leadfoot
 {
     "name": "Ogre Leadfoot",

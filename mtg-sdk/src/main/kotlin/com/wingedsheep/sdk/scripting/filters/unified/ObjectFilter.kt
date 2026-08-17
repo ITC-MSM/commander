@@ -1070,6 +1070,11 @@ data class GameObjectFilter(
         statePredicates = statePredicates + StatePredicate.HasCounter(counterType)
     )
 
+    /** Must not have a counter of the specified type. Other counter types are allowed. */
+    fun withoutCounter(counterType: String) = copy(
+        statePredicates = statePredicates + StatePredicate.Not(StatePredicate.HasCounter(counterType))
+    )
+
     /** Must have any counter of any type */
     fun withAnyCounter() = copy(
         statePredicates = statePredicates + StatePredicate.HasAnyCounter
