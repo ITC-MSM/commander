@@ -1920,6 +1920,12 @@ object Effects {
     fun RemoveAllCounters(target: EffectTarget = EffectTarget.ContextTarget(0)): Effect =
         com.wingedsheep.sdk.scripting.effects.RemoveAllCountersEffect(target)
 
+    /** Remove every counter of [type] from [target], preserving counters of other kinds. */
+    fun RemoveAllCountersOfType(
+        type: String,
+        target: EffectTarget = EffectTarget.ContextTarget(0)
+    ): Effect = com.wingedsheep.sdk.scripting.effects.RemoveAllCountersOfTypeEffect(type, target)
+
     /**
      * Add counters to all entities in a named collection.
      */

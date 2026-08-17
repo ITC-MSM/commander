@@ -301,6 +301,20 @@ data class RemoveAllCountersEffect(
 }
 
 /**
+ * Remove every counter of one specified kind from a target permanent.
+ * Other counter kinds on that permanent are left unchanged.
+ */
+@SerialName("RemoveAllCountersOfType")
+@Serializable
+data class RemoveAllCountersOfTypeEffect(
+    val counterType: String,
+    val target: EffectTarget = EffectTarget.ContextTarget(0)
+) : Effect {
+    override val description: String =
+        "Remove all $counterType counters from ${target.description}"
+}
+
+/**
  * Add counters to all entities in a named collection.
  * Used for non-targeting "choose" effects that place counters on multiple permanents.
  * "Put an aim counter on each of them"

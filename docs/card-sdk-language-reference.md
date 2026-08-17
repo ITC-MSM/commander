@@ -3746,7 +3746,9 @@ This is the player-arm prerequisite for the planned composable mixed `TargetUnio
   projection / trigger matching / cost calculation report `false` (no X context). Underlying
   predicate: `CardPredicate.PowerAtLeastX`.
 - `.tapped()` / `.untapped()` — tap state.
-- `.withCounter(type)` / `.withAnyCounter()` / `.withoutCounters()` — counter presence: a specific kind,
+- `.withCounter(type)` / `.withoutCounter(type)` / `.withAnyCounter()` / `.withoutCounters()` — counter presence: a specific kind,
+  absence of one specific kind while permitting others, any kind, or no counters at all. The named
+  negative form models clauses such as Oblivion Stone's “without a fate counter on it.”
   any kind, or none at all. `.withoutCounters()` is `StatePredicate.Not(HasAnyCounter)` for "with no
   counters on it" (Heartless Act). All three are also on `TargetFilter`
   (`TargetFilter.Creature.withoutCounters()`).

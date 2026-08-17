@@ -42,6 +42,7 @@ import com.wingedsheep.engine.handlers.effects.permanent.counters.GrantCounterPl
 import com.wingedsheep.engine.handlers.effects.permanent.counters.DistributeCountersFromSelfExecutor
 import com.wingedsheep.engine.handlers.effects.permanent.counters.ProliferateExecutor
 import com.wingedsheep.engine.handlers.effects.permanent.counters.RemoveAllCountersExecutor
+import com.wingedsheep.engine.handlers.effects.permanent.counters.RemoveAllCountersOfTypeExecutor
 import com.wingedsheep.engine.handlers.effects.permanent.counters.RemoveAnyNumberOfCountersExecutor
 import com.wingedsheep.engine.handlers.effects.permanent.counters.RemoveCountersExecutor
 import com.wingedsheep.engine.handlers.effects.permanent.protection.ChooseColorThenExecutor
@@ -151,6 +152,7 @@ class PermanentExecutors(
         MoveCountersExecutor(),
         MoveChosenCountersToTargetExecutor(),
         RemoveAllCountersExecutor(),
+        RemoveAllCountersOfTypeExecutor(),
         DistributeCountersFromSelfExecutor(),
         DistributeCountersAmongTargetsExecutor(),
         DistributeCountersAmongFilteredExecutor(),

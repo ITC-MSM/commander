@@ -29,6 +29,7 @@ enum class CounterType {
     GOLD,
     PLAGUE,
     TRAP,
+    FATE,
     DEPLETION,
     EGG,
     LORE,
@@ -165,6 +166,7 @@ object Counters {
     const val GOLD = "gold"
     const val PLAGUE = "plague"
     const val TRAP = "trap"
+    const val FATE = "fate"
     const val DEPLETION = "depletion"
     const val EGG = "egg"
     const val LORE = "lore"

@@ -238,6 +238,9 @@ data class GroupFilter(
     /** Must have a counter of the given type (e.g. `Counters.PLUS_ONE_PLUS_ONE`) */
     fun withCounter(counterType: String) = copy(baseFilter = baseFilter.withCounter(counterType))
 
+    /** Must not have a counter of the given type; delegates to [GameObjectFilter.withoutCounter]. */
+    fun withoutCounter(counterType: String) = copy(baseFilter = baseFilter.withoutCounter(counterType))
+
     /** Add keyword requirement */
     fun withKeyword(keyword: Keyword) = copy(baseFilter = baseFilter.withKeyword(keyword))
 

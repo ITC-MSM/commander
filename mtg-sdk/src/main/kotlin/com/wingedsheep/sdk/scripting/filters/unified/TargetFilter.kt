@@ -412,6 +412,9 @@ data class TargetFilter(
     /** Must have no counters of any type ("with no counters on it" — Heartless Act). */
     fun withoutCounters() = copy(baseFilter = baseFilter.withoutCounters())
 
+    /** Must not have a counter of the given type; other counter types are allowed. */
+    fun withoutCounter(counterType: String) = copy(baseFilter = baseFilter.withoutCounter(counterType))
+
     /** Must be tapped */
     fun tapped() = copy(baseFilter = baseFilter.tapped())
 
