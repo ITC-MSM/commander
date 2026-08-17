@@ -915,24 +915,13 @@ export function enterPhase(
             .replace(/^Cast /, '')
             .replace(/^Activate /, '')
           break
-        // Collect evidence N (CR 701.59a): any number of graveyard cards, gated on their summed
-        // mana value rather than a count — so the count bounds are simply 1..whole graveyard and
-        // `minTotalManaValue` carries the real constraint.
+        // The sum-gated graveyard exiles: collect evidence N (CR 701.59a) and "exile any number of
+        // <filter> cards from your graveyard with N or more <measure>" (Baron Helmut Zemo). Any
+        // number of cards, gated on a summed measure rather than a count — so the count bounds are
+        // simply 1..whole graveyard and `minTotalWeight` carries the real constraint. Both read the
+        // server's per-card weights: the client computes no measure of its own, which is what lets
+        // one branch serve both costs.
         case 'CollectEvidence':
-          validTargets = [...(costInfo.validExileTargets ?? [])]
-          minTargets = 1
-          maxTargets = costInfo.validExileTargets?.length ?? 1
-          flags.isSacrificeSelection = true
-          flags.targetZone = 'Graveyard'
-          flags.targetDescription = costInfo.description
-          if (costInfo.exileMinTotalManaValue != null) {
-            flags.minTotalManaValue = costInfo.exileMinTotalManaValue
-          }
-          break
-        // "Exile any number of <filter> cards from your graveyard with N or more <measure>"
-        // (Baron Helmut Zemo). Same variable-size selection as collect evidence, but the running
-        // total is over server-supplied per-card weights, because the measure (printed coloured
-        // pips) is not something the client computes.
         case 'ExileForTotal':
           validTargets = [...(costInfo.validExileTargets ?? [])]
           minTargets = 1
@@ -943,6 +932,7 @@ export function enterPhase(
           if (costInfo.exileMinTotalWeight != null) {
             flags.minTotalWeight = costInfo.exileMinTotalWeight
             flags.cardWeights = { ...(costInfo.exileCardWeights ?? {}) }
+            if (costInfo.exileWeightUnit != null) flags.weightUnit = costInfo.exileWeightUnit
           }
           break
         case 'ExileFromZone':

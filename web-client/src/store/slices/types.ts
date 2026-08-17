@@ -121,20 +121,18 @@ export interface TargetingState {
   /** If set, this spell requires damage distribution after target selection */
   requiresDamageDistribution?: boolean
   /**
-   * Collect evidence N (CR 701.59a): the floor on the combined mana value of the selected cards.
-   * When set, the confirm button stays disabled until the running total reaches it, and the
-   * overlay shows that total — `minTargets` / `maxTargets` say nothing useful here, because the
-   * cost constrains no card count at all. An empty selection is exempt so an optional collection
-   * can still be declined.
-   */
-  minTotalManaValue?: number
-  /**
-   * The same sum gate over a server-supplied measure rather than mana value (Baron Helmut Zemo's
-   * black-pip total). `minTotalWeight` is the floor and `cardWeights` gives each selectable card's
-   * contribution; the two are set together and take precedence over `minTotalManaValue`.
+   * The sum gate shared by the graveyard exile costs that constrain a *total* rather than a count
+   * — collect evidence N (CR 701.59a, mana value) and Baron Helmut Zemo's black-pip total.
+   * `minTotalWeight` is the floor, `cardWeights` gives each selectable card's server-computed
+   * contribution, and `weightUnit` names one unit for the tally ("mana value"); all three are set
+   * together. When set, the confirm button stays disabled until the running total reaches the
+   * floor, and the overlay shows that total — `minTargets` / `maxTargets` say nothing useful here,
+   * because the cost constrains no card count at all. An empty selection is exempt so an optional
+   * collection can still be declined.
    */
   minTotalWeight?: number
   cardWeights?: Record<string, number>
+  weightUnit?: string
   /** The zone the current targets are in (e.g., "Graveyard"). Set by server via targetRequirements. */
   targetZone?: string
   /** Description of the current target requirement (e.g., "non-Zombie creature") */

@@ -160,7 +160,9 @@ object GraveyardTotalExileResolver {
      * [AdditionalCostData.exileMinTotalWeight] + [AdditionalCostData.exileCardWeights] are what make
      * the client's picker a *sum* gate over a measure it can't compute itself; the ordinary
      * `exileMinCount` / `exileMaxCount` pair can only express a counted selection, so it is set to
-     * "at least one, at most all of them" and carries none of the real constraint.
+     * "at least one, at most all of them" and carries none of the real constraint. Collect evidence
+     * ships the same three fields ([CollectEvidenceResolver.costInfo]), so the client has one
+     * sum-gated picker rather than one per cost.
      */
     fun costInfo(atom: CostAtom.ExileFromGraveyardForTotal, candidates: Candidates): AdditionalCostData? {
         if (!candidates.canReach(atom.minTotal)) return null
@@ -172,6 +174,7 @@ object GraveyardTotalExileResolver {
             exileMaxCount = candidates.cards.size,
             exileMinTotalWeight = atom.minTotal,
             exileCardWeights = candidates.weightById,
+            exileWeightUnit = atom.measure.unitLabel,
         )
     }
 

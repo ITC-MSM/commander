@@ -489,9 +489,11 @@ excluded.
   **The threshold is a floor on total mana value, not a card count.** Exiling *more* than N is legal,
   and mana-value-0 cards (lands) are legal selections contributing nothing — so "enough cards" never
   implies "enough evidence". The picker is therefore a variable-size selection with a sum gate:
-  `AdditionalCostData.exileMinTotalManaValue` and `SelectCardsDecision.minTotalManaValue` (the mirror
-  of the existing `maxTotalManaValue` cap) carry the floor, and the client shows a running total and
-  keeps Confirm disabled until it is met.
+  `AdditionalCostData.exileMinTotalWeight` (with the per-card `exileCardWeights` the client sums and
+  the `exileWeightUnit` it labels the tally with — the same payload the filtered
+  `ExileFromGraveyardForTotal` uses, so there is one sum-gated picker rather than one per cost) and
+  `SelectCardsDecision.minTotalManaValue` (the mirror of the existing `maxTotalManaValue` cap) carry
+  the floor, and the client shows a running total and keeps Confirm disabled until it is met.
 
   Per **CR 701.59b** a player who cannot reach N *can't choose to collect evidence*: every
   affordability check fails closed on the summed mana value, so the option is never payable and an
@@ -531,11 +533,14 @@ excluded.
   battlefield projection); the *filter* evaluates against projected state like every other cost
   filter.
 
-  Client-side the picker is the collect-evidence picker with a server-supplied weight table:
-  `AdditionalCostData.exileMinTotalWeight` + `exileCardWeights` under `costType == "ExileForTotal"`,
-  because a pip total is a server-side reading of the printed cost that the client can't compute for
-  itself. The server re-validates the submitted selection regardless — a submitted selection that
-  doesn't pay is **rejected**, never silently replaced with the engine's own pick.
+  Client-side it *is* the collect-evidence picker — one branch, not a parallel one. Both costs ship
+  `AdditionalCostData.exileMinTotalWeight` + `exileCardWeights` + `exileWeightUnit` (the unit label
+  comes from `CardMeasure.unitLabel`, so the measure names itself and the client never has to know
+  which cost it is looking at); only `costType` differs. The weights are server-computed for both,
+  because a pip total is a reading of the printed cost the client can't do — and sending mana values
+  it *could* have computed is what buys the single code path. The server re-validates the submitted
+  selection regardless — a submitted selection that doesn't pay is **rejected**, never silently
+  replaced with the engine's own pick.
 
   Activated-ability cost only today: it is deliberately reported unpayable as a spell's additional
   cost and as a `PayCost`, since no printed card wants either and an offered-then-unpayable cost is
@@ -2987,7 +2992,7 @@ effect = Effects.Pipeline {
   Onslaught): `RepeatDynamicTimes(XValue, manifestDread(markEntered = true))` →
   `gather(EnteredViaThisResolution)` → `AddCountersToCollection(+1/+1, XValue)`.
 - `CardSource.LastKnownEquipmentAttachedToSource` — the Equipment that was attached to the source the
-  moment a self-sacrifice / self-exile cost moved it off the battlefield (CR 112.7a), read off
+  moment a self-sacrifice / self-exile cost moved it off the battlefield (CR 113.7a), read off
   `EffectContext.lastKnownSourceAttachments` (captured before the cost wiped the source's attachment
   list) and restricted to permanents still on the battlefield that are still Equipment. The host has
   gone by resolution, so the live attachment index is empty — only the captured snapshot identifies
@@ -7079,8 +7084,8 @@ copy of it (CR 707.10e). The activated-ability analogue of the spell-level `cant
 > Two properties drive the whole implementation:
 > - **The constraint is a sum, not a count.** Overpaying is legal, and a graveyard of lands (mana
 >   value 0) is never enough evidence however many cards it holds. Selection is variable-size with a
->   mana-value floor — `exileMinTotalManaValue` on the cost payload, `minTotalManaValue` on
->   `SelectCardsDecision`.
+>   mana-value floor — `exileMinTotalWeight` + `exileCardWeights` on the cost payload,
+>   `minTotalManaValue` on `SelectCardsDecision`.
 > - **CR 701.59b fails closed.** A player unable to reach N *can't choose to collect evidence*, so
 >   every affordability check gates on the summed mana value and an under-total submission is
 >   rejected rather than completed.
@@ -7337,7 +7342,7 @@ composite abilities).
   cost whose amount is a `DynamicAmount` read when the ward trigger *resolves* (CR 702.21b) — e.g.
   Raubahn, Bull of Ala Mhigo's "Ward—Pay life equal to Raubahn's power"
   (`wardLife(DynamicAmounts.sourcePower())`), which reads the source's projected power then, or its
-  last-known power if the source has left the battlefield (CR 112.7a, via `EntityReference.Source`'s
+  last-known power if the source has left the battlefield (CR 113.7a, via `EntityReference.Source`'s
   last-known-information policy). It resolves down to a fixed `WardCost.Life` in the executor, so it
   composes inside `WardCost.Composite` and uses the same pay-or-counter prompt.
   `WardCost.CollectEvidence(n)` (built via `KeywordAbility.wardCollectEvidence(n)`) is
@@ -9109,7 +9114,7 @@ both spellings, and the ability its bare-noun line grants says "Regenerate this 
 ### Last-known source counters (self-exile / self-sacrifice cost, dies/leaves triggers)
 
 - `LastKnownSourceCounters(CounterTypeFilter)` — the number of matching counters the *source* had as it last existed
-  on the battlefield (CR 112.7a / 608.2h). Counters cease to exist on a zone change (CR 122.2), so the value comes
+  on the battlefield (CR 113.7a / 608.2h). Counters cease to exist on a zone change (CR 122.2), so the value comes
   from whichever snapshot the resolution context carries — the two never both apply to one resolution:
   - the **cost-payment** snapshot, taken by `ActivateAbilityHandler` when an activated ability's cost exiles or
     sacrifices its own source. Lost Isle Calling: "{4}{U}{U}, Exile this enchantment: Draw a card for each verse
@@ -9163,7 +9168,7 @@ both spellings, and the ability its bare-noun line grants says "Regenerate this 
   `LastKnownSourceCounters`, applied automatically to `EntityProperty(EntityReference.Source, Power|Toughness)`
   (i.e. `DynamicAmounts.sourcePower()` / `sourceToughness()`). When an activated ability's cost sacrifices or
   exiles its own source, the source is off the battlefield by resolution, so `ActivateAbilityHandler` snapshots
-  its projected P/T at cost-payment time (CR 112.7a / 608.2h, mirroring the counter snapshot) and
+  its projected P/T at cost-payment time (CR 113.7a / 608.2h, mirroring the counter snapshot) and
   `DynamicAmountEvaluator` reads the snapshot back when the source is no longer on the battlefield. This makes
   "{T}, Sacrifice this creature: it deals damage equal to its power" (Ghitu Fire-Eater, Cinder Shade, Blazing
   Bomb's Blow Up) read the pre-sacrifice power including counters/buffs rather than zero. No DSL change: existing
@@ -9177,7 +9182,7 @@ both spellings, and the ability its bare-noun line grants says "Regenerate this 
   dedicated node rather than `EntityProperty(TappedAsCost(0), Power)` so the CR 702.184c characteristic substitution
   (Tapestry Warden's `StationUsingToughness` → use toughness when toughness > power) is confined to station abilities
   and never rewrites an unrelated "tap a creature: do X equal to its power" read. Resolves with last-known information
-  (CR 112.7a) if the tapped creature has left the battlefield before the station ability resolves.
+  (CR 113.7a) if the tapped creature has left the battlefield before the station ability resolves.
 
 ### Card properties
 
@@ -10526,7 +10531,7 @@ substitution.
   one, transforming the artifact once a `Compare(countersOnSelf(Named(OMEN)), EQ, 0)` intervening check passes.
   Pure passive counters with no inherent rule; the cards that use them accumulate/spend them via their own
   abilities and read the count via `DynamicAmounts.countersOnSelf(CounterTypeFilter.Named(Counters.X))` — or, when a
-  self-sacrifice/exile cost wipes them first, `DynamicAmounts.lastKnownSourceCounters(...)` (CR 112.7a; see §13).
+  self-sacrifice/exile cost wipes them first, `DynamicAmounts.lastKnownSourceCounters(...)` (CR 113.7a; see §13).
   `rev` (`Counters.REV`): DSK — Chainsaw, whose "whenever one or more creatures die" batched trigger accumulates one
   per death batch and whose `+X/+0` static reads the count via `DynamicAmounts.countersOnSelf(...)` applied to the
   equipped creature — another pure passive counter with no inherent rule.

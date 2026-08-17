@@ -259,21 +259,16 @@ data class AdditionalCostInfo(
     val exileMinCount: Int = 0,
     val exileMaxCount: Int = 0,
     /**
-     * Sum gate for a `CollectEvidence` cost (CR 701.59a) — see
-     * [com.wingedsheep.engine.legalactions.AdditionalCostData.exileMinTotalManaValue]. The client
-     * sums the mana values it already knows per card and enables Confirm at this floor; the count
-     * bounds carry no constraint for that cost. 0 for every other cost type.
-     */
-    val exileMinTotalManaValue: Int = 0,
-    /**
-     * Sum gate for an `ExileForTotal` cost — see
+     * Sum gate for a graveyard exile cost measured by a total rather than a count — collect
+     * evidence N (CR 701.59a) and `ExileForTotal` alike; see
      * [com.wingedsheep.engine.legalactions.AdditionalCostData.exileMinTotalWeight]. The client sums
-     * [exileCardWeights] over its selection and enables Confirm at [exileMinTotalWeight]; the
-     * server re-validates the submitted selection either way. Both are 0 / empty for every other
-     * cost type.
+     * [exileCardWeights] over its selection, labels the tally with [exileWeightUnit] and enables
+     * Confirm at [exileMinTotalWeight]; the server re-validates the submitted selection either way.
+     * All three are 0 / empty for every other cost type.
      */
     val exileMinTotalWeight: Int = 0,
     val exileCardWeights: Map<EntityId, Int> = emptyMap(),
+    val exileWeightUnit: String = "",
     val validBeholdTargets: List<EntityId> = emptyList(),
     val beholdCount: Int = 0,
     val counterRemovalCreatures: List<CounterRemovalCreatureInfo> = emptyList(),

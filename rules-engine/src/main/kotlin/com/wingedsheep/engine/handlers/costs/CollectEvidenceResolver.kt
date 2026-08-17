@@ -97,9 +97,11 @@ object CollectEvidenceResolver {
      * The legal-action cost payload for a collect-evidence cost, or null when the graveyard can't
      * reach [amount] (CR 701.59b — the caller must then omit the action entirely).
      *
-     * [AdditionalCostData.exileMinTotalManaValue] is what makes the client's picker a *sum* gate:
-     * the ordinary `exileMinCount` / `exileMaxCount` pair can only express a counted selection, and
-     * this cost has no meaningful count.
+     * [AdditionalCostData.exileMinTotalWeight] + [AdditionalCostData.exileCardWeights] are what make
+     * the client's picker a *sum* gate: the ordinary `exileMinCount` / `exileMaxCount` pair can only
+     * express a counted selection, and this cost has no meaningful count. The weights here are the
+     * mana values the client could have summed itself — shipping them anyway is what lets one client
+     * path serve both sum-gated exile costs (see [GraveyardTotalExileResolver.costInfo]).
      */
     fun costInfo(candidates: Candidates, amount: Int): AdditionalCostData? {
         if (!candidates.canReach(amount)) return null
@@ -112,7 +114,9 @@ object CollectEvidenceResolver {
             // the mana-value sum below, not either of these.
             exileMinCount = 1,
             exileMaxCount = candidates.cards.size,
-            exileMinTotalManaValue = amount,
+            exileMinTotalWeight = amount,
+            exileCardWeights = candidates.manaValueById,
+            exileWeightUnit = MEASURE.unitLabel,
         )
     }
 

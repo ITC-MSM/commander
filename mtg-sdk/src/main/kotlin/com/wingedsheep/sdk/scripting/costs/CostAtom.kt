@@ -554,6 +554,13 @@ sealed interface CardMeasure {
     fun thresholdPhrase(minTotal: Int): String
 
     /**
+     * What one unit of this measure is called, for a running total the player watches while
+     * picking ("3 / 6 mana value"). The bare noun phrase only — the numbers around it belong to
+     * whoever renders the tally, and [thresholdPhrase] is the sentence form.
+     */
+    val unitLabel: String
+
+    /**
      * The card's mana value (CR 202.3) — the measure collect evidence N uses
      * ("with total mana value N or greater", CR 701.59a).
      */
@@ -561,6 +568,7 @@ sealed interface CardMeasure {
     @Serializable
     data object ManaValue : CardMeasure {
         override fun thresholdPhrase(minTotal: Int): String = "total mana value $minTotal or greater"
+        override val unitLabel: String get() = "mana value"
     }
 
     /**
@@ -589,5 +597,8 @@ sealed interface CardMeasure {
         override fun thresholdPhrase(minTotal: Int): String =
             "$minTotal or more ${colors.joinToString(" or ") { it.displayName.lowercase() }} " +
                 "mana symbols among their mana costs"
+
+        override val unitLabel: String
+            get() = "${colors.joinToString(" or ") { it.displayName.lowercase() }} mana symbols"
     }
 }

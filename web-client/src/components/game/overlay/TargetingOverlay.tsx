@@ -31,7 +31,7 @@ function ZoneCardTargetingOverlay({
   onViewBattlefield,
 }: {
   zoneCards: ClientCard[]
-  targetingState: { selectedTargets: readonly EntityId[]; minTargets: number; maxTargets: number; targetDescription?: string; currentRequirementIndex?: number; totalRequirements?: number; sourceCardName?: string; minTotalManaValue?: number; minTotalWeight?: number; cardWeights?: Record<string, number> }
+  targetingState: { selectedTargets: readonly EntityId[]; minTargets: number; maxTargets: number; targetDescription?: string; currentRequirementIndex?: number; totalRequirements?: number; sourceCardName?: string; minTotalWeight?: number; cardWeights?: Record<string, number>; weightUnit?: string }
   responsive: ResponsiveSizes
   onSelect: (cardId: EntityId) => void
   onDeselect: (cardId: EntityId) => void
@@ -57,17 +57,15 @@ function ZoneCardTargetingOverlay({
   const minTargets = targetingState.minTargets
   const maxTargets = targetingState.maxTargets
 
-  // Collect evidence N (CR 701.59a): the cost constrains the *summed mana value* of the picked
-  // cards, not how many there are, so Confirm is gated on the running total rather than the count.
-  // An empty selection is exempt — that is how an optional collection is declined.
-  // Two costs share this gate: collect evidence sums mana value, which the client already knows
-  // per card, while an `ExileForTotal` cost sums a measure only the server can read and therefore
-  // ships explicit per-card weights. One floor, one weight lookup — the weights win when present.
-  const sumFloor = targetingState.minTotalWeight ?? targetingState.minTotalManaValue
+  // A sum-gated graveyard exile — collect evidence N (CR 701.59a) or Baron Helmut Zemo's pip total
+  // — constrains the *summed measure* of the picked cards, not how many there are, so Confirm is
+  // gated on the running total rather than the count. An empty selection is exempt: that is how an
+  // optional collection is declined. Every weight comes from the server (the client computes no
+  // measure of its own), and the server names the unit it measured in.
+  const sumFloor = targetingState.minTotalWeight
   const weights = targetingState.cardWeights
-  const floorUnit = weights != null ? '' : ' mana value'
-  const weightOf = (id: EntityId): number =>
-    weights != null ? (weights[id] ?? 0) : (gameState?.cards[id]?.manaValue ?? 0)
+  const floorUnit = targetingState.weightUnit ? ` ${targetingState.weightUnit}` : ''
+  const weightOf = (id: EntityId): number => weights?.[id] ?? 0
   const totalSelected =
     sumFloor == null
       ? 0
