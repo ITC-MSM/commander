@@ -77,6 +77,10 @@ class TriggersTest : StringSpec({
         )
     }
 
+    // The prefix itself is one slot over `Triggers.phase(step, player, binding)` and lives in
+    // [Phases], whose own test covers every spelling it can take. What belongs *here* is the lift: a
+    // step trigger's effect clause is the same English a spell prints, so it inherits the whole step
+    // vocabulary exactly as an event trigger's does.
     "the step triggers are the same shape with a different prefix" {
         listOf(
             "At the beginning of your upkeep, draw a card.",
@@ -89,17 +93,6 @@ class TriggersTest : StringSpec({
 
         ability("At the beginning of your upkeep, draw a card.").trigger shouldBe
             SdkTriggers.YourUpkeep.event
-    }
-
-    // Wizards templates the all-players steps both ways. One model cannot have two printed forms, so
-    // the more common spelling prints and the other parses — VARIANT, not a decline, and the reading
-    // is provably unchanged because reparsing the printed line gives the identical ability.
-    "the each-player spelling parses to the same model and prints as the canonical one" {
-        ability("At the beginning of each player's upkeep, draw a card.") shouldBe
-            ability("At the beginning of each upkeep, draw a card.")
-
-        Grammar.abilityLine.printLine(fragment("At the beginning of each player's upkeep, draw a card.")) shouldBe
-            "At the beginning of each upkeep, draw a card."
     }
 
     // "You may …" is one sentence with one model. A triggered ability used to spell it with an
