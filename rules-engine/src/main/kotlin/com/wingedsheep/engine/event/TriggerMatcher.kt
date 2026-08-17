@@ -1532,8 +1532,9 @@ class TriggerMatcher(
      * step in Two-Headed Giant (CR 805.4d): every member of the active team sees their own "at the
      * beginning of your upkeep/draw/end step" trigger fire, and a nonactive player's "each opponent's
      * step" trigger fires while the opposing team is active. In a non-team game this reduces to the
-     * ordinary active-player comparison. (The 805.4d per-opponent *multiplicity* nuance — firing once
-     * per opposing teammate — is not yet modelled; the trigger fires once.)
+     * ordinary active-player comparison. CR 805.4d's per-opponent *multiplicity* is applied by
+     * [TriggerDetector] after this team-scoped match: it creates one context per opposing teammate
+     * only when the triggered ability's typed rules data refers to that individual player.
      *
      * [Player.ChosenOpponent] keys the step to the opponent stored on the source permanent when
      * it entered (`ChoiceSlot.OPPONENT`, via [com.wingedsheep.sdk.scripting.EntersWithChoice]) —
