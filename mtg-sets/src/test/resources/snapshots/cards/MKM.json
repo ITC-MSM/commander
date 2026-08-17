@@ -2369,6 +2369,124 @@
     ]
 }
 
+// Cease // Desist
+{
+    "name": "Cease // Desist",
+    "manaCost": "",
+    "typeLine": "Instant",
+    "oracleText": "Exile up to two target cards from a single graveyard. Target player gains 2 life and draws a card.\n//\nDestroy all artifacts and enchantments.",
+    "metadata": {
+        "collectorNumber": "246",
+        "rarity": "UNCOMMON",
+        "artist": "Dominik Mayer",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/b/cb59130a-a134-4383-b983-e4b526d11fb4.jpg?1783912830"
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLACK",
+        "GREEN"
+    ],
+    "layout": "SPLIT",
+    "cardFaces": [
+        {
+            "name": "Cease",
+            "manaCost": "{1}{B/G}",
+            "typeLine": "Instant",
+            "oracleText": "Exile up to two target cards from a single graveyard. Target player gains 2 life and draws a card.",
+            "script": {
+                "spellEffect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": "ChosenTargets",
+                            "storeAs": "ceaseTargets"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "ceaseTargets",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile"
+                            }
+                        },
+                        {
+                            "type": "GainLife",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 2
+                            },
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target player"
+                            }
+                        },
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            },
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target player"
+                            }
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "count": 2,
+                        "optional": true,
+                        "filter": {
+                            "baseFilter": {},
+                            "zone": "Graveyard"
+                        },
+                        "id": "up to two target cards from a single graveyard",
+                        "sameOwner": true
+                    },
+                    {
+                        "type": "TargetPlayer",
+                        "id": "target player"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "Desist",
+            "manaCost": "{4}{G/W}{G/W}",
+            "typeLine": "Sorcery",
+            "oracleText": "Destroy all artifacts and enchantments.",
+            "script": {
+                "spellEffect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "BattlefieldMatching",
+                                "filter": "artifact|enchantment"
+                            },
+                            "storeAs": "destroyAll_gathered"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "destroyAll_gathered",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            },
+                            "moveType": "Destroy"
+                        }
+                    ]
+                }
+            }
+        }
+    ],
+    "hasNoManaCost": true
+}
+
 // Cerebral Confiscation
 {
     "name": "Cerebral Confiscation",
@@ -8156,6 +8274,112 @@
     ]
 }
 
+// Leyline of the Guildpact
+{
+    "name": "Leyline of the Guildpact",
+    "manaCost": "{G/W}{G/U}{B/G}{R/G}",
+    "typeLine": "Enchantment",
+    "oracleText": "If this card is in your opening hand, you may begin the game with it on the battlefield.\nEach nonland permanent you control is all colors.\nLands you control are every basic land type in addition to their other types.",
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "GrantColor",
+                "color": "WHITE",
+                "filter": {
+                    "baseFilter": "nonland permanent ctrl:you"
+                }
+            },
+            {
+                "type": "GrantColor",
+                "color": "BLUE",
+                "filter": {
+                    "baseFilter": "nonland permanent ctrl:you"
+                }
+            },
+            {
+                "type": "GrantColor",
+                "color": "BLACK",
+                "filter": {
+                    "baseFilter": "nonland permanent ctrl:you"
+                }
+            },
+            {
+                "type": "GrantColor",
+                "color": "RED",
+                "filter": {
+                    "baseFilter": "nonland permanent ctrl:you"
+                }
+            },
+            {
+                "type": "GrantColor",
+                "color": "GREEN",
+                "filter": {
+                    "baseFilter": "nonland permanent ctrl:you"
+                }
+            },
+            {
+                "type": "GrantSubtype",
+                "subtype": "Plains",
+                "filter": {
+                    "baseFilter": "land ctrl:you"
+                }
+            },
+            {
+                "type": "GrantSubtype",
+                "subtype": "Island",
+                "filter": {
+                    "baseFilter": "land ctrl:you"
+                }
+            },
+            {
+                "type": "GrantSubtype",
+                "subtype": "Swamp",
+                "filter": {
+                    "baseFilter": "land ctrl:you"
+                }
+            },
+            {
+                "type": "GrantSubtype",
+                "subtype": "Mountain",
+                "filter": {
+                    "baseFilter": "land ctrl:you"
+                }
+            },
+            {
+                "type": "GrantSubtype",
+                "subtype": "Forest",
+                "filter": {
+                    "baseFilter": "land ctrl:you"
+                }
+            }
+        ],
+        "mayStartOnBattlefield": true
+    },
+    "metadata": {
+        "collectorNumber": "217",
+        "rarity": "RARE",
+        "artist": "Daarken",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/f/bf6e59be-f959-4f4a-8c2d-b7c441e88135.jpg?1783912844",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "Each land you control will have the land types Plains, Island, Swamp, Mountain, and Forest. They'll also have the mana ability of each basic land type. They'll still have their other subtypes and abilities."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "Giving a land additional basic land types doesn't change its name or whether it's legendary or basic."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLUE",
+        "BLACK",
+        "RED",
+        "GREEN"
+    ]
+}
+
 // Long Goodbye
 {
     "name": "Long Goodbye",
@@ -10703,6 +10927,119 @@
         ]
     },
     "colorIdentityOverride": []
+}
+
+// Push // Pull
+{
+    "name": "Push // Pull",
+    "manaCost": "",
+    "typeLine": "Sorcery",
+    "oracleText": "Destroy target tapped creature.\n//\nPut up to two target creature cards from a single graveyard onto the battlefield under your control. They gain haste until end of turn. Sacrifice them at the beginning of the next end step.",
+    "metadata": {
+        "collectorNumber": "250",
+        "rarity": "UNCOMMON",
+        "artist": "Eli Minaya",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/5/85835473-b9b6-4f4a-bb93-fef93d5ec57b.jpg?1783912830"
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLACK",
+        "RED"
+    ],
+    "layout": "SPLIT",
+    "cardFaces": [
+        {
+            "name": "Push",
+            "manaCost": "{1}{W/B}",
+            "typeLine": "Sorcery",
+            "oracleText": "Destroy target tapped creature.",
+            "script": {
+                "spellEffect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target tapped creature"
+                    },
+                    "destination": "Graveyard",
+                    "byDestruction": true
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature tapped"
+                        },
+                        "id": "target tapped creature"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "Pull",
+            "manaCost": "{4}{B/R}{B/R}",
+            "typeLine": "Sorcery",
+            "oracleText": "Put up to two target creature cards from a single graveyard onto the battlefield under your control. They gain haste until end of turn. Sacrifice them at the beginning of the next end step.",
+            "script": {
+                "spellEffect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": "ChosenTargets",
+                            "storeAs": "pullTargets"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "pullTargets",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Battlefield"
+                            },
+                            "storeMovedAs": "pullEntered"
+                        },
+                        {
+                            "type": "ForEach",
+                            "space": {
+                                "type": "IterationSpace.Collection",
+                                "collection": "pullEntered"
+                            },
+                            "body": {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "GrantKeyword",
+                                        "keyword": "HASTE",
+                                        "target": "Self"
+                                    },
+                                    {
+                                        "type": "CreateDelayedTrigger",
+                                        "step": "END",
+                                        "effect": {
+                                            "type": "SacrificeTarget",
+                                            "target": "Self"
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "count": 2,
+                        "optional": true,
+                        "filter": {
+                            "baseFilter": "creature",
+                            "zone": "Graveyard"
+                        },
+                        "sameOwner": true
+                    }
+                ]
+            }
+        }
+    ],
+    "hasNoManaCost": true
 }
 
 // Pyrotechnic Performer
