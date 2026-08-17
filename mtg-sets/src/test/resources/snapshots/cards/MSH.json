@@ -5065,6 +5065,150 @@
     ]
 }
 
+// Doom Reigns Supreme
+{
+    "name": "Doom Reigns Supreme",
+    "manaCost": "{1}{B}",
+    "typeLine": "Enchantment — Plan",
+    "oracleText": "Whenever a Villain you control enters, each opponent loses 1 life and you gain 1 life. Put a plan counter on this enchantment.\nWhen the fifth plan counter is put on this enchantment, sacrifice it. When you do, target opponent exiles the top five cards of their library. You may cast up to two spells from among the exiled cards without paying their mana costs.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "permanent Villain ctrl:you",
+                    "to": "Battlefield"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "LoseLife",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 1
+                            },
+                            "target": {
+                                "type": "PlayerRef",
+                                "player": "EachOpponent"
+                            }
+                        },
+                        {
+                            "type": "GainLife",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        },
+                        {
+                            "type": "AddCounters",
+                            "counterType": "plan",
+                            "count": 1,
+                            "target": "Self"
+                        }
+                    ]
+                },
+                "descriptionOverride": "Whenever a Villain you control enters, each opponent loses 1 life and you gain 1 life. Put a plan counter on this enchantment."
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "CountersPlacedEvent",
+                    "counterType": "plan"
+                },
+                "effect": {
+                    "type": "ReflexiveTrigger",
+                    "action": {
+                        "type": "SacrificeTarget",
+                        "target": "Self"
+                    },
+                    "optional": false,
+                    "reflexiveEffect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "GatherCards",
+                                        "source": {
+                                            "type": "TopOfLibrary",
+                                            "count": {
+                                                "type": "Fixed",
+                                                "amount": 5
+                                            },
+                                            "player": "TargetOpponent"
+                                        },
+                                        "storeAs": "exiled_top"
+                                    },
+                                    {
+                                        "type": "MoveCollection",
+                                        "from": "exiled_top",
+                                        "destination": {
+                                            "type": "ToZone",
+                                            "zone": "Exile",
+                                            "player": "TargetOpponent"
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "FilterCollection",
+                                "from": "exiled_top",
+                                "filter": {
+                                    "type": "MatchesFilter",
+                                    "filter": "nonland"
+                                },
+                                "storeMatching": "castable"
+                            },
+                            {
+                                "type": "CastAnyNumberFromCollectionWithoutPayingCost",
+                                "from": "castable",
+                                "maxCasts": 2
+                            }
+                        ]
+                    },
+                    "reflexiveTargetRequirements": [
+                        "TargetOpponent"
+                    ],
+                    "descriptionOverride": "Sacrifice this enchantment. When you do, target opponent exiles the top five cards of their library. You may cast up to two spells from among the exiled cards without paying their mana costs."
+                },
+                "triggerCondition": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "EntityProperty",
+                        "entity": "Source",
+                        "numericProperty": {
+                            "type": "CounterCount",
+                            "counterType": {
+                                "type": "Named",
+                                "name": "plan"
+                            }
+                        }
+                    },
+                    "operator": "GTE",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 5
+                    }
+                },
+                "descriptionOverride": "When the fifth plan counter is put on this enchantment, sacrifice it. When you do, target opponent exiles the top five cards of their library. You may cast up to two spells from among the exiled cards without paying their mana costs."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "96",
+        "rarity": "RARE",
+        "artist": "Alexander Gering",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/b/9b99894b-c774-45c2-9ee9-4d6a8e7522f5.jpg?1783902944"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Earth's Mightiest Heroes
 {
     "name": "Earth's Mightiest Heroes",

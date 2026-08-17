@@ -1,94 +1,76 @@
-# u37 — Storm, Windrider (+ two combat/iteration primitives)
+# u38 — Doom Reigns Supreme (+ one capped-free-cast bound)
 
-**Card.** Storm, Windrider [MSH 230] — {1}{G}{W}{W} 4/4 flier. Three clauses, three different
-rules: `CantBeAttackedBy` (defender-side attack restriction), `CantBeBlockedBy` over a
-battlefield-scoped `GroupFilter` (the "or block creatures you control" half — read from the
-attacker's side, not a `CantBlock`), and a cast trigger whose payoff acts on the targets the
-trigger captured.
+**Card.** Doom Reigns Supreme [MSH 96] — {1}{B} Enchantment — Plan. Accumulator: "Whenever a
+Villain you control enters, each opponent loses 1 life and you gain 1 life. Put a plan counter on
+this enchantment." Payoff: "When the fifth plan counter is put on this enchantment, sacrifice it.
+When you do, target opponent exiles the top five cards of their library. You may cast up to two
+spells from among the exiled cards without paying their mana costs."
 
-**Primitive 1 — `CantBeAttackedBy(attackerFilter)`.** A *generalization*, not an addition: the old
-`CantBeAttackedWithout(requiredKeyword, attackerFilter)` could only say "…**without** keyword", and
-`GameObjectFilter.withoutKeyword` already expressed that. One filter-shaped static now covers both
-polarities; the old type is deleted and Form of the Dragon + Teferi's Moat migrated onto it.
-Engine: `CantBeAttackedWithoutDefenderRule` → `CantBeAttackedByDefenderRule`, plus a face-down
-guard (CR 708.2) and the CR 506.3 / 508.1b scope fix below.
+**Triage (nobody did it before me).** Everything except the "up to two" bound composes from
+existing vocabulary. The set's own gap doc had already reached the same conclusion
+(`backlog/sets/marvel-super-heroes/mechanics.md` → "Capped free cast — Doom Reigns Supreme"); I
+re-derived it from Scryfall + the code before reading that, and the two agree.
 
-**Primitive 2 — trigger-time capture of a spell's targets.** `Triggers.youCastSpellTargeting(filter)`
-now records the targets that satisfied its own `SpellCastPredicate.TargetsMatching` gate into
-`TriggerContext.capturedEntityIds`, which the resolving ability sees as
-`IterationSpace.TRIGGER_CAPTURED_COLLECTION` — the same engine-seeded slot a batched ETB payoff reads
-(Kambal). Storm's payoff is then a plain
-`ForEachInCollectionEffect(TRIGGER_CAPTURED_COLLECTION, GrantKeyword(FLYING, Self))`: no new effect
-type, no new sealed variant. Gate and payoff are one computation (`TriggerMatcher.matchingCastTargets`),
-so they can't drift, and the capture is a snapshot at trigger time — countering or retargeting the
-spell in response to the trigger can't change which creatures gain flying (CR 113.7a).
+**Primitive — `maxCasts` on `CastAnyNumberFromCollectionWithoutPayingCostEffect`.** A
+generalization of the existing free-cast loop, not a new effect type. `null` (the default) is the
+old uncapped "any number" behaviour, so Villainous Wealth / Etali / Kotis / The Tale of Tamiyo are
+byte-identical. Engine: the executor no-ops when the budget is `<= 0` (before offering a decision),
+puts the budget on `CastAnyNumberFromCollectionContinuation`, and the resumer re-enters the loop
+with `maxCasts - 1` when the pick will actually be cast. Facade
+`Effects.CastUpToNFromCollectionWithoutPayingCost(from, maxCasts)` (which rejects a non-positive
+cap). `docs/card-sdk-language-reference.md` updated in the same change.
 
-**Engine fix behind the block half.** `CantBeBlockedByRule.hostScopedRestrictions` skipped the host
-permanent whenever the host *was* the attacker, which silently exempted a creature whose own
-battlefield-group clause names a group it belongs to (Storm is "a creature you control"). Host is
-now included; the group filter's `excludeSelf` is honored for the "other creatures you control …"
-wording. Only Wall Crawl (an enchantment) uses this shape today, so no existing card changes.
+**Composition for everything else.** Villain-enters filter is
+`GameObjectFilter.Permanent.withSubtype(VILLAIN).youControl()` — "a Villain you control" selects by
+subtype, so a noncreature permanent that gained it would count (every printed Villain is in fact a
+creature, so the two filters agree on today's pool). The drain is `LoseLife(1, EachOpponent)` + flat `GainLife(1)`, *not* `DrainLife` (the
+gain is 1 regardless of opponent count / prevention) — the Kang, Temporal Tyrant idiom. The
+threshold is the Plan cycle's `Triggers.countersPlacedOn(SELF)` +
+`Conditions.SourceCounterCountAtLeast(PLAN, 5)`; exact because the payoff sacrifices its own
+source, so a sixth counter can never land. The payoff is the Villainous Wealth pipeline
+(`Patterns.Library.exileTop(5, TargetOpponent)` → `FilterCollection(Nonland)`) plus the capped cast,
+inside a mandatory `ReflexiveTriggerEffect` (CR 603.12, verified against the local comp rules).
 
-**Mutation-proved.** Each piece was stubbed on its own and the suite re-run, then restored:
-`CantBeAttackedBy` disabled → 4/5 restriction tests + Storm's attack test red; the host-self skip
-restored → *exactly* the two tests that cover it red, the other three group tests green; the
-trigger-time capture returning `null` → 4/5 capture tests + all 3 Storm grant tests red (the "no
-targets" one correctly stays green, and the combat tests stay green). Teferi's Moat's filter reduced
-to a bare `Creature` → 3/4 of its new tests red, so its conjunction tests are discriminating; Form of
-the Dragon's filter flipped to `withKeyword` → its (rewritten) attack test red.
-**Finding from the first run:** the pre-existing `FormOfTheDragonTest > non-flying creature cannot
-attack controller` stayed **green** under the stub — it asserted a life total, not the rejection.
-It has since been rewritten to declare attackers and assert the rejection, and now fails under the
-mutation.
+**Gate.** `just test` → 13,280 tests, 1 failure, 0 errors (counted from `build/test-results/*.xml`).
+The one failure is `AIPlayerTest > AI can evaluate board state`, a `TimeoutCancellationException` in
+the `ai` module — not in this diff, and green on a `just test-ai` re-run on the quiet box (all 14
+cases PASSED). All three `DoomReignsSupremeScenarioTest` cases passed inside the full run. The box
+was shared with a sibling container's build throughout (load peaked at 25, free memory at 68 MiB);
+an earlier attempt was OOM-killed outright. `just rebless-cards` → only `MSH.json` moved, 139
+insertions and **zero** deletions, and the only added `"name"` is `Doom Reigns Supreme`; no other
+set's golden moved. `just check-card-printing "Doom Reigns Supreme"` ok (MSH is the only real
+printing). `just fix-backlog` → 273/276.
 
-**Gate.** `just test` (see the PR body for the counted totals). `just rebless-cards` → MSH.json
-moves for Storm only; INV.json and SCG.json also move for the `CantBeAttackedWithout` →
-`CantBeAttackedBy` structural rename (see below).
-`just check-card-printing "Storm, Windrider"` ok; `just fix-backlog` → 272/276.
-`docs/card-sdk-language-reference.md` updated (the new static, the spell-cast target capture, and
-the `CantBeBlockedBy` group-scope note).
+**Mutation-proved.** The resumer's decrement was neutered (`it - 1` → `it - 0`) and the suite
+re-run: *exactly* "the loop stops after two casts even though a third card is still castable" went
+red; the ETB/threshold test and the decline-early test stayed green. Restored and re-run green.
 
 ## Things I'm unsure about — please look
 
-- **Two other sets' goldens moved, by design.** INV (Teferi's Moat) and SCG (Form of the Dragon)
-  re-encode their static from `CantBeAttackedWithout` to `CantBeAttackedBy`. That is a *structural
-  rename*, so it is not the "zero deletions" shape the unit brief describes as inherent movement —
-  5 lines deleted across the two files (INV −3, SCG −2), replaced by the equivalent filter.
-  Behaviour is preserved
-  (same defending-player scan, same projected-keyword read, `withoutKeyword` → `CardPredicate.NotKeyword`
-  which `PredicateEvaluator` answers off projected keywords). If a reviewer would rather keep the
-  old type and add a parallel one, that is the call to reverse — I judged one primitive better than
-  two overlapping ones, per `docs/sdk-design-principles.md`.
-- **I changed Form of the Dragon's planeswalker behaviour.** The old rule mapped a planeswalker
-  defender to its controller, so "creatures without flying can't attack you" also stopped attacks on
-  that player's planeswalkers. Form of the Dragon's own 2014-02-01 ruling — printed in the card file —
-  says the opposite, and CR 506.3 / 508.1b make a planeswalker a defender in its own right. The new rule returns early
-  unless the chosen defender *is* the player. This is the one behaviour change to a card I did not
-  otherwise own; I took it because I was redefining the primitive's meaning, but it is a fair thing
-  to challenge.
-- **`SpellCastPredicate.TargetsMatching` can match a creature *spell* on the stack.** Its helper
-  (`TriggerMatcher.castTargetEntities`) includes `ChosenTarget.Spell`, and `IsCreature` is true of a
-  creature card on the stack — so a counterspell aimed at a creature spell fires Storm's trigger
-  (and Mockingbird's, and Iron Fist's — this is pre-existing, shared behaviour I did not touch).
-  The capture is narrowed to battlefield permanents, so the payoff correctly does nothing; a test
-  pins that end to end. Fixing the *trigger* is worth a separate unit; changing three cards'
-  trigger conditions here would have been out of scope.
-- **The face-down guard on the attack rule is tested by stamping `FaceDownComponent` directly**
-  rather than by playing a morph, because no card with this static is morph-able. If the reviewer
-  thinks that test proves too little, it can go — the guard itself matches the block rules' pattern.
-- **Not tested: expiry of the granted flying.** `Duration.EndOfTurn` is shared engine machinery and
-  I did not add a "next turn it's gone" assertion; the tests assert the grant lands, not that it
-  lifts. (It is indirectly evidenced: the first version of these tests used a fixed
-  `repeat(8) { bothPass() }`, which walked past cleanup and expired the grant — that is what made
-  them fail. The tests now resolve only while the stack is non-empty.)
-- **Combat tests need a decoy attacker.** With no legal attack at all the engine skips the
-  declare-attackers step, so an "expect a rejection" assertion either never reaches the step or
-  passes for the wrong reason. Every attack test here keeps an unrestricted ground creature on the
-  attacking side and asserts `currentStep`/`activePlayer` before declaring. Worth knowing for the
-  next combat-restriction unit.
-- **Not tested: the `distinct()` in the capture** (a spell with two "target creature" instances
-  aimed at the same creature). I could not set that up through the driver without fighting the
-  target-legality checks, so the dedup is argued from CR 601.2c, not proven.
-- **No manual playthrough in the web client, no UX pass, no e2e, no AI-heuristic review.**
-  `ai/CardIntentAnalyzer` only special-cases `IterationSpace.Group`, and the payoff now uses the
-  pre-existing `IterationSpace.Collection`, so nothing there changed at all.
+- **The cap is enforced in the loop, not by a separate counter.** The budget decrements only in the
+  resumer. A declined pick ends the loop without spending anything, and (after review) a pick whose
+  required target has no legal choice — the cast can't initiate, CR 601.2c — leaves the budget
+  alone too, though that card is dropped from the pool. The one case that still spends a cast
+  without a spell reaching the stack is a cast that initiates and then errors inside
+  `CastSpellHandler`, which isn't knowable before the loop's tail effect is built. The number is
+  never surfaced as engine state a test could read directly; the tests prove it by what is and
+  isn't offered.
+- **`maxCasts` is not exposed on the paid facade** (`Effects.CastAnyNumberFromCollection`). The
+  field is on the shared effect, so a paid capped form is one keyword argument away, but no card
+  needs it and I did not add a facade for it.
+- **I edited `backlog/.../mechanics.md`**: deleted the now-closed "Capped free cast — Doom Reigns
+  Supreme" section, struck gap (2) on Baron Helmut Zemo (same missing field, now shipped), and
+  decremented the header's blocked count 22 → 21. I decremented by exactly one for the card I
+  shipped; I did **not** re-audit the other sections against the current SDK, so that number is
+  only as good as it was before.
+- **The prompt text changed for capped loops only** — "Choose a spell to cast for free (N
+  remaining), or select none to stop" (review reworded it from "up to N more", which reads as N *in
+  addition to* the card being chosen). Uncapped loops keep their old string verbatim. Nobody has
+  looked at how that reads in the real client.
+- **Not done: manual playthrough in the web client, UX pass, e2e, AI-heuristic review.** No new
+  decision type and no new `GameEvent`, so `SELECT_CARDS` routing and `ClientEvent` are untouched —
+  but that is an argument, not an observation.
+- **Multiplayer**: "each opponent loses 1 life" and "target opponent" are both modelled with the
+  proper multi/target references. A three-player test now pins the drain half (both opponents lose
+  1, the controller still gains exactly 1); the *targeted* payoff is still only exercised
+  two-player.

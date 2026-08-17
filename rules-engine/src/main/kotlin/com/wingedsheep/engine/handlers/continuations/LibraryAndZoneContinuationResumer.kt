@@ -1243,6 +1243,14 @@ class LibraryAndZoneContinuationResumer(
      *
      * The chosen card is keyed under a private collection name and the loop collection is
      * trimmed to the remainder, so each iteration's bookkeeping is self-contained.
+     *
+     * A capped loop ("cast up to N of them") carries its remaining budget on the continuation;
+     * the re-entered loop effect gets `maxCasts - 1` when the pick will actually be cast, and at
+     * 0 the executor ends the loop without offering another decision. A pick that can't be cast
+     * because a required target has no legal choice (CR 601.2c) leaves the budget alone — the
+     * card is still dropped from the pool, so the loop can't re-offer it forever. The residual
+     * case is a cast that initiates and then errors inside `CastSpellHandler`; that still spends
+     * a cast, because the outcome isn't knowable before the loop's tail effect is built.
      */
     fun resumeCastAnyNumberFromCollection(
         state: GameState,
@@ -1274,11 +1282,30 @@ class LibraryAndZoneContinuationResumer(
             )
         )
 
+        // "Up to N *spells*" is a cap on casts, not on picks: a chosen card whose required target
+        // has no legal choice can't be cast at all (CR 601.2c) and
+        // CastFromCollectionWithoutPayingCostExecutor no-ops on it, leaving it in exile. Ask the
+        // executor's own precondition the same question it will ask, so that pick doesn't burn a
+        // cast. Deterministic over the same state, so the two answers can't disagree.
+        val castWillInitiate = continuation.maxCasts == null ||
+            CastFromCollectionWithoutPayingCostExecutor.prepareTargetSelection(
+                state = state,
+                cardId = chosenId,
+                casterId = ctx.controllerId,
+                cardRegistry = services.cardRegistry,
+                targetFinder = targetFinder,
+            ) !is CastFromCollectionWithoutPayingCostExecutor.TargetPrep.NoLegalTargets
+
         val effects = listOf(
             CastFromCollectionWithoutPayingCostEffect(from = singleKey, payManaCost = continuation.payManaCost),
             CastAnyNumberFromCollectionWithoutPayingCostEffect(
                 from = continuation.from,
                 payManaCost = continuation.payManaCost,
+                // One cast of the "up to N" budget has just been spent — unless nothing will be
+                // cast, in which case the loop re-offers the rest with the budget intact (the
+                // uncastable card is out of the pool either way, so this can't spin). `null`
+                // stays uncapped; a budget that hits 0 makes the next iteration a no-op.
+                maxCasts = continuation.maxCasts?.let { if (castWillInitiate) it - 1 else it },
             ),
         )
         val result = effectRunner.executeRemainingEffects(state, effects, loopContext)

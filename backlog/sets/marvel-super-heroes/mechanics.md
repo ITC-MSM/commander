@@ -8,7 +8,7 @@ Scope: the 276 booster cards (collector numbers 1–276). Triaged against the SD
 updated 2026-08-07 after **power-up** and the **per-turn effect budget** shipped, 2026-08-08
 after **teamwork** shipped in full, and 2026-08-10 after **copy-with-exceptions**,
 **ward with a non-listed cost**, the **ability-source predicate on stack targets** and **improvise**
-shipped. **22 of the 276 are blocked**; every other card is buildable from existing primitives.
+shipped. **21 of the 276 are blocked**; every other card is buildable from existing primitives.
 
 Supported today and *not* a blocker despite looking like one: **power-up** (see the first section
 below — the keyword, its once-only limit and its pip-wise cost reduction all ship), **harness / ∞ abilities**
@@ -461,20 +461,16 @@ filter** — the event has `spellsOnly` but no inverse. `byYou` and `firstTimeEa
 plus `CardPredicate.ManaCostContainsSymbol(color)` for the trigger's filter (`withColor(BLUE)` tests
 the card's *colour*, which is not the same thing). Namor's dynamic power is fine.
 
-### Aggregate-metric cost + capped free cast — **Baron Helmut Zemo** [87]
-Three gaps stack. (1) "Exile any number of black cards from your graveyard with **fifteen or more black
-mana symbols** among their mana costs" — costs select by count and filter, never by a summed per-card
-metric; structurally the same selection crew uses for total power, over the missing
-`ColoredManaSymbolCount` above. (2) `CastAnyNumberFromCollectionWithoutPayingCostEffect`
-(`mtg-sdk/.../scripting/effects/LibraryEffects.kt`) has no `maxCasts` field, so "cast up to three of the
-copies" can't be bounded. (3) Not a blocker: the boast window is already
-`ActivationRestriction.OncePerTurn` + `Conditions.SourceAttackedThisTurn`; only a cosmetic
+### Aggregate-metric cost — **Baron Helmut Zemo** [87]
+Two gaps stacked; one is now shipped. (1) **Still blocking:** "Exile any number of black cards from
+your graveyard with **fifteen or more black mana symbols** among their mana costs" — costs select by
+count and filter, never by a summed per-card metric; structurally the same selection crew uses for
+total power, over the missing `ColoredManaSymbolCount` above. (2) ~~the free-cast loop effect has no
+`maxCasts` field~~ — **shipped** 2026-08-13 with Doom Reigns Supreme; "cast up to three of the
+copies" is now `Effects.CastUpToNFromCollectionWithoutPayingCost(from, 3)`.
+(3) Not a blocker: the boast window is
+already `ActivationRestriction.OncePerTurn` + `Conditions.SourceAttackedThisTurn`; only a cosmetic
 `Keyword.BOAST` is absent.
-
-### Capped free cast — **Doom Reigns Supreme** [96]
-The same missing `maxCasts` on `CastAnyNumberFromCollectionWithoutPayingCostEffect` ("cast up to two
-spells from among the exiled cards"). Everything else on the card — including the plan-counter
-threshold — composes today.
 
 ### "Until the end of your next turn" continuous duration — **Evil's Thrall** [128]
 `Duration` has `EndOfTurn`, `UntilYourNextTurn` (which ends at the *beginning* of your next turn — a
