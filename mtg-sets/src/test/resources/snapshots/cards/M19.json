@@ -170,6 +170,50 @@
     ]
 }
 
+// Arcane Encyclopedia
+{
+    "name": "Arcane Encyclopedia",
+    "manaCost": "{3}",
+    "typeLine": "Artifact — Book",
+    "oracleText": "{3}, {T}: Draw a card.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{3}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "descriptionOverride": "{3}, {T}: Draw a card."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "227",
+        "rarity": "UNCOMMON",
+        "artist": "Nic Klein",
+        "flavorText": "Knowledge itself is neither good nor evil. Just as the wrong book in the wrong hands could doom all existence, the same book in the right hands could save it.",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/c/0ce4702d-f65b-413e-99da-112f632a0a63.jpg?1783934516"
+    },
+    "colorIdentityOverride": []
+}
+
 // Bogstomper
 {
     "name": "Bogstomper",

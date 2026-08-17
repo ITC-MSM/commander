@@ -87,6 +87,67 @@
     ]
 }
 
+// Thunder Dragon
+{
+    "name": "Thunder Dragon",
+    "manaCost": "{5}{R}{R}",
+    "typeLine": "Creature — Dragon",
+    "oracleText": "Flying\nWhen this creature enters, it deals 3 damage to each creature without flying.",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 5
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": {
+                                "cardPredicates": [
+                                    "IsCreature",
+                                    {
+                                        "type": "NotKeyword",
+                                        "keyword": "FLYING"
+                                    }
+                                ]
+                            }
+                        }
+                    },
+                    "body": {
+                        "type": "DealDamage",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 3
+                        },
+                        "target": "Self"
+                    }
+                },
+                "descriptionOverride": "When this creature enters, it deals 3 damage to each creature without flying."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "119",
+        "rarity": "RARE",
+        "artist": "Dana Knutson",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/e/7e9b06a8-c3f3-4174-b992-7da7ca163990.jpg?1783946025"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Tidings
 {
     "name": "Tidings",
