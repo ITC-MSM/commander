@@ -9926,6 +9926,26 @@ The priority groups are (CR 616.1a–f):
   combat damage and noncombat damage from any source you control. Mirrors `ReplaceDamageWithCounters`;
   wired in both damage paths (`DamageUtils.applyReplaceDamageWithMill` for the general path,
   `CombatDamageManager` for combat). Damage-type filtering is not applied (matches any type).
+- `HealOtherDamage(appliesTo = DamageEvent(recipient = Self))` — the damage is dealt **in full**, but
+  as part of the same replacement all *other* damage already marked on the recipient is **healed**
+  (CR 701.69a: "If an effect states that damage already dealt to a permanent 'is healed,' that
+  permanent's controller removes all marked damage from that permanent"). **Wolverine, Fierce
+  Fighter**: "If damage would be dealt to Wolverine, instead that damage is dealt, but all other
+  damage already dealt to him is healed." The only member of the damage family that leaves the
+  *amount* alone — it can't be expressed as `PreventDamage` (subtracts), `CapDamage` (clamps) or
+  `ReplaceDamageWithCounters` (swaps the damage for something else), because its whole job is the
+  side effect on already-marked damage. Observable result: marked damage never accumulates across
+  separate damage *events*, so the recipient only ever carries the most recent event's damage.
+  Applied **once per damage event, not per instance**: all combat damage in a step is dealt
+  simultaneously (CR 510.2), so a double-blocked Wolverine heals what was marked before the step and
+  then takes both blockers' damage; the first-strike and regular combat damage steps are separate
+  events and each heal in turn. Fires *after* every prevention/redirection/replacement has had its
+  say, so fully prevented or redirected damage heals nothing; a deathtouch source still kills, and a
+  wither source still triggers the heal (wither only changes the *form* of the damage, CR 702.80a).
+  Players, planeswalkers and battles have no marked damage, so it is a no-op on them. The threading
+  that enforces once-per-event and the engine entry points (`DamageUtils.applyHealOtherDamage`,
+  `DamageUtils.healMarkedDamage`) are documented on the `HealOtherDamage` KDoc and
+  `CombatDamageManager.applyCombatDamage`.
 - **DamageEvent filters (gap #7):** `EventPattern.DamageEvent(recipient, source, damageType, amount)`.
   `amount: AmountFilter` (`Any` / `AtMost(n)` / `AtLeast(n)` / `Exactly(n)`) gates on the would-be
   amount (Callous Giant: `AtMost(3)`). `source = SourceFilter.Matching(filter)` can carry relational

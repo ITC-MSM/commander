@@ -838,6 +838,49 @@ data class SetMinimumDamage(
     }
 }
 
+/**
+ * The damage is still dealt in full, but as part of the same replacement all *other* damage
+ * already marked on the recipient is **healed** (CR 701.69a: "If an effect states that damage
+ * already dealt to a permanent 'is healed,' that permanent's controller removes all marked damage
+ * from that permanent").
+ *
+ * Wolverine, Fierce Fighter: "If damage would be dealt to Wolverine, instead that damage is dealt,
+ * but all other damage already dealt to him is healed." →
+ * `HealOtherDamage(appliesTo = DamageEvent(recipient = RecipientFilter.Self))`.
+ *
+ * Unlike every other member of this family the *amount* is untouched — this is the one damage
+ * replacement whose whole job is a side effect on the recipient's already-marked damage, which is
+ * why it can't be expressed as [PreventDamage] (which subtracts), [CapDamage] (which clamps), or
+ * [ReplaceDamageWithCounters] (which swaps the damage for something else). The observable result is
+ * that marked damage never accumulates across separate damage events: the recipient effectively
+ * only ever has the most recent event's damage on it.
+ *
+ * Because it heals only damage dealt *before* this event, the engine applies it **once per
+ * damage event**, not once per instance: all combat damage in a step is dealt simultaneously
+ * (CR 510.2), so a creature blocked by two attackers keeps both attackers' damage and heals only
+ * what was marked before the step. The first-strike and regular combat damage steps are separate
+ * events, so each heals in turn.
+ *
+ * Healing removes marked damage only; -1/-1 counters from a wither/infect source are not marked
+ * damage (CR 120.3d) and survive, though a wither source dealing damage still triggers the heal.
+ * Recipients that don't mark damage (players, planeswalkers, battles) have nothing to heal, so the
+ * replacement is a no-op on them.
+ */
+@SerialName("HealOtherDamage")
+@Serializable
+data class HealOtherDamage(
+    override val appliesTo: EventPattern = EventPattern.DamageEvent(recipient = RecipientFilter.Self)
+) : ReplacementEffect {
+    override val description: String =
+        "If ${appliesTo.description}, instead that damage is dealt, but all other damage already " +
+            "dealt to it is healed"
+
+    override fun applyTextReplacement(replacer: TextReplacer): ReplacementEffect {
+        val newAppliesTo = appliesTo.applyTextReplacement(replacer)
+        return if (newAppliesTo !== appliesTo) copy(appliesTo = newAppliesTo) else this
+    }
+}
+
 // =============================================================================
 // Draw Replacement Effects
 // =============================================================================

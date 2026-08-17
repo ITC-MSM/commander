@@ -988,6 +988,10 @@ object ZoneMovementUtils {
         val isAttacking = entity.has<AttackingComponent>()
         val isBlocking = entity.has<BlockingComponent>()
 
+        // "Remove all damage marked on it" (CR 701.19a) is the CR 701.69a heal action — one shared
+        // primitive so every damage-removal site behaves identically.
+        val healedState = DamageUtils.healMarkedDamage(state, entityId)
+
         // CR 701.19a: "…instead remove all damage marked on it and its controller taps it. If it's
         // an attacking or blocking creature, remove it from combat." The tap is a real tap
         // transition, so it goes through the `tap()` atom rather than being open-coded: that emits
@@ -1000,12 +1004,11 @@ object ZoneMovementUtils {
         // permanents can be tapped — so `tap()` no-ops and emits nothing. The rest of the
         // replacement (damage removal, combat removal) still applies, which is why the tap is taken
         // separately from the component strip below rather than folded into it.
-        val (tappedState, tappedEvent) = tap(state, entityId)
+        val (tappedState, tappedEvent) = tap(healedState, entityId)
 
-        // Remove damage and strip combat components from the regenerated creature
+        // Strip combat components from the regenerated creature
         var newState = tappedState.updateEntity(entityId) { c ->
-            c.without<DamageComponent>()
-                .without<AttackingComponent>()
+            c.without<AttackingComponent>()
                 .without<BlockingComponent>()
                 .without<BlockedComponent>()
                 .without<DamageAssignmentComponent>()
@@ -1075,9 +1078,7 @@ object ZoneMovementUtils {
      * with "remove all damage marked on it".
      */
     fun applyRemoveDamageReplacement(state: GameState, entityId: EntityId): EffectResult {
-        state.getEntity(entityId) ?: return EffectResult.success(state)
-        val newState = state.updateEntity(entityId) { c -> c.without<DamageComponent>() }
-        return EffectResult.success(newState)
+        return EffectResult.success(DamageUtils.healMarkedDamage(state, entityId))
     }
 
     /**

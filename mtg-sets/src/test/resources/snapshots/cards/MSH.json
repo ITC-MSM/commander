@@ -20691,6 +20691,63 @@
     ]
 }
 
+// Wolverine, Fierce Fighter
+{
+    "name": "Wolverine, Fierce Fighter",
+    "manaCost": "{2}{R}{G}",
+    "typeLine": "Legendary Creature — Mutant Berserker Hero",
+    "oracleText": "Haste\nWhen Wolverine enters, he fights up to one other target creature.\nIf damage would be dealt to Wolverine, instead that damage is dealt, but all other damage already dealt to him is healed.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 5
+    },
+    "keywords": [
+        "HASTE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Fight",
+                    "target1": "Self",
+                    "target2": {
+                        "type": "BoundVariable",
+                        "name": "up to one other target creature"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "optional": true,
+                    "filter": {
+                        "baseFilter": "creature",
+                        "excludeSelf": true
+                    },
+                    "id": "up to one other target creature"
+                }
+            }
+        ],
+        "replacementEffects": [
+            "HealOtherDamage"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "240",
+        "rarity": "RARE",
+        "artist": "Dan Brereton",
+        "flavorText": "\"You picked the wrong dance partner, bub.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/1/c1c7aa22-51b0-45ee-9a8e-5493a1820d8c.jpg?1783902893"
+    },
+    "colorIdentityOverride": [
+        "RED",
+        "GREEN"
+    ]
+}
+
 // Worlds Within Worlds
 {
     "name": "Worlds Within Worlds",
