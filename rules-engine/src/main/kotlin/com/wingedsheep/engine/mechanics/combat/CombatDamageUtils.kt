@@ -164,9 +164,25 @@ internal object CombatDamageUtils {
 
         // Global permanents with Scope.Battlefield (e.g., Tapestry Warden: "creatures you control")
         // The source may equal the creature (e.g., Tapestry Warden applying to itself).
+        //
+        // Printed abilities *and* ones granted at runtime and recorded in
+        // [GameState.grantedStaticAbilities] — the point-of-use read every granted `StaticAbility`
+        // kind needs, in the shape `BlockPhaseManager` already uses for `CantBeBlockedByMoreThan`.
+        // Reading it here rather than through projection is what keeps the affected set dynamic in
+        // the way CR 611.2c demands of a rules modification: `power`/`toughness` are the *final*
+        // projected values, so a creature pumped after the effect began is covered, and one whose
+        // power outgrows its toughness stops being. The Kingpin of Crime's "until end of turn,
+        // creatures you control with toughness greater than their power assign combat damage equal
+        // to their toughness" is the durational form of Bedrock Tortoise's printed sentence, and
+        // grants exactly this ability to itself.
         for (permanentId in state.getBattlefield()) {
-            val permCardId = state.getEntity(permanentId)?.get<CardComponent>()?.cardDefinitionId ?: continue
-            val abilities = cardRegistry.getCard(permCardId)?.staticAbilities.orEmpty()
+            val permCardId = state.getEntity(permanentId)?.get<CardComponent>()?.cardDefinitionId
+            val printed = permCardId?.let { cardRegistry.getCard(it)?.staticAbilities }.orEmpty()
+            val granted = state.grantedStaticAbilities
+                .filter { it.entityId == permanentId }
+                .map { it.ability }
+            val abilities = printed + granted
+            if (abilities.isEmpty()) continue
             if (matchesBattlefield(state, projected, permanentId, creatureId, abilities, power, toughness)) return true
         }
 

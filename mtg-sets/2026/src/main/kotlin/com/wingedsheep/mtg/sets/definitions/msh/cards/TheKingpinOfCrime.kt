@@ -1,13 +1,12 @@
 package com.wingedsheep.mtg.sets.definitions.msh.cards
 
-import com.wingedsheep.sdk.core.AbilityFlag
 import com.wingedsheep.sdk.core.ManaCost
 import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.Triggers
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
+import com.wingedsheep.sdk.scripting.AssignDamageEqualToToughness
 import com.wingedsheep.sdk.scripting.Duration
-import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.effects.Gate
 import com.wingedsheep.sdk.scripting.effects.GatedEffect
 import com.wingedsheep.sdk.scripting.effects.MayPayManaEffect
@@ -48,21 +47,28 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  *    Fires on [Triggers.YouAttack] (declare attackers, once per combat,
  *    regardless of whether the Kingpin himself attacks — he is a 1/5 that would rather stay home).
  *
- *  - **"creatures you control with toughness greater than their power"** is resolved *once*, when
- *    the trigger resolves: [Effects.ForEachInGroup] snapshots the matching battlefield creatures
- *    and grants each of them the [AbilityFlag.ASSIGNS_COMBAT_DAMAGE_AS_TOUGHNESS] floating flag
- *    for the turn (Bill the Pony's grant, applied to a group instead of a target).
- *    `CombatDamageUtils` reads the flag off projected keywords, so first-strike/regular damage
- *    steps both honor it.
+ *  - **"creatures you control with toughness greater than their power"** stays a *dynamic* set for
+ *    the rest of the turn, not a snapshot taken when the trigger resolves. The printed effect
+ *    changes no object's characteristics and no object's controller, so by CR 611.2c it modifies
+ *    the rules of the game and "can affect objects that weren't affected when that continuous
+ *    effect began": a creature that only becomes toughness-heavy later — a combat trick after
+ *    blockers, a counter — must pick it up, and one whose power outgrows its toughness must lose it.
  *
- *    **Known limitation: the snapshot is *not* the printed timing.** The printed effect changes no
- *    object's characteristics and no object's controller, so by CR 611.2c it modifies the rules of
- *    the game and its affected set has to stay *dynamic* — a creature that only later becomes
- *    toughness-heavy, or that enters the battlefield after the trigger resolves, should pick the
- *    effect up for the rest of the turn. This model does not: the group is frozen at resolution.
- *    Nothing in `Effects.*` currently grants a group-dynamic continuous effect, so a faithful
- *    version is add-feature work (a new dynamic-set grant), not something this card can fix on its
- *    own.
+ *    So this is not a grant of anything to the creatures. It is the *durational form of Bedrock
+ *    Tortoise's printed sentence*, and it is written as exactly that: the Kingpin grants
+ *    **himself** [AssignDamageEqualToToughness]`(AllCreaturesYouControl, onlyWhenToughnessGreater…)`
+ *    until end of turn. `CombatDamageUtils` reads that ability — printed or granted — at the point
+ *    of use, against the final projected power and toughness, so the set is re-decided per creature
+ *    per damage step, and both the first-strike and regular steps honor it.
+ *
+ *    Two shapes are deliberately *not* used. [Effects.ForEachInGroup] + `GrantKeyword` snapshots the
+ *    group at resolution, which is right for an ability grant ("creatures you control gain trample")
+ *    and wrong for a rules modification. A floating group-flag effect would keep membership dynamic
+ *    across projections but resolve its filter in layer 6, before layer 7 has applied — so it still
+ *    could not see a toughness pumped after the trigger resolved, which is the whole point here.
+ *
+ *    Residual: the grant is anchored to the Kingpin, so it stops applying if he leaves the
+ *    battlefield mid-turn, where the printed effect would outlive him.
  */
 val TheKingpinOfCrime = card("The Kingpin of Crime") {
     manaCost = "{1}{W}{B}"
@@ -95,13 +101,13 @@ val TheKingpinOfCrime = card("The Kingpin of Crime") {
         trigger = Triggers.YouAttack
         effect = GatedEffect(
             gate = Gate.MayPay(PayLifeEffect(2)),
-            then = Effects.ForEachInGroup(
-                GroupFilter(GameObjectFilter.Creature.youControl().toughnessGreaterThanPower()),
-                Effects.GrantKeyword(
-                    AbilityFlag.ASSIGNS_COMBAT_DAMAGE_AS_TOUGHNESS,
-                    EffectTarget.Self,
-                    Duration.EndOfTurn,
+            then = Effects.GrantStaticAbility(
+                AssignDamageEqualToToughness(
+                    filter = GroupFilter.AllCreaturesYouControl,
+                    onlyWhenToughnessGreaterThanPower = true,
                 ),
+                EffectTarget.Self,
+                Duration.EndOfTurn,
             ),
             descriptionOverride = "You may pay 2 life. If you do, until end of turn, creatures " +
                 "you control with toughness greater than their power assign combat damage equal " +
