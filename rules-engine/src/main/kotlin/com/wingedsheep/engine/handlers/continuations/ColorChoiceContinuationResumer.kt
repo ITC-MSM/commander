@@ -1,7 +1,7 @@
 package com.wingedsheep.engine.handlers.continuations
 
 import com.wingedsheep.engine.core.*
-import com.wingedsheep.engine.handlers.effects.mana.AdditionalManaOnSourceTapMirror
+import com.wingedsheep.engine.handlers.effects.mana.AdditionalManaOnSourceTapOnColorChoice
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.battlefield.ChoiceValue
 import com.wingedsheep.engine.state.components.battlefield.withCastChoice
@@ -192,14 +192,15 @@ class ColorChoiceContinuationResumer(
 
         if (effectResult.isPaused) return effectResult.toExecutionResult()
 
-        // CR 605 mirror bonus: if the just-chosen mana came from tapping a permanent for mana
-        // (the continuation's source) and a battlefield `AdditionalManaOnSourceTap` mirror static
-        // (color = null) applies to that source for this tapper, add one mana of the chosen type.
-        // This is the any-color analogue of `ActivateAbilityHandler.resolveAdditionalManaOnSourceTap`
-        // — that path runs only for fixed/non-pausing producers (Lavaleaper's basic lands); an
-        // any-color producer (Roxanne's Meteorite, "{T}: Add one mana of any color") pauses for the
-        // color choice and resumes here, so the mirror must fire after the choice is known.
-        val mirrored = AdditionalManaOnSourceTapMirror.applyForResolvedTap(
+        // CR 605 tap bonus: if the just-chosen mana came from tapping a permanent for mana (the
+        // continuation's source), apply every battlefield `AdditionalManaOnSourceTap` static that
+        // matches that source for this tapper — the mirror form (Roxanne, color = null) needs the
+        // colour that was just chosen, and the fixed-colour form (Badgermole Cub's "+{G}") would
+        // otherwise be dropped entirely. This is the any-color analogue of
+        // `ActivateAbilityHandler.resolveAdditionalManaOnSourceTap`: that inline pass runs only
+        // when the mana ability resolved without pausing, so an any-color producer never reaches
+        // it and both forms must fire here instead.
+        val mirrored = AdditionalManaOnSourceTapOnColorChoice.applyForResolvedTap(
             services, effectResult.state, continuation.sourceId, continuation.controllerId, response.color
         )
         if (mirrored.isPaused) return mirrored

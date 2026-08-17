@@ -1,6 +1,7 @@
 package com.wingedsheep.engine.scenarios
 
 import com.wingedsheep.engine.core.ActivateAbility
+import com.wingedsheep.engine.core.ColorChosenResponse
 import com.wingedsheep.engine.mechanics.mana.ManaSolver
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.components.player.ManaPoolComponent
@@ -15,8 +16,10 @@ import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.basicLand
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Deck
+import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Tests for Badgermole Cub ({1}{G}, 2/2 Badger Mole).
@@ -47,15 +50,33 @@ class BadgermoleCubTest : FunSpec({
         }
     }
 
+    // "{T}: Add one mana of any color" — a mana ability that pauses for a color decision when the
+    // activation carries no `manaColorChoice`, which is the path the AI and the gym always take.
+    val tapForAnyColorCreature = card("Any-Color Elf") {
+        manaCost = "{G}"
+        colorIdentity = "G"
+        typeLine = "Creature — Elf"
+        power = 1
+        toughness = 1
+        oracleText = "{T}: Add one mana of any color."
+        activatedAbility {
+            cost = Costs.Tap
+            effect = Effects.AddAnyColorMana(1)
+            manaAbility = true
+        }
+    }
+
+    val testCards = listOf(TestForest, BadgermoleCub, tapForGreenCreature, tapForAnyColorCreature)
+
     fun createDriver(): GameTestDriver {
         val driver = GameTestDriver()
-        driver.registerCards(TestCards.all + listOf(TestForest, BadgermoleCub, tapForGreenCreature))
+        driver.registerCards(TestCards.all + testCards)
         return driver
     }
 
     fun createRegistry(): CardRegistry {
         val registry = CardRegistry()
-        registry.register(TestCards.all + listOf(TestForest, BadgermoleCub, tapForGreenCreature))
+        registry.register(TestCards.all + testCards)
         return registry
     }
 
@@ -78,6 +99,45 @@ class BadgermoleCubTest : FunSpec({
         // 1 from Elf + 1 bonus from Cub = 2 green available
         solver.canPay(driver.state, activePlayer, ManaCost.parse("{G}{G}")) shouldBe true
         solver.canPay(driver.state, activePlayer, ManaCost.parse("{G}{G}{G}")) shouldBe false
+    }
+
+    test("Bonus fires for an any-color mana ability that pauses for the color choice") {
+        // Regression: "{T}: Add one mana of any color" pauses for a color decision when the
+        // activation doesn't carry one (the AI never supplies `manaColorChoice`). The handler
+        // returns before its inline `AdditionalManaOnSourceTap` pass, so the bonus has to be
+        // applied by the color-choice continuation instead — and that path used to handle only
+        // the mirror form (color = null), silently dropping the Cub's fixed {G}.
+        val driver = createDriver()
+        driver.initMirrorMatch(
+            deck = Deck.of("Forest" to 20, "Forest" to 20),
+            startingLife = 20
+        )
+
+        val activePlayer = driver.activePlayer!!
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        driver.putCreatureOnBattlefield(activePlayer, "Badgermole Cub")
+        val prism = driver.putCreatureOnBattlefield(activePlayer, "Any-Color Elf")
+        driver.removeSummoningSickness(prism)
+
+        val manaAbilityId = tapForAnyColorCreature.activatedAbilities[0].id
+        // No manaColorChoice — the effect pauses and asks for the color.
+        val result = driver.submit(
+            ActivateAbility(playerId = activePlayer, sourceId = prism, abilityId = manaAbilityId)
+        )
+        withClue("activation error: ${result.error}") { result.error shouldBe null }
+
+        val decision = driver.pendingDecision
+        withClue("the any-color ability should have paused for a color choice") {
+            decision shouldNotBe null
+        }
+        driver.submitDecision(activePlayer, ColorChosenResponse(decision!!.id, Color.BLUE))
+
+        val pool = driver.state.getEntity(activePlayer)?.get<ManaPoolComponent>()!!
+        withClue("one chosen blue + one bonus green from the Cub, pool was $pool") {
+            pool.blue shouldBe 1
+            pool.green shouldBe 1
+        }
     }
 
     test("Bonus does not fire when an opponent controls the Badgermole Cub") {

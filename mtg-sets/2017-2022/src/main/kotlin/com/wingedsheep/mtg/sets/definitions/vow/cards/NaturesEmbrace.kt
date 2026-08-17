@@ -9,6 +9,7 @@ import com.wingedsheep.sdk.scripting.ActivatedAbility
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.GrantActivatedAbility
 import com.wingedsheep.sdk.scripting.ModifyStats
+import com.wingedsheep.sdk.scripting.TimingRule
 import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
 import com.wingedsheep.sdk.scripting.filters.unified.TargetFilter
@@ -28,7 +29,9 @@ import com.wingedsheep.sdk.scripting.targets.TargetPermanent
  * permanent" scope regardless of the host's type), each gated by an [Conditions.EnchantedPermanentMatches]
  * check on the host's *current* type so the buff and the mana ability switch on continuously if the
  * host ever changes types. The granted land ability mirrors New Horizons' `{T}: Add two mana of any
- * one color` ([Effects.AddAnyColorMana]`(2)`).
+ * one color` ([Effects.AddAnyColorMana]`(2)`), and like it must set `isManaAbility = true` /
+ * [TimingRule.ManaAbility] by hand — the raw [ActivatedAbility] constructor defaults both to the
+ * non-mana classification, which would push the grant onto the stack.
  */
 val NaturesEmbrace = card("Nature's Embrace") {
     manaCost = "{2}{G}"
@@ -53,7 +56,9 @@ val NaturesEmbrace = card("Nature's Embrace") {
             ability = ActivatedAbility(
                 id = AbilityId.generate(),
                 cost = Costs.Tap,
-                effect = Effects.AddAnyColorMana(2)
+                effect = Effects.AddAnyColorMana(2),
+                isManaAbility = true,
+                timing = TimingRule.ManaAbility
             )
         )
     }

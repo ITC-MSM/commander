@@ -16,22 +16,28 @@ import com.wingedsheep.sdk.scripting.AdditionalManaOnSourceTap
 import com.wingedsheep.sdk.scripting.TappedForManaType
 
 /**
- * Applies the [AdditionalManaOnSourceTap] *mirror* bonus (`color = null` — "add one mana of any
- * type that source produced") for a tap whose produced color is only known after a color choice
- * resolves.
+ * Applies [AdditionalManaOnSourceTap] bonuses for a tap whose produced color is only known after a
+ * color choice resolves.
  *
- * Roxanne, Starfall Savant's "Whenever you tap an artifact token for mana, add one mana of any
- * type that artifact token produced" pairs with the Meteorite's "{T}: Add one mana of any color".
- * The Meteorite's mana ability pauses for the color choice, so the inline mirror resolution in
- * [com.wingedsheep.engine.handlers.actions.ability.ActivateAbilityHandler.resolveAdditionalManaOnSourceTap]
- * (which only runs on the non-pausing path, e.g. Lavaleaper's fixed-color basic lands) is bypassed.
- * The color-choice continuation resumer calls this once the produced color is known.
+ * `ActivateAbilityHandler` resolves these inline (`resolveAdditionalManaOnSourceTap`) right after a
+ * mana ability's effect executes — but only when that effect *didn't* pause. An "add one mana of
+ * any color" producer (Roxanne's Meteorite; anything holding a Cryptolith Rite-style grant) pauses
+ * for the color decision and returns before reaching that code, so the whole bonus pass is skipped.
+ * The color-choice continuation resumer calls this once the produced color is known, which is the
+ * only place the two forms can be told apart:
  *
- * Only the **mirror** (`color = null`) case is handled here — a fixed-color
- * `AdditionalManaOnSourceTap` doesn't depend on the produced color, so it already fires on the
- * synchronous path. Returns the accumulated mana-added events for the bonus.
+ * - **Mirror** (`color = null`) — Roxanne, Starfall Savant's "add one mana of any type that artifact
+ *   token produced". Needs the chosen color; can only be resolved here.
+ * - **Fixed color** (`color != null`) — Badgermole Cub's "Whenever you tap a creature for mana, add
+ *   an additional {G}". Doesn't depend on the produced color, but is lost all the same when the
+ *   producer pauses, because the inline pass never ran.
+ *
+ * The two paths are mutually exclusive — the inline pass runs only when the effect completed
+ * synchronously — so nothing is applied twice.
+ *
+ * Returns the accumulated mana-added events for the bonus.
  */
-object AdditionalManaOnSourceTapMirror {
+object AdditionalManaOnSourceTapOnColorChoice {
 
     private val dynamicAmountEvaluator = DynamicAmountEvaluator()
 
@@ -53,8 +59,6 @@ object AdditionalManaOnSourceTapMirror {
             val cardDef = services.cardRegistry.getCard(card.cardDefinitionId) ?: continue
             for (staticAbility in cardDef.script.staticAbilities) {
                 val onSourceTap = staticAbility as? AdditionalManaOnSourceTap ?: continue
-                // Only the mirror form is resolved here; fixed-color forms fire synchronously.
-                if (onSourceTap.color != null) continue
                 // This resume path only fires after a *color* choice resolves, so the produced mana
                 // is always colored — a COLORLESS-gated bonus ("tap for {C}") can never match here.
                 if (onSourceTap.whenProducing == TappedForManaType.COLORLESS) continue
@@ -74,20 +78,23 @@ object AdditionalManaOnSourceTapMirror {
                 val bonusAmount = dynamicAmountEvaluator.evaluate(currentState, onSourceTap.amount, effectContext)
                 if (bonusAmount <= 0) continue
 
+                // Explicit color wins; null mirrors the color that was just chosen.
+                val bonusColor = onSourceTap.color ?: producedColor
+
                 currentState = currentState.updateEntity(tappingPlayerId) { c ->
                     val pool = c.get<ManaPoolComponent>() ?: ManaPoolComponent()
-                    c.with(pool.add(producedColor, bonusAmount))
+                    c.with(pool.add(bonusColor, bonusAmount))
                 }
                 events.add(
                     ManaAddedEvent(
                         playerId = tappingPlayerId,
                         sourceId = entityId,
                         sourceName = card.name,
-                        white = if (producedColor == Color.WHITE) bonusAmount else 0,
-                        blue = if (producedColor == Color.BLUE) bonusAmount else 0,
-                        black = if (producedColor == Color.BLACK) bonusAmount else 0,
-                        red = if (producedColor == Color.RED) bonusAmount else 0,
-                        green = if (producedColor == Color.GREEN) bonusAmount else 0,
+                        white = if (bonusColor == Color.WHITE) bonusAmount else 0,
+                        blue = if (bonusColor == Color.BLUE) bonusAmount else 0,
+                        black = if (bonusColor == Color.BLACK) bonusAmount else 0,
+                        red = if (bonusColor == Color.RED) bonusAmount else 0,
+                        green = if (bonusColor == Color.GREEN) bonusAmount else 0,
                         colorless = 0
                     )
                 )
