@@ -25,6 +25,7 @@ import com.wingedsheep.sdk.scripting.Duration
 import com.wingedsheep.sdk.scripting.EntersWithCounters
 import com.wingedsheep.sdk.scripting.EntersWithDynamicCounters
 import com.wingedsheep.sdk.scripting.EntersWithKeywords
+import com.wingedsheep.sdk.scripting.Vanishing
 import com.wingedsheep.sdk.scripting.events.CounterTypeFilter
 
 /**
@@ -156,7 +157,15 @@ object EntersWithReplacements {
         val events = mutableListOf<GameEvent>()
         val entityName = newState.getEntity(entityId)?.get<CardComponent>()?.name ?: ""
 
-        for (effect in cardDef.script.replacementEffects) {
+        // Vanishing N (CR 702.62a) — "this permanent enters with N time counters on it" is an
+        // ability of the keyword, not a line any vanishing card prints, so synthesize the
+        // replacement from the printed `Vanishing N` and run it through the same path as an
+        // authored one. Same `printed + listOfNotNull(synthetic)` shape as granted Riot's
+        // enters-with choice in StackResolver.
+        val vanishingEntry = Vanishing.printedCount(cardDef)?.let { Vanishing.entersWithCounters(it) }
+        val replacementEffects = cardDef.script.replacementEffects + listOfNotNull(vanishingEntry)
+
+        for (effect in replacementEffects) {
             when (effect) {
                 is EntersWithCounters -> {
                     // Skip "other only" effects when applying to self (Metallic Mimic's "each other

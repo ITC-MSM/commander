@@ -360,6 +360,9 @@ Madness / Impending / Firebending ones.
 `absorb`, `afflict`, `annihilator`, `bushido`, `casualty`, `devour` / `devourLand`, `fabricate`,
 `fading`, `hideaway`, `mobilize`, `modular`, `rampage`, `renown`, `toxic`, `tribute`, `vanishing`
 
+(`vanishing` is now engine-live — declaring `KeywordAbility.vanishing(n)` is the whole
+implementation, so the emitter can render it as a bare keyword line with no hand-lowering.)
+
 These are the cheapest wins in the whole document — the shape is identical to the already-rendered
 `saddle(N)` / `firebending(N)`, just a different factory name.
 

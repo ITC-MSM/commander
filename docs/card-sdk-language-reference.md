@@ -7319,8 +7319,24 @@ composite abilities).
   last-known **+1/+1** count specifically rather than reaching for `Effects.MoveAllLastKnownCounters`
   (Servant of the Scale): that moves every counter kind, so a modular creature killed by -1/-1
   counters would hand its leftover -1/-1 counters to the target too.
-- `Fading(n)` — ETB with N fade counters; removes one each upkeep, sacrifice if can't.
-- `Vanishing(n)` — same idea with time counters.
+- `Fading(n)` — ETB with N fade counters; removes one each upkeep, sacrifice if can't. **Display-only
+  — nothing in the engine reads `Keyword.FADING`**, and unlike vanishing it cannot simply borrow the
+  time-counter machinery: fading counts a distinct fade counter type this codebase does not have, and
+  its third ability is "if you *can't* remove a counter, sacrifice it" — one turn earlier than
+  vanishing's. Hand-lower it, or add the counter type first.
+- `Vanishing(n)` — **engine-live.** Declare it and nothing else: `keywordAbility(KeywordAbility.vanishing(3))`
+  (Deep Forest Hermit). The engine supplies all three CR 702.62 abilities from
+  [`Vanishing`](../mtg-sdk/src/main/kotlin/com/wingedsheep/sdk/scripting/Vanishing.kt) — the
+  "enters with N time counters" replacement is synthesized at the entry seam from the printed `n`
+  (so it runs through `placeEntryCounters` and honours Hardened Scales / Solemnity), and the upkeep
+  countdown plus the "when the last time counter is removed, sacrifice it" trigger are granted from
+  the **projected** keyword, the same way flanking and the Siege defeat trigger are. Deriving from
+  the projection is what makes a token created *with* vanishing, or a creature that *gains* it,
+  count down as well — and what makes "loses all abilities" stop the clock. Do **not** hand-write
+  the three parts; they would stack with the engine's. Note 702.62b and 702.62c stay two separate
+  abilities (unlike suspend, which fuses them): a vanishing permanent sits where instant-speed
+  counter removal can reach it, and it is sacrificed whenever the last counter leaves, not only on
+  an upkeep.
 - `Renown(n)` — first combat damage to a player grants renown counters.
 - `Fabricate(n)` — ETB choose +1/+1 counters or Servo tokens.
 - `Tribute(n)` — opponent chooses ETB bonus.

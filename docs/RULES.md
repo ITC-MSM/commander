@@ -77,7 +77,9 @@ doubt, leave it out — the planner will conservatively schedule a rule-plan.
 
 ### Numeric keywords (printed text + payload; engine wires them where used)
 - Annihilator N, Bushido N, Rampage N, Absorb N, Afflict N, Modular N,
-  Fading N, Vanishing N, Renown N, Fabricate N, Tribute N
+  Fading N, Renown N, Fabricate N, Tribute N
+- Vanishing N — fully wired (CR 702.62): declaring the keyword ability is the whole
+  implementation; the engine supplies the enters-with-counters replacement and both triggers.
   (catalog entries with display text and N; only the ones above with their own
   bullets have full mechanical wiring beyond what `KeywordAbility.Numeric` carries.
   When a card's only behaviour is the keyword itself, prefer to confirm via an

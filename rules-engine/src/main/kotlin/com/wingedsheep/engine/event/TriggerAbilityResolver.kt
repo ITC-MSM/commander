@@ -105,9 +105,14 @@ class TriggerAbilityResolver(
         // and one that stops being a Siege loses it.
         val siegeAbilities = getSiegeDefeatAbilities(entityId, state)
 
+        // Vanishing N (CR 702.62) — the upkeep countdown and the last-counter sacrifice are
+        // intrinsic to the keyword, printed on no card as separate lines. Derived from the
+        // projected keywords, so granted vanishing works and "loses all abilities" strips it.
+        val vanishingAbilities = getVanishingTriggeredAbilities(entityId, state)
+
         val allGranted = grantedAbilities + staticGrantedAbilities + attachedGrantedAbilities +
             selfGrantedAbilities + wardAbilities + flankingAbilities + ringBearerAbilities +
-            suspendAbilities + paradigmAbilities + siegeAbilities
+            suspendAbilities + paradigmAbilities + siegeAbilities + vanishingAbilities
         val combined = if (allGranted.isNotEmpty()) base + allGranted else base
 
         // Apply text replacement if the entity has one
@@ -287,9 +292,14 @@ class TriggerAbilityResolver(
         // and one that stops being a Siege loses it.
         val siegeAbilities = getSiegeDefeatAbilities(entityId, state)
 
+        // Vanishing N (CR 702.62) — the upkeep countdown and the last-counter sacrifice are
+        // intrinsic to the keyword, printed on no card as separate lines. Derived from the
+        // projected keywords, so granted vanishing works and "loses all abilities" strips it.
+        val vanishingAbilities = getVanishingTriggeredAbilities(entityId, state)
+
         val allGranted = grantedAbilities + staticGrantedAbilities + attachedGrantedAbilities +
             selfGrantedAbilities + wardAbilities + flankingAbilities + ringBearerAbilities +
-            suspendAbilities + paradigmAbilities + siegeAbilities
+            suspendAbilities + paradigmAbilities + siegeAbilities + vanishingAbilities
         val combined = if (allGranted.isNotEmpty()) base + allGranted else base
 
         val textReplacement = state.getEntity(entityId)?.get<TextReplacementComponent>()
@@ -680,6 +690,31 @@ class TriggerAbilityResolver(
     private fun getFlankingTriggeredAbilities(entityId: EntityId, state: GameState): List<TriggeredAbility> =
         if (state.projectedState.hasKeyword(entityId, com.wingedsheep.sdk.core.Keyword.FLANKING)) {
             listOf(com.wingedsheep.sdk.scripting.Flanking.blockedByNonFlankerTrigger)
+        } else {
+            emptyList()
+        }
+
+    /**
+     * Vanishing N (CR 702.62) as two keyword-derived triggered abilities: the upkeep countdown
+     * (702.62b) and the last-time-counter sacrifice (702.62c). A vanishing card prints one keyword
+     * line and a reminder, never these two abilities, so the engine supplies them — the same shape
+     * as flanking, ward and the Siege defeat trigger.
+     *
+     * Keyed on the *projected* keyword, which buys three things at once: a token created "with
+     * vanishing 3" and a creature that *gains* vanishing both count down, and a permanent that has
+     * lost all abilities stops counting down (the keyword is stripped in projection) — matching
+     * CR 702.62, where all three vanishing abilities are abilities of the permanent.
+     *
+     * The N-carrying half — "enters with N time counters" — is not here: it is a replacement
+     * effect applied at entry from the printed [com.wingedsheep.sdk.scripting.KeywordAbility.Numeric],
+     * see `EntersWithReplacements`.
+     */
+    private fun getVanishingTriggeredAbilities(entityId: EntityId, state: GameState): List<TriggeredAbility> =
+        if (state.projectedState.hasKeyword(entityId, com.wingedsheep.sdk.core.Keyword.VANISHING)) {
+            listOf(
+                com.wingedsheep.sdk.scripting.Vanishing.upkeepCountdown,
+                com.wingedsheep.sdk.scripting.Vanishing.lastCounterSacrifice,
+            )
         } else {
             emptyList()
         }
