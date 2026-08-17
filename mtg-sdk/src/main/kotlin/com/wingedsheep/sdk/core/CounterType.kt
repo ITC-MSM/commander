@@ -96,6 +96,7 @@ enum class CounterType {
     OMEN,
     PLAN,
     INVASION,
+    UNLOCK,
 
     /**
      * Harness counter (Marvel's Spider-Man Infinity Stones). A binary "harnessed" marker: the Stone's
@@ -531,6 +532,15 @@ object Counters {
      * NOT a keyword counter, so it is intentionally absent from `StateProjector.KEYWORD_COUNTER_MAP`.
      */
     const val INVASION = "invasion"
+
+    /**
+     * Unlock counter (MKM — Cryptex). Passive accumulate-then-threshold counter with no inherent
+     * rule of its own: Cryptex's mana ability adds one per activation, and its sacrifice ability is
+     * gated on `Conditions.SourceCounterCountAtLeast(Counters.UNLOCK, 5)`. Same shape as
+     * `Counters.POINT` / `Counters.PLAN`, and like them the payoff removes the source.
+     * NOT a keyword counter, so it is intentionally absent from `StateProjector.KEYWORD_COUNTER_MAP`.
+     */
+    const val UNLOCK = "unlock"
 
     /**
      * Wildcard sentinel for triggers/events that fire on counters of *any* type, e.g.

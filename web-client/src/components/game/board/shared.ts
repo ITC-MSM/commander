@@ -820,6 +820,7 @@ export const PASSIVE_COUNTER_TYPES: readonly CounterType[] = [
   CounterType.HARNESS,
   CounterType.PLAN,
   CounterType.INVASION,
+  CounterType.UNLOCK,
   CounterType.HONE,
   CounterType.PLUS_ONE_PLUS_ZERO,
   CounterType.PLUS_ZERO_PLUS_ONE,

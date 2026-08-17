@@ -1311,7 +1311,12 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   at-least gate can never fire a second time — no dedicated "Nth counter" trigger event is needed),
   `Counters.INVASION` (Alien Invasion — a tally its begin-combat trigger reads via
   `DynamicAmounts.countersOnSelf(CounterTypeFilter.Named(Counters.INVASION))` to size the +1/+1 counters
-  on the Alien token it just made, then increments).
+  on the Alien token it just made, then increments),
+  `Counters.UNLOCK` (MKM — Cryptex: its `{T}`, collect-evidence-3 **mana** ability adds one per activation
+  and its `Costs.SacrificeSelf` ability is gated on
+  `ActivationRestriction.OnlyIfCondition(Conditions.SourceCounterCountAtLeast(Counters.UNLOCK, 5))`; the
+  rider on a mana ability doesn't change its classification — CR 605.1a asks only whether the ability could
+  add mana and whether it targets, so the counter lands at a moment nobody can respond to).
 - `DistributeCountersFromSelf(type?, count?)` — split source's counters among creatures you control.
 - `DistributeCountersAmongTargets(total, type?, minPerTarget?)` — divvy N counters among chosen
   targets. `total` is a `DynamicAmount` (an `Int` overload wraps it in `Fixed`), evaluated once at
