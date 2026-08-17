@@ -83,10 +83,14 @@ above.
 
 ## Next implementation order
 
-1. Expand the shared-team / Two-Headed Giant block-tax flow beyond the verified fixed-output,
+1. Replace the sequential combat-damage application path with a resolved simultaneous-batch model
+   before extending multi-source creature excess. It must resolve prevention/replacement/redirection
+   into final recipient contributions before mutating damage or counters, then calculate excess from
+   each recipient's pre-damage state; do not assign aggregate excess to an arbitrary source.
+2. Expand the shared-team / Two-Headed Giant block-tax flow beyond the verified fixed-output,
    choice-output, self-sacrifice, and exact two-colour Signet `{1},{T}` sources while preserving atomic
    payment and rollback.
-2. Keep the P0 composition traces (replacement chains, partial target fizzle,
+3. Keep the P0 composition traces (replacement chains, partial target fizzle,
    multiplayer stack/concession, and commander SBA-loss) in every repeatable release gate.
-3. Run the P0 scenario matrix and the broad rules-engine gate before treating readiness
+4. Run the P0 scenario matrix and the broad rules-engine gate before treating readiness
    dashboard evidence as eligible for larger card batches.
