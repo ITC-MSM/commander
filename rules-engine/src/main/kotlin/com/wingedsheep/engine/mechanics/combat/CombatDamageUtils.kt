@@ -175,13 +175,14 @@ internal object CombatDamageUtils {
         // creatures you control with toughness greater than their power assign combat damage equal
         // to their toughness" is the durational form of Bedrock Tortoise's printed sentence, and
         // grants exactly this ability to itself.
+        // Indexed once rather than re-scanned per permanent: this runs for every creature assigning
+        // combat damage, and the list is empty in the overwhelmingly common case.
+        val grantsByEntity = state.grantedStaticAbilities.groupBy { it.entityId }
         for (permanentId in state.getBattlefield()) {
             val permCardId = state.getEntity(permanentId)?.get<CardComponent>()?.cardDefinitionId
             val printed = permCardId?.let { cardRegistry.getCard(it)?.staticAbilities }.orEmpty()
-            val granted = state.grantedStaticAbilities
-                .filter { it.entityId == permanentId }
-                .map { it.ability }
-            val abilities = printed + granted
+            val granted = grantsByEntity[permanentId]?.map { it.ability }.orEmpty()
+            val abilities = if (granted.isEmpty()) printed else printed + granted
             if (abilities.isEmpty()) continue
             if (matchesBattlefield(state, projected, permanentId, creatureId, abilities, power, toughness)) return true
         }

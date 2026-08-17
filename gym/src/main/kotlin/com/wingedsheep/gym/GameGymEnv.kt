@@ -92,11 +92,7 @@ class GameGymEnv(
                 // ID can't carry (attackers, blockers, targets, X); params complete it.
                 val action = ActionParameterizer.apply(resolved.action, params, environment.state)
                 environment.step(action)
-                // An engine rejection leaves the state untouched, which would otherwise read as a
-                // successful no-op — the exact way a mis-declared attack used to disappear.
-                environment.lastRejection?.let {
-                    throw IllegalArgumentException("Action $actionId rejected by the engine: $it")
-                }
+                failOnRejection(actionId)
             }
             is ResolvedAction.Decision -> {
                 require(params.isEmpty) {
@@ -105,9 +101,21 @@ class GameGymEnv(
                 val pending = environment.state.pendingDecision
                     ?: throw IllegalStateException("Registry has a decision response but env is not paused")
                 environment.step(SubmitDecision(pending.playerId, resolved.response))
+                failOnRejection(actionId)
             }
             ResolvedAction.Unknown ->
                 throw IllegalArgumentException("Action ID $actionId is not valid for the current step")
+        }
+    }
+
+    /**
+     * An engine rejection leaves the state untouched, which would otherwise read as a successful
+     * no-op — the exact way a mis-declared attack used to disappear. Applies to a submitted decision
+     * for the same reason it applies to a played action: neither changes the state when refused.
+     */
+    private fun failOnRejection(actionId: Int) {
+        environment.lastRejection?.let {
+            throw IllegalArgumentException("Action $actionId rejected by the engine: $it")
         }
     }
 }

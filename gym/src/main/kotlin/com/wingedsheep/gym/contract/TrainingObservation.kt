@@ -250,7 +250,7 @@ data class LegalActionView(
      * with no params to attack with nobody.
      */
     val validAttackers: List<EntityId> = emptyList(),
-    /** Attackers that *must* attack if able (CR 508.1a) — a declaration omitting one is rejected. */
+    /** Attackers that *must* attack if able (CR 508.1d) — a declaration omitting one is rejected. */
     val mandatoryAttackers: List<EntityId> = emptyList(),
     /** Players, planeswalkers and battles this player may attack. */
     val validAttackTargets: List<EntityId> = emptyList(),
@@ -259,6 +259,18 @@ data class LegalActionView(
      * Map each to the attackers it blocks in `ActionParams.blockers`.
      */
     val validBlockers: List<EntityId> = emptyList(),
+    /**
+     * How many attackers each blocker may block at once — absent means the default one (CR 509.1a).
+     * A declaration exceeding a blocker's limit is rejected, so a caller building
+     * `ActionParams.blockers` has to respect it.
+     */
+    val blockerMaxBlockCounts: Map<EntityId, Int> = emptyMap(),
+    /**
+     * Blocks that *must* be made if able (CR 509.1c) — blocker id → the attackers it is required to
+     * block. Like [mandatoryAttackers] on the attack side, a declaration that obeys fewer of these
+     * than it could is illegal, so this is not advisory.
+     */
+    val mandatoryBlockerAssignments: Map<EntityId, List<EntityId>> = emptyMap(),
     /** True when this entry was generated from [PendingDecisionView], not a GameAction. */
     val isDecisionOption: Boolean = false
 )

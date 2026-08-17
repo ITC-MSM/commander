@@ -48,7 +48,16 @@ data class ActionParams(
     val xValue: Int? = null
 ) {
     val isEmpty: Boolean
-        get() = attackers.isEmpty() && blockers.isEmpty() && targets.isEmpty() && xValue == null
+        get() = populatedFields.isEmpty()
+
+    /** The names of the fields actually carrying a choice — the vocabulary of the error messages. */
+    internal val populatedFields: List<String>
+        get() = buildList {
+            if (attackers.isNotEmpty()) add("attackers")
+            if (blockers.isNotEmpty()) add("blockers")
+            if (targets.isNotEmpty()) add("targets")
+            if (xValue != null) add("xValue")
+        }
 
     companion object {
         val EMPTY = ActionParams()
@@ -69,22 +78,17 @@ object ActionParameterizer {
 
         return when (action) {
             is DeclareAttackers -> {
-                reject(params.blockers.isNotEmpty(), "blockers", action)
-                reject(params.targets.isNotEmpty(), "targets", action)
-                reject(params.xValue != null, "xValue", action)
+                params.allowOnly(action, "attackers")
                 action.copy(attackers = params.attackers)
             }
 
             is DeclareBlockers -> {
-                reject(params.attackers.isNotEmpty(), "attackers", action)
-                reject(params.targets.isNotEmpty(), "targets", action)
-                reject(params.xValue != null, "xValue", action)
+                params.allowOnly(action, "blockers")
                 action.copy(blockers = params.blockers)
             }
 
             is CastSpell -> {
-                reject(params.attackers.isNotEmpty(), "attackers", action)
-                reject(params.blockers.isNotEmpty(), "blockers", action)
+                params.allowOnly(action, "targets", "xValue")
                 action.copy(
                     targets = params.targets.map { resolveTarget(it, state) }
                         .ifEmpty { action.targets },
@@ -93,8 +97,7 @@ object ActionParameterizer {
             }
 
             is ActivateAbility -> {
-                reject(params.attackers.isNotEmpty(), "attackers", action)
-                reject(params.blockers.isNotEmpty(), "blockers", action)
+                params.allowOnly(action, "targets", "xValue")
                 action.copy(
                     targets = params.targets.map { resolveTarget(it, state) }
                         .ifEmpty { action.targets },
@@ -112,8 +115,12 @@ object ActionParameterizer {
      * Turn a bare entity id into the [ChosenTarget] variant its current zone implies. The caller
      * sends ids because that is all the observation exposes; which variant an id means is a fact
      * about the game state, not about the request.
+     *
+     * `internal` rather than private so the zone dispatch can be asserted directly — it is the only
+     * part of this object that reads live state, and driving a game to each of the four zones just
+     * to reach it would test the driver, not the dispatch.
      */
-    private fun resolveTarget(id: EntityId, state: GameState): ChosenTarget = when {
+    internal fun resolveTarget(id: EntityId, state: GameState): ChosenTarget = when {
         id in state.turnOrder -> ChosenTarget.Player(id)
         id in state.stack -> ChosenTarget.Spell(id)
         id in state.getBattlefield() -> ChosenTarget.Permanent(id)
@@ -124,9 +131,16 @@ object ActionParameterizer {
         }
     }
 
-    private fun reject(condition: Boolean, field: String, action: GameAction) {
-        require(!condition) {
-            "Step param '$field' is not applicable to ${action::class.simpleName}"
+    /**
+     * Reject any populated field [action] can't use. Stated as a whitelist rather than as one
+     * rejection per inapplicable field, so a new [ActionParams] field is inapplicable everywhere by
+     * default instead of being silently dropped by every branch that forgot to name it.
+     */
+    private fun ActionParams.allowOnly(action: GameAction, vararg allowed: String) {
+        val unusable = populatedFields - allowed.toSet()
+        require(unusable.isEmpty()) {
+            "Step param(s) ${unusable.joinToString(", ") { "'$it'" }} " +
+                "are not applicable to ${action::class.simpleName}"
         }
     }
 }

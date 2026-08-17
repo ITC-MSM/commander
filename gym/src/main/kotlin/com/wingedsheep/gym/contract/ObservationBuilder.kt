@@ -318,11 +318,16 @@ class ObservationBuilder(
             isManaAbility = la.isManaAbility,
             // Combat candidates. The enumerator offers one DeclareAttackers / DeclareBlockers action
             // carrying an empty map, so without these the caller has the action but no way to know
-            // what it could declare — and `ActionParams` has nothing to be built from.
+            // what it could declare — and `ActionParams` has nothing to be built from. The two
+            // blocker constraints ride along for the same reason: a declaration that exceeds a
+            // blocker's limit or skips a required block is rejected, and a caller that can't see
+            // them can only discover that as a 400 it had no way to predict.
             validAttackers = la.validAttackers.orEmpty(),
             mandatoryAttackers = la.mandatoryAttackers.orEmpty(),
             validAttackTargets = la.validAttackTargets.orEmpty(),
             validBlockers = la.validBlockers.orEmpty(),
+            blockerMaxBlockCounts = la.blockerMaxBlockCounts.orEmpty(),
+            mandatoryBlockerAssignments = la.mandatoryBlockerAssignments.orEmpty(),
             isDecisionOption = false
         )
     }

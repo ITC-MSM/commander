@@ -44,11 +44,12 @@ Default port **8081** so it coexists with the game server on 8080.
 
 ### `params`: the choices an action ID can't carry
 
-`DeclareAttackers` is enumerated once, with an **empty** attacker map; the candidates ride on the
-same legal action (`validAttackers`, `mandatoryAttackers`, `validAttackTargets`, `validBlockers`).
-Stepping it by ID alone therefore attacks with nobody — legal, accepted, and for a long time the
-reason combat was unreachable over HTTP while every request returned 200. `StepBody.params`
-(`ActionParams` in `:gym`) completes such an action:
+`DeclareAttackers` is enumerated once, with an **empty** attacker map; the candidates and the
+constraints on a legal declaration ride on the same legal action (`validAttackers`,
+`mandatoryAttackers`, `validAttackTargets`, `validBlockers`, `blockerMaxBlockCounts`,
+`mandatoryBlockerAssignments`). Stepping it by ID alone therefore attacks with nobody — legal,
+accepted, and for a long time the reason combat was unreachable over HTTP while every request
+returned 200. `StepBody.params` (`ActionParams` in `:gym`) completes such an action:
 
 ```json
 { "actionId": 4, "params": { "attackers": { "<attackerId>": "<defenderId>" } } }
@@ -57,8 +58,9 @@ reason combat was unreachable over HTTP while every request returned 200. `StepB
 ```
 
 Params an action can't use → `400`. A completed action the engine rejects → `400` with the engine's
-reason, rather than a state-unchanged 200. Richer choices (bands, alternative costs, convoke/delve)
-still belong to `POST /envs/{id}/decision`.
+reason, rather than a state-unchanged 200. Both hold on `step-batch` too: a task's own exception is
+unwrapped out of its `Future`, so one rejected item in a batch is a `400`, not a `500`. Richer
+choices (bands, alternative costs, convoke/delve) still belong to `POST /envs/{id}/decision`.
 
 ## Design choices worth knowing about
 

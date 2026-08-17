@@ -127,15 +127,18 @@ curl -s -X POST localhost:8081/envs/$ENV/step -H 'Content-Type: application/json
 | `params` field | Shape | Comes from |
 |---|---|---|
 | `attackers` | attacker id → defender id | `validAttackers`, `validAttackTargets` on the action |
-| `blockers` | blocker id → `[attacker id, …]` | `validBlockers` on the action; attackers from the board |
+| `blockers` | blocker id → `[attacker id, …]` | `validBlockers`, `blockerMaxBlockCounts`, `mandatoryBlockerAssignments` on the action; attackers from the board |
 | `targets` | `[entity id, …]`, in requirement order | `targetEntityIds`, `minTargets`, `maxTargets` |
 | `xValue` | int | `hasXCost`, `maxAffordableX` |
 
-`mandatoryAttackers` lists creatures that must attack if able (CR 508.1a); a declaration omitting one
-is rejected. Params a given action can't use, and a declaration the engine rejects, both return
-`400` with the reason — neither is silently dropped. Anything richer (bands, alternative-cost
-payments, convoke/delve selections) is not expressible over `step`; complex decisions go to
-`POST /envs/{id}/decision` (section 5).
+The declaration constraints are not advisory — a declaration that disobeys one is illegal, and the
+step is rejected. `mandatoryAttackers` lists creatures that must attack if able (CR 508.1d);
+`mandatoryBlockerAssignments` lists blocks that must be made if able (CR 509.1c); and
+`blockerMaxBlockCounts` caps how many attackers a blocker may block at once, where absent means the
+default one (CR 509.1a). Params a given action can't use, and a declaration the engine rejects, both
+return `400` with the reason — neither is silently dropped, on `/step` or on `/step-batch`. Anything
+richer (bands, alternative-cost payments, convoke/delve selections) is not expressible over `step`;
+complex decisions go to `POST /envs/{id}/decision` (section 5).
 
 ### Reading an observation
 
@@ -145,7 +148,8 @@ The fields that matter most for spotting bugs:
 - `legalActions[]` — each has `actionId`, `kind` (the engine's action type verbatim: `CastSpell`,
   `PlayLand`, `ActivateAbility`, `DeclareAttackers`, `DeclareBlockers`, `PassPriority`, `DECISION`,
   …), `description`, `affordable`, `manaCost`, target counts, and the combat candidates
-  (`validAttackers`, `mandatoryAttackers`, `validAttackTargets`, `validBlockers`).
+  (`validAttackers`, `mandatoryAttackers`, `validAttackTargets`, `validBlockers`,
+  `blockerMaxBlockCounts`, `mandatoryBlockerAssignments`).
 - `zones[]` → `cards[]` → `EntityFeatures` — the projected (post-layers) truth about each object:
   `oracleText`, `power`/`toughness`, `types`/`subtypes`/`keywords`/`colors`, `tapped`, `counters`,
   `attachedTo`. **`oracleText` is your oracle**: read what the card *says*, then watch whether the
