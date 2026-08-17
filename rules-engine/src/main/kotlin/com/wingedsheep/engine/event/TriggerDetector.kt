@@ -517,13 +517,13 @@ class TriggerDetector(
             for (ability in entry.abilities) {
                 if (Zone.BATTLEFIELD !in ability.activeZones) continue
                 if (matcher.matchesStepTrigger(ability.trigger, step, entry.controllerId, state, entry.entityId)) {
-                    triggers.add(
+                    for (context in stepTriggerContexts(ability, entry.controllerId, step, activePlayerId, state)) triggers.add(
                         PendingTrigger(
                             ability = ability,
                             sourceId = entry.entityId,
                             sourceName = entry.cardComponent.name,
                             controllerId = entry.controllerId,
-                            triggerContext = TriggerContext(step = step, triggeringEntityId = activePlayerId)
+                            triggerContext = context
                         )
                     )
                 }
@@ -541,13 +541,13 @@ class TriggerDetector(
                     val trigger = ability.trigger as? EventPattern.StepEvent ?: continue
                     if (step != trigger.step) continue
                     if (matcher.matchesPlayerForStep(trigger.player, enchantedController, state)) {
-                        triggers.add(
+                        for (context in stepTriggerContexts(ability, enchantedController, step, activePlayerId, state)) triggers.add(
                             PendingTrigger(
                                 ability = ability,
                                 sourceId = entry.entityId,
                                 sourceName = entry.cardComponent.name,
                                 controllerId = enchantedController,
-                                triggerContext = TriggerContext(step = step, triggeringEntityId = activePlayerId)
+                                triggerContext = context
                             )
                         )
                     }
@@ -576,13 +576,13 @@ class TriggerDetector(
                             ?: container.get<OwnerComponent>()?.playerId
                             ?: continue
                         if (matcher.matchesStepTrigger(ability.trigger, step, ownerId, state, entityId)) {
-                            triggers.add(
+                            for (context in stepTriggerContexts(ability, ownerId, step, activePlayerId, state)) triggers.add(
                                 PendingTrigger(
                                     ability = ability,
                                     sourceId = entityId,
                                     sourceName = cardComponent.name,
                                     controllerId = ownerId,
-                                    triggerContext = TriggerContext(step = step, triggeringEntityId = activePlayerId)
+                                    triggerContext = context
                                 )
                             )
                         }
@@ -596,13 +596,13 @@ class TriggerDetector(
         for (global in state.globalGrantedTriggeredAbilities) {
             val ability = global.ability
             if (matcher.matchesStepTrigger(ability.trigger, step, global.controllerId, state, global.sourceId)) {
-                triggers.add(
+                for (context in stepTriggerContexts(ability, global.controllerId, step, activePlayerId, state)) triggers.add(
                     PendingTrigger(
                         ability = ability,
                         sourceId = global.sourceId,
                         sourceName = global.sourceName,
                         controllerId = global.controllerId,
-                        triggerContext = TriggerContext(step = step, triggeringEntityId = activePlayerId)
+                        triggerContext = context
                     )
                 )
             }
@@ -621,6 +621,33 @@ class TriggerDetector(
             state,
             matcher.filterByTriggerCondition(state, assignGranterIds(state, filteredTriggers))
         )
+    }
+
+    /**
+     * CR 805.4d normally treats a shared team upkeep as one step. It creates one trigger per
+     * opposing teammate only when the typed ability data binds "that opponent" individually.
+     */
+    private fun stepTriggerContexts(
+        ability: TriggeredAbility,
+        controllerId: EntityId,
+        step: Step,
+        activePlayerId: EntityId,
+        state: GameState,
+    ): List<TriggerContext> {
+        val default = TriggerContext(
+            step = step,
+            triggeringEntityId = activePlayerId,
+            triggeringPlayerId = activePlayerId,
+        )
+        val stepPlayer = (ability.trigger as? EventPattern.StepEvent)?.player ?: return listOf(default)
+        if (stepPlayer !in setOf(Player.Each, Player.EachOpponent) || !ability.referencesTriggeringPlayer) return listOf(default)
+
+        val candidates = state.sharedTurnTeam(activePlayerId).filter { candidate ->
+            stepPlayer != Player.EachOpponent || candidate in state.getOpponents(controllerId)
+        }
+        return candidates.map { playerId ->
+            TriggerContext(step = step, triggeringEntityId = playerId, triggeringPlayerId = playerId)
+        }
     }
 
     /**

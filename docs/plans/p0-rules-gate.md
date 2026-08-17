@@ -37,6 +37,7 @@ green card-definition count or a successful UI build does not satisfy it.
 | Modal target changes during the same resolution | `ModalIntraResolutionPartialTargetTest` | Implemented; independently reviewed and broad rules-engine-tested |
 | Four-player stack, counter, and concession | `CommanderPodSimulationTest :: P0-4P-STACK-CONCESSION-001` | Implemented; broad rules-engine-tested |
 | Commander-loss / lethal-damage SBA / survivor trigger chain | `CommanderPodSimulationTest :: SBA-COMMANDER-LOSS-DIES-4P-001` | Implemented; broad rules-engine-tested |
+| 2HG each-opponent upkeep trigger multiplicity | `TwoHeadedGiantStepTriggerMultiplicityTest`, `TriggeredAbilitySemanticsTest` | Implemented; independently reviewed and focused/broad rules-engine-tested |
 
 ## Explicit scope boundary
 
