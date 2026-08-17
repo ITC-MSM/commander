@@ -1070,6 +1070,10 @@ internal class CombatDamageManager(
         var newState = state
         val counters = newState.getEntity(targetId)?.get<CountersComponent>() ?: CountersComponent()
         val currentCount = counters.getCount(counterType)
+        // CR 120.4a: damage above a planeswalker's loyalty or a battle's defense is excess.
+        // Measure it before this assignment removes counters. Multi-source simultaneous damage
+        // needs a batch-level aggregate and is intentionally outside this event-local calculation.
+        val excess = (amount - currentCount).coerceAtLeast(0)
         newState = newState.updateEntity(targetId) { container ->
             container.with(counters.withRemoved(counterType, amount))
         }
@@ -1097,7 +1101,8 @@ internal class CombatDamageManager(
         val defaultName = if (counterType == com.wingedsheep.sdk.core.CounterType.LOYALTY) "Planeswalker" else "Battle"
         val targetName = newState.getEntity(targetId)?.get<CardComponent>()?.name ?: defaultName
         events.add(DamageDealtEvent(sourceId, targetId, amount, true,
-            sourceName = sourceName, targetName = targetName, targetIsPlayer = false))
+            sourceName = sourceName, targetName = targetName, targetIsPlayer = false,
+            excessAmount = excess))
         val removed = amount.coerceAtMost(currentCount)
         if (counterType == com.wingedsheep.sdk.core.CounterType.LOYALTY) {
             events.add(LoyaltyChangedEvent(targetId, targetName, -removed))
@@ -1234,8 +1239,9 @@ internal class CombatDamageManager(
             val projected = newState.projectedState
             val hasWither = projected.hasKeyword(sourceId, Keyword.WITHER)
             // Excess damage (CR 120.4a) is only computed for the non-wither path below.
-            // Wither damage (dealt as -1/-1 counters per CR 702.80a), planeswalker (above
-            // loyalty), and battle (above defense) excess paths are not yet modelled.
+            // Single-assignment planeswalker and battle excess is handled in
+            // removeCountersForDamage. Wither and simultaneous multi-source aggregation remain
+            // unmodelled here.
             var excess = 0
             if (hasWither) {
                 // Wither (CR 702.80): damage to creatures is dealt in the form of -1/-1 counters

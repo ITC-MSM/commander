@@ -1,6 +1,8 @@
 package com.wingedsheep.engine.scenarios
 
 import com.wingedsheep.engine.mechanics.battle.Battles
+import com.wingedsheep.engine.mechanics.combat.CombatDamageManager
+import com.wingedsheep.engine.mechanics.combat.DamageCalculator
 import com.wingedsheep.engine.state.components.battlefield.CountersComponent
 import com.wingedsheep.engine.state.components.combat.AttackingComponent
 import com.wingedsheep.engine.support.ScenarioTestBase
@@ -40,6 +42,14 @@ class BattleCardTypeScenarioTest : ScenarioTestBase() {
         oracleText = "A battle with no battle types."
     }
 
+    private val testTitan = card("Test Titan") {
+        manaCost = "{6}"
+        colorIdentity = ""
+        typeLine = "Creature — Giant"
+        power = 10
+        toughness = 10
+    }
+
     private fun defenseOf(game: TestGame, name: String): Int =
         game.findPermanent(name)
             ?.let { game.state.getEntity(it)?.get<CountersComponent>()?.getCount(CounterType.DEFENSE) }
@@ -51,6 +61,7 @@ class BattleCardTypeScenarioTest : ScenarioTestBase() {
     init {
         cardRegistry.register(testSiege)
         cardRegistry.register(testTypelessBattle)
+        cardRegistry.register(testTitan)
 
         context("CR 310.4 — defense is defense counters") {
 
@@ -311,6 +322,34 @@ class BattleCardTypeScenarioTest : ScenarioTestBase() {
                 withClue("defense counters can't go below zero") {
                     game.state.getEntity(bulwark)?.get<CountersComponent>()
                         ?.getCount(CounterType.DEFENSE) ?: 0 shouldBe 0
+                }
+            }
+
+            test("combat damage reports excess above a battle's defense") {
+                val game = scenario()
+                    .withPlayers("Player", "Opponent")
+                    .withCardOnBattlefield(1, "Test Siege")
+                    .withCardOnBattlefield(1, "Test Titan", summoningSickness = false)
+                    .withActivePlayer(1)
+                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                    .build()
+
+                game.checkStateBasedActions()
+                game.advanceToPhase(Phase.COMBAT, Step.DECLARE_ATTACKERS)
+                game.declareAttackersWithPermanentTargets(
+                    permanentAttackers = mapOf("Test Titan" to "Test Siege")
+                ).error shouldBe null
+
+                val siege = game.findPermanent("Test Siege")!!
+                val combatDamage = CombatDamageManager(cardRegistry, DamageCalculator(cardRegistry))
+                    .applyCombatDamage(game.state)
+                combatDamage.error shouldBe null
+
+                val damageEvent = combatDamage.events
+                    .filterIsInstance<com.wingedsheep.engine.core.DamageDealtEvent>()
+                    .single { it.targetId == siege }
+                withClue("CR 120.4a — combat damage above a battle's defense is excess") {
+                    damageEvent.excessAmount shouldBe 5
                 }
             }
         }
