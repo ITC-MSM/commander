@@ -28,7 +28,12 @@ import io.kotest.matchers.shouldBe
 class MoveToZoneEffectExecutorTest : FunSpec({
 
     val cardRegistry = com.wingedsheep.engine.registry.CardRegistry()
-    val executor = MoveToZoneEffectExecutor(cardRegistry)
+    // None of the cases below use a card definition carrying an OnEnterRunEffect, so the
+    // entering-permanent recursion must never fire; throwing makes that explicit.
+    val executor = MoveToZoneEffectExecutor(
+        cardRegistry,
+        effectExecutor = { _, _, _ -> error("no OnEnterRunEffect expected in this test") }
+    )
 
     val playerId = EntityId.generate()
     val cardId = EntityId.generate()

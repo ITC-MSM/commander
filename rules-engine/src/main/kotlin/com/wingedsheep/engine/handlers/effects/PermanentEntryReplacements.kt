@@ -25,6 +25,7 @@ import com.wingedsheep.engine.state.components.identity.PlayerComponent
 import com.wingedsheep.engine.state.components.identity.RevealedToComponent
 import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.core.Zone
+import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.CardNamePool
 import com.wingedsheep.sdk.scripting.ChoiceType
@@ -40,12 +41,23 @@ import com.wingedsheep.sdk.scripting.references.Player
  * [OnEnterRunEffect] — to an entity that has *already* been placed on the battlefield
  * **directly**, i.e. not cast as a spell that resolves off the stack.
  *
- * Callers share this seam:
- *  - [com.wingedsheep.engine.handlers.actions.land.PlayLandHandler] — a land played directly,
+ * **Each caller uses a different subset — this is a toolbox, not one entry point.** Which of the
+ * two helper families is wired where today:
+ *
+ *  - [com.wingedsheep.engine.handlers.actions.land.PlayLandHandler] — a land played directly.
+ *    Both: [pauseForEntersWithChoice] / [entersAsCopyCandidates], and [OnEnterRunEffect] inline
+ *    (sharing this object's [onEnterRunEffectFor] lookup).
  *  - [com.wingedsheep.engine.handlers.effects.token.TokenFromDefinition] — a token minted from a
- *    card definition (e.g. the Momir Basic avatar's random-creature token), and
+ *    card definition (e.g. the Momir Basic avatar's random-creature token).
+ *    [pauseForEntersWithChoice] only.
  *  - [com.wingedsheep.engine.handlers.effects.zones.MoveToZoneEffectExecutor] — a card put onto
- *    the battlefield by an effect (reanimation, a blink or earthbend return from exile, a fetch).
+ *    the battlefield by an effect (reanimation, a blink or earthbend return from exile).
+ *    [runOnEnterRunEffect] only.
+ *
+ * Those omissions are real gaps, not deliberate exclusions. The next one worth closing is
+ * [EntersWithChoice] on the move path: a reanimated Shapeshifter or Sorcerous Spyglass currently
+ * enters with its as-enters choice never made — the same shape of bug [runOnEnterRunEffect] was
+ * added to fix, one replacement over.
  *
  * The spell-resolution path keeps its own pre-battlefield variant
  * ([com.wingedsheep.engine.mechanics.stack.StackResolver.pauseForEntersWithChoice]) because there
@@ -95,15 +107,33 @@ object PermanentEntryReplacements {
     }
 
     /**
+     * The single [OnEnterRunEffect] a card definition contributes, or `null` if it has none.
+     *
+     * **First one wins.** Both entry paths consult only the first, so a card that needs two
+     * "as ~ enters" clauses must fold them into one composite inside a single replacement — see
+     * `MultiversalPassage`, whose choose-a-type and pay-2-life clauses share one wrapper for
+     * exactly this reason. That rule is single-sourced here so
+     * [com.wingedsheep.engine.handlers.actions.land.PlayLandHandler] and [runOnEnterRunEffect]
+     * cannot drift apart on it.
+     */
+    fun onEnterRunEffectFor(cardDef: CardDefinition?): OnEnterRunEffect? =
+        cardDef?.script?.replacementEffects
+            ?.filterIsInstance<OnEnterRunEffect>()
+            ?.firstOrNull()
+
+    /**
      * Run a permanent's own [OnEnterRunEffect] — the generic "as ~ enters, run [effect]"
      * self-replacement — on an entity that has *already* been placed on the battlefield.
      *
      * [com.wingedsheep.engine.handlers.actions.land.PlayLandHandler] runs this inline for a land
      * being played; this is the counterpart for every *other* direct battlefield entry (a return
-     * from exile or the graveyard, a reanimation, a "put onto the battlefield" fetch). Without it,
-     * a permanent whose entry choice lives in this replacement — Multiversal Passage's "as this
-     * land enters, choose a basic land type" — comes back with the choice never made and no way to
-     * make it later.
+     * from exile or the graveyard, a reanimation). Without it, a permanent whose entry choice
+     * lives in this replacement — Multiversal Passage's "as this land enters, choose a basic land
+     * type" — comes back with the choice never made and no way to make it later.
+     *
+     * Not a library search that puts a card onto the battlefield: `SearchDestination.BATTLEFIELD`
+     * routes through `MoveCollectionExecutor` even for a single card, and that executor does not
+     * run this replacement yet.
      *
      * The effect runs with a fresh [EffectContext] rooted at the entering permanent, so
      * `EffectTarget.Self` resolves to it rather than to whatever moved it. It may pause for player
@@ -124,11 +154,7 @@ object PermanentEntryReplacements {
         resolutionDepth: Int = 0,
     ): EffectResult? {
         val cardDefinitionId = state.getEntity(entityId)?.get<CardComponent>()?.cardDefinitionId ?: return null
-        val cardDef = cardRegistry.getCard(cardDefinitionId) ?: return null
-        val onEnter = cardDef.script.replacementEffects
-            .filterIsInstance<OnEnterRunEffect>()
-            .firstOrNull()
-            ?: return null
+        val onEnter = onEnterRunEffectFor(cardRegistry.getCard(cardDefinitionId)) ?: return null
         return effectExecutor(
             state,
             onEnter.effect,

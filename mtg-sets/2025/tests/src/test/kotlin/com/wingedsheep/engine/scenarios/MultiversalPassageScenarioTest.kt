@@ -14,6 +14,9 @@ import com.wingedsheep.mtg.sets.definitions.spm.cards.SandmanShiftingScoundrel
 import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.core.Zone
+import com.wingedsheep.sdk.dsl.Effects
+import com.wingedsheep.sdk.dsl.Triggers
+import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.AbilityId
@@ -32,6 +35,25 @@ import io.kotest.matchers.types.shouldBeInstanceOf
  * gate whose decline branch taps the land. These tests prove the chosen type sticks (subtype +
  * intrinsic mana), and that the pay/decline branch controls tapped-ness.
  */
+/**
+ * Landfall witness for the deferred-trigger case below. The entry's `ZoneChangeEvent` is emitted
+ * before the as-enters clause pauses for its choice, so this trigger only fires if the paused
+ * result carries that event up to the resume path.
+ */
+private val LandfallWatcher = card("Landfall Watcher") {
+    manaCost = "{1}"
+    colorIdentity = ""
+    typeLine = "Creature — Spirit"
+    power = 1
+    toughness = 1
+    oracleText = "Whenever a land you control enters, you gain 1 life."
+
+    triggeredAbility {
+        trigger = Triggers.LandYouControlEnters
+        effect = Effects.GainLife(1)
+    }
+}
+
 class MultiversalPassageScenarioTest : FunSpec({
 
     fun GameTestDriver.pool(playerId: EntityId): ManaPoolComponent =
@@ -39,7 +61,9 @@ class MultiversalPassageScenarioTest : FunSpec({
 
     fun createDriver(): GameTestDriver {
         val driver = GameTestDriver()
-        driver.registerCards(TestCards.all + MultiversalPassage + SandmanShiftingScoundrel)
+        driver.registerCards(
+            TestCards.all + MultiversalPassage + SandmanShiftingScoundrel + LandfallWatcher
+        )
         return driver
     }
 
@@ -139,6 +163,50 @@ class MultiversalPassageScenarioTest : FunSpec({
         driver.untapPermanent(passage) // it returned tapped, per Sandman's ability
         driver.submitSuccess(ActivateAbility(p1, passage, AbilityId.intrinsicMana('R')))
         driver.pool(p1).red shouldBe 1
+    }
+
+    test("the entry's landfall trigger survives the as-enters pause and fires after the choice") {
+        val driver = createDriver()
+        driver.initMirrorMatch(deck = Deck.of("Forest" to 40), startingLife = 20)
+        val p1 = driver.activePlayer!!
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        driver.putPermanentOnBattlefield(p1, "Landfall Watcher")
+        val sandman = driver.putCardInGraveyard(p1, "Sandman, Shifting Scoundrel")
+        val passage = driver.putCardInGraveyard(p1, "Multiversal Passage")
+        driver.giveMana(p1, Color.GREEN, 5)
+
+        driver.submitSuccess(
+            ActivateAbility(
+                playerId = p1,
+                sourceId = sandman,
+                abilityId = SandmanShiftingScoundrel.activatedAbilities.first().id,
+                targets = listOf(ChosenTarget.Card(passage, ownerId = p1, zone = Zone.GRAVEYARD)),
+            )
+        )
+        var guard = 0
+        while (driver.state.stack.isNotEmpty() && driver.pendingDecision == null && guard++ < 20) {
+            driver.bothPass()
+        }
+
+        // Paused mid-entry for the basic land type. The land is physically on the battlefield and
+        // its ZoneChangeEvent has been emitted, but nothing has resolved off it yet.
+        val choice = driver.pendingDecision
+        choice.shouldBeInstanceOf<ChooseOptionDecision>()
+        driver.getLifeTotal(p1) shouldBe 20
+
+        driver.submitDecision(p1, OptionChosenResponse(choice.id, choice.options.indexOf("Mountain")))
+        val payDecision = driver.pendingDecision
+        payDecision.shouldBeInstanceOf<YesNoDecision>()
+        driver.submitYesNo(p1, false)
+
+        // The entry event was carried through the pause, so the landfall trigger was deferred onto
+        // the stack rather than dropped. Drain it.
+        guard = 0
+        while (driver.state.stack.isNotEmpty() && driver.pendingDecision == null && guard++ < 20) {
+            driver.bothPass()
+        }
+        driver.getLifeTotal(p1) shouldBe 21
     }
 
     test("choosing Mountain makes it a Mountain that taps for R") {
