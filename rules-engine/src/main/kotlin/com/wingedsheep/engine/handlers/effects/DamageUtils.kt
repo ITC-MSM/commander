@@ -300,9 +300,8 @@ object DamageUtils {
         val events = mutableListOf<EngineGameEvent>()
         events.addAll(shieldCounterEvents)
         events.addAll(reflectEvents)
-        // Excess damage (CR 120.4a) is only computed below for the non-wither creature and the
-        // battle branch (above its defense) — planeswalker (above loyalty) and wither (damage
-        // dealt as -1/-1 counters) paths are not yet modelled and stay at 0 here.
+        // Excess damage (CR 120.4a) is computed for ordinary creatures, planeswalkers, and
+        // battles. Wither damage (dealt as -1/-1 counters) remains unmodelled here.
         var creatureExcessDamage = 0
 
         // Check if target is a player, planeswalker, or creature
@@ -326,6 +325,7 @@ object DamageUtils {
             // It's a planeswalker - remove loyalty counters equal to damage dealt
             val counters = newState.getEntity(targetId)?.get<CountersComponent>() ?: CountersComponent()
             val currentLoyalty = counters.getCount(CounterType.LOYALTY)
+            creatureExcessDamage = (effectiveAmount - currentLoyalty).coerceAtLeast(0)
             newState = newState.updateEntity(targetId) { container ->
                 container.with(counters.withRemoved(CounterType.LOYALTY, effectiveAmount))
             }

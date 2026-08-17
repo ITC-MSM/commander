@@ -38,7 +38,7 @@ green card-definition count or a successful UI build does not satisfy it.
 | Four-player stack, counter, and concession | `CommanderPodSimulationTest :: P0-4P-STACK-CONCESSION-001` | Implemented; broad rules-engine-tested |
 | Commander-loss / lethal-damage SBA / survivor trigger chain | `CommanderPodSimulationTest :: SBA-COMMANDER-LOSS-DIES-4P-001` | Implemented; broad rules-engine-tested |
 | 2HG each-opponent upkeep trigger multiplicity | `TwoHeadedGiantStepTriggerMultiplicityTest`, `TriggeredAbilitySemanticsTest` | Implemented; independently reviewed and focused/broad rules-engine-tested |
-| Single-source combat excess to battles / planeswalkers | `BattleCardTypeScenarioTest` | Implemented; independently reviewed and focused-tested. Simultaneous multi-source aggregation remains open. |
+| Single-source excess to battles / planeswalkers | `BattleCardTypeScenarioTest` | Implemented for combat battles and noncombat planeswalkers; independently reviewed and focused-tested. Simultaneous multi-source aggregation remains open. |
 
 ## Explicit scope boundary
 

@@ -50,6 +50,13 @@ class BattleCardTypeScenarioTest : ScenarioTestBase() {
         toughness = 10
     }
 
+    private val testPlaneswalker = card("Test Planeswalker") {
+        manaCost = "{2}{U}"
+        colorIdentity = "U"
+        typeLine = "Planeswalker — Tester"
+        startingLoyalty = 3
+    }
+
     private fun defenseOf(game: TestGame, name: String): Int =
         game.findPermanent(name)
             ?.let { game.state.getEntity(it)?.get<CountersComponent>()?.getCount(CounterType.DEFENSE) }
@@ -62,6 +69,7 @@ class BattleCardTypeScenarioTest : ScenarioTestBase() {
         cardRegistry.register(testSiege)
         cardRegistry.register(testTypelessBattle)
         cardRegistry.register(testTitan)
+        cardRegistry.register(testPlaneswalker)
 
         context("CR 310.4 — defense is defense counters") {
 
@@ -350,6 +358,29 @@ class BattleCardTypeScenarioTest : ScenarioTestBase() {
                     .single { it.targetId == siege }
                 withClue("CR 120.4a — combat damage above a battle's defense is excess") {
                     damageEvent.excessAmount shouldBe 5
+                }
+            }
+
+            test("noncombat damage reports excess above a planeswalker's loyalty") {
+                val game = scenario()
+                    .withPlayers("Player", "Opponent")
+                    .withCardOnBattlefield(1, "Test Planeswalker")
+                    .withCardOnBattlefield(1, "Test Titan", summoningSickness = false)
+                    .withActivePlayer(1)
+                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                    .build()
+
+                val planeswalker = game.findPermanent("Test Planeswalker")!!
+                val titan = game.findPermanent("Test Titan")!!
+                val result = com.wingedsheep.engine.handlers.effects.DamageUtils.dealDamageToTarget(
+                    game.state, planeswalker, 10, sourceId = titan
+                )
+
+                val damageEvent = result.events
+                    .filterIsInstance<com.wingedsheep.engine.core.DamageDealtEvent>()
+                    .single { it.targetId == planeswalker }
+                withClue("CR 120.4a — excess is the amount above the planeswalker's loyalty (10 - 3)") {
+                    damageEvent.excessAmount shouldBe 7
                 }
             }
         }
