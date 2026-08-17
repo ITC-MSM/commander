@@ -1,4 +1,4 @@
-package com.wingedsheep.mtg.sets.definitions.blc.cards
+package com.wingedsheep.mtg.sets.definitions.snc.cards
 
 import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.card
@@ -30,9 +30,10 @@ val BigScore = card("Big Score") {
     }
 
     metadata {
-        rarity = Rarity.UNCOMMON
-        collectorNumber = "193"
-        artist = "Daren Bader"
-        imageUri = "https://cards.scryfall.io/normal/front/2/4/243b460e-e67a-40d7-a874-a61fdb011c5a.jpg?1721429138"
+        rarity = Rarity.COMMON
+        collectorNumber = "102"
+        artist = "Gaboleps"
+        flavorText = "\"Unimaginable riches? I assure you, I have a *vivid* imagination.\""
+        imageUri = "https://cards.scryfall.io/normal/front/3/9/39d1578f-e2cf-4b93-8204-ed5434feb183.jpg?1783923123"
     }
 }

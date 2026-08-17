@@ -1,4 +1,4 @@
-package com.wingedsheep.mtg.sets.definitions.blc.cards
+package com.wingedsheep.mtg.sets.definitions.snc.cards
 
 import com.wingedsheep.sdk.dsl.Costs
 import com.wingedsheep.sdk.dsl.Effects
@@ -36,8 +36,9 @@ val BootleggersStash = card("Bootleggers' Stash") {
 
     metadata {
         rarity = Rarity.MYTHIC
-        collectorNumber = "207"
+        collectorNumber = "134"
         artist = "Anastasia Ovchinnikova"
-        imageUri = "https://cards.scryfall.io/normal/front/c/1/c10525b5-067c-4a30-a069-875f11f2ff19.jpg?1721429213"
+        flavorText = "Labyrinths of tunnels beneath the streets of the Caldaia offer an ample array of discreet routes for enterprising smugglers."
+        imageUri = "https://cards.scryfall.io/normal/front/8/0/80b5b7e1-52c2-4453-b3c0-efe2cebad6ce.jpg?1783923109"
     }
 }
