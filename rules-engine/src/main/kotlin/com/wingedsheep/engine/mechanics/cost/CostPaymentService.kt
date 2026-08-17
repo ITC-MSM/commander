@@ -755,8 +755,12 @@ class CostPaymentService(private val services: EngineServices) {
                 // source is in the pool. Self-removal picks nothing at all.
                 is CostAtom.RemoveCounters ->
                     if (atom.self) null else controlledMatching(state, payerId, atom.filter)
+                // ExileFromGraveyardForTotal does pick objects, but only ever as an activated-ability
+                // cost — CostHandler owns its selection, and [canAfford] already reports it
+                // unaffordable as a PayCost, so it has no domain on this path.
                 is CostAtom.Mana, is CostAtom.PayLife, is CostAtom.Mill,
-                is CostAtom.PutCountersOnSelf, is CostAtom.VariablePermanents -> null
+                is CostAtom.PutCountersOnSelf, is CostAtom.VariablePermanents,
+                is CostAtom.ExileFromGraveyardForTotal -> null
             }
         }
 
