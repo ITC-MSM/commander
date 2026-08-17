@@ -309,6 +309,30 @@ That last group is also this band's write-off with an expiry date, in the sense 
 records: the day some band builds `EventPattern`, `Prevention`'s KDoc is what says the prevention
 statics are sitting there waiting for it.
 
+The **fronted duration** is the first band whose product is a *measurement*, and it is the one to
+read before picking anything off the top of the tail ranking. "Until end of turn, …" was the second
+row — 265 cards blocked, 189 sole-blocked — and moving the duration to the back of its own 266
+declined lines finishes **five**. The rest decline again on the payload: 54 animate a permanent, 42
+grant a quoted ability, 32 set base power and toughness, 14 pump by a count. So the honest reading is
+that **a family which is a clause position measures its payload rather than itself** — the ranking
+counts the cards whose *first* unreadable clause is this one, and for an opening clause that is every
+card whose sentence the grammar cannot read at all. The band still ships, because the position is
+what every one of those four families lands in the day it is written; what it must not do is claim
+the 265.
+
+Three things transfer. **The probe was exact for once, and the reason generalizes**: every previous
+band substituted a stand-in prefix and overstated (234 → 183, 101 → 75), while this one performed the
+family's own transformation — moving a word — so there was no gap between the measurement and the
+rule to be wrong in. When a family's construct can be *applied* rather than approximated, the probe
+stops being a prediction. Second, **a second spelling of one rule is not a second rule**: the fronted
+form needs the identical `build` and `match`, so the kernel grew `PhraseBuilder.alsoSpelled` — an
+extra surface template on the same rule, sharing its closures, alternate by construction — and
+`Durations` owns the derivation. Copying a rule to move one word is how a grammar acquires two halves
+that agree until someone edits one. Third, **the derivation belongs to the family and the capability
+to the kernel**: `alsoSpelled` knows nothing about durations, which is what keeps it usable by the
+next family that finds one model with two word orders, and what keeps Oracle vocabulary out of
+`syntax/`.
+
 The top-of-library band's differential result is the argument for the whole discipline: it put
 `SelectFromCollectionEffect` under comparison for the first time, and **every newly-compared card
 that disagreed was wrong** — five had silently dropped `restOrder` so "in any order" resolved as "in
@@ -402,6 +426,7 @@ has not surfaced yet.
 | `token` re-reads what it writes | The kernel cannot cross-check a leaf's two halves the way a template can, so `unparse` is verified against `read` on every call. |
 | `furthest`/`expected` | The entire source of `assay explain`'s caret. Any new combinator must call `ctx.fail(pos, name)` where it gives up. |
 | Declaration order inside an `object` | Initializers run in order; a rule referencing a later one reads a null out of a half-initialized object. Declare leaves first. |
+| `alsoSpelled` shares the rule's closures | Two spellings of one model must not be two rules — a copied `build`/`match` pair agrees until someone edits one. The extra template is alternate by construction, and the *derivation* between the two spellings belongs to a grammar family (`Durations`), never here. |
 
 ## Adding a rule
 
@@ -518,6 +543,16 @@ before trusting a number: it substitutes a prefix into the lines that *declined*
 family's payoff was partly in lines that had never declined as a family at all — the 204 cards whose
 header sits inside a trigger, which the probe measured as trigger declines. A family that is a
 *clause position* rather than a line shape will do this again. Read the probe as a floor there.
+
+The fronted duration is the same shape and it came out the other way, which is what makes the pair
+useful. It is a clause position too, and its probe was **exact** — 5 lines and 4 whole cards
+predicted, 5 and 4 delivered — because the substitution *was* the rule: moving "until end of turn" to
+the back of a line is precisely what the band taught the grammar to read. **A probe that performs the
+family's own transformation has no gap to be wrong in; one that stands in for it does.** What the
+ranking got wrong there was not the probe but the *card count*: an opening clause is where every
+unreadable sentence dies, so 265 cards "blocked" and 189 "sole-blocked" were mostly cards whose
+payload the grammar cannot read either. When the family sits at the *front* of its line, read the
+sole-blocked number as an upper bound with no lower bound in it, and let the probe say the rest.
 
 **Three keyings, three biases, and knowing which to read.** `DeclineKey` holds all of them and the
 gate computes all three in the one sweep, so the CLI and the explorer cannot disagree about a family.

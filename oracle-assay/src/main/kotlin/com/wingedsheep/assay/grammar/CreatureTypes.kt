@@ -42,6 +42,7 @@ object CreatureTypes {
             "{self} becomes the creature type of your choice$suffix until end of turn",
             name = "the source becomes a chosen creature type",
         ) {
+            frontedDuration()
             slot("self", Primitives.self)
             build { script }
             match { if (it == script) bind("self" to Unit) else null }
@@ -66,6 +67,10 @@ object CreatureTypes {
             "choose a creature type. each creature you control becomes that type until end of turn",
             name = "each creature you control becomes a chosen type",
         ) {
+            // Two sentences, and the duration belongs to the second: the fronted spelling is
+            // "Choose a creature type. Until end of turn, each creature you control becomes that
+            // type." See [Durations.fronted] for why the derivation fronts into the last sentence.
+            frontedDuration()
             build { script }
             match { if (it == script) bind() else null }
         }
@@ -91,6 +96,7 @@ object CreatureTypes {
             "creatures of the creature type of your choice get {mod} and gain {kw} until end of turn",
             name = "creatures of a chosen type get and gain",
         ) {
+            frontedDuration()
             slot("mod", Primitives.statModifiers)
             slot("kw", Keywords.keyword)
             build { scriptFor(it.value("mod"), it.value("kw")) }
