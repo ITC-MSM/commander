@@ -10,7 +10,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 
 /**
- * Last-known source P/T on a self-sacrifice cost (CR 112.7a / 608.2h).
+ * Last-known source P/T on a self-sacrifice cost (CR 113.7a / 608.2h).
  *
  * "{T}, Sacrifice this creature: It deals damage equal to its power …" — the source is gone by the
  * time the ability resolves, so `EntityProperty(Source, Power)` (`DynamicAmounts.sourcePower()`)

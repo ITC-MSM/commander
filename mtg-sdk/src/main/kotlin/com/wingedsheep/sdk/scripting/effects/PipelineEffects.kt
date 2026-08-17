@@ -348,7 +348,7 @@ sealed interface CardSource {
 
     /**
      * The Equipment that was attached to the effect's source the moment a self-sacrifice / self-exile
-     * cost moved it off the battlefield (CR 112.7a last-known information). Read off
+     * cost moved it off the battlefield (CR 113.7a last-known information). Read off
      * [com.wingedsheep.engine.handlers.EffectContext.lastKnownSourceAttachments] — the source's
      * attachment list captured before the cost was paid — and restricted to permanents that are
      * *still on the battlefield and still Equipment*, since an Equipment that has since left (or

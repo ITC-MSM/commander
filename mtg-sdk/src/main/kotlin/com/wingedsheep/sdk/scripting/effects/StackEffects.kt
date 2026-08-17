@@ -459,7 +459,7 @@ sealed interface WardCost {
      * Raubahn, Bull of Ala Mhigo's "Ward—Pay life equal to Raubahn's power"
      * ([com.wingedsheep.sdk.dsl.DynamicAmounts.sourcePower]). The amount is evaluated when the
      * ward triggered ability *resolves* (CR 702.21b), reading the source's power at that time,
-     * or its last-known value if the source has left the battlefield (CR 112.7a) — both handled
+     * or its last-known value if the source has left the battlefield (CR 113.7a) — both handled
      * by [com.wingedsheep.sdk.scripting.values.EntityReference.Source]'s last-known-information
      * fallback. The fixed-Int [Life] stays the common case; this variant covers only costs that
      * read live game state.

@@ -1282,7 +1282,7 @@ class ActivateAbilityHandler(
         )
 
         // Snapshot projected subtypes and P/T of sacrifice targets before zone change
-        // (Rule 112.7a / 608.2h — "as it last existed on the battlefield"). Covers both the
+        // (Rule 113.7a / 608.2h — "as it last existed on the battlefield"). Covers both the
         // fixed-count sacrifice cost and a variable-count one, which moves permanents just the same.
         val sacrificeTargetIds = (action.costPayment?.sacrificedPermanents ?: emptyList()) +
             (action.costPayment?.variableCostPermanents ?: emptyList())
@@ -1294,7 +1294,7 @@ class ActivateAbilityHandler(
         val tappedSnapshots = captureEntitySnapshots(tappedTargetIds, currentState.projectedState)
 
         // Snapshot the source's counters before a self-exile / self-sacrifice cost wipes them
-        // (CR 112.7a / 122.2), so the effect can read the pre-cost count via
+        // (CR 113.7a / 122.2), so the effect can read the pre-cost count via
         // DynamicAmount.LastKnownSourceCounters (Lost Isle Calling).
         val lastKnownSourceCounters: Map<String, Int> =
             if (costExilesOrSacrificesSelf(effectiveCost)) {
@@ -1341,7 +1341,7 @@ class ActivateAbilityHandler(
             } else null
 
         // Snapshot the entity ids attached to the source before a self-exile / self-sacrifice cost
-        // moves it off the battlefield (CR 112.7a). The host's live AttachmentsComponent is gone by
+        // moves it off the battlefield (CR 113.7a). The host's live AttachmentsComponent is gone by
         // resolution, so capture it now — read via CardSource.LastKnownEquipmentAttachedToSource to
         // re-attach "an Equipment that was attached to it" (Zack Fair). Mirrors lastKnownSourceCounters.
         val lastKnownSourceAttachments: List<EntityId> =
@@ -1912,7 +1912,7 @@ class ActivateAbilityHandler(
                 // Station-style batch: this activation taps the i-th chosen creature (1-indexed
                 // list, so iteration `i` consumes element `i - 1`). Other repeatable abilities
                 // (mana-only) carry no tap choices, so the slice is empty and the cost re-pays from
-                // mana as before. Snapshot the creature before it's tapped (Rule 112.7a) so
+                // mana as before. Snapshot the creature before it's tapped (Rule 113.7a) so
                 // DynamicAmount.StationCharge reads its power off this instance's own snapshot.
                 val repeatTapSlice = if (isTapBatch) listOf(action.costPayment!!.tappedPermanents[i - 1]) else emptyList()
                 val repeatTapSnapshots = captureEntitySnapshots(repeatTapSlice, currentState.projectedState)

@@ -177,7 +177,7 @@ class DynamicAmountEvaluator(
 
             is DynamicAmount.XValue -> context.xValue ?: 0
 
-            // Counters the source had as it last existed on the battlefield (CR 112.7a / 608.2h).
+            // Counters the source had as it last existed on the battlefield (CR 113.7a / 608.2h).
             // Two snapshots feed this, and they never both apply to one resolution: the cost-payment
             // one, taken when a self-exile / self-sacrifice cost wiped the counters (Lost Isle
             // Calling), and the leaves-the-battlefield one carried on a dies/leaves trigger
@@ -454,7 +454,7 @@ class DynamicAmountEvaluator(
                     return context.enchantedCreatureLastKnownPower ?: 0
                 }
                 if (entityId == null) return 0
-                // Last-known-information fallback (CR 112.7a / 603.10 / 608.2h): one rule for every
+                // Last-known-information fallback (CR 113.7a / 603.10 / 608.2h): one rule for every
                 // reference that reads a permanent after it has left the battlefield — a
                 // self-sacrificing source, or a sacrificed / tapped / chosen cost permanent. When
                 // such a reference resolves off the battlefield, read its captured snapshot's P/T
@@ -480,7 +480,7 @@ class DynamicAmountEvaluator(
             // creature tapped to pay the station cost. CR 702.184c lets a static ability change
             // which characteristic is counted; Tapestry Warden's [GrantsStationUsingToughnessComponent]
             // substitutes toughness when toughness > power. Reads with last-known information if the
-            // tapped creature has left the battlefield (CR 112.7a). Keeping this on its own node
+            // tapped creature has left the battlefield (CR 113.7a). Keeping this on its own node
             // confines the substitution to station abilities.
             is DynamicAmount.StationCharge -> {
                 val entityId = context.tappedPermanents.firstOrNull() ?: return 0
@@ -1184,7 +1184,7 @@ class DynamicAmountEvaluator(
      *
      * [fallbackControllerId] is consulted when [entityId] is no longer on the battlefield
      * (projection has no controller) — typically the snapshot's last-known controller
-     * captured at cost-payment time (Rule 112.7a).
+     * captured at cost-payment time (Rule 113.7a).
      */
     private fun controllerHasStationUsingToughness(
         state: GameState,
@@ -1349,7 +1349,7 @@ class DynamicAmountEvaluator(
         }
         // Last-known-info fallback for dies/leaves-the-battlefield triggers: when the
         // triggering entity is no longer on the battlefield, its projected P/T is gone,
-        // so consult the value captured on the ZoneChangeEvent (Rule 603.10, 112.7a).
+        // so consult the value captured on the ZoneChangeEvent (Rule 603.10, 113.7a).
         if (entityId == context.triggeringEntityId || entityId == context.sourceId) {
             val lastKnown = if (isPower) context.triggerLastKnownPower else context.triggerLastKnownToughness
             if (lastKnown != null) return lastKnown

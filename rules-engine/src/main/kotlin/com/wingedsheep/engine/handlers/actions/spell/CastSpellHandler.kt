@@ -2606,7 +2606,7 @@ class CastSpellHandler(
                     is AdditionalCost.Atom -> when (val atom = additionalCost.atom) {
                         is CostAtom.Sacrifice -> {
                             // Snapshot projected subtypes and P/T before zone change
-                            // (Rule 112.7a / 608.2h — "as it last existed on the battlefield")
+                            // (Rule 113.7a / 608.2h — "as it last existed on the battlefield")
                             val projectedBeforeSacrifice = currentState.projectedState
                             sacrificedSnapshots.addAll(
                                 captureEntitySnapshots(action.additionalCostPayment.sacrificedPermanents, projectedBeforeSacrifice)
@@ -2970,7 +2970,7 @@ class CastSpellHandler(
                         // When `captureSnapshot` is set, freeze a power/toughness/subtype
                         // snapshot for battlefield choices so downstream effects can fall
                         // back to LKI when the entity leaves between cost-pay and resolution
-                        // (Rule 112.7a).
+                        // (Rule 113.7a).
                         val chosen = action.additionalCostPayment.beheldCards
                         if (chosen.isNotEmpty()) {
                             beheldCards.addAll(chosen)

@@ -63,7 +63,7 @@ class StationMechanicTest : ScenarioTestBase() {
     }
 
     // A minimal "destroy target creature" instant, to remove the tapped creature in response and
-    // exercise the last-known-information path (CR 112.7a).
+    // exercise the last-known-information path (CR 113.7a).
     private val doomBlade = card("Test Doom Blade") {
         manaCost = "{1}{B}"
         typeLine = "Instant"
@@ -278,7 +278,7 @@ class StationMechanicTest : ScenarioTestBase() {
                 withClue("a sorcery-speed ability can't be activated on the opponent's turn") { result.error shouldNotBe null }
             }
 
-            test("last-known information: charge equals the tapped creature's power even if it leaves first (112.7a)") {
+            test("last-known information: charge equals the tapped creature's power even if it leaves first (113.7a)") {
                 val game = scenario()
                     .withPlayers()
                     .withCardOnBattlefield(1, "Wedgelight Rammer", summoningSickness = false)
