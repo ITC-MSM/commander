@@ -23,7 +23,6 @@ import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.AbilityCost
 import com.wingedsheep.sdk.scripting.costs.CostAtom
 import com.wingedsheep.sdk.scripting.costs.manaCostOrNull
-import com.wingedsheep.sdk.scripting.AbilityId
 import com.wingedsheep.sdk.scripting.ActivatedAbility
 import com.wingedsheep.sdk.scripting.ActivationRestriction
 import com.wingedsheep.sdk.scripting.CantCastSpellsSharingColorWithLastCast
@@ -61,12 +60,15 @@ class CastPermissionUtils(
     private val conditionEvaluator: ConditionEvaluator
 ) {
     /**
-     * @param ability the ability being checked. Only [ActivationRestriction.Once] reads it, for its
-     *   `isExhaust`/`isPowerUp` flags: the once-only memory those keywords install can be raised or
-     *   waived by an [ExtraOnceOnlyActivations] permission (Elvish Refueler, Wonder Man), while a
-     *   plain `Once` restriction on an ordinary ability never is. Passing the whole ability rather
-     *   than a flag per keyword is deliberate — a second keyword must not need a second boolean
-     *   threaded through five call sites.
+     * @param ability the ability being checked — the single source of both the per-ability
+     *   identity the turn/lifetime trackers key on ([ActivatedAbility.id], read by
+     *   [ActivationRestriction.OncePerTurn] / [ActivationRestriction.MaxPerTurn]) and the
+     *   `isExhaust`/`isPowerUp` flags [ActivationRestriction.Once] reads: the once-only memory
+     *   those keywords install can be raised or waived by an [ExtraOnceOnlyActivations] permission
+     *   (Elvish Refueler, Wonder Man), while a plain `Once` restriction on an ordinary ability
+     *   never is. Passing the whole ability rather than an id plus a flag per keyword is
+     *   deliberate — a second keyword must not need a second boolean threaded through five call
+     *   sites, and a separate `abilityId` parameter beside it could disagree with `ability.id`.
      *
      *   Deliberately **required, with no default**. A defaulted `ability` would make a forgetful
      *   call site silently disable the permission for that path — an enumerator that stops offering
@@ -79,7 +81,6 @@ class CastPermissionUtils(
         playerId: EntityId,
         restriction: ActivationRestriction,
         sourceId: EntityId? = null,
-        abilityId: AbilityId? = null,
         ability: ActivatedAbility
     ): Boolean {
         return when (restriction) {
@@ -98,17 +99,17 @@ class CastPermissionUtils(
                 conditionEvaluator.evaluate(state, restriction.condition, context)
             }
             is ActivationRestriction.OncePerTurn -> {
-                if (sourceId == null || abilityId == null) true
+                if (sourceId == null) true
                 else {
                     val tracker = state.getEntity(sourceId)?.get<AbilityActivatedThisTurnComponent>()
-                    tracker == null || !tracker.hasActivated(abilityId)
+                    tracker == null || !tracker.hasActivated(ability.id)
                 }
             }
             is ActivationRestriction.MaxPerTurn -> {
-                if (sourceId == null || abilityId == null) true
+                if (sourceId == null) true
                 else {
                     val tracker = state.getEntity(sourceId)?.get<AbilityActivatedThisTurnComponent>()
-                    (tracker?.activationCount(abilityId) ?: 0) < restriction.count
+                    (tracker?.activationCount(ability.id) ?: 0) < restriction.count
                 }
             }
             is ActivationRestriction.Once -> {
@@ -125,7 +126,7 @@ class CastPermissionUtils(
                     ?.has<com.wingedsheep.engine.state.components.battlefield.SummoningSicknessComponent>() != true
             }
             is ActivationRestriction.All -> restriction.restrictions.all {
-                checkActivationRestriction(state, playerId, it, sourceId, abilityId, ability)
+                checkActivationRestriction(state, playerId, it, sourceId, ability)
             }
         }
     }

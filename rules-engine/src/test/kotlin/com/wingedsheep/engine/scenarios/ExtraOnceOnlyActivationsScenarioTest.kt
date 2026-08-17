@@ -2,7 +2,9 @@ package com.wingedsheep.engine.scenarios
 
 import com.wingedsheep.engine.core.ActivateAbility
 import com.wingedsheep.engine.core.SelectManaSourcesDecision
+import com.wingedsheep.engine.event.GrantedStaticAbility
 import com.wingedsheep.engine.state.components.battlefield.CountersComponent
+import com.wingedsheep.engine.state.components.identity.FaceDownComponent
 import com.wingedsheep.engine.support.ScenarioTestBase
 import com.wingedsheep.sdk.core.CounterType
 import com.wingedsheep.sdk.core.Counters
@@ -15,6 +17,7 @@ import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.AbilityId
 import com.wingedsheep.sdk.scripting.ActivationRestriction
+import com.wingedsheep.sdk.scripting.Duration
 import com.wingedsheep.sdk.scripting.ExtraOnceOnlyActivations
 import com.wingedsheep.sdk.scripting.OnceOnlyAbilityKind
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
@@ -496,6 +499,62 @@ class ExtraOnceOnlyActivationsScenarioTest : ScenarioTestBase() {
                 }
                 game.activate(1, coordinatorId, plainOnceAbilityId) shouldNotBe null
                 game.countersOn(coordinatorId) shouldBe 1
+            }
+        }
+
+        context("ExtraOnceOnlyActivations — a face-down source (CR 708.2a)") {
+
+            // CR 708.2a: a face-down permanent is a 2/2 with no text, so it grants nothing its card
+            // printed. Abilities *granted* to it at runtime are a separate continuous effect and do
+            // still apply, which is why `extraActivationsFor` suppresses only the printed half. The
+            // two halves are asserted separately — an implementation that skipped the whole
+            // permanent would pass the first test and fail the second.
+
+            test("a face-down permission source grants nothing its card printed") {
+                val game = baseScenario().withCardOnBattlefield(1, "Encore Star").build()
+                val bodyId = game.findPermanent("Stunt Double")!!
+                val starId = game.findPermanent("Encore Star")!!
+
+                game.state = game.state.updateEntity(starId) { it.with(FaceDownComponent) }
+
+                game.activate(1, bodyId, powerUpAbilityId) shouldBe null
+                withClue("the printed static is text the face-down permanent no longer has") {
+                    game.actionFor(1, powerUpAbilityId) shouldBe null
+                }
+                game.activate(1, bodyId, powerUpAbilityId) shouldNotBe null
+                withClue("only the printed activation resolved") { game.countersOn(bodyId) shouldBe 1 }
+            }
+
+            test("a permission granted to that same face-down permanent still applies") {
+                val game = baseScenario().withCardOnBattlefield(1, "Encore Star").build()
+                val bodyId = game.findPermanent("Stunt Double")!!
+                val starId = game.findPermanent("Encore Star")!!
+
+                game.state = game.state
+                    .updateEntity(starId) { it.with(FaceDownComponent) }
+                    .copy(
+                        grantedStaticAbilities = listOf(
+                            GrantedStaticAbility(
+                                entityId = starId,
+                                ability = ExtraOnceOnlyActivations(
+                                    kind = OnceOnlyAbilityKind.POWER_UP,
+                                    extraActivations = 1
+                                ),
+                                duration = Duration.Permanent
+                            )
+                        )
+                    )
+
+                game.activate(1, bodyId, powerUpAbilityId) shouldBe null
+                withClue("a granted ability is not the card's text, so being face down doesn't strip it") {
+                    game.actionFor(1, powerUpAbilityId) shouldNotBe null
+                    game.activate(1, bodyId, powerUpAbilityId) shouldBe null
+                }
+                game.countersOn(bodyId) shouldBe 2
+
+                withClue("and it is still a ceiling: 1 printed + 1 granted extra") {
+                    game.actionFor(1, powerUpAbilityId) shouldBe null
+                }
             }
         }
 

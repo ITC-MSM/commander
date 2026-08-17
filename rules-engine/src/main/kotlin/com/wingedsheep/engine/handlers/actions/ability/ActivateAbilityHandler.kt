@@ -435,7 +435,7 @@ class ActivateAbilityHandler(
         // Check activation restrictions
         for (restriction in ability.restrictions) {
             val error = checkActivationRestriction(
-                state, action.playerId, action.sourceId, action.abilityId, restriction, ability
+                state, action.playerId, action.sourceId, restriction, ability
             )
             if (error != null) return error
         }
@@ -2363,11 +2363,12 @@ class ActivateAbilityHandler(
         state: GameState,
         playerId: com.wingedsheep.sdk.model.EntityId,
         sourceId: com.wingedsheep.sdk.model.EntityId,
-        abilityId: com.wingedsheep.sdk.scripting.AbilityId,
         restriction: ActivationRestriction,
         // Required, with no default: a defaulted `ability` would let a forgetful call site silently
         // disable the ExtraOnceOnlyActivations permission on this path while the enumerators kept
-        // honouring it. Omission must be a compile error, not a behaviour difference.
+        // honouring it. Omission must be a compile error, not a behaviour difference. It is also
+        // the only source of the ability id the turn trackers key on, so that id can't disagree
+        // with the ability whose flags the `Once` branch reads.
         ability: com.wingedsheep.sdk.scripting.ActivatedAbility
     ): String? {
         return when (restriction) {
@@ -2405,13 +2406,13 @@ class ActivateAbilityHandler(
             }
             is ActivationRestriction.OncePerTurn -> {
                 val tracker = state.getEntity(sourceId)?.get<AbilityActivatedThisTurnComponent>()
-                if (tracker != null && tracker.hasActivated(abilityId)) {
+                if (tracker != null && tracker.hasActivated(ability.id)) {
                     "This ability can only be activated once each turn"
                 } else null
             }
             is ActivationRestriction.MaxPerTurn -> {
                 val tracker = state.getEntity(sourceId)?.get<AbilityActivatedThisTurnComponent>()
-                if ((tracker?.activationCount(abilityId) ?: 0) >= restriction.count) {
+                if ((tracker?.activationCount(ability.id) ?: 0) >= restriction.count) {
                     "This ability can't be activated more than ${restriction.count} times each turn"
                 } else null
             }
@@ -2430,7 +2431,7 @@ class ActivateAbilityHandler(
             }
             is ActivationRestriction.All -> {
                 restriction.restrictions.firstNotNullOfOrNull {
-                    checkActivationRestriction(state, playerId, sourceId, abilityId, it, ability)
+                    checkActivationRestriction(state, playerId, sourceId, it, ability)
                 }
             }
         }
