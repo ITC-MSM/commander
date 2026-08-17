@@ -97,6 +97,25 @@ data class ActivatedAbility(
      * be activated") both need to pick power-up abilities out of every other activated ability.
      */
     val isPowerUp: Boolean = false,
+    /**
+     * True for a *boast* ability (Kaldheim, returning in Marvel Super Heroes; CR 702.142).
+     * "Boast — [cost]: [effect]" means "[cost]: [effect]. Activate only if this creature attacked
+     * this turn and only once each turn."
+     *
+     * Like [isExhaust] and [isPowerUp] this flag is only the keyword marker — it drives the
+     * "Boast — " prefix in [description] and lets tooling recognise the mechanic. Both rules
+     * clauses are ordinary [restrictions] the `activatedAbility { isBoast = true }` DSL adds:
+     *  - **"only once each turn"** is [ActivationRestriction.OncePerTurn];
+     *  - **"only if this creature attacked this turn"** is an
+     *    [ActivationRestriction.OnlyIfCondition] over `Conditions.SourceAttackedThisTurn`.
+     *
+     * Nothing bespoke is needed for either: "attacked this turn" is already tracked per creature
+     * for the whole turn (it survives the end of combat, so a boast may be activated in the
+     * postcombat main phase or the end step), and the per-turn activation counter already backs
+     * every other "activate only once each turn" ability. Note boast is *once each turn*, not
+     * exhaust's once ever, which is why it does not reuse [ActivationRestriction.Once].
+     */
+    val isBoast: Boolean = false,
     /** When true, prevents auto-pass whenever this ability is available.
      *  Used for abilities that interact with transient game state the player would miss,
      *  such as copying a spell on the stack. */
@@ -185,11 +204,13 @@ data class ActivatedAbility(
             return if (effectiveCost.manaCostOrNull != null) "$keyword $base" else "$keyword—$base"
         }
         val costText = if (hasWaterbend) "Waterbend $base" else base
-        // An exhaust or power-up ability prefixes its keyword before the (already
-        // waterbend-prefixed) cost. The two never co-occur — both mean "activate only once".
+        // An exhaust, power-up or boast ability prefixes its keyword before the (already
+        // waterbend-prefixed) cost. Exhaust and power-up never co-occur — both mean "activate only
+        // once" — and boast is a third, mutually exclusive keyword over the same slot.
         val prefixed = when {
             isExhaust -> "Exhaust — $costText"
             isPowerUp -> "Power-up — $costText"
+            isBoast -> "Boast — $costText"
             else -> costText
         }
         return "$prefixed: ${effect.description}"

@@ -128,6 +128,13 @@ export interface TargetingState {
    * can still be declined.
    */
   minTotalManaValue?: number
+  /**
+   * The same sum gate over a server-supplied measure rather than mana value (Baron Helmut Zemo's
+   * black-pip total). `minTotalWeight` is the floor and `cardWeights` gives each selectable card's
+   * contribution; the two are set together and take precedence over `minTotalManaValue`.
+   */
+  minTotalWeight?: number
+  cardWeights?: Record<string, number>
   /** The zone the current targets are in (e.g., "Graveyard"). Set by server via targetRequirements. */
   targetZone?: string
   /** Description of the current target requirement (e.g., "non-Zombie creature") */

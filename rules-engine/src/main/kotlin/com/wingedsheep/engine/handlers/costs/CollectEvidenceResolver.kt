@@ -2,13 +2,10 @@ package com.wingedsheep.engine.handlers.costs
 
 import com.wingedsheep.engine.core.EvidenceCollectedEvent
 import com.wingedsheep.engine.core.GameEvent
-import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.legalactions.AdditionalCostData
 import com.wingedsheep.engine.state.GameState
-import com.wingedsheep.engine.state.ZoneKey
-import com.wingedsheep.engine.state.components.identity.CardComponent
-import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
+import com.wingedsheep.sdk.scripting.costs.CardMeasure
 
 /**
  * Single source of truth for **collect evidence N** (CR 701.59 — "to collect evidence N means to
@@ -32,17 +29,35 @@ import com.wingedsheep.sdk.model.EntityId
  * option must be absent, not offered and refused. [canCollect] is that gate and every enumerator,
  * feasibility check and affordability check calls it; there is deliberately no code path that
  * offers a collection it cannot complete.
+ *
+ * **The mechanics live in [GraveyardTotalExileResolver]**, the shared "exile any number of graveyard
+ * cards whose summed measure reaches N" implementation that also backs the unnamed filtered form
+ * (`CostAtom.ExileFromGraveyardForTotal`). What stays here is everything that is *collect evidence*
+ * specifically rather than that shape: the keyword's name and wording, its `EvidenceCollectedEvent`,
+ * and the unfiltered / mana-value choice of pool and measure.
  */
 object CollectEvidenceResolver {
+
+    /** Collect evidence measures every graveyard card by its mana value (CR 701.59a). */
+    private val MEASURE = CardMeasure.ManaValue
 
     /** The cost-payload discriminator the client switches on to raise the evidence picker. */
     const val COST_TYPE: String = "CollectEvidence"
 
-    /** The graveyard cards [playerId] could spend, and what they are worth. */
+    /**
+     * The graveyard cards [playerId] could spend, and what they are worth.
+     *
+     * A thin, evidence-named view over [GraveyardTotalExileResolver.Candidates] — same data, with
+     * `manaValueById` naming the measure collect evidence actually uses. Every caller of this
+     * resolver reads it under that name, so the alias stays.
+     */
     data class Candidates(
         val cards: List<EntityId>,
         val manaValueById: Map<EntityId, Int>,
     ) {
+        internal val shared: GraveyardTotalExileResolver.Candidates =
+            GraveyardTotalExileResolver.Candidates(cards, manaValueById)
+
         /** Combined mana value of every available card — the most evidence that could be collected. */
         val totalManaValue: Int get() = manaValueById.values.sum()
 
@@ -59,9 +74,10 @@ object CollectEvidenceResolver {
      * graveyard-cast shape; mirrors [ForageCostResolver.candidates]).
      */
     fun candidates(state: GameState, playerId: EntityId, excludeCardId: EntityId? = null): Candidates {
-        val cards = state.getZone(ZoneKey(playerId, Zone.GRAVEYARD)).filter { it != excludeCardId }
-        val manaValues = cards.associateWith { manaValueOf(state, it) }
-        return Candidates(cards, manaValues)
+        val shared = GraveyardTotalExileResolver.candidates(
+            state, playerId, MEASURE, excludeCardId = excludeCardId
+        )
+        return Candidates(shared.cards, shared.weightById)
     }
 
     /**
@@ -148,51 +164,28 @@ object CollectEvidenceResolver {
             )
         }
 
-        val distinctChoice = chosenCards.distinct()
-        val chosenIsLegal = distinctChoice.isNotEmpty() &&
-            distinctChoice.all { it in candidates.manaValueById } &&
-            distinctChoice.sumOf { candidates.manaValueById.getValue(it) } >= amount
-
-        val toExile = if (chosenIsLegal) distinctChoice else autoSelect(candidates, amount)
+        val toExile = GraveyardTotalExileResolver
+            .resolveSelection(candidates.shared, amount, chosenCards)
         if (toExile.isEmpty()) {
             return Result.Failure("Cannot collect evidence $amount: no legal selection")
         }
 
         val totalManaValue = toExile.sumOf { candidates.manaValueById[it] ?: 0 }
 
-        var newState = state
-        val events = mutableListOf<GameEvent>()
-        for (cardId in toExile) {
-            val transition = ZoneTransitionService.moveToZone(newState, cardId, Zone.EXILE)
-            newState = transition.state
-            events.addAll(transition.events)
-        }
-        events.add(EvidenceCollectedEvent(playerId, amount, toExile, totalManaValue, sourceName))
+        val (newState, events) = GraveyardTotalExileResolver.exile(state, toExile)
+        val allEvents = events +
+            EvidenceCollectedEvent(playerId, amount, toExile, totalManaValue, sourceName)
 
-        return Result.Success(newState, events, toExile, totalManaValue)
+        return Result.Success(newState, allEvents, toExile, totalManaValue)
     }
 
     /**
      * Pick a legal collection for a player who didn't supply one (AI / engine-direct payment).
-     *
-     * Takes the **highest** mana values first, which reaches [amount] while exiling the fewest
-     * cards. That is the choice that costs the player least in cards, and — unlike a
-     * lowest-first or arbitrary-order sweep — it never dumps a graveyard's worth of cheap
-     * spells to pay a threshold two expensive ones would have covered.
-     *
-     * Returns an empty list only if the threshold is unreachable, which [collect] has already
-     * excluded.
+     * Takes the **highest** mana values first — see [GraveyardTotalExileResolver.autoSelect] for
+     * why that ordering rather than another.
      */
-    fun autoSelect(candidates: Candidates, amount: Int): List<EntityId> {
-        val selected = mutableListOf<EntityId>()
-        var total = 0
-        for (cardId in candidates.cards.sortedByDescending { candidates.manaValueById[it] ?: 0 }) {
-            if (total >= amount) break
-            selected.add(cardId)
-            total += candidates.manaValueById[cardId] ?: 0
-        }
-        return if (total >= amount) selected else emptyList()
-    }
+    fun autoSelect(candidates: Candidates, amount: Int): List<EntityId> =
+        GraveyardTotalExileResolver.autoSelect(candidates.shared, amount)
 
     /**
      * Whether [chosenCards] is a legal collection of evidence [amount] from [playerId]'s graveyard.
@@ -205,19 +198,7 @@ object CollectEvidenceResolver {
         amount: Int,
         chosenCards: List<EntityId>,
         excludeCardId: EntityId? = null,
-    ): Boolean {
-        val candidates = candidates(state, playerId, excludeCardId)
-        val distinct = chosenCards.distinct()
-        return distinct.isNotEmpty() &&
-            distinct.all { it in candidates.manaValueById } &&
-            distinct.sumOf { candidates.manaValueById.getValue(it) } >= amount
-    }
-
-    /**
-     * Mana value of a card in a non-battlefield zone. Mana value is intrinsic to the card
-     * (CR 202.3), so the base [CardComponent] is the correct read here — graveyard cards are not
-     * subject to the battlefield projection.
-     */
-    private fun manaValueOf(state: GameState, cardId: EntityId): Int =
-        state.getEntity(cardId)?.get<CardComponent>()?.manaValue ?: 0
+    ): Boolean = GraveyardTotalExileResolver.isLegalSelection(
+        candidates(state, playerId, excludeCardId).shared, amount, chosenCards
+    )
 }

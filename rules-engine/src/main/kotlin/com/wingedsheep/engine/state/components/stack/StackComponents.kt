@@ -310,6 +310,12 @@ data class ActivatedAbilityOnStackComponent(
     /** LKI snapshots for [tappedPermanents] — see [sacrificedPermanents]. */
     val tappedEntitySnapshots: List<EntitySnapshot> = emptyList(),
     /**
+     * Cards exiled to pay this activation's cost, carried to resolution for
+     * [com.wingedsheep.sdk.scripting.effects.CardSource.ExiledAsCost] ("copy those exiled cards").
+     * Recorded per activation, so a second activation of the same ability never sees the first's.
+     */
+    val exiledAsCostCards: List<EntityId> = emptyList(),
+    /**
      * Counters (counter-type-string → count) the source had the moment a self-exile /
      * self-sacrifice cost was paid (CR 112.7a). Captured before the cost wipes them so the
      * resolving effect can read the pre-cost count via

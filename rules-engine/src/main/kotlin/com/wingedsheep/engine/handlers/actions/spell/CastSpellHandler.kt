@@ -1721,6 +1721,9 @@ class CastSpellHandler(
                 is CostAtom.TapPermanents -> p.tappedPermanents.isNotEmpty()
                 is CostAtom.ReturnToHand -> p.bouncedPermanents.isNotEmpty()
                 is CostAtom.VariablePermanents -> p.variableCostPermanents.isNotEmpty()
+                // Never offered as a spell's additional cost (see CostHandler.canPayAdditionalCost),
+                // so no payment can satisfy it here.
+                is CostAtom.ExileFromGraveyardForTotal -> false
                 else -> false
             }
             else -> false
@@ -1917,10 +1920,11 @@ class CastSpellHandler(
                     }
                     // Mana / reveal are not produced as spell additional costs today;
                     // put-counters-on-self is ability-scoped (no permanent to accrue them on);
-                    // Mill is an activated-ability-only cost, never a spell additional cost
-                    // (canPayAdditionalCost already reports Mill unpayable).
+                    // Mill and ExileFromGraveyardForTotal are activated-ability-only costs, never
+                    // spell additional costs (canPayAdditionalCost already reports both unpayable).
                     is CostAtom.Mana, is CostAtom.RevealFromHand,
                     is CostAtom.PutCountersOnSelf,
+                    is CostAtom.ExileFromGraveyardForTotal,
                     is CostAtom.Mill -> {}
                     is CostAtom.RemoveCounters -> {
                         val needed = when (val c = atom.count) {
@@ -2740,8 +2744,12 @@ class CastSpellHandler(
                         // permanent to accrue them on); Mill is an activated-ability-only cost, never a
                         // spell additional cost (and canPayAdditionalCost reports Mill unpayable, so
                         // this is unreachable).
+                        // ExileFromGraveyardForTotal is an activated-ability cost only: it is never
+                        // offered as a spell's additional cost (canPayAdditionalCost reports it
+                        // unpayable), so this branch is unreachable for the same reason Mill's is.
                         is CostAtom.PayLife, is CostAtom.Mana, is CostAtom.RevealFromHand,
                         is CostAtom.PutCountersOnSelf,
+                        is CostAtom.ExileFromGraveyardForTotal,
                         is CostAtom.Mill -> {}
                         is CostAtom.RemoveCounters -> {
                             val resolvedRemovals = resolveDistributedCounterRemovalsForPayment(action)

@@ -1,5 +1,6 @@
 package com.wingedsheep.sdk.scripting.costs
 
+import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.core.ManaCost
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.scripting.GameObjectFilter
@@ -398,6 +399,67 @@ sealed interface CostAtom : TextReplaceable<CostAtom> {
         override val description: String get() = "collect evidence $amount"
     }
 
+    /**
+     * Exile **any number** of cards matching [filter] from your graveyard whose combined
+     * [measure] is [minTotal] or more — the unnamed, filtered generalization of the shape
+     * [CollectEvidence] names: a variable-size graveyard exile gated on a *sum* rather than a
+     * count.
+     *
+     * Baron Helmut Zemo: "Exile any number of black cards from your graveyard with fifteen or more
+     * black mana symbols among their mana costs" is
+     * `ExileFromGraveyardForTotal(Filters.blackCard, CardMeasure.ColoredManaSymbols([BLACK]), 15)`.
+     *
+     * Two axes distinguish it from [CollectEvidence], which is otherwise the identical mechanic:
+     *  - [filter] — collect evidence spends *any* graveyard card (CR 701.59a); this cost restricts
+     *    which cards may be chosen, and non-matching cards are not offered at all;
+     *  - [measure] — collect evidence's threshold is always total mana value; this one names the
+     *    per-card quantity that is summed, so the same cost shape serves a pip total.
+     *
+     * **The threshold is a floor on the measure, not on the count** ([selectionCount] is only the
+     * floor of one card). Over-paying is legal, and a matching card whose measure is 0 is a legal
+     * selection contributing nothing — so "enough cards" never implies "enough total".
+     *
+     * **Fails closed**, the way CR 701.59b makes collect evidence fail closed: a player whose
+     * matching graveyard cards cannot reach [minTotal] can't choose to pay, so the ability is not
+     * offered at all rather than offered and refused.
+     *
+     * @property filter which graveyard cards may be chosen.
+     * @property measure the per-card quantity that is summed toward [minTotal].
+     * @property minTotal the floor the chosen cards' summed [measure] must meet or exceed.
+     */
+    @SerialName("AtomExileFromGraveyardForTotal")
+    @Serializable
+    data class ExileFromGraveyardForTotal(
+        val filter: GameObjectFilter = GameObjectFilter.Any,
+        val measure: CardMeasure,
+        val minTotal: Int,
+    ) : CostAtom {
+        init {
+            require(minTotal >= 1) {
+                "ExileFromGraveyardForTotal needs minTotal >= 1, got $minTotal (a floor of 0 is " +
+                    "satisfied by exiling nothing, which is not a cost)"
+            }
+        }
+
+        // Variable count, like CollectEvidence: at least one card, with the real gate carried to
+        // the picker as a running total of [measure].
+        override val selectionCount: Int get() = 1
+        override val description: String get() = buildString {
+            append("exile any number of ")
+            // `filter.description` is a noun phrase without the head noun ("black", "artifact"),
+            // and reads "card" for the unfiltered case — so append "cards" only when it isn't
+            // already the head noun itself.
+            if (filter != GameObjectFilter.Any) append("${filter.description} ")
+            append("cards from your graveyard with ")
+            append(measure.thresholdPhrase(minTotal))
+        }
+
+        override fun applyTextReplacement(replacer: TextReplacer): CostAtom {
+            val newFilter = filter.applyTextReplacement(replacer)
+            return if (newFilter !== filter) copy(filter = newFilter) else this
+        }
+    }
+
     /** Reveal [count] cards matching [filter] from your hand (the cards stay in hand). */
     @SerialName("AtomRevealFromHand")
     @Serializable
@@ -467,4 +529,65 @@ enum class VariableCostMeasure {
      * projected state so a lord bonus or a +1/+1 counter counts toward the threshold.
      */
     TOTAL_POWER
+}
+
+/**
+ * A per-card quantity that a variable-size *card* selection can be summed against —
+ * the graveyard-side counterpart of [VariableCostMeasure] (which measures battlefield permanents).
+ *
+ * Kept separate rather than folded into [VariableCostMeasure] because the two answer different
+ * questions about different objects: [VariableCostMeasure] reads *projected* battlefield state
+ * (a lord bonus counts toward total power), while a card in a graveyard has only its printed,
+ * intrinsic characteristics (CR 202.3) — there is no projection to read, and TOTAL_POWER has no
+ * meaning for a card that isn't a permanent. Sharing one enum would offer every variant to both
+ * sites and make half of them nonsense.
+ *
+ * Used by [CostAtom.ExileFromGraveyardForTotal] and — through the shared resolver — by
+ * [CostAtom.CollectEvidence].
+ */
+@Serializable
+sealed interface CardMeasure {
+    /**
+     * How the "N or more" threshold reads in this measure's own words, appended after
+     * "… from your graveyard with ".
+     */
+    fun thresholdPhrase(minTotal: Int): String
+
+    /**
+     * The card's mana value (CR 202.3) — the measure collect evidence N uses
+     * ("with total mana value N or greater", CR 701.59a).
+     */
+    @SerialName("MeasureManaValue")
+    @Serializable
+    data object ManaValue : CardMeasure {
+        override fun thresholdPhrase(minTotal: Int): String = "total mana value $minTotal or greater"
+    }
+
+    /**
+     * How many mana symbols of [colors] appear in the card's **printed** mana cost — Baron Helmut
+     * Zemo's "fifteen or more black mana symbols among their mana costs".
+     *
+     * Counted by [com.wingedsheep.sdk.core.ManaCost.coloredSymbolCount], the single counting rule
+     * shared with [com.wingedsheep.sdk.scripting.predicates.CardPredicate.ColoredManaSymbolsAtLeast]
+     * (the per-object filter) and
+     * [com.wingedsheep.sdk.scripting.values.EntityNumericProperty.ColoredManaSymbolCount] (the
+     * per-object amount), so the group total and the per-card reads can never disagree: hybrid and
+     * Phyrexian pips count for their colour(s) (CR 107.4e/f); generic, `{C}` and `{X}` count for
+     * none; a pip that is two of the requested colours counts once.
+     *
+     * **Not the same as counting *black cards*** — colour is a characteristic, this is the pips
+     * printed on the card. Pair it with a colour filter when the printed cost restricts both, as
+     * Zemo's does.
+     */
+    @SerialName("MeasureColoredManaSymbols")
+    @Serializable
+    data class ColoredManaSymbols(val colors: List<Color>) : CardMeasure {
+        init {
+            require(colors.isNotEmpty()) { "ColoredManaSymbols needs at least one color" }
+        }
+
+        override fun thresholdPhrase(minTotal: Int): String =
+            "$minTotal or more ${colors.joinToString(" or ") { it.displayName.lowercase() }} " +
+                "mana symbols among their mana costs"
+    }
 }

@@ -1102,6 +1102,15 @@ export interface AdditionalCostInfo {
    * graveyard.
    */
   readonly exileMinTotalManaValue?: number
+  /**
+   * Floor on the summed *measure* of the exiled cards, with the per-card weights the sum is taken
+   * over — `costType === 'ExileForTotal'` (Baron Helmut Zemo's "fifteen or more black mana symbols
+   * among their mana costs"). The generalization of `exileMinTotalManaValue` to a measure the
+   * client can't compute: the server ships the weights and the client only adds up the numbers it
+   * was given.
+   */
+  readonly exileMinTotalWeight?: number
+  readonly exileCardWeights?: Readonly<Record<EntityId, number>>
   readonly validBeholdTargets?: readonly EntityId[]
   readonly beholdCount?: number
   readonly counterRemovalCreatures?: readonly CounterRemovalCreatureInfo[]

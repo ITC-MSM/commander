@@ -123,6 +123,22 @@ class ActivateAbilityHandler(
         else -> null
     }
 
+    /**
+     * The first [CostAtom.ExileFromGraveyardForTotal] atom anywhere in this cost, or null.
+     * A cost carries at most one — its selection is what `CardSource.ExiledAsCost` reads back.
+     *
+     * Callers additionally assume it is the cost's **only** exile atom: `exileChoices` is a single
+     * flat channel shared by every exile atom in a composite cost, so a cost pairing this atom with
+     * an `ExileFrom` would need the two selections split per atom before either could be trusted.
+     * No printed card has that shape; a card that does must fix the channel, not the call site.
+     */
+    private fun AbilityCost.firstExileForTotalAtomOrNull(): CostAtom.ExileFromGraveyardForTotal? =
+        when (this) {
+            is AbilityCost.Atom -> atom as? CostAtom.ExileFromGraveyardForTotal
+            is AbilityCost.Composite -> costs.firstNotNullOfOrNull { it.firstExileForTotalAtomOrNull() }
+            else -> null
+        }
+
     override fun validate(state: GameState, action: ActivateAbility): String? {
         // `opponentTargetsChosen` is an internal resume marker for "… of an opponent's choice"
         // targets (Cuombajj Witches). Only the engine's resumer sets it, and the resumer re-enters
@@ -294,6 +310,23 @@ class ActivateAbilityHandler(
                 }
                 if (tapped.toSet().size != tapped.size) {
                     return "Cannot tap the same creature for more than one activation"
+                }
+            }
+        }
+
+        // A client-supplied selection for a sum-gated graveyard exile cost is rejected outright when
+        // it doesn't pay: every `GameAction` field is client-supplied, and silently substituting the
+        // engine's own pick would exile cards the player never chose. An *empty* selection is not an
+        // error — that is the AI / engine-direct path asking the resolver to choose.
+        effectiveCost.firstExileForTotalAtomOrNull()?.let { atom ->
+            val submitted = action.costPayment?.exiledCards ?: emptyList()
+            if (submitted.isNotEmpty()) {
+                val resolver = com.wingedsheep.engine.handlers.costs.GraveyardTotalExileResolver
+                val candidates = resolver.candidates(
+                    state, action.playerId, atom.measure, atom.filter
+                )
+                if (!resolver.isLegalSelection(candidates, atom.minTotal, submitted)) {
+                    return "Those cards don't pay this cost: ${atom.description}"
                 }
             }
         }
@@ -1210,11 +1243,35 @@ class ActivateAbilityHandler(
             action.costPayment?.tappedPermanents ?: emptyList()
         }
 
+        // A sum-gated graveyard exile cost (`ExileFromGraveyardForTotal`) decides *here* which cards
+        // it will exile, rather than leaving CostHandler to fall back on its own pick during
+        // payment. Two things need the same answer and would otherwise diverge: the payment, and
+        // the record of "those exiled cards" that rides the stack to resolution. Resolving it once
+        // and feeding it into `exileChoices` makes them the same list by construction.
+        //
+        // This *replaces* the submitted list rather than merging into it, which is only correct
+        // because such a cost is the ability's sole exile atom — see
+        // [firstExileForTotalAtomOrNull]. A composite pairing it with another exile atom would
+        // drop that atom's selection here.
+        val totalExileAtom = effectiveCost.firstExileForTotalAtomOrNull()
+        val exileChoices = if (totalExileAtom == null) {
+            action.costPayment?.exiledCards ?: emptyList()
+        } else {
+            val resolver = com.wingedsheep.engine.handlers.costs.GraveyardTotalExileResolver
+            resolver.resolveSelection(
+                resolver.candidates(
+                    currentState, action.playerId, totalExileAtom.measure, totalExileAtom.filter
+                ),
+                totalExileAtom.minTotal,
+                action.costPayment?.exiledCards ?: emptyList(),
+            )
+        }
+
         // Build cost payment choices from the action
         val costChoices = CostPaymentChoices(
             sacrificeChoices = action.costPayment?.sacrificedPermanents ?: emptyList(),
             discardChoices = action.costPayment?.discardedCards ?: emptyList(),
-            exileChoices = action.costPayment?.exiledCards ?: emptyList(),
+            exileChoices = exileChoices,
             variablePermanentChoices = action.costPayment?.variableCostPermanents ?: emptyList(),
             tapChoices = firstTapSlice,
             bounceChoices = action.costPayment?.bouncedPermanents ?: emptyList(),
@@ -1792,6 +1849,10 @@ class ActivateAbilityHandler(
             xValue = effectiveXValue,
             tappedPermanents = firstTapSlice,
             tappedEntitySnapshots = tappedSnapshots,
+            // Only the sum-gated exile cost records its selection: it is the one whose effect can
+            // refer back to the cards it exiled (`CardSource.ExiledAsCost`). Empty for every other
+            // ability, so nothing else changes.
+            exiledAsCostCards = if (totalExileAtom != null) exileChoices else emptyList(),
             lastKnownSourceCounters = lastKnownSourceCounters,
             lastKnownSourceSnapshot = lastKnownSourceSnapshot,
             lastKnownSourceAttachments = lastKnownSourceAttachments,

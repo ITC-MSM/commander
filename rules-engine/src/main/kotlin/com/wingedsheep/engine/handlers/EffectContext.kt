@@ -152,6 +152,15 @@ data class EffectContext(
     val additionalCostBlightAmount: Int = 0,
     /** Permanents tapped as part of an activated ability's cost (e.g., Cryptic Gateway) */
     val tappedPermanents: List<EntityId> = emptyList(),
+    /**
+     * Cards exiled to pay an activated ability's cost, recorded at payment time (CR 601.2h — the
+     * cost is paid on activation, long before the ability resolves). Read by
+     * [com.wingedsheep.sdk.scripting.effects.CardSource.ExiledAsCost] so the resolving effect can
+     * name "those exiled cards" (Baron Helmut Zemo). The exile counterpart of [tappedPermanents],
+     * and scoped to *this* activation's payment — unlike a permanent's linked-exile pile, which
+     * accumulates across activations.
+     */
+    val exiledAsCostCards: List<EntityId> = emptyList(),
     /** LKI snapshots for [tappedPermanents] (Rule 112.7a). See [EntitySnapshot]. */
     val tappedEntitySnapshots: List<EntitySnapshot> = emptyList(),
     /**

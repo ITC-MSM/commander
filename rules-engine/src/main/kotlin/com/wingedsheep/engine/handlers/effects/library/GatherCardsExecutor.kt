@@ -115,6 +115,18 @@ class GatherCardsExecutor : EffectExecutor<GatherCardsEffect> {
                 context.tappedPermanents
             }
 
+            // The cards exiled to pay this ability's activation cost, recorded at payment time.
+            // Restricted to cards still in exile: a copy effect or another player's response can
+            // move one out between activation and resolution, and "those exiled cards" can only
+            // mean the ones that are still there to act on.
+            is CardSource.ExiledAsCost -> {
+                context.exiledAsCostCards.filter { cardId ->
+                    val ownerId = state.getEntity(cardId)?.get<OwnerComponent>()?.playerId
+                        ?: context.controllerId
+                    cardId in state.getZone(ZoneKey(ownerId, Zone.EXILE))
+                }
+            }
+
             is CardSource.ControlledPermanents -> {
                 val playerId = resolvePlayer(source.player, context, state)
                     ?: return EffectResult.error(state, "Could not resolve player for GatherCards ControlledPermanents")

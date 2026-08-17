@@ -213,6 +213,7 @@ export function computePhases(actionInfo: LegalActionInfo, options?: ComputePhas
       'DiscardCard',
       'ExileFromGraveyard',
       'CollectEvidence',
+      'ExileForTotal',
       'ExileFromZone',
       'RevealCard',
       'Behold',
@@ -453,7 +454,8 @@ export function mergeResult(
               ? { discardedCards: selectedTargets }
               : costType === 'BouncePermanent'
                 ? { bouncedPermanents: selectedTargets }
-                : costType === 'ExileFromGraveyard' || costType === 'CollectEvidence'
+                : costType === 'ExileFromGraveyard' || costType === 'CollectEvidence' ||
+                    costType === 'ExileForTotal'
                   ? { exiledCards: selectedTargets }
                   : costType === 'Behold' || costType === 'ChooseEntity'
                     ? { beheldCards: selectedTargets }
@@ -490,7 +492,7 @@ export function mergeResult(
               : costType === 'BouncePermanent'
                 ? { bouncedPermanents: selectedTargets }
                 : costType === 'ExileFromGraveyard' || costType === 'Craft' ||
-                    costType === 'CollectEvidence'
+                    costType === 'CollectEvidence' || costType === 'ExileForTotal'
                   ? { exiledCards: selectedTargets }
                   : costType === 'Blight'
                     ? { blightTargets: selectedTargets }
@@ -925,6 +927,22 @@ export function enterPhase(
           flags.targetDescription = costInfo.description
           if (costInfo.exileMinTotalManaValue != null) {
             flags.minTotalManaValue = costInfo.exileMinTotalManaValue
+          }
+          break
+        // "Exile any number of <filter> cards from your graveyard with N or more <measure>"
+        // (Baron Helmut Zemo). Same variable-size selection as collect evidence, but the running
+        // total is over server-supplied per-card weights, because the measure (printed coloured
+        // pips) is not something the client computes.
+        case 'ExileForTotal':
+          validTargets = [...(costInfo.validExileTargets ?? [])]
+          minTargets = 1
+          maxTargets = costInfo.validExileTargets?.length ?? 1
+          flags.isSacrificeSelection = true
+          flags.targetZone = 'Graveyard'
+          flags.targetDescription = costInfo.description
+          if (costInfo.exileMinTotalWeight != null) {
+            flags.minTotalWeight = costInfo.exileMinTotalWeight
+            flags.cardWeights = { ...(costInfo.exileCardWeights ?? {}) }
           }
           break
         case 'ExileFromZone':

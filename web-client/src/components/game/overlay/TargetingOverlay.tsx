@@ -31,7 +31,7 @@ function ZoneCardTargetingOverlay({
   onViewBattlefield,
 }: {
   zoneCards: ClientCard[]
-  targetingState: { selectedTargets: readonly EntityId[]; minTargets: number; maxTargets: number; targetDescription?: string; currentRequirementIndex?: number; totalRequirements?: number; sourceCardName?: string; minTotalManaValue?: number }
+  targetingState: { selectedTargets: readonly EntityId[]; minTargets: number; maxTargets: number; targetDescription?: string; currentRequirementIndex?: number; totalRequirements?: number; sourceCardName?: string; minTotalManaValue?: number; minTotalWeight?: number; cardWeights?: Record<string, number> }
   responsive: ResponsiveSizes
   onSelect: (cardId: EntityId) => void
   onDeselect: (cardId: EntityId) => void
@@ -60,19 +60,23 @@ function ZoneCardTargetingOverlay({
   // Collect evidence N (CR 701.59a): the cost constrains the *summed mana value* of the picked
   // cards, not how many there are, so Confirm is gated on the running total rather than the count.
   // An empty selection is exempt — that is how an optional collection is declined.
-  const manaFloor = targetingState.minTotalManaValue
-  const totalManaValueSelected =
-    manaFloor == null
+  // Two costs share this gate: collect evidence sums mana value, which the client already knows
+  // per card, while an `ExileForTotal` cost sums a measure only the server can read and therefore
+  // ships explicit per-card weights. One floor, one weight lookup — the weights win when present.
+  const sumFloor = targetingState.minTotalWeight ?? targetingState.minTotalManaValue
+  const weights = targetingState.cardWeights
+  const floorUnit = weights != null ? '' : ' mana value'
+  const weightOf = (id: EntityId): number =>
+    weights != null ? (weights[id] ?? 0) : (gameState?.cards[id]?.manaValue ?? 0)
+  const totalSelected =
+    sumFloor == null
       ? 0
-      : targetingState.selectedTargets.reduce(
-          (sum, id) => sum + (gameState?.cards[id]?.manaValue ?? 0),
-          0,
-        )
-  const meetsManaFloor =
-    manaFloor == null || selectedCount === 0 || totalManaValueSelected >= manaFloor
+      : targetingState.selectedTargets.reduce((sum, id) => sum + weightOf(id), 0)
+  const meetsSumFloor =
+    sumFloor == null || selectedCount === 0 || totalSelected >= sumFloor
 
-  const hasEnoughTargets = selectedCount >= minTargets && meetsManaFloor
-  const hasMaxTargets = manaFloor != null ? false : selectedCount >= maxTargets
+  const hasEnoughTargets = selectedCount >= minTargets && meetsSumFloor
+  const hasMaxTargets = sumFloor != null ? false : selectedCount >= maxTargets
 
   // A group key combines the owning player and the card's zone, so graveyard and exile piles for
   // the same player are separate tabs. Zone defaults to Graveyard when the card carries none.
@@ -473,8 +477,8 @@ function ZoneCardTargetingOverlay({
             transition: 'all 0.15s',
           }}
         >
-          {manaFloor != null
-            ? `Confirm (${totalManaValueSelected}/${manaFloor} mana value)`
+          {sumFloor != null
+            ? `Confirm (${totalSelected}/${sumFloor}${floorUnit})`
             : minTargets === 0 && selectedCount === 0
               ? 'Skip'
               : selectedCount > 0

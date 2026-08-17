@@ -391,6 +391,24 @@ data class AdditionalCostData(
      * ([com.wingedsheep.engine.handlers.costs.CollectEvidenceResolver.isLegalSelection]).
      */
     val exileMinTotalManaValue: Int = 0,
+    /**
+     * For an `ExileFromGraveyardForTotal` cost (Baron Helmut Zemo): the **floor on the combined
+     * measure** of the exiled cards, and what each offered card is worth toward it.
+     *
+     * The generalization of [exileMinTotalManaValue] to a measure the client cannot compute for
+     * itself. Collect evidence's floor is total mana value, which the client already knows per card
+     * from the card data it holds; a pip total ("fifteen or more black mana symbols among their
+     * mana costs") is a server-side reading of the printed cost, so the server ships the per-card
+     * weights in [exileCardWeights] and the client only sums the numbers it was given — the
+     * server-is-authoritative rule applied to a running total.
+     *
+     * Both are non-zero only together, and only for `costType == "ExileForTotal"`. The server
+     * re-validates the submitted selection regardless
+     * ([com.wingedsheep.engine.handlers.costs.GraveyardTotalExileResolver.isLegalSelection]).
+     */
+    val exileMinTotalWeight: Int = 0,
+    /** Per-card weights for [exileMinTotalWeight], keyed by the ids in [validExileTargets]. */
+    val exileCardWeights: Map<EntityId, Int> = emptyMap(),
     val validBeholdTargets: List<EntityId> = emptyList(),
     val beholdCount: Int = 0,
     val counterRemovalCreatures: List<CounterRemovalCreatureData> = emptyList(),

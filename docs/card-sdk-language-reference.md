@@ -497,6 +497,49 @@ excluded.
   affordability check fails closed on the summed mana value, so the option is never payable and an
   under-total submission is rejected rather than trimmed. For collect evidence as an *effect* rather
   than a cost, use `Effects.CollectEvidence(n)` (§ effects).
+- `Costs.ExileFromGraveyardForTotal(minTotal, measure, filter = Any)` /
+  `Costs.ExileFromGraveyardForColoredSymbols(minSymbols, vararg colors)` — the **unnamed, filtered
+  generalization of collect evidence**: "exile any number of `<filter>` cards from your graveyard
+  whose summed `<measure>` is `minTotal` or more". Backed by `CostAtom.ExileFromGraveyardForTotal`
+  and by the *same* engine implementation collect evidence uses — `GraveyardTotalExileResolver`,
+  which `CollectEvidenceResolver` now delegates to, so the two can never drift apart on
+  reachability, legality, auto-selection or the exile itself.
+
+  Two axes distinguish it from `Costs.CollectEvidence(n)`, which is otherwise the identical mechanic:
+  the **filter** (collect evidence spends *any* graveyard card, CR 701.59a; here non-matching cards
+  are never offered), and the **measure** — the per-card quantity that is summed, a `CardMeasure`:
+  - `CardMeasure.ManaValue` — mana value (CR 202.3); what collect evidence uses;
+  - `CardMeasure.ColoredManaSymbols(colors)` — how many mana symbols of those colours appear in the
+    card's **printed** mana cost, counted by `ManaCost.coloredSymbolCount` — the single counting rule
+    also behind `CardPredicate.ColoredManaSymbolsAtLeast` and
+    `EntityNumericProperty.ColoredManaSymbolCount`, so a group total and a per-card read can never
+    disagree (hybrid/Phyrexian pips count for their colour(s), CR 107.4e/f; generic, `{C}` and `{X}`
+    count for none).
+
+  `ExileFromGraveyardForColoredSymbols(15, Color.BLACK)` is **Baron Helmut Zemo**'s boast cost,
+  "exile any number of black cards from your graveyard with fifteen or more black mana symbols among
+  their mana costs" — it derives the colour filter and the pip measure from one list of colours so
+  they can't drift. The colour filter and the pip count are *not* redundant: colour is a
+  characteristic, the count reads printed pips, so the filter is what keeps a black card with no
+  black pip on the right side of the printed wording.
+
+  Same three consequences as collect evidence, for the same reason: **the threshold is a floor on the
+  measure, never on the card count** (overpaying is legal, and a matching card whose measure is 0 is
+  a legal selection contributing nothing), and the cost **fails closed** — a graveyard that can't
+  reach the floor makes the ability not offered at all rather than offered and refused. Measures read
+  the **base** card (mana value and printed cost are intrinsic, and a graveyard card has no
+  battlefield projection); the *filter* evaluates against projected state like every other cost
+  filter.
+
+  Client-side the picker is the collect-evidence picker with a server-supplied weight table:
+  `AdditionalCostData.exileMinTotalWeight` + `exileCardWeights` under `costType == "ExileForTotal"`,
+  because a pip total is a server-side reading of the printed cost that the client can't compute for
+  itself. The server re-validates the submitted selection regardless — a submitted selection that
+  doesn't pay is **rejected**, never silently replaced with the engine's own pick.
+
+  Activated-ability cost only today: it is deliberately reported unpayable as a spell's additional
+  cost and as a `PayCost`, since no printed card wants either and an offered-then-unpayable cost is
+  worse than an absent one.
 - `Costs.Craft(filter, minCount = 1, maxCount = null)` — Craft material cost (CR 702.167a): exile
   this permanent **and** exile at least `minCount` (and, when `maxCount` is set, at most `maxCount`)
   cards matching `filter` selected from the combined pool of
@@ -2904,6 +2947,14 @@ effect = Effects.Pipeline {
   You may play that card from exile this turn" (Norin, Swift Survivalist): `gather(TriggeringEntity)` →
   `exile(...)` → `GrantMayPlayFromExile(EndOfTurn)`.
 - `CardSource.TappedAsCost` — the permanents tapped to pay the activation cost.
+- `CardSource.ExiledAsCost` — the cards exiled to pay the **activation cost**, the exile counterpart
+  of `TappedAsCost`. Recorded at cost-payment time (CR 601.2h: the cost is paid on activation, long
+  before the ability resolves), carried on the stack object, and filtered at resolution to the cards
+  still in exile. This is what "those exiled cards" means in an ability whose *cost* did the exiling
+  — **Baron Helmut Zemo**'s "Exile any number of black cards from your graveyard …: **Copy those
+  exiled cards.**" Deliberately **not** `FromLinkedExile`, which is the pile a permanent has
+  accumulated over its lifetime and would hand a second activation the first one's cards; this gather
+  is scoped to the one payment that put the ability on the stack.
 - `CardSource.AttachedTo(host, filter?)` — the permanents attached to the `host` entity (any
   `EffectTarget` that resolves to a permanent — a spell's `ContextTarget`, `Self`, `TriggeringEntity`, …)
   that match `filter`, read off the host's `AttachmentsComponent` and intersected with the projected
@@ -6879,6 +6930,32 @@ permanent's ordinary activated abilities are untouched:
   player, on every permanent and in every zone, applies to the extra turn only, and outlives its
   source leaving the battlefield. (Engine-side plumbing is documented on
   `CastPermissionUtils.isPowerUpActivationRestricted`, next to the code.)
+
+**Boast** (Kaldheim, returning in Marvel Super Heroes; CR 702.142) — the third marker flag on an
+activated ability, alongside Exhaust and Power-up and mutually exclusive with them. *"Boast —
+[cost]: [effect]"* means *"[cost]: [effect]. Activate only if this creature attacked this turn and
+only once each turn."* (CR 702.142a). Set `isBoast = true` in the `activatedAbility { }` block. That
+(a) renders the *"Boast — "* prefix on the ability's `description` and (b) **auto-adds both rules
+clauses as ordinary restrictions** — `ActivationRestriction.OncePerTurn` and an
+`ActivationRestriction.OnlyIfCondition(Conditions.SourceAttackedThisTurn)` — so the keyword marker
+and its enforcement can't drift apart.
+
+Nothing about it is new machinery. "Attacked this turn" is already a turn-long per-creature fact
+(`StatePredicate.AttackedThisTurn`, which survives the end of combat), so a boast is still available
+in the postcombat main phase and the end step; and the per-turn activation counter already backs
+every other "activate only once each turn" ability. Note boast is once **each turn**, not exhaust's
+once ever — so it never adds `ActivationRestriction.Once`, and a creature that attacks on two
+consecutive turns boasts on both.
+
+```kotlin
+// Baron Helmut Zemo — Boast — Exile any number of black cards from your graveyard with fifteen or
+// more black mana symbols among their mana costs: Copy those exiled cards. …
+activatedAbility {
+    isBoast = true
+    cost = Costs.ExileFromGraveyardForColoredSymbols(15, Color.BLACK)
+    effect = Effects.Composite(/* gather ExiledAsCost → copy → cast up to three for free */)
+}
+```
 
 **`ManaCost.subtract(other)` — pip-wise cost reduction (CR 118.7).** The primitive behind power-up
 (CR 702.193b) and, identically worded, offering (CR 702.48c): generic reduces generic; colored and

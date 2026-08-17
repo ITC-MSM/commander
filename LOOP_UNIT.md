@@ -1,91 +1,113 @@
-# u40 — World War Hulk (+ one new SDK primitive)
+# u22 — Baron Helmut Zemo (+ three SDK generalizations)
 
-**Card.** World War Hulk [MSH 197] — {3}{G}{G} Enchantment — Saga. I: the next red or green
-creature spell you cast this turn can be cast without paying its mana cost. II: three +1/+1
-counters on target creature you control. III: choose target creature you control, double its power
-and toughness and give it trample until end of turn.
+**Card.** Baron Helmut Zemo [MSH 87] — {B}{B}{B} Legendary Creature — Human Noble Villain 3/3.
+"Whenever you cast a black spell from your hand, Baron Helmut Zemo connives. / Boast — Exile any
+number of black cards from your graveyard with fifteen or more black mana symbols among their mana
+costs: Copy those exiled cards. You may cast up to three of the copies without paying their mana
+costs." Oracle text taken from Scryfall, not from the planner's paraphrase (which was accurate).
 
-**Triage (nobody triaged this card before me — I did it from Scryfall + the code).** Chapters II and
-III compose from existing vocabulary: `Effects.AddCounters`, and Epic Fight's doubling shape
-(`Effects.ModifyStats` with both halves read off the target at resolution — the standard layer-7c
-+N/+N modification) composed with `Effects.GrantKeyword(TRAMPLE)`. Chapter I had no existing
-vocabulary: the only free-cast mechanism was the battlefield static `MayCastWithoutPayingManaCost`,
-which is read off a permanent and gated on first-spell / once-per-turn / active-player, none of
-which is what the printed text says.
+**I inherited ~520 lines of uncommitted WIP from a predecessor agent on this same unit.** I
+re-triaged the card from the code on this branch and **kept the design** — see below for why each
+piece is right — then added everything it was missing (the card's own scenario test, the primitive's
+own scenario test, the DSL reference update) and fixed two real bugs in its one test file. Nothing
+in it had ever been compiled or run.
 
-**Primitive — `GrantNextSpellFreeCastEffect` (facade `Effects.GrantNextSpellFreeCast(spellFilter)`).**
-A one-shot pending rider on `GameState.pendingFreeCastSpells`, deliberately built as the third
-member of an existing family (`PendingUncounterableSpell` = Mistrise Village,
-`PendingNextSpellAffinity` = Don & Raph) rather than a new mechanism:
+## Re-triage against the eleven units under this branch
 
-- `CostCalculator.hasFreeCastPermission` reads the rider **before** the battlefield scan, so the
-  cast surfaces the *existing* `CastSpell.useWithoutPayingManaCost` action variant — no new legal
-  action, no new decision, no new client component.
-- `CastSpellHandler` consumes the rider on the next matching cast, next to where the two sibling
-  riders are consumed. `TurnManager.startTurn` clears an unused one.
-- **Consumed by the cast, not by the discount** — "the next red or green creature spell you cast
-  this turn" names a spell, so a matching spell cast for full price is that spell and spends the
-  grant. This is the one thing that could have looked right and played wrong, so it has its own
-  test in both files.
-- Living on the state (not on the permanent) is what the printed text requires: the ability has
-  already resolved, so the permission survives the Saga leaving the battlefield and isn't restricted
-  to a cast zone.
-- CR cited and checked against `/workspace/MagicCompRules_20260619.txt`: 118.9 (without paying its
-  mana cost *is* an alternative cost), 118.9a (only one alternative cost per cast), 107.3b (X = 0).
-- A rider-funded free cast deliberately does **not** burn a `MayCastWithoutPayingManaCost(oncePerTurn
-  = true)` source's use (fail-safe, mirroring the existing emblem guard).
-- `docs/card-sdk-language-reference.md` updated in the same change — a new bullet in the stack-effect
-  rider family, plus a cross-reference from the `MayCastWithoutPayingManaCost` static entry.
-- Client: one `ClientPlayerEffect` badge ("Free Cast") so the player can see the pending grant, in
-  the same block as the existing copy / uncounterable badges, plus its emoji in `shared.ts`.
+The planner's triage was nine days stale. What I checked before adding anything:
 
-**Gate.**
-- `just rebless-cards` → exit 0. Only `mtg-sets/src/test/resources/snapshots/cards/MSH.json` moved:
-  **104 insertions, 0 deletions**, the only added card `"name"` is `World War Hulk` (the three other
-  added `name` keys are my own chapters' target requirements). No other set's golden moved.
-- `just test` (full, run *after* the rebless) → BUILD SUCCESSFUL. From `*/build/test-results`:
-  **13,297 tests, 0 failures, 0 errors, 27 pre-existing skips** — rules-engine 11,198 / game-server 483
-  / mtg-sdk 450 / ai 458 / mtg-sets 345 / mtg-search 163 / mtgish-tooling 143 / gym 43 / gym-server 10
-  / gym-trainer 4. `WorldWarHulkScenarioTest` 4/4, `GrantNextSpellFreeCastTest` 5/5.
-  The **first** attempt died mid `:rules-engine:test` with "Gradle build daemon disappeared" — the
-  documented OOM flake, with a sibling container's build at load 13 and ~350 MB RAM free. I left the
-  sibling's daemons alone, waited for the box to go quiet, and re-ran the same gate to completion.
-- `just check-card-printing "World War Hulk"` → ok (MSH is the earliest and only set; both MSH
-  collector numbers map to the one canonical).
-- `just fix-backlog` → 275 / 276.
+- **`Effects.CastUpToNFromCollectionWithoutPayingCost(from, maxCasts)`** already exists (Doom Reigns
+  Supreme) and is exactly "cast up to three of the copies without paying their mana costs" — used
+  as-is. `Effects.GrantNextSpellFreeCast` + `maxCasts` (u38/u40) is a *pending rider on the next
+  spell you cast*, a different shape; not used.
+- **`Effects.CopyCollectionIntoCollection`** already exists (The Tale of Tamiyo IV) and already
+  creates the copies in exile per CR 707.12 — used as-is.
+- **`ManaCost.coloredSymbolCount(colors)` (u36)** already exists and already backs
+  `CardPredicate.ColoredManaSymbolsAtLeast` and `EntityNumericProperty.ColoredManaSymbolCount`. The
+  new group-aggregate measure calls *that* function, so the pip count can never disagree with the
+  per-card filter or amount. This was u36's own stated motivating example; `DevotionTo` was
+  correctly left alone.
+- **`ActivationRestriction.OncePerTurn` + `OnlyIfCondition(Conditions.SourceAttackedThisTurn)`
+  (u21's unified activation axis)** already express both of boast's rules clauses, so boast needed
+  no new activation machinery — only a marker flag, the same arrangement `isExhaust`/`isPowerUp` use.
+- **`Effects.PayRepeatedly` / `DynamicAmounts.timesPaid` (u17)** — not applicable, no repeated payment.
+- **CR number:** the planner said 702.135 (that is *Afterlife*). Boast is **CR 702.142**, verified in
+  `/workspace/MagicCompRules_20260619.txt`.
 
-**Mutation-proved (three, each reverted and the files verified byte-identical by md5 afterwards).**
-- Neutering the consumption in `CastSpellHandler` → exactly the three rider-consumption assertions
-  in `GrantNextSpellFreeCastTest` went red; "unused rider cleared at turn boundary" and the
-  once-per-turn test stayed green.
-- Removing the `hasFreeCastRider` guard in `oncePerTurnFreeCastSourceToConsume` → exactly "a
-  rider-funded free cast doesn't burn a once-per-turn battlefield permission" went red, nothing else.
-- Making the rider ignore its `spellFilter` → exactly "a red creature spell qualifies too, and a blue
-  one does not" in `WorldWarHulkScenarioTest` went red, nothing else.
+## The three additions, all generalizations of something that existed
 
-## Things I'm unsure about — please look
+1. **`ActivatedAbility.isBoast` + `activatedAbility { isBoast = true }`** (CR 702.142a). Marker flag
+   only: renders the "Boast — " prefix and auto-adds `OncePerTurn` + an `OnlyIfCondition` over
+   `Conditions.SourceAttackedThisTurn`, so marker and enforcement can't drift. Deliberately *not*
+   `ActivationRestriction.Once` — boast is once each turn, not exhaust's once ever.
+2. **`CostAtom.ExileFromGraveyardForTotal(filter, measure, minTotal)` + `CardMeasure`.** The unnamed,
+   *filtered* generalization of collect evidence. Rather than a parallel implementation,
+   `CollectEvidenceResolver` was **refactored to delegate** to a new shared
+   `GraveyardTotalExileResolver`; collect evidence keeps only what is keyword-specific (its name, its
+   `EvidenceCollectedEvent`, its unfiltered/mana-value choice). Two axes are new: the filter, and the
+   `CardMeasure` (mana value vs. coloured pips). CR 701.59a/b, 202.3, 107.4e/f verified locally.
+3. **`CardSource.ExiledAsCost`** — the exile counterpart of the existing `TappedAsCost`, recorded at
+   payment time (CR 601.2h) on `EffectContext` / `ActivatedAbilityOnStackComponent`. Scoped to *this*
+   activation's payment, unlike `FromLinkedExile`, which would hand a second boast the first one's
+   cards.
 
-- **Consumption semantics.** I could find no Scryfall ruling for this card (it has none), so
-  "a matching spell cast for full price spends the grant" is my reading of "the next … spell you
-  cast this turn" plus the engine's existing precedent (the affinity rider is consumed by a cast
-  whose cost it never changed). If you read it the other way, the change is one `if` in
-  `CastSpellHandler` and two test expectations.
-- **Graveyard casts.** The rider applies from any zone in `hasFreeCastPermission`, and the exile
-  enumerator threads it (`freeCastPermissionFor(cardId, Zone.EXILE)`), but I did not find a
-  free-cast variant on the *graveyard* (flashback-style) cast path — that looks like a pre-existing
-  gap for the battlefield static too, and I did not widen it.
-- **Filter evaluation is asymmetric between the two sites**, as it already is for the affinity
-  rider: the permission site is `CostCalculator.matchesCardDefinition` (card definition + the
-  rider's own sourceId), the consumption site is `predicateEvaluator.matches` on the stack entity.
-  They agree for a printed red/green creature card; a colour-changing continuous effect is the case
-  where they could disagree, and I did not test that.
-- **Pause/resume casts.** The consumption sits in `CastSpellHandler.execute`, the same place the
-  other two riders are consumed. I did not verify a cast that pauses mid-way (X, modes) and resumes
-  through a different code path still consumes the rider — the sibling riders have the same
-  exposure.
-- **Multiplayer / opponents' spells.** The rider is controller-scoped by `controllerId`; only
-  two-player games were tested.
-- **Not done: no manual playthrough in the web client, no UX pass beyond adding the badge, no e2e
-  test, no AI-heuristic review.** The free cast reuses the existing `useWithoutPayingManaCost`
-  action variant that Weftwalking/Omniscience already surface, so no new UI was needed — but that is
-  reasoning, not a check I ran.
+Client side reuses the collect-evidence sum-gated picker with a server-supplied weight table
+(`costType: "ExileForTotal"`, `exileMinTotalWeight` + `exileCardWeights`), because a printed-pip
+total is a server-side reading the client cannot compute — server-is-authoritative applied to a
+running total.
+
+## Tests
+
+Three files, 21 tests, all green.
+
+- `BaronHelmutZemoScenarioTest` (6) — the card: the from-hand colour-filtered connive trigger and its
+  two negatives, the boast gated on attacking, the fourteen-pips-isn't-fifteen fail-closed case, and
+  the full path (cost exiles five, resolution copies exactly those five, three copies cast free, the
+  other two swept, originals still exiled, and the free casts do **not** re-fire the from-hand trigger).
+- `BoastKeywordScenarioTest` (6) — the keyword, card-independent.
+- `GraveyardTotalExileCostScenarioTest` (9) — the cost primitive, card-independent: fails closed,
+  count is never the question, the weight payload, overpay honoured, an illegal submission rejected
+  rather than substituted, heaviest-first auto-select, hybrid/Phyrexian pips, and the filter axis.
+
+`docs/card-sdk-language-reference.md` updated in the same change (cost facades + `CardMeasure`,
+`CardSource.ExiledAsCost`, and a Boast section beside Exhaust/Power-up).
+
+## Bugs I fixed in the inherited test file
+
+- `BoastKeywordScenarioTest` filtered legal actions on `LegalActionInfo.sourceId`, **a field that
+  does not exist**; it never compiled. Now reads `(action as? ActivateAbility)?.sourceId`.
+- Its "comes back next turn" test called `passUntilPhase(ENDING, END)` twice in a row.
+  `passUntilPhase` returns immediately when already in the step, so the second call was a no-op and
+  the test silently ran on the **opponent's** combat. It also relied on empty scenario libraries,
+  which deck a player on the next draw step and end the game. Both fixed, and the test now asserts
+  the active player rather than assuming it.
+
+## Gate
+
+`just rebless-cards` (Baron Helmut Zemo added to `MSH.json`: **159 insertions, 0 deletions** — no
+other card moved, so no shared SDK behaviour leaked), then `just test` — **passed**:
+`BUILD SUCCESSFUL in 12m 46s`, 13 322 tests, 0 failures / 0 errors.
+`just check-card-printing "Baron Helmut Zemo"` ok (msh is the earliest real printing).
+Backlog ticked; MSH is now **276 / 276**.
+
+Two gate failures on the way, both real and both fixed here:
+`CostAtomSerializationTest`'s sealed-subtype coverage net needed a representative for the new atom,
+and `SetCoverageServiceTest` caught the now-stale `incomplete = true` override on
+`MarvelSuperHeroesSet` — Zemo was the set's last missing card, so the set is complete and the
+override had to go.
+
+## Things I'm not sure about — worth a reviewer's eyes
+
+- `ExileFromGraveyardForTotal` is deliberately reported **unpayable** as a spell's additional cost and
+  as a `PayCost` (`canPayAdditionalCost` → false, `CostPaymentService` → `Unaffordable`). That is a
+  choice — no printed card wants either shape, and an offered-then-unpayable cost is worse than an
+  absent one — but it means those `when` branches are dead code until something needs them.
+- **The web-client changes are untypechecked.** `web-client/node_modules` is absent and the network is
+  firewalled, so `npm run typecheck` cannot run here. The diff is small and additive (two optional
+  fields, one new `costType` case, one weight lookup in the existing evidence picker), but nobody has
+  compiled it.
+- `CollectEvidenceResolver.Candidates.shared` rebuilds a wrapper object on every access. Harmless at
+  these sizes, and it keeps every existing caller reading `manaValueById` under that name, but it is a
+  seam a reviewer might want collapsed.
+- The card's `oracleText` spells out reminder text for both connive and boast, matching how other MSH
+  cards in this set are written; I did not re-derive that convention from a style guide.

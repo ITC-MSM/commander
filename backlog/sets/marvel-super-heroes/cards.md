@@ -3,7 +3,7 @@
 **Set Size:** 276 booster cards (collector numbers 1-276; basic lands 277-296 and showcase
 variants 297+ are excluded)
 **Release Date:** June 26, 2026
-**Implemented:** 275 / 276
+**Implemented:** 276 / 276
 - [x] Agent 13, Sharon Carter
 - [x] Agent Maria Hill
 - [x] Agent of Atlas
@@ -90,7 +90,7 @@ variants 297+ are excluded)
 - [x] The Wondrous Wasp
 - [x] Agents of HYDRA
 - [x] Arnim Zola, Bio-Fanatic
-- [ ] Baron Helmut Zemo
+- [x] Baron Helmut Zemo
 - [x] Baron Strucker, HYDRA Overlord
 - [x] Black Widow, Super Spy
 - [x] Construct a Cosmic Cube

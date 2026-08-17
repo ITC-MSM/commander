@@ -53,5 +53,9 @@ fun CostAtom.repeated(times: Int): CostAtom {
         // separate exiles of N would. (No printed card repeats it — escalate is the only caller —
         // but the threshold multiplies cleanly, so there's nothing to reject.)
         is CostAtom.CollectEvidence -> copy(amount = amount * times)
+        // Same reasoning as CollectEvidence: the constraint is a summed floor, and CR 601.2f folds
+        // the repeated cost into one payment, so paying it N times is one selection reaching N
+        // times the threshold.
+        is CostAtom.ExileFromGraveyardForTotal -> copy(minTotal = minTotal * times)
     }
 }

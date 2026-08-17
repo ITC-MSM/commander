@@ -209,7 +209,7 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                 var craftMaterials: List<EntityId> = emptyList()
                 var exileCost: CostAtom.ExileFrom? = null
                 var exileTargets: List<EntityId>? = null
-                var collectEvidenceInfo: AdditionalCostData? = null
+                var prebuiltCostInfo: AdditionalCostData? = null
                 var costAffordable = true
 
                 when (effectiveCost) {
@@ -317,8 +317,16 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                         // mana value reaches N, so an unreachable threshold drops the action
                         // entirely rather than surfacing an unpayable one.
                         is CostAtom.CollectEvidence -> {
-                            collectEvidenceInfo = com.wingedsheep.engine.handlers.costs
+                            prebuiltCostInfo = com.wingedsheep.engine.handlers.costs
                                 .CollectEvidenceResolver.costInfo(state, playerId, atom.amount)
+                                ?: continue
+                        }
+                        // Same fail-closed shape as collect evidence over a filtered pool: when the
+                        // matching graveyard cards can't reach the floor the action is dropped
+                        // entirely rather than offered and rejected at payment.
+                        is CostAtom.ExileFromGraveyardForTotal -> {
+                            prebuiltCostInfo = com.wingedsheep.engine.handlers.costs
+                                .GraveyardTotalExileResolver.costInfo(state, playerId, atom)
                                 ?: continue
                         }
                         // Pay-life / reveal carry no enumeration-time selection or affordability gate
@@ -481,10 +489,20 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                                     }
                                     // CR 701.59b — see the top-level branch.
                                     is CostAtom.CollectEvidence -> {
-                                        collectEvidenceInfo = com.wingedsheep.engine.handlers.costs
+                                        prebuiltCostInfo = com.wingedsheep.engine.handlers.costs
                                             .CollectEvidenceResolver
                                             .costInfo(state, playerId, atom.amount)
-                                        if (collectEvidenceInfo == null) {
+                                        if (prebuiltCostInfo == null) {
+                                            costCanBePaid = false
+                                            break
+                                        }
+                                    }
+                                    // See the top-level branch.
+                                    is CostAtom.ExileFromGraveyardForTotal -> {
+                                        prebuiltCostInfo = com.wingedsheep.engine.handlers.costs
+                                            .GraveyardTotalExileResolver
+                                            .costInfo(state, playerId, atom)
+                                        if (prebuiltCostInfo == null) {
                                             costCanBePaid = false
                                             break
                                         }
@@ -785,7 +803,7 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                     discardCost, discardTargets,
                     craftCost, craftMaterials,
                     exileCost, exileTargets,
-                    collectEvidenceInfo,
+                    prebuiltCostInfo,
                     tapBatchMaxActivations
                 )
 
@@ -1197,14 +1215,16 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
         craftMaterials: List<EntityId> = emptyList(),
         exileCost: CostAtom.ExileFrom? = null,
         exileTargets: List<EntityId>? = null,
-        collectEvidenceInfo: AdditionalCostData? = null,
+        prebuiltCostInfo: AdditionalCostData? = null,
         tapBatchMaxActivations: Int = 1
     ): AdditionalCostData? {
-        // Collect evidence (CR 701.59) owns the whole payload when present: the picker is over the
-        // entire graveyard with a mana-value floor, which no other cost payload can express. Built
-        // by the caller, which has the state and player in scope; a null here means the threshold
-        // was unreachable and the action was already dropped (CR 701.59b).
-        if (collectEvidenceInfo != null) return collectEvidenceInfo
+        // A cost whose resolver builds its own complete payload owns the whole thing when present:
+        // the sum-gated graveyard exiles (collect evidence, CR 701.59; and the filtered
+        // `ExileFromGraveyardForTotal`) put a *measure* floor on a variable-size selection, which
+        // none of the counted payloads below can express. Built by the caller, which has the state
+        // and player in scope; a null there means the threshold was unreachable and the action was
+        // already dropped, so nothing unpayable ever reaches this point.
+        if (prebuiltCostInfo != null) return prebuiltCostInfo
         if (craftCost != null) {
             // Craft (CR 702.167) is handled exclusively: when a Composite cost contains a
             // [AbilityCost.Craft] sub-cost, we surface only the Craft payload, dropping any
