@@ -384,6 +384,37 @@ ability watching both events, and three cards use it where sixty write two abili
 prints the majority and the gate reports the rest. A `match` that accepted both would be `AMBIGUOUS`
 by construction; a fold entry would be the gate agreeing with itself.
 
+The **step-trigger band** — "At the beginning of each opponent's end step, …" — is the frozen-facade
+lesson a fifth time, and it is the one to read for *where a derivation lives*. The SDK's
+`Triggers.phase(step, player, binding)` says in its own KDoc to "reach for this factory for any other
+combination", and the grammar was calling the thirteen constants that call it with all three
+arguments fixed. Three things transfer.
+
+**A derivation the SDK publishes is the spelling; the family only chooses the membership.** Every
+word the whose-turn layer needs — "your", "each player's", "each opponent's", "the chosen player's",
+"enchanted player's" — is `Player.possessive`, which exists precisely so zone and step descriptions
+do not each restate it, so the rule takes the `Player` and asks. A table copied into `grammar/` would
+have agreed exactly until someone added a `Player`. But `possessive` is *total*, and "target player's
+upkeep" is a sentence no card writes — so the members are an explicit list and only the spelling is
+borrowed. Borrowing a total derivation without bounding its domain is how a rule acquires the ability
+to print English that does not exist.
+
+**Which spelling is canonical can be decided by the argument, not by the family.** `Player.Each` is
+printed both bare and possessive, and the majority flips with the *step*: "each upkeep" 100:83, "each
+end step" 98:23, and 0:13 for the draw step, where only "each player's draw step" is ever printed. One
+template with the step slotted would print the minority form for a third of the family, so it is one
+rule per step with its own `alsoSpelled` list — the same shape `TopOfLibrary`'s impulse durations
+take, and the second time this exact question has come up. Check the majority *per value of the other
+axis* before making an axis a slot.
+
+**And the third band in a row to confirm it: a family at the front of its line measures its payload.**
+This one was the tail ranking's third row (197 cards, 106 sole-blocked) and finished **3**. The probe
+said 17 lines before it was written, which is the number to have believed. What the band is actually
+worth is that its 200 lines are now keyed on what blocks them rather than on their opening clause, and
+the ranking names three successors — "sacrifice ~." as a bare step (171 cards, now the table's top
+row), the triggering *player* as a subject, and the delayed trigger. **When the fronted-duration
+lesson applies, say the small number and publish the ranking it uncovered; that is the product.**
+
 The top-of-library band's differential result is the argument for the whole discipline: it put
 `SelectFromCollectionEffect` under comparison for the first time, and **every newly-compared card
 that disagreed was wrong** — five had silently dropped `restOrder` so "in any order" resolved as "in
