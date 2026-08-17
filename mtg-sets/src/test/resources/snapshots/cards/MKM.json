@@ -308,6 +308,206 @@
     ]
 }
 
+// Agrus Kos, Spirit of Justice
+{
+    "name": "Agrus Kos, Spirit of Justice",
+    "manaCost": "{2}{R}{W}",
+    "typeLine": "Legendary Creature — Spirit Detective",
+    "oracleText": "Double strike, vigilance\nWhenever Agrus Kos enters or attacks, choose up to one target creature. If it's suspected, exile it. Otherwise, suspect it. (A suspected creature has menace and can't block.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 4
+    },
+    "keywords": [
+        "DOUBLE_STRIKE",
+        "VIGILANCE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.WhenCondition",
+                        "condition": {
+                            "type": "EntityMatches",
+                            "entity": {
+                                "type": "ContextTarget",
+                                "index": 0
+                            },
+                            "filter": {
+                                "cardPredicates": [
+                                    "IsCreature"
+                                ],
+                                "statePredicates": [
+                                    "IsSuspected"
+                                ]
+                            }
+                        }
+                    },
+                    "then": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "up to one target creature"
+                        },
+                        "destination": "Exile"
+                    },
+                    "otherwise": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "SetSuspected",
+                                "target": {
+                                    "type": "BoundVariable",
+                                    "name": "up to one target creature"
+                                }
+                            },
+                            {
+                                "type": "GrantKeyword",
+                                "keyword": "MENACE",
+                                "target": {
+                                    "type": "BoundVariable",
+                                    "name": "up to one target creature"
+                                },
+                                "duration": "Permanent"
+                            },
+                            {
+                                "type": "CantBlockTargetCreatures",
+                                "target": {
+                                    "type": "BoundVariable",
+                                    "name": "up to one target creature"
+                                },
+                                "duration": "Permanent"
+                            }
+                        ],
+                        "descriptionOverride": "target becomes suspected"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "optional": true,
+                    "filter": {
+                        "baseFilter": "creature"
+                    },
+                    "id": "up to one target creature"
+                },
+                "descriptionOverride": "Choose up to one target creature. If it's suspected, exile it. Otherwise, suspect it."
+            },
+            {
+                "id": "ability_2",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.WhenCondition",
+                        "condition": {
+                            "type": "EntityMatches",
+                            "entity": {
+                                "type": "ContextTarget",
+                                "index": 0
+                            },
+                            "filter": {
+                                "cardPredicates": [
+                                    "IsCreature"
+                                ],
+                                "statePredicates": [
+                                    "IsSuspected"
+                                ]
+                            }
+                        }
+                    },
+                    "then": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "up to one target creature"
+                        },
+                        "destination": "Exile"
+                    },
+                    "otherwise": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "SetSuspected",
+                                "target": {
+                                    "type": "BoundVariable",
+                                    "name": "up to one target creature"
+                                }
+                            },
+                            {
+                                "type": "GrantKeyword",
+                                "keyword": "MENACE",
+                                "target": {
+                                    "type": "BoundVariable",
+                                    "name": "up to one target creature"
+                                },
+                                "duration": "Permanent"
+                            },
+                            {
+                                "type": "CantBlockTargetCreatures",
+                                "target": {
+                                    "type": "BoundVariable",
+                                    "name": "up to one target creature"
+                                },
+                                "duration": "Permanent"
+                            }
+                        ],
+                        "descriptionOverride": "target becomes suspected"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "optional": true,
+                    "filter": {
+                        "baseFilter": "creature"
+                    },
+                    "id": "up to one target creature"
+                },
+                "descriptionOverride": "Choose up to one target creature. If it's suspected, exile it. Otherwise, suspect it."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "184",
+        "rarity": "MYTHIC",
+        "artist": "Jason A. Engle",
+        "flavorText": "\"Eventually I'll give retirement another shot. But not today.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/8/58aeac7c-1275-49d4-9915-7604ae4bfdff.jpg?1783912857",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "When an effect suspects a creature, it becomes suspected. It gains menace and \"This creature can't block\" for as long as it's suspected. It stays suspected until it leaves the battlefield or another effect causes it to no longer be suspected."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "If a suspected creature loses all abilities, it will lose menace and \"This creature can't block\", but it won't stop being suspected."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "Being suspected isn't a copiable value. If a permanent becomes a copy of a suspected creature, it won't be suspected."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "If a creature is already suspected, suspecting it again won't have any effect."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "There's no limit to the number of creatures that can be suspected simultaneously. Suspecting a new creature doesn't cause other creatures to stop being suspected."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED",
+        "WHITE"
+    ]
+}
+
 // Alley Assailant
 {
     "name": "Alley Assailant",
@@ -9693,6 +9893,86 @@
     ]
 }
 
+// Rakdos, Patron of Chaos
+{
+    "name": "Rakdos, Patron of Chaos",
+    "manaCost": "{4}{B}{R}",
+    "typeLine": "Legendary Creature — Demon",
+    "oracleText": "Flying, trample\nAt the beginning of your end step, target opponent may sacrifice two nonland, nontoken permanents of their choice. If they don't, you draw two cards.",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 6
+    },
+    "keywords": [
+        "FLYING",
+        "TRAMPLE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "END"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "ChooseAction",
+                    "choices": [
+                        {
+                            "label": "Sacrifice two nonland, nontoken permanents",
+                            "effect": {
+                                "type": "ForceSacrifice",
+                                "filter": "nonland permanent nontoken",
+                                "count": 2,
+                                "target": {
+                                    "type": "BoundVariable",
+                                    "name": "target opponent"
+                                }
+                            },
+                            "feasibilityCheck": {
+                                "type": "ControlsPermanentMatching",
+                                "filter": "nonland permanent nontoken",
+                                "count": 2
+                            }
+                        },
+                        {
+                            "label": "Let Rakdos's controller draw two cards",
+                            "effect": {
+                                "type": "DrawCards",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 2
+                                }
+                            }
+                        }
+                    ],
+                    "player": {
+                        "type": "BoundVariable",
+                        "name": "target opponent"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetOpponent",
+                    "id": "target opponent"
+                },
+                "descriptionOverride": "At the beginning of your end step, target opponent may sacrifice two nonland, nontoken permanents of their choice. If they don't, you draw two cards."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "224",
+        "rarity": "MYTHIC",
+        "artist": "Joshua Raphael",
+        "flavorText": "\"Finally, a performance worthy of my applause!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/c/cc6fd2d5-8eb2-4265-a1bf-d4ae635285af.jpg?1783912841"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "RED"
+    ]
+}
+
 // Rakish Scoundrel
 {
     "name": "Rakish Scoundrel",
@@ -13517,6 +13797,76 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Worldsoul's Rage
+{
+    "name": "Worldsoul's Rage",
+    "manaCost": "{X}{R}{G}",
+    "typeLine": "Sorcery",
+    "oracleText": "Worldsoul's Rage deals X damage to any target. Put up to X land cards from your hand and/or graveyard onto the battlefield tapped.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "DealDamage",
+                    "amount": "XValue",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "any target"
+                    }
+                },
+                {
+                    "type": "GatherCards",
+                    "source": {
+                        "type": "FromMultipleZones",
+                        "zones": [
+                            "Hand",
+                            "Graveyard"
+                        ],
+                        "filter": "land"
+                    },
+                    "storeAs": "worldsoulLands"
+                },
+                {
+                    "type": "SelectFromCollection",
+                    "from": "worldsoulLands",
+                    "selection": {
+                        "type": "ChooseUpTo",
+                        "count": "XValue"
+                    },
+                    "storeSelected": "worldsoulLandsChosen"
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "worldsoulLandsChosen",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Battlefield",
+                        "placement": "Tapped"
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "AnyTarget",
+                "id": "any target"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "244",
+        "rarity": "RARE",
+        "artist": "Lius Lasahido",
+        "flavorText": "\"Hoarding supplies, profiting from death and destruction, colluding with the invaders—every one of them betrayed Ravnica in its time of greatest need. They all deserved to die. And I'm not done yet!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/c/fc3340bd-1d8c-4c21-a59d-e092fcbe02e3.jpg?1783912832"
+    },
+    "colorIdentityOverride": [
+        "RED",
+        "GREEN"
     ]
 }
 
