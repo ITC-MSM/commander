@@ -86,21 +86,30 @@ class ForEachExecutor(
         items: List<ForEachItem>,
         outerContext: EffectContext
     ): EffectResult {
+        if (items.isEmpty()) {
+            val collected = effect.collectCollections.values.associateWith { aggregate ->
+                outerContext.pipeline.storedCollections[aggregate].orEmpty()
+            }
+            return EffectResult(state = state, updatedCollections = collected)
+        }
+
         var currentState = state
+        var currentOuterContext = outerContext
         val allEvents = mutableListOf<GameEvent>()
 
         for ((index, item) in items.withIndex()) {
             val remainingItems = items.drop(index + 1)
 
-            val iterationContext = bindIterationContext(currentState, outerContext, item)
+            val iterationContext = bindIterationContext(currentState, currentOuterContext, item)
 
-            val stateForExecution = if (remainingItems.isNotEmpty()) {
+            val needsContinuation = remainingItems.isNotEmpty() || effect.collectCollections.isNotEmpty()
+            val stateForExecution = if (needsContinuation) {
                 currentState.pushContinuation(
                     ForEachContinuation(
                         decisionId = "pending",
                         remainingItems = remainingItems,
                         effect = effect,
-                        effectContext = outerContext
+                        effectContext = currentOuterContext
                     )
                 )
             } else {
@@ -121,16 +130,45 @@ class ForEachExecutor(
 
             // Pop the pre-pushed continuation (it wasn't needed). A failed body
             // (per CR 608.2 partial resolution) still continues with the next item.
-            currentState = if (remainingItems.isNotEmpty()) {
+            currentState = if (needsContinuation) {
                 val (_, stateWithoutCont) = result.state.popContinuation()
                 stateWithoutCont
             } else {
                 result.state
             }
             allEvents.addAll(result.events)
+
+            if (effect.collectCollections.isNotEmpty()) {
+                currentOuterContext = appendCollectedCollections(
+                    currentOuterContext,
+                    effect,
+                    result.updatedCollections
+                )
+            }
         }
 
-        return EffectResult.success(currentState, allEvents)
+        val collected = effect.collectCollections.values.associateWith { aggregate ->
+            currentOuterContext.pipeline.storedCollections[aggregate].orEmpty()
+        }
+        return EffectResult(currentState, allEvents, updatedCollections = collected)
+    }
+
+    private fun appendCollectedCollections(
+        context: EffectContext,
+        effect: ForEachEffect,
+        outputs: Map<String, List<EntityId>>
+    ): EffectContext {
+        if (outputs.isEmpty()) return context
+        var collections = context.pipeline.storedCollections
+        for ((localName, aggregateName) in effect.collectCollections) {
+            val iterationOutput = outputs[localName].orEmpty()
+            if (iterationOutput.isNotEmpty()) {
+                collections = collections + (
+                    aggregateName to collections[aggregateName].orEmpty() + iterationOutput
+                )
+            }
+        }
+        return context.copy(pipeline = context.pipeline.copy(storedCollections = collections))
     }
 
     /** Snapshot the iteration space into concrete items. */

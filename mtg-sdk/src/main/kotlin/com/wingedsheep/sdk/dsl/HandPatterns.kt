@@ -18,6 +18,7 @@ import com.wingedsheep.sdk.scripting.effects.EffectChoice
 import com.wingedsheep.sdk.scripting.effects.FeasibilityCheck
 import com.wingedsheep.sdk.scripting.effects.ForEachEffect
 import com.wingedsheep.sdk.scripting.effects.ForEachPlayerEffect
+import com.wingedsheep.sdk.scripting.effects.ForEachPlayerCollectingEffect
 import com.wingedsheep.sdk.scripting.effects.GainLifeEffect
 import com.wingedsheep.sdk.scripting.effects.GatherCardsEffect
 import com.wingedsheep.sdk.scripting.effects.MoveCollectionEffect
@@ -43,29 +44,37 @@ object HandPatterns {
     fun eachOpponentDiscards(count: Int, controllerDrawsPerDiscard: Int = 0): Effect {
         if (controllerDrawsPerDiscard > 0) {
             val drawCount: DynamicAmount = if (controllerDrawsPerDiscard == 1) {
-                DynamicAmount.VariableReference("discarded_count")
+                DynamicAmount.DistinctEntitiesInCollections(listOf("discarded_by_opponents"))
             } else {
-                DynamicAmount.Multiply(DynamicAmount.VariableReference("discarded_count"), controllerDrawsPerDiscard)
+                DynamicAmount.Multiply(
+                    DynamicAmount.DistinctEntitiesInCollections(listOf("discarded_by_opponents")),
+                    controllerDrawsPerDiscard
+                )
             }
             return CompositeEffect(listOf(
-                GatherCardsEffect(
-                    // TODO(multiplayer Phase 1, backlog/multiplayer.md): "each opponent discards,
-                    //  you draw per discard" needs cross-iteration count accumulation; until then
-                    //  this hits one opponent (identical in two-player games).
-                    source = CardSource.FromZone(Zone.HAND, Player.AnOpponent),
-                    storeAs = "hand"
-                ),
-                SelectFromCollectionEffect(
-                    from = "hand",
-                    selection = SelectionMode.ChooseExactly(DynamicAmount.Fixed(count)),
-                    chooser = Chooser.Opponent,
-                    storeSelected = "discarded",
-                    prompt = "Choose ${if (count == 1) "a card" else "$count cards"} to discard"
-                ),
-                MoveCollectionEffect(
-                    from = "discarded",
-                    destination = CardDestination.ToZone(Zone.GRAVEYARD, player = Player.AnOpponent),
-                    moveType = MoveType.Discard
+                ForEachPlayerCollectingEffect(
+                    players = Player.EachOpponent,
+                    effects = listOf(
+                        GatherCardsEffect(
+                            source = CardSource.FromZone(Zone.HAND, Player.You),
+                            storeAs = "hand"
+                        ),
+                        SelectFromCollectionEffect(
+                            from = "hand",
+                            selection = SelectionMode.ChooseExactly(DynamicAmount.Fixed(count)),
+                            storeSelected = "discarded",
+                            prompt = "Choose ${if (count == 1) "a card" else "$count cards"} to discard"
+                        ),
+                        MoveCollectionEffect(
+                            from = "discarded",
+                            destination = CardDestination.ToZone(Zone.GRAVEYARD),
+                            moveType = MoveType.Discard,
+                            storeMovedAs = "discarded_this_opponent"
+                        )
+                    ),
+                    collectCollections = mapOf(
+                        "discarded_this_opponent" to "discarded_by_opponents"
+                    )
                 ),
                 DrawCardsEffect(count = drawCount)
             ))

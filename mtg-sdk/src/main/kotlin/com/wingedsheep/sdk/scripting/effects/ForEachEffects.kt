@@ -125,7 +125,18 @@ sealed interface IterationSpace {
 @Serializable
 data class ForEachEffect(
     val space: IterationSpace,
-    val body: Effect
+    val body: Effect,
+    /**
+     * Per-iteration collection outputs to append into an outer result collection.
+     * The key is the collection written by [body]; the value is the collection
+     * published after every iteration completes.
+     *
+     * Player and target iterations still start with fresh collections. This reducer
+     * is the explicit bridge for effects such as "each opponent discards ...; draw
+     * for each card discarded this way", where every opponent makes an independent
+     * choice but the following effect needs the combined set of moved cards.
+     */
+    val collectCollections: Map<String, String> = emptyMap()
 ) : Effect {
     override val description: String = render { it.description }
 
@@ -218,6 +229,22 @@ fun ForEachTargetEffect(effects: List<Effect>): ForEachEffect =
 @Suppress("FunctionName")
 fun ForEachPlayerEffect(players: Player, effects: List<Effect>): ForEachEffect =
     ForEachEffect(IterationSpace.Players(players), effects.asBody())
+
+/**
+ * Execute a fresh sub-pipeline once per matching player and append selected collection
+ * outputs across every iteration. [collectCollections] maps each body-local output name
+ * to the aggregate name exposed to following effects.
+ */
+@Suppress("FunctionName")
+fun ForEachPlayerCollectingEffect(
+    players: Player,
+    effects: List<Effect>,
+    collectCollections: Map<String, String>
+): ForEachEffect = ForEachEffect(
+    IterationSpace.Players(players),
+    effects.asBody(),
+    collectCollections
+)
 
 /**
  * Run [effect] once per entity in a named pipeline collection, with

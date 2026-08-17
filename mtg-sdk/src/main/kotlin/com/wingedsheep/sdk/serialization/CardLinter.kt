@@ -435,6 +435,16 @@ object CardLinter {
                     Kind.WRITE to (Space.COLLECTION to "toGraveyard"),
                     Kind.WRITE to (Space.COLLECTION to "toTop"),
                 )
+            type == "ForEach" -> {
+                val reducers = obj["collectCollections"] as? JsonObject
+                if (reducers == null) emptyList() else reducers.flatMap { (localName, aggregateValue) ->
+                    val aggregateName = (aggregateValue as? JsonPrimitive)?.contentOrNull
+                    if (aggregateName == null) emptyList() else listOf(
+                        Kind.READ to (Space.COLLECTION to localName),
+                        Kind.WRITE to (Space.COLLECTION to aggregateName),
+                    )
+                }
+            }
             else -> emptyList()
         }
 
@@ -980,7 +990,8 @@ object CardLinter {
                 if (engineSeeded(read)) continue
                 val inScope = scope.writes.filter { matches(read, it) }
                 when {
-                    inScope.any { it.pos <= read.pos } -> {}
+                    inScope.any { it.pos <= read.pos } ||
+                        (read.nodeType == "ForEach" && read.field == "(implicit)" && inScope.isNotEmpty()) -> {}
                     inScope.isNotEmpty() -> state.findings.add(
                         CardValidationError.PipelineReadBeforeWrite(
                             cardName = state.cardName,

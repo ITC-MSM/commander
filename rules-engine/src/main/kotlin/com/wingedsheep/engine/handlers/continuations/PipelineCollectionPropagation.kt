@@ -2,6 +2,7 @@ package com.wingedsheep.engine.handlers.continuations
 
 import com.wingedsheep.engine.core.EffectContinuation
 import com.wingedsheep.engine.core.GatedActionContinuation
+import com.wingedsheep.engine.core.ForEachContinuation
 import com.wingedsheep.engine.core.ReflexiveTriggerTargetContinuation
 import com.wingedsheep.engine.core.RepeatWhileContinuation
 import com.wingedsheep.engine.handlers.EffectContext
@@ -71,6 +72,25 @@ fun exposeCollectionsToNextFrame(
         )
 
     return when (val next = state.peekContinuation()) {
+        is ForEachContinuation -> {
+            var accumulated = next.effectContext.pipeline.storedCollections
+            for ((localName, aggregateName) in next.effect.collectCollections) {
+                val iterationOutput = collections[localName].orEmpty()
+                if (iterationOutput.isNotEmpty()) {
+                    accumulated = accumulated + (
+                        aggregateName to accumulated[aggregateName].orEmpty() + iterationOutput
+                    )
+                }
+            }
+            val (_, popped) = state.popContinuation()
+            popped.pushContinuation(
+                next.copy(
+                    effectContext = next.effectContext.copy(
+                        pipeline = next.effectContext.pipeline.copy(storedCollections = accumulated)
+                    )
+                )
+            )
+        }
         is EffectContinuation -> {
             val (_, popped) = state.popContinuation()
             popped.pushContinuation(next.copy(effectContext = next.effectContext.withMergedCollections()))

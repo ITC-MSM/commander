@@ -2400,7 +2400,13 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   Every space snapshots its items before the first iteration (entities destroyed mid-loop stay in
   the list) and every space is **pause-safe**: a body that pauses for a decision resumes the
   remaining iterations via the shared `ForEachContinuation`. Multi-effect bodies lower to a
-  `CompositeEffect`.
+  `CompositeEffect`. `ForEachPlayerCollectingEffect(players, effects, collectCollections)` is the
+  player-loop facade for a following effect that needs outputs from every fresh per-player
+  sub-pipeline. Its map is `body-local collection → aggregate collection`; each iteration's output
+  is appended in player order and published only outside the loop. Accumulation is pause-safe and
+  does not leak one player's working collections into the next player's body. Syphon Mind maps each
+  opponent's `discarded_this_opponent` output into `discarded_by_opponents`, then draws from that
+  aggregate.
 - `ConditionalEffect(condition, ifTrue, ifFalse?)` / `Branch(...)` — conditional branch. Facade
   preserved for existing cards; it now **lowers to `GatedEffect(Gate.WhenCondition(condition), then =
   ifTrue, otherwise = ifFalse)`** (compiled form is `Gated`, not a distinct `Conditional` type). It is
@@ -2670,7 +2676,11 @@ one-off pipeline belongs inline in the card file via `Effects.Pipeline { }` (§5
   to decouple the payoff from the discard ("discard up to two cards, then draw three").
 - `discardRandom(count, target)` — random discards.
 - `discardHand(target)` — discard entire hand.
-- `eachOpponentDiscards(count, controllerDrawsPerDiscard?)` — Mind Twist-style.
+- `eachOpponentDiscards(count, controllerDrawsPerDiscard?)` — each opponent independently chooses
+  and discards `count` cards. When `controllerDrawsPerDiscard > 0`, the per-player pipelines collect
+  the cards that actually reached graveyards and the controller draws that many times the multiplier
+  in one draw instruction (Syphon Mind); this covers every opponent and naturally counts fewer cards
+  when an opponent's hand is short.
 - `eachPlayerDiscards(count)` — each player *including you* discards N, each from their own hand (facade `Effects.EachPlayerDiscards(count)`). Rankle's Prank's first mode, Lore Broker's second half. One `ForEachPlayer(Player.ActivePlayerFirst)` iteration per player so the choices happen in APNAP order (CR 101.4); iterations run sequentially, so a later player chooses after an earlier player's cards have already hit the graveyard, where the rules would have every player choose face down (CR 101.4a) and discard simultaneously. The mtgish emitter renders `EachPlayerAction(AnyPlayer, Discard…)` to this pattern when the discard is the player's sole action.
 - `eachPlayerDiscardsDraws(controllerBonusDraw?)` — Windfall / Wheel of Fortune.
 - `eachPlayerDrawsX(includeController?, includeOpponents?)` — Howling Mine shape.
