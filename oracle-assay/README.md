@@ -20,7 +20,18 @@ and those are the two sentences on it. The **aura band** followed: `Enchant <fil
 attached-permanent statics, which opened `staticAbilities` — the largest `CardScript` slot the
 differential could not see into, and the one every later static family lands in.
 
-The most recent work is the **entry band** — "When ~ enters …" and "As ~ enters, …", the tail
+The most recent work is the **step-trigger band** — "At the beginning of **each opponent's end
+step**, …" (**+3 whole cards**, and the "At the beginning …" decline family from 197 cards to 20).
+`dsl.Triggers.phase(step, player, binding)` is the SDK's one language for a step trigger and the
+grammar was calling its frozen constants — thirteen whole-prefix rules, one per printed sentence — so
+[`Phases`](src/main/kotlin/com/wingedsheep/assay/grammar/Phases.kt) makes it the product it already
+was: a step noun, a whose-turn layer that is `Player.possessive` rather than a table copied here, and
+the three frames English prints. Its number is the small one on purpose. A family at the *front* of
+its line measures its payload, and the ranking now names that payload — "sacrifice ~." as a bare step
+leads the table it inherited, with the triggering player as a subject and the delayed trigger behind
+it. See [the step-trigger band](#the-step-trigger-band).
+
+Before it came the **entry band** — "When ~ enters …" and "As ~ enters, …", the tail
 ranking's top two families, taken together because they are the two halves of one moment
 (**+26 whole cards**). Its two pieces are the same lesson read off two different SDK types. The
 trigger half is a *join*: Oracle writes "When this creature enters **or** dies, …" and the SDK writes
@@ -1676,6 +1687,126 @@ The genuinely open row is the one the ranking now puts first in this family: "Wh
 whenever you cast …" and "When ~ enters **and** at the beginning of your upkeep, …" — a join over two
 *different* trigger prefixes rather than two self-events, which wants a rule that slots the trigger
 vocabulary on both sides.
+
+## The step-trigger band
+
+"At the beginning of **each opponent's end step**, …" — the third row of the tail ranking, and the
+fourth time the answer has been *the SDK already factored this and the grammar was calling it with
+every argument frozen*. Whole-corpus coverage 8,102 → **8,105 cards** (+3); the baked ledger
+7,888 → **7,891 whole** — Goblin Pyromancer, Parasitic Bond and Wanderlust — with **none lost**; the
+"At the beginning …"
+decline family **197 cards / 106 sole-blocked / 200 lines → 20 / 20 / 20**, and the twenty that remain
+are a different construct entirely (`Other enchantments have "At the beginning of your upkeep, …"` —
+a *granted* ability, not a prefix). MISMATCH, AMBIGUOUS and redundant readings stay at 0; the
+differential's 15 divergences and 3,412 compared cards are unchanged, so nothing here changed what an
+already-readable card means.
+
+**The frozen arguments.** `dsl.Triggers.phase(step, player, binding)` is the SDK's one language for
+"at the beginning of a step" — its own KDoc says to "reach for this factory for any other combination
+of (step, player, binding)" — and `YourUpkeep`, `EachEndStep`, `BeginCombat` and the rest are calls to
+it with all three fixed. [`Triggers`](src/main/kotlin/com/wingedsheep/assay/grammar/Triggers.kt) was
+calling *the constants*: thirteen whole-prefix rules, one per printed sentence. So "at the beginning
+of each opponent's end step" was not a rule nobody had written, it was a **pair of words nobody had
+slotted** — the [top-of-library band](#the-top-of-library-band)'s lesson on a `TriggerSpec` instead of
+on a `Patterns` recipe.
+
+[`Phases`](src/main/kotlin/com/wingedsheep/assay/grammar/Phases.kt) is that pair of words, and
+`Triggers` now slots it exactly once, so the plain step trigger and the graveyard-zoned one ("At the
+beginning of your upkeep, **if ~ is in your graveyard**, …" — Ghastly Remains) share every spelling.
+
+**The whose-turn layer is `Player.possessive`, not a table.** Every word this position needs —
+"your", "each player's", "each opponent's", "the chosen player's", "enchanted player's" — is already
+derived by the SDK so that zone and step descriptions do not each restate it. The rule takes the
+`Player` and asks how it is spelled, which makes the grammar and the model one definition; a table
+copied in here would agree exactly until someone added a `Player`. What the layer does *not* do is
+range over the whole type: `possessive` is total ("target player's", "defending player's") and a step
+whose turn belongs to a *target* is a sentence no card writes, so the membership is an explicit list.
+**The derivation owns the spelling; the family owns the membership.**
+
+**Three frames, because English has three.** The possessive form is the only one that takes the
+whose-turn layer as a slot. `Player.Each` is spelled *both* ways and the majority flips with the step
+— "each upkeep" 100:83 over "each player's upkeep", "each end step" 98:23, and 0:13 for the draw
+step, where only the possessive form is ever printed — so it is one rule per step with its own
+`alsoSpelled` list, exactly as [the top-of-library band](#the-top-of-library-band)'s impulse durations
+are. `Player.Each` is consequently absent from the possessive slot, which is what leaves exactly one
+rule able to print each of those models. And beginning-of-combat names the *phase*: Oracle puts whose
+turn it is in a trailing clause ("combat on your turn", "combat on each opponent's turn"), so
+`Step.BEGIN_COMBAT` is absent from the step noun and reachable only there — which is what stops the
+possessive frame inventing "your combat".
+
+**The binding is the third argument, and it is the aura frame.** "At the beginning of the upkeep of
+enchanted creature's controller" is `phase(Step.UPKEEP, Player.You, ATTACHED)` — the SDK's own worked
+example, and what Unstable Mutation's and Lingering Death's goldens write. `Player.You` there is not
+an approximation: the binding is what re-scopes "you" to the attached permanent's controller, so an
+`ATTACHED` step has no second player it could name.
+
+### What the prefixes read, exactly
+
+| | occurrences | spellings |
+|---|---|---|
+| read before | 2,572 | 12 |
+| read now | **2,720** | **25** |
+| still declining | 179 | 20 |
+
+The thirteen new spellings are each opponent's end step and draw step, each player's draw step and
+first main phase, the chosen player's upkeep, enchanted player's upkeep, combat on each opponent's
+turn, the two attached frames, and four second spellings that parse without printing — "the end step"
+(pre-2015 templating for `Player.Each`; Skizzik's golden reads it as `Triggers.EachEndStep`), "each of
+your postcombat main phases", "each of your upkeeps" and "precombat main phase".
+
+The 179 that remain are four groups, and only the first is a band:
+
+| what it is | occurrences |
+|---|---|
+| **delayed triggers** — "the next end step", "your next upkeep", "that turn's end step", "combat this turn" | 132 |
+| a non-creature attachment noun — "enchanted **land**'s controller" | 9 |
+| an anaphoric controller — "its controller's upkeep", "its owner's upkeep" | 10 |
+| not real Magic, or not one step — playtest cards, Archenemy schemes, "each of your main phases" | 28 |
+
+The delayed trigger is a `CreateDelayedTriggerEffect` inside a resolving effect, so it is a *clause in
+a sentence* rather than a line prefix, and reading it as an ordinary step trigger would mean a
+permanent that sacrifices itself every turn. The attachment noun is printed shape decided by an Aura's
+`enchant` line: `normalize/` canonicalizes the attachment *adjective* ("equipped" → "enchanted") and
+fixes the noun at "creature", so widening it is a normalization change reaching every "enchanted
+creature" in the grammar. Both are write-offs with an expiry date, in the sense
+[the conditional-tapped-entry band](#the-conditional-tapped-entry-band) records.
+
+### The payload was the point, and now it is visible
+
++3 whole cards is what this band *moved*, and it is the [fronted duration](#the-fronted-duration)'s
+lesson a second time: **a family that sits at the front of its line measures its payload, not
+itself.** The tail ranking keys a line on the text it dies at, so an opening clause is where every
+unreadable sentence dies — 197 cards "blocked" were mostly cards whose payload the grammar cannot read
+either. The probe said so before the band was written: substituting a known-good prefix into all 200
+declined lines leaves **17** parsing.
+
+What changed is that those cards are now keyed on the thing that actually blocks them, and the
+ranking says what it is. The family that inherited them leads the table:
+
+```
+  cards  sole   lines  tail                       example
+  171    79     173    .                          At the beginning of the end step, sacrif
+```
+
+— "sacrifice ~." as a bare step, which the grammar reads only as "sacrifice ~ **unless you pay** …".
+`SacrificeSelfEffect` beside `SacrificeEffect` is two SDK spellings to classify before that row can be
+written, which is the shape
+[`Steps.sacrificeFiltered`](src/main/kotlin/com/wingedsheep/assay/grammar/Steps.kt) already records
+for the filtered half. Behind it are the triggering **player** as a subject ("that player draws an
+additional card" — nearly every each-player step has one, and the grammar has
+`Player.TriggeringPlayer` in eight bespoke clauses and no vocabulary), and the delayed trigger above.
+Each of those lands on all twenty-five step spellings the day it is written, which is what this band
+buys.
+
+### One finding for the engine
+
+`Player.EnchantedPlayer` on a `StepEvent` — the ten Curses that say "At the beginning of enchanted
+player's upkeep, …" — is expressible in `mtg-sdk` and is what the grammar reads. The engine's
+`TriggerMatcher.matchesPlayerForStep` handles `You`, `Each`, `EachOpponent` and `ChosenOpponent` and
+falls through to `else -> true` for everything else, so a Curse's upkeep trigger would fire on *every*
+player's upkeep. That is an engine gap rather than an SDK one, so it is reported here rather than
+routed around: no Curse has a golden today and none of them reads whole yet, so nothing is currently
+relying on it.
 
 ## The differential gate
 
