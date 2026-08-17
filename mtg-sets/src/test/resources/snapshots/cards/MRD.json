@@ -5489,6 +5489,78 @@
     }
 }
 
+// Mindslaver
+{
+    "name": "Mindslaver",
+    "manaCost": "{6}",
+    "typeLine": "Legendary Artifact",
+    "oracleText": "{4}, {T}, Sacrifice Mindslaver: You control target player during that player's next turn. (You see all cards that player could see and make all decisions for them.)",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{4}"
+                            }
+                        },
+                        "CostTap",
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "HijackNextTurn",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target player"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetPlayer",
+                        "id": "target player"
+                    }
+                ],
+                "descriptionOverride": "{4}, {T}, Sacrifice Mindslaver: You control target player during that player's next turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "206",
+        "rarity": "RARE",
+        "artist": "Glen Angus",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/8/98fb1eaa-2871-491a-a4f5-3e358778ba40.jpg?1783944513",
+        "rulings": [
+            {
+                "date": "2024-04-12",
+                "text": "The player you're controlling is still the active player during that turn."
+            },
+            {
+                "date": "2024-04-12",
+                "text": "You only control the player. You don't control any of that player's permanents, spells, or abilities."
+            },
+            {
+                "date": "2024-04-12",
+                "text": "You can use only the affected player's resources (cards, mana, and so on) to pay costs for that player; you can't use your own. Similarly, you can use the affected player's resources only to pay that player's costs; you can't spend them on your costs."
+            },
+            {
+                "date": "2024-04-12",
+                "text": "If the targeted player skips their next turn, you'll control the next turn the affected player actually takes."
+            },
+            {
+                "date": "2024-04-12",
+                "text": "Multiple player-controlling effects that affect the same player overwrite each other. The last one to be created is the one that works."
+            }
+        ]
+    },
+    "colorIdentityOverride": []
+}
+
 // Molder Slug
 {
     "name": "Molder Slug",
