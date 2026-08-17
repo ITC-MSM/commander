@@ -1,62 +1,69 @@
-# loop-msh-u24 — Loki, God of Mischief
+# loop-msh-u21 — Wonder Man, Hollywood Hero
 
-- **Primitive (1/2):** `StackResolver.emitBecomesTarget` now emits a `BecomesTargetEvent` for
-  `ChosenTarget.Player` too, stamped `targetIsPlayer = true` (new field on the engine event).
-  `rules-engine/.../mechanics/stack/StackResolver.kt`, `.../core/GameEvent.kt`.
-- **Primitive (2/2):** `EventPattern.BecomesTargetEvent` gains `includePlayerTargets` (widens *what
-  got targeted*) and `abilitiesOnly` (narrows *what did the targeting*, mirror of `spellsOnly`).
-  `mtg-sdk/.../scripting/EventPattern.kt`; matched in `TriggerMatcher.matchesBecomesTargetTrigger`.
-- **DSL:** `Triggers.BecomesTargetOfAbility(filter, byYou, includePlayers)` in
-  `mtg-sdk/.../dsl/Triggers.kt`, the mirror of the existing `BecomesTargetOfSpell`.
-- **Card:** `mtg-sets/.../definitions/msh/cards/LokiGodOfMischief.kt` — {1}{U} 2/1 legend; the new
-  trigger plus `oncePerTurn = true` and `Effects.DrawCards(1)`. No new effect type.
-- **Target-emission sites audited:** all 7 places a stack object gets a `TargetsComponent` (found by
-  `git grep "TargetsComponent.capture"`, which is the only construction path). The 4 declaration
-  sites in `StackResolver` (cast, triggered, activated, spell copy) all funnel through
-  `emitBecomesTarget` and now cover players. The 3 retarget/reselect sites
-  (`ManaPaymentContinuationResumer.resumeChangeSpellTarget`, `ContestedRetargetLogic.advance`,
-  `ReselectTargetRandomlyExecutor`) emit **nothing today for any target kind** — pre-existing, left
-  unchanged, pinned by a characterization test.
-- **Blast radius:** `EventPattern.BecomesTargetEvent` has exactly one matcher
-  (`TriggerMatcher.matchesBecomesTargetTrigger`, verified by grep across every module's `src/main`),
-  and the player-target guard sits ahead of the filter check, so no existing card can see a player
-  target. Ward is `TriggerBinding.SELF` on a permanent, so it can't match a player id either.
-- **Tests:** `rules-engine/.../triggers/BecomesTargetPlayerAndAbilityAxesTest.kt` (emission +
-  matching axes, plus the redirect characterization) and
-  `rules-engine/.../scenarios/LokiGodOfMischiefScenarioTest.kt` (the card, via Prodigal Sorcerer).
-- **Playtest scenario:** `manual-scenarios/sets/msh/loop-msh-u24-loki-god-of-mischief.json`.
-- **Docs:** `docs/card-sdk-language-reference.md` — `BecomesTarget` entry extended, new
-  `BecomesTargetOfAbility` entry, redirect gap recorded.
-- **Gate:** `just test` passed on the second run (first run failed only on the expected MSH snapshot
-  rebless plus `ConniveTargetingTest`'s 120s timeout flake, which passes standalone); the second run
-  genuinely executed `:rules-engine:test` and `:mtg-sets:test`. Details in
-  `build/pr/loop-msh-u24-body.md`.
-- **Base:** rebased onto `loop-msh-u26` (local, **not** merged upstream). u26 → u31 → u30 → u28 →
-  `origin/main`, so `main` *is* an ancestor now, but none of those commits are upstream yet; this
-  waits for them to land before it can be opened on its own. Reviewer: `git diff loop-msh-u26...HEAD`.
-  That rebase also moved the card and its scenario test into the per-era modules `origin/main` now
-  uses — `mtg-sets/2026/src/main/.../msh/cards/LokiGodOfMischief.kt` and
-  `mtg-sets/2026/tests/src/test/.../LokiGodOfMischiefScenarioTest.kt`, both byte-identical to their
-  pre-rebase contents. (`rules-engine`'s test source set does still depend on `:mtg-sets`, so the
-  test compiled where it was; the move is for the convention and the compile-sharding rationale in
-  `mtg-sets/2026/tests/build.gradle.kts`, not to fix a build error.) The mechanic-level
-  `BecomesTargetPlayerAndAbilityAxesTest.kt` stays in `rules-engine/src/test/.../triggers/`.
-- **Gate re-run owed:** the green below predates the rebase onto the rewritten `loop-msh-u26` (new
-  base, and the card/test changed modules), so it no longer covers this tree. The diff reaches
-  `mtg-sdk` (`EventPattern`, `Triggers`) and `mtgish-tooling` as well as `rules-engine` and
-  `mtg-sets`, so the re-run is the **full** `test` suite — and again after the eventual rebase onto
-  `origin/main`.
-- **Settled (was "unsure"):** the retarget/reselect paths *should* emit — this is a **known bug**, not
-  an open rules question. CR 115.9c counts the targets chosen when a spell or ability was put on the
-  stack "(as modified by effects that changed those targets)", so a redirected object *is* one of its
-  targets, and by CR 603.2e the "becomes a target" event happens the moment the redirect makes it
-  one. Ward and every other becomes-target trigger therefore miss every redirect today, for
-  permanents as much as for players. Pre-existing and orthogonal to this unit, so it stays audited
-  and pinned; the characterization test now says in as many words that it locks in
-  current-and-**wrong** behaviour and should be inverted, not deleted, when a follow-up unit fixes it.
-- **Settled (was "unsure"):** `includePlayerTargets` with a non-`Any` `targetFilter` used to fire on
-  permanents only while `description` still promised the player half. It is now a load-time
-  `require` in `EventPattern.BecomesTargetEvent`'s `init` (matching the `spellsOnly`/`abilitiesOnly`
-  one), so a future "a player or *creature*" wording fails loudly instead of half-working.
-- **Not done:** no manual playthrough in the web client, no UX pass, no e2e. `BecomesTargetEvent`
-  maps to no `ClientEvent`, and the card adds no new decision, so no client change was needed.
+**Card.** Wonder Man, Hollywood Hero (MSH #160), {3}{R}{R} 4/4 Legendary Creature — Human Performer
+Hero: flying, "Each power-up ability of permanents you control can be activated an additional time",
+and Power-up — {5}{R}{R}: two +1/+1 counters on himself.
+
+**Primitive.** No new type. The existing exhaust-waiver static was *generalized*:
+`IgnoreExhaustActivationLimit` → `ExtraOnceOnlyActivations(kind, extraActivations, condition)`, and
+its engine resolver `ExhaustActivationWaiver` → `OnceOnlyActivationAllowance`. `kind` picks exhaust
+(CR 702.177) vs power-up (CR 702.193) — they desugar to the *same* `ActivationRestriction.Once`, so
+without that axis a power-up permission would re-arm every exhaust ability on the board.
+`extraActivations` picks waive (`null`, Elvish Refueler) vs raise-by-N (`1`, Wonder Man), summed
+across the battlefield. `AbilityActivatedEverComponent` gained the per-object activation *count*
+raise-by-N needs (it was a `Set` before); `activationCount` falls back to set membership so a state
+serialized before the field still reports ≥1.
+
+**Composition with u20's lockout.** Kang's `powerUpRestrictedTurns` gate is checked in
+`ActivateAbilityHandler.validate` and each enumerator *before* any `ActivationRestriction`, so it
+still wins — a raised ceiling has nothing to raise (CR 101.2, verified locally). Two tests in
+`ExtraOnceOnlyActivationsScenarioTest` pin it: during a locked turn the re-armed ability is withheld
+by the enumerator and rejected by the handler with the lockout's message (not the spent-`Once`
+message), and after the locked turn the unspent extra activation is still available.
+
+**Gate.** `just test` — **passed**, verified from `build/test-results` (zero failures across all ten
+modules; `ExtraOnceOnlyActivationsScenarioTest` 12/12, `WonderManHollywoodHeroScenarioTest` 4/4,
+`ElvishRefuelerScenarioTest` 4/4, `ExhaustKeywordScenarioTest` 3/3, `PowerUpKeywordScenarioTest`
+13/13, `KangTheConquerorScenarioTest` 4/4). Run twice: the first stopped at the expected snapshot
+drift before `:rules-engine:test` was reached, so the green above is the post-rebless run.
+`just rebless-cards` — `MSH.json` gains only Wonder Man (zero deletions), `DFT.json` changes one
+line (Elvish Refueler's `"type"`). `just check-card-printing "Wonder Man, Hollywood Hero"` — ok,
+MSH is the only printing. `just fix-backlog` — MSH now 270/276.
+
+**Things worth a reviewer's eye**
+
+- The rename changes `@SerialName("IgnoreExhaustActivationLimit")` → `"ExtraOnceOnlyActivations"`, so
+  Elvish Refueler moves in `DFT.json` and any *persisted* game state holding the old name would no
+  longer deserialize. I judged that acceptable; say so if this repo cares about save compatibility.
+- `CastPermissionUtils.checkActivationRestriction` and its `ActivateAbilityHandler` twin now take
+  `ability: ActivatedAbility?` instead of `isExhaustAbility: Boolean` — deliberate, so a second
+  keyword doesn't need a second boolean threaded through five call sites. All five enumerator call
+  sites plus the handler pass it; the `null` default still gives the restrictive answer.
+- `ManaSolver`'s inlined `Once` branch now calls the same helper, so auto-tap agrees. `ManaSolver`'s
+  *permission* blind spot (it filters on `isManaAbility` with no lockout check) is pre-existing and
+  untouched — no printed power-up or exhaust ability is a mana ability.
+- Elvish Refueler's static-ability `description` string is unchanged for the `null` case by
+  construction, but I have not eyeballed the reblessed `DFT.json` beyond that claim.
+- `kind` defaults to `EXHAUST`. That default is arbitrary on a two-kind type; I kept it so the
+  reblessed `DFT.json` diff stays a single type-name line (kotlinx omits defaults), and both call
+  sites pass `kind` explicitly anyway. Making it a required parameter is a one-line change if you
+  think the explicitness is worth the extra snapshot churn.
+- Not done: no manual playthrough, no e2e, no UX/AI-heuristic review.
+
+## Review corrections (post-review commit)
+
+- Oracle text now reproduces Scryfall verbatim, joke and all: `only . . . once?`, not `only once.`
+  (MSH.json reblessed — one line, Wonder Man only).
+- `ability` is a **required** parameter of both `CastPermissionUtils.checkActivationRestriction` and
+  its `ActivateAbilityHandler` twin; both dead `null` fallbacks deleted. A forgetful call site is now
+  a compile error rather than a silently disabled permission.
+- `ExtraOnceOnlyActivations.kind` no longer defaults (one added line in `DFT.json`), and an `init`
+  block requires `extraActivations == null || >= 1`.
+- `extraActivationsFor` skips the *printed* statics of a face-down granter (CR 708.2/708.2a); granted
+  statics still apply. The base-vs-projected-controller and `Duration`-gate gaps are documented in
+  place as house-wide and deliberately left alone.
+- Three tests added: no end-of-turn refresh of a spent allowance, CR 400.7 fresh allowance after a
+  bounce-and-recast, and waive-beats-counted for the same `kind`. Each was mutation-checked to fail
+  alone under a targeted break.
+- `activationCount`'s `abilityIds` fallback is **kept**: live `GameState` is Redis-persisted whole,
+  so it is reached by any game in flight across the deploy. Comment now says so.

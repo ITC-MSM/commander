@@ -54,6 +54,7 @@ import com.wingedsheep.sdk.scripting.CapDamage
 import com.wingedsheep.sdk.scripting.DamageCantBePrevented
 import com.wingedsheep.sdk.scripting.DoubleDamage
 import com.wingedsheep.sdk.scripting.EventPattern
+import com.wingedsheep.sdk.scripting.HealOtherDamage
 import com.wingedsheep.sdk.scripting.ModifyDamageAmount
 import com.wingedsheep.sdk.scripting.LifeLossFloor
 import com.wingedsheep.sdk.scripting.ModifyLifeLoss
@@ -359,6 +360,15 @@ object DamageUtils {
                 )
             }
         } else {
+            // Heal-on-damage replacement (Wolverine, Fierce Fighter): "instead that damage is
+            // dealt, but all other damage already dealt to him is healed" (CR 701.69a). Applied
+            // here — after every prevention/replacement above has had its say and the damage is
+            // certain to be dealt — and *before* the marking below, so the new damage is the only
+            // damage on the creature. It deliberately sits outside the wither branch: wither only
+            // changes the form of the damage (CR 702.80a), the damage is still dealt, so the heal
+            // still fires.
+            newState = applyHealOtherDamage(newState, targetId, effectiveAmount, sourceId, isCombatDamage)
+
             // It's a creature - mark damage (or place -1/-1 counters if source has wither)
             val hasWither = sourceId != null && (
                 projected.hasKeyword(sourceId, Keyword.WITHER) ||
@@ -2210,6 +2220,88 @@ object DamageUtils {
         val sourceEntity = state.getEntity(sourceId) ?: return false
         val card = sourceEntity.components[CardComponent::class.java] as? CardComponent ?: return false
         return card.colors.contains(color)
+    }
+
+    /**
+     * Heal (CR 701.69a) all damage marked on [entityId] — "that permanent's controller removes all
+     * marked damage from that permanent". Deliberately clears the whole [DamageComponent], including
+     * the `deathtouchDamageReceived` flag: that flag only records damage *marked* by a deathtouch
+     * source, and a heal removes exactly that. Any deathtouch damage being dealt in the same event
+     * is re-stamped after the heal by the damage-marking code, so a deathtouch source still kills
+     * (CR 704.5h).
+     *
+     * -1/-1 counters from a wither/infect source are NOT marked damage (CR 120.3d) and are untouched.
+     *
+     * This is the single home of the action: regeneration (CR 701.19a), the Pyramids destruction
+     * replacement, the cleanup step (CR 514.2) and [applyHealOtherDamage] all route through it. The
+     * battlefield-exit component strip in `ZoneMovementUtils` deliberately does *not* — that is a
+     * whole-object reset (CR 400.7), not a heal.
+     */
+    fun healMarkedDamage(state: GameState, entityId: EntityId): GameState {
+        val container = state.getEntity(entityId) ?: return state
+        if (container.get<DamageComponent>() == null) return state
+        return state.updateEntity(entityId) { it.without<DamageComponent>() }
+    }
+
+    /**
+     * Apply [HealOtherDamage] — "instead that damage is dealt, but all other damage already dealt to
+     * it is healed" (Wolverine, Fierce Fighter). The damage amount is untouched; the replacement's
+     * only job is to wipe the damage marked *before* this event, so the recipient never accumulates
+     * damage across separate damage events.
+     *
+     * **Caller contract:** call this immediately before the damage is marked, and at most once per
+     * damage *event* — not once per instance. `CombatDamageManager.applyCombatDamage` documents why
+     * and enforces it with a per-step set; the noncombat path deals one instance at a time and needs
+     * no bookkeeping.
+     *
+     * Players, planeswalkers and battles never have marked damage, so this is a no-op on them.
+     *
+     * @return the state with marked damage healed if a matching replacement exists, else [state]
+     */
+    fun applyHealOtherDamage(
+        state: GameState,
+        targetId: EntityId,
+        amount: Int,
+        sourceId: EntityId?,
+        isCombatDamage: Boolean
+    ): GameState {
+        if (amount <= 0) return state
+        // Fast path: nothing marked, nothing to heal — skip the battlefield scan. Not a correctness
+        // guard; `healMarkedDamage` re-checks before touching the entity.
+        if (state.getEntity(targetId)?.get<DamageComponent>() == null) return state
+        val projected = state.projectedState
+
+        for (entityId in state.getBattlefield()) {
+            val container = state.getEntity(entityId) ?: continue
+            val replacementComponent = container.get<ReplacementEffectSourceComponent>() ?: continue
+            val hostControllerId = replacementHostController(state, entityId) ?: continue
+
+            for (effect in replacementComponent.replacementEffects) {
+                if (effect !is HealOtherDamage) continue
+
+                val damageEvent = effect.appliesTo as? EventPattern.DamageEvent ?: continue
+
+                val damageTypeMatches = when (damageEvent.damageType) {
+                    is DamageType.Any -> true
+                    is DamageType.Combat -> isCombatDamage
+                    is DamageType.NonCombat -> !isCombatDamage
+                }
+                if (!damageTypeMatches) continue
+                if (!damageEvent.amount.matches(amount)) continue
+
+                if (!damageRecipientMatches(
+                        state, projected, damageEvent.recipient, targetId, entityId, hostControllerId
+                    )
+                ) continue
+                if (!damageSourceMatches(
+                        state, projected, damageEvent.source, sourceId, entityId, hostControllerId, targetId
+                    )
+                ) continue
+
+                return healMarkedDamage(state, targetId)
+            }
+        }
+        return state
     }
 
     /**

@@ -1,6 +1,7 @@
 package com.wingedsheep.engine.core
 
 import com.wingedsheep.engine.handlers.DecisionHandler
+import com.wingedsheep.engine.handlers.effects.DamageUtils
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.battlefield.AbilityActivatedThisTurnComponent
@@ -1030,7 +1031,7 @@ class CleanupPhaseManager(
             }.keys
             for (entityId in permanentsWithDamage) {
                 if (damagePersistsThroughCleanup(newState, cardRegistry, entityId)) continue
-                newState = newState.updateEntity(entityId) { it.without<DamageComponent>() }
+                newState = DamageUtils.healMarkedDamage(newState, entityId)
             }
 
             // Remove MustAttackThisTurnComponent from all creatures (Walking Desecration effect)

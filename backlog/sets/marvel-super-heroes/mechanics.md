@@ -68,15 +68,16 @@ Non-blocking notes for those: Stature's "can't be blocked if her power is 1 or l
 switch off; Quicksilver's opening-hand clause is `mayBeginGameOnBattlefield()`; Thanos's odd/even
 sweep is `.manaValueIsOdd()` / `.manaValueIsEven()` + a modal.
 
-### Still blocked — 4 cards, each needing one more thing ⛔
+### Still blocked — 1 card ⛔ (the other three shipped; kept below for the design notes)
 
-- **Wonder Man, Hollywood Hero** [160] — "Each power-up ability of permanents you control can be
-  activated an additional time" must *raise* the limit. `ActivationRestriction.Once` is a fixed
-  `data object`; needs either `ActivationRestriction.MaxPerGame(count: DynamicAmount)` or a
-  `GrantExtraPowerUpActivations(filter, amount)` static consulted where `Once` / `MaxPerTurn` are
-  enforced. `IgnoreExhaustActivationLimit` / `ExhaustActivationWaiver` is the structural precedent,
-  but it *waives* the limit rather than raising it by one.
-- **Kang the Conqueror** [62] — "During that turn, power-up abilities can't be activated" needs a
+- ~~**Wonder Man, Hollywood Hero** [160]~~ — **SHIPPED.** Built by generalizing the structural
+  precedent rather than adding a second primitive next to it: `IgnoreExhaustActivationLimit` /
+  `ExhaustActivationWaiver` became `ExtraOnceOnlyActivations` / `OnceOnlyActivationAllowance`, with
+  a `kind` axis (exhaust CR 702.177 vs power-up CR 702.193, which desugar to the same
+  `ActivationRestriction.Once`) and an `extraActivations` axis (`null` = waive, N = raise by N,
+  summed across the battlefield). `AbilityActivatedEverComponent` gained the per-object activation
+  *count* the raise-by-N shape needs. Elvish Refueler is the `null` case, Wonder Man the `1` case.
+- ~~**Kang the Conqueror** [62]~~ — **SHIPPED.** "During that turn, power-up abilities can't be activated" needs a
   turn-scoped flag on `GameState`, read where granted `PreventActivatedAbilities` is read
   (`CastPermissionUtils.isActivationPrevented`) and gated on `ActivatedAbility.isPowerUp`, which now
   exists. The extra turn itself is fine (`Effects.TakeExtraTurn`).
@@ -90,7 +91,7 @@ sweep is `.manaValueIsOdd()` / `.manaValueIsEven()` + a modal.
   TransformEffect))` in a `ConditionalEffect` over it. Note the transform must stay *post-entry* —
   the printed order puts the card onto the battlefield first, so its ETB triggers fire on the front
   face and only then does it flip, which is not the same as entering transformed.
-- **Loki Laufeyson** [143] — the power-up half is done; the *other* ability needs a delayed "when you
+- ~~**Loki Laufeyson** [143]~~ — **SHIPPED.** The power-up half is done; the *other* ability needs a delayed "when you
   next cast" trigger whose spell filter is source-relative
   (`CardPredicate.ManaValueAtMostDynamic(DynamicAmounts.sourcePower())` — the predicate exists, but
   nothing evaluates a source-relative dynamic filter inside delayed-trigger matching).
@@ -426,12 +427,20 @@ counter-placement chokepoint and cleared by `TurnManager.startTurn`, plus
 
 ### Replacing a keyword action (connive) — **Leader, Super-Genius** [64]
 "If a creature you control would connive, instead you draw a card, then that creature connives."
-Connive is a *composed effect* (`Patterns.Hand.connive` / `Effects.Connive`), not an event the
-replacement system can see; `ReplacementEffect` has no keyword-action variants at all (its nearest
-neighbours are `ModifyDrawAmount`, `ModifyMillAmount`, `ModifyExplore`). Needed: either a
-`ConniveEvent` `EventPattern` + `ReplacementEffect.ModifyConnive(prefixEffect)` read by the connive
-executor, or a `ConniveModifier` static consulted at the same point. The card's second ability is fine
-today.
+Connive *was* a bare composed effect (`Patterns.Hand.connive` / `Effects.Connive`), not an action the
+replacement system could see.
+
+**Implemented (u18).** `HandPatterns.connive` now wraps the unchanged pipeline in a
+`ConniveEffect(subject, body)`, which gives the keyword action a name and a subject; the new
+`EventPattern.ConnivedEvent` + engine `PermanentConnivedEvent` make it replaceable and observable
+(`Triggers.creatureConnives`). The card is that replacement plus an ordinary `Effects.Connive` on a
+cast-time target.
+
+One correction to the earlier triage: the replacement is **not** a new `ModifyConnive` type. The
+explore-only `ModifyExplore` was generalized into `ModifyKeywordAction(prefixEffect, appliesTo)` —
+`appliesTo` already carried *which* action and `prefixEffect` *what else happens*, so the two printed
+cards (Twists and Turns, explore; Leader, connive) differ only in data. `ModifyExplore` no longer
+exists.
 
 ### "Becomes the target of an ability you control" — **Loki, God of Mischief** [65]
 Two independent gaps in `EventPattern.BecomesTargetEvent`: (1) **player targets are never emitted** —

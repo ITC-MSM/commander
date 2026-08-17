@@ -46,9 +46,15 @@ class CommandZoneAbilityEnumerator : ActionEnumerator {
                 // action is never offered at instant speed (the handler would reject it anyway).
                 if (ability.timing == TimingRule.SorcerySpeed && !context.canPlaySorcerySpeed) continue
 
+                // Kang the Conqueror's turn-scoped power-up lockout is zone-independent, and so is
+                // the matching check in `ActivateAbilityHandler.validate` — which sits before the
+                // zone split and so would reject a command-zone power-up the same way. Guard here
+                // too, or the action would be offered and then refused.
+                if (context.castPermissionUtils.isPowerUpActivationRestricted(state, ability)) continue
+
                 // Activation restrictions (e.g. once each turn).
                 if (ability.restrictions.any {
-                        !context.castPermissionUtils.checkActivationRestriction(state, playerId, it, entityId, ability.id, ability.isExhaust)
+                        !context.castPermissionUtils.checkActivationRestriction(state, playerId, it, entityId, ability)
                     }
                 ) continue
 

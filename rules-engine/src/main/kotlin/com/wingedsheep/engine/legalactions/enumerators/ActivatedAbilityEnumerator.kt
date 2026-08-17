@@ -125,6 +125,10 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                     !(ability.isEquipAbility && context.castPermissionUtils.canEquipAtInstantSpeed(state, playerId))
                 ) continue
 
+                // "During that turn, power-up abilities can't be activated" (Kang the Conqueror) —
+                // a turn-scoped, all-players lockout recorded on the turn, not on a permanent.
+                if (context.castPermissionUtils.isPowerUpActivationRestricted(state, ability)) continue
+
                 // Planeswalker loyalty abilities: sorcery speed + once per turn + loyalty cost check
                 if (ability.isPlaneswalkerAbility) {
                     if (context.cantActivateLoyaltyAbilities) continue
@@ -672,7 +676,7 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                 // Check activation restrictions
                 var restrictionsMet = true
                 for (restriction in ability.restrictions) {
-                    if (!context.castPermissionUtils.checkActivationRestriction(state, playerId, restriction, entityId, ability.id, ability.isExhaust)) {
+                    if (!context.castPermissionUtils.checkActivationRestriction(state, playerId, restriction, entityId, ability)) {
                         restrictionsMet = false
                         break
                     }
@@ -1073,6 +1077,10 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
             val textReplacement = container.get<TextReplacementComponent>()
 
             for (ability in anyPlayerAbilities) {
+                // Kang the Conqueror's turn-scoped power-up lockout applies to every player, so it
+                // also covers an "any player may activate" power-up on an opponent's permanent.
+                if (context.castPermissionUtils.isPowerUpActivationRestricted(state, ability)) continue
+
                 val effectiveCost = if (textReplacement != null) {
                     ability.cost.applyTextReplacement(textReplacement)
                 } else {
@@ -1096,7 +1104,7 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                 // Check activation restrictions
                 var restrictionsMet = true
                 for (restriction in ability.restrictions) {
-                    if (!context.castPermissionUtils.checkActivationRestriction(state, playerId, restriction, entityId, ability.id, ability.isExhaust)) {
+                    if (!context.castPermissionUtils.checkActivationRestriction(state, playerId, restriction, entityId, ability)) {
                         restrictionsMet = false
                         break
                     }

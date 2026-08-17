@@ -5110,7 +5110,8 @@
         ],
         "staticAbilities": [
             {
-                "type": "IgnoreExhaustActivationLimit",
+                "type": "ExtraOnceOnlyActivations",
+                "kind": "EXHAUST",
                 "condition": {
                     "type": "All",
                     "conditions": [

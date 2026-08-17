@@ -55,7 +55,7 @@ class EffectExecutorRegistry(
     )
     private val playerExecutors = PlayerExecutors(decisionHandler, cardRegistry)
     private val chainExecutors = ChainExecutors()
-    // Held as a field so its recursion (for ModifyExplore's Composite delegation) can be wired
+    // Held as a field so its recursion (for ModifyKeywordAction's Composite delegation) can be wired
     // before the module is registered, mirroring libraryExecutors.
     private val permanentExecutors = PermanentExecutors(decisionHandler, amountEvaluator, cardRegistry)
 
@@ -69,7 +69,7 @@ class EffectExecutorRegistry(
         // Register all effect executors by module
         registerModule(LifeExecutors(amountEvaluator, cardRegistry))
         registerModule(DamageExecutors(amountEvaluator, decisionHandler))
-        // Wire the recursion (for ModifyExplore's Composite delegation) before registering, so the
+        // Wire the recursion (for ModifyKeywordAction's Composite delegation) before registering, so the
         // ref is read lazily at explore time (order is not load-bearing — see libraryExecutors).
         permanentExecutors.initializeRecursion(::recurse)
         registerModule(permanentExecutors)

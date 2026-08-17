@@ -11,7 +11,7 @@ import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.EventPattern
 import com.wingedsheep.sdk.scripting.GameObjectFilter
-import com.wingedsheep.sdk.scripting.ModifyExplore
+import com.wingedsheep.sdk.scripting.ModifyKeywordAction
 import com.wingedsheep.sdk.scripting.TimingRule
 import com.wingedsheep.sdk.scripting.effects.CardOrder
 import com.wingedsheep.sdk.scripting.effects.TransformEffect
@@ -37,7 +37,7 @@ import com.wingedsheep.sdk.scripting.values.DynamicAmount
  *   random order.
  *
  * Implementation:
- *  - The explore-modifying clause is a [ModifyExplore] replacement (CR 614): "if a creature you
+ *  - The explore-modifying clause is a [ModifyKeywordAction] replacement (CR 614): "if a creature you
  *    control would explore, first [Effects.Scry] 1, then it explores." `ExploreEffectExecutor`
  *    consults it and re-issues the explore as a Composite so the scry's top/bottom decision
  *    resolves before the explore.
@@ -61,7 +61,7 @@ private val TwistsAndTurnsFront = card("Twists and Turns") {
 
     // If a creature you control would explore, instead you scry 1, then that creature explores.
     replacementEffect(
-        ModifyExplore(
+        ModifyKeywordAction(
             prefixEffect = Effects.Scry(1),
             appliesTo = EventPattern.ExploredEvent(filter = GameObjectFilter.Creature.youControl()),
         )

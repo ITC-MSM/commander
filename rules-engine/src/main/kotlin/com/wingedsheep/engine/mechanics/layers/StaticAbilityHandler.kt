@@ -1007,7 +1007,7 @@ class StaticAbilityHandler(
             is SpendAnyManaTypeForActivatedAbilities,
             is PreventActivatedAbilities,
             is PlayersCantActivateAbilities,
-            is com.wingedsheep.sdk.scripting.IgnoreExhaustActivationLimit,
+            is com.wingedsheep.sdk.scripting.ExtraOnceOnlyActivations,
             is PreventCycling,
 
             // Trigger detection (TriggerDetector.suppressEntersTriggers) — not a continuous
@@ -1126,6 +1126,7 @@ class StaticAbilityHandler(
             is com.wingedsheep.sdk.scripting.DamageCantBePrevented,
             is ReplaceDamageWithCounters,
             is com.wingedsheep.sdk.scripting.ReplaceDamageWithMill,
+            is com.wingedsheep.sdk.scripting.HealOtherDamage,
             // Life gain/loss:
             is PreventLifeGain,
             is com.wingedsheep.sdk.scripting.ModifyLifeGain,
@@ -1156,8 +1157,9 @@ class StaticAbilityHandler(
             is com.wingedsheep.sdk.scripting.RedirectZoneChange,
             is com.wingedsheep.sdk.scripting.RedirectZoneChangeWithEffect,
             is com.wingedsheep.sdk.scripting.PreventExtraTurns,
-            // Explore modification (consulted from the battlefield at explore time — Twists and Turns):
-            is com.wingedsheep.sdk.scripting.ModifyExplore,
+            // Keyword-action modification, consulted from the battlefield when the action happens:
+            // explore (Twists and Turns) and connive (Leader, Super-Genius).
+            is com.wingedsheep.sdk.scripting.ModifyKeywordAction,
             // Token creation:
             is com.wingedsheep.sdk.scripting.ReplaceTokenCreationWithAttachedCopy,
             is com.wingedsheep.sdk.scripting.MultiplyTokenCreation,

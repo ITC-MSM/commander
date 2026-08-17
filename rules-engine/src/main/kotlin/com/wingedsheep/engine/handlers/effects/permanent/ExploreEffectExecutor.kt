@@ -2,23 +2,19 @@ package com.wingedsheep.engine.handlers.effects.permanent
 
 import com.wingedsheep.engine.core.*
 import com.wingedsheep.engine.handlers.EffectContext
-import com.wingedsheep.engine.handlers.PredicateContext
-import com.wingedsheep.engine.handlers.PredicateEvaluator
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
+import com.wingedsheep.engine.handlers.effects.KeywordActionReplacements
+import com.wingedsheep.engine.handlers.effects.ReplaceableKeywordAction
 import com.wingedsheep.engine.handlers.effects.ReplacementEffectUtils
 import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.handlers.effects.permanent.counters.counterTypeToString
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.battlefield.CountersComponent
-import com.wingedsheep.engine.state.components.battlefield.ReplacementEffectSourceComponent
-import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.RevealedToComponent
 import com.wingedsheep.sdk.core.CounterType
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
-import com.wingedsheep.sdk.scripting.EventPattern
-import com.wingedsheep.sdk.scripting.ModifyExplore
 import com.wingedsheep.sdk.scripting.effects.CompositeEffect
 import com.wingedsheep.sdk.scripting.effects.Effect
 import com.wingedsheep.sdk.scripting.effects.EmitExploredEventEffect
@@ -38,9 +34,10 @@ import kotlin.reflect.KClass
  *
  * The exploring player is the effect controller. The exploring creature is [ExploreEffect.target].
  *
- * Before the explore proper, applicable [ModifyExplore] replacements (CR 614) on the battlefield
- * are consulted — like [com.wingedsheep.sdk.scripting.ReplaceDrawWithEffect], explore isn't a
- * generic replaceable event, so it's checked here directly. A match re-issues the explore as
+ * Before the explore proper, applicable [com.wingedsheep.sdk.scripting.ModifyKeywordAction]
+ * replacements (CR 614) on the battlefield are consulted via [KeywordActionReplacements] — like
+ * [com.wingedsheep.sdk.scripting.ReplaceDrawWithEffect], explore isn't a generic replaceable
+ * event, so it's checked here directly. A match re-issues the explore as
  * `Composite(prefixEffect, ExploreEffect(sameCreature, replacementsApplied = true))` through the
  * registry [recurse] runner, reusing the composite executor's pause-sequencing (a Scry prefix
  * finishes its top/bottom decision before the explore runs).
@@ -54,8 +51,6 @@ class ExploreEffectExecutor(
 
     override val effectType: KClass<ExploreEffect> = ExploreEffect::class
 
-    private val predicateEvaluator = PredicateEvaluator()
-
     override fun execute(
         state: GameState,
         effect: ExploreEffect,
@@ -67,12 +62,12 @@ class ExploreEffectExecutor(
         val explorerId = context.controllerId
 
         // CR 614: apply explore-modifying replacements before the explore proper, unless this is
-        // the post-replacement re-issue (replacementsApplied). Collect the prefix effects from
-        // every ModifyExplore on the battlefield whose filter matches this exploring creature
-        // (evaluated with the replacement source's controller as "you"), then run them as a
+        // the post-replacement re-issue (replacementsApplied). The collected prefixes run as a
         // Composite ahead of the guarded explore so a pausing prefix (Scry) sequences correctly.
         if (!effect.replacementsApplied) {
-            val prefixEffects = collectExploreReplacementPrefixes(state, exploringCreatureId)
+            val prefixEffects = KeywordActionReplacements.collectPrefixes(
+                state, exploringCreatureId, ReplaceableKeywordAction.EXPLORE
+            )
             if (prefixEffects.isNotEmpty()) {
                 val composite = CompositeEffect(
                     prefixEffects + ExploreEffect(
@@ -194,43 +189,6 @@ class ExploreEffectExecutor(
                 )
             )
         }
-    }
-
-    /**
-     * The ordered prefix effects of every [ModifyExplore] on the battlefield that applies to
-     * [exploringCreatureId] exploring: the replacement's `appliesTo` filter is matched against the
-     * creature using the replacement source's controller as "you" (so "a creature you control
-     * would explore" only fires for that player's creatures). Battlefield order is used for the
-     * multi-source case — a faithful APNAP ordering (CR 616) would let the exploring player order
-     * simultaneous applicable replacements, but no printed card stacks explore modifiers today.
-     */
-    private fun collectExploreReplacementPrefixes(
-        state: GameState,
-        exploringCreatureId: EntityId
-    ): List<Effect> {
-        val prefixes = mutableListOf<Effect>()
-        for (permanentId in state.getBattlefield()) {
-            val container = state.getEntity(permanentId) ?: continue
-            val replacementComponent = container.get<ReplacementEffectSourceComponent>() ?: continue
-            val sourceControllerId = container.get<ControllerComponent>()?.playerId ?: continue
-            for (replacement in replacementComponent.replacementEffects) {
-                if (replacement !is ModifyExplore) continue
-                val pattern = replacement.appliesTo as? EventPattern.ExploredEvent ?: continue
-                val filter = pattern.filter
-                if (filter != null) {
-                    val matches = predicateEvaluator.matches(
-                        state,
-                        state.projectedState,
-                        exploringCreatureId,
-                        filter,
-                        PredicateContext(controllerId = sourceControllerId, sourceId = permanentId)
-                    )
-                    if (!matches) continue
-                }
-                prefixes.add(replacement.prefixEffect)
-            }
-        }
-        return prefixes
     }
 
     private fun addPlusOneCounter(

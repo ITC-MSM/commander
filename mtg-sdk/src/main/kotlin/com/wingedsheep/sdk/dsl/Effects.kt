@@ -421,13 +421,19 @@ object Effects {
     /**
      * Take an extra turn after this one (Time Walk, Lost Isle Calling). When [loseAtEndStep]
      * is true, the player loses the game at the beginning of that turn's end step (Last Chance,
-     * Final Fortune). Prevented by `PreventExtraTurns` (Ugin's Nexus).
+     * Final Fortune). When [powerUpAbilitiesCantBeActivated] is true, no player may activate a
+     * power-up ability during that turn (Kang the Conqueror). Both riders are scoped to the extra
+     * turn this effect creates, so neither applies when `PreventExtraTurns` (Ugin's Nexus) stops
+     * the extra turn from happening at all.
      */
     fun TakeExtraTurn(
         target: EffectTarget = EffectTarget.Controller,
-        loseAtEndStep: Boolean = false
+        loseAtEndStep: Boolean = false,
+        powerUpAbilitiesCantBeActivated: Boolean = false
     ): Effect =
-        com.wingedsheep.sdk.scripting.effects.TakeExtraTurnEffect(loseAtEndStep, target)
+        com.wingedsheep.sdk.scripting.effects.TakeExtraTurnEffect(
+            loseAtEndStep, target, powerUpAbilitiesCantBeActivated
+        )
 
     /**
      * Force a player to exile from multiple zones (battlefield, hand, graveyard).
@@ -624,7 +630,11 @@ object Effects {
      * Connive (CR 701.50): draw a card, then discard a card. If the discarded card
      * is a nonland, put a +1/+1 counter on [target].
      *
-     * Composed entirely from atomic pipeline primitives — see [HandPatterns.connive].
+     * The keyword action proper: a
+     * [com.wingedsheep.sdk.scripting.effects.ConniveEffect] naming [target] as the conniving
+     * permanent, wrapped around the atomic pipeline that carries it out — so the action can be
+     * replaced ("if a creature you control would connive, instead …") and observed ("whenever a
+     * creature you control connives"). See [HandPatterns.connive].
      */
     fun Connive(target: EffectTarget = EffectTarget.Self): Effect =
         HandPatterns.connive(target)

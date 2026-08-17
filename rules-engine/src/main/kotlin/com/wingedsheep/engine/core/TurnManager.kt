@@ -135,6 +135,10 @@ class TurnManager(
             turnSpellCostReductions = emptyList(),
             spellWarpedThisTurn = false,
             damageCantBePreventedThisTurn = false,
+            // Kang the Conqueror's "during that turn, power-up abilities can't be activated" is
+            // stamped against a future turn number, so it is *not* cleared at the boundary — only
+            // stamps for turns that have already passed are dropped.
+            powerUpRestrictedTurns = state.powerUpRestrictedTurns.filter { it >= newTurnNumber }.toSet(),
             nonlandPermanentLeftBattlefieldThisTurn = false,
             permanentsSacrificedThisTurn = 0,
             playersWhoCommittedCrimeThisTurn = emptySet(),

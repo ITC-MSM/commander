@@ -3,7 +3,7 @@
 **Set Size:** 276 booster cards (collector numbers 1-276; basic lands 277-296 and showcase
 variants 297+ are excluded)
 **Release Date:** June 26, 2026
-**Implemented:** 266 / 276
+**Implemented:** 270 / 276
 - [x] Agent 13, Sharon Carter
 - [x] Agent Maria Hill
 - [x] Agent of Atlas
@@ -65,9 +65,9 @@ variants 297+ are excluded)
 - [x] Iron Lad, Diverging Destiny
 - [x] Ironheart, Clever Champion
 - [x] Justice, Vance Astrovik
-- [ ] Kang the Conqueror
+- [x] Kang the Conqueror
 - [x] Kid Loki
-- [ ] Leader, Super-Genius
+- [x] Leader, Super-Genius
 - [x] Loki, God of Mischief
 - [x] Mister Fantastic, Reed Richards
 - [x] Ms. Marvel, Kamala Khan
@@ -163,7 +163,7 @@ variants 297+ are excluded)
 - [x] Truck Toss
 - [x] Vision of Love
 - [x] Volcanic Villain
-- [ ] Wonder Man, Hollywood Hero
+- [x] Wonder Man, Hollywood Hero
 - [x] Ant-Man's Army
 - [x] Call Damage Control
 - [x] Claim the Kingdom
@@ -243,7 +243,7 @@ variants 297+ are excluded)
 - [x] Vision Quest
 - [x] War Machine, Legacy of Iron
 - [x] Winter Soldier, Icy Assassin
-- [ ] Wolverine, Fierce Fighter
+- [x] Wolverine, Fierce Fighter
 - [x] Worlds Within Worlds
 - [x] A.I.M. Synthoids
 - [x] Arc Reactor

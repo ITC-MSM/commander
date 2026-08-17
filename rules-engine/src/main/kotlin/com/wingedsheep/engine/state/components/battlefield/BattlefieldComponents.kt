@@ -601,12 +601,40 @@ data class AbilityActivatedThisTurnComponent(
  */
 @Serializable
 data class AbilityActivatedEverComponent(
-    val abilityIds: Set<AbilityId> = emptySet()
+    val abilityIds: Set<AbilityId> = emptySet(),
+    /**
+     * How many times each ability has been activated over this object's lifetime. A plain `Once`
+     * restriction only needs the yes/no [abilityIds] answer, but a permission that *raises* the
+     * limit rather than waiving it —
+     * [com.wingedsheep.sdk.scripting.ExtraOnceOnlyActivations] with a non-null
+     * `extraActivations`, i.e. Wonder Man's "can be activated an additional time" — has to compare
+     * against a count. The this-turn sibling above carries the same pair for the same reason.
+     */
+    val activationCounts: Map<AbilityId, Int> = emptyMap()
 ) : Component {
     fun withActivated(abilityId: AbilityId): AbilityActivatedEverComponent =
-        copy(abilityIds = abilityIds + abilityId)
+        copy(
+            abilityIds = abilityIds + abilityId,
+            activationCounts = activationCounts + (abilityId to activationCount(abilityId) + 1)
+        )
 
     fun hasActivated(abilityId: AbilityId): Boolean = abilityId in abilityIds
+
+    /**
+     * Number of times [abilityId] has been activated over this object's lifetime. Falls back to
+     * [abilityIds] membership so a state serialized before [activationCounts] existed still reports
+     * at least one activation for an ability it recorded.
+     *
+     * That fallback is load-bearing, not a dead branch: live `GameState` is persisted whole (see
+     * `RedisGameRepository` / `PersistentGameSession.gameState`), so a game in flight across the
+     * deploy that added [activationCounts] is restored with the map empty and only [abilityIds]
+     * populated. Without the fallback every already-spent once-only ability in that game would
+     * re-arm itself. The this-turn sibling above needs no such fallback because its memory is
+     * cleared at end of turn, so a restored old state self-heals within one turn — which is why
+     * only this component carries it.
+     */
+    fun activationCount(abilityId: AbilityId): Int =
+        activationCounts[abilityId] ?: if (abilityId in abilityIds) 1 else 0
 }
 
 /**

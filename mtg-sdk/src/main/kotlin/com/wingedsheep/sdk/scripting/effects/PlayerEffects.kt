@@ -187,22 +187,39 @@ data class AddAdditionalEndStepsEffect(
 }
 
 /**
- * Take an extra turn after this one, with a consequence at end of turn.
- * Used for Last Chance: "Take an extra turn after this one. At the beginning of that turn's end step, you lose the game."
+ * Take an extra turn after this one, optionally with a rider that applies **during that turn**.
+ *
+ * The riders live on this effect rather than as separate composable effects because "that turn" is
+ * the extra turn *this* effect creates: if the extra turn is never granted (a `PreventExtraTurns`
+ * source such as Ugin's Nexus is out), the rider must not apply either. A sibling effect in a
+ * `Composite` *could* re-check that condition, but only by duplicating a precondition that the
+ * extra-turn executor legitimately owns — and it would silently drift the moment this effect gains
+ * another way to fail (a targeted variant whose target is gone, say). Keeping "did a turn actually
+ * get created" in one place is the reason.
  *
  * @param loseAtEndStep If true, you lose the game at the beginning of that turn's end step
+ *   (Last Chance, Final Fortune).
  * @param target The player who takes the extra turn. Defaults to the controller.
+ * @param powerUpAbilitiesCantBeActivated If true, no player may activate a power-up ability
+ *   (CR 702.193) during the extra turn — Kang the Conqueror's "Take an extra turn after this one.
+ *   During that turn, power-up abilities can't be activated." The prohibition is global (it is not
+ *   scoped to the turn's controller) and outlasts the source leaving the battlefield, so the engine
+ *   records it against the turn rather than against a permanent or a player.
  */
 @SerialName("TakeExtraTurn")
 @Serializable
 data class TakeExtraTurnEffect(
     val loseAtEndStep: Boolean = false,
-    val target: EffectTarget = EffectTarget.Controller
+    val target: EffectTarget = EffectTarget.Controller,
+    val powerUpAbilitiesCantBeActivated: Boolean = false
 ) : Effect {
     override val description: String = buildString {
         append("Take an extra turn after this one")
         if (loseAtEndStep) {
             append(". At the beginning of that turn's end step, you lose the game")
+        }
+        if (powerUpAbilitiesCantBeActivated) {
+            append(". During that turn, power-up abilities can't be activated")
         }
     }
 }

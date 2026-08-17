@@ -113,8 +113,9 @@ class PermanentExecutors(
 ) : ExecutorModule {
     private val staticAbilityHandler = StaticAbilityHandler(cardRegistry)
 
-    // Late-bound registry recursion, so ExploreEffectExecutor can re-issue an explore as a
-    // Composite(prefixEffect, explore) when a ModifyExplore replacement (CR 614) applies. Mirrors
+    // Late-bound registry recursion, so ExploreEffectExecutor / ConniveEffectExecutor can re-issue
+    // their action as a Composite(prefixEffect, action) when a ModifyKeywordAction replacement
+    // (CR 614) applies, and so the connive pipeline itself can be run. Mirrors
     // LibraryExecutors' recursion wiring; read through the ref at execution time so constructing
     // this module before initialization (as some unit tests do) never trips over an unset property.
     private val recursionRef =
@@ -123,11 +124,11 @@ class PermanentExecutors(
     private val recursion: (com.wingedsheep.engine.state.GameState, com.wingedsheep.sdk.scripting.effects.Effect, com.wingedsheep.engine.handlers.EffectContext) -> com.wingedsheep.engine.core.EffectResult =
         { state, effect, context ->
             val executor = recursionRef.get()
-                ?: error("PermanentExecutors.initializeRecursion(...) was not called before an explore replacement ran")
+                ?: error("PermanentExecutors.initializeRecursion(...) was not called before a keyword-action executor ran")
             executor(state, effect, context)
         }
 
-    /** Late-bind the registry's recursive executor so ExploreEffectExecutor can delegate. */
+    /** Late-bind the registry's recursive executor so the keyword-action executors can delegate. */
     fun initializeRecursion(executor: (com.wingedsheep.engine.state.GameState, com.wingedsheep.sdk.scripting.effects.Effect, com.wingedsheep.engine.handlers.EffectContext) -> com.wingedsheep.engine.core.EffectResult) {
         recursionRef.set(executor)
     }
@@ -220,6 +221,10 @@ class PermanentExecutors(
         MarkEnduringReturnExecutor(),
         ExploreEffectExecutor(recursion),
         EmitExploredEventExecutor(),
+        // connive (CR 701.50) — same shape as explore: the executor consults
+        // ModifyKeywordAction replacements and delegates the pipeline through [recursion]
+        ConniveEffectExecutor(recursion),
+        EmitConnivedEventExecutor(),
         // tapping
         TapUntapExecutor(),
         TapUntapCollectionExecutor(),

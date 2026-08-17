@@ -266,8 +266,24 @@ internal class CombatDamageManager(
         events.addAll(shieldResult.third)
 
         // Phase 3: Apply
+        //
+        // All combat damage in a step is dealt simultaneously (CR 510.2), so a heal-on-damage
+        // replacement (Wolverine, Fierce Fighter — "all *other* damage already dealt to him is
+        // healed") must fire at most once for the whole batch: a creature blocked by two attackers
+        // heals what was marked before the step and then keeps *both* attackers' damage. The set
+        // records every recipient whose heal replacement has already been *evaluated* this step —
+        // not only the ones that actually healed. That distinction is load-bearing: recording only
+        // real heals would let a source-filtered heal fire on a later assignment in the same step
+        // and wipe an earlier assignment's damage, breaking CR 510.2 simultaneity. The cost is that
+        // for a *filtered* heal, applicability is decided from the first assignment that reaches the
+        // recipient rather than from the whole simultaneous event; no printed card exercises that
+        // today (Wolverine is Self / any source / any amount).
+        //
+        // The set is deliberately step-scoped: the first-strike and regular combat damage steps are
+        // separate events that each call `applyCombatDamage`, so each heals in turn.
+        val healProcessedTargets = mutableSetOf<EntityId>()
         for (assignment in finalAssignments) {
-            newState = applySingleAssignment(newState, assignment, events)
+            newState = applySingleAssignment(newState, assignment, events, healProcessedTargets)
         }
 
         // Consume one-shot redirect effects for creatures that dealt damage
@@ -812,7 +828,9 @@ internal class CombatDamageManager(
     private fun applySingleAssignment(
         state: GameState,
         assignment: CombatDamageAssignment,
-        events: MutableList<GameEvent>
+        events: MutableList<GameEvent>,
+        /** Recipients whose heal-on-damage replacement was already evaluated this step — see [applyCombatDamage]. */
+        healProcessedTargets: MutableSet<EntityId>
     ): GameState {
         if (assignment.amount <= 0) return state
 
@@ -828,7 +846,10 @@ internal class CombatDamageManager(
         )
 
         return when {
-            isPlayer -> applyDamageToPlayer(state, assignment.sourceId, assignment.targetId, amplifiedAmount, assignment.amount, events)
+            isPlayer -> applyDamageToPlayer(
+                state, assignment.sourceId, assignment.targetId, amplifiedAmount, assignment.amount,
+                events, healProcessedTargets
+            )
             isPlaneswalker -> applyDamageByRemovingCounters(
                 state, assignment.sourceId, assignment.targetId, amplifiedAmount,
                 com.wingedsheep.sdk.core.CounterType.LOYALTY, events
@@ -837,7 +858,9 @@ internal class CombatDamageManager(
                 state, assignment.sourceId, assignment.targetId, amplifiedAmount,
                 com.wingedsheep.sdk.core.CounterType.DEFENSE, events
             )
-            else -> applyDamageToCreature(state, assignment.sourceId, assignment.targetId, amplifiedAmount, events)
+            else -> applyDamageToCreature(
+                state, assignment.sourceId, assignment.targetId, amplifiedAmount, events, healProcessedTargets
+            )
         }
     }
 
@@ -893,7 +916,8 @@ internal class CombatDamageManager(
         targetId: EntityId,
         amplifiedAmount: Int,
         originalAmount: Int,
-        events: MutableList<GameEvent>
+        events: MutableList<GameEvent>,
+        healProcessedTargets: MutableSet<EntityId>
     ): GameState {
         var newState = state
 
@@ -954,10 +978,10 @@ internal class CombatDamageManager(
         )
         newState = redirectState
         if (redirectTargetId != null && redirectAmount > 0) {
-            newState = dealFinalDamage(newState, sourceId, redirectTargetId, redirectAmount, events)
+            newState = dealFinalDamage(newState, sourceId, redirectTargetId, redirectAmount, events, healProcessedTargets)
             val remaining = effectiveAmount - redirectAmount
             if (remaining > 0) {
-                newState = dealFinalDamage(newState, sourceId, targetId, remaining, events)
+                newState = dealFinalDamage(newState, sourceId, targetId, remaining, events, healProcessedTargets)
             }
             return newState
         }
@@ -1118,7 +1142,8 @@ internal class CombatDamageManager(
         sourceId: EntityId,
         targetId: EntityId,
         amplifiedAmount: Int,
-        events: MutableList<GameEvent>
+        events: MutableList<GameEvent>,
+        healProcessedTargets: MutableSet<EntityId>
     ): GameState {
         if (targetId !in state.getBattlefield()) return state
         var newState = state
@@ -1148,15 +1173,15 @@ internal class CombatDamageManager(
         )
         newState = redirectState
         if (redirectTargetId != null && redirectAmount > 0) {
-            newState = dealFinalDamage(newState, sourceId, redirectTargetId, redirectAmount, events)
+            newState = dealFinalDamage(newState, sourceId, redirectTargetId, redirectAmount, events, healProcessedTargets)
             val remaining = effectiveAmount - redirectAmount
             if (remaining > 0) {
-                newState = dealFinalDamage(newState, sourceId, targetId, remaining, events)
+                newState = dealFinalDamage(newState, sourceId, targetId, remaining, events, healProcessedTargets)
             }
             return newState
         }
 
-        return dealFinalDamage(newState, sourceId, targetId, effectiveAmount, events)
+        return dealFinalDamage(newState, sourceId, targetId, effectiveAmount, events, healProcessedTargets)
     }
 
     /**
@@ -1168,7 +1193,9 @@ internal class CombatDamageManager(
         sourceId: EntityId,
         targetId: EntityId,
         amount: Int,
-        events: MutableList<GameEvent>
+        events: MutableList<GameEvent>,
+        /** Recipients whose heal-on-damage replacement was already evaluated this step — see [applyCombatDamage]. */
+        healProcessedTargets: MutableSet<EntityId>
     ): GameState {
         if (amount <= 0) return state
         var newState = state
@@ -1231,6 +1258,15 @@ internal class CombatDamageManager(
             newState = removeCountersForDamage(newState, sourceId, targetId, amount, counterType, events)
         } else {
             if (targetId !in newState.getBattlefield()) return newState
+            // Heal-on-damage replacement (Wolverine, Fierce Fighter), CR 701.69a. Fires here —
+            // after prevention/redirection/replacement have had their say and the damage is certain
+            // to be marked — and at most once per recipient per step; see [applyCombatDamage] for
+            // why the set is scoped and shaped the way it is.
+            if (healProcessedTargets.add(targetId)) {
+                newState = DamageUtils.applyHealOtherDamage(
+                    newState, targetId, amount, sourceId, isCombatDamage = true
+                )
+            }
             val projected = newState.projectedState
             val hasWither = projected.hasKeyword(sourceId, Keyword.WITHER)
             // Excess damage (CR 120.4a) is only computed for the non-wither path below.

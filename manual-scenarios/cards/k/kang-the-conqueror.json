@@ -1,0 +1,53 @@
+{
+  "player1Name": "Alice",
+  "player2Name": "Bob",
+  "player1": {
+    "lifeTotal": 20,
+    "hand": ["Kang the Conqueror", "Daydream"],
+    "battlefield": [
+      {"name": "Aerial Doombot"},
+      {"name": "Island"},
+      {"name": "Island"},
+      {"name": "Island"},
+      {"name": "Island"},
+      {"name": "Island"},
+      {"name": "Island"},
+      {"name": "Island"},
+      {"name": "Island"},
+      {"name": "Island"},
+      {"name": "Island"},
+      {"name": "Island"},
+      {"name": "Plains"}
+    ],
+    "graveyard": [],
+    "library": ["Island", "Island", "Island"]
+  },
+  "player2": {
+    "lifeTotal": 20,
+    "hand": ["Murder"],
+    "battlefield": [
+      {"name": "Serpent Specialist"},
+      {"name": "Wind Drake"},
+      {"name": "Hill Giant"},
+      {"name": "Aerial Doombot"},
+      {"name": "Island"},
+      {"name": "Swamp"},
+      {"name": "Swamp"},
+      {"name": "Swamp"},
+      {"name": "Forest"},
+      {"name": "Forest"},
+      {"name": "Forest"},
+      {"name": "Forest"}
+    ],
+    "graveyard": [],
+    "library": ["Forest", "Forest", "Forest"]
+  },
+  "phase": "PRECOMBAT_MAIN",
+  "activePlayer": 1,
+  "priorityPlayer": 1,
+  "player1StopAtSteps": [],
+  "player2StopAtSteps": [],
+  "player1OpponentStopAtSteps": [],
+  "player2OpponentStopAtSteps": [],
+  "mode": "SELF"
+}

@@ -602,6 +602,19 @@ class TriggerMatcher(
                     PredicateContext(controllerId = controllerId, sourceId = sourceId)
                 )
             }
+            is EventPattern.ConnivedEvent -> {
+                if (event !is com.wingedsheep.engine.core.PermanentConnivedEvent) return false
+                // Subject gate: the conniving permanent must match the filter, resolving "you" to
+                // the observing ability's controller. A null filter matches any permanent.
+                val filter = trigger.filter ?: return true
+                predicateEvaluator.matches(
+                    state,
+                    state.projectedState,
+                    event.connivingPermanentId,
+                    filter,
+                    PredicateContext(controllerId = controllerId, sourceId = sourceId)
+                )
+            }
             is EventPattern.ExploitedEvent -> {
                 if (event !is com.wingedsheep.engine.core.ExploitedEvent) return false
                 // SELF: the exploiter is this permanent (a creature's own "when it exploits" payoff —

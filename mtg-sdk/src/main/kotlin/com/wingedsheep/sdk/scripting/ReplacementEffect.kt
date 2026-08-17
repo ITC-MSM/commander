@@ -838,6 +838,49 @@ data class SetMinimumDamage(
     }
 }
 
+/**
+ * The damage is still dealt in full, but as part of the same replacement all *other* damage
+ * already marked on the recipient is **healed** (CR 701.69a: "If an effect states that damage
+ * already dealt to a permanent 'is healed,' that permanent's controller removes all marked damage
+ * from that permanent").
+ *
+ * Wolverine, Fierce Fighter: "If damage would be dealt to Wolverine, instead that damage is dealt,
+ * but all other damage already dealt to him is healed." →
+ * `HealOtherDamage(appliesTo = DamageEvent(recipient = RecipientFilter.Self))`.
+ *
+ * Unlike every other member of this family the *amount* is untouched — this is the one damage
+ * replacement whose whole job is a side effect on the recipient's already-marked damage, which is
+ * why it can't be expressed as [PreventDamage] (which subtracts), [CapDamage] (which clamps), or
+ * [ReplaceDamageWithCounters] (which swaps the damage for something else). The observable result is
+ * that marked damage never accumulates across separate damage events: the recipient effectively
+ * only ever has the most recent event's damage on it.
+ *
+ * Because it heals only damage dealt *before* this event, the engine applies it **once per
+ * damage event**, not once per instance: all combat damage in a step is dealt simultaneously
+ * (CR 510.2), so a creature blocked by two attackers keeps both attackers' damage and heals only
+ * what was marked before the step. The first-strike and regular combat damage steps are separate
+ * events, so each heals in turn.
+ *
+ * Healing removes marked damage only; -1/-1 counters from a wither/infect source are not marked
+ * damage (CR 120.3d) and survive, though a wither source dealing damage still triggers the heal.
+ * Recipients that don't mark damage (players, planeswalkers, battles) have nothing to heal, so the
+ * replacement is a no-op on them.
+ */
+@SerialName("HealOtherDamage")
+@Serializable
+data class HealOtherDamage(
+    override val appliesTo: EventPattern = EventPattern.DamageEvent(recipient = RecipientFilter.Self)
+) : ReplacementEffect {
+    override val description: String =
+        "If ${appliesTo.description}, instead that damage is dealt, but all other damage already " +
+            "dealt to it is healed"
+
+    override fun applyTextReplacement(replacer: TextReplacer): ReplacementEffect {
+        val newAppliesTo = appliesTo.applyTextReplacement(replacer)
+        return if (newAppliesTo !== appliesTo) copy(appliesTo = newAppliesTo) else this
+    }
+}
+
 // =============================================================================
 // Draw Replacement Effects
 // =============================================================================
@@ -1008,31 +1051,55 @@ data class ReplaceDrawWithEffect(
 }
 
 /**
- * Insert an extra effect into an explore (CR 614, CR 701.44). Replaces "[a permanent matching
- * [appliesTo]'s filter] explores" with "[prefixEffect] happens, then that permanent explores".
+ * Insert an extra effect *in front of* a keyword action (CR 614). Replaces "[a permanent matching
+ * [appliesTo]'s filter] <acts>" with "[prefixEffect] happens, then that permanent <acts>".
  *
- * Modeled on [ReplaceDrawWithEffect]: like draw replacement, explore isn't dispatched as a
- * generic replaceable event, so `ExploreEffectExecutor` consults this directly at explore time.
- * When a matching `ModifyExplore` is on the battlefield, the executor re-issues the explore as
- * `Composite([prefixEffect], ExploreEffect(sameCreature, replacementsApplied = true))`, reusing
- * the composite executor's pause-sequencing so a prefix that pauses (e.g. Scry's top/bottom
- * decision) resolves fully before the explore runs.
+ * This is the printed "If a permanent you control would X, instead <something>, then that permanent
+ * Xs" shape. It is one type across keyword actions rather than one per action, because the printed
+ * cards differ only in *which* action and *what* the prefix is — [appliesTo] carries the action
+ * (and its subject filter), [prefixEffect] carries the rest:
  *
- * [appliesTo]'s filter scopes *which* explores are modified, evaluated with the replacement
- * source's controller as "you" — `ExploredEvent(Creature.youControl())` for "if a creature you
- * control would explore". The [prefixEffect] runs as the source's controller.
+ *  - Twists and Turns — `ModifyKeywordAction(Effects.Scry(1), ExploredEvent(Creature.youControl()))`
+ *    "If a creature you control would explore, instead you scry 1, then that creature explores."
+ *  - Leader, Super-Genius — `ModifyKeywordAction(Effects.DrawCards(1), ConnivedEvent(Creature.youControl()))`
+ *    "If a creature you control would connive, instead you draw a card, then that creature connives."
  *
- * Twists and Turns: `ModifyExplore(Effects.Scry(1), ExploredEvent(Creature.youControl()))` —
- * "If a creature you control would explore, instead you scry 1, then that creature explores."
+ * Supported [appliesTo] patterns: [EventPattern.ExploredEvent] (CR 701.44) and
+ * [EventPattern.ConnivedEvent] (CR 701.50). Any other pattern never matches — the two executors
+ * below are the only consumers.
+ *
+ * Modeled on [ReplaceDrawWithEffect]: like draw replacement, neither explore nor connive is
+ * dispatched as a generic replaceable event, so `ExploreEffectExecutor` / `ConniveEffectExecutor`
+ * consult this directly at action time. On a match the executor re-issues the action as
+ * `Composite([prefixEffect], <action>(sameCreature, replacementsApplied = true))`, reusing the
+ * composite executor's pause-sequencing so a prefix that pauses (Scry's top/bottom decision) or the
+ * action's own decision (connive's discard) resolves fully and in the printed order. The
+ * `replacementsApplied` flag is what stops a replacement from applying to its own re-issue
+ * (CR 614.5).
+ *
+ * [appliesTo]'s filter scopes *which* actions are modified and is evaluated with the replacement
+ * source's controller as "you", so "a creature you control would connive" only fires for that
+ * player's creatures. Note the [prefixEffect] itself runs in the *replaced action's* context, not a
+ * fresh one rooted at this source — with the usual "creature you control" filter those controllers
+ * are the same player, but an opponent's effect that makes your creature connive would run the
+ * prefix as the opponent. Pre-existing behavior inherited from the explore case; no printed card
+ * in either set distinguishes them today.
  */
-@SerialName("ModifyExplore")
+@SerialName("ModifyKeywordAction")
 @Serializable
-data class ModifyExplore(
+data class ModifyKeywordAction(
     val prefixEffect: Effect,
-    override val appliesTo: EventPattern = EventPattern.ExploredEvent()
+    override val appliesTo: EventPattern
 ) : ReplacementEffect {
+    // The verb comes from the action, so both printed cards read the way they are printed:
+    // "…then it explores" / "…then it connives", not a generic "then it does".
     override val description: String =
-        "If ${appliesTo.description}, first ${prefixEffect.description}, then it explores"
+        "If ${appliesTo.description}, first ${prefixEffect.description}, then it " +
+            when (appliesTo) {
+                is EventPattern.ExploredEvent -> "explores"
+                is EventPattern.ConnivedEvent -> "connives"
+                else -> "does so"
+            }
 
     override fun applyTextReplacement(replacer: TextReplacer): ReplacementEffect {
         val newAppliesTo = appliesTo.applyTextReplacement(replacer)

@@ -7,7 +7,6 @@ import com.wingedsheep.engine.handlers.PredicateContext
 import com.wingedsheep.engine.handlers.PredicateEvaluator
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
-import com.wingedsheep.engine.state.components.battlefield.AbilityActivatedEverComponent
 import com.wingedsheep.engine.state.components.battlefield.AbilityActivatedThisTurnComponent
 import com.wingedsheep.engine.state.components.battlefield.AttachedToComponent
 import com.wingedsheep.engine.state.components.battlefield.CastFromTopOfLibraryUsesThisTurnComponent
@@ -24,7 +23,6 @@ import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.AbilityCost
 import com.wingedsheep.sdk.scripting.costs.CostAtom
 import com.wingedsheep.sdk.scripting.costs.manaCostOrNull
-import com.wingedsheep.sdk.scripting.AbilityId
 import com.wingedsheep.sdk.scripting.ActivatedAbility
 import com.wingedsheep.sdk.scripting.ActivationRestriction
 import com.wingedsheep.sdk.scripting.CantCastSpellsSharingColorWithLastCast
@@ -40,9 +38,9 @@ import com.wingedsheep.sdk.scripting.MayPlayPermanentsFromGraveyard
 import com.wingedsheep.sdk.scripting.PlayFromTopOfLibrary
 import com.wingedsheep.sdk.scripting.PlayLandsAndCastFilteredFromTopOfLibrary
 import com.wingedsheep.sdk.scripting.PlotFromTopOfLibrary
-import com.wingedsheep.engine.mechanics.ExhaustActivationWaiver
+import com.wingedsheep.engine.mechanics.OnceOnlyActivationAllowance
 import com.wingedsheep.engine.mechanics.FlashTypeGrants
-import com.wingedsheep.sdk.scripting.IgnoreExhaustActivationLimit
+import com.wingedsheep.sdk.scripting.ExtraOnceOnlyActivations
 import com.wingedsheep.sdk.scripting.PlayersCantActivateAbilities
 import com.wingedsheep.sdk.scripting.PlayersCantCastSpells
 import com.wingedsheep.sdk.scripting.PreventActivatedAbilities
@@ -62,19 +60,28 @@ class CastPermissionUtils(
     private val conditionEvaluator: ConditionEvaluator
 ) {
     /**
-     * @param isExhaustAbility whether the ability being checked is an exhaust ability (CR 702.177).
-     *   Only [ActivationRestriction.Once] reads it: an exhaust ability's once-only memory can be
-     *   waived by [IgnoreExhaustActivationLimit] (Elvish Refueler), while a plain `Once` restriction
-     *   on a non-exhaust ability never is. Defaults to false, which is the restrictive answer — a
-     *   call site that forgets to pass it withholds a permission rather than granting one.
+     * @param ability the ability being checked — the single source of both the per-ability
+     *   identity the turn/lifetime trackers key on ([ActivatedAbility.id], read by
+     *   [ActivationRestriction.OncePerTurn] / [ActivationRestriction.MaxPerTurn]) and the
+     *   `isExhaust`/`isPowerUp` flags [ActivationRestriction.Once] reads: the once-only memory
+     *   those keywords install can be raised or waived by an [ExtraOnceOnlyActivations] permission
+     *   (Elvish Refueler, Wonder Man), while a plain `Once` restriction on an ordinary ability
+     *   never is. Passing the whole ability rather than an id plus a flag per keyword is
+     *   deliberate — a second keyword must not need a second boolean threaded through five call
+     *   sites, and a separate `abilityId` parameter beside it could disagree with `ability.id`.
+     *
+     *   Deliberately **required, with no default**. A defaulted `ability` would make a forgetful
+     *   call site silently disable the permission for that path — an enumerator that stops offering
+     *   a re-armed ability while the handler still accepts it — which is exactly the
+     *   enumerator-vs-handler drift this helper exists to prevent. Omission has to be a compile
+     *   error, not a behaviour difference.
      */
     fun checkActivationRestriction(
         state: GameState,
         playerId: EntityId,
         restriction: ActivationRestriction,
         sourceId: EntityId? = null,
-        abilityId: AbilityId? = null,
-        isExhaustAbility: Boolean = false
+        ability: ActivatedAbility
     ): Boolean {
         return when (restriction) {
             is ActivationRestriction.AnyPlayerMay -> true
@@ -92,26 +99,22 @@ class CastPermissionUtils(
                 conditionEvaluator.evaluate(state, restriction.condition, context)
             }
             is ActivationRestriction.OncePerTurn -> {
-                if (sourceId == null || abilityId == null) true
+                if (sourceId == null) true
                 else {
                     val tracker = state.getEntity(sourceId)?.get<AbilityActivatedThisTurnComponent>()
-                    tracker == null || !tracker.hasActivated(abilityId)
+                    tracker == null || !tracker.hasActivated(ability.id)
                 }
             }
             is ActivationRestriction.MaxPerTurn -> {
-                if (sourceId == null || abilityId == null) true
+                if (sourceId == null) true
                 else {
                     val tracker = state.getEntity(sourceId)?.get<AbilityActivatedThisTurnComponent>()
-                    (tracker?.activationCount(abilityId) ?: 0) < restriction.count
+                    (tracker?.activationCount(ability.id) ?: 0) < restriction.count
                 }
             }
             is ActivationRestriction.Once -> {
-                if (sourceId == null || abilityId == null) true
-                else {
-                    val tracker = state.getEntity(sourceId)?.get<AbilityActivatedEverComponent>()
-                    tracker == null || !tracker.hasActivated(abilityId) ||
-                        (isExhaustAbility && isExhaustActivationLimitWaived(state, playerId))
-                }
+                if (sourceId == null) true
+                else mayActivateOnceOnlyAbility(state, playerId, sourceId, ability)
             }
             is ActivationRestriction.ControlledSinceYourMostRecentTurn -> {
                 // "Controlled continuously since the beginning of your most recent turn" — the
@@ -123,7 +126,7 @@ class CastPermissionUtils(
                     ?.has<com.wingedsheep.engine.state.components.battlefield.SummoningSicknessComponent>() != true
             }
             is ActivationRestriction.All -> restriction.restrictions.all {
-                checkActivationRestriction(state, playerId, it, sourceId, abilityId, isExhaustAbility)
+                checkActivationRestriction(state, playerId, it, sourceId, ability)
             }
         }
     }
@@ -632,20 +635,27 @@ class CastPermissionUtils(
     }
 
     /**
-     * True when some permanent [playerId] controls waives the "activate only once" memory that an
-     * exhaust ability carries (CR 702.177a) — Elvish Refueler's "you may activate exhaust abilities
-     * as though they haven't been activated".
+     * True when [playerId] may activate [ability] of [sourceId] despite its
+     * [ActivationRestriction.Once] — because the object hasn't used it up yet, or because an
+     * [ExtraOnceOnlyActivations] permission on [playerId]'s battlefield raises or waives the
+     * keyword's limit (Elvish Refueler for exhaust, Wonder Man for power-up).
      *
-     * Scans printed and granted [IgnoreExhaustActivationLimit] statics on [playerId]'s battlefield
-     * and evaluates each one's condition in the granting permanent's controller's context, so
-     * Elvish Refueler's "During your turn, as long as you haven't activated an exhaust ability this
-     * turn" gate is re-checked every frame — the waiver disappears the moment the turn's first
-     * exhaust ability is activated. Consulted by both this class's restriction check (the
-     * enumerators' offered actions) and [ActivateAbilityHandler]'s (the executed action), so the
-     * two can't drift.
+     * Scans printed and granted permissions and evaluates each one's condition in the granting
+     * permanent's controller's context, so Elvish Refueler's "During your turn, as long as you
+     * haven't activated an exhaust ability this turn" gate is re-checked every frame — the waiver
+     * disappears the moment the turn's first exhaust ability is activated. Consulted by both this
+     * class's restriction check (the enumerators' offered actions) and [ActivateAbilityHandler]'s
+     * (the executed action), so the two can't drift.
      */
-    fun isExhaustActivationLimitWaived(state: GameState, playerId: EntityId): Boolean =
-        ExhaustActivationWaiver.isWaivedFor(state, playerId, cardRegistry, conditionEvaluator)
+    fun mayActivateOnceOnlyAbility(
+        state: GameState,
+        playerId: EntityId,
+        sourceId: EntityId,
+        ability: ActivatedAbility
+    ): Boolean =
+        OnceOnlyActivationAllowance.mayActivate(
+            state, playerId, sourceId, ability, cardRegistry, conditionEvaluator
+        )
 
     /**
      * Sum the [ReduceEquipCost] amounts across [playerId]'s battlefield, unwrapping a
@@ -1048,6 +1058,28 @@ class CastPermissionUtils(
         }
         return false
     }
+
+    /**
+     * True when [ability] is a power-up ability (CR 702.193) and this turn is one that a
+     * [com.wingedsheep.sdk.scripting.effects.TakeExtraTurnEffect] rider locked out — Kang the
+     * Conqueror's "During that turn, power-up abilities can't be activated."
+     *
+     * The prohibition is global: it applies to every player, on every permanent, regardless of who
+     * created it or who is taking the turn. It is therefore checked against
+     * [GameState.powerUpRestrictedTurns] alone, with no battlefield scan — unlike
+     * [isActivationPrevented] / [isActivationPreventedForPlayer], both of which read statics off
+     * permanents and so would stop applying the moment the source left play.
+     *
+     * `ActivateAbilityHandler.validate` is the authority. Every enumerator that offers an activation
+     * also consults this so an ability is never offered and then rejected: `ActivatedAbilityEnumerator`
+     * (own-permanent and any-player-may paths), `ManaAbilityEnumerator`, `ZoneActivatedAbilityEnumerator`
+     * and `CommandZoneAbilityEnumerator` — the four enumerators that construct an `ActivateAbility`.
+     * Not literally every path: `ManaSolver`'s auto-tap payment search filters on `isManaAbility`
+     * with no permission check, so a power-up *mana* ability (none is printed today) could still be
+     * auto-tapped for a cost.
+     */
+    fun isPowerUpActivationRestricted(state: GameState, ability: ActivatedAbility): Boolean =
+        ability.isPowerUp && state.turnNumber in state.powerUpRestrictedTurns
 
     /**
      * Count additional land drops granted by static abilities on permanents

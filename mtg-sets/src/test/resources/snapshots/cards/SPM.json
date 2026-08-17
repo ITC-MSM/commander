@@ -1710,58 +1710,61 @@
                 "id": "ability_1",
                 "trigger": "AttackEvent",
                 "effect": {
-                    "type": "Composite",
-                    "effects": [
-                        {
-                            "type": "DrawCards",
-                            "count": {
-                                "type": "Fixed",
-                                "amount": 1
-                            }
-                        },
-                        {
-                            "type": "GatherCards",
-                            "source": {
-                                "type": "FromZone",
-                                "zone": "Hand"
-                            },
-                            "storeAs": "connive_hand"
-                        },
-                        {
-                            "type": "SelectFromCollection",
-                            "from": "connive_hand",
-                            "selection": {
-                                "type": "ChooseExactly",
+                    "type": "Connive",
+                    "body": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "DrawCards",
                                 "count": {
                                     "type": "Fixed",
                                     "amount": 1
                                 }
                             },
-                            "storeSelected": "connive_discarded",
-                            "prompt": "Choose a card to discard"
-                        },
-                        {
-                            "type": "MoveCollection",
-                            "from": "connive_discarded",
-                            "destination": {
-                                "type": "ToZone",
-                                "zone": "Graveyard"
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Hand"
+                                },
+                                "storeAs": "connive_hand"
                             },
-                            "moveType": "Discard"
-                        },
-                        {
-                            "type": "ConditionalOnCollection",
-                            "collection": "connive_discarded",
-                            "ifNotEmpty": {
-                                "type": "AddCounters",
-                                "counterType": "+1/+1",
-                                "count": 1,
-                                "target": "Self"
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "connive_hand",
+                                "selection": {
+                                    "type": "ChooseExactly",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "storeSelected": "connive_discarded",
+                                "prompt": "Choose a card to discard"
                             },
-                            "filter": "nonland"
-                        }
-                    ],
-                    "descriptionOverride": "Connive"
+                            {
+                                "type": "MoveCollection",
+                                "from": "connive_discarded",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Graveyard"
+                                },
+                                "moveType": "Discard"
+                            },
+                            {
+                                "type": "ConditionalOnCollection",
+                                "collection": "connive_discarded",
+                                "ifNotEmpty": {
+                                    "type": "AddCounters",
+                                    "counterType": "+1/+1",
+                                    "count": 1,
+                                    "target": "Self"
+                                },
+                                "filter": "nonland"
+                            }
+                        ],
+                        "descriptionOverride": "Connive"
+                    }
                 }
             }
         ]
@@ -4923,61 +4926,68 @@
                             "destination": "Exile"
                         },
                         {
-                            "type": "Composite",
-                            "effects": [
-                                {
-                                    "type": "DrawCards",
-                                    "count": {
-                                        "type": "Fixed",
-                                        "amount": 1
-                                    }
-                                },
-                                {
-                                    "type": "GatherCards",
-                                    "source": {
-                                        "type": "FromZone",
-                                        "zone": "Hand"
-                                    },
-                                    "storeAs": "connive_hand"
-                                },
-                                {
-                                    "type": "SelectFromCollection",
-                                    "from": "connive_hand",
-                                    "selection": {
-                                        "type": "ChooseExactly",
+                            "type": "Connive",
+                            "subject": {
+                                "type": "BoundVariable",
+                                "name": "target creature you control"
+                            },
+                            "body": {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "DrawCards",
                                         "count": {
                                             "type": "Fixed",
                                             "amount": 1
                                         }
                                     },
-                                    "storeSelected": "connive_discarded",
-                                    "prompt": "Choose a card to discard"
-                                },
-                                {
-                                    "type": "MoveCollection",
-                                    "from": "connive_discarded",
-                                    "destination": {
-                                        "type": "ToZone",
-                                        "zone": "Graveyard"
+                                    {
+                                        "type": "GatherCards",
+                                        "source": {
+                                            "type": "FromZone",
+                                            "zone": "Hand"
+                                        },
+                                        "storeAs": "connive_hand"
                                     },
-                                    "moveType": "Discard"
-                                },
-                                {
-                                    "type": "ConditionalOnCollection",
-                                    "collection": "connive_discarded",
-                                    "ifNotEmpty": {
-                                        "type": "AddCounters",
-                                        "counterType": "+1/+1",
-                                        "count": 1,
-                                        "target": {
-                                            "type": "BoundVariable",
-                                            "name": "target creature you control"
-                                        }
+                                    {
+                                        "type": "SelectFromCollection",
+                                        "from": "connive_hand",
+                                        "selection": {
+                                            "type": "ChooseExactly",
+                                            "count": {
+                                                "type": "Fixed",
+                                                "amount": 1
+                                            }
+                                        },
+                                        "storeSelected": "connive_discarded",
+                                        "prompt": "Choose a card to discard"
                                     },
-                                    "filter": "nonland"
-                                }
-                            ],
-                            "descriptionOverride": "Connive"
+                                    {
+                                        "type": "MoveCollection",
+                                        "from": "connive_discarded",
+                                        "destination": {
+                                            "type": "ToZone",
+                                            "zone": "Graveyard"
+                                        },
+                                        "moveType": "Discard"
+                                    },
+                                    {
+                                        "type": "ConditionalOnCollection",
+                                        "collection": "connive_discarded",
+                                        "ifNotEmpty": {
+                                            "type": "AddCounters",
+                                            "counterType": "+1/+1",
+                                            "count": 1,
+                                            "target": {
+                                                "type": "BoundVariable",
+                                                "name": "target creature you control"
+                                            }
+                                        },
+                                        "filter": "nonland"
+                                    }
+                                ],
+                                "descriptionOverride": "Connive"
+                            }
                         }
                     ]
                 },
@@ -5321,61 +5331,68 @@
                     "to": "Battlefield"
                 },
                 "effect": {
-                    "type": "Composite",
-                    "effects": [
-                        {
-                            "type": "DrawCards",
-                            "count": {
-                                "type": "Fixed",
-                                "amount": 1
-                            }
-                        },
-                        {
-                            "type": "GatherCards",
-                            "source": {
-                                "type": "FromZone",
-                                "zone": "Hand"
-                            },
-                            "storeAs": "connive_hand"
-                        },
-                        {
-                            "type": "SelectFromCollection",
-                            "from": "connive_hand",
-                            "selection": {
-                                "type": "ChooseExactly",
+                    "type": "Connive",
+                    "subject": {
+                        "type": "BoundVariable",
+                        "name": "target creature you control"
+                    },
+                    "body": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "DrawCards",
                                 "count": {
                                     "type": "Fixed",
                                     "amount": 1
                                 }
                             },
-                            "storeSelected": "connive_discarded",
-                            "prompt": "Choose a card to discard"
-                        },
-                        {
-                            "type": "MoveCollection",
-                            "from": "connive_discarded",
-                            "destination": {
-                                "type": "ToZone",
-                                "zone": "Graveyard"
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Hand"
+                                },
+                                "storeAs": "connive_hand"
                             },
-                            "moveType": "Discard"
-                        },
-                        {
-                            "type": "ConditionalOnCollection",
-                            "collection": "connive_discarded",
-                            "ifNotEmpty": {
-                                "type": "AddCounters",
-                                "counterType": "+1/+1",
-                                "count": 1,
-                                "target": {
-                                    "type": "BoundVariable",
-                                    "name": "target creature you control"
-                                }
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "connive_hand",
+                                "selection": {
+                                    "type": "ChooseExactly",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "storeSelected": "connive_discarded",
+                                "prompt": "Choose a card to discard"
                             },
-                            "filter": "nonland"
-                        }
-                    ],
-                    "descriptionOverride": "Connive"
+                            {
+                                "type": "MoveCollection",
+                                "from": "connive_discarded",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Graveyard"
+                                },
+                                "moveType": "Discard"
+                            },
+                            {
+                                "type": "ConditionalOnCollection",
+                                "collection": "connive_discarded",
+                                "ifNotEmpty": {
+                                    "type": "AddCounters",
+                                    "counterType": "+1/+1",
+                                    "count": 1,
+                                    "target": {
+                                        "type": "BoundVariable",
+                                        "name": "target creature you control"
+                                    }
+                                },
+                                "filter": "nonland"
+                            }
+                        ],
+                        "descriptionOverride": "Connive"
+                    }
                 },
                 "targetRequirement": {
                     "type": "TargetObject",
@@ -5920,58 +5937,61 @@
                     "recipient": "AnyPlayer"
                 },
                 "effect": {
-                    "type": "Composite",
-                    "effects": [
-                        {
-                            "type": "DrawCards",
-                            "count": {
-                                "type": "Fixed",
-                                "amount": 1
-                            }
-                        },
-                        {
-                            "type": "GatherCards",
-                            "source": {
-                                "type": "FromZone",
-                                "zone": "Hand"
-                            },
-                            "storeAs": "connive_hand"
-                        },
-                        {
-                            "type": "SelectFromCollection",
-                            "from": "connive_hand",
-                            "selection": {
-                                "type": "ChooseExactly",
+                    "type": "Connive",
+                    "body": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "DrawCards",
                                 "count": {
                                     "type": "Fixed",
                                     "amount": 1
                                 }
                             },
-                            "storeSelected": "connive_discarded",
-                            "prompt": "Choose a card to discard"
-                        },
-                        {
-                            "type": "MoveCollection",
-                            "from": "connive_discarded",
-                            "destination": {
-                                "type": "ToZone",
-                                "zone": "Graveyard"
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Hand"
+                                },
+                                "storeAs": "connive_hand"
                             },
-                            "moveType": "Discard"
-                        },
-                        {
-                            "type": "ConditionalOnCollection",
-                            "collection": "connive_discarded",
-                            "ifNotEmpty": {
-                                "type": "AddCounters",
-                                "counterType": "+1/+1",
-                                "count": 1,
-                                "target": "Self"
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "connive_hand",
+                                "selection": {
+                                    "type": "ChooseExactly",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "storeSelected": "connive_discarded",
+                                "prompt": "Choose a card to discard"
                             },
-                            "filter": "nonland"
-                        }
-                    ],
-                    "descriptionOverride": "Connive"
+                            {
+                                "type": "MoveCollection",
+                                "from": "connive_discarded",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Graveyard"
+                                },
+                                "moveType": "Discard"
+                            },
+                            {
+                                "type": "ConditionalOnCollection",
+                                "collection": "connive_discarded",
+                                "ifNotEmpty": {
+                                    "type": "AddCounters",
+                                    "counterType": "+1/+1",
+                                    "count": 1,
+                                    "target": "Self"
+                                },
+                                "filter": "nonland"
+                            }
+                        ],
+                        "descriptionOverride": "Connive"
+                    }
                 },
                 "descriptionOverride": "Whenever Norman Osborn deals combat damage to a player, he connives."
             }
@@ -6973,58 +6993,61 @@
                 },
                 "binding": "OTHER",
                 "effect": {
-                    "type": "Composite",
-                    "effects": [
-                        {
-                            "type": "DrawCards",
-                            "count": {
-                                "type": "Fixed",
-                                "amount": 1
-                            }
-                        },
-                        {
-                            "type": "GatherCards",
-                            "source": {
-                                "type": "FromZone",
-                                "zone": "Hand"
-                            },
-                            "storeAs": "connive_hand"
-                        },
-                        {
-                            "type": "SelectFromCollection",
-                            "from": "connive_hand",
-                            "selection": {
-                                "type": "ChooseExactly",
+                    "type": "Connive",
+                    "body": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "DrawCards",
                                 "count": {
                                     "type": "Fixed",
                                     "amount": 1
                                 }
                             },
-                            "storeSelected": "connive_discarded",
-                            "prompt": "Choose a card to discard"
-                        },
-                        {
-                            "type": "MoveCollection",
-                            "from": "connive_discarded",
-                            "destination": {
-                                "type": "ToZone",
-                                "zone": "Graveyard"
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Hand"
+                                },
+                                "storeAs": "connive_hand"
                             },
-                            "moveType": "Discard"
-                        },
-                        {
-                            "type": "ConditionalOnCollection",
-                            "collection": "connive_discarded",
-                            "ifNotEmpty": {
-                                "type": "AddCounters",
-                                "counterType": "+1/+1",
-                                "count": 1,
-                                "target": "Self"
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "connive_hand",
+                                "selection": {
+                                    "type": "ChooseExactly",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "storeSelected": "connive_discarded",
+                                "prompt": "Choose a card to discard"
                             },
-                            "filter": "nonland"
-                        }
-                    ],
-                    "descriptionOverride": "Connive"
+                            {
+                                "type": "MoveCollection",
+                                "from": "connive_discarded",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Graveyard"
+                                },
+                                "moveType": "Discard"
+                            },
+                            {
+                                "type": "ConditionalOnCollection",
+                                "collection": "connive_discarded",
+                                "ifNotEmpty": {
+                                    "type": "AddCounters",
+                                    "counterType": "+1/+1",
+                                    "count": 1,
+                                    "target": "Self"
+                                },
+                                "filter": "nonland"
+                            }
+                        ],
+                        "descriptionOverride": "Connive"
+                    }
                 },
                 "descriptionOverride": "Whenever another Villain you control enters, Prowler connives."
             }
@@ -8329,61 +8352,68 @@
                 },
                 "binding": "ANY",
                 "effect": {
-                    "type": "Composite",
-                    "effects": [
-                        {
-                            "type": "DrawCards",
-                            "count": {
-                                "type": "Fixed",
-                                "amount": 1
-                            }
-                        },
-                        {
-                            "type": "GatherCards",
-                            "source": {
-                                "type": "FromZone",
-                                "zone": "Hand"
-                            },
-                            "storeAs": "connive_hand"
-                        },
-                        {
-                            "type": "SelectFromCollection",
-                            "from": "connive_hand",
-                            "selection": {
-                                "type": "ChooseExactly",
+                    "type": "Connive",
+                    "subject": {
+                        "type": "BoundVariable",
+                        "name": "target creature you control"
+                    },
+                    "body": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "DrawCards",
                                 "count": {
                                     "type": "Fixed",
                                     "amount": 1
                                 }
                             },
-                            "storeSelected": "connive_discarded",
-                            "prompt": "Choose a card to discard"
-                        },
-                        {
-                            "type": "MoveCollection",
-                            "from": "connive_discarded",
-                            "destination": {
-                                "type": "ToZone",
-                                "zone": "Graveyard"
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Hand"
+                                },
+                                "storeAs": "connive_hand"
                             },
-                            "moveType": "Discard"
-                        },
-                        {
-                            "type": "ConditionalOnCollection",
-                            "collection": "connive_discarded",
-                            "ifNotEmpty": {
-                                "type": "AddCounters",
-                                "counterType": "+1/+1",
-                                "count": 1,
-                                "target": {
-                                    "type": "BoundVariable",
-                                    "name": "target creature you control"
-                                }
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "connive_hand",
+                                "selection": {
+                                    "type": "ChooseExactly",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "storeSelected": "connive_discarded",
+                                "prompt": "Choose a card to discard"
                             },
-                            "filter": "nonland"
-                        }
-                    ],
-                    "descriptionOverride": "Connive"
+                            {
+                                "type": "MoveCollection",
+                                "from": "connive_discarded",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Graveyard"
+                                },
+                                "moveType": "Discard"
+                            },
+                            {
+                                "type": "ConditionalOnCollection",
+                                "collection": "connive_discarded",
+                                "ifNotEmpty": {
+                                    "type": "AddCounters",
+                                    "counterType": "+1/+1",
+                                    "count": 1,
+                                    "target": {
+                                        "type": "BoundVariable",
+                                        "name": "target creature you control"
+                                    }
+                                },
+                                "filter": "nonland"
+                            }
+                        ],
+                        "descriptionOverride": "Connive"
+                    }
                 },
                 "targetRequirement": {
                     "type": "TargetObject",
@@ -13004,61 +13034,68 @@
                         }
                     },
                     "then": {
-                        "type": "Composite",
-                        "effects": [
-                            {
-                                "type": "DrawCards",
-                                "count": {
-                                    "type": "Fixed",
-                                    "amount": 1
-                                }
-                            },
-                            {
-                                "type": "GatherCards",
-                                "source": {
-                                    "type": "FromZone",
-                                    "zone": "Hand"
-                                },
-                                "storeAs": "connive_hand"
-                            },
-                            {
-                                "type": "SelectFromCollection",
-                                "from": "connive_hand",
-                                "selection": {
-                                    "type": "ChooseExactly",
+                        "type": "Connive",
+                        "subject": {
+                            "type": "BoundVariable",
+                            "name": "up to one target creature you control"
+                        },
+                        "body": {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "DrawCards",
                                     "count": {
                                         "type": "Fixed",
                                         "amount": 1
                                     }
                                 },
-                                "storeSelected": "connive_discarded",
-                                "prompt": "Choose a card to discard"
-                            },
-                            {
-                                "type": "MoveCollection",
-                                "from": "connive_discarded",
-                                "destination": {
-                                    "type": "ToZone",
-                                    "zone": "Graveyard"
+                                {
+                                    "type": "GatherCards",
+                                    "source": {
+                                        "type": "FromZone",
+                                        "zone": "Hand"
+                                    },
+                                    "storeAs": "connive_hand"
                                 },
-                                "moveType": "Discard"
-                            },
-                            {
-                                "type": "ConditionalOnCollection",
-                                "collection": "connive_discarded",
-                                "ifNotEmpty": {
-                                    "type": "AddCounters",
-                                    "counterType": "+1/+1",
-                                    "count": 1,
-                                    "target": {
-                                        "type": "BoundVariable",
-                                        "name": "up to one target creature you control"
-                                    }
+                                {
+                                    "type": "SelectFromCollection",
+                                    "from": "connive_hand",
+                                    "selection": {
+                                        "type": "ChooseExactly",
+                                        "count": {
+                                            "type": "Fixed",
+                                            "amount": 1
+                                        }
+                                    },
+                                    "storeSelected": "connive_discarded",
+                                    "prompt": "Choose a card to discard"
                                 },
-                                "filter": "nonland"
-                            }
-                        ],
-                        "descriptionOverride": "Connive"
+                                {
+                                    "type": "MoveCollection",
+                                    "from": "connive_discarded",
+                                    "destination": {
+                                        "type": "ToZone",
+                                        "zone": "Graveyard"
+                                    },
+                                    "moveType": "Discard"
+                                },
+                                {
+                                    "type": "ConditionalOnCollection",
+                                    "collection": "connive_discarded",
+                                    "ifNotEmpty": {
+                                        "type": "AddCounters",
+                                        "counterType": "+1/+1",
+                                        "count": 1,
+                                        "target": {
+                                            "type": "BoundVariable",
+                                            "name": "up to one target creature you control"
+                                        }
+                                    },
+                                    "filter": "nonland"
+                                }
+                            ],
+                            "descriptionOverride": "Connive"
+                        }
                     }
                 }
             ]

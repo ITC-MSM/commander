@@ -855,9 +855,14 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   at 0; a player with no maximum hand size has nothing to reduce (the reduction is inert while that
   holds).
 - `WinGame(target, message?)` — target wins the game.
-- `TakeExtraTurn(target, loseAtEndStep?)` — target takes an extra turn after this one (Time Walk, Lost Isle Calling).
-  Set `loseAtEndStep = true` for "...you lose the game at the beginning of that turn's end step" (Last Chance, Final
-  Fortune). Prevented by the `PreventExtraTurns` replacement (Ugin's Nexus).
+- `TakeExtraTurn(target, loseAtEndStep?, powerUpAbilitiesCantBeActivated?)` — target takes an extra turn after this
+  one (Time Walk, Lost Isle Calling). Set `loseAtEndStep = true` for "...you lose the game at the beginning of that
+  turn's end step" (Last Chance, Final Fortune). Set `powerUpAbilitiesCantBeActivated = true` for "During that turn,
+  power-up abilities can't be activated" (Kang the Conqueror) — a global lockout on every player's power-up abilities
+  (§ Power-up, CR 702.193) for the extra turn only, on every permanent, that outlives its source. Both riders are
+  scoped to the extra turn *this* effect creates, so neither applies when the `PreventExtraTurns` replacement
+  (Ugin's Nexus) stops the extra turn from happening; that is why they are parameters here rather than separate
+  effects sequenced after it in a `Composite`.
 - `EndTheTurn` — end the current turn (CR 720): Ultima ("Destroy all artifacts and creatures. End the turn."),
   Time Stop, Sundial of the Infinite, Discontinuity. When it resolves the whole stack is exiled (including the
   source and any triggered abilities the resolution queued — even ones that can't be countered — so those never
@@ -1997,6 +2002,7 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
 - `AnimateLandEffect(target, subtypes, keywords, duration)` — land becomes a creature.
 - `MassAnimateEffect(filter, power, toughness, loseAllAbilities = true, duration = EndOfTurn)` — facade `Effects.MassAnimate(filter, power, toughness, loseAllAbilities, duration)`. One-shot: animate **every** permanent matching `filter` into a creature for `duration`, setting each one's base power and toughness to the `power`/`toughness` **`DynamicAmount`s** — resolved per affected permanent (Layer 7b `SetPowerToughnessDynamic`), so `EntityProperty(AffectedEntity, ManaValue)` gives "each equal to its own mana value" — and, when `loseAllAbilities`, stripping all of its abilities (Layer 6 `RemoveAllAbilities`); Layer 4 `AddType("CREATURE")` makes them creatures. The affected set is captured **once** at resolution against the current battlefield (CR 611.2c) and locked in for the duration. This is the fixed-set, one-shot companion to expressing the same effect *continuously* via the `GrantCardType` + `LoseAllAbilities` + `SetBasePowerToughnessDynamicStatic` group statics on a permanent (which take the same `DynamicAmount` P/T) — use the statics for the while-on-battlefield behavior and this effect for the "this effect continues until end of turn" linger when the generating permanent leaves. Used by **Titania's Song** ("Each noncreature artifact loses all abilities and becomes an artifact creature with power and toughness each equal to its mana value. If this enchantment leaves the battlefield, this effect continues until end of turn.") — a `LeavesBattlefield(SELF)` trigger replays the static set as until-EOT floating effects with `power = toughness = EntityProperty(AffectedEntity, ManaValue)`. The dynamic-P/T floating effect resolves its controller from the effect's captured controller (`ContinuousEffect.controllerId`) when the source has already left the battlefield.
 - `ExploreEffect(target)` — Explore mechanic (reveal top; land → battlefield, else hand + counter).
+- `ConniveEffect(subject, body, replacementsApplied = false)` — the connive keyword action (CR 701.50), wrapping the pipeline that carries it out. Built by `Patterns.Hand.connive` / `Effects.Connive(target)`; never constructed directly by a card. `body` is the ordinary draw → discard → conditional +1/+1 counter pipeline and runs unchanged — the wrapper exists to give the action a **name and a subject**, which is what `ModifyKeywordAction` needs to replace it (`EventPattern.ConnivedEvent`) and what lets `ConniveEffectExecutor` append `EmitConnivedEventEffect` as the pipeline's tail so `PermanentConnivedEvent` fires after the discard resolves (CR 701.50f). `replacementsApplied` is the CR 614.5 recursion guard, set only on the post-replacement re-issue. Mirrors `ExploreEffect`, the other replaceable/observable keyword action.
 - `AttachEquipmentEffect(equip, target)` — attach an Equipment. Facade `Effects.AttachEquipment(...)`.
   `Effects.AttachTargetEquipmentToCreature(equipmentTarget, creatureTarget)` force-attaches one
   *targeted* Equipment to one *targeted* creature (both are explicit targets, not the source) — used
@@ -2699,8 +2705,8 @@ one-off pipeline belongs inline in the card file via `Effects.Pipeline { }` (§5
   Forager). For forage as a *cost*, use `Costs.Forage()` / `Costs.additional.Forage` (§3).
 - `loot(draw?, discard?)` — "draw N, discard M" loop.
 - `rummage(count?)` — discard then draw.
-- `connive(target?)` — draw 1, discard 1, then put a +1/+1 counter on `target` (default Self) if the discard was a nonland (CR 701.50). Also exposed as `Effects.Connive(target)`.
-- `conniveTargeting(requirement, storeAs?)` — connive whose +1/+1 counter lands on a *reflexively chosen* target: "draw a card, then discard a card. When you discard a nonland card this way, put a +1/+1 counter on target creature you control" (Teo, Spirited Glider). The recipient is selected at resolution via `SelectTargetEffect` *inside* the nonland gate — so the player never chooses up front or when the discard is a land. Pass the recipient's `TargetRequirement` (e.g. `Targets.CreatureYouControl`); do **not** also declare it as a cast-time `target(...)`. Exposed as `Effects.ConniveTargeting(requirement)`.
+- `connive(target?)` — draw 1, discard 1, then put a +1/+1 counter on `target` (default Self) if the discard was a nonland (CR 701.50). Also exposed as `Effects.Connive(target)`. Returns the pipeline wrapped in `ConniveEffect(subject = target, body = …)`: the wrapper names the keyword action and its subject, which is what lets `ModifyKeywordAction` replace it and what makes it emit `PermanentConnivedEvent` (CR 701.50f). The pipeline itself is unchanged.
+- `conniveTargeting(requirement, storeAs?)` — connive whose +1/+1 counter lands on a *reflexively chosen* target: "draw a card, then discard a card. When you discard a nonland card this way, put a +1/+1 counter on target creature you control" (Teo, Spirited Glider). The recipient is selected at resolution via `SelectTargetEffect` *inside* the nonland gate — so the player never chooses up front or when the discard is a land. Pass the recipient's `TargetRequirement` (e.g. `Targets.CreatureYouControl`); do **not** also declare it as a cast-time `target(...)`. Exposed as `Effects.ConniveTargeting(requirement)`. Deliberately **not** wrapped in `ConniveEffect` — Teo's printed text spells the looting out and never says "connive", so it is not the keyword action: it fires no connive triggers and is not touched by "if a creature you control would connive" replacements.
 - `Patterns.Mechanic.recruit()` — **Recruit** (The Hobbit): "draw a card, then discard a card. If you
   discarded a nonland card, create a 1/1 white Human Soldier creature token." A keyword *action* with
   fixed reminder text, not a keyword ability, so there is no `Keyword.RECRUIT` — it is connive's pipeline
@@ -4982,6 +4988,22 @@ Triggers.youCastSpell(
   - Fires even on an **empty library** (CR 701.44b — the permanent still explored): `ANY` matches,
     `LAND`/`NONLAND` do not (`revealedCardWasLand == null`).
 
+### Connive (CR 701.50)
+
+- `Triggers.creatureConnives(filter)` / `Triggers.WheneverCreatureYouControlConnives` — "Whenever a
+  permanent matching `filter` connives." The conniving permanent is the event subject, so the
+  binding is `TriggerBinding.ANY` and `filter.youControl()` resolves "you" to the observing
+  ability's controller. Backed by `EventPattern.ConnivedEvent`; emitted by `ConniveEffectExecutor`
+  as `PermanentConnivedEvent`, once per connive, as the *tail* of the connive pipeline — after the
+  discard decision and the +1/+1 counter, so it lands in a completed resolution batch. Fires even
+  when the draw or the discard was impossible (CR 701.50f — the permanent connives even if some or
+  all of those actions were impossible).
+  - Only a **real** connive fires it. Connive-*shaped* looting that the printed card never calls
+    connive (`Effects.ConniveTargeting`, the Teo, Spirited Glider shape) emits nothing and is not
+    replaced.
+  - Doubles as the `appliesTo` pattern for `ModifyKeywordAction` ("if a creature you control would
+    connive, instead …" — Leader, Super-Genius).
+
 ### Library search (CR 701.23)
 
 - `WheneverYouSearchYourLibrary` / `WheneverAnOpponentSearchesTheirLibrary` — fire once per
@@ -6175,18 +6197,34 @@ staticAbility {
   condition = IsYourTurn)` ("During your turn, your opponents can't activate abilities of artifacts,
   creatures, or enchantments."); loyalty abilities and land mana abilities are unaffected because the
   filter only matches those three permanent types.
-- `IgnoreExhaustActivationLimit(condition = null)` — the *permission* mirror of the above: the controller
-  may activate exhaust abilities (CR 702.177) as though they hadn't been activated, i.e. the
-  `ActivationRestriction.Once` memory `isExhaust = true` installs is waived. Scoped to the activating player
-  being this permanent's controller (there is no "who" axis — you can only activate abilities of permanents
-  you control) and gated by `condition`, evaluated in the controller's context; `null` = always. Resolved by
-  `ExhaustActivationWaiver`, which all three activation-legality paths consult (the enumerators and the
-  activate handler via `CastPermissionUtils`, plus `ManaSolver`'s inlined check for auto-tapping) so they
-  can't drift. It never reaches a plain `Once`/`OncePerTurn` restriction on a *non*-exhaust ability.
-  Elvish Refueler = `IgnoreExhaustActivationLimit(condition = Conditions.All(Conditions.IsYourTurn,
-  Conditions.YouHaventActivatedAnExhaustAbilityThisTurn))` — the gate re-evaluates every frame, so the
-  permission evaporates the instant the turn's first exhaust ability is activated. Net effect: once per turn,
-  on your turn, you may re-use one already-spent exhaust ability of any permanent you control.
+- `ExtraOnceOnlyActivations(kind, extraActivations = null, condition = null)`
+  — the *permission* counterpart of the above, over the keyword-prefixed "Activate this ability only once"
+  limits: exhaust (CR 702.177) and power-up (CR 702.193), selected by `kind` (**required, no default** —
+  a default on a two-valued discriminator would silently mean the wrong keyword). Both keywords install the
+  same `ActivationRestriction.Once`, so the permission has to say which one it lifts. `extraActivations`
+  is the second axis: `null` waives the limit outright ("as though they hadn't been activated"), an
+  integer ≥ 1 *raises* it by that many activations per instance and sums across the battlefield — except
+  that a single waiver anywhere on the battlefield short-circuits the sum to "no limit".
+  Not an exact mirror of `PlayersCantActivateAbilities`: that type carries a `permanentFilter`, this one
+  hardcodes "permanents you control" because both printed cards want that scope.
+  Scoped to the activating player being this permanent's controller (there is no "who" axis — you can only
+  activate abilities of permanents you control) and gated by `condition`, evaluated in the controller's
+  context; `null` = always. Resolved by `OnceOnlyActivationAllowance`, which all three activation-legality
+  paths consult (the enumerators and the activate handler via
+  `CastPermissionUtils.mayActivateOnceOnlyAbility`, plus `ManaSolver`'s inlined check for auto-tapping) so
+  they can't drift. It never reaches a plain `Once`/`OncePerTurn` restriction an ordinary ability printed
+  for itself, nor the other `kind`.
+  - **Waive** — Elvish Refueler = `ExtraOnceOnlyActivations(EXHAUST, extraActivations = null,
+    condition = Conditions.All(Conditions.IsYourTurn,
+    Conditions.YouHaventActivatedAnExhaustAbilityThisTurn))` — the gate re-evaluates every frame, so the
+    permission evaporates the instant the turn's first exhaust ability is activated. Net effect: once per
+    turn, on your turn, you may re-use one already-spent exhaust ability of any permanent you control.
+  - **Raise by N** — Wonder Man, Hollywood Hero = `ExtraOnceOnlyActivations(POWER_UP,
+    extraActivations = 1)` ("Each power-up ability of permanents you control can be activated an
+    additional time"). Counted against `AbilityActivatedEverComponent.activationCount(abilityId)`, the
+    per-object lifetime tally the `Once` tracker gained for this; two Wonder Men allow three activations
+    each. A prohibition still beats it (CR 101.2) — Kang the Conqueror's turn-scoped power-up lockout is
+    checked ahead of the ability's restrictions, so a raised ceiling has nothing to raise.
 
 **Tapped-for-mana mana statics** (extra mana / replaced mana when a land is tapped for mana — resolve
 inline as triggered mana abilities, off the stack per CR 605). These fire on the *manual* mana-ability
@@ -6742,6 +6780,17 @@ activatedAbility {
 
 Do **not** reach for `genericCostReduction` for this: it is generic-only (CR 118.7a) and so cannot
 express any power-up cost whose reduction includes a colored pip — which is most of the cycle.
+
+Two effects read the `isPowerUp` flag rather than the permanent, and both gate on the *ability*, so a
+permanent's ordinary activated abilities are untouched:
+
+- `ReduceActivatedAbilityCost(..., powerUpOnly = true)` — the sibling of `exhaustOnly`, for "Power-up
+  abilities of other creatures you control cost {3} less to activate" (Hulk, Gamma Goliath).
+- `TakeExtraTurn(powerUpAbilitiesCantBeActivated = true)` — "During that turn, power-up abilities
+  can't be activated" (Kang the Conqueror). Not a static on the permanent: the lockout binds every
+  player, on every permanent and in every zone, applies to the extra turn only, and outlives its
+  source leaving the battlefield. (Engine-side plumbing is documented on
+  `CastPermissionUtils.isPowerUpActivationRestricted`, next to the code.)
 
 **`ManaCost.subtract(other)` — pip-wise cost reduction (CR 118.7).** The primitive behind power-up
 (CR 702.193b) and, identically worded, offering (CR 702.48c): generic reduces generic; colored and
@@ -8373,7 +8422,7 @@ default to "you" so card authors don't need to pass it explicitly.
   `PlayerActivatedExhaustAbilitiesThisTurn(Player.You, atLeast)`, reading the per-player
   `ExhaustAbilitiesActivatedThisTurnComponent` (bumped at activation time, so a countered exhaust ability
   still counts; reset for all players at turn start). Gates Elvish Refueler's
-  `IgnoreExhaustActivationLimit`.
+  `ExtraOnceOnlyActivations`.
 - `TriggeringSpellMatches(filter)` — intervening-if guard: the spell that triggered this ability
   matches `filter`. Reads the triggering entity's static card characteristics (so it stays correct
   after the spell leaves the stack). General "whenever you cast a spell, if it's a/an X ..." gate.
@@ -9909,6 +9958,26 @@ The priority groups are (CR 616.1a–f):
   combat damage and noncombat damage from any source you control. Mirrors `ReplaceDamageWithCounters`;
   wired in both damage paths (`DamageUtils.applyReplaceDamageWithMill` for the general path,
   `CombatDamageManager` for combat). Damage-type filtering is not applied (matches any type).
+- `HealOtherDamage(appliesTo = DamageEvent(recipient = Self))` — the damage is dealt **in full**, but
+  as part of the same replacement all *other* damage already marked on the recipient is **healed**
+  (CR 701.69a: "If an effect states that damage already dealt to a permanent 'is healed,' that
+  permanent's controller removes all marked damage from that permanent"). **Wolverine, Fierce
+  Fighter**: "If damage would be dealt to Wolverine, instead that damage is dealt, but all other
+  damage already dealt to him is healed." The only member of the damage family that leaves the
+  *amount* alone — it can't be expressed as `PreventDamage` (subtracts), `CapDamage` (clamps) or
+  `ReplaceDamageWithCounters` (swaps the damage for something else), because its whole job is the
+  side effect on already-marked damage. Observable result: marked damage never accumulates across
+  separate damage *events*, so the recipient only ever carries the most recent event's damage.
+  Applied **once per damage event, not per instance**: all combat damage in a step is dealt
+  simultaneously (CR 510.2), so a double-blocked Wolverine heals what was marked before the step and
+  then takes both blockers' damage; the first-strike and regular combat damage steps are separate
+  events and each heal in turn. Fires *after* every prevention/redirection/replacement has had its
+  say, so fully prevented or redirected damage heals nothing; a deathtouch source still kills, and a
+  wither source still triggers the heal (wither only changes the *form* of the damage, CR 702.80a).
+  Players, planeswalkers and battles have no marked damage, so it is a no-op on them. The threading
+  that enforces once-per-event and the engine entry points (`DamageUtils.applyHealOtherDamage`,
+  `DamageUtils.healMarkedDamage`) are documented on the `HealOtherDamage` KDoc and
+  `CombatDamageManager.applyCombatDamage`.
 - **DamageEvent filters (gap #7):** `EventPattern.DamageEvent(recipient, source, damageType, amount)`.
   `amount: AmountFilter` (`Any` / `AtMost(n)` / `AtLeast(n)` / `Exactly(n)`) gates on the would-be
   amount (Callous Giant: `AtMost(3)`). `source = SourceFilter.Matching(filter)` can carry relational
@@ -10196,21 +10265,34 @@ The priority groups are (CR 616.1a–f):
   instances sum. Use for "if an opponent would mill one or more cards, they mill that many cards plus
   four instead" (The Water Crystal:
   `ModifyMillAmount(modifier = 4, appliesTo = EventPattern.MillEvent(player = Player.EachOpponent))`).
-- `ModifyExplore(prefixEffect, appliesTo)` — insert an extra effect into an explore (CR 614, CR
-  701.44): replaces "[a matching permanent] explores" with "[prefixEffect], then that permanent
-  explores". `appliesTo` is an `EventPattern.ExploredEvent` whose `filter` scopes which explores are
-  modified, matched against the exploring creature with the **source's controller** as "you" (so
-  `ExploredEvent(GameObjectFilter.Creature.youControl())` = "if a creature you control would
-  explore"); `revealedType` is irrelevant (the replacement runs before the reveal). Like
-  `ReplaceDrawWithEffect`, explore isn't a generic replaceable event — `ExploreEffectExecutor`
-  consults printed `ModifyExplore` on the battlefield directly and, on a match, re-issues the explore
-  as `Composite(prefixEffect, ExploreEffect(sameCreature, replacementsApplied = true))` through the
-  registry recursion, so a pausing prefix (Scry's top/bottom decision) sequences fully before the
-  explore. The `replacementsApplied` guard on the inner `ExploreEffect` stops the same replacement
-  applying twice. Multiple applicable sources chain their prefixes in battlefield order (a faithful
-  APNAP order per CR 616 is unmodeled — no printed card stacks explore modifiers). Twists and Turns:
-  `ModifyExplore(Effects.Scry(1), EventPattern.ExploredEvent(GameObjectFilter.Creature.youControl()))`
-  ("If a creature you control would explore, instead you scry 1, then that creature explores").
+- `ModifyKeywordAction(prefixEffect, appliesTo)` — insert an extra effect *in front of* a keyword
+  action (CR 614): replaces "[a matching permanent] <acts>" with "[prefixEffect], then that permanent
+  <acts>". One type across keyword actions rather than one per action — `appliesTo` carries which
+  action (and its subject filter), `prefixEffect` carries the rest. Supported patterns:
+  `EventPattern.ExploredEvent` (CR 701.44) and `EventPattern.ConnivedEvent` (CR 701.50); any other
+  pattern never matches. The pattern's `filter` scopes which actions are modified, matched against
+  the acting permanent with the **source's controller** as "you" (so
+  `ConnivedEvent(GameObjectFilter.Creature.youControl())` = "if a creature you control would
+  connive"); `ExploredEvent.revealedType` is irrelevant (the replacement runs before the reveal).
+  Like `ReplaceDrawWithEffect`, neither action is a generic replaceable event —
+  `ExploreEffectExecutor` / `ConniveEffectExecutor` consult printed `ModifyKeywordAction` on the
+  battlefield directly (via `KeywordActionReplacements`) and, on a match, re-issue the action as
+  `Composite(prefixEffect, <action>(sameCreature, replacementsApplied = true))` through the registry
+  recursion, so a pausing prefix (Scry's top/bottom decision) and the action's own decision
+  (connive's discard) sequence in the printed order. The `replacementsApplied` guard on the inner
+  action stops the same replacement applying twice (CR 614.5). Multiple applicable sources chain
+  their prefixes in battlefield order (a faithful APNAP order per CR 616 is unmodeled — no printed
+  card stacks two modifiers on one action). Note the prefix runs in the *replaced action's* context,
+  so an opponent's effect making your creature act would run the prefix as the opponent; no printed
+  card distinguishes this today.
+  - Twists and Turns:
+    `ModifyKeywordAction(Effects.Scry(1), EventPattern.ExploredEvent(GameObjectFilter.Creature.youControl()))`
+    ("If a creature you control would explore, instead you scry 1, then that creature explores").
+  - Leader, Super-Genius:
+    `ModifyKeywordAction(Effects.DrawCards(1), EventPattern.ConnivedEvent(GameObjectFilter.Creature.youControl()))`
+    ("If a creature you control would connive, instead you draw a card, then that creature
+    connives") — the extra card is in hand *before* the discard is chosen, which a
+    "whenever … connives, draw a card" trigger could not do.
 - `ModifyLifeGain(multiplier, modifier, appliesTo, restrictions)` — modify life gain by a multiplicative *and/or*
   additive factor: `gained = (original * multiplier) + modifier`, clamped to ≥ 0. `appliesTo` is a `LifeGainEvent`
   whose `player` filter (default `Player.Each`) gates which players the replacement applies to. `restrictions`
