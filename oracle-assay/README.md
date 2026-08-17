@@ -20,7 +20,16 @@ and those are the two sentences on it. The **aura band** followed: `Enchant <fil
 attached-permanent statics, which opened `staticAbilities` — the largest `CardScript` slot the
 differential could not see into, and the one every later static family lands in.
 
-The most recent work is the **prevention band** — "Prevent all combat damage that would be dealt this
+The most recent work is the **fronted duration** — "Until end of turn, target creature gets +3/+3."
+(**+4 whole cards**), and it is the band whose *measurement* is the product. It is the second family
+on the tail ranking, 265 cards blocked and 189 sole-blocked, and moving the duration to the back of
+its own 266 declined lines finishes **five** of them: everything behind that opening clause is a
+construct nobody has written yet. So what shipped is the position — one kernel capability
+(`PhraseBuilder.alsoSpelled`), one derivation ([`Durations`](src/main/kotlin/com/wingedsheep/assay/grammar/Durations.kt)),
+and one line on each of thirteen durational rules — and the four bands the measurement named are the
+work. See [the fronted duration](#the-fronted-duration).
+
+Before it came the **prevention band** — "Prevent all combat damage that would be dealt this
 turn." and everything the same SDK type can say (**+75 whole cards**). It is the top-of-library
 band's lesson on an `Effect` rather than on a `Patterns` recipe: `PreventDamageEffect` calls itself
 "a single parametrized type that can express any combination" of six fields, and the grammar was
@@ -1376,6 +1385,77 @@ vocabulary, `PreventionScope`'s missing noncombat case, a recipient set of *play
 prevention one — "creatures your opponents control" (Thwart the Enemy, and 86 cards corpus-wide) has
 no controller layer yet, which is the same shape as the `legendary` layer the tapped-entry band
 measured at 416 lines.
+
+## The fronted duration
+
+"Until end of turn, target creature gets +3/+3." — the same sentence the grammar already read, with
+its duration at the other end. Whole-corpus coverage 8,042 → **8,046 cards** (+4); the baked ledger
+7,829 → **7,833 whole**, four cards gained and **none lost**. No new SDK type, no new grammar family
+in the usual sense: one kernel capability, one derivation, and one line on each of thirteen rules.
+
+**The number this band is worth is the one it measured, not the one it moved.** "Until end of …" is
+the second row of the tail ranking — 265 cards blocked, 189 sole-blocked, 267 lines — and every
+ranking the module has is over the text a line *dies on*, which here is its first clause. So the
+probe was run the way [ranking a band](#ranking-what-to-write-next) prescribes, with one wrinkle:
+the family's construct is not a prefix that can be substituted for, it is a *position*, so the
+measurement moves the duration to the back of each declined line and re-parses. Five of 266 lines
+come back readable. The other 261 decline again on what follows:
+
+| what the payload says | lines |
+|---|---|
+| "becomes a 5/5 green Plant creature …" — animating a permanent | 54 |
+| granting a quoted ability — `"When ~ dies, …"` | 42 |
+| "has base power and toughness 4/4" | 32 |
+| pumping by a count — "+1/+1 for each creature you control" | 14 |
+| a colour, a type removal, a blocking restriction, a damage rider, … | 119 |
+
+That is the band's actual product: **four named families, ranked, each of which lands in both word
+orders the day it is written.** A family that is a clause position measures its payload rather than
+itself, and the four cards this one finished are the ones whose payload was already in the grammar.
+
+**The probe was exact for once, and the reason is worth keeping.** Every previous band overstated —
+234 predicted against 183 delivered, 101 against 75 — and the modal band understated because its
+payoff sat in lines that had never declined as a family. This one predicted 5 lines and 4 whole
+cards and delivered 5 and 4, because the substitution is not an approximation of the construct here:
+moving a word is exactly what the rule does. **A probe that performs the family's own transformation
+rather than standing in for it has no gap to be wrong in.**
+
+### The position, and why it is not thirteen more rules
+
+Oracle prints this duration trailing 5,370 times on 4,862 cards and fronted 823 times on 810 — one
+model, two spellings, and by the sixfold majority the trailing one is canonical. The fronted form
+therefore has to *parse and never print*, which is what `alternate` has always been for. What it
+could not be is thirteen sibling rules: the fronted spelling of "target creature gets +3/+3 until
+end of turn" needs the identical `build` and `match`, and a second copy of a rule's two halves is the
+drift the whole bidirectional discipline exists to prevent — they agree until someone edits one.
+
+So the kernel grew the one generic thing it was missing: `PhraseBuilder.alsoSpelled(template, name)`
+registers an additional surface template on the *same* rule, sharing its closures and alternate by
+construction. It knows nothing about durations;
+[`Durations`](src/main/kotlin/com/wingedsheep/assay/grammar/Durations.kt) owns the word and the
+derivation, and each durational rule adds a single self-derived line:
+
+```kotlin
+phrase("target {filter} gets {mod} until end of turn", name = "pump target") {
+    frontedDuration()   // ← derives "until end of turn, target {filter} gets {mod}" from the template above
+    …
+}
+```
+
+Two details in the derivation are load-bearing. It **requires** a trailing duration rather than
+quietly doing nothing, so a rule that is not durational fails at construction — every rule is built
+during object initialization, which makes that the first thing a test run reports. And it fronts
+into the template's **last sentence**, not onto its front: "Choose a creature type. Each creature you
+control becomes that type until end of turn." fronts as "Choose a creature type. Until end of turn,
+each creature you control becomes that type.", which is what the duration scopes over and what
+Oracle prints. Prefixing the whole template would have read a sentence no card prints.
+
+**Two rules keep their fronted literal, and that is the corpus's decision rather than an
+inconsistency.** `Combat`'s attack-and-block tax and `TopOfLibrary`'s two cross-turn impulse
+durations print fronted on *every* card that has them, so there the fronted form is canonical and
+belongs in the template. Which order is canonical is a fact about the duration — "this turn" trails
+115:40 while `UntilEndOfNextTurn` fronts 59:16 — and this band changes nothing about that; it only
+gives the one duration whose majority is trailing its minority spelling.
 
 ## The differential gate
 
