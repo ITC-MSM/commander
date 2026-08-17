@@ -316,6 +316,13 @@ class ObservationBuilder(
             maxTargets = la.targetCount,
             requiresDamageDistribution = la.requiresDamageDistribution,
             isManaAbility = la.isManaAbility,
+            // Combat candidates. The enumerator offers one DeclareAttackers / DeclareBlockers action
+            // carrying an empty map, so without these the caller has the action but no way to know
+            // what it could declare — and `ActionParams` has nothing to be built from.
+            validAttackers = la.validAttackers.orEmpty(),
+            mandatoryAttackers = la.mandatoryAttackers.orEmpty(),
+            validAttackTargets = la.validAttackTargets.orEmpty(),
+            validBlockers = la.validBlockers.orEmpty(),
             isDecisionOption = false
         )
     }

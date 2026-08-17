@@ -33,14 +33,32 @@ Default port **8081** so it coexists with the game server on 8080.
 | `DELETE /envs` | `dispose` | `{ "envIds": [...] }` |
 | `GET /envs/{id}` | `observe` | `?revealAll=true` optional |
 | `POST /envs/{id}/reset` | `reset` | `EnvConfig` JSON |
-| `POST /envs/{id}/step` | `step` | `{ "actionId": 3 }` |
-| `POST /envs/step-batch` | `stepBatch` (parallel) | `[ { envId, actionId }, ...]` |
+| `POST /envs/{id}/step` | `step` | `{ "actionId": 3 }`, plus optional `params` — `attackers` / `blockers` / `targets` / `xValue` (see below) |
+| `POST /envs/step-batch` | `stepBatch` (parallel) | `[ { envId, actionId, params? }, ...]` |
 | `POST /envs/{id}/decision` | `submitDecision` | `DecisionResponse` JSON |
 | `POST /envs/{id}/fork` | `fork` | `?count=N` |
 | `POST /envs/{id}/snapshot` | `snapshot` | — |
 | `POST /envs/{id}/restore` | `restore` | `SnapshotHandle` JSON |
 | `GET /schema-hash` | constant | returns `{ schemaHash }` for drift-check |
 | `GET /health` | constant | returns `{ status: "ok" }` |
+
+### `params`: the choices an action ID can't carry
+
+`DeclareAttackers` is enumerated once, with an **empty** attacker map; the candidates ride on the
+same legal action (`validAttackers`, `mandatoryAttackers`, `validAttackTargets`, `validBlockers`).
+Stepping it by ID alone therefore attacks with nobody — legal, accepted, and for a long time the
+reason combat was unreachable over HTTP while every request returned 200. `StepBody.params`
+(`ActionParams` in `:gym`) completes such an action:
+
+```json
+{ "actionId": 4, "params": { "attackers": { "<attackerId>": "<defenderId>" } } }
+{ "actionId": 2, "params": { "blockers":  { "<blockerId>": ["<attackerId>"] } } }
+{ "actionId": 7, "params": { "targets": ["<entityId>"], "xValue": 3 } }
+```
+
+Params an action can't use → `400`. A completed action the engine rejects → `400` with the engine's
+reason, rather than a state-unchanged 200. Richer choices (bands, alternative costs, convoke/delve)
+still belong to `POST /envs/{id}/decision`.
 
 ## Design choices worth knowing about
 

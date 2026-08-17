@@ -244,6 +244,21 @@ data class LegalActionView(
     val maxTargets: Int = 0,
     val requiresDamageDistribution: Boolean = false,
     val isManaAbility: Boolean = false,
+    /**
+     * Creatures that may be declared as attackers (`kind == "DeclareAttackers"`), empty otherwise.
+     * Pair each with one of [validAttackTargets] in `ActionParams.attackers` when stepping; step it
+     * with no params to attack with nobody.
+     */
+    val validAttackers: List<EntityId> = emptyList(),
+    /** Attackers that *must* attack if able (CR 508.1a) — a declaration omitting one is rejected. */
+    val mandatoryAttackers: List<EntityId> = emptyList(),
+    /** Players, planeswalkers and battles this player may attack. */
+    val validAttackTargets: List<EntityId> = emptyList(),
+    /**
+     * Creatures that may be declared as blockers (`kind == "DeclareBlockers"`), empty otherwise.
+     * Map each to the attackers it blocks in `ActionParams.blockers`.
+     */
+    val validBlockers: List<EntityId> = emptyList(),
     /** True when this entry was generated from [PendingDecisionView], not a GameAction. */
     val isDecisionOption: Boolean = false
 )

@@ -3,6 +3,8 @@ package com.wingedsheep.gym
 import com.wingedsheep.engine.core.DecisionResponse
 import com.wingedsheep.engine.core.GameConfig
 import com.wingedsheep.engine.core.SubmitDecision
+import com.wingedsheep.gym.contract.ActionParameterizer
+import com.wingedsheep.gym.contract.ActionParams
 import com.wingedsheep.gym.contract.ActionRegistry
 import com.wingedsheep.gym.contract.ObservationBuilder
 import com.wingedsheep.gym.contract.ObservationResult
@@ -34,8 +36,8 @@ class GameGymEnv(
     override fun observe(revealAll: Boolean?): ObservationResult =
         build(revealAll ?: defaultRevealAll)
 
-    override fun step(actionId: Int): ObservationResult {
-        executeResolved(registry.resolve(actionId), actionId)
+    override fun step(actionId: Int, params: ActionParams): ObservationResult {
+        executeResolved(registry.resolve(actionId), actionId, params)
         return build(defaultRevealAll)
     }
 
@@ -83,10 +85,23 @@ class GameGymEnv(
         return result
     }
 
-    private fun executeResolved(resolved: ResolvedAction, actionId: Int) {
+    private fun executeResolved(resolved: ResolvedAction, actionId: Int, params: ActionParams) {
         when (resolved) {
-            is ResolvedAction.Legal -> environment.step(resolved.action)
+            is ResolvedAction.Legal -> {
+                // The enumerated action is a template for the action types that need a choice the
+                // ID can't carry (attackers, blockers, targets, X); params complete it.
+                val action = ActionParameterizer.apply(resolved.action, params, environment.state)
+                environment.step(action)
+                // An engine rejection leaves the state untouched, which would otherwise read as a
+                // successful no-op — the exact way a mis-declared attack used to disappear.
+                environment.lastRejection?.let {
+                    throw IllegalArgumentException("Action $actionId rejected by the engine: $it")
+                }
+            }
             is ResolvedAction.Decision -> {
+                require(params.isEmpty) {
+                    "Action ID $actionId is a folded decision response and takes no step params"
+                }
                 val pending = environment.state.pendingDecision
                     ?: throw IllegalStateException("Registry has a decision response but env is not paused")
                 environment.step(SubmitDecision(pending.playerId, resolved.response))

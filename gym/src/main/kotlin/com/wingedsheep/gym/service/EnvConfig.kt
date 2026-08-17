@@ -1,5 +1,6 @@
 package com.wingedsheep.gym.service
 
+import com.wingedsheep.gym.contract.ActionParams
 import com.wingedsheep.sdk.model.EntityId
 import kotlinx.serialization.Serializable
 
@@ -90,7 +91,9 @@ data class PlayerSpec(
 @Serializable
 data class StepRequest(
     val envId: EnvId,
-    val actionId: Int
+    val actionId: Int,
+    /** Choices the action ID can't carry — attackers, blockers, targets, X. See [ActionParams]. */
+    val params: ActionParams = ActionParams.EMPTY
 )
 
 /** Result of deck validation. Surfaced by [DeckResolver.validate]. */

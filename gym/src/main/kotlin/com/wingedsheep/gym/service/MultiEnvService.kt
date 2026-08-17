@@ -103,7 +103,7 @@ class MultiEnvService(
      * come from the most-recent observation for that env.
      */
     fun step(request: StepRequest): ObservationResult =
-        requireEnv(request.envId).step(request.actionId)
+        requireEnv(request.envId).step(request.actionId, request.params)
 
     /** Advance N envs in parallel. Each env is single-threaded inside its own task. */
     fun stepBatch(requests: List<StepRequest>): List<Pair<EnvId, ObservationResult>> {

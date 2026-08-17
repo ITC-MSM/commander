@@ -107,6 +107,17 @@ class GameEnvironment private constructor(
     var stepCount: Int = 0
         private set
 
+    /**
+     * Why the engine rejected the most recent [step], or `null` when it was accepted.
+     *
+     * An illegal action leaves the state untouched, which on its own is indistinguishable from an
+     * action that legitimately changed nothing (declaring no attackers, passing priority). Callers
+     * that must not swallow a rejection — the HTTP transport, which turns it into a 400 — read this;
+     * the trainer SPI, which only ever submits enumerated actions, can keep ignoring it.
+     */
+    var lastRejection: String? = null
+        private set
+
     // =========================================================================
     // Queries
     // =========================================================================
@@ -144,6 +155,7 @@ class GameEnvironment private constructor(
         playerIds = initResult.playerIds
         events = initResult.events
         lastStepEvents = initResult.events
+        lastRejection = null
         stepCount = 0
         return buildStepResult(initResult.events)
     }
@@ -174,6 +186,7 @@ class GameEnvironment private constructor(
         state = simResult.state
         events = events + simResult.events
         lastStepEvents = simResult.events
+        lastRejection = (simResult as? SimulationResult.Illegal)?.reason
         stepCount++
 
         return buildStepResult(simResult.events)

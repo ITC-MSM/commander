@@ -243,14 +243,21 @@ class EnvController(
 
     @Operation(
         summary = "Advance an env by one action",
-        description = "`actionId` must come from the most recent observation. Stale IDs return 400."
+        description = """
+            `actionId` must come from the most recent observation. Stale IDs return 400.
+            Optional `params` complete an action the ID alone can't describe — `attackers`
+            (attacker id → defender id), `blockers` (blocker id → attackers blocked), `targets`,
+            `xValue`. The candidates come from the same legal action's `validAttackers` /
+            `validAttackTargets` / `validBlockers`. Params the action can't use, and an action the
+            engine then rejects, both return 400 rather than a silent no-op.
+        """
     )
     @PostMapping("/{id}/step")
     fun step(
         @PathVariable id: String,
         @RequestBody body: StepBody
     ): Observation =
-        multiEnvService.step(StepRequest(EnvId(id), body.actionId)).observation
+        multiEnvService.step(StepRequest(EnvId(id), body.actionId, body.params)).observation
 
     @Operation(
         summary = "Advance many envs in parallel",
@@ -258,7 +265,7 @@ class EnvController(
     )
     @PostMapping("/step-batch")
     fun stepBatch(@RequestBody items: List<StepBatchItem>): List<StepBatchResult> {
-        val requests = items.map { StepRequest(it.envId, it.actionId) }
+        val requests = items.map { StepRequest(it.envId, it.actionId, it.params) }
         return multiEnvService.stepBatch(requests).map { (envId, obs) ->
             StepBatchResult(envId, obs.observation)
         }
