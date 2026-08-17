@@ -76,6 +76,8 @@ data class EffectContext(
      * amount's `Target(0)` power read would land on the surviving opponent's creature.
      */
     val alignedTargets: List<ChosenTarget?> = emptyList(),
+    /** Battlefield-entry stamps captured with spell targets, used for CR 400.7 rechecks. */
+    val targetEntryStamps: Map<EntityId, Long> = emptyMap(),
     /**
      * The X chosen for an X-cost spell/ability. Also reused by `ChooseNumberThenEffect` to
      * carry a "choose a number" value into the inner effect (read via `CardPredicate.ManaValueEqualsX`,

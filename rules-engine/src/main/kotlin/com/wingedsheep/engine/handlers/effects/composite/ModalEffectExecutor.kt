@@ -179,7 +179,8 @@ class ModalEffectExecutor(
             effect,
             chosenModes = context.chosenModes,
             modeTargetsOrdered = context.modeTargetsOrdered,
-            modeTargetRequirements = context.modeTargetRequirements
+            modeTargetRequirements = context.modeTargetRequirements,
+            targetEntryStamps = context.targetEntryStamps
         )
         val sourceName = context.sourceId?.let { id -> state.getEntity(id)?.get<CardComponent>()?.name }
         val baseCtx = PreTargetedEffectContext(
@@ -204,7 +205,8 @@ class ModalEffectExecutor(
             effect: ModalEffect,
             chosenModes: List<Int>,
             modeTargetsOrdered: List<List<com.wingedsheep.engine.state.components.stack.ChosenTarget>>,
-            modeTargetRequirements: Map<Int, List<com.wingedsheep.sdk.scripting.targets.TargetRequirement>>
+            modeTargetRequirements: Map<Int, List<com.wingedsheep.sdk.scripting.targets.TargetRequirement>>,
+            targetEntryStamps: Map<com.wingedsheep.sdk.model.EntityId, Long> = emptyMap()
         ): List<PreTargetedEffectEntry> {
             return chosenModes.mapIndexed { ordinal, modeIndex ->
                 val mode = effect.modes.getOrNull(modeIndex)
@@ -215,18 +217,24 @@ class ModalEffectExecutor(
                 PreTargetedEffectEntry(
                     effect = mode?.effect ?: error("Invalid pre-chosen mode index: $modeIndex"),
                     targets = targets,
-                    targetRequirements = reqs
+                    targetRequirements = reqs,
+                    targetEntryStamps = targetEntryStamps
                 )
             }
         }
 
         /** Convenience overload reading from a [SpellOnStackComponent]. */
-        fun buildModeEntries(effect: ModalEffect, spellOnStack: SpellOnStackComponent): List<PreTargetedEffectEntry> =
+        fun buildModeEntries(
+            effect: ModalEffect,
+            spellOnStack: SpellOnStackComponent,
+            targetEntryStamps: Map<com.wingedsheep.sdk.model.EntityId, Long> = emptyMap()
+        ): List<PreTargetedEffectEntry> =
             buildModeEntries(
                 effect,
                 spellOnStack.chosenModes,
                 spellOnStack.modeTargetsOrdered,
-                spellOnStack.modeTargetRequirements
+                spellOnStack.modeTargetRequirements,
+                targetEntryStamps
             )
     }
 }
@@ -280,7 +288,8 @@ internal fun processPreTargetedEffectQueue(
             casterId = ctx.controllerId,
             sourceColors = sourceColors,
             sourceSubtypes = sourceSubtypes,
-            sourceId = ctx.sourceId
+            sourceId = ctx.sourceId,
+            targetEntryStamps = head.targetEntryStamps
         )
     } else head.targets
 

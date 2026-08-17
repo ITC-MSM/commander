@@ -15,6 +15,7 @@ import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.engine.state.components.identity.FaceDownComponent
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
+import com.wingedsheep.engine.state.components.stack.TargetsComponent
 import com.wingedsheep.sdk.core.AbilityFlag
 import com.wingedsheep.sdk.core.CardType
 import com.wingedsheep.sdk.core.Color
@@ -61,7 +62,8 @@ class TargetValidator {
         sourceColors: Set<Color> = emptySet(),
         sourceSubtypes: Set<String> = emptySet(),
         sourceId: EntityId? = null,
-        xValue: Int? = null
+        xValue: Int? = null,
+        targetEntryStamps: Map<EntityId, Long> = emptyMap()
     ): List<ChosenTarget?> {
         if (requirements.isEmpty()) return targets
 
@@ -94,6 +96,9 @@ class TargetValidator {
             }
             val requirement = requirements.getOrNull(requirementIndex) ?: return@mapIndexed null
             target.takeIf {
+                (it !is ChosenTarget.Permanent || !TargetsComponent.isDifferentObject(
+                    state, it.entityId, targetEntryStamps
+                )) &&
                 validateSingleTarget(
                     state, it, requirement, casterId, sourceColors, sourceSubtypes, sourceId, xValue, targets
                 ) == null

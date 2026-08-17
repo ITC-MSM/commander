@@ -7,6 +7,7 @@ import com.wingedsheep.engine.support.GameTestDriver
 import com.wingedsheep.engine.support.TestCards
 import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.core.Step
+import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.CardDefinition
@@ -14,6 +15,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.scripting.effects.ForEachTargetEffect
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.scripting.targets.TargetCreature
+import com.wingedsheep.sdk.dsl.Targets
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 
@@ -43,8 +45,28 @@ class ModalIntraResolutionPartialTargetTest : FunSpec({
         }
     }
 
+    val blinkThenSpray: CardDefinition = card("Blink Then Spray") {
+        manaCost = "{R}"
+        typeLine = "Sorcery"
+        spell {
+            modal(chooseCount = 2, minChooseCount = 2) {
+                mode("Exile then return target creature you control") {
+                    val creature = target("creature to blink", Targets.CreatureYouControl)
+                    effect = Effects.Move(creature, Zone.EXILE)
+                        .then(Effects.Move(creature, Zone.BATTLEFIELD))
+                }
+                mode("Deal 1 damage to each of up to two target creatures") {
+                    target("creatures to damage", TargetCreature(count = 2, minCount = 1))
+                    effect = ForEachTargetEffect(
+                        listOf(Effects.DealDamage(1, EffectTarget.ContextTarget(0)))
+                    )
+                }
+            }
+        }
+    }
+
     fun driver(): GameTestDriver = GameTestDriver().also {
-        it.registerCards(TestCards.all + listOf(destroyThenSpray))
+        it.registerCards(TestCards.all + listOf(destroyThenSpray, blinkThenSpray))
     }
 
     test("later modal mode damages its remaining legal target after an earlier mode destroys the other") {
@@ -81,6 +103,43 @@ class ModalIntraResolutionPartialTargetTest : FunSpec({
         d.bothPass()
 
         d.findPermanent(p2, "Savannah Lions") shouldBe null
+        (d.state.getEntity(courser)?.get<DamageComponent>()?.amount ?: 0) shouldBe 1
+    }
+
+    test("later modal mode ignores a target that blinked and returned as a new object") {
+        val d = driver()
+        d.initMirrorMatch(deck = Deck.of("Mountain" to 20))
+        val p1 = d.activePlayer!!
+        d.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        d.putCreatureOnBattlefield(p1, "Savannah Lions")
+        d.putCreatureOnBattlefield(p1, "Centaur Courser")
+        d.giveMana(p1, Color.RED, 1)
+        val spell = d.putCardInHand(p1, "Blink Then Spray")
+        val lions = d.findPermanent(p1, "Savannah Lions")!!
+        val courser = d.findPermanent(p1, "Centaur Courser")!!
+
+        d.submit(
+            CastSpell(
+                playerId = p1,
+                cardId = spell,
+                targets = listOf(
+                    ChosenTarget.Permanent(lions),
+                    ChosenTarget.Permanent(lions),
+                    ChosenTarget.Permanent(courser),
+                ),
+                chosenModes = listOf(0, 1),
+                modeTargetsOrdered = listOf(
+                    listOf(ChosenTarget.Permanent(lions)),
+                    listOf(ChosenTarget.Permanent(lions), ChosenTarget.Permanent(courser)),
+                ),
+            )
+        ).isSuccess shouldBe true
+
+        d.bothPass()
+
+        (lions in d.state.getBattlefield()) shouldBe true
+        (d.state.getEntity(lions)?.get<DamageComponent>()?.amount ?: 0) shouldBe 0
         (d.state.getEntity(courser)?.get<DamageComponent>()?.amount ?: 0) shouldBe 1
     }
 })

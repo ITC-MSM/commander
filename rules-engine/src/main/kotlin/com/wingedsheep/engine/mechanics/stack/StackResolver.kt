@@ -118,14 +118,18 @@ class StackResolver(
      * A spliced card contributes its *rules text*, so what is queued is its `spellEffect`; a splice
      * card with no spell effect (nothing splice-able) simply drops out.
      */
-    private fun buildSpliceEntries(spellComponent: SpellOnStackComponent): List<PreTargetedEffectEntry> =
+    private fun buildSpliceEntries(
+        spellComponent: SpellOnStackComponent,
+        targetEntryStamps: Map<EntityId, Long> = emptyMap()
+    ): List<PreTargetedEffectEntry> =
         spellComponent.splicedCardNames.mapIndexedNotNull { index, name ->
             val splicedDef = cardRegistry.getCard(name) ?: return@mapIndexedNotNull null
             val effect = splicedDef.script.spellEffect ?: return@mapIndexedNotNull null
             PreTargetedEffectEntry(
                 effect = effect,
                 targets = spellComponent.splicedTargetsOrdered.getOrNull(index) ?: emptyList(),
-                targetRequirements = splicedDef.script.targetRequirements
+                targetRequirements = splicedDef.script.targetRequirements,
+                targetEntryStamps = targetEntryStamps
             )
         }
 
@@ -1997,7 +2001,9 @@ class StackResolver(
         // that consumes "all targets" would swallow the spliced card's as well.
         // A spell with no effect of its own can't be a splice host in practice (a splice card is
         // spliced onto a spell that has text), so the tail lives inside the `spellEffect != null` guard.
-        val spliceEntries = buildSpliceEntries(spellComponent)
+        val stackTargetEntryStamps = state.getEntity(spellId)
+            ?.get<TargetsComponent>()?.targetEntryStamps ?: emptyMap()
+        val spliceEntries = buildSpliceEntries(spellComponent, stackTargetEntryStamps)
         val splicedRequirementCount = spellComponent.splicedCardNames.sumOf { name ->
             cardRegistry.getCard(name)?.script?.targetRequirements?.size ?: 0
         }
@@ -2035,6 +2041,7 @@ class StackResolver(
                 // references — ContextTarget(n), EntityReference.Target(n), ContextPlayer(n) —
                 // resolve by ORIGINAL slot and don't shift onto a later still-valid target.
                 alignedTargets = mainAlignedTargets,
+                targetEntryStamps = stackTargetEntryStamps,
                 // A pay-X-life additional cost (AdditionalCost.PayXLife, e.g. Vicious Rivalry) feeds
                 // its declared X through the same X slot read by DynamicAmount.XValue and the
                 // ManaValue*X predicates. Such a card never also carries an {X} mana cost, so
