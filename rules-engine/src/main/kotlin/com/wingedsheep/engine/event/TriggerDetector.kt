@@ -14,6 +14,7 @@ import com.wingedsheep.engine.core.UntappedEvent
 import com.wingedsheep.engine.core.ControlChangedEvent
 import com.wingedsheep.engine.core.DoorUnlockedEvent
 import com.wingedsheep.engine.core.DamageDealtEvent
+import com.wingedsheep.engine.core.CombatDamageBatchExcessEvent
 import com.wingedsheep.engine.core.PermanentsSacrificedEvent
 import com.wingedsheep.engine.core.ReflexiveAbilityTriggeredEvent
 import com.wingedsheep.engine.core.SpellCastEvent
@@ -1510,6 +1511,12 @@ class TriggerDetector(
         // Handle general damage observer triggers (e.g., Kazarov: "whenever a creature an opponent controls is dealt damage")
         if (event is DamageDealtEvent) {
             damageDetector.detectDamageObserverTriggers(state, event, triggers, index)
+        }
+
+        // CR 120.10 aggregate excess for simultaneous combat damage to a planeswalker or battle
+        // is recipient-side: no individual source gets an arbitrary excess attribution.
+        if (event is CombatDamageBatchExcessEvent) {
+            damageDetector.detectCombatDamageBatchExcessTriggers(state, event, triggers, index)
         }
 
         // Handle "whenever a [subtype] deals combat damage to a player" triggers (e.g., Cabal Slaver)

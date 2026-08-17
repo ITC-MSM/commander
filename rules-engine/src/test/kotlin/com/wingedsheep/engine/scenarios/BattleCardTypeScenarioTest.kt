@@ -50,6 +50,20 @@ class BattleCardTypeScenarioTest : ScenarioTestBase() {
         toughness = 10
     }
 
+    private val testStrikerA = card("Test Striker A") {
+        manaCost = "{3}"
+        typeLine = "Creature — Warrior"
+        power = 3
+        toughness = 3
+    }
+
+    private val testStrikerB = card("Test Striker B") {
+        manaCost = "{3}"
+        typeLine = "Creature — Warrior"
+        power = 3
+        toughness = 3
+    }
+
     private val testPlaneswalker = card("Test Planeswalker") {
         manaCost = "{2}{U}"
         colorIdentity = "U"
@@ -69,6 +83,8 @@ class BattleCardTypeScenarioTest : ScenarioTestBase() {
         cardRegistry.register(testSiege)
         cardRegistry.register(testTypelessBattle)
         cardRegistry.register(testTitan)
+        cardRegistry.register(testStrikerA)
+        cardRegistry.register(testStrikerB)
         cardRegistry.register(testPlaneswalker)
 
         context("CR 310.4 — defense is defense counters") {
@@ -358,6 +374,87 @@ class BattleCardTypeScenarioTest : ScenarioTestBase() {
                     .single { it.targetId == siege }
                 withClue("CR 120.4a — combat damage above a battle's defense is excess") {
                     damageEvent.excessAmount shouldBe 5
+                }
+            }
+
+            test("simultaneous combat damage reports aggregate battle excess without source-order attribution") {
+                val game = scenario()
+                    .withPlayers("Player", "Opponent")
+                    .withCardOnBattlefield(1, "Test Siege")
+                    .withCardOnBattlefield(1, "Test Striker A", summoningSickness = false)
+                    .withCardOnBattlefield(1, "Test Striker B", summoningSickness = false)
+                    .withActivePlayer(1)
+                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                    .build()
+
+                game.checkStateBasedActions()
+                game.advanceToPhase(Phase.COMBAT, Step.DECLARE_ATTACKERS)
+                game.declareAttackersWithPermanentTargets(
+                    permanentAttackers = linkedMapOf(
+                        "Test Striker A" to "Test Siege",
+                        "Test Striker B" to "Test Siege"
+                    )
+                ).error shouldBe null
+
+                val siege = game.findPermanent("Test Siege")!!
+                val combatDamage = CombatDamageManager(cardRegistry, DamageCalculator(cardRegistry))
+                    .applyCombatDamage(game.state)
+                combatDamage.error shouldBe null
+
+                val sourceEvents = combatDamage.events
+                    .filterIsInstance<com.wingedsheep.engine.core.DamageDealtEvent>()
+                    .filter { it.targetId == siege }
+                withClue("neither simultaneous source is arbitrarily marked as the excess source") {
+                    sourceEvents.size shouldBe 2
+                    sourceEvents.map { it.excessAmount }.toSet() shouldBe setOf(0)
+                }
+                val aggregate = combatDamage.events
+                    .filterIsInstance<com.wingedsheep.engine.core.CombatDamageBatchExcessEvent>()
+                    .single { it.targetId == siege }
+                withClue("CR 120.4a/120.10 — 3 + 3 combat damage over 5 defense has one aggregate excess") {
+                    aggregate.preDamageCounterCount shouldBe 5
+                    aggregate.totalDamage shouldBe 6
+                    aggregate.excessAmount shouldBe 1
+                    aggregate.sourceIds.toSet() shouldBe sourceEvents.map { it.sourceId }.toSet()
+                }
+            }
+
+            test("simultaneous combat damage reports aggregate planeswalker excess") {
+                val game = scenario()
+                    .withPlayers("Player", "Opponent")
+                    .withCardOnBattlefield(2, "Test Planeswalker")
+                    .withCardOnBattlefield(1, "Test Striker A", summoningSickness = false)
+                    .withCardOnBattlefield(1, "Test Striker B", summoningSickness = false)
+                    .withActivePlayer(1)
+                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                    .build()
+
+                game.advanceToPhase(Phase.COMBAT, Step.DECLARE_ATTACKERS)
+                game.declareAttackersWithPermanentTargets(
+                    permanentAttackers = linkedMapOf(
+                        "Test Striker A" to "Test Planeswalker",
+                        "Test Striker B" to "Test Planeswalker"
+                    )
+                ).error shouldBe null
+
+                val planeswalker = game.findPermanent("Test Planeswalker")!!
+                val combatDamage = CombatDamageManager(cardRegistry, DamageCalculator(cardRegistry))
+                    .applyCombatDamage(game.state)
+                combatDamage.error shouldBe null
+
+                combatDamage.events
+                    .filterIsInstance<com.wingedsheep.engine.core.DamageDealtEvent>()
+                    .filter { it.targetId == planeswalker }
+                    .map { it.excessAmount }
+                    .toSet() shouldBe setOf(0)
+                val aggregate = combatDamage.events
+                    .filterIsInstance<com.wingedsheep.engine.core.CombatDamageBatchExcessEvent>()
+                    .single { it.targetId == planeswalker }
+                withClue("CR 120.4a/120.10 — 3 + 3 over three loyalty is three aggregate excess") {
+                    aggregate.counterType shouldBe CounterType.LOYALTY.name
+                    aggregate.preDamageCounterCount shouldBe 3
+                    aggregate.totalDamage shouldBe 6
+                    aggregate.excessAmount shouldBe 3
                 }
             }
 

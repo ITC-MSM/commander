@@ -2,6 +2,7 @@ package com.wingedsheep.engine.event
 
 import com.wingedsheep.engine.core.CardsDiscardedEvent
 import com.wingedsheep.engine.core.ControlChangedEvent
+import com.wingedsheep.engine.core.CombatDamageBatchExcessEvent
 import com.wingedsheep.engine.core.DamageDealtEvent
 import com.wingedsheep.engine.core.PermanentsSacrificedEvent
 import com.wingedsheep.engine.core.ZoneChangeEvent
@@ -20,8 +21,12 @@ import com.wingedsheep.sdk.dsl.Triggers
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.Deck
+import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.EventPattern
 import com.wingedsheep.sdk.scripting.GameObjectFilter
+import com.wingedsheep.sdk.scripting.TriggerBinding
+import com.wingedsheep.sdk.scripting.events.DamageType
+import com.wingedsheep.sdk.scripting.events.RecipientFilter
 import com.wingedsheep.sdk.scripting.effects.LoseLifeEffect
 import com.wingedsheep.sdk.scripting.references.Player
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
@@ -106,6 +111,20 @@ class TriggerDetectorBatchTriggerTest : FunSpec({
             trigger = Triggers.Dies
             triggerZone = Zone.GRAVEYARD
             effect = LoseLifeEffect(1, EffectTarget.PlayerRef(Player.You))
+        }
+    }
+
+    val aggregateExcessWatcher = card("Aggregate Excess Watcher") {
+        manaCost = "{1}"
+        typeLine = "Enchantment"
+        triggeredAbility {
+            trigger = Triggers.dealsDamage(
+                damageType = DamageType.Combat,
+                recipient = RecipientFilter.AnyPermanent,
+                binding = TriggerBinding.ANY,
+                requireExcess = true
+            )
+            effect = LoseLifeEffect(1, EffectTarget.PlayerRef(Player.EachOpponent))
         }
     }
 
@@ -464,6 +483,32 @@ class TriggerDetectorBatchTriggerTest : FunSpec({
             triggers.filter {
                 it.ability.trigger is EventPattern.OneOrMoreDealCombatDamageToPlayerEvent
             }.shouldBeEmpty()
+        }
+    }
+
+    context("aggregate combat excess to battles and planeswalkers") {
+
+        test("recipient-side excess observer fires once with the aggregate amount") {
+            val driver = createDriver(aggregateExcessWatcher, plainArtifact)
+            driver.putPermanentOnBattlefield(driver.player1, "Aggregate Excess Watcher")
+            val target = driver.putPermanentOnBattlefield(driver.player2, "Chrome Mox")
+            val event = CombatDamageBatchExcessEvent(
+                targetId = target,
+                targetName = "Test Siege",
+                counterType = "DEFENSE",
+                preDamageCounterCount = 5,
+                totalDamage = 6,
+                excessAmount = 1,
+                sourceIds = listOf(EntityId("source-a"), EntityId("source-b"))
+            )
+
+            val triggers = detectorFor(driver).detectTriggers(driver.state, listOf(event))
+
+            triggers shouldHaveSize 1
+            triggers.single().controllerId shouldBe driver.player1
+            triggers.single().triggerContext.triggeringEntityId shouldBe target
+            triggers.single().triggerContext.damageAmount shouldBe 6
+            triggers.single().triggerContext.excessDamageAmount shouldBe 1
         }
     }
 

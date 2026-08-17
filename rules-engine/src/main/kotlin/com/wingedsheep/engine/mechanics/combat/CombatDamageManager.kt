@@ -265,9 +265,19 @@ internal class CombatDamageManager(
         finalAssignments = shieldResult.second
         events.addAll(shieldResult.third)
 
-        // Phase 3: Apply
-        for (assignment in finalAssignments) {
+        // Phase 3: Apply. Counter-backed recipients need their pre-damage counter total only once
+        // per simultaneous batch: doing these assignments in the ordinary loop would make excess
+        // damage depend on list order rather than CR 120.4a's aggregate calculation.
+        val (counterAssignments, ordinaryAssignments) = finalAssignments.partition { assignment ->
+            val target = newState.getEntity(assignment.targetId) ?: return@partition false
+            target.get<LifeTotalComponent>() == null &&
+                (newState.projectedState.isPlaneswalker(assignment.targetId) || newState.projectedState.isBattle(assignment.targetId))
+        }
+        for (assignment in ordinaryAssignments) {
             newState = applySingleAssignment(newState, assignment, events)
+        }
+        for ((_, assignments) in counterAssignments.groupBy { it.targetId }) {
+            newState = applyCounterDamageBatch(newState, assignments, events)
         }
 
         // Consume one-shot redirect effects for creatures that dealt damage
@@ -839,6 +849,93 @@ internal class CombatDamageManager(
             )
             else -> applyDamageToCreature(state, assignment.sourceId, assignment.targetId, amplifiedAmount, events)
         }
+    }
+
+    /** Apply all simultaneous combat damage headed for one planeswalker or battle as one counter batch. */
+    private fun applyCounterDamageBatch(
+        state: GameState,
+        assignments: List<CombatDamageAssignment>,
+        events: MutableList<GameEvent>
+    ): GameState {
+        val targetId = assignments.first().targetId
+        if (targetId !in state.getBattlefield()) return state
+        val projected = state.projectedState
+        val counterType = when {
+            projected.isPlaneswalker(targetId) -> com.wingedsheep.sdk.core.CounterType.LOYALTY
+            projected.isBattle(targetId) -> com.wingedsheep.sdk.core.CounterType.DEFENSE
+            else -> return state
+        }
+
+        // Replacement/prevention remains source-sensitive. Resolve each source's actual amount
+        // first, without mutating target counters; only then calculate the aggregate excess.
+        var newState = state
+        val resolved = mutableListOf<Pair<CombatDamageAssignment, Int>>()
+        for (assignment in assignments) {
+            val amplified = DamageUtils.applyStaticDamageAmplification(
+                newState, targetId, assignment.amount, assignment.sourceId, isCombatDamage = true
+            )
+            val (afterPrevention, actual) = DamageUtils.applyDamagePreventionShields(
+                newState, targetId, amplified, isCombatDamage = true, sourceId = assignment.sourceId
+            )
+            newState = afterPrevention
+            if (actual > 0) resolved += assignment to actual
+        }
+        if (resolved.isEmpty() || targetId !in newState.getBattlefield()) return newState
+
+        // Preserve the established source-local representation for a true one-source hit. For
+        // multiple simultaneous sources, all ordinary source events intentionally carry zero
+        // excess and the recipient-level aggregate event below carries the rule quantity.
+        if (resolved.size == 1) {
+            val (assignment, amount) = resolved.single()
+            return removeCountersForDamage(newState, assignment.sourceId, targetId, amount, counterType, events)
+        }
+
+        val counters = newState.getEntity(targetId)?.get<CountersComponent>() ?: CountersComponent()
+        val before = counters.getCount(counterType)
+        val total = resolved.sumOf { it.second }
+        val excess = (total - before).coerceAtLeast(0)
+        newState = newState.updateEntity(targetId) { it.with(counters.withRemoved(counterType, total)) }
+
+        if (counterType == com.wingedsheep.sdk.core.CounterType.DEFENSE &&
+            before in 1..total && Battles.isSiege(newState, targetId)
+        ) {
+            newState = newState.updateEntity(targetId) {
+                it.with(com.wingedsheep.engine.state.components.battlefield.DefeatTriggerArmedComponent)
+            }
+        }
+
+        val targetName = newState.getEntity(targetId)?.get<CardComponent>()?.name
+            ?: if (counterType == com.wingedsheep.sdk.core.CounterType.LOYALTY) "Planeswalker" else "Battle"
+        for ((assignment, amount) in resolved) {
+            if (assignment.sourceId in newState.getBattlefield()) {
+                newState = newState.updateEntity(assignment.sourceId) { it.with(HasDealtDamageComponent) }
+            }
+            val sourceName = newState.getEntity(assignment.sourceId)?.get<CardComponent>()?.name ?: "Creature"
+            events += DamageDealtEvent(
+                assignment.sourceId, targetId, amount, true,
+                sourceName = sourceName, targetName = targetName, targetIsPlayer = false, excessAmount = 0
+            )
+        }
+        val removed = total.coerceAtMost(before)
+        if (counterType == com.wingedsheep.sdk.core.CounterType.LOYALTY) {
+            events += LoyaltyChangedEvent(targetId, targetName, -removed)
+        } else if (removed > 0) {
+            events += com.wingedsheep.engine.core.CountersRemovedEvent(
+                targetId, counterType.name, removed, targetName, remainingCount = before - removed
+            )
+        }
+        if (excess > 0) {
+            events += CombatDamageBatchExcessEvent(
+                targetId = targetId,
+                targetName = targetName,
+                counterType = counterType.name,
+                preDamageCounterCount = before,
+                totalDamage = total,
+                excessAmount = excess,
+                sourceIds = resolved.map { it.first.sourceId }.distinct().sortedBy { it.toString() },
+            )
+        }
+        return newState
     }
 
     /**

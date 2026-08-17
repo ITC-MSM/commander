@@ -56,6 +56,7 @@ val engineSerializersModule = SerializersModule {
         subclass(ZoneChangeEvent::class)
         subclass(LifeChangedEvent::class)
         subclass(DamageDealtEvent::class)
+        subclass(CombatDamageBatchExcessEvent::class)
         subclass(DamagePreventedEvent::class)
         subclass(CardPlayedFromPermissionEvent::class)
         subclass(LandPlayedEvent::class)

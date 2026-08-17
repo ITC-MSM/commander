@@ -1,6 +1,7 @@
 package com.wingedsheep.engine.event
 
 import com.wingedsheep.engine.core.DamageDealtEvent
+import com.wingedsheep.engine.core.CombatDamageBatchExcessEvent
 import com.wingedsheep.engine.core.GameEvent as EngineGameEvent
 import com.wingedsheep.engine.mechanics.layers.ProjectedState
 import com.wingedsheep.engine.state.GameState
@@ -286,6 +287,59 @@ class DamageTriggerDetector(
                         )
                     }
                 }
+            }
+        }
+    }
+
+    /**
+     * Detect recipient-side excess triggers for a simultaneous combat batch to a battle or
+     * planeswalker. CR 120.10 defines this excess for the recipient collectively, not for one
+     * arbitrary source, so source-bound damage triggers deliberately do not enter this path.
+     */
+    fun detectCombatDamageBatchExcessTriggers(
+        state: GameState,
+        event: CombatDamageBatchExcessEvent,
+        triggers: MutableList<PendingTrigger>,
+        index: TriggerIndex
+    ) {
+        val aggregateView = DamageDealtEvent(
+            sourceId = null,
+            targetId = event.targetId,
+            amount = event.totalDamage,
+            isCombatDamage = true,
+            sourceName = null,
+            targetName = event.targetName,
+            targetIsPlayer = false,
+            excessAmount = event.excessAmount
+        )
+        for (entry in index.damageObservers) {
+            for (ability in entry.abilities) {
+                val trigger = ability.trigger
+                if (trigger !is EventPattern.DealsDamageEvent ||
+                    ability.binding != TriggerBinding.ANY ||
+                    trigger.batch ||
+                    !trigger.requireExcess ||
+                    trigger.sourceFilter != null ||
+                    trigger.requires.isNotEmpty() ||
+                    !matcher.matchesDealsDamageTrigger(trigger, aggregateView, state, entry.controllerId)
+                ) continue
+
+                // This aggregate route is only for actual permanent recipients. Do not reuse the
+                // broad creature/player matcher branches here: a battle must never satisfy an
+                // "a creature is dealt excess damage" trigger merely because it is non-player.
+                if (trigger.recipient !in setOf(RecipientFilter.Any, RecipientFilter.AnyPermanent)) continue
+
+                triggers += PendingTrigger(
+                    ability = ability,
+                    sourceId = entry.entityId,
+                    sourceName = entry.cardComponent.name,
+                    controllerId = entry.controllerId,
+                    triggerContext = TriggerContext(
+                        triggeringEntityId = event.targetId,
+                        damageAmount = event.totalDamage,
+                        excessDamageAmount = event.excessAmount
+                    )
+                )
             }
         }
     }

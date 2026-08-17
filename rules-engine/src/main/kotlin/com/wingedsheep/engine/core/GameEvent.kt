@@ -159,6 +159,26 @@ data class DamageDealtEvent(
 ) : GameEvent
 
 /**
+ * Aggregate excess from one simultaneous combat-damage batch to a planeswalker or battle.
+ *
+ * Unlike [DamageDealtEvent], this event intentionally has no source: CR 120.4a/120.10 measure
+ * excess against the recipient's pre-damage loyalty/defense while accounting for all sources
+ * dealing damage at the same time. Assigning that aggregate to whichever source happened to be
+ * processed last would make rules behaviour depend on engine iteration order.
+ */
+@Serializable
+@SerialName("CombatDamageBatchExcessEvent")
+data class CombatDamageBatchExcessEvent(
+    val targetId: EntityId,
+    val targetName: String,
+    val counterType: String,
+    val preDamageCounterCount: Int,
+    val totalDamage: Int,
+    val excessAmount: Int,
+    val sourceIds: List<EntityId>,
+) : GameEvent
+
+/**
  * A "next damage from a chosen source" shield fired on an instance of damage (Deflecting Palm,
  * New Way Forward, Eye for an Eye). Carries [linkId] so the shield's own delayed triggered ability
  * ("When damage is prevented this way, …") fires on the stack and reads [amount] (the captured
