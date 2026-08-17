@@ -170,6 +170,50 @@
     ]
 }
 
+// Arcane Encyclopedia
+{
+    "name": "Arcane Encyclopedia",
+    "manaCost": "{3}",
+    "typeLine": "Artifact — Book",
+    "oracleText": "{3}, {T}: Draw a card.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{3}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "descriptionOverride": "{3}, {T}: Draw a card."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "227",
+        "rarity": "UNCOMMON",
+        "artist": "Nic Klein",
+        "flavorText": "Knowledge itself is neither good nor evil. Just as the wrong book in the wrong hands could doom all existence, the same book in the right hands could save it.",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/c/0ce4702d-f65b-413e-99da-112f632a0a63.jpg?1783934516"
+    },
+    "colorIdentityOverride": []
+}
+
 // Bogstomper
 {
     "name": "Bogstomper",
@@ -1429,6 +1473,65 @@
     "colorIdentityOverride": [
         "BLACK"
     ]
+}
+
+// Suspicious Bookcase
+{
+    "name": "Suspicious Bookcase",
+    "manaCost": "{2}",
+    "typeLine": "Artifact Creature — Wall",
+    "oracleText": "Defender\n{3}, {T}: Target creature can't be blocked this turn.",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 4
+    },
+    "keywords": [
+        "DEFENDER"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{3}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "GrantKeyword",
+                    "keyword": "CANT_BE_BLOCKED",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature"
+                        },
+                        "id": "target"
+                    }
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "246",
+        "rarity": "UNCOMMON",
+        "artist": "Anastasia Ovchinnikova",
+        "flavorText": "All the books were dusty with disuse, save the one titled *Camouflage and Its Practical Applications*.",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/c/ccf01421-856e-4cdd-8938-148928626f56.jpg?1783934508"
+    }
 }
 
 // Trusty Packbeast

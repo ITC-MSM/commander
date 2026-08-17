@@ -1,3 +1,153 @@
+// Bonecaller Cleric
+{
+    "name": "Bonecaller Cleric",
+    "manaCost": "{1}{B}",
+    "typeLine": "Creature — Human Cleric",
+    "oracleText": "{3}{B}, Sacrifice this creature: Return target creature card from your graveyard to the battlefield. Activate only as a sorcery.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{3}{B}"
+                            }
+                        },
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    },
+                    "destination": "Battlefield",
+                    "fromZone": "Graveyard"
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature own:you",
+                            "zone": "Graveyard"
+                        },
+                        "id": "target"
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "descriptionOverride": "{3}{B}, Sacrifice this creature: Return target creature card from your graveyard to the battlefield. Activate only as a sorcery."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "117",
+        "rarity": "UNCOMMON",
+        "artist": "Jason A. Engle",
+        "flavorText": "The bell's unearthly chime slips into the ears of the dead, waking them rudely from their eternal slumber.",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/7/87f411d0-c796-443f-b957-c632aa23deb0.jpg?1783922765"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Breath Weapon
+{
+    "name": "Breath Weapon",
+    "manaCost": "{2}{R}",
+    "typeLine": "Instant",
+    "oracleText": "Breath Weapon deals 2 damage to each non-Dragon creature.",
+    "script": {
+        "spellEffect": {
+            "type": "ForEach",
+            "space": {
+                "type": "IterationSpace.Group",
+                "filter": {
+                    "baseFilter": {
+                        "cardPredicates": [
+                            "IsCreature",
+                            {
+                                "type": "NotSubtype",
+                                "subtype": "Dragon"
+                            }
+                        ]
+                    }
+                }
+            },
+            "body": {
+                "type": "DealDamage",
+                "amount": {
+                    "type": "Fixed",
+                    "amount": 2
+                },
+                "target": "Self"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "165",
+        "artist": "Adam Vehige",
+        "flavorText": "\"In the name of Tempus, Lord of Battles, you will die honorably in righteous fire.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/1/0174e40a-0ef5-4439-91e6-3fc39f482520.jpg?1783922743"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Bronze Walrus
+{
+    "name": "Bronze Walrus",
+    "manaCost": "{3}",
+    "typeLine": "Artifact Creature — Walrus",
+    "oracleText": "When this creature enters, scry 2. (Look at the top two cards of your library, then put any number of them on the bottom and the rest on top in any order.)\n{T}: Add one mana of any color.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Scry",
+                    "count": 2
+                },
+                "descriptionOverride": "When this creature enters, scry 2."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": "CostTap",
+                "effect": "AddManaOfChoice",
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "302",
+        "artist": "James Paick",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/2/b2cfd2c0-2110-47f1-809e-487b9b0a1043.jpg?1783922682"
+    },
+    "colorIdentityOverride": []
+}
+
 // Carnelian Orb of Dragonkind
 {
     "name": "Carnelian Orb of Dragonkind",
@@ -59,5 +209,573 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Chardalyn Dragon
+{
+    "name": "Chardalyn Dragon",
+    "manaCost": "{6}",
+    "typeLine": "Artifact Creature — Dragon",
+    "oracleText": "Flying",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "metadata": {
+        "collectorNumber": "306",
+        "artist": "Sergey Glushakov",
+        "flavorText": "First discovered in ancient Netheril, chardalyn stones absorb and hold magical energy, enabling constructs to be infused with fearsome power and unnatural malice.",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/9/a950d8be-dcf7-4253-a3cc-c040ba632355.jpg?1783922678"
+    },
+    "colorIdentityOverride": []
+}
+
+// Cloak of the Bat
+{
+    "name": "Cloak of the Bat",
+    "manaCost": "{2}",
+    "typeLine": "Artifact — Equipment",
+    "oracleText": "Equipped creature has flying and haste.\nEquip {2} ({2}: Attach to target creature you control. Equip only as a sorcery.)",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{2}"
+                    }
+                },
+                "effect": {
+                    "type": "AttachEquipment",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "creature you control"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        },
+                        "id": "creature you control"
+                    }
+                ],
+                "timing": "SorcerySpeed",
+                "isEquipAbility": true
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "GrantKeyword",
+                "keyword": "FLYING"
+            },
+            {
+                "type": "GrantKeyword",
+                "keyword": "HASTE"
+            }
+        ]
+    },
+    "equipCost": "{2}",
+    "metadata": {
+        "collectorNumber": "307",
+        "artist": "Dominik Mayer",
+        "flavorText": "\"How about the power of silent flight? Does that suit your needs, cutthroat?\"\n—Rivalen Blackhand, proprietor of Sorcerous Sundries",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/f/2f508a65-ff32-480a-b9c6-075074d0c3c3.jpg?1783922679"
+    },
+    "colorIdentityOverride": []
+}
+
+// Draconic Lore
+{
+    "name": "Draconic Lore",
+    "manaCost": "{5}{U}",
+    "typeLine": "Instant",
+    "oracleText": "This spell costs {2} less to cast if you control a Dragon.\nDraw three cards.",
+    "script": {
+        "spellEffect": {
+            "type": "DrawCards",
+            "count": {
+                "type": "Fixed",
+                "amount": 3
+            }
+        },
+        "staticAbilities": [
+            {
+                "type": "ModifySpellCost",
+                "target": "SelfCast",
+                "modification": {
+                    "type": "ReduceGeneric",
+                    "amount": 2
+                },
+                "gating": {
+                    "type": "OnlyIf",
+                    "condition": {
+                        "type": "Exists",
+                        "player": "You",
+                        "zone": "Battlefield",
+                        "filter": "permanent Dragon"
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "64",
+        "artist": "Tom Babbey",
+        "flavorText": "The wyrmling studied the ancient carvings and dreamed of a day when her own exploits would be immortalized in stone.",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/5/557f2aa6-0b82-4f60-9617-610b613c2a48.jpg?1783922792"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Draconic Muralists
+{
+    "name": "Draconic Muralists",
+    "manaCost": "{3}{G}",
+    "typeLine": "Creature — Dragon Bard",
+    "oracleText": "When this creature dies, you may search your library for a Dragon card, reveal it, put it into your hand, then shuffle.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Library",
+                                    "filter": "permanent Dragon"
+                                },
+                                "storeAs": "searchable"
+                            },
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "searchable",
+                                "selection": {
+                                    "type": "ChooseUpTo",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "storeSelected": "found"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "found",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Hand"
+                                },
+                                "revealed": true
+                            },
+                            "ShuffleLibrary",
+                            "EmitLibrarySearchedEvent"
+                        ]
+                    }
+                },
+                "descriptionOverride": "When this creature dies, you may search your library for a Dragon card, reveal it, put it into your hand, then shuffle."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "224",
+        "rarity": "UNCOMMON",
+        "artist": "Tom Babbey",
+        "flavorText": "\"We must never allow the deeds of our great ancestors to be forgotten.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/c/4c9bf864-1f93-4d73-a212-f71265411768.jpg?1783922717"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Dragonborn Looter
+{
+    "name": "Dragonborn Looter",
+    "manaCost": "{1}{U}",
+    "typeLine": "Creature — Dragon Rogue",
+    "oracleText": "{1}, {T}: Draw a card, then discard a card.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 2
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        },
+                        {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "GatherCards",
+                                    "source": {
+                                        "type": "FromZone",
+                                        "zone": "Hand"
+                                    },
+                                    "storeAs": "hand"
+                                },
+                                {
+                                    "type": "SelectFromCollection",
+                                    "from": "hand",
+                                    "selection": {
+                                        "type": "ChooseExactly",
+                                        "count": {
+                                            "type": "Fixed",
+                                            "amount": 1
+                                        }
+                                    },
+                                    "storeSelected": "discarded",
+                                    "prompt": "Choose 1 card to discard"
+                                },
+                                {
+                                    "type": "MoveCollection",
+                                    "from": "discarded",
+                                    "destination": {
+                                        "type": "ToZone",
+                                        "zone": "Graveyard"
+                                    },
+                                    "moveType": "Discard"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "descriptionOverride": "{1}, {T}: Draw a card, then discard a card."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "65",
+        "artist": "Julio Reyna",
+        "flavorText": "Erdur never thought of it as stealing. Treasure simply didn't deserve to be stuck underground where no one could admire it.",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/7/570e8aaa-5273-42f4-b151-51976ab7730c.jpg?1783922793"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Earth Tremor
+{
+    "name": "Earth Tremor",
+    "manaCost": "{3}{R}",
+    "typeLine": "Instant",
+    "oracleText": "Earth Tremor deals damage to target creature or planeswalker equal to the number of lands you control.",
+    "script": {
+        "spellEffect": {
+            "type": "DealDamage",
+            "amount": {
+                "type": "AggregateBattlefield",
+                "player": "You",
+                "filter": "land"
+            },
+            "target": {
+                "type": "BoundVariable",
+                "name": "target"
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetCreatureOrPlaneswalker",
+                "id": "target"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "171",
+        "artist": "Borja Pindado",
+        "flavorText": "\"Every cave-in is Moradin telling you to leave the earth where it is.\"\n—Halgar, dwarven recluse",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/5/b5f700c6-7591-481d-b223-21f5b820e831.jpg?1783922742"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Pseudodragon Familiar
+{
+    "name": "Pseudodragon Familiar",
+    "manaCost": "{2}{U}",
+    "typeLine": "Creature — Dragon",
+    "oracleText": "Flying\n{2}{U}: Target creature gains flying until end of turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{2}{U}"
+                    }
+                },
+                "effect": {
+                    "type": "GrantKeyword",
+                    "keyword": "FLYING",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature"
+                        },
+                        "id": "target"
+                    }
+                ],
+                "descriptionOverride": "{2}{U}: Target creature gains flying until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "88",
+        "artist": "Campbell White",
+        "flavorText": "Pseudodragons are favored companions of wizards, prized for their cunning and curiosity.",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/0/50d69ee8-a616-4191-b111-1330dfb24f72.jpg?1783922780"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Reckless Barbarian
+{
+    "name": "Reckless Barbarian",
+    "manaCost": "{1}{R}",
+    "typeLine": "Creature — Dragon Barbarian",
+    "oracleText": "Sacrifice this creature: Add {R}{R}.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostSacrificeSelf",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "RED",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 2
+                    }
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "193",
+        "artist": "Oleksandr Kozachenko",
+        "flavorText": "The best defense is not even knowing what the word \"defense\" means.",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/9/c912e984-1d27-4da2-9733-d56e437bcf58.jpg?1783922731"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Roving Harper
+{
+    "name": "Roving Harper",
+    "manaCost": "{2}{W}",
+    "typeLine": "Creature — Elf Scout",
+    "oracleText": "When this creature enters, draw a card.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "descriptionOverride": "When this creature enters, draw a card."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "40",
+        "artist": "Anastasia Ovchinnikova",
+        "flavorText": "The Harpers value peaceful coexistence, historical preservation, and harmony with nature, and each day they spread their ideals a little farther.",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/6/c6b0ed9c-9a99-4a50-80a9-396420a8dcf9.jpg?1783922804"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Steadfast Unicorn
+{
+    "name": "Steadfast Unicorn",
+    "manaCost": "{W}",
+    "typeLine": "Creature — Unicorn",
+    "oracleText": "{3}{W}: Creatures you control get +1/+1 and gain vigilance until end of turn. Activate only during your turn. (Attacking doesn't cause them to tap.)",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 2
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{3}{W}"
+                    }
+                },
+                "effect": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        }
+                    },
+                    "body": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "ModifyStats",
+                                "powerModifier": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                },
+                                "toughnessModifier": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                },
+                                "target": "Self"
+                            },
+                            {
+                                "type": "GrantKeyword",
+                                "keyword": "VIGILANCE",
+                                "target": "Self"
+                            }
+                        ]
+                    }
+                },
+                "restrictions": [
+                    "OnlyDuringYourTurn"
+                ],
+                "descriptionOverride": "{3}{W}: Creatures you control get +1/+1 and gain vigilance until end of turn. Activate only during your turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "44",
+        "artist": "John Thacker",
+        "flavorText": "Only the good-hearted may set foot in a unicorn's domain.",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/3/13762890-6c5e-44e4-9bd8-998bd054db20.jpg?1783922804"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Stoneskin
+{
+    "name": "Stoneskin",
+    "manaCost": "{2}{W}",
+    "typeLine": "Enchantment — Aura",
+    "oracleText": "Flash\nEnchant creature\nEnchanted creature gets +0/+10.",
+    "keywords": [
+        "FLASH"
+    ],
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 0,
+                "toughnessBonus": 10
+            }
+        ],
+        "auraTarget": {
+            "type": "TargetObject",
+            "filter": {
+                "baseFilter": "creature"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "45",
+        "rarity": "UNCOMMON",
+        "artist": "Jake Murray",
+        "flavorText": "\"Ooh, nice shot! I almost felt that one.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/6/16b9fdaa-9da9-48ff-b271-e6a41aabf073.jpg?1783922802"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }

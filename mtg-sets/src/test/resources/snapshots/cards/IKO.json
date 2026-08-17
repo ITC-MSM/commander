@@ -312,6 +312,56 @@
     ]
 }
 
+// Sprite Dragon
+{
+    "name": "Sprite Dragon",
+    "manaCost": "{U}{R}",
+    "typeLine": "Creature — Faerie Dragon",
+    "oracleText": "Flying, haste\nWhenever you cast a noncreature spell, put a +1/+1 counter on this creature.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "FLYING",
+        "HASTE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            "IsNoncreature"
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": "Self"
+                },
+                "descriptionOverride": "Whenever you cast a noncreature spell, put a +1/+1 counter on this creature."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "211",
+        "rarity": "UNCOMMON",
+        "artist": "Gabor Szikszai",
+        "flavorText": "Size of a pixie, rage of a hellkite.",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/8/281f6118-adb8-4a7d-9c77-5570f3399e6e.jpg?1783931016"
+    },
+    "colorIdentityOverride": [
+        "RED",
+        "BLUE"
+    ]
+}
+
 // Voracious Greatshark
 {
     "name": "Voracious Greatshark",

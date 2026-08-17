@@ -44,6 +44,51 @@
     ]
 }
 
+// Demon Bolt
+{
+    "name": "Demon Bolt",
+    "manaCost": "{2}{R}",
+    "typeLine": "Instant",
+    "oracleText": "Demon Bolt deals 4 damage to target creature or planeswalker.\nForetell {R} (During your turn, you may pay {2} and exile this card from your hand face down. Cast it on a later turn for its foretell cost.)",
+    "keywords": [
+        "FORETELL"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Foretell",
+            "cost": "{R}"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "DealDamage",
+            "amount": {
+                "type": "Fixed",
+                "amount": 4
+            },
+            "target": {
+                "type": "BoundVariable",
+                "name": "target"
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetCreatureOrPlaneswalker",
+                "id": "target"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "129",
+        "artist": "Campbell White",
+        "flavorText": "\"Burn them from the sky.\"\n—Varragoth",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/f/5f856b0e-b413-49b0-9aa7-d935ad40ae53.jpg?1783928232"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Esika's Chariot
 {
     "name": "Esika's Chariot",
@@ -260,6 +305,29 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Highland Forest
+{
+    "name": "Highland Forest",
+    "manaCost": "",
+    "typeLine": "Snow Land — Mountain Forest",
+    "oracleText": "({T}: Add {R} or {G}.)\nThis land enters tapped.",
+    "script": {
+        "replacementEffects": [
+            "EntersTapped"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "261",
+        "artist": "Alayna Danner",
+        "flavorText": "\"Tread carefully! The last time I walked this path, half the snowdrifts were, in fact, sleeping trolls. I've never run so fast in my life!\"\n—Iskene, Kannah storyteller",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/8/682eee5f-7986-45d3-910f-407303fdbcc4.jpg?1783928176"
+    },
+    "colorIdentityOverride": [
+        "GREEN",
+        "RED"
     ]
 }
 
@@ -508,6 +576,29 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Snowfield Sinkhole
+{
+    "name": "Snowfield Sinkhole",
+    "manaCost": "",
+    "typeLine": "Snow Land — Plains Swamp",
+    "oracleText": "({T}: Add {W} or {B}.)\nThis land enters tapped.",
+    "script": {
+        "replacementEffects": [
+            "EntersTapped"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "269",
+        "artist": "Marta Nael",
+        "flavorText": "\"Young Vitima bellowed to the Cosmos, daring the gods to punish her hubris! Well, she got their attention, as you can see.\"\n—Iskene, Kannah storyteller",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/6/6611dc5e-6acc-48df-b8c4-4b327314578b.jpg?1783928172"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "WHITE"
     ]
 }
 

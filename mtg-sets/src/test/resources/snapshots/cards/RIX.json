@@ -513,6 +513,56 @@
     ]
 }
 
+// Ravenous Chupacabra
+{
+    "name": "Ravenous Chupacabra",
+    "manaCost": "{2}{B}{B}",
+    "typeLine": "Creature — Beast Horror",
+    "oracleText": "When this creature enters, destroy target creature an opponent controls.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    },
+                    "destination": "Graveyard",
+                    "byDestruction": true
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature ctrl:opponent"
+                    },
+                    "id": "target"
+                },
+                "descriptionOverride": "When this creature enters, destroy target creature an opponent controls."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "82",
+        "rarity": "UNCOMMON",
+        "artist": "Daarken",
+        "flavorText": "Opening Orazca unleashed more horrors than just the Immortal Sun.",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/2/02551196-ecea-472f-9547-3c9658d0489e.jpg?1783935306"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Seafloor Oracle
 {
     "name": "Seafloor Oracle",

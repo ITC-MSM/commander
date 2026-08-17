@@ -31,7 +31,18 @@ sentence; and the "This ability triggers only once each turn." rider, one rule o
 reaches every trigger family and immediately exposed five card bugs. See
 [the batch-trigger band](#the-batch-trigger-band).
 
-Before it came the **prevention band** — "Prevent all combat damage that would be dealt this
+Alongside it, one row further down the same ranking, came the **fronted duration** — "Until end of turn, target creature gets +3/+3."
+(**+4 whole cards**), and it is the band whose *measurement* is the product. It is the second family
+on the tail ranking, 265 cards blocked and 189 sole-blocked, and moving the duration to the back of
+its own 266 declined lines finishes **five** of them: everything behind that opening clause is a
+construct nobody has written yet. So what shipped is the position — one kernel capability
+(`PhraseBuilder.alsoSpelled`), one derivation ([`Durations`](src/main/kotlin/com/wingedsheep/assay/grammar/Durations.kt)),
+and one line on each of thirteen durational rules — and the four bands the measurement named are the
+work. See [the fronted duration](#the-fronted-duration). The two bands are worth reading together:
+each is a top-of-the-ranking family whose probe said the payload behind it, not the family itself,
+is where the work is.
+
+Before them came the **prevention band** — "Prevent all combat damage that would be dealt this
 turn." and everything the same SDK type can say (**+75 whole cards**). It is the top-of-library
 band's lesson on an `Effect` rather than on a `Patterns` recipe: `PreventDamageEffect` calls itself
 "a single parametrized type that can express any combination" of six fields, and the grammar was
@@ -227,15 +238,15 @@ Cards assayed                    34882
 Ability lines                    64753  (37998 unique)
 
 Round-trips byte-exact           26196   404.6‰ (40.5%)
-Alternate spelling normalized    1418
-Declined                         37139
+Alternate spelling normalized    1423
+Declined                         37134
 Ambiguous — distinct readings    0
 Print mismatch                   0
 Normalization not invertible     0
 Full inverse not reproduced      0
 Redundant readings (same model)  0
 
-Cards fully covered              8072 / 34882   231.4‰ (23.1%)
+Cards fully covered              8076 / 34882   231.5‰ (23.2%)
 Vanilla + keyword-only cards     1444 / 1712   843.5‰ (84.3%)   <- Phase 1 target
 Portal (set POR)                 200 / 200     1000.0‰ (100%)   <- the Portal band's target
 Legions (set LGN)                145 / 145     1000.0‰ (100%)   <- the Legions band's target
@@ -1390,9 +1401,10 @@ measured at 416 lines.
 
 ## The batch-trigger band
 
-CR 603.2c's "one or more". Whole-corpus coverage 8,042 → **8,072 cards** (+30); the differential's
-compared population 3,145 → **3,272** (+127) and its divergence count 13 → **14**, the four new ones
-that were card bugs fixed in the same change. No new SDK type and no new SDK field; rows in
+CR 603.2c's "one or more". Whole-corpus coverage 8,046 → **8,076 cards** (+30, over the fronted
+duration band it merged with); the baked ledger 7,833 → **7,863 whole**, 30 in and **none out**; the
+differential's divergence count 13 → **14**, the four new ones being card bugs fixed in the same
+change. No new SDK type and no new SDK field; rows in
 [`Triggers`](src/main/kotlin/com/wingedsheep/assay/grammar/Triggers.kt) over one generalized shape,
 two noun phrases in [`Filters`](src/main/kotlin/com/wingedsheep/assay/grammar/Filters.kt).
 
@@ -1478,6 +1490,77 @@ writes `initialCounters = {decayed: 1}`. The card's spelling is the one that *wo
 grammar's is the one the text states; neither is right to change on its own, so the gap is reported.
 Same shape as the display-only keywords the report's bottom table already ranks.
 
+## The fronted duration
+
+"Until end of turn, target creature gets +3/+3." — the same sentence the grammar already read, with
+its duration at the other end. Whole-corpus coverage 8,042 → **8,046 cards** (+4); the baked ledger
+7,829 → **7,833 whole**, four cards gained and **none lost**. No new SDK type, no new grammar family
+in the usual sense: one kernel capability, one derivation, and one line on each of thirteen rules.
+
+**The number this band is worth is the one it measured, not the one it moved.** "Until end of …" is
+the second row of the tail ranking — 265 cards blocked, 189 sole-blocked, 267 lines — and every
+ranking the module has is over the text a line *dies on*, which here is its first clause. So the
+probe was run the way [ranking a band](#ranking-what-to-write-next) prescribes, with one wrinkle:
+the family's construct is not a prefix that can be substituted for, it is a *position*, so the
+measurement moves the duration to the back of each declined line and re-parses. Five of 266 lines
+come back readable. The other 261 decline again on what follows:
+
+| what the payload says | lines |
+|---|---|
+| "becomes a 5/5 green Plant creature …" — animating a permanent | 54 |
+| granting a quoted ability — `"When ~ dies, …"` | 42 |
+| "has base power and toughness 4/4" | 32 |
+| pumping by a count — "+1/+1 for each creature you control" | 14 |
+| a colour, a type removal, a blocking restriction, a damage rider, … | 119 |
+
+That is the band's actual product: **four named families, ranked, each of which lands in both word
+orders the day it is written.** A family that is a clause position measures its payload rather than
+itself, and the four cards this one finished are the ones whose payload was already in the grammar.
+
+**The probe was exact for once, and the reason is worth keeping.** Every previous band overstated —
+234 predicted against 183 delivered, 101 against 75 — and the modal band understated because its
+payoff sat in lines that had never declined as a family. This one predicted 5 lines and 4 whole
+cards and delivered 5 and 4, because the substitution is not an approximation of the construct here:
+moving a word is exactly what the rule does. **A probe that performs the family's own transformation
+rather than standing in for it has no gap to be wrong in.**
+
+### The position, and why it is not thirteen more rules
+
+Oracle prints this duration trailing 5,370 times on 4,862 cards and fronted 823 times on 810 — one
+model, two spellings, and by the sixfold majority the trailing one is canonical. The fronted form
+therefore has to *parse and never print*, which is what `alternate` has always been for. What it
+could not be is thirteen sibling rules: the fronted spelling of "target creature gets +3/+3 until
+end of turn" needs the identical `build` and `match`, and a second copy of a rule's two halves is the
+drift the whole bidirectional discipline exists to prevent — they agree until someone edits one.
+
+So the kernel grew the one generic thing it was missing: `PhraseBuilder.alsoSpelled(template, name)`
+registers an additional surface template on the *same* rule, sharing its closures and alternate by
+construction. It knows nothing about durations;
+[`Durations`](src/main/kotlin/com/wingedsheep/assay/grammar/Durations.kt) owns the word and the
+derivation, and each durational rule adds a single self-derived line:
+
+```kotlin
+phrase("target {filter} gets {mod} until end of turn", name = "pump target") {
+    frontedDuration()   // ← derives "until end of turn, target {filter} gets {mod}" from the template above
+    …
+}
+```
+
+Two details in the derivation are load-bearing. It **requires** a trailing duration rather than
+quietly doing nothing, so a rule that is not durational fails at construction — every rule is built
+during object initialization, which makes that the first thing a test run reports. And it fronts
+into the template's **last sentence**, not onto its front: "Choose a creature type. Each creature you
+control becomes that type until end of turn." fronts as "Choose a creature type. Until end of turn,
+each creature you control becomes that type.", which is what the duration scopes over and what
+Oracle prints. Prefixing the whole template would have read a sentence no card prints.
+
+**Two rules keep their fronted literal, and that is the corpus's decision rather than an
+inconsistency.** `Combat`'s attack-and-block tax and `TopOfLibrary`'s two cross-turn impulse
+durations print fronted on *every* card that has them, so there the fronted form is canonical and
+belongs in the template. Which order is canonical is a fact about the duration — "this turn" trails
+115:40 while `UntilEndOfNextTurn` fronts 59:16 — and this band changes nothing about that; it only
+gives the one duration whose majority is trailing its minority spelling.
+
 ## The differential gate
 
 `just assay-differential` diffs Assay's reading of a card against the `CardDefinition` a human wrote
@@ -1491,16 +1574,16 @@ partially-read card would count a keyword Assay never saw as agreement, so every
 named population bucket instead and the denominator stays visible.
 
 ```
-  Hand-written cards                 9477
-    compared                         3272
-    not yet covered by the grammar   5532
-    script slot not modelled yet     117
+  Hand-written cards                 9598
+    compared                         3384
+    not yet covered by the grammar   5535
+    script slot not modelled yet     121
     lines do not fold into one card   57
-    multi-face (out of scope)        301
-    Oracle text differs from golden  198
+    multi-face (out of scope)        302
+    Oracle text differs from golden  199
     golden would not decode            0
 
-  Confirmed — models agree           3258   995.7‰ (99.6%)
+  Confirmed — models agree           3370   995.9‰ (99.6%)
   DIVERGENT — read every one           14
 ```
 

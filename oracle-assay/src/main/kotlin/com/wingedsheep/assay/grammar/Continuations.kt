@@ -99,6 +99,7 @@ object Continuations {
             spellEffect = Effects.ModifyStats(modifiers.first, modifiers.second, Targets.bound())
         )
         phrase("it gets {mod} until end of turn", name = "the target gets") {
+            frontedDuration()
             slot("mod", Primitives.statModifiers)
             build { scriptFor(it.value("mod")) }
             match { script ->

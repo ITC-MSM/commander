@@ -1,3 +1,39 @@
+// Bloodbraid Elf
+{
+    "name": "Bloodbraid Elf",
+    "manaCost": "{2}{R}{G}",
+    "typeLine": "Creature — Elf Berserker",
+    "oracleText": "Haste (This creature can attack and {T} as soon as it comes under your control.)\nCascade (When you cast this spell, exile cards from the top of your library until you exile a nonland card that costs less. You may cast it without paying its mana cost. Put the exiled cards on the bottom in a random order.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "keywords": [
+        "HASTE",
+        "CASCADE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "CastThisSpellEvent",
+                "effect": "Cascade",
+                "descriptionOverride": "Cascade"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "50",
+        "rarity": "UNCOMMON",
+        "artist": "Dominick Domingo",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/e/7ef67487-c8e5-49bb-b0f7-e073ff2e31f1.jpg?1783942431"
+    },
+    "colorIdentityOverride": [
+        "GREEN",
+        "RED"
+    ]
+}
+
 // Grizzled Leotau
 {
     "name": "Grizzled Leotau",
@@ -15,6 +51,53 @@
     },
     "colorIdentityOverride": [
         "WHITE",
+        "GREEN"
+    ]
+}
+
+// Jenara, Asura of War
+{
+    "name": "Jenara, Asura of War",
+    "manaCost": "{G}{W}{U}",
+    "typeLine": "Legendary Creature — Angel",
+    "oracleText": "Flying\n{1}{W}: Put a +1/+1 counter on Jenara.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{1}{W}"
+                    }
+                },
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": "Self"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "128",
+        "rarity": "MYTHIC",
+        "artist": "Chris Rahn",
+        "flavorText": "Wounded soldiers looked up, grateful for her appearance. But she passed over them, her eyes firmly on their foe.",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/6/d643c335-e3a7-461d-a024-095795ab6770.jpg"
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLUE",
         "GREEN"
     ]
 }

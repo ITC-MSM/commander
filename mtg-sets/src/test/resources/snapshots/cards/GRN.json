@@ -50,6 +50,110 @@
     ]
 }
 
+// Assassin's Trophy
+{
+    "name": "Assassin's Trophy",
+    "manaCost": "{B}{G}",
+    "typeLine": "Instant",
+    "oracleText": "Destroy target permanent an opponent controls. Its controller may search their library for a basic land card, put it onto the battlefield, then shuffle.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target permanent an opponent controls"
+                    },
+                    "destination": "Graveyard",
+                    "byDestruction": true
+                },
+                {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Players",
+                        "players": {
+                            "type": "ControllerOf",
+                            "targetDescription": "the destroyed permanent"
+                        }
+                    },
+                    "body": {
+                        "type": "Gated",
+                        "gate": "Gate.MayDecide",
+                        "then": {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "GatherCards",
+                                    "source": {
+                                        "type": "FromZone",
+                                        "zone": "Library",
+                                        "filter": "basicland"
+                                    },
+                                    "storeAs": "searchable"
+                                },
+                                {
+                                    "type": "SelectFromCollection",
+                                    "from": "searchable",
+                                    "selection": {
+                                        "type": "ChooseUpTo",
+                                        "count": {
+                                            "type": "Fixed",
+                                            "amount": 1
+                                        }
+                                    },
+                                    "storeSelected": "found"
+                                },
+                                {
+                                    "type": "MoveCollection",
+                                    "from": "found",
+                                    "destination": {
+                                        "type": "ToZone",
+                                        "zone": "Battlefield"
+                                    }
+                                },
+                                "ShuffleLibrary",
+                                "EmitLibrarySearchedEvent"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "permanent ctrl:opponent"
+                },
+                "id": "target permanent an opponent controls"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "152",
+        "rarity": "RARE",
+        "artist": "Seb McKinnon",
+        "flavorText": "A power vacuum for the Azorius. A keepsake for Vraska.",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/0/906b6e99-128f-4c11-8daf-16099d35b0d4.jpg?1783934143",
+        "rulings": [
+            {
+                "date": "2018-10-05",
+                "text": "If the target permanent is a legal target but isn't destroyed, most likely because it has indestructible, its controller may search their library."
+            },
+            {
+                "date": "2018-10-05",
+                "text": "If the permanent's controller doesn't search their library, they don't shuffle their library."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "GREEN"
+    ]
+}
+
 // Burglar Rat
 {
     "name": "Burglar Rat",
@@ -261,6 +365,45 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// March of the Multitudes
+{
+    "name": "March of the Multitudes",
+    "manaCost": "{X}{G}{W}{W}",
+    "typeLine": "Instant",
+    "oracleText": "Convoke (Your creatures can help cast this spell. Each creature you tap while casting this spell pays for {1} or one mana of that creature's color.)\nCreate X 1/1 white Soldier creature tokens with lifelink.",
+    "keywords": [
+        "CONVOKE"
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "CreateToken",
+            "count": "XValue",
+            "power": 1,
+            "toughness": 1,
+            "colors": [
+                "WHITE"
+            ],
+            "creatureTypes": [
+                "Soldier"
+            ],
+            "keywords": [
+                "LIFELINK"
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "188",
+        "rarity": "MYTHIC",
+        "artist": "Zack Stella",
+        "flavorText": "\"Our forces number more than the leaves of Vitu-Ghazi. Do not provoke us.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/c/2cc2b646-0181-4f0a-a141-00ca56069a06.jpg"
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "GREEN"
     ]
 }
 

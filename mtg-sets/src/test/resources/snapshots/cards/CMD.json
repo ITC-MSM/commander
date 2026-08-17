@@ -41,6 +41,62 @@
     "colorIdentityOverride": []
 }
 
+// Hornet Queen
+{
+    "name": "Hornet Queen",
+    "manaCost": "{4}{G}{G}{G}",
+    "typeLine": "Creature — Insect",
+    "oracleText": "Flying, deathtouch\nWhen this creature enters, create four 1/1 green Insect creature tokens with flying and deathtouch.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "FLYING",
+        "DEATHTOUCH"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 4
+                    },
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [
+                        "GREEN"
+                    ],
+                    "creatureTypes": [
+                        "Insect"
+                    ],
+                    "keywords": [
+                        "FLYING",
+                        "DEATHTOUCH"
+                    ]
+                },
+                "descriptionOverride": "When this creature enters, create four 1/1 green Insect creature tokens with flying and deathtouch."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "159",
+        "rarity": "RARE",
+        "artist": "Martina Pilcerova",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/1/714cd47b-88f6-448d-9242-481935565250.jpg?1783941193"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Kaalia of the Vast
 {
     "name": "Kaalia of the Vast",

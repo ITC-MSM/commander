@@ -1,3 +1,65 @@
+// Arasta of the Endless Web
+{
+    "name": "Arasta of the Endless Web",
+    "manaCost": "{2}{G}{G}",
+    "typeLine": "Legendary Enchantment Creature — Spider",
+    "oracleText": "Reach\nWhenever an opponent casts an instant or sorcery spell, create a 1/2 green Spider creature token with reach.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 5
+    },
+    "keywords": [
+        "REACH"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            {
+                                "type": "Or",
+                                "predicates": [
+                                    "IsInstant",
+                                    "IsSorcery"
+                                ]
+                            }
+                        ]
+                    },
+                    "player": "EachOpponent"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 1,
+                    "toughness": 2,
+                    "colors": [
+                        "GREEN"
+                    ],
+                    "creatureTypes": [
+                        "Spider"
+                    ],
+                    "keywords": [
+                        "REACH"
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "165",
+        "rarity": "RARE",
+        "artist": "Sam Rowan",
+        "flavorText": "Her webs, spun from her own hair, reach from Nyx to the mortal world and even into the Underworld.",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/c/7c38833a-96c5-48b5-8dd8-23f10e798537.jpg"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Archon of Sun's Grace
 {
     "name": "Archon of Sun's Grace",

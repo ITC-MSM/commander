@@ -179,6 +179,54 @@
     ]
 }
 
+// Indrik Stomphowler
+{
+    "name": "Indrik Stomphowler",
+    "manaCost": "{4}{G}",
+    "typeLine": "Creature — Beast",
+    "oracleText": "When this creature enters, destroy target artifact or enchantment.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "ContextTarget",
+                        "index": 0
+                    },
+                    "destination": "Graveyard",
+                    "byDestruction": true
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "artifact|enchantment"
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "86",
+        "rarity": "UNCOMMON",
+        "artist": "Carl Critchlow",
+        "flavorText": "\"An indrik's howl has destructive power much subtler than that of its crushing foot. The sound is mundane, but inaudible vibrations scatter and sunder magical contrivances.\"\n—Simic research notes",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/e/fe57b3a2-0fd9-4f99-bb2b-828979dbcfc3.jpg"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Macabre Waltz
 {
     "name": "Macabre Waltz",

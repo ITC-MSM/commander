@@ -475,3 +475,99 @@
         "GREEN"
     ]
 }
+
+// Talrand's Invocation
+{
+    "name": "Talrand's Invocation",
+    "manaCost": "{2}{U}{U}",
+    "typeLine": "Sorcery",
+    "oracleText": "Create two 2/2 blue Drake creature tokens with flying.",
+    "script": {
+        "spellEffect": {
+            "type": "CreateToken",
+            "count": {
+                "type": "Fixed",
+                "amount": 2
+            },
+            "power": 2,
+            "toughness": 2,
+            "colors": [
+                "BLUE"
+            ],
+            "creatureTypes": [
+                "Drake"
+            ],
+            "keywords": [
+                "FLYING"
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "73",
+        "rarity": "UNCOMMON",
+        "artist": "Svetlin Velinov",
+        "flavorText": "After Talrand conquered the depths of Shandalar, his ambitions drove him skyward, joined by servants whose drive and curiosity equaled his own.",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/2/c2cd809c-557a-42a5-950b-56b5b47b325b.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Thragtusk
+{
+    "name": "Thragtusk",
+    "manaCost": "{4}{G}",
+    "typeLine": "Creature — Beast",
+    "oracleText": "When this creature enters, you gain 5 life.\nWhen this creature leaves the battlefield, create a 3/3 green Beast creature token.",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "GainLife",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 5
+                    }
+                }
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 3,
+                    "toughness": 3,
+                    "colors": [
+                        "GREEN"
+                    ],
+                    "creatureTypes": [
+                        "Beast"
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "193",
+        "rarity": "RARE",
+        "artist": "Nils Hamm",
+        "flavorText": "\"Always carry two spears.\"\n—Mokgar, Kalonian hunter",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/8/28667c8b-d02c-4e57-a050-1549207b65d1.jpg"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
