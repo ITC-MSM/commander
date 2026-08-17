@@ -14940,6 +14940,83 @@
     ]
 }
 
+// Voja, Jaws of the Conclave
+{
+    "name": "Voja, Jaws of the Conclave",
+    "manaCost": "{2}{R}{G}{W}",
+    "typeLine": "Legendary Creature — Wolf",
+    "oracleText": "Vigilance, trample, ward {3}\nWhenever Voja attacks, put X +1/+1 counters on each creature you control, where X is the number of Elves you control. Draw a card for each Wolf you control.",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 5
+    },
+    "keywords": [
+        "VIGILANCE",
+        "TRAMPLE",
+        "WARD"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Ward",
+            "cost": {
+                "type": "WardCost.Mana",
+                "manaCost": "{3}"
+            }
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "ForEach",
+                            "space": {
+                                "type": "IterationSpace.Group",
+                                "filter": {
+                                    "baseFilter": "creature ctrl:you"
+                                }
+                            },
+                            "body": {
+                                "type": "AddDynamicCounters",
+                                "counterType": "+1/+1",
+                                "amount": {
+                                    "type": "AggregateBattlefield",
+                                    "player": "You",
+                                    "filter": "creature Elf"
+                                },
+                                "target": "Self"
+                            }
+                        },
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "AggregateBattlefield",
+                                "player": "You",
+                                "filter": "creature Wolf"
+                            }
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "432",
+        "rarity": "MYTHIC",
+        "artist": "Valera Lutfullina",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/f/bfa1bd2f-25bd-4fbd-877b-cef00ab7f92f.jpg?1783912763"
+    },
+    "colorIdentityOverride": [
+        "RED",
+        "GREEN",
+        "WHITE"
+    ]
+}
+
 // Warleader's Call
 {
     "name": "Warleader's Call",
