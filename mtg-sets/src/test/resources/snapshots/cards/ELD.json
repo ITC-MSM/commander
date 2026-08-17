@@ -196,6 +196,70 @@
     ]
 }
 
+// Castle Vantress
+{
+    "name": "Castle Vantress",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "This land enters tapped unless you control an Island.\n{T}: Add {U}.\n{2}{U}{U}, {T}: Scry 2.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "BLUE"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}{U}{U}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "Scry",
+                    "count": 2
+                },
+                "descriptionOverride": "{2}{U}{U}, {T}: Scry 2."
+            }
+        ],
+        "replacementEffects": [
+            {
+                "type": "EntersTapped",
+                "unlessCondition": {
+                    "type": "Exists",
+                    "player": "You",
+                    "zone": "Battlefield",
+                    "filter": "land Island"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "242",
+        "rarity": "RARE",
+        "artist": "John Avon",
+        "flavorText": "Without Vantress's knowledge, the realm would lose itself in darkness.",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/a/0a8b9d37-e89c-44ad-bd1b-51cb06ec3e0b.jpg?1783932578"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Charming Prince
 {
     "name": "Charming Prince",
