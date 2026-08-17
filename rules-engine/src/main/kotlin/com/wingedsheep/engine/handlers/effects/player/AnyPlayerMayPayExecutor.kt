@@ -130,7 +130,7 @@ class AnyPlayerMayPayExecutor(
     ): Boolean {
         return when (val atom = (cost as? PayCost.Atom)?.atom) {
             is CostAtom.Sacrifice -> {
-                val validPermanents = findValidPermanentsOnBattlefield(state, playerId, atom.filter, sourceId)
+                val validPermanents = findValidPermanentsOnBattlefield(state, playerId, atom, sourceId)
                 validPermanents.size >= atom.count
             }
             // CR 119.4: a player may pay life only if their life total is at least the amount.
@@ -153,7 +153,7 @@ class AnyPlayerMayPayExecutor(
         playerOrder: List<EntityId>,
         currentIndex: Int
     ): EffectResult {
-        val validPermanents = findValidPermanentsOnBattlefield(state, playerId, cost.filter, sourceId)
+        val validPermanents = findValidPermanentsOnBattlefield(state, playerId, cost, sourceId)
 
         val prompt = "You may sacrifice ${cost.count} ${cost.filter.description}s to cause $sourceName to be sacrificed, or skip"
 
@@ -298,14 +298,22 @@ class AnyPlayerMayPayExecutor(
         return executor(state, consequence, context)
     }
 
+    /**
+     * The permanents [playerId] may sacrifice to pay a [CostAtom.Sacrifice] whose source is
+     * [sourceId] — the same source-relative rule the resumer applies when it asks the *next* player
+     * (see `SacrificeAndPayContinuationResumer.askNextPlayerForAnyPlayerMayPay`): the atom's own
+     * `excludeSelf` decides whether the source is in the pool, and nothing else does.
+     */
     private fun findValidPermanentsOnBattlefield(
         state: GameState,
         playerId: EntityId,
-        filter: com.wingedsheep.sdk.scripting.GameObjectFilter,
+        cost: CostAtom.Sacrifice,
         sourceId: EntityId
-    ): List<EntityId> {
-        return BattlefieldFilterUtils.findMatchingOnBattlefield(
-            state, filter.youControl(), PredicateContext(controllerId = playerId)
+    ): List<EntityId> =
+        BattlefieldFilterUtils.findMatchingOnBattlefield(
+            state,
+            cost.filter.youControl(),
+            PredicateContext(controllerId = playerId),
+            excludeSelfId = if (cost.excludeSelf) sourceId else null
         )
-    }
 }

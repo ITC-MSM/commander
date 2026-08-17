@@ -73,8 +73,13 @@ class CostPaymentService(private val services: EngineServices) {
     // ---------------------------------------------------------------------------------------------
 
     /**
-     * Whether [payerId] can pay [cost]. For battlefield selection costs the [sourceId] is excluded
-     * from the candidate pool (you can't sacrifice/return/tap the very permanent whose cost this is).
+     * Whether [payerId] can pay [cost].
+     *
+     * The candidate domain for a battlefield selection cost is *source-relative*: the atom's own
+     * `excludeSelf` flag decides whether [sourceId] is in it ("sacrifice **another** creature" vs
+     * "sacrifice a creature", which the source itself may pay — CR 601.2h). Affordability, the
+     * prompt this service builds, and final payment validation all read that one rule, so they can
+     * never disagree about which permanents are payable.
      *
      * Delegates to the [companion][Companion] form so legal-action enumerators
      * (e.g. `TurnFaceUpEnumerator`) can call affordability directly with just a [ManaSolver] —
@@ -84,9 +89,8 @@ class CostPaymentService(private val services: EngineServices) {
         state: GameState,
         payerId: EntityId,
         cost: PayCost,
-        sourceId: EntityId,
-        excludeSource: Boolean = true
-    ): Boolean = canAfford(state, payerId, cost, sourceId, services.manaSolver, excludeSource)
+        sourceId: EntityId
+    ): Boolean = canAfford(state, payerId, cost, sourceId, services.manaSolver)
 
     // ---------------------------------------------------------------------------------------------
     // Pay — build the right prompt and push a single continuation.
@@ -103,14 +107,16 @@ class CostPaymentService(private val services: EngineServices) {
         payerId: EntityId,
         cost: PayCost,
         sourceId: EntityId,
-        ctx: CostPaymentContext = CostPaymentContext(),
-        excludeSource: Boolean = true
+        ctx: CostPaymentContext = CostPaymentContext()
     ): PaymentResult {
         val resolved = resolve(state, cost, sourceId)
-        if (!canAfford(state, payerId, resolved, sourceId, excludeSource)) {
+        if (!canAfford(state, payerId, resolved, sourceId)) {
             return PaymentResult.Unaffordable(state)
         }
         val sourceName = state.getEntity(sourceId)?.get<CardComponent>()?.name ?: "the source"
+        // The one source-relative candidate domain — the same list affordability counted above and
+        // the resumer validates the response against.
+        val candidates = selectionCandidates(state, payerId, resolved, sourceId).orEmpty()
 
         return when (resolved) {
             is PayCost.Choice -> choicePrompt(state, payerId, resolved, sourceId, sourceName, ctx)
@@ -126,32 +132,29 @@ class CostPaymentService(private val services: EngineServices) {
                         val word = if (atom.count == 1) "a card" else "${atom.count} cards"
                         yesNoPrompt(state, payerId, resolved, sourceId, sourceName, ctx, "Discard $word at random?", "Discard")
                     } else {
-                        selectionPrompt(state, payerId, resolved, sourceId, sourceName, ctx, cardsInHand(state, payerId, atom.filter), atom.count, useTargetingUI = false)
+                        selectionPrompt(state, payerId, resolved, sourceId, sourceName, ctx, candidates, atom.count, useTargetingUI = false)
                     }
                 is CostAtom.ExileFrom ->
-                    selectionPrompt(state, payerId, resolved, sourceId, sourceName, ctx, cardsInZone(state, payerId, atom.filter, atom.zone), atom.count, useTargetingUI = atom.zone == Zone.BATTLEFIELD)
+                    selectionPrompt(state, payerId, resolved, sourceId, sourceName, ctx, candidates, atom.count, useTargetingUI = atom.zone == Zone.BATTLEFIELD)
                 // Collect evidence N (CR 701.59a) — the whole graveyard is selectable and the gate
                 // is the summed mana value, so the count cap is simply "all of them".
-                is CostAtom.CollectEvidence -> {
-                    val graveyard = com.wingedsheep.engine.handlers.costs.CollectEvidenceResolver
-                        .candidates(state, payerId).cards
+                is CostAtom.CollectEvidence ->
                     selectionPrompt(
-                        state, payerId, resolved, sourceId, sourceName, ctx, graveyard, graveyard.size,
+                        state, payerId, resolved, sourceId, sourceName, ctx, candidates, candidates.size,
                         useTargetingUI = false, minTotalManaValue = atom.amount
                     )
-                }
                 // Milling takes no selection — the cards are the top of the library — so this is a
                 // plain yes/no like paying life.
                 is CostAtom.Mill ->
                     yesNoPrompt(state, payerId, resolved, sourceId, sourceName, ctx, "${atom.description.replaceFirstChar { it.uppercase() }}?", atom.description.replaceFirstChar { it.uppercase() })
                 is CostAtom.RevealFromHand ->
-                    selectionPrompt(state, payerId, resolved, sourceId, sourceName, ctx, cardsInHand(state, payerId, atom.filter), atom.count, useTargetingUI = false)
+                    selectionPrompt(state, payerId, resolved, sourceId, sourceName, ctx, candidates, atom.count, useTargetingUI = false)
                 is CostAtom.Sacrifice ->
-                    selectionPrompt(state, payerId, resolved, sourceId, sourceName, ctx, controlledMatching(state, payerId, atom.filter, sourceId), atom.count, useTargetingUI = true)
+                    selectionPrompt(state, payerId, resolved, sourceId, sourceName, ctx, candidates, atom.count, useTargetingUI = true)
                 is CostAtom.ReturnToHand ->
-                    selectionPrompt(state, payerId, resolved, sourceId, sourceName, ctx, controlledMatching(state, payerId, atom.filter, sourceId), atom.count, useTargetingUI = true)
+                    selectionPrompt(state, payerId, resolved, sourceId, sourceName, ctx, candidates, atom.count, useTargetingUI = true)
                 is CostAtom.TapPermanents ->
-                    selectionPrompt(state, payerId, resolved, sourceId, sourceName, ctx, controlledUntapped(state, payerId, atom.filter, if (atom.excludeSelf) sourceId else null), atom.count, useTargetingUI = true)
+                    selectionPrompt(state, payerId, resolved, sourceId, sourceName, ctx, candidates, atom.count, useTargetingUI = true)
                 // Activated-ability-scoped (see canAfford below, which reports it unaffordable as a
                 // PayCost) — unreachable, but a yes/no is its shape if it is ever wired up.
                 is CostAtom.PutCountersOnSelf ->
@@ -166,9 +169,6 @@ class CostPaymentService(private val services: EngineServices) {
                         val prompt = atom.description
                         yesNoPrompt(state, payerId, resolved, sourceId, sourceName, ctx, prompt, prompt)
                     } else {
-                        val candidates = controlledMatching(
-                            state, payerId, atom.filter, if (excludeSource) sourceId else null
-                        )
                         if (candidates.isEmpty()) {
                             return PaymentResult.Unaffordable(state)
                         }
@@ -644,8 +644,7 @@ class CostPaymentService(private val services: EngineServices) {
             payerId: EntityId,
             cost: PayCost,
             sourceId: EntityId,
-            manaSolver: ManaSolver,
-            excludeSource: Boolean = true
+            manaSolver: ManaSolver
         ): Boolean {
             return when (val c = resolve(state, cost, sourceId)) {
                 // Only unresolvable own-mana-costs reach here (missing source/card component) — unpayable.
@@ -656,8 +655,8 @@ class CostPaymentService(private val services: EngineServices) {
                     // CR 119.4 — a player may pay life only if their life total is at least the amount; paying
                     // life that would reduce them to 0 or less is legal (they then lose as a state-based action).
                     is CostAtom.PayLife -> life(state, payerId) >= atom.amount
-                    is CostAtom.Discard -> cardsInHand(state, payerId, atom.filter).size >= atom.count
-                    is CostAtom.ExileFrom -> cardsInZone(state, payerId, atom.filter, atom.zone).size >= atom.count
+                    is CostAtom.Discard -> domain(state, payerId, c, sourceId).size >= atom.count
+                    is CostAtom.ExileFrom -> domain(state, payerId, c, sourceId).size >= atom.count
                     // CR 701.59b — unpayable unless the graveyard's *total mana value* reaches N.
                     // Card count says nothing here: five lands total 0 and pay nothing.
                     is CostAtom.CollectEvidence ->
@@ -665,16 +664,14 @@ class CostPaymentService(private val services: EngineServices) {
                             .canCollect(state, payerId, atom.amount)
                     // CR 701.17b — a mill cost is unpayable when the library holds fewer cards.
                     is CostAtom.Mill -> state.getZone(ZoneKey(payerId, Zone.LIBRARY)).size >= atom.count
-                    is CostAtom.RevealFromHand -> cardsInHand(state, payerId, atom.filter).size >= atom.count
+                    is CostAtom.RevealFromHand -> domain(state, payerId, c, sourceId).size >= atom.count
                     is CostAtom.Sacrifice -> {
-                        val candidates = controlledMatching(
-                            state, payerId, atom.filter, if (excludeSource) sourceId else null
-                        )
+                        val candidates = domain(state, payerId, c, sourceId)
                         if (atom.distinctNames) distinctNameCount(state, candidates) >= atom.count
                         else candidates.size >= atom.count
                     }
-                    is CostAtom.ReturnToHand -> controlledMatching(state, payerId, atom.filter, sourceId).size >= atom.count
-                    is CostAtom.TapPermanents -> controlledUntapped(state, payerId, atom.filter, if (atom.excludeSelf) sourceId else null).size >= atom.count
+                    is CostAtom.ReturnToHand -> domain(state, payerId, c, sourceId).size >= atom.count
+                    is CostAtom.TapPermanents -> domain(state, payerId, c, sourceId).size >= atom.count
                     // Activated-ability cost only: no printed morph / "unless you …" cost puts
                     // counters on a permanent, and CostHandler owns the placement path.
                     is CostAtom.PutCountersOnSelf -> false
@@ -692,10 +689,7 @@ class CostPaymentService(private val services: EngineServices) {
                             else counters.counters.values.sum() >= needed
                         } else {
                             val counterType = atom.counterType?.let { resolveCounterType(it) }
-                            val projected = state.projectedState
-                            val candidates = projected.getBattlefieldControlledBy(payerId).filter {
-                                predicateEvaluator.matches(state, projected, it, atom.filter, PredicateContext(controllerId = payerId))
-                            }
+                            val candidates = domain(state, payerId, c, sourceId)
                             val total = candidates.sumOf { entityId ->
                                 val counters = state.getEntity(entityId)?.get<CountersComponent>() ?: return@sumOf 0
                                 if (counterType != null) counters.getCount(counterType)
@@ -709,6 +703,57 @@ class CostPaymentService(private val services: EngineServices) {
                 }
             }
         }
+
+        /**
+         * The objects [payerId] may pick to pay [cost] — the **one** source-relative candidate rule,
+         * shared by [canAfford], the prompt [pay] builds, and the resumer's final validation, so
+         * those three can never disagree about which objects are legal.
+         *
+         * The source-relative part is the atom's own `excludeSelf`: "sacrifice **another** creature"
+         * excludes the cost's source, a plain "sacrifice a creature" does not — the source may pay
+         * its own cost (CR 601.2h). A blanket source exclusion here is what made a self-inclusive
+         * cost falsely unaffordable on a board holding only the source, and what let a self-exclusive
+         * one be offered and then rejected at payment.
+         *
+         * Null for a cost with no object domain at all (mana, life, mill, self counter removal, the
+         * activated-ability-only atoms, and the option pick of a [PayCost.Choice]). A domain is not
+         * the same as a prompt: a random discard has a domain (the matching cards in hand) but is
+         * paid with a yes/no.
+         */
+        fun selectionCandidates(
+            state: GameState,
+            payerId: EntityId,
+            cost: PayCost,
+            sourceId: EntityId
+        ): List<EntityId>? = when (val c = resolve(state, cost, sourceId)) {
+            is PayCost.OwnManaCost, is PayCost.Choice -> null
+            is PayCost.Atom -> when (val atom = c.atom) {
+                is CostAtom.Discard -> cardsInHand(state, payerId, atom.filter)
+                is CostAtom.RevealFromHand -> cardsInHand(state, payerId, atom.filter)
+                is CostAtom.ExileFrom -> cardsInZone(state, payerId, atom.filter, atom.zone)
+                // Collect evidence N (CR 701.59a) — the whole graveyard is selectable; the gate is
+                // the summed mana value, checked in [canAfford].
+                is CostAtom.CollectEvidence ->
+                    com.wingedsheep.engine.handlers.costs.CollectEvidenceResolver.candidates(state, payerId).cards
+                is CostAtom.Sacrifice ->
+                    controlledMatching(state, payerId, atom.filter, if (atom.excludeSelf) sourceId else null)
+                // ReturnToHand carries no `excludeSelf` axis, so the source stays out of the pool —
+                // one rule, applied identically by affordability, prompt, and validation.
+                is CostAtom.ReturnToHand -> controlledMatching(state, payerId, atom.filter, sourceId)
+                is CostAtom.TapPermanents ->
+                    controlledUntapped(state, payerId, atom.filter, if (atom.excludeSelf) sourceId else null)
+                // "Remove a counter from among permanents you control" never says "another", so the
+                // source is in the pool. Self-removal picks nothing at all.
+                is CostAtom.RemoveCounters ->
+                    if (atom.self) null else controlledMatching(state, payerId, atom.filter)
+                is CostAtom.Mana, is CostAtom.PayLife, is CostAtom.Mill,
+                is CostAtom.PutCountersOnSelf, is CostAtom.VariablePermanents -> null
+            }
+        }
+
+        /** [selectionCandidates] for a cost whose branch already knows it has a domain. */
+        private fun domain(state: GameState, payerId: EntityId, cost: PayCost, sourceId: EntityId): List<EntityId> =
+            selectionCandidates(state, payerId, cost, sourceId).orEmpty()
 
         /**
          * Lowers [PayCost.OwnManaCost] to a concrete [PayCost.Atom] (CostAtom.Mana) against the source's printed cost so

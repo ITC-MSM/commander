@@ -674,9 +674,7 @@ class PayOrSufferExecutor(
                 targets = context.targets,
                 namedTargets = context.pipeline.namedTargets,
                 storedCollections = context.pipeline.storedCollections
-            ),
-            // "Remove counters from among creatures you control" does not say "another".
-            excludeSource = false
+            )
         )
         return when (payment) {
             is PaymentResult.Pending ->

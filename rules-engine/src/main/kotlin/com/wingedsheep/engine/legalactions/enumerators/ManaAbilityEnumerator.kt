@@ -157,7 +157,10 @@ class ManaAbilityEnumerator : ActionEnumerator {
                     is AbilityCost.Atom -> when (val atom = effectiveCost.atom) {
                         is CostAtom.TapPermanents -> {
                             tapCost = atom
-                            tapTargets = context.costUtils.findAbilityTapTargets(state, playerId, atom.filter)
+                            tapTargets = context.costUtils.findAbilityTapTargets(
+                                state, playerId, atom.filter,
+                                if (atom.excludeSelf) entityId else null
+                            )
                             if (tapTargets.size < atom.count) affordable = false
                         }
                         is CostAtom.Sacrifice -> {
@@ -223,7 +226,10 @@ class ManaAbilityEnumerator : ActionEnumerator {
                                     }
                                     is CostAtom.TapPermanents -> {
                                         tapCost = atom
-                                        tapTargets = context.costUtils.findAbilityTapTargets(state, playerId, atom.filter)
+                                        tapTargets = context.costUtils.findAbilityTapTargets(
+                                            state, playerId, atom.filter,
+                                            if (atom.excludeSelf) entityId else null
+                                        )
                                         if (tapTargets.size < atom.count) {
                                             affordable = false; break
                                         }

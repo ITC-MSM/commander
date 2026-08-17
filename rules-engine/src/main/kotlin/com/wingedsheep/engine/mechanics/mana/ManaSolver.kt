@@ -2397,10 +2397,9 @@ class ManaSolver(
             payerId = playerId,
             cost = PayCost.Atom(cost.atom),
             sourceId = sourceId,
-            manaSolver = this,
-            // The source pays its own cost unless the atom says otherwise (CR 601.2h) — mirrors
-            // ManaAbilityEnumerator, which only excludes self for an excludeSelf sacrifice.
-            excludeSource = (cost.atom as? CostAtom.Sacrifice)?.excludeSelf == true
+            // The source pays its own cost unless the atom's own `excludeSelf` says otherwise
+            // (CR 601.2h); canAfford reads that flag itself.
+            manaSolver = this
         )
         is AbilityCost.Composite -> cost.costs.all {
             nonManaAbilityCostIsPayable(state, playerId, sourceId, it)

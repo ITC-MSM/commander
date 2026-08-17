@@ -9,7 +9,7 @@ import com.wingedsheep.engine.handlers.DecisionHandler
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.PipelineState
 import com.wingedsheep.engine.handlers.PredicateContext
-import com.wingedsheep.engine.handlers.PredicateEvaluator
+import com.wingedsheep.engine.handlers.effects.BattlefieldFilterUtils
 import com.wingedsheep.engine.mechanics.mana.ManaPaymentWindow
 import com.wingedsheep.engine.mechanics.mana.ManaPool
 import com.wingedsheep.engine.mechanics.mana.ManaSolver
@@ -21,6 +21,7 @@ import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.player.ManaPoolComponent
 import com.wingedsheep.sdk.core.ManaCost
 import com.wingedsheep.sdk.core.Zone
+import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.Duration
 import com.wingedsheep.sdk.scripting.costs.CostAtom
 import com.wingedsheep.sdk.scripting.costs.PayCost
@@ -649,7 +650,10 @@ class SacrificeAndPayContinuationResumer(
                 if (selectedPermanents.size < continuation.requiredCount) {
                     return askNextPlayerForAnyPlayerMayPay(state, continuation, checkForMore)
                 }
-
+                // No domain re-check here: `DecisionValidators.validateSelectCards` already rejects
+                // anything outside the decision's `options`, and those options come from
+                // [anyPlayerSacrificeCandidates] on both the initial and the next-player path — so an
+                // `excludeSelf` source can never reach this payment.
                 var newState = state
                 val events = mutableListOf<GameEvent>()
                 events.add(PermanentsSacrificedEvent(playerId, selectedPermanents))
@@ -709,6 +713,31 @@ class SacrificeAndPayContinuationResumer(
     }
 
     /**
+     * The permanents [playerId] may sacrifice to pay an "any player may sacrifice …" [cost] whose
+     * source is [sourceId].
+     *
+     * The same rule the initial prompt uses (`AnyPlayerMayPayExecutor`), applied here so the
+     * continuation can't widen or narrow the domain between players:
+     *
+     * - the atom's own `excludeSelf` — and nothing else — decides whether the source is in the pool;
+     * - control comes from *projected* state via [BattlefieldFilterUtils], not from a raw
+     *   `ZoneKey(playerId, BATTLEFIELD)` scan, so a permanent whose controller was changed by a
+     *   continuous effect is offered to the player who actually controls it.
+     */
+    private fun anyPlayerSacrificeCandidates(
+        state: GameState,
+        playerId: EntityId,
+        cost: CostAtom.Sacrifice,
+        sourceId: EntityId
+    ): List<EntityId> =
+        BattlefieldFilterUtils.findMatchingOnBattlefield(
+            state,
+            cost.filter.youControl(),
+            PredicateContext(controllerId = playerId),
+            excludeSelfId = if (cost.excludeSelf) sourceId else null
+        )
+
+    /**
      * Find and ask the next eligible player for "any player may [cost]" effects.
      * If no player can pay, runs the "none paid" consequence (e.g., reanimate the discarded card).
      */
@@ -717,20 +746,16 @@ class SacrificeAndPayContinuationResumer(
         continuation: AnyPlayerMayPayContinuation,
         checkForMore: CheckForMore
     ): ExecutionResult {
-        val predicateEvaluator = PredicateEvaluator()
         val cost = continuation.cost
-        val projected = state.projectedState
         val decisionHandler = DecisionHandler()
 
         for ((index, nextPlayerId) in continuation.remainingPlayers.withIndex()) {
             val remainingAfter = continuation.remainingPlayers.drop(index + 1)
             when (val atom = (cost as? PayCost.Atom)?.atom) {
                 is CostAtom.Sacrifice -> {
-                    val battlefield = state.getZone(ZoneKey(nextPlayerId, Zone.BATTLEFIELD))
-                    val context = PredicateContext(controllerId = nextPlayerId)
-                    val validPermanents = battlefield.filter { permanentId ->
-                        predicateEvaluator.matches(state, projected, permanentId, atom.filter, context)
-                    }
+                    val validPermanents = anyPlayerSacrificeCandidates(
+                        state, nextPlayerId, atom, continuation.sourceId
+                    )
                     if (validPermanents.size >= atom.count) {
                         val prompt = "You may sacrifice ${atom.count} ${atom.filter.description}s to cause ${continuation.sourceName} to be sacrificed, or skip"
                         val decisionResult = decisionHandler.createCardSelectionDecision(

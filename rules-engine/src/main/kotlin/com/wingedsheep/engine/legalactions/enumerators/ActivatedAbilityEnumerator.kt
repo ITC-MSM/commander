@@ -290,8 +290,10 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                         }
                         is CostAtom.TapPermanents -> {
                             tapCost = atom
-                            tapTargets = context.costUtils.findAbilityTapTargets(state, playerId, atom.filter)
-                                .let { targets -> if (atom.excludeSelf) targets.filter { it != entityId } else targets }
+                            tapTargets = context.costUtils.findAbilityTapTargets(
+                                state, playerId, atom.filter,
+                                if (atom.excludeSelf) entityId else null
+                            )
                             if (tapTargets.size < atom.count) continue
                         }
                         is CostAtom.Discard -> {
@@ -460,8 +462,10 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                                     }
                                     is CostAtom.TapPermanents -> {
                                         tapCost = atom
-                                        tapTargets = context.costUtils.findAbilityTapTargets(state, playerId, atom.filter)
-                                            .let { targets -> if (atom.excludeSelf) targets.filter { it != entityId } else targets }
+                                        tapTargets = context.costUtils.findAbilityTapTargets(
+                                            state, playerId, atom.filter,
+                                            if (atom.excludeSelf) entityId else null
+                                        )
                                         if (tapTargets.size < atom.count) {
                                             costCanBePaid = false
                                             break
