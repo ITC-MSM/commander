@@ -16,6 +16,7 @@ import com.wingedsheep.sdk.scripting.effects.DealDamageEffect
 import com.wingedsheep.sdk.scripting.effects.DrawCardsEffect
 import com.wingedsheep.sdk.scripting.effects.ForEachEffect
 import com.wingedsheep.sdk.scripting.effects.ForEachInGroupEffect
+import com.wingedsheep.sdk.scripting.effects.ForEachPlayerCollectingEffect
 import com.wingedsheep.sdk.scripting.effects.IterationSpace
 import com.wingedsheep.sdk.scripting.effects.GainControlEffect
 import com.wingedsheep.sdk.scripting.effects.GrantHarmonizeEffect
@@ -34,6 +35,7 @@ import com.wingedsheep.sdk.scripting.predicates.ControllerPredicate
 import com.wingedsheep.sdk.scripting.predicates.StatePredicate
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.scripting.EventPattern
+import com.wingedsheep.sdk.scripting.references.Player
 import com.wingedsheep.sdk.scripting.TriggerBinding
 import com.wingedsheep.sdk.scripting.TriggerSpec
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
@@ -53,6 +55,25 @@ class CardSerializationRoundTripTest : DescribeSpec({
     val json = CardSerialization.json
 
     describe("Effect round-trip serialization") {
+
+        it("should round-trip player-iteration collection reducers") {
+            val card = card("Collect Player Outputs") {
+                manaCost = "{B}"
+                typeLine = "Sorcery"
+                spell {
+                    effect = ForEachPlayerCollectingEffect(
+                        players = Player.EachOpponent,
+                        effects = listOf(DrawCardsEffect(DynamicAmount.Fixed(1))),
+                        collectCollections = mapOf("local" to "all")
+                    )
+                }
+            }
+
+            val serialized = CardLoader.toJson(card)
+            val effect = CardLoader.fromJson(serialized).script.spellEffect as ForEachEffect
+
+            effect.collectCollections shouldBe mapOf("local" to "all")
+        }
 
         it("should round-trip a simple damage spell") {
             val card = card("Lightning Bolt") {

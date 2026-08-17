@@ -25,7 +25,9 @@ class CoreAutoResumerModule(
             mergeAndContinue(result, events)
         },
 
-        autoResumer(ForEachContinuation::class, canResume = { it.remainingItems.isNotEmpty() }) { state, continuation, events, checkForMore ->
+        autoResumer(ForEachContinuation::class, canResume = {
+            it.remainingItems.isNotEmpty() || it.effect.collectCollections.isNotEmpty()
+        }) { state, continuation, events, checkForMore ->
             val forEachExecutor = com.wingedsheep.engine.handlers.effects.composite.ForEachExecutor { s, e, c ->
                 services.effectExecutorRegistry.execute(s, e, c)
             }
@@ -34,8 +36,14 @@ class CoreAutoResumerModule(
                 continuation.effect,
                 continuation.remainingItems,
                 continuation.effectContext
-            ).toExecutionResult()
-            mergeAndContinue(result, events, checkForMore)
+            )
+            if (result.isPaused) {
+                return@autoResumer ExecutionResult.paused(
+                    result.state, result.pendingDecision!!, events + result.events
+                )
+            }
+            val published = exposeCollectionsToNextFrame(result.state, result.updatedCollections)
+            checkForMore(published, events + result.events)
         },
 
         autoResumer(DrawReplacementRemainingDrawsContinuation::class) { state, continuation, events, checkForMore ->
