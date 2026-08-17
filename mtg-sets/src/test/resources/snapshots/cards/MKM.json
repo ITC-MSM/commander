@@ -11933,6 +11933,78 @@
     ]
 }
 
+// Repulsive Mutation
+{
+    "name": "Repulsive Mutation",
+    "manaCost": "{X}{G}{U}",
+    "typeLine": "Instant",
+    "oracleText": "Put X +1/+1 counters on target creature you control. Then counter up to one target spell unless its controller pays mana equal to the greatest power among creatures you control.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "AddDynamicCounters",
+                    "counterType": "+1/+1",
+                    "amount": "XValue",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "creature you control"
+                    }
+                },
+                {
+                    "type": "Counter",
+                    "condition": {
+                        "type": "CounterCondition.UnlessPaysDynamic",
+                        "amount": {
+                            "type": "AggregateBattlefield",
+                            "player": "You",
+                            "filter": "creature",
+                            "aggregation": "MAX",
+                            "property": "POWER"
+                        }
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature ctrl:you"
+                },
+                "id": "creature you control"
+            },
+            {
+                "type": "TargetObject",
+                "optional": true,
+                "filter": {
+                    "baseFilter": {},
+                    "zone": "Stack"
+                },
+                "id": "up to one target spell"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "227",
+        "rarity": "UNCOMMON",
+        "artist": "Filip Burburan",
+        "flavorText": "\"Remind me to send the biomancer team a gift basket.\"\n—Olana, Simic field researcher",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/1/71701c28-f113-4d38-8fd3-a19cd9749661.jpg?1783912838",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "If you control no creatures as Repulsive Mutation is resolving, the amount of mana the target spell's controller must pay to stop their spell from being countered is 0. That player can choose not to pay 0 mana; if they do, the spell will be countered."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN",
+        "BLUE"
+    ]
+}
+
 // Riftburst Hellion
 {
     "name": "Riftburst Hellion",
