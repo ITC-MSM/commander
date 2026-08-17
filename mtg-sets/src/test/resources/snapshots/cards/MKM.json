@@ -1917,6 +1917,199 @@
     ]
 }
 
+// Burden of Proof
+{
+    "name": "Burden of Proof",
+    "manaCost": "{1}{U}",
+    "typeLine": "Enchantment — Aura",
+    "oracleText": "Flash\nEnchant creature\nEnchanted creature gets +2/+2 as long as it's a Detective you control. Otherwise, it has base power and toughness 1/1 and can't block Detectives.",
+    "keywords": [
+        "FLASH"
+    ],
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "ModifyStats",
+                    "powerBonus": 2,
+                    "toughnessBonus": 2
+                },
+                "condition": {
+                    "type": "EntityMatches",
+                    "entity": "EnchantedPermanent",
+                    "filter": "creature Detective ctrl:you"
+                }
+            },
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "SetBasePowerToughnessStatic",
+                    "power": 1,
+                    "toughness": 1
+                },
+                "condition": {
+                    "type": "Not",
+                    "condition": {
+                        "type": "EntityMatches",
+                        "entity": "EnchantedPermanent",
+                        "filter": "creature Detective ctrl:you"
+                    }
+                }
+            },
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "CanOnlyBlockCreaturesWith",
+                    "blockerFilter": {
+                        "cardPredicates": [
+                            "IsCreature",
+                            {
+                                "type": "NotSubtype",
+                                "subtype": "Detective"
+                            }
+                        ]
+                    },
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "AttachedTo"
+                    }
+                },
+                "condition": {
+                    "type": "Not",
+                    "condition": {
+                        "type": "EntityMatches",
+                        "entity": "EnchantedPermanent",
+                        "filter": "creature Detective ctrl:you"
+                    }
+                }
+            }
+        ],
+        "auraTarget": {
+            "type": "TargetObject",
+            "filter": {
+                "baseFilter": "creature"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "42",
+        "rarity": "UNCOMMON",
+        "artist": "Deruchenko Alexander",
+        "flavorText": "\"You must have known all those lies would catch up to you eventually.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/e/4ea29c34-4b55-4170-9120-0a8dda61f2eb.jpg?1783912915",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "Once a Detective has been blocked, attaching Burden of Proof to a creature blocking it won't cause that Detective to become unblocked."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Buried in the Garden
+{
+    "name": "Buried in the Garden",
+    "manaCost": "{2}{G}{W}",
+    "typeLine": "Enchantment — Aura",
+    "oracleText": "Enchant land\nWhen this Aura enters, exile target nonland permanent you don't control until this Aura leaves the battlefield.\nWhenever enchanted land is tapped for mana, its controller adds an additional one mana of any color.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "ExileUntilLeaves",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "exiled"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "nonland permanent ctrl:opponent"
+                    },
+                    "id": "exiled"
+                },
+                "descriptionOverride": "When this Aura enters, exile target nonland permanent you don't control until this Aura leaves the battlefield."
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": "FromLinkedExile",
+                            "storeAs": "linked_return"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "linked_return",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Battlefield"
+                            },
+                            "underOwnersControl": true
+                        }
+                    ]
+                }
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "AdditionalManaOnTap",
+                "amount": {
+                    "type": "Fixed",
+                    "amount": 1
+                },
+                "anyColor": true
+            }
+        ],
+        "auraTarget": {
+            "type": "TargetObject",
+            "filter": {
+                "baseFilter": "land"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "191",
+        "rarity": "UNCOMMON",
+        "artist": "Tom Babbey",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/e/7e144609-e1f6-4bdc-8d14-b735ef4140d3.jpg?1783912854",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "If Buried in the Garden leaves the battlefield before its first triggered ability resolves, the target permanent won't be exiled."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "Auras attached to the exiled permanent will be put into their owners' graveyards. Any Equipment will become unattached and remain on the battlefield. Any counters on the exiled permanent will cease to exist. When the card returns to the battlefield, it will be a new object with no connection to the card that was exiled."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "If a token is exiled this way, it will cease to exist and won't return to the battlefield."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN",
+        "WHITE"
+    ]
+}
+
 // Call a Surprise Witness
 {
     "name": "Call a Surprise Witness",
@@ -2691,6 +2884,115 @@
             {
                 "date": "2024-02-02",
                 "text": "Any time you have priority, you may turn the face-down creature face up by revealing what its disguise cost is and paying that cost. This is a special action. It doesn't use the stack and can't be responded to. Only a face-down permanent can be turned face up this way; a face-down spell cannot."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Connecting the Dots
+{
+    "name": "Connecting the Dots",
+    "manaCost": "{1}{R}",
+    "typeLine": "Enchantment",
+    "oracleText": "Whenever a creature you control attacks, exile the top card of your library face down. (You can't look at it.)\n{1}{R}, Discard your hand, Sacrifice this enchantment: Put all cards exiled with this enchantment into their owners' hands.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "AttackEvent",
+                    "filter": "creature ctrl:you"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeAs": "clue"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "clue",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile"
+                            },
+                            "linkToSource": true,
+                            "faceDown": "HIDDEN"
+                        }
+                    ]
+                },
+                "descriptionOverride": "Whenever a creature you control attacks, exile the top card of your library face down."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}{R}"
+                            }
+                        },
+                        "CostDiscardHand",
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": "FromLinkedExile",
+                            "storeAs": "linked_return_hand"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "linked_return_hand",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Hand"
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "Put all cards exiled with this enchantment into their owners' hands."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "118",
+        "rarity": "RARE",
+        "artist": "Aaron J. Riley",
+        "flavorText": "\"How could I have missed it? The answer was right in front of me all along!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/e/8e02731a-8698-4b41-99c3-f0a19fc31430.jpg?1783912884",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "Each Connecting the Dots you control has its own set of face-down exiled cards. Connecting the Dots's last ability puts only those cards into your hand, not those of any other Connecting the Dots."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "If Connecting the Dots leaves the battlefield before you activate its last ability, any cards exiled by its triggered ability remain exiled face down for the rest of the game."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "You can pay the cost of \"discard your hand\" even if your hand contains zero cards."
             }
         ]
     },
@@ -5172,6 +5474,71 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Forensic Gadgeteer
+{
+    "name": "Forensic Gadgeteer",
+    "manaCost": "{2}{U}",
+    "typeLine": "Creature — Vedalken Artificer Detective",
+    "oracleText": "Whenever you cast an artifact spell, investigate. (Create a Clue token. It's an artifact with \"{2}, Sacrifice this token: Draw a card.\")\nActivated abilities of artifacts you control cost {1} less to activate. This effect can't reduce the mana in that cost to less than one mana.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            "IsArtifact"
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Clue"
+                },
+                "descriptionOverride": "Whenever you cast an artifact spell, investigate."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ReduceActivatedAbilityCost",
+                "filter": {
+                    "baseFilter": "artifact ctrl:you"
+                },
+                "amount": {
+                    "type": "Fixed",
+                    "amount": 1
+                },
+                "manaFloor": 1
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "57",
+        "rarity": "RARE",
+        "artist": "Volkan Baǵa",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/7/97d08a15-e61c-4421-a541-c68a4f87cb74.jpg?1783912910",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "Activated abilities contain a colon. They're generally written \"[Cost]: [Effect].\" Triggered abilities (starting with \"when,\" \"whenever,\" or \"at\") are unaffected by the cost reduction ability of Forensic Gadgeteer."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "Forensic Gadgeteer's last ability affects only abilities of artifacts you control on the battlefield. The costs of activated abilities of artifact cards that work in other zones, such as cycling, won't be reduced."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 
@@ -9809,6 +10176,65 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Pompous Gadabout
+{
+    "name": "Pompous Gadabout",
+    "manaCost": "{2}{G}",
+    "typeLine": "Creature — Human Citizen",
+    "oracleText": "During your turn, this creature has hexproof.\nThis creature can't be blocked by creatures that don't have a name.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 2
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "GrantKeyword",
+                    "keyword": "HEXPROOF",
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "Self"
+                    }
+                },
+                "condition": "IsYourTurn"
+            },
+            {
+                "type": "CantBeBlockedBy",
+                "blockerFilter": {
+                    "cardPredicates": [
+                        "IsCreature"
+                    ],
+                    "statePredicates": [
+                        "IsFaceDown"
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "171",
+        "rarity": "UNCOMMON",
+        "artist": "Scott Murphy",
+        "flavorText": "\"Stand aside, nobodies.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/d/6d803b93-c1df-4a02-9dbb-d347c841d4d7.jpg?1783912863",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "Face-down creatures don't have names unless an effect says otherwise."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "Once Pompous Gadabout has been blocked by a creature, turning that creature face down or otherwise causing it to lose its name won't cause it to stop blocking Pompous Gadabout."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 
