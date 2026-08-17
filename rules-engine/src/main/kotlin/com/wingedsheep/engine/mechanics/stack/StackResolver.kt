@@ -2839,6 +2839,7 @@ class StackResolver(
             xValue = abilityComponent.xValue,
             tappedPermanents = abilityComponent.tappedPermanents,
             tappedEntitySnapshots = abilityComponent.tappedEntitySnapshots,
+            exiledAsCostCards = abilityComponent.exiledAsCostCards,
             lastKnownSourceCounters = abilityComponent.lastKnownSourceCounters,
             lastKnownSourceSnapshot = abilityComponent.lastKnownSourceSnapshot,
             lastKnownSourceAttachments = abilityComponent.lastKnownSourceAttachments,

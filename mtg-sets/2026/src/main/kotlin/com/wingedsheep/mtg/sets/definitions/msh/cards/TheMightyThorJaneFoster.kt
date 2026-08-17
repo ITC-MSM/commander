@@ -1,6 +1,7 @@
 package com.wingedsheep.mtg.sets.definitions.msh.cards
 
 import com.wingedsheep.sdk.core.Keyword
+import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.Triggers
@@ -73,7 +74,7 @@ val TheMightyThorJaneFoster = card("The Mighty Thor, Jane Foster") {
     // Whenever an Equipment you control enters, draw a card.
     triggeredAbility {
         trigger = Triggers.entersBattlefield(
-            filter = GameObjectFilter.Artifact.withSubtype("Equipment").youControl(),
+            filter = GameObjectFilter.Artifact.withSubtype(Subtype.EQUIPMENT).youControl(),
             binding = TriggerBinding.ANY,
         )
         effect = Effects.DrawCards(1)

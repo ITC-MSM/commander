@@ -1440,6 +1440,10 @@ class CostCalculator(
         spellCardDef: CardDefinition? = null,
         castFromZone: com.wingedsheep.sdk.core.Zone? = null
     ): Boolean {
+        // A state-held "the next matching spell you cast this turn can be cast without paying its
+        // mana cost" rider (World War Hulk I) is checked first: it isn't tied to a battlefield
+        // source and isn't restricted to a cast zone, so none of the per-source gates below apply.
+        if (hasFreeCastRider(state, casterId, spellCardDef)) return true
         for (entityId in state.getBattlefield()) {
             val container = state.getEntity(entityId) ?: continue
             val card = container.get<CardComponent>() ?: continue
@@ -1476,6 +1480,48 @@ class CostCalculator(
             }
         }
         return hasEmblemFreeCastPermission(state, casterId, spellCardDef, castFromZone)
+    }
+
+    /**
+     * The pending-rider half of [hasFreeCastPermission]: a
+     * [com.wingedsheep.engine.state.PendingFreeCastSpell] installed by
+     * [com.wingedsheep.sdk.scripting.effects.GrantNextSpellFreeCastEffect] (World War Hulk I).
+     *
+     * The rider's own `sourceId` goes in as the predicate source so source-relative predicates
+     * ("shares a creature type with this permanent") resolve against the permanent that installed
+     * it, matching how [com.wingedsheep.engine.handlers.actions.spell.CastSpellHandler] evaluates
+     * the same filter when it consumes the rider. With no spell in hand (the coarse "does any
+     * free-cast permission exist?" probe) a filtered rider still counts, exactly as a filtered
+     * battlefield source does.
+     *
+     * **What "matching" means differs by characteristic source between the two sites.** Here the
+     * filter is evaluated against the [CardDefinition] — *printed* types/colors/keywords, with no
+     * continuous effects applied. The consumption site evaluates the same filter against the spell
+     * *entity* through `PredicateEvaluator`, which prefers projected values and falls back to base
+     * when the entity has no projection entry. Today they always agree, because objects on the
+     * stack have no projection entry; if that ever changes (or a Painter's-Servant-style colour
+     * effect reaches hand/stack), a card whose printed characteristics match but whose actual ones
+     * don't would be *offered* the free cast here and would *not* spend the rider there. Widening
+     * this to projected characteristics is the fix if that day comes — the asymmetry is recorded
+     * rather than papered over.
+     */
+    private fun hasFreeCastRider(
+        state: GameState,
+        casterId: EntityId,
+        spellCardDef: CardDefinition?
+    ): Boolean = state.pendingFreeCastSpells.any { rider ->
+        rider.controllerId == casterId &&
+            (
+                spellCardDef == null ||
+                    rider.spellFilter == GameObjectFilter.Any ||
+                    matchesCardDefinition(
+                        spellCardDef,
+                        rider.spellFilter,
+                        rider.sourceId,
+                        state,
+                        state.projectedState
+                    )
+            )
     }
 
     /**
@@ -1532,6 +1578,9 @@ class CostCalculator(
         // An emblem's permission is always unlimited, so it covers this cast on its own and no
         // battlefield once-per-turn use should be consumed.
         if (hasEmblemFreeCastPermission(state, casterId, spellCardDef, castFromZone)) return null
+        // Same for a pending "next spell you cast" rider — it pays for this cast and is itself
+        // consumed by the cast, so a Zaffai-style once-per-turn use must not be burned as well.
+        if (hasFreeCastRider(state, casterId, spellCardDef)) return null
         var oncePerTurnCandidate: EntityId? = null
         for (entityId in state.getBattlefield()) {
             val container = state.getEntity(entityId) ?: continue

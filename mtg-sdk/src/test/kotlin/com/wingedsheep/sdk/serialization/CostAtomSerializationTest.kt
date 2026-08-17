@@ -1,10 +1,12 @@
 package com.wingedsheep.sdk.serialization
 
+import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.core.Counters
 import com.wingedsheep.sdk.core.ManaCost
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.scripting.AdditionalCost
 import com.wingedsheep.sdk.scripting.GameObjectFilter
+import com.wingedsheep.sdk.scripting.costs.CardMeasure
 import com.wingedsheep.sdk.scripting.costs.CostAtom
 import com.wingedsheep.sdk.scripting.costs.PayCost
 import io.kotest.core.spec.style.FunSpec
@@ -41,7 +43,16 @@ class CostAtomSerializationTest : FunSpec({
         CostAtom.RemoveCounters("charge", self = true),
         CostAtom.RemoveCounters(counterType = null, filter = GameObjectFilter.Creature),
         CostAtom.PutCountersOnSelf(Counters.PAGE, count = 1),
-        CostAtom.CollectEvidence(amount = 6)
+        CostAtom.CollectEvidence(amount = 6),
+        CostAtom.ExileFromGraveyardForTotal(
+            filter = GameObjectFilter.Any.withColor(Color.BLACK),
+            measure = CardMeasure.ColoredManaSymbols(listOf(Color.BLACK)),
+            minTotal = 15,
+        ),
+        CostAtom.ExileFromGraveyardForTotal(
+            measure = CardMeasure.ManaValue,
+            minTotal = 6,
+        )
     )
 
     test("every concrete CostAtom subtype has a representative in this test") {

@@ -47,8 +47,7 @@ val SecretInvasion = card("Secret Invasion") {
         "When this Aura enters, exile up to one target creature other than enchanted creature " +
         "until this Aura leaves the battlefield. Enchanted creature becomes a copy of that " +
         "creature until this Aura leaves the battlefield.\n" +
-        "Enchanted creature has ward {2}. (Whenever this creature becomes the target of a spell " +
-        "or ability an opponent controls, counter it unless that player pays {2}.)"
+        "Enchanted creature has ward {2}."
 
     auraTarget = Targets.CreatureYouControl
 

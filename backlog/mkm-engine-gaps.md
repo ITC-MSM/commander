@@ -104,7 +104,7 @@ all routed through the engine's `CollectEvidenceResolver` so the cost and effect
 The optional *linked* cast cost (`card { collectEvidence(n) }`) rides the existing
 optional-additional-cost rail under `ChoiceSlot.EVIDENCE_COLLECTED`, read back by
 `Conditions.WasEvidenceCollected`; `Triggers.WheneverYouCollectEvidence` is the payoff. Selection is
-sum-gated (`minTotalManaValue` / `exileMinTotalManaValue`), and CR 701.59b fails closed everywhere.
+sum-gated (`minTotalManaValue` / `exileMinTotalWeight`), and CR 701.59b fails closed everywhere.
 Six cards ship with it (Vitu-Ghazi Inspector, Crimestopper Sprite, Bite Down on Crime, Sample
 Collector, Forensic Researcher, Surveillance Monitor); the rest are unblocked but not yet written,
 and four need *separate* features first — see below.

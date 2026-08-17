@@ -380,17 +380,32 @@ data class AdditionalCostData(
     val exileMinCount: Int = 0,
     val exileMaxCount: Int = 0,
     /**
-     * For a collect-evidence cost (CR 701.59a): the **floor on the combined mana value** of the
-     * exiled cards. Non-zero only for `costType == "CollectEvidence"`.
+     * The **floor on the combined measure** of the exiled cards, and what each offered card is
+     * worth toward it — the sum gate shared by every graveyard exile cost whose constraint is a
+     * total rather than a count: collect evidence N (CR 701.59a, measured by mana value) and the
+     * filtered `ExileFromGraveyardForTotal` (Baron Helmut Zemo, measured by coloured pips).
      *
-     * Its own field because collect evidence is the one exile cost whose constraint is a sum rather
-     * than a count — [exileMinCount] / [exileMaxCount] bound the selection at 1 and the whole
-     * graveyard, which is all a counted picker can say about it. The client gates its confirm
-     * button on the running total reaching this number and shows that total as the player selects.
-     * The server re-validates the submitted selection against it regardless
-     * ([com.wingedsheep.engine.handlers.costs.CollectEvidenceResolver.isLegalSelection]).
+     * Its own field because [exileMinCount] / [exileMaxCount] can only bound the selection at 1 and
+     * the whole graveyard, which is all a counted picker can say about such a cost. The client sums
+     * [exileCardWeights] over its selection, shows that running total and gates Confirm on it
+     * reaching [exileMinTotalWeight]; the weights are shipped rather than recomputed because a pip
+     * total is a server-side reading of the printed cost, and shipping them for mana value too
+     * keeps one code path instead of a client-computed special case. The server re-validates the
+     * submitted selection regardless
+     * ([com.wingedsheep.engine.handlers.costs.GraveyardTotalExileResolver.isLegalSelection]).
+     *
+     * Non-zero / non-empty only for `costType == "CollectEvidence"` or `"ExileForTotal"`.
      */
-    val exileMinTotalManaValue: Int = 0,
+    val exileMinTotalWeight: Int = 0,
+    /** Per-card weights for [exileMinTotalWeight], keyed by the ids in [validExileTargets]. */
+    val exileCardWeights: Map<EntityId, Int> = emptyMap(),
+    /**
+     * What one unit of [exileMinTotalWeight] is called, for the client's running tally
+     * ("3 / 6 mana value", "5 / 15 black mana symbols"). Straight from
+     * [com.wingedsheep.sdk.scripting.costs.CardMeasure.unitLabel], so the measure names its own
+     * unit and the client never has to know which cost it is looking at.
+     */
+    val exileWeightUnit: String = "",
     val validBeholdTargets: List<EntityId> = emptyList(),
     val beholdCount: Int = 0,
     val counterRemovalCreatures: List<CounterRemovalCreatureData> = emptyList(),

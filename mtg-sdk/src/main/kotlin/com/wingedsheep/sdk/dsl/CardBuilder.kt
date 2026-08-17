@@ -1670,6 +1670,15 @@ class ActivatedAbilityBuilder {
      * engine's pip-wise self cost reduction. See [ActivatedAbility.isPowerUp].
      */
     var isPowerUp: Boolean = false
+    /**
+     * When true, this is a *boast* ability (CR 702.142): "Boast — [cost]: [effect]" =
+     * "[cost]: [effect]. Activate only if this creature attacked this turn and only once each
+     * turn." Setting this renders the "Boast — " prefix and automatically adds both rules clauses
+     * to [restrictions] — [ActivationRestriction.OncePerTurn] and an
+     * [ActivationRestriction.OnlyIfCondition] over [Conditions.SourceAttackedThisTurn] — so an
+     * author only writes `isBoast = true`. See [ActivatedAbility.isBoast].
+     */
+    var isBoast: Boolean = false
     var holdPriority: Boolean = false
     var genericCostReduction: DynamicAmount? = null
     /** Colors that may be spent on the `{X}` portion of this ability's cost (empty = any). */
@@ -1707,10 +1716,23 @@ class ActivatedAbilityBuilder {
         // Exhaust (CR 702.177a) and power-up (CR 702.193a) both mean "Activate only once": ensure
         // the once-per-object restriction is present so the keyword marker and its enforcement
         // can't drift apart.
-        val effectiveRestrictions =
+        var effectiveRestrictions =
             if ((isExhaust || isPowerUp) && restrictions.none { it == ActivationRestriction.Once })
                 restrictions + ActivationRestriction.Once
             else restrictions
+        // Boast (CR 702.142a) is "activate only if this creature attacked this turn and only once
+        // each turn" — two ordinary restrictions, added here so the keyword marker and its
+        // enforcement can't drift apart (the same arrangement exhaust and power-up use above).
+        // Boast is once *each turn*, not exhaust's once ever, so it never adds `Once`.
+        if (isBoast) {
+            if (effectiveRestrictions.none { it == ActivationRestriction.OncePerTurn }) {
+                effectiveRestrictions = effectiveRestrictions + ActivationRestriction.OncePerTurn
+            }
+            val attackedGate = ActivationRestriction.OnlyIfCondition(Conditions.SourceAttackedThisTurn)
+            if (effectiveRestrictions.none { it == attackedGate }) {
+                effectiveRestrictions = effectiveRestrictions + attackedGate
+            }
+        }
         return ActivatedAbility(
             id = AbilityId.generate(),
             cost = cost,
@@ -1727,6 +1749,7 @@ class ActivatedAbilityBuilder {
             hasWaterbend = hasWaterbend,
             isExhaust = isExhaust,
             isPowerUp = isPowerUp,
+            isBoast = isBoast,
             holdPriority = holdPriority,
             genericCostReduction = genericCostReduction,
             xManaRestriction = xManaRestriction,

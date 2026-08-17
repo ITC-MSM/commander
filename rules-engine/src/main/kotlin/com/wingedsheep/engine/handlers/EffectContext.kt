@@ -121,7 +121,7 @@ data class EffectContext(
     val wasMayhem: Boolean = false,
     // --- Cast-time state ---
     /**
-     * Projected snapshots of permanents sacrificed as part of the cost (Rule 112.7a /
+     * Projected snapshots of permanents sacrificed as part of the cost (Rule 113.7a /
      * 608.2h — "as it last existed on the battlefield"). Captured before the zone change
      * so downstream effects can read power, toughness, and subtypes after the permanent
      * has left the battlefield.
@@ -152,11 +152,20 @@ data class EffectContext(
     val additionalCostBlightAmount: Int = 0,
     /** Permanents tapped as part of an activated ability's cost (e.g., Cryptic Gateway) */
     val tappedPermanents: List<EntityId> = emptyList(),
-    /** LKI snapshots for [tappedPermanents] (Rule 112.7a). See [EntitySnapshot]. */
+    /**
+     * Cards exiled to pay an activated ability's cost, recorded at payment time (CR 601.2h — the
+     * cost is paid on activation, long before the ability resolves). Read by
+     * [com.wingedsheep.sdk.scripting.effects.CardSource.ExiledAsCost] so the resolving effect can
+     * name "those exiled cards" (Baron Helmut Zemo). The exile counterpart of [tappedPermanents],
+     * and scoped to *this* activation's payment — unlike a permanent's linked-exile pile, which
+     * accumulates across activations.
+     */
+    val exiledAsCostCards: List<EntityId> = emptyList(),
+    /** LKI snapshots for [tappedPermanents] (Rule 113.7a). See [EntitySnapshot]. */
     val tappedEntitySnapshots: List<EntitySnapshot> = emptyList(),
     /**
      * Counters (counter-type-string → count) the source had the moment a self-exile /
-     * self-sacrifice cost wiped them (CR 112.7a). Read by
+     * self-sacrifice cost wiped them (CR 113.7a). Read by
      * [com.wingedsheep.sdk.scripting.values.DynamicAmount.LastKnownSourceCounters] so an effect
      * like "Draw a card for each verse counter on this. If it had seven or more..." (Lost Isle
      * Calling) sees the pre-cost count rather than zero.
@@ -164,7 +173,7 @@ data class EffectContext(
     val lastKnownSourceCounters: Map<String, Int> = emptyMap(),
     /**
      * Frozen projected P/T (and subtypes/supertypes) the source had the moment a self-exile /
-     * self-sacrifice cost moved it off the battlefield (CR 112.7a / 608.2h — "as it last existed
+     * self-sacrifice cost moved it off the battlefield (CR 113.7a / 608.2h — "as it last existed
      * on the battlefield"). Mirrors [lastKnownSourceCounters]. Read by [DynamicAmountEvaluator]
      * when an `EntityProperty(EntityReference.Source, …)` power/toughness read resolves after the
      * source is gone, so "Sacrifice this creature: it deals damage equal to its power" reads the
@@ -174,7 +183,7 @@ data class EffectContext(
     val lastKnownSourceSnapshot: EntitySnapshot? = null,
     /**
      * Entity ids of the permanents (Equipment/Auras) that were attached to the source the moment a
-     * self-sacrifice / self-exile cost moved it off the battlefield (CR 112.7a). Captured before the
+     * self-sacrifice / self-exile cost moved it off the battlefield (CR 113.7a). Captured before the
      * cost is paid, while the source still carries its `AttachmentsComponent`. Read by
      * [com.wingedsheep.sdk.scripting.effects.CardSource.LastKnownEquipmentAttachedToSource] so an
      * effect can "attach an Equipment that was attached to it to that creature" (Zack Fair) after the
@@ -183,7 +192,7 @@ data class EffectContext(
      */
     val lastKnownSourceAttachments: List<EntityId> = emptyList(),
     /**
-     * LKI snapshots (Rule 112.7a) for entities chosen via an additional cost
+     * LKI snapshots (Rule 113.7a) for entities chosen via an additional cost
      * step like [com.wingedsheep.sdk.scripting.AdditionalCost.ChooseEntity]
      * with `captureSnapshot = true`. Indexed by entity id via
      * [com.wingedsheep.engine.state.components.stack.snapshotFor]. Read by

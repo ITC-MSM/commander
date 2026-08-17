@@ -213,6 +213,7 @@ export function computePhases(actionInfo: LegalActionInfo, options?: ComputePhas
       'DiscardCard',
       'ExileFromGraveyard',
       'CollectEvidence',
+      'ExileForTotal',
       'ExileFromZone',
       'RevealCard',
       'Behold',
@@ -453,7 +454,8 @@ export function mergeResult(
               ? { discardedCards: selectedTargets }
               : costType === 'BouncePermanent'
                 ? { bouncedPermanents: selectedTargets }
-                : costType === 'ExileFromGraveyard' || costType === 'CollectEvidence'
+                : costType === 'ExileFromGraveyard' || costType === 'CollectEvidence' ||
+                    costType === 'ExileForTotal'
                   ? { exiledCards: selectedTargets }
                   : costType === 'Behold' || costType === 'ChooseEntity'
                     ? { beheldCards: selectedTargets }
@@ -490,7 +492,7 @@ export function mergeResult(
               : costType === 'BouncePermanent'
                 ? { bouncedPermanents: selectedTargets }
                 : costType === 'ExileFromGraveyard' || costType === 'Craft' ||
-                    costType === 'CollectEvidence'
+                    costType === 'CollectEvidence' || costType === 'ExileForTotal'
                   ? { exiledCards: selectedTargets }
                   : costType === 'Blight'
                     ? { blightTargets: selectedTargets }
@@ -913,18 +915,24 @@ export function enterPhase(
             .replace(/^Cast /, '')
             .replace(/^Activate /, '')
           break
-        // Collect evidence N (CR 701.59a): any number of graveyard cards, gated on their summed
-        // mana value rather than a count — so the count bounds are simply 1..whole graveyard and
-        // `minTotalManaValue` carries the real constraint.
+        // The sum-gated graveyard exiles: collect evidence N (CR 701.59a) and "exile any number of
+        // <filter> cards from your graveyard with N or more <measure>" (Baron Helmut Zemo). Any
+        // number of cards, gated on a summed measure rather than a count — so the count bounds are
+        // simply 1..whole graveyard and `minTotalWeight` carries the real constraint. Both read the
+        // server's per-card weights: the client computes no measure of its own, which is what lets
+        // one branch serve both costs.
         case 'CollectEvidence':
+        case 'ExileForTotal':
           validTargets = [...(costInfo.validExileTargets ?? [])]
           minTargets = 1
           maxTargets = costInfo.validExileTargets?.length ?? 1
           flags.isSacrificeSelection = true
           flags.targetZone = 'Graveyard'
           flags.targetDescription = costInfo.description
-          if (costInfo.exileMinTotalManaValue != null) {
-            flags.minTotalManaValue = costInfo.exileMinTotalManaValue
+          if (costInfo.exileMinTotalWeight != null) {
+            flags.minTotalWeight = costInfo.exileMinTotalWeight
+            flags.cardWeights = { ...(costInfo.exileCardWeights ?? {}) }
+            if (costInfo.exileWeightUnit != null) flags.weightUnit = costInfo.exileWeightUnit
           }
           break
         case 'ExileFromZone':

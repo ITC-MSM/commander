@@ -1721,6 +1721,9 @@ class CastSpellHandler(
                 is CostAtom.TapPermanents -> p.tappedPermanents.isNotEmpty()
                 is CostAtom.ReturnToHand -> p.bouncedPermanents.isNotEmpty()
                 is CostAtom.VariablePermanents -> p.variableCostPermanents.isNotEmpty()
+                // Never offered as a spell's additional cost (see CostHandler.canPayAdditionalCost),
+                // so no payment can satisfy it here.
+                is CostAtom.ExileFromGraveyardForTotal -> false
                 else -> false
             }
             else -> false
@@ -1917,10 +1920,11 @@ class CastSpellHandler(
                     }
                     // Mana / reveal are not produced as spell additional costs today;
                     // put-counters-on-self is ability-scoped (no permanent to accrue them on);
-                    // Mill is an activated-ability-only cost, never a spell additional cost
-                    // (canPayAdditionalCost already reports Mill unpayable).
+                    // Mill and ExileFromGraveyardForTotal are activated-ability-only costs, never
+                    // spell additional costs (canPayAdditionalCost already reports both unpayable).
                     is CostAtom.Mana, is CostAtom.RevealFromHand,
                     is CostAtom.PutCountersOnSelf,
+                    is CostAtom.ExileFromGraveyardForTotal,
                     is CostAtom.Mill -> {}
                     is CostAtom.RemoveCounters -> {
                         val needed = when (val c = atom.count) {
@@ -2602,7 +2606,7 @@ class CastSpellHandler(
                     is AdditionalCost.Atom -> when (val atom = additionalCost.atom) {
                         is CostAtom.Sacrifice -> {
                             // Snapshot projected subtypes and P/T before zone change
-                            // (Rule 112.7a / 608.2h — "as it last existed on the battlefield")
+                            // (Rule 113.7a / 608.2h — "as it last existed on the battlefield")
                             val projectedBeforeSacrifice = currentState.projectedState
                             sacrificedSnapshots.addAll(
                                 captureEntitySnapshots(action.additionalCostPayment.sacrificedPermanents, projectedBeforeSacrifice)
@@ -2740,8 +2744,12 @@ class CastSpellHandler(
                         // permanent to accrue them on); Mill is an activated-ability-only cost, never a
                         // spell additional cost (and canPayAdditionalCost reports Mill unpayable, so
                         // this is unreachable).
+                        // ExileFromGraveyardForTotal is an activated-ability cost only: it is never
+                        // offered as a spell's additional cost (canPayAdditionalCost reports it
+                        // unpayable), so this branch is unreachable for the same reason Mill's is.
                         is CostAtom.PayLife, is CostAtom.Mana, is CostAtom.RevealFromHand,
                         is CostAtom.PutCountersOnSelf,
+                        is CostAtom.ExileFromGraveyardForTotal,
                         is CostAtom.Mill -> {}
                         is CostAtom.RemoveCounters -> {
                             val resolvedRemovals = resolveDistributedCounterRemovalsForPayment(action)
@@ -2962,7 +2970,7 @@ class CastSpellHandler(
                         // When `captureSnapshot` is set, freeze a power/toughness/subtype
                         // snapshot for battlefield choices so downstream effects can fall
                         // back to LKI when the entity leaves between cost-pay and resolution
-                        // (Rule 112.7a).
+                        // (Rule 113.7a).
                         val chosen = action.additionalCostPayment.beheldCards
                         if (chosen.isNotEmpty()) {
                             beheldCards.addAll(chosen)
@@ -3929,6 +3937,32 @@ class CastSpellHandler(
             if (matchingAffinityRiders.isNotEmpty()) {
                 currentCastState = currentCastState.copy(
                     pendingNextSpellAffinities = currentCastState.pendingNextSpellAffinities.filter { it !in matchingAffinityRiders }
+                )
+            }
+        }
+
+        // Consume any matching "the next matching spell you cast this turn can be cast without
+        // paying its mana cost" riders (World War Hulk I). The permission was already offered by
+        // CostCalculator.hasFreeCastPermission while the rider was present; removing it here means
+        // only *the next* matching spell benefits. Deliberately not gated on
+        // `action.useWithoutPayingManaCost`: the printed text names a spell ("the next red or green
+        // creature spell you cast this turn"), so a matching spell cast for full price is that
+        // spell and spends the rider — the same contract as the affinity rider above.
+        run {
+            val matchingFreeCastRiders = currentCastState.pendingFreeCastSpells.filter { pending ->
+                if (pending.controllerId != action.playerId) return@filter false
+                // Source-relative filters, as above.
+                val freeCastEvalContext = PredicateContext(
+                    controllerId = action.playerId,
+                    sourceId = pending.sourceId
+                )
+                predicateEvaluator.matches(
+                    currentCastState, currentCastState.projectedState, action.cardId, pending.spellFilter, freeCastEvalContext
+                )
+            }
+            if (matchingFreeCastRiders.isNotEmpty()) {
+                currentCastState = currentCastState.copy(
+                    pendingFreeCastSpells = currentCastState.pendingFreeCastSpells.filter { it !in matchingFreeCastRiders }
                 )
             }
         }

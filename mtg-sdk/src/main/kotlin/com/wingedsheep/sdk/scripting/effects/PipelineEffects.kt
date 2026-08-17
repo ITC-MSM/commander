@@ -188,6 +188,27 @@ sealed interface CardSource {
     }
 
     /**
+     * The cards exiled to pay the ability's *activation cost* — the exile counterpart of
+     * [TappedAsCost], read from `EffectContext.exiledAsCostCards`, which the activation records at
+     * cost-payment time (CR 601.2h/602.2b: the cost is paid on activation, long before the ability
+     * resolves).
+     *
+     * This is what "those exiled cards" refers to in an ability whose *cost* did the exiling —
+     * Baron Helmut Zemo's "Exile any number of black cards from your graveyard …: **Copy those
+     * exiled cards.**" The cards are already in exile by resolution, and each activation sees only
+     * its own selection.
+     *
+     * **Not [FromLinkedExile]**, which is the accumulated pile a permanent has exiled over its
+     * lifetime: on a second activation that source would hand back the first activation's cards
+     * too. This gather is scoped to the one payment that put the ability on the stack.
+     */
+    @SerialName("ExiledAsCost")
+    @Serializable
+    data object ExiledAsCost : CardSource {
+        override val description: String = "those exiled cards"
+    }
+
+    /**
      * Cards from the source permanent's linked exile (LinkedExileComponent).
      * Returns the entity IDs stored in the component, filtered to only those
      * currently in exile.
@@ -327,7 +348,7 @@ sealed interface CardSource {
 
     /**
      * The Equipment that was attached to the effect's source the moment a self-sacrifice / self-exile
-     * cost moved it off the battlefield (CR 112.7a last-known information). Read off
+     * cost moved it off the battlefield (CR 113.7a last-known information). Read off
      * [com.wingedsheep.engine.handlers.EffectContext.lastKnownSourceAttachments] — the source's
      * attachment list captured before the cost was paid — and restricted to permanents that are
      * *still on the battlefield and still Equipment*, since an Equipment that has since left (or

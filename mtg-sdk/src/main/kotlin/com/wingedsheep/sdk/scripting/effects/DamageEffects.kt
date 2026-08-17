@@ -57,8 +57,9 @@ data class DealDamageEffect(
         if (cantBePrevented) append(". This damage can't be prevented")
     }
 
-    override fun runtimeDescription(resolver: (DynamicAmount) -> Int): String = buildString {
-        val resolved = resolver(amount)
+    override fun runtimeDescription(resolver: (DynamicAmount) -> Int?): String = buildString {
+        // Undeterminable amount ("damage equal to target's power", pre-choice) reads by name.
+        val resolved: String = resolver(amount)?.toString() ?: amount.description
         if (damageSource != null) {
             append("${damageSource.description} deals $resolved damage to ${target.description}")
         } else {
@@ -98,9 +99,9 @@ data class AmplifyNoncombatDamageThisTurnEffect(
         "Until end of turn, if a source you control would deal noncombat damage to a permanent or " +
             "player, it deals that much damage plus ${bonus.description} instead"
 
-    override fun runtimeDescription(resolver: (DynamicAmount) -> Int): String =
+    override fun runtimeDescription(resolver: (DynamicAmount) -> Int?): String =
         "Until end of turn, if a source you control would deal noncombat damage to a permanent or " +
-            "player, it deals that much damage plus ${resolver(bonus)} instead"
+            "player, it deals that much damage plus ${resolver(bonus) ?: bonus.description} instead"
 
     override fun applyTextReplacement(replacer: TextReplacer): Effect {
         val newBonus = bonus.applyTextReplacement(replacer)

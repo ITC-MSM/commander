@@ -193,9 +193,10 @@ data class PreventDamageEffect(
         }
     }
 
-    override fun runtimeDescription(resolver: (DynamicAmount) -> Int): String {
+    override fun runtimeDescription(resolver: (DynamicAmount) -> Int?): String {
         if (amount == null) return description
-        val resolved = resolver(amount)
+        // Undeterminable: [description] already renders the amount by name, so leave it as-is.
+        val resolved = resolver(amount) ?: return description
         return description.replace(amount.description, resolved.toString())
     }
 

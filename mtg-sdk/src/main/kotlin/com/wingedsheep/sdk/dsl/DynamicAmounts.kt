@@ -345,7 +345,7 @@ object DynamicAmounts {
 
     /**
      * The number of [filter] counters the source had as it last existed on the battlefield
-     * (CR 112.7a / 608.2h) — either wiped by its own self-exile / self-sacrifice cost ("for each
+     * (CR 113.7a / 608.2h) — either wiped by its own self-exile / self-sacrifice cost ("for each
      * verse counter on this" / "if it had seven or more counters on it", Lost Isle Calling) or
      * captured when it left the battlefield, for a dies/leaves trigger ("if it had a revival
      * counter on it", Nine-Lives Familiar). See [DynamicAmount.LastKnownSourceCounters]; use

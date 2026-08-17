@@ -67,7 +67,10 @@ class CostPaymentContinuationResumer(
             is CostAtom.ReturnToHand, is CostAtom.TapPermanents,
             // Collect evidence is a selection cost too — the sum gate rides on the decision's
             // `minTotalManaValue`, so resuming it is the ordinary selection path.
-            is CostAtom.CollectEvidence ->
+            is CostAtom.CollectEvidence,
+            // Never reaches a PayCost prompt (canPayCost reports it unpayable), but it is the same
+            // sum-gated selection shape if one is ever built.
+            is CostAtom.ExileFromGraveyardForTotal ->
                 resumeSelection(state, continuation, cost, response, checkForMore)
             is CostAtom.RemoveCounters ->
                 if (atom.self || atom.counterType == null) {

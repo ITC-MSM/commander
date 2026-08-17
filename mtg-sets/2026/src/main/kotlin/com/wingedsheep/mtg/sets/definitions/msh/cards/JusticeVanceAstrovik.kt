@@ -53,7 +53,7 @@ val JusticeVanceAstrovik = card("Justice, Vance Astrovik") {
                 filter = TargetFilter(GameObjectFilter.NonlandPermanent.nontoken()),
             )
         )
-        effect = Effects.Move(t, Zone.HAND)
+        effect = Effects.ReturnToHand(t)
         description = "When Justice enters, return up to one target nonland, nontoken permanent to its owner's hand."
     }
 

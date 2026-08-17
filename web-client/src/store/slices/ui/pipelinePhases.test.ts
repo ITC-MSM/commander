@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { computePhases } from './pipelinePhases'
+import { computePhases, enterPhase } from './pipelinePhases'
 import type { LegalActionInfo } from '@/types/messages'
 
 /**
@@ -137,5 +137,73 @@ describe('computePhases — tap-for-generic (improvise / waterbend)', () => {
     expect(computePhases(waterbendAction, { autoTapEnabled: true })).toEqual([
       { type: 'tapForGeneric' },
     ])
+  })
+})
+
+describe('enterPhase — sum-gated graveyard exile costs', () => {
+  /**
+   * Collect evidence N (CR 701.59a) and Baron Helmut Zemo's pip total are the same picker: any
+   * number of graveyard cards, gated on a summed measure the *server* computes. Both are pinned
+   * here because the two used to be separate client branches — one summing card mana values it
+   * looked up itself, one summing a server weight table — and the shared branch is only correct
+   * as long as the server ships weights for both.
+   */
+  function exileCostAction(costType: string, costInfo: Record<string, unknown>): LegalActionInfo {
+    return castAction({
+      actionType: 'ActivateAbility',
+      description: 'Activate Baron Helmut Zemo',
+      additionalCostInfo: { costType, description: 'Exile cards', ...costInfo },
+    })
+  }
+
+  function captureTargeting(info: LegalActionInfo): Record<string, unknown> | null {
+    let captured: Record<string, unknown> | null = null
+    const store = {
+      startTargeting: (arg: Record<string, unknown>) => {
+        captured = arg
+      },
+    } as unknown as Parameters<typeof enterPhase>[3]
+    enterPhase({ type: 'costPayment' }, info, info.action, store)
+    return captured
+  }
+
+  it('collect evidence gates Confirm on the server weight table, not on client-side mana values', () => {
+    const captured = captureTargeting(
+      exileCostAction('CollectEvidence', {
+        validExileTargets: ['a', 'b'],
+        exileMinCount: 1,
+        exileMaxCount: 2,
+        exileMinTotalWeight: 6,
+        exileCardWeights: { a: 4, b: 2 },
+        exileWeightUnit: 'mana value',
+      }),
+    )
+    expect(captured).toMatchObject({
+      validTargets: ['a', 'b'],
+      minTargets: 1,
+      maxTargets: 2,
+      minTotalWeight: 6,
+      cardWeights: { a: 4, b: 2 },
+      weightUnit: 'mana value',
+      targetZone: 'Graveyard',
+    })
+  })
+
+  it('an ExileForTotal cost takes the identical path with its own unit', () => {
+    const captured = captureTargeting(
+      exileCostAction('ExileForTotal', {
+        validExileTargets: ['x', 'y'],
+        exileMinCount: 1,
+        exileMaxCount: 2,
+        exileMinTotalWeight: 15,
+        exileCardWeights: { x: 9, y: 6 },
+        exileWeightUnit: 'black mana symbols',
+      }),
+    )
+    expect(captured).toMatchObject({
+      minTotalWeight: 15,
+      cardWeights: { x: 9, y: 6 },
+      weightUnit: 'black mana symbols',
+    })
   })
 })

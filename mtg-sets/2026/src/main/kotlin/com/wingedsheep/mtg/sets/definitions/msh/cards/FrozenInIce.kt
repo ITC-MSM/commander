@@ -20,8 +20,10 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  * Enchanted creature loses all abilities and can't become untapped.
  *
  * The Stop Cold / Blossombind idiom: an ETB [Effects.Tap] on the enchanted creature plus a Layer 6
- * [LoseAllAbilities] and the [AbilityFlag.DOESNT_UNTAP] untap restriction (the engine's
- * "can't become untapped" flag, checked by the untap step in `BeginningPhaseManager`).
+ * [LoseAllAbilities] and an untap restriction. The printed wording is the *stronger*
+ * [AbilityFlag.CANT_BECOME_UNTAPPED] (as on Blossombind), which blocks explicit untap effects and
+ * untap costs too — not just the controller's untap step, which is all `DOESNT_UNTAP` (Stop Cold)
+ * covers.
  */
 val FrozenInIce = card("Frozen in Ice") {
     manaCost = "{2}{U}"
@@ -43,7 +45,7 @@ val FrozenInIce = card("Frozen in Ice") {
     }
 
     staticAbility {
-        ability = GrantKeyword(AbilityFlag.DOESNT_UNTAP.name)
+        ability = GrantKeyword(AbilityFlag.CANT_BECOME_UNTAPPED.name)
     }
 
     metadata {

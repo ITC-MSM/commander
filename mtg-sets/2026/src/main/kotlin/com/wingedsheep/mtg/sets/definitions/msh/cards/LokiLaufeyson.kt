@@ -63,9 +63,9 @@ val LokiLaufeyson = card("Loki Laufeyson") {
             spellFilter = GameObjectFilter.InstantOrSorcery
                 .manaValueAtMostDynamic(DynamicAmounts.sourcePower())
         )
-        description = "When you next cast an instant or sorcery spell with mana value less than " +
-            "or equal to Loki's power this turn, copy that spell. You may choose new targets " +
-            "for the copy."
+        description = "{1}, {T}: When you next cast an instant or sorcery spell with mana value " +
+            "less than or equal to Loki's power this turn, copy that spell. You may choose new " +
+            "targets for the copy."
     }
 
     activatedAbility {

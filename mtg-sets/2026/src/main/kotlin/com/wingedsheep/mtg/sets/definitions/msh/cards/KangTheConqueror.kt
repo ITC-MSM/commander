@@ -59,6 +59,7 @@ val KangTheConqueror = card("Kang the Conqueror") {
         rarity = Rarity.MYTHIC
         collectorNumber = "62"
         artist = "Peter Scanlan"
+        flavorText = "\"My time . . . is all times.\""
         imageUri = "https://cards.scryfall.io/normal/front/7/9/79747b45-fd7b-4023-9a9c-4d9dab2429fe.jpg?1783902956"
     }
 }

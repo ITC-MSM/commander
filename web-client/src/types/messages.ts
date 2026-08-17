@@ -1096,12 +1096,19 @@ export interface AdditionalCostInfo {
   readonly exileMinCount?: number
   readonly exileMaxCount?: number
   /**
-   * Floor on the summed mana value of the exiled cards — collect evidence N (CR 701.59a).
-   * Set only for `costType === 'CollectEvidence'`, where the constraint is a sum rather than a
-   * count and `exileMinCount` / `exileMaxCount` merely bound the selection at 1 and the whole
-   * graveyard.
+   * Floor on the summed *measure* of the exiled cards, with the per-card weights the sum is taken
+   * over and the name of one unit for the tally. Set for the graveyard exile costs whose
+   * constraint is a total rather than a count — `costType === 'CollectEvidence'` (CR 701.59a,
+   * mana value) and `'ExileForTotal'` (Baron Helmut Zemo's "fifteen or more black mana symbols
+   * among their mana costs") — where `exileMinCount` / `exileMaxCount` merely bound the selection
+   * at 1 and the whole graveyard.
+   *
+   * The client never computes a weight: the server ships them (a pip total is a reading of the
+   * printed cost the client can't do, and sending mana values too keeps this one code path).
    */
-  readonly exileMinTotalManaValue?: number
+  readonly exileMinTotalWeight?: number
+  readonly exileCardWeights?: Readonly<Record<EntityId, number>>
+  readonly exileWeightUnit?: string
   readonly validBeholdTargets?: readonly EntityId[]
   readonly beholdCount?: number
   readonly counterRemovalCreatures?: readonly CounterRemovalCreatureInfo[]

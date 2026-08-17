@@ -137,7 +137,7 @@ data class AssignDamageEqualToToughness(
  * is on the battlefield, the evaluator substitutes toughness for power when the tapped creature's
  * controller matches and toughness > power. The substitution is re-evaluated at resolution time
  * and uses last-known characteristics if the tapped creature has left the battlefield (Rule
- * 112.7a — Tapestry Warden 2025-07-25 rulings). A per-creature filter is not currently supported;
+ * 113.7a — Tapestry Warden 2025-07-25 rulings). A per-creature filter is not currently supported;
  * the override applies to all of the controller's creatures meeting the toughness > power condition.
  *
  * Used for Tapestry Warden: "Each creature you control with toughness greater than its

@@ -33,9 +33,14 @@ data class DrawCardsEffect(
         else -> "${target.description.replaceFirstChar { it.uppercase() }} draws cards equal to ${count.description}"
     }
 
-    override fun runtimeDescription(resolver: (DynamicAmount) -> Int): String {
+    override fun runtimeDescription(resolver: (DynamicAmount) -> Int?): String {
         val resolved = resolver(count)
-        val cardText = if (resolved == 1) "a card" else "$resolved cards"
+        // Undeterminable count keeps its own wording and stays plural — "draw cards equal to …".
+        val cardText = when {
+            resolved == null -> "${count.description} cards"
+            resolved == 1 -> "a card"
+            else -> "$resolved cards"
+        }
         return when (target) {
             EffectTarget.Controller -> "Draw $cardText"
             else -> "${target.description.replaceFirstChar { it.uppercase() }} draws $cardText"

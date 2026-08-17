@@ -1,5 +1,6 @@
 package com.wingedsheep.sdk.dsl
 
+import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.core.ManaCost
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.dsl.Costs.Composite
@@ -12,6 +13,7 @@ import com.wingedsheep.sdk.scripting.AbilityCost
 import com.wingedsheep.sdk.scripting.AdditionalCost
 import com.wingedsheep.sdk.scripting.CostZone
 import com.wingedsheep.sdk.scripting.GameObjectFilter
+import com.wingedsheep.sdk.scripting.costs.CardMeasure
 import com.wingedsheep.sdk.scripting.costs.CostAtom
 import com.wingedsheep.sdk.scripting.costs.PayCost
 import com.wingedsheep.sdk.scripting.costs.PermanentCostAction
@@ -264,6 +266,52 @@ object Costs {
      */
     fun CollectEvidence(amount: Int): AbilityCost =
         AbilityCost.Atom(CostAtom.CollectEvidence(amount))
+
+    /**
+     * Exile any number of cards matching [filter] from your graveyard whose summed [measure]
+     * reaches [minTotal] — the unnamed, filtered generalization of [CollectEvidence]'s shape.
+     *
+     * Baron Helmut Zemo's boast cost ("Exile any number of black cards from your graveyard with
+     * fifteen or more black mana symbols among their mana costs") is
+     * `ExileFromGraveyardForTotal(15, CardMeasure.ColoredManaSymbols(listOf(Color.BLACK)),
+     * Filters.Unified.withColor(Color.BLACK))`; prefer [ExileFromGraveyardForColoredSymbols], which
+     * derives the colour filter from the same colours it counts.
+     *
+     * Like collect evidence, the count is free and the *sum* is the constraint, and the cost fails
+     * closed: an ability whose graveyard can't reach [minTotal] isn't offered at all.
+     */
+    fun ExileFromGraveyardForTotal(
+        minTotal: Int,
+        measure: CardMeasure,
+        filter: GameObjectFilter = GameObjectFilter.Any,
+    ): AbilityCost = AbilityCost.Atom(
+        CostAtom.ExileFromGraveyardForTotal(filter = filter, measure = measure, minTotal = minTotal)
+    )
+
+    /**
+     * "Exile any number of [color] cards from your graveyard with [minSymbols] or more [color] mana
+     * symbols among their mana costs" (Baron Helmut Zemo) — [ExileFromGraveyardForTotal] with the
+     * pip measure and the matching colour filter derived from one list of colours, so the two can't
+     * drift apart.
+     *
+     * The colour filter and the pip count are *not* redundant: colour is a characteristic while the
+     * count reads printed pips, so the filter is what keeps a black card with no black pips (and a
+     * blue card with a `{B/U}` pip) on the right side of the printed wording.
+     */
+    fun ExileFromGraveyardForColoredSymbols(
+        minSymbols: Int,
+        vararg colors: Color,
+    ): AbilityCost {
+        require(colors.isNotEmpty()) { "ExileFromGraveyardForColoredSymbols needs at least one color" }
+        // `withAnyColor` (union), matching `ManaCost.coloredSymbolCount`'s union over the same
+        // colours: a card contributing a pip of *any* requested colour is one the cost may spend.
+        val colorFilter = GameObjectFilter.Any.withAnyColor(*colors)
+        return ExileFromGraveyardForTotal(
+            minTotal = minSymbols,
+            measure = CardMeasure.ColoredManaSymbols(colors.toList()),
+            filter = colorFilter,
+        )
+    }
 
     /**
      * Exile one or more permanents matching [filter] you control (variable count, at least

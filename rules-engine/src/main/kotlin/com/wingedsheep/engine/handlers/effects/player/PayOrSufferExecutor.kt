@@ -93,6 +93,11 @@ class PayOrSufferExecutor(
                 // unpayable below rather than handled here, so nothing silently succeeds.
                 is CostAtom.CollectEvidence ->
                     EffectResult.error(state, "CollectEvidence is not a PayOrSuffer cost")
+                // Same reasoning as CollectEvidence, whose shape it generalizes: no printed
+                // "unless you exile cards totalling N" exists, so it is reported unpayable rather
+                // than prompting into a half-built payment.
+                is CostAtom.ExileFromGraveyardForTotal ->
+                    EffectResult.error(state, "ExileFromGraveyardForTotal is not a PayOrSuffer cost")
                 is CostAtom.VariablePermanents -> EffectResult.error(state, "VariablePermanents payment for PayOrSuffer not supported")
                 is CostAtom.RemoveCounters -> handleRemoveCountersCost(state, effect, context, atom, sourceId, sourceCard.name, payingPlayerId)
             }
@@ -728,6 +733,7 @@ class PayOrSufferExecutor(
                 is CostAtom.Mill -> false
                 // See the execute branch: unpayable rather than prompting into an error.
                 is CostAtom.CollectEvidence -> false
+                is CostAtom.ExileFromGraveyardForTotal -> false
                 is CostAtom.RemoveCounters -> {
                     // Can pay if there are permanents matching the filter with enough counters.
                     // Don't exclude the source — removing counters from the source itself is a

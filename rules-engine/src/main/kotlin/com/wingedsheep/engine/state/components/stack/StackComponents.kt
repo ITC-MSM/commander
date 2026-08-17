@@ -61,7 +61,7 @@ data class SpellOnStackComponent(
     val modeTargetsOrdered: List<List<ChosenTarget>> = emptyList(),  // Per-mode chosen targets, aligned 1:1 with chosenModes
     val modeTargetRequirements: Map<Int, List<TargetRequirement>> = emptyMap(),  // Per-mode TargetRequirements for 608.2b re-validation at resolution
     val modeDamageDistribution: Map<Int, Map<EntityId, Int>> = emptyMap(),  // Per-mode DividedDamageEffect allocations (future)
-    /** Snapshots of permanents sacrificed as additional cost (Rule 112.7a — last known info). */
+    /** Snapshots of permanents sacrificed as additional cost (Rule 113.7a — last known info). */
     val sacrificedPermanents: List<EntitySnapshot> = emptyList(),
     val castFaceDown: Boolean = false,  // For morph - creature enters face-down
     val damageDistribution: Map<EntityId, Int>? = null,  // For DividedDamageEffect - pre-chosen damage allocation
@@ -114,7 +114,7 @@ data class SpellOnStackComponent(
      */
     val discardedAsCostCards: List<EntityId> = emptyList(),
     /**
-     * Last-known-info snapshots (Rule 112.7a) for entities chosen at cost-pay time
+     * Last-known-info snapshots (Rule 113.7a) for entities chosen at cost-pay time
      * that may later leave the battlefield before the spell resolves. Populated
      * when an [com.wingedsheep.sdk.scripting.AdditionalCost.ChooseEntity] step
      * has `captureSnapshot = true` — freezes the chosen entity's projected
@@ -303,22 +303,28 @@ data class ActivatedAbilityOnStackComponent(
     val sourceName: String,
     val controllerId: EntityId,
     val effect: Effect,
-    /** Snapshots of permanents sacrificed as additional cost (Rule 112.7a — last known info). */
+    /** Snapshots of permanents sacrificed as additional cost (Rule 113.7a — last known info). */
     val sacrificedPermanents: List<EntitySnapshot> = emptyList(),
     val xValue: Int? = null,
     val tappedPermanents: List<EntityId> = emptyList(),
     /** LKI snapshots for [tappedPermanents] — see [sacrificedPermanents]. */
     val tappedEntitySnapshots: List<EntitySnapshot> = emptyList(),
     /**
+     * Cards exiled to pay this activation's cost, carried to resolution for
+     * [com.wingedsheep.sdk.scripting.effects.CardSource.ExiledAsCost] ("copy those exiled cards").
+     * Recorded per activation, so a second activation of the same ability never sees the first's.
+     */
+    val exiledAsCostCards: List<EntityId> = emptyList(),
+    /**
      * Counters (counter-type-string → count) the source had the moment a self-exile /
-     * self-sacrifice cost was paid (CR 112.7a). Captured before the cost wipes them so the
+     * self-sacrifice cost was paid (CR 113.7a). Captured before the cost wipes them so the
      * resolving effect can read the pre-cost count via
      * [com.wingedsheep.sdk.scripting.values.DynamicAmount.LastKnownSourceCounters] (Lost Isle Calling).
      */
     val lastKnownSourceCounters: Map<String, Int> = emptyMap(),
     /**
      * Frozen projected P/T of the source captured before a self-exile / self-sacrifice cost moved
-     * it off the battlefield (CR 112.7a). Mirrors [lastKnownSourceCounters]; read at resolution via
+     * it off the battlefield (CR 113.7a). Mirrors [lastKnownSourceCounters]; read at resolution via
      * [com.wingedsheep.engine.handlers.EffectContext.lastKnownSourceSnapshot] so an
      * `EntityProperty(Source, Power)` read (Ghitu Fire-Eater / Blazing Bomb's Blow Up) sees the
      * pre-sacrifice power. Null when the cost did not sacrifice/exile the source.
@@ -326,7 +332,7 @@ data class ActivatedAbilityOnStackComponent(
     val lastKnownSourceSnapshot: EntitySnapshot? = null,
     /**
      * Entity ids of the Equipment/Auras that were attached to the source when a self-sacrifice /
-     * self-exile cost was paid (CR 112.7a). Captured before the cost wipes the source's
+     * self-exile cost was paid (CR 113.7a). Captured before the cost wipes the source's
      * `AttachmentsComponent`; read at resolution via
      * [com.wingedsheep.engine.handlers.EffectContext.lastKnownSourceAttachments] so
      * [com.wingedsheep.sdk.scripting.effects.CardSource.LastKnownEquipmentAttachedToSource] can

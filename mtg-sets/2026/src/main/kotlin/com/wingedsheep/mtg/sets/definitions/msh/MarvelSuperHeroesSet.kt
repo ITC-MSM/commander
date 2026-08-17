@@ -16,7 +16,6 @@ object MarvelSuperHeroesSet : MtgSet {
     override val code = "MSH"
     override val displayName = "Marvel Super Heroes"
     override val releaseDate = "2026-06-26"
-    override val incomplete = true
 
     override val cards: List<CardDefinition> by lazy {
         CardDiscovery.findIn(CARDS_PACKAGE)

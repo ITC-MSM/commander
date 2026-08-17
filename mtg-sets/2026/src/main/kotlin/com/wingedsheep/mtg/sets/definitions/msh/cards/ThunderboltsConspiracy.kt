@@ -1,6 +1,6 @@
 package com.wingedsheep.mtg.sets.definitions.msh.cards
 
-import com.wingedsheep.sdk.core.Counters
+import com.wingedsheep.sdk.core.CounterType
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.core.Zone
@@ -24,13 +24,16 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  * The Valkyrie's Call template: a filtered dies trigger ([Triggers.leavesBattlefield] to
  * [Zone.GRAVEYARD], [TriggerBinding.ANY]) whose filter is "Villain creature you control".
  * [EffectTarget.TriggeringEntity] resolves to the dying card, now in the graveyard;
- * [Effects.Move] returns it to the battlefield under its owner's control (the reanimation default),
- * then the [Counters.FINALITY] counter and the [Duration.Permanent] Hero type-add apply to the new
- * object created by that return (CR 611.2b — the effect has no duration, so it modifies the object
- * for as long as it stays on the battlefield).
+ * [Effects.Move] returns it to the battlefield under its owner's control (the reanimation default)
+ * *with* the [CounterType.FINALITY] counter — `addCounterType`, not a following AddCounters, because
+ * "with a counter on it" is an as-enters replacement (CR 614.1c): the counter rides the zone change,
+ * so counter doublers and "enters with an additional counter" effects see it enter carrying the
+ * counter, and it is never briefly on the battlefield without one. The [Duration.Permanent] Hero
+ * type-add then applies to the new object created by that return (CR 611.2b — the effect has no
+ * duration, so it modifies the object for as long as it stays on the battlefield).
  *
  * The finality counter's "if it would die, exile it instead" replacement is engine-intrinsic to
- * [Counters.FINALITY], so the loop self-terminates on the creature's second death. A token Villain
+ * [CounterType.FINALITY], so the loop self-terminates on the creature's second death. A token Villain
  * dying leaves nothing to return — the Move is a graceful no-op, matching the rules.
  */
 val ThunderboltsConspiracy = card("Thunderbolts Conspiracy") {
@@ -51,10 +54,14 @@ val ThunderboltsConspiracy = card("Thunderbolts Conspiracy") {
             binding = TriggerBinding.ANY
         )
         effect = Effects.Composite(
-            // Return it to the battlefield under its owner's control ...
-            Effects.Move(EffectTarget.TriggeringEntity, Zone.BATTLEFIELD),
-            // ... with a finality counter on it.
-            Effects.AddCounters(Counters.FINALITY, 1, EffectTarget.TriggeringEntity),
+            // Return it to the battlefield under its owner's control *with* a finality counter on
+            // it — `addCounterType`, not a following AddCounters, because "with a counter on it"
+            // is an as-enters replacement (CR 614.1c).
+            Effects.Move(
+                EffectTarget.TriggeringEntity,
+                Zone.BATTLEFIELD,
+                addCounterType = CounterType.FINALITY,
+            ),
             // That creature is a Hero in addition to its other types.
             Effects.AddCreatureType("Hero", EffectTarget.TriggeringEntity, Duration.Permanent)
         )

@@ -16,6 +16,7 @@ import com.wingedsheep.sdk.dsl.RIOT_MODE_COUNTER
 import com.wingedsheep.sdk.dsl.RIOT_MODE_HASTE
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.Duration
+import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.GrantChosenColor
 import com.wingedsheep.sdk.scripting.KeywordAbility
 import com.wingedsheep.sdk.scripting.ProtectionScope
@@ -625,7 +626,7 @@ class ClientStateTransformer(
                         val mode = triggeredModal.modes.getOrNull(modeIndex)
                             ?: return@map "Unknown mode"
                         try {
-                            mode.effect.runtimeDescription { amount -> evaluator.evaluate(state, amount, context) }
+                            mode.effect.runtimeDescription { amount -> evaluator.evaluateForDisplay(state, amount, context) }
                         } catch (_: Exception) {
                             mode.description
                         }
@@ -1635,7 +1636,7 @@ class ClientStateTransformer(
             // depending on whether the optional Blight cost was paid) instead of the full
             // "if X, do Y. Otherwise, do Z." description.
             val resolvedEffect = resolveConditionalForStack(state, effect, context)
-            resolvedEffect.runtimeDescription { amount -> evaluator.evaluate(state, amount, context) }
+            resolvedEffect.runtimeDescription { amount -> evaluator.evaluateForDisplay(state, amount, context) }
         } catch (_: Exception) {
             effect.description
         }
@@ -1692,7 +1693,7 @@ class ClientStateTransformer(
         return spellOnStack.chosenModes.map { modeIndex ->
             val mode = modal.modes.getOrNull(modeIndex) ?: return@map "Unknown mode"
             try {
-                mode.effect.runtimeDescription { amount -> evaluator.evaluate(state, amount, context) }
+                mode.effect.runtimeDescription { amount -> evaluator.evaluateForDisplay(state, amount, context) }
             } catch (_: Exception) {
                 mode.description
             }
@@ -1776,6 +1777,7 @@ class ClientStateTransformer(
         val context = EffectContext(
             sourceId = abilityEntityId,
             controllerId = activated.controllerId,
+            targets = chosenTargetsOf(state, abilityEntityId),
             xValue = activated.xValue,
             sacrificedPermanents = activated.sacrificedPermanents,
             tappedPermanents = activated.tappedPermanents,
@@ -1783,6 +1785,21 @@ class ClientStateTransformer(
         )
         return runtimeAbilityText(state, activated.effect, context)
     }
+
+    /**
+     * The targets already chosen for an ability sitting on the stack.
+     *
+     * An ability's targets are locked in when it's put on the stack, so text rendered for it can
+     * read them — "double its power" on a 5/5 should say "+5/+5", not fall back to the amount's
+     * wording. The spell path does the same thing; omitting it here left every
+     * [com.wingedsheep.sdk.scripting.values.EntityReference.Target]-relative amount undeterminable
+     * on the stack, where it is in fact known.
+     */
+    private fun chosenTargetsOf(state: GameState, abilityEntityId: EntityId) =
+        state.getEntity(abilityEntityId)
+            ?.get<com.wingedsheep.engine.state.components.stack.TargetsComponent>()
+            ?.targets
+            ?: emptyList()
 
     /**
      * Generate runtime text for a triggered ability on the stack. Builds an [EffectContext] with
@@ -1803,7 +1820,7 @@ class ClientStateTransformer(
     private fun runtimeAbilityText(state: GameState, effect: Effect, context: EffectContext): String? {
         return try {
             val evaluator = DynamicAmountEvaluator()
-            val text = effect.runtimeDescription { amount -> evaluator.evaluate(state, amount, context) }
+            val text = effect.runtimeDescription { amount -> evaluator.evaluateForDisplay(state, amount, context) }
             // Only return if it differs from static description (i.e., dynamic amounts were resolved)
             if (text != effect.description) text else null
         } catch (_: Exception) {
@@ -1856,6 +1873,7 @@ class ClientStateTransformer(
     ): EffectContext = EffectContext(
         sourceId = abilityEntityId,
         controllerId = triggered.controllerId,
+        targets = chosenTargetsOf(state, abilityEntityId),
         xValue = triggered.xValue,
         triggerDamageAmount = triggered.triggerDamageAmount,
         triggerCounterCount = triggered.triggerCounterCount,
@@ -2342,6 +2360,32 @@ class ClientStateTransformer(
                     name = "Uncounterable",
                     description = "Your next $filterDesc spell can't be countered ($sourceName)",
                     icon = "no-counter"
+                )
+            )
+        }
+
+        // Check for pending "next spell can be cast without paying its mana cost" riders
+        // (e.g. World War Hulk I) — the player needs to see the free cast is still available.
+        val pendingFreeCasts = state.pendingFreeCastSpells.filter { it.controllerId == playerId }
+        if (pendingFreeCasts.isNotEmpty()) {
+            val sourceName = pendingFreeCasts.map { it.sourceName }.distinct().joinToString(", ")
+            // With several riders the broadest one sets the wording: an unfiltered rider frees the
+            // next spell whatever it is, so naming only a filtered sibling's types would understate
+            // it — and joining a blank filter into the list rendered as "red or green creature /".
+            val filterDesc = if (pendingFreeCasts.any { it.spellFilter == GameObjectFilter.Any }) {
+                ""
+            } else {
+                pendingFreeCasts
+                    .map { it.spellFilter.description }
+                    .distinct()
+                    .joinToString("/") + " "
+            }
+            effects.add(
+                ClientPlayerEffect(
+                    effectId = "pending_free_cast_spell",
+                    name = "Free Cast",
+                    description = "Your next ${filterDesc}spell can be cast without paying its mana cost ($sourceName)",
+                    icon = "free-cast"
                 )
             )
         }

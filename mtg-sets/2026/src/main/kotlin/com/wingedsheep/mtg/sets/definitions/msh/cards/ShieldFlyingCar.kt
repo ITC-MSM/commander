@@ -47,8 +47,7 @@ val ShieldFlyingCar = card("S.H.I.E.L.D. Flying Car") {
         "Flying\n" +
         "When this Vehicle enters, exile up to one target creature you control. Return that card " +
         "to the battlefield under its owner's control at the beginning of the next end step.\n" +
-        "Crew 1 (Tap any number of creatures you control with total power 1 or more: This Vehicle " +
-        "becomes an artifact creature until end of turn.)"
+        "Crew 1"
 
     keywords(Keyword.FLASH, Keyword.FLYING)
 

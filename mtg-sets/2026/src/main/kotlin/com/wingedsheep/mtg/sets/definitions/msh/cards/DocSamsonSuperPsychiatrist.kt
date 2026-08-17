@@ -30,12 +30,6 @@ import com.wingedsheep.sdk.scripting.values.ManaColorSet
  * two Doc Samsons stack, and the controller orders it against other placement replacements per
  * CR 616.1.
  *
- * **Fidelity note.** [ModifyCounterPlacement] has no `placedByYou` flag, so the printed
- * "**If you would put** …" is modelled as the Winding Constrictor "if counters would be put"
- * wording. The difference only shows when an *opponent's* effect puts counters on a permanent
- * you control (e.g. an opposing fight/bolster-style effect, or an opponent's proliferate): the
- * printed card does not add the extra counter there, this model does.
- *
  * "Add X mana of any one color" is [AddManaOfChoiceEffect] over [ManaColorSet.AnyColor] with a
  * dynamic amount — the player picks one color and gets that many of it (as opposed to
  * `AddDynamicManaEffect`, which splits a total across colors). X reads the source's *projected*

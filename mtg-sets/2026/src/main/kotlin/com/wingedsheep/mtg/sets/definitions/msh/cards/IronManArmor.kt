@@ -47,8 +47,12 @@ private val IronManArmorArtifactCount: DynamicAmount =
  *   creature" test ([Conditions.SourceMatches] over [GameObjectFilter.Noncreature], read from
  *   projected state so a second activation while already animated does nothing), and the
  *   animation itself is a Layer 7b [BecomeCreatureEffect] on the source. `addTypes = ARTIFACT`
- *   keeps it an artifact (CREATURE is always added, existing types are kept, so it also stays an
- *   Equipment and remains attached).
+ *   keeps it an artifact (CREATURE is always added and existing types are kept, so it also keeps
+ *   the Equipment subtype) — but it does **not** stay attached: an Equipment that is itself a
+ *   creature can't equip a creature unless it has reconfigure (CR 301.5c), so the engine's
+ *   `UnattachedAurasCheck` (704.5n) unattaches it as a state-based action as soon as the `{2}`
+ *   resolves. Animating therefore *costs* the equipped creature its +2/+1 and flying for as long
+ *   as the animation lasts, and the Armor has to be re-equipped afterwards.
  * - The granted "gets +1/+1 for each artifact you control" is carried by
  *   [BecomeCreatureEffect.dynamicPower] / [BecomeCreatureEffect.dynamicToughness] rather than a
  *   granted [ModifyStats] static: a dynamic base P/T is recomputed every projection pass, so the
@@ -68,7 +72,7 @@ val IronManArmor = card("Iron Man Armor") {
         "{2}: If this Equipment isn't a creature, it becomes a 0/0 Construct Hero artifact " +
         "creature with flying and \"This creature gets +1/+1 for each artifact you control\" " +
         "until end of turn.\n" +
-        "Equip {2} ({2}: Attach to target creature you control. Equip only as a sorcery.)"
+        "Equip {2}"
 
     // When this Equipment enters, attach it to target creature you control.
     triggeredAbility {

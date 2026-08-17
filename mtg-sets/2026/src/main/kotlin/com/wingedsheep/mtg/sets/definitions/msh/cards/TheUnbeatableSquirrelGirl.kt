@@ -31,11 +31,14 @@ private const val SQUIRREL_TOKEN_IMAGE =
  *   Thunderhulk / Queen's Bay Paladin split): the SDK has no single enters-or-attacks event, and
  *   authoring it as one would collapse the two independent firings a blink-then-attack turn
  *   produces.
- * - X on the activated ability is [DynamicAmounts.battlefield] `(You, Creature.withSubtype(SQUIRREL))
+ * - X on the activated ability is [DynamicAmounts.battlefield] `(You, Any.withSubtype(SQUIRREL))
  *   .count()`, evaluated at resolution against projected state — so Squirrel Girl herself (a
  *   Squirrel) counts, as do tokens minted earlier in the turn and anything a type-changing effect
- *   has turned into a Squirrel. The ability can be activated with no Squirrels at all only in
- *   theory: Squirrel Girl is on the battlefield to activate it, so X is at least 1.
+ *   has turned into a Squirrel. `Any` rather than `Creature` because the bare tribal noun
+ *   "Squirrels" counts any *permanent* with that creature type, including a noncreature
+ *   Kindred — Squirrel (the Namor, the Sub-Mariner "number of Merfolk you control" shape). The
+ *   ability can be activated with no Squirrels at all only in theory: Squirrel Girl is on the
+ *   battlefield to activate it, so X is at least 1.
  * - Both token effects mint the MSH Squirrel token art (Scryfall set `tmsh`, #14).
  */
 val TheUnbeatableSquirrelGirl = card("The Unbeatable Squirrel Girl") {
@@ -83,7 +86,7 @@ val TheUnbeatableSquirrelGirl = card("The Unbeatable Squirrel Girl") {
         effect = Effects.CreateToken(
             count = DynamicAmounts.battlefield(
                 Player.You,
-                GameObjectFilter.Creature.withSubtype(Subtype.SQUIRREL),
+                GameObjectFilter.Any.withSubtype(Subtype.SQUIRREL),
             ).count(),
             power = 1,
             toughness = 1,
@@ -91,8 +94,8 @@ val TheUnbeatableSquirrelGirl = card("The Unbeatable Squirrel Girl") {
             creatureTypes = setOf(Subtype.SQUIRREL.value),
             imageUri = SQUIRREL_TOKEN_IMAGE,
         )
-        description = "I LOVE Squirrels! — Create X 1/1 green Squirrel creature tokens, where X " +
-            "is the number of Squirrels you control."
+        description = "I LOVE Squirrels! — {1}{G}{G}{G}: Create X 1/1 green Squirrel creature " +
+            "tokens, where X is the number of Squirrels you control."
     }
 
     metadata {

@@ -185,6 +185,9 @@ class CostPaymentService(private val services: EngineServices) {
                 }
                 // VariablePermanents is an activated-ability-only cost, never a PayCost.
                 is CostAtom.VariablePermanents -> PaymentResult.Unaffordable(state)
+                // Likewise ExileFromGraveyardForTotal: canAfford reports it unaffordable as a
+                // PayCost, so this is unreachable and fails closed rather than half-prompting.
+                is CostAtom.ExileFromGraveyardForTotal -> PaymentResult.Unaffordable(state)
             }
         }
     }
@@ -353,6 +356,9 @@ class CostPaymentService(private val services: EngineServices) {
             is CostAtom.RemoveCounters -> performRemoveCounters(state, payerId, atom, sourceId, selected)
             // VariablePermanents is an activated-ability-only cost, never a PayCost.
             is CostAtom.VariablePermanents -> CostPaymentExecution(state, emptyList(), success = false)
+            // Likewise ExileFromGraveyardForTotal — see the prompt branch above.
+            is CostAtom.ExileFromGraveyardForTotal ->
+                CostPaymentExecution(state, emptyList(), success = false)
         }
     }
 
@@ -662,6 +668,9 @@ class CostPaymentService(private val services: EngineServices) {
                     is CostAtom.CollectEvidence ->
                         com.wingedsheep.engine.handlers.costs.CollectEvidenceResolver
                             .canCollect(state, payerId, atom.amount)
+                    // Activated-ability-only; nothing prompts or pays it as a PayCost, so it is
+                    // reported unaffordable rather than offered into a dead payment path.
+                    is CostAtom.ExileFromGraveyardForTotal -> false
                     // CR 701.17b — a mill cost is unpayable when the library holds fewer cards.
                     is CostAtom.Mill -> state.getZone(ZoneKey(payerId, Zone.LIBRARY)).size >= atom.count
                     is CostAtom.RevealFromHand -> domain(state, payerId, c, sourceId).size >= atom.count
@@ -746,8 +755,12 @@ class CostPaymentService(private val services: EngineServices) {
                 // source is in the pool. Self-removal picks nothing at all.
                 is CostAtom.RemoveCounters ->
                     if (atom.self) null else controlledMatching(state, payerId, atom.filter)
+                // ExileFromGraveyardForTotal does pick objects, but only ever as an activated-ability
+                // cost — CostHandler owns its selection, and [canAfford] already reports it
+                // unaffordable as a PayCost, so it has no domain on this path.
                 is CostAtom.Mana, is CostAtom.PayLife, is CostAtom.Mill,
-                is CostAtom.PutCountersOnSelf, is CostAtom.VariablePermanents -> null
+                is CostAtom.PutCountersOnSelf, is CostAtom.VariablePermanents,
+                is CostAtom.ExileFromGraveyardForTotal -> null
             }
         }
 

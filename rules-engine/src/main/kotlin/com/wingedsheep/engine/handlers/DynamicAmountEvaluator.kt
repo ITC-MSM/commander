@@ -98,6 +98,67 @@ class DynamicAmountEvaluator(
         explicit ?: defaultProjection(state)
 
     /**
+     * Evaluate [amount] for *display*, reporting `null` when [context] cannot determine it yet.
+     *
+     * [evaluate] answers `0` for a reference that doesn't resolve, which is the right answer when an
+     * effect is actually being applied but the wrong one when text is being rendered: a caller can't
+     * tell that `0` apart from an amount that genuinely resolved to zero. The gap that matters is the
+     * targeting banner — it renders an ability's text *before* the player picks a target, so an
+     * amount reading "target's power" cannot resolve by construction, and printing `0` claims a
+     * concrete "+0/+0". Description renderers take `null` as "fall back to the amount's own wording".
+     *
+     * Only entity-reference reads can be undeterminable; every other amount reads state that already
+     * exists. Composite amounts are undeterminable if any operand is.
+     */
+    fun evaluateForDisplay(
+        state: GameState,
+        amount: DynamicAmount,
+        context: EffectContext,
+        projectedState: ProjectedState? = null
+    ): Int? = if (isDeterminable(state, amount, context)) {
+        evaluate(state, amount, context, projectedState)
+    } else {
+        null
+    }
+
+    /**
+     * Whether every entity reference inside [amount] binds in [context]. Mirrors the operand
+     * structure of [evaluate]; a reference the evaluator would silently read as `0` is the thing
+     * being detected, so this walks the same composites [evaluate] recurses through.
+     */
+    private fun isDeterminable(
+        state: GameState,
+        amount: DynamicAmount,
+        context: EffectContext
+    ): Boolean = when (amount) {
+        is DynamicAmount.EntityProperty ->
+            // The enchanted-creature branch of [evaluate] has its own last-known-information
+            // fallback and stays determinable even once the aura has detached.
+            amount.entity is EntityReference.EnchantedCreature ||
+                TargetResolutionUtils.resolveEntityReference(amount.entity, context, state) != null
+
+        is DynamicAmount.Add -> isDeterminable(state, amount.left, context) &&
+            isDeterminable(state, amount.right, context)
+        is DynamicAmount.Subtract -> isDeterminable(state, amount.left, context) &&
+            isDeterminable(state, amount.right, context)
+        is DynamicAmount.Max -> isDeterminable(state, amount.left, context) &&
+            isDeterminable(state, amount.right, context)
+        is DynamicAmount.Min -> isDeterminable(state, amount.left, context) &&
+            isDeterminable(state, amount.right, context)
+        is DynamicAmount.Multiply -> isDeterminable(state, amount.amount, context)
+        is DynamicAmount.Power -> isDeterminable(state, amount.exponent, context)
+        is DynamicAmount.IfPositive -> isDeterminable(state, amount.amount, context)
+        is DynamicAmount.Divide -> isDeterminable(state, amount.numerator, context) &&
+            isDeterminable(state, amount.denominator, context)
+        // Both arms, not just the one the condition selects: the text renders before resolution,
+        // and the condition itself may not be evaluable in a display-only context either.
+        is DynamicAmount.Conditional -> isDeterminable(state, amount.ifTrue, context) &&
+            isDeterminable(state, amount.ifFalse, context)
+
+        else -> true
+    }
+
+    /**
      * Evaluate a DynamicAmount to get an actual integer value.
      *
      * @param projectedState Optional pre-computed projected state for battlefield reads.
@@ -116,7 +177,7 @@ class DynamicAmountEvaluator(
 
             is DynamicAmount.XValue -> context.xValue ?: 0
 
-            // Counters the source had as it last existed on the battlefield (CR 112.7a / 608.2h).
+            // Counters the source had as it last existed on the battlefield (CR 113.7a / 608.2h).
             // Two snapshots feed this, and they never both apply to one resolution: the cost-payment
             // one, taken when a self-exile / self-sacrifice cost wiped the counters (Lost Isle
             // Calling), and the leaves-the-battlefield one carried on a dies/leaves trigger
@@ -393,7 +454,7 @@ class DynamicAmountEvaluator(
                     return context.enchantedCreatureLastKnownPower ?: 0
                 }
                 if (entityId == null) return 0
-                // Last-known-information fallback (CR 112.7a / 603.10 / 608.2h): one rule for every
+                // Last-known-information fallback (CR 113.7a / 603.10 / 608.2h): one rule for every
                 // reference that reads a permanent after it has left the battlefield — a
                 // self-sacrificing source, or a sacrificed / tapped / chosen cost permanent. When
                 // such a reference resolves off the battlefield, read its captured snapshot's P/T
@@ -419,7 +480,7 @@ class DynamicAmountEvaluator(
             // creature tapped to pay the station cost. CR 702.184c lets a static ability change
             // which characteristic is counted; Tapestry Warden's [GrantsStationUsingToughnessComponent]
             // substitutes toughness when toughness > power. Reads with last-known information if the
-            // tapped creature has left the battlefield (CR 112.7a). Keeping this on its own node
+            // tapped creature has left the battlefield (CR 113.7a). Keeping this on its own node
             // confines the substitution to station abilities.
             is DynamicAmount.StationCharge -> {
                 val entityId = context.tappedPermanents.firstOrNull() ?: return 0
@@ -1123,7 +1184,7 @@ class DynamicAmountEvaluator(
      *
      * [fallbackControllerId] is consulted when [entityId] is no longer on the battlefield
      * (projection has no controller) — typically the snapshot's last-known controller
-     * captured at cost-payment time (Rule 112.7a).
+     * captured at cost-payment time (Rule 113.7a).
      */
     private fun controllerHasStationUsingToughness(
         state: GameState,
@@ -1288,7 +1349,7 @@ class DynamicAmountEvaluator(
         }
         // Last-known-info fallback for dies/leaves-the-battlefield triggers: when the
         // triggering entity is no longer on the battlefield, its projected P/T is gone,
-        // so consult the value captured on the ZoneChangeEvent (Rule 603.10, 112.7a).
+        // so consult the value captured on the ZoneChangeEvent (Rule 603.10, 113.7a).
         if (entityId == context.triggeringEntityId || entityId == context.sourceId) {
             val lastKnown = if (isPower) context.triggerLastKnownPower else context.triggerLastKnownToughness
             if (lastKnown != null) return lastKnown

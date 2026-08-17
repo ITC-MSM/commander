@@ -37,7 +37,7 @@ class MoveAllLastKnownCountersExecutor : EffectExecutor<MoveAllLastKnownCounters
 
         // Dies/leaves triggers carry the last-known counter map on triggerLastKnownCounters; an
         // activated ability whose source was sacrificed/exiled as a cost (Zack Fair) carries the
-        // same map on lastKnownSourceCounters (captured before the cost wiped them, CR 112.7a). Read
+        // same map on lastKnownSourceCounters (captured before the cost wiped them, CR 113.7a). Read
         // the trigger map first, falling back to the cost-sacrifice map so both shapes work.
         val lastKnown = context.triggerLastKnownCounters?.takeIf { it.isNotEmpty() }
             ?: context.lastKnownSourceCounters

@@ -725,11 +725,13 @@ wins in whichever PR next touches the area:
 - A `notAttacking()` builder on `ObjectFilter`/`TargetFilter`. Spider-Man, To the Rescue [228] currently
   hand-rolls `StatePredicate.Not(StatePredicate.IsAttacking)`, and the existing
   `mir/cards/Alarum.kt` silently drops its nonattacking restriction.
-- `ReplacementEffect.ModifyCounterPlacement` has no `placedByYou` flag (its sibling
-  `DoubleCounterPlacement` does). Doc Samson [164] is therefore modelled as the Winding Constrictor "if
-  counters would be put" wording rather than the printed "**If you would put** …".
+- ~~`ReplacementEffect.ModifyCounterPlacement` has no `placedByYou` flag~~ — **SHIPPED.** The flag
+  exists (`mtg-sdk/.../scripting/ReplacementEffect.kt:236`) and Doc Samson [164] passes
+  `placedByYou = true`, so the card now reads the printed "**If you would put** …" rather than the
+  Winding Constrictor wording. (Verified 2026-08-17.)
 - `Keyword.EXTORT` does not exist. The Kingpin of Crime [220] composes it exactly as
   `Triggers.YouCastSpell` + `MayPayManaEffect("{W/B}", DrainLife(1))`; promote it to a real keyword when
   a second extort card lands.
-- `Keyword.BOAST` does not exist either; the activation window composes from
-  `ActivationRestriction.OncePerTurn` + `Conditions.SourceAttackedThisTurn`.
+- `Keyword.BOAST` does not exist as an enum entry, but the **authoring flag shipped**: `isBoast = true`
+  on an `activatedAbility { }` (`mtg-sdk/.../scripting/ActivatedAbility.kt`, `dsl/CardBuilder.kt`), which
+  is what Baron Helmut Zemo [107] uses. Boast is **CR 702.142**. (Verified 2026-08-17.)

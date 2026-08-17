@@ -27,7 +27,7 @@ enum class LkiPolicy {
 fun lkiPolicyFor(reference: EntityReference): LkiPolicy = when (reference) {
     // A self-sacrificing/exiling source, the triggering permanent of a dies/leaves trigger, an
     // enchanted creature whose aura detached, and cost-paid permanents (sacrificed / tapped /
-    // chosen) are all routinely read after they have left the battlefield (CR 112.7a / 608.2h).
+    // chosen) are all routinely read after they have left the battlefield (CR 113.7a / 608.2h).
     EntityReference.Source,
     EntityReference.Triggering,
     EntityReference.EnchantedCreature,

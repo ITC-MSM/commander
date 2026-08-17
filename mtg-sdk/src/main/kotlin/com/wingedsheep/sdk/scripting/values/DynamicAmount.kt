@@ -524,7 +524,7 @@ sealed interface DynamicAmount : TextReplaceable<DynamicAmount> {
 
     /**
      * The number of counters matching [counterType] the *source* of the current ability had as it
-     * last existed on the battlefield (CR 112.7a / 608.2h last-known information). Counters cease
+     * last existed on the battlefield (CR 113.7a / 608.2h last-known information). Counters cease
      * to exist on a zone change (CR 122.2), so the count comes from whichever snapshot the
      * resolution context carries:
      *
@@ -1277,7 +1277,7 @@ sealed interface DynamicAmount : TextReplaceable<DynamicAmount> {
      *
      * Like the generic tapped-as-cost read, it resolves with last-known information: if the tapped
      * creature has left the battlefield between cost payment and resolution it uses the snapshot
-     * captured at cost-pay time (CR 112.7a). Reads the first creature tapped for the cost.
+     * captured at cost-pay time (CR 113.7a). Reads the first creature tapped for the cost.
      *
      * Emitted by the `station()` card-DSL helper; do not hand-author.
      */

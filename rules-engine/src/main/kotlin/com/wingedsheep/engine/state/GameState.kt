@@ -163,6 +163,14 @@ data class GameState(
     val pendingNextSpellAffinities: List<PendingNextSpellAffinity> = emptyList(),
 
     /**
+     * Pending "the next matching spell you cast this turn can be cast without paying its mana cost"
+     * riders (World War Hulk I). Read by
+     * [com.wingedsheep.engine.mechanics.mana.CostCalculator.hasFreeCastPermission] and consumed by
+     * the next matching cast, whether or not the free cast was taken.
+     */
+    val pendingFreeCastSpells: List<PendingFreeCastSpell> = emptyList(),
+
+    /**
      * Turn-scoped "spells you cast this turn that match … cost {N} less" discounts (the Scion
      * cycle). Unlike [pendingNextSpellAffinities] these are not consumed by the spell they
      * discount — they apply to every matching spell until the turn ends.

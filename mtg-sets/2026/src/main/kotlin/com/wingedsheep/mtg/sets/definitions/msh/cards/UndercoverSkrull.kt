@@ -7,7 +7,6 @@ import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.CompositeStaticAbility
 import com.wingedsheep.sdk.scripting.ConditionalStaticAbility
-import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.IsAllCreatureTypes
 import com.wingedsheep.sdk.scripting.ModifyStats
 import com.wingedsheep.sdk.scripting.TimingRule
@@ -31,8 +30,8 @@ import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
  *   layer as an independent effect.
  * - The whole bundle is wrapped in a [ConditionalStaticAbility] so both layers are gated on the
  *   same "as long as" condition, which the projector re-evaluates as cards enter and leave the
- *   graveyard. `Conditions.CardsInGraveyardMatchingAtLeast(2, Creature)` counts creature *cards* in
- *   **your** graveyard only, matching the printed wording.
+ *   graveyard. [Conditions.CreatureCardsInGraveyardAtLeast] counts creature *cards* in **your**
+ *   graveyard only, matching the printed wording.
  * - [IsAllCreatureTypes] adds every creature type without granting changeling, which is right here:
  *   the card says "is all creature types", not "changeling", so no Changeling badge should show.
  * - The mana ability is the canonical `{T}: Add one mana of any color` — [Effects.AddManaOfChoice]
@@ -56,7 +55,7 @@ val UndercoverSkrull = card("Undercover Skrull") {
                     IsAllCreatureTypes(GroupFilter.source()),
                 )
             ),
-            condition = Conditions.CardsInGraveyardMatchingAtLeast(2, GameObjectFilter.Creature),
+            condition = Conditions.CreatureCardsInGraveyardAtLeast(2),
         )
     }
 

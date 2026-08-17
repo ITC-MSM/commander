@@ -12,7 +12,7 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  * Reptil, Dinomorpher (MSH #182) — {G} Legendary Creature — Human Hero · 1/2
  *
  * Brontosaurus — {3}: Until end of turn, Reptil becomes a Dinosaur Hero with base power and
- * toughness 3/5 and gains vigilance and reach.
+ * toughness 3/5 and gains reach and vigilance.
  * Tyrannosaurus Rex — {6}: Until end of turn, Reptil becomes a Dinosaur Hero with base power and
  * toughness 6/6 and gains trample.
  *
@@ -33,7 +33,7 @@ val ReptilDinomorpher = card("Reptil, Dinomorpher") {
     power = 1
     toughness = 2
     oracleText = "Brontosaurus — {3}: Until end of turn, Reptil becomes a Dinosaur Hero with base " +
-        "power and toughness 3/5 and gains vigilance and reach.\n" +
+        "power and toughness 3/5 and gains reach and vigilance.\n" +
         "Tyrannosaurus Rex — {6}: Until end of turn, Reptil becomes a Dinosaur Hero with base " +
         "power and toughness 6/6 and gains trample."
 
@@ -48,7 +48,7 @@ val ReptilDinomorpher = card("Reptil, Dinomorpher") {
             duration = Duration.EndOfTurn,
         )
         description = "Brontosaurus — {3}: Until end of turn, Reptil becomes a Dinosaur Hero with " +
-            "base power and toughness 3/5 and gains vigilance and reach."
+            "base power and toughness 3/5 and gains reach and vigilance."
     }
 
     activatedAbility {

@@ -489,14 +489,62 @@ excluded.
   **The threshold is a floor on total mana value, not a card count.** Exiling *more* than N is legal,
   and mana-value-0 cards (lands) are legal selections contributing nothing — so "enough cards" never
   implies "enough evidence". The picker is therefore a variable-size selection with a sum gate:
-  `AdditionalCostData.exileMinTotalManaValue` and `SelectCardsDecision.minTotalManaValue` (the mirror
-  of the existing `maxTotalManaValue` cap) carry the floor, and the client shows a running total and
-  keeps Confirm disabled until it is met.
+  `AdditionalCostData.exileMinTotalWeight` (with the per-card `exileCardWeights` the client sums and
+  the `exileWeightUnit` it labels the tally with — the same payload the filtered
+  `ExileFromGraveyardForTotal` uses, so there is one sum-gated picker rather than one per cost) and
+  `SelectCardsDecision.minTotalManaValue` (the mirror of the existing `maxTotalManaValue` cap) carry
+  the floor, and the client shows a running total and keeps Confirm disabled until it is met.
 
   Per **CR 701.59b** a player who cannot reach N *can't choose to collect evidence*: every
   affordability check fails closed on the summed mana value, so the option is never payable and an
   under-total submission is rejected rather than trimmed. For collect evidence as an *effect* rather
   than a cost, use `Effects.CollectEvidence(n)` (§ effects).
+- `Costs.ExileFromGraveyardForTotal(minTotal, measure, filter = Any)` /
+  `Costs.ExileFromGraveyardForColoredSymbols(minSymbols, vararg colors)` — the **unnamed, filtered
+  generalization of collect evidence**: "exile any number of `<filter>` cards from your graveyard
+  whose summed `<measure>` is `minTotal` or more". Backed by `CostAtom.ExileFromGraveyardForTotal`
+  and by the *same* engine implementation collect evidence uses — `GraveyardTotalExileResolver`,
+  which `CollectEvidenceResolver` now delegates to, so the two can never drift apart on
+  reachability, legality, auto-selection or the exile itself.
+
+  Two axes distinguish it from `Costs.CollectEvidence(n)`, which is otherwise the identical mechanic:
+  the **filter** (collect evidence spends *any* graveyard card, CR 701.59a; here non-matching cards
+  are never offered), and the **measure** — the per-card quantity that is summed, a `CardMeasure`:
+  - `CardMeasure.ManaValue` — mana value (CR 202.3); what collect evidence uses;
+  - `CardMeasure.ColoredManaSymbols(colors)` — how many mana symbols of those colours appear in the
+    card's **printed** mana cost, counted by `ManaCost.coloredSymbolCount` — the single counting rule
+    also behind `CardPredicate.ColoredManaSymbolsAtLeast` and
+    `EntityNumericProperty.ColoredManaSymbolCount`, so a group total and a per-card read can never
+    disagree (hybrid/Phyrexian pips count for their colour(s), CR 107.4e/f; generic, `{C}` and `{X}`
+    count for none).
+
+  `ExileFromGraveyardForColoredSymbols(15, Color.BLACK)` is **Baron Helmut Zemo**'s boast cost,
+  "exile any number of black cards from your graveyard with fifteen or more black mana symbols among
+  their mana costs" — it derives the colour filter and the pip measure from one list of colours so
+  they can't drift. The colour filter and the pip count are *not* redundant: colour is a
+  characteristic, the count reads printed pips, so the filter is what keeps a black card with no
+  black pip on the right side of the printed wording.
+
+  Same three consequences as collect evidence, for the same reason: **the threshold is a floor on the
+  measure, never on the card count** (overpaying is legal, and a matching card whose measure is 0 is
+  a legal selection contributing nothing), and the cost **fails closed** — a graveyard that can't
+  reach the floor makes the ability not offered at all rather than offered and refused. Measures read
+  the **base** card (mana value and printed cost are intrinsic, and a graveyard card has no
+  battlefield projection); the *filter* evaluates against projected state like every other cost
+  filter.
+
+  Client-side it *is* the collect-evidence picker — one branch, not a parallel one. Both costs ship
+  `AdditionalCostData.exileMinTotalWeight` + `exileCardWeights` + `exileWeightUnit` (the unit label
+  comes from `CardMeasure.unitLabel`, so the measure names itself and the client never has to know
+  which cost it is looking at); only `costType` differs. The weights are server-computed for both,
+  because a pip total is a reading of the printed cost the client can't do — and sending mana values
+  it *could* have computed is what buys the single code path. The server re-validates the submitted
+  selection regardless — a submitted selection that doesn't pay is **rejected**, never silently
+  replaced with the engine's own pick.
+
+  Activated-ability cost only today: it is deliberately reported unpayable as a spell's additional
+  cost and as a `PayCost`, since no printed card wants either and an offered-then-unpayable cost is
+  worse than an absent one.
 - `Costs.Craft(filter, minCount = 1, maxCount = null)` — Craft material cost (CR 702.167a): exile
   this permanent **and** exile at least `minCount` (and, when `maxCount` is set, at most `maxCount`)
   cards matching `filter` selected from the combined pool of
@@ -1929,7 +1977,8 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
 - `CopyNextSpellCastEffect(copies = 1, spellFilter = InstantOrSorcery)` (facade `Effects.CopyNextSpellCast(copies, spellFilter)`) — when its controller next casts a spell matching `spellFilter` this turn, create `copies` copies of it. `spellFilter` is a `GameObjectFilter` matched against the spell as it's cast, so the default "instant or sorcery" (Howl of the Horde) can be widened — e.g. `GameObjectFilter.Creature` for "copy the next creature spell." The filter is evaluated with the rider's **own source** in the predicate context, so it may be source-relative — Loki Laufeyson's "with mana value less than or equal to Loki's power" is `InstantOrSorcery.manaValueAtMostDynamic(DynamicAmounts.sourcePower())`, resolved as the spell is cast (which is when the delayed trigger's condition is checked), not when the rider was created. Consumed after one matching cast. Non-matching casts leave the entry waiting. A source-relative filter keeps working after the source **leaves the battlefield** (CR 608.2h / 113.7a — the rider exists independently of its source): `ZoneTransitionService` stamps the departing permanent's `EntitySnapshot` onto the pending entry, and `PredicateEvaluator.evaluateDynamicCap` threads it into the reconstructed `EffectContext` so `DynamicAmountEvaluator`'s existing last-known-information branch resolves the cap. The stamp happens at **departure**, not at rider creation, so a source that grew after arming the rider caps on the larger value — Loki armed at 2/1, powered up to 4/3, then killed still copies a mana-value-4 spell.
 - `CopyEachSpellCastEffect(copies = 1, spellFilter = InstantOrSorcery)` (facade `Effects.CopyEachSpellCast(copies, spellFilter)`) — the persistent sibling: copies **every** spell matching `spellFilter` the controller casts for the rest of the turn (The Mirari Conjecture Ch. III). Same `spellFilter` parameterization as above.
 - `MakeNextSpellUncounterableEffect(spellFilter = Any)` (facade `Effects.MakeNextSpellUncounterable(spellFilter)`) — one-shot rider: the controller's **next** spell matching `spellFilter` cast this turn can't be countered, then the entry is consumed. Stamps `CantBeCounteredComponent` on that spell as it's cast (so it stays uncounterable for as long as it's on the stack); non-matching casts leave the entry waiting, and an unused entry clears at the start of the controller's next turn. Same pending-rider shape as `CopyNextSpellCastEffect`, including the source-relative filter contract (the entry's own `sourceId` goes into the predicate context at cast time). Contrast with the duration-based `GrantSpellsCantBeCountered` (Domri), which protects **every** matching spell cast for a whole duration rather than just the next one. Used by **Mistrise Village** ("{U}, {T}: The next spell you cast this turn can't be countered.").
-- `GrantNextSpellAffinityEffect(spellFilter = Noncreature, forType = ARTIFACT)` (facade `Effects.GrantNextSpellAffinity(spellFilter, forType)`) — one-shot rider mirroring `MakeNextSpellUncounterable`, but the controller's **next** matching spell this turn gains **affinity for `forType`**: the cost calculator reduces it by the caster's count of that card type *at cast time* (dynamic), then `CastSpellHandler` consumes the entry. The *consumption* site evaluates `spellFilter` with the entry's own `sourceId` in context like the other two riders, but the *cost-reduction* site (`CostCalculator`) has no entity context and answers `false` for dynamic/entity-relative card predicates — so keep this rider's filter source-independent until that gap is closed. Used by **Don & Raph, Hard Science** ("the next noncreature spell you cast this turn has affinity for artifacts").
+- `GrantNextSpellAffinityEffect(spellFilter = Noncreature, forType = ARTIFACT)` (facade `Effects.GrantNextSpellAffinity(spellFilter, forType)`) — one-shot rider mirroring `MakeNextSpellUncounterable`, but the controller's **next** matching spell this turn gains **affinity for `forType`**: the cost calculator reduces it by the caster's count of that card type *at cast time* (dynamic), then `CastSpellHandler` consumes the entry. The *consumption* site evaluates `spellFilter` with the entry's own `sourceId` in context like the other two riders, but the *cost-reduction* site (`CostCalculator`) passes no `sourceEntityId` at all, so it answers `false` for dynamic **and** source-relative card predicates — so keep this rider's filter source-independent until that gap is closed. (This is a call-site difference, not a `CostCalculator` limitation: `GrantNextSpellFreeCastEffect` below passes its entry's `sourceId` into the same helper and source-relative predicates do work there.) Used by **Don & Raph, Hard Science** ("the next noncreature spell you cast this turn has affinity for artifacts").
+- `GrantNextSpellFreeCastEffect(spellFilter = Any)` (facade `Effects.GrantNextSpellFreeCast(spellFilter)`) — one-shot rider in the same family: the controller's **next** spell matching `spellFilter` cast this turn **can be cast without paying its mana cost**, then the entry is consumed. Stored on `GameState.pendingFreeCastSpells`; `CostCalculator.hasFreeCastPermission` reads it (ahead of the battlefield scan) so the cast surfaces the ordinary `CastSpell.useWithoutPayingManaCost` action variant, and `CastSpellHandler` removes the entry on the matching cast. Per CR 118.9 this is an alternative cost — mandatory additional costs still apply, X is 0 (CR 107.3b, enforced by the enumerator: the `CastWithoutPayingManaCost` action variant carries no X and is not flagged `hasXCost`), and only one alternative cost may apply to a cast (CR 118.9a). **Consumed by the cast, not by the discount**: "the next … spell you cast this turn" names a spell, so a matching spell cast for full price is that spell and spends the rider. Non-matching casts leave the entry waiting, and an unused entry clears at the turn boundary (`TurnManager.startTurn`). Prefer this over the battlefield static `MayCastWithoutPayingManaCost` (§ static abilities) whenever the permission has already *resolved*: the rider lives on the state, so it survives its source leaving the battlefield, applies to a cast from any zone, and carries no first-spell / once-per-turn / active-player gate. A rider-funded free cast deliberately does **not** burn a `MayCastWithoutPayingManaCost(oncePerTurn = true)` source's use. Both the permission site and the consumption site evaluate `spellFilter` with the entry's own `sourceId` in context, so source-relative predicates work on both — but the permission site is `CostCalculator`, which still answers `false` for *dynamic* card predicates (mana-value/power comparisons against another entity). The two sites also read different *characteristic* sources: `CostCalculator` matches the printed `CardDefinition`, while the consumption site matches the spell entity through `PredicateEvaluator` (projected values, falling back to base). They agree today because objects on the stack have no projection entry; see the `hasFreeCastRider` KDoc for what would diverge if that changed. Used by **World War Hulk** chapter I ("The next red or green creature spell you cast this turn can be cast without paying its mana cost.", `GameObjectFilter().withAnyColor(RED, GREEN) and GameObjectFilter.Creature`).
 - `ReduceSpellCostsThisTurnEffect(spellFilter, amount)` (facade `Effects.ReduceSpellCostsThisTurn(spellFilter, amount)`) — the **repeating** counterpart of `GrantNextSpellAffinityEffect`: "spells you cast this turn that match `spellFilter` cost {X} less to cast." `amount` (a `DynamicAmount`) is evaluated **once, when this effect resolves**, and the resolved number is stored on `GameState.turnSpellCostReductions`; every matching spell the controller casts for the rest of the turn is discounted by it, and nothing is consumed by a cast. Only generic mana is reduced (CR 601.2f). Two consequences of living on the state rather than on the source: the discount survives the source leaving the battlefield, and it is cleared at the turn boundary by `TurnManager.startTurn`. Resolving `amount` up front is what the Scion cycle's rulings require ("the value of X is determined only once, at the time the ability resolves") — reach for a static `ModifySpellCost` instead when the reduction should track board state continuously. Used by **Will, Scion of Peace** (`DynamicAmounts.lifeGainedThisTurn()`, white and/or blue spells) and **Rowan, Scion of War** (`DynamicAmounts.lifeLostThisTurn()`, black and/or red).
 - `CopyCardIntoCollectionEffect(source, storeAs)` (facade `Effects.CopyCardIntoCollection(source, storeAs)`) — copy a **card in a zone** (not a spell on the stack), publishing the copy's entity id to pipeline collection `storeAs`. Per Rule 707.12 the copy is created in the card's current zone under the effect's controller and tagged as a stack-style copy, so once cast it becomes a token if it's a permanent spell and ceases to exist if it's an instant/sorcery (Rule 707.10). Pair with `CastFromCollectionWithoutPayingCostEffect(from)` (facade `Effects.CastFromCollectionWithoutPayingCost(from)`, wrap in `MayEffect` for "you may cast") to express "copy a card, then cast the copy" — e.g. **Shiko, Paragon of the Way**: `Composite(MoveToZoneEffect(target, Zone.EXILE), Effects.CopyCardIntoCollection(target, "copy"), MayEffect(Effects.CastFromCollectionWithoutPayingCost("copy")))`. A copy that is never cast is swept up by the Rule 707.10a state-based action (`PhantomCardCopiesCheck`), so no explicit cleanup step is needed. For the "you may cast it" wording that **doesn't** say "without paying its mana cost", use `Effects.CastFromCollection(from, storeCastTo?)` (`CastFromCollectionWithoutPayingCostEffect(from, payManaCost = true, storeCastTo)`): the controller pays the spell's normal cost (an {X} spell prompts for X) instead of casting for free. Pass `storeCastTo` to publish the cast card's id to that pipeline collection on a successful cast, then gate a follow-up with `IfYouDoEffect(this, then, SuccessCriterion.CollectionNonEmpty(storeCastTo))` — e.g. **Kaervek, the Punisher**: `Composite(Move(target, EXILE), CopyCardIntoCollection(target, "copy"), MayEffect(IfYouDoEffect(CastFromCollection("copy", storeCastTo = "cast"), LoseLife(2, Controller), SuccessCriterion.CollectionNonEmpty("cast"))))` — declining (or being unable to pay) leaves the collection empty, so no life is lost. (`storeCastTo` is reliably published for synchronous casts and target-selection casts; an {X}-cost spell cast with no targets is the one sub-case where the publish doesn't survive the X pause.) **Free-casting still pays the copied spell's non-mana additional costs** (CR 601.2f / 118.9 waive only the mana cost) — when the copy carries a printed sacrifice / discard / exile / tap additional cost, the engine resolves it during the synthesized cast: a forced single option is auto-paid, and a real choice pauses for an on-battlefield (sacrifice/tap) or overlay (discard/exile) selection; if the cost can't be paid the cast doesn't happen (e.g. Roving Actuator copying **Embrace Oblivion**'s "sacrifice an artifact or creature" still makes you sacrifice).
 - `CopyCollectionIntoCollectionEffect(from, storeAs)` (facade `Effects.CopyCollectionIntoCollection(from, storeAs)`) — the collection-wide sibling of `CopyCardIntoCollectionEffect`: copy **every** card in pipeline collection `from`, publishing all the copies' entity ids (in `from` order) to `storeAs`. For "copy them" over a set of cards rather than one (`CopyCardIntoCollection` overwrites its collection, so it can't accumulate across a `ForEach`). Each copy is created in its original's current zone (Rule 707.12) and tagged as a stack-style copy, so gather/exile the originals first, then copy. Pair with `Effects.CastAnyNumberFromCollection(storeAs)` for "copy them. You may cast any number of the copies" — e.g. **The Tale of Tamiyo** IV: `Composite(ForEachTargetEffect(Move(ContextTarget(0), EXILE)), GatherCards(ChosenTargets, "exiled"), CopyCollectionIntoCollection("exiled", "copies"), CastAnyNumberFromCollection("copies"))`. Copies never cast are swept by the Rule 707.10a state-based action.
@@ -2913,6 +2962,14 @@ effect = Effects.Pipeline {
   You may play that card from exile this turn" (Norin, Swift Survivalist): `gather(TriggeringEntity)` →
   `exile(...)` → `GrantMayPlayFromExile(EndOfTurn)`.
 - `CardSource.TappedAsCost` — the permanents tapped to pay the activation cost.
+- `CardSource.ExiledAsCost` — the cards exiled to pay the **activation cost**, the exile counterpart
+  of `TappedAsCost`. Recorded at cost-payment time (CR 601.2h: the cost is paid on activation, long
+  before the ability resolves), carried on the stack object, and filtered at resolution to the cards
+  still in exile. This is what "those exiled cards" means in an ability whose *cost* did the exiling
+  — **Baron Helmut Zemo**'s "Exile any number of black cards from your graveyard …: **Copy those
+  exiled cards.**" Deliberately **not** `FromLinkedExile`, which is the pile a permanent has
+  accumulated over its lifetime and would hand a second activation the first one's cards; this gather
+  is scoped to the one payment that put the ability on the stack.
 - `CardSource.AttachedTo(host, filter?)` — the permanents attached to the `host` entity (any
   `EffectTarget` that resolves to a permanent — a spell's `ContextTarget`, `Self`, `TriggeringEntity`, …)
   that match `filter`, read off the host's `AttachmentsComponent` and intersected with the projected
@@ -2945,7 +3002,7 @@ effect = Effects.Pipeline {
   Onslaught): `RepeatDynamicTimes(XValue, manifestDread(markEntered = true))` →
   `gather(EnteredViaThisResolution)` → `AddCountersToCollection(+1/+1, XValue)`.
 - `CardSource.LastKnownEquipmentAttachedToSource` — the Equipment that was attached to the source the
-  moment a self-sacrifice / self-exile cost moved it off the battlefield (CR 112.7a), read off
+  moment a self-sacrifice / self-exile cost moved it off the battlefield (CR 113.7a), read off
   `EffectContext.lastKnownSourceAttachments` (captured before the cost wiped the source's attachment
   list) and restricted to permanents still on the battlefield that are still Equipment. The host has
   gone by resolution, so the live attachment index is empty — only the captured snapshot identifies
@@ -6704,7 +6761,10 @@ riders, matching how the engine already treats e.g. City of Brass's damage durin
   per-spell in `CostCalculator.hasFreeCastPermission(state, casterId, spellCardDef, castFromZone)`
   (the enumerator threads the card being cast and its zone through
   `EnumerationContext.freeCastPermissionFor(cardId, castFromZone)` — `Zone.HAND` on the hand path,
-  `Zone.EXILE` on the cast-from-exile path).
+  `Zone.EXILE` on the cast-from-exile path). For a **one-shot** permission created by a resolved
+  ability ("the next … spell you cast this turn can be cast without paying its mana cost"), use the
+  `GrantNextSpellFreeCastEffect` rider (§ stack effects) instead: it isn't tied to a permanent
+  staying on the battlefield, and the same `hasFreeCastPermission` call answers for both.
   Cast-legality is checked by `CostCalculator.hasFreeCastPermission`. Surfaced as a dedicated
   `CastWithoutPayingManaCost` `LegalAction` variant routed through
   `CastSpell.useWithoutPayingManaCost = true` — emitted **alongside** Jodah-style
@@ -6886,6 +6946,32 @@ permanent's ordinary activated abilities are untouched:
   source leaving the battlefield. (Engine-side plumbing is documented on
   `CastPermissionUtils.isPowerUpActivationRestricted`, next to the code.)
 
+**Boast** (Kaldheim, returning in Marvel Super Heroes; CR 702.142) — the third marker flag on an
+activated ability, alongside Exhaust and Power-up and mutually exclusive with them. *"Boast —
+[cost]: [effect]"* means *"[cost]: [effect]. Activate only if this creature attacked this turn and
+only once each turn."* (CR 702.142a). Set `isBoast = true` in the `activatedAbility { }` block. That
+(a) renders the *"Boast — "* prefix on the ability's `description` and (b) **auto-adds both rules
+clauses as ordinary restrictions** — `ActivationRestriction.OncePerTurn` and an
+`ActivationRestriction.OnlyIfCondition(Conditions.SourceAttackedThisTurn)` — so the keyword marker
+and its enforcement can't drift apart.
+
+Nothing about it is new machinery. "Attacked this turn" is already a turn-long per-creature fact
+(`StatePredicate.AttackedThisTurn`, which survives the end of combat), so a boast is still available
+in the postcombat main phase and the end step; and the per-turn activation counter already backs
+every other "activate only once each turn" ability. Note boast is once **each turn**, not exhaust's
+once ever — so it never adds `ActivationRestriction.Once`, and a creature that attacks on two
+consecutive turns boasts on both.
+
+```kotlin
+// Baron Helmut Zemo — Boast — Exile any number of black cards from your graveyard with fifteen or
+// more black mana symbols among their mana costs: Copy those exiled cards. …
+activatedAbility {
+    isBoast = true
+    cost = Costs.ExileFromGraveyardForColoredSymbols(15, Color.BLACK)
+    effect = Effects.Composite(/* gather ExiledAsCost → copy → cast up to three for free */)
+}
+```
+
 **`ManaCost.subtract(other)` — pip-wise cost reduction (CR 118.7).** The primitive behind power-up
 (CR 702.193b) and, identically worded, offering (CR 702.48c): generic reduces generic; colored and
 colorless reduce mana of the same type with any excess spilling into generic; hybrid pips cancel
@@ -7008,8 +7094,8 @@ copy of it (CR 707.10e). The activated-ability analogue of the spell-level `cant
 > Two properties drive the whole implementation:
 > - **The constraint is a sum, not a count.** Overpaying is legal, and a graveyard of lands (mana
 >   value 0) is never enough evidence however many cards it holds. Selection is variable-size with a
->   mana-value floor — `exileMinTotalManaValue` on the cost payload, `minTotalManaValue` on
->   `SelectCardsDecision`.
+>   mana-value floor — `exileMinTotalWeight` + `exileCardWeights` on the cost payload,
+>   `minTotalManaValue` on `SelectCardsDecision`.
 > - **CR 701.59b fails closed.** A player unable to reach N *can't choose to collect evidence*, so
 >   every affordability check gates on the summed mana value and an under-total submission is
 >   rejected rather than completed.
@@ -7266,7 +7352,7 @@ composite abilities).
   cost whose amount is a `DynamicAmount` read when the ward trigger *resolves* (CR 702.21b) — e.g.
   Raubahn, Bull of Ala Mhigo's "Ward—Pay life equal to Raubahn's power"
   (`wardLife(DynamicAmounts.sourcePower())`), which reads the source's projected power then, or its
-  last-known power if the source has left the battlefield (CR 112.7a, via `EntityReference.Source`'s
+  last-known power if the source has left the battlefield (CR 113.7a, via `EntityReference.Source`'s
   last-known-information policy). It resolves down to a fixed `WardCost.Life` in the executor, so it
   composes inside `WardCost.Composite` and uses the same pay-or-counter prompt.
   `WardCost.CollectEvidence(n)` (built via `KeywordAbility.wardCollectEvidence(n)`) is
@@ -9038,7 +9124,7 @@ both spellings, and the ability its bare-noun line grants says "Regenerate this 
 ### Last-known source counters (self-exile / self-sacrifice cost, dies/leaves triggers)
 
 - `LastKnownSourceCounters(CounterTypeFilter)` — the number of matching counters the *source* had as it last existed
-  on the battlefield (CR 112.7a / 608.2h). Counters cease to exist on a zone change (CR 122.2), so the value comes
+  on the battlefield (CR 113.7a / 608.2h). Counters cease to exist on a zone change (CR 122.2), so the value comes
   from whichever snapshot the resolution context carries — the two never both apply to one resolution:
   - the **cost-payment** snapshot, taken by `ActivateAbilityHandler` when an activated ability's cost exiles or
     sacrifices its own source. Lost Isle Calling: "{4}{U}{U}, Exile this enchantment: Draw a card for each verse
@@ -9092,7 +9178,7 @@ both spellings, and the ability its bare-noun line grants says "Regenerate this 
   `LastKnownSourceCounters`, applied automatically to `EntityProperty(EntityReference.Source, Power|Toughness)`
   (i.e. `DynamicAmounts.sourcePower()` / `sourceToughness()`). When an activated ability's cost sacrifices or
   exiles its own source, the source is off the battlefield by resolution, so `ActivateAbilityHandler` snapshots
-  its projected P/T at cost-payment time (CR 112.7a / 608.2h, mirroring the counter snapshot) and
+  its projected P/T at cost-payment time (CR 113.7a / 608.2h, mirroring the counter snapshot) and
   `DynamicAmountEvaluator` reads the snapshot back when the source is no longer on the battlefield. This makes
   "{T}, Sacrifice this creature: it deals damage equal to its power" (Ghitu Fire-Eater, Cinder Shade, Blazing
   Bomb's Blow Up) read the pre-sacrifice power including counters/buffs rather than zero. No DSL change: existing
@@ -9106,7 +9192,7 @@ both spellings, and the ability its bare-noun line grants says "Regenerate this 
   dedicated node rather than `EntityProperty(TappedAsCost(0), Power)` so the CR 702.184c characteristic substitution
   (Tapestry Warden's `StationUsingToughness` → use toughness when toughness > power) is confined to station abilities
   and never rewrites an unrelated "tap a creature: do X equal to its power" read. Resolves with last-known information
-  (CR 112.7a) if the tapped creature has left the battlefield before the station ability resolves.
+  (CR 113.7a) if the tapped creature has left the battlefield before the station ability resolves.
 
 ### Card properties
 
@@ -10455,7 +10541,7 @@ substitution.
   one, transforming the artifact once a `Compare(countersOnSelf(Named(OMEN)), EQ, 0)` intervening check passes.
   Pure passive counters with no inherent rule; the cards that use them accumulate/spend them via their own
   abilities and read the count via `DynamicAmounts.countersOnSelf(CounterTypeFilter.Named(Counters.X))` — or, when a
-  self-sacrifice/exile cost wipes them first, `DynamicAmounts.lastKnownSourceCounters(...)` (CR 112.7a; see §13).
+  self-sacrifice/exile cost wipes them first, `DynamicAmounts.lastKnownSourceCounters(...)` (CR 113.7a; see §13).
   `rev` (`Counters.REV`): DSK — Chainsaw, whose "whenever one or more creatures die" batched trigger accumulates one
   per death batch and whose `+X/+0` static reads the count via `DynamicAmounts.countersOnSelf(...)` applied to the
   equipped creature — another pure passive counter with no inherent rule.

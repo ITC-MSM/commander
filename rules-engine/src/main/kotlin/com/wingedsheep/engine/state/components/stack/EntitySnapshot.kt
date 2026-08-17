@@ -62,11 +62,11 @@ class LiveEntityView(
 
 /**
  * Frozen projected characteristics of a permanent captured at a specific moment — typically just
- * before it leaves the battlefield (CR 112.7a / 603.10 / 608.2h, "as it last existed on the
+ * before it leaves the battlefield (CR 113.7a / 603.10 / 608.2h, "as it last existed on the
  * battlefield"). The single last-known-information value type for the whole engine. It backs:
  *
  * - **cost-time references** — sacrificed / tapped / chosen permanents and a self-sacrificing
- *   source (CR 112.7a), so "deals damage equal to its power" reads the pre-cost power; and
+ *   source (CR 113.7a), so "deals damage equal to its power" reads the pre-cost power; and
  * - **death / leaves-the-battlefield triggers** — carried as a single value on
  *   [com.wingedsheep.engine.core.ZoneChangeEvent.lastKnown] and threaded into trigger resolution,
  *   replacing what used to be ~16 parallel `lastKnown*` scalar fields.

@@ -102,7 +102,7 @@ sealed interface EntityReference {
      * When paired with `DynamicAmount.EntityProperty(...)`, the evaluator
      * consults `EffectContext.chosenEntitySnapshots` for last-known-info
      * fallback if the entity has left the battlefield since cost-pay time
-     * (Rule 112.7a / 608.2h), mirroring the existing
+     * (Rule 113.7a / 608.2h), mirroring the existing
      * [Sacrificed] / [TappedAsCost] LKI paths.
      *
      * @property collectionName The `storeAs` key under which the cost step

@@ -29,11 +29,10 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  * `Auto` can't infer it and a creature with no counters must not draw. Any kind of counter counts,
  * not just +1/+1.
  *
- * [Effects.RemoveCountersUpTo]`(1, …)` is the removal primitive: the controller picks which kind
- * to take off, capped at one counter total. It also permits taking off zero, which the printed
- * "Remove a counter" doesn't — a harmless liberty, since the mode is already declinable by
- * pointing it at a creature with no counters, and the "if you do" gate keeps the draw honest
- * either way.
+ * [Effects.RemoveCounterOfAnyKind] is the removal primitive: the controller picks which kind to
+ * take off, but not *whether* — exactly one counter comes off. The ceiling-only
+ * [Effects.RemoveCountersUpTo]`(1, …)` would let a player who chose this mandatory mode answer 0
+ * to every prompt on a creature that does have counters and still draw.
  */
 val MisterHydeMonsterWithin = card("Mister Hyde, Monster Within") {
     manaCost = "{2}{G}"
@@ -56,8 +55,7 @@ val MisterHydeMonsterWithin = card("Mister Hyde, Monster Within") {
                 Effects.Composite(
                     Effects.SelectTarget(Targets.CreatureYouControl, storeAs = "hydeCounterSource"),
                     Effects.IfYouDo(
-                        action = Effects.RemoveCountersUpTo(
-                            1,
+                        action = Effects.RemoveCounterOfAnyKind(
                             EffectTarget.PipelineTarget("hydeCounterSource", 0),
                         ),
                         ifYouDo = Effects.DrawCards(1),

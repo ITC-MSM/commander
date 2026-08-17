@@ -42,12 +42,14 @@ data class CompositeEffect(
     override val description: String =
         descriptionOverride ?: effects.joinToString(". ") { it.description }
 
-    override fun runtimeDescription(resolver: (DynamicAmount) -> Int): String {
+    override fun runtimeDescription(resolver: (DynamicAmount) -> Int?): String {
         val template = descriptionOverride
             ?: return effects.joinToString(". ") { it.runtimeDescription(resolver) }
         var rendered = template
         descriptionAmounts.forEachIndexed { index, amount ->
-            rendered = rendered.replace("{$index}", resolver(amount).toString())
+            // Undeterminable slot: substitute the amount's own wording rather than a bogus "0".
+            val value = resolver(amount)?.toString() ?: amount.description
+            rendered = rendered.replace("{$index}", value)
         }
         return rendered
     }

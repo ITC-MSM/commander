@@ -601,6 +601,12 @@ class CostHandler {
         is CostAtom.CollectEvidence ->
             com.wingedsheep.engine.handlers.costs.CollectEvidenceResolver
                 .canCollect(state, controllerId, atom.amount)
+        // Same fail-closed gate collect evidence gets, over the filtered pool and the atom's own
+        // measure: the ability isn't activatable unless the matching graveyard cards can reach the
+        // floor. Card count is never the question — the summed measure is.
+        is CostAtom.ExileFromGraveyardForTotal ->
+            com.wingedsheep.engine.handlers.costs.GraveyardTotalExileResolver
+                .canPay(state, controllerId, atom.measure, atom.minTotal, atom.filter)
         // CR 701.17b — a player can't pay a cost that includes milling more cards than their
         // library holds. Checked against the printed count; a ModifyMillAmount replacement only
         // enlarges the mill once the cost is actually being paid.
@@ -712,6 +718,23 @@ class CostHandler {
                 is com.wingedsheep.engine.handlers.costs.CollectEvidenceResolver.Result.Failure ->
                     CostPaymentResult.failure(result.reason)
             }
+        // Rides `exileChoices` like every other graveyard exile cost. The payer's selection is
+        // honoured whenever it is legal (including a deliberate overpay); an absent or illegal one
+        // falls back to the resolver's own pick, which is what the AI / engine-direct paths use.
+        is CostAtom.ExileFromGraveyardForTotal -> {
+            val resolver = com.wingedsheep.engine.handlers.costs.GraveyardTotalExileResolver
+            val candidates = resolver.candidates(state, controllerId, atom.measure, atom.filter)
+            val toExile = resolver.resolveSelection(candidates, atom.minTotal, choices.exileChoices)
+            if (toExile.isEmpty()) {
+                CostPaymentResult.failure(
+                    "Cannot pay ${atom.description}: matching graveyard cards total only " +
+                        "${candidates.total}"
+                )
+            } else {
+                val (exiledState, exileEvents) = resolver.exile(state, toExile)
+                CostPaymentResult.success(exiledState, manaPool, exileEvents)
+            }
+        }
         is CostAtom.Mill -> {
             // Same announcement semantics as the mill effect (GatherCardsExecutor): apply
             // ModifyMillAmount replacements once to the announced count (CR 616), then take that
@@ -1167,6 +1190,12 @@ class CostHandler {
                 is CostAtom.CollectEvidence ->
                     com.wingedsheep.engine.handlers.costs.CollectEvidenceResolver
                         .canCollect(state, controllerId, atom.amount)
+                // Not payable as a *spell's* additional cost today: nothing offers this atom in a
+                // cast context, and the cast-time picker has no sum-gated exile mode to raise, so
+                // an unreachable one would be offered and then fail at payment. Fails closed until
+                // a printed card needs it, matching the "prefer absent to unpayable" rule the
+                // collect-evidence branch above follows.
+                is CostAtom.ExileFromGraveyardForTotal -> false
                 is CostAtom.TapPermanents ->
                     findUntappedMatchingPermanentsUnified(state, controllerId, atom.filter).size >= atom.count
                 is CostAtom.RemoveCounters -> {

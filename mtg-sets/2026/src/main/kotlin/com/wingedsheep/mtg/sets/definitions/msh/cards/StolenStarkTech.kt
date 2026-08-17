@@ -34,7 +34,8 @@ val StolenStarkTech = card("Stolen Stark Tech") {
     typeLine = "Artifact — Equipment"
     oracleText = "Flash\n" +
         "When this Equipment enters, attach it to target creature you control. That creature " +
-        "gains indestructible until end of turn.\n" +
+        "gains indestructible until end of turn. (Damage and effects that say \"destroy\" don't " +
+        "destroy it.)\n" +
         "Equipped creature gets +1/+0.\n" +
         "Equip {1} ({1}: Attach to target creature you control. Equip only as a sorcery.)"
 
