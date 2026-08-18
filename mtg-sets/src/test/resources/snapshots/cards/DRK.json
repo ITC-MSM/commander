@@ -147,6 +147,69 @@
     ]
 }
 
+// Bone Flute
+{
+    "name": "Bone Flute",
+    "manaCost": "{3}",
+    "typeLine": "Artifact",
+    "oracleText": "{2}, {T}: All creatures get -1/-0 until end of turn.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": "creature"
+                        }
+                    },
+                    "body": {
+                        "type": "ModifyStats",
+                        "powerModifier": {
+                            "type": "Fixed",
+                            "amount": -1
+                        },
+                        "toughnessModifier": {
+                            "type": "Fixed",
+                            "amount": 0
+                        },
+                        "target": "Self"
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "97",
+        "rarity": "UNCOMMON",
+        "artist": "Christopher Rush",
+        "flavorText": "After the Battle of Pitdown, Lady Ursnell fashioned the first such instrument out of Lord Ursnell's left leg.",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/3/63a31de0-d764-4ff6-a85f-027e1e58d86c.jpg?1783947928",
+        "rulings": [
+            {
+                "date": "2009-10-01",
+                "text": "The ability affects only creatures on the battlefield at the time it resolves. A creature that enters later in the turn won't get -1/-0."
+            }
+        ]
+    },
+    "colorIdentityOverride": []
+}
+
 // Carnivorous Plant
 {
     "name": "Carnivorous Plant",
