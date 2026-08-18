@@ -322,6 +322,46 @@
     ]
 }
 
+// Morale
+{
+    "name": "Morale",
+    "manaCost": "{1}{W}{W}",
+    "typeLine": "Instant",
+    "oracleText": "Attacking creatures get +1/+1 until end of turn.",
+    "script": {
+        "spellEffect": {
+            "type": "ForEach",
+            "space": {
+                "type": "IterationSpace.Group",
+                "filter": {
+                    "baseFilter": "creature attacking"
+                }
+            },
+            "body": {
+                "type": "ModifyStats",
+                "powerModifier": {
+                    "type": "Fixed",
+                    "amount": 1
+                },
+                "toughnessModifier": {
+                    "type": "Fixed",
+                    "amount": 1
+                },
+                "target": "Self"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "14",
+        "artist": "Mark Poole",
+        "flavorText": "\"After Lacjsi's speech, the Knights grew determined to crush their ancient enemies clan by clan.\" —Tivadar of Thorn, *History of the Goblin Wars*",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/4/c4104546-abd9-4bfb-a65e-5928cdd4522f.jpg?1783947946"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Scarwood Goblins
 {
     "name": "Scarwood Goblins",
