@@ -4356,6 +4356,35 @@ object Effects {
         )
 
     /**
+     * Prevent all damage that would be dealt to **you** for [duration], from sources matching
+     * [fromSources] — "prevent all damage that would be dealt to you this turn by creatures with
+     * flying" (Scarecrow).
+     *
+     * The permanent-less member of the recipient-shield family: [PreventAllDamageToGroup] names
+     * permanents, [PreventAllDamageToYouAndGroup] names you *and* permanents, and this one names
+     * you alone, so all three are the same
+     * [PreventDamageEffect.recipientGroup]/[PreventDamageEffect.recipientGroupIncludesController]
+     * shield with a different half filled in. [fromSources] is re-evaluated against projected
+     * state at the moment damage would be dealt, and a damage instance whose source can't be
+     * identified is *not* prevented — a "by creatures with flying" shield must not swallow damage
+     * it can't attribute.
+     *
+     * Not combat-only by default: an activated ability of a flying creature that damages you is
+     * prevented too. Pass [PreventionScope.CombatOnly] for the combat-only wording.
+     */
+    fun PreventAllDamageToYouFrom(
+        fromSources: com.wingedsheep.sdk.scripting.filters.unified.GroupFilter,
+        scope: PreventionScope = PreventionScope.AllDamage,
+        duration: Duration = Duration.EndOfTurn
+    ): Effect =
+        PreventDamageEffect(
+            recipientGroupIncludesController = true,
+            sourceFilter = PreventionSourceFilter.FromGroup(fromSources),
+            scope = scope,
+            duration = duration
+        )
+
+    /**
      * Prevent all damage that would be dealt to controller this turn by attacking creatures.
      */
     fun PreventDamageFromAttackingCreatures(): Effect =
