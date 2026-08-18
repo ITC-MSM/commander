@@ -114,6 +114,51 @@ class TasterOfWaresScenarioTest : ScenarioTestBase() {
                 }
             }
 
+            test("the cast permission ends when the Taster leaves the battlefield") {
+                val game = scenario()
+                    .withPlayers("Alice", "Bob")
+                    .withCardInHand(1, "Taster of Wares")
+                    .withCardOnBattlefield(1, "Raging Goblin")
+                    .withLandsOnBattlefield(1, "Swamp", 5)
+                    .withCardInHand(2, "Volcanic Hammer")
+                    .withCardInHand(2, "Hill Giant")
+                    .withLandsOnBattlefield(2, "Mountain", 2)
+                    .withActivePlayer(1)
+                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                    .build()
+
+                game.castSpell(1, "Taster of Wares")
+                game.resolveStack()
+
+                val decision = game.getPendingDecision() as com.wingedsheep.engine.core.SelectCardsDecision
+                val hammer = decision.options.first { id ->
+                    game.state.getEntity(id)?.get<CardComponent>()?.name == "Volcanic Hammer"
+                }
+                game.selectCards(listOf(hammer))
+                game.resolveStack()
+
+                withClue("Alice can cast the exiled Hammer while she controls the Taster") {
+                    game.getLegalActions(1).any { it.description.contains("Volcanic Hammer") } shouldBe true
+                }
+
+                // "for as long as you control this creature" — destroy the Taster and the
+                // permission ends. The Hammer stays exiled; only the permission is revoked.
+                val taster = game.findPermanent("Taster of Wares")!!
+                game.state = com.wingedsheep.engine.handlers.effects.ZoneMovementUtils.moveCardToZone(
+                    game.state,
+                    taster,
+                    com.wingedsheep.sdk.core.Zone.GRAVEYARD
+                ).state
+                game.checkStateBasedActions()
+
+                withClue("Volcanic Hammer should still be exiled") {
+                    namesIn(game, game.state.getExile(game.player2Id)) shouldBe listOf("Volcanic Hammer")
+                }
+                withClue("Alice can no longer cast it once the Taster is gone") {
+                    game.getLegalActions(1).none { it.description.contains("Volcanic Hammer") } shouldBe true
+                }
+            }
+
             test("an exiled creature card grants no cast permission") {
                 val game = scenario()
                     .withPlayers("Alice", "Bob")

@@ -37,10 +37,12 @@ import com.wingedsheep.sdk.dsl.Effects
  * can be spent to cast that spell.
  *
  * Implementation notes:
- * - The cast-from-exile permission is modeled with `permanent = true`, which
- *   keeps it active as long as the card stays in exile. The "as long as you
- *   control this creature" clause is a small simplification (matches the typical
- *   case where the player casts the exiled spell while Taster is still alive).
+ * - The cast-from-exile permission carries `MayPlayExpiry.WhileYouControlSource`,
+ *   so it ends the moment this creature leaves the battlefield or someone else
+ *   gains control of it. Per CR 611.2b the window is one-way: the grant is not
+ *   created at all if the Taster is already gone when the trigger resolves, and
+ *   getting it back later does not revive a permission that has ended. The card
+ *   stays exiled either way — only the permission ends.
  * - "Mana of any type can be spent" is plumbed via `withAnyManaType = true` on
  *   the granted permission, which relaxes colored cost requirements at cast time.
  */
@@ -108,7 +110,7 @@ val TasterOfWares = card("Taster of Wares") {
                 ),
                 GrantMayPlayFromExileEffect(
                     from = "instantOrSorcery",
-                    expiry = MayPlayExpiry.Permanent,
+                    expiry = MayPlayExpiry.WhileYouControlSource("this creature"),
                     withAnyManaType = true
                 )
             )

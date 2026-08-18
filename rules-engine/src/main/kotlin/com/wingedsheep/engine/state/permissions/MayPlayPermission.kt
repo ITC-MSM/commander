@@ -91,6 +91,26 @@ data class MayPlayPermission(
      */
     val supersededBySameSource: Boolean = false,
     /**
+     * When true, this permission lasts only for as long as its "you" still controls [sourceId] —
+     * "you may cast it for as long as you control this creature" (Taster of Wares). "You" is
+     * [expiryControllerId] when set and [controllerId] otherwise, the same resolution the turn-keyed
+     * window uses, so an owner-scoped grant still measures the window against the player whose
+     * ability granted it.
+     *
+     * Enforced by revocation, not by a gate: [com.wingedsheep.engine.mechanics.sba.permanent
+     * .EndedDurationExpiryCheck] deletes the permission on the first state-based check after the
+     * source leaves the battlefield or its projected controller changes. Deleting rather than
+     * gating is what makes the window one-way, as CR 611.2b requires — a gate would silently
+     * reopen if the source came back or control reverted.
+     *
+     * Set together with [permanent] = true (the window is not turn-keyed, so cleanup must not
+     * take it first) by [com.wingedsheep.engine.handlers.effects.library
+     * .GrantMayPlayFromExileExecutor] when the grant carries
+     * [com.wingedsheep.sdk.scripting.effects.MayPlayExpiry.WhileYouControlSource]. Meaningless
+     * without a [sourceId]; the executor refuses to build such a permission.
+     */
+    val endsWhenSourceUncontrolled: Boolean = false,
+    /**
      * When true, this permission authorizes casting spells only — a land among [cardIds] can
      * never be played through it. Mirrors
      * [com.wingedsheep.sdk.scripting.effects.GrantMayPlayFromExileEffect.nonLandOnly]: "cast"
@@ -145,6 +165,11 @@ data class MayPlayPermission(
         // as the source). Require a real sourceId whenever a condition is attached.
         require(condition == null || sourceId != null) {
             "MayPlayPermission with a condition must specify sourceId (condition: ${condition!!.description})"
+        }
+        // The "for as long as you control it" window is evaluated entirely from sourceId; without
+        // one it could never close, which is the opposite of what the duration says.
+        require(!endsWhenSourceUncontrolled || sourceId != null) {
+            "MayPlayPermission with endsWhenSourceUncontrolled must specify sourceId"
         }
     }
 }
