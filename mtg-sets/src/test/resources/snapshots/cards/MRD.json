@@ -648,6 +648,80 @@
     ]
 }
 
+// Betrayal of Flesh
+{
+    "name": "Betrayal of Flesh",
+    "manaCost": "{5}{B}",
+    "typeLine": "Instant",
+    "oracleText": "Choose one —\n• Destroy target creature.\n• Return target creature card from your graveyard to the battlefield.\nEntwine—Sacrifice three lands. (Choose both if you pay the entwine cost.)",
+    "script": {
+        "spellEffect": {
+            "type": "Modal",
+            "modes": [
+                {
+                    "effect": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "creature to destroy"
+                        },
+                        "destination": "Graveyard",
+                        "byDestruction": true
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "creature"
+                            },
+                            "id": "creature to destroy"
+                        }
+                    ],
+                    "description": "Destroy target creature"
+                },
+                {
+                    "effect": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "creature card to return"
+                        },
+                        "destination": "Battlefield",
+                        "fromZone": "Graveyard"
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "creature own:you",
+                                "zone": "Graveyard"
+                            },
+                            "id": "creature card to return"
+                        }
+                    ],
+                    "description": "Return target creature card from your graveyard to the battlefield"
+                }
+            ],
+            "chooseCount": 2,
+            "minChooseCount": 1,
+            "additionalCostPerExtraMode": {
+                "type": "AtomSacrifice",
+                "filter": "land",
+                "count": 3
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "58",
+        "rarity": "UNCOMMON",
+        "artist": "Wayne England",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/9/a9e2e107-0277-4e5c-81a7-258bb2998f3e.jpg?1783944549"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Blinding Beam
 {
     "name": "Blinding Beam",
@@ -3961,6 +4035,68 @@
         "artist": "Paolo Parente",
         "flavorText": "Centuries before the first peaks of the Oxidda Chain rewrote the laws of magnetism, the golems patrolled Mirrodin's featureless surface unhindered.",
         "imageUri": "https://cards.scryfall.io/normal/front/3/c/3cf8d47d-6ecb-424a-a908-a6501f308c8e.jpg"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Incite War
+{
+    "name": "Incite War",
+    "manaCost": "{2}{R}",
+    "typeLine": "Instant",
+    "oracleText": "Choose one —\n• Creatures target player controls attack this turn if able.\n• Creatures you control gain first strike until end of turn.\nEntwine {2} (Choose both if you pay the entwine cost.)",
+    "script": {
+        "spellEffect": {
+            "type": "Modal",
+            "modes": [
+                {
+                    "effect": {
+                        "type": "ForEach",
+                        "space": {
+                            "type": "IterationSpace.Group",
+                            "filter": {
+                                "baseFilter": "creature ctrl:target-player"
+                            }
+                        },
+                        "body": "MarkMustAttackThisTurn"
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetPlayer",
+                            "id": "player whose creatures must attack"
+                        }
+                    ],
+                    "description": "Creatures target player controls attack this turn if able"
+                },
+                {
+                    "effect": {
+                        "type": "ForEach",
+                        "space": {
+                            "type": "IterationSpace.Group",
+                            "filter": {
+                                "baseFilter": "creature ctrl:you"
+                            }
+                        },
+                        "body": {
+                            "type": "GrantKeyword",
+                            "keyword": "FIRST_STRIKE",
+                            "target": "Self"
+                        }
+                    },
+                    "description": "Creatures you control gain first strike until end of turn"
+                }
+            ],
+            "chooseCount": 2,
+            "minChooseCount": 1,
+            "additionalManaCostPerExtraMode": "{2}"
+        }
+    },
+    "metadata": {
+        "collectorNumber": "96",
+        "artist": "Alex Horley-Orlandelli",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/e/ee30527c-0eb1-4b66-9028-1607a960019a.jpg?1783944540"
     },
     "colorIdentityOverride": [
         "RED"
@@ -7785,6 +7921,93 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Promise of Power
+{
+    "name": "Promise of Power",
+    "manaCost": "{2}{B}{B}{B}",
+    "typeLine": "Sorcery",
+    "oracleText": "Choose one —\n• You draw five cards and you lose 5 life.\n• Create an X/X black Demon creature token with flying, where X is the number of cards in your hand.\nEntwine {4} (Choose both if you pay the entwine cost.)",
+    "script": {
+        "spellEffect": {
+            "type": "Modal",
+            "modes": [
+                {
+                    "effect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "DrawCards",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 5
+                                }
+                            },
+                            {
+                                "type": "LoseLife",
+                                "amount": {
+                                    "type": "Fixed",
+                                    "amount": 5
+                                }
+                            }
+                        ]
+                    },
+                    "description": "Draw five cards and lose 5 life"
+                },
+                {
+                    "effect": {
+                        "type": "CreateToken",
+                        "power": 0,
+                        "toughness": 0,
+                        "colors": [
+                            "BLACK"
+                        ],
+                        "creatureTypes": [
+                            "Demon"
+                        ],
+                        "keywords": [
+                            "FLYING"
+                        ],
+                        "imageUri": "https://cards.scryfall.io/normal/front/c/6/c6df5992-9c1c-407d-9602-a6c659342a15.jpg?1783927202",
+                        "dynamicPower": {
+                            "type": "Count",
+                            "player": "You",
+                            "zone": "Hand"
+                        },
+                        "dynamicToughness": {
+                            "type": "Count",
+                            "player": "You",
+                            "zone": "Hand"
+                        }
+                    },
+                    "description": "Create an X/X black Demon creature token with flying"
+                }
+            ],
+            "chooseCount": 2,
+            "minChooseCount": 1,
+            "additionalManaCostPerExtraMode": "{4}"
+        }
+    },
+    "metadata": {
+        "collectorNumber": "74",
+        "rarity": "RARE",
+        "artist": "Kev Walker",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/9/d96c3947-0eec-48a1-ba69-59734b4ac9da.jpg?1783944545",
+        "rulings": [
+            {
+                "date": "2004-12-01",
+                "text": "The power and toughness of the Demon token are set when Promise of Power resolves. They’re unaffected if the number of cards in your hand changes later."
+            },
+            {
+                "date": "2004-12-01",
+                "text": "If you pay the entwine cost, you draw five cards, then lose five life, then put the Demon token onto the battlefield. The five cards you draw count toward the Demon’s power and toughness."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 
