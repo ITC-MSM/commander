@@ -2707,6 +2707,184 @@
     ]
 }
 
+// Case of the Filched Falcon
+{
+    "name": "Case of the Filched Falcon",
+    "manaCost": "{U}",
+    "typeLine": "Enchantment — Case",
+    "oracleText": "When this Case enters, investigate. (Create a Clue token. It's an artifact with \"{2}, Sacrifice this token: Draw a card.\")\nTo solve — You control three or more artifacts. (If unsolved, solve at the beginning of your end step.)\nSolved — {2}{U}, Sacrifice this Case: Put four +1/+1 counters on target noncreature artifact. It becomes a 0/0 Bird creature with flying in addition to its other types.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Clue"
+                }
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "END"
+                },
+                "binding": "ANY",
+                "effect": "BecomeSolved",
+                "interveningIf": {
+                    "type": "All",
+                    "conditions": [
+                        {
+                            "type": "Compare",
+                            "left": {
+                                "type": "AggregateBattlefield",
+                                "player": "You",
+                                "filter": "artifact"
+                            },
+                            "operator": "GTE",
+                            "right": {
+                                "type": "Fixed",
+                                "amount": 3
+                            }
+                        },
+                        {
+                            "type": "Not",
+                            "condition": {
+                                "type": "EntityMatches",
+                                "entity": "Self",
+                                "filter": {
+                                    "statePredicates": [
+                                        "IsSolved"
+                                    ]
+                                }
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "To solve — the number of artifacts you control is at least 3"
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_3",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}{U}"
+                            }
+                        },
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "AddCounters",
+                            "counterType": "+1/+1",
+                            "count": 4,
+                            "target": {
+                                "type": "ContextTarget",
+                                "index": 0
+                            }
+                        },
+                        {
+                            "type": "BecomeCreature",
+                            "target": {
+                                "type": "ContextTarget",
+                                "index": 0
+                            },
+                            "power": {
+                                "type": "Fixed",
+                                "amount": 0
+                            },
+                            "toughness": {
+                                "type": "Fixed",
+                                "amount": 0
+                            },
+                            "keywords": [
+                                "FLYING"
+                            ],
+                            "creatureTypes": [
+                                "Bird"
+                            ],
+                            "addTypes": [
+                                "ARTIFACT"
+                            ],
+                            "duration": "Permanent"
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": {
+                                "cardPredicates": [
+                                    "IsArtifact",
+                                    {
+                                        "type": "Not",
+                                        "predicate": "IsCreature"
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                ],
+                "restrictions": [
+                    {
+                        "type": "ActivationOnlyIfCondition",
+                        "condition": {
+                            "type": "EntityMatches",
+                            "entity": "Self",
+                            "filter": {
+                                "statePredicates": [
+                                    "IsSolved"
+                                ]
+                            }
+                        }
+                    }
+                ],
+                "descriptionOverride": "Put four +1/+1 counters on target noncreature artifact. It becomes a 0/0 Bird creature with flying in addition to its other types."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "44",
+        "rarity": "UNCOMMON",
+        "artist": "Julia Metzger",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/6/266be5bd-71ba-4511-8b71-d0b03885a28d.jpg?1783912914",
+        "rulings": [
+            {
+                "date": "2024-02-09",
+                "text": "The artifact retains any types, subtypes, or supertypes it has."
+            },
+            {
+                "date": "2024-02-09",
+                "text": "If the target artifact is an attached Equipment, it becomes unattached. If an Equipment without reconfigure becomes an artifact creature, it can't be attached to another creature."
+            },
+            {
+                "date": "2024-02-09",
+                "text": "If the target noncreature artifact is a Vehicle, its power and toughness will be set to 0/0. Crewing that Vehicle will not restore its power and toughness."
+            },
+            {
+                "date": "2024-02-09",
+                "text": "The resulting artifact creature will be able to attack on your turn if it's been under your control continuously since the turn began. That is, it doesn't matter how long it's been a creature, just how long it's been on the battlefield."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Case of the Gateway Express
 {
     "name": "Case of the Gateway Express",
