@@ -1122,6 +1122,35 @@
     ]
 }
 
+// People of the Woods
+{
+    "name": "People of the Woods",
+    "manaCost": "{G}{G}",
+    "typeLine": "Creature — Human",
+    "oracleText": "People of the Woods's toughness is equal to the number of Forests you control.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": {
+            "type": "Dynamic",
+            "source": {
+                "type": "AggregateBattlefield",
+                "player": "You",
+                "filter": "land Forest"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "83",
+        "rarity": "UNCOMMON",
+        "artist": "Drew Tucker",
+        "flavorText": "\"Their rain of arrows left only myself alive, cowering within a tree hollow. They did not even come out to loot the bodies.\" —Vervamon the Elder",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/f/2fb5926f-9988-4bc0-b2b7-e286db208310.jpg?1783947930"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Pikemen
 {
     "name": "Pikemen",
