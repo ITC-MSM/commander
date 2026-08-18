@@ -621,6 +621,37 @@
     ]
 }
 
+// Riptide
+{
+    "name": "Riptide",
+    "manaCost": "{U}",
+    "typeLine": "Instant",
+    "oracleText": "Tap all blue creatures.",
+    "script": {
+        "spellEffect": {
+            "type": "ForEach",
+            "space": {
+                "type": "IterationSpace.Group",
+                "filter": {
+                    "baseFilter": "creature blue"
+                }
+            },
+            "body": {
+                "type": "TapUntap",
+                "target": "Self"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "35",
+        "artist": "Randy Asplund-Faith",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/0/b0f11ae4-e30e-441d-bb64-439930d9997c.jpg?1783947941"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Scarwood Goblins
 {
     "name": "Scarwood Goblins",
