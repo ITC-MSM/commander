@@ -913,6 +913,30 @@
     ]
 }
 
+// Land Leeches
+{
+    "name": "Land Leeches",
+    "manaCost": "{1}{G}{G}",
+    "typeLine": "Creature — Leech",
+    "oracleText": "First strike",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "FIRST_STRIKE"
+    ],
+    "metadata": {
+        "collectorNumber": "79",
+        "artist": "Quinton Hoover",
+        "flavorText": "\"The standard cure for leeches requires the application of burning embers. Alternative methods must be devised should an ember of sufficient size prove more harmful than the leech.\" —Vervamon the Elder",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/f/ff99543d-86a1-44f8-88ec-aaec071d6c05.jpg?1783947931"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Marsh Gas
 {
     "name": "Marsh Gas",
