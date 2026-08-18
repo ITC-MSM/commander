@@ -4174,6 +4174,195 @@
     ]
 }
 
+// Deadly Cover-Up
+{
+    "name": "Deadly Cover-Up",
+    "manaCost": "{3}{B}{B}",
+    "typeLine": "Sorcery",
+    "oracleText": "As an additional cost to cast this spell, you may collect evidence 6.\nDestroy all creatures. If evidence was collected, exile a card from an opponent's graveyard. Then search its owner's graveyard, hand, and library for any number of cards with that name and exile them. That player shuffles, then draws a card for each card exiled from their hand this way.",
+    "keywordAbilities": [
+        {
+            "type": "Kicker",
+            "additionalCost": {
+                "type": "AdditionalAtom",
+                "atom": {
+                    "type": "AtomCollectEvidence",
+                    "amount": 6
+                }
+            },
+            "declaredSlot": "EVIDENCE_COLLECTED"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "BattlefieldMatching",
+                                "filter": "creature"
+                            },
+                            "storeAs": "destroyAll_gathered"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "destroyAll_gathered",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            },
+                            "moveType": "Destroy"
+                        }
+                    ]
+                },
+                {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.WhenCondition",
+                        "condition": {
+                            "type": "CastChoiceMade",
+                            "slot": "EVIDENCE_COLLECTED"
+                        }
+                    },
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Graveyard",
+                                    "player": "EachOpponent"
+                                },
+                                "storeAs": "opponentGraveyardCards"
+                            },
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "opponentGraveyardCards",
+                                "selection": {
+                                    "type": "ChooseExactly",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "chooser": "SourceController",
+                                "storeSelected": "seed",
+                                "prompt": "Choose a card from an opponent's graveyard to exile"
+                            },
+                            {
+                                "type": "CaptureControllers",
+                                "from": "seed",
+                                "storeAs": "owners"
+                            },
+                            {
+                                "type": "StoreCardName",
+                                "from": "seed",
+                                "storeAs": "cardName"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "seed",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Exile"
+                                }
+                            },
+                            {
+                                "type": "ForEachCapturedController",
+                                "collection": "seed",
+                                "originalCollection": "seed",
+                                "controllerSnapshot": "owners",
+                                "countVariable": "count5",
+                                "effects": [
+                                    {
+                                        "type": "GatherCards",
+                                        "source": {
+                                            "type": "FromMultipleZones",
+                                            "zones": [
+                                                "Graveyard",
+                                                "Hand",
+                                                "Library"
+                                            ],
+                                            "filter": {
+                                                "cardPredicates": [
+                                                    {
+                                                        "type": "NameEqualsChosen",
+                                                        "variableName": "cardName"
+                                                    }
+                                                ]
+                                            }
+                                        },
+                                        "storeAs": "matches"
+                                    },
+                                    {
+                                        "type": "SelectFromCollection",
+                                        "from": "matches",
+                                        "selection": "ChooseAnyNumber",
+                                        "chooser": "SourceController",
+                                        "storeSelected": "selected",
+                                        "prompt": "Choose any number of cards with that name to exile",
+                                        "showAllCards": true,
+                                        "alwaysPrompt": true
+                                    },
+                                    {
+                                        "type": "FilterCollection",
+                                        "from": "selected",
+                                        "filter": {
+                                            "type": "InZone",
+                                            "zone": "Hand"
+                                        },
+                                        "storeMatching": "selectedFromHand"
+                                    },
+                                    {
+                                        "type": "MoveCollection",
+                                        "from": "selected",
+                                        "destination": {
+                                            "type": "ToZone",
+                                            "zone": "Exile"
+                                        }
+                                    },
+                                    "ShuffleLibrary",
+                                    {
+                                        "type": "DrawCards",
+                                        "count": {
+                                            "type": "VariableReference",
+                                            "variableName": "selectedFromHand_count"
+                                        }
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "83",
+        "rarity": "RARE",
+        "artist": "Sam Guay",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/8/3876aa0f-b199-43f5-8a91-c2d620b8ef84.jpg?1783912899",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "Unlike many other effects of this kind, Deadly Cover-Up allows its controller to exile a basic land."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "If you can't exile enough cards to meet or exceed the required mana value, you can't choose to collect evidence at all."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Deduce
 {
     "name": "Deduce",
