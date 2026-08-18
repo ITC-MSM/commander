@@ -2817,6 +2817,115 @@
     ]
 }
 
+// Case of the Pilfered Proof
+{
+    "name": "Case of the Pilfered Proof",
+    "manaCost": "{1}{W}",
+    "typeLine": "Enchantment — Case",
+    "oracleText": "Whenever a Detective you control enters or is turned face up, put a +1/+1 counter on it.\nTo solve — You control three or more Detectives. (If unsolved, solve at the beginning of your end step.)\nSolved — If one or more tokens would be created under your control, those tokens plus a Clue token are created instead. (It's an artifact with \"{2}, Sacrifice this token: Draw a card.\")",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "creature Detective ctrl:you",
+                    "to": "Battlefield"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": "TriggeringEntity"
+                },
+                "descriptionOverride": "Whenever a Detective you control enters, put a +1/+1 counter on it."
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "CreatureTurnedFaceUpEvent",
+                    "filter": "creature Detective"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": "TriggeringEntity"
+                },
+                "descriptionOverride": "Whenever a Detective you control is turned face up, put a +1/+1 counter on it."
+            },
+            {
+                "id": "ability_3",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "END"
+                },
+                "binding": "ANY",
+                "effect": "BecomeSolved",
+                "interveningIf": {
+                    "type": "All",
+                    "conditions": [
+                        {
+                            "type": "Compare",
+                            "left": {
+                                "type": "AggregateBattlefield",
+                                "player": "You",
+                                "filter": "creature Detective"
+                            },
+                            "operator": "GTE",
+                            "right": {
+                                "type": "Fixed",
+                                "amount": 3
+                            }
+                        },
+                        {
+                            "type": "Not",
+                            "condition": {
+                                "type": "EntityMatches",
+                                "entity": "Self",
+                                "filter": {
+                                    "statePredicates": [
+                                        "IsSolved"
+                                    ]
+                                }
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "To solve — the number of Detective creatures you control is at least 3"
+            }
+        ],
+        "replacementEffects": [
+            {
+                "type": "CreateAdditionalToken",
+                "additionalTokenType": "Clue",
+                "restrictions": [
+                    {
+                        "type": "EntityMatches",
+                        "entity": "Self",
+                        "filter": {
+                            "statePredicates": [
+                                "IsSolved"
+                            ]
+                        }
+                    }
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "9",
+        "rarity": "UNCOMMON",
+        "artist": "Joshua Cairos",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/2/32927bf2-63c1-4402-99dc-3a0f2f8e0f9c.jpg?1783912927"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Case of the Shattered Pact
 {
     "name": "Case of the Shattered Pact",

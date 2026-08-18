@@ -420,7 +420,7 @@ class ReplacementEffectProcessor {
                     controllerId = controllerId,
                     sourceId = entityId
                 )
-                if (!matchesEvent(effect, event, controllerId, state, evalContext)) continue
+                if (!matchesEvent(effect, event, controllerId, state, evalContext, entityId)) continue
 
                 results.add(
                     GatheredReplacement(
@@ -443,7 +443,7 @@ class ReplacementEffectProcessor {
 
             val sdkEffect = fe.effect.modification.toReplacementEffect(fe.controllerId) ?: continue
 
-            if (!matchesEvent(sdkEffect, event, fe.controllerId, state, context)) continue
+            if (!matchesEvent(sdkEffect, event, fe.controllerId, state, context, fe.sourceId)) continue
 
             val cardName = fe.sourceName
                 ?: fe.sourceId
@@ -462,7 +462,7 @@ class ReplacementEffectProcessor {
         // 3. Granted replacement effects (temporary riders like Malicious Eclipse)
         for ((index, grant) in state.grantedReplacementEffects.withIndex()) {
             val controllerId = grant.controllerId
-            if (!matchesEvent(grant.replacement, event, controllerId, state, context)) continue
+            if (!matchesEvent(grant.replacement, event, controllerId, state, context, grant.entityId)) continue
 
             results.add(
                 GatheredReplacement(
@@ -488,7 +488,7 @@ class ReplacementEffectProcessor {
                 ?: continue
 
             for ((index, effect) in selfRedirect.redirects.withIndex()) {
-                if (!matchesEvent(effect, event, controllerId, state, context)) continue
+                if (!matchesEvent(effect, event, controllerId, state, context, entityId)) continue
 
                 results.add(
                     GatheredReplacement(
@@ -550,7 +550,8 @@ class ReplacementEffectProcessor {
         event: PendingGameEvent,
         sourceControllerId: EntityId,
         state: GameState,
-        context: EffectContext? = null
+        context: EffectContext? = null,
+        sourceId: EntityId? = null
     ): Boolean {
         // Delegate to the polymorphic event match
         if (!event.matches(effect.appliesTo, sourceControllerId, state, context)) {
@@ -565,8 +566,12 @@ class ReplacementEffectProcessor {
         // player the event is happening to, not the caller's context.
         val restrictions = effect.restrictions
         if (restrictions.isNotEmpty()) {
+            // The *source* is this replacement's own object, taken from the gather loop rather
+            // than from `context` (which may belong to an unrelated resolving spell). Without it a
+            // source-relative restriction — "as long as this Case is solved" (CR 702.169b), the
+            // replacement-effect form of a Solved static — could never resolve its own permanent.
             val evalContext = EffectContext(
-                sourceId = null,
+                sourceId = sourceId,
                 controllerId = event.affectedPlayerId
             )
             return restrictions.all { condition ->

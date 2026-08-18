@@ -10459,7 +10459,7 @@ The priority groups are (CR 616.1a–f):
   attachment-type validation already happens at cast/attach time via `equipmentTarget` /
   `auraTarget`. Token copies are summoning-sick only when the copy is a creature (CR 302.6).
   Mirrormind Crown: `attachmentVerb = "equipped"`; Moonlit Meditation: `attachmentVerb = "enchanted"`.
-- `CreateAdditionalToken(additionalTokenType, additionalTokenCount = 1, inheritTapped = false, appliesTo)` —
+- `CreateAdditionalToken(additionalTokenType, additionalTokenCount = 1, inheritTapped = false, appliesTo, restrictions = [])` —
   token-creation replacement that keeps the original tokens and appends one or more predefined tokens of
   another type. `appliesTo = EventPattern.TokenCreationEvent(controller, tokenFilter)` gates the original
   creation event, and the extra tokens are added once per qualifying event, not once per token. The added
@@ -10467,6 +10467,13 @@ The priority groups are (CR 616.1a–f):
   trigger itself. Used by Worldwalker Helm (`TokenCreationEvent(You, Artifact)`, add `Map`, `inheritTapped = true`)
   and Peregrin Took (`additionalTokenType = "Food"`, "those tokens plus an additional Food token are created instead")
   and Quina, Qu Gourmet (`additionalTokenType = "Frog"`, default `appliesTo` = any token you create, adds a 1/1 green Frog).
+  `restrictions` are extra `Condition` gates, evaluated by `TokenCreationReplacementHelper` with the
+  *creating* player as the controller and the rider's own permanent as the source — so a source-relative
+  gate resolves. That is how a **Solved replacement effect** carries its gate: a "Solved —" static
+  ability written as a replacement effect can't go through `solvedStaticAbility { }` (replacement effects
+  are declared outside the static-ability builder), so it takes `restrictions = listOf(Conditions.SourceIsSolved)`
+  instead — Case of the Pilfered Proof's "Solved — If one or more tokens would be created under your
+  control, those tokens plus a Clue token are created instead".
 - `EntersAsCopy(optional, copyFilter, copyFromZone, filterByTotalManaSpent, additionalSubtypes, additionalKeywords, nameOverride, powerOverride, toughnessOverride, exileCopiedCard, tappedIfCopied, additionalCounters)` —
   "enter as a copy of …". As the permanent enters, the controller picks an object matching
   `copyFilter` and the permanent enters as a copy (Rule 707 copiable values), with any overrides

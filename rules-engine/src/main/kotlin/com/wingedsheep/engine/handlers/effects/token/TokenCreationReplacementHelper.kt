@@ -7,6 +7,7 @@ import com.wingedsheep.engine.core.EffectResult
 import com.wingedsheep.engine.core.TokenCreationReplacementContinuation
 import com.wingedsheep.engine.core.YesNoDecision
 import com.wingedsheep.engine.core.ZoneChangeEvent
+import com.wingedsheep.engine.handlers.ConditionEvaluator
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.EntersWithReplacements
 import com.wingedsheep.engine.mechanics.layers.StaticAbilityHandler
@@ -135,7 +136,8 @@ object TokenCreationReplacementHelper {
         originalTapped: Boolean,
         cardRegistry: CardRegistry?,
         staticAbilityHandler: StaticAbilityHandler?,
-        predicateEvaluator: PredicateEvaluator = PredicateEvaluator()
+        predicateEvaluator: PredicateEvaluator = PredicateEvaluator(),
+        conditionEvaluator: ConditionEvaluator = ConditionEvaluator()
     ): Pair<GameState, List<com.wingedsheep.engine.core.GameEvent>> {
         if (createdTokenIds.isEmpty() || cardRegistry == null) return state to emptyList()
 
@@ -175,6 +177,22 @@ object TokenCreationReplacementHelper {
                     }
                 }
                 if (!anyMatch) continue
+
+                // Extra gates on the rider (CR 614). Evaluated with the *creating* player as the
+                // controller — the player the event happens to, matching
+                // `ReplacementEffect.restrictions` — and with the rider's own permanent as the
+                // source, so a source-relative gate resolves. That is what puts Case of the
+                // Pilfered Proof's Clue rider behind its solved designation (CR 702.169b).
+                if (effect.restrictions.isNotEmpty()) {
+                    val restrictionContext = EffectContext(
+                        sourceId = entityId,
+                        controllerId = tokenControllerId
+                    )
+                    val allHold = effect.restrictions.all { restriction ->
+                        conditionEvaluator.evaluate(state, restriction, restrictionContext)
+                    }
+                    if (!allHold) continue
+                }
 
                 val cardDef = cardRegistry.getCard(effect.additionalTokenType) ?: continue
                 val tapped = effect.inheritTapped && originalTapped

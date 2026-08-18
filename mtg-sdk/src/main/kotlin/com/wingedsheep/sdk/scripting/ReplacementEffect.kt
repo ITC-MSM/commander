@@ -193,6 +193,12 @@ data class ModifyTokenCount(
  * @property additionalTokenCount How many of that token to add per qualifying event.
  * @property inheritTapped When true, the added token enters tapped if the original
  *           creation made tapped tokens.
+ * @property restrictions Extra gates on when this applies, evaluated as described on
+ *           [ReplacementEffect.restrictions]. `Conditions.SourceIsSolved` puts the rider behind a
+ *           Case's solved designation (CR 702.169b) — Case of the Pilfered Proof's "Solved — If one
+ *           or more tokens would be created under your control, those tokens plus a Clue token are
+ *           created instead", which is a Solved *static* ability in replacement-effect form and so
+ *           carries its gate here rather than through `solvedStaticAbility { }`.
  */
 @SerialName("CreateAdditionalToken")
 @Serializable
@@ -200,7 +206,8 @@ data class CreateAdditionalToken(
     val additionalTokenType: String,
     val additionalTokenCount: Int = 1,
     val inheritTapped: Boolean = false,
-    override val appliesTo: EventPattern = EventPattern.TokenCreationEvent()
+    override val appliesTo: EventPattern = EventPattern.TokenCreationEvent(),
+    override val restrictions: List<Condition> = emptyList()
 ) : ReplacementEffect {
     override val description: String = buildString {
         append("If ${appliesTo.description}, create those tokens plus ")
@@ -211,7 +218,10 @@ data class CreateAdditionalToken(
 
     override fun applyTextReplacement(replacer: TextReplacer): ReplacementEffect {
         val newAppliesTo = appliesTo.applyTextReplacement(replacer)
-        return if (newAppliesTo !== appliesTo) copy(appliesTo = newAppliesTo) else this
+        val newRestrictions = restrictions.map { it.applyTextReplacement(replacer) }
+        return if (newAppliesTo !== appliesTo || newRestrictions != restrictions) {
+            copy(appliesTo = newAppliesTo, restrictions = newRestrictions)
+        } else this
     }
 }
 
