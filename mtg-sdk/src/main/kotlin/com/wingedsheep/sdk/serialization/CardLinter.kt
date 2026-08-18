@@ -198,52 +198,94 @@ object CardLinter {
      * True if [ability]'s **cost or effect** moves a card to or from a library — the CR 605.1a
      * disqualifier ("its cost and effect don't move any card to or from a library").
      *
-     * Checked by serial name against the *real* vocabulary, in two groups, because there is no
-     * single `Mill` or `SearchLibrary` node to look for: mill, search, exile-the-top and every other
-     * library operation is a `GatherCards` → `MoveCollection` pipeline over a `CardSource` /
-     * `CardDestination`, so the library-ness lives in a **zone field** on those nodes rather than in
-     * the effect's own name.
+     * Checked by serial name against the *real* vocabulary, because there is no single `Mill` or
+     * `SearchLibrary` node to look for: mill, search, exile-the-top and every other library
+     * operation is a `GatherCards` → `MoveCollection` pipeline over a `CardSource` /
+     * `CardDestination`, so the library-ness lives in a **zone field** on those nodes rather than
+     * in the effect's own name. Three tests, in order of how much they have to know:
      *
-     * - [LIBRARY_MOVING_NODES] — nodes that always move a library card whatever their arguments:
-     *   `DrawCards`, the `TopOfLibrary` source behind mill/exile-top, `Surveil` (library →
-     *   graveyard), `Cascade`/`Discover`/`ExileFromTopRepeating`/`ExileLibraryUntilManaValue`,
-     *   `PutOnLibraryPositionOfChoice`, and the `AtomMill` cost.
-     * - [ZONE_BEARING_NODES] — nodes that move a card only *when their zone is the library*:
-     *   `FromZone` (the search gather), `FromMultipleZones`, `ToZone` (put-back / shuffle-in) and
-     *   the `AtomExileFrom` cost, which exiles from a graveyard or hand just as often.
+     * - [LIBRARY_MOVING_NODES] — nodes that move a library card whatever their arguments:
+     *   `DrawCards`, `Surveil` (library → graveyard), `Cascade`/`Discover`/`ExileFromTopRepeating`/
+     *   `ExileLibraryUntilManaValue`, `PutOnLibraryPositionOfChoice`, and the `AtomMill` cost.
+     * - The `AtomExileFrom` cost, which is a move only when its zone is the library — it exiles
+     *   from a graveyard or a hand just as often (Molt Tender).
+     * - [crossesLibraryBoundary] — the pipeline shapes, where whether a card moves *to or from* a
+     *   library is a property of the whole pipeline rather than of any one node.
      *
-     * `Scry` is deliberately in neither group: it reorders cards *within* a library and never moves
+     * `Scry` is deliberately in none of them: it reorders cards *within* a library and never moves
      * one to or from it, so a scry rider leaves a mana ability a mana ability (Path of Ancestry).
      */
     private fun movesCardToOrFromLibrary(ability: JsonObject): Boolean =
         listOfNotNull(ability["effect"], ability["cost"]).any { tree ->
-            ownEffectContains(tree, LIBRARY_MOVING_NODES) || touchesLibraryZone(tree)
+            ownEffectContains(tree, LIBRARY_MOVING_NODES) ||
+                exilesFromLibraryAsCost(tree) ||
+                crossesLibraryBoundary(tree)
         }
 
     /**
-     * True if [tree] holds a [ZONE_BEARING_NODES] node pointed at a library — either a scalar
-     * `zone` member or a `zones` list containing one.
+     * True if a card *crosses* the library boundary somewhere in [tree] — the pipeline half of
+     * [movesCardToOrFromLibrary], and the reason `TopOfLibrary` and `ToZone(Library)` can't simply
+     * be listed as library-moving nodes.
+     *
+     * `CardSource.TopOfLibrary` is the shared gather for mill, exile-the-top, surveil, scry **and
+     * look-at-top**, and `CardDestination.ToZone(Library)` is the shared put-back for shuffle-in,
+     * put-on-top *and* the same reorders. Either one alone says only that a library was *touched*.
+     *
+     * So the default is that touching a library at all counts, and exactly one shape is carved out:
+     * a **reorder**, where cards come off a library and every one of them goes straight back into
+     * it. That is `LibraryPatterns.lookAtTopAndReorder` and the pipeline the compact `Scry` node
+     * expands to — flagging those would make the check contradict its own `Scry` carve-out
+     * depending only on which spelling the card used. Anything else that leaves the library
+     * (mill, `lookAtTopAndKeep`, a search that casts what it finds) and anything that enters one
+     * without having come from it (shuffle a graveyard in, put a card from hand on top) crosses.
+     *
+     * Reading destinations tree-wide rather than per-`MoveCollection` keeps this independent of
+     * collection-key bookkeeping: `scryPipeline` re-keys its gather through `SelectFromCollection`
+     * into two separate moves, and both still land in the library.
      */
-    private fun touchesLibraryZone(tree: JsonElement): Boolean = when (tree) {
-        is JsonObject ->
-            // Same stop as [ownEffectContains]: a granted ability or an embedded token definition
-            // that reaches a library is not something *this* resolution does.
-            if (isNestedAbilityOrDefinition(tree)) false
-            else {
-                val isZoneBearing = (tree["type"] as? JsonPrimitive)?.contentOrNull in ZONE_BEARING_NODES
-                val namesLibrary = (tree["zone"] as? JsonPrimitive)?.contentOrNull == LIBRARY_ZONE ||
-                    (tree["zones"] as? JsonArray)
-                        ?.any { (it as? JsonPrimitive)?.contentOrNull == LIBRARY_ZONE } == true
-                (isZoneBearing && namesLibrary) || tree.values.any { touchesLibraryZone(it) }
-            }
-        is JsonArray -> tree.any { touchesLibraryZone(it) }
-        else -> false
+    private fun crossesLibraryBoundary(tree: JsonElement): Boolean {
+        val fromLibrary = anyNode(tree) { node, type ->
+            type == "TopOfLibrary" || (type in ZONE_SOURCE_NODES && namesLibrary(node))
+        }
+        val toLibrary = anyNode(tree) { node, type -> type == "ToZone" && namesLibrary(node) }
+        if (!fromLibrary && !toLibrary) return false
+
+        val toElsewhere = anyNode(tree) { node, type -> type == "ToZone" && !namesLibrary(node) }
+        // A cast takes the card to the stack, so a gather it consumes has left the library even
+        // though no `ToZone` says so.
+        val castsFromCollection = anyNode(tree) { _, type -> type == CAST_FROM_COLLECTION }
+        val reorder = fromLibrary && toLibrary && !toElsewhere && !castsFromCollection
+        return !reorder
     }
 
-    /** Nodes that always move a card to or from a library. See [movesCardToOrFromLibrary]. */
+    /** True if [tree] pays an `AtomExileFrom` cost out of a library. */
+    private fun exilesFromLibraryAsCost(tree: JsonElement): Boolean =
+        anyNode(tree) { node, type -> type == "AtomExileFrom" && namesLibrary(node) }
+
+    /**
+     * True if any node in [tree] satisfies [predicate], which receives the node and its serial
+     * `type`. Stops at the same boundary as [ownEffectContains]: a granted ability or an embedded
+     * token definition that reaches a library is not something *this* resolution does.
+     */
+    private fun anyNode(tree: JsonElement, predicate: (JsonObject, String?) -> Boolean): Boolean =
+        when (tree) {
+            is JsonObject ->
+                if (isNestedAbilityOrDefinition(tree)) false
+                else predicate(tree, (tree["type"] as? JsonPrimitive)?.contentOrNull) ||
+                    tree.values.any { anyNode(it, predicate) }
+            is JsonArray -> tree.any { anyNode(it, predicate) }
+            else -> false
+        }
+
+    /** True if [node] names the library in a scalar `zone` member or in a `zones` list. */
+    private fun namesLibrary(node: JsonObject): Boolean =
+        (node["zone"] as? JsonPrimitive)?.contentOrNull == LIBRARY_ZONE ||
+            (node["zones"] as? JsonArray)
+                ?.any { (it as? JsonPrimitive)?.contentOrNull == LIBRARY_ZONE } == true
+
+    /** Nodes that move a card to or from a library. See [movesCardToOrFromLibrary]. */
     private val LIBRARY_MOVING_NODES = setOf(
         "DrawCards",
-        "TopOfLibrary",
         "Surveil",
         "Cascade",
         "Discover",
@@ -253,13 +295,14 @@ object CardLinter {
         "AtomMill",
     )
 
-    /** Nodes that move a card to or from a library only when their zone is the library. */
-    private val ZONE_BEARING_NODES = setOf(
+    /** `CardSource` shapes that name the zone they gather from. See [crossesLibraryBoundary]. */
+    private val ZONE_SOURCE_NODES = setOf(
         "FromZone",
         "FromMultipleZones",
-        "ToZone",
-        "AtomExileFrom",
     )
+
+    /** Serial name of the effect that casts a gathered card, taking it out of wherever it was. */
+    private const val CAST_FROM_COLLECTION = "CastFromCollectionWithoutPayingCost"
 
     /** `Zone.LIBRARY`'s serial name. */
     private const val LIBRARY_ZONE = "Library"

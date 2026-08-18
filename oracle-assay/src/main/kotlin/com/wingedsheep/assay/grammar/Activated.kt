@@ -18,11 +18,18 @@ import com.wingedsheep.sdk.scripting.effects.AddManaOfChoiceEffect
 import com.wingedsheep.sdk.scripting.effects.AddManaEffect
 import com.wingedsheep.sdk.scripting.effects.CardDestination
 import com.wingedsheep.sdk.scripting.effects.CardSource
+import com.wingedsheep.sdk.scripting.effects.CascadeEffect
+import com.wingedsheep.sdk.scripting.effects.CastFromCollectionWithoutPayingCostEffect
 import com.wingedsheep.sdk.scripting.effects.CompositeEffect
+import com.wingedsheep.sdk.scripting.effects.DiscoverEffect
 import com.wingedsheep.sdk.scripting.effects.DrawCardsEffect
 import com.wingedsheep.sdk.scripting.effects.Effect
+import com.wingedsheep.sdk.scripting.effects.ExileFromTopRepeatingEffect
+import com.wingedsheep.sdk.scripting.effects.ExileLibraryUntilManaValueEffect
 import com.wingedsheep.sdk.scripting.effects.GatherCardsEffect
 import com.wingedsheep.sdk.scripting.effects.MoveCollectionEffect
+import com.wingedsheep.sdk.scripting.effects.PutOnLibraryPositionOfChoiceEffect
+import com.wingedsheep.sdk.scripting.effects.SurveilEffect
 
 /**
  * "{T}: Add {G}." — the cost-colon-effect sentence, and the third `CardScript` slot the grammar
@@ -146,25 +153,78 @@ object Activated {
      *
      * Cost and effect are read with the same walk, and it descends only through the shapes a printed
      * line builds — `CompositeEffect` and `AbilityCost.Composite` — for [producesMana]'s reason.
+     *
+     * This has to agree with `CardLinter`'s `MisflaggedManaAbility` rule card-for-card, because the
+     * differential gate compares what the grammar derives against what the hand-written cards
+     * declare: a disagreement here is reported as a card defect rather than as the rule drift it
+     * would actually be. The two therefore split the vocabulary the same way — the nodes that always
+     * move a library card, and the pipeline shapes where only [crossesLibraryBoundary] can tell.
+     *
      * Scry is not a disqualifier: it reorders cards *within* a library and moves none to or from it,
      * so Path of Ancestry keeps its classification.
      */
     private fun movesLibraryCard(cost: AbilityCost, effect: Effect): Boolean =
-        movesLibraryCard(cost) || movesLibraryCard(effect)
+        movesLibraryCard(cost) || movesLibraryCard(effect) || crossesLibraryBoundary(effect)
 
+    /**
+     * Nodes that move a library card whatever their arguments. `Surveil` puts cards from a library
+     * into a graveyard; cascade, discover and the exile-from-the-top family all take cards off a
+     * library; `PutOnLibraryPositionOfChoice` puts one back onto it.
+     */
     private fun movesLibraryCard(effect: Effect): Boolean = when (effect) {
-        is DrawCardsEffect -> true
-        is GatherCardsEffect -> effect.source.let { source ->
-            source is CardSource.TopOfLibrary ||
-                (source is CardSource.FromZone && source.zone == Zone.LIBRARY) ||
-                (source is CardSource.FromMultipleZones && Zone.LIBRARY in source.zones)
-        }
-        is MoveCollectionEffect -> effect.destination.let {
-            it is CardDestination.ToZone && it.zone == Zone.LIBRARY
-        }
+        is DrawCardsEffect,
+        is SurveilEffect,
+        is CascadeEffect,
+        is DiscoverEffect,
+        is ExileFromTopRepeatingEffect,
+        is ExileLibraryUntilManaValueEffect,
+        is PutOnLibraryPositionOfChoiceEffect -> true
         is CompositeEffect -> effect.effects.any(::movesLibraryCard)
         else -> false
     }
+
+    /**
+     * True if a card *crosses* the library boundary somewhere in [effect] — the pipeline half, and
+     * the reason a `TopOfLibrary` gather is not on its own a disqualifier.
+     *
+     * `CardSource.TopOfLibrary` is the shared gather for mill, exile-the-top, surveil, scry **and
+     * look-at-top**, and `CardDestination.ToZone(Zone.LIBRARY)` is the shared put-back for
+     * shuffle-in, put-on-top *and* the same reorders. Either alone says only that a library was
+     * touched; 605.1a asks whether a card ended up on the other side of it. So the default is that
+     * touching a library counts, and exactly one shape is carved out: a **reorder**, where cards come
+     * off a library and every one of them goes straight back into it —
+     * `LibraryPatterns.lookAtTopAndReorder` and the pipeline `Scry` expands to, which must classify
+     * the same way the compact `Scry` node does.
+     */
+    private fun crossesLibraryBoundary(effect: Effect): Boolean {
+        val fromLibrary = anyEffect(effect) {
+            it is GatherCardsEffect && it.source.let { source ->
+                source is CardSource.TopOfLibrary ||
+                    (source is CardSource.FromZone && source.zone == Zone.LIBRARY) ||
+                    (source is CardSource.FromMultipleZones && Zone.LIBRARY in source.zones)
+            }
+        }
+        val toLibrary = anyEffect(effect) { it.movesTo(Zone.LIBRARY) == true }
+        if (!fromLibrary && !toLibrary) return false
+
+        val toElsewhere = anyEffect(effect) { it.movesTo(Zone.LIBRARY) == false }
+        // A cast takes the card to the stack, so a gather it consumes has left the library even
+        // though no destination says so.
+        val castsFromCollection = anyEffect(effect) { it is CastFromCollectionWithoutPayingCostEffect }
+        val reorder = fromLibrary && toLibrary && !toElsewhere && !castsFromCollection
+        return !reorder
+    }
+
+    /** Null unless this is a `MoveCollection` to a fixed zone; else whether that zone is [zone]. */
+    private fun Effect.movesTo(zone: Zone): Boolean? =
+        (this as? MoveCollectionEffect)?.destination
+            ?.let { it as? CardDestination.ToZone }
+            ?.let { it.zone == zone }
+
+    /** True if [effect] or any effect inside its `CompositeEffect` chain satisfies [predicate]. */
+    private fun anyEffect(effect: Effect, predicate: (Effect) -> Boolean): Boolean =
+        predicate(effect) ||
+            (effect is CompositeEffect && effect.effects.any { anyEffect(it, predicate) })
 
     private fun movesLibraryCard(cost: AbilityCost): Boolean = when (cost) {
         is AbilityCost.Atom -> cost.atom.let { atom ->

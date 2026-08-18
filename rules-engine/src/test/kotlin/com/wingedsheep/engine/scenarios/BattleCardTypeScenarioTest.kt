@@ -22,7 +22,7 @@ import io.kotest.matchers.shouldNotBe
  *
  * Uses inline test battles rather than printed cards: a Siege (the only battle type that exists in
  * paper — CR 310.12) and a hypothetical typeless battle, which is the only way to exercise both the
- * CR 310.9a branch where a battle's own controller is the only player who can protect it and the CR 704.5x
+ * CR 310.9a branch where a battle's own controller is the only player who can protect it and the CR 704.5w
  * 0-defense action that, unlike a Siege's CR 704.5v, has no pending-trigger reprieve.
  */
 class BattleCardTypeScenarioTest : ScenarioTestBase() {
@@ -46,7 +46,7 @@ class BattleCardTypeScenarioTest : ScenarioTestBase() {
 
     /**
      * A battle — of each type — carrying a triggered ability of its own, so the CR 704.5v
-     * defeat-trigger reprieve and CR 704.5x's lack of one can be told apart. An upkeep trigger is
+     * defeat-trigger reprieve and CR 704.5w's lack of one can be told apart. An upkeep trigger is
      * used because `passUntilPhase` stops with begin-of-step triggers queued but unresolved, which
      * is exactly the "is the source of an ability that has triggered but not yet left the stack"
      * state both rules turn on.
@@ -333,7 +333,7 @@ class BattleCardTypeScenarioTest : ScenarioTestBase() {
              *  - CR 704.5v (Siege) keeps a battle alive while it is the source of an ability that
              *    has triggered but not yet left the stack — the clause that exists so a Siege's own
              *    defeat trigger has something left to exile.
-             *  - CR 704.5x (non-Siege) has no such clause, so the battle is binned on the spot and
+             *  - CR 704.5w (non-Siege) has no such clause, so the battle is binned on the spot and
              *    its pending trigger resolves with the battle already in the graveyard.
              *
              * Until that update the reprieve was written for every battle, which no test could
@@ -376,7 +376,7 @@ class BattleCardTypeScenarioTest : ScenarioTestBase() {
             test("a non-Siege battle at 0 defense is binned despite its own pending trigger") {
                 val game = battleWithPendingUpkeepTrigger("Test Beacon")
 
-                withClue("CR 704.5x — a non-Siege battle gets no reprieve for a pending trigger") {
+                withClue("CR 704.5w — a non-Siege battle gets no reprieve for a pending trigger") {
                     game.isOnBattlefield("Test Beacon") shouldBe false
                     game.isInGraveyard(1, "Test Beacon") shouldBe true
                 }

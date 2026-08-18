@@ -32,9 +32,11 @@ import com.wingedsheep.sdk.scripting.effects.MoveCollectionEffect
  *     ignored, and a card left uncast simply stays in exile), and `castTransformed` puts the back
  *     face on the stack (CR 712.8c) the same way disturb does.
  *
- * The window this depends on is CR 704.5v's carve-out: a battle with defense 0 is *not* put into
+ * The window this depends on is CR 704.5v's carve-out: a *Siege* with defense 0 is *not* put into
  * its owner's graveyard while it is the source of a trigger still on the stack, which is precisely
- * how the battle survives long enough for step 2 to exile it.
+ * how the battle survives long enough for step 2 to exile it. The carve-out is Siege-only — a
+ * non-Siege battle at 0 defense falls under CR 704.5w and is binned with no reprieve, which is why
+ * nothing but a Siege can carry this pipeline.
  */
 object Sieges {
 

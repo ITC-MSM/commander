@@ -113,6 +113,16 @@ class ActivatedTest : StringSpec({
         assistant.timing shouldBe TimingRule.InstantSpeed
     }
 
+    // Surveil takes a card off the library too, and the linter's mirror rule says so — the two
+    // derivations have to agree card-for-card or the differential gate reports rule drift as a card
+    // defect. A scry rider, which reorders within the library, still leaves the classification alone.
+    "a surveil rider disqualifies a mana ability, a scry rider does not" {
+        fragment("{T}: Add {G}. Surveil 1.").script.activatedAbilities.single()
+            .isManaAbility shouldBe false
+        fragment("{T}: Add {G}. Scry 1.").script.activatedAbilities.single()
+            .isManaAbility shouldBe true
+    }
+
     // The fail-closed half. An `ActivatedAbility` has two dozen fields the sentence does not spell,
     // and printing one that carries any of them would drop it and still round-trip.
     "an ability carrying content the sentence does not spell refuses to print" {

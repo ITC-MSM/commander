@@ -28,6 +28,7 @@ import com.wingedsheep.sdk.scripting.conditions.EntityMatches
 import com.wingedsheep.sdk.scripting.ChoiceSlot
 import com.wingedsheep.sdk.scripting.effects.CardDestination
 import com.wingedsheep.sdk.scripting.effects.CardSource
+import com.wingedsheep.sdk.scripting.effects.CastFromCollectionWithoutPayingCostEffect
 import com.wingedsheep.sdk.scripting.effects.CompositeEffect
 import com.wingedsheep.sdk.scripting.effects.ConditionalEffect
 import com.wingedsheep.sdk.scripting.effects.AddManaEffect
@@ -535,6 +536,104 @@ class CardLinterTest : DescribeSpec({
                     ),
                 ),
             ).shouldBeEmpty()
+        }
+
+        // The same reorder written as the pipeline the `Scry` node expands to. Nothing crosses the
+        // library boundary — the cards are gathered from the library and put straight back — so the
+        // classification must not depend on which spelling the card used.
+        it("accepts a mana ability that looks at the top of the library and puts it back") {
+            misflagged(
+                rock(
+                    ability(
+                        CompositeEffect(listOf(addGreen, Patterns.Library.lookAtTopAndReorder(2))),
+                        isManaAbility = true,
+                    ),
+                ),
+            ).shouldBeEmpty()
+        }
+
+        // The near neighbour that *does* move a card out: same gather, but one card is kept.
+        it("flags a mana ability that looks at the top of the library and keeps a card") {
+            misflagged(
+                rock(
+                    ability(
+                        CompositeEffect(
+                            listOf(
+                                addGreen,
+                                Patterns.Library.lookAtTopAndKeep(
+                                    count = 2,
+                                    keepCount = 1,
+                                    keepDestination = CardDestination.ToZone(Zone.HAND),
+                                ),
+                            ),
+                        ),
+                        isManaAbility = true,
+                    ),
+                ),
+            ).shouldHaveSize(1)
+        }
+
+        // The other direction across the boundary: a card that did not come from a library ends up
+        // in one.
+        it("flags a mana ability that puts a card from hand on top of the library") {
+            misflagged(
+                rock(
+                    ability(
+                        CompositeEffect(
+                            listOf(
+                                addGreen,
+                                GatherCardsEffect(
+                                    source = CardSource.FromZone(Zone.HAND),
+                                    storeAs = "tucked",
+                                ),
+                                MoveCollectionEffect(
+                                    from = "tucked",
+                                    destination = CardDestination.ToZone(Zone.LIBRARY),
+                                ),
+                            ),
+                        ),
+                        isManaAbility = true,
+                    ),
+                ),
+            ).shouldHaveSize(1)
+        }
+
+        // A library gather whose cards leave by being *cast* rather than by a move — no destination
+        // node says "library", so only the cast marks the crossing.
+        it("flags a mana ability that gathers from a library and casts what it found") {
+            misflagged(
+                rock(
+                    ability(
+                        CompositeEffect(
+                            listOf(
+                                addGreen,
+                                GatherCardsEffect(
+                                    source = CardSource.FromZone(Zone.LIBRARY),
+                                    storeAs = "found",
+                                ),
+                                CastFromCollectionWithoutPayingCostEffect(from = "found"),
+                            ),
+                        ),
+                        isManaAbility = true,
+                    ),
+                ),
+            ).shouldHaveSize(1)
+        }
+
+        it("flags a mana ability that is also a loyalty ability") {
+            val found = misflagged(
+                rock(
+                    ActivatedAbility(
+                        id = AbilityId.generate(),
+                        cost = AbilityCost.Tap,
+                        effect = addGreen,
+                        isManaAbility = true,
+                        isPlaneswalkerAbility = true,
+                    ),
+                ),
+            )
+            found.shouldHaveSize(1)
+            found[0].message shouldContain "it is a loyalty ability"
         }
 
         it("flags a mana ability that requires a target") {

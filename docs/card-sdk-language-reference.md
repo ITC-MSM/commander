@@ -11256,9 +11256,12 @@ levels, saga chapters, faces — is covered automatically. What it checks:
   has no builder to derive the flag), and `MisflaggedManaAbility` fires when a disqualified ability
   *is* flagged. The library clause entered 605.1a in the August 7, 2026 update, which is why the
   second direction exists: Chromatic Sphere, the five Odyssey Eggs and Deranged Assistant were all
-  correctly flagged when written and became ordinary activated abilities on that date. Scry is not a
-  disqualifier — it reorders cards *within* a library and moves none to or from it, so Path of
-  Ancestry's scry rider leaves it a mana ability.
+  correctly flagged when written and became ordinary activated abilities on that date. A library
+  *reorder* is not a disqualifier — it moves cards **within** a library, not to or from one — so
+  `Scry`, the pipeline it expands to, and `Patterns.Library.lookAtTopAndReorder` all leave a mana
+  ability a mana ability (Path of Ancestry). What the check reads is whether a card crosses the
+  library boundary: gathered from a library and put anywhere else, or put into a library without
+  having come from one. `Surveil` does cross it (library → graveyard) and disqualifies.
 - **Attach-scope on a card that can't be attached** — a **printed** static ability
   (`script.staticAbilities` or a `classLevels` entry, on any face) whose `GroupFilter` carries
   `Scope.AttachedTo` ("enchanted/equipped creature"), on a card that is not an Aura, Equipment, or
