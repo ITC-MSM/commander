@@ -8809,6 +8809,12 @@ default to "you" so card authors don't need to pass it explicitly.
   cards were put into graveyards from anywhere this turn". Same tracker, so the same two rulings apply:
   it reads the card's own type line (what the card *is in the graveyard*, so a creature card that was a
   noncreature permanent counts and an animated noncreature card doesn't), and tokens never count.
+- `SourcesYouControlledDealtDamageThisTurn(atLeast)` — at least `atLeast` **distinct sources** you
+  controlled dealt damage this turn (`TurnTracker.DAMAGE_SOURCES`). Case of the Burning Masks. Counts
+  source *objects* at the moment they dealt damage, which is what the printed rulings require: a source
+  that pings twice counts once; a source that left the battlefield and returned is a new object and
+  counts again; a source that dies or changes controller afterwards still counts; and an ability is not
+  a source (the source is the object the ability came from).
 - `YouDealtRedNoncombatDamageThisTurn(atLeast = 1)` — red sources you controlled dealt at least
   `atLeast` noncombat damage this turn. `Compare(TurnTracking(Player.You, TurnTracker.RED_NONCOMBAT_DAMAGE_DEALT),
   GTE, Fixed(atLeast))`, backed by the per-player `RedNoncombatDamageDealtThisTurnComponent`. Gates
@@ -9796,6 +9802,14 @@ this turn").
   counter (which sums every player's sacrifices). Backs `Conditions.YouSacrificedPermanentsThisTurn(atLeast)`
   and `DynamicAmounts.permanentsSacrificedThisTurn(player)` — e.g. Sawblade Skinripper's "if you sacrificed
   one or more permanents this turn, ... deals that much damage".
+- `DAMAGE_SOURCES` — the number of distinct sources a player controlled that dealt damage this turn.
+  Backed by the per-player `DamageSourcesThisTurnComponent`, a set of
+  `DamageSourceIdentity(entityId, incarnation)` recorded on the source's controller *at damage time*
+  (from `DamageUtils.trackDamageSourceForController`, called from the noncombat damage chokepoint and
+  from each combat-damage path) and cleared at end of turn. `incarnation` is the source's
+  battlefield-entry timestamp, which is what makes a blinked permanent a second source (CR 400.7)
+  while a permanent that deals damage repeatedly stays one. Backs
+  `Conditions.SourcesYouControlledDealtDamageThisTurn(atLeast)` — Case of the Burning Masks.
 - `RED_NONCOMBAT_DAMAGE_DEALT` — total noncombat damage red sources a player controlled dealt this turn
   (controller-scoped). Backed by the per-player `RedNoncombatDamageDealtThisTurnComponent`, incremented in
   `DamageUtils.dealDamageToTarget` on the source's controller whenever a red source deals positive noncombat

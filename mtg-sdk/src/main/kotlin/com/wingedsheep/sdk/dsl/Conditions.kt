@@ -1770,6 +1770,19 @@ object Conditions {
         )
 
     /**
+     * If [atLeast] or more distinct sources you controlled dealt damage this turn — Case of the
+     * Burning Masks. Counts source *objects* at the moment they dealt the damage: a source that
+     * pings twice counts once, a source that left and returned counts twice, and one that dies or
+     * changes controller afterwards still counts. Abilities are not sources; the source is the
+     * object the ability came from.
+     */
+    fun SourcesYouControlledDealtDamageThisTurn(atLeast: Int): ConditionInterface =
+        trackerAtLeast(
+            com.wingedsheep.sdk.scripting.values.TurnTracker.DAMAGE_SOURCES,
+            atLeast = atLeast,
+        )
+
+    /**
      * If you've sacrificed [atLeast] or more permanents this turn (controller-scoped, any
      * permanent type). Backed by the per-player `PermanentsSacrificedThisTurnComponent` —
      * distinct from the game-wide cost-reduction counter. Used by Sawblade Skinripper's

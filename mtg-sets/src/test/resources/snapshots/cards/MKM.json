@@ -2707,6 +2707,172 @@
     ]
 }
 
+// Case of the Burning Masks
+{
+    "name": "Case of the Burning Masks",
+    "manaCost": "{1}{R}{R}",
+    "typeLine": "Enchantment — Case",
+    "oracleText": "When this Case enters, it deals 3 damage to target creature an opponent controls.\nTo solve — Three or more sources you controlled dealt damage this turn. (If unsolved, solve at the beginning of your end step.)\nSolved — Sacrifice this Case: Exile the top three cards of your library. Choose one of them. You may play that card this turn.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 3
+                    },
+                    "target": {
+                        "type": "ContextTarget",
+                        "index": 0
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature ctrl:opponent"
+                    }
+                }
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "END"
+                },
+                "binding": "ANY",
+                "effect": "BecomeSolved",
+                "interveningIf": {
+                    "type": "All",
+                    "conditions": [
+                        {
+                            "type": "Compare",
+                            "left": {
+                                "type": "TurnTracking",
+                                "player": "You",
+                                "tracker": "DAMAGE_SOURCES"
+                            },
+                            "operator": "GTE",
+                            "right": {
+                                "type": "Fixed",
+                                "amount": 3
+                            }
+                        },
+                        {
+                            "type": "Not",
+                            "condition": {
+                                "type": "EntityMatches",
+                                "entity": "Self",
+                                "filter": {
+                                    "statePredicates": [
+                                        "IsSolved"
+                                    ]
+                                }
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "To solve — the number of sources you controlled that dealt damage this turn is at least 3"
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_3",
+                "cost": "CostSacrificeSelf",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 3
+                                }
+                            },
+                            "storeAs": "gathered0"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "gathered0",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile"
+                            }
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "gathered0",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "selected2",
+                            "prompt": "Choose a card you may play this turn",
+                            "showAllCards": true
+                        },
+                        {
+                            "type": "GrantMayPlayFromExile",
+                            "from": "selected2"
+                        }
+                    ]
+                },
+                "restrictions": [
+                    {
+                        "type": "ActivationOnlyIfCondition",
+                        "condition": {
+                            "type": "EntityMatches",
+                            "entity": "Self",
+                            "filter": {
+                                "statePredicates": [
+                                    "IsSolved"
+                                ]
+                            }
+                        }
+                    }
+                ],
+                "descriptionOverride": "Sacrifice this Case: Exile the top three cards of your library. Choose one of them. You may play that card this turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "113",
+        "rarity": "UNCOMMON",
+        "artist": "Bastien L. Deharme",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/9/29ee07df-215f-45a6-9a5a-708143d73e45.jpg?1783912887",
+        "rulings": [
+            {
+                "date": "2024-02-09",
+                "text": "You need to control the sources that dealt damage only at the times when they dealt damage. If they die or change control after that point, the \"to solve\" ability will still trigger at the beginning of your end step as long as you still control Case of the Burning Masks."
+            },
+            {
+                "date": "2024-02-09",
+                "text": "Activated and triggered abilities are not themselves sources of damage. The source of an activated ability is the object whose ability was activated, and the source of a triggered ability (other than a delayed triggered ability) is the object whose ability triggered."
+            },
+            {
+                "date": "2024-02-09",
+                "text": "If multiple creatures you control deal combat damage, each one counts as a source that dealt damage that turn. A single creature that deals combat damage multiple times in a turn (due to double strike or additional combats) still counts as only one source."
+            },
+            {
+                "date": "2024-02-09",
+                "text": "You pay all costs and follow all normal timing rules for the card played from exile with Case of the Burning Masks's last ability. For example, if the exiled card is a land card, you may play it only during your main phase while the stack is empty."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Case of the Filched Falcon
 {
     "name": "Case of the Filched Falcon",

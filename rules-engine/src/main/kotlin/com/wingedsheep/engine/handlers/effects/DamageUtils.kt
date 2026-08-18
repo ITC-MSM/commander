@@ -33,6 +33,8 @@ import com.wingedsheep.engine.state.components.stack.SpellGrantedKeywordsCompone
 import com.wingedsheep.engine.state.components.stack.SpellOnStackComponent
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
 import com.wingedsheep.engine.state.components.stack.TargetsComponent
+import com.wingedsheep.engine.state.components.player.DamageSourceIdentity
+import com.wingedsheep.engine.state.components.player.DamageSourcesThisTurnComponent
 import com.wingedsheep.engine.state.components.player.RedNoncombatDamageDealtThisTurnComponent
 import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.engine.mechanics.mana.GrantedKeywordResolver
@@ -445,6 +447,12 @@ object DamageUtils {
             newState = newState.updateEntity(sourceId) { container ->
                 container.with(HasDealtDamageComponent(newState.turnNumber))
             }
+        }
+        // Record the source on its controller's per-turn set of damage sources. Unlike the stamp
+        // above this is not battlefield-only: a resolving burn spell is a source that dealt damage
+        // just as much as a creature is (Case of the Burning Masks).
+        if (sourceId != null && effectiveAmount > 0) {
+            newState = trackDamageSourceForController(newState, sourceId)
         }
 
         val sourceName = sourceId?.let { state.getEntity(it)?.get<CardComponent>()?.name }
@@ -921,6 +929,39 @@ object DamageUtils {
      * matching a filter] dies" (Shelob). Snapshotting on the *damaged* creature means a source that
      * died in the same combat is still evaluated against its damage-time state (CR 608.2h).
      */
+    /**
+     * Record [sourceId] as a source that dealt damage this turn, on the player who controls it
+     * **right now** — i.e. at the moment the damage is dealt, which is the only moment Case of the
+     * Burning Masks's "sources you controlled dealt damage this turn" cares about.
+     *
+     * The identity stored is (entity, battlefield-entry timestamp), so a permanent that deals
+     * damage repeatedly counts once while one that left the battlefield and returned counts as the
+     * new object it is (CR 400.7). A source that isn't a permanent — a spell resolving off the
+     * stack — carries no timestamp and is identified by its entity alone.
+     */
+    fun trackDamageSourceForController(state: GameState, sourceId: EntityId): GameState {
+        val container = state.getEntity(sourceId) ?: return state
+        val controllerId = state.projectedState.getController(sourceId)
+            ?: container.get<ControllerComponent>()?.playerId
+            ?: container.get<SpellOnStackComponent>()?.casterId
+            ?: container.get<CardComponent>()?.ownerId
+            ?: return state
+        val identity = DamageSourceIdentity(
+            entityId = sourceId,
+            incarnation = container
+                .get<com.wingedsheep.engine.state.components.battlefield.BattlefieldEntryTimestampComponent>()
+                ?.timestamp
+                ?: 0L
+        )
+        val existing = state.getEntity(controllerId)?.get<DamageSourcesThisTurnComponent>()
+        if (existing != null && identity in existing.sources) return state
+        return state.updateEntity(controllerId) { playerContainer ->
+            val current = playerContainer.get<DamageSourcesThisTurnComponent>()
+                ?: DamageSourcesThisTurnComponent()
+            playerContainer.with(current.adding(identity))
+        }
+    }
+
     fun trackDamageSourceLki(state: GameState, sourceId: EntityId, targetCreatureId: EntityId): GameState {
         if (targetCreatureId !in state.getBattlefield()) return state
         val projected = state.projectedState
