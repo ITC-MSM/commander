@@ -54,6 +54,12 @@ import com.wingedsheep.sdk.scripting.Duration
  * granted Treasure mana ability is the source-keyed case, Ultima's counter-keyed "{T}: Add {C}"
  * and Braided Net's activation lock the affected-keyed ones.
  *
+ * The same applies to [GameState.mayPlayPermissions]: a cast-from-exile permission granted "for as
+ * long as you control this [permanent]" (Taster of Wares, `MayPlayExpiry.WhileYouControlSource`)
+ * has no floating-effect representation either, so it is latched off here when its source leaves
+ * the battlefield or changes controller — the [Duration.WhileYouControlSource] gate above, applied
+ * to a permission instead of an effect.
+ *
  * Affected entities no longer on the battlefield are left untouched: the effect as a whole is
  * reaped by the untap-step cleanup / zone-change handling, and we must not emit spurious
  * control-change events for permanents that merely left.
@@ -73,7 +79,10 @@ class EndedDurationExpiryCheck : StateBasedActionCheck {
         // condition fails — otherwise a de-blighted land keeps the mana ability / an untapped
         // permanent stays locked / a Treasured permanent keeps saccing for mana after its
         // Larcenist died. This latch is one-way by nature: the grant is never re-added.
-        val prunedState = pruneEndedGrants(state)
+        // A cast-from-exile permission granted "for as long as you control this [permanent]"
+        // (Taster of Wares) has no floating-effect representation either, so it needs the same
+        // one-way latch: revoke it the moment its source leaves the battlefield or changes hands.
+        val prunedState = pruneEndedMayPlayPermissions(pruneEndedGrants(state))
 
         if (prunedState.floatingEffects.isEmpty()) {
             return if (prunedState === state) ExecutionResult.success(state)
@@ -230,6 +239,39 @@ class EndedDurationExpiryCheck : StateBasedActionCheck {
             )
         }
         return result
+    }
+
+    /**
+     * Revoke every [com.wingedsheep.engine.state.permissions.MayPlayPermission] whose
+     * `endsWhenSourceUncontrolled` window has closed — the granting permanent has left the
+     * battlefield, or its *projected* controller is no longer the grant's "you".
+     *
+     * "You" is `expiryControllerId ?: controllerId`, the same resolution the turn-keyed cleanup
+     * window uses. For an ordinary grant those coincide; for an owner-scoped one the granting
+     * executor pins `expiryControllerId` to the player whose ability granted the permission, so the
+     * window still belongs to them rather than to each card's owner (who never controls the source).
+     *
+     * Reading the *projected* controller rather than [ControllerComponent] is what makes a
+     * Threaten-style steal of the source close the window, matching
+     * [Duration.WhileYouControlSource] — losing control is as much an end to "for as long as you
+     * control this" as the permanent dying (CR 611.2b).
+     *
+     * Removal, not gating, is deliberate: the latch must be one-way, so a source that comes back
+     * or a control change that reverts must not revive a permission. Returns the same instance
+     * when nothing changed.
+     */
+    private fun pruneEndedMayPlayPermissions(state: GameState): GameState {
+        if (state.mayPlayPermissions.none { it.endsWhenSourceUncontrolled }) return state
+        val projected = state.projectedState
+        val battlefield = state.getBattlefield()
+        val surviving = state.mayPlayPermissions.filterNot { permission ->
+            if (!permission.endsWhenSourceUncontrolled) return@filterNot false
+            val sourceId = permission.sourceId ?: return@filterNot true
+            val you = permission.expiryControllerId ?: permission.controllerId
+            !battlefield.contains(sourceId) || projected.getController(sourceId) != you
+        }
+        return if (surviving.size == state.mayPlayPermissions.size) state
+        else state.copy(mayPlayPermissions = surviving)
     }
 
     /**

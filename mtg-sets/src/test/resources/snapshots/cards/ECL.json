@@ -17840,7 +17840,7 @@
                             "type": "SelectFromCollection",
                             "from": "revealed",
                             "selection": {
-                                "type": "ChooseUpTo",
+                                "type": "ChooseExactly",
                                 "count": {
                                     "type": "Fixed",
                                     "amount": 1
@@ -17873,7 +17873,10 @@
                         {
                             "type": "GrantMayPlayFromExile",
                             "from": "instantOrSorcery",
-                            "expiry": "Permanent",
+                            "expiry": {
+                                "type": "WhileYouControlSource",
+                                "sourceDescription": "this creature"
+                            },
                             "withAnyManaType": true
                         }
                     ]

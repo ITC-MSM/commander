@@ -37,10 +37,12 @@ import com.wingedsheep.sdk.dsl.Effects
  * can be spent to cast that spell.
  *
  * Implementation notes:
- * - The cast-from-exile permission is modeled with `permanent = true`, which
- *   keeps it active as long as the card stays in exile. The "as long as you
- *   control this creature" clause is a small simplification (matches the typical
- *   case where the player casts the exiled spell while Taster is still alive).
+ * - The cast-from-exile permission carries `MayPlayExpiry.WhileYouControlSource`,
+ *   so it ends the moment this creature leaves the battlefield or someone else
+ *   gains control of it. Per CR 611.2b the window is one-way: the grant is not
+ *   created at all if the Taster is already gone when the trigger resolves, and
+ *   getting it back later does not revive a permission that has ended. The card
+ *   stays exiled either way — only the permission ends.
  * - "Mana of any type can be spent" is plumbed via `withAnyManaType = true` on
  *   the granted permission, which relaxes colored cost requirements at cast time.
  */
@@ -84,11 +86,13 @@ val TasterOfWares = card("Taster of Wares") {
                     storeSelected = "revealed",
                     prompt = "Reveal X cards from your hand (X = number of Goblins your opponent controls)"
                 ),
-                // You choose one of the revealed cards (use ChooseUpTo so X=0
-                // and empty-hand cases resolve cleanly)
+                // You choose one of the revealed cards. Mandatory (ChooseExactly), not a "may":
+                // ChooseUpTo would offer a min-0 decision that a player or the AI can decline,
+                // and nothing would be exiled. ChooseExactly still resolves cleanly when X = 0 or
+                // the hand is empty — an empty collection auto-selects nothing rather than pausing.
                 SelectFromCollectionEffect(
                     from = "revealed",
-                    selection = SelectionMode.ChooseUpTo(DynamicAmount.Fixed(1)),
+                    selection = SelectionMode.ChooseExactly(DynamicAmount.Fixed(1)),
                     chooser = Chooser.Controller,
                     storeSelected = "chosen",
                     prompt = "Choose one of the revealed cards to exile"
@@ -106,7 +110,7 @@ val TasterOfWares = card("Taster of Wares") {
                 ),
                 GrantMayPlayFromExileEffect(
                     from = "instantOrSorcery",
-                    expiry = MayPlayExpiry.Permanent,
+                    expiry = MayPlayExpiry.WhileYouControlSource("this creature"),
                     withAnyManaType = true
                 )
             )

@@ -58,11 +58,25 @@ class GrantMayPlayFromExileExecutor : EffectExecutor<GrantMayPlayFromExileEffect
         // survives the per-player rebinding (the source itself may already be in exile from a
         // cost, so it can't be read off the source's ControllerComponent).
         val activatingPlayer = context.effectControllerId ?: controllerId
-        // "Until you exile another card with this permanent" persists across turns like a
-        // permanent grant, so it is exempt from end-of-turn cleanup; the superseding revocation
-        // (below) is what ends it, not a turn boundary.
-        val supersedesSameSource = effect.expiry is MayPlayExpiry.UntilSourceExilesAnother
-        val isPermanent = effect.expiry is MayPlayExpiry.Permanent || supersedesSameSource
+
+        val (isPermanent, supersedesSameSource, endsWhenSourceUncontrolled) =
+            cleanupBehaviorFor(effect.expiry)
+
+        // CR 611.2b: a "for as long as ..." duration that is already over when the effect would
+        // first be applied means the effect does nothing at all — the rule's own Master Thief
+        // example. If the granting permanent has left the battlefield, or been stolen, while this
+        // ability sat on the stack, the window never opens and no permission is created. Without
+        // this the grant would be born already-dead and merely revoked on the next SBA pass, which
+        // is observably different: the card would be castable during that window.
+        if (endsWhenSourceUncontrolled) {
+            val sourceId = context.sourceId
+            if (sourceId == null ||
+                !state.getBattlefield().contains(sourceId) ||
+                state.projectedState.getController(sourceId) != activatingPlayer
+            ) {
+                return EffectResult.success(state)
+            }
+        }
 
         var newState = state
 
@@ -110,7 +124,18 @@ class GrantMayPlayFromExileExecutor : EffectExecutor<GrantMayPlayFromExileEffect
             // controller grant they follow the activating player (Memory Vessel rebinding).
             val expiryAnchor = if (effect.ownerControls) grantee else activatingPlayer
             val expiresAfterTurn = expiresAfterTurnFor(newState, expiryAnchor, effect.expiry)
-            val expiryControllerId = if (expiryAnchor != grantee) expiryAnchor else null
+            // The window's "you" is stored only when it differs from the grantee, EXCEPT for a
+            // source-keyed window: "for as long as **you** control this" always means the player
+            // whose ability granted it, even under `ownerControls`, where the anchor would
+            // otherwise collapse to each card's owner and revoke the grant on the first SBA pass
+            // (the owner does not control the source). Pinning it here is what makes
+            // EndedDurationExpiryCheck's `expiryControllerId ?: controllerId` resolve to the
+            // granting player in every grouping.
+            val expiryControllerId = when {
+                endsWhenSourceUncontrolled -> activatingPlayer
+                expiryAnchor != grantee -> expiryAnchor
+                else -> null
+            }
 
             val (permId, stateWithPerm) = newState.newEntity()
             newState = stateWithPerm
@@ -153,6 +178,7 @@ class GrantMayPlayFromExileExecutor : EffectExecutor<GrantMayPlayFromExileEffect
                     riderLinkId = riderLinkId,
                     expiryControllerId = expiryControllerId,
                     supersededBySameSource = supersedesSameSource,
+                    endsWhenSourceUncontrolled = endsWhenSourceUncontrolled,
                     nonLandOnly = effect.nonLandOnly,
                     castFaceIndex = effect.castFaceIndex,
                     castColorRestriction = effect.castColorRestriction,
@@ -191,10 +217,48 @@ class GrantMayPlayFromExileExecutor : EffectExecutor<GrantMayPlayFromExileEffect
     }
 
     /**
+     * The [MayPlayPermission] lifecycle flags implied by a [MayPlayExpiry].
+     *
+     * @param permanent exempt from end-of-turn cleanup ([MayPlayPermission.permanent]).
+     * @param supersededBySameSource ended when the same source grants again
+     *   ([MayPlayPermission.supersededBySameSource]).
+     * @param endsWhenSourceUncontrolled ended when its "you" stops controlling the source
+     *   ([MayPlayPermission.endsWhenSourceUncontrolled]).
+     */
+    private data class CleanupBehavior(
+        val permanent: Boolean,
+        val supersededBySameSource: Boolean,
+        val endsWhenSourceUncontrolled: Boolean,
+    )
+
+    /**
+     * Derived by one exhaustive `when` rather than a chain of independent `is` checks, because the
+     * three flags are not independent: every expiry that is *not* turn-keyed must set `permanent`
+     * or the cleanup pass takes the permission before its real end condition can. Deriving them
+     * separately let a new variant default silently to "expires this turn"; here the compiler
+     * rejects a new [MayPlayExpiry] until its cleanup behaviour is stated.
+     */
+    private fun cleanupBehaviorFor(expiry: MayPlayExpiry): CleanupBehavior = when (expiry) {
+        // Turn-keyed: cleanup owns them, so none of the revocation flags apply.
+        MayPlayExpiry.EndOfTurn,
+        is MayPlayExpiry.UntilControllerStep -> CleanupBehavior(false, false, false)
+        // "for as long as it remains exiled" — nothing but casting the card ends it.
+        MayPlayExpiry.Permanent -> CleanupBehavior(true, false, false)
+        // "Until you exile another card with this permanent" persists across turns like a
+        // permanent grant, so it is exempt from end-of-turn cleanup; the superseding revocation
+        // is what ends it, not a turn boundary.
+        MayPlayExpiry.UntilSourceExilesAnother -> CleanupBehavior(true, true, false)
+        // "for as long as you control this [permanent]" — not turn-keyed, so cleanup must skip it;
+        // EndedDurationExpiryCheck revokes it instead.
+        is MayPlayExpiry.WhileYouControlSource -> CleanupBehavior(true, false, true)
+    }
+
+    /**
      * Translate a [MayPlayExpiry] into the turn whose cleanup will remove the permission.
      * Returns `null` for [MayPlayExpiry.EndOfTurn] (default handling: cleared this cleanup),
-     * for [MayPlayExpiry.Permanent], and for [MayPlayExpiry.UntilSourceExilesAnother] (both
-     * flagged permanent and skipped by cleanup — the latter is ended by same-source revocation).
+     * for [MayPlayExpiry.Permanent], for [MayPlayExpiry.UntilSourceExilesAnother], and for
+     * [MayPlayExpiry.WhileYouControlSource] (all flagged permanent and skipped by cleanup — the
+     * last two are ended by revocation, on same-source exile and on losing the source respectively).
      */
     private fun expiresAfterTurnFor(
         state: GameState,
@@ -204,6 +268,8 @@ class GrantMayPlayFromExileExecutor : EffectExecutor<GrantMayPlayFromExileEffect
         MayPlayExpiry.EndOfTurn,
         MayPlayExpiry.Permanent,
         MayPlayExpiry.UntilSourceExilesAnother -> null
+        // Source-keyed, not turn-keyed: revoked by EndedDurationExpiryCheck, never by cleanup.
+        is MayPlayExpiry.WhileYouControlSource -> null
         is MayPlayExpiry.UntilControllerStep -> resolveStepTurn(state, controllerId, expiry)
     }
 

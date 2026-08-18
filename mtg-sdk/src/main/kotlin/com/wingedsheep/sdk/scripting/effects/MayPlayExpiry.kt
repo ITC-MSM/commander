@@ -75,6 +75,36 @@ sealed interface MayPlayExpiry {
         }
     }
 
+    /**
+     * Permission lasts for as long as the grant's controller controls the **granting permanent** —
+     * "you may cast it for as long as you control this creature" (Taster of Wares). The exiled card
+     * stays exiled either way; only the permission ends.
+     *
+     * Mirrors [com.wingedsheep.sdk.scripting.Duration.WhileYouControlSource] and shares its two
+     * halves: the window closes when the source leaves the battlefield **or** when the source's
+     * *projected* controller stops being the grant's controller, so a Threaten-style steal of the
+     * source ends it just as a destroy would.
+     *
+     * One-way, per CR 611.2b — "it doesn't start and immediately stop again, and it doesn't last
+     * forever". Two consequences the engine implements:
+     *  - The grant is never created at all if the source is already gone (or already stolen) when
+     *    the granting ability resolves — the rule's Master Thief example.
+     *  - Once the window closes the permission is physically removed, so regaining control of the
+     *    source, or a new copy of it entering, does not revive it.
+     *
+     * Distinct from [Permanent], which survives the source leaving play, and from
+     * [UntilSourceExilesAnother], which ends only when that same source exiles another card.
+     * Requires a source id on the grant; without one the window can never be evaluated and the
+     * permission is not created.
+     */
+    @SerialName("WhileYouControlSource")
+    @Serializable
+    data class WhileYouControlSource(
+        val sourceDescription: String = "this permanent"
+    ) : MayPlayExpiry {
+        override val description = "for as long as you control $sourceDescription"
+    }
+
     companion object {
         /** "Until the end of your next turn" — never expires this turn, even on your own turn. */
         val UntilEndOfNextTurn: MayPlayExpiry =
