@@ -11,7 +11,7 @@ import com.wingedsheep.sdk.model.EntityId
 /**
  * The one place a player's **speed** changes (Aetherdrift, CR 702.179).
  *
- * Both writers go through here — the CR 704.5z state-based action that starts a speed at 1
+ * Both writers go through here — the CR 704.5aa state-based action that starts a speed at 1
  * ([com.wingedsheep.engine.mechanics.sba.player.StartYourEnginesCheck]) and the
  * [com.wingedsheep.sdk.scripting.effects.ChangeSpeedEffect] executor behind "your speed increases by
  * N" / "reduce that opponent's speed by 1" — so the rules that govern the value can't drift apart
@@ -57,7 +57,7 @@ object SpeedService {
 
     /**
      * Set [playerId]'s speed to exactly [newSpeed] (CR 702.179b, "a rule or effect sets their speed
-     * to a specific value") — the low-level primitive, used by the CR 704.5z state-based action for
+     * to a specific value") — the low-level primitive, used by the CR 704.5aa state-based action for
      * its "becomes 1" and by [change] once it has computed the target.
      *
      * Clamped into `0..`[Speed.MAX]. A [newSpeed] equal to the current speed is a no-op, which is what

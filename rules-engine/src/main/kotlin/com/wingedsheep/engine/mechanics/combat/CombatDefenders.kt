@@ -20,7 +20,7 @@ object CombatDefenders {
     /**
      * The player defending against an attack aimed at [defenderId]: a player defends as
      * themselves, a planeswalker defends on behalf of its controller (CR 508.5), and a **battle
-     * defends on behalf of its protector, not its controller** (CR 310.8d — for a battle being
+     * defends on behalf of its protector, not its controller** (CR 310.9d — for a battle being
      * attacked, every rule and effect that refers to the defending player means its protector).
      * That asymmetry is the whole point of a Siege: its controller attacks it while an opponent
      * defends it.

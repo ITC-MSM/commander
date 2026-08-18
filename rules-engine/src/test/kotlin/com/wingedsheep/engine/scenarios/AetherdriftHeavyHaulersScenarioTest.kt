@@ -299,7 +299,7 @@ class AetherdriftHeavyHaulersScenarioTest : ScenarioTestBase() {
 
     /**
      * Lightwheel Enhancements already in player 1's graveyard, one Plains to recast it, and a
-     * Grizzly Bears to enchant. Built in the upkeep step so the CR 704.5z start-your-engines
+     * Grizzly Bears to enchant. Built in the upkeep step so the CR 704.5aa start-your-engines
      * state-based action has a step change to run on.
      */
     private fun lightwheelGame(): TestGame {

@@ -282,7 +282,7 @@ data class EnduringStoryGainedEvent(
 /**
  * A player's speed changed (Aetherdrift, CR 702.179).
  *
- * Fired both by the CR 704.5z state-based action that starts a speed at 1 ([oldSpeed] = 0) and by
+ * Fired both by the CR 704.5aa state-based action that starts a speed at 1 ([oldSpeed] = 0) and by
  * every later increase. Speed only ever rises and never past
  * [com.wingedsheep.sdk.core.Speed.MAX], so [newSpeed] > [oldSpeed] always holds and reaching
  * [com.wingedsheep.sdk.core.Speed.MAX] fires at most once per player per game — which is what lets
@@ -1275,7 +1275,7 @@ data class CountersAddedEvent(
  *   game state at trigger-detection time: several removals can happen in one batch (two attackers
  *   damaging the same battle), and by the time triggers are detected the state shows the count
  *   after *all* of them — which would make every removal in the batch look like the one that
- *   emptied the permanent. "When the last counter is removed" (CR 310.11b) reads this field, and
+ *   emptied the permanent. "When the last counter is removed" (CR 310.12b) reads this field, and
  *   falls back to the live count when it is null.
  */
 @Serializable

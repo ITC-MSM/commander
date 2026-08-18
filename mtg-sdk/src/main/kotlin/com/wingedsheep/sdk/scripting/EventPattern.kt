@@ -2003,7 +2003,7 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
      * [CountersPlacedEvent].
      *
      * Set [lastRemoved] for the "when the **last** counter is removed" templating that the
-     * counter-countdown mechanics share (CR 310.11b's Siege defeat trigger, and the vanishing /
+     * counter-countdown mechanics share (CR 310.12b's Siege defeat trigger, and the vanishing /
      * suspend family's "when the last time counter is removed from this permanent"). It's a
      * property of the removal, not a separate event: the trigger fires only when the removal left
      * the permanent with none of that counter type on it, so removing 2 of 5 defense counters is

@@ -284,7 +284,7 @@ class CastSpellHandler(
         // — it drives timing, targeting, the aura target, colors and subtypes below, which must all
         // read this face rather than the printed front. Three sources, all meaning "back face up on
         // the stack": disturb's printed keyword, the modal-DFC face choice above, and a may-play
-        // permission granted with `castTransformed` (CR 310.11b — "exile it, then you may cast it
+        // permission granted with `castTransformed` (CR 310.12b — "exile it, then you may cast it
         // transformed"). The zone legality of the last was already settled by `mayPlayFromExile` /
         // `mayCastFromZone` above, so that lookup only answers *which face*.
         val transformedFace = disturbFace
@@ -2201,7 +2201,7 @@ class CastSpellHandler(
         // validate(): disturb (CR 702.146a) casts transformed from the graveyard for its disturb
         // cost; the modal-DFC face choice (CR 712.11b) casts the back face from hand for its own
         // mana cost; and a `castTransformed` may-play permission casts transformed from wherever the
-        // permission covers (CR 310.11b — "exile it, then you may cast it transformed").
+        // permission covers (CR 310.12b — "exile it, then you may cast it transformed").
         val transformedFace = (
             if (action.useAlternativeCost && action.altAllows(AlternativeCostType.DISTURB)) {
                 zoneResolver.disturbCastFace(state, action.playerId, action.cardId)

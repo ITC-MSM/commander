@@ -21,8 +21,8 @@ import io.kotest.matchers.shouldNotBe
  * attacked, damage removing defense, and the two state-based actions that bin a battle.
  *
  * Uses inline test battles rather than printed cards: a Siege (the only battle type that exists in
- * paper — CR 310.11) and a hypothetical typeless battle, which is the only way to exercise both the
- * CR 310.8a branch where a battle's own controller becomes its protector and the CR 704.5w
+ * paper — CR 310.12) and a hypothetical typeless battle, which is the only way to exercise both the
+ * CR 310.9a branch where a battle's own controller is the only player who can protect it and the CR 704.5x
  * 0-defense action that, unlike a Siege's CR 704.5v, has no pending-trigger reprieve.
  */
 class BattleCardTypeScenarioTest : ScenarioTestBase() {
@@ -35,7 +35,7 @@ class BattleCardTypeScenarioTest : ScenarioTestBase() {
         oracleText = "(As a Siege enters, choose an opponent to protect it. You and others can attack it.)"
     }
 
-    /** No battle type, so CR 310.8a makes its own controller the protector. */
+    /** No battle type, so CR 310.9a makes its own controller the protector. */
     private val testTypelessBattle = card("Test Bulwark") {
         manaCost = "{3}{G}"
         colorIdentity = "G"
@@ -46,7 +46,7 @@ class BattleCardTypeScenarioTest : ScenarioTestBase() {
 
     /**
      * A battle — of each type — carrying a triggered ability of its own, so the CR 704.5v
-     * defeat-trigger reprieve and CR 704.5w's lack of one can be told apart. An upkeep trigger is
+     * defeat-trigger reprieve and CR 704.5x's lack of one can be told apart. An upkeep trigger is
      * used because `passUntilPhase` stops with begin-of-step triggers queued but unresolved, which
      * is exactly the "is the source of an ability that has triggered but not yet left the stack"
      * state both rules turn on.
@@ -134,7 +134,7 @@ class BattleCardTypeScenarioTest : ScenarioTestBase() {
             }
         }
 
-        context("CR 310.8 / 704.5w / 704.5x — the protector") {
+        context("CR 310.9 / 704.5x / 704.5y — the protector") {
 
             test("a Siege is protected by its controller's opponent, never by its controller") {
                 val game = scenario()
@@ -146,10 +146,10 @@ class BattleCardTypeScenarioTest : ScenarioTestBase() {
 
                 game.checkStateBasedActions().error shouldBe null
 
-                withClue("CR 310.11a — only an opponent of a Siege's controller may protect it") {
+                withClue("CR 310.12a — only an opponent of a Siege's controller may protect it") {
                     protectorOf(game, "Test Siege") shouldBe game.player2Id
                 }
-                withClue("the Siege is still controlled by the player who cast it (CR 310.8d asymmetry)") {
+                withClue("the Siege is still controlled by the player who cast it (CR 310.9d asymmetry)") {
                     game.state.projectedState.getController(game.findPermanent("Test Siege")!!) shouldBe game.player1Id
                 }
             }
@@ -164,7 +164,7 @@ class BattleCardTypeScenarioTest : ScenarioTestBase() {
 
                 game.checkStateBasedActions().error shouldBe null
 
-                withClue("CR 310.8a — with no battle types, the controller becomes the protector") {
+                withClue("CR 310.9a — with no battle types, only the controller can be its protector") {
                     protectorOf(game, "Test Bulwark") shouldBe game.player1Id
                 }
             }
@@ -208,7 +208,7 @@ class BattleCardTypeScenarioTest : ScenarioTestBase() {
             }
         }
 
-        context("CR 310.8b — who can attack a battle") {
+        context("CR 310.9b — who can attack a battle") {
 
             test("a Siege's controller can attack the Siege they control") {
                 val game = scenario()
@@ -226,7 +226,7 @@ class BattleCardTypeScenarioTest : ScenarioTestBase() {
                     permanentAttackers = mapOf("Grizzly Bears" to "Test Siege")
                 )
 
-                withClue("CR 310.8b — the opponent protects it, so its controller may attack it") {
+                withClue("CR 310.9b — the opponent protects it, so its controller may attack it") {
                     result.error shouldBe null
                 }
                 val bears = game.findPermanent("Grizzly Bears")!!
@@ -235,7 +235,7 @@ class BattleCardTypeScenarioTest : ScenarioTestBase() {
             }
 
             test("a battle's protector can never attack it") {
-                // P2 protects P1's Siege, so P2's creatures may not attack it (CR 310.8b).
+                // P2 protects P1's Siege, so P2's creatures may not attack it (CR 310.9b).
                 val game = scenario()
                     .withPlayers("Player", "Opponent")
                     .withCardOnBattlefield(1, "Test Siege")
@@ -277,7 +277,7 @@ class BattleCardTypeScenarioTest : ScenarioTestBase() {
             }
         }
 
-        context("CR 120.3h / 704.5v — damage and defeat") {
+        context("CR 120.3h / 704.5v/w — damage and defeat") {
 
             test("combat damage to a battle removes that many defense counters") {
                 val game = scenario()
@@ -319,7 +319,7 @@ class BattleCardTypeScenarioTest : ScenarioTestBase() {
 
                 game.checkStateBasedActions().error shouldBe null
 
-                withClue("CR 704.5v — a battle at 0 defense is put into its owner's graveyard") {
+                withClue("CR 704.5w — a non-Siege battle at 0 defense is put into its owner's graveyard") {
                     game.isOnBattlefield("Test Bulwark") shouldBe false
                     game.isInGraveyard(1, "Test Bulwark") shouldBe true
                 }
@@ -333,7 +333,7 @@ class BattleCardTypeScenarioTest : ScenarioTestBase() {
              *  - CR 704.5v (Siege) keeps a battle alive while it is the source of an ability that
              *    has triggered but not yet left the stack — the clause that exists so a Siege's own
              *    defeat trigger has something left to exile.
-             *  - CR 704.5w (non-Siege) has no such clause, so the battle is binned on the spot and
+             *  - CR 704.5x (non-Siege) has no such clause, so the battle is binned on the spot and
              *    its pending trigger resolves with the battle already in the graveyard.
              *
              * Until that update the reprieve was written for every battle, which no test could
@@ -376,7 +376,7 @@ class BattleCardTypeScenarioTest : ScenarioTestBase() {
             test("a non-Siege battle at 0 defense is binned despite its own pending trigger") {
                 val game = battleWithPendingUpkeepTrigger("Test Beacon")
 
-                withClue("CR 704.5w — a non-Siege battle gets no reprieve for a pending trigger") {
+                withClue("CR 704.5x — a non-Siege battle gets no reprieve for a pending trigger") {
                     game.isOnBattlefield("Test Beacon") shouldBe false
                     game.isInGraveyard(1, "Test Beacon") shouldBe true
                 }
@@ -413,7 +413,7 @@ class BattleCardTypeScenarioTest : ScenarioTestBase() {
             }
         }
 
-        context("CR 310.8c/d — the protector defends the battle") {
+        context("CR 310.9c/d — the protector defends the battle") {
 
             test("the protector, not the controller, is the defending player for an attacked battle") {
                 val game = scenario()
@@ -431,7 +431,7 @@ class BattleCardTypeScenarioTest : ScenarioTestBase() {
                 ).error shouldBe null
 
                 val siege = game.findPermanent("Test Siege")!!
-                withClue("CR 310.8d — the defending player is the Siege's protector, not its controller") {
+                withClue("CR 310.9d — the defending player is the Siege's protector, not its controller") {
                     com.wingedsheep.engine.mechanics.combat.CombatDefenders
                         .defendingPlayerOf(game.state, siege) shouldBe game.player2Id
                 }
@@ -460,7 +460,7 @@ class BattleCardTypeScenarioTest : ScenarioTestBase() {
 
                 val result = game.declareBlockers(mapOf("Hill Giant" to listOf("Grizzly Bears")))
 
-                withClue("CR 310.8c — the Siege's protector may block its attackers") {
+                withClue("CR 310.9c — the Siege's protector may block its attackers") {
                     result.error shouldBe null
                 }
             }

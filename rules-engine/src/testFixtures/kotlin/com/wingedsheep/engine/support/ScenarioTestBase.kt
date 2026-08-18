@@ -238,9 +238,9 @@ abstract class ScenarioTestBase : FunSpec() {
                 // A battle enters with its printed defense as defense counters (CR 310.4b), and its
                 // defense *is* that count (CR 310.4c). Same reasoning as loyalty above, but with a
                 // sharper failure: a battle seeded at 0 defense is put into its owner's graveyard by
-                // the very next state-based action check (CR 704.5v).
+                // the very next state-based action check (CR 704.5v/w).
                 //
-                // No protector is seeded — that is the CR 704.5w state-based action's job, and
+                // No protector is seeded — that is the CR 704.5x state-based action's job, and
                 // letting it run is what a scenario should be exercising.
                 cardDef.startingDefense?.let { defense ->
                     val counters = container.get<com.wingedsheep.engine.state.components.battlefield.CountersComponent>()
@@ -557,7 +557,7 @@ abstract class ScenarioTestBase : FunSpec() {
          * A scenario built with [ScenarioBuilder] seeds permanents directly onto the battlefield
          * without ever giving a player priority, so SBAs have not run yet. Call this when the
          * scenario depends on an SBA having fired — e.g. a battle's protector, which is designated
-         * by the CR 704.5w state-based action rather than at entry. Pauses (an SBA that needs a
+         * by the CR 704.5x state-based action rather than at entry. Pauses (an SBA that needs a
          * player decision) surface as `pendingDecision`, exactly as in a real game.
          */
         fun checkStateBasedActions(): ExecutionResult {

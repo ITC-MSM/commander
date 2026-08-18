@@ -16,7 +16,7 @@ import io.kotest.matchers.shouldBe
  * "Max speed — This creature has deathtouch and haste."
  *
  * The ETB is the card's own speed enabler, so the first case checks the whole chain in one go:
- * entering starts speed at 1 (CR 704.5z state-based action), and the opponent losing life *during
+ * entering starts speed at 1 (CR 704.5aa state-based action), and the opponent losing life *during
  * your turn* then ticks the inherent speed trigger to 2. The second case pins the max-speed gate —
  * the two keywords must be absent below speed 4 and present at it.
  */

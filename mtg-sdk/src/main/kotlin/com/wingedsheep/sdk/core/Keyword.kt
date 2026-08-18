@@ -516,7 +516,7 @@ enum class Keyword(val displayName: String) {
      * your engines! and that player has no speed, their speed becomes 1."
      *
      * Unlike most display-only keywords, this one is *load-bearing*: the engine's
-     * `StartYourEnginesCheck` state-based action (CR 704.5z) scans projected battlefield permanents
+     * `StartYourEnginesCheck` state-based action (CR 704.5aa) scans projected battlefield permanents
      * for this keyword, so granting it to a permanent at runtime works. Nothing else needs wiring on
      * the card — add it with the `startYourEngines()` helper on
      * [com.wingedsheep.sdk.dsl.CardBuilder]. See [com.wingedsheep.sdk.core.Speed].

@@ -538,7 +538,7 @@ function GameCardImpl({
 
   // For attacker mode: check if this permanent can be attacked — an opponent's planeswalker, or a
   // battle (CR 310.5). Deliberately *not* scoped to opponent cards: a Siege's protector is an
-  // opponent of its controller (CR 310.11a), so its own controller may attack it (CR 310.8b) and
+  // opponent of its controller (CR 310.12a), so its own controller may attack it (CR 310.9b) and
   // it sits on their side of the board. The server's `validAttackTargets` is the only authority on
   // which permanents are legal, so trust it rather than re-deriving whose card this is.
   const isValidAttackTargetCard = isInAttackerMode && combatState.validAttackTargets.includes(card.id)

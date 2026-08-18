@@ -1049,7 +1049,7 @@ internal class CombatDamageManager(
      * Apply combat damage to a permanent whose "life" is a counter stack: a planeswalker's loyalty
      * (CR 120.3c) or a battle's defense (CR 120.3h). Damage removes that many counters and never
      * destroys the permanent itself (CR 120.5) — state-based actions put it into its owner's
-     * graveyard once the stack is empty (CR 704.5i / 704.5v).
+     * graveyard once the stack is empty (CR 704.5i / 704.5v/w).
      *
      * @param counterType [com.wingedsheep.sdk.core.CounterType.LOYALTY] or
      *   [com.wingedsheep.sdk.core.CounterType.DEFENSE]; also selects which change event is emitted,
@@ -1098,7 +1098,7 @@ internal class CombatDamageManager(
             container.with(counters.withRemoved(counterType, amount))
         }
 
-        // Combat damage that takes a Siege's last defense counter defeats it (CR 310.11b). Arm the
+        // Combat damage that takes a Siege's last defense counter defeats it (CR 310.12b). Arm the
         // marker so the state-based action that runs before this turn's trigger-detection pass
         // leaves the battle alone long enough for its defeat trigger to be put on the stack — see
         // DefeatTriggerArmedComponent.

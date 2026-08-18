@@ -176,7 +176,7 @@ class AetherdriftRoadCrewScenarioTest : ScenarioTestBase() {
 
     /**
      * Player 1's precombat main with Point the Way out, four Forests for the {3}{G} activation and
-     * six Islands in the library to find. Built in the upkeep step so the CR 704.5z
+     * six Islands in the library to find. Built in the upkeep step so the CR 704.5aa
      * start-your-engines state-based action has a step change to run on.
      */
     private fun pointTheWayGame(): TestGame {

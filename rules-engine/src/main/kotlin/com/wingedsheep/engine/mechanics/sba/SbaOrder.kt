@@ -6,7 +6,7 @@ package com.wingedsheep.engine.mechanics.sba
  */
 object SbaOrder {
     const val DAY_NIGHT = 40                 // 702.145c/d/f/g (daybound/nightbound designation + transform)
-    const val START_YOUR_ENGINES = 50       // 704.5z (Aetherdrift speed)
+    const val START_YOUR_ENGINES = 50       // 704.5aa (Aetherdrift speed)
     const val ASCEND_CITYS_BLESSING = 60    // 702.131b (ascend on a permanent is a static ability)
     const val STORIED_ENDURING_STORY = 70   // 702.195a (storied is a static ability)
     const val PLAYER_LIFE_LOSS = 100        // 704.5a
@@ -18,8 +18,8 @@ object SbaOrder {
     const val ZERO_TOUGHNESS = 300          // 704.5f
     const val LETHAL_DAMAGE = 400           // 704.5g/h
     const val PLANESWALKER_LOYALTY = 500    // 704.5i
-    const val BATTLE_DEFENSE = 550          // 704.5v (a battle at 0 defense)
-    const val BATTLE_PROTECTOR = 560        // 704.5w/x (a battle with no legal protector)
+    const val BATTLE_DEFENSE = 550          // 704.5v/w (a battle at 0 defense)
+    const val BATTLE_PROTECTOR = 560        // 704.5x/y (a battle with no legal protector)
     const val LEGEND_RULE = 600             // 704.5j
     const val COUNTER_ANNIHILATION = 700    // 704.5q
     const val UNATTACHED_AURAS = 800        // 704.5m/n/p

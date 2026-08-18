@@ -11,7 +11,7 @@ import com.wingedsheep.sdk.core.Speed
 import com.wingedsheep.sdk.model.EntityId
 
 /**
- * CR 704.5z — if a player controls a permanent with **start your engines!** and that player has no
+ * CR 704.5aa — if a player controls a permanent with **start your engines!** and that player has no
  * speed, that player's speed becomes 1 (CR 702.179a).
  *
  * Being a state-based action rather than a triggered ability is load-bearing, and it's why this is a
@@ -39,7 +39,7 @@ import com.wingedsheep.sdk.model.EntityId
  * starting a speed can't cause or prevent any other state-based action.
  */
 class StartYourEnginesCheck : StateBasedActionCheck {
-    override val name = "704.5z Start Your Engines"
+    override val name = "704.5aa Start Your Engines"
     override val order = SbaOrder.START_YOUR_ENGINES
 
     override fun check(state: GameState): ExecutionResult {

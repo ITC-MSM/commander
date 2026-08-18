@@ -11,7 +11,7 @@ import com.wingedsheep.sdk.scripting.effects.MayEffect
 import com.wingedsheep.sdk.scripting.effects.MoveCollectionEffect
 
 /**
- * The Siege defeat trigger (CR 310.11b) as pure data — the intrinsic ability *every* Siege has,
+ * The Siege defeat trigger (CR 310.12b) as pure data — the intrinsic ability *every* Siege has,
  * printed on none of them.
  *
  * A Siege's card text is only its reminder line ("As a Siege enters, choose an opponent to protect
@@ -23,7 +23,7 @@ import com.wingedsheep.sdk.scripting.effects.MoveCollectionEffect
  * The ability is a three-step pipeline over primitives that already existed:
  *
  *  1. **[CardSource.Self] → collection.** The battle feeds itself into the pipeline.
- *  2. **Move that collection to exile.** Mandatory — "exile it" has no "may" (CR 310.11b), and the
+ *  2. **Move that collection to exile.** Mandatory — "exile it" has no "may" (CR 310.12b), and the
  *     exile is what makes the *cast* legal: the card must be in exile for the free-cast grant to
  *     have a zone to cast from. [MoveCollectionEffect.storeMovedAs] republishes the ids that
  *     actually moved, so a battle that somehow left the battlefield first casts nothing.
@@ -45,7 +45,7 @@ object Sieges {
     const val DEFEAT_EXILED_COLLECTION: String = "siege_defeat_exiled"
 
     /**
-     * The synthesized triggered ability every Siege on the battlefield has (CR 310.11b).
+     * The synthesized triggered ability every Siege on the battlefield has (CR 310.12b).
      *
      * [TriggerBinding.SELF] scopes it to defense counters leaving *this* permanent, and
      * `lastRemoved` fires it only for the removal that empties them — chipping a Siege from 5

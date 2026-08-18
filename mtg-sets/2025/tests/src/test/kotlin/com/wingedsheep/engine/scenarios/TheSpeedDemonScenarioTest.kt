@@ -91,7 +91,7 @@ class TheSpeedDemonScenarioTest : ScenarioTestBase() {
             builder.withCardInLibrary(1, "Grizzly Bears")
             builder.withCardInLibrary(2, "Grizzly Bears")
         }
-        // Built in the upkeep and advanced, so the CR 704.5z start-your-engines state-based action
+        // Built in the upkeep and advanced, so the CR 704.5aa start-your-engines state-based action
         // has run before any test reads a speed.
         val game = builder
             .withActivePlayer(1)

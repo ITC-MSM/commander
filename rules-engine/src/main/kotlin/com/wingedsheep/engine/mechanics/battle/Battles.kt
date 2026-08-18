@@ -19,17 +19,17 @@ import com.wingedsheep.sdk.scripting.events.CounterTypeFilter
  *    enters with its printed defense number of them (CR 310.4b) and damage removes that many
  *    (CR 120.3h). [defenseOf].
  *  - **A protector, not a controller, defends it.** Every battle has a player designated as its
- *    protector (CR 310.8), and for a battle being attacked *that* player — not its controller — is
- *    the defending player for every rule and effect (CR 310.8d). [protectorOf].
+ *    protector (CR 310.9), and for a battle being attacked *that* player — not its controller — is
+ *    the defending player for every rule and effect (CR 310.9d). [protectorOf].
  *  - **Its protector can never attack it.** Anyone for whom the protector is a defending player
- *    can, which for a Siege notably includes the battle's own controller (CR 310.8b).
+ *    can, which for a Siege notably includes the battle's own controller (CR 310.9b).
  *    [canBeAttackedBy].
  */
 object Battles {
 
     /**
      * The counter kind a battle's defense is made of. Used by the intrinsic entry ability
-     * (CR 310.4b), by damage (CR 120.3h), and by the defeat trigger (CR 310.11b).
+     * (CR 310.4b), by damage (CR 120.3h), and by the defeat trigger (CR 310.12b).
      */
     val DEFENSE_COUNTER: CounterTypeFilter = CounterTypeFilter.Named(Counters.DEFENSE)
 
@@ -53,20 +53,22 @@ object Battles {
         state.getEntity(entityId)?.get<CountersComponent>()?.getCount(CounterType.DEFENSE) ?: 0
 
     /**
-     * The player designated as [entityId]'s protector (CR 310.8), or null if none is designated
+     * The player designated as [entityId]'s protector (CR 310.9), or null if none is designated
      * yet — a gap [com.wingedsheep.engine.mechanics.sba.permanent.BattleProtectorCheck] closes as a
-     * state-based action (CR 704.5w).
+     * state-based action (CR 704.5x).
      */
     fun protectorOf(state: GameState, entityId: EntityId): EntityId? =
         state.getEntity(entityId)?.get<ProtectorComponent>()?.playerId
 
     /**
-     * The players who may legally be [battleId]'s protector, in turn order (CR 310.8a). Determined
-     * by the battle's type: a Siege's protector must be an opponent of its controller (CR 310.11a);
-     * a battle with no battle types is protected by its own controller (CR 310.8a).
+     * The players who may legally be [battleId]'s protector, in turn order (CR 310.9a). Determined
+     * by the battle's type: a Siege's protector must be an opponent of its controller (CR 310.12a);
+     * for a battle with no battle types **only its controller can be its protector** (CR 310.9a,
+     * which said "its controller becomes its protector" until the August 7, 2026 update restated it
+     * as an eligibility rule — the same set, said the way this function answers).
      *
      * Empty means no player qualifies, which puts the battle into its owner's graveyard
-     * (CR 704.5w).
+     * (CR 704.5x / 704.5y).
      */
     fun eligibleProtectors(state: GameState, battleId: EntityId): List<EntityId> {
         val controller = state.projectedState.getController(battleId) ?: return emptyList()
@@ -78,7 +80,7 @@ object Battles {
     }
 
     /**
-     * True if [attackerPlayerId]'s creatures may attack [battleId] (CR 310.8b): a battle can be
+     * True if [attackerPlayerId]'s creatures may attack [battleId] (CR 310.9b): a battle can be
      * attacked by any attacking player for whom its protector is a defending player, and never by
      * its protector. The battle's *controller* is irrelevant — which is exactly why a player can
      * attack a Siege they control once an opponent is protecting it.

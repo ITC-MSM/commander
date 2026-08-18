@@ -23,7 +23,7 @@ import com.wingedsheep.sdk.scripting.effects.SearchDestination
  * your hand, then shuffle. Activate only as a sorcery.
  *
  * `startYourEngines()` is keyword-only — raising the controller's speed to 1 is the
- * `StartYourEnginesCheck` state-based action (CR 704.5z), not a trigger. The tutor sits inside a
+ * `StartYourEnginesCheck` state-based action (CR 704.5aa), not a trigger. The tutor sits inside a
  * [maxSpeed] block, which turns it into an [com.wingedsheep.sdk.scripting.ActivationRestriction.OnlyIfCondition]
  * on "your speed is 4" so the ability simply isn't a legal action below max speed, and renders the
  * "Max speed — " prefix. "Activate only as a sorcery" is [TimingRule.SorcerySpeed]; the two-part

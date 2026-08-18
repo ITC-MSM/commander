@@ -534,7 +534,7 @@ data class CommanderZoneChoiceContinuation(
 ) : ContinuationFrame
 
 /**
- * Resume after a battle's controller picks its protector for the CR 704.5w/x state-based action
+ * Resume after a battle's controller picks its protector for the CR 704.5x/y state-based action
  * (see [com.wingedsheep.engine.mechanics.sba.permanent.BattleProtectorCheck]). Only raised when
  * two or more players are eligible — a forced choice is applied without a prompt.
  *

@@ -129,7 +129,7 @@ data class MayPlayPermission(
      *
      * Mirrors [com.wingedsheep.sdk.scripting.effects.CastFromCollectionWithoutPayingCostEffect
      * .castTransformed]: "exile it, then you may cast it transformed without paying its mana cost"
-     * (CR 310.11b, the Siege defeat trigger). Distinct from [castFaceIndex], which selects an
+     * (CR 310.12b, the Siege defeat trigger). Distinct from [castFaceIndex], which selects an
      * alternative *face* of a multi-face card (an Adventure, a split half) — a transforming
      * double-faced card's back face is `CardDefinition.backFace`, not a `cardFaces` entry, and it
      * goes on the stack as the same card turned over rather than as a separate half.

@@ -18,7 +18,7 @@ enum class CounterType {
     /**
      * Defense counter (CR 310.4). A battle's defense *is* its number of defense counters
      * (CR 310.4c): it enters with as many as its printed defense number, damage removes that
-     * many (CR 120.3h), and a battle at 0 is put into its owner's graveyard (CR 704.5v). The
+     * many (CR 120.3h), and a battle at 0 is put into its owner's graveyard (CR 704.5v/w). The
      * battle analogue of [LOYALTY].
      */
     DEFENSE,

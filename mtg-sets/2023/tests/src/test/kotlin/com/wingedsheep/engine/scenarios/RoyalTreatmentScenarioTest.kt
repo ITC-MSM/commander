@@ -68,7 +68,7 @@ class RoyalTreatmentScenarioTest : ScenarioTestBase() {
 
             // Monstrous Rage's Monster Role lands on the same creature; every Role of mine on it
             // except the newest-timestamped one is put into the graveyard as a state-based action
-            // (CR 303.7a / 704.5y), so the Royal Role falls off.
+            // (CR 303.7a / 704.5z), so the Royal Role falls off.
             g.castSpell(1, "Monstrous Rage", bears).error shouldBe null
             g.resolveStack()
 
