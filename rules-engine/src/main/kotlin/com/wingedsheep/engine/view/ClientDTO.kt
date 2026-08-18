@@ -337,6 +337,22 @@ data class ClientCard(
     /** Whether this permanent is suspected (CR 701.60 — has menace and can't block). Battlefield only. */
     val isSuspected: Boolean = false,
 
+    /**
+     * Saddle N (CR 702.171a) printed on this permanent, or null if it has no saddle ability.
+     * Battlefield only. Sent for every player's Mounts, not just the controller's: whether a Mount
+     * is saddled is public information that changes how the table blocks, and the number is the
+     * only way to read how much power the controller has to spend to turn it on.
+     */
+    val saddleRequirement: Int? = null,
+
+    /**
+     * Whether this permanent is currently saddled (CR 702.171b) — the designation a resolved Saddle
+     * ability grants until end of turn. Battlefield only. Mount payoffs are gated on it, and it
+     * silently expires at cleanup, so without a flag a saddled Mount and an unsaddled one are
+     * indistinguishable on the board.
+     */
+    val isSaddled: Boolean = false,
+
     /** Whether this card is plotted in exile (CR 718 — Plot keyword, castable for free on a later turn). Exile only. */
     val isPlotted: Boolean = false,
 

@@ -4,10 +4,14 @@ import com.wingedsheep.engine.core.SaddleMount
 import com.wingedsheep.engine.legalactions.ActionEnumerator
 import com.wingedsheep.engine.legalactions.EnumerationContext
 import com.wingedsheep.engine.legalactions.LegalAction
+import com.wingedsheep.engine.handlers.actions.ability.CrewSaddleContributionEvaluator
 import com.wingedsheep.engine.legalactions.TapForPowerCreatureData
+import com.wingedsheep.engine.mechanics.combat.rules.AttackAvailability
+import com.wingedsheep.engine.state.components.battlefield.SaddledComponent
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.sdk.core.Keyword
+import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.KeywordAbility
 
 /**
@@ -29,6 +33,9 @@ class SaddleEnumerator : ActionEnumerator {
         val state = context.state
         val playerId = context.playerId
         val projected = context.projected
+        // Every Mount sees the same candidate creatures, so answer "could it attack?" once per
+        // creature rather than once per (Mount, creature) pair.
+        val canAttackCache = HashMap<EntityId, Boolean>()
 
         for (entityId in context.battlefieldPermanents) {
             val container = state.getEntity(entityId) ?: continue
@@ -50,17 +57,37 @@ class SaddleEnumerator : ActionEnumerator {
                 if (!projected.isCreature(creatureId)) continue
                 val creatureContainer = state.getEntity(creatureId) ?: continue
                 if (creatureContainer.has<TappedComponent>()) continue
-                val power = projected.getPower(creatureId) ?: 0
+                // What it contributes, not its raw power — `SaddleMountHandler` measures the cost
+                // through the same evaluator, so a creature that "saddles as though its power were
+                // 2 greater" must read that way here or the client's progress bar would refuse a
+                // saddle the engine accepts.
+                val power = CrewSaddleContributionEvaluator.evaluate(
+                    state, projected, context.cardRegistry, creatureId
+                )
                 val creatureName = creatureContainer.get<CardComponent>()?.name ?: "Unknown"
-                validSaddleCreatures.add(TapForPowerCreatureData(creatureId, creatureName, power))
+                val canAttack = canAttackCache.getOrPut(creatureId) {
+                    AttackAvailability.canAttack(state, projected, creatureId, playerId, context.cardRegistry)
+                }
+                validSaddleCreatures.add(
+                    TapForPowerCreatureData(creatureId, creatureName, power, canAttack)
+                )
                 totalAvailablePower += power
             }
 
             val canAfford = totalAvailablePower >= saddleAbility.n
+            // Saddle has no once-each-turn clause (CR 702.171a), and re-activating it adds
+            // saddlers that "creatures that saddled it this turn" payoffs count — so keep offering
+            // it on an already-saddled Mount, but label it so the player doesn't spend creatures
+            // thinking they still need the designation.
+            val alreadySaddled = container.has<SaddledComponent>()
             result.add(
                 LegalAction(
                     actionType = "SaddleMount",
-                    description = "Saddle ${cardComponent.name}",
+                    description = if (alreadySaddled) {
+                        "Saddle ${cardComponent.name} again"
+                    } else {
+                        "Saddle ${cardComponent.name}"
+                    },
                     action = SaddleMount(playerId, entityId, emptyList()),
                     affordable = canAfford,
                     tapForPower = true,

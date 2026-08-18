@@ -31,14 +31,24 @@ function isTapForPowerAction(info: LegalActionInfo): boolean {
 }
 
 function resolveTapForPower(info: LegalActionInfo, ctx: ActionContext): void {
-  const verb = info.action.type === 'SaddleMount' ? 'Saddle' : 'Crew'
+  const isSaddle = info.action.type === 'SaddleMount'
+  const verb = isSaddle ? 'Saddle' : 'Crew'
+  // Read the source off the action rather than the description: the server labels an
+  // already-saddled Mount "Saddle <name> again", so string-stripping the verb would leave the
+  // trailing "again" in the name. The card is also where the saddled designation lives.
+  const sourceId = isSaddle
+    ? (info.action as { mountId: EntityId }).mountId
+    : (info.action as { vehicleId: EntityId }).vehicleId
+  const source = useGameStore.getState().gameState?.cards?.[sourceId]
   ctx.startTapForPowerSelection({
     actionInfo: info,
+    sourceId,
     verb,
-    sourceName: info.description.replace(`${verb} `, ''),
+    sourceName: source?.name ?? info.description.replace(`${verb} `, ''),
     requiredPower: info.tapForPowerRequired ?? 0,
     selectedCreatures: [],
     validCreatures: info.tapForPowerCreatures!,
+    alreadySaddled: isSaddle && source?.isSaddled === true,
   })
   ctx.selectCard(null)
 }

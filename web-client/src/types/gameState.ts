@@ -328,6 +328,15 @@ export interface ClientCard {
    * Battlefield only. */
   readonly isDashed?: boolean
 
+  /** Saddle N printed on this permanent (CR 702.171a), or absent if it has no saddle ability.
+   * Public — the number is how much power its controller must spend to switch its Mount payoffs
+   * on, which is exactly what the other players need to play around. Battlefield only. */
+  readonly saddleRequirement?: number | null
+
+  /** Whether this permanent currently carries the saddled designation (CR 702.171b), granted by a
+   * resolved saddle ability and lost at end of turn. Battlefield only. */
+  readonly isSaddled?: boolean
+
   /** Morph cost for face-down creatures (only visible to controller) */
   readonly morphCost?: string | null
 

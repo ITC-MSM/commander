@@ -2167,6 +2167,55 @@ export const styles: Record<string, React.CSSProperties> = {
     zIndex: 6,
   } as React.CSSProperties,
 
+  // Saddle (CR 702.171) — a Mount's designation cue, in two states sharing one slot so the eye
+  // reads them as the same fact switching on and off.
+  //
+  // `saddledBadge` is the live one: warm saddle-leather, lit, readable across the board, because
+  // every Mount payoff is gated on it and it silently expires at cleanup — a saddled Mount and an
+  // unsaddled one are otherwise identical permanents.
+  saddledBadge: {
+    position: 'absolute',
+    bottom: 4,
+    left: 4,
+    borderRadius: 4,
+    padding: '1px 5px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: 3,
+    fontWeight: 700,
+    fontSize: 10,
+    color: '#2b1706',
+    background: 'linear-gradient(135deg, #d99a4e, #f2c98a)',
+    border: '1px solid #ffe1b8',
+    boxShadow: '0 0 6px rgba(217, 154, 78, 0.9)',
+    textShadow: 'none',
+    pointerEvents: 'none',
+    zIndex: 6,
+  } as React.CSSProperties,
+
+  // `saddleAvailableBadge` is the dormant one: the printed Saddle N on a Mount nobody has saddled
+  // yet. Deliberately muted — it is a standing fact about the permanent, not an event — but present
+  // for every player, since how much power the controller needs to switch the Mount on is exactly
+  // what the rest of the table plays around.
+  saddleAvailableBadge: {
+    position: 'absolute',
+    bottom: 4,
+    left: 4,
+    borderRadius: 4,
+    padding: '1px 5px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: 3,
+    fontWeight: 600,
+    fontSize: 10,
+    color: '#d8c0a4',
+    background: 'rgba(60, 40, 22, 0.78)',
+    border: '1px solid rgba(217, 154, 78, 0.55)',
+    textShadow: 'none',
+    pointerEvents: 'none',
+    zIndex: 6,
+  } as React.CSSProperties,
+
   // Dash (CR 702.109, Khans of Tarkir) — a permanent cast for its dash cost: hasty and returned to
   // its owner's hand at the next end step. Unlike warp (multi-turn exile-then-recast, cosmic ring
   // treatment), dash resolves within the same turn, so a plain amber "hasty" badge is enough — no

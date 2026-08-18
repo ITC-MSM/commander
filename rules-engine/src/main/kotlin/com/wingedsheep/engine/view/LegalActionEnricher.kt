@@ -321,7 +321,8 @@ class LegalActionEnricher(
     private fun TapForPowerCreatureData.toDto() = TapForPowerCreatureInfo(
         entityId = entityId,
         name = name,
-        power = power
+        power = power,
+        canAttack = canAttack
     )
 
     private fun CounterRemovalCreatureData.toDto() = CounterRemovalCreatureInfo(

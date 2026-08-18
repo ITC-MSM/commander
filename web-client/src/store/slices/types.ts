@@ -474,6 +474,8 @@ export interface HarmonizeSelectionState {
  */
 export interface TapForPowerSelectionState {
   actionInfo: LegalActionInfo
+  /** The source permanent (Vehicle or Mount) being paid for. */
+  sourceId: EntityId
   /** The source permanent's name (Vehicle or Mount). */
   sourceName: string
   /** The verb shown to the player: "Crew" or "Saddle". */
@@ -484,6 +486,9 @@ export interface TapForPowerSelectionState {
   selectedCreatures: EntityId[]
   /** All valid creatures that can be tapped. */
   validCreatures: readonly TapForPowerCreatureInfo[]
+  /** Saddle only: the Mount already carries the saddled designation (CR 702.171b), so this
+   * activation only adds saddlers for "creatures that saddled it this turn" payoffs. */
+  alreadySaddled: boolean
 }
 
 /**
@@ -1185,6 +1190,7 @@ export type GameStore = {
   confirmHarmonizeSelection: () => void
   startTapForPowerSelection: (state: TapForPowerSelectionState) => void
   toggleTapForPowerCreature: (entityId: EntityId) => void
+  setTapForPowerCreatures: (entityIds: readonly EntityId[]) => void
   cancelTapForPowerSelection: () => void
   confirmTapForPowerSelection: () => void
   startDelveSelection: (state: DelveSelectionState) => void

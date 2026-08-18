@@ -1,13 +1,16 @@
 package com.wingedsheep.engine.legalactions.enumerators
 
 import com.wingedsheep.engine.core.CrewVehicle
+import com.wingedsheep.engine.handlers.actions.ability.CrewSaddleContributionEvaluator
 import com.wingedsheep.engine.legalactions.ActionEnumerator
 import com.wingedsheep.engine.legalactions.TapForPowerCreatureData
 import com.wingedsheep.engine.legalactions.EnumerationContext
 import com.wingedsheep.engine.legalactions.LegalAction
+import com.wingedsheep.engine.mechanics.combat.rules.AttackAvailability
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.sdk.core.Keyword
+import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.KeywordAbility
 
 /**
@@ -24,6 +27,9 @@ class CrewEnumerator : ActionEnumerator {
         val state = context.state
         val playerId = context.playerId
         val projected = context.projected
+        // Every Vehicle sees the same candidate creatures, so answer "could it attack?" once per
+        // creature rather than once per (Vehicle, creature) pair.
+        val canAttackCache = HashMap<EntityId, Boolean>()
 
         for (entityId in context.battlefieldPermanents) {
             val container = state.getEntity(entityId) ?: continue
@@ -63,10 +69,21 @@ class CrewEnumerator : ActionEnumerator {
                 if (!projected.isCreature(creatureId)) continue
                 val creatureContainer = state.getEntity(creatureId) ?: continue
                 if (creatureContainer.has<TappedComponent>()) continue
-                // Summoning sickness does NOT prevent crewing
-                val power = projected.getPower(creatureId) ?: 0
+                // Summoning sickness does NOT prevent crewing.
+                // What it contributes, not its raw power — `CrewVehicleHandler` measures the cost
+                // through the same evaluator, so a creature that "crews Vehicles as though its
+                // power were 2 greater" must read that way here or the client's progress bar would
+                // refuse a crew the engine accepts.
+                val power = CrewSaddleContributionEvaluator.evaluate(
+                    state, projected, context.cardRegistry, creatureId
+                )
                 val creatureName = creatureContainer.get<CardComponent>()?.name ?: "Unknown"
-                validCrewCreatures.add(TapForPowerCreatureData(creatureId, creatureName, power))
+                val canAttack = canAttackCache.getOrPut(creatureId) {
+                    AttackAvailability.canAttack(state, projected, creatureId, playerId, context.cardRegistry)
+                }
+                validCrewCreatures.add(
+                    TapForPowerCreatureData(creatureId, creatureName, power, canAttack)
+                )
                 totalAvailablePower += power
             }
 

@@ -1,7 +1,9 @@
 package com.wingedsheep.engine.legalactions
 
 import com.wingedsheep.engine.legalactions.support.EnumerationTestDriver
+import com.wingedsheep.engine.state.components.battlefield.SaddledComponent
 import com.wingedsheep.engine.support.TestCards
+import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.dsl.Conditions
 import com.wingedsheep.sdk.dsl.Effects
@@ -9,6 +11,7 @@ import com.wingedsheep.sdk.dsl.Triggers
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
+import com.wingedsheep.sdk.scripting.CrewSaddleContribution
 import com.wingedsheep.sdk.scripting.KeywordAbility
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldBeEmpty
@@ -45,10 +48,30 @@ class SaddleEnumeratorTest : FunSpec({
         oracleText = ""
     }
 
+    // "Saddles Mounts and crews Vehicles as though its power were 2 greater" — the measure the
+    // handler charges against, which must be what the enumerator reports.
+    val testPilot = card("Test Pilot") {
+        manaCost = "{1}"
+        typeLine = "Creature — Human Pilot"
+        power = 1
+        toughness = 1
+        oracleText = "This creature saddles Mounts and crews Vehicles as though its power were 2 greater."
+        staticAbility { ability = CrewSaddleContribution(modifier = 2) }
+    }
+
+    val testWall = card("Test Wall") {
+        manaCost = "{1}"
+        typeLine = "Creature — Wall"
+        power = 3
+        toughness = 3
+        oracleText = "Defender"
+        keywords(Keyword.DEFENDER)
+    }
+
     fun driverInMainPhase(): EnumerationTestDriver {
         val driver = EnumerationTestDriver()
         driver.registerCards(TestCards.all)
-        driver.registerCards(listOf(testMount, testPony))
+        driver.registerCards(listOf(testMount, testPony, testPilot, testWall))
         driver.game.initMirrorMatch(Deck.of("Forest" to 40), skipMulligans = true)
         driver.game.passPriorityUntil(Step.PRECOMBAT_MAIN)
         return driver
@@ -111,6 +134,63 @@ class SaddleEnumeratorTest : FunSpec({
         val saddle = driver.saddleActionsFor(driver.player1).single()
         saddle.tapForPowerCreatures!!.map { it.entityId }.contains(bear) shouldBe false
         saddle.affordable shouldBe false // no untapped creature left to reach power 2
+    }
+
+    // -----------------------------------------------------------------------------------------
+    // What the client needs to present the cost: the contribution actually charged, and whether
+    // spending a creature on it costs its controller an attacker.
+    // -----------------------------------------------------------------------------------------
+
+    test("a candidate's reported power is its crew/saddle contribution, not its printed power") {
+        val driver = driverInMainPhase()
+        driver.game.putCreatureOnBattlefield(driver.player1, "Test Mount")
+        driver.game.putCreatureOnBattlefield(driver.player1, "Test Pilot") // 1/1, contributes 3
+
+        val saddle = driver.saddleActionsFor(driver.player1).single()
+        saddle.tapForPowerCreatures!!.single().power shouldBe 3
+        // The handler measures the same way, so a lone Pilot must read as affording Saddle 2.
+        saddle.affordable shouldBe true
+    }
+
+    test("a summoning-sick creature reports canAttack = false; removing the sickness flips it") {
+        val driver = driverInMainPhase()
+        driver.game.putCreatureOnBattlefield(driver.player1, "Test Mount")
+        val bear = driver.game.putCreatureOnBattlefield(driver.player1, "Grizzly Bears")
+
+        driver.saddleActionsFor(driver.player1).single()
+            .tapForPowerCreatures!!.single { it.entityId == bear }.canAttack shouldBe false
+
+        driver.game.removeSummoningSickness(bear)
+
+        driver.saddleActionsFor(driver.player1).single()
+            .tapForPowerCreatures!!.single { it.entityId == bear }.canAttack shouldBe true
+    }
+
+    test("a creature with defender reports canAttack = false even without summoning sickness") {
+        val driver = driverInMainPhase()
+        driver.game.putCreatureOnBattlefield(driver.player1, "Test Mount")
+        val wall = driver.game.putCreatureOnBattlefield(driver.player1, "Test Wall")
+        driver.game.removeSummoningSickness(wall)
+
+        val saddle = driver.saddleActionsFor(driver.player1).single()
+        saddle.tapForPowerCreatures!!.single { it.entityId == wall }.canAttack shouldBe false
+        // It still saddles — saddling is not attacking (CR 702.171a).
+        saddle.affordable shouldBe true
+    }
+
+    test("the action is labelled 'again' on a Mount that is already saddled") {
+        val driver = driverInMainPhase()
+        val mount = driver.game.putCreatureOnBattlefield(driver.player1, "Test Mount")
+        driver.game.putCreatureOnBattlefield(driver.player1, "Grizzly Bears")
+
+        driver.saddleActionsFor(driver.player1).single().description shouldBe "Saddle Test Mount"
+
+        // Saddle has no once-each-turn clause (CR 702.171a), so it stays offered — the label is
+        // what stops a player spending creatures on a designation they already have.
+        driver.game.addComponent(mount, SaddledComponent)
+
+        driver.saddleActionsFor(driver.player1).single().description shouldBe
+            "Saddle Test Mount again"
     }
 
     test("Saddle is NOT available to a player who isn't the active player (sorcery-speed gate)") {

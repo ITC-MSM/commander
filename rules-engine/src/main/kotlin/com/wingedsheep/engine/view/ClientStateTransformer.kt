@@ -1259,6 +1259,21 @@ class ClientStateTransformer(
         val isDashed = zoneKey.zoneType == Zone.BATTLEFIELD &&
             container.has<com.wingedsheep.engine.state.components.battlefield.DashedComponent>()
 
+        // Mounts (CR 702.171): surface the printed Saddle N and whether the permanent currently
+        // carries the saddled designation, so the client can badge both states. Read from the card
+        // definition for the same reason `SaddleEnumerator` does — the handler resolves the saddle
+        // keyword by definition id, so a renamed copy (CR 707.9) still saddles.
+        val saddleRequirement = if (zoneKey.zoneType == Zone.BATTLEFIELD) {
+            cardDef?.keywordAbilities
+                ?.filterIsInstance<com.wingedsheep.sdk.scripting.KeywordAbility.Numeric>()
+                ?.firstOrNull { it.keyword == com.wingedsheep.sdk.core.Keyword.SADDLE }
+                ?.n
+        } else {
+            null
+        }
+        val isSaddled = zoneKey.zoneType == Zone.BATTLEFIELD &&
+            container.has<com.wingedsheep.engine.state.components.battlefield.SaddledComponent>()
+
         // Threshold-style progress badge: detect static abilities gated on
         // "controller's graveyard has at least N cards".
         val thresholdInfo = cardDef?.let { def ->
@@ -1349,6 +1364,8 @@ class ClientStateTransformer(
             isFaceDown = isFaceDown,
             faceDownMode = if (isFaceDown) container.get<FaceDownModeComponent>()?.mode?.name else null,
             isSuspected = projectedValues?.isSuspected == true,
+            saddleRequirement = saddleRequirement,
+            isSaddled = isSaddled,
             isPlotted = isPlotted,
             isParadigm = isParadigm,
             isSuspended = isSuspended,

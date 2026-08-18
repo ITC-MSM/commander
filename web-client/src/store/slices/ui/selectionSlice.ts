@@ -77,6 +77,7 @@ export interface SelectionSliceActions {
   confirmHarmonizeSelection: () => void
   startTapForPowerSelection: (state: TapForPowerSelectionState) => void
   toggleTapForPowerCreature: (entityId: EntityId) => void
+  setTapForPowerCreatures: (entityIds: readonly EntityId[]) => void
   cancelTapForPowerSelection: () => void
   confirmTapForPowerSelection: () => void
   startDelveSelection: (state: DelveSelectionState) => void
@@ -381,6 +382,19 @@ export const createSelectionSlice: SliceCreator<SelectionSlice> = (set, get) => 
         },
       }
     })
+  },
+
+  setTapForPowerCreatures: (entityIds) => {
+    set((state) =>
+      state.tapForPowerSelectionState
+        ? {
+            tapForPowerSelectionState: {
+              ...state.tapForPowerSelectionState,
+              selectedCreatures: [...entityIds],
+            },
+          }
+        : state
+    )
   },
 
   cancelTapForPowerSelection: () => {
