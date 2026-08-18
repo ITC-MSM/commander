@@ -837,6 +837,54 @@
     ]
 }
 
+// Water Wurm
+{
+    "name": "Water Wurm",
+    "manaCost": "{U}",
+    "typeLine": "Creature — Wurm",
+    "oracleText": "This creature gets +0/+1 as long as an opponent controls an Island.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "ModifyStats",
+                    "powerBonus": 0,
+                    "toughnessBonus": 1,
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "Self"
+                    }
+                },
+                "condition": {
+                    "type": "Exists",
+                    "player": "EachOpponent",
+                    "zone": "Battlefield",
+                    "filter": "land Island"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "38",
+        "artist": "Ron Spencer",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/3/e3da4a88-5225-467f-9240-f30bc1eee520.jpg?1783947941",
+        "rulings": [
+            {
+                "date": "2004-10-04",
+                "text": "Only gets the bonus once even if more than one opponent has an Island on the battlefield."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Witch Hunter
 {
     "name": "Witch Hunter",
