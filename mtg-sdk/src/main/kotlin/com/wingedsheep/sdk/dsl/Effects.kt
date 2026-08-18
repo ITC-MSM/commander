@@ -2646,6 +2646,16 @@ object Effects {
         CreatePredefinedTokenEffect("Treasure", tapped = tapped, dynamicCount = count, imageUri = imageUri)
 
     /**
+     * Create 0/1 colorless Eldrazi Spawn creature tokens.
+     * "Sacrifice this creature: Add {C}."
+     *
+     * @param count Number of tokens to create
+     * @param controller Who controls the tokens (null = effect controller)
+     */
+    fun CreateEldraziSpawn(count: Int = 1, controller: EffectTarget? = null, imageUri: String? = null): Effect =
+        CreatePredefinedTokenEffect("Eldrazi Spawn", count, controller, imageUri = imageUri)
+
+    /**
      * "You may behold a [filter]. If you do, [ifBeheld]." — the resolution-time behold
      * (choose a matching permanent you control or reveal a matching card from hand). See
      * [com.wingedsheep.sdk.scripting.effects.BeholdEffect]. Used by Sarkhan, Dragon Ascendant.
