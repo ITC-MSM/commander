@@ -5239,6 +5239,81 @@
     ]
 }
 
+// Expedited Inheritance
+{
+    "name": "Expedited Inheritance",
+    "manaCost": "{R}{R}",
+    "typeLine": "Enchantment",
+    "oracleText": "Whenever a creature is dealt damage, its controller may exile that many cards from the top of their library. They may play those cards until the end of their next turn.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "DealsDamageEvent",
+                    "recipient": "AnyCreature"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "TopOfLibrary",
+                                    "count": {
+                                        "type": "ContextProperty",
+                                        "key": "TRIGGER_DAMAGE_AMOUNT"
+                                    }
+                                },
+                                "storeAs": "impulseExiled"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "impulseExiled",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Exile"
+                                }
+                            },
+                            {
+                                "type": "GrantMayPlayFromExile",
+                                "from": "impulseExiled",
+                                "expiry": {
+                                    "type": "UntilControllerStep",
+                                    "step": "CLEANUP",
+                                    "includeCurrentTurn": false
+                                }
+                            }
+                        ]
+                    },
+                    "descriptionOverride": "You may exile that many cards from the top of your library. You may play those cards until the end of your next turn."
+                },
+                "controlledByTriggeringEntityController": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "123",
+        "rarity": "MYTHIC",
+        "artist": "Micah Epstein",
+        "flavorText": "Astronomical wealth hinders peaceful succession.",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/6/b65209da-cf48-4d37-b045-7d181070fd05.jpg?1783912881",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "Players pay all costs and follow all normal timing rules for cards played from exile with Expedited Inheritance's permission. For example, if one of the exiled cards is a land card, they may play it only during their main phase while the stack is empty."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Extract a Confession
 {
     "name": "Extract a Confession",
