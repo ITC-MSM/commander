@@ -5239,6 +5239,81 @@
     ]
 }
 
+// Expedited Inheritance
+{
+    "name": "Expedited Inheritance",
+    "manaCost": "{R}{R}",
+    "typeLine": "Enchantment",
+    "oracleText": "Whenever a creature is dealt damage, its controller may exile that many cards from the top of their library. They may play those cards until the end of their next turn.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "DealsDamageEvent",
+                    "recipient": "AnyCreature"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "TopOfLibrary",
+                                    "count": {
+                                        "type": "ContextProperty",
+                                        "key": "TRIGGER_DAMAGE_AMOUNT"
+                                    }
+                                },
+                                "storeAs": "impulseExiled"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "impulseExiled",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Exile"
+                                }
+                            },
+                            {
+                                "type": "GrantMayPlayFromExile",
+                                "from": "impulseExiled",
+                                "expiry": {
+                                    "type": "UntilControllerStep",
+                                    "step": "CLEANUP",
+                                    "includeCurrentTurn": false
+                                }
+                            }
+                        ]
+                    },
+                    "descriptionOverride": "You may exile that many cards from the top of your library. You may play those cards until the end of your next turn."
+                },
+                "controlledByTriggeringEntityController": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "123",
+        "rarity": "MYTHIC",
+        "artist": "Micah Epstein",
+        "flavorText": "Astronomical wealth hinders peaceful succession.",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/6/b65209da-cf48-4d37-b045-7d181070fd05.jpg?1783912881",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "Players pay all costs and follow all normal timing rules for cards played from exile with Expedited Inheritance's permission. For example, if one of the exiled cards is a land card, they may play it only during their main phase while the stack is empty."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Extract a Confession
 {
     "name": "Extract a Confession",
@@ -12900,6 +12975,193 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Relive the Past
+{
+    "name": "Relive the Past",
+    "manaCost": "{5}{G}{W}",
+    "typeLine": "Sorcery",
+    "oracleText": "Return up to one target artifact card, up to one target land card, and up to one target non-Aura enchantment card from your graveyard to the battlefield. They are 5/5 Elemental creatures in addition to their other types.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "up to one target artifact card from your graveyard"
+                    },
+                    "destination": "Battlefield"
+                },
+                {
+                    "type": "BecomeCreature",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "up to one target artifact card from your graveyard"
+                    },
+                    "power": {
+                        "type": "Fixed",
+                        "amount": 5
+                    },
+                    "toughness": {
+                        "type": "Fixed",
+                        "amount": 5
+                    },
+                    "duration": "Permanent"
+                },
+                {
+                    "type": "AddSubtype",
+                    "subtype": "Elemental",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "up to one target artifact card from your graveyard"
+                    },
+                    "duration": "Permanent"
+                },
+                {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "MoveToZone",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "up to one target land card from your graveyard"
+                            },
+                            "destination": "Battlefield"
+                        },
+                        {
+                            "type": "BecomeCreature",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "up to one target land card from your graveyard"
+                            },
+                            "power": {
+                                "type": "Fixed",
+                                "amount": 5
+                            },
+                            "toughness": {
+                                "type": "Fixed",
+                                "amount": 5
+                            },
+                            "duration": "Permanent"
+                        },
+                        {
+                            "type": "AddSubtype",
+                            "subtype": "Elemental",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "up to one target land card from your graveyard"
+                            },
+                            "duration": "Permanent"
+                        }
+                    ]
+                },
+                {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "MoveToZone",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "up to one target non-Aura enchantment card from your graveyard"
+                            },
+                            "destination": "Battlefield"
+                        },
+                        {
+                            "type": "BecomeCreature",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "up to one target non-Aura enchantment card from your graveyard"
+                            },
+                            "power": {
+                                "type": "Fixed",
+                                "amount": 5
+                            },
+                            "toughness": {
+                                "type": "Fixed",
+                                "amount": 5
+                            },
+                            "duration": "Permanent"
+                        },
+                        {
+                            "type": "AddSubtype",
+                            "subtype": "Elemental",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "up to one target non-Aura enchantment card from your graveyard"
+                            },
+                            "duration": "Permanent"
+                        }
+                    ]
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "optional": true,
+                "filter": {
+                    "baseFilter": "artifact own:you",
+                    "zone": "Graveyard"
+                },
+                "id": "up to one target artifact card from your graveyard"
+            },
+            {
+                "type": "TargetObject",
+                "optional": true,
+                "filter": {
+                    "baseFilter": "land own:you",
+                    "zone": "Graveyard"
+                },
+                "id": "up to one target land card from your graveyard"
+            },
+            {
+                "type": "TargetObject",
+                "optional": true,
+                "filter": {
+                    "baseFilter": {
+                        "cardPredicates": [
+                            "IsEnchantment",
+                            {
+                                "type": "NotSubtype",
+                                "subtype": "Aura"
+                            }
+                        ],
+                        "controllerPredicate": "OwnedByYou"
+                    },
+                    "zone": "Graveyard"
+                },
+                "id": "up to one target non-Aura enchantment card from your graveyard"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "226",
+        "rarity": "RARE",
+        "artist": "Randy Vargas",
+        "flavorText": "\"Many have tried to subjugate Ravnica. All have failed. All will fail.\"\n—Museum of Ravnican History",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/0/20948cd2-e40c-4648-832f-ab0f1cc21610.jpg?1783912839",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "An artifact creature, land creature, or enchantment creature returned this way will be a 5/5 creature and will be an Elemental in addition to its other creature types."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "An Equipment without reconfigure that's also a creature can't be attached to anything. You can activate its equip ability, but it won't become attached."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "If another effect causes one of the returned permanents to become a creature and sets its power and toughness as it does so, that creature will have that power and toughness; it won't be 5/5. Notably, crewing a Vehicle does not set its power and toughness, so a Vehicle will remain a 5/5 creature if you crew it."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN",
+        "WHITE"
     ]
 }
 
