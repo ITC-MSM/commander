@@ -322,6 +322,59 @@
     ]
 }
 
+// Fire Drake
+{
+    "name": "Fire Drake",
+    "manaCost": "{1}{R}{R}",
+    "typeLine": "Creature — Drake",
+    "oracleText": "Flying\n{R}: This creature gets +1/+0 until end of turn. Activate only once each turn.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 2
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{R}"
+                    }
+                },
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 0
+                    },
+                    "target": "Self"
+                },
+                "restrictions": [
+                    "OncePerTurn"
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "62",
+        "rarity": "UNCOMMON",
+        "artist": "Christopher Rush",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/3/d3419db6-1c38-4aa4-b953-1dde7d22b927.jpg?1783947935"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Flood
 {
     "name": "Flood",
