@@ -1064,6 +1064,42 @@
     ]
 }
 
+// Sisters of the Flame
+{
+    "name": "Sisters of the Flame",
+    "manaCost": "{1}{R}{R}",
+    "typeLine": "Creature — Human Shaman",
+    "oracleText": "{T}: Add {R}.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "RED"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "74",
+        "rarity": "UNCOMMON",
+        "artist": "Jesper Myrfors",
+        "flavorText": "We are many wicks sharing a common tallow; we feed the skies with the ashes of our prey.",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/6/564e0ccd-decb-48d2-981f-cefa8045340f.jpg?1783947934"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Skull of Orm
 {
     "name": "Skull of Orm",
