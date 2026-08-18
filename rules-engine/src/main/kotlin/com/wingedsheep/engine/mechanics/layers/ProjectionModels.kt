@@ -515,6 +515,16 @@ sealed interface Modification {
     }
 
     /**
+     * Grants "hexproof from multicolored" to each affected entity — adds the keyword
+     * `HEXPROOF_FROM_MULTICOLORED`, which blocks targeting by multicolored (two or more colors)
+     * spells and abilities opponents control. Used for Niv-Mizzet, Guildpact.
+     */
+    @Serializable
+    data object GrantHexproofFromMulticolored : Modification {
+        override val layer get() = Layer.ABILITY
+    }
+
+    /**
      * Grants each affected entity "protection from the colors of permanents the source's
      * controller controls". Read at apply-time: collects the projected colors of every
      * battlefield permanent controlled by the source's (projected) controller, then adds

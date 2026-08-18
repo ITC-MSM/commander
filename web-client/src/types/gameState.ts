@@ -204,6 +204,9 @@ export interface ClientCard {
   /** Hexproof from monocolored (CR 105.2) — shows an uncolored hexproof shield chip */
   readonly hexproofFromMonocolored?: boolean
 
+  /** Hexproof from multicolored (CR 105.2b) — shows an uncolored hexproof shield chip */
+  readonly hexproofFromMulticolored?: boolean
+
   /** Counters on the card */
   readonly counters: Partial<Record<CounterType, number>>
 

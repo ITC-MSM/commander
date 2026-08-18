@@ -32,6 +32,18 @@ enum class Aggregation {
     DISTINCT_PERMANENT_TYPES,
     /** Count distinct colors across all matched entities */
     DISTINCT_COLORS,
+    /**
+     * Count the distinct *color pairs* contributed by the matched entities — one pair per entity
+     * that is exactly two colors (CR 105.2c), the same pair on two entities counting once. There
+     * are ten pairs in Magic, so the value is bounded by 10.
+     *
+     * Entities of one, three, four, or five colors — and colorless ones — contribute nothing:
+     * "color pair" names an *exactly two colors* object, so the "that are exactly two colors"
+     * clause is part of this aggregation rather than something the filter has to spell.
+     * Used for "the number of different color pairs among permanents you control that are
+     * exactly two colors" (Niv-Mizzet, Guildpact).
+     */
+    DISTINCT_COLOR_PAIRS,
     /** Count distinct English card names across all matched entities */
     DISTINCT_NAMES,
     /**

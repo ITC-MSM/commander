@@ -799,6 +799,9 @@ class ClientStateTransformer(
         // Hexproof from monocolored (CR 105.2) — a quality, not a color, so it rides its own flag.
         val hexproofFromMonocolored = projectedValues?.keywords?.contains("HEXPROOF_FROM_MONOCOLORED") ?: false
 
+        // Hexproof from multicolored (CR 105.2b) — the other half of the quality pair, same shape.
+        val hexproofFromMulticolored = projectedValues?.keywords?.contains("HEXPROOF_FROM_MULTICOLORED") ?: false
+
         // Add PROTECTION keyword when protections are present
         val keywords = if (protections.isNotEmpty()) rawKeywords + Keyword.PROTECTION else rawKeywords
 
@@ -1338,6 +1341,7 @@ class ClientStateTransformer(
             protections = protections,
             hexproofFromColors = hexproofFromColors,
             hexproofFromMonocolored = hexproofFromMonocolored,
+            hexproofFromMulticolored = hexproofFromMulticolored,
             counters = counters,
             isTapped = isTapped,
             isExerted = isExerted,

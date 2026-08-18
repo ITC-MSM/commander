@@ -986,6 +986,17 @@ class DynamicAmountEvaluator(
                         ?: emptySet()
                 }
             }.size
+            // "Different color pairs among <group> that are exactly two colors" (Niv-Mizzet,
+            // Guildpact). Only an entity whose *projected* colour set is exactly two contributes,
+            // and it contributes one unordered pair; the same pair on several permanents counts
+            // once. Bounded by the ten pairs of CR 105.2c.
+            Aggregation.DISTINCT_COLOR_PAIRS -> matchingEntities.mapNotNullTo(mutableSetOf()) { entityId ->
+                val colors = projection.getColors(entityId).ifEmpty {
+                    state.getEntity(entityId)?.get<CardComponent>()?.colors?.map { it.name }?.toSet()
+                        ?: emptySet()
+                }
+                if (colors.size == 2) colors.sorted().joinToString("/") else null
+            }.size
             Aggregation.DISTINCT_NAMES -> matchingEntities.mapNotNullTo(mutableSetOf()) { entityId ->
                 state.getEntity(entityId)?.get<CardComponent>()?.name
             }.size
@@ -1066,6 +1077,15 @@ class DynamicAmountEvaluator(
                 matchingEntities.flatMapTo(mutableSetOf()) { entityId ->
                     state.getEntity(entityId)?.get<CardComponent>()?.colors?.map { it.name }?.toSet()
                         ?: emptySet()
+                }.size
+            }
+            // Zone counterpart of the battlefield branch: cards outside the battlefield have no
+            // projection entry, so their printed colours are the only ones there are.
+            Aggregation.DISTINCT_COLOR_PAIRS -> {
+                matchingEntities.mapNotNullTo(mutableSetOf()) { entityId ->
+                    val colors = state.getEntity(entityId)?.get<CardComponent>()?.colors?.map { it.name }?.toSet()
+                        ?: emptySet()
+                    if (colors.size == 2) colors.sorted().joinToString("/") else null
                 }.size
             }
             Aggregation.DISTINCT_NAMES -> {

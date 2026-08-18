@@ -59,6 +59,7 @@ export function KeywordIcons({
   protections,
   hexproofFromColors,
   hexproofFromMonocolored,
+  hexproofFromMulticolored,
   isSuspected,
   topOffset,
   size,
@@ -69,6 +70,8 @@ export function KeywordIcons({
   hexproofFromColors?: readonly Color[]
   /** Hexproof from monocolored (CR 105.2) — an uncolored hexproof-quality shield. */
   hexproofFromMonocolored?: boolean
+  /** Hexproof from multicolored (CR 105.2b) — an uncolored hexproof-quality shield. */
+  hexproofFromMulticolored?: boolean
   /** Whether the permanent currently has the suspected status (CR 701.60). */
   isSuspected?: boolean
   /** Override the column's top offset (px) so it can clear the ring-bearer badge in the same corner. */
@@ -80,8 +83,11 @@ export function KeywordIcons({
   // already convey the protection set, and showing an uncolored shield alongside misleads the player.
   const hexproofFromList = hexproofFromColors ?? []
   const hasHexproofFromMonocolored = hexproofFromMonocolored === true
-  // Any "hexproof from [quality]" — per-color or monocolored — that conveys the protection set.
-  const hasScopedHexproof = hexproofFromList.length > 0 || hasHexproofFromMonocolored
+  const hasHexproofFromMulticolored = hexproofFromMulticolored === true
+  // Any "hexproof from [quality]" — per-color, monocolored, or multicolored — that conveys the
+  // protection set.
+  const hasScopedHexproof =
+    hexproofFromList.length > 0 || hasHexproofFromMonocolored || hasHexproofFromMulticolored
   const hasFullHexproof = keywords.includes('HEXPROOF' as Keyword)
   const hasDoubleStrike = keywords.includes('DOUBLE_STRIKE' as Keyword)
   const filteredKeywords = keywords.filter(k =>
@@ -164,6 +170,28 @@ export function KeywordIcons({
             boxShadow: `0 0 4px ${HEXPROOF_QUALITY_TINT}`,
           }}
           title="Hexproof from monocolored"
+        >
+          <i
+            className="ms ms-ability-hexproof"
+            style={{
+              fontSize: size,
+              color: HEXPROOF_QUALITY_TINT,
+              display: 'block',
+              lineHeight: 1,
+            }}
+          />
+        </div>
+      )}
+      {hasHexproofFromMulticolored && (
+        <div
+          key="hexproof-multicolored"
+          style={{
+            ...styles.keywordIconWrapper,
+            // Same neutral quality ring as the monocolored chip; the tooltip tells them apart.
+            border: `1px solid ${HEXPROOF_QUALITY_TINT}`,
+            boxShadow: `0 0 4px ${HEXPROOF_QUALITY_TINT}`,
+          }}
+          title="Hexproof from multicolored"
         >
           <i
             className="ms ms-ability-hexproof"
