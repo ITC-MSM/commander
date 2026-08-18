@@ -8808,6 +8808,153 @@
     ]
 }
 
+// Izoni, Center of the Web
+{
+    "name": "Izoni, Center of the Web",
+    "manaCost": "{4}{B}{G}",
+    "typeLine": "Legendary Creature — Elf Detective",
+    "oracleText": "Menace\nWhenever Izoni enters or attacks, you may collect evidence 4. If you do, create two 2/1 black and green Spider creature tokens with reach and menace.\nSacrifice four tokens: Surveil 2, then draw two cards. You gain 2 life.",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 4
+    },
+    "keywords": [
+        "MENACE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.MayPay",
+                        "cost": {
+                            "type": "CollectEvidence",
+                            "amount": 4
+                        }
+                    },
+                    "then": {
+                        "type": "CreateToken",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 2
+                        },
+                        "power": 2,
+                        "toughness": 1,
+                        "colors": [
+                            "BLACK",
+                            "GREEN"
+                        ],
+                        "creatureTypes": [
+                            "Spider"
+                        ],
+                        "keywords": [
+                            "REACH",
+                            "MENACE"
+                        ],
+                        "imageUri": "https://cards.scryfall.io/normal/front/7/4/74cb3ba3-9a14-4d72-bf24-0b75ae747f96.jpg?1783912607"
+                    }
+                },
+                "descriptionOverride": "Whenever Izoni enters or attacks, you may collect evidence 4. If you do, create two 2/1 black and green Spider creature tokens with reach and menace."
+            },
+            {
+                "id": "ability_2",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.MayPay",
+                        "cost": {
+                            "type": "CollectEvidence",
+                            "amount": 4
+                        }
+                    },
+                    "then": {
+                        "type": "CreateToken",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 2
+                        },
+                        "power": 2,
+                        "toughness": 1,
+                        "colors": [
+                            "BLACK",
+                            "GREEN"
+                        ],
+                        "creatureTypes": [
+                            "Spider"
+                        ],
+                        "keywords": [
+                            "REACH",
+                            "MENACE"
+                        ],
+                        "imageUri": "https://cards.scryfall.io/normal/front/7/4/74cb3ba3-9a14-4d72-bf24-0b75ae747f96.jpg?1783912607"
+                    }
+                },
+                "descriptionOverride": "Whenever Izoni enters or attacks, you may collect evidence 4. If you do, create two 2/1 black and green Spider creature tokens with reach and menace."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_3",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomSacrifice",
+                        "filter": "token",
+                        "count": 4
+                    }
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "Surveil",
+                            "count": 2
+                        },
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 2
+                            }
+                        },
+                        {
+                            "type": "GainLife",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 2
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "Sacrifice four tokens: Surveil 2, then draw two cards. You gain 2 life."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "209",
+        "rarity": "RARE",
+        "artist": "Justine Cruz",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/0/70ea66cd-587a-4ca6-87f7-a52c96079e4a.jpg?1783912846",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "If you can't exile enough cards to meet or exceed the required mana value, you can't choose to collect evidence at all."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "GREEN"
+    ]
+}
+
 // Jaded Analyst
 {
     "name": "Jaded Analyst",

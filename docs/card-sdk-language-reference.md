@@ -2789,11 +2789,12 @@ one-off pipeline belongs inline in the card file via `Effects.Pipeline { }` (§5
   701.59a), for cards where collecting is not a cost. Use it as the `action` half of a
   `ReflexiveTriggerEffect` for "you may collect evidence 3. **When you do**, …" (Sample Collector —
   a real reflexive trigger per CR 603.12, so its target is chosen after the collection resolves and
-  opponents may respond), or under `MayEffect` / a gated effect for a bare "you may collect
-  evidence N" (Surveillance Monitor) and "if you do" (Izoni, Center of the Web).
-  `ReflexiveTriggerEffectExecutor.isActionFeasible` gates the prompt on reachability, so CR 701.59b
-  holds by construction — a player who can't reach N is never *asked*, rather than being asked and
-  forced to decline. Emits the same `EvidenceCollectedEvent` the cost contexts do.
+  opponents may respond), under `MayEffect` for a bare "you may collect evidence N" (Surveillance
+  Monitor), or as `OptionalCostEffect(cost = Effects.CollectEvidence(n), ifPaid = …)` for "you may
+  collect evidence N. If you do, …" (Izoni, Center of the Web). Both consent gates check the summed
+  graveyard mana value before prompting, so CR 701.59b holds by construction — a player who can't
+  reach N is never *asked*, rather than being asked and forced to decline. Emits the same
+  `EvidenceCollectedEvent` the cost contexts do.
 - `forage(afterEffect?)` — Forage as an *effect* ("you may forage"): a `ChooseActionEffect` letting
   the player choose to exile three cards from their graveyard or sacrifice a Food (each gated by a
   feasibility check), with `afterEffect` appended to whichever mode is taken (Bushy Bodyguard, Curious

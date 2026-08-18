@@ -30,6 +30,7 @@ import com.wingedsheep.sdk.scripting.SpellCostTarget
 import com.wingedsheep.sdk.scripting.conditions.WasKicked
 import com.wingedsheep.sdk.scripting.effects.ConditionalEffect
 import com.wingedsheep.sdk.scripting.effects.MayEffect
+import com.wingedsheep.sdk.scripting.effects.OptionalCostEffect
 import com.wingedsheep.sdk.scripting.effects.ReflexiveTriggerEffect
 import com.wingedsheep.sdk.scripting.filters.unified.TargetFilter
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
@@ -194,6 +195,21 @@ class CollectEvidenceScenarioTest : ScenarioTestBase() {
         }
     }
 
+    // Izoni, Center of the Web's shape: collect evidence is the cost of an optional effect.
+    private val optionalCostCollector = card("Optional-Cost Evidence Collector") {
+        manaCost = "{G}"
+        typeLine = "Creature — Elf Detective"
+        power = 1
+        toughness = 1
+        triggeredAbility {
+            trigger = Triggers.EntersBattlefield
+            effect = OptionalCostEffect(
+                cost = Effects.CollectEvidence(4),
+                ifPaid = Effects.GainLife(7),
+            )
+        }
+    }
+
     // Controls for the "separate fact" tests — same rail, different slots.
     private val kickerBear = card("Evidence Kicker Bear") {
         manaCost = "{1}{G}"
@@ -260,6 +276,7 @@ class CollectEvidenceScenarioTest : ScenarioTestBase() {
         cardRegistry.register(collector)
         cardRegistry.register(examiner)
         cardRegistry.register(monitor)
+        cardRegistry.register(optionalCostCollector)
         cardRegistry.register(kickerBear)
         cardRegistry.register(evidenceBearReadsKicked)
 
@@ -485,6 +502,25 @@ class CollectEvidenceScenarioTest : ScenarioTestBase() {
             // and the attacker gained no counter.
             game.state.pendingDecision shouldBe null
             game.containerOf("Evidence Collector").plusOneCounters() shouldBe 0
+        }
+
+        test("collect evidence used as an optional effect cost is not offered when it can't be paid") {
+            val game = scenario()
+                .withPlayers("Caster", "Opponent")
+                .withCardInHand(1, "Optional-Cost Evidence Collector")
+                .withCardInGraveyard(1, "Test Pebble")
+                .withLandsOnBattlefield(1, "Forest", 1)
+                .withActivePlayer(1)
+                .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                .build()
+
+            val life = game.getLifeTotal(1)
+            game.castSpell(1, "Optional-Cost Evidence Collector").error shouldBe null
+            game.resolveStack()
+
+            game.state.pendingDecision shouldBe null
+            game.getLifeTotal(1) shouldBe life
+            game.isInGraveyard(1, "Test Pebble") shouldBe true
         }
 
         // ---------------------------------------------------------------------------------------

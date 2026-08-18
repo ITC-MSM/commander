@@ -9,6 +9,7 @@ import com.wingedsheep.engine.handlers.PredicateEvaluator
 import com.wingedsheep.engine.handlers.effects.BattlefieldFilterUtils
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.handlers.effects.TargetResolutionUtils
+import com.wingedsheep.engine.handlers.costs.CollectEvidenceResolver
 import com.wingedsheep.engine.legalactions.utils.CostEnumerationUtils
 import com.wingedsheep.engine.mechanics.mana.CostCalculator
 import com.wingedsheep.engine.mechanics.mana.ManaSolver
@@ -25,6 +26,7 @@ import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.effects.CardDestination
 import com.wingedsheep.sdk.scripting.effects.ChooseActionEffect
+import com.wingedsheep.sdk.scripting.effects.CollectEvidenceEffect
 import com.wingedsheep.sdk.scripting.effects.CompositeEffect
 import com.wingedsheep.sdk.scripting.effects.Effect
 import com.wingedsheep.sdk.scripting.effects.DynamicHint
@@ -628,6 +630,12 @@ class GatedEffectExecutor(
             is PayManaCostRepeatedlyEffect -> PayManaCostRepeatedlyExecutor.affordableRepetitions(
                 state, playerId, cost.cost, cost.maxTimes, cardRegistry
             ) >= 1
+            // Resolution-time collect evidence is also a payable action (Izoni): the player may
+            // choose it only when their graveyard can meet the full mana-value threshold.
+            is CollectEvidenceEffect -> {
+                val collector = TargetResolutionUtils.resolvePlayerRef(cost.player, context, state)
+                collector != null && CollectEvidenceResolver.canCollect(state, collector, cost.amount)
+            }
             is CompositeEffect -> cost.effects.all { canAfford(state, playerId, it, context) }
             // "You may sacrifice [filter]" — payable only if the player controls enough matching
             // permanents (`any = true`, "sacrifice any number", is always payable: zero is legal).
