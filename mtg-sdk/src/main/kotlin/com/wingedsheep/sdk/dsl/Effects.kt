@@ -4189,11 +4189,18 @@ object Effects {
         com.wingedsheep.sdk.scripting.effects.ProvokeEffect(target)
 
     /**
-     * Force a target creature to block the source creature this combat if able.
+     * Force a target creature to block a named attacker this combat if able.
      * Unlike Provoke, does NOT untap the target.
+     *
+     * [attacker] defaults to the ability's own source — "blocks **it**" on an attack trigger
+     * (Avalanche Tusker). Pass [EffectTarget.TriggeringEntity] when the trigger is ANY-bound and
+     * the creature that must be blocked is the one that attacked rather than the source
+     * (Tolsimir, Midnight's Light: "blocks **that Wolf** this combat if able").
      */
-    fun ForceBlock(target: EffectTarget = EffectTarget.ContextTarget(0)): Effect =
-        com.wingedsheep.sdk.scripting.effects.ForceBlockEffect(target)
+    fun ForceBlock(
+        target: EffectTarget = EffectTarget.ContextTarget(0),
+        attacker: EffectTarget = EffectTarget.Self
+    ): Effect = com.wingedsheep.sdk.scripting.effects.ForceBlockEffect(target, attacker)
 
     /**
      * Insert a single additional combat phase — and *only* a combat phase, no trailing main phase

@@ -17,7 +17,11 @@ import kotlin.reflect.KClass
  * Executor for ForceBlockEffect.
  * "Target creature blocks this creature this combat if able."
  *
- * Creates a floating effect forcing the target to block the source attacker.
+ * Creates a floating effect forcing the target to block the named attacker — the source by
+ * default (Avalanche Tusker), or whichever creature `effect.attacker` resolves to for an
+ * ANY-bound trigger that pins the blocker to the *triggering* attacker (Tolsimir, Midnight's
+ * Light: "blocks that Wolf this combat if able").
+ *
  * Unlike ProvokeExecutor, does NOT untap the target creature.
  */
 class ForceBlockExecutor : EffectExecutor<ForceBlockEffect> {
@@ -40,21 +44,23 @@ class ForceBlockExecutor : EffectExecutor<ForceBlockEffect> {
             return EffectResult.error(state, "Target is not a creature")
         }
 
-        // The source is the creature that must be blocked (the attacker)
-        val sourceId = context.sourceId
-            ?: return EffectResult.error(state, "No source for force block effect")
+        // The creature that must be blocked. Defaults to the ability's source; an ANY-bound
+        // trigger can name the triggering attacker instead.
+        val attackerId = context.resolveTarget(effect.attacker)
+            ?: return EffectResult.error(state, "No valid attacker for force block effect")
 
-        // Verify source is attacking
-        val sourceContainer = state.getEntity(sourceId)
-            ?: return EffectResult.error(state, "Source creature no longer exists")
-        if (!sourceContainer.has<AttackingComponent>()) {
-            return EffectResult.error(state, "Source creature is not attacking")
+        // Verify the attacker is actually attacking — CR 509.1c can only be satisfied against a
+        // declared attacker, and the block-declaration validator reads the requirement per combat.
+        val attackerContainer = state.getEntity(attackerId)
+            ?: return EffectResult.error(state, "Attacking creature no longer exists")
+        if (!attackerContainer.has<AttackingComponent>()) {
+            return EffectResult.error(state, "Named creature is not attacking")
         }
 
-        // Create a floating effect forcing the target to block the source
+        // Create a floating effect forcing the target to block that attacker
         val newState = state.addFloatingEffect(
             layer = Layer.ABILITY,
-            modification = SerializableModification.MustBlockSpecificAttacker(sourceId),
+            modification = SerializableModification.MustBlockSpecificAttacker(attackerId),
             affectedEntities = setOf(targetId),
             duration = Duration.EndOfTurn,
             context = context

@@ -1880,9 +1880,12 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   `SerializableModification.SetMustBlock` for `Duration.EndOfTurn`, i.e. the same projected
   `mustBlock` the *static* `MustBlock` (Grand Melee) writes, so
   `BlockPhaseManager.validateProjectedMustBlockRequirements` enforces it with no extra wiring and
-  the generic end-of-turn cleanup expires it. Distinct from `Effects.ForceBlock`, which pins the
-  creature to blocking one *named* attacker and requires the source to be attacking — this one is
-  satisfied by blocking anything. A requirement, not a guarantee (CR 509.1c): a tapped creature, one
+  the generic end-of-turn cleanup expires it. Distinct from
+  `Effects.ForceBlock(target, attacker = EffectTarget.Self)`, which pins the creature to blocking one
+  *named* attacker and requires that attacker to be attacking — this one is satisfied by blocking
+  anything. `attacker` defaults to the ability's own source ("blocks **it**", Avalanche Tusker); pass
+  `EffectTarget.TriggeringEntity` when an ANY-bound trigger pins the blocker to the creature that
+  attacked instead (Tolsimir, Midnight's Light: "blocks **that Wolf** this combat if able"). A requirement, not a guarantee (CR 509.1c): a tapped creature, one
   that can't block, or one whose every block would be illegal is excused, and its controller is
   never forced to pay a cost associated with blocking. Used by Culvert Ambusher (MKM).
 - `Effects.SkipNextTurn(target = Controller, count = Fixed(1))` (`SkipNextTurnEffect`) — target skips their next `count` turns. `count` is a `DynamicAmount`, so it can read a pipeline value (e.g. a coin-flip tally via `DynamicAmount.VariableReference`). Skips accumulate on a `SkipNextTurnComponent(turns)`, decremented one turn per the player's turn-start; a resolved count of 0 is a no-op. Used by Lethal Vapors (one turn) and **Ral Zarek, Guest Lecturer** (skip N turns where N = heads).

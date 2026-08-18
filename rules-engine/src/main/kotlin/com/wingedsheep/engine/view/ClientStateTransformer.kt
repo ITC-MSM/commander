@@ -2664,11 +2664,21 @@ class ClientStateTransformer(
                     )
                 }
                 is SerializableModification.MustBlockSpecificAttacker -> {
+                    // Name the attacker. The pinned creature is not always the obvious one — an
+                    // ANY-bound "blocks that Wolf" trigger (Tolsimir, Midnight's Light) pins the
+                    // blocker to a creature other than the ability's source, and a defender who
+                    // guesses wrong only finds out when their declaration is rejected.
+                    val attackerName = state.getEntity(modification.attackerId)
+                        ?.get<CardComponent>()?.name
                     effects.add(
                         ClientCardEffect(
                             effectId = "must_block_${modification.attackerId}",
                             name = "Must Block",
-                            description = "This creature must block a specific attacker if able",
+                            description = if (attackerName != null) {
+                                "This creature must block $attackerName this combat if able"
+                            } else {
+                                "This creature must block a specific attacker if able"
+                            },
                             icon = "must-attack"
                         )
                     )
