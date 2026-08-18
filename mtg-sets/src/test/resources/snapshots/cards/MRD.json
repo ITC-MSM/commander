@@ -9625,6 +9625,87 @@
     ]
 }
 
+// Solar Tide
+{
+    "name": "Solar Tide",
+    "manaCost": "{4}{W}{W}",
+    "typeLine": "Sorcery",
+    "oracleText": "Choose one —\n• Destroy all creatures with power 2 or less.\n• Destroy all creatures with power 3 or greater.\nEntwine—Sacrifice two lands. (Choose both if you pay the entwine cost.)",
+    "script": {
+        "spellEffect": {
+            "type": "Modal",
+            "modes": [
+                {
+                    "effect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "BattlefieldMatching",
+                                    "filter": "creature pow<=2"
+                                },
+                                "storeAs": "destroyAll_gathered"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "destroyAll_gathered",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Graveyard"
+                                },
+                                "moveType": "Destroy"
+                            }
+                        ]
+                    },
+                    "description": "Destroy all creatures with power 2 or less"
+                },
+                {
+                    "effect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "BattlefieldMatching",
+                                    "filter": "creature pow>=3"
+                                },
+                                "storeAs": "destroyAll_gathered"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "destroyAll_gathered",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Graveyard"
+                                },
+                                "moveType": "Destroy"
+                            }
+                        ]
+                    },
+                    "description": "Destroy all creatures with power 3 or greater"
+                }
+            ],
+            "chooseCount": 2,
+            "minChooseCount": 1,
+            "additionalCostPerExtraMode": {
+                "type": "AtomSacrifice",
+                "filter": "land",
+                "count": 2
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "24",
+        "rarity": "RARE",
+        "artist": "Dave Dorman",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/7/57ce33b6-267f-4ee8-a3f7-f41c619d0cfa.jpg?1783944559"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Soldier Replica
 {
     "name": "Soldier Replica",
@@ -11171,6 +11252,91 @@
     ]
 }
 
+// Temporal Cascade
+{
+    "name": "Temporal Cascade",
+    "manaCost": "{5}{U}{U}",
+    "typeLine": "Sorcery",
+    "oracleText": "Choose one —\n• Each player shuffles their hand and graveyard into their library.\n• Each player draws seven cards.\nEntwine {2} (Choose both if you pay the entwine cost.)",
+    "script": {
+        "spellEffect": {
+            "type": "Modal",
+            "modes": [
+                {
+                    "effect": {
+                        "type": "ForEach",
+                        "space": {
+                            "type": "IterationSpace.Players",
+                            "players": "Each"
+                        },
+                        "body": {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "GatherCards",
+                                    "source": {
+                                        "type": "FromMultipleZones",
+                                        "zones": [
+                                            "Hand",
+                                            "Graveyard"
+                                        ]
+                                    },
+                                    "storeAs": "temporalCascadeCards"
+                                },
+                                {
+                                    "type": "MoveCollection",
+                                    "from": "temporalCascadeCards",
+                                    "destination": {
+                                        "type": "ToZone",
+                                        "zone": "Library",
+                                        "placement": "Shuffled"
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "description": "Each player shuffles their hand and graveyard into their library"
+                },
+                {
+                    "effect": {
+                        "type": "ForEach",
+                        "space": {
+                            "type": "IterationSpace.Players",
+                            "players": "Each"
+                        },
+                        "body": {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 7
+                            }
+                        }
+                    },
+                    "description": "Each player draws seven cards"
+                }
+            ],
+            "chooseCount": 2,
+            "minChooseCount": 1,
+            "additionalManaCostPerExtraMode": "{2}"
+        }
+    },
+    "metadata": {
+        "collectorNumber": "52",
+        "rarity": "RARE",
+        "artist": "Puddnhead",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/a/daf180c6-7ab6-4922-9f5e-73b4f2c9488a.jpg?1783944551",
+        "rulings": [
+            {
+                "date": "2013-07-01",
+                "text": "This card won’t be put into your graveyard until after it’s finished resolving, which means it won’t be shuffled into your library as part of its own effect."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Thirst for Knowledge
 {
     "name": "Thirst for Knowledge",
@@ -11317,6 +11483,111 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Tooth and Nail
+{
+    "name": "Tooth and Nail",
+    "manaCost": "{5}{G}{G}",
+    "typeLine": "Sorcery",
+    "oracleText": "Choose one —\n• Search your library for up to two creature cards, reveal them, put them into your hand, then shuffle.\n• Put up to two creature cards from your hand onto the battlefield.\nEntwine {2} (Choose both if you pay the entwine cost.)",
+    "script": {
+        "spellEffect": {
+            "type": "Modal",
+            "modes": [
+                {
+                    "effect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Library",
+                                    "filter": "creature"
+                                },
+                                "storeAs": "searchable"
+                            },
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "searchable",
+                                "selection": {
+                                    "type": "ChooseUpTo",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 2
+                                    }
+                                },
+                                "storeSelected": "found"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "found",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Hand"
+                                },
+                                "revealed": true
+                            },
+                            "ShuffleLibrary",
+                            "EmitLibrarySearchedEvent"
+                        ]
+                    },
+                    "description": "Search your library for up to two creature cards"
+                },
+                {
+                    "effect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Hand",
+                                    "filter": "creature"
+                                },
+                                "storeAs": "toothAndNailCandidates"
+                            },
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "toothAndNailCandidates",
+                                "selection": {
+                                    "type": "ChooseUpTo",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 2
+                                    }
+                                },
+                                "storeSelected": "toothAndNailChosen",
+                                "prompt": "Choose up to two creature cards to put onto the battlefield"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "toothAndNailChosen",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Battlefield"
+                                }
+                            }
+                        ]
+                    },
+                    "description": "Put up to two creature cards from your hand onto the battlefield"
+                }
+            ],
+            "chooseCount": 2,
+            "minChooseCount": 1,
+            "additionalManaCostPerExtraMode": "{2}"
+        }
+    },
+    "metadata": {
+        "collectorNumber": "134",
+        "rarity": "RARE",
+        "artist": "Greg Hildebrandt",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/2/02f0067c-2d38-46bd-b52e-070c2ce424f0.jpg?1783944531"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 
