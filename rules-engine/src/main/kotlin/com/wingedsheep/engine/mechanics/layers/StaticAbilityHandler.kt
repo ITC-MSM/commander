@@ -93,6 +93,7 @@ import com.wingedsheep.sdk.scripting.AssignCombatDamageAsUnblocked
 import com.wingedsheep.sdk.scripting.AssignDamageEqualToToughness
 import com.wingedsheep.sdk.scripting.AttackTax
 import com.wingedsheep.sdk.scripting.BlockTax
+import com.wingedsheep.sdk.scripting.CantAttackOrBlockUnlessPay
 import com.wingedsheep.sdk.scripting.AttackerCountLimit
 import com.wingedsheep.sdk.scripting.BlockerCountLimit
 import com.wingedsheep.sdk.scripting.CanAttackDespiteDefender
@@ -922,6 +923,7 @@ class StaticAbilityHandler(
             // AttackRestrictionRules / BlockEvasionRules / CombatEnumerator):
             is AttackTax,
             is BlockTax,
+            is CantAttackOrBlockUnlessPay,
             is AttackerCountLimit,
             is BlockerCountLimit,
             is CanAttackDespiteDefender,

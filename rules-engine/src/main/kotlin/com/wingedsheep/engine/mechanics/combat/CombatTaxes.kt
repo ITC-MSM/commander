@@ -13,6 +13,7 @@ import com.wingedsheep.sdk.core.ManaSymbol
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.AttackTax
 import com.wingedsheep.sdk.scripting.BlockTax
+import com.wingedsheep.sdk.scripting.CantAttackOrBlockUnlessPay
 
 /**
  * What a proposed attack or block costs in generic mana before it may be declared — Ghostly Prison,
@@ -84,7 +85,8 @@ object CombatTaxes {
             }
         }
 
-        return totalGenericTax + perCreatureTax(state, attackers.keys, projected)
+        return totalGenericTax + perCreatureTax(state, attackers.keys, projected) +
+            selfTax(state, cardRegistry, attackers.keys, projected)
     }
 
     /**
@@ -119,7 +121,41 @@ object CombatTaxes {
                 totalTax += taxPerBlocker * blockerIds.size
             }
         }
-        return totalTax + perCreatureTax(state, blockerIds, projected)
+        return totalTax + perCreatureTax(state, blockerIds, projected) +
+            selfTax(state, cardRegistry, blockerIds, projected)
+    }
+
+    /**
+     * Tax a creature charges for *itself* — [CantAttackOrBlockUnlessPay], Myr Prototype's "can't
+     * attack or block unless you pay {1} for each +1/+1 counter on it".
+     *
+     * Unlike [AttackTax]/[BlockTax] this doesn't scan the battlefield: only the creatures actually
+     * being declared can charge, and each charges once for itself. That is also what keeps the
+     * whole tax monotone in the declared set — dropping a creature drops exactly its own charge.
+     *
+     * The amount is evaluated with the taxed creature as the source, so a counter-counting amount
+     * reads that creature's counters rather than the declaring player's board. Taxes attackers and
+     * blockers identically, hence one implementation for both.
+     */
+    private fun selfTax(
+        state: GameState,
+        cardRegistry: CardRegistry,
+        creatureIds: Set<EntityId>,
+        projected: ProjectedState,
+    ): Int {
+        var totalTax = 0
+        for (creatureId in creatureIds) {
+            val container = state.getEntity(creatureId) ?: continue
+            val cardComponent = container.get<CardComponent>() ?: continue
+            val cardDef = cardRegistry.getCard(cardComponent.cardDefinitionId) ?: continue
+            val controllerId = projected.getController(creatureId) ?: continue
+            for (ability in cardDef.staticAbilities) {
+                if (ability !is CantAttackOrBlockUnlessPay) continue
+                val ctx = EffectContext(sourceId = creatureId, controllerId = controllerId)
+                totalTax += maxOf(0, dynamicAmountEvaluator.evaluate(state, ability.amount, ctx, projected))
+            }
+        }
+        return totalTax
     }
 
     /**

@@ -147,6 +147,10 @@ class CostPaymentService(private val services: EngineServices) {
                 // plain yes/no like paying life.
                 is CostAtom.Mill ->
                     yesNoPrompt(state, payerId, resolved, sourceId, sourceName, ctx, "${atom.description.replaceFirstChar { it.uppercase() }}?", atom.description.replaceFirstChar { it.uppercase() })
+                // Same shape as Mill: the cards are the top of the library, so there is nothing to
+                // select and the prompt is a plain yes/no.
+                is CostAtom.ExileTopOfLibrary ->
+                    yesNoPrompt(state, payerId, resolved, sourceId, sourceName, ctx, "${atom.description.replaceFirstChar { it.uppercase() }}?", atom.description.replaceFirstChar { it.uppercase() })
                 is CostAtom.RevealFromHand ->
                     selectionPrompt(state, payerId, resolved, sourceId, sourceName, ctx, candidates, atom.count, useTargetingUI = false)
                 is CostAtom.Sacrifice ->
@@ -346,6 +350,7 @@ class CostPaymentService(private val services: EngineServices) {
                         CostPaymentExecution(state, emptyList(), success = false)
                 }
             is CostAtom.Mill -> millTop(state, payerId, atom.count)
+            is CostAtom.ExileTopOfLibrary -> exileTop(state, payerId, atom.count)
             is CostAtom.RevealFromHand -> revealSelected(state, payerId, selected.keys.toList())
             is CostAtom.Sacrifice -> sacrificeSelected(state, payerId, selected.keys.toList())
             is CostAtom.ReturnToHand -> returnSelected(state, selected.keys.toList())
@@ -559,6 +564,19 @@ class CostPaymentService(private val services: EngineServices) {
         return CostPaymentExecution(result.state, result.events, success = true)
     }
 
+    /**
+     * The [CostAtom.ExileTopOfLibrary] payment: the top [count] cards straight to exile.
+     *
+     * Mirrors [millTop] except for the destination and the absent mill replacement — exiling from
+     * the top is not milling (CR 701.17a), so the announced count is the paid count. [canAfford]
+     * has already guaranteed the library is deep enough.
+     */
+    private fun exileTop(state: GameState, payerId: EntityId, count: Int): CostPaymentExecution {
+        val exiled = state.getZone(ZoneKey(payerId, Zone.LIBRARY)).take(count)
+        val result = ZoneTransitionService.moveToZoneBatch(state, exiled, Zone.EXILE)
+        return CostPaymentExecution(result.state, result.events, success = true)
+    }
+
     private fun exileSelected(state: GameState, payerId: EntityId, selected: List<EntityId>, zone: Zone): CostPaymentExecution {
         val fromZone = ZoneKey(payerId, zone)
         val exileZone = ZoneKey(payerId, Zone.EXILE)
@@ -673,6 +691,9 @@ class CostPaymentService(private val services: EngineServices) {
                     is CostAtom.ExileFromGraveyardForTotal -> false
                     // CR 701.17b — a mill cost is unpayable when the library holds fewer cards.
                     is CostAtom.Mill -> state.getZone(ZoneKey(payerId, Zone.LIBRARY)).size >= atom.count
+                    // CR 118.3 — the top N cards have to be there to be exiled.
+                    is CostAtom.ExileTopOfLibrary ->
+                        state.getZone(ZoneKey(payerId, Zone.LIBRARY)).size >= atom.count
                     is CostAtom.RevealFromHand -> domain(state, payerId, c, sourceId).size >= atom.count
                     is CostAtom.Sacrifice -> {
                         val candidates = domain(state, payerId, c, sourceId)
@@ -759,6 +780,7 @@ class CostPaymentService(private val services: EngineServices) {
                 // cost — CostHandler owns its selection, and [canAfford] already reports it
                 // unaffordable as a PayCost, so it has no domain on this path.
                 is CostAtom.Mana, is CostAtom.PayLife, is CostAtom.Mill,
+                is CostAtom.ExileTopOfLibrary,
                 is CostAtom.PutCountersOnSelf, is CostAtom.VariablePermanents,
                 is CostAtom.ExileFromGraveyardForTotal -> null
             }

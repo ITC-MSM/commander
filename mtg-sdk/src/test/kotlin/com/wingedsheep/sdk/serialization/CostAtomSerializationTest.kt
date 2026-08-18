@@ -35,6 +35,7 @@ class CostAtomSerializationTest : FunSpec({
         CostAtom.Discard(count = 1, filter = GameObjectFilter.Any, random = true),
         CostAtom.ExileFrom(Zone.GRAVEYARD, GameObjectFilter.Creature, count = 3),
         CostAtom.Mill(count = 1),
+        CostAtom.ExileTopOfLibrary(count = 10),
         CostAtom.VariablePermanents(GameObjectFilter.Artifact, minCount = 1, excludeSelf = true),
         CostAtom.TapPermanents(count = 1, filter = GameObjectFilter.Creature),
         CostAtom.ReturnToHand(GameObjectFilter.Any, count = 1),
@@ -94,5 +95,8 @@ class CostAtomSerializationTest : FunSpec({
         CostAtom.Sacrifice(count = 2).selectionCount shouldBe 2
         CostAtom.ExileFrom(Zone.GRAVEYARD, count = 3).selectionCount shouldBe 3
         CostAtom.TapPermanents(count = 1).selectionCount shouldBe 1
+        // Top-of-library costs take no selection: the cards are the top, not a player's pick.
+        CostAtom.Mill(count = 1).selectionCount shouldBe 0
+        CostAtom.ExileTopOfLibrary(count = 10).selectionCount shouldBe 0
     }
 })

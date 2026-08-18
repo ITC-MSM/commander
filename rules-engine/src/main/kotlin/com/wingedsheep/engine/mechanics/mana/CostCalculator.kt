@@ -394,6 +394,10 @@ class CostCalculator(
                 }
             }
             is CostModification.IncreaseGeneric -> addGenericIncrease(modification.amount)
+            is CostModification.IncreaseGenericBy ->
+                addGenericIncrease(
+                    evaluateReduction(state, modification.source, casterId, chosenTargets, abilitySourceId)
+                )
             is CostModification.IncreaseColored -> {
                 ManaCost.parse(modification.symbols).symbols
                     .filterIsInstance<ManaSymbol.Colored>()
@@ -1635,6 +1639,13 @@ class CostCalculator(
             if (!matchesCardDefinition(cardDef, target.filter, sourceId, state, state.projectedState)) continue
             when (val mod = ability.modification) {
                 is CostModification.IncreaseGeneric -> totalIncrease += mod.amount
+                is CostModification.IncreaseGenericBy -> {
+                    if (casterId != null) {
+                        totalIncrease += evaluateReduction(
+                            state, mod.source, casterId, abilitySourceId = sourceId
+                        )
+                    }
+                }
                 is CostModification.IncreaseGenericPerOtherSpellThisTurn -> {
                     if (casterId != null) {
                         val spellsCast = state.playerSpellsCastThisTurn[casterId] ?: 0

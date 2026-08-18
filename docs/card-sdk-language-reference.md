@@ -407,6 +407,14 @@ excluded.
   `ModifyMillAmount` replacement (Bruvac) still applies to the announced count when the cost is
   actually paid, and the library→graveyard moves go through `ZoneTransitionService`, so mill triggers
   fire exactly as they do for an effect's mill.
+- `Costs.ExileTopOfLibrary(count)` — exile the top `count` cards of your library as a cost
+  ("{R}, Exile the top ten cards of your library" — Arc-Slogger). The exile twin of `Costs.Mill`:
+  no player selection (the cards are the top of the library), and per **CR 118.3** — a player can't
+  pay a cost without the resources to pay it fully — the cost is **unpayable** on a short library and
+  gates legal-action enumeration, rather than exiling as many as possible the way the exile *effect*
+  would. Unlike mill, no `ModifyMillAmount` replacement applies: exiling from the top is not milling
+  (CR 701.17a), so the announced count is the paid count. Distinct from the `ExileFromGraveyard`-style
+  *chosen*-card costs, which mean "choose N", not "the top N".
 - `Costs.ExileSelf` — exile this permanent (or graveyard card, for graveyard-activated abilities).
 - `Costs.ReturnSelfToHand` — return this permanent to its owner's hand (Maze's End: "{3}, {T},
   Return this land to its owner's hand: …"). The bounce-to-hand sibling of `Costs.SacrificeSelf` /
@@ -5907,6 +5915,17 @@ staticAbility {
   declaration pauses for the same mana-source confirmation as the attack tax. The pre-existing
   per-creature-type block tax (Whipgrass Entangler) uses `AttackBlockTaxPerCreatureType` floating
   effects instead.
+- `CantAttackOrBlockUnlessPay(amount: DynamicAmount)` — the **self-scoped** tax: this permanent
+  can't attack or block unless its controller pays `amount` generic mana *for it* (Myr Prototype,
+  "can't attack or block unless you pay {1} for each +1/+1 counter on it"). Where `AttackTax` /
+  `BlockTax` tax other players' creatures from the side of the board they are aimed at, here the
+  taxing permanent and the taxed creature are the same object — so there is no filter and no
+  per-attacker multiplier, and the amount is evaluated with the declared creature as the source
+  (`DynamicAmounts.countersOnSelf(…)` reads *its* counters, not a board aggregate). Priced through
+  the same `CombatTaxes` entry point as the other two, so it stacks with them, pauses declaration
+  for the same `SelectManaSourcesDecision`, and stays monotone in the declared set. Attacking and
+  blocking are charged separately; a card taxing only one half wants its own variant rather than a
+  boolean here.
 - `CantBeAttackedBy(attackerFilter)` — the general **defender-side** attack restriction (CR
   508.1c): creatures matching `attackerFilter` can't attack the controller of the permanent carrying
   it. Resolved by `CantBeAttackedByDefenderRule`, which scans the *defending* player's projected
@@ -6027,7 +6046,13 @@ staticAbility {
   `IncreaseGenericIfAnyTargetMatches(amount, filter)` (target-gated tax — "{N} more if it targets
   a Dragon", Dragon's Prey; the increase analogue of the `FixedIfAnyTargetMatches` reduction;
   applies only once a matching target is chosen, so affordability enumeration treats it as not
-  applying), `IncreaseLife(amount)`.
+  applying), `IncreaseGenericBy(source)` (the tax mirror of `ReduceGenericBy`, reading the same
+  `CostReductionSource` vocabulary — Hum of the Radix's "Each artifact spell costs {1} more to cast
+  for each artifact its controller controls" is `AnyCaster(Artifact)` +
+  `IncreaseGenericBy(ArtifactsYouControl)`. The source is evaluated against the **casting** player,
+  exactly as on the reduction side, which is what makes "its controller controls" fall out without a
+  second vocabulary: an opponent pays for *their* artifacts. Applies to alternative base costs too,
+  per CR 118.9a), `IncreaseLife(amount)`.
   Reduction `source: CostReductionSource` covers fixed amounts, counts of permanents/cards in
   zones, target gates, and a few mechanic-specific shapes — e.g. `Fixed`, `CreaturesYouControl`,
   `ArtifactsYouControl`, `PermanentsYouControlMatching(filter)` (the filtered "you control" count —

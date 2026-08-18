@@ -339,6 +339,11 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                         is CostAtom.Mill -> {
                             if (state.getZone(ZoneKey(playerId, Zone.LIBRARY)).size < atom.count) continue
                         }
+                        // CR 118.3 — likewise for exiling the top N: a library too shallow to pay
+                        // makes the ability unactivatable, it does not exile what's left.
+                        is CostAtom.ExileTopOfLibrary -> {
+                            if (state.getZone(ZoneKey(playerId, Zone.LIBRARY)).size < atom.count) continue
+                        }
                         is CostAtom.RemoveCounters -> {
                             val needed = when (val count = atom.count) {
                                 is com.wingedsheep.sdk.scripting.values.DynamicAmount.Fixed -> count.amount
@@ -543,6 +548,13 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                                     // CR 701.17b — a mill cost is unpayable when the library holds
                                     // fewer cards. No selection: the milled cards are the top.
                                     is CostAtom.Mill -> {
+                                        if (state.getZone(ZoneKey(playerId, Zone.LIBRARY)).size < atom.count) {
+                                            costCanBePaid = false
+                                            break
+                                        }
+                                    }
+                                    // CR 118.3 — same gate for exiling the top N.
+                                    is CostAtom.ExileTopOfLibrary -> {
                                         if (state.getZone(ZoneKey(playerId, Zone.LIBRARY)).size < atom.count) {
                                             costCanBePaid = false
                                             break
