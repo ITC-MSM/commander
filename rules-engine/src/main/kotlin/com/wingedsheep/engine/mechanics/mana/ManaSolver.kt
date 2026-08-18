@@ -1203,7 +1203,7 @@ class ManaSolver(
                 }
 
                 // Check summoning sickness for creatures (non-lands)
-                if (!card.typeLine.isLand && isCreature && tapBlockedBySickness) {
+                if (isCreature && tapBlockedBySickness) {
                     continue // Can't use this ability due to summoning sickness
                 }
 
@@ -2411,10 +2411,11 @@ class ManaSolver(
     private fun canTapForCost(state: GameState, entityId: EntityId): Boolean {
         val container = state.getEntity(entityId) ?: return false
         if (container.has<TappedComponent>()) return false
-        val card = container.get<CardComponent>() ?: return false
         val projected = state.projectedState
-        // Summoning sickness only bites non-land creatures (CR 302.6).
-        if (!card.typeLine.isLand && projected.isCreature(entityId)) {
+        // Summoning sickness bites any creature (CR 302.6) — including a land that is also a
+        // creature (Dryad Arbor). A land that isn't also a creature never satisfies isCreature,
+        // so this is a no-op for every ordinary land's mana ability.
+        if (projected.isCreature(entityId)) {
             if (SummoningSicknessRules.blocksTapOrUntapCost(entityId, container, projected)) return false
         }
         return true
@@ -2472,7 +2473,7 @@ class ManaSolver(
             // Summoning sickness applies to non-land creatures (CR 302.6) — they can't tap unless
             // they have haste or an "activate as though hasty" grant.
             val isCreature = projected.isCreature(entityId)
-            if (!card.typeLine.isLand && isCreature &&
+            if (isCreature &&
                 SummoningSicknessRules.blocksTapOrUntapCost(entityId, container, projected)
             ) continue
 
@@ -2589,7 +2590,7 @@ class ManaSolver(
             if (projected.hasLostAllAbilities(entityId)) continue
 
             val isCreature = projected.isCreature(entityId)
-            if (!card.typeLine.isLand && isCreature &&
+            if (isCreature &&
                 SummoningSicknessRules.blocksTapOrUntapCost(entityId, container, projected)
             ) continue
 

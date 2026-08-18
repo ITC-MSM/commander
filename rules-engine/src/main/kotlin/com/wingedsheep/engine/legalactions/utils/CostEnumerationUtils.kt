@@ -507,11 +507,13 @@ class CostEnumerationUtils(
     fun canPayTapCost(state: GameState, entityId: EntityId): Boolean {
         val container = state.getEntity(entityId) ?: return false
         if (container.has<TappedComponent>()) return false
-        val cardComponent = container.get<CardComponent>() ?: return false
         // Read creature-ness / haste from projected state so a Vehicle or animated permanent
-        // that is currently a creature is gated. Lands keep the carve-out (basic-land mana
-        // abilities are not restricted by summoning sickness).
-        if (!cardComponent.typeLine.isLand && state.projectedState.isCreature(entityId) &&
+        // that is currently a creature is gated. Gating on `isCreature` alone (no `isLand`
+        // carve-out) is already correct for plain lands — a land that isn't also a creature
+        // never satisfies `isCreature` — and it's the only way to catch a land that *is* also a
+        // creature (Dryad Arbor: "This land ... is affected by summoning sickness"), which a
+        // land-wide carve-out would silently exempt.
+        if (state.projectedState.isCreature(entityId) &&
             SummoningSicknessRules.blocksTapOrUntapCost(entityId, container, state.projectedState)
         ) return false
         return true
