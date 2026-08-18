@@ -11252,6 +11252,91 @@
     ]
 }
 
+// Temporal Cascade
+{
+    "name": "Temporal Cascade",
+    "manaCost": "{5}{U}{U}",
+    "typeLine": "Sorcery",
+    "oracleText": "Choose one —\n• Each player shuffles their hand and graveyard into their library.\n• Each player draws seven cards.\nEntwine {2} (Choose both if you pay the entwine cost.)",
+    "script": {
+        "spellEffect": {
+            "type": "Modal",
+            "modes": [
+                {
+                    "effect": {
+                        "type": "ForEach",
+                        "space": {
+                            "type": "IterationSpace.Players",
+                            "players": "Each"
+                        },
+                        "body": {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "GatherCards",
+                                    "source": {
+                                        "type": "FromMultipleZones",
+                                        "zones": [
+                                            "Hand",
+                                            "Graveyard"
+                                        ]
+                                    },
+                                    "storeAs": "temporalCascadeCards"
+                                },
+                                {
+                                    "type": "MoveCollection",
+                                    "from": "temporalCascadeCards",
+                                    "destination": {
+                                        "type": "ToZone",
+                                        "zone": "Library",
+                                        "placement": "Shuffled"
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "description": "Each player shuffles their hand and graveyard into their library"
+                },
+                {
+                    "effect": {
+                        "type": "ForEach",
+                        "space": {
+                            "type": "IterationSpace.Players",
+                            "players": "Each"
+                        },
+                        "body": {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 7
+                            }
+                        }
+                    },
+                    "description": "Each player draws seven cards"
+                }
+            ],
+            "chooseCount": 2,
+            "minChooseCount": 1,
+            "additionalManaCostPerExtraMode": "{2}"
+        }
+    },
+    "metadata": {
+        "collectorNumber": "52",
+        "rarity": "RARE",
+        "artist": "Puddnhead",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/a/daf180c6-7ab6-4922-9f5e-73b4f2c9488a.jpg?1783944551",
+        "rulings": [
+            {
+                "date": "2013-07-01",
+                "text": "This card won’t be put into your graveyard until after it’s finished resolving, which means it won’t be shuffled into your library as part of its own effect."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Thirst for Knowledge
 {
     "name": "Thirst for Knowledge",
