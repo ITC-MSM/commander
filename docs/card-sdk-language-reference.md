@@ -6035,7 +6035,13 @@ staticAbility {
   `IncreaseGenericIfAnyTargetMatches(amount, filter)` (target-gated tax — "{N} more if it targets
   a Dragon", Dragon's Prey; the increase analogue of the `FixedIfAnyTargetMatches` reduction;
   applies only once a matching target is chosen, so affordability enumeration treats it as not
-  applying), `IncreaseLife(amount)`.
+  applying), `IncreaseGenericBy(source)` (the tax mirror of `ReduceGenericBy`, reading the same
+  `CostReductionSource` vocabulary — Hum of the Radix's "Each artifact spell costs {1} more to cast
+  for each artifact its controller controls" is `AnyCaster(Artifact)` +
+  `IncreaseGenericBy(ArtifactsYouControl)`. The source is evaluated against the **casting** player,
+  exactly as on the reduction side, which is what makes "its controller controls" fall out without a
+  second vocabulary: an opponent pays for *their* artifacts. Applies to alternative base costs too,
+  per CR 118.9a), `IncreaseLife(amount)`.
   Reduction `source: CostReductionSource` covers fixed amounts, counts of permanents/cards in
   zones, target gates, and a few mechanic-specific shapes — e.g. `Fixed`, `CreaturesYouControl`,
   `ArtifactsYouControl`, `PermanentsYouControlMatching(filter)` (the filtered "you control" count —

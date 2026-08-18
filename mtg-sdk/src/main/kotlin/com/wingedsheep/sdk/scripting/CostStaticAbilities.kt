@@ -59,6 +59,8 @@ data class ModifySpellCost(
             is CostModification.ReduceColoredIfAnyTargetMatches ->
                 "cost ${modification.symbols} less to cast if it targets ${modification.filter.description}"
             is CostModification.IncreaseGeneric -> "cost {${modification.amount}} more"
+            is CostModification.IncreaseGenericBy ->
+                "cost {X} more to cast, where X is ${fromCasterPerspective(modification.source.description)}"
             is CostModification.IncreaseColored -> "cost ${modification.symbols} more to cast"
             is CostModification.IncreaseGenericPerOtherSpellThisTurn ->
                 "cost {${modification.amountPerSpell}} more to cast for each other spell that player has cast this turn"
@@ -76,6 +78,29 @@ data class ModifySpellCost(
         }
         return "$prefix $agreedVerb$perTurn$conditionSuffix"
     }
+
+    /**
+     * Re-person a [CostReductionSource] description for a tax that isn't aimed at its own
+     * controller.
+     *
+     * Every source phrases itself from the *reducing* player's point of view ("the number of
+     * artifacts you control") because a reduction is always something you give yourself. An
+     * increase pointed at [SpellCostTarget.AnyCaster] or at opponents taxes whoever casts the
+     * spell, so "you" names the wrong player — Hum of the Radix reads "for each artifact **its
+     * controller** controls". Rewriting the possessive here keeps that in one place instead of
+     * giving all thirty sources a second-person twin they would otherwise never use.
+     */
+    private fun fromCasterPerspective(sourceDescription: String): String =
+        when (target) {
+            is SpellCostTarget.AnyCaster,
+            is SpellCostTarget.OpponentsCastTargeting,
+            is SpellCostTarget.OpponentsCastFromZones ->
+                sourceDescription
+                    .replace("you control", "its controller controls")
+                    .replace("you own", "its controller owns")
+                    .replace("your ", "its controller's ")
+            else -> sourceDescription
+        }
 
     // A filter that narrows nothing (e.g. GameObjectFilter.Any) describes itself as "card", which
     // reads wrong as an adjective ("the second card spell you cast"). Emit no adjective in that case
@@ -309,6 +334,23 @@ sealed interface CostModification {
     @SerialName("IncreaseGeneric")
     @Serializable
     data class IncreaseGeneric(val amount: Int) : CostModification
+
+    /**
+     * Increase generic mana by a dynamic amount sourced from the game state — the tax mirror of
+     * [ReduceGenericBy], reading the same [CostReductionSource] vocabulary.
+     *
+     * Used for Hum of the Radix ("Each artifact spell costs {1} more to cast for each artifact its
+     * controller controls") as
+     * `IncreaseGenericBy(CostReductionSource.ArtifactsYouControl)`.
+     *
+     * The source is evaluated against the **casting** player, exactly as it is on the reduction
+     * side. That is what makes "its controller controls" work without a second vocabulary: paired
+     * with [SpellCostTarget.AnyCaster] the counted permanents are the taxed player's, not the
+     * taxing permanent's controller's.
+     */
+    @SerialName("IncreaseGenericBy")
+    @Serializable
+    data class IncreaseGenericBy(val source: CostReductionSource) : CostModification
 
     /**
      * Add specific colored mana symbols to the cost (e.g. `"{W}"`), a colored tax effect.
