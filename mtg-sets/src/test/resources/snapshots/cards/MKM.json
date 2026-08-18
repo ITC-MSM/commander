@@ -5008,6 +5008,67 @@
     ]
 }
 
+// Doppelgang
+{
+    "name": "Doppelgang",
+    "manaCost": "{X}{X}{X}{G}{U}",
+    "typeLine": "Sorcery",
+    "oracleText": "For each of X target permanents, create X tokens that are copies of that permanent.",
+    "script": {
+        "spellEffect": {
+            "type": "ForEach",
+            "space": "IterationSpace.Targets",
+            "body": {
+                "type": "CreateTokenCopyOfTarget",
+                "target": {
+                    "type": "ContextTarget",
+                    "index": 0
+                },
+                "count": "XValue"
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "optional": true,
+                "filter": {
+                    "baseFilter": "permanent"
+                },
+                "dynamicMaxCount": "XValue"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "198",
+        "rarity": "RARE",
+        "artist": "Chris Rallis",
+        "flavorText": "\"Suspect spotted at the Tin Street Market, Yescu Street entrance. And the Oak Street entrance. And somehow also in Lobar Alley!\"\n—Avult of the Foundway Associates",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/2/a2daec58-78ed-4da5-b3b0-b04f12b0acbd.jpg?1783912852",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "The tokens copy exactly what was printed on the original permanent and nothing else (unless that permanent is itself copying something else; see below). They don't copy whether that permanent is tapped or untapped, whether it has any counters on it or Auras attached to it, or any non-copy effects that have changed its power, toughness, types, color, and so on."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "If the copied permanent is copying something else, then the tokens enter the battlefield as whatever that permanent copied."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "If the copied permanent has {X} in its mana cost, X is 0."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "Any enters-the-battlefield abilities of the copied permanent will trigger when the tokens enter the battlefield. Any \"as [this permanent] enters the battlefield\" or \"[this permanent] enters the battlefield with\" abilities of the permanent will also work."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN",
+        "BLUE"
+    ]
+}
+
 // Drag the Canal
 {
     "name": "Drag the Canal",
@@ -9372,6 +9433,123 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Judith, Carnage Connoisseur
+{
+    "name": "Judith, Carnage Connoisseur",
+    "manaCost": "{3}{B}{R}",
+    "typeLine": "Legendary Creature — Human Shaman",
+    "oracleText": "Whenever you cast an instant or sorcery spell, choose one —\n• That spell gains deathtouch and lifelink.\n• Create a 2/2 red Imp creature token with \"When this token dies, it deals 2 damage to each opponent.\"",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 4
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            {
+                                "type": "Or",
+                                "predicates": [
+                                    "IsInstant",
+                                    "IsSorcery"
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Modal",
+                    "modes": [
+                        {
+                            "effect": {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "GrantKeywordToSpell",
+                                        "keyword": "DEATHTOUCH"
+                                    },
+                                    {
+                                        "type": "GrantKeywordToSpell",
+                                        "keyword": "LIFELINK"
+                                    }
+                                ]
+                            },
+                            "description": "That spell gains deathtouch and lifelink"
+                        },
+                        {
+                            "effect": {
+                                "type": "CreateToken",
+                                "power": 2,
+                                "toughness": 2,
+                                "colors": [
+                                    "RED"
+                                ],
+                                "creatureTypes": [
+                                    "Imp"
+                                ],
+                                "imageUri": "https://cards.scryfall.io/normal/front/4/7/47a1385b-2be2-49a8-8400-186cd5525dad.jpg?1783912609",
+                                "triggeredAbilities": [
+                                    {
+                                        "id": "ability_2",
+                                        "trigger": {
+                                            "type": "ZoneChangeEvent",
+                                            "from": "Battlefield",
+                                            "to": "Graveyard"
+                                        },
+                                        "effect": {
+                                            "type": "DealDamage",
+                                            "amount": {
+                                                "type": "Fixed",
+                                                "amount": 2
+                                            },
+                                            "target": {
+                                                "type": "PlayerRef",
+                                                "player": "EachOpponent"
+                                            }
+                                        }
+                                    }
+                                ]
+                            },
+                            "description": "Create a 2/2 red Imp creature token with \"When this token dies, it deals 2 damage to each opponent.\""
+                        }
+                    ]
+                },
+                "descriptionOverride": "Whenever you cast an instant or sorcery spell, choose one — that spell gains deathtouch and lifelink; or create a 2/2 red Imp creature token with \"When this token dies, it deals 2 damage to each opponent.\""
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "210",
+        "rarity": "RARE",
+        "artist": "Jodie Muir",
+        "flavorText": "\"I don't make my living hiding the truth, detective. I shout it from the stage.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/e/3eaa19ce-cace-499e-8b23-ef9e56b23700.jpg?1783912849",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "Judith, Carnage Connoisseur's triggered ability resolves before the spell that caused it to trigger. The ability will resolve even if that spell is countered."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "An instant or sorcery spell with deathtouch must actually deal damage to a creature for it to be destroyed. If the spell instructs another object to deal damage (for example, Hard-Hitting Question), the spell doesn't deal any damage itself and its instance of deathtouch doesn't apply. Dealing 0 damage isn't dealing damage."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "Similarly, an instant or sorcery spell with lifelink must actually deal damage in order to cause its controller to gain life. If the spell instructs another object to deal damage, its controller won't gain life when that damage is dealt."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "RED"
     ]
 }
 
