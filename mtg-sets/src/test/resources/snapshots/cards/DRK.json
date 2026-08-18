@@ -481,3 +481,44 @@
         "WHITE"
     ]
 }
+
+// Tivadar's Crusade
+{
+    "name": "Tivadar's Crusade",
+    "manaCost": "{1}{W}{W}",
+    "typeLine": "Sorcery",
+    "oracleText": "Destroy all Goblins.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherCards",
+                    "source": {
+                        "type": "BattlefieldMatching",
+                        "filter": "permanent Goblin"
+                    },
+                    "storeAs": "destroyAll_gathered"
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "destroyAll_gathered",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Graveyard"
+                    },
+                    "moveType": "Destroy"
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "18",
+        "rarity": "UNCOMMON",
+        "artist": "Dennis Detwiller",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/b/8b6da540-6803-47e5-9af0-7ae8e2f84b6c.jpg?1783947945"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
