@@ -247,6 +247,45 @@
     ]
 }
 
+// Dark Heart of the Wood
+{
+    "name": "Dark Heart of the Wood",
+    "manaCost": "{B}{G}",
+    "typeLine": "Enchantment",
+    "oracleText": "Sacrifice a Forest: You gain 3 life.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomSacrifice",
+                        "filter": "land Forest"
+                    }
+                },
+                "effect": {
+                    "type": "GainLife",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 3
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "95",
+        "artist": "Christopher Rush",
+        "flavorText": "Even the Goblins shun this haunted place, where the tree limbs twist in agony and the ground seems to scuttle under your feet.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/3/e3d3df64-1e90-4aef-86ae-0062aa23ff30.jpg?1783947928"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "GREEN"
+    ]
+}
+
 // Drowned
 {
     "name": "Drowned",
