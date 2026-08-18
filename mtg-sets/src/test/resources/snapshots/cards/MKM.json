@@ -2707,6 +2707,163 @@
     ]
 }
 
+// Case of the Shattered Pact
+{
+    "name": "Case of the Shattered Pact",
+    "manaCost": "{2}",
+    "typeLine": "Enchantment — Case",
+    "oracleText": "When this Case enters, search your library for a basic land card, reveal it, put it into your hand, then shuffle.\nTo solve — There are five colors among permanents you control. (If unsolved, solve at the beginning of your end step.)\nSolved — At the beginning of combat on your turn, target creature you control gains flying, double strike, and vigilance until end of turn.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Library",
+                                "filter": "basicland"
+                            },
+                            "storeAs": "searchable"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "searchable",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "found"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "found",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Hand"
+                            },
+                            "revealed": true
+                        },
+                        "ShuffleLibrary",
+                        "EmitLibrarySearchedEvent"
+                    ]
+                }
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "END"
+                },
+                "binding": "ANY",
+                "effect": "BecomeSolved",
+                "interveningIf": {
+                    "type": "All",
+                    "conditions": [
+                        {
+                            "type": "Compare",
+                            "left": {
+                                "type": "AggregateBattlefield",
+                                "player": "You",
+                                "filter": "permanent",
+                                "aggregation": "DISTINCT_COLORS"
+                            },
+                            "operator": "GTE",
+                            "right": {
+                                "type": "Fixed",
+                                "amount": 5
+                            }
+                        },
+                        {
+                            "type": "Not",
+                            "condition": {
+                                "type": "EntityMatches",
+                                "entity": "Self",
+                                "filter": {
+                                    "statePredicates": [
+                                        "IsSolved"
+                                    ]
+                                }
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "To solve — the number of colors among permanents you control is at least 5"
+            },
+            {
+                "id": "ability_3",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "BEGIN_COMBAT"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "FLYING",
+                            "target": {
+                                "type": "ContextTarget",
+                                "index": 0
+                            }
+                        },
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "DOUBLE_STRIKE",
+                            "target": {
+                                "type": "ContextTarget",
+                                "index": 0
+                            }
+                        },
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "VIGILANCE",
+                            "target": {
+                                "type": "ContextTarget",
+                                "index": 0
+                            }
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature ctrl:you"
+                    }
+                },
+                "triggerRestriction": {
+                    "type": "EntityMatches",
+                    "entity": "Self",
+                    "filter": {
+                        "statePredicates": [
+                            "IsSolved"
+                        ]
+                    }
+                },
+                "descriptionOverride": "Solved — At the beginning of combat on your turn, target creature you control gains flying, double strike, and vigilance until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "1",
+        "rarity": "UNCOMMON",
+        "artist": "Peter Polach",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/a/2a70f0ae-d49b-4cc8-9f76-895039c3dc39.jpg?1783912930"
+    },
+    "colorIdentityOverride": []
+}
+
 // Caught Red-Handed
 {
     "name": "Caught Red-Handed",
