@@ -110,6 +110,45 @@
     ]
 }
 
+// Drowned
+{
+    "name": "Drowned",
+    "manaCost": "{1}{U}",
+    "typeLine": "Creature — Zombie",
+    "oracleText": "{B}: Regenerate this creature.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{B}"
+                    }
+                },
+                "effect": {
+                    "type": "Regenerate",
+                    "target": "Self"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "24",
+        "artist": "Quinton Hoover",
+        "flavorText": "We asked Captain Soll what became of the Serafina, but all he said was, \"Ships that go down shouldn't come back up.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/5/951b6c10-cbba-44b6-aae2-2c386b7ebacb.jpg?1783947945"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Exorcist
 {
     "name": "Exorcist",
