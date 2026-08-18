@@ -2698,9 +2698,7 @@
                             }
                         }
                     ]
-                },
-                "timing": "ManaAbility",
-                "isManaAbility": true
+                }
             }
         ]
     },

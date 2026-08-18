@@ -1737,9 +1737,7 @@
                             }
                         }
                     ]
-                },
-                "timing": "ManaAbility",
-                "isManaAbility": true
+                }
             }
         ]
     },
@@ -3553,9 +3551,7 @@
                             }
                         }
                     ]
-                },
-                "timing": "ManaAbility",
-                "isManaAbility": true
+                }
             }
         ]
     },
@@ -4718,9 +4714,7 @@
                             }
                         }
                     ]
-                },
-                "timing": "ManaAbility",
-                "isManaAbility": true
+                }
             }
         ]
     },
@@ -4965,9 +4959,7 @@
                             }
                         }
                     ]
-                },
-                "timing": "ManaAbility",
-                "isManaAbility": true
+                }
             }
         ]
     },
@@ -5307,9 +5299,7 @@
                             }
                         }
                     ]
-                },
-                "timing": "ManaAbility",
-                "isManaAbility": true
+                }
             }
         ]
     },

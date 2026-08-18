@@ -38,8 +38,11 @@ object Battles {
         state.projectedState.isBattle(entityId)
 
     /**
-     * True if [entityId] is a Siege — the only battle type printed so far (CR 310.11), and the one
-     * whose protector must be an opponent of its controller (CR 310.11a). Read from projected
+     * True if [entityId] is a Siege — the only battle type printed so far, and the one whose
+     * protector must be an opponent of its controller (CR 310.12a). Note that CR 310.12 says only
+     * that *some* battles have the subtype (it said "all currently existing battles" until the
+     * August 7, 2026 update), so this is a real test and not a formality: 704.5v's defeat-trigger
+     * reprieve and [eligibleProtectors] both branch on it. Read from projected
      * subtypes so a type-changing effect is respected.
      */
     fun isSiege(state: GameState, entityId: EntityId): Boolean =

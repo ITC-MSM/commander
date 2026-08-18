@@ -41,7 +41,10 @@ sealed interface TimingRule {
      * Mana ability: Special timing that does NOT use the stack.
      *
      * MTG Rules 605.1: A mana ability is either:
-     * - An activated ability without a target that could add mana to a player's mana pool
+     * - An activated ability that could add mana to a player's mana pool, doesn't require a target,
+     *   isn't a loyalty ability, and whose cost and effect move no card to or from a library
+     *   (605.1a — the library clause arrived in the August 7, 2026 update, and is what makes
+     *   Chromatic Sphere and Deranged Assistant ordinary activated abilities)
      * - A triggered ability without a target that triggers from a mana ability
      *
      * Key characteristics:

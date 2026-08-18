@@ -339,4 +339,16 @@ sealed interface CardValidationError {
         override val cardName: String,
         override val message: String
     ) : CardValidationError
+
+    /**
+     * The mirror of [UnflaggedManaAbility]: an activated ability flagged `isManaAbility = true`
+     * that CR 605.1a disqualifies — it targets, it is a loyalty ability, or its cost or effect
+     * moves a card to or from a library. The library clause entered 605.1a in the August 7, 2026
+     * update, which is what makes this direction worth failing on: a card can be correctly flagged
+     * when written and be wrong later, and nothing about the flag is visible at a glance.
+     */
+    data class MisflaggedManaAbility(
+        override val cardName: String,
+        override val message: String
+    ) : CardValidationError
 }

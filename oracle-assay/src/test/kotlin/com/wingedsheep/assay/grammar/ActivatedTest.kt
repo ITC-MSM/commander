@@ -90,13 +90,27 @@ class ActivatedTest : StringSpec({
             .targetRequirements shouldBe listOf(Targets.permanent(GameObjectFilter.Creature))
     }
 
-    // CR 605.1a: no target, and it could add mana. Both flags are derived rather than spelled,
-    // because no printed word says either.
+    // CR 605.1a: no target, it could add mana, and neither its cost nor its effect moves a card to
+    // or from a library. All of it is derived rather than spelled, because no printed word says any
+    // of it.
     "mana-ability-ness is derived from the effect, not from the sentence" {
         fragment("{T}: Add {G}.").script.activatedAbilities.single().isManaAbility shouldBe true
         fragment("{T}: Draw a card.").script.activatedAbilities.single().isManaAbility shouldBe false
         fragment("{T}: Draw a card.").script.activatedAbilities.single().timing shouldBe
             TimingRule.InstantSpeed
+    }
+
+    // The clause CR 605.1a gained on August 7, 2026. Nothing in either printed line changed on that
+    // date, which is the whole reason the derivation has to carry the rule: Chromatic Sphere's own
+    // Gatherer ruling still calls it a mana ability, and it is not one any more.
+    "a library rider disqualifies a mana ability, on the effect or on the cost" {
+        val sphere = fragment("{T}: Add {G}. Draw a card.").script.activatedAbilities.single()
+        sphere.isManaAbility shouldBe false
+        sphere.timing shouldBe TimingRule.InstantSpeed
+
+        val assistant = fragment("{T}, Mill a card: Add {C}.").script.activatedAbilities.single()
+        assistant.isManaAbility shouldBe false
+        assistant.timing shouldBe TimingRule.InstantSpeed
     }
 
     // The fail-closed half. An `ActivatedAbility` has two dozen fields the sentence does not spell,

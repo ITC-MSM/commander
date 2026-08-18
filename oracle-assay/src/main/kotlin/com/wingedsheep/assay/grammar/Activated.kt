@@ -4,18 +4,25 @@ import com.wingedsheep.assay.syntax.Phrase
 import com.wingedsheep.assay.syntax.bind
 import com.wingedsheep.assay.syntax.oneOf
 import com.wingedsheep.assay.syntax.phrase
+import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.CardScript
 import com.wingedsheep.sdk.scripting.AbilityCost
 import com.wingedsheep.sdk.scripting.AbilityId
 import com.wingedsheep.sdk.scripting.ActivatedAbility
 import com.wingedsheep.sdk.scripting.ActivationRestriction
 import com.wingedsheep.sdk.scripting.TimingRule
+import com.wingedsheep.sdk.scripting.costs.CostAtom
 import com.wingedsheep.sdk.scripting.effects.AddColorlessManaEffect
 import com.wingedsheep.sdk.scripting.effects.AddDynamicManaEffect
 import com.wingedsheep.sdk.scripting.effects.AddManaOfChoiceEffect
 import com.wingedsheep.sdk.scripting.effects.AddManaEffect
+import com.wingedsheep.sdk.scripting.effects.CardDestination
+import com.wingedsheep.sdk.scripting.effects.CardSource
 import com.wingedsheep.sdk.scripting.effects.CompositeEffect
+import com.wingedsheep.sdk.scripting.effects.DrawCardsEffect
 import com.wingedsheep.sdk.scripting.effects.Effect
+import com.wingedsheep.sdk.scripting.effects.GatherCardsEffect
+import com.wingedsheep.sdk.scripting.effects.MoveCollectionEffect
 
 /**
  * "{T}: Add {G}." — the cost-colon-effect sentence, and the third `CardScript` slot the grammar
@@ -83,7 +90,7 @@ object Activated {
         val effect = script.spellEffect ?: return null
         val targets = script.targetRequirements
         if (script != CardScript(spellEffect = effect, targetRequirements = targets)) return null
-        val manaAbility = targets.isEmpty() && producesMana(effect)
+        val manaAbility = targets.isEmpty() && producesMana(effect) && !movesLibraryCard(cost, effect)
         return ActivatedAbility(
             id = ID,
             cost = cost,
@@ -108,20 +115,62 @@ object Activated {
      * Channeler come out as instant-speed abilities that go on the stack. The differential found all
      * three the first time the grammar could read them.
      *
-     * **A rider does not stop it being one.** The rule says "could add mana … when it resolves", not
-     * "does nothing else", so "{1}, {T}, Sacrifice this artifact: Add one mana of any color. Draw a
-     * card." is a mana ability with a draw attached — Chromatic Sphere, whose own printed ruling
-     * spells that out ("This is a mana ability, which means it can be activated as part of the
-     * process of casting a spell … but you don't get to look at the drawn card until you have
-     * finished"). Reading only the outermost effect made the whole clause an instant-speed ability
-     * that goes on the stack, which is a different card. The walk therefore descends through the one
-     * shape a multi-clause line builds — a `CompositeEffect` — and no further: a mana effect buried
-     * under a gate or a `ForEach` is one that *might not* happen, and CR 605.1a's "could" is about
-     * the ability, not about a branch the grammar has not proved reachable.
+     * **Most riders do not stop it being one.** The rule says "could add mana … when it resolves",
+     * not "does nothing else", so a mana line with something attached is still a mana line and the
+     * walk has to see past the outermost effect. Reading only that made Cryptex's unlock counter and
+     * Path of Ancestry's scry come out as instant-speed abilities that go on the stack, which are
+     * different cards. The walk therefore descends through the one shape a multi-clause line builds
+     * — a `CompositeEffect` — and no further: a mana effect buried under a gate or a `ForEach` is one
+     * that *might not* happen, and CR 605.1a's "could" is about the ability, not about a branch the
+     * grammar has not proved reachable.
+     *
+     * The exception is a rider that touches a library, which [movesLibraryCard] handles separately —
+     * see there for why "{1}, {T}, Sacrifice this artifact: Add one mana of any color. Draw a card."
+     * is no longer a mana ability.
      */
     private fun producesMana(effect: Effect): Boolean = when (effect) {
         is AddManaEffect, is AddColorlessManaEffect, is AddManaOfChoiceEffect, is AddDynamicManaEffect -> true
         is CompositeEffect -> effect.effects.any(::producesMana)
+        else -> false
+    }
+
+    /**
+     * CR 605.1a's "and its cost and effect don't move any card to or from a library".
+     *
+     * The August 7, 2026 rules update added this clause, and it reclassified seven cards the
+     * grammar already read: Chromatic Sphere and the five Odyssey Eggs ("Add {W}{U}. Draw a card.")
+     * lose it on the effect, Deranged Assistant ("{T}, Mill a card: Add {C}.") on the cost. Before
+     * that update all seven were mana abilities — Chromatic Sphere's own printed ruling still says
+     * so — which is exactly why the derivation has to carry the clause rather than the card text:
+     * nothing in any of those seven printed lines changed on that date.
+     *
+     * Cost and effect are read with the same walk, and it descends only through the shapes a printed
+     * line builds — `CompositeEffect` and `AbilityCost.Composite` — for [producesMana]'s reason.
+     * Scry is not a disqualifier: it reorders cards *within* a library and moves none to or from it,
+     * so Path of Ancestry keeps its classification.
+     */
+    private fun movesLibraryCard(cost: AbilityCost, effect: Effect): Boolean =
+        movesLibraryCard(cost) || movesLibraryCard(effect)
+
+    private fun movesLibraryCard(effect: Effect): Boolean = when (effect) {
+        is DrawCardsEffect -> true
+        is GatherCardsEffect -> effect.source.let { source ->
+            source is CardSource.TopOfLibrary ||
+                (source is CardSource.FromZone && source.zone == Zone.LIBRARY) ||
+                (source is CardSource.FromMultipleZones && Zone.LIBRARY in source.zones)
+        }
+        is MoveCollectionEffect -> effect.destination.let {
+            it is CardDestination.ToZone && it.zone == Zone.LIBRARY
+        }
+        is CompositeEffect -> effect.effects.any(::movesLibraryCard)
+        else -> false
+    }
+
+    private fun movesLibraryCard(cost: AbilityCost): Boolean = when (cost) {
+        is AbilityCost.Atom -> cost.atom.let { atom ->
+            atom is CostAtom.Mill || (atom is CostAtom.ExileFrom && atom.zone == Zone.LIBRARY)
+        }
+        is AbilityCost.Composite -> cost.costs.any(::movesLibraryCard)
         else -> false
     }
 

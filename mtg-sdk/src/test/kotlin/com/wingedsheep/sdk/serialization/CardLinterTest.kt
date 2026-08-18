@@ -1,9 +1,11 @@
 package com.wingedsheep.sdk.serialization
 
+import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.core.ManaCost
 import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.core.TypeLine
 import com.wingedsheep.sdk.core.Zone
+import com.wingedsheep.sdk.dsl.Patterns
 import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.CardScript
 import com.wingedsheep.sdk.model.CreatureStats
@@ -15,6 +17,7 @@ import com.wingedsheep.sdk.scripting.EventPattern
 import com.wingedsheep.sdk.scripting.TriggeredAbility
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.GrantWard
+import com.wingedsheep.sdk.scripting.costs.CostAtom
 import com.wingedsheep.sdk.scripting.KeywordAbility
 import com.wingedsheep.sdk.scripting.ModifyStats
 import com.wingedsheep.sdk.scripting.effects.BecomeArtifactEffect
@@ -27,7 +30,10 @@ import com.wingedsheep.sdk.scripting.effects.CardDestination
 import com.wingedsheep.sdk.scripting.effects.CardSource
 import com.wingedsheep.sdk.scripting.effects.CompositeEffect
 import com.wingedsheep.sdk.scripting.effects.ConditionalEffect
+import com.wingedsheep.sdk.scripting.effects.AddManaEffect
 import com.wingedsheep.sdk.scripting.effects.DealDamageEffect
+import com.wingedsheep.sdk.scripting.effects.DrawCardsEffect
+import com.wingedsheep.sdk.scripting.effects.ScryEffect
 import com.wingedsheep.sdk.scripting.effects.GatherCardsEffect
 import com.wingedsheep.sdk.scripting.effects.GrantTriggeredAbilityEffect
 import com.wingedsheep.sdk.scripting.effects.MoveCollectionEffect
@@ -394,6 +400,177 @@ class CardLinterTest : DescribeSpec({
             CardLinter.lint(card)
                 .filterIsInstance<CardValidationError.UnsupportedEntityMatchesRole>()
                 .shouldBeEmpty()
+        }
+    }
+
+    describe("mana-ability classification (CR 605.1a)") {
+
+        // Chromatic Sphere's shape: "{1}, {T}, Sacrifice this artifact: Add one mana of any color.
+        // Draw a card." Mana plus a library move — a mana ability until August 7, 2026, and an
+        // ordinary activated ability from then on.
+        fun rock(ability: ActivatedAbility) = CardDefinition(
+            name = "Classification Rock",
+            manaCost = ManaCost.parse("{1}"),
+            typeLine = TypeLine.artifact(),
+            script = CardScript(activatedAbilities = listOf(ability)),
+        )
+
+        fun ability(
+            effect: com.wingedsheep.sdk.scripting.effects.Effect,
+            cost: AbilityCost = AbilityCost.Tap,
+            isManaAbility: Boolean,
+        ) = ActivatedAbility(
+            id = AbilityId.generate(),
+            cost = cost,
+            effect = effect,
+            isManaAbility = isManaAbility,
+        )
+
+        val addGreen = AddManaEffect(Color.GREEN)
+
+        fun misflagged(card: CardDefinition) = CardLinter.lint(card)
+            .filterIsInstance<CardValidationError.MisflaggedManaAbility>()
+
+        fun unflagged(card: CardDefinition) = CardLinter.lint(card)
+            .filterIsInstance<CardValidationError.UnflaggedManaAbility>()
+
+        it("accepts a plain tap-for-mana ability flagged as one") {
+            val card = rock(ability(addGreen, isManaAbility = true))
+            misflagged(card).shouldBeEmpty()
+            unflagged(card).shouldBeEmpty()
+        }
+
+        it("flags a mana ability whose effect draws a card") {
+            val found = misflagged(
+                rock(
+                    ability(
+                        CompositeEffect(listOf(addGreen, DrawCardsEffect(1))),
+                        isManaAbility = true,
+                    ),
+                ),
+            )
+            found.shouldHaveSize(1)
+            found[0].message shouldContain "moves a card to or from a library"
+        }
+
+        // Deranged Assistant: "{T}, Mill a card: Add {C}." The disqualifier is in the *cost*, which
+        // is the half of 605.1a's "its cost and effect" a check on the effect alone would miss.
+        it("flags a mana ability whose cost mills") {
+            val found = misflagged(
+                rock(
+                    ability(
+                        addGreen,
+                        cost = AbilityCost.Composite(
+                            listOf(AbilityCost.Tap, AbilityCost.Atom(CostAtom.Mill())),
+                        ),
+                        isManaAbility = true,
+                    ),
+                ),
+            )
+            found.shouldHaveSize(1)
+            found[0].message shouldContain "moves a card to or from a library"
+        }
+
+        it("flags a mana ability whose cost exiles from a library") {
+            val found = misflagged(
+                rock(
+                    ability(
+                        addGreen,
+                        cost = AbilityCost.Atom(CostAtom.ExileFrom(Zone.LIBRARY)),
+                        isManaAbility = true,
+                    ),
+                ),
+            )
+            found.shouldHaveSize(1)
+        }
+
+        // The same atom against a graveyard moves nothing to or from a library, so Molt Tender's
+        // "exile a card from your graveyard" additional cost leaves it a mana ability.
+        it("accepts a mana ability whose cost exiles from a graveyard") {
+            misflagged(
+                rock(
+                    ability(
+                        addGreen,
+                        cost = AbilityCost.Atom(CostAtom.ExileFrom(Zone.GRAVEYARD)),
+                        isManaAbility = true,
+                    ),
+                ),
+            ).shouldBeEmpty()
+        }
+
+        // Mill has no serial name of its own — it is a GatherCards(TopOfLibrary) → MoveCollection
+        // pipeline — so a check that only knew effect names would miss it entirely.
+        it("flags a mana ability that mills as part of its effect") {
+            val found = misflagged(
+                rock(
+                    ability(
+                        CompositeEffect(listOf(addGreen, Patterns.Library.mill(1))),
+                        isManaAbility = true,
+                    ),
+                ),
+            )
+            found.shouldHaveSize(1)
+            found[0].message shouldContain "moves a card to or from a library"
+        }
+
+        it("flags a mana ability that searches its library") {
+            misflagged(
+                rock(
+                    ability(
+                        CompositeEffect(listOf(addGreen, Patterns.Library.searchLibrary(count = 1))),
+                        isManaAbility = true,
+                    ),
+                ),
+            ).shouldHaveSize(1)
+        }
+
+        // Scry reorders cards inside the library and moves none to or from it, so Path of Ancestry
+        // keeps its classification. This is the assertion that stops the check overreaching.
+        it("accepts a mana ability with a scry rider") {
+            misflagged(
+                rock(
+                    ability(
+                        CompositeEffect(listOf(addGreen, ScryEffect(1))),
+                        isManaAbility = true,
+                    ),
+                ),
+            ).shouldBeEmpty()
+        }
+
+        it("flags a mana ability that requires a target") {
+            val found = misflagged(
+                rock(
+                    ActivatedAbility(
+                        id = AbilityId.generate(),
+                        cost = AbilityCost.Tap,
+                        effect = addGreen,
+                        targetRequirements = listOf(AnyTarget()),
+                        isManaAbility = true,
+                    ),
+                ),
+            )
+            found.shouldHaveSize(1)
+            found[0].message shouldContain "requires a target"
+        }
+
+        // The unflagged direction has to honour the same disqualifiers, or reclassifying a card
+        // trades one finding for the opposite one and the build can never go green.
+        it("does not ask an ability disqualified by its cost to be flagged") {
+            unflagged(
+                rock(
+                    ability(
+                        addGreen,
+                        cost = AbilityCost.Composite(
+                            listOf(AbilityCost.Tap, AbilityCost.Atom(CostAtom.Mill())),
+                        ),
+                        isManaAbility = false,
+                    ),
+                ),
+            ).shouldBeEmpty()
+        }
+
+        it("still asks a plain unflagged tap-for-mana ability to be flagged") {
+            unflagged(rock(ability(addGreen, isManaAbility = false))).shouldHaveSize(1)
         }
     }
 

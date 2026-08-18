@@ -1624,7 +1624,10 @@ class ActivatedAbilityBuilder {
     var target: TargetRequirement? = null
     /**
      * When true, this is a mana ability (CR 605.1a) — it doesn't use the stack and may be activated
-     * during the payment of a cost.
+     * during the payment of a cost. Not an authoring preference: 605.1a decides it from the ability,
+     * and `CardLinter` fails the build in both directions. An ability that could add mana is one
+     * unless it targets, is a loyalty ability, or its cost or effect moves a card to or from a
+     * library.
      *
      * Setting this also settles [timing], which is the same fact written twice: `TimingRule` calls
      * its `ManaAbility` case "special timing that does NOT use the stack", so an ability that is one

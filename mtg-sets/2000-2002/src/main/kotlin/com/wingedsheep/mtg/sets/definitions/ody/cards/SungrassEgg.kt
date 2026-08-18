@@ -9,7 +9,6 @@ import com.wingedsheep.sdk.dsl.Costs
 import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
-import com.wingedsheep.sdk.scripting.TimingRule
 import com.wingedsheep.sdk.scripting.effects.DrawCardsEffect
 
 
@@ -18,6 +17,12 @@ import com.wingedsheep.sdk.scripting.effects.DrawCardsEffect
  * {1}
  * Artifact
  * {2}, {T}, Sacrifice this artifact: Add {G}{W}. Draw a card.
+ *
+ * Not a mana ability. CR 605.1a (August 7, 2026) disqualifies an activated ability whose cost or
+ * effect moves a card to or from a library, so the draw makes this an ordinary activated ability:
+ * it uses the stack, can be responded to, and can't be activated while paying a cost. Before that
+ * update the whole ability resolved mid-payment and the drawn card stayed unseen until the spell
+ * being cast was finished.
  */
 val SungrassEgg = card("Sungrass Egg") {
     manaCost = "{1}"
@@ -30,8 +35,6 @@ val SungrassEgg = card("Sungrass Egg") {
             Effects.Composite(Effects.AddMana(Color.GREEN, 1), Effects.AddMana(Color.WHITE, 1)),
             DrawCardsEffect(1)
         )
-        manaAbility = true
-        timing = TimingRule.ManaAbility
     }
     metadata {
         rarity = Rarity.UNCOMMON

@@ -1214,9 +1214,7 @@
                         "type": "Fixed",
                         "amount": 1
                     }
-                },
-                "timing": "ManaAbility",
-                "isManaAbility": true
+                }
             }
         ]
     },
