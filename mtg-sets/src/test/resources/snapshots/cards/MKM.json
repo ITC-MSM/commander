@@ -4255,6 +4255,79 @@
     ]
 }
 
+// Delney, Streetwise Lookout
+{
+    "name": "Delney, Streetwise Lookout",
+    "manaCost": "{2}{W}",
+    "typeLine": "Legendary Creature — Human Scout",
+    "oracleText": "Creatures you control with power 2 or less can't be blocked by creatures with power 3 or greater.\nIf a triggered ability of a creature you control with power 2 or less triggers, that ability triggers an additional time.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "CantBeBlockedBy",
+                "blockerFilter": {
+                    "cardPredicates": [
+                        "IsCreature",
+                        {
+                            "type": "PowerAtLeast",
+                            "min": 3
+                        }
+                    ]
+                },
+                "filter": {
+                    "baseFilter": "creature pow<=2 ctrl:you"
+                }
+            },
+            {
+                "type": "AdditionalSourceTriggers",
+                "sourceFilter": "creature pow<=2",
+                "excludeSelf": false,
+                "description": "If a triggered ability of a creature you control with power 2 or less triggers, that ability triggers an additional time"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "12",
+        "rarity": "MYTHIC",
+        "artist": "Darren Tan",
+        "flavorText": "\"It's not a matter of what I know. It's a matter of making it worth my while to tell you.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/e/be219928-3d0e-4d00-b124-152ce8a8c13b.jpg?1783912925",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "Once a creature you control has become blocked, reducing its power to 2 or less and/or increasing the power of the creature blocking it to 3 or greater won't cause it to become unblocked."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "Replacement effects and abilities that apply as a creature enters the battlefield or is turned face up are unaffected by Delney's last ability."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "Each additional instance of a triggered ability has its choices, including modes and targets, made separately."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "Multiple Delneys are additive: two cause qualifying abilities to trigger three times, three cause them to trigger four times, and so on."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "A face-up trigger is doubled only if that creature's power is 2 or less after it has been turned face up."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "Whether Delney adds a trigger is determined when the ability triggers; later power changes don't add or remove the additional instance."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Demand Answers
 {
     "name": "Demand Answers",
