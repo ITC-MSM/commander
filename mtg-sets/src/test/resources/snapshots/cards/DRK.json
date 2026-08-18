@@ -308,6 +308,48 @@
     "colorIdentityOverride": []
 }
 
+// Ghost Ship
+{
+    "name": "Ghost Ship",
+    "manaCost": "{2}{U}{U}",
+    "typeLine": "Creature — Spirit",
+    "oracleText": "Flying\n{U}{U}{U}: Regenerate this creature.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 4
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{U}{U}{U}"
+                    }
+                },
+                "effect": {
+                    "type": "Regenerate",
+                    "target": "Self"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "28",
+        "artist": "Tom Wänerstrand",
+        "flavorText": "\"That phantom prow split the storm as lightning cast its long shadow on the battlefield below.\" —Mireille Gaetane, *The Valeriad*",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/b/db591b28-37e5-4e7c-ae4d-d761262b12d0.jpg?1783947943"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Goblin Hero
 {
     "name": "Goblin Hero",
