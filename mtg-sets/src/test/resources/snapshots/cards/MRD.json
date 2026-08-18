@@ -1332,6 +1332,98 @@
     ]
 }
 
+// Chrome Mox
+{
+    "name": "Chrome Mox",
+    "manaCost": "{0}",
+    "typeLine": "Artifact",
+    "oracleText": "Imprint — When this artifact enters, you may exile a nonartifact, nonland card from your hand.\n{T}: Add one mana of any of the exiled card's colors.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Hand",
+                                    "filter": "nonland nonartifact"
+                                },
+                                "storeAs": "chosenCardCandidates"
+                            },
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "chosenCardCandidates",
+                                "selection": {
+                                    "type": "ChooseExactly",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "storeSelected": "chosenCard",
+                                "prompt": "Choose a nonartifact, nonland card to exile"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "chosenCard",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Exile"
+                                },
+                                "linkToSource": true
+                            }
+                        ]
+                    }
+                }
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddManaOfChoice",
+                    "colorSet": "ManaColorSet.AmongLinkedExiledCards"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "152",
+        "rarity": "RARE",
+        "artist": "Donato Giancola",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/a/6a058e68-70af-4a64-859c-c881e5578368.jpg?1783944526",
+        "rulings": [
+            {
+                "date": "2025-02-07",
+                "text": "If no card is exiled with this artifact, it can't add mana. The same is true if the exiled card is colorless."
+            },
+            {
+                "date": "2025-02-07",
+                "text": "This artifact's activated ability can never add {C}, even if the exiled card is colorless or has a colorless mana symbol in its mana cost."
+            },
+            {
+                "date": "2025-02-07",
+                "text": "If the exiled card is multicolored, you choose one of that card's colors each time you tap this artifact for mana."
+            }
+        ]
+    },
+    "colorIdentityOverride": []
+}
+
 // Clockwork Beetle
 {
     "name": "Clockwork Beetle",
