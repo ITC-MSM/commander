@@ -13739,6 +13739,92 @@
     ]
 }
 
+// Reenact the Crime
+{
+    "name": "Reenact the Crime",
+    "manaCost": "{1}{U}{U}{U}",
+    "typeLine": "Instant",
+    "oracleText": "Exile target nonland card in a graveyard that was put there from anywhere this turn. Copy it. You may cast the copy without paying its mana cost.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target nonland card in a graveyard that was put there from anywhere this turn"
+                    },
+                    "destination": "Exile",
+                    "fromZone": "Graveyard"
+                },
+                {
+                    "type": "CopyCardIntoCollection",
+                    "source": {
+                        "type": "BoundVariable",
+                        "name": "target nonland card in a graveyard that was put there from anywhere this turn"
+                    },
+                    "storeAs": "copy"
+                },
+                {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "CastFromCollectionWithoutPayingCost",
+                        "from": "copy"
+                    },
+                    "descriptionOverride": "You may cast the copy without paying its mana cost."
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": {
+                        "cardPredicates": [
+                            "IsNonland"
+                        ],
+                        "statePredicates": [
+                            "PutIntoGraveyardThisTurn"
+                        ]
+                    },
+                    "zone": "Graveyard"
+                },
+                "id": "target nonland card in a graveyard that was put there from anywhere this turn"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "70",
+        "rarity": "RARE",
+        "artist": "Daarken",
+        "flavorText": "At Proft's command, an ethereal model of the ransacked workshop sprang into being, every detail perfectly recreated. He'd missed something—he knew it—but what?",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/9/d942e4ce-f582-4264-89aa-9b4a743e6b29.jpg?1783912905",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "You cast the copy while Reenact the Crime is resolving and still on the stack. You can't wait to cast it later in the turn."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "If a spell has {X} in its mana cost, you must choose 0 as the value of X when casting it without paying its mana cost."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "If you cast a spell without paying its mana cost, you can't choose an alternative cost, but you may pay optional additional costs and must pay mandatory additional costs."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "If you don't cast the copy, it ceases to exist the next time state-based actions are checked."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Relive the Past
 {
     "name": "Relive the Past",
