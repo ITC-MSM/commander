@@ -4222,6 +4222,149 @@
     ]
 }
 
+// Jinxed Choker
+{
+    "name": "Jinxed Choker",
+    "manaCost": "{3}",
+    "typeLine": "Artifact",
+    "oracleText": "At the beginning of your end step, target opponent gains control of this artifact and puts a charge counter on it.\nAt the beginning of your upkeep, this artifact deals damage to you equal to the number of charge counters on it.\n{3}: Put a charge counter on this artifact or remove one from it.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "END"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GiveControlToTargetPlayer",
+                            "permanent": "Self",
+                            "newController": {
+                                "type": "BoundVariable",
+                                "name": "opponent"
+                            }
+                        },
+                        {
+                            "type": "AddCounters",
+                            "counterType": "charge",
+                            "count": 1,
+                            "target": "Self"
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetOpponent",
+                    "id": "opponent"
+                }
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "EntityProperty",
+                        "entity": "Source",
+                        "numericProperty": {
+                            "type": "CounterCount",
+                            "counterType": {
+                                "type": "Named",
+                                "name": "charge"
+                            }
+                        }
+                    },
+                    "target": "Controller"
+                }
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_3",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{3}"
+                    }
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.WhenCondition",
+                        "condition": {
+                            "type": "EntityMatches",
+                            "entity": "Self",
+                            "filter": {
+                                "statePredicates": [
+                                    {
+                                        "type": "HasCounter",
+                                        "counterType": "CHARGE"
+                                    }
+                                ]
+                            }
+                        }
+                    },
+                    "then": {
+                        "type": "ChooseAction",
+                        "choices": [
+                            {
+                                "label": "Put a charge counter on Jinxed Choker",
+                                "effect": {
+                                    "type": "AddCounters",
+                                    "counterType": "charge",
+                                    "count": 1,
+                                    "target": "Self"
+                                }
+                            },
+                            {
+                                "label": "Remove a charge counter from Jinxed Choker",
+                                "effect": {
+                                    "type": "RemoveCounters",
+                                    "counterType": "charge",
+                                    "count": 1,
+                                    "target": "Self"
+                                }
+                            }
+                        ]
+                    },
+                    "otherwise": {
+                        "type": "AddCounters",
+                        "counterType": "charge",
+                        "count": 1,
+                        "target": "Self"
+                    }
+                },
+                "descriptionOverride": "Put a charge counter on this artifact or remove one from it"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "189",
+        "rarity": "RARE",
+        "artist": "Mike Dringenberg",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/8/987910b0-0419-45ff-bda6-c6683fd00e49.jpg?1783944517",
+        "rulings": [
+            {
+                "date": "2004-12-01",
+                "text": "“You” is always Jinxed Choker’s current controller."
+            },
+            {
+                "date": "2004-12-01",
+                "text": "If you activate Jinxed Choker’s activated ability, you choose to either add or remove a counter when the ability resolves."
+            }
+        ]
+    },
+    "colorIdentityOverride": []
+}
+
 // Journey of Discovery
 {
     "name": "Journey of Discovery",
@@ -12966,6 +13109,78 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// War Elemental
+{
+    "name": "War Elemental",
+    "manaCost": "{R}{R}{R}",
+    "typeLine": "Creature — Elemental",
+    "oracleText": "When this creature enters, sacrifice it unless an opponent was dealt damage this turn.\nWhenever an opponent is dealt damage, put that many +1/+1 counters on this creature.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.WhenCondition",
+                        "condition": {
+                            "type": "Compare",
+                            "left": {
+                                "type": "TurnTracking",
+                                "player": "EachOpponent",
+                                "tracker": "DAMAGE_RECEIVED"
+                            },
+                            "operator": "LT",
+                            "right": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        }
+                    },
+                    "then": {
+                        "type": "SacrificeTarget",
+                        "target": "Self"
+                    }
+                }
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "DealsDamageEvent",
+                    "recipient": "RecipientOpponent"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "AddDynamicCounters",
+                    "counterType": "+1/+1",
+                    "amount": {
+                        "type": "ContextProperty",
+                        "key": "TRIGGER_DAMAGE_AMOUNT"
+                    },
+                    "target": "Self"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "112",
+        "rarity": "RARE",
+        "artist": "Anthony S. Waters",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/c/9cc32bfc-7d87-46d9-a424-eac64eefd7ea.jpg?1783944535"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
