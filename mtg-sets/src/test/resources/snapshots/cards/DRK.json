@@ -209,6 +209,62 @@
     ]
 }
 
+// Flood
+{
+    "name": "Flood",
+    "manaCost": "{U}",
+    "typeLine": "Enchantment",
+    "oracleText": "{U}{U}: Tap target creature without flying.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{U}{U}"
+                    }
+                },
+                "effect": {
+                    "type": "TapUntap",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature without flying"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": {
+                                "cardPredicates": [
+                                    "IsCreature",
+                                    {
+                                        "type": "NotKeyword",
+                                        "keyword": "FLYING"
+                                    }
+                                ]
+                            }
+                        },
+                        "id": "target creature without flying"
+                    }
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "27",
+        "rarity": "UNCOMMON",
+        "artist": "Dennis Detwiller",
+        "flavorText": "\"A dash of cool water does wonders to clear a cluttered battlefield.\" —Vibekke Ragnild, *Witches and War*",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/a/fabc3267-b59b-4f36-8873-5b4b072711ca.jpg?1783947944"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Fountain of Youth
 {
     "name": "Fountain of Youth",
