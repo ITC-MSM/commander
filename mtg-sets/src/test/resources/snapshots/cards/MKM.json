@@ -7889,6 +7889,112 @@
     "hasNoManaCost": true
 }
 
+// Ill-Timed Explosion
+{
+    "name": "Ill-Timed Explosion",
+    "manaCost": "{2}{U}{R}",
+    "typeLine": "Sorcery",
+    "oracleText": "Draw two cards. Then you may discard two cards. When you do, Ill-Timed Explosion deals X damage to each creature, where X is the greatest mana value among cards discarded this way.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 2
+                    }
+                },
+                {
+                    "type": "ReflexiveTrigger",
+                    "action": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Hand"
+                                },
+                                "storeAs": "hand"
+                            },
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "hand",
+                                "selection": {
+                                    "type": "ChooseExactly",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 2
+                                    }
+                                },
+                                "storeSelected": "discarded",
+                                "prompt": "Choose 2 cards to discard"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "discarded",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Graveyard"
+                                },
+                                "moveType": "Discard"
+                            }
+                        ]
+                    },
+                    "reflexiveEffect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "FilterCollection",
+                                "from": "discarded",
+                                "filter": "GreatestManaValue",
+                                "storeMatching": "greatestDiscarded"
+                            },
+                            {
+                                "type": "ForEach",
+                                "space": {
+                                    "type": "IterationSpace.Group",
+                                    "filter": {
+                                        "baseFilter": "creature"
+                                    }
+                                },
+                                "body": {
+                                    "type": "DealDamage",
+                                    "amount": {
+                                        "type": "StoredCardManaValue",
+                                        "collectionName": "greatestDiscarded"
+                                    },
+                                    "target": "Self"
+                                }
+                            }
+                        ]
+                    },
+                    "descriptionOverride": "You may discard two cards. When you do, Ill-Timed Explosion deals damage to each creature equal to the greatest mana value among cards discarded this way."
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "207",
+        "rarity": "RARE",
+        "artist": "Aaron J. Riley",
+        "flavorText": "Only too late did the Agency custodians realize the device had not been inactive—it was just waiting for the right trigger.",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/b/0b5cdb01-eaa4-4a0a-b42a-332bcf4d6fff.jpg?1783912847",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "If a card discarded this way has {X} in its mana cost, X is 0."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "RED"
+    ]
+}
+
 // Innocent Bystander
 {
     "name": "Innocent Bystander",
