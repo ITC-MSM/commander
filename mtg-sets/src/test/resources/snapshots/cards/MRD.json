@@ -4934,6 +4934,113 @@
     ]
 }
 
+// Lightning Coils
+{
+    "name": "Lightning Coils",
+    "manaCost": "{3}",
+    "typeLine": "Artifact",
+    "oracleText": "Whenever a nontoken creature you control dies, put a charge counter on this artifact.\nAt the beginning of your upkeep, if this artifact has five or more charge counters on it, remove all of them from it and create that many 3/1 red Elemental creature tokens with haste. Exile them at the beginning of the next end step.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "creature nontoken ctrl:you",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "charge",
+                    "count": 1,
+                    "target": "Self"
+                }
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "StoreNumber",
+                            "name": "removedChargeCounters",
+                            "amount": {
+                                "type": "EntityProperty",
+                                "entity": "Source",
+                                "numericProperty": {
+                                    "type": "CounterCount",
+                                    "counterType": {
+                                        "type": "Named",
+                                        "name": "charge"
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "type": "RemoveAllCountersOfType",
+                            "counterType": "charge",
+                            "target": "Self"
+                        },
+                        {
+                            "type": "CreateToken",
+                            "count": {
+                                "type": "VariableReference",
+                                "variableName": "removedChargeCounters"
+                            },
+                            "power": 3,
+                            "toughness": 1,
+                            "colors": [
+                                "RED"
+                            ],
+                            "creatureTypes": [
+                                "Elemental"
+                            ],
+                            "keywords": [
+                                "HASTE"
+                            ],
+                            "imageUri": "https://cards.scryfall.io/normal/front/e/4/e4a9051b-f964-43f9-877b-ea4f17620ecb.jpg?1783915251",
+                            "exileAtStep": "END"
+                        }
+                    ]
+                },
+                "interveningIf": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "EntityProperty",
+                        "entity": "Source",
+                        "numericProperty": {
+                            "type": "CounterCount",
+                            "counterType": {
+                                "type": "Named",
+                                "name": "charge"
+                            }
+                        }
+                    },
+                    "operator": "GTE",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 5
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "198",
+        "rarity": "RARE",
+        "artist": "Brian Snõddy",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/8/a800f326-3416-4917-a1cf-0f90255777d3.jpg?1783944514"
+    },
+    "colorIdentityOverride": []
+}
+
 // Lightning Greaves
 {
     "name": "Lightning Greaves",
