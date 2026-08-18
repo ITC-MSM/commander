@@ -1,3 +1,53 @@
+// Apprentice Wizard
+{
+    "name": "Apprentice Wizard",
+    "manaCost": "{1}{U}{U}",
+    "typeLine": "Creature — Human Wizard",
+    "oracleText": "{U}, {T}: Add {C}{C}{C}.",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{U}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "AddColorlessMana",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 3
+                    }
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "21",
+        "rarity": "RARE",
+        "artist": "Dan Frazier",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/5/151b332e-164b-4646-8f52-741984cd71ad.jpg?1783947945"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Ball Lightning
 {
     "name": "Ball Lightning",
