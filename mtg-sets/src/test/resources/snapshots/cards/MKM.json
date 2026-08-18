@@ -9558,6 +9558,149 @@
     ]
 }
 
+// Krenko's Buzzcrusher
+{
+    "name": "Krenko's Buzzcrusher",
+    "manaCost": "{2}{R}{R}",
+    "typeLine": "Artifact Creature — Insect Thopter",
+    "oracleText": "Flying, trample\nWhen this creature enters, for each player, destroy up to one nonbasic land that player controls. For each land destroyed this way, its controller may search their library for a basic land card, put it onto the battlefield tapped, then shuffle.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "FLYING",
+        "TRAMPLE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Players",
+                        "players": "Each"
+                    },
+                    "body": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Battlefield",
+                                    "filter": {
+                                        "cardPredicates": [
+                                            "IsLand",
+                                            {
+                                                "type": "Not",
+                                                "predicate": "IsBasicLand"
+                                            }
+                                        ]
+                                    }
+                                },
+                                "storeAs": "gathered0"
+                            },
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "gathered0",
+                                "selection": {
+                                    "type": "ChooseUpTo",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "chooser": "SourceController",
+                                "storeSelected": "selected1",
+                                "prompt": "Choose up to one nonbasic land this player controls to destroy",
+                                "useTargetingUI": true,
+                                "alwaysPrompt": true
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "selected1",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Graveyard"
+                                },
+                                "moveType": "Destroy",
+                                "storeMovedAs": "moved2"
+                            },
+                            {
+                                "type": "ConditionalOnCollection",
+                                "collection": "moved2",
+                                "ifNotEmpty": {
+                                    "type": "Gated",
+                                    "gate": "Gate.MayDecide",
+                                    "then": {
+                                        "type": "Composite",
+                                        "effects": [
+                                            {
+                                                "type": "GatherCards",
+                                                "source": {
+                                                    "type": "FromZone",
+                                                    "zone": "Library",
+                                                    "filter": "basicland"
+                                                },
+                                                "storeAs": "searchable"
+                                            },
+                                            {
+                                                "type": "SelectFromCollection",
+                                                "from": "searchable",
+                                                "selection": {
+                                                    "type": "ChooseUpTo",
+                                                    "count": {
+                                                        "type": "Fixed",
+                                                        "amount": 1
+                                                    }
+                                                },
+                                                "storeSelected": "found"
+                                            },
+                                            {
+                                                "type": "MoveCollection",
+                                                "from": "found",
+                                                "destination": {
+                                                    "type": "ToZone",
+                                                    "zone": "Battlefield",
+                                                    "placement": "Tapped"
+                                                }
+                                            },
+                                            "ShuffleLibrary",
+                                            "EmitLibrarySearchedEvent"
+                                        ]
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                },
+                "descriptionOverride": "For each player, destroy up to one nonbasic land that player controls. For each land destroyed this way, its controller may search their library for a basic land card, put it onto the battlefield tapped, then shuffle."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "136",
+        "rarity": "RARE",
+        "artist": "Joshua Raphael",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/e/0edcda2a-071b-40c5-9fb3-8a4ff87ca00e.jpg?1783912878",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "None of the nonbasic lands are targets of Krenko's Buzzcrusher's triggered ability."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Krenko, Baron of Tin Street
 {
     "name": "Krenko, Baron of Tin Street",
@@ -9792,6 +9935,84 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Lamplight Phoenix
+{
+    "name": "Lamplight Phoenix",
+    "manaCost": "{1}{R}{R}",
+    "typeLine": "Creature — Phoenix",
+    "oracleText": "Flying\nWhen this creature dies, you may exile it and collect evidence 4. If you do, return this card to the battlefield tapped. (To collect evidence 4, exile cards with total mana value 4 or greater from your graveyard.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.MayPay",
+                        "cost": {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "MoveToZone",
+                                    "target": "Self",
+                                    "destination": "Exile",
+                                    "fromZone": "Graveyard"
+                                },
+                                {
+                                    "type": "CollectEvidence",
+                                    "amount": 4
+                                }
+                            ]
+                        }
+                    },
+                    "then": {
+                        "type": "MoveToZone",
+                        "target": "Self",
+                        "destination": "Battlefield",
+                        "placement": "Tapped"
+                    }
+                },
+                "activeZones": [
+                    "Graveyard"
+                ],
+                "descriptionOverride": "When this creature dies, you may exile it and collect evidence 4. If you do, return this card to the battlefield tapped."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "137",
+        "rarity": "RARE",
+        "artist": "Ryan Pancoast",
+        "flavorText": "The only warning was the faint smell of burning plasma.",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/f/2faa0e56-527c-4be5-b8c9-b10ccde275f5.jpg?1783912876",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "You can't exile Lamplight Phoenix from your graveyard to pay the collect evidence cost of its triggered ability."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "If you can't exile enough cards to meet or exceed the required mana value, you can't choose to collect evidence at all."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
