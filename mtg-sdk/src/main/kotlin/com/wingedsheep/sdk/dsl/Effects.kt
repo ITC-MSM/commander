@@ -43,6 +43,7 @@ import com.wingedsheep.sdk.scripting.effects.BecomeCreatureEffect
 import com.wingedsheep.sdk.scripting.effects.BecomePreparedEffect
 import com.wingedsheep.sdk.scripting.effects.UnprepareEffect
 import com.wingedsheep.sdk.scripting.effects.BecomeSaddledEffect
+import com.wingedsheep.sdk.scripting.effects.BecomeSolvedEffect
 import com.wingedsheep.sdk.scripting.effects.EachPermanentBecomesCopyOfTargetEffect
 import com.wingedsheep.sdk.scripting.effects.SetBaseStatsEffect
 
@@ -4870,6 +4871,14 @@ object Effects {
      */
     fun BecomeSaddled(target: EffectTarget = EffectTarget.Self): Effect =
         BecomeSaddledEffect(target)
+
+    /**
+     * [target] becomes solved (CR 719.3b) — the resolving effect of a Case's "To solve" trigger.
+     * Defaults to the source, since a Case always solves itself. Authored through
+     * [com.wingedsheep.sdk.dsl.CardBuilder.toSolve] rather than called directly on a Case.
+     */
+    fun BecomeSolved(target: EffectTarget = EffectTarget.Self): Effect =
+        BecomeSolvedEffect(target)
 
     /**
      * [target] becomes prepared (Secrets of Strixhaven). The target must be a PREPARE-layout

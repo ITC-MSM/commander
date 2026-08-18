@@ -574,6 +574,11 @@ internal class AffectsFilterResolver {
         }
         StatePredicate.IsSaddled ->
             container.has<com.wingedsheep.engine.state.components.battlefield.SaddledComponent>()
+        // Solved (CR 719.3b) is a component-backed designation, not a layer modification, so it
+        // reads off base state and is stable for the whole projection pass — a "Solved —" static
+        // ability can gate on it without the self-referential caveat that IsSuspected carries.
+        StatePredicate.IsSolved ->
+            container.has<com.wingedsheep.engine.state.components.battlefield.SolvedComponent>()
         // Suspected (CR 701.60a) is itself a Layer-ability modification, so it is read off the
         // values accumulated so far in this projection pass — the same source `ProjectedState`
         // exposes as `isSuspected`, and the same self-referential caveat as IsModified above.

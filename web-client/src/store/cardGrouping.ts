@@ -121,6 +121,7 @@ export function computeCardGroupKey(card: ClientCard): string {
 
   // Special designations carry prominent badges.
   if (card.isSuspected) parts.push('suspected')
+  if (card.isSolved) parts.push('solved')
   if (card.isRingBearer) parts.push('ringbearer')
   if (card.isCommander) parts.push('commander')
   // A soulbond pair anchors a drawn bond to one specific slot, so a paired creature must never

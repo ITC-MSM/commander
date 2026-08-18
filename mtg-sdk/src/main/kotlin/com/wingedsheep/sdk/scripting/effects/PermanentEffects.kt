@@ -281,6 +281,30 @@ data class BecomeSaddledEffect(
 }
 
 /**
+ * Target permanent becomes solved (CR 719.3b) — the resolving effect of a Case's "To solve"
+ * triggered ability. Stamps the engine's `SolvedComponent`, which the Case's "Solved —" abilities
+ * read back through `Conditions.SourceIsSolved` / `StatePredicate.IsSolved`.
+ *
+ * The designation is sticky and one-way: once a permanent is solved it stays solved until it
+ * leaves the battlefield, so re-solving is a harmless no-op and there is no inverse effect.
+ * Like saddled it is engine state rather than a copiable value (CR 719.3b), so copying a solved
+ * Case produces an unsolved one.
+ *
+ * Defaults to [EffectTarget.Self] because a Case's "To solve" trigger always solves its own source;
+ * the [target] is parameterized anyway so an outside effect ("solve target Case you control") can
+ * reuse it.
+ *
+ * @property target The permanent to give the solved designation
+ */
+@SerialName("BecomeSolved")
+@Serializable
+data class BecomeSolvedEffect(
+    val target: EffectTarget = EffectTarget.Self
+) : Effect {
+    override val description: String = "${target.description} becomes solved"
+}
+
+/**
  * Make [target] become prepared (Secrets of Strixhaven). The target must be a permanent whose
  * card has the [com.wingedsheep.sdk.model.CardLayout.PREPARE] layout. Becoming prepared creates a
  * copy of its prepare spell in the controller's exile that may be cast (paying that spell's cost);

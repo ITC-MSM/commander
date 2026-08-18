@@ -1033,6 +1033,11 @@ data class GameObjectFilter(
         statePredicates = statePredicates + StatePredicate.IsSuspected
     )
 
+    /** Must have the solved designation (CR 719.3b) — see [StatePredicate.IsSolved]. */
+    fun solved() = copy(
+        statePredicates = statePredicates + StatePredicate.IsSolved
+    )
+
     /**
      * Must have crewed (CR 702.122) or saddled (CR 702.171) the effect's source permanent this
      * turn. Source-relative — see [StatePredicate.CrewedOrSaddledSourceThisTurn].

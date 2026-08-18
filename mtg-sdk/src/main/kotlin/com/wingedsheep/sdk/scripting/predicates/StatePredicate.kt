@@ -717,6 +717,30 @@ sealed interface StatePredicate {
     }
 
     // =============================================================================
+    // Solved (Entity)
+    // =============================================================================
+
+    /**
+     * Permanent that currently has the solved designation (CR 719.3b, Murders at Karlov Manor).
+     * Set by `Effects.BecomeSolved` when a Case's "To solve" trigger resolves.
+     *
+     * Sticky and one-way: once a permanent becomes solved it stays solved until it leaves the
+     * battlefield, and there is no "unsolve". That is why this is component-backed (the engine's
+     * `SolvedComponent`) like [IsSaddled] rather than a floating layer effect like [IsSuspected] —
+     * the designation is neither an ability nor part of the permanent's copiable values, so a copy
+     * of a solved Case is not itself solved.
+     *
+     * Read by the "Solved —" abilities (CR 702.169) through `Conditions.SourceIsSolved`, which gates
+     * them as a static condition, an intervening-if, or an activation restriction depending on the
+     * ability's kind.
+     */
+    @SerialName("IsSolved")
+    @Serializable
+    data object IsSolved : Entity {
+        override val description: String = "solved"
+    }
+
+    // =============================================================================
     // Saddle (Entity)
     // =============================================================================
 

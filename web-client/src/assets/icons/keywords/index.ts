@@ -58,6 +58,9 @@ export const keywordManaClass: Record<string, string> = {
    *  ProjectedState.isSuspected — the status itself isn't a keyword, but reusing this
    *  icon table keeps the badge rendering uniform. */
   SUSPECTED: 'ability-suspect',
+  /** Solved designation (CR 719.3b). Same synthetic-pseudo-keyword trick as SUSPECTED, from
+   *  ClientCard.isSolved — it marks a Case whose "Solved —" abilities are switched on. */
+  SOLVED: 'ability-case-solved',
 }
 
 export const displayableKeywords = new Set([

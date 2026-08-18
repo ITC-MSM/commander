@@ -1149,6 +1149,18 @@ object Conditions {
     val SourceIsSuspected: ConditionInterface =
         SourceMatches(com.wingedsheep.sdk.scripting.GameObjectFilter.Any.suspected())
 
+    /**
+     * If this permanent has the solved designation (CR 719.3b). The gate behind every "Solved —"
+     * ability (CR 702.169): as a [com.wingedsheep.sdk.dsl.CardBuilder.solvedStaticAbility]
+     * condition, a [com.wingedsheep.sdk.dsl.CardBuilder.solvedTriggeredAbility] intervening-if, or
+     * a [com.wingedsheep.sdk.dsl.CardBuilder.solvedActivatedAbility] activation restriction.
+     *
+     * Negated by [Not] it is the other half of the "To solve" trigger — a Case only becomes solved
+     * "if [condition] and this Case is not solved" (CR 719.3a).
+     */
+    val SourceIsSolved: ConditionInterface =
+        SourceMatches(com.wingedsheep.sdk.scripting.GameObjectFilter.Any.solved())
+
     /** If this creature is soulbond-paired with another creature (CR 702.95b). */
     val SourceIsPaired: ConditionInterface =
         SourceMatches(com.wingedsheep.sdk.scripting.GameObjectFilter.Any.paired())

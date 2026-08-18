@@ -149,6 +149,20 @@ data object EvokedComponent : Component
 data object SaddledComponent : Component
 
 /**
+ * Marks a permanent as solved (CR 719.3b) — the designation a Case gains when its "To solve"
+ * trigger resolves. Read via
+ * [com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsSolved] to gate the Case's
+ * "Solved —" static, triggered, and activated abilities (CR 702.169).
+ *
+ * Sticky and one-way, unlike [SaddledComponent]: once set it survives cleanup and stays until the
+ * permanent leaves the battlefield (a fresh entity has no battlefield components — stripped in
+ * `ZoneMovementUtils.stripBattlefieldComponents`). There is no "unsolve". It is engine state and
+ * not a copiable value, so a copy of a solved Case enters unsolved.
+ */
+@Serializable
+data object SolvedComponent : Component
+
+/**
  * Records the distinct creatures that have crewed (CR 702.122) or saddled (CR 702.171) this
  * permanent during the current turn — the creatures tapped to pay a Crew or Saddle cost on it.
  * A permanent is only ever a Vehicle (crew) or a Mount (saddle), so one set covers both keywords.

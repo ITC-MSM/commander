@@ -61,6 +61,7 @@ export function KeywordIcons({
   hexproofFromMonocolored,
   hexproofFromMulticolored,
   isSuspected,
+  isSolved,
   topOffset,
   size,
 }: {
@@ -74,6 +75,8 @@ export function KeywordIcons({
   hexproofFromMulticolored?: boolean
   /** Whether the permanent currently has the suspected status (CR 701.60). */
   isSuspected?: boolean
+  /** Whether the permanent is a solved Case (CR 719.3b). */
+  isSolved?: boolean
   /** Override the column's top offset (px) so it can clear the ring-bearer badge in the same corner. */
   topOffset?: number
   size: number
@@ -101,14 +104,20 @@ export function KeywordIcons({
   const hasHexproofFrom = hasScopedHexproof
   const hasKeywords = filteredKeywords.length > 0 || displayableFlags.length > 0
   const hasSuspected = isSuspected === true
+  const hasSolved = isSolved === true
 
-  if (!hasKeywords && !hasProtections && !hasHexproofFrom && !hasSuspected) return null
+  if (!hasKeywords && !hasProtections && !hasHexproofFrom && !hasSuspected && !hasSolved) return null
 
   return (
     <div style={topOffset === undefined ? styles.keywordIconsContainer : { ...styles.keywordIconsContainer, top: topOffset }}>
       {hasSuspected && (
         <div key="suspected" style={styles.keywordIconWrapper} title="Suspected (has menace and can't block)">
           <KeywordGlyph name="SUSPECTED" size={size} />
+        </div>
+      )}
+      {hasSolved && (
+        <div key="solved" style={styles.keywordIconWrapper} title="Solved (its Solved — ability is active)">
+          <KeywordGlyph name="SOLVED" size={size} />
         </div>
       )}
       {filteredKeywords.map((keyword) => (
