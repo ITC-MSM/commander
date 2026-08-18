@@ -183,6 +183,54 @@
     ]
 }
 
+// Holy Light
+{
+    "name": "Holy Light",
+    "manaCost": "{2}{W}",
+    "typeLine": "Instant",
+    "oracleText": "Nonwhite creatures get -1/-1 until end of turn.",
+    "script": {
+        "spellEffect": {
+            "type": "ForEach",
+            "space": {
+                "type": "IterationSpace.Group",
+                "filter": {
+                    "baseFilter": {
+                        "cardPredicates": [
+                            "IsCreature",
+                            {
+                                "type": "NotColor",
+                                "color": "WHITE"
+                            }
+                        ]
+                    }
+                }
+            },
+            "body": {
+                "type": "ModifyStats",
+                "powerModifier": {
+                    "type": "Fixed",
+                    "amount": -1
+                },
+                "toughnessModifier": {
+                    "type": "Fixed",
+                    "amount": -1
+                },
+                "target": "Self"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "10",
+        "artist": "Drew Tucker",
+        "flavorText": "\"Bathed in hallowed light, the infidels looked upon the impurities of their souls and despaired.\" —*The Book of Tal*",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/3/c3c8a850-bc99-4679-a316-45ecdea696b2.jpg?1783947948"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Inferno
 {
     "name": "Inferno",
