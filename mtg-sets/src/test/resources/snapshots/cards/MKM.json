@@ -10717,6 +10717,72 @@
     ]
 }
 
+// Outrageous Robbery
+{
+    "name": "Outrageous Robbery",
+    "manaCost": "{X}{B}{B}",
+    "typeLine": "Instant",
+    "oracleText": "Target opponent exiles the top X cards of their library face down. You may look at and play those cards for as long as they remain exiled. If you cast a spell this way, you may spend mana as though it were mana of any type to cast it.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherCards",
+                    "source": {
+                        "type": "TopOfLibrary",
+                        "count": "XValue",
+                        "player": "TargetOpponent"
+                    },
+                    "storeAs": "robbedCards"
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "robbedCards",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Exile",
+                        "player": "TargetOpponent"
+                    },
+                    "faceDown": "HIDDEN"
+                },
+                {
+                    "type": "GrantMayPlayFromExile",
+                    "from": "robbedCards",
+                    "expiry": "Permanent",
+                    "withAnyManaType": true
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetOpponent",
+                "id": "target opponent"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "97",
+        "rarity": "RARE",
+        "artist": "Kai Carpenter",
+        "flavorText": "\"When you can't erase your own trail, leave as many false ones as possible.\"\n—Etrata",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/8/b87813fa-ad12-4062-bb9e-436d8418fba5.jpg?1783912894",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "You pay all costs and follow all normal timing rules for cards played this way. For example, if one of the exiled cards is a land card, you may play it only during your main phase while the stack is empty."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "If you leave the game, the exiled cards remain exiled face down indefinitely. No player may look at them."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Perimeter Enforcer
 {
     "name": "Perimeter Enforcer",
