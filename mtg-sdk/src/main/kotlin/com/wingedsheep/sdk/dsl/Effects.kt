@@ -2416,6 +2416,8 @@ object Effects {
      *   Ayala). Null (the default) names the token after its creature types, which is what an
      *   ordinary "create a 1/1 white Soldier creature token" wants. Pair it with
      *   `legendary = true` when the printed token is legendary, so the legend rule applies.
+     * @param exileAtStep Arms a delayed trigger that exiles each created token at the beginning
+     *   of the next step of this kind.
      * @param sacrificeAtStep Arms a delayed trigger that sacrifices each created token at the
      *   beginning of the next step of this kind — the "create …, sacrifice it at the beginning of
      *   the next end step" rider (Harried Dronesmith). The plain-token sibling of the parameter of
@@ -2436,6 +2438,7 @@ object Effects {
         artifactToken: Boolean = false,
         enchantmentToken: Boolean = false,
         staticAbilities: List<com.wingedsheep.sdk.scripting.StaticAbility> = emptyList(),
+        exileAtStep: com.wingedsheep.sdk.core.Step? = null,
         sacrificeAtStep: com.wingedsheep.sdk.core.Step? = null
     ): Effect = CreateTokenEffect(
         count = DynamicAmount.Fixed(count), power = power, toughness = toughness,
@@ -2443,7 +2446,8 @@ object Effects {
         controller = controller, imageUri = imageUri, name = name,
         legendary = legendary, tapped = tapped,
         artifactToken = artifactToken, enchantmentToken = enchantmentToken,
-        staticAbilities = staticAbilities, sacrificeAtStep = sacrificeAtStep
+        staticAbilities = staticAbilities, exileAtStep = exileAtStep,
+        sacrificeAtStep = sacrificeAtStep
     )
 
     /**
@@ -2451,6 +2455,7 @@ object Effects {
      * time (e.g. "create X 1/1 green Saproling creature tokens" for Verdeloth the Ancient,
      * where X is the kicker amount read via [DynamicAmount.XValue]). Distinct from the
      * `Int`-count overload above; callers pass `count = DynamicAmount.XValue` etc.
+     * Both delayed zone-change parameters are also available for dynamic token counts.
      */
     fun CreateToken(
         count: DynamicAmount,
@@ -2463,12 +2468,15 @@ object Effects {
         imageUri: String? = null,
         legendary: Boolean = false,
         tapped: Boolean = false,
-        staticAbilities: List<com.wingedsheep.sdk.scripting.StaticAbility> = emptyList()
+        staticAbilities: List<com.wingedsheep.sdk.scripting.StaticAbility> = emptyList(),
+        exileAtStep: com.wingedsheep.sdk.core.Step? = null,
+        sacrificeAtStep: com.wingedsheep.sdk.core.Step? = null
     ): Effect = CreateTokenEffect(
         count = count, power = power, toughness = toughness, colors = colors,
         creatureTypes = creatureTypes, keywords = keywords,
         controller = controller, imageUri = imageUri, legendary = legendary, tapped = tapped,
-        staticAbilities = staticAbilities
+        staticAbilities = staticAbilities, exileAtStep = exileAtStep,
+        sacrificeAtStep = sacrificeAtStep
     )
 
     /**

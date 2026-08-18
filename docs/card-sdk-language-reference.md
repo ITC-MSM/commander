@@ -1518,7 +1518,9 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
 
 ### Tokens & emblems
 
-- `CreateToken(p, t, colors?, creatureTypes, keywords?, count?, controller?, imageUri?, name?, legendary?, tapped?, artifactToken?, enchantmentToken?, staticAbilities?, sacrificeAtStep?)` — make N creature tokens.
+- `CreateToken(p, t, colors?, creatureTypes, keywords?, count?, controller?, imageUri?, name?, legendary?, tapped?, artifactToken?, enchantmentToken?, staticAbilities?, exileAtStep?, sacrificeAtStep?)` — make N creature tokens.
+  `exileAtStep: Step?` arms the exile counterpart of the delayed trigger described below. Both the fixed
+  and dynamic-count overloads expose both delayed zone-change options.
   `sacrificeAtStep: Step?` arms a delayed trigger that sacrifices each created token at the beginning of the next
   step of that kind — the "create …, sacrifice it at the beginning of the next end step" rider (Harried Dronesmith
   passes `Step.END`; because its ability triggers at the beginning of combat on the controller's own turn, "your
