@@ -8803,6 +8803,12 @@ default to "you" so card authors don't need to pass it explicitly.
   `ZoneTransitionService.trackDiscard` and reset to empty for every player at the start of each turn by
   `TurnManager`. Powers "draw a card for each card you've discarded this turn" (Green Goblin, Revenant).
   The same component's membership check backs the Mayhem gate (`Conditions.YouDiscardedThisCardThisTurn`).
+- `CreatureCardsPutIntoGraveyardsThisTurn(atLeast = 1)` — the **game-wide** sibling of
+  `CreatureCardPutIntoYourGraveyardThisTurn`: at least `atLeast` creature cards reached *any* player's
+  graveyard this turn (summed via `Player.Each`). Case of the Gorgon's Kiss's "three or more creature
+  cards were put into graveyards from anywhere this turn". Same tracker, so the same two rulings apply:
+  it reads the card's own type line (what the card *is in the graveyard*, so a creature card that was a
+  noncreature permanent counts and an animated noncreature card doesn't), and tokens never count.
 - `YouDealtRedNoncombatDamageThisTurn(atLeast = 1)` — red sources you controlled dealt at least
   `atLeast` noncombat damage this turn. `Compare(TurnTracking(Player.You, TurnTracker.RED_NONCOMBAT_DAMAGE_DEALT),
   GTE, Fixed(atLeast))`, backed by the per-player `RedNoncombatDamageDealtThisTurnComponent`. Gates

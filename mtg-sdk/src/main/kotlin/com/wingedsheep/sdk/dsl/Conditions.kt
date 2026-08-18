@@ -1751,6 +1751,25 @@ object Conditions {
         )
 
     /**
+     * If [atLeast] or more creature cards were put into graveyards this turn — **game-wide**,
+     * counting every player's graveyard (summed via [Player.Each]), not just yours. The
+     * player-agnostic sibling of [CreatureCardPutIntoYourGraveyardThisTurn], for Case of the
+     * Gorgon's Kiss's "three or more creature cards were put into graveyards from anywhere this
+     * turn".
+     *
+     * The underlying tracker reads the card's own type line, i.e. what it *is in the graveyard*,
+     * which is the printed ruling: a creature card that was a noncreature permanent on the
+     * battlefield still counts, and a noncreature card animated into a creature does not. Tokens
+     * are never counted — a token isn't a card (CR 111.6).
+     */
+    fun CreatureCardsPutIntoGraveyardsThisTurn(atLeast: Int = 1): ConditionInterface =
+        trackerAtLeast(
+            com.wingedsheep.sdk.scripting.values.TurnTracker.CREATURE_CARDS_PUT_INTO_GRAVEYARD,
+            atLeast = atLeast,
+            player = Player.Each,
+        )
+
+    /**
      * If you've sacrificed [atLeast] or more permanents this turn (controller-scoped, any
      * permanent type). Backed by the per-player `PermanentsSacrificedThisTurnComponent` —
      * distinct from the game-wide cost-reduction counter. Used by Sawblade Skinripper's
