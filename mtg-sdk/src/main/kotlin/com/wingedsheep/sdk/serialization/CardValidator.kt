@@ -131,7 +131,7 @@ object CardValidator {
      * A planeswalker and a battle each have an intrinsic "enters with this many counters" ability
      * keyed off a number printed on the card — loyalty (CR 306.5b) and defense (CR 310.4b). Omitting
      * the number is silently fatal in the same way for both: the permanent enters with zero counters
-     * and state-based actions bin it immediately (CR 704.5i / 704.5v), so both are checked here.
+     * and state-based actions bin it immediately (CR 704.5i / 704.5v/w), so both are checked here.
      */
     private fun validateEntryCounterNumbers(card: CardDefinition, errors: MutableList<CardValidationError>) {
         if (card.isPlaneswalker && card.startingLoyalty == null) {
@@ -336,6 +336,18 @@ sealed interface CardValidationError {
      * is invisible to the mana solver.
      */
     data class UnflaggedManaAbility(
+        override val cardName: String,
+        override val message: String
+    ) : CardValidationError
+
+    /**
+     * The mirror of [UnflaggedManaAbility]: an activated ability flagged `isManaAbility = true`
+     * that CR 605.1a disqualifies — it targets, it is a loyalty ability, or its cost or effect
+     * moves a card to or from a library. The library clause entered 605.1a in the August 7, 2026
+     * update, which is what makes this direction worth failing on: a card can be correctly flagged
+     * when written and be wrong later, and nothing about the flag is visible at a glance.
+     */
+    data class MisflaggedManaAbility(
         override val cardName: String,
         override val message: String
     ) : CardValidationError

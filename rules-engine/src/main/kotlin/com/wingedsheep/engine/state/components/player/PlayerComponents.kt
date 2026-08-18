@@ -754,7 +754,7 @@ data class TheRingComponent(
  * Tracks a player's **speed** (Aetherdrift, CR 702.179).
  *
  * *Presence* of this component means the player has speed at all; its absence is CR 702.179b's "no
- * speed". The distinction matters for one thing only — whether the CR 704.5z state-based action
+ * speed". The distinction matters for one thing only — whether the CR 704.5aa state-based action
  * fires (it sets speed to 1 for a player who has *no* speed) and whether the inherent speed trigger
  * exists (only for a player with 1 or more speed, CR 702.179d). Everything that *reads* speed treats
  * "no speed" as 0 (CR 702.179f), which is what [com.wingedsheep.engine.state.GameState.speed] does,

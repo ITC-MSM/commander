@@ -35,7 +35,7 @@ class OutpaceOblivionScenarioTest : ScenarioTestBase() {
             test("start your engines! puts its controller on the board at speed 1") {
                 val game = oblivionGame()
 
-                withClue("CR 704.5z sets speed to 1 as soon as you control the permanent") {
+                withClue("CR 704.5aa sets speed to 1 as soon as you control the permanent") {
                     game.state.speed(game.player1Id) shouldBe Speed.STARTING
                 }
                 withClue("each player tracks speed separately — the opponent still has none") {
@@ -112,7 +112,7 @@ class OutpaceOblivionScenarioTest : ScenarioTestBase() {
             builder.withCardInLibrary(1, "Grizzly Bears")
             builder.withCardInLibrary(2, "Grizzly Bears")
         }
-        // Built in the upkeep and advanced, so the CR 704.5z start-your-engines state-based action
+        // Built in the upkeep and advanced, so the CR 704.5aa start-your-engines state-based action
         // has actually run by the time a test reads anyone's speed.
         val game = builder
             .withActivePlayer(1)

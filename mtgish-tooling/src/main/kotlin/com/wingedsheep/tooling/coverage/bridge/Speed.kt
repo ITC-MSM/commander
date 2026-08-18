@@ -10,16 +10,16 @@ package com.wingedsheep.tooling.coverage.bridge
  *
  * `StartYourEngines` and `MaxSpeed` are `supported`, not `keyword`, for the Station reason: the engine
  * *does* have `Keyword.START_YOUR_ENGINES` / `Keyword.MAX_SPEED`, but the capability isn't the enum
- * member — it's the CR 704.5z state-based action and the condition gate the `startYourEngines()` /
+ * member — it's the CR 704.5aa state-based action and the condition gate the `startYourEngines()` /
  * `maxSpeed { }` builders wire. Registering them as `keyword` would score them off an enum whose
  * presence alone proves nothing about whether the rules engine acts on it.
  */
 fun BridgeBuilder.speed() {
-    // `_Rule: StartYourEngines` — the keyword. Argentum starts the controller's speed via the CR 704.5z
+    // `_Rule: StartYourEngines` — the keyword. Argentum starts the controller's speed via the CR 704.5aa
     // state-based action (StartYourEnginesCheck), so the card only needs the keyword tag.
     supported(
         "StartYourEngines",
-        "keyword ability: Start your engines! (CR 702.179a) -> startYourEngines(); speed becomes 1 via the CR 704.5z state-based action"
+        "keyword ability: Start your engines! (CR 702.179a) -> startYourEngines(); speed becomes 1 via the CR 704.5aa state-based action"
     )
     // `_Rule: MaxSpeed` wrapping a nested `_Rule` — "Max speed — [Ability]" (CR 702.178a). The gate is
     // Conditions.YouHaveMaxSpeed applied with each ability kind's own vocabulary (ConditionalStaticAbility /

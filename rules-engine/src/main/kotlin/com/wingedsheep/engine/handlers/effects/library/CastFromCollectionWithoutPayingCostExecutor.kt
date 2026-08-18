@@ -73,7 +73,7 @@ class CastFromCollectionWithoutPayingCostExecutor(
 
         // "Cast it transformed" needs a face to turn over to. A card with no back face — a token,
         // or a single-faced card that became a copy of a transforming one — simply isn't cast, and
-        // per the CR 310.11b ruling it stays where it is (in exile, for the Siege defeat trigger)
+        // per the CR 310.12b ruling it stays where it is (in exile, for the Siege defeat trigger)
         // rather than being cast front face up.
         if (effect.castTransformed && !hasBackFace(state, cardId)) {
             return EffectResult.success(state)

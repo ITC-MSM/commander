@@ -1420,7 +1420,7 @@ object Triggers {
      *
      * With [lastRemoved] this is the "when the last counter is removed" shape the counter-countdown
      * mechanics share; bound [TriggerBinding.SELF] it reads "when the last [counterType] counter is
-     * removed from this permanent" (CR 310.11b). The permanent the counters left is available via
+     * removed from this permanent" (CR 310.12b). The permanent the counters left is available via
      * [com.wingedsheep.sdk.scripting.targets.EffectTarget.TriggeringEntity].
      */
     fun countersRemovedFrom(

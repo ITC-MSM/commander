@@ -14,7 +14,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 
 /**
- * The Siege defeat trigger (CR 310.11b): "When the last defense counter is removed from this
+ * The Siege defeat trigger (CR 310.12b): "When the last defense counter is removed from this
  * permanent, exile it, then you may cast it transformed without paying its mana cost."
  *
  * Every rule and Gatherer ruling that governs it gets an assertion here, because none of it is
@@ -115,7 +115,7 @@ class SiegeDefeatTriggerScenarioTest : ScenarioTestBase() {
             }
         }
 
-        context("CR 310.11b — when the last defense counter is removed") {
+        context("CR 310.12b — when the last defense counter is removed") {
 
             test("chipping a Siege without emptying it doesn't trigger anything") {
                 val game = siegeInPlay("Test Siege")

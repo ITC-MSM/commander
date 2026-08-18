@@ -53,7 +53,7 @@ class InvasionOfInnistradScenarioTest : ScenarioTestBase() {
                     game.isOnBattlefield("Serra Angel") shouldBe false
                     game.isInGraveyard(2, "Serra Angel") shouldBe true
                 }
-                withClue("a Siege is protected by an opponent of its controller (CR 310.11a)") {
+                withClue("a Siege is protected by an opponent of its controller (CR 310.12a)") {
                     game.state.getEntity(game.findPermanent("Invasion of Innistrad")!!)
                         ?.get<com.wingedsheep.engine.state.components.battlefield.ProtectorComponent>()
                         ?.playerId shouldBe game.player2Id
@@ -97,7 +97,7 @@ class InvasionOfInnistradScenarioTest : ScenarioTestBase() {
                 game.checkStateBasedActions()
                 game.advanceToPhase(Phase.COMBAT, Step.DECLARE_ATTACKERS)
 
-                // CR 310.8b — a Siege's own controller may attack it, because its protector is an
+                // CR 310.9b — a Siege's own controller may attack it, because its protector is an
                 // opponent. 4 + 5 power removes all 5 defense counters.
                 game.declareAttackersWithPermanentTargets(
                     permanentAttackers = mapOf(

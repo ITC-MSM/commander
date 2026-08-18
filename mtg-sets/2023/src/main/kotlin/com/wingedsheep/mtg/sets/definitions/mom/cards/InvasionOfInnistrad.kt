@@ -26,9 +26,9 @@ import com.wingedsheep.sdk.scripting.effects.ConditionalEffect
  * The reminder text a Siege prints ("As a Siege enters, choose an opponent to protect it. You and
  * others can attack it. When it's defeated, exile it, then cast it transformed.") is *not* card
  * text — it restates rules every battle has. So none of it is scripted here: the protector choice
- * is a state-based action (CR 704.5w/x), the attack legality is CR 310.8b, and the defeat trigger
+ * is a state-based action (CR 704.5x/y), the attack legality is CR 310.9b, and the defeat trigger
  * is the intrinsic ability the engine grants every Siege
- * ([com.wingedsheep.sdk.scripting.Sieges.defeatAbility], CR 310.11b). The only things this card
+ * ([com.wingedsheep.sdk.scripting.Sieges.defeatAbility], CR 310.12b). The only things this card
  * declares are its `startingDefense` and its back face.
  *
  * -13/-13 is a kill clause, not a stat tweak — big enough to finish anything the format prints —

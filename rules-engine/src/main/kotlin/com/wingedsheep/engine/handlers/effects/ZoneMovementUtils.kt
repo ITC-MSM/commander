@@ -151,7 +151,7 @@ object ZoneMovementUtils {
      * permanent enters, not just a resolving spell. Without this, a planeswalker or battle put onto
      * the battlefield from any non-stack zone (returned by an O-Ring style "until this leaves"
      * exile, reanimated, tutored straight into play) would enter with 0 counters and be put into
-     * its owner's graveyard by state-based actions (CR 704.5i / 704.5v) the moment it arrived.
+     * its owner's graveyard by state-based actions (CR 704.5i / 704.5v/w) the moment it arrived.
      *
      * Called from both battlefield-entry pipelines, exactly like [applySagaEntryIfNeeded]:
      * [ZoneTransitionService.moveToZone] for every zone-change entry, and the ad-hoc
@@ -471,9 +471,9 @@ object ZoneMovementUtils {
             .without<HasBecomeTappedComponent>()
             .without<HasDealtCombatDamageToPlayerComponent>()
             .without<CountersComponent>()
-            // A battle's protector is a designation on the battlefield object (CR 310.8); the
+            // A battle's protector is a designation on the battlefield object (CR 310.9); the
             // object that leaves takes it with it, and one that comes back is a new object
-            // (CR 400.7) whose protector is chosen afresh by the CR 704.5w state-based action.
+            // (CR 400.7) whose protector is chosen afresh by the CR 704.5x state-based action.
             .without<com.wingedsheep.engine.state.components.battlefield.ProtectorComponent>()
             // "Activate only once" memory (CR 702.177 Exhaust, and any `ActivationRestriction.Once`
             // ability) is tracked per object. A permanent that leaves and re-enters the battlefield

@@ -387,7 +387,7 @@ class CastZoneResolver(
      *
      * The permission-granted sibling of [disturbCastFace], and it returns the face for the same
      * reason: every caller needs the back face's characteristics (timing, targets, `auraTarget`)
-     * because that is the face the spell has on the stack (CR 712.8c). Backs CR 310.11b's "exile
+     * because that is the face the spell has on the stack (CR 712.8c). Backs CR 310.12b's "exile
      * it, then you may cast it transformed"; unlike disturb the permission — not a printed keyword
      * — is what authorizes the cast, so the zone the card sits in is the permission's business, not
      * this lookup's.

@@ -4,18 +4,32 @@ import com.wingedsheep.assay.syntax.Phrase
 import com.wingedsheep.assay.syntax.bind
 import com.wingedsheep.assay.syntax.oneOf
 import com.wingedsheep.assay.syntax.phrase
+import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.CardScript
 import com.wingedsheep.sdk.scripting.AbilityCost
 import com.wingedsheep.sdk.scripting.AbilityId
 import com.wingedsheep.sdk.scripting.ActivatedAbility
 import com.wingedsheep.sdk.scripting.ActivationRestriction
 import com.wingedsheep.sdk.scripting.TimingRule
+import com.wingedsheep.sdk.scripting.costs.CostAtom
 import com.wingedsheep.sdk.scripting.effects.AddColorlessManaEffect
 import com.wingedsheep.sdk.scripting.effects.AddDynamicManaEffect
 import com.wingedsheep.sdk.scripting.effects.AddManaOfChoiceEffect
 import com.wingedsheep.sdk.scripting.effects.AddManaEffect
+import com.wingedsheep.sdk.scripting.effects.CardDestination
+import com.wingedsheep.sdk.scripting.effects.CardSource
+import com.wingedsheep.sdk.scripting.effects.CascadeEffect
+import com.wingedsheep.sdk.scripting.effects.CastFromCollectionWithoutPayingCostEffect
 import com.wingedsheep.sdk.scripting.effects.CompositeEffect
+import com.wingedsheep.sdk.scripting.effects.DiscoverEffect
+import com.wingedsheep.sdk.scripting.effects.DrawCardsEffect
 import com.wingedsheep.sdk.scripting.effects.Effect
+import com.wingedsheep.sdk.scripting.effects.ExileFromTopRepeatingEffect
+import com.wingedsheep.sdk.scripting.effects.ExileLibraryUntilManaValueEffect
+import com.wingedsheep.sdk.scripting.effects.GatherCardsEffect
+import com.wingedsheep.sdk.scripting.effects.MoveCollectionEffect
+import com.wingedsheep.sdk.scripting.effects.PutOnLibraryPositionOfChoiceEffect
+import com.wingedsheep.sdk.scripting.effects.SurveilEffect
 
 /**
  * "{T}: Add {G}." — the cost-colon-effect sentence, and the third `CardScript` slot the grammar
@@ -83,7 +97,7 @@ object Activated {
         val effect = script.spellEffect ?: return null
         val targets = script.targetRequirements
         if (script != CardScript(spellEffect = effect, targetRequirements = targets)) return null
-        val manaAbility = targets.isEmpty() && producesMana(effect)
+        val manaAbility = targets.isEmpty() && producesMana(effect) && !movesLibraryCard(cost, effect)
         return ActivatedAbility(
             id = ID,
             cost = cost,
@@ -108,20 +122,115 @@ object Activated {
      * Channeler come out as instant-speed abilities that go on the stack. The differential found all
      * three the first time the grammar could read them.
      *
-     * **A rider does not stop it being one.** The rule says "could add mana … when it resolves", not
-     * "does nothing else", so "{1}, {T}, Sacrifice this artifact: Add one mana of any color. Draw a
-     * card." is a mana ability with a draw attached — Chromatic Sphere, whose own printed ruling
-     * spells that out ("This is a mana ability, which means it can be activated as part of the
-     * process of casting a spell … but you don't get to look at the drawn card until you have
-     * finished"). Reading only the outermost effect made the whole clause an instant-speed ability
-     * that goes on the stack, which is a different card. The walk therefore descends through the one
-     * shape a multi-clause line builds — a `CompositeEffect` — and no further: a mana effect buried
-     * under a gate or a `ForEach` is one that *might not* happen, and CR 605.1a's "could" is about
-     * the ability, not about a branch the grammar has not proved reachable.
+     * **Most riders do not stop it being one.** The rule says "could add mana … when it resolves",
+     * not "does nothing else", so a mana line with something attached is still a mana line and the
+     * walk has to see past the outermost effect. Reading only that made Cryptex's unlock counter and
+     * Path of Ancestry's scry come out as instant-speed abilities that go on the stack, which are
+     * different cards. The walk therefore descends through the one shape a multi-clause line builds
+     * — a `CompositeEffect` — and no further: a mana effect buried under a gate or a `ForEach` is one
+     * that *might not* happen, and CR 605.1a's "could" is about the ability, not about a branch the
+     * grammar has not proved reachable.
+     *
+     * The exception is a rider that touches a library, which [movesLibraryCard] handles separately —
+     * see there for why "{1}, {T}, Sacrifice this artifact: Add one mana of any color. Draw a card."
+     * is no longer a mana ability.
      */
     private fun producesMana(effect: Effect): Boolean = when (effect) {
         is AddManaEffect, is AddColorlessManaEffect, is AddManaOfChoiceEffect, is AddDynamicManaEffect -> true
         is CompositeEffect -> effect.effects.any(::producesMana)
+        else -> false
+    }
+
+    /**
+     * CR 605.1a's "and its cost and effect don't move any card to or from a library".
+     *
+     * The August 7, 2026 rules update added this clause, and it reclassified seven cards the
+     * grammar already read: Chromatic Sphere and the five Odyssey Eggs ("Add {W}{U}. Draw a card.")
+     * lose it on the effect, Deranged Assistant ("{T}, Mill a card: Add {C}.") on the cost. Before
+     * that update all seven were mana abilities — Chromatic Sphere's own printed ruling still says
+     * so — which is exactly why the derivation has to carry the clause rather than the card text:
+     * nothing in any of those seven printed lines changed on that date.
+     *
+     * Cost and effect are read with the same walk, and it descends only through the shapes a printed
+     * line builds — `CompositeEffect` and `AbilityCost.Composite` — for [producesMana]'s reason.
+     *
+     * This has to agree with `CardLinter`'s `MisflaggedManaAbility` rule card-for-card, because the
+     * differential gate compares what the grammar derives against what the hand-written cards
+     * declare: a disagreement here is reported as a card defect rather than as the rule drift it
+     * would actually be. The two therefore split the vocabulary the same way — the nodes that always
+     * move a library card, and the pipeline shapes where only [crossesLibraryBoundary] can tell.
+     *
+     * Scry is not a disqualifier: it reorders cards *within* a library and moves none to or from it,
+     * so Path of Ancestry keeps its classification.
+     */
+    private fun movesLibraryCard(cost: AbilityCost, effect: Effect): Boolean =
+        movesLibraryCard(cost) || movesLibraryCard(effect) || crossesLibraryBoundary(effect)
+
+    /**
+     * Nodes that move a library card whatever their arguments. `Surveil` puts cards from a library
+     * into a graveyard; cascade, discover and the exile-from-the-top family all take cards off a
+     * library; `PutOnLibraryPositionOfChoice` puts one back onto it.
+     */
+    private fun movesLibraryCard(effect: Effect): Boolean = when (effect) {
+        is DrawCardsEffect,
+        is SurveilEffect,
+        is CascadeEffect,
+        is DiscoverEffect,
+        is ExileFromTopRepeatingEffect,
+        is ExileLibraryUntilManaValueEffect,
+        is PutOnLibraryPositionOfChoiceEffect -> true
+        is CompositeEffect -> effect.effects.any(::movesLibraryCard)
+        else -> false
+    }
+
+    /**
+     * True if a card *crosses* the library boundary somewhere in [effect] — the pipeline half, and
+     * the reason a `TopOfLibrary` gather is not on its own a disqualifier.
+     *
+     * `CardSource.TopOfLibrary` is the shared gather for mill, exile-the-top, surveil, scry **and
+     * look-at-top**, and `CardDestination.ToZone(Zone.LIBRARY)` is the shared put-back for
+     * shuffle-in, put-on-top *and* the same reorders. Either alone says only that a library was
+     * touched; 605.1a asks whether a card ended up on the other side of it. So the default is that
+     * touching a library counts, and exactly one shape is carved out: a **reorder**, where cards come
+     * off a library and every one of them goes straight back into it —
+     * `LibraryPatterns.lookAtTopAndReorder` and the pipeline `Scry` expands to, which must classify
+     * the same way the compact `Scry` node does.
+     */
+    private fun crossesLibraryBoundary(effect: Effect): Boolean {
+        val fromLibrary = anyEffect(effect) {
+            it is GatherCardsEffect && it.source.let { source ->
+                source is CardSource.TopOfLibrary ||
+                    (source is CardSource.FromZone && source.zone == Zone.LIBRARY) ||
+                    (source is CardSource.FromMultipleZones && Zone.LIBRARY in source.zones)
+            }
+        }
+        val toLibrary = anyEffect(effect) { it.movesTo(Zone.LIBRARY) == true }
+        if (!fromLibrary && !toLibrary) return false
+
+        val toElsewhere = anyEffect(effect) { it.movesTo(Zone.LIBRARY) == false }
+        // A cast takes the card to the stack, so a gather it consumes has left the library even
+        // though no destination says so.
+        val castsFromCollection = anyEffect(effect) { it is CastFromCollectionWithoutPayingCostEffect }
+        val reorder = fromLibrary && toLibrary && !toElsewhere && !castsFromCollection
+        return !reorder
+    }
+
+    /** Null unless this is a `MoveCollection` to a fixed zone; else whether that zone is [zone]. */
+    private fun Effect.movesTo(zone: Zone): Boolean? =
+        (this as? MoveCollectionEffect)?.destination
+            ?.let { it as? CardDestination.ToZone }
+            ?.let { it.zone == zone }
+
+    /** True if [effect] or any effect inside its `CompositeEffect` chain satisfies [predicate]. */
+    private fun anyEffect(effect: Effect, predicate: (Effect) -> Boolean): Boolean =
+        predicate(effect) ||
+            (effect is CompositeEffect && effect.effects.any { anyEffect(it, predicate) })
+
+    private fun movesLibraryCard(cost: AbilityCost): Boolean = when (cost) {
+        is AbilityCost.Atom -> cost.atom.let { atom ->
+            atom is CostAtom.Mill || (atom is CostAtom.ExileFrom && atom.zone == Zone.LIBRARY)
+        }
+        is AbilityCost.Composite -> cost.costs.any(::movesLibraryCard)
         else -> false
     }
 

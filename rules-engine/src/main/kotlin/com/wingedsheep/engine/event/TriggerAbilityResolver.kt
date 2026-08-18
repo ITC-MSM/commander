@@ -100,7 +100,7 @@ class TriggerAbilityResolver(
         val suspendAbilities = getSuspendTriggeredAbilities(entityId, state)
         val paradigmAbilities = getParadigmTriggeredAbilities(entityId, state)
 
-        // Every Siege on the battlefield has the defeat trigger (CR 310.11b), printed on none of
+        // Every Siege on the battlefield has the defeat trigger (CR 310.12b), printed on none of
         // them. Derived from the projected subtypes, so a permanent that becomes a Siege gains it
         // and one that stops being a Siege loses it.
         val siegeAbilities = getSiegeDefeatAbilities(entityId, state)
@@ -138,7 +138,7 @@ class TriggerAbilityResolver(
 
     /**
      * Grant [com.wingedsheep.sdk.scripting.Sieges.defeatAbility] to every Siege on the battlefield
-     * (CR 310.11b) — the "when it's defeated, exile it, then you may cast it transformed" half of
+     * (CR 310.12b) — the "when it's defeated, exile it, then you may cast it transformed" half of
      * the reminder text, which no Siege actually prints.
      *
      * Keyed off [Battles.isSiege], i.e. the *projected* card types and subtypes, so it follows a
@@ -287,7 +287,7 @@ class TriggerAbilityResolver(
         val suspendAbilities = getSuspendTriggeredAbilities(entityId, state)
         val paradigmAbilities = getParadigmTriggeredAbilities(entityId, state)
 
-        // Every Siege on the battlefield has the defeat trigger (CR 310.11b), printed on none of
+        // Every Siege on the battlefield has the defeat trigger (CR 310.12b), printed on none of
         // them. Derived from the projected subtypes, so a permanent that becomes a Siege gains it
         // and one that stops being a Siege loses it.
         val siegeAbilities = getSiegeDefeatAbilities(entityId, state)

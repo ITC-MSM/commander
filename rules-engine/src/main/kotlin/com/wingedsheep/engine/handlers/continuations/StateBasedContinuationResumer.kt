@@ -20,7 +20,7 @@ class StateBasedContinuationResumer(
     )
 
     /**
-     * Apply the protector a battle's controller picked for the CR 704.5w/x state-based action.
+     * Apply the protector a battle's controller picked for the CR 704.5x/y state-based action.
      * The battle may have left the battlefield while the prompt was open (the SBA loop pauses
      * mid-pass), in which case there is nothing to assign and the loop simply carries on.
      */

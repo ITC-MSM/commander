@@ -272,11 +272,11 @@ data class ClientCard(
     val controllerId: EntityId,
 
     /**
-     * For a battle (CR 310): the player designated as its protector (CR 310.8) — the player who
+     * For a battle (CR 310): the player designated as its protector (CR 310.9) — the player who
      * defends it, may never attack it, and is the only one who may block creatures attacking it.
      * Deliberately separate from [controllerId], which for a Siege is usually its protector's
      * opponent. Null on every non-battle permanent, and on a battle whose protector has not been
-     * designated yet (the CR 704.5w state-based action closes that gap).
+     * designated yet (the CR 704.5x state-based action closes that gap).
      *
      * The battle's defense needs no field of its own: it *is* the defense-counter count
      * (CR 310.4c), which the client already receives in [counters].

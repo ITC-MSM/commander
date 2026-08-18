@@ -364,7 +364,7 @@ object Emitter {
                 // Station keyword ability (CR 702.184a) — fully fixed, renders the no-arg builder.
                 rname == "Station" -> block = listOf(Eval(call("station")))
                 // Start your engines! (CR 702.179a, Aetherdrift) — the keyword is the whole card-side
-                // mechanic: the CR 704.5z state-based action starts the controller's speed at 1. Render
+                // mechanic: the CR 704.5aa state-based action starts the controller's speed at 1. Render
                 // the `startYourEngines()` builder call (like `station()`); it carries no args.
                 rname == "StartYourEngines" -> block = listOf(Eval(call("startYourEngines")))
                 // Max speed — [Ability] (CR 702.178a). Delegates the nested ability to its normal

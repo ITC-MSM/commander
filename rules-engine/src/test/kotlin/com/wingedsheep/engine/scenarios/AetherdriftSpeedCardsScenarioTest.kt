@@ -28,7 +28,7 @@ import io.kotest.matchers.shouldBe
  * | Risen Necroregent | end-step trigger | `triggerRestriction` |
  * | Racers' Scoreboard | spell cost reduction | `CostGating.OnlyIf` |
  *
- * Each also carries "Start your engines!", so every test doubles as a check that the CR 704.5z
+ * Each also carries "Start your engines!", so every test doubles as a check that the CR 704.5aa
  * state-based action starts speed from a real card's printed keyword.
  */
 class AetherdriftSpeedCardsScenarioTest : ScenarioTestBase() {
@@ -40,7 +40,7 @@ class AetherdriftSpeedCardsScenarioTest : ScenarioTestBase() {
                 val game = speedGame("Burnout Bashtronaut")
                 val goblin = game.findPermanent("Burnout Bashtronaut")!!
 
-                withClue("Its printed \"Start your engines!\" starts speed via the CR 704.5z SBA") {
+                withClue("Its printed \"Start your engines!\" starts speed via the CR 704.5aa SBA") {
                     game.state.speed(game.player1Id) shouldBe Speed.STARTING
                 }
                 withClue("Menace is printed and unconditional; double strike is behind the gate") {
@@ -216,7 +216,7 @@ class AetherdriftSpeedCardsScenarioTest : ScenarioTestBase() {
     /**
      * Player 1's precombat main phase with [cardName] on the battlefield and stocked libraries.
      *
-     * Built in the upkeep step and advanced a step so the CR 704.5z state-based action actually runs
+     * Built in the upkeep step and advanced a step so the CR 704.5aa state-based action actually runs
      * (it is polled on step changes) — the same reasoning as [SpeedMechanicScenarioTest.speedGame].
      */
     private fun speedGame(cardName: String, lands: Int = 0): TestGame {

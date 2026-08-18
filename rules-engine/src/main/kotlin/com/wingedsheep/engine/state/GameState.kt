@@ -796,7 +796,7 @@ data class GameState(
             ?: com.wingedsheep.sdk.core.Speed.NONE
 
     /**
-     * Whether [playerId] has a speed at all (CR 702.179b). False means the CR 704.5z state-based
+     * Whether [playerId] has a speed at all (CR 702.179b). False means the CR 704.5aa state-based
      * action may still start their speed at 1, and that they have no inherent speed trigger yet
      * (CR 702.179d).
      */

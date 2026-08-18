@@ -19,7 +19,7 @@ import kotlinx.serialization.json.JsonObject
  * Speed rendering (Aetherdrift, CR 702.178–702.179) — the `_Rule: MaxSpeed` envelope.
  *
  * `_Rule: StartYourEngines` renders as the bare `startYourEngines()` builder call straight from
- * [Emitter]'s rule loop (like `station()` / `increment()`): the CR 704.5z state-based action does the
+ * [Emitter]'s rule loop (like `station()` / `increment()`): the CR 704.5aa state-based action does the
  * work, so there is nothing else to emit.
  *
  * `MaxSpeed` is the interesting one. It wraps **one nested `_Rule`** whose payload is an ordinary

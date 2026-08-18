@@ -112,30 +112,34 @@ object CardLinter {
     )
 
     /**
-     * Flag an activated ability that adds mana but isn't flagged `isManaAbility`.
+     * Check every activated ability's `isManaAbility` flag against CR 605.1a, in both directions.
      *
      * CR 605.1a makes the classification a *consequence* of the ability, not a choice: an activated
-     * ability that could add mana, doesn't target, isn't a loyalty ability and moves no card to or
-     * from a library **is** a mana ability. Getting the flag wrong is invisible on inspection and
-     * breaks four things at once — the ability can't be activated while paying a cost (CR 605.3a),
-     * it wrongly uses the stack (CR 605.3b), `ManaAbilityEnumerator` never surfaces it to the
-     * auto-tap solver, and nothing that keys off "tapping a permanent for mana" (Badgermole Cub,
-     * Lavaleaper, Overabundance) ever fires.
+     * ability that could add mana, doesn't target, isn't a loyalty ability and whose **cost and
+     * effect** move no card to or from a library **is** a mana ability — and one that fails any of
+     * those tests is not, however much mana it makes. Getting the flag wrong is invisible on
+     * inspection and changes four things at once: whether the ability can be activated while paying
+     * a cost (CR 605.3a), whether it uses the stack and can be responded to (CR 605.3b), whether
+     * `ManaAbilityEnumerator` surfaces it to the auto-tap solver, and whether anything keying off
+     * "tapping a permanent for mana" (Badgermole Cub, Lavaleaper, Overabundance) fires.
      *
-     * The `activatedAbility { manaAbility = true }` builder derives [TimingRule.ManaAbility] from
-     * the flag, but a raw `ActivatedAbility(...)` — the only way to build one *inside* a
-     * `GrantActivatedAbility` — has no builder to do it, and its `isManaAbility` defaults to false.
-     * That is how Cryptolith Rite, Joiner Adept and Citanul Hierophants shipped unflagged, and then
-     * Abundant Growth, Nature's Embrace, New Horizons, Huatli, Enduring Vitality and Great Divide
-     * Guide after them. Documenting it twice didn't stop the second batch; this does.
+     * **Unflagged** — the `activatedAbility { manaAbility = true }` builder derives
+     * [TimingRule.ManaAbility] from the flag, but a raw `ActivatedAbility(...)` — the only way to
+     * build one *inside* a `GrantActivatedAbility` — has no builder to do it, and its
+     * `isManaAbility` defaults to false. That is how Cryptolith Rite, Joiner Adept and Citanul
+     * Hierophants shipped unflagged, and then Abundant Growth, Nature's Embrace, New Horizons,
+     * Huatli, Enduring Vitality and Great Divide Guide after them. Documenting it twice didn't stop
+     * the second batch; this does.
+     *
+     * **Misflagged** — the mirror image, and the reason this check runs both ways. The library
+     * clause was only added to 605.1a in the August 7, 2026 rules update, so seven cards that were
+     * mana abilities when they were written stopped being them on that date: Chromatic Sphere and
+     * the five Odyssey Eggs (mana plus "Draw a card") and Deranged Assistant (a mill *cost*). A
+     * one-directional check silently keeps every one of them resolving off the stack.
      *
      * Structural on purpose: an `isManaAbility` member identifies an `ActivatedAbility` wherever it
      * sits — printed, inside a static grant, or nested in a `GrantActivatedAbilityEffect` — so a
      * new grant shape is covered the day it is added.
-     *
-     * Deliberately narrow, matching 605.1a's carve-outs: an ability that targets (Radiant Lotus'
-     * "target player adds …"), a loyalty ability, or one whose effect moves a card to or from a
-     * library is not a mana ability however much mana it makes.
      */
     private fun checkManaAbilityClassification(
         cardName: String,
@@ -143,43 +147,165 @@ object CardLinter {
         findings: MutableList<CardValidationError>
     ) {
         forEachActivatedAbility(tree) { ability ->
-            if ((ability["isManaAbility"] as? JsonPrimitive)?.booleanOrNull != false) return@forEachActivatedAbility
-            if ((ability["isPlaneswalkerAbility"] as? JsonPrimitive)?.booleanOrNull == true) return@forEachActivatedAbility
-            if ((ability["targetRequirements"] as? JsonArray)?.isNotEmpty() == true) return@forEachActivatedAbility
+            val flagged = (ability["isManaAbility"] as? JsonPrimitive)?.booleanOrNull ?: return@forEachActivatedAbility
+            val isLoyalty = (ability["isPlaneswalkerAbility"] as? JsonPrimitive)?.booleanOrNull == true
+            val targets = (ability["targetRequirements"] as? JsonArray)?.isNotEmpty() == true
             val effect = ability["effect"] ?: return@forEachActivatedAbility
-            if (!ownEffectContains(effect, MANA_ADDING_EFFECTS)) return@forEachActivatedAbility
-            if (ownEffectContains(effect, LIBRARY_MOVING_EFFECTS)) return@forEachActivatedAbility
+            val movesLibraryCard = movesCardToOrFromLibrary(ability)
+
+            if (!flagged) {
+                if (isLoyalty || targets || movesLibraryCard) return@forEachActivatedAbility
+                if (!ownEffectContains(effect, MANA_ADDING_EFFECTS)) return@forEachActivatedAbility
+                findings.add(
+                    CardValidationError.UnflaggedManaAbility(
+                        cardName = cardName,
+                        message = "'$cardName' has an activated ability that adds mana but is not " +
+                            "flagged `isManaAbility = true`. By CR 605.1a it IS a mana ability, so the " +
+                            "engine must resolve it off the stack: as written it uses the stack, can't " +
+                            "be activated while paying a cost, is invisible to the auto-tap solver, and " +
+                            "never triggers a \"whenever you tap a permanent for mana\" static. Set " +
+                            "`isManaAbility = true` and `timing = TimingRule.ManaAbility` on the raw " +
+                            "ActivatedAbility (the `activatedAbility { manaAbility = true }` builder " +
+                            "sets both for you). If the ability genuinely isn't one — it targets, or " +
+                            "moves a card to or from a library — say so in lint-allowlist.txt."
+                    )
+                )
+                return@forEachActivatedAbility
+            }
+
+            val disqualifier = when {
+                movesLibraryCard -> "its cost or effect moves a card to or from a library"
+                targets -> "it requires a target"
+                isLoyalty -> "it is a loyalty ability"
+                else -> return@forEachActivatedAbility
+            }
             findings.add(
-                CardValidationError.UnflaggedManaAbility(
+                CardValidationError.MisflaggedManaAbility(
                     cardName = cardName,
-                    message = "'$cardName' has an activated ability that adds mana but is not " +
-                        "flagged `isManaAbility = true`. By CR 605.1a it IS a mana ability, so the " +
-                        "engine must resolve it off the stack: as written it uses the stack, can't " +
-                        "be activated while paying a cost, is invisible to the auto-tap solver, and " +
-                        "never triggers a \"whenever you tap a permanent for mana\" static. Set " +
-                        "`isManaAbility = true` and `timing = TimingRule.ManaAbility` on the raw " +
-                        "ActivatedAbility (the `activatedAbility { manaAbility = true }` builder " +
-                        "sets both for you). If the ability genuinely isn't one — it targets, or " +
-                        "moves a card to or from a library — say so in lint-allowlist.txt."
+                    message = "'$cardName' has an activated ability flagged `isManaAbility = true` " +
+                        "that CR 605.1a disqualifies, because $disqualifier. It is an ordinary " +
+                        "activated ability: it must use the stack, be respondable, and be " +
+                        "unavailable while paying a cost — but as flagged the engine resolves it " +
+                        "off the stack and offers it to the auto-tap solver. Drop `manaAbility = " +
+                        "true` (and any explicit `timing = TimingRule.ManaAbility`) so the ability " +
+                        "keeps the default instant-speed timing."
                 )
             )
         }
     }
 
     /**
-     * Serial names of effects that move a card to or from a library — the CR 605.1a disqualifier
-     * ("its cost and effect don't move any card to or from a library").
+     * True if [ability]'s **cost or effect** moves a card to or from a library — the CR 605.1a
+     * disqualifier ("its cost and effect don't move any card to or from a library").
+     *
+     * Checked by serial name against the *real* vocabulary, because there is no single `Mill` or
+     * `SearchLibrary` node to look for: mill, search, exile-the-top and every other library
+     * operation is a `GatherCards` → `MoveCollection` pipeline over a `CardSource` /
+     * `CardDestination`, so the library-ness lives in a **zone field** on those nodes rather than
+     * in the effect's own name. Three tests, in order of how much they have to know:
+     *
+     * - [LIBRARY_MOVING_NODES] — nodes that move a library card whatever their arguments:
+     *   `DrawCards`, `Surveil` (library → graveyard), `Cascade`/`Discover`/`ExileFromTopRepeating`/
+     *   `ExileLibraryUntilManaValue`, `PutOnLibraryPositionOfChoice`, and the `AtomMill` cost.
+     * - The `AtomExileFrom` cost, which is a move only when its zone is the library — it exiles
+     *   from a graveyard or a hand just as often (Molt Tender).
+     * - [crossesLibraryBoundary] — the pipeline shapes, where whether a card moves *to or from* a
+     *   library is a property of the whole pipeline rather than of any one node.
+     *
+     * `Scry` is deliberately in none of them: it reorders cards *within* a library and never moves
+     * one to or from it, so a scry rider leaves a mana ability a mana ability (Path of Ancestry).
      */
-    private val LIBRARY_MOVING_EFFECTS = setOf(
-        "SearchLibrary",
+    private fun movesCardToOrFromLibrary(ability: JsonObject): Boolean =
+        listOfNotNull(ability["effect"], ability["cost"]).any { tree ->
+            ownEffectContains(tree, LIBRARY_MOVING_NODES) ||
+                exilesFromLibraryAsCost(tree) ||
+                crossesLibraryBoundary(tree)
+        }
+
+    /**
+     * True if a card *crosses* the library boundary somewhere in [tree] — the pipeline half of
+     * [movesCardToOrFromLibrary], and the reason `TopOfLibrary` and `ToZone(Library)` can't simply
+     * be listed as library-moving nodes.
+     *
+     * `CardSource.TopOfLibrary` is the shared gather for mill, exile-the-top, surveil, scry **and
+     * look-at-top**, and `CardDestination.ToZone(Library)` is the shared put-back for shuffle-in,
+     * put-on-top *and* the same reorders. Either one alone says only that a library was *touched*.
+     *
+     * So the default is that touching a library at all counts, and exactly one shape is carved out:
+     * a **reorder**, where cards come off a library and every one of them goes straight back into
+     * it. That is `LibraryPatterns.lookAtTopAndReorder` and the pipeline the compact `Scry` node
+     * expands to — flagging those would make the check contradict its own `Scry` carve-out
+     * depending only on which spelling the card used. Anything else that leaves the library
+     * (mill, `lookAtTopAndKeep`, a search that casts what it finds) and anything that enters one
+     * without having come from it (shuffle a graveyard in, put a card from hand on top) crosses.
+     *
+     * Reading destinations tree-wide rather than per-`MoveCollection` keeps this independent of
+     * collection-key bookkeeping: `scryPipeline` re-keys its gather through `SelectFromCollection`
+     * into two separate moves, and both still land in the library.
+     */
+    private fun crossesLibraryBoundary(tree: JsonElement): Boolean {
+        val fromLibrary = anyNode(tree) { node, type ->
+            type == "TopOfLibrary" || (type in ZONE_SOURCE_NODES && namesLibrary(node))
+        }
+        val toLibrary = anyNode(tree) { node, type -> type == "ToZone" && namesLibrary(node) }
+        if (!fromLibrary && !toLibrary) return false
+
+        val toElsewhere = anyNode(tree) { node, type -> type == "ToZone" && !namesLibrary(node) }
+        // A cast takes the card to the stack, so a gather it consumes has left the library even
+        // though no `ToZone` says so.
+        val castsFromCollection = anyNode(tree) { _, type -> type == CAST_FROM_COLLECTION }
+        val reorder = fromLibrary && toLibrary && !toElsewhere && !castsFromCollection
+        return !reorder
+    }
+
+    /** True if [tree] pays an `AtomExileFrom` cost out of a library. */
+    private fun exilesFromLibraryAsCost(tree: JsonElement): Boolean =
+        anyNode(tree) { node, type -> type == "AtomExileFrom" && namesLibrary(node) }
+
+    /**
+     * True if any node in [tree] satisfies [predicate], which receives the node and its serial
+     * `type`. Stops at the same boundary as [ownEffectContains]: a granted ability or an embedded
+     * token definition that reaches a library is not something *this* resolution does.
+     */
+    private fun anyNode(tree: JsonElement, predicate: (JsonObject, String?) -> Boolean): Boolean =
+        when (tree) {
+            is JsonObject ->
+                if (isNestedAbilityOrDefinition(tree)) false
+                else predicate(tree, (tree["type"] as? JsonPrimitive)?.contentOrNull) ||
+                    tree.values.any { anyNode(it, predicate) }
+            is JsonArray -> tree.any { anyNode(it, predicate) }
+            else -> false
+        }
+
+    /** True if [node] names the library in a scalar `zone` member or in a `zones` list. */
+    private fun namesLibrary(node: JsonObject): Boolean =
+        (node["zone"] as? JsonPrimitive)?.contentOrNull == LIBRARY_ZONE ||
+            (node["zones"] as? JsonArray)
+                ?.any { (it as? JsonPrimitive)?.contentOrNull == LIBRARY_ZONE } == true
+
+    /** Nodes that move a card to or from a library. See [movesCardToOrFromLibrary]. */
+    private val LIBRARY_MOVING_NODES = setOf(
         "DrawCards",
-        "Mill",
-        "PutOnTopOfLibrary",
-        "PutOnBottomOfLibrary",
-        "ShuffleIntoLibrary",
-        "ExileTopOfLibrary",
-        "RevealTopOfLibrary",
+        "Surveil",
+        "Cascade",
+        "Discover",
+        "ExileFromTopRepeating",
+        "ExileLibraryUntilManaValue",
+        "PutOnLibraryPositionOfChoice",
+        "AtomMill",
     )
+
+    /** `CardSource` shapes that name the zone they gather from. See [crossesLibraryBoundary]. */
+    private val ZONE_SOURCE_NODES = setOf(
+        "FromZone",
+        "FromMultipleZones",
+    )
+
+    /** Serial name of the effect that casts a gathered card, taking it out of wherever it was. */
+    private const val CAST_FROM_COLLECTION = "CastFromCollectionWithoutPayingCost"
+
+    /** `Zone.LIBRARY`'s serial name. */
+    private const val LIBRARY_ZONE = "Library"
 
     /** Every serialized `ActivatedAbility` anywhere in [tree] — the `isManaAbility` member marks one. */
     private fun forEachActivatedAbility(tree: JsonElement, visit: (JsonObject) -> Unit) {

@@ -27,7 +27,7 @@ object Speed {
     /** A player who has never had their speed set (CR 702.179b) — reads as 0 (CR 702.179f). */
     const val NONE: Int = 0
 
-    /** The speed a permanent with "Start your engines!" confers (CR 702.179a / 704.5z). */
+    /** The speed a permanent with "Start your engines!" confers (CR 702.179a / 704.5aa). */
     const val STARTING: Int = 1
 
     /** "Max speed": a player has it if and only if their speed is exactly this (CR 702.179e). */

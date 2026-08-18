@@ -26,7 +26,7 @@ internal fun BridgeBuilder.triggersCostsAndContinuous() {
     supported("WhenAnyNumberOfCountersOfTypeArePutOnAPermanent", "trigger: one or more counters of a type put on this permanent (CountersPlacedEvent, SELF)")
     // The removal mirror of the two tags above (EventPattern.CountersRemovedEvent /
     // Triggers.countersRemovedFrom). `lastRemoved = true` is the "when the LAST counter is removed"
-    // variant that CR 310.11b's Siege defeat ability is built from (Divine Intervention prints the
+    // variant that CR 310.12b's Siege defeat ability is built from (Divine Intervention prints the
     // same shape). The emitter renders the SELF-subject + nameable-counter form; the last-counter tag
     // additionally carries a *remover* selector, which our trigger doesn't model, so that one declines
     // to SCAFFOLD rather than silently dropping the restriction.

@@ -329,7 +329,7 @@ class CardValidatorTest : DescribeSpec({
 
         it("flags a battle without startingDefense") {
             // Without the printed defense number a battle enters with zero defense counters
-            // (CR 310.4b) and state-based actions bin it immediately (CR 704.5v).
+            // (CR 310.4b) and state-based actions bin it immediately (CR 704.5v/w).
             val card = CardDefinition(
                 name = "Defense-Less Siege",
                 manaCost = ManaCost.parse("{2}{B}{B}"),

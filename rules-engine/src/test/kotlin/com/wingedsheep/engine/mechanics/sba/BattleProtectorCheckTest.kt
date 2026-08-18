@@ -26,7 +26,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 
 /**
- * The CR 704.5w / 704.5x state-based actions that keep a battle's protector legal (CR 310.8),
+ * The CR 704.5x / 704.5y state-based actions that keep a battle's protector legal (CR 310.9),
  * exercised directly so the multiplayer branches — where the choice is *not* forced — are covered.
  * The two-player behaviour and the surrounding combat rules live in `BattleCardTypeScenarioTest`.
  */
@@ -71,17 +71,17 @@ class BattleProtectorCheckTest : FunSpec({
 
     val check = BattleProtectorCheck()
 
-    test("CR 310.11a — a Siege's eligible protectors are exactly its controller's opponents") {
+    test("CR 310.12a — a Siege's eligible protectors are exactly its controller's opponents") {
         val state = stateWith(listOf(p1, p2, p3), siege = true)
         Battles.eligibleProtectors(state, battleId) shouldContainExactlyInAnyOrder listOf(p2, p3)
     }
 
-    test("CR 310.8a — a battle with no battle types is protected by its controller") {
+    test("CR 310.9a — only its controller can protect a battle with no battle types") {
         val state = stateWith(listOf(p1, p2, p3), siege = false)
         Battles.eligibleProtectors(state, battleId) shouldContainExactlyInAnyOrder listOf(p1)
     }
 
-    test("CR 704.5w — with two eligible protectors, the controller is prompted to choose") {
+    test("CR 704.5x — with two eligible protectors, the controller is prompted to choose") {
         val state = stateWith(listOf(p1, p2, p3), siege = true)
 
         val result = check.check(state)
@@ -100,7 +100,7 @@ class BattleProtectorCheckTest : FunSpec({
         frame.candidateIds shouldContainExactlyInAnyOrder listOf(p2, p3)
     }
 
-    test("CR 704.5w — a single eligible protector is assigned silently, with no decision") {
+    test("CR 704.5x — a single eligible protector is assigned silently, with no decision") {
         val state = stateWith(listOf(p1, p2), siege = true)
 
         val result = check.check(state)
@@ -109,7 +109,7 @@ class BattleProtectorCheckTest : FunSpec({
         Battles.protectorOf(result.state, battleId) shouldBe p2
     }
 
-    test("CR 704.5x — a Siege protected by its own controller gets a new protector") {
+    test("CR 704.5y — a Siege protected by a player who can't protect it gets a new one") {
         val state = stateWith(listOf(p1, p2), siege = true, protector = p1)
 
         val result = check.check(state)
@@ -119,7 +119,7 @@ class BattleProtectorCheckTest : FunSpec({
         }
     }
 
-    test("CR 704.5w — a battle with no eligible protector is put into its owner's graveyard") {
+    test("CR 704.5x — a battle with no eligible protector is put into its owner's graveyard") {
         // A one-player game leaves a Siege with no opponent to protect it.
         val state = stateWith(listOf(p1), siege = true)
 

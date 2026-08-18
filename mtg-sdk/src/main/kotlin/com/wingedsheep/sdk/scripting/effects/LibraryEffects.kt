@@ -331,7 +331,7 @@ data class CastFromCollectionWithoutPayingCostEffect(
      * Cast the card **transformed** — back face up (CR 712.8c), the way disturb casts a card from
      * the graveyard. The back face supplies the spell's characteristics: its card types, targets,
      * and the permanent it becomes. Set for "exile it, then you may cast it transformed" (CR
-     * 310.11b, the Siege defeat trigger).
+     * 310.12b, the Siege defeat trigger).
      *
      * A card with no back face is cast normally, so this is safe to set on a collection that may
      * hold single-faced cards.

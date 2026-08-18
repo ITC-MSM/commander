@@ -34,7 +34,7 @@ import io.kotest.matchers.shouldBe
  *
  * | Rule | What it says | Covered by |
  * |---|---|---|
- * | 704.5z / 702.179a | controlling a permanent with the keyword and having no speed ⇒ speed becomes 1 | "starts a controller's speed at 1", "gaining control", "granted keyword" |
+ * | 704.5aa / 702.179a | controlling a permanent with the keyword and having no speed ⇒ speed becomes 1 | "starts a controller's speed at 1", "gaining control", "granted keyword" |
  * | 702.179b | players have no speed until something sets it | "a player with no speed-granting permanent never gains speed" |
  * | 702.179c | increasing a no-speed player's speed sets it to that amount | "increasing from no speed lands on the amount" |
  * | 702.179d | the inherent trigger: opponents lose life on your turn, speed < 4, +1, once each turn | "rises when an opponent loses life", "only once each turn", "not on an opponent's turn" |
@@ -181,7 +181,7 @@ class SpeedMechanicScenarioTest : ScenarioTestBase() {
             speedScaler, drainOne, speedSiphon, engineGranter, steal, slay, slowDown
         ).forEach { cardRegistry.register(it) }
 
-        context("Start your engines! (CR 702.179a / 704.5z)") {
+        context("Start your engines! (CR 702.179a / 704.5aa)") {
 
             test("starts a controller's speed at 1 as a state-based action") {
                 val game = speedGame {
@@ -635,7 +635,7 @@ class SpeedMechanicScenarioTest : ScenarioTestBase() {
      * Two-player board in [activePlayer]'s precombat main phase — the shared setup for every test
      * here. [extra] adds the permanents/cards that test needs.
      *
-     * Deliberately built one step *earlier* (upkeep) and then advanced: the CR 704.5z state-based
+     * Deliberately built one step *earlier* (upkeep) and then advanced: the CR 704.5aa state-based
      * action fires when the engine polls state-based actions, and the poll this crosses is the one
      * after the draw step (`TurnManager`) — so arriving in the main phase through a real step
      * sequence is what proves the check is wired into the game loop rather than merely callable. A

@@ -27,7 +27,7 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  * fizzle. The Rats themselves are the iteration entities, so the body attaches to
  * [EffectTarget.Self] — under a `Group` space that resolves to the current entity rather than to the
  * Witch. [Effects.CreateRoleToken] already implements the Role state-based action (CR 303.7a /
- * 704.5y) that bins an older Role you control on the same creature, so landing this on Rats that
+ * 704.5z) that bins an older Role you control on the same creature, so landing this on Rats that
  * already carry a Monster or Cursed Role replaces rather than stacks.
  */
 val TwistedSewerWitch = card("Twisted Sewer-Witch") {

@@ -341,7 +341,7 @@ object DamageUtils {
         } else if (projected.isBattle(targetId)) {
             // CR 120.3h — damage dealt to a battle removes that many defense counters from it. The
             // battle isn't destroyed by the damage; state-based actions bin it once its defense
-            // reaches 0 (CR 120.5 / 704.5v). Excess damage is the amount above its defense
+            // reaches 0 (CR 120.5 / 704.5v/w). Excess damage is the amount above its defense
             // (CR 120.4a / 120.10), computed before the counters come off.
             val counters = newState.getEntity(targetId)?.get<CountersComponent>() ?: CountersComponent()
             val currentDefense = counters.getCount(CounterType.DEFENSE)

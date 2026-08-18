@@ -239,7 +239,7 @@ class AetherdriftDriftersScenarioTest : ScenarioTestBase() {
 
     /**
      * Player 1's precombat main phase with Greasewrench Goblin out, [handCards] discardable cards in
-     * hand and enough red mana for the exhaust. Built in the upkeep step so the CR 704.5z
+     * hand and enough red mana for the exhaust. Built in the upkeep step so the CR 704.5aa
      * start-your-engines state-based action has a step change to run on.
      */
     private fun goblinGame(handCards: Int, lands: Int = 3): TestGame {

@@ -391,14 +391,14 @@ data class CountersComponent(
 }
 
 /**
- * The player designated as this battle's protector (CR 310.8).
+ * The player designated as this battle's protector (CR 310.9).
  *
  * A battle's protector — not its controller — is the defending player for every rule and effect
- * that refers to one while the battle is being attacked (CR 310.8d), may never attack it, and is
- * the only player who may block creatures attacking it (CR 310.8b/c).
+ * that refers to one while the battle is being attacked (CR 310.9d), may never attack it, and is
+ * the only player who may block creatures attacking it (CR 310.9b/c).
  *
  * Assigned and repaired as a state-based action by
- * [com.wingedsheep.engine.mechanics.sba.permanent.BattleProtectorCheck] (CR 704.5w/x), and read
+ * [com.wingedsheep.engine.mechanics.sba.permanent.BattleProtectorCheck] (CR 704.5x/y), and read
  * through [com.wingedsheep.engine.mechanics.battle.Battles.protectorOf]. Absent until that check
  * runs, and on any non-battle permanent.
  */
@@ -415,7 +415,7 @@ data class ProtectorComponent(
  * damage is applied and state-based actions run *within the same engine action*, before the turn's
  * trigger-detection pass gets to see the damage events — so without this marker
  * [com.wingedsheep.engine.mechanics.sba.permanent.BattleDefenseCheck] would bin a Siege killed in
- * combat a moment before its own defeat trigger (CR 310.11b) could exile it, and the back face
+ * combat a moment before its own defeat trigger (CR 310.12b) could exile it, and the back face
  * would never be cast. Damage dealt by a *resolving* spell needs no marker: triggers from that
  * resolution are already detected before the next SBA pass.
  *

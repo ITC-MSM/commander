@@ -31,7 +31,7 @@ import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
  * speed becomes 1."
  *
  * Nothing but the keyword is wired here, and that is the whole design: raising a controller's speed
- * to 1 is a *state-based action* (CR 704.5z), not a triggered ability, so the engine's
+ * to 1 is a *state-based action* (CR 704.5aa), not a triggered ability, so the engine's
  * `StartYourEnginesCheck` does it by scanning projected battlefield permanents for
  * [Keyword.START_YOUR_ENGINES]. Consequences that fall out for free:
  *
