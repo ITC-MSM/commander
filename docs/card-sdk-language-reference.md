@@ -7542,13 +7542,23 @@ composite abilities).
   Conditions.SourceIsSaddled` for "whenever this attacks while saddled"). The marker (engine
   `SaddledComponent`) is cleared at end of turn or when the permanent leaves the battlefield, and
   is not a copiable value (CR 702.171b). Mounts that gate on the saddled state use this.
+  Both halves reach the client on the card itself: `ClientCard.saddleRequirement` (the printed N,
+  present on every battlefield Mount) and `ClientCard.isSaddled` (the live designation). Both are
+  public — a saddled Mount and an unsaddled one are otherwise identical permanents, and the
+  designation expires at cleanup with no event of its own.
 - `CrewSaddleContribution(characteristic = POWER, modifier = 0)` — changes only the numeric value
   a creature contributes while paying a Crew or Saddle cost; it does not change that creature's
   power or toughness. The selected `characteristic` is read from projected state before `modifier`
   is applied, so counters and continuous effects are honored. Pilot text such as “saddles Mounts
   and crews Vehicles as though its power were 2 greater” uses `modifier = 2`; “using its toughness
   rather than its power” uses `characteristic = CrewSaddleCharacteristic.TOUGHNESS`. Printed and
-  token-granted instances use the same handler path.
+  token-granted instances use the same handler path. The Crew and Saddle **enumerators** report each
+  candidate's contribution through this same evaluator, so `LegalActionInfo.tapForPowerCreatures[].power`
+  is the number the handler charges against, not the creature's printed power — the client's progress
+  bar would otherwise refuse a crew or saddle the engine accepts. (Teamwork N deliberately keeps
+  counting plain projected power; the *measure* is what differs between the two costs.) Each candidate
+  also carries `canAttack`, the per-creature CR 508.1a attack check via `AttackAvailability`, since
+  paying the cost taps the creature out of combat.
 - `Modular(n)` — ETB with +1/+1 counters, transfer on death. Display-only; nothing in the engine
   reads `Keyword.MODULAR`. Lower it alongside the keyword ability as its two printed halves
   (Arcbound Condor): `replacementEffect(EntersWithCounters(CounterTypeFilter.PlusOnePlusOne, n,

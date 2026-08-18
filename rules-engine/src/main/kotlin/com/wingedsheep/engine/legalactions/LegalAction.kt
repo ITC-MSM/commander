@@ -336,7 +336,22 @@ data class DelveCardData(
 data class TapForPowerCreatureData(
     val entityId: EntityId,
     val name: String,
-    val power: Int
+    /**
+     * What this creature contributes toward the cost. For Crew and Saddle that is its
+     * `CrewSaddleContributionEvaluator` value — the same measure the handlers charge against, which
+     * a "crews as though its power were 2 greater" static can raise above its printed power. For
+     * Teamwork N it is plain projected power, which is what that cost counts.
+     */
+    val power: Int,
+    /**
+     * Whether this creature could legally be declared as an attacker in the current state — the
+     * per-creature attack restrictions of CR 508.1a evaluated by
+     * [com.wingedsheep.engine.mechanics.combat.rules.AttackAvailability]. Tapping a creature to pay
+     * a Crew / Saddle / Teamwork cost takes it out of combat (CR 508.1a: an attacker must be
+     * untapped), so the client sorts its auto-pick to spend the creatures that weren't going to
+     * attack anyway, and marks the ones that were.
+     */
+    val canAttack: Boolean = true
 )
 
 /**

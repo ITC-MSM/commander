@@ -234,7 +234,16 @@ data class HarmonizeCreatureInfo(
 data class TapForPowerCreatureInfo(
     val entityId: EntityId,
     val name: String,
-    val power: Int
+    /** What this creature contributes toward the cost — for Crew and Saddle that can exceed its
+     * printed power (a "crews as though its power were 2 greater" static), and it is the number the
+     * handler charges against, so the client's progress bar must sum this and not power. */
+    val power: Int,
+    /**
+     * Whether this creature could legally attack right now (CR 508.1a per-creature restrictions).
+     * Paying with it taps it, which takes it out of combat — the client spends the creatures that
+     * couldn't attack anyway first, and flags the ones that could.
+     */
+    val canAttack: Boolean = true
 )
 
 @Serializable

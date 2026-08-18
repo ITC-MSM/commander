@@ -1767,6 +1767,28 @@ function GameCardImpl({
         </>
       )}
 
+      {/* Saddle (CR 702.171): a Mount reads as saddled or not, and that is the whole difference
+          between its payoffs being on and off. The designation is granted by a resolved saddle
+          ability and lost at end of turn without any visible event, so the board itself has to
+          carry it. Two states, one slot: lit "Saddled" once it's on, muted "Saddle N" while it
+          isn't — the second doubles as "this permanent is a Mount, and here's the price".
+          Shown on every player's Mounts; saddled status is public and changes how you block.
+          Bottom-left, not the crowded top-left provenance lane: unlike a dashed or warped marker
+          this one is on every Mount for that permanent's whole life, so it must not sit on the
+          card name — and combat-relevant state is what the eye already goes to the bottom for. */}
+      {battlefield && !faceDown && card.saddleRequirement != null && (
+        <div
+          style={card.isSaddled ? styles.saddledBadge : styles.saddleAvailableBadge}
+          title={
+            card.isSaddled
+              ? `Saddled (CR 702.171b) until end of turn — its "while saddled" abilities are active`
+              : `Saddle ${card.saddleRequirement} (CR 702.171a) — tap other untapped creatures you control with total power ${card.saddleRequirement} or more, as a sorcery, to saddle it`
+          }
+        >
+          {card.isSaddled ? 'Saddled' : `Saddle ${card.saddleRequirement}`}
+        </div>
+      )}
+
       {/* Dash (CR 702.109, Khans of Tarkir): a permanent cast for its dash cost — hasty, returned to
           its owner's hand at the beginning of the next end step. */}
       {battlefield && card.isDashed && !faceDown && (

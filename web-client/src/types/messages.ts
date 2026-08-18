@@ -1020,6 +1020,10 @@ export interface TapForPowerCreatureInfo {
   readonly name: string
   /** Projected power of this creature */
   readonly power: number
+  /** Whether the server says this creature could legally attack right now (CR 508.1a). Paying with
+   * it taps it, so it drops out of combat — the auto-pick spends creatures that couldn't attack
+   * anyway first, and the HUD flags the ones that could. */
+  readonly canAttack?: boolean
 }
 
 /**
