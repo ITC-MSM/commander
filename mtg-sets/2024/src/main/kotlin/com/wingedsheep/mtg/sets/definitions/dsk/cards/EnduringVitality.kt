@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.scripting.AbilityId
 import com.wingedsheep.sdk.scripting.ActivatedAbility
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.GrantActivatedAbility
+import com.wingedsheep.sdk.scripting.TimingRule
 import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
 
 /**
@@ -24,7 +25,10 @@ import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
  *
  * The mana ability is granted to every creature you control via [GrantActivatedAbility] (the
  * Citanul Hierophants / Cryptolith Rite lord shape); each grantee taps for one mana of any
- * color. The death clause is the Duskmourn "Enduring" mechanic — see [enduring].
+ * color. A granted mana ability must say so explicitly — the raw [ActivatedAbility] constructor
+ * has no builder to derive `isManaAbility` / [TimingRule.ManaAbility] from the effect, and without
+ * them the grant is an ordinary stack-using ability (`CardLintTest` now enforces this corpus-wide).
+ * The death clause is the Duskmourn "Enduring" mechanic — see [enduring].
  */
 val EnduringVitality = card("Enduring Vitality") {
     manaCost = "{1}{G}{G}"
@@ -45,7 +49,9 @@ val EnduringVitality = card("Enduring Vitality") {
             ability = ActivatedAbility(
                 id = AbilityId.generate(),
                 cost = Costs.Tap,
-                effect = Effects.AddAnyColorMana(1)
+                effect = Effects.AddAnyColorMana(1),
+                isManaAbility = true,
+                timing = TimingRule.ManaAbility
             ),
             filter = GroupFilter(GameObjectFilter.Creature.youControl())
         )

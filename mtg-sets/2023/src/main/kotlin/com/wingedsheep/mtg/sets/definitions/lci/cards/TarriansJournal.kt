@@ -81,6 +81,7 @@ private val TheTombOfAclazotz = card("The Tomb of Aclazotz") {
 
     // {T}: Add {B}.
     activatedAbility {
+        manaAbility = true
         cost = Costs.Tap
         effect = Effects.AddMana(Color.BLACK)
     }

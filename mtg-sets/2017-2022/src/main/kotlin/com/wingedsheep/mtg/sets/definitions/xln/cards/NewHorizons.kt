@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.AbilityId
 import com.wingedsheep.sdk.scripting.ActivatedAbility
 import com.wingedsheep.sdk.scripting.GrantActivatedAbility
+import com.wingedsheep.sdk.scripting.TimingRule
 
 /**
  * New Horizons
@@ -48,7 +49,9 @@ val NewHorizons = card("New Horizons") {
             ability = ActivatedAbility(
                 id = AbilityId.generate(),
                 cost = Costs.Tap,
-                effect = Effects.AddAnyColorMana(2)
+                effect = Effects.AddAnyColorMana(2),
+                isManaAbility = true,
+                timing = TimingRule.ManaAbility
             )
         )
     }

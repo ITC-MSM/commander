@@ -9,6 +9,7 @@ import com.wingedsheep.sdk.scripting.AbilityId
 import com.wingedsheep.sdk.scripting.ActivatedAbility
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.GrantActivatedAbility
+import com.wingedsheep.sdk.scripting.TimingRule
 import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
 
 /**
@@ -32,7 +33,9 @@ val GreatDivideGuide = card("Great Divide Guide") {
             ability = ActivatedAbility(
                 id = AbilityId.generate(),
                 cost = Costs.Tap,
-                effect = Effects.AddAnyColorMana()
+                effect = Effects.AddAnyColorMana(),
+                isManaAbility = true,
+                timing = TimingRule.ManaAbility
             ),
             filter = GroupFilter(
                 (GameObjectFilter.Land or GameObjectFilter().withSubtype(Subtype.ALLY)).youControl()

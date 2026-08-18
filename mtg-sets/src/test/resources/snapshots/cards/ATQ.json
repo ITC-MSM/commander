@@ -2915,6 +2915,8 @@
                         "numericProperty": "ManaValue"
                     }
                 },
+                "timing": "ManaAbility",
+                "isManaAbility": true,
                 "descriptionOverride": "{T}, Sacrifice an artifact: Add an amount of {B} equal to the sacrificed artifact's mana value."
             }
         ]

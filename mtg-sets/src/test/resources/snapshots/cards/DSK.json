@@ -4764,7 +4764,9 @@
                 "ability": {
                     "id": "ability_1",
                     "cost": "CostTap",
-                    "effect": "AddManaOfChoice"
+                    "effect": "AddManaOfChoice",
+                    "timing": "ManaAbility",
+                    "isManaAbility": true
                 },
                 "filter": {
                     "baseFilter": "creature ctrl:you"

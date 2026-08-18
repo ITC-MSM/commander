@@ -11,6 +11,7 @@ import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonPrimitive
 
@@ -96,8 +97,128 @@ object CardLinter {
         checkSlots(card.name, slots, findings)
         checkOpponentChoosers(card.name, explicitTree, withinActivatedAbility = false, findings)
         checkAttachedScope(card, findings)
+        checkManaAbilityClassification(card.name, fullTree, findings)
         return findings
     }
+
+    /** Serial names of the effects that put mana into a pool (CR 605.1a's "could add mana"). */
+    private val MANA_ADDING_EFFECTS = setOf(
+        "AddMana",
+        "AddColorlessMana",
+        "AddManaOfChoice",
+        "AddDynamicMana",
+        "AddAnyColorManaSpendOnChosenType",
+        "AddOneManaOfEachColorAmong",
+    )
+
+    /**
+     * Flag an activated ability that adds mana but isn't flagged `isManaAbility`.
+     *
+     * CR 605.1a makes the classification a *consequence* of the ability, not a choice: an activated
+     * ability that could add mana, doesn't target, isn't a loyalty ability and moves no card to or
+     * from a library **is** a mana ability. Getting the flag wrong is invisible on inspection and
+     * breaks four things at once — the ability can't be activated while paying a cost (CR 605.3a),
+     * it wrongly uses the stack (CR 605.3b), `ManaAbilityEnumerator` never surfaces it to the
+     * auto-tap solver, and nothing that keys off "tapping a permanent for mana" (Badgermole Cub,
+     * Lavaleaper, Overabundance) ever fires.
+     *
+     * The `activatedAbility { manaAbility = true }` builder derives [TimingRule.ManaAbility] from
+     * the flag, but a raw `ActivatedAbility(...)` — the only way to build one *inside* a
+     * `GrantActivatedAbility` — has no builder to do it, and its `isManaAbility` defaults to false.
+     * That is how Cryptolith Rite, Joiner Adept and Citanul Hierophants shipped unflagged, and then
+     * Abundant Growth, Nature's Embrace, New Horizons, Huatli, Enduring Vitality and Great Divide
+     * Guide after them. Documenting it twice didn't stop the second batch; this does.
+     *
+     * Structural on purpose: an `isManaAbility` member identifies an `ActivatedAbility` wherever it
+     * sits — printed, inside a static grant, or nested in a `GrantActivatedAbilityEffect` — so a
+     * new grant shape is covered the day it is added.
+     *
+     * Deliberately narrow, matching 605.1a's carve-outs: an ability that targets (Radiant Lotus'
+     * "target player adds …"), a loyalty ability, or one whose effect moves a card to or from a
+     * library is not a mana ability however much mana it makes.
+     */
+    private fun checkManaAbilityClassification(
+        cardName: String,
+        tree: JsonElement,
+        findings: MutableList<CardValidationError>
+    ) {
+        forEachActivatedAbility(tree) { ability ->
+            if ((ability["isManaAbility"] as? JsonPrimitive)?.booleanOrNull != false) return@forEachActivatedAbility
+            if ((ability["isPlaneswalkerAbility"] as? JsonPrimitive)?.booleanOrNull == true) return@forEachActivatedAbility
+            if ((ability["targetRequirements"] as? JsonArray)?.isNotEmpty() == true) return@forEachActivatedAbility
+            val effect = ability["effect"] ?: return@forEachActivatedAbility
+            if (!ownEffectContains(effect, MANA_ADDING_EFFECTS)) return@forEachActivatedAbility
+            if (ownEffectContains(effect, LIBRARY_MOVING_EFFECTS)) return@forEachActivatedAbility
+            findings.add(
+                CardValidationError.UnflaggedManaAbility(
+                    cardName = cardName,
+                    message = "'$cardName' has an activated ability that adds mana but is not " +
+                        "flagged `isManaAbility = true`. By CR 605.1a it IS a mana ability, so the " +
+                        "engine must resolve it off the stack: as written it uses the stack, can't " +
+                        "be activated while paying a cost, is invisible to the auto-tap solver, and " +
+                        "never triggers a \"whenever you tap a permanent for mana\" static. Set " +
+                        "`isManaAbility = true` and `timing = TimingRule.ManaAbility` on the raw " +
+                        "ActivatedAbility (the `activatedAbility { manaAbility = true }` builder " +
+                        "sets both for you). If the ability genuinely isn't one — it targets, or " +
+                        "moves a card to or from a library — say so in lint-allowlist.txt."
+                )
+            )
+        }
+    }
+
+    /**
+     * Serial names of effects that move a card to or from a library — the CR 605.1a disqualifier
+     * ("its cost and effect don't move any card to or from a library").
+     */
+    private val LIBRARY_MOVING_EFFECTS = setOf(
+        "SearchLibrary",
+        "DrawCards",
+        "Mill",
+        "PutOnTopOfLibrary",
+        "PutOnBottomOfLibrary",
+        "ShuffleIntoLibrary",
+        "ExileTopOfLibrary",
+        "RevealTopOfLibrary",
+    )
+
+    /** Every serialized `ActivatedAbility` anywhere in [tree] — the `isManaAbility` member marks one. */
+    private fun forEachActivatedAbility(tree: JsonElement, visit: (JsonObject) -> Unit) {
+        when (tree) {
+            is JsonObject -> {
+                if (tree.containsKey("isManaAbility")) visit(tree)
+                tree.values.forEach { forEachActivatedAbility(it, visit) }
+            }
+            is JsonArray -> tree.forEach { forEachActivatedAbility(it, visit) }
+            else -> {}
+        }
+    }
+
+    /**
+     * True if any polymorphic `"type"` discriminator in [tree] — or the tree itself, when a
+     * no-argument effect encodes as the bare serial name — is one of [names], counting only what
+     * *this* resolution does.
+     *
+     * The recursion stops at a nested ability or embedded card definition, because an effect that
+     * merely carries one doesn't perform it: Avatar Roku's "{8}: Create a … Dragon with firebending
+     * 4" embeds a token whose attack trigger adds {R}{R}{R}{R}, and the {8} ability adds no mana at
+     * all. The same guard keeps a `GrantActivatedAbilityEffect` from being read as though it
+     * produced the mana its granted ability will — [forEachActivatedAbility] visits that one on its
+     * own terms.
+     */
+    private fun ownEffectContains(tree: JsonElement, names: Set<String>): Boolean = when (tree) {
+        is JsonPrimitive -> tree.isString && tree.contentOrNull in names
+        is JsonObject ->
+            if (isNestedAbilityOrDefinition(tree)) false
+            else (tree["type"] as? JsonPrimitive)?.contentOrNull in names ||
+                tree.values.any { ownEffectContains(it, names) }
+        is JsonArray -> tree.any { ownEffectContains(it, names) }
+        else -> false
+    }
+
+    /** A serialized ability or card definition rather than a step of the effect being scanned. */
+    private fun isNestedAbilityOrDefinition(tree: JsonObject): Boolean =
+        tree.containsKey("script") || tree.containsKey("trigger") ||
+            tree.containsKey("isManaAbility") || tree.containsKey("chapter")
 
     /**
      * Flag a `Scope.AttachedTo` filter on a card that can never host an attachment.

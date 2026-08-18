@@ -91,6 +91,84 @@ class EnduringVitalityScenarioTest : ScenarioTestBase() {
                 }
             }
 
+            test("the granted ability is a real mana ability — it resolves off the stack") {
+                // Regression: the raw `ActivatedAbility` constructor defaults to
+                // `isManaAbility = false`, so the grant used to be an ordinary activated ability
+                // that went on the stack. It still produced mana eventually, but it couldn't be
+                // activated while paying a cost and was invisible to everything that keys off
+                // "tapping a permanent for mana".
+                val game = scenario()
+                    .withPlayers("Player1", "Player2")
+                    .withCardOnBattlefield(1, "Enduring Vitality", summoningSickness = false)
+                    .withCardOnBattlefield(1, "Grizzly Bears", summoningSickness = false)
+                    .withActivePlayer(1)
+                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                    .build()
+
+                val abilityId = cardRegistry.getCard("Enduring Vitality")!!.staticAbilities
+                    .filterIsInstance<GrantActivatedAbility>().first().ability.id
+                val bears = game.findPermanent("Grizzly Bears")!!
+
+                val result = game.execute(
+                    ActivateAbility(
+                        playerId = game.player1Id,
+                        sourceId = bears,
+                        abilityId = abilityId,
+                        manaColorChoice = Color.GREEN
+                    )
+                )
+                withClue("Activation should succeed: ${result.error}") { result.error shouldBe null }
+
+                withClue("A mana ability never uses the stack (CR 605.3b)") {
+                    game.state.stack shouldBe emptyList()
+                }
+                val pool = game.state.getEntity(game.player1Id)?.get<ManaPoolComponent>()
+                withClue("The mana is in the pool immediately, before any stack resolution") {
+                    pool?.green shouldBe 1
+                }
+            }
+
+            test("a 'whenever you tap a creature for mana' static sees the granted ability") {
+                // Badgermole Cub: "Whenever you tap a creature for mana, add an additional {G}."
+                // The bonus only fires for abilities the engine classifies as mana abilities, so
+                // this pins the classification from the payoff side as well. Activated *without*
+                // a manaColorChoice — as the AI and the gym always do — so the ability pauses for
+                // the color and the bonus has to survive the resume.
+                val game = scenario()
+                    .withPlayers("Player1", "Player2")
+                    .withCardOnBattlefield(1, "Enduring Vitality", summoningSickness = false)
+                    .withCardOnBattlefield(1, "Badgermole Cub", summoningSickness = false)
+                    .withCardOnBattlefield(1, "Grizzly Bears", summoningSickness = false)
+                    .withActivePlayer(1)
+                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                    .build()
+
+                val abilityId = cardRegistry.getCard("Enduring Vitality")!!.staticAbilities
+                    .filterIsInstance<GrantActivatedAbility>().first().ability.id
+                val bears = game.findPermanent("Grizzly Bears")!!
+
+                val result = game.execute(
+                    ActivateAbility(
+                        playerId = game.player1Id,
+                        sourceId = bears,
+                        abilityId = abilityId
+                    )
+                )
+                withClue("Activation should succeed: ${result.error}") { result.error shouldBe null }
+
+                val decision = game.getPendingDecision() as? ChooseColorDecision
+                withClue("the any-color ability should have paused for a color choice") {
+                    decision shouldNotBe null
+                }
+                game.submitDecision(ColorChosenResponse(decision!!.id, Color.BLUE))
+
+                val pool = game.state.getEntity(game.player1Id)?.get<ManaPoolComponent>()!!
+                withClue("one blue from the Bears + one green from the Cub, pool was $pool") {
+                    pool.blue shouldBe 1
+                    pool.green shouldBe 1
+                }
+            }
+
             test("an opponent's creature is NOT granted the mana ability") {
                 val game = scenario()
                     .withPlayers("Player1", "Player2")

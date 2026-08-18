@@ -8489,7 +8489,9 @@
                                             "WHITE"
                                         ]
                                     }
-                                }
+                                },
+                                "timing": "ManaAbility",
+                                "isManaAbility": true
                             },
                             "filter": {
                                 "baseFilter": "creature ctrl:you"
@@ -18129,7 +18131,9 @@
                     "effect": {
                         "type": "AddMana",
                         "color": "BLACK"
-                    }
+                    },
+                    "timing": "ManaAbility",
+                    "isManaAbility": true
                 },
                 {
                     "id": "ability_4",

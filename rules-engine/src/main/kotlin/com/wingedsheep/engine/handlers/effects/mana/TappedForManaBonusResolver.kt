@@ -29,8 +29,8 @@ import com.wingedsheep.sdk.scripting.values.ManaColorSet
  * the pending bonuses one at a time, pausing for a [ChooseAnyColorTapBonusContinuation] when a
  * color choice is needed and resuming with the remaining bonuses afterward.
  *
- * Fixed-color and mirror-color tap bonuses are handled directly (no decision) by
- * `ActivateAbilityHandler.resolveAdditionalManaOnTap` / `resolveAdditionalManaOnSourceTap`; this
+ * Fixed-color and mirror-color tap bonuses are handled directly (no decision) earlier in
+ * [ManaAbilityResolutionPipeline.finishTapBonuses], which drives this resolver last; this
  * resolver only handles the any-color choice case. The shared [AddManaOfChoiceExecutor] keeps the
  * actual mana addition (and its events) consistent with normal "add one mana of any color".
  */

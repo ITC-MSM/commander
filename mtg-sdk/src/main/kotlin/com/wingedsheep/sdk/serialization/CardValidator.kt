@@ -328,4 +328,15 @@ sealed interface CardValidationError {
         override val cardName: String,
         override val message: String
     ) : CardValidationError
+
+    /**
+     * An activated ability that adds mana without `isManaAbility = true`. CR 605.1a makes the
+     * classification a consequence of the ability rather than a choice, and the engine keys the
+     * whole tap-for-mana pipeline off the flag — so an unflagged one silently uses the stack and
+     * is invisible to the mana solver.
+     */
+    data class UnflaggedManaAbility(
+        override val cardName: String,
+        override val message: String
+    ) : CardValidationError
 }

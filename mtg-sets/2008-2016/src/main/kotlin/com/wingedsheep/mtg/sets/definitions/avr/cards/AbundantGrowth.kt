@@ -9,6 +9,7 @@ import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.AbilityId
 import com.wingedsheep.sdk.scripting.ActivatedAbility
 import com.wingedsheep.sdk.scripting.GrantActivatedAbility
+import com.wingedsheep.sdk.scripting.TimingRule
 
 /**
  * Abundant Growth
@@ -38,7 +39,9 @@ val AbundantGrowth = card("Abundant Growth") {
             ability = ActivatedAbility(
                 id = AbilityId.generate(),
                 cost = Costs.Tap,
-                effect = Effects.AddAnyColorMana(1)
+                effect = Effects.AddAnyColorMana(1),
+                isManaAbility = true,
+                timing = TimingRule.ManaAbility
             )
         )
     }
