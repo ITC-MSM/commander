@@ -629,6 +629,46 @@
     ]
 }
 
+// Marsh Gas
+{
+    "name": "Marsh Gas",
+    "manaCost": "{B}",
+    "typeLine": "Instant",
+    "oracleText": "All creatures get -2/-0 until end of turn.",
+    "script": {
+        "spellEffect": {
+            "type": "ForEach",
+            "space": {
+                "type": "IterationSpace.Group",
+                "filter": {
+                    "baseFilter": "creature"
+                }
+            },
+            "body": {
+                "type": "ModifyStats",
+                "powerModifier": {
+                    "type": "Fixed",
+                    "amount": -2
+                },
+                "toughnessModifier": {
+                    "type": "Fixed",
+                    "amount": 0
+                },
+                "target": "Self"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "48",
+        "artist": "Douglas Shuler",
+        "flavorText": "\"Comes right outta th' ground. If ya can smell it, it's too late.\" —Keevy Bogsbury",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/8/b80ecb15-258b-4fc9-86e4-c2bf01891606.jpg?1783947938"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Merfolk Assassin
 {
     "name": "Merfolk Assassin",
