@@ -8037,6 +8037,111 @@
     ]
 }
 
+// Illicit Masquerade
+{
+    "name": "Illicit Masquerade",
+    "manaCost": "{3}{B}",
+    "typeLine": "Enchantment",
+    "oracleText": "Flash\nWhen this enchantment enters, put an impostor counter on each creature you control.\nWhenever a creature you control with an impostor counter on it dies, exile it. Return up to one other target creature card from your graveyard to the battlefield.",
+    "keywords": [
+        "FLASH"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        }
+                    },
+                    "body": {
+                        "type": "AddCounters",
+                        "counterType": "IMPOSTOR",
+                        "count": 1,
+                        "target": "Self"
+                    }
+                },
+                "descriptionOverride": "When this enchantment enters, put an impostor counter on each creature you control."
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": {
+                        "cardPredicates": [
+                            "IsCreature"
+                        ],
+                        "statePredicates": [
+                            {
+                                "type": "HasCounter",
+                                "counterType": "IMPOSTOR"
+                            }
+                        ],
+                        "controllerPredicate": "ControlledByYou"
+                    },
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "MoveToZone",
+                            "target": "TriggeringEntity",
+                            "destination": "Exile",
+                            "fromZone": "Graveyard"
+                        },
+                        {
+                            "type": "MoveToZone",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "up to one other target creature card from your graveyard"
+                            },
+                            "destination": "Battlefield",
+                            "fromZone": "Graveyard"
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "optional": true,
+                    "filter": {
+                        "baseFilter": "creature own:you",
+                        "zone": "Graveyard",
+                        "excludeTriggeringEntity": true
+                    },
+                    "id": "up to one other target creature card from your graveyard"
+                },
+                "descriptionOverride": "Whenever a creature you control with an impostor counter on it dies, exile it. Return up to one other target creature card from your graveyard to the battlefield."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "88",
+        "rarity": "RARE",
+        "artist": "Valera Lutfullina",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/a/2a7a3ec4-afaa-45e1-8cde-f15bf4bd7379.jpg?1783912896",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "Illicit Masquerade's last ability affects all creatures you control with impostor counters on them, not just ones that had impostor counters put on them with Illicit Masquerade's second ability."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Innocent Bystander
 {
     "name": "Innocent Bystander",
@@ -8486,6 +8591,127 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Kellan, Inquisitive Prodigy
+{
+    "name": "Kellan, Inquisitive Prodigy",
+    "manaCost": "{2}{G}{U}",
+    "typeLine": "Legendary Creature — Human Faerie Detective",
+    "oracleText": "Flying, vigilance\nWhenever Kellan attacks, destroy up to one target artifact. If you controlled that permanent, draw a card.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 4
+    },
+    "keywords": [
+        "FLYING",
+        "VIGILANCE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.WhenCondition",
+                        "condition": {
+                            "type": "EntityMatches",
+                            "entity": {
+                                "type": "ContextTarget",
+                                "index": 0
+                            },
+                            "filter": "artifact ctrl:you"
+                        }
+                    },
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "MoveToZone",
+                                "target": {
+                                    "type": "BoundVariable",
+                                    "name": "up to one target artifact"
+                                },
+                                "destination": "Graveyard",
+                                "byDestruction": true
+                            },
+                            {
+                                "type": "DrawCards",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            }
+                        ]
+                    },
+                    "otherwise": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "up to one target artifact"
+                        },
+                        "destination": "Graveyard",
+                        "byDestruction": true
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "optional": true,
+                    "filter": {
+                        "baseFilter": "artifact"
+                    },
+                    "id": "up to one target artifact"
+                },
+                "descriptionOverride": "Whenever Kellan attacks, destroy up to one target artifact. If you controlled that permanent, draw a card."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "212",
+        "rarity": "RARE",
+        "artist": "Joshua Raphael",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/4/c49690c7-c282-4eb4-8da3-5e0c46a80fc4.jpg?1783912845",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "If the artifact you target with Kellan, Inquisitive Prodigy's triggered ability isn't destroyed (perhaps because it's indestructible), you will still draw a card as long as you control the artifact."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "The effect of Tail the Suspect that allows you to play an additional land is cumulative with similar effects."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN",
+        "BLUE"
+    ],
+    "layout": "ADVENTURE",
+    "cardFaces": [
+        {
+            "name": "Tail the Suspect",
+            "manaCost": "{G}{U}",
+            "typeLine": "Sorcery — Adventure",
+            "oracleText": "Investigate. You may play an additional land this turn. (Then exile this card. You may cast the creature later from exile.)",
+            "script": {
+                "spellEffect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "CreatePredefinedToken",
+                            "tokenType": "Clue"
+                        },
+                        {
+                            "type": "PlayAdditionalLands",
+                            "count": 1
+                        }
+                    ]
+                }
+            }
+        }
     ]
 }
 
