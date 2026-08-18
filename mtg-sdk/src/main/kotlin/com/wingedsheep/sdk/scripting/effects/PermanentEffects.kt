@@ -147,7 +147,11 @@ data class BecomeCreatureEffect(
  *   change (Ultima's blighted land "loses all land types and abilities" but stays a land and keeps
  *   any other card types such as artifact, per its ruling).
  * @property subtypes Subtypes to set, replacing all existing ones (e.g. `setOf("Treasure")`;
- *   `emptySet()` strips all subtypes — "loses all land types")
+ *   `emptySet()` strips all subtypes — "loses all land types"). `null` keeps the permanent's
+ *   existing subtypes unchanged, the sibling of [cardTypes]'s `null` — for a transform that only
+ *   renames or grants ("it becomes a legendary creature named Mileva, the Stalwart", Tenth
+ *   District Hero, which stays whatever creature types it already had). Distinguishing "set to
+ *   nothing" from "don't touch" is why this is nullable rather than defaulting to a no-op.
  * @property colors Colors to set (`emptySet()` = colorless, the default; `null` = keep existing)
  * @property loseAllAbilities Whether the permanent loses all printed/granted-via-projection abilities
  * @property name Name to set, replacing the permanent's own (CR 612.8 — "loses any names it had
@@ -176,7 +180,7 @@ data class BecomeCreatureEffect(
 data class BecomeArtifactEffect(
     val target: EffectTarget = EffectTarget.ContextTarget(0),
     val cardTypes: Set<String>? = setOf("ARTIFACT"),
-    val subtypes: Set<String> = emptySet(),
+    val subtypes: Set<String>? = emptySet(),
     val colors: Set<com.wingedsheep.sdk.core.Color>? = emptySet(),
     val loseAllAbilities: Boolean = true,
     val name: String? = null,
@@ -187,9 +191,9 @@ data class BecomeArtifactEffect(
     override val description: String = buildString {
         append("${target.description} becomes ")
         if (colors?.isEmpty() == true) append("a colorless ")
-        if (subtypes.isNotEmpty()) append(subtypes.joinToString(" "))
+        if (!subtypes.isNullOrEmpty()) append(subtypes.joinToString(" "))
         if (!cardTypes.isNullOrEmpty()) {
-            if (subtypes.isNotEmpty()) append(" ")
+            if (!subtypes.isNullOrEmpty()) append(" ")
             append(cardTypes.joinToString(" ") { it.lowercase() })
         }
         if (name != null) append(" named $name")

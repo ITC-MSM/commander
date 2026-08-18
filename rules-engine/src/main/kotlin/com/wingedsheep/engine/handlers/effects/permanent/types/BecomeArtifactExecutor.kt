@@ -86,13 +86,19 @@ class BecomeArtifactExecutor(
         }
 
         // Layer 4 (TYPE): set subtypes, replacing all existing ones (e.g. "Treasure").
-        newState = newState.addFloatingEffect(
-            layer = Layer.TYPE,
-            modification = SerializableModification.SetAllSubtypes(effect.subtypes),
-            affectedEntities = affectedEntities,
-            duration = effect.duration,
-            context = context
-        )
+        // Skipped when subtypes is null — the permanent keeps its existing subtypes, the sibling of
+        // the cardTypes skip above. A rename-or-grant transform (Tenth District Hero becoming
+        // "Mileva, the Stalwart") must not strip the creature types it already has, and an empty
+        // set already means "lose all subtypes", so the two readings need separate spellings.
+        effect.subtypes?.let { subtypes ->
+            newState = newState.addFloatingEffect(
+                layer = Layer.TYPE,
+                modification = SerializableModification.SetAllSubtypes(subtypes),
+                affectedEntities = affectedEntities,
+                duration = effect.duration,
+                context = context
+            )
+        }
 
         // Layer 5 (COLOR): set colors (emptySet = colorless).
         effect.colors?.let { colors ->

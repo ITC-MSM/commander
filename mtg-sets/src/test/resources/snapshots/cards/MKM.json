@@ -16415,6 +16415,162 @@
     ]
 }
 
+// Tenth District Hero
+{
+    "name": "Tenth District Hero",
+    "manaCost": "{1}{W}",
+    "typeLine": "Creature — Human",
+    "oracleText": "{1}{W}, Collect evidence 2: This creature becomes a Human Detective with base power and toughness 4/4 and gains vigilance. (To collect evidence 2, exile cards with total mana value 2 or greater from your graveyard.)\n{2}{W}, Collect evidence 4: If this creature is a Detective, it becomes a legendary creature named Mileva, the Stalwart, it has base power and toughness 5/5, and it gains \"Other creatures you control have indestructible.\"",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}{W}"
+                            }
+                        },
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomCollectEvidence",
+                                "amount": 2
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "BecomeCreature",
+                    "power": {
+                        "type": "Fixed",
+                        "amount": 4
+                    },
+                    "toughness": {
+                        "type": "Fixed",
+                        "amount": 4
+                    },
+                    "keywords": [
+                        "VIGILANCE"
+                    ],
+                    "creatureTypes": [
+                        "Human",
+                        "Detective"
+                    ],
+                    "duration": "Permanent"
+                },
+                "descriptionOverride": "This creature becomes a Human Detective with base power and toughness 4/4 and gains vigilance."
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}{W}"
+                            }
+                        },
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomCollectEvidence",
+                                "amount": 4
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.WhenCondition",
+                        "condition": {
+                            "type": "EntityMatches",
+                            "entity": "Self",
+                            "filter": "creature Detective"
+                        }
+                    },
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "AddCardType",
+                                "cardType": "LEGENDARY",
+                                "target": "Self"
+                            },
+                            {
+                                "type": "BecomeArtifact",
+                                "target": "Self",
+                                "cardTypes": null,
+                                "subtypes": null,
+                                "colors": null,
+                                "loseAllAbilities": false,
+                                "name": "Mileva, the Stalwart",
+                                "grantedStaticAbilities": [
+                                    {
+                                        "type": "GrantKeyword",
+                                        "keyword": "INDESTRUCTIBLE",
+                                        "filter": {
+                                            "baseFilter": "creature ctrl:you",
+                                            "excludeSelf": true
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "SetBaseStats",
+                                "target": "Self",
+                                "power": {
+                                    "type": "Fixed",
+                                    "amount": 5
+                                },
+                                "toughness": {
+                                    "type": "Fixed",
+                                    "amount": 5
+                                }
+                            }
+                        ]
+                    }
+                },
+                "descriptionOverride": "If this creature is a Detective, it becomes a legendary creature named Mileva, the Stalwart, it has base power and toughness 5/5, and it gains \"Other creatures you control have indestructible.\""
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "34",
+        "rarity": "RARE",
+        "artist": "Kai Carpenter",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/c/7c65a79e-f28a-4f30-95a4-1ea55fd84564.jpg?1783912919",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "Neither of these abilities have durations. If one of them resolves, it will remain in effect until the game ends, Tenth District Hero leaves the battlefield, or some subsequent effect changes its characteristics, whichever comes first."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "You can activate Tenth District Hero's second ability regardless of what creature types it is. The ability checks Tenth District Hero's creature types when it resolves. If Tenth District Hero isn't a Detective at that time, the ability does nothing."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "If you can't exile enough cards to meet or exceed the required mana value, you can't choose to collect evidence at all."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Teysa, Opulent Oligarch
 {
     "name": "Teysa, Opulent Oligarch",

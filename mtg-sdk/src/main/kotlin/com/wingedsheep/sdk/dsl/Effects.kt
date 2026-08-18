@@ -1612,13 +1612,22 @@ object Effects {
         GrantKeywordEffect(flag.name, target, duration)
 
     /**
-     * Grant a static ability to a target until end of turn (or another [duration]).
-     *
-     * The runtime sibling of a printed [com.wingedsheep.sdk.scripting.StaticAbility] — e.g.
-     * granting [com.wingedsheep.sdk.scripting.CantBeBlockedByMoreThan] so the combat blocker
-     * validation honors a temporarily-conferred "can't be blocked by more than one creature"
-     * (Full Steam Ahead). Compose inside [ForEachInGroup] with [EffectTarget.Self] for
+     * Grant a **point-of-use** static ability to a target until end of turn (or another
+     * [duration]) — e.g. [com.wingedsheep.sdk.scripting.CantBeBlockedByMoreThan] so the combat
+     * blocker validation honors a temporarily-conferred "can't be blocked by more than one
+     * creature" (Full Steam Ahead). Compose inside [ForEachInGroup] with [EffectTarget.Self] for
      * "each creature you control gains ...".
+     *
+     * The grant lands in `GameState.grantedStaticAbilities`, which the combat, casting, and
+     * activation checks read alongside a permanent's printed statics. The **layer projector does
+     * not read it.** A static that only does something by projecting — `SetName`, `GrantKeyword`,
+     * `ModifyStats`, `SetBasePowerToughnessStatic`, `TransformPermanent`, … — is therefore
+     * *silently inert* when granted this way. Reach for
+     * [com.wingedsheep.sdk.scripting.effects.BecomeArtifactEffect]'s `grantedStaticAbilities`
+     * instead: it appends to the permanent's own `ContinuousEffectSourceComponent`, the same
+     * channel a printed static uses, and its `cardTypes = null` / `subtypes = null` /
+     * `loseAllAbilities = false` knobs let it grant without transforming anything else (Tenth
+     * District Hero).
      */
     fun GrantStaticAbility(
         ability: com.wingedsheep.sdk.scripting.StaticAbility,
