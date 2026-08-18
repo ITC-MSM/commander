@@ -11486,6 +11486,111 @@
     ]
 }
 
+// Tooth and Nail
+{
+    "name": "Tooth and Nail",
+    "manaCost": "{5}{G}{G}",
+    "typeLine": "Sorcery",
+    "oracleText": "Choose one —\n• Search your library for up to two creature cards, reveal them, put them into your hand, then shuffle.\n• Put up to two creature cards from your hand onto the battlefield.\nEntwine {2} (Choose both if you pay the entwine cost.)",
+    "script": {
+        "spellEffect": {
+            "type": "Modal",
+            "modes": [
+                {
+                    "effect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Library",
+                                    "filter": "creature"
+                                },
+                                "storeAs": "searchable"
+                            },
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "searchable",
+                                "selection": {
+                                    "type": "ChooseUpTo",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 2
+                                    }
+                                },
+                                "storeSelected": "found"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "found",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Hand"
+                                },
+                                "revealed": true
+                            },
+                            "ShuffleLibrary",
+                            "EmitLibrarySearchedEvent"
+                        ]
+                    },
+                    "description": "Search your library for up to two creature cards"
+                },
+                {
+                    "effect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Hand",
+                                    "filter": "creature"
+                                },
+                                "storeAs": "toothAndNailCandidates"
+                            },
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "toothAndNailCandidates",
+                                "selection": {
+                                    "type": "ChooseUpTo",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 2
+                                    }
+                                },
+                                "storeSelected": "toothAndNailChosen",
+                                "prompt": "Choose up to two creature cards to put onto the battlefield"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "toothAndNailChosen",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Battlefield"
+                                }
+                            }
+                        ]
+                    },
+                    "description": "Put up to two creature cards from your hand onto the battlefield"
+                }
+            ],
+            "chooseCount": 2,
+            "minChooseCount": 1,
+            "additionalManaCostPerExtraMode": "{2}"
+        }
+    },
+    "metadata": {
+        "collectorNumber": "134",
+        "rarity": "RARE",
+        "artist": "Greg Hildebrandt",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/2/02f0067c-2d38-46bd-b52e-070c2ce424f0.jpg?1783944531"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Tooth of Chiss-Goria
 {
     "name": "Tooth of Chiss-Goria",
