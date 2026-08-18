@@ -747,6 +747,55 @@
     ]
 }
 
+// Sunken City
+{
+    "name": "Sunken City",
+    "manaCost": "{U}{U}",
+    "typeLine": "Enchantment",
+    "oracleText": "At the beginning of your upkeep, sacrifice this enchantment unless you pay {U}{U}.\nBlue creatures get +1/+1.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "PayOrSuffer",
+                    "cost": {
+                        "type": "PayAtom",
+                        "atom": {
+                            "type": "AtomMana",
+                            "cost": "{U}{U}"
+                        }
+                    },
+                    "suffer": "SacrificeSelf"
+                }
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 1,
+                "toughnessBonus": 1,
+                "filter": {
+                    "baseFilter": "creature blue"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "36",
+        "artist": "Jesper Myrfors",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/1/f1e0f9ec-2b06-4bda-8b80-a716d82d1f13.jpg?1783947942"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Tivadar's Crusade
 {
     "name": "Tivadar's Crusade",
