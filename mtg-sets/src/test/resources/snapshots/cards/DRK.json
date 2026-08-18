@@ -453,6 +453,44 @@
     ]
 }
 
+// Diabolic Machine
+{
+    "name": "Diabolic Machine",
+    "manaCost": "{7}",
+    "typeLine": "Artifact Creature — Construct",
+    "oracleText": "{3}: Regenerate this creature.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{3}"
+                    }
+                },
+                "effect": {
+                    "type": "Regenerate",
+                    "target": "Self"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "101",
+        "rarity": "UNCOMMON",
+        "artist": "Anson Maddocks",
+        "flavorText": "\"The bolts of our ballistae smashed into the monstrous thing, but our hopes died in our chests as its gears continued turning.\" —Sevti Mukul, *The Fall of Alsoor*",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/3/c3b0f228-6b06-4426-a557-1225d547b908.jpg?1783947926"
+    },
+    "colorIdentityOverride": []
+}
+
 // Drowned
 {
     "name": "Drowned",
