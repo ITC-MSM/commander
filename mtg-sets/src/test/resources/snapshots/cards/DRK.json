@@ -110,6 +110,43 @@
     ]
 }
 
+// Bog Rats
+{
+    "name": "Bog Rats",
+    "manaCost": "{B}",
+    "typeLine": "Creature — Rat",
+    "oracleText": "This creature can't be blocked by Walls.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "CantBeBlockedBy",
+                "blockerFilter": {
+                    "cardPredicates": [
+                        "IsCreature",
+                        {
+                            "type": "HasSubtype",
+                            "subtype": "Wall"
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "42",
+        "artist": "Ron Spencer",
+        "flavorText": "Their stench was vile and strong enough, but not nearly as powerful as their hunger.",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/6/d64c9153-bc6d-4a64-885f-c039a5487a31.jpg?1783947941"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Drowned
 {
     "name": "Drowned",
