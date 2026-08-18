@@ -94,8 +94,10 @@ data class MayPlayPermission(
      * When true, this permission lasts only for as long as its "you" still controls [sourceId] —
      * "you may cast it for as long as you control this creature" (Taster of Wares). "You" is
      * [expiryControllerId] when set and [controllerId] otherwise, the same resolution the turn-keyed
-     * window uses, so an owner-scoped grant still measures the window against the player whose
-     * ability granted it.
+     * window uses. For this flag the granting executor always pins [expiryControllerId] to the
+     * player whose ability granted the permission, so the window measures against them even under
+     * an `ownerControls` grouping, where [controllerId] is each card's owner — an owner does not
+     * control the source, so keying the window off them would revoke the grant immediately.
      *
      * Enforced by revocation, not by a gate: [com.wingedsheep.engine.mechanics.sba.permanent
      * .EndedDurationExpiryCheck] deletes the permission on the first state-based check after the

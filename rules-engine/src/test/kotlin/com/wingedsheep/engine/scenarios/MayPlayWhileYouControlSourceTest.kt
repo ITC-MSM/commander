@@ -15,7 +15,13 @@ import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.Duration
+import com.wingedsheep.sdk.scripting.effects.CardDestination
+import com.wingedsheep.sdk.scripting.effects.CardSource
+import com.wingedsheep.sdk.scripting.effects.GatherCardsEffect
+import com.wingedsheep.sdk.scripting.effects.GrantMayPlayFromExileEffect
 import com.wingedsheep.sdk.scripting.effects.MayPlayExpiry
+import com.wingedsheep.sdk.scripting.effects.MoveCollectionEffect
+import com.wingedsheep.sdk.scripting.references.Player
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 
@@ -68,6 +74,39 @@ class MayPlayWhileYouControlSourceTest : FunSpec({
         }
     }
 
+    // "{T}: Exile each card from an opponent's hand. For each of those cards, its OWNER may
+    // play it for as long as you control this creature." The `ownerControls` grouping keys the
+    // permission to each card's owner, while "you" in the duration stays the activating player —
+    // the one grouping where those two diverge.
+    val OwnerControlsExiler = card("Owner Controls Exiler") {
+        manaCost = "{0}"
+        typeLine = "Creature — Test"
+        power = 2
+        toughness = 2
+        oracleText = "{T}: Exile each card from an opponent's hand. For each of those cards, its " +
+            "owner may play it for as long as you control this creature."
+        activatedAbility {
+            cost = Costs.Tap
+            effect = Effects.Composite(
+                listOf(
+                    GatherCardsEffect(
+                        source = CardSource.FromZone(Zone.HAND, Player.AnOpponent),
+                        storeAs = "theirs"
+                    ),
+                    MoveCollectionEffect(
+                        from = "theirs",
+                        destination = CardDestination.ToZone(Zone.EXILE, Player.AnOpponent)
+                    ),
+                    GrantMayPlayFromExileEffect(
+                        from = "theirs",
+                        expiry = MayPlayExpiry.WhileYouControlSource("this creature"),
+                        ownerControls = true
+                    )
+                )
+            )
+        }
+    }
+
     val DestroyAnyPermanent = card("Destroy Any Permanent") {
         manaCost = "{0}"
         typeLine = "Sorcery"
@@ -92,7 +131,8 @@ class MayPlayWhileYouControlSourceTest : FunSpec({
         val driver = GameTestDriver()
         driver.registerCards(
             TestCards.all + listOf(
-                SourceBoundExiler, PermanentExiler, ThreatenAnyPermanent, DestroyAnyPermanent
+                SourceBoundExiler, PermanentExiler, ThreatenAnyPermanent, DestroyAnyPermanent,
+                OwnerControlsExiler
             )
         )
         return driver
@@ -220,6 +260,45 @@ class MayPlayWhileYouControlSourceTest : FunSpec({
         if (driver.activePlayer != active) driver.passPriorityUntil(Step.DRAW, maxPasses = 600)
         driver.activePlayer shouldBe active
         projector.project(driver.state).getController(exiler) shouldBe active
+        driver.state.mayPlayPermissions.isEmpty() shouldBe true
+    }
+
+    test("an ownerControls grant keys the window to the granting player, not each card's owner") {
+        val driver = createDriver()
+        driver.initMirrorMatch(deck = Deck.of("Forest" to 40), startingLife = 20)
+        val active = driver.activePlayer!!
+        val opponent = driver.getOpponent(active)
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        driver.putCardInHand(opponent, "Destroy Any Permanent")
+        val exiler = driver.putCreatureOnBattlefield(active, "Owner Controls Exiler")
+        driver.removeSummoningSickness(exiler)
+        driver.submit(
+            ActivateAbility(
+                playerId = active,
+                sourceId = exiler,
+                abilityId = OwnerControlsExiler.activatedAbilities.first().id
+            )
+        ).isSuccess shouldBe true
+        driver.bothPass()
+
+        // The permission belongs to the OWNER of the exiled card (the opponent), but the "for as
+        // long as you control this creature" window belongs to the player who activated it. If the
+        // window keyed off `controllerId` here it would resolve to the opponent — who never
+        // controls the source — and the very next state-based check would delete the grant.
+        val permission = driver.state.mayPlayPermissions.single()
+        permission.controllerId shouldBe opponent
+        permission.endsWhenSourceUncontrolled shouldBe true
+        permission.expiryControllerId shouldBe active
+
+        // Surviving the state-based check that `bothPass` just ran is itself the regression: with
+        // the window keyed off `controllerId`, that pass would already have deleted the grant.
+
+        // …and it still ends when the source goes, exactly like the controller-scoped grant.
+        val destroy = driver.putCardInHand(active, "Destroy Any Permanent")
+        driver.castSpell(active, destroy, listOf(exiler))
+        driver.bothPass()
+        driver.state.getBattlefield().contains(exiler) shouldBe false
         driver.state.mayPlayPermissions.isEmpty() shouldBe true
     }
 

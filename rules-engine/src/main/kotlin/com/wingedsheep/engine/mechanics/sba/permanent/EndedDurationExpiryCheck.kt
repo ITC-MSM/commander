@@ -54,6 +54,12 @@ import com.wingedsheep.sdk.scripting.Duration
  * granted Treasure mana ability is the source-keyed case, Ultima's counter-keyed "{T}: Add {C}"
  * and Braided Net's activation lock the affected-keyed ones.
  *
+ * The same applies to [GameState.mayPlayPermissions]: a cast-from-exile permission granted "for as
+ * long as you control this [permanent]" (Taster of Wares, `MayPlayExpiry.WhileYouControlSource`)
+ * has no floating-effect representation either, so it is latched off here when its source leaves
+ * the battlefield or changes controller — the [Duration.WhileYouControlSource] gate above, applied
+ * to a permission instead of an effect.
+ *
  * Affected entities no longer on the battlefield are left untouched: the effect as a whole is
  * reaped by the untap-step cleanup / zone-change handling, and we must not emit spurious
  * control-change events for permanents that merely left.
@@ -241,8 +247,9 @@ class EndedDurationExpiryCheck : StateBasedActionCheck {
      * battlefield, or its *projected* controller is no longer the grant's "you".
      *
      * "You" is `expiryControllerId ?: controllerId`, the same resolution the turn-keyed cleanup
-     * window uses: for an ordinary grant those coincide, and for an owner-scoped one the window
-     * still belongs to the player whose ability granted it, not to each card's owner.
+     * window uses. For an ordinary grant those coincide; for an owner-scoped one the granting
+     * executor pins `expiryControllerId` to the player whose ability granted the permission, so the
+     * window still belongs to them rather than to each card's owner (who never controls the source).
      *
      * Reading the *projected* controller rather than [ControllerComponent] is what makes a
      * Threaten-style steal of the source close the window, matching
