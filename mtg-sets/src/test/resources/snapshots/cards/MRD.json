@@ -794,6 +794,61 @@
     ]
 }
 
+// Blinkmoth Urn
+{
+    "name": "Blinkmoth Urn",
+    "manaCost": "{5}",
+    "typeLine": "Artifact",
+    "oracleText": "At the beginning of each player's first main phase, if this artifact is untapped, that player adds {C} for each artifact they control.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "PRECOMBAT_MAIN",
+                    "player": "Each"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Players",
+                        "players": "TriggeringPlayer"
+                    },
+                    "body": {
+                        "type": "AddColorlessMana",
+                        "amount": {
+                            "type": "AggregateBattlefield",
+                            "player": "You",
+                            "filter": "artifact"
+                        }
+                    }
+                },
+                "interveningIf": {
+                    "type": "EntityMatches",
+                    "entity": "Self",
+                    "filter": "untapped"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "145",
+        "rarity": "RARE",
+        "artist": "David Martin",
+        "flavorText": "The vedalken embed such urns in their living artifact creations.",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/f/0ff34d0b-a278-4990-beaf-5a64885460db.jpg?1783944528",
+        "rulings": [
+            {
+                "date": "2004-10-04",
+                "text": "The precombat main phase is the first main phase of the turn. All others are postcombat main phases, even if they technically occur before combat."
+            }
+        ]
+    },
+    "colorIdentityOverride": []
+}
+
 // Blinkmoth Well
 {
     "name": "Blinkmoth Well",
