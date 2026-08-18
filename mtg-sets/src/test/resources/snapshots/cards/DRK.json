@@ -1064,6 +1064,64 @@
     ]
 }
 
+// Niall Silvain
+{
+    "name": "Niall Silvain",
+    "manaCost": "{G}{G}{G}",
+    "typeLine": "Creature — Ouphe",
+    "oracleText": "{G}{G}{G}{G}, {T}: Regenerate target creature.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{G}{G}{G}{G}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "Regenerate",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature"
+                        },
+                        "id": "target creature"
+                    }
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "82",
+        "rarity": "RARE",
+        "artist": "Christopher Rush",
+        "flavorText": "This is his domain, and while you remain here you must value all life as you value your own.",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/d/9d5911b5-a54e-4ebb-9c36-d4dc8e97bb4b.jpg?1783947931"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Pikemen
 {
     "name": "Pikemen",
