@@ -1188,6 +1188,102 @@
     ]
 }
 
+// Aurelia, the Law Above
+{
+    "name": "Aurelia, the Law Above",
+    "manaCost": "{3}{R}{W}",
+    "typeLine": "Legendary Creature — Angel",
+    "oracleText": "Flying, vigilance, haste\nWhenever a player attacks with three or more creatures, you draw a card.\nWhenever a player attacks with five or more creatures, Aurelia deals 3 damage to each of your opponents and you gain 3 life.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "FLYING",
+        "VIGILANCE",
+        "HASTE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "AttackEvent",
+                    "requires": [
+                        {
+                            "type": "AttackerCountAtLeast",
+                            "n": 3
+                        }
+                    ]
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "descriptionOverride": "Whenever a player attacks with three or more creatures, you draw a card."
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "AttackEvent",
+                    "requires": [
+                        {
+                            "type": "AttackerCountAtLeast",
+                            "n": 5
+                        }
+                    ]
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DealDamage",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 3
+                            },
+                            "target": {
+                                "type": "PlayerRef",
+                                "player": "EachOpponent"
+                            },
+                            "damageSource": "Self"
+                        },
+                        {
+                            "type": "GainLife",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 3
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "Whenever a player attacks with five or more creatures, Aurelia deals 3 damage to each of your opponents and you gain 3 life."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "188",
+        "rarity": "RARE",
+        "artist": "Lie Setiawan",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/f/8f80c6e7-e9f9-4ca6-87f7-a52c96079e4a.jpg?1783912856",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "For both triggered abilities, it doesn't matter what happens to the attacking creatures in response. As long as a player attacked with at least the appropriate number of creatures, the effects of Aurelia's triggered abilities will still occur."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED",
+        "WHITE"
+    ]
+}
+
 // Auspicious Arrival
 {
     "name": "Auspicious Arrival",
@@ -8717,6 +8813,114 @@
     "colorIdentityOverride": [
         "BLACK",
         "GREEN"
+    ]
+}
+
+// Intrude on the Mind
+{
+    "name": "Intrude on the Mind",
+    "manaCost": "{3}{U}{U}",
+    "typeLine": "Instant",
+    "oracleText": "Reveal the top five cards of your library and separate them into two piles. An opponent chooses one of those piles. Put that pile into your hand and the other into your graveyard. Create a 0/0 colorless Thopter artifact creature token with flying, then put a +1/+1 counter on it for each card put into your graveyard this way.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherCards",
+                    "source": {
+                        "type": "TopOfLibrary",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 5
+                        }
+                    },
+                    "storeAs": "revealed",
+                    "revealed": true
+                },
+                {
+                    "type": "SelectFromCollection",
+                    "from": "revealed",
+                    "selection": "ChooseAnyNumber",
+                    "storeSelected": "pileOne",
+                    "storeRemainder": "pileTwo",
+                    "prompt": "Separate the revealed cards into two piles. The cards you select form Pile 1; the rest form Pile 2.",
+                    "selectedLabel": "Pile 1",
+                    "remainderLabel": "Pile 2",
+                    "alwaysPrompt": true
+                },
+                {
+                    "type": "ChoosePile",
+                    "pileA": "pileOne",
+                    "pileB": "pileTwo",
+                    "chooser": "Opponent",
+                    "storeChosenAs": "handPile",
+                    "storeOtherAs": "graveyardPile",
+                    "prompt": "Choose a pile. That pile goes to your opponent's hand; the other goes to their graveyard."
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "handPile",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Hand"
+                    }
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "graveyardPile",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Graveyard"
+                    }
+                },
+                {
+                    "type": "CreateToken",
+                    "power": 0,
+                    "toughness": 0,
+                    "colors": [],
+                    "creatureTypes": [
+                        "Thopter"
+                    ],
+                    "keywords": [
+                        "FLYING"
+                    ],
+                    "name": "Thopter",
+                    "imageUri": "https://cards.scryfall.io/normal/front/2/2/22ad97f4-cc41-493c-9848-c06f3cf778c7.jpg?1783912603",
+                    "artifactToken": true
+                },
+                {
+                    "type": "AddCountersToCollection",
+                    "collectionName": "createdTokens",
+                    "counterType": "+1/+1",
+                    "amount": {
+                        "type": "DistinctEntitiesInCollections",
+                        "collections": [
+                            "graveyardPile"
+                        ]
+                    }
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "61",
+        "rarity": "MYTHIC",
+        "artist": "Magali Villeneuve",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/b/fbe62f47-df17-4646-88ca-89a8ec4deee9.jpg?1783912908",
+        "rulings": [
+            {
+                "date": "2024-02-02",
+                "text": "You decide which opponent chooses the pile while resolving Intrude on the Mind."
+            },
+            {
+                "date": "2024-02-02",
+                "text": "You may choose to put all of the cards into one pile and leave the other pile empty. If you do, the opponent will choose whether to put the revealed cards into your hand or your graveyard."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 
