@@ -1246,6 +1246,78 @@
     ]
 }
 
+// Maze of Ith
+{
+    "name": "Maze of Ith",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "{T}: Untap target attacking creature. Prevent all combat damage that would be dealt to and dealt by that creature this turn.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "TapUntap",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target attacking creature"
+                            },
+                            "tap": false
+                        },
+                        {
+                            "type": "PreventDamageShield",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target attacking creature"
+                            },
+                            "scope": "CombatOnly",
+                            "direction": "Both"
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature attacking"
+                        },
+                        "id": "target attacking creature"
+                    }
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "117",
+        "rarity": "UNCOMMON",
+        "artist": "Anson Maddocks",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/2/42dcceee-2a47-4eaa-a6a3-2931b3d50244.jpg?1783947922",
+        "rulings": [
+            {
+                "date": "2022-12-08",
+                "text": "Maze of Ith doesn't have a mana ability. It doesn't tap for colorless mana."
+            },
+            {
+                "date": "2022-12-08",
+                "text": "Maze of Ith can target an untapped attacking creature. It will still prevent the combat damage it would deal and be dealt."
+            },
+            {
+                "date": "2022-12-08",
+                "text": "The creature isn't removed from combat; it just has its damage prevented. It's still an attacking creature until the combat phase is complete."
+            },
+            {
+                "date": "2022-12-08",
+                "text": "You can activate Maze of Ith's ability targeting an attacking creature you control during the combat damage step or the end of combat step, even though it will already have dealt combat damage. This will untap the creature. The damage it dealt will be unaffected."
+            }
+        ]
+    },
+    "colorIdentityOverride": []
+}
+
 // Merfolk Assassin
 {
     "name": "Merfolk Assassin",
