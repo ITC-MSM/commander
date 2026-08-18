@@ -8628,6 +8628,13 @@ default to "you" so card authors don't need to pass it explicitly.
 
 - `YouAttackedWithCreaturesThisTurn(filter, atLeast)` — Raid/Battalion shape. Backed by
   `PlayerAttackedWithCreaturesThisTurn(Player.You, filter, atLeast)`.
+- `CreaturesAttackedThisTurn(atLeast, filter = Creature)` — the **player-agnostic** count: at least
+  `atLeast` creatures matching `filter` attacked this turn, whoever declared them
+  (`PlayerAttackedWithCreaturesThisTurn(Player.Each, …)`, which unions every player's attack record
+  so a creature counts once). For printed text that names no player — Case of the Gateway Express's
+  "three or more creatures attacked this turn" — rather than the controller-scoped
+  `YouAttackedWithCreaturesThisTurn`. The record is keyed to the player who *declared* the attacker,
+  so a creature whose controller changed after attacking still counts.
 - `PlayerAttackedPlayerThisTurn(attacker, defender = Player.You)` — whether `attacker` "attacked"
   `defender` this turn (CR 508.6): they declared one or more attackers whose defending player was
   `defender` (the player directly, or the controller of a planeswalker / protector of a battle the

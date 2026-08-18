@@ -1406,6 +1406,19 @@ object Conditions {
         PlayerAttackedWithCreaturesThisTurn(Player.You, filter, atLeast)
 
     /**
+     * If [atLeast] or more creatures matching [filter] attacked this turn, **whoever declared
+     * them** — the player-agnostic sibling of [YouAttackedWithCreaturesThisTurn], for text that
+     * says "three or more creatures attacked this turn" rather than "you attacked with three or
+     * more" (Case of the Gateway Express). Counts each creature once even if the scopes overlap.
+     */
+    fun CreaturesAttackedThisTurn(
+        atLeast: Int,
+        filter: com.wingedsheep.sdk.scripting.GameObjectFilter =
+            com.wingedsheep.sdk.scripting.GameObjectFilter.Creature
+    ): ConditionInterface =
+        PlayerAttackedWithCreaturesThisTurn(Player.Each, filter, atLeast)
+
+    /**
      * Whether [attacker] attacked [defender] this turn (CR 508.6) — declared one or more
      * attackers whose defending player was [defender]. Defaults [defender] to [Player.You].
      * Negate with [Not] for "didn't attack you that turn" (Faramir, Prince of Ithilien).

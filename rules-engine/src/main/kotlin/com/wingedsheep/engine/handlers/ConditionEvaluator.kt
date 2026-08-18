@@ -1044,16 +1044,36 @@ class ConditionEvaluator(
         ctx: ConditionEvaluationContext
     ): Boolean {
         if (condition.atLeast <= 0) return true
-        val playerId = resolvePlayer(state, condition.player, ctx) ?: return false
-        val attackerIds = state.getEntity(playerId)
-            ?.get<PlayerAttackersThisTurnComponent>()
-            ?.attackerIds
-            ?: emptySet()
+        // Player.Each / Player.Any make this the *player-agnostic* count — "three or more creatures
+        // attacked this turn" (Case of the Gateway Express) rather than "you attacked with three or
+        // more". Every other scope resolves to the single player it names, so Player.You behaves
+        // exactly as before.
+        val playerIds = when (condition.player) {
+            is Player.Each, is Player.Any -> state.activePlayers
+            is Player.EachOpponent -> {
+                val controller = resolvePlayer(state, Player.You, ctx) ?: return false
+                state.getOpponents(controller)
+            }
+            else -> listOfNotNull(resolvePlayer(state, condition.player, ctx))
+        }
+        if (playerIds.isEmpty()) return false
+        // Attackers are recorded per declaring player, so the union is the set of creatures that
+        // attacked at all this turn — a creature counts once even if two scopes both name it.
+        val attackerIds = playerIds.flatMapTo(mutableSetOf()) { playerId ->
+            state.getEntity(playerId)
+                ?.get<PlayerAttackersThisTurnComponent>()
+                ?.attackerIds
+                ?: emptySet()
+        }
         if (attackerIds.size < condition.atLeast) return false
         val predicateEvaluator = PredicateEvaluator()
         val predicateContext = when (ctx) {
             is Resolution -> PredicateContext.fromEffectContext(ctx.effectContext)
-            is Projection -> PredicateContext(controllerId = playerId)
+            // The filter's own "you control" clauses are relative to the ability's controller,
+            // not to whichever player's attack record is being scanned.
+            is Projection -> PredicateContext(
+                controllerId = resolvePlayer(state, Player.You, ctx) ?: playerIds.first()
+            )
         }
         val projected = ctx.projectedStateFor(state)
         var matches = 0

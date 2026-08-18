@@ -149,6 +149,12 @@ data object YouWereAttackedThisStep : Condition {
  * which the engine resolves to the source's controller in both resolution and static-ability
  * (projection) contexts.
  *
+ * [Player.Each] / [Player.Any] make it the **player-agnostic** count — the union of every player's
+ * attack record, i.e. "three or more creatures attacked this turn" whoever declared them
+ * (`Conditions.CreaturesAttackedThisTurn`, Case of the Gateway Express). A creature is counted once
+ * however many scopes name it, and the filter's own "you control" clauses stay relative to the
+ * ability's controller rather than to whichever record is being scanned.
+ *
  * Used for cards like Deepway Navigator: "as long as you attacked with three or more
  * Merfolk this turn".
  */
@@ -160,7 +166,13 @@ data class PlayerAttackedWithCreaturesThisTurn(
     val atLeast: Int
 ) : Condition {
     override val description: String =
-        "if ${player.description} attacked with $atLeast or more ${DynamicAmount.pluralize(filter.description)} this turn"
+        if (player is Player.Each || player is Player.Any) {
+            // Player-agnostic reading: the printed text names no player at all.
+            "if $atLeast or more ${DynamicAmount.pluralize(filter.description)} attacked this turn"
+        } else {
+            "if ${player.description} attacked with $atLeast or more " +
+                "${DynamicAmount.pluralize(filter.description)} this turn"
+        }
     override fun applyTextReplacement(replacer: TextReplacer): Condition {
         val newFilter = filter.applyTextReplacement(replacer)
         return if (newFilter !== filter) copy(filter = newFilter) else this
