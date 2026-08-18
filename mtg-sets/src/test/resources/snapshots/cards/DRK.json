@@ -210,6 +210,60 @@
     "colorIdentityOverride": []
 }
 
+// Book of Rass
+{
+    "name": "Book of Rass",
+    "manaCost": "{6}",
+    "typeLine": "Artifact — Book",
+    "oracleText": "{2}, Pay 2 life: Draw a card.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}"
+                            }
+                        },
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomPayLife",
+                                "amount": 2
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "98",
+        "rarity": "UNCOMMON",
+        "artist": "Sandra Everingham",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/a/5a391ada-e9e3-45db-ae84-17421ac6b44d.jpg?1783947929",
+        "rulings": [
+            {
+                "date": "2004-10-04",
+                "text": "You can't spend yourself to below zero life. You can't spend life you don't have."
+            }
+        ]
+    },
+    "colorIdentityOverride": []
+}
+
 // Carnivorous Plant
 {
     "name": "Carnivorous Plant",
