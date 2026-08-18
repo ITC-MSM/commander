@@ -407,6 +407,89 @@
     ]
 }
 
+// Grave Robbers
+{
+    "name": "Grave Robbers",
+    "manaCost": "{1}{B}{B}",
+    "typeLine": "Creature — Human Rogue",
+    "oracleText": "{B}, {T}: Exile target artifact card from a graveyard. You gain 2 life.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{B}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "MoveToZone",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target artifact card from a graveyard"
+                            },
+                            "destination": "Exile",
+                            "fromZone": "Graveyard"
+                        },
+                        {
+                            "type": "GainLife",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 2
+                            }
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "artifact",
+                            "zone": "Graveyard"
+                        },
+                        "id": "target artifact card from a graveyard"
+                    }
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "46",
+        "rarity": "RARE",
+        "artist": "Quinton Hoover",
+        "flavorText": "\"If you don't have your health, you don't have anything.\" —Proverb",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/1/a131605a-f646-4745-a1e4-48d155a3d94f.jpg?1783947938",
+        "rulings": [
+            {
+                "date": "2004-10-04",
+                "text": "This exiles the artifact on resolution, but you choose it as a target when activating the ability."
+            },
+            {
+                "date": "2004-10-04",
+                "text": "If the target is not there on resolution, you do not gain the life."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Holy Light
 {
     "name": "Holy Light",
