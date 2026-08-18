@@ -45,7 +45,7 @@ val WarElemental = card("War Elemental") {
                 ComparisonOperator.LT,
                 DynamicAmount.Fixed(1),
             ),
-            effect = Effects.Sacrifice(EffectTarget.Self),
+            effect = Effects.SacrificeTarget(EffectTarget.Self),
         )
     }
 
