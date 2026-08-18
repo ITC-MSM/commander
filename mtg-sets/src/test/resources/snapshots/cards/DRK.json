@@ -60,6 +60,66 @@
     ]
 }
 
+// Exorcist
+{
+    "name": "Exorcist",
+    "manaCost": "{W}{W}",
+    "typeLine": "Creature — Human Cleric",
+    "oracleText": "{1}{W}, {T}: Destroy target black creature.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}{W}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target black creature"
+                    },
+                    "destination": "Graveyard",
+                    "byDestruction": true
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature black"
+                        },
+                        "id": "target black creature"
+                    }
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "6",
+        "rarity": "RARE",
+        "artist": "Drew Tucker",
+        "flavorText": "Though they often bore little greater charm than the demons they battled, exorcists were always welcome in Scarwood.",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/8/184b7d52-e991-4668-9f6a-bcded97f51ac.jpg?1783947949"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Fountain of Youth
 {
     "name": "Fountain of Youth",
