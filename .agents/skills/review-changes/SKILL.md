@@ -199,12 +199,12 @@ values, layer interactions, "as ~ enters", protection / hexproof / ward).
 3. **Issues, by severity:**
    - **Blocking** — wrong behavior, broken rules, missing wiring (new event without
      `ClientEvent.kt` branch), tests that don't exercise the change, base-vs-projected
-     state bugs. Must be fixed before merge.
+     state bugs. Must be fixed before merge. Numbered B#
    - **Important** — over-specialized SDK types (show the rewrite), CR-number mismatches,
      missing rule-corner test, projection fallback gaps, naming that lies about
-     semantics. Should be fixed before merge.
+     semantics. Should be fixed before merge. Numbered I#
    - **Minor** — comment hygiene, descriptions, drive-by formatting, dead code, doc
-     inconsistencies. Author's discretion.
+     inconsistencies. Author's discretion. Numbered M#
 
    Each issue: one short paragraph with `file:line` and the concrete fix.
 4. **Recommendation** — concrete next action ("drop type X, define card via Y, add a
