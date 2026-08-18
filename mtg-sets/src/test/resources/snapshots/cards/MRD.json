@@ -3691,6 +3691,110 @@
     "colorIdentityOverride": []
 }
 
+// Grab the Reins
+{
+    "name": "Grab the Reins",
+    "manaCost": "{3}{R}",
+    "typeLine": "Instant",
+    "oracleText": "Choose one —\n• Until end of turn, you gain control of target creature and it gains haste.\n• Sacrifice a creature. Grab the Reins deals damage equal to that creature's power to any target.\nEntwine {2}{R} (Choose both if you pay the entwine cost.)",
+    "script": {
+        "spellEffect": {
+            "type": "Modal",
+            "modes": [
+                {
+                    "effect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GainControl",
+                                "target": {
+                                    "type": "BoundVariable",
+                                    "name": "creature to gain control of"
+                                },
+                                "duration": "EndOfTurn"
+                            },
+                            {
+                                "type": "GrantKeyword",
+                                "keyword": "HASTE",
+                                "target": {
+                                    "type": "BoundVariable",
+                                    "name": "creature to gain control of"
+                                }
+                            }
+                        ]
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "creature"
+                            },
+                            "id": "creature to gain control of"
+                        }
+                    ],
+                    "description": "Gain control of target creature until end of turn; it gains haste"
+                },
+                {
+                    "effect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "Sacrifice",
+                                "filter": "creature"
+                            },
+                            {
+                                "type": "DealDamage",
+                                "amount": {
+                                    "type": "EntityProperty",
+                                    "entity": "Sacrificed",
+                                    "numericProperty": "Power"
+                                },
+                                "target": {
+                                    "type": "BoundVariable",
+                                    "name": "damage target"
+                                }
+                            }
+                        ]
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "AnyTarget",
+                            "id": "damage target"
+                        }
+                    ],
+                    "description": "Sacrifice a creature; deal damage equal to its power to any target"
+                }
+            ],
+            "chooseCount": 2,
+            "minChooseCount": 1,
+            "additionalManaCostPerExtraMode": "{2}{R}"
+        }
+    },
+    "metadata": {
+        "collectorNumber": "95",
+        "rarity": "UNCOMMON",
+        "artist": "Michael Sutfin",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/7/570fa211-e937-4ad7-bc72-60f8adc3203d.jpg?1783944540",
+        "rulings": [
+            {
+                "date": "2004-12-01",
+                "text": "If you pay the entwine cost, you can sacrifice the creature you gain control of with Grab the Reins."
+            },
+            {
+                "date": "2004-12-01",
+                "text": "If you choose the sacrifice mode, choose the damage target as you cast the spell, but choose the creature to sacrifice as it resolves. You must sacrifice a creature if possible; if you control none, no damage is dealt."
+            },
+            {
+                "date": "2004-12-01",
+                "text": "An entwined Grab the Reins resolves as one spell; no player gets priority between gaining control of the creature and sacrificing a creature."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Granite Shard
 {
     "name": "Granite Shard",
