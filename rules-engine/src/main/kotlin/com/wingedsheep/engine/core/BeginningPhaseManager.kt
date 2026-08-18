@@ -508,6 +508,10 @@ class BeginningPhaseManager(
         is StatePredicate.Or -> predicate.predicates.any { matchesStatePredicateForUntap(it, container) }
         is StatePredicate.And -> predicate.predicates.all { matchesStatePredicateForUntap(it, container) }
         is StatePredicate.Not -> !matchesStatePredicateForUntap(predicate.predicate, container)
+        // Relational battlefield predicates need the whole projected battlefield, which this
+        // narrow untap helper deliberately does not receive. Fail closed rather than untapping an
+        // unrelated permanent.
+        is StatePredicate.HasLeastManaValueAmong -> false
         // Untap-during-other-untap-step filters only meaningfully restrict by counter type
         // and structural combinators. Tap / combat / face-down / damage-history / equipment
         // predicates would either be redundant at this point in the turn (e.g. IsTapped is

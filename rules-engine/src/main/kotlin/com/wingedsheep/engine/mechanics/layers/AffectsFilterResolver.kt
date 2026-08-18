@@ -588,6 +588,10 @@ internal class AffectsFilterResolver {
         is StatePredicate.WasCastFromZone -> false
         StatePredicate.HasGreatestPower -> hasGreatestPowerInProjection(state, entityId, container, projectedValues)
         StatePredicate.HasLeastPowerAmongAllCreatures -> hasLeastPowerAmongAllCreaturesInProjection(state, entityId, container, projectedValues)
+        // Relational minimum-mana-value matching is intended for point-of-use filters (targeting
+        // and gathering), where PredicateEvaluator has the full ability context. It is not a
+        // continuous-effect applicability predicate.
+        is StatePredicate.HasLeastManaValueAmong -> false
         StatePredicate.HasLeastPower -> hasLeastPowerInProjection(state, entityId, container, projectedValues)
         StatePredicate.HasAnyCounter -> {
             val counters = container.get<CountersComponent>()

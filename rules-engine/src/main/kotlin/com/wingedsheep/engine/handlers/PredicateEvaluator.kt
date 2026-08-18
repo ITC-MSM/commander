@@ -1646,6 +1646,26 @@ class PredicateEvaluator {
                 entityPower <= minPower
             }
 
+            is StatePredicate.HasLeastManaValueAmong -> {
+                val predicateContext = context ?: return false
+                val entityManaValue = if (projected.getProjectedValues(entityId)?.isFaceDown == true) {
+                    0
+                } else {
+                    container.get<CardComponent>()?.manaValue ?: return false
+                }
+                val minManaValue = state.getBattlefield()
+                    .asSequence()
+                    .filter { matches(state, projected, it, predicate.candidates, predicateContext) }
+                    .mapNotNull { candidateId ->
+                        val candidate = state.getEntity(candidateId) ?: return@mapNotNull null
+                        if (projected.getProjectedValues(candidateId)?.isFaceDown == true) 0
+                        else candidate.get<CardComponent>()?.manaValue
+                    }
+                    .minOrNull()
+                    ?: return false
+                entityManaValue == minManaValue
+            }
+
             StatePredicate.HasLeastPower -> {
                 val entityController = projected.getController(entityId)
                     ?: container.get<ControllerComponent>()?.playerId

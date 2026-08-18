@@ -1099,6 +1099,11 @@ data class GameObjectFilter(
         statePredicates = statePredicates + StatePredicate.HasLeastPowerAmongAllCreatures
     )
 
+    /** Must have the least mana value among battlefield permanents matching [candidates]. */
+    fun hasLeastManaValueAmong(candidates: GameObjectFilter) = copy(
+        statePredicates = statePredicates + StatePredicate.HasLeastManaValueAmong(candidates)
+    )
+
     /** Must have the least power among creatures its controller controls */
     fun hasLeastPower() = copy(
         statePredicates = statePredicates + StatePredicate.HasLeastPower

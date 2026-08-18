@@ -4065,6 +4065,9 @@ work for abilities-on-stack (which carry no `CardComponent`).
   `hasLeastPower()`) — has the greatest / least projected power among creatures *its controller*
   controls (ties all qualify). Used for "creature with the greatest/least power" target and edict
   filters, e.g. Witch-king, Bringer of Ruin: `Effects.Sacrifice(Creature.hasLeastPower(), 1, EachOpponent)`.
+- `HasLeastManaValueAmong(candidates)` (filter builder `hasLeastManaValueAmong(candidates)`) — has the
+  least mana value among battlefield permanents matching the supplied composable filter. Ties all
+  qualify, and target legality is rechecked at resolution (Culling Scales).
 - `IsRingBearer` (filter builder `ringBearer()`) — the creature is its controller's Ring-bearer
   (CR 701.54: has `RingBearerComponent` and is controlled by its designating owner). Used for
   player-level Ring-bearer conditions via `Conditions.YouControl(Creature.ringBearer(), negate = …)`
