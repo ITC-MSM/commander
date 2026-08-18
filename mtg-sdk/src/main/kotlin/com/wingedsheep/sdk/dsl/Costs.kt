@@ -176,6 +176,17 @@ object Costs {
     fun Mill(count: Int): AbilityCost = AbilityCost.Atom(CostAtom.Mill(count))
 
     /**
+     * Exile the top [count] cards of your library as a cost — "{R}, Exile the top ten cards of
+     * your library" (Arc-Slogger).
+     *
+     * The exile twin of [Mill]: no player selection (the cards are the top of the library), and
+     * unpayable unless the library holds at least [count] cards (CR 118.3). Not to be confused
+     * with [ExileFromGraveyard]-style *chosen*-card costs, which mean "choose N", not "the top N".
+     */
+    fun ExileTopOfLibrary(count: Int): AbilityCost =
+        AbilityCost.Atom(CostAtom.ExileTopOfLibrary(count))
+
+    /**
      * Discard this card (for cycling and similar abilities).
      */
     val DiscardSelf: AbilityCost = AbilityCost.DiscardSelf

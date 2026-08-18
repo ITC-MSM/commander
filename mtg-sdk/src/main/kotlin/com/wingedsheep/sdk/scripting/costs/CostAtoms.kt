@@ -33,6 +33,7 @@ fun CostAtom.repeated(times: Int): CostAtom {
         is CostAtom.Mana -> copy(cost = cost * times)
         is CostAtom.PayLife -> copy(amount = amount * times)
         is CostAtom.Mill -> copy(count = count * times)
+        is CostAtom.ExileTopOfLibrary -> copy(count = count * times)
         is CostAtom.Sacrifice -> copy(count = count * times)
         is CostAtom.VariablePermanents -> copy(minCount = minCount * times)
         is CostAtom.Discard -> copy(count = count * times)

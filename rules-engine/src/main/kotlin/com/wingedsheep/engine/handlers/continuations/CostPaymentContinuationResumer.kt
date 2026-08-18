@@ -57,7 +57,9 @@ class CostPaymentContinuationResumer(
         is PayCost.Atom -> when (val atom = cost.atom) {
             // Yes/no costs: mana, life, mill (the milled cards are the top of the library, so
             // there is nothing to select), and random discard.
-            is CostAtom.Mana, is CostAtom.PayLife, is CostAtom.Mill ->
+            is CostAtom.Mana, is CostAtom.PayLife, is CostAtom.Mill,
+            // Exiling the top N takes no selection either, for the same reason Mill doesn't.
+            is CostAtom.ExileTopOfLibrary ->
                 resumeYesNo(state, continuation, cost, response, checkForMore)
             is CostAtom.Discard ->
                 if (atom.random) resumeYesNo(state, continuation, cost, response, checkForMore)

@@ -88,6 +88,29 @@ sealed interface CostAtom : TextReplaceable<CostAtom> {
     }
 
     /**
+     * Exile the top [count] cards of your library — Arc-Slogger's "{R}, Exile the top ten cards of
+     * your library".
+     *
+     * The exile twin of [Mill], and takes no selection for the same reason: the cards are the top
+     * of the library, not a player choice. Affordability is a plain library-size check (CR 118.3 —
+     * a player can't pay a cost without the resources to pay it fully), so a nine-card library
+     * can't pay a ten-card exile at all rather than exiling as many as possible. That is the split
+     * from the exile *effect*, which takes what it finds.
+     *
+     * Distinct from [ExileFrom], which is a *chosen-cards* cost ("exile two cards from your
+     * graveyard") and so means "choose N" rather than "the top N". The resulting library→exile zone
+     * changes are ordinary ones, and no mill replacement applies: exiling from the top is not
+     * milling (CR 701.17a), so nothing enlarges the announced count.
+     */
+    @SerialName("AtomExileTopOfLibrary")
+    @Serializable
+    data class ExileTopOfLibrary(val count: Int) : CostAtom {
+        override val description: String get() =
+            if (count == 1) "exile the top card of your library"
+            else "exile the top $count cards of your library"
+    }
+
+    /**
      * Sacrifice [count] permanents matching [filter].
      *
      * @property excludeSelf when true the cost's source permanent is excluded from the candidate

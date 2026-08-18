@@ -177,6 +177,10 @@ class ManaAbilityEnumerator : ActionEnumerator {
                         is CostAtom.Mill -> {
                             if (state.getZone(ZoneKey(playerId, Zone.LIBRARY)).size < atom.count) affordable = false
                         }
+                        // CR 118.3 — same shallow-library gate for exiling the top N.
+                        is CostAtom.ExileTopOfLibrary -> {
+                            if (state.getZone(ZoneKey(playerId, Zone.LIBRARY)).size < atom.count) affordable = false
+                        }
                         // Other atoms (mana, life, discard, …) — engine validates at payment.
                         else -> {}
                     }

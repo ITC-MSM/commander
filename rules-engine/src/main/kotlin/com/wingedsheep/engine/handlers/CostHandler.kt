@@ -611,6 +611,10 @@ class CostHandler {
         // library holds. Checked against the printed count; a ModifyMillAmount replacement only
         // enlarges the mill once the cost is actually being paid.
         is CostAtom.Mill -> state.getZone(ZoneKey(controllerId, Zone.LIBRARY)).size >= atom.count
+        // CR 118.3 — Arc-Slogger with nine cards left can't activate at all; there is no
+        // "exile as many as possible" for a cost.
+        is CostAtom.ExileTopOfLibrary ->
+            state.getZone(ZoneKey(controllerId, Zone.LIBRARY)).size >= atom.count
         is CostAtom.TapPermanents -> {
             val candidates = findUntappedMatchingPermanentsUnified(state, controllerId, atom.filter)
                 .let { targets -> if (atom.excludeSelf) targets.filter { it != sourceId } else targets }
@@ -745,6 +749,14 @@ class CostHandler {
             val effectiveCount = MillAmountModifier.apply(state, controllerId, atom.count)
             val milled = state.getZone(ZoneKey(controllerId, Zone.LIBRARY)).take(effectiveCount)
             val result = ZoneTransitionService.moveToZoneBatch(state, milled, Zone.GRAVEYARD)
+            CostPaymentResult.success(result.state, manaPool, result.events)
+        }
+        is CostAtom.ExileTopOfLibrary -> {
+            // No mill replacement to apply — exiling from the top is not milling (CR 701.17a), so
+            // the announced count is the paid count, and the affordability check above already
+            // guaranteed the library holds it. Emits ordinary library→exile zone changes.
+            val exiled = state.getZone(ZoneKey(controllerId, Zone.LIBRARY)).take(atom.count)
+            val result = ZoneTransitionService.moveToZoneBatch(state, exiled, Zone.EXILE)
             CostPaymentResult.success(result.state, manaPool, result.events)
         }
         is CostAtom.TapPermanents -> payTapPermanents(state, atom, sourceId, controllerId, manaPool, choices)
@@ -1228,7 +1240,8 @@ class CostHandler {
                 // spell additional costs today (put-counters-on-self is inherently ability-scoped —
                 // a spell on the stack has no permanent to put the counters on).
                 is CostAtom.Mana, is CostAtom.ReturnToHand, is CostAtom.RevealFromHand,
-                is CostAtom.PutCountersOnSelf, is CostAtom.Mill -> false
+                is CostAtom.PutCountersOnSelf, is CostAtom.Mill,
+                is CostAtom.ExileTopOfLibrary -> false
             }
             is AdditionalCost.PayLifePerTarget -> {
                 // Always payable: choosing zero targets pays zero life. Per-target life

@@ -1925,6 +1925,7 @@ class CastSpellHandler(
                     is CostAtom.Mana, is CostAtom.RevealFromHand,
                     is CostAtom.PutCountersOnSelf,
                     is CostAtom.ExileFromGraveyardForTotal,
+                    is CostAtom.ExileTopOfLibrary,
                     is CostAtom.Mill -> {}
                     is CostAtom.RemoveCounters -> {
                         val needed = when (val c = atom.count) {
@@ -2750,6 +2751,7 @@ class CastSpellHandler(
                         is CostAtom.PayLife, is CostAtom.Mana, is CostAtom.RevealFromHand,
                         is CostAtom.PutCountersOnSelf,
                         is CostAtom.ExileFromGraveyardForTotal,
+                        is CostAtom.ExileTopOfLibrary,
                         is CostAtom.Mill -> {}
                         is CostAtom.RemoveCounters -> {
                             val resolvedRemovals = resolveDistributedCounterRemovalsForPayment(action)

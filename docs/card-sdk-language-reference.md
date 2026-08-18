@@ -407,6 +407,14 @@ excluded.
   `ModifyMillAmount` replacement (Bruvac) still applies to the announced count when the cost is
   actually paid, and the library→graveyard moves go through `ZoneTransitionService`, so mill triggers
   fire exactly as they do for an effect's mill.
+- `Costs.ExileTopOfLibrary(count)` — exile the top `count` cards of your library as a cost
+  ("{R}, Exile the top ten cards of your library" — Arc-Slogger). The exile twin of `Costs.Mill`:
+  no player selection (the cards are the top of the library), and per **CR 118.3** — a player can't
+  pay a cost without the resources to pay it fully — the cost is **unpayable** on a short library and
+  gates legal-action enumeration, rather than exiling as many as possible the way the exile *effect*
+  would. Unlike mill, no `ModifyMillAmount` replacement applies: exiling from the top is not milling
+  (CR 701.17a), so the announced count is the paid count. Distinct from the `ExileFromGraveyard`-style
+  *chosen*-card costs, which mean "choose N", not "the top N".
 - `Costs.ExileSelf` — exile this permanent (or graveyard card, for graveyard-activated abilities).
 - `Costs.ReturnSelfToHand` — return this permanent to its owner's hand (Maze's End: "{3}, {T},
   Return this land to its owner's hand: …"). The bounce-to-hand sibling of `Costs.SacrificeSelf` /
