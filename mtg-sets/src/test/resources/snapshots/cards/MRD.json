@@ -3661,6 +3661,123 @@
     ]
 }
 
+// Goblin Charbelcher
+{
+    "name": "Goblin Charbelcher",
+    "manaCost": "{4}",
+    "typeLine": "Artifact",
+    "oracleText": "{3}, {T}: Reveal cards from the top of your library until you reveal a land card. This artifact deals damage equal to the number of nonland cards revealed this way to any target. If the revealed land card was a Mountain, this artifact deals double that damage instead. Put the revealed cards on the bottom of your library in any order.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{3}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherUntilMatch",
+                            "filter": "land",
+                            "storeMatch": "landCard",
+                            "storeRevealed": "revealed"
+                        },
+                        {
+                            "type": "RevealCollection",
+                            "from": "revealed"
+                        },
+                        {
+                            "type": "FilterCollection",
+                            "from": "revealed",
+                            "filter": {
+                                "type": "MatchesFilter",
+                                "filter": "nonland"
+                            },
+                            "storeMatching": "nonlands"
+                        },
+                        {
+                            "type": "DealDamage",
+                            "amount": {
+                                "type": "Conditional",
+                                "condition": {
+                                    "type": "CollectionContainsMatch",
+                                    "collection": "landCard",
+                                    "filter": "land Mountain"
+                                },
+                                "ifTrue": {
+                                    "type": "Multiply",
+                                    "amount": {
+                                        "type": "DistinctEntitiesInCollections",
+                                        "collections": [
+                                            "nonlands"
+                                        ]
+                                    },
+                                    "multiplier": 2
+                                },
+                                "ifFalse": {
+                                    "type": "DistinctEntitiesInCollections",
+                                    "collections": [
+                                        "nonlands"
+                                    ]
+                                }
+                            },
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "any target"
+                            }
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "revealed",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Library",
+                                "placement": "Bottom"
+                            },
+                            "order": "ControllerChooses"
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "AnyTarget",
+                        "id": "any target"
+                    }
+                ],
+                "descriptionOverride": "{3}, {T}: Reveal cards from the top of your library until you reveal a land card. This artifact deals damage equal to the number of nonland cards revealed this way to any target. If the revealed land card was a Mountain, this artifact deals double that damage instead. Put the revealed cards on the bottom of your library in any order."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "176",
+        "rarity": "RARE",
+        "artist": "Stephen Tappin",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/6/b6c37fc1-4842-4bc5-93ed-83fff9e420f2.jpg?1783944520",
+        "rulings": [
+            {
+                "date": "2016-06-08",
+                "text": "You must choose a target for Goblin Charbelcher's ability as you activate it, before you reveal any cards."
+            },
+            {
+                "date": "2016-06-08",
+                "text": "If you reveal no land cards, Goblin Charbelcher deals damage equal to the number of cards revealed, and then you may order your library as you like."
+            }
+        ]
+    },
+    "colorIdentityOverride": []
+}
+
 // Goblin Dirigible
 {
     "name": "Goblin Dirigible",
@@ -10728,6 +10845,100 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Spoils of the Vault
+{
+    "name": "Spoils of the Vault",
+    "manaCost": "{B}",
+    "typeLine": "Instant",
+    "oracleText": "Choose a card name. Reveal cards from the top of your library until you reveal a card with that name, then put that card into your hand. Exile all other cards revealed this way, and you lose 1 life for each of the exiled cards.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "ChooseOption",
+                    "optionType": "CARD_NAME",
+                    "storeAs": "chosenName",
+                    "prompt": "Choose a card name"
+                },
+                {
+                    "type": "GatherUntilMatch",
+                    "filter": {
+                        "cardPredicates": [
+                            {
+                                "type": "NameEqualsChosen",
+                                "variableName": "chosenName"
+                            }
+                        ]
+                    },
+                    "storeMatch": "match",
+                    "storeRevealed": "revealed"
+                },
+                {
+                    "type": "RevealCollection",
+                    "from": "revealed"
+                },
+                {
+                    "type": "SelectFromCollection",
+                    "from": "revealed",
+                    "selection": "SelectAll",
+                    "filter": {
+                        "cardPredicates": [
+                            {
+                                "type": "NameEqualsChosen",
+                                "variableName": "chosenName"
+                            }
+                        ]
+                    },
+                    "storeSelected": "toHand",
+                    "storeRemainder": "toExile"
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "toHand",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Hand"
+                    }
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "toExile",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Exile"
+                    }
+                },
+                {
+                    "type": "LoseLife",
+                    "amount": {
+                        "type": "DistinctEntitiesInCollections",
+                        "collections": [
+                            "toExile"
+                        ]
+                    },
+                    "target": "Controller"
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "78",
+        "rarity": "RARE",
+        "artist": "Thomas M. Baxa",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/b/3b9d100d-d20b-4018-8518-609113ec36d7.jpg?1783944544",
+        "rulings": [
+            {
+                "date": "2018-12-07",
+                "text": "You don't have to choose the name of a card that's still in your library, or even a card that's in your deck at all. If no card with the chosen name is in your library, you exile your library and lose 1 life for each of those cards."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 
