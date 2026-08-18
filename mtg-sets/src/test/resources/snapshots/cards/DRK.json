@@ -1228,6 +1228,66 @@
     ]
 }
 
+// Scavenger Folk
+{
+    "name": "Scavenger Folk",
+    "manaCost": "{G}",
+    "typeLine": "Creature — Human",
+    "oracleText": "{G}, {T}, Sacrifice this creature: Destroy target artifact.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{G}"
+                            }
+                        },
+                        "CostTap",
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target artifact"
+                    },
+                    "destination": "Graveyard",
+                    "byDestruction": true
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "artifact"
+                        },
+                        "id": "target artifact"
+                    }
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "87",
+        "artist": "Dennis Detwiller",
+        "flavorText": "String, weapons, wax, or jewels—it makes no difference. Leave nothing unguarded in Scarwood.",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/e/8e99870c-b2b9-431b-b8a8-3f4a80aa8fa5.jpg?1783947929"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Sisters of the Flame
 {
     "name": "Sisters of the Flame",
