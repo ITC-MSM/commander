@@ -745,6 +745,35 @@
     ]
 }
 
+// Hidden Path
+{
+    "name": "Hidden Path",
+    "manaCost": "{2}{G}{G}{G}{G}",
+    "typeLine": "Enchantment",
+    "oracleText": "Green creatures have forestwalk. (They can't be blocked as long as defending player controls a Forest.)",
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "GrantKeyword",
+                "keyword": "FORESTWALK",
+                "filter": {
+                    "baseFilter": "creature green"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "78",
+        "rarity": "RARE",
+        "artist": "Rob Alexander",
+        "flavorText": "\"Where moments before we were lost beyond hope, the strange, floating lights showed us the way and restored our morale.\" —Vervamon the Elder",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/b/cbc93c0b-0ac8-4b8f-b2f6-96887d1acd77.jpg?1783947932"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Holy Light
 {
     "name": "Holy Light",
